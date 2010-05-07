@@ -16,7 +16,7 @@ also supported; in 2D and 3D implicit zero-padding substantially reduces
 memory usage and computation time.  For more information, see the
 manuscript "Efficient Dealiased Convolutions without Padding"
 by John C. Bowman and Malcolm Roberts, submitted to the SIAM Journal on
-Scientific Computing, (2010):
+Scientific Computing, 2010:
 
 http://www.math.ualberta.ca/~bowman/publications/dealias.pdf
 
