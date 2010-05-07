@@ -1,0 +1,87 @@
+#!/bin/bash
+
+start=6
+stop=20
+
+if [ "$1" == "" ]; then
+    echo Usage: $0 "["conv\|cconv\|conv2\|cconv2\|biconv\|biconv2\|cconv3"]" "["start"]" "["stop"]"
+    echo please specify program: error "["conv, cconv, conv2, or cconv2"]" "["start"]" "["stop"]"
+    exit
+fi
+
+divisor=0;
+
+if [ "$1" == "conv" ]; then
+    shift=1;
+    offset=2;
+    divisor=3;
+    outdir=timings1r
+    workingcase=yes
+fi
+if [ "$1" == "conv2" ]; then
+    shift=1;
+    offset=2;
+    divisor=3;
+    outdir=timings2r
+    prune=yes
+fi
+if [ "$1" == "cconv" ]; then
+    outdir=timings1c
+    workingcase=yes
+fi
+if [ "$1" == "cconv2" ]; then
+    outdir=timings2c
+    prune=yes
+fi
+if [ "$1" == "biconv" ]; then
+    shift=2;
+    offset=3;
+    divisor=4;
+    outdir=timings1b
+fi
+if [ "$1" == "biconv2" ]; then
+    shift=2;
+    offset=3;
+    divisor=4;
+    outdir=timings2b
+    prune=yes
+fi
+if [ "$1" == "cconv3" ]; then
+    outdir=timings3c
+    prune=yes
+fi
+
+if [ "$workingcase" != "yes" ]; then
+    echo Not yet implemented!
+    exit
+fi
+
+if [ "$outdir" == "" ]; then
+    echo "wrong program name!"
+    exit
+fi
+
+mkdir -p $outdir
+cd $outdir
+rm -f error.explicit error.implicit
+cd ..
+
+if [ "$2" != "" ]; then
+    start=$2
+fi
+
+if [ "$3" != "" ]; then
+    stop=$3
+fi
+
+echo Calculating error:
+for (( i=$start; i<=$stop; i++ ))
+do
+    echo $i
+    m=$(asy -c "2^$i")
+    echo -e "$m \t $(nice -n 19 ./$1 -i -N1 -t -m $m | grep error | sed s/error=//)"| cat >> $outdir/error.implicit
+    if [ "$divisor" != "0" ]; then
+	m=$(asy -c "quotient(2^($i+$shift)+$offset,$divisor)")
+    fi
+    echo -e "$m \t $(nice -n 19 ./$1 -e -N1 -t -m $m | grep error | sed s/error=//)" | cat >> $outdir/error.explicit
+done
