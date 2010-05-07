@@ -8,14 +8,16 @@ complex-to-real Fast Fourier Transforms and convolutions. It takes
 care of the technical aspects of memory allocation, alignment, planning,
 and wisdom. Wrappers for multiple 1D transforms are also provided. As with
 the FFTW3 library itself, both in-place and out-of-place transforms of
-arbitrary size are supported. Implicitly dealiasing of standard and
-centered Hermitian convolutions is also supported; in 2D and 3D
-implicit zero-padding substantially reduces memory usage and computation time.
-See
-<a href="http://www.math.ualberta.ca/~bowman/publications/dealias.pdf">
-Efficient Dealiased Convolutions without Padding</a>
-John C. Bowman and Malcolm Roberts,
-submitted to <I>SIAM Journal on Scientific Computing</I>, (2010).
+arbitrary size are supported. 
+
+Implicitly dealiasing of standard and centered Hermitian convolutions is
+also supported; in 2D and 3D implicit zero-padding substantially reduces
+memory usage and computation time.  For more information, see the
+manuscript "Efficient Dealiased Convolutions without Padding"
+by John C. Bowman and Malcolm Roberts, submitted to the SIAM Journal on
+Scientific Computing, (2010):
+
+http://www.math.ualberta.ca/~bowman/publications/dealias.pdf
 
 Convenient optional shift routines that place the Fourier origin in the logical
 center of the domain are provided for centered complex-to-real transforms
