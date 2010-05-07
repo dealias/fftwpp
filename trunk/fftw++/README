@@ -1,5 +1,6 @@
         FFTW++: Fast Fourier Transform C++ Header Class for FFTW3 Library
            Copyright (C) 2004-10 John C. Bowman, University of Alberta
+                    http://fftwpp.sourceforge.net
 
 FFTW++ is a C++ header class for Version 3 of the highly optimized FFTW
 (http://www.fftw.org) Fourier Transform library. It provides a simple
@@ -78,6 +79,9 @@ cconv3.cc
 
 3D Hermitian implicitly dealiased convolution test:
 conv3.cc
+
+The latest developmental source code of fftw++ is available via Subversion:
+svn co https://fftwpp.svn.sourceforge.net/svnroot/fftwpp/trunk/fftw++
 
 All source files in the Asymptote project, unless explicitly noted otherwise,
 are released under version 3 (or later) of the GNU Lesser General Public
