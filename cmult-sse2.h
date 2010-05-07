@@ -23,7 +23,7 @@
 #include "Complex.h"
 #include <emmintrin.h>
 
-namespace fftw {
+namespace fftwpp {
 
 typedef __m128d Vec;
 

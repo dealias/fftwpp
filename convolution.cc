@@ -1,9 +1,9 @@
 #include "Complex.h"
 #include "convolution.h"
 
-using namespace fftw;
+using namespace fftwpp;
 
-namespace fftw {
+namespace fftwpp {
 
 #ifdef __SSE2__
 const union uvec sse2_pm = {
