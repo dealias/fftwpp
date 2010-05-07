@@ -4,7 +4,7 @@ start=6
 stop=12
 
 if [ "$1" == "" ]; then
-    echo Usage: $0 "["conv\|cconv\|conv2\|cconv2\|biconv\|biconv2\|cconv3"]" "["start"]" "["stop"]"
+    echo Usage: $0 "["conv\|cconv\|biconv\|conv2\|cconv2\|biconv2\|cconv3"]" "["start"]" "["stop"]"
     exit
 fi
 
