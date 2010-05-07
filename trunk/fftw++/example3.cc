@@ -5,7 +5,7 @@
 
 using namespace std;
 using namespace Array;
-using namespace fftw;
+using namespace fftwpp;
 
 int main() 
 {

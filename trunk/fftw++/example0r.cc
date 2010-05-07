@@ -3,7 +3,7 @@
 // Compilation: g++ example0r.cc fftw++.cc -lfftw3
 
 using namespace std;
-using namespace fftw;
+using namespace fftwpp;
 
 int main()
 {

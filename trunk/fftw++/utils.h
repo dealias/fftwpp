@@ -17,7 +17,7 @@ inline double seconds()
 }
 
 // timing routines
-double emptytime(double *T, unsigned int N)
+inline double emptytime(double *T, unsigned int N)
 {
   double val=0.0;
   for(unsigned int i=0; i < N; ++i) {
@@ -29,7 +29,7 @@ double emptytime(double *T, unsigned int N)
   return val/N;
 }
 
-void stdev(double *T, unsigned int N, double mean, double &sigmaL,
+inline void stdev(double *T, unsigned int N, double mean, double &sigmaL,
            double& sigmaH) 
 {
   sigmaL=0.0, sigmaH=0.0;
@@ -46,7 +46,7 @@ void stdev(double *T, unsigned int N, double mean, double &sigmaL,
   sigmaH=sqrt(sigmaH*factor);
 }
 
-void timings(const char* text, double *T, unsigned int N)
+inline void timings(const char* text, double *T, unsigned int N)
 {
   double sigmaL=0.0, sigmaH=0.0;
   double mean=0.0;
@@ -57,4 +57,28 @@ void timings(const char* text, double *T, unsigned int N)
   mean -= emptytime(T,N);
   std::cout << std::endl << text << ":\n" << mean << "\t" << sigmaL << "\t" <<
     sigmaH << std::endl << std::endl;
+}
+
+inline void usage(int n, bool Explicit=true)
+{
+  std::cerr << "Options: " << std::endl;
+  std::cerr << "-h\t\t help" << std::endl;
+  std::cerr << "-i\t\t implicitly padded convolution" << std::endl;
+  if(Explicit) {
+    std::cerr << "-e\t\t explicitly padded convolution" << std::endl;
+    if(n > 1)
+      std::cerr << "-p\t\t pruned explicitly padded convolution" << std::endl;
+  }
+  std::cerr << "-d\t\t direct convolution (slow)" << std::endl;
+  std::cerr << "-t\t\t accuracy test" << std::endl;
+  std::cerr << "-N\t\t number of iterations" << std::endl;
+  std::cerr << "-M\t\t number of data blocks in dot product" << std::endl;
+  std::cerr << "-m\t\t size" << std::endl;
+  if(n > 1) {
+    std::cerr << "-x\t\t x size" << std::endl;
+    std::cerr << "-y\t\t y size" << std::endl;
+  }
+  if(n > 2)
+    std::cerr << "-z\t\t z size" << std::endl;
+  exit(1);
 }

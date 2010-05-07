@@ -6,7 +6,7 @@
 
 using namespace std;
 using namespace Array;
-using namespace fftw;
+using namespace fftwpp;
 
 // g++ -g -O3 -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse conv2.cc fftw++.cc -lfftw3 -march=native
 
@@ -64,13 +64,13 @@ int main(int argc, char* argv[])
 {
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
-#endif  
+#endif
   
 #ifdef __GNUC__	
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"deiptM:N:m:x:y:n:");
+    int c = getopt(argc,argv,"hdeiptM:N:m:x:y:n:");
     if (c == -1) break;
 		
     switch (c) {
@@ -111,6 +111,9 @@ int main(int argc, char* argv[])
       case 'n':
         N0=atoi(optarg);
         break;
+      case 'h':
+      default:
+        usage(2);
     }
   }
 

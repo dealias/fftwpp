@@ -1,6 +1,6 @@
 #include "fftw++.h"
 
-namespace fftw {
+namespace fftwpp {
 
 std::ifstream fftw::ifWisdom;
 std::ofstream fftw::ofWisdom;

@@ -2,7 +2,7 @@
 
 #include "cmult-sse2.h"
 
-namespace fftw {
+namespace fftwpp {
 
 #ifndef __convolution_h__
 #define __convolution_h__ 1
