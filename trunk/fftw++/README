@@ -1,0 +1,78 @@
+        FFTW++: Fast Fourier Transform C++ Header Class for FFTW3 Library
+           Copyright (C) 2004-10 John C. Bowman, University of Alberta
+
+FFTW++ is a C++ header class for Version 3 of the highly optimized FFTW
+(http://www.fftw.org) Fourier Transform library. It provides a simple
+interface for 1D, 2D, and 3D complex-to-complex, real-to-complex, and
+complex-to-real Fast Fourier Transforms and convolutions. It takes
+care of the technical aspects of memory allocation, alignment, planning,
+and wisdom. Wrappers for multiple 1D transforms are also provided. As with
+the FFTW3 library itself, both in-place and out-of-place transforms of
+arbitrary size are supported. Implicitly dealiasing of standard and
+centered Hermitian convolutions is also supported; in 2D and 3D
+implicit zero-padding substantially reduces memory usage and computation time.
+See
+<a href="http://www.math.ualberta.ca/~bowman/publications/dealias.pdf">
+Efficient Dealiased Convolutions without Padding</a>
+John C. Bowman and Malcolm Roberts,
+submitted to <I>SIAM Journal on Scientific Computing</I>, (2010).
+
+Convenient optional shift routines that place the Fourier origin in the logical
+center of the domain are provided for centered complex-to-real transforms
+in 2D and 3D; see fftw++.h for details.
+
+FFTW++ can also exploit the high-performance Array class available at
+http://www.math.ualberta.ca/~bowman/Array (version 1.43 or higher),
+designed for scientific computing. The arrays in that package do memory
+bounds checking in debugging mode, but can be optimized by specifying the
+-DNDEBUG compilation option (1D arrays optimize completely to pointer
+operations).
+
+Detailed documentation is provided before each class in the fftw++.h header
+file. The included examples illustrate how easy it is to use FFTW in C++
+with the FFTW++ header class. Use of the Array class is optional, but
+encouraged. If for some reason the Array class is not used, memory should
+be allocated with ComplexAlign (or doubleAlign) to ensure that the data is
+optimally aligned to sizeof(Complex), to enable the SIMD extensions.
+The optional alignment check in fftw++.h can be disabled with the
+-DNO_CHECK_ALIGN compiler option.
+
+1D examples using ComplexAlign allocator:
+example0.cc
+example0r.cc
+
+1D examples using Array class:
+example1.cc
+example1r.cc
+
+2D examples using Array class:
+example2.cc
+example2r.cc
+
+3D examples using Array class:
+example3.cc
+example3r.cc
+
+1D complex implicitly dealiased convolution test:
+cconv.cc
+
+1D Hermitian implicitly dealiased convolution test:
+conv.cc
+
+1D Hermitian implicitly dealiased biconvolution test:
+biconv.cc
+
+2D complex implicitly dealiased convolution test:
+cconv2.cc
+
+2D Hermitian implicitly dealiased convolution test:
+conv2.cc
+
+2D Hermitian implicitly dealiased biconvolution test:
+biconv2.cc
+
+3D complex implicitly dealiased convolution test:
+cconv3.cc
+
+3D Hermitian implicitly dealiased convolution test:
+conv3.cc
