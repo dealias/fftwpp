@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
         break;
       case 'h':
       default:
-        usage(3);
+        usage(3,false,false);
     }
   }
 

@@ -59,7 +59,7 @@ inline void timings(const char* text, double *T, unsigned int N)
     sigmaH << std::endl << std::endl;
 }
 
-inline void usage(int n, bool Explicit=true)
+inline void usage(int n, bool test=false, bool Explicit=true)
 {
   std::cerr << "Options: " << std::endl;
   std::cerr << "-h\t\t help" << std::endl;
@@ -70,6 +70,7 @@ inline void usage(int n, bool Explicit=true)
       std::cerr << "-p\t\t pruned explicitly padded convolution" << std::endl;
   }
   std::cerr << "-d\t\t direct convolution (slow)" << std::endl;
+  if(test)
   std::cerr << "-t\t\t accuracy test" << std::endl;
   std::cerr << "-N\t\t number of iterations" << std::endl;
   std::cerr << "-M\t\t number of data blocks in dot product" << std::endl;

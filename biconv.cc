@@ -18,7 +18,7 @@ unsigned int N=0;
 unsigned int m=12;
 unsigned int M=1;
   
-bool Direct=false, Implicit=true, Explicit=false, Test=false;
+bool Direct=false, Implicit=true, Explicit=false;
 
 inline void init(Complex *e, Complex *f, Complex *g, unsigned int M=1) 
 {
@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptM:N:m:n:");
+    int c = getopt(argc,argv,"hdeipM:N:m:n:");
     if (c == -1) break;
 		
     switch (c) {
@@ -76,9 +76,6 @@ int main(int argc, char* argv[])
         break;
       case 'N':
         N=atoi(optarg);
-        break;
-      case 't':
-        Test=true;
         break;
       case 'm':
         m=atoi(optarg);
@@ -115,9 +112,6 @@ int main(int argc, char* argv[])
   Complex *f=ComplexAlign(np);
   Complex *g=ComplexAlign(np);
 
-  Complex *h0=NULL;
-  if(Test) h0=ComplexAlign(m);
-
   double *T=new double[N];
 
   if(Implicit) {
@@ -144,8 +138,6 @@ int main(int argc, char* argv[])
     if(m < 100) 
       for(unsigned int i=0; i < m; i++) cout << e[i] << endl;
     else cout << e[0] << endl;
-    if(Test)
-      for(unsigned int i=0; i < m; i++) h0[i]=e[i];
   }
   
   if(Explicit) {
@@ -162,7 +154,6 @@ int main(int argc, char* argv[])
     if(m < 100) 
       for(unsigned int i=0; i < m; i++) cout << e[i] << endl;
     else cout << e[0] << endl;
-    if(Test) for(unsigned int i=0; i < m; i++) h0[i]=e[i];
   }
   
   if(Direct) {
@@ -179,22 +170,8 @@ int main(int argc, char* argv[])
       for(unsigned int i=0; i < m; i++) cout << h[i] << endl;
     else cout << h[0] << endl;
     deleteAlign(h);
-    if(Test) for(unsigned int i=0; i < m; i++) h0[i]=h[i];
   }
 
-  if(Test) {
-    Complex *h=ComplexAlign(m);
-    double error=0.0;
-    cout << endl;
-    cout << "Exact:" << endl;
-    for(unsigned int i=0; i < m; i++) 
-      error += abs2(h[i]-h0[i]);
-    cout << "error="<<error<<endl;
-    if (error > 1e-12)
-      cerr << "Caution! error="<<error<<endl;
-    deleteAlign(h);
-  }
-  
   deleteAlign(g);
   deleteAlign(f);
   deleteAlign(e);
