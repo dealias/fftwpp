@@ -141,7 +141,7 @@ inline void deleteAlign(T *p)
 #ifdef HAVE_POSIX_MEMALIGN
   free(p);
 #else
-  free0(p);
+  Array::free0(p);
 #endif  
 }
 
