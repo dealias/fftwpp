@@ -35,7 +35,7 @@ unsigned int outlimit=300;
 inline void init(array3<Complex>& f, array3<Complex>& g, unsigned int M=1) 
 {
   unsigned int xstop=nxp;
-  double factor=1.0/sqrt(M);
+  double factor=1.0/sqrt((double) M);
   for(unsigned int s=0; s < M; ++s) {
     double S=sqrt(1.0+s);
     double ffactor=S*factor;

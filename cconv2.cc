@@ -27,7 +27,7 @@ bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
 inline void init(array2<Complex>& f, array2<Complex>& g, unsigned int M=1) 
 {
-  double factor=1.0/sqrt(M);
+  double factor=1.0/sqrt((double) M);
   for(unsigned int s=0; s < M; ++s) {
     double S=sqrt(1.0+s);
     double ffactor=S*factor;
