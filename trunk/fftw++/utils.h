@@ -3,13 +3,20 @@
 #endif
 
 #include <iostream>
+
+#ifndef _WIN32
 #include <sys/time.h>
+#endif
 
 inline double seconds()
 {
   static timeval lasttime;
   timeval tv;
+#ifndef _WIN32
   gettimeofday(&tv,NULL);
+#else  
+  return 0.0;
+#endif  
   double seconds=tv.tv_sec-lasttime.tv_sec+
     ((double) tv.tv_usec-lasttime.tv_usec)/1000000.0;
   lasttime=tv;

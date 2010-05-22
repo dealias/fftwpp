@@ -310,9 +310,13 @@ inline ostream& operator << (ostream& s, const Complex& y)
   return s;
 }
 
+#ifdef _WIN32
+#define isfinite _finite
+#endif
+
 inline int isfinite(Complex z)
 {
-  return !(isinf(z.re) || isnan(z.re) || isinf(z.re) || isnan(z.re));
+  return isfinite(z.re) && isfinite(z.im);
 }
 
 #endif

@@ -18,7 +18,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA. */
 #ifndef __Array_h__
 #define __Array_h__ 1
 
-#define __ARRAY_H_VERSION__ 1.43
+#define __ARRAY_H_VERSION__ 1.44svn
 
 // Defining NDEBUG improves optimization but disables argument checking.
 // Defining __NOARRAY2OPT inhibits special optimization of Array2[].
@@ -79,6 +79,8 @@ inline void ArrayExit(const char *x)
 extern "C" int posix_memalign(void **memptr, size_t alignment, size_t size);
 #endif
 #else
+namespace Array {
+
 // Adapted from FFTW aligned malloc/free.  Assumes that malloc is at least
 // sizeof(void*)-aligned. Allocated memory must be freed with free0.
 inline int posix_memalign0(void **memptr, size_t alignment, size_t size)
@@ -95,6 +97,8 @@ inline int posix_memalign0(void **memptr, size_t alignment, size_t size)
 inline void free0(void *p)
 {
   if(p) free(*((void **) p-1));
+}
+
 }
 #endif
 
