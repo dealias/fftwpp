@@ -18,7 +18,7 @@
 #ifndef __fftwpp_h__
 #define __fftwpp_h__ 1
 
-#define __FFTWPP_H_VERSION__ 1.07svn
+#define __FFTWPP_H_VERSION__ 1.07
 
 #include <cstdlib>
 #include <fstream>
