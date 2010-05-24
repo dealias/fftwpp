@@ -314,7 +314,7 @@ inline ostream& operator << (ostream& s, const Complex& y)
 #define isfinite _finite
 #endif
 
-inline int isfinite(Complex z)
+inline bool isfinite(Complex z)
 {
   return isfinite(z.re) && isfinite(z.im);
 }
