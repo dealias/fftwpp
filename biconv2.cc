@@ -36,7 +36,7 @@ inline void init(array2<Complex>& e, array2<Complex>& f, array2<Complex>& g,
   unsigned int offset=Explicit ? nx/2-mx+1 : (Implicit ? 1 : 0);
   unsigned int stop=2*mx-1;
   unsigned int stopoffset=stop+offset;
-  double factor=1.0/cbrt(M);
+  double factor=1.0/cbrt((double) M);
   for(unsigned int s=0; s < M; ++s) {
     double S=sqrt(1.0+s);
     double efactor=1.0/S*factor;
