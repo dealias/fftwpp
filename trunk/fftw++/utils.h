@@ -7,12 +7,10 @@
 #ifdef _WIN32
 #include <Winsock2.h>
 
-#include "stdafx.h"
 #include <time.h>
 #include <windows.h>
 #include <iostream>
 
-using namespace System;
 using namespace std;
  
 #if defined(_MSC_VER) || defined(_MSC_EXTENSIONS)
