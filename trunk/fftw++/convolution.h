@@ -175,7 +175,7 @@ protected:
   unsigned int stride;
 public:
   Dot(unsigned int m, unsigned int M) : 
-    m(m), M(M), odd(m % 2), stride(odd ? m+1 : m+2) {}
+    m(m), M(M), odd(m % 2 == 1), stride(odd ? m+1 : m+2) {}
   
   // a[0][k]=sum_i a[i][k]*b[i][k]
   void mult(double *a, double **B, unsigned int offset=0) {

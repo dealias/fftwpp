@@ -44,22 +44,6 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA. */
 #endif
 #endif
 
-namespace Array {
-  
-inline std::ostream& _newl(std::ostream& s) {s << '\n'; return s;}
-
-inline void ArrayExit(const char *x);
-  
-#ifndef __ExternalArrayExit
-inline void ArrayExit(const char *x)
-{
-  std::cerr << _newl << "ERROR: " << x << "." << std::endl;
-  exit(1);
-} 
-#endif
-
-}
-
 #ifndef HAVE_POSIX_MEMALIGN
 
 #ifdef __GLIBC_PREREQ
@@ -72,14 +56,28 @@ inline void ArrayExit(const char *x)
 #endif
 #endif
 
-#endif
+#else
 
-#ifdef HAVE_POSIX_MEMALIGN
 #ifdef _AIX
 extern "C" int posix_memalign(void **memptr, size_t alignment, size_t size);
 #endif
-#else
+
+#endif
+
 namespace Array {
+inline std::ostream& _newl(std::ostream& s) {s << '\n'; return s;}
+
+inline void ArrayExit(const char *x);
+  
+#ifndef __ExternalArrayExit
+inline void ArrayExit(const char *x)
+{
+  std::cerr << _newl << "ERROR: " << x << "." << std::endl;
+  exit(1);
+} 
+#endif
+
+#ifndef __fftwpp_h__
 
 // Adapted from FFTW aligned malloc/free.  Assumes that malloc is at least
 // sizeof(void*)-aligned. Allocated memory must be freed with free0.
@@ -94,17 +92,12 @@ inline int posix_memalign0(void **memptr, size_t alignment, size_t size)
   *memptr=p;
   return 0;
 }
+
 inline void free0(void *p)
 {
   if(p) free(*((void **) p-1));
 }
 
-}
-#endif
-
-namespace Array {
-  
-#ifndef __fftwpp_h__
 template<class T>
 inline void newAlign(T *&v, size_t len, size_t align)
 {
@@ -133,6 +126,7 @@ inline void deleteAlign(T *v, size_t len)
   free0(v);
 #endif  
 }
+
 #endif
 
 template<class T>

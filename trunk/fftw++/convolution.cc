@@ -1015,8 +1015,8 @@ void DirectHConvolution2::convolve(Complex *h, Complex *f, Complex *g,
     HermitianSymmetrizeX(mx,my,xorigin,g);
   }
     
-  int xstart=-xorigin;
-  int ystart=1-my;
+  int xstart=-(int)xorigin;
+  int ystart=1-(int) my;
   int xstop=mx;
   int ystop=my;
   for(int kx=xstart; kx < xstop; ++kx) {
@@ -1150,9 +1150,9 @@ void DirectHConvolution3::convolve(Complex *h, Complex *f, Complex *g,
     HermitianSymmetrizeXY(mx,my,mz,ny,xorigin,yorigin,g);
   }
     
-  int xstart=-xorigin;
-  int ystart=-yorigin;
-  int zstart=1-mz;
+  int xstart=-(int) xorigin;
+  int ystart=-(int) yorigin;
+  int zstart=1-(int) mz;
   int xstop=mx;
   int ystop=my;
   int zstop=mz;
@@ -1567,10 +1567,10 @@ void DirectHBiConvolution2::convolve(Complex *h, Complex *e, Complex *f,
   }
     
   unsigned int xorigin=mx-1;
-  int xstart=-xorigin;
+  int xstart=-(int) xorigin;
   int xstop=mx;
   int ystop=my;
-  int ystart=1-my;
+  int ystart=1-(int) my;
   for(int kx=xstart; kx < xstop; ++kx) {
     for(int ky=0; ky < ystop; ++ky) {
       Complex sum=0.0;
