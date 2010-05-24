@@ -75,6 +75,16 @@ inline int gettimeofday(struct timeval *tv, struct timezone *tz)
  
   return 0;
 }
+
+#include "getopt.h"
+
+inline double cbrt(double x) 
+{
+  if(x == 0.0) return 0.0;
+  static double third=1.0/3.0;
+  return x > 0.0 ? exp(third*log(x)) : -exp(third*log(-x));
+}
+
 #else
 #include <sys/time.h>
 #endif

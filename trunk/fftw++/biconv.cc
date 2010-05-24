@@ -24,7 +24,7 @@ inline void init(Complex *e, Complex *f, Complex *g, unsigned int M=1)
 {
   unsigned int m1=m+1;
   unsigned int Mm=M*m1;
-  double factor=1.0/cbrt(M);
+  double factor=1.0/cbrt((double) M);
   for(unsigned int i=0; i < Mm; i += m1) {
     double s=sqrt(1.0+i);
     double efactor=1.0/s*factor;
