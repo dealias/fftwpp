@@ -56,13 +56,14 @@ pen Lp=fontsize(8pt);
  // error bars:
 errorbars(me,e,0*me,he,0*me,le,Pen(0));
 draw(graph(me,e,e > 0),Pen(0),Label("explicit",Pen(0)+Lp),mark0);
-errorbars(mi,i,0*mi,hi,0*mi,li,Pen(1));
-draw(graph(mi,i,i > 0),Pen(1),Label("implicit",Pen(1)+Lp),mark1);
 
 if(pruned) {
   errorbars(mp,p,0*mp,hp,0*mp,lp,Pen(2));
   draw(graph(mp,p,p > 0),Pen(2),Label(prunelabel,Pen(2)+Lp),mark2);
 }
+
+errorbars(mi,i,0*mi,hi,0*mi,li,Pen(1));
+draw(graph(mi,i,i > 0),Pen(1),Label("implicit",Pen(1)+Lp),mark1);
 
 // fitting information; requires running rfit under R.
 real[] f;
