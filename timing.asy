@@ -4,7 +4,7 @@ size(175,200,IgnoreAspect);
 
 barfactor=10;
 
-scale(Log,Log);
+scale(Log,Linear);
 real[] me,e,le,he;
 real[] mi,i,li,hi;
 real[] mp,p,lp,hp;
@@ -23,6 +23,10 @@ if(pname == "cconv3") {
   dir="timings3c"; prunelabel="$xz$-pruned"; legendmargin=8;
 }
   
+real d=1;
+if(find(pname,"2") >= 0) d=2;
+if(find(pname,"3") >= 0) d=3;
+
 file fin=input(dir+"/explicit").line();
 real[][] a=fin.dimension(0,0);
 a=transpose(a);
@@ -53,15 +57,26 @@ marker mark2=marker(g2,Draw(Pen(2)));
 
 pen Lp=fontsize(8pt);
 
+real[] f(real[] x) {return x^d*log(x^d)/log(2);}
+
  // error bars:
+e /= f(me);
+he /= f(me);
+le /= f(me);
 errorbars(me,e,0*me,he,0*me,le,Pen(0));
 draw(graph(me,e,e > 0),Pen(0),Label("explicit",Pen(0)+Lp),mark0);
 
 if(pruned) {
+  p /= f(mp);
+  hp /= f(mp);
+  lp /= f(mp);
   errorbars(mp,p,0*mp,hp,0*mp,lp,Pen(2));
   draw(graph(mp,p,p > 0),Pen(2),Label(prunelabel,Pen(2)+Lp),mark2);
 }
 
+i /= f(mi);
+hi /= f(mi);
+li /= f(mi);
 errorbars(mi,i,0*mi,hi,0*mi,li,Pen(1));
 draw(graph(mi,i,i > 0),Pen(1),Label("implicit",Pen(1)+Lp),mark1);
 
@@ -82,8 +97,10 @@ if(!error(fin)) {
   draw(graph(mi,f,f > 0),Pen(1)+dashed);
 }
 
+string D=(string) d;
+
 xaxis("$m$",BottomTop,LeftTicks);
-yaxis("time (sec)",LeftRight,RightTicks);
+yaxis("time/($m^"+D+"\log_2 m^"+D+"$) (sec)",LeftRight,RightTicks);
 
 legendlinelength=0.5cm;
 legendmargin=8;
