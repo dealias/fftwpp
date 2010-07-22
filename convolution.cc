@@ -1186,23 +1186,23 @@ void DirectHConvolution3::convolve(Complex *h, Complex *f, Complex *g,
   }	
 }
 
-void ExplicitHBiConvolution::pad(Complex *f)
+void ExplicitHTConvolution::pad(Complex *f)
 {
   unsigned int n2=n/2;
   for(unsigned int i=m; i <= n2; ++i) f[i]=0.0;
 }
 
-void ExplicitHBiConvolution::backwards(Complex *f)
+void ExplicitHTConvolution::backwards(Complex *f)
 {
   cr->fft(f);
 }
 
-void ExplicitHBiConvolution::forwards(Complex *f)
+void ExplicitHTConvolution::forwards(Complex *f)
 {
   rc->fft(f);
 }
 
-void ExplicitHBiConvolution::convolve(Complex *f, Complex *g, Complex *h)
+void ExplicitHTConvolution::convolve(Complex *f, Complex *g, Complex *h)
 {
   pad(f);
   backwards(f);
@@ -1224,7 +1224,7 @@ void ExplicitHBiConvolution::convolve(Complex *f, Complex *g, Complex *h)
   forwards(f);
 }
 
-void ImplicitHBiConvolution::convolve(Complex **F, Complex **G, Complex **H,
+void ImplicitHTConvolution::convolve(Complex **F, Complex **G, Complex **H,
                                       unsigned int offset)
 {
   // 8M-3 of 8M FFTs are out-of-place
@@ -1352,7 +1352,7 @@ void ImplicitHBiConvolution::convolve(Complex **F, Complex **G, Complex **H,
   }
 }
 
-void DirectHBiConvolution::convolve(Complex *h, Complex *e, Complex *f,
+void DirectHTConvolution::convolve(Complex *h, Complex *e, Complex *f,
                                     Complex *g)
 {
   int stop=m;
@@ -1472,7 +1472,7 @@ void fft0bipad::forwards(Complex *f, Complex *u)
   }
 }
 
-void ExplicitHBiConvolution2::pad(Complex *f)
+void ExplicitHTConvolution2::pad(Complex *f)
 {
   unsigned int nyp=ny/2+1;
   unsigned int nx2=nx/2;
@@ -1498,7 +1498,7 @@ void ExplicitHBiConvolution2::pad(Complex *f)
   }
 }
 
-void ExplicitHBiConvolution2::backwards(Complex *f, bool shift)
+void ExplicitHTConvolution2::backwards(Complex *f, bool shift)
 {
   if(prune) {
     xBackwards->fft(f);
@@ -1510,7 +1510,7 @@ void ExplicitHBiConvolution2::backwards(Complex *f, bool shift)
     return Backwards->fft(f);
 }
 
-void ExplicitHBiConvolution2::forwards(Complex *f, bool shift)
+void ExplicitHTConvolution2::forwards(Complex *f, bool shift)
 {
   if(prune) {
     yForwards->fft(f);
@@ -1522,7 +1522,7 @@ void ExplicitHBiConvolution2::forwards(Complex *f, bool shift)
     Forwards->fft(f);
 }
 
-void ExplicitHBiConvolution2::convolve(Complex *f, Complex *g, Complex *h,
+void ExplicitHTConvolution2::convolve(Complex *f, Complex *g, Complex *h,
                                        bool symmetrize)
 {
   unsigned int xorigin=nx/2;
@@ -1557,7 +1557,7 @@ void ExplicitHBiConvolution2::convolve(Complex *f, Complex *g, Complex *h,
   forwards(f,false);
 }
 
-void DirectHBiConvolution2::convolve(Complex *h, Complex *e, Complex *f,
+void DirectHTConvolution2::convolve(Complex *h, Complex *e, Complex *f,
                                      Complex *g, bool symmetrize)
 {
   if(symmetrize) {

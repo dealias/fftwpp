@@ -1241,8 +1241,8 @@ public:
   void convolve(Complex *h, Complex *f, Complex *g, bool symmetrize=true);
 };
 
-// In-place explicitly dealiased Hermitian biconvolution.
-class ExplicitHBiConvolution {
+// In-place explicitly dealiased Hermitian ternary convolution.
+class ExplicitHTConvolution {
 protected:
   unsigned int n;
   unsigned int m;
@@ -1250,13 +1250,13 @@ protected:
   crfft1d *cr;
 public:
   // u is a temporary array of size n.
-  ExplicitHBiConvolution(unsigned int n, unsigned int m, Complex *u) :
+  ExplicitHTConvolution(unsigned int n, unsigned int m, Complex *u) :
     n(n), m(m) {
     rc=new rcfft1d(n,u);
     cr=new crfft1d(n,u);
   }
   
-  ~ExplicitHBiConvolution() {
+  ~ExplicitHTConvolution() {
     delete cr;
     delete rc;
   }
@@ -1265,7 +1265,7 @@ public:
   void backwards(Complex *f);
   void forwards(Complex *f);
   
-// Compute the biconvolution of f, and g, and h, where f, and g, and h
+// Compute the ternary convolution of f, and g, and h, where f, and g, and h
 // contain the m non-negative Fourier components of real
 // functions. Dealiasing is internally implemented via explicit
 // zero-padding to size n >= 3*m. The (distinct) input arrays f, g, and h
@@ -1274,8 +1274,8 @@ public:
   void convolve(Complex *f, Complex *g, Complex *h);
 };
 
-// In-place implicitly dealiased Hermitian biconvolution.
-class ImplicitHBiConvolution : public Dot3 {
+// In-place implicitly dealiased Hermitian ternary convolution.
+class ImplicitHTConvolution : public Dot3 {
 protected:
   unsigned int m;
   Complex *u,*v,*w;
@@ -1306,20 +1306,20 @@ public:
   }
   
   // u, v, and w are distinct temporary arrays each of size m+1.
-  ImplicitHBiConvolution(unsigned int m, Complex *u, Complex *v, Complex *w,
-                         unsigned int M=1) :
+  ImplicitHTConvolution(unsigned int m, Complex *u, Complex *v,
+                              Complex *w, unsigned int M=1) :
     Dot3(m,M), m(m), u(u), v(v), w(w), M(M), allocated(false) {
     init();
   }
   
   // u, v, and w are distinct temporary arrays each of size m+1.
-  ImplicitHBiConvolution(unsigned int m, unsigned int M=1) : 
+  ImplicitHTConvolution(unsigned int m, unsigned int M=1) : 
     Dot3(m,M), m(m), u(ComplexAlign(m*M+M)), v(ComplexAlign(m*M+M)),
     w(ComplexAlign(m*M+M)), M(M), allocated(true) {
     init();
   }
   
-  ~ImplicitHBiConvolution() {
+  ~ImplicitHTConvolution() {
     delete [] W;
     
     if(allocated) {
@@ -1347,12 +1347,12 @@ public:
   }
 };
 
-// Out-of-place direct 1D Hermitian biconvolution.
-class DirectHBiConvolution {
+// Out-of-place direct 1D Hermitian ternary convolution.
+class DirectHTConvolution {
 protected:  
   unsigned int m;
 public:
-  DirectHBiConvolution(unsigned int m) : m(m) {}
+  DirectHTConvolution(unsigned int m) : m(m) {}
   
   void convolve(Complex *h, Complex *e, Complex *f, Complex *g);
 };
@@ -1398,8 +1398,8 @@ public:
   void forwards(Complex *f, Complex *u);
 };
   
-// In-place explicitly dealiased 2D Hermitian biconvolution.
-class ExplicitHBiConvolution2 {
+// In-place explicitly dealiased 2D Hermitian ternary convolution.
+class ExplicitHTConvolution2 {
 protected:
   unsigned int nx,ny;
   unsigned int mx,my;
@@ -1414,7 +1414,7 @@ protected:
   Complex *ZetaH,*ZetaL;
   
 public:  
-  ExplicitHBiConvolution2(unsigned int nx, unsigned int ny, 
+  ExplicitHTConvolution2(unsigned int nx, unsigned int ny, 
                           unsigned int mx, unsigned int my, Complex *f,
                           bool pruned=false) :
     nx(nx), ny(ny), mx(mx), my(my), prune(pruned) {
@@ -1438,7 +1438,7 @@ public:
     }
   }
   
-  ~ExplicitHBiConvolution2() {
+  ~ExplicitHTConvolution2() {
     if(prune) {
       delete xForwards;
       delete yForwards;
@@ -1456,21 +1456,21 @@ public:
   void convolve(Complex *f, Complex *g, Complex *h, bool symmetrize=true);
 };
 
-// In-place implicitly dealiased 2D Hermitian biconvolution.
-class ImplicitHBiConvolution2 {
+// In-place implicitly dealiased 2D Hermitian ternary convolution.
+class ImplicitHTConvolution2 {
 protected:
   unsigned int mx,my;
   Complex *u1,*v1,*w1;
   Complex *u2,*v2,*w2;
   unsigned int M;
   fft0bipad *xfftpad;
-  ImplicitHBiConvolution *yconvolve;
+  ImplicitHTConvolution *yconvolve;
   Complex **U2,**V2,**W2;
   bool allocated;
 public:  
   void init() {
     xfftpad=new fft0bipad(mx,my,my+1,u2);
-    yconvolve=new ImplicitHBiConvolution(my,u1,v1,w1,M);
+    yconvolve=new ImplicitHTConvolution(my,u1,v1,w1,M);
     
     U2=new Complex *[M];
     V2=new Complex *[M];
@@ -1487,7 +1487,7 @@ public:
   // u1, v1, and w1 are temporary arrays of size (my+1)*M;
   // u2, v2, and w2 are temporary arrays of size 2mx*(my+1)*M.
   // M is the number of data blocks (each corresponding to a dot product term).
-  ImplicitHBiConvolution2(unsigned int mx, unsigned int my,
+  ImplicitHTConvolution2(unsigned int mx, unsigned int my,
                           Complex *u1, Complex *v1, Complex *w1, 
                           Complex *u2, Complex *v2, Complex *w2,
                           unsigned int M=1) :
@@ -1496,7 +1496,7 @@ public:
     init();
   }
   
-  ImplicitHBiConvolution2(unsigned int mx, unsigned int my,
+  ImplicitHTConvolution2(unsigned int mx, unsigned int my,
                           unsigned int M=1) :
     mx(mx), my(my), u1(ComplexAlign(my*M+M)), v1(ComplexAlign(my*M+M)),
     w1(ComplexAlign(my*M+M)), u2(ComplexAlign(2*mx*(my*M+M))),
@@ -1505,7 +1505,7 @@ public:
     init();
   }
   
-  ~ImplicitHBiConvolution2() {
+  ~ImplicitHTConvolution2() {
     delete [] W2;
     delete [] V2;
     delete [] U2;
@@ -1565,12 +1565,13 @@ public:
   }
 };
 
-// Out-of-place direct 2D Hermitian biconvolution.
-class DirectHBiConvolution2 {
+// Out-of-place direct 2D Hermitian ternary convolution.
+class DirectHTConvolution2 {
 protected:  
   unsigned int mx,my;
 public:
-  DirectHBiConvolution2(unsigned int mx, unsigned int my) : mx(mx), my(my) {}
+  DirectHTConvolution2(unsigned int mx, unsigned int my) : mx(mx), my(my)
+  {}
   
   void convolve(Complex *h, Complex *e, Complex *f, Complex *g,
                 bool symmetrize=true);

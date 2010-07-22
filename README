@@ -62,8 +62,8 @@ cconv.cc
 1D Hermitian implicitly dealiased convolution test:
 conv.cc
 
-1D Hermitian implicitly dealiased biconvolution test:
-biconv.cc
+1D Hermitian implicitly dealiased ternary convolution test:
+tconv.cc
 
 2D complex implicitly dealiased convolution test:
 cconv2.cc
@@ -71,8 +71,8 @@ cconv2.cc
 2D Hermitian implicitly dealiased convolution test:
 conv2.cc
 
-2D Hermitian implicitly dealiased biconvolution test:
-biconv2.cc
+2D Hermitian implicitly dealiased ternary convolution test:
+tconv2.cc
 
 3D complex implicitly dealiased convolution test:
 cconv3.cc
