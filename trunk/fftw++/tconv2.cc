@@ -145,7 +145,7 @@ int main(int argc, char* argv[])
   double *T=new double[N];
 
   if(Implicit) {
-    ImplicitHBiConvolution2 C(mx,my,M);
+    ImplicitHTConvolution2 C(mx,my,M);
     Complex **E=new Complex *[M];
     Complex **F=new Complex *[M];
     Complex **G=new Complex *[M];
@@ -176,7 +176,7 @@ int main(int argc, char* argv[])
   }
   
   if(Explicit) {
-    ExplicitHBiConvolution2 C(nx,ny,mx,my,f,Pruned);
+    ExplicitHTConvolution2 C(nx,ny,mx,my,f,Pruned);
     for(unsigned int i=0; i < N; ++i) {
       init(e,f,g);
       seconds();
@@ -202,7 +202,7 @@ int main(int argc, char* argv[])
     array2<Complex> e(nxp,my,align);
     array2<Complex> f(nxp,my,align);
     array2<Complex> g(nxp,my,align);
-    DirectHBiConvolution2 C(mx,my);
+    DirectHTConvolution2 C(mx,my);
     init(e,f,g);
     seconds();
     C.convolve(h,e,f,g);

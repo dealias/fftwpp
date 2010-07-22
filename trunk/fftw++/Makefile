@@ -13,7 +13,7 @@ MAKEDEPEND=$(CFLAGS) -O0 -M -DDEPEND
 LDFLAGS=-lfftw3
 
 FILES=example0 example0r example1 example1r example2 example2r \
-example3 example3r conv cconv conv2 cconv2 conv3 cconv3 biconv biconv2
+example3 example3r conv cconv conv2 cconv2 conv3 cconv3 tconv tconv2
 FFTW=fftw++
 EXTRA=$(FFTW) convolution
 ALL=$(FILES) $(EXTRA)
@@ -65,11 +65,11 @@ conv3: conv3.o $(EXTRA:=.o)
 cconv3: cconv3.o $(EXTRA:=.o)
 	$(CC) $(CFLAGS) cconv3.o $(EXTRA:=.o) $(LDFLAGS) -o cconv3
 
-biconv: biconv.o $(EXTRA:=.o)
-	$(CC) $(CFLAGS) biconv.o $(EXTRA:=.o) $(LDFLAGS) -o biconv
+tconv: tconv.o $(EXTRA:=.o)
+	$(CC) $(CFLAGS) tconv.o $(EXTRA:=.o) $(LDFLAGS) -o tconv
 
-biconv2: biconv2.o $(EXTRA:=.o)
-	$(CC) $(CFLAGS) biconv2.o $(EXTRA:=.o) $(LDFLAGS) -o biconv2
+tconv2: tconv2.o $(EXTRA:=.o)
+	$(CC) $(CFLAGS) tconv2.o $(EXTRA:=.o) $(LDFLAGS) -o tconv2
 
 clean:  FORCE
 	rm -rf $(ALL) $(ALL:=.o) $(ALL:=.d) wisdom3.txt

@@ -15,10 +15,10 @@ string prunelabel="$y$-pruned";
 
 if(pname == "conv") dir="timings1r";
 if(pname == "cconv") dir="timings1c";
-if(pname == "biconv") dir="timings1b";
+if(pname == "tconv") dir="timings1b";
 if(pname == "conv2") dir="timings2r";
 if(pname == "cconv2") dir="timings2c";
-if(pname == "biconv2") dir="timings2b";
+if(pname == "tconv2") dir="timings2b";
 if(pname == "cconv3") {
   dir="timings3c"; prunelabel="$xz$-pruned"; legendmargin=8;
 }
