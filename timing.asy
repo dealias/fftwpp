@@ -47,6 +47,7 @@ if(pruned) {
 
 monoPen[0]=dashed;
 monoPen[1]=solid;
+monoPen[2]=Dotted;
 colorPen[2]=heavygreen;
 
 guide g0=scale(0.5mm)*unitcircle;
@@ -104,6 +105,6 @@ string D=d > 1 ? "^"+(string) d : "";
 xaxis("$m$",BottomTop,LeftTicks);
 yaxis("time/($m"+D+"\log_2 m"+D+"$) (ns)",LeftRight,RightTicks);
 
-legendlinelength=0.5cm;
-legendmargin=8;
-attach(legend(),point(NW),10SE);
+legendlinelength=0.6cm;
+legendmargin=5;
+attach(legend(),point(NW),17SE);

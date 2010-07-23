@@ -37,6 +37,6 @@ draw(graph(mu,u,u>0),Pentype(1),Label("implicit",Pen(1)+lp),mark1);
 xaxis("$m$",BottomTop,LeftTicks);
 yaxis("normalized error",LeftRight,RightTicks);
 
-legendlinelength=0.5cm;
-legendmargin=8;
-attach(legend(),point(NW),10SE);
+legendlinelength=0.6cm;
+legendmargin=5;
+attach(legend(),point(NW),17SE);
