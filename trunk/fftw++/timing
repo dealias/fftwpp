@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# typical start/stop values:
+# 1D runs: 6 20
+# 2D runs: 6 13 (12 for tconv)
+# 3D runs: 2 8 
+
 start=6
 stop=12
 
