@@ -57,7 +57,7 @@ marker mark2=marker(g2,Draw(Pen(2)));
 
 pen Lp=fontsize(8pt);
 
-real[] f(real[] x) {return x^d*log(x^d)/log(2);}
+real[] f(real[] x) {return 1e-9*x^d*log(x^d)/log(2);}
 
  // error bars:
 e /= f(me);
@@ -100,7 +100,7 @@ if(!error(fin)) {
 string D=(string) d;
 
 xaxis("$m$",BottomTop,LeftTicks);
-yaxis("time/($m^"+D+"\log_2 m^"+D+"$) (sec)",LeftRight,RightTicks);
+yaxis("time/($m^"+D+"\log_2 m^"+D+"$) (ns)",LeftRight,RightTicks);
 
 legendlinelength=0.5cm;
 legendmargin=8;
