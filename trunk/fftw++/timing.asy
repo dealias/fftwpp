@@ -51,9 +51,9 @@ guide g0=scale(0.5mm)*unitcircle;
 guide g1=scale(0.6mm)*polygon(3);
 guide g2=scale(0.6mm)*polygon(4);
 
-marker mark0=marker(g0,Draw(Pen(0)));
-marker mark1=marker(g1,Draw(Pen(1)));
-marker mark2=marker(g2,Draw(Pen(2)));
+marker mark0=marker(g0,Draw(Pen(0)+solid));
+marker mark1=marker(g1,Draw(Pen(1)+solid));
+marker mark2=marker(g2,Draw(Pen(2)+solid));
 
 pen Lp=fontsize(8pt);
 
@@ -64,14 +64,14 @@ e /= f(me);
 he /= f(me);
 le /= f(me);
 errorbars(me,e,0*me,he,0*me,le,Pen(0));
-draw(graph(me,e,e > 0),Pen(0),Label("explicit",Pen(0)+Lp),mark0);
+draw(graph(me,e,e > 0),Pen(0)+dashed,Label("explicit",Pen(0)+Lp),mark0);
 
 if(pruned) {
   p /= f(mp);
   hp /= f(mp);
   lp /= f(mp);
   errorbars(mp,p,0*mp,hp,0*mp,lp,Pen(2));
-  draw(graph(mp,p,p > 0),Pen(2),Label(prunelabel,Pen(2)+Lp),mark2);
+  draw(graph(mp,p,p > 0),Pen(2)+Dotted,Label(prunelabel,Pen(2)+Lp),mark2);
 }
 
 i /= f(mi);
@@ -97,10 +97,10 @@ if(!error(fin)) {
   draw(graph(mi,f,f > 0),Pen(1)+dashed);
 }
 
-string D=(string) d;
+string D=d > 1 ? "^"+(string) d : "";
 
 xaxis("$m$",BottomTop,LeftTicks);
-yaxis("time/($m^"+D+"\log_2 m^"+D+"$) (ns)",LeftRight,RightTicks);
+yaxis("time/($m"+D+"\log_2 m"+D+"$) (ns)",LeftRight,RightTicks);
 
 legendlinelength=0.5cm;
 legendmargin=8;
