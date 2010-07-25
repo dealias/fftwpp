@@ -47,8 +47,9 @@ if(pruned) {
 
 monoPen[0]=dashed;
 monoPen[1]=solid;
-monoPen[2]=Dotted;
-colorPen[2]=heavygreen;
+real Dotme=1.19;
+monoPen[2]=dotted+Dotme;
+colorPen[2]=deepgreen;
 
 guide g0=scale(0.5mm)*unitcircle;
 guide g1=scale(0.6mm)*polygon(3);
@@ -74,7 +75,7 @@ if(pruned) {
   hp /= f(mp);
   lp /= f(mp);
   errorbars(mp,p,0*mp,hp,0*mp,lp,Pen(2));
-  draw(graph(mp,p,p > 0),Pentype(2),Label(prunelabel,Pen(2)+Lp),mark2);
+  draw(graph(mp,p,p > 0),Pentype(2)+dotted+Dotme,Label(prunelabel,Pen(2)+Lp),mark2);
 }
 
 i /= f(mi);

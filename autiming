@@ -1,0 +1,11 @@
+#!/usr/bin/expect -f
+
+# an "expect"-based script to allow command-line use of timing.asy
+# usage: autiming <program name, e.g. conv>
+
+set pname [lindex $argv 0]	
+
+spawn asy timing
+expect "name"
+send "$pname\r"
+expect eof
