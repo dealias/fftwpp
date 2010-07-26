@@ -5,11 +5,16 @@ size(175,200,IgnoreAspect);
 scale(Log,Log(true,true));
 real[] mp,p,mu,u,mP,P;
 
-string pname=getstring("program name");
+string name;
+
+usersetting();
+
+if(name == "") name=getstring("program name");
+
 string dir;
-if(pname == "conv") dir="timings1r/error.";
-else if(pname == "cconv") dir="timings1c/error.";
-else abort("error test not implemented for "+pname);
+if(name == "conv") dir="timings1r/error.";
+else if(name == "cconv") dir="timings1c/error.";
+else abort("error test not implemented for "+name);
 
 file fin=input(dir+"explicit").line();
 real[][] a=fin.dimension(0,0);
