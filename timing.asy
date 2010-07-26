@@ -9,23 +9,28 @@ real[] me,e,le,he;
 real[] mi,i,li,hi;
 real[] mp,p,lp,hp;
 
-string pname=getstring("program name");
+string name;
+
+usersetting();
+
+if(name == "") name=getstring("program name");
+
 string dir;
 string prunelabel="$y$-pruned";
 
-if(pname == "conv") dir="timings1r";
-if(pname == "cconv") dir="timings1c";
-if(pname == "tconv") dir="timings1b";
-if(pname == "conv2") dir="timings2r";
-if(pname == "cconv2") dir="timings2c";
-if(pname == "tconv2") dir="timings2b";
-if(pname == "cconv3") {
+if(name == "conv") dir="timings1r";
+if(name == "cconv") dir="timings1c";
+if(name == "tconv") dir="timings1b";
+if(name == "conv2") dir="timings2r";
+if(name == "cconv2") dir="timings2c";
+if(name == "tconv2") dir="timings2b";
+if(name == "cconv3") {
   dir="timings3c"; prunelabel="$xz$-pruned"; legendmargin=8;
 }
   
 real d=1;
-if(find(pname,"2") >= 0) d=2;
-if(find(pname,"3") >= 0) d=3;
+if(find(name,"2") >= 0) d=2;
+if(find(name,"3") >= 0) d=3;
 
 file fin=input(dir+"/explicit").line();
 real[][] a=fin.dimension(0,0);
@@ -47,8 +52,6 @@ if(pruned) {
 
 monoPen[0]=dashed;
 monoPen[1]=solid;
-real Dotme=1.19;
-monoPen[2]=dotted+Dotme;
 colorPen[2]=deepgreen;
 
 guide g0=scale(0.5mm)*unitcircle;
@@ -75,7 +78,7 @@ if(pruned) {
   hp /= f(mp);
   lp /= f(mp);
   errorbars(mp,p,0*mp,hp,0*mp,lp,Pen(2));
-  draw(graph(mp,p,p > 0),Pentype(2)+dotted+Dotme,Label(prunelabel,Pen(2)+Lp),mark2);
+  draw(graph(mp,p,p > 0),Pentype(2)+Dotted,Label(prunelabel,Pen(2)+Lp),mark2);
 }
 
 i /= f(mi);
