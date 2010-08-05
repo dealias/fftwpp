@@ -20,10 +20,10 @@ string prunelabel="$y$-pruned";
 
 if(name == "conv") dir="timings1r";
 if(name == "cconv") dir="timings1c";
-if(name == "tconv") dir="timings1b";
+if(name == "tconv") dir="timings1t";
 if(name == "conv2") dir="timings2r";
 if(name == "cconv2") dir="timings2c";
-if(name == "tconv2") dir="timings2b";
+if(name == "tconv2") dir="timings2t";
 if(name == "cconv3") {
   dir="timings3c"; prunelabel="$xz$-pruned"; legendmargin=8;
 }
