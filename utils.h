@@ -121,7 +121,7 @@ inline void stdev(double *T, unsigned int N, double mean, double &sigmaL,
     double v=T[i]-mean;
     if(v < 0)
       sigmaL += v*v;
-    if(v >= 0)
+    if(v > 0)
       sigmaH += v*v;
   }
   
