@@ -11,7 +11,7 @@ and wisdom. Wrappers for multiple 1D transforms are also provided. As with
 the FFTW3 library itself, both in-place and out-of-place transforms of
 arbitrary size are supported. 
 
-Implicitly dealiasing of standard and centered Hermitian convolutions is
+Implicit dealiasing of standard and centered Hermitian convolutions is
 also implemented; in 2D and 3D implicit zero-padding substantially reduces
 memory usage and computation time.  For more information, see the
 manuscript "Efficient Dealiased Convolutions without Padding",
