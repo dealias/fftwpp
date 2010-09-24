@@ -30,10 +30,10 @@ bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
 unsigned int outlimit=100;
 
-inline void init(array2<Complex>& e, array2<Complex>& f, array2<Complex>& g,
+inline void init(Array2<Complex>& e, Array2<Complex>& f, Array2<Complex>& g,
                  unsigned int M=1) 
 {
-  unsigned int offset=Explicit ? nx/2-mx+1 : (Implicit ? 1 : 0);
+  unsigned int offset=Explicit ? nx/2-mx+1 : 0;
   unsigned int stop=2*mx-1;
   unsigned int stopoffset=stop+offset;
   double factor=1.0/cbrt((double) M);
@@ -43,8 +43,8 @@ inline void init(array2<Complex>& e, array2<Complex>& f, array2<Complex>& g,
     double ffactor=(1.0+S)*S*factor;
     double gfactor=1.0/(1.0+S)*factor;
     for(unsigned int i=0; i < stop; i++) {
+      unsigned int I=s*stopoffset+i+offset;
       for(unsigned int j=0; j < my; j++) {
-        unsigned int I=s*stopoffset+i+offset;
         e[I][j]=efactor*Complex(i,j);
         f[I][j]=ffactor*Complex(i+1,j+2);
         g[I][j]=gfactor*Complex(2*i,j+1);
@@ -138,9 +138,10 @@ int main(int argc, char* argv[])
   nxp=Explicit ? nx : (Implicit ? 2*mx : 2*mx-1);
   nyp=Explicit ? ny/2+1 : (Implicit ? my+1 : my);
   unsigned int nxp0=Implicit ? nxp*M : nxp;
-  array2<Complex> e(nxp0,nyp,align);
-  array2<Complex> f(nxp0,nyp,align);
-  array2<Complex> g(nxp0,nyp,align);
+  unsigned int offset=Implicit ? -1 : 0;
+  Array2<Complex> e(nxp0,nyp,offset,0,align);
+  Array2<Complex> f(nxp0,nyp,offset,0,align);
+  Array2<Complex> g(nxp0,nyp,offset,0,align);
 
   double *T=new double[N];
 
@@ -167,7 +168,7 @@ int main(int argc, char* argv[])
     timings("Implicit",T,N);
     
     if(nxp*my < outlimit)
-      for(unsigned int i=1; i < nxp; i++) {
+      for(unsigned int i=0; i < 2*mx-1; i++) {
         for(unsigned int j=0; j < my; j++)
           cout << e[i][j] << "\t";
         cout << endl;
@@ -198,10 +199,10 @@ int main(int argc, char* argv[])
   if(Direct) {
     Explicit=0;
     unsigned int nxp=2*mx-1;
-    array2<Complex> h(nxp,my,align);
-    array2<Complex> e(nxp,my,align);
-    array2<Complex> f(nxp,my,align);
-    array2<Complex> g(nxp,my,align);
+    Array2<Complex> h(nxp,my,0,0,align);
+    Array2<Complex> e(nxp,my,0,0,align);
+    Array2<Complex> f(nxp,my,0,0,align);
+    Array2<Complex> g(nxp,my,0,0,align);
     DirectHTConvolution2 C(mx,my);
     init(e,f,g);
     seconds();
