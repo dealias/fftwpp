@@ -15,8 +15,8 @@ Implicit dealiasing of standard and centered Hermitian convolutions is
 also implemented; in 2D and 3D implicit zero-padding substantially reduces
 memory usage and computation time.  For more information, see the
 manuscript "Efficient Dealiased Convolutions without Padding",
-by John C. Bowman and Malcolm Roberts, submitted to the SIAM Journal on
-Scientific Computing, 2010:
+by John C. Bowman and Malcolm Roberts, to appear in the SIAM Journal on
+Scientific Computing, 2011:
 
 http://www.math.ualberta.ca/~bowman/publications/dealias.pdf
 
