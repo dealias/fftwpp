@@ -27,25 +27,25 @@ example0: example0.o $(FFTW:=.o)
 	$(CC) $(CFLAGS) example0.o $(FFTW:=.o) $(LDFLAGS) -o example0
 
 example0r: example0r.o $(FFTW:=.o)
-	$(CC) $(CFLAGS) example0.o $(FFTW:=.o) $(LDFLAGS) -o example0r
+	$(CC) $(CFLAGS) example0r.o $(FFTW:=.o) $(LDFLAGS) -o example0r
 
 example1: example1.o $(FFTW:=.o)
 	$(CC) $(CFLAGS) example1.o $(FFTW:=.o) $(LDFLAGS) -o example1
 
 example1r: example1r.o $(FFTW:=.o)
-	$(CC) $(CFLAGS) example1.o $(FFTW:=.o) $(LDFLAGS) -o example1r
+	$(CC) $(CFLAGS) example1r.o $(FFTW:=.o) $(LDFLAGS) -o example1r
 
 example2: example2.o $(FFTW:=.o)
 	$(CC) $(CFLAGS) example2.o $(FFTW:=.o) $(LDFLAGS) -o example2
 
 example2r: example2r.o $(FFTW:=.o)
-	$(CC) $(CFLAGS) example2.o $(FFTW:=.o) $(LDFLAGS) -o example2r
+	$(CC) $(CFLAGS) example2r.o $(FFTW:=.o) $(LDFLAGS) -o example2r
 
 example3: example3.o $(FFTW:=.o)
 	$(CC) $(CFLAGS) example3.o $(FFTW:=.o) $(LDFLAGS) -o example3
 
 example3r: example3r.o $(FFTW:=.o)
-	$(CC) $(CFLAGS) example3.o $(FFTW:=.o) $(LDFLAGS) -o example3r
+	$(CC) $(CFLAGS) example3r.o $(FFTW:=.o) $(LDFLAGS) -o example3r
 
 conv: conv.o $(EXTRA:=.o)
 	$(CC) $(CFLAGS) conv.o $(EXTRA:=.o) $(LDFLAGS) -o conv
