@@ -343,6 +343,15 @@ public:
     delete Backwards;
   }
   
+  // Unscramble indices.
+  inline unsigned findex(unsigned i) {
+    return i < m-1 ? 3*i : 3*i+4-3*m;
+  }
+
+  inline unsigned uindex(unsigned i) {
+    return i > 0 ? (i < m ? 3*i-1 : 3*m-3) : 3*m-1;
+  }
+
   void backwards(Complex *f, Complex *u);
   void forwards(Complex *f, Complex *u);
 };
@@ -587,23 +596,19 @@ public:
   void convolve(Complex *f, Complex *g, bool symmetrize=true);
 };
 
-// In-place implicitly dealiased 2D Hermitian convolution.
-class ImplicitHConvolution2 {
+class ImplicitHConvolution2Base {
 protected:
   unsigned int mx,my;
   Complex *u1,*v1,*w1;
   Complex *u2,*v2;
   unsigned int M;
   fft0pad *xfftpad;
-  ImplicitHConvolution *yconvolve;
   Complex **U2,**V2;
   bool allocated;
 public:  
   
   void init() {
     xfftpad=new fft0pad(mx,my,my,u2);
-    yconvolve=new ImplicitHConvolution(my,u1,v1,w1,M);
-    
     U2=new Complex *[M];
     V2=new Complex *[M];
     unsigned int mu=(mx+1)*my;
@@ -614,11 +619,7 @@ public:
     }
   }
 
-  // u1 and v1 are temporary arrays of size (my/2+1)*M.
-  // w1 is a temporary array of size 3*M.
-  // u2 and v2 are temporary arrays of size (mx+1)*my*M;
-  // M is the number of data blocks (each corresponding to a dot product term).
-  ImplicitHConvolution2(unsigned int mx, unsigned int my,
+  ImplicitHConvolution2Base(unsigned int mx, unsigned int my,
                         Complex *u1, Complex *v1, Complex *w1,
                         Complex *u2, Complex *v2, unsigned int M=1) :
     mx(mx), my(my), u1(u1), v1(v1), w1(w1), u2(u2), v2(v2),
@@ -626,7 +627,7 @@ public:
     init();
   }
   
-  ImplicitHConvolution2(unsigned int mx, unsigned int my, unsigned int M=1) :
+  ImplicitHConvolution2Base(unsigned int mx, unsigned int my, unsigned int M=1) :
     mx(mx), my(my), u1(ComplexAlign((my/2+1)*M)), v1(ComplexAlign((my/2+1)*M)),
     w1(ComplexAlign(3*M)),
     u2(ComplexAlign((mx+1)*my*M)), v2(ComplexAlign((mx+1)*my*M)),
@@ -634,7 +635,7 @@ public:
     init();
   }
   
-  ~ImplicitHConvolution2() {
+  ~ImplicitHConvolution2Base() {
     delete [] V2;
     delete [] U2;
     
@@ -645,8 +646,37 @@ public:
       deleteAlign(v1);
       deleteAlign(u1);
     }
-    delete yconvolve;
     delete xfftpad;
+  }
+};
+  
+// In-place implicitly dealiased 2D Hermitian convolution.
+class ImplicitHConvolution2 : public ImplicitHConvolution2Base {
+protected:
+  ImplicitHConvolution *yconvolve;
+public:
+  void initconvolve() {
+    yconvolve=new ImplicitHConvolution(my,u1,v1,w1,M);
+  }
+    
+  // u1 and v1 are temporary arrays of size (my/2+1)*M.
+  // w1 is a temporary array of size 3*M.
+  // u2 and v2 are temporary arrays of size (mx+1)*my*M;
+  // M is the number of data blocks (each corresponding to a dot product term).
+  ImplicitHConvolution2(unsigned int mx, unsigned int my,
+                        Complex *u1, Complex *v1, Complex *w1,
+                        Complex *u2, Complex *v2, unsigned int M=1) :
+    ImplicitHConvolution2Base(mx,my,u1,v1,w1,u2,v2,M) {
+    initconvolve();
+  }
+  
+  ImplicitHConvolution2(unsigned int mx, unsigned int my, unsigned int M=1) :
+    ImplicitHConvolution2Base(mx,my,M) {
+    initconvolve();
+  }
+  
+  ~ImplicitHConvolution2() {
+    delete yconvolve;
   }
   
   // F and G are pointers to M distinct data blocks each of size (2mx-1)*my,
