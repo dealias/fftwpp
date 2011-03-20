@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 start=6
 stop=20

@@ -86,6 +86,99 @@ void ExplicitConvolution::convolve(Complex *f, Complex *g)
   forwards(f);
 }
 
+// a[0][k]=sum_i a[i][k]*b[i][k]
+void ImplicitConvolution::mult(Complex *a, Complex **B, unsigned int offset) {
+  if(M == 1) { // a[k]=a[k]*b[k]
+    Complex *B0=B[0]+offset;
+    for(unsigned int k=0; k < m; ++k) {
+      Complex *p=a+k;
+#ifdef __SSE2__      
+      STORE(p,ZMULT(LOAD(p),LOAD(B0+k)));
+#else
+      Complex ak=*p;
+      Complex bk=*(B0+k);
+      p->re=ak.re*bk.re-ak.im*bk.im;
+      p->im=ak.re*bk.im+ak.im*bk.re;
+#endif      
+    }
+  } else if(M == 2) {
+    Complex *a1=a+m;
+    Complex *B0=B[0]+offset;
+    Complex *B1=B[1]+offset;
+    for(unsigned int k=0; k < m; ++k) {
+      Complex *p=a+k;
+#ifdef __SSE2__
+      STORE(p,ZMULT(LOAD(p),LOAD(B0+k))+ZMULT(LOAD(a1+k),LOAD(B1+k)));
+#else
+      Complex ak=*p;
+      Complex bk=B0[k];
+      double re=ak.re*bk.re-ak.im*bk.im;
+      double im=ak.re*bk.im+ak.im*bk.re;
+      ak=a1[k];
+      bk=B1[k];
+      re += ak.re*bk.re-ak.im*bk.im;
+      im += ak.re*bk.im+ak.im*bk.re; 
+      p->re=re;
+      p->im=im;
+#endif      
+    }
+  } else if(M == 3) {
+    Complex *a1=a+m;
+    Complex *a2=a+2*m;
+    Complex *B0=B[0]+offset;
+    Complex *B1=B[1]+offset;
+    Complex *B2=B[2]+offset;
+    for(unsigned int k=0; k < m; ++k) {
+      Complex *p=a+k;
+#ifdef __SSE2__
+      STORE(p,ZMULT(LOAD(p),LOAD(B0+k))+ZMULT(LOAD(a1+k),LOAD(B1+k))
+            +ZMULT(LOAD(a2+k),LOAD(B2+k)));
+#else
+      Complex ak=*p;
+      Complex bk=B0[k];
+      double re=ak.re*bk.re-ak.im*bk.im;
+      double im=ak.re*bk.im+ak.im*bk.re;
+      ak=a1[k];
+      bk=B1[k];
+      re += ak.re*bk.re-ak.im*bk.im;
+      im += ak.re*bk.im+ak.im*bk.re; 
+      ak=a2[k];
+      bk=B2[k];
+      re += ak.re*bk.re-ak.im*bk.im;
+      im += ak.re*bk.im+ak.im*bk.re; 
+      p->re=re;
+      p->im=im;
+#endif      
+    }
+  } else {
+    Complex *A=a-offset;
+    Complex *B0=B[0];
+    unsigned int stop=offset+m;
+    for(unsigned int k=offset; k < stop; ++k) {
+      Complex *p=A+k;
+#ifdef __SSE2__      
+      Vec sum=ZMULT(LOAD(p),LOAD(B0+k));
+      for(unsigned int i=1; i < M; ++i)
+        sum += ZMULT(LOAD(p+m*i),LOAD(B[i]+k));
+      STORE(p,sum);
+#else
+      Complex ak=*p;
+      Complex bk=B0[k];
+      double re=ak.re*bk.re-ak.im*bk.im;
+      double im=ak.re*bk.im+ak.im*bk.re;
+      for(unsigned int i=1; i < M; ++i) {
+        Complex ak=p[m*i];
+        Complex bk=B[i][k];
+        re += ak.re*bk.re-ak.im*bk.im;
+        im += ak.re*bk.im+ak.im*bk.re; 
+      }
+      p->re=re;
+      p->im=im;
+#endif      
+    }
+  }
+}
+
 void ImplicitConvolution::convolve(Complex **F, Complex **G,
                                    unsigned int offset)
 {
@@ -241,6 +334,82 @@ inline void conjreverse(Complex *f, unsigned int m)
     q->im=-im;
   }
   if(2*c < m) f[c]=conj(f[c]);
+}
+
+// Compute a[0][k]=sum_i a[i][k]*b[i][k]
+void ImplicitHConvolution::mult(double *a, double **B, unsigned int offset)
+{
+  unsigned int m1=m-1;
+  if(M == 1) { // a[k]=a[k]*b[k]
+    double *B0=B[0]+offset;
+#ifdef __SSE2__        
+    for(unsigned int k=0; k < m1; k += 2)
+      STORE(a+k,LOAD(a+k)*LOAD(B0+k));
+    if(odd)
+      STORE(a+m1,LOAD(a+m1)*LOAD(B0+m1));
+#else        
+    for(unsigned int k=0; k < m; ++k)
+      a[k] *= B0[k];
+#endif        
+  } else if(M == 2) {
+    double *a1=a+stride;
+    double *B0=B[0]+offset;
+    double *B1=B[1]+offset;
+#ifdef __SSE2__        
+    for(unsigned int k=0; k < m1; k += 2)
+      STORE(a+k,LOAD(a+k)*LOAD(B0+k)+LOAD(a1+k)*LOAD(B1+k));
+    if(odd)
+      STORE(a+m1,LOAD(a+m1)*LOAD(B0+m1)+LOAD(a1+m1)*LOAD(B1+m1));
+#else        
+    for(unsigned int k=0; k < m; ++k)
+      a[k]=a[k]*B0[k]+a1[k]*B1[k];
+#endif        
+  } else if(M == 3) {
+    double *a1=a+stride;
+    double *a2=a1+stride;
+    double *B0=B[0]+offset;
+    double *B1=B[1]+offset;
+    double *B2=B[2]+offset;
+#ifdef __SSE2__        
+    for(unsigned int k=0; k < m1; k += 2)
+      STORE(a+k,LOAD(a+k)*LOAD(B0+k)+LOAD(a1+k)*LOAD(B1+k)+
+            LOAD(a2+k)*LOAD(B2+k));
+    if(odd)
+      STORE(a+m1,LOAD(a+m1)*LOAD(B0+m1)+LOAD(a1+m1)*LOAD(B1+m1)+
+            LOAD(a2+m1)*LOAD(B2+m1));
+#else        
+    for(unsigned int k=0; k < m; ++k)
+      a[k]=a[k]*B0[k]+a1[k]*B1[k]+a2[k]*B2[k];
+#endif        
+  } else {
+    double *A=a-offset;
+    double *B0=B[0];
+    unsigned int stop=m1+offset;
+#ifdef __SSE2__        
+    for(unsigned int k=offset; k < stop; k += 2) {
+      double *p=A+k;
+      Vec sum=LOAD(p)*LOAD(B0+k);
+      for(unsigned int i=1; i < M; ++i)
+        sum += LOAD(p+i*stride)*LOAD(B[i]+k);
+      STORE(p,sum);
+    }
+    if(odd) {
+      double *p=A+stop;
+      Vec sum=LOAD(p)*LOAD(B0+stop);
+      for(unsigned int i=1; i < M; ++i)
+        sum += LOAD(p+i*stride)*LOAD(B[i]+stop);
+      STORE(p,sum);
+    }
+#else        
+    for(unsigned int k=offset; k <= stop; ++k) {
+      double *p=A+k;
+      double sum=(*p)*B0[k];
+      for(unsigned int i=1; i < M; ++i)
+        sum += p[i*stride]*B[i][k];
+      *p=sum;
+    }
+#endif        
+  }
 }
 
 void ImplicitHConvolution::convolve(Complex **F, Complex **G, 
@@ -1224,8 +1393,82 @@ void ExplicitHTConvolution::convolve(Complex *f, Complex *g, Complex *h)
   forwards(f);
 }
 
+// a[0][k]=sum_i a[i][k]*b[i][k]*c[i][k]
+void ImplicitHTConvolution::mult(double *a, double *b, double **C,
+                                 unsigned int offset) {
+  unsigned int twom=2*m;
+  if(M == 1) { // a[k]=a[k]*b[k]*c[k]
+    double *C0=C[0]+offset;
+#ifdef __SSE2__        
+    for(unsigned int k=0; k < twom; k += 2)
+      STORE(a+k,LOAD(a+k)*LOAD(b+k)*LOAD(C0+k));
+#else        
+    for(unsigned int k=0; k < twom; ++k)
+      a[k] *= b[k]*C0[k];
+#endif        
+  } else if(M == 2) {
+    double *a1=a+stride;
+    double *b1=b+stride;
+    double *C0=C[0]+offset;
+    double *C1=C[1]+offset;
+#ifdef __SSE2__        
+    for(unsigned int k=0; k < twom; k += 2)
+      STORE(a+k,LOAD(a+k)*LOAD(b+k)*LOAD(C0+k)+
+            LOAD(a1+k)*LOAD(b1+k)*LOAD(C1+k));
+#else        
+    for(unsigned int k=0; k < twom; ++k)
+      a[k]=a[k]*b[k]*C0[k]+a1[k]*b1[k]*C1[k];
+#endif        
+  } else if(M == 3) {
+    double *a1=a+stride;
+    double *a2=a1+stride;
+    double *b1=b+stride;
+    double *b2=b1+stride;
+    double *C0=C[0]+offset;
+    double *C1=C[1]+offset;
+    double *C2=C[2]+offset;
+#ifdef __SSE2__        
+    for(unsigned int k=0; k < twom; k += 2)
+      STORE(a+k,LOAD(a+k)*LOAD(b+k)*LOAD(C0+k)+
+            LOAD(a1+k)*LOAD(b1+k)*LOAD(C1+k)+
+            LOAD(a2+k)*LOAD(b2+k)*LOAD(C2+k));
+#else        
+    for(unsigned int k=0; k < twom; ++k)
+      a[k]=a[k]*b[k]*C0[k]+a1[k]*b1[k]*C1[k]+a2[k]*b2[k]*C2[k];
+#endif        
+  } else {
+    double *A=a-offset;
+    double *B=b-offset;
+    double *C0=C[0];
+    unsigned int stop=twom+offset;
+#ifdef __SSE2__        
+    for(unsigned int k=offset; k < stop; k += 2) {
+      double *p=A+k;
+      double *q=B+k;
+      Vec sum=LOAD(p)*LOAD(q)*LOAD(C0+k);
+      for(unsigned int i=1; i < M; ++i) {
+        unsigned int istride=i*stride;
+        sum += LOAD(p+istride)*LOAD(q+istride)*LOAD(C[i]+k);
+      }
+      STORE(p,sum);
+    }
+#else        
+    for(unsigned int k=offset; k < stop; ++k) {
+      double *p=A+k;
+      double *q=B+k;
+      double sum=(*p)*(*q)*C0[k];
+      for(unsigned int i=1; i < M; ++i) {
+        unsigned int istride=i*stride;
+        sum += p[istride]*q[istride]*C[i][k];
+      }
+      *p=sum;
+    }
+#endif        
+  }
+}
+
 void ImplicitHTConvolution::convolve(Complex **F, Complex **G, Complex **H,
-                                      unsigned int offset)
+                                     unsigned int offset)
 {
   // 8M-3 of 8M FFTs are out-of-place
     
@@ -1353,7 +1596,7 @@ void ImplicitHTConvolution::convolve(Complex **F, Complex **G, Complex **H,
 }
 
 void DirectHTConvolution::convolve(Complex *h, Complex *e, Complex *f,
-                                    Complex *g)
+                                   Complex *g)
 {
   int stop=m;
   int start=1-m;
@@ -1523,7 +1766,7 @@ void ExplicitHTConvolution2::forwards(Complex *f, bool shift)
 }
 
 void ExplicitHTConvolution2::convolve(Complex *f, Complex *g, Complex *h,
-                                       bool symmetrize)
+                                      bool symmetrize)
 {
   unsigned int xorigin=nx/2;
   unsigned int nyp=ny/2+1;
@@ -1558,7 +1801,7 @@ void ExplicitHTConvolution2::convolve(Complex *f, Complex *g, Complex *h,
 }
 
 void DirectHTConvolution2::convolve(Complex *h, Complex *e, Complex *f,
-                                     Complex *g, bool symmetrize)
+                                    Complex *g, bool symmetrize)
 {
   if(symmetrize) {
     HermitianSymmetrizeX(mx,my,mx-1,e);
@@ -1601,4 +1844,3 @@ void DirectHTConvolution2::convolve(Complex *h, Complex *e, Complex *f,
 }
 
 }
-

@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/bin/sh
 
 # typical start/stop values:
 # 1D runs: 6 20
-# 2D runs: 6 13 (12 for tconv)
+# 2D runs: 6 13 (12 for tconv2)
 # 3D runs: 2 8 
 
 start=6
