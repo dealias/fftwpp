@@ -64,282 +64,8 @@ public:
   void convolve(Complex *f, Complex *g);
 };
 
-class CDot {
-protected:
-  unsigned int m;
-  unsigned int M;
-  
-public:
-  CDot(unsigned int m, unsigned int M) : 
-    m(m), M(M) {}
-  
-  // a[0][k]=sum_i a[i][k]*b[i][k]
-  void mult(Complex *a, Complex **B, unsigned int offset=0) {
-    if(M == 1) { // a[k]=a[k]*b[k]
-      Complex *B0=B[0]+offset;
-      for(unsigned int k=0; k < m; ++k) {
-        Complex *p=a+k;
-#ifdef __SSE2__      
-        STORE(p,ZMULT(LOAD(p),LOAD(B0+k)));
-#else
-        Complex ak=*p;
-        Complex bk=*(B0+k);
-        p->re=ak.re*bk.re-ak.im*bk.im;
-        p->im=ak.re*bk.im+ak.im*bk.re;
-#endif      
-      }
-    } else if(M == 2) {
-      Complex *a1=a+m;
-      Complex *B0=B[0]+offset;
-      Complex *B1=B[1]+offset;
-      for(unsigned int k=0; k < m; ++k) {
-        Complex *p=a+k;
-#ifdef __SSE2__
-        STORE(p,ZMULT(LOAD(p),LOAD(B0+k))+ZMULT(LOAD(a1+k),LOAD(B1+k)));
-#else
-        Complex ak=*p;
-        Complex bk=B0[k];
-        double re=ak.re*bk.re-ak.im*bk.im;
-        double im=ak.re*bk.im+ak.im*bk.re;
-        ak=a1[k];
-        bk=B1[k];
-        re += ak.re*bk.re-ak.im*bk.im;
-        im += ak.re*bk.im+ak.im*bk.re; 
-        p->re=re;
-        p->im=im;
-#endif      
-      }
-    } else if(M == 3) {
-      Complex *a1=a+m;
-      Complex *a2=a+2*m;
-      Complex *B0=B[0]+offset;
-      Complex *B1=B[1]+offset;
-      Complex *B2=B[2]+offset;
-      for(unsigned int k=0; k < m; ++k) {
-        Complex *p=a+k;
-#ifdef __SSE2__
-        STORE(p,ZMULT(LOAD(p),LOAD(B0+k))+ZMULT(LOAD(a1+k),LOAD(B1+k))
-              +ZMULT(LOAD(a2+k),LOAD(B2+k)));
-#else
-        Complex ak=*p;
-        Complex bk=B0[k];
-        double re=ak.re*bk.re-ak.im*bk.im;
-        double im=ak.re*bk.im+ak.im*bk.re;
-        ak=a1[k];
-        bk=B1[k];
-        re += ak.re*bk.re-ak.im*bk.im;
-        im += ak.re*bk.im+ak.im*bk.re; 
-        ak=a2[k];
-        bk=B2[k];
-        re += ak.re*bk.re-ak.im*bk.im;
-        im += ak.re*bk.im+ak.im*bk.re; 
-        p->re=re;
-        p->im=im;
-#endif      
-      }
-    } else {
-      Complex *A=a-offset;
-      Complex *B0=B[0];
-      unsigned int stop=offset+m;
-      for(unsigned int k=offset; k < stop; ++k) {
-        Complex *p=A+k;
-#ifdef __SSE2__      
-        Vec sum=ZMULT(LOAD(p),LOAD(B0+k));
-        for(unsigned int i=1; i < M; ++i)
-          sum += ZMULT(LOAD(p+m*i),LOAD(B[i]+k));
-        STORE(p,sum);
-#else
-        Complex ak=*p;
-        Complex bk=B0[k];
-        double re=ak.re*bk.re-ak.im*bk.im;
-        double im=ak.re*bk.im+ak.im*bk.re;
-        for(unsigned int i=1; i < M; ++i) {
-          Complex ak=p[m*i];
-          Complex bk=B[i][k];
-          re += ak.re*bk.re-ak.im*bk.im;
-          im += ak.re*bk.im+ak.im*bk.re; 
-        }
-        p->re=re;
-        p->im=im;
-#endif      
-      }
-    }
-  }
-};
-
-class Dot {
-protected:
-  unsigned int m;
-  unsigned int M;
-  bool odd;
-  unsigned int stride;
-public:
-  Dot(unsigned int m, unsigned int M) : 
-    m(m), M(M), odd(m % 2 == 1), stride(odd ? m+1 : m+2) {}
-  
-  // a[0][k]=sum_i a[i][k]*b[i][k]
-  void mult(double *a, double **B, unsigned int offset=0) {
-    unsigned int m1=m-1;
-    if(M == 1) { // a[k]=a[k]*b[k]
-      double *B0=B[0]+offset;
-#ifdef __SSE2__        
-      for(unsigned int k=0; k < m1; k += 2)
-        STORE(a+k,LOAD(a+k)*LOAD(B0+k));
-      if(odd)
-        STORE(a+m1,LOAD(a+m1)*LOAD(B0+m1));
-#else        
-      for(unsigned int k=0; k < m; ++k)
-        a[k] *= B0[k];
-#endif        
-    } else if(M == 2) {
-      double *a1=a+stride;
-      double *B0=B[0]+offset;
-      double *B1=B[1]+offset;
-#ifdef __SSE2__        
-      for(unsigned int k=0; k < m1; k += 2)
-        STORE(a+k,LOAD(a+k)*LOAD(B0+k)+LOAD(a1+k)*LOAD(B1+k));
-      if(odd)
-        STORE(a+m1,LOAD(a+m1)*LOAD(B0+m1)+LOAD(a1+m1)*LOAD(B1+m1));
-#else        
-      for(unsigned int k=0; k < m; ++k)
-        a[k]=a[k]*B0[k]+a1[k]*B1[k];
-#endif        
-    } else if(M == 3) {
-      double *a1=a+stride;
-      double *a2=a1+stride;
-      double *B0=B[0]+offset;
-      double *B1=B[1]+offset;
-      double *B2=B[2]+offset;
-#ifdef __SSE2__        
-      for(unsigned int k=0; k < m1; k += 2)
-        STORE(a+k,LOAD(a+k)*LOAD(B0+k)+LOAD(a1+k)*LOAD(B1+k)+
-              LOAD(a2+k)*LOAD(B2+k));
-      if(odd)
-        STORE(a+m1,LOAD(a+m1)*LOAD(B0+m1)+LOAD(a1+m1)*LOAD(B1+m1)+
-              LOAD(a2+m1)*LOAD(B2+m1));
-#else        
-      for(unsigned int k=0; k < m; ++k)
-        a[k]=a[k]*B0[k]+a1[k]*B1[k]+a2[k]*B2[k];
-#endif        
-    } else {
-      double *A=a-offset;
-      double *B0=B[0];
-      unsigned int stop=m1+offset;
-#ifdef __SSE2__        
-      for(unsigned int k=offset; k < stop; k += 2) {
-        double *p=A+k;
-        Vec sum=LOAD(p)*LOAD(B0+k);
-        for(unsigned int i=1; i < M; ++i)
-          sum += LOAD(p+i*stride)*LOAD(B[i]+k);
-        STORE(p,sum);
-      }
-      if(odd) {
-        double *p=A+stop;
-        Vec sum=LOAD(p)*LOAD(B0+stop);
-        for(unsigned int i=1; i < M; ++i)
-          sum += LOAD(p+i*stride)*LOAD(B[i]+stop);
-        STORE(p,sum);
-      }
-#else        
-      for(unsigned int k=offset; k <= stop; ++k) {
-        double *p=A+k;
-        double sum=(*p)*B0[k];
-        for(unsigned int i=1; i < M; ++i)
-          sum += p[i*stride]*B[i][k];
-        *p=sum;
-      }
-#endif        
-    }
-  }
-};
-  
-class Dot3 {
-protected:
-  unsigned int m;
-  unsigned int M;
-  unsigned int twom;
-  unsigned int stride;
-  
-public:
-  Dot3(unsigned int m, unsigned int M) : 
-    m(m), M(M), twom(2*m), stride(twom+2) {}
-  
-  // a[0][k]=sum_i a[i][k]*b[i][k]*c[i][k]
-  void mult(double *a, double *b, double **C, unsigned int offset=0) {
-    unsigned int twom=2*m;
-    if(M == 1) { // a[k]=a[k]*b[k]*c[k]
-      double *C0=C[0]+offset;
-#ifdef __SSE2__        
-      for(unsigned int k=0; k < twom; k += 2)
-        STORE(a+k,LOAD(a+k)*LOAD(b+k)*LOAD(C0+k));
-#else        
-      for(unsigned int k=0; k < twom; ++k)
-        a[k] *= b[k]*C0[k];
-#endif        
-    } else if(M == 2) {
-      double *a1=a+stride;
-      double *b1=b+stride;
-      double *C0=C[0]+offset;
-      double *C1=C[1]+offset;
-#ifdef __SSE2__        
-      for(unsigned int k=0; k < twom; k += 2)
-        STORE(a+k,LOAD(a+k)*LOAD(b+k)*LOAD(C0+k)+
-              LOAD(a1+k)*LOAD(b1+k)*LOAD(C1+k));
-#else        
-      for(unsigned int k=0; k < twom; ++k)
-        a[k]=a[k]*b[k]*C0[k]+a1[k]*b1[k]*C1[k];
-#endif        
-    } else if(M == 3) {
-      double *a1=a+stride;
-      double *a2=a1+stride;
-      double *b1=b+stride;
-      double *b2=b1+stride;
-      double *C0=C[0]+offset;
-      double *C1=C[1]+offset;
-      double *C2=C[2]+offset;
-#ifdef __SSE2__        
-      for(unsigned int k=0; k < twom; k += 2)
-        STORE(a+k,LOAD(a+k)*LOAD(b+k)*LOAD(C0+k)+
-              LOAD(a1+k)*LOAD(b1+k)*LOAD(C1+k)+
-              LOAD(a2+k)*LOAD(b2+k)*LOAD(C2+k));
-#else        
-      for(unsigned int k=0; k < twom; ++k)
-        a[k]=a[k]*b[k]*C0[k]+a1[k]*b1[k]*C1[k]+a2[k]*b2[k]*C2[k];
-#endif        
-    } else {
-      double *A=a-offset;
-      double *B=b-offset;
-      double *C0=C[0];
-      unsigned int stop=twom+offset;
-#ifdef __SSE2__        
-      for(unsigned int k=offset; k < stop; k += 2) {
-        double *p=A+k;
-        double *q=B+k;
-        Vec sum=LOAD(p)*LOAD(q)*LOAD(C0+k);
-        for(unsigned int i=1; i < M; ++i) {
-          unsigned int istride=i*stride;
-          sum += LOAD(p+istride)*LOAD(q+istride)*LOAD(C[i]+k);
-        }
-        STORE(p,sum);
-      }
-#else        
-      for(unsigned int k=offset; k < stop; ++k) {
-        double *p=A+k;
-        double *q=B+k;
-        double sum=(*p)*(*q)*C0[k];
-        for(unsigned int i=1; i < M; ++i) {
-          unsigned int istride=i*stride;
-          sum += p[istride]*q[istride]*C[i][k];
-        }
-        *p=sum;
-      }
-#endif        
-    }
-  }
-};
-  
 // In-place implicitly dealiased 1D complex convolution.
-class ImplicitConvolution : public CDot {
+class ImplicitConvolution {
 protected:
   unsigned int m;
   Complex *u,*v;
@@ -366,12 +92,12 @@ public:
   // u and v are distinct temporary arrays each of size m*M.
   // M is the number of data blocks (each corresponding to a dot product term).
   ImplicitConvolution(unsigned int m, Complex *u, Complex *v, unsigned int M=1)
-    : CDot(m,M), m(m), u(u), v(v), M(M), allocated(false) {
+    : m(m), u(u), v(v), M(M), allocated(false) {
     init();
   }
   
   ImplicitConvolution(unsigned int m, unsigned int M=1)
-    : CDot(m,M), m(m), u(ComplexAlign(m*M)), v(ComplexAlign(m*M)), M(M),
+    : m(m), u(ComplexAlign(m*M)), v(ComplexAlign(m*M)), M(M),
       allocated(true) {
     init();
   }
@@ -388,6 +114,8 @@ public:
     delete Forwards;
     delete Backwards;
   }
+  
+  void mult(Complex *a, Complex **B, unsigned int offset=0);
   
   // F and G are pointers to M distinct data blocks each of size m,
   // shifted by offset (contents not preserved).
@@ -444,12 +172,14 @@ public:
 };
 
 // In-place implicitly dealiased 1D Hermitian convolution.
-class ImplicitHConvolution : public Dot {
+class ImplicitHConvolution {
 protected:
   unsigned int m;
   unsigned int c;
   Complex *u,*v,*w;
   unsigned int M;
+  bool odd;
+  unsigned int stride;
 public:
   unsigned int s;
   rcfft1d *rc,*rco;
@@ -459,6 +189,9 @@ public:
   bool allocated;
   
   void init() {
+    odd=m % 2 == 1;
+    stride=odd ? m+1 : m+2;
+    
     U=new Complex *[M];
     unsigned int cp1=c+1;
     for(unsigned int i=0; i < M; ++i)
@@ -479,12 +212,12 @@ public:
   // M is the number of data blocks (each corresponding to a dot product term).
   ImplicitHConvolution(unsigned int m, Complex *u, Complex *v, Complex *w,
                        unsigned int M=1)
-    : Dot(m,M), m(m), c(m/2), u(u), v(v), w(w), M(M), allocated(false) {
+    : m(m), c(m/2), u(u), v(v), w(w), M(M), allocated(false) {
     init();
   }
 
   ImplicitHConvolution(unsigned int m, unsigned int M=1)
-    : Dot(m,M), m(m), c(m/2), u(ComplexAlign(c*M+M)),v(ComplexAlign(c*M+M)),
+    : m(m), c(m/2), u(ComplexAlign(c*M+M)),v(ComplexAlign(c*M+M)),
       w(ComplexAlign(3*M)), M(M), allocated(true) {
     init();
   }
@@ -504,6 +237,8 @@ public:
     delete cr;
     delete rc;
   }
+  
+  virtual void mult(double *a, double **B, unsigned int offset=0);
   
   // F and G are pointers to M distinct data blocks each of size m,
   // shifted by offset (contents not preserved).
@@ -577,7 +312,7 @@ public:
 // The arrays in and out (which may coincide) must be allocated as
 // Complex[M*(2m-1)]. The array u must be allocated as Complex[M*(m+1)].
 //
-//   fft0pad fft(m,M,stride);
+//   fft0pad fft(m,M,stride,u);
 //   fft.backwards(in,u);
 //   fft.forwards(in,u);
 //
@@ -1275,7 +1010,7 @@ public:
 };
 
 // In-place implicitly dealiased Hermitian ternary convolution.
-class ImplicitHTConvolution : public Dot3 {
+class ImplicitHTConvolution {
 protected:
   unsigned int m;
   Complex *u,*v,*w;
@@ -1286,10 +1021,13 @@ protected:
   Complex *ZetaH, *ZetaL;
   Complex **W;
   bool allocated;
+  unsigned int twom;
+  unsigned int stride;
 public:  
   
   void init() {
-    unsigned int twom=2*m;
+    twom=2*m;
+    stride=twom+2;
     
     W=new Complex *[M];
     unsigned int m1=m+1;
@@ -1307,14 +1045,14 @@ public:
   
   // u, v, and w are distinct temporary arrays each of size m+1.
   ImplicitHTConvolution(unsigned int m, Complex *u, Complex *v,
-                              Complex *w, unsigned int M=1) :
-    Dot3(m,M), m(m), u(u), v(v), w(w), M(M), allocated(false) {
+                        Complex *w, unsigned int M=1) :
+    m(m), u(u), v(v), w(w), M(M), allocated(false) {
     init();
   }
   
   // u, v, and w are distinct temporary arrays each of size m+1.
   ImplicitHTConvolution(unsigned int m, unsigned int M=1) : 
-    Dot3(m,M), m(m), u(ComplexAlign(m*M+M)), v(ComplexAlign(m*M+M)),
+    m(m), u(ComplexAlign(m*M+M)), v(ComplexAlign(m*M+M)),
     w(ComplexAlign(m*M+M)), M(M), allocated(true) {
     init();
   }
@@ -1334,6 +1072,8 @@ public:
     delete cr;
     delete rc;
   }
+  
+  void mult(double *a, double *b, double **C, unsigned int offset=0);
   
   // In-place implicitly dealiased convolution.
   // The input arrays f, g, and h are each of size m+1 (contents not preserved).
@@ -1415,8 +1155,8 @@ protected:
   
 public:  
   ExplicitHTConvolution2(unsigned int nx, unsigned int ny, 
-                          unsigned int mx, unsigned int my, Complex *f,
-                          bool pruned=false) :
+                         unsigned int mx, unsigned int my, Complex *f,
+                         bool pruned=false) :
     nx(nx), ny(ny), mx(mx), my(my), prune(pruned) {
     unsigned int nyp=ny/2+1;
     // Odd nx requires interleaving of shift with x and y transforms.
@@ -1488,16 +1228,16 @@ public:
   // u2, v2, and w2 are temporary arrays of size 2mx*(my+1)*M.
   // M is the number of data blocks (each corresponding to a dot product term).
   ImplicitHTConvolution2(unsigned int mx, unsigned int my,
-                          Complex *u1, Complex *v1, Complex *w1, 
-                          Complex *u2, Complex *v2, Complex *w2,
-                          unsigned int M=1) :
+                         Complex *u1, Complex *v1, Complex *w1, 
+                         Complex *u2, Complex *v2, Complex *w2,
+                         unsigned int M=1) :
     mx(mx), my(my), u1(u1), v1(v1), w1(w1), u2(u2), v2(v2), w2(w2),
     M(M), allocated(false) {
     init();
   }
   
   ImplicitHTConvolution2(unsigned int mx, unsigned int my,
-                          unsigned int M=1) :
+                         unsigned int M=1) :
     mx(mx), my(my), u1(ComplexAlign(my*M+M)), v1(ComplexAlign(my*M+M)),
     w1(ComplexAlign(my*M+M)), u2(ComplexAlign(2*mx*(my*M+M))),
     v2(ComplexAlign(2*mx*(my*M+M))), w2(ComplexAlign(2*mx*(my*M+M))),
