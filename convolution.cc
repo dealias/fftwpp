@@ -1250,7 +1250,8 @@ void ExplicitConvolution3::backwards(Complex *f)
   if(prune) {
     for(unsigned int i=0; i < mx; ++i)
       yBackwards->fft(f+i*nyz);
-    xBackwards->fft(f);
+    for(unsigned int j=0; j < ny; ++j)
+      xBackwards->fft(f+j*nz);
     zBackwards->fft(f);
   } else
     Backwards->fft(f);
@@ -1260,7 +1261,8 @@ void ExplicitConvolution3::forwards(Complex *f)
 {
   if(prune) {
     zForwards->fft(f);
-    xForwards->fft(f);
+    for(unsigned int j=0; j < ny; ++j)
+      xForwards->fft(f+j*nz);
     unsigned int nyz=ny*nz;
     for(unsigned int i=0; i < mx; ++i)
       yForwards->fft(f+i*nyz);
