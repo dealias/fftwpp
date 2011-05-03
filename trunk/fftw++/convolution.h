@@ -745,12 +745,12 @@ public:
     unsigned int nxy=nx*ny;
     unsigned int nyz=ny*nz;
     if(prune) {
-      xBackwards=new mfft1d(nx,1,nyz,nyz,1,f);
+      xBackwards=new mfft1d(nx,1,mz,nyz,1,f);
       yBackwards=new mfft1d(ny,1,mz,nz,1,f);
       zBackwards=new mfft1d(nz,1,nxy,1,nz,f);
       zForwards=new mfft1d(nz,-1,nxy,1,nz,f);
       yForwards=new mfft1d(ny,-1,mz,nz,1,f);
-      xForwards=new mfft1d(nx,-1,nyz,nyz,1,f);
+      xForwards=new mfft1d(nx,-1,mz,nyz,1,f);
     } else {
       Backwards=new fft3d(nx,ny,nz,1,f);
       Forwards=new fft3d(nx,ny,nz,-1,f);
