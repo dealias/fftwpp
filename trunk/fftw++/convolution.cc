@@ -377,7 +377,7 @@ void ImplicitHConvolution::mult(double *a, double **B, unsigned int offset)
     if(odd)
       a[m1]=a[m1]*B0[m1]+a1[m1]*B1[m1]+a2[m1]*B2[m1];
 #else        
-    for(unsigned int =0; k < m; ++k)
+    for(unsigned int k=0; k < m; ++k)
       a[k]=a[k]*B0[k]+a1[k]*B1[k]+a2[k]*B2[k];
 #endif        
   } else {
