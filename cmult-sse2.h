@@ -153,6 +153,11 @@ static inline void STORE(double *z, const Vec& v)
   *(Vec *) z = v;
 }
 
+static inline Vec LOAD(double z)
+{
+  return _mm_load1_pd(&z);
+}
+
 }
 
 #endif
