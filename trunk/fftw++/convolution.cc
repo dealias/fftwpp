@@ -22,10 +22,6 @@ inline unsigned int min(unsigned int a, unsigned int b)
 
 const double sqrt3=sqrt(3.0);
 const double hsqrt3=0.5*sqrt3;
-
-const Complex hSqrt3(hsqrt3,hsqrt3);
-const Complex mhsqrt3(-hsqrt3,-hsqrt3);
-const Complex mhalf(-0.5,-0.5);
 const Complex zeta3(-0.5,hsqrt3);
 
 unsigned int BuildZeta(unsigned int n, unsigned int m,
@@ -74,8 +70,7 @@ void ExplicitConvolution::convolve(Complex *f, Complex *g)
       
   double ninv=1.0/n;
 #ifdef __SSE2__      
-  const Complex ninv2(ninv,ninv);
-  Vec Ninv=LOAD(&ninv2);
+  Vec Ninv=LOAD(ninv);
   for(unsigned int k=0; k < n; ++k)
     STORE(f+k,Ninv*ZMULT(LOAD(f+k),LOAD(g+k)));
 #else    
@@ -242,8 +237,7 @@ void ImplicitConvolution::convolve(Complex **F, Complex **G,
 
   double ninv=0.5/m;
 #ifdef __SSE2__      
-  const Complex ninv2(ninv,ninv);
-  Vec Ninv=LOAD(&ninv2);
+  Vec Ninv=LOAD(ninv);
 #endif    
   for(unsigned int a=0, k=0; k < m; ++a) {
     unsigned int stop=min(k+s,m);
@@ -457,8 +451,8 @@ void ImplicitHConvolution::convolve(Complex **F, Complex **G,
     Vec Zetak;
     Vec Fmk=LOAD(&fmk);
     Vec Gmk=LOAD(&gmk);
-    Vec Mhalf=LOAD(&mhalf);
-    Vec HSqrt3=LOAD(&hSqrt3);
+    Vec Mhalf=LOAD(-0.5);
+    Vec HSqrt3=LOAD(hsqrt3);
     for(unsigned int a=0, k=1; k < c; ++a) {
       Vec Zeta=LOAD(ZetaH+a);
       Vec X=UNPACKL(Zeta,Zeta);
@@ -652,10 +646,9 @@ void ImplicitHConvolution::convolve(Complex **F, Complex **G,
   unsigned int stop=s;
   Complex *ZetaL0=ZetaL;
 #ifdef __SSE2__      
-  const Complex ninv2(ninv,ninv);
-  Vec Ninv=LOAD(&ninv2);
-  Vec Mhalf=LOAD(&mhalf);
-  Vec HSqrt3=LOAD(&hSqrt3);
+  Vec Ninv=LOAD(ninv);
+  Vec Mhalf=LOAD(-0.5);
+  Vec HSqrt3=LOAD(hsqrt3);
   for(unsigned int a=0, k=1; k < start; ++a) {
     Vec Zeta=Ninv*LOAD(ZetaH+a);
     Vec X=UNPACKL(Zeta,Zeta);
@@ -775,8 +768,7 @@ void fftpad::forwards(Complex *f, Complex *u)
 
   double ninv=0.5/m;
 #ifdef __SSE2__
-  const Complex ninv2(ninv,ninv);
-  Vec Ninv=LOAD(&ninv2);
+  Vec Ninv=LOAD(ninv);
 #endif    
   for(unsigned int a=0, k=0; k < m; ++a) {
     unsigned int stop=min(k+s,m);
@@ -825,8 +817,8 @@ void fft0pad::backwards(Complex *f, Complex *u)
     u[i]=fm1stride[i];
     
 #ifdef __SSE2__      
-  Vec Mhalf=LOAD(&mhalf);
-  Vec Mhsqrt3=LOAD(&mhsqrt3);
+  Vec Mhalf=LOAD(-0.5);
+  Vec Mhsqrt3=LOAD(-hsqrt3);
 #endif    
   unsigned int stop=s;
   Complex *ZetaL0=ZetaL;
@@ -930,10 +922,9 @@ void fft0pad::forwards(Complex *f, Complex *u)
   for(unsigned int i=0; i < M; ++i)
     umstride[i]=(umstride[i]+f[i]+u[i])*ninv;
 #ifdef __SSE2__      
-  const Complex ninv2(ninv,ninv);
-  Vec Ninv=LOAD(&ninv2);
-  Vec Mhalf=LOAD(&mhalf);
-  Vec HSqrt3=LOAD(&hSqrt3);
+  Vec Ninv=LOAD(ninv);
+  Vec Mhalf=LOAD(-0.5);
+  Vec HSqrt3=LOAD(hsqrt3);
 #endif    
   unsigned int stop=s;
   Complex *ZetaL0=ZetaL;
@@ -1043,8 +1034,7 @@ void ExplicitConvolution2::convolve(Complex *f, Complex *g)
   unsigned int n=nx*ny;
   double ninv=1.0/n;
 #ifdef __SSE2__      
-  const Complex ninv2(ninv,ninv);
-  Vec Ninv=LOAD(&ninv2);
+  Vec Ninv=LOAD(ninv);
   for(unsigned int k=0; k < n; ++k)
     STORE(f+k,Ninv*ZMULT(LOAD(f+k),LOAD(g+k)));
 #else    
@@ -1280,8 +1270,7 @@ void ExplicitConvolution3::convolve(Complex *f, Complex *g)
   unsigned int n=nx*ny*nz;
   double ninv=1.0/n;
 #ifdef __SSE2__      
-  const Complex ninv2(ninv,ninv);
-  Vec Ninv=LOAD(&ninv2);
+  Vec Ninv=LOAD(ninv);
   for(unsigned int k=0; k < n; ++k)
     STORE(f+k,Ninv*ZMULT(LOAD(f+k),LOAD(g+k)));
 #else    
@@ -1564,8 +1553,7 @@ void ImplicitHTConvolution::convolve(Complex **F, Complex **G, Complex **H,
     
   double ninv=0.25/m;
 #ifdef __SSE2__      
-  const Complex ninv2(ninv,ninv);
-  Vec Ninv=LOAD(&ninv2);
+  Vec Ninv=LOAD(ninv);
 #endif    
   for(unsigned int a=0, k=0; k < m; ++a) {
     unsigned int stop=min(k+s,m);
@@ -1672,8 +1660,7 @@ void fft0bipad::forwards(Complex *f, Complex *u)
 
   double ninv=0.25/m;
 #ifdef __SSE2__
-  const Complex ninv2(ninv,ninv);
-  Vec Ninv=LOAD(&ninv2);
+  Vec Ninv=LOAD(ninv);
 #endif    
   unsigned int twom=2*m;
   unsigned int stop=s;
