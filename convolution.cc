@@ -346,7 +346,7 @@ void ImplicitHConvolution::mult(double *a, double **B, unsigned int offset)
     for(unsigned int k=0; k < m1; k += 2)
       STORE(a+k,LOAD(a+k)*LOAD(B0+k));
     if(odd)
-      STORE(a+m1,LOAD(a+m1)*LOAD(B0+m1));
+      a[m1] *= B0[m1];
 #else        
     for(unsigned int k=0; k < m; ++k)
       a[k] *= B0[k];
@@ -359,7 +359,7 @@ void ImplicitHConvolution::mult(double *a, double **B, unsigned int offset)
     for(unsigned int k=0; k < m1; k += 2)
       STORE(a+k,LOAD(a+k)*LOAD(B0+k)+LOAD(a1+k)*LOAD(B1+k));
     if(odd)
-      STORE(a+m1,LOAD(a+m1)*LOAD(B0+m1)+LOAD(a1+m1)*LOAD(B1+m1));
+      a[m1]=a[m1]*B0[m1]+a1[m1]*B1[m1];
 #else        
     for(unsigned int k=0; k < m; ++k)
       a[k]=a[k]*B0[k]+a1[k]*B1[k];
@@ -375,10 +375,9 @@ void ImplicitHConvolution::mult(double *a, double **B, unsigned int offset)
       STORE(a+k,LOAD(a+k)*LOAD(B0+k)+LOAD(a1+k)*LOAD(B1+k)+
             LOAD(a2+k)*LOAD(B2+k));
     if(odd)
-      STORE(a+m1,LOAD(a+m1)*LOAD(B0+m1)+LOAD(a1+m1)*LOAD(B1+m1)+
-            LOAD(a2+m1)*LOAD(B2+m1));
+      a[m1]=a[m1]*B0[m1]+a1[m1]*B1[m1]+a2[m1]*B2[m1];
 #else        
-    for(unsigned int k=0; k < m; ++k)
+    for(unsigned int =0; k < m; ++k)
       a[k]=a[k]*B0[k]+a1[k]*B1[k]+a2[k]*B2[k];
 #endif        
   } else {
@@ -395,10 +394,10 @@ void ImplicitHConvolution::mult(double *a, double **B, unsigned int offset)
     }
     if(odd) {
       double *p=A+stop;
-      Vec sum=LOAD(p)*LOAD(B0+stop);
+      double sum=(*p)*B0[stop];
       for(unsigned int i=1; i < M; ++i)
-        sum += LOAD(p+i*stride)*LOAD(B[i]+stop);
-      STORE(p,sum);
+        sum += p[i*stride]*B[i][stop];
+      *p=sum;
     }
 #else        
     for(unsigned int k=offset; k <= stop; ++k) {
