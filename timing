@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # typical start/stop values:
 # 1D runs: 6 20
@@ -48,14 +48,14 @@ if [ "$1" == "tconv" ]; then
     shift=2;
     offset=3;
     divisor=4;
-    outdir=timings1b
+    outdir=timings1t
     N=$N0
 fi
 if [ "$1" == "tconv2" ]; then
     shift=2;
     offset=3;
     divisor=4;
-    outdir=timings2b
+    outdir=timings2t
     prune=yes
 fi
 if [ "$1" == "cconv3" ]; then
