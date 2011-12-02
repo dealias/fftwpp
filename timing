@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # typical start/stop values:
 # 1D runs: 6 20
@@ -8,13 +8,13 @@
 start=6
 stop=12
 
-if [ "$1" == "" ]; then
+if [ "$1" = "" ]; then
     echo Usage: $0 "["conv\|cconv\|tconv\|conv2\|cconv2\|tconv2\|cconv3"]" "["start"]" "["stop"]"
     exit
 fi
 
 N0=10000000
-if [ "$HOSTTYPE" == "x86_64-linux" ]; then
+if [ "$HOSTTYPE" = "x86_64-linux" ]; then
     N0=100000000
 fi
 
@@ -22,48 +22,48 @@ prune=no
 divisor=0;
 N=$N0
 
-if [ "$1" == "conv" ]; then
+if [ "$1" = "conv" ]; then
     shift=1;
     offset=2;
     divisor=3;
     outdir=timings1r
     N=$N0
 fi
-if [ "$1" == "conv2" ]; then
+if [ "$1" = "conv2" ]; then
     shift=1;
     offset=2;
     divisor=3;
     outdir=timings2r
     prune=yes
 fi
-if [ "$1" == "cconv" ]; then
+if [ "$1" = "cconv" ]; then
     outdir=timings1c
     N=$N0
 fi
-if [ "$1" == "cconv2" ]; then
+if [ "$1" = "cconv2" ]; then
     outdir=timings2c
     prune=yes
 fi
-if [ "$1" == "tconv" ]; then
+if [ "$1" = "tconv" ]; then
     shift=2;
     offset=3;
     divisor=4;
     outdir=timings1t
     N=$N0
 fi
-if [ "$1" == "tconv2" ]; then
+if [ "$1" = "tconv2" ]; then
     shift=2;
     offset=3;
     divisor=4;
     outdir=timings2t
     prune=yes
 fi
-if [ "$1" == "cconv3" ]; then
+if [ "$1" = "cconv3" ]; then
     outdir=timings3c
     prune=yes
 fi
 
-if [ "$outdir" == "" ]; then
+if [ "$outdir" = "" ]; then
     echo "wrong program name!"
     exit
 fi
@@ -81,8 +81,9 @@ if [ "$3" != "" ]; then
 fi
 
 echo Timing:
-for (( i=$start; i<=$stop; i++ ))
-do
+
+i=$start;
+while (test $i -le 7); do
     echo $i
     m=$(asy -c "2^$i")
     echo -e "$m \t $(./$1 -m $m -i -n $N| grep -A 1 Implicit | tail -n 1)"| cat >> $outdir/implicit
@@ -90,8 +91,8 @@ do
 	m=$(asy -c "quotient(2^($i+$shift)+$offset,$divisor)")
     fi
     echo -e "$m \t $(./$1 -m $m -e -n $N| grep -A 1 Explicit | tail -n 1)" | cat >> $outdir/explicit
-    if [ "$prune" == "yes" ]; then
+    if [ "$prune" = "yes" ]; then
 	echo -e "$m \t $(./$1 -m $m -p -n $N| grep -A 1 Pruned | tail -n 1)" | cat >> $outdir/pruned
     fi
-
+    i=$((i+1))
 done
