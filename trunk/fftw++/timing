@@ -83,7 +83,7 @@ fi
 echo Timing:
 
 i=$start;
-while (test $i -le 7); do
+while (test $i -le $stop); do
     echo $i
     m=$(asy -c "2^$i")
     echo -e "$m \t $(./$1 -m $m -i -n $N| grep -A 1 Implicit | tail -n 1)"| cat >> $outdir/implicit
