@@ -5,11 +5,12 @@
 # 2D runs: 6 13 (12 for tconv2)
 # 3D runs: 2 8 
 
-start=6
-stop=12
+start=0
+stop=0
 
 if [ "$1" = "" ]; then
     echo Usage: $0 "["conv\|cconv\|tconv\|conv2\|cconv2\|tconv2\|cconv3"]" "["start"]" "["stop"]"
+    echo start and stop values are optional.
     exit
 fi
 
@@ -28,6 +29,8 @@ if [ "$1" = "conv" ]; then
     divisor=3;
     outdir=timings1r
     N=$N0
+    start=6
+    stop=20
 fi
 if [ "$1" = "conv2" ]; then
     shift=1;
@@ -35,14 +38,20 @@ if [ "$1" = "conv2" ]; then
     divisor=3;
     outdir=timings2r
     prune=yes
+    start=6
+    stop=11
 fi
 if [ "$1" = "cconv" ]; then
     outdir=timings1c
     N=$N0
+    start=6
+    stop=20
 fi
 if [ "$1" = "cconv2" ]; then
     outdir=timings2c
     prune=yes
+    start=6
+    stop=11
 fi
 if [ "$1" = "tconv" ]; then
     shift=2;
@@ -50,6 +59,8 @@ if [ "$1" = "tconv" ]; then
     divisor=4;
     outdir=timings1t
     N=$N0
+    start=6
+    stop=20
 fi
 if [ "$1" = "tconv2" ]; then
     shift=2;
@@ -57,10 +68,14 @@ if [ "$1" = "tconv2" ]; then
     divisor=4;
     outdir=timings2t
     prune=yes
+    start=6
+    stop=12
 fi
 if [ "$1" = "cconv3" ]; then
     outdir=timings3c
     prune=yes
+    start=2
+    stop=8
 fi
 
 if [ "$outdir" = "" ]; then
@@ -72,14 +87,6 @@ cd $outdir
 rm -f explicit implicit pruned
 cd ..
 
-if [ "$2" != "" ]; then
-    start=$2
-fi
-
-if [ "$3" != "" ]; then
-    stop=$3
-fi
-
 if [ "$BASH_VERSION" = "" ]; then
     #  Ubuntu used dash, which messes up "echo -e"
     EOPTS=""
@@ -88,6 +95,20 @@ else
     EOPTS="-e"
 fi
 
+if [ "$start" = "0" ]; then
+    start=6
+fi
+if [ "$start" = "0" ]; then
+    stop=8
+fi
+
+if [ "$2" != "" ]; then
+    start=$2
+fi
+if [ "$3" != "" ]; then
+    stop=$3
+fi
+echo $start to $stop
 echo Timing:
 
 i=$start;
