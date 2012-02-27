@@ -80,19 +80,27 @@ if [ "$3" != "" ]; then
     stop=$3
 fi
 
+if [ "$BASH_VERSION" = "" ]; then
+    #  Ubuntu used dash, which messes up "echo -e"
+    EOPTS=""
+else
+    # we are using bash.
+    EOPTS="-e"
+fi
+
 echo Timing:
 
 i=$start;
 while (test $i -le $stop); do
     echo $i
     m=$(asy -c "2^$i")
-    echo -e "$m \t $(./$1 -m $m -i -n $N| grep -A 1 Implicit | tail -n 1)"| cat >> $outdir/implicit
+    echo $EOPTS "$m \t $(./$1 -m $m -i -n $N| grep -A 1 Implicit | tail -n 1)"| cat >> $outdir/implicit
     if [ "$divisor" != "0" ]; then
 	m=$(asy -c "quotient(2^($i+$shift)+$offset,$divisor)")
     fi
-    echo -e "$m \t $(./$1 -m $m -e -n $N| grep -A 1 Explicit | tail -n 1)" | cat >> $outdir/explicit
+    echo $EOPTS "$m \t $(./$1 -m $m -e -n $N| grep -A 1 Explicit | tail -n 1)" | cat >> $outdir/explicit
     if [ "$prune" = "yes" ]; then
-	echo -e "$m \t $(./$1 -m $m -p -n $N| grep -A 1 Pruned | tail -n 1)" | cat >> $outdir/pruned
+	echo $EOPTS "$m \t $(./$1 -m $m -p -n $N| grep -A 1 Pruned | tail -n 1)" | cat >> $outdir/pruned
     fi
     i=$((i+1))
 done
