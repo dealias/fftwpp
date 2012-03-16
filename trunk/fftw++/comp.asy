@@ -22,6 +22,7 @@ if(name == "conv2") dir="timings2r";
 if(name == "cconv2") dir="timings2c";
 if(name == "tconv2") dir="timings2t";
 if(name == "cconv3") dir="timings3c"; 
+if(name == "conv3") dir="timings3r"; 
 
 real d=1;
 if(find(name,"2") >= 0) d=2;
