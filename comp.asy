@@ -35,6 +35,9 @@ monoPen[0]=dashed;
 monoPen[1]=solid;
 colorPen[2]=deepgreen;
 
+string[] runnames={"serial","4 cores","4 threads"};
+//string[] runnames={"explicit","implicit","4 threads"};
+
 guide g0=scale(0.5mm)*unitcircle;
 guide g1=scale(0.6mm)*polygon(3);
 guide g2=scale(0.6mm)*polygon(4);
@@ -53,6 +56,7 @@ bool flag=true;
 int n=-1;
 int lastpos;
 
+
 while(flag) {
   
   ++n;
@@ -63,7 +67,8 @@ while(flag) {
   lastpos=pos > 0 ? pos+1 : -1;
 
   if(flag) {
-    file fin=input(run+dir+"/implicit").line();
+    string runtype=getstring("implicit or explicit");
+    file fin=input(run+dir+"/"+runtype).line();
     real[][] a=fin.dimension(0,0);
     a=transpose(a);
     // error bars:
@@ -74,16 +79,23 @@ while(flag) {
     
     errorbars(me,e,0*me,he,0*me,le,Pen(n));
     draw(graph(me,e,e > 0),Pentype(n),Label(run,Pen(n)+Lp),marks[n]);
+    //draw(graph(me,e,e > 0),Pentype(n),Label(runnames[n],Pen(n)+Lp),marks[n]);
   }
 }
 
 
 string D=d > 1 ? "^"+(string) d : "";
 
-xaxis("$m$",BottomTop,LeftTicks);
-yaxis("time/($m"+D+"\log_2 m"+D+"$) (ns)",LeftRight,RightTicks);
+xaxis("$N$",BottomTop,LeftTicks);
+yaxis("time/($N"+D+"\log_2 N"+D+"$) (ns)",LeftRight,RightTicks);
 
 legendlinelength=0.6cm;
 legendmargin=5;
 attach(legend(),point(S),26S);
+/*
+if(d ==3)
+  attach(legend(),point(E),8W+4N);
+else
+  attach(legend(),point(E),8W+8S);
 //attach(legend());
+*/

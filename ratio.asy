@@ -15,7 +15,15 @@ usersetting();
 
 if(name == "") name=getstring("program name");
 
+int P=getint("numer of cores");
+
 string dir;
+string newdir="";
+newdir=getstring("new dir");
+string newruntype=getstring("implicit or explicit");
+string olddir="";
+olddir=getstring("old dir");
+string oldruntype=getstring("implicit or explicit");
 string prunelabel="$y$-pruned";
 
 if(name == "conv") dir="timings1r";
@@ -27,23 +35,24 @@ if(name == "tconv2") dir="timings2t";
 if(name == "cconv3") {
   dir="timings3c"; prunelabel="$xz$-pruned"; legendmargin=8;
 }
-  
+if(name == "conv3") {dir="timings3r";}
+
 real d=1;
 if(find(name,"2") >= 0) d=2;
 if(find(name,"3") >= 0) d=3;
-
-file fin=input(dir+"/explicit").line();
+file fin=input(newdir+dir+"/"+newruntype).line();
 real[][] a=fin.dimension(0,0);
 a=transpose(a);
 me=a[0]; e=a[1]; le=a[2]; he=a[3];
 
-file fin=input(dir+"/implicit").line();
+file fin=input(olddir+dir+"/"+oldruntype).line();
 real[][] a=fin.dimension(0,0);
 a=transpose(a);
-mi=a[0]; i=a[1]; li=a[2]; hi=a[3];
+mi=a[0]; i=a[1]/P; li=a[2]; hi=a[3];
 
 file fin=input(dir+"/pruned",check=false).line();
 bool pruned=!error(fin);
+pruned=false;
 if(pruned) {
   real[][] a=fin.dimension(0,0);
   a=transpose(a);
@@ -66,48 +75,31 @@ pen Lp=fontsize(8pt);
 
 real[] f(real[] x) {return 1e-9*x^d*log(x^d)/log(2);}
 
- // error bars:
 e /= f(me);
 he /= f(me);
 le /= f(me);
-errorbars(me,e,0*me,he,0*me,le,Pen(0));
-draw(graph(me,e,e > 0),Pentype(0),Label("explicit",Pen(0)+Lp),mark0);
-
-if(pruned) {
-  p /= f(mp);
-  hp /= f(mp);
-  lp /= f(mp);
-  errorbars(mp,p,0*mp,hp,0*mp,lp,Pen(2));
-  draw(graph(mp,p,p > 0),Pentype(2)+Dotted,Label(prunelabel,Pen(2)+Lp),mark2);
-}
-
 i /= f(mi);
 hi /= f(mi);
 li /= f(mi);
-errorbars(mi,i,0*mi,hi,0*mi,li,Pen(1));
-draw(graph(mi,i,i > 0),Pentype(1),Label("implicit",Pen(1)+Lp),mark1);
 
-// fitting information; requires running rfit under R.
-real[] f;
-file fin=input(dir+"/implicit.p",check=false).line();
-if(!error(fin)) {
-  real[][] A=fin.dimension(0,0);
-  real fcurve(real m) {
-    real val=A[0][0]*m*log(m) +A[1][0]*m + A[2][0]*log(m) + A[3][0];
-    return val;
+real ratio[];
+real mratio[];
+for(int a=0; a < i.length; ++a) {
+  for(int b=0; b < e.length; ++b) {
+    if(mi[a]==me[b]) {
+      ratio.push(i[a]/e[b]);
+      mratio.push(mi[a]);
+    }
   }
-
-  for(int i=0; i < mi.length; ++i)
-    f[i]=fcurve(mi[i]);
-  // real a=min(me), b = max(me);
-  // draw(graph(fcurve,a,b),Pen(1)+dashed);
-  draw(graph(mi,f,f > 0),Pen(1)+dashed);
 }
 
-string D=d > 1 ? "^"+(string) d : "";
+write(ratio*P);
+draw(graph(mratio,ratio),Pentype(0),mark0);
 
-xaxis("$N$",BottomTop,LeftTicks);
-yaxis("time/($N"+D+"\log_2 N"+D+"$) (ns)",LeftRight,RightTicks);
+
+
+xaxis("$m$",BottomTop,LeftTicks);
+yaxis("new/("+(string)P+"$\times$old)",LeftRight,RightTicks);
 
 legendlinelength=0.6cm;
 legendmargin=5;
