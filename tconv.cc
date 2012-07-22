@@ -1,6 +1,7 @@
 #include "Complex.h"
 #include "convolution.h"
 #include "utils.h"
+#include <unistd.h>
 
 using namespace std;
 using namespace fftwpp;
