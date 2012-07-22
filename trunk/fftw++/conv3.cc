@@ -2,6 +2,8 @@
 #include "convolution.h"
 #include "utils.h"
 #include "Array.h"
+#include <unistd.h>
+
 
 using namespace std;
 using namespace Array;
