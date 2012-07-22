@@ -114,7 +114,7 @@ echo Timing:
 i=$start;
 while (test $i -le $stop); do
     echo $i
-    m=$(asy -c "2^$i")
+    m=$( echo 2^$i | bc)
     echo $EOPTS "$m \t $(./$1 -m $m -i -n $N| grep -A 1 Implicit | tail -n 1)"| cat >> $outdir/implicit
     if [ "$divisor" != "0" ]; then
 	m=$(asy -c "quotient(2^($i+$shift)+$offset,$divisor)")
