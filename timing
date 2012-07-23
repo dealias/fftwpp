@@ -117,7 +117,7 @@ while (test $i -le $stop); do
     m=$( echo 2^$i | bc)
     echo $EOPTS "$m \t $(./$1 -m $m -i -n $N| grep -A 1 Implicit | tail -n 1)"| cat >> $outdir/implicit
     if [ "$divisor" != "0" ]; then
-	m=$(asy -c "quotient(2^($i+$shift)+$offset,$divisor)")
+ 	m=$( echo \(2^\($i+$shift\)+$offset\)/$divisor | bc)
     fi
     echo $EOPTS "$m \t $(./$1 -m $m -e -n $N| grep -A 1 Explicit | tail -n 1)" | cat >> $outdir/explicit
     if [ "$prune" = "yes" ]; then

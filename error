@@ -45,7 +45,7 @@ while (test $i -le $stop); do
     m=$( echo 2^$i | bc)
     echo -e "$m \t $(nice -n 19 ./$1 -i -N1 -t -m $m | grep error | sed s/error=//)"| cat >> $outdir/error.implicit
     if [ "$divisor" != "0" ]; then
-	m=$(asy -c "quotient(2^($i+$shift)+$offset,$divisor)")
+	m=$( echo \(2^\($i+$shift\)+$offset\)/$divisor | bc)
     fi
     echo -e "$m \t $(nice -n 19 ./$1 -e -N1 -t -m $m | grep error | sed s/error=//)" | cat >> $outdir/error.explicit
     i=$((i+1))
