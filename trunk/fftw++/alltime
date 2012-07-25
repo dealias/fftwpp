@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# run timing script on all cases.
+# usage: ./alltime
+
+start=6
+stop=20
+for i in cconv conv tconv 
+do
+    echo $i:
+    ./timing $i $start $stop
+done
+
+start=6
+stop=11
+for i in cconv2 conv2 tconv2
+do
+    echo $i:
+    ./timing $i  $start $stop
+done
+
+start=2
+stop=8
+
+echo cconv3
+./timing cconv3 $start $stop
+echo conv3
+./timing conv3 $start $stop yes no
