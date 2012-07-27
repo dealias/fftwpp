@@ -222,7 +222,7 @@ public:
     init();
   }
     
-  ~ImplicitHConvolution() {
+  virtual ~ImplicitHConvolution() {
     delete [] U;
     
     if(allocated) {
