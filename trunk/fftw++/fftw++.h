@@ -500,8 +500,8 @@ public:
   {Setup(in,out);} 
   
   fftw_plan Plan(Complex *in, Complex *out) {
-    int n[1]={nx};
-    return fftw_plan_many_dft(1,n,M,
+    int n=(int) nx;
+    return fftw_plan_many_dft(1,&n,M,
                               (fftw_complex *) in,NULL,stride,dist,
                               (fftw_complex *) out,NULL,stride,dist,
                               sign,effort);
@@ -648,8 +648,8 @@ public:
       stride(stride), dist(Dist(nx,stride,dist)) {Setup(in,out);} 
   
   fftw_plan Plan(Complex *in, Complex *out) {
-    const int n[1]={nx};
-    return fftw_plan_many_dft_r2c(1,n,M,
+    int n=(int) nx;
+    return fftw_plan_many_dft_r2c(1,&n,M,
                                   (double *) in,NULL,stride,2*dist,
                                   (fftw_complex *) out,NULL,stride,dist,
                                   effort);
@@ -699,8 +699,8 @@ public:
       nx(nx), M(M), stride(stride), dist(Dist(nx,stride,dist)) {Setup(in,out);}
   
   fftw_plan Plan(Complex *in, Complex *out) {
-    const int n[1]={nx};
-    return fftw_plan_many_dft_c2r(1,n,M,
+    int n=(int) nx;
+    return fftw_plan_many_dft_c2r(1,&n,M,
                                   (fftw_complex *) in,NULL,stride,dist,
                                   (double *) out,NULL,stride,2*dist,
                                   effort);
