@@ -9,8 +9,9 @@ start=0
 stop=0
 
 if [ "$1" = "" ]; then
-    echo Usage: $0 "["conv\|cconv\|tconv\|conv2\|cconv2\|tconv2\|cconv3"]" "["start"]" "["stop"]"
+    echo Usage: $0 "["conv\|cconv\|tconv\|conv2\|cconv2\|tconv2\|cconv3\|conv3"]" "["start"]" "["stop"]" "["implicit: yes/no"]" "["explicit: yes/no"]"
     echo start and stop values are optional.
+    echo yes and no arguments are optional
     exit
 fi
 
@@ -19,7 +20,19 @@ if [ "$HOSTTYPE" = "x86_64-linux" ]; then
     N0=100000000
 fi
 
-prune=no
+if [ -z "$4" ]; then
+    implicit=yes
+else
+    implicit=$4
+fi
+if [ -z "$5" ]; then
+    explicit=yes
+else
+    explicit=$5
+fi
+echo implicit=$implicit
+echo explicit=$explicit
+
 divisor=0;
 N=$N0
 
@@ -38,8 +51,8 @@ if [ "$1" = "conv2" ]; then
     divisor=3;
     outdir=timings2r
     prune=yes
-    start=6
-    stop=11
+    start=8
+    stop=13
 fi
 if [ "$1" = "cconv" ]; then
     outdir=timings1c
@@ -50,8 +63,8 @@ fi
 if [ "$1" = "cconv2" ]; then
     outdir=timings2c
     prune=yes
-    start=6
-    stop=11
+    start=8
+    stop=13
 fi
 if [ "$1" = "tconv" ]; then
     shift=2;
@@ -68,12 +81,19 @@ if [ "$1" = "tconv2" ]; then
     divisor=4;
     outdir=timings2t
     prune=yes
-    start=6
+    start=8
     stop=12
 fi
 if [ "$1" = "cconv3" ]; then
     outdir=timings3c
     prune=yes
+    start=2
+    stop=8
+fi
+if [ "$1" = "conv3" ]; then
+    outdir=timings3r
+    prune=no
+    explicit=no
     start=2
     stop=8
 fi
@@ -84,7 +104,12 @@ if [ "$outdir" = "" ]; then
 fi
 mkdir -p $outdir
 cd $outdir
-rm -f explicit implicit pruned
+if [ "$explicit" = "yes" ]; then
+    rm -f explicit pruned
+fi
+if [ "$implicit" = "yes" ]; then
+    rm -f implicit
+fi
 cd ..
 
 if [ "$BASH_VERSION" = "" ]; then
@@ -115,13 +140,24 @@ i=$start;
 while (test $i -le $stop); do
     echo $i
     m=$( echo 2^$i | bc)
-    echo $EOPTS "$m \t $(./$1 -m $m -i -n $N| grep -A 1 Implicit | tail -n 1)"| cat >> $outdir/implicit
+    if [ "$implicit" = "yes" ]; then
+	#echo implicit
+	output="$m \t $(./$1 -m $m -i -n $N| grep -A 1 Implicit | tail -n 1)"
+	echo $EOPTS $output | cat >> $outdir/implicit
+    fi
+
     if [ "$divisor" != "0" ]; then
  	m=$( echo \(2^\($i+$shift\)+$offset\)/$divisor | bc)
     fi
-    echo $EOPTS "$m \t $(./$1 -m $m -e -n $N| grep -A 1 Explicit | tail -n 1)" | cat >> $outdir/explicit
-    if [ "$prune" = "yes" ]; then
-	echo $EOPTS "$m \t $(./$1 -m $m -p -n $N| grep -A 1 Pruned | tail -n 1)" | cat >> $outdir/pruned
+    if [ "$explicit" = "yes" ]; then
+	#echo explicit
+	output="$m \t $(./$1 -m $m -e -n $N| grep -A 1 Explicit | tail -n 1)"
+	echo $EOPTS $output | cat >> $outdir/explicit
+	if [ "$prune" = "yes" ]; then
+	    #echo prune
+	    output="$m \t $(./$1 -m $m -p -n $N| grep -A 1 Pruned | tail -n 1)"
+	    echo $EOPTS $output | cat >> $outdir/pruned
+	fi
     fi
     i=$((i+1))
 done
