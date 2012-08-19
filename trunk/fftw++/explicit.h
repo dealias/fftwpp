@@ -1,0 +1,419 @@
+namespace fftwpp {
+
+#ifndef __explicit_h__
+#define __explicit_h__ 1
+
+// Out-of-place direct 1D complex convolution.
+class DirectConvolution {
+protected:
+  unsigned int m;
+public:  
+  DirectConvolution(unsigned int m) : m(m) {}
+  
+  void convolve(Complex *h, Complex *f, Complex *g);
+};
+
+// Out-of-place direct 1D Hermitian convolution.
+class DirectHConvolution {
+protected:
+  unsigned int m;
+public:  
+  DirectHConvolution(unsigned int m) : m(m) {}
+  
+// Compute h= f (*) g via direct convolution, where f and g contain the m
+// non-negative Fourier components of real functions (contents
+// preserved). The output of m complex values is returned in the array h,
+// which must be distinct from f and g.
+  void convolve(Complex *h, Complex *f, Complex *g);
+};
+
+// Out-of-place direct 2D complex convolution.
+class DirectConvolution2 {
+protected:  
+  unsigned int mx,my;
+public:
+  DirectConvolution2(unsigned int mx, unsigned int my) : mx(mx), my(my) {}
+  
+  void convolve(Complex *h, Complex *f, Complex *g);
+};
+
+// Out-of-place direct 2D Hermitian convolution.
+class DirectHConvolution2 {
+protected:  
+  unsigned int mx,my;
+public:
+  DirectHConvolution2(unsigned int mx, unsigned int my) : mx(mx), my(my) {}
+  
+  void convolve(Complex *h, Complex *f, Complex *g, bool symmetrize=true);
+};
+
+// Out-of-place direct 3D complex convolution.
+class DirectConvolution3 {
+protected:  
+  unsigned int mx,my,mz;
+  unsigned int myz;
+public:
+  DirectConvolution3(unsigned int mx, unsigned int my, unsigned int mz) : 
+    mx(mx), my(my), mz(mz), myz(my*mz) {}
+  
+  void convolve(Complex *h, Complex *f, Complex *g);
+};
+
+// Out-of-place direct 3D Hermitian convolution.
+class DirectHConvolution3 {
+protected:  
+  unsigned int mx,my,mz;
+public:
+  DirectHConvolution3(unsigned int mx, unsigned int my, unsigned int mz) : 
+    mx(mx), my(my), mz(mz) {}
+  
+  void convolve(Complex *h, Complex *f, Complex *g, bool symmetrize=true);
+};
+
+// Out-of-place direct 1D Hermitian ternary convolution.
+class DirectHTConvolution {
+protected:  
+  unsigned int m;
+public:
+  DirectHTConvolution(unsigned int m) : m(m) {}
+  
+  void convolve(Complex *h, Complex *e, Complex *f, Complex *g);
+};
+
+// Out-of-place direct 2D Hermitian ternary convolution.
+class DirectHTConvolution2 {
+protected:  
+  unsigned int mx,my;
+public:
+  DirectHTConvolution2(unsigned int mx, unsigned int my) : mx(mx), my(my)
+  {}
+  
+  void convolve(Complex *h, Complex *e, Complex *f, Complex *g,
+                bool symmetrize=true);
+};
+
+// In-place explicitly dealiased 1D complex convolution.
+class ExplicitConvolution : public ThreadBase {
+protected:
+  unsigned int n,m;
+  fft1d *Backwards,*Forwards;
+public:  
+  
+  // u is a temporary array of size n.
+  ExplicitConvolution(unsigned int n, unsigned int m, Complex *u) :
+    n(n), m(m) {
+    Backwards=new fft1d(n,1,u);
+    Forwards=new fft1d(n,-1,u);
+
+    threads=Forwards->Threads();
+  }
+  
+  ~ExplicitConvolution() {
+    delete Forwards;
+    delete Backwards;
+  }    
+  
+  void pad(Complex *f);
+  void backwards(Complex *f);
+  void forwards(Complex *f);
+  
+  // Compute f (*) g. The distinct input arrays f and g are each of size n 
+  // (contents not preserved). The output is returned in f.
+  void convolve(Complex *f, Complex *g);
+};
+
+// In-place explicitly dealiased 1D Hermitian convolution.
+class ExplicitHConvolution {
+protected:
+  unsigned int n,m;
+  rcfft1d *rc;
+  crfft1d *cr;
+  unsigned int threads;
+public:
+  // u is a temporary array of size n.
+  ExplicitHConvolution(unsigned int n, unsigned int m, Complex *u) :
+    n(n), m(m) {
+    rc=new rcfft1d(n,u);
+    cr=new crfft1d(n,u);
+
+    threads=cr->Threads();
+  }
+  
+  ~ExplicitHConvolution() {
+    delete cr;
+    delete rc;
+  }
+    
+  void pad(Complex *f);
+  void backwards(Complex *f);
+  void forwards(Complex *f);
+  
+// Compute f (*) g, where f and g contain the m non-negative Fourier
+// components of real functions. Dealiasing is internally implemented via
+// explicit zero-padding to size n >= 3*m.
+//
+// The (distinct) input arrays f and g must each be allocated to size n/2+1
+// (contents not preserved). The output is returned in the first m elements
+// of f.
+  void convolve(Complex *f, Complex *g);
+};
+
+// In-place explicitly dealiased 2D complex convolution.
+class ExplicitConvolution2 : public ThreadBase {
+protected:
+  unsigned int nx,ny;
+  unsigned int mx,my;
+  bool prune; // Skip Fourier transforming rows containing all zeroes?
+  mfft1d *xBackwards, *xForwards;
+  mfft1d *yBackwards, *yForwards;
+  fft2d *Backwards, *Forwards;
+public:
+  ExplicitConvolution2(unsigned int nx, unsigned int ny,
+                       unsigned int mx, unsigned int my,
+                       Complex *f, bool prune=false) :
+    nx(nx), ny(ny), mx(mx), my(my), prune(prune) {
+    if(prune) {
+      xBackwards=new mfft1d(nx,1,my,ny,1,f);
+      yBackwards=new mfft1d(ny,1,nx,1,ny,f);
+      yForwards=new mfft1d(ny,-1,nx,1,ny,f);
+      xForwards=new mfft1d(nx,-1,my,ny,1,f);
+      threads=xForwards->Threads();
+    } else {
+      Backwards=new fft2d(nx,ny,1,f);
+      Forwards=new fft2d(nx,ny,-1,f);
+      threads=Forwards->Threads();
+    }
+  }
+  
+  ~ExplicitConvolution2() {
+    if(prune) {
+      delete xForwards;
+      delete yForwards;
+      delete yBackwards;
+      delete xBackwards;
+    } else {
+      delete Forwards;
+      delete Backwards;
+    }
+  }    
+  
+  void pad(Complex *f);
+  void backwards(Complex *f);
+  void forwards(Complex *f);
+  void convolve(Complex *f, Complex *g);
+};
+
+// In-place explicitly dealiased 2D Hermitian convolution.
+class ExplicitHConvolution2 : public ThreadBase {
+protected:
+  unsigned int nx,ny;
+  unsigned int mx,my;
+  bool prune; // Skip Fourier transforming rows containing all zeroes?
+  mfft1d *xBackwards;
+  mfft1d *xForwards;
+  mcrfft1d *yBackwards;
+  mrcfft1d *yForwards;
+  crfft2d *Backwards;
+  rcfft2d *Forwards;
+  
+  unsigned int s;
+  Complex *ZetaH,*ZetaL;
+public:  
+  ExplicitHConvolution2(unsigned int nx, unsigned int ny, 
+                        unsigned int mx, unsigned int my, Complex *f,
+                        bool pruned=false) :
+    nx(nx), ny(ny), mx(mx), my(my), prune(pruned) {
+    threads=fftw::maxthreads;
+    unsigned int nyp=ny/2+1;
+    // Odd nx requires interleaving of shift with x and y transforms.
+    unsigned int My=my;
+    if(nx % 2) {
+      if(!prune) My=nyp;
+      prune=true;
+      s=BuildZeta(2*nx,nx,ZetaH,ZetaL);
+    }
+
+    if(prune) {
+      xBackwards=new mfft1d(nx,1,My,nyp,1,f);
+      yBackwards=new mcrfft1d(ny,nx,1,nyp,f);
+      yForwards=new mrcfft1d(ny,nx,1,nyp,f);
+      xForwards=new mfft1d(nx,-1,My,nyp,1,f);
+    } else {
+      Backwards=new crfft2d(nx,ny,f);
+      Forwards=new rcfft2d(nx,ny,f);
+    }
+  }
+  
+  ~ExplicitHConvolution2() {
+    if(prune) {
+      delete xForwards;
+      delete yForwards;
+      delete yBackwards;
+      delete xBackwards;
+    } else {
+      delete Forwards;
+      delete Backwards;
+    }
+  }    
+  
+  void pad(Complex *f);
+  void backwards(Complex *f, bool shift=true);
+  void forwards(Complex *f);
+  void convolve(Complex *f, Complex *g, bool symmetrize=true);
+};
+
+// In-place explicitly dealiased 3D complex convolution.
+class ExplicitConvolution3 {
+protected:
+  unsigned int nx,ny,nz;
+  unsigned int mx,my,mz;
+  bool prune; // Skip Fourier transforming rows containing all zeroes?
+  mfft1d *xBackwards, *xForwards;
+  mfft1d *yBackwards, *yForwards;
+  mfft1d *zBackwards, *zForwards;
+  fft3d *Backwards, *Forwards;
+  unsigned int threads;
+public:
+  ExplicitConvolution3(unsigned int nx, unsigned int ny, unsigned int nz,
+                       unsigned int mx, unsigned int my, unsigned int mz,
+                       Complex *f, bool prune=false) :
+    nx(nx), ny(ny), nz(nz), mx(mx), my(my), mz(mz), prune(prune) {
+    threads=fftw::maxthreads;
+    unsigned int nxy=nx*ny;
+    unsigned int nyz=ny*nz;
+    if(prune) {
+      xBackwards=new mfft1d(nx,1,mz,nyz,1,f);
+      yBackwards=new mfft1d(ny,1,mz,nz,1,f);
+      zBackwards=new mfft1d(nz,1,nxy,1,nz,f);
+      zForwards=new mfft1d(nz,-1,nxy,1,nz,f);
+      yForwards=new mfft1d(ny,-1,mz,nz,1,f);
+      xForwards=new mfft1d(nx,-1,mz,nyz,1,f);
+    } else {
+      Backwards=new fft3d(nx,ny,nz,1,f);
+      Forwards=new fft3d(nx,ny,nz,-1,f);
+    }
+  }
+  
+  ~ExplicitConvolution3() {
+    if(prune) {
+      delete xForwards;
+      delete yForwards;
+      delete zForwards;
+      delete zBackwards;
+      delete yBackwards;
+      delete xBackwards;
+    } else {
+      delete Forwards;
+      delete Backwards;
+    }
+  }    
+  
+  void pad(Complex *f);
+  void backwards(Complex *f);
+  void forwards(Complex *f);
+  void convolve(Complex *f, Complex *g);
+};
+
+// In-place explicitly dealiased Hermitian ternary convolution.
+class ExplicitHTConvolution {
+protected:
+  unsigned int n;
+  unsigned int m;
+  rcfft1d *rc;
+  crfft1d *cr;
+  unsigned int threads;
+public:
+  // u is a temporary array of size n.
+  ExplicitHTConvolution(unsigned int n, unsigned int m, Complex *u) :
+    n(n), m(m) {
+    rc=new rcfft1d(n,u);
+    cr=new crfft1d(n,u);
+
+    threads=cr->Threads();
+  }
+  
+  ~ExplicitHTConvolution() {
+    delete cr;
+    delete rc;
+  }
+    
+  void pad(Complex *f);
+  void backwards(Complex *f);
+  void forwards(Complex *f);
+  
+// Compute the ternary convolution of f, and g, and h, where f, and g, and h
+// contain the m non-negative Fourier components of real
+// functions. Dealiasing is internally implemented via explicit
+// zero-padding to size n >= 3*m. The (distinct) input arrays f, g, and h
+// must each be allocated to size n/2+1 (contents not preserved).
+// The output is returned in the first m elements of f.
+  void convolve(Complex *f, Complex *g, Complex *h);
+};
+
+// In-place explicitly dealiased 2D Hermitian ternary convolution.
+class ExplicitHTConvolution2 {
+protected:
+  unsigned int nx,ny;
+  unsigned int mx,my;
+  bool prune; // Skip Fourier transforming rows containing all zeroes?
+  mfft1d *xBackwards;
+  mfft1d *xForwards;
+  mcrfft1d *yBackwards;
+  mrcfft1d *yForwards;
+  crfft2d *Backwards;
+  rcfft2d *Forwards;
+  unsigned int s;
+  Complex *ZetaH,*ZetaL;
+  unsigned int threads;
+
+public:  
+  ExplicitHTConvolution2(unsigned int nx, unsigned int ny, 
+                         unsigned int mx, unsigned int my, Complex *f,
+                         bool pruned=false) :
+    nx(nx), ny(ny), mx(mx), my(my), prune(pruned) {
+    unsigned int nyp=ny/2+1;
+    // Odd nx requires interleaving of shift with x and y transforms.
+    unsigned int My=my;
+    if(nx % 2) {
+      if(!prune) My=nyp;
+      prune=true;
+      s=BuildZeta(2*nx,nx,ZetaH,ZetaL);
+    }
+    
+    if(prune) {
+      xBackwards=new mfft1d(nx,1,My,nyp,1,f);
+      yBackwards=new mcrfft1d(ny,nx,1,nyp,f);
+      yForwards=new mrcfft1d(ny,nx,1,nyp,f);
+      xForwards=new mfft1d(nx,-1,My,nyp,1,f);
+      threads=xForwards->Threads();
+    } else {
+      Backwards=new crfft2d(nx,ny,f);
+      Forwards=new rcfft2d(nx,ny,f);
+      threads=Forwards->Threads();
+    }
+  }
+  
+  ~ExplicitHTConvolution2() {
+    if(prune) {
+      delete xForwards;
+      delete yForwards;
+      delete yBackwards;
+      delete xBackwards;
+    } else {
+      delete Forwards;
+      delete Backwards;
+    }
+  }    
+  
+  void pad(Complex *f);
+  void backwards(Complex *f, bool shift=true);
+  void forwards(Complex *f, bool shift=true);
+  void convolve(Complex *f, Complex *g, Complex *h, bool symmetrize=true);
+};
+
+
+
+#endif
+
+}
+

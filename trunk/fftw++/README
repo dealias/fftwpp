@@ -1,5 +1,5 @@
         FFTW++: Fast Fourier Transform C++ Header Class for FFTW3 Library
-           Copyright (C) 2004-10 John C. Bowman, University of Alberta
+  Copyright (C) 2004-12 John C. Bowman and Malcolm Roberts, University of Alberta
                     http://fftwpp.sourceforge.net
 
 FFTW++ is a C++ header class for Version 3 of the highly optimized FFTW
@@ -12,11 +12,11 @@ the FFTW3 library itself, both in-place and out-of-place transforms of
 arbitrary size are supported. 
 
 Implicit dealiasing of standard and centered Hermitian convolutions is
-also implemented; in 2D and 3D implicit zero-padding substantially reduces
-memory usage and computation time.  For more information, see the
-manuscript "Efficient Dealiased Convolutions without Padding",
-by John C. Bowman and Malcolm Roberts, to appear in the SIAM Journal on
-Scientific Computing, 2011:
+also implemented; in 2D and 3D implicit zero-padding substantially
+reduces memory usage and computation time.  For more information, see
+the manuscript "Efficient Dealiased Convolutions without Padding", by
+John C. Bowman and Malcolm Roberts, SIAM Journal on Scientific
+Computing, 33:1, 386-406 (2011):
 
 http://www.math.ualberta.ca/~bowman/publications/dealias.pdf
 
@@ -25,20 +25,20 @@ center of the domain are provided for centered complex-to-real transforms
 in 2D and 3D; see fftw++.h for details.
 
 FFTW++ can also exploit the high-performance Array class available at
-http://www.math.ualberta.ca/~bowman/Array (version 1.44 or higher),
-designed for scientific computing. The arrays in that package do memory
-bounds checking in debugging mode, but can be optimized by specifying the
--DNDEBUG compilation option (1D arrays optimize completely to pointer
-operations).
+http://www.math.ualberta.ca/~bowman/Array (version 1.45 or higher),
+designed for scientific computing. The arrays in that package do
+memory bounds checking in debugging mode, but can be optimized by
+specifying the -DNDEBUG compilation option (1D arrays optimize
+completely to pointer operations).
 
-Detailed documentation is provided before each class in the fftw++.h header
-file. The included examples illustrate how easy it is to use FFTW in C++
-with the FFTW++ header class. Use of the Array class is optional, but
-encouraged. If for some reason the Array class is not used, memory should
-be allocated with ComplexAlign (or doubleAlign) to ensure that the data is
-optimally aligned to sizeof(Complex), to enable the SIMD extensions.
-The optional alignment check in fftw++.h can be disabled with the
--DNO_CHECK_ALIGN compiler option.
+Detailed documentation is provided before each class in the fftw++.h
+header file. The included examples illustrate how easy it is to use
+FFTW in C++ with the FFTW++ header class. Use of the Array class is
+optional, but encouraged. If for some reason the Array class is not
+used, memory should be allocated with ComplexAlign (or doubleAlign) to
+ensure that the data is optimally aligned to sizeof(Complex), to
+enable the SIMD extensions.  The optional alignment check in fftw++.h
+can be disabled with the -DNO_CHECK_ALIGN compiler option.
 
 1D examples using ComplexAlign allocator:
 example0.cc
@@ -56,28 +56,31 @@ example2r.cc
 example3.cc
 example3r.cc
 
-1D complex implicitly dealiased convolution test:
+1D example of implicitly dealiased convolutions:
+exampleconv.cc
+
+1D complex convolution test:
 cconv.cc
 
-1D Hermitian implicitly dealiased convolution test:
+1D Hermitian convolution test:
 conv.cc
 
-1D Hermitian implicitly dealiased ternary convolution test:
+1D Hermitian ternary convolution test:
 tconv.cc
 
-2D complex implicitly dealiased convolution test:
+2D complex convolution test:
 cconv2.cc
 
-2D Hermitian implicitly dealiased convolution test:
+2D Hermitian convolution test:
 conv2.cc
 
-2D Hermitian implicitly dealiased ternary convolution test:
+2D Hermitian ternary convolution test:
 tconv2.cc
 
-3D complex implicitly dealiased convolution test:
+3D complex convolution test:
 cconv3.cc
 
-3D Hermitian implicitly dealiased convolution test:
+3D Hermitian convolution test:
 conv3.cc
 
 The latest developmental source code of fftw++ is available via Subversion:

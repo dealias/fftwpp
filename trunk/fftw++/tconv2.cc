@@ -1,5 +1,6 @@
 #include "Complex.h"
 #include "convolution.h"
+#include "explicit.h"
 #include "utils.h"
 #include "Array.h"
 #include <unistd.h>
@@ -7,13 +8,6 @@
 using namespace std;
 using namespace Array;
 using namespace fftwpp;
-
-// g++ -g -O3 -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse conv2.cc fftw++.cc -lfftw3 -march=native
-
-// icpc -O3 -ansi-alias -malign-double -fp-model fast=2 conv2.cc fftw++.cc -lfftw3
-
-// FFTW: 
-// configure --enable-sse2 CC=icpc CFLAGS="-O3 -ansi-alias -malign-double -fp-model fast=2"
 
 // Number of iterations.
 unsigned int N0=10000000;
@@ -66,6 +60,8 @@ unsigned int padding(unsigned int m)
 
 int main(int argc, char* argv[])
 {
+  fftw::maxthreads=get_max_threads();
+
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
@@ -82,7 +78,6 @@ int main(int argc, char* argv[])
         break;
       case 'd':
         Direct=true;
-        Implicit=false;
         break;
       case 'e':
         Explicit=true;
@@ -91,7 +86,6 @@ int main(int argc, char* argv[])
         break;
       case 'i':
         Implicit=true;
-        Direct=false;
         Explicit=false;
         break;
       case 'p':
@@ -136,6 +130,8 @@ int main(int argc, char* argv[])
   cout << "N=" << N << endl;
     
   size_t align=sizeof(Complex);
+  array2<Complex> h0;
+  if(Direct) h0.Allocate(mx,my,align);
   nxp=Explicit ? nx : (Implicit ? 2*mx : 2*mx-1);
   nyp=Explicit ? ny/2+1 : (Implicit ? my+1 : my);
   unsigned int nxp0=Implicit ? nxp*M : nxp;
@@ -168,6 +164,12 @@ int main(int argc, char* argv[])
     
     timings("Implicit",T,N);
     
+    if(Direct) {
+      for(unsigned int i=0; i < mx; i++) 
+        for(unsigned int j=0; j < my; j++)
+	  h0[i][j]=e[i][j];
+    }
+
     if(nxp*my < outlimit)
       for(unsigned int i=0; i < 2*mx-1; i++) {
         for(unsigned int j=0; j < my; j++)
@@ -175,6 +177,10 @@ int main(int argc, char* argv[])
         cout << endl;
       } else cout << e[1][0] << endl;
     cout << endl;
+    
+    delete [] G;
+    delete [] F;
+    delete [] E;
   }
   
   if(Explicit) {
@@ -188,6 +194,12 @@ int main(int argc, char* argv[])
     
     timings(Pruned ? "Pruned" : "Explicit",T,N);
 
+    if(Direct) {
+      for(unsigned int i=0; i < mx; i++) 
+        for(unsigned int j=0; j < my; j++)
+	  h0[i][j]=e[i][j];
+    }
+
     unsigned int offset=nx/2-mx+1;
     if(2*(mx-1)*my < outlimit) 
       for(unsigned int i=offset; i < offset+2*mx-1; i++) {
@@ -198,7 +210,7 @@ int main(int argc, char* argv[])
   }
   
   if(Direct) {
-    Explicit=0;
+    Explicit=false;
     unsigned int nxp=2*mx-1;
     Array2<Complex> h(nxp,my,0,0,align);
     Array2<Complex> e(nxp,my,0,0,align);
@@ -218,7 +230,25 @@ int main(int argc, char* argv[])
           cout << h[i][j] << "\t";
         cout << endl;
       } else cout << h[0][0] << endl;
+
+    if(Implicit) { // compare implicit version with direct verion:
+      double error=0.0;
+      cout << endl;
+      double norm=0.0;
+      for(unsigned int i=0; i < mx; i++) {
+        for(unsigned int j=0; j < my; j++) {
+	  error += abs2(h0[i][j]-h[i][j]);
+	  norm += abs2(h[i][j]);
+	}
+      }
+      error=sqrt(error/norm);
+      cout << "error=" << error << endl;
+      if (error > 1e-12) cerr << "Caution! error=" << error << endl;
+    }
+
   }
   
   delete [] T;
+
+  return 0;
 }

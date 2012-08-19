@@ -1,19 +1,13 @@
 #include "Complex.h"
 #include "convolution.h"
+#include "explicit.h"
 #include "utils.h"
 #include "Array.h"
-#include <unistd.h>
+#include <omp.h>
 
 using namespace std;
 using namespace Array;
 using namespace fftwpp;
-
-// g++ -g -O3 -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse cconv2.cc fftw++.cc -lfftw3 -march=native
-
-// icpc -O3 -ansi-alias -malign-double -fp-model fast=2 cconv2.cc fftw++.cc -lfftw3
-
-// FFTW: 
-// configure --enable-sse2 CC=icpc CFLAGS="-O3 -ansi-alias -malign-double -fp-model fast=2"
 
 // Number of iterations.
 unsigned int N0=10000000;
@@ -69,6 +63,8 @@ void add(Complex *f, Complex *F)
 
 int main(int argc, char* argv[])
 {
+  fftw::maxthreads=get_max_threads();
+
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
@@ -139,6 +135,8 @@ int main(int argc, char* argv[])
   cout << "N=" << N << endl;
   
   size_t align=sizeof(Complex);
+  array2<Complex> h0;
+  if(Direct) h0.Allocate(mx,my,align);
   int nxp=Explicit ? nx : mx;
   int nyp=Explicit ? ny : my;
   if(Implicit) nxp *= M;
@@ -148,6 +146,11 @@ int main(int argc, char* argv[])
   double *T=new double[N];
 
   if(Implicit) {
+    // NB: if openmp is present, the convolution may use get_max_threads()
+    // so it needs to know the max number of threads in order to allocate
+    // sub-convolutions.
+
+
     ImplicitConvolution2 C(mx,my,M);
     unsigned int mxy=mx*my;
     Complex **F=new Complex *[M];
@@ -167,12 +170,18 @@ int main(int argc, char* argv[])
     
     timings("Implicit",T,N);
 
+    if(Direct) {
+      for(unsigned int i=0; i < mx; i++) 
+        for(unsigned int j=0; j < my; j++)
+	  h0[i][j]=f[i][j];
+    }
+    
     if(mx*my < outlimit) 
       for(unsigned int i=0; i < mx; i++) {
         for(unsigned int j=0; j < my; j++)
           cout << f[i][j] << "\t";
         cout << endl;
-      } else cout << f[0][0] << endl;
+      } else cout << f[1][1] << endl;
     cout << endl;
     
     delete [] G;
@@ -189,6 +198,13 @@ int main(int argc, char* argv[])
     }
 
     timings(Pruned ? "Pruned" : "Explicit",T,N);
+
+    if(Direct) {
+      for(unsigned int i=0; i < mx; i++)
+        for(unsigned int j=0; j < my; j++)
+	  h0[i][j]=f[i][j];
+    }
+  
 
     if(mx*my < outlimit) 
       for(unsigned int i=0; i < mx; i++) {
@@ -209,15 +225,33 @@ int main(int argc, char* argv[])
     T[0]=seconds();
   
     timings("Direct",T,1);
-
+    
     if(mx*my < outlimit) 
       for(unsigned int i=0; i < mx; i++) {
         for(unsigned int j=0; j < my; j++)
           cout << h[i][j] << "\t";
         cout << endl;
       } else cout << h[0][0] << endl;
+
+    { // compare implicit or explicit version with direct verion:
+      double error=0.0;
+      cout << endl;
+      double norm=0.0;
+      for(unsigned int i=0; i < mx; i++) {
+        for(unsigned int j=0; j < my; j++) {
+	  error += abs2(h0[i][j]-h[i][j]);
+	  norm += abs2(h[i][j]);
+	}
+      }
+      error=sqrt(error/norm);
+      cout << "error=" << error << endl;
+      if (error > 1e-12) cerr << "Caution! error=" << error << endl;
+    }
+
   }
   
   delete [] T;
+  
+  return 0;
 }
 

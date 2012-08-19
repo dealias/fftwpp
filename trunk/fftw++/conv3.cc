@@ -1,5 +1,6 @@
 #include "Complex.h"
 #include "convolution.h"
+#include "explicit.h"
 #include "utils.h"
 #include "Array.h"
 #include <unistd.h>
@@ -8,13 +9,6 @@
 using namespace std;
 using namespace Array;
 using namespace fftwpp;
-
-// g++ -g -O3 -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse conv3.cc fftw++.cc -lfftw3 -march=native
-
-// icpc -O3 -ansi-alias -malign-double -fp-model fast=2 conv3.cc fftw++.cc -lfftw3
-
-// FFTW: 
-// configure --enable-sse2 CC=icpc CFLAGS="-O3 -ansi-alias -malign-double -fp-model fast=2"
 
 // Number of iterations.
 unsigned int N0=10000000;
@@ -66,6 +60,8 @@ unsigned int padding(unsigned int m)
 
 int main(int argc, char* argv[])
 {
+  fftw::maxthreads=get_max_threads();
+  
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
@@ -137,6 +133,8 @@ int main(int argc, char* argv[])
   nyp=2*my-1;
   nzp=mz;
   unsigned int nxp0=Implicit ? nxp*M : nxp;
+  array3<Complex> h0;
+  if(Direct) h0.Allocate(mx,my,mz,align);
   array3<Complex> f(nxp0,nyp,nzp,align);
   array3<Complex> g(nxp0,nyp,nzp,align);
 
@@ -161,6 +159,13 @@ int main(int argc, char* argv[])
     }
     
     timings("Implicit",T,N);
+
+    if(Direct) {
+      for(unsigned int i=0; i < mx; i++) 
+        for(unsigned int j=0; j < my; j++)
+	  for(unsigned int k=0; k < mz; k++)
+	    h0[i][j][k]=f[i][j][k];
+    }
 
     if(nxp*nyp*mz < outlimit) {
       for(unsigned int i=0; i < nxp; ++i) {
@@ -200,7 +205,25 @@ int main(int argc, char* argv[])
       }
     else cout << h[0][0][0] << endl;
     
+    { // compare implicit or explicit version with direct verion:
+      double error=0.0;
+      double norm=0.0;
+      for(unsigned int i=0; i < mx; i++) {
+        for(unsigned int j=0; j < my; j++) {
+	  for(unsigned int k=0; k < mz; k++) {
+	    error += abs2(h0[i][j][k]-h[i][j][k]);
+	    norm += abs2(h[i][j][k]);
+	  }
+	}
+      }
+      error=sqrt(error/norm);
+      cout << "error=" << error << endl;
+      if (error > 1e-12) cerr << "Caution! error=" << error << endl;
+    }
+
   }
   
   delete [] T;
+
+  return 0;
 }
