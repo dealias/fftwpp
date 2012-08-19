@@ -1,0 +1,26 @@
+#!/bin/sh
+
+# check that the implicit convolution routines reproduce a direct convolution
+# usage: ./directerror
+
+echo "Comparison of implicit routine versus direct routine:"
+echo
+
+for i in cconv cconv2 cconv3 conv conv2 conv3 tconv tconv2
+do
+    /bin/echo -ne $i "implicit:  \t"
+    ./$i -N1 -i -d -M 1| grep ^error
+done
+
+echo
+
+# NB: comparisons between explicit and direct are not yet implimented in 
+# conv2 tconv and tconv2
+
+for i in cconv cconv2 cconv3 conv 
+do
+    /bin/echo -ne $i "explicit:  \t"
+    ./$i -N1 -e -d -M 1| grep ^error
+done
+echo
+

@@ -1,21 +1,24 @@
 CC=g++
-CFLAGS=-g -Wall -ansi -O3 -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native
+CFLAGS=-fopenmp -g -Wall -ansi -O3 -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native
+
 #For valgrind:
-#CFLAGS=-g -Wall -ansi -O3 -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -msse2 -mfpmath=sse -march=native
+#CFLAGS=-fopenmp -g -Wall -ansi -O3 -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse
 
 a:=$(shell which icpc 2>&1 | tail -c5)
 ifeq ($(a),icpc)
 CC=icpc
-CFLAGS=-O3 -ansi-alias -malign-double -fp-model fast=2 
+CFLAGS=-O3 -ansi-alias -malign-double -fp-model fast=2 -openmp
 endif
 
 MAKEDEPEND=$(CFLAGS) -O0 -M -DDEPEND
-LDFLAGS=-lfftw3
+#LDFLAGS=-lfftw3 -lfftw3_threads -lm
+LDFLAGS=-lfftw3 -lfftw3_omp -lm
 
 FILES=example0 example0r example1 example1r example2 example2r \
-example3 example3r conv cconv conv2 cconv2 conv3 cconv3 tconv tconv2
+example3 example3r conv cconv conv2 cconv2 conv3 cconv3 tconv tconv2 \
+exampleconv
 FFTW=fftw++
-EXTRA=$(FFTW) convolution
+EXTRA=$(FFTW) convolution explicit
 ALL=$(FILES) $(EXTRA)
 
 all: $(FILES)
@@ -47,6 +50,9 @@ example3: example3.o $(FFTW:=.o)
 example3r: example3r.o $(FFTW:=.o)
 	$(CC) $(CFLAGS) example3r.o $(FFTW:=.o) $(LDFLAGS) -o example3r
 
+exampleconv: exampleconv.o $(EXTRA:=.o)
+	$(CC) $(CFLAGS) exampleconv.o $(EXTRA:=.o) $(LDFLAGS) -o exampleconv
+
 conv: conv.o $(EXTRA:=.o)
 	$(CC) $(CFLAGS) conv.o $(EXTRA:=.o) $(LDFLAGS) -o conv
 
@@ -72,7 +78,7 @@ tconv2: tconv2.o $(EXTRA:=.o)
 	$(CC) $(CFLAGS) tconv2.o $(EXTRA:=.o) $(LDFLAGS) -o tconv2
 
 clean:  FORCE
-	rm -rf $(ALL) $(ALL:=.o) $(ALL:=.d) wisdom3.txt
+	rm -rf $(ALL) $(ALL:=.o) $(ALL:=.d)
 
 .SUFFIXES: .c .cc .o .d
 .cc.o:

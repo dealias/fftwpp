@@ -111,4 +111,4 @@ yaxis("time/($N"+D+"\log_2 N"+D+"$) (ns)",LeftRight,RightTicks);
 
 legendlinelength=0.6cm;
 legendmargin=5;
-attach(legend(),point(NW),17SE);
+attach(legend(),point(NW),17SE+2N);

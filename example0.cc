@@ -1,12 +1,15 @@
 #include "fftw++.h"
 
-// Compilation: g++ example0.cc fftw++.cc -lfftw3
+// Compile with:
+// g++ -fopenmp example0.cc fftw++.cc -lfftw3 -lfftw3_omp
 
 using namespace std;
 using namespace fftwpp;
 
 int main()
 {
+  fftw::maxthreads=get_max_threads();
+  
   unsigned int n=4; 
   Complex *f=ComplexAlign(n);
   

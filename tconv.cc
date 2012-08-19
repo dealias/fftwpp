@@ -1,17 +1,11 @@
 #include "Complex.h"
 #include "convolution.h"
+#include "explicit.h"
 #include "utils.h"
 #include <unistd.h>
 
 using namespace std;
 using namespace fftwpp;
-
-// g++ -g -O3 -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse conv.cc fftw++.cc -lfftw3 -march=native
-
-// icpc -O3 -ansi-alias -malign-double -fp-model fast=2 conv.cc fftw++.cc -lfftw3
-
-// FFTW: 
-// configure --enable-sse2 CC=icpc CFLAGS="-O3 -ansi-alias -malign-double -fp-model fast=2"
 
 // Number of iterations.
 unsigned int N0=10000000;
@@ -45,6 +39,8 @@ inline void init(Complex *e, Complex *f, Complex *g, unsigned int M=1)
 
 int main(int argc, char* argv[])
 {
+  fftw::maxthreads=get_max_threads();
+
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
@@ -105,6 +101,10 @@ int main(int argc, char* argv[])
   }
   cout << "N=" << N << endl;
   
+  Complex *h0=NULL;
+  if(Direct && ! Explicit) h0=ComplexAlign(m);
+
+
   unsigned int m1=m+1;
   unsigned int np=Explicit ? n/2+1 : m1;
   if(Implicit) np *= M;
@@ -136,9 +136,15 @@ int main(int argc, char* argv[])
     
     timings("Implicit",T,N);
 
+    if(Direct) for(unsigned int i=0; i < m; i++) h0[i]=e[i];
+
     if(m < 100) 
       for(unsigned int i=0; i < m; i++) cout << e[i] << endl;
     else cout << e[0] << endl;
+    
+    delete [] G;
+    delete [] F;
+    delete [] E;
   }
   
   if(Explicit) {
@@ -170,6 +176,20 @@ int main(int argc, char* argv[])
     if(m < 100) 
       for(unsigned int i=0; i < m; i++) cout << h[i] << endl;
     else cout << h[0] << endl;
+
+    if(Implicit) { // compare implicit or explicit version with direct verion:
+      double error=0.0;
+      cout << endl;
+      double norm=0.0;
+      for(unsigned long long k=0; k < m; k++) {
+	error += abs2(h0[k]-h[k]);
+	norm += abs2(h[k]);
+      }
+      error=sqrt(error/norm);
+      cout << "error=" << error << endl;
+      if (error > 1e-12) cerr << "Caution! error=" << error << endl;
+    }
+
     deleteAlign(h);
   }
 
@@ -178,4 +198,6 @@ int main(int argc, char* argv[])
   deleteAlign(e);
   
   delete [] T;
+
+  return 0;
 }

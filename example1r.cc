@@ -1,7 +1,8 @@
 #include "Array.h"
 #include "fftw++.h"
 
-// Compilation: g++ example1r.cc fftw++.cc -lfftw3
+// Compile with:
+// g++ -fopenmp example1r.cc fftw++.cc -lfftw3 -lfftw3_omp
 
 using namespace std;
 using namespace Array;
@@ -9,6 +10,8 @@ using namespace fftwpp;
 
 int main()
 {
+  fftw::maxthreads=get_max_threads();
+  
   unsigned int n=5;
   unsigned int np=n/2+1;
   size_t align=sizeof(Complex);

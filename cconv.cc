@@ -1,20 +1,13 @@
 #include "Complex.h"
 #include "convolution.h"
+#include "explicit.h"
 #include "utils.h"
 #include <unistd.h>
 
 using namespace std;
 using namespace fftwpp;
 
-// g++ -g -O3 -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse cconv.cc fftw++.cc -lfftw3 -march=native
-
-// icpc -O3 -ansi-alias -malign-double -fp-model fast=2 cconv.cc fftw++.cc -lfftw3
-
-// FFTW: 
-// configure --enable-sse2 CC=icpc CFLAGS="-O3 -ansi-alias -malign-double -fp-model fast=2"
-
 // Number of iterations.
-
 unsigned int N0=10000000;
 unsigned int N=0;
   
@@ -58,6 +51,8 @@ void add(Complex *f, Complex *F)
 
 int main(int argc, char* argv[])
 {
+  fftw::maxthreads=get_max_threads();
+
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
@@ -127,7 +122,7 @@ int main(int argc, char* argv[])
   Complex *g=ComplexAlign(np);
 
   Complex *h0=NULL;
-  if(Test) h0=ComplexAlign(m);
+  if(Test || Direct) h0=ComplexAlign(m);
 
   double *T=new double[N];
 
@@ -153,7 +148,7 @@ int main(int argc, char* argv[])
     if(m < 100) 
       for(unsigned int i=0; i < m; i++) cout << f[i] << endl;
     else cout << f[0] << endl;
-    if(Test) for(unsigned int i=0; i < m; i++) h0[i]=f[i];
+    if(Test || Direct) for(unsigned int i=0; i < m; i++) h0[i]=f[i];
     
     delete [] G;
     delete [] F;
@@ -167,14 +162,14 @@ int main(int argc, char* argv[])
       C.convolve(f,g);
       T[i]=seconds();
     }
-
+    
     timings("Explicit",T,N);
 
     if(m < 100) 
       for(unsigned int i=0; i < m; i++) cout << f[i] << endl;
     else cout << f[0] << endl;
     cout << endl;
-    if(Test) for(unsigned int i=0; i < m; i++) h0[i]=f[i];
+    if(Test || Direct) for(unsigned int i=0; i < m; i++) h0[i]=f[i];
   }
   
   if(Direct) {
@@ -190,6 +185,20 @@ int main(int argc, char* argv[])
     if(m < 100)
       for(unsigned int i=0; i < m; i++) cout << h[i] << endl;
     else cout << h[0] << endl;
+
+    { // compare implicit or explicit version with direct verion:
+      double error=0.0;
+      cout << endl;
+      double norm=0.0;
+      for(unsigned long long k=0; k < m; k++) {
+	error += abs2(h0[k]-h[k]);
+	norm += abs2(h[k]);
+      }
+      error=sqrt(error/norm);
+      cout << "error=" << error << endl;
+      if (error > 1e-12) cerr << "Caution! error=" << error << endl;
+    }
+    
     if(Test) for(unsigned int i=0; i < m; i++) h0[i]=h[i];
     deleteAlign(h);
   }
@@ -217,4 +226,6 @@ int main(int argc, char* argv[])
   delete [] T;
   deleteAlign(g);
   deleteAlign(f);
+
+  return 0;
 }

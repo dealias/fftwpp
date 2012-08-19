@@ -1,5 +1,6 @@
 #include "Complex.h"
 #include "convolution.h"
+#include "explicit.h"
 #include "utils.h"
 #include <unistd.h>
 
@@ -8,13 +9,6 @@
 using namespace std;
 using namespace Array;
 using namespace fftwpp;
-
-// g++ -g -O3 -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse conv2.cc fftw++.cc -lfftw3 -march=native
-
-// icpc -O3 -ansi-alias -malign-double -fp-model fast=2 conv2.cc fftw++.cc -lfftw3
-
-// FFTW: 
-// configure --enable-sse2 CC=icpc CFLAGS="-O3 -ansi-alias -malign-double -fp-model fast=2"
 
 // Number of iterations.
 unsigned int N0=10000000;
@@ -63,6 +57,8 @@ unsigned int padding(unsigned int m)
 
 int main(int argc, char* argv[])
 {
+  fftw::maxthreads=get_max_threads();
+
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif
@@ -131,6 +127,10 @@ int main(int argc, char* argv[])
   cout << "N=" << N << endl;
     
   size_t align=sizeof(Complex);
+
+  array2<Complex> h0;
+  if(Direct && Implicit) h0.Allocate(mx,my,align);
+
   nxp=Explicit ? nx : 2*mx-1;
   nyp=Explicit ? ny/2+1 : my;
   unsigned int nxp0=Implicit ? nxp*M : nxp;
@@ -159,6 +159,12 @@ int main(int argc, char* argv[])
     
     timings("Implicit",T,N);
 
+    if(Direct) {
+      for(unsigned int i=0; i < mx; i++) 
+        for(unsigned int j=0; j < my; j++)
+	  h0[i][j]=f[i][j];
+    }
+    
     if(nxp*my < outlimit)
       for(unsigned int i=0; i < nxp; i++) {
         for(unsigned int j=0; j < my; j++)
@@ -183,6 +189,7 @@ int main(int argc, char* argv[])
     timings(Pruned ? "Pruned" : "Explicit",T,N);
 
     unsigned int offset=nx/2-mx+1;
+
     if(2*(mx-1)*my < outlimit) 
       for(unsigned int i=offset; i < offset+2*mx-1; i++) {
         for(unsigned int j=0; j < my; j++)
@@ -211,7 +218,25 @@ int main(int argc, char* argv[])
           cout << h[i][j] << "\t";
         cout << endl;
       } else cout << h[0][0] << endl;
+
+    if(Implicit) { // compare implicit or explicit version with direct verion:
+      double error=0.0;
+      cout << endl;
+      double norm=0.0;
+      for(unsigned int i=0; i < mx; i++) {
+        for(unsigned int j=0; j < my; j++) {
+	  error += abs2(h0[i][j]-h[i][j]);
+	  norm += abs2(h[i][j]);
+	}
+      }
+      error=sqrt(error/norm);
+      cout << "error=" << error << endl;
+      if (error > 1e-12) cerr << "Caution! error=" << error << endl;
+    }
+
   }
   
   delete [] T;
+  
+  return 0;
 }
