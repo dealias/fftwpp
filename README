@@ -24,6 +24,16 @@ Convenient optional shift routines that place the Fourier origin in the logical
 center of the domain are provided for centered complex-to-real transforms
 in 2D and 3D; see fftw++.h for details.
 
+FFTW++ supports multi-threaded transforms and convolutions.  Setting
+fftw::maxthreads determines the maximum number of threads available
+when a transform or convolution is created.  FFTW with
+fftw::effort=FFTW_PATIENT will attempt to determine the optimal number
+of threads.  FFTW++'s implicitly dealiased convolutions include an
+additional test to determine whether multiple threads should be used
+for convolutions.  Multithreaded algorithms require linking with a
+multi-threaded FFTW implementation.  Multi-threaded routines can be
+disabled by adding -DSINGLE_THREAD to CFLAGS.
+
 FFTW++ can also exploit the high-performance Array class available at
 http://www.math.ualberta.ca/~bowman/Array (version 1.45 or higher),
 designed for scientific computing. The arrays in that package do
