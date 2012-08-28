@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
   cout << "m=" << m << endl;
   
   if(N == 0) {
-    N=(int) ((double)N0/(double)n);
+    N=N0/n;
     if(N < 10) N=10;
   }
   cout << "N=" << N << endl;
