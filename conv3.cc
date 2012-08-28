@@ -123,7 +123,7 @@ int main(int argc, char* argv[])
   cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
   
   if(N == 0) {
-    N=(int) ((double)N0/((double)(nx*ny*nz)) );
+    N=N0/nx/ny/nz;
     if(N < 10) N=10;
   }
   cout << "N=" << N << endl;

@@ -222,6 +222,7 @@ protected:
   
 public:
   static unsigned int maxthreads;
+  static double testseconds;
   
   unsigned int Threads() {return threads;}
   
@@ -350,18 +351,18 @@ public:
     plan=plan1;
     
     if(maxthreads > 1) {
-      double limit=0.1; // Time limit for threading efficiency tests
       double sum=0.0;
       double sum2=0.0;
       unsigned int N=1;
-      unsigned int microseconds=1000000;
-      for(; N < limit*microseconds;++N) {
+      const unsigned int microseconds=1000000;
+      unsigned int limit=(int) (testseconds*microseconds);
+      for(; N < limit; ++N) {
         seconds();
         fft(in,out);
         double t=seconds();	
         sum += t;
         sum2 += t*t;
-        if(sum > limit)
+        if(sum > testseconds)
           break;
       }
       double mean1=sum/N;
