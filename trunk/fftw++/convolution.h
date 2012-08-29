@@ -656,14 +656,15 @@ public:
     }
     
     unsigned int mf=nx*my;
+    unsigned int inc=my;
 #pragma omp parallel for num_threads(threads)
-    for(unsigned int i=0; i < mf; i += my) {
+    for(unsigned int i=0; i < mf; i += inc) {
       unsigned int thread=get_thread_num();
       yconvolve->convolve(F,G,U[thread],v[thread],w[thread],i+offset);
     }
     
 #pragma omp parallel for num_threads(threads)
-    for(unsigned int i=0; i < mu; i += my) {
+    for(unsigned int i=0; i < mu; i += inc) {
       unsigned int thread=get_thread_num();
       yconvolve->convolve(U2,V2,U[thread],v[thread],w[thread],i);
     }
