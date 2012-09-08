@@ -1,8 +1,6 @@
 #include "Complex.h"
 #include "convolution.h"
 
-using namespace fftwpp;
-
 namespace fftwpp {
 
 #ifdef __SSE2__
@@ -15,6 +13,7 @@ const union uvec sse2_mm = {
 };
 #endif
 
+#ifndef FFTWPP_SINGLE_THREAD
 #define PARALLEL(code)                                  \
   if(threads > 1) {                                     \
     _Pragma("omp parallel for num_threads(threads)")    \
@@ -22,6 +21,12 @@ const union uvec sse2_mm = {
       } else {                                          \
     code                                                \
       }
+#else
+#define PARALLEL(code)                          \
+  {                                             \
+    code                                        \
+      }
+#endif
 
 inline unsigned int min(unsigned int a, unsigned int b)
 {
@@ -47,13 +52,17 @@ unsigned int BuildZeta(unsigned int n, unsigned int m,
   double arg=twopi/n;
   ZetaH=ComplexAlign(t);
   
+#ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for
+#endif    
   for(unsigned int a=0; a < t; ++a) {
     double theta=s*a*arg;
     ZetaH[a]=Complex(cos(theta),sin(theta));
   }
   ZetaL=ComplexAlign(s);
+#ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for
+#endif    
   for(unsigned int b=0; b < s; ++b) {
     double theta=b*arg;
     ZetaL[b]=Complex(cos(theta),sin(theta));
@@ -1262,9 +1271,5 @@ void fft0bipad::forwards(Complex *f, Complex *u)
     }
     )
     }
-
-
-
-#undef PARALLEL
 
 }
