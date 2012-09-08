@@ -2,17 +2,22 @@
 #include "convolution.h"
 #include "explicit.h"
 
-using namespace fftwpp;
-
 namespace fftwpp {
 
-#define PARALLEL(code)                               \
-  if(threads > 1) {                                  \
-    _Pragma("omp parallel for num_threads(threads)") \
-      code                                           \
-      } else {                                       \
-    code                                             \
+#ifndef FFTWPP_SINGLE_THREAD
+#define PARALLEL(code)                                  \
+  if(threads > 1) {                                     \
+    _Pragma("omp parallel for num_threads(threads)")    \
+      code                                              \
+      } else {                                          \
+    code                                                \
       }
+#else
+#define PARALLEL(code)                          \
+  {                                             \
+    code                                        \
+      }
+#endif
 
 void DirectConvolution::convolve(Complex *h, Complex *f, Complex *g)
 {

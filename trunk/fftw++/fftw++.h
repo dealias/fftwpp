@@ -26,13 +26,13 @@
 #include <fftw3.h>
 #include <cerrno>
 
-#ifndef SINGLE_THREAD
+#ifndef FFTWPP_SINGLE_THREAD
 #include <omp.h>
 #endif
 
 inline int get_max_threads() 
 {
-#ifdef SINGLE_THREAD
+#ifdef FFTWPP_SINGLE_THREAD
   return 1;
 #else
   return omp_get_max_threads();
@@ -41,7 +41,7 @@ inline int get_max_threads()
 
 inline int get_thread_num() 
 {
-#ifdef SINGLE_THREAD
+#ifdef FFTWPP_SINGLE_THREAD
   return 0;
 #else
   return omp_get_thread_num();
@@ -304,7 +304,7 @@ public:
     plan(NULL) {
     static bool initialize=true;
     if(initialize) {
-#ifndef SINGLE_THREAD
+#ifndef FFTWPP_SINGLE_THREAD
       fftw_init_threads();
 #endif      
       initialize=false;
@@ -343,7 +343,7 @@ public:
 #endif    
     inplace=(out==in);
     
-#ifndef SINGLE_THREAD
+#ifndef FFTWPP_SINGLE_THREAD
     fftw_plan_with_nthreads(1);
 #endif    
     fftw_plan plan1=Plan(in,out);
@@ -370,7 +370,7 @@ public:
         
       threads=get_max_threads();
       if(maxthreads > threads) maxthreads=threads;
-#ifndef SINGLE_THREAD
+#ifndef FFTWPP_SINGLE_THREAD
       fftw_plan_with_nthreads(maxthreads);
 #endif
       plan=Plan(in,out);
@@ -513,7 +513,9 @@ public:
     else {
       out=Setout(in,out);
       Execute(in,out);
-#pragma omp parallel for
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif
       for(unsigned int k=0; k < M; k++) {
         for(unsigned int j=0; j < nx; j++) {
           out[j*stride+k*dist] *= norm;

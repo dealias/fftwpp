@@ -29,7 +29,7 @@ The global variable fftw::maxthreads specifies the maximum number of threads
 to use. The constructors invoke a short timing test to check that using
 multiple threads is actually beneficial for the given problem size.
 Multithreaded routines require linking with a multithreaded FFTW implementation;
-multithreading can be disabled by adding -DSINGLE_THREAD to CFLAGS. 
+multithreading can be disabled by adding -DFFTWPP_SINGLE_THREAD to CFLAGS. 
 
 FFTW++ can also exploit the high-performance Array class available at
 http://www.math.ualberta.ca/~bowman/Array (version 1.45 or higher),

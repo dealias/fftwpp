@@ -424,13 +424,17 @@ public:
     for(unsigned int s=0; s < M; ++s)
       xfftpad->backwards(G[s]+offset,v2+s*mxy);
     
+#ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
+#endif    
     for(unsigned int i=0; i < mxy; i += my) {
       unsigned int thread=get_thread_num();
       yconvolve->convolve(F,G,u[thread],V[thread],i+offset);
     }
     
+#ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
+#endif    
     for(unsigned int i=0; i < mxy; i += my) {
       unsigned int thread=get_thread_num();
       yconvolve->convolve(U2,V2,u[thread],V[thread],i);
@@ -657,13 +661,17 @@ public:
     
     unsigned int mf=nx*my;
     unsigned int inc=my;
+#ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
+#endif    
     for(unsigned int i=0; i < mf; i += inc) {
       unsigned int thread=get_thread_num();
       yconvolve->convolve(F,G,U[thread],v[thread],w[thread],i+offset);
     }
     
+#ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
+#endif    
     for(unsigned int i=0; i < mu; i += inc) {
       unsigned int thread=get_thread_num();
       yconvolve->convolve(U2,V2,U[thread],v[thread],w[thread],i);
@@ -809,13 +817,17 @@ public:
     for(unsigned int s=0; s < M; ++s)
       xfftpad->backwards(G[s]+offset,v3+s*mxyz);
 
+#ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
+#endif    
     for(unsigned int i=0; i < mxyz; i += myz) {
       unsigned int thread=get_thread_num();
       yzconvolve->convolve(F,G,u+thread,V+thread,U2[thread],V2[thread],i+offset);
     }
     
+#ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
+#endif    
     for(unsigned int i=0; i < mxyz; i += myz) {
       unsigned int thread=get_thread_num();
       yzconvolve->convolve(U3,V3,u+thread,V+thread,U2[thread],V2[thread],i);
@@ -981,14 +993,18 @@ public:
     }
         
     unsigned int nymz=ny*mz;
-#pragma omp parallel for num_threads(threads) 
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif    
     for(unsigned int i=0; i < mf; i += nymz) {
       unsigned int thread=get_thread_num();
       yzconvolve->convolve(F,G,U+thread,v+thread,w+thread,
                            U2[thread],V2[thread],false,i+offset);
     }
     
-#pragma omp parallel for num_threads(threads) 
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif    
     for(unsigned int i=0; i < mu; i += nymz) {
       unsigned int thread=get_thread_num();
       yzconvolve->convolve(U3,V3,U+thread,v+thread,w+thread,
@@ -1288,13 +1304,17 @@ public:
       xfftpad->backwards(h,w2+s*mu);
     }
 
+#ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
+#endif    
     for(unsigned int i=0; i < mu; i += my1) {
       unsigned int thread=get_thread_num();
       yconvolve->convolve(F,G,H,u[thread],v[thread],W[thread],i+offset);
     }
     
+#ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
+#endif    
     for(unsigned int i=0; i < mu; i += my1) {
       unsigned int thread=get_thread_num();
       yconvolve->convolve(U2,V2,W2,u[thread],v[thread],W[thread],i+offset);
