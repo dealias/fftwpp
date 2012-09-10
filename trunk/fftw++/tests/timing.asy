@@ -4,6 +4,8 @@ size(175,200,IgnoreAspect);
 
 barfactor=10;
 
+bool drawerrorbars=true;
+
 scale(Log,Linear);
 real[] me,e,le,he;
 real[] mi,i,li,hi;
@@ -70,21 +72,24 @@ real[] f(real[] x) {return 1e-9*x^d*log(x^d)/log(2);}
 e /= f(me);
 he /= f(me);
 le /= f(me);
-errorbars(me,e,0*me,he,0*me,le,Pen(0));
+if(drawerrorbars)
+  errorbars(me,e,0*me,he,0*me,le,Pen(0));
 draw(graph(me,e,e > 0),Pentype(0),Label("explicit",Pen(0)+Lp),mark0);
 
 if(pruned) {
   p /= f(mp);
   hp /= f(mp);
   lp /= f(mp);
-  errorbars(mp,p,0*mp,hp,0*mp,lp,Pen(2));
+  if(drawerrorbars)
+    errorbars(mp,p,0*mp,hp,0*mp,lp,Pen(2));
   draw(graph(mp,p,p > 0),Pentype(2)+Dotted,Label(prunelabel,Pen(2)+Lp),mark2);
 }
 
 i /= f(mi);
 hi /= f(mi);
 li /= f(mi);
-errorbars(mi,i,0*mi,hi,0*mi,li,Pen(1));
+if(drawerrorbars)
+  errorbars(mi,i,0*mi,hi,0*mi,li,Pen(1));
 draw(graph(mi,i,i > 0),Pentype(1),Label("implicit",Pen(1)+Lp),mark1);
 
 // fitting information; requires running rfit under R.

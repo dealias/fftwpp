@@ -47,7 +47,7 @@ int main(int argc, char* argv[])
     cout << f[i] << "\t" << g[i] << endl;
   
   {
-    cout << endl << "non-centered convolution:" << endl;
+    cout << endl << "non-centered complex convolution:" << endl;
     ImplicitConvolution C(m);
     C.convolve(f,g);
     for(unsigned int i=0; i < m; i++) cout << f[i] << endl;
@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
 
   init(f,g);
   {
-    cout << endl << "centered convolution:" << endl;
+    cout << endl << "centered Hermitian-symmetric convolution:" << endl;
     ImplicitHConvolution C(m);
     C.convolve(f,g);
     for(unsigned int i=0; i < m; i++) cout << f[i] << endl;

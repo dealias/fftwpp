@@ -47,6 +47,8 @@ ensure that the data is optimally aligned to sizeof(Complex), to
 enable the SIMD extensions.  The optional alignment check in fftw++.h
 can be disabled with the -DNO_CHECK_ALIGN compiler option.
 
+The following programs are provided in the examples directory:
+
 1D examples using ComplexAlign allocator:
 example0.cc
 example0r.cc
@@ -65,6 +67,12 @@ example3r.cc
 
 1D example of implicitly dealiased convolutions:
 exampleconv.cc
+
+
+The following programs are provided in tests/, along with various
+timing and error analysis scritps.  Asymptote
+(http://asymptote.sourceforge.net/) scripts are provided for
+visualizing the output.
 
 1D complex convolution test:
 cconv.cc
