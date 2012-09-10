@@ -15,6 +15,18 @@ if [ "$1" = "" ]; then
     exit
 fi
 
+# total system RAM:
+RAM=$(free  | head -n 2 | sed '1,1d' | awk '{ print  $2 '})
+
+# for available RAM, use:
+#RAM=$(free  | head -n 3 | sed '1,1d' | awk '{ print  $2 '})
+
+RAM=$( echo 1024*$RAM | bc)
+
+echo $RAM
+max=10000
+
+
 N0=10000000
 if [ "$HOSTTYPE" = "x86_64-linux" ]; then
     N0=100000000
@@ -52,7 +64,8 @@ if [ "$1" = "conv2" ]; then
     outdir=timings2r
     prune=yes
     start=8
-    stop=13
+    stop=14
+    max=$( asy -c floor\(0.5*log\($RAM/96\)/log\(2\)\) )
 fi
 if [ "$1" = "cconv" ]; then
     outdir=timings1c
@@ -64,7 +77,9 @@ if [ "$1" = "cconv2" ]; then
     outdir=timings2c
     prune=yes
     start=8
-    stop=13
+    stop=12
+    max=$( asy -c floor\(0.5*log\($RAM/64\)/log\(2\)\) )
+
 fi
 if [ "$1" = "tconv" ]; then
     shift=2;
@@ -88,14 +103,24 @@ if [ "$1" = "cconv3" ]; then
     outdir=timings3c
     prune=yes
     start=2
-    stop=8
+    stop=18
+    max=$( asy -c  floor\(log\($RAM/64\)/log\(2\)/3\) )
 fi
 if [ "$1" = "conv3" ]; then
     outdir=timings3r
     prune=no
     explicit=no
     start=2
-    stop=8
+    stop=7
+    max=$( asy -c  floor\(log\($RAM/192\)/\(log\(2\)*3\)\) )
+    echo $stop
+fi
+
+echo max=$max
+echo stop=$stop
+
+if [ $stop -ge $max ]; then
+    stop=$max
 fi
 
 if [ "$outdir" = "" ]; then
