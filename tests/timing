@@ -53,8 +53,6 @@ if [ -z "$5" ]; then
 else
     explicit=$5
 fi
-echo implicit=$implicit
-echo explicit=$explicit
 
 divisor=0;
 N=$N0
@@ -75,8 +73,9 @@ if [ "$1" = "conv2" ]; then
     outdir=timings2r
     prune=yes
     start=8
-    stop=14
-    max=$( python -c "from math import *; print int(floor(0.5*log($RAM/96)/log(2)))")
+    stop=16
+    max=$( python -c "from math import *; print int(floor(log($RAM/16/3^2)/log(2)/2))")
+    #max=$( python -c "from math import *; print int(floor(0.5*log($RAM/96)/log(2)))")
 fi
 
 if [ "$1" = "cconv" ]; then
@@ -89,8 +88,9 @@ if [ "$1" = "cconv2" ]; then
     outdir=timings2c
     prune=yes
     start=8
-    stop=12
-    max=$( python -c "from math import *; print int(floor(0.5*log($RAM/64)/log(2)))")
+    stop=15
+    max=$( python -c "from math import *; print int(floor(log($RAM/16/2^2)/log(2)/2))")
+#    max=$( python -c "from math import *; print int(floor(0.5*log($RAM/64)/log(2)))")
 fi
 if [ "$1" = "tconv" ]; then
     shift=2;
@@ -113,16 +113,17 @@ fi
 if [ "$1" = "cconv3" ]; then
     outdir=timings3c
     prune=yes
-    start=2
+    start=4
     stop=18
-    max=$( python -c "from math import *; print int(floor(log($RAM/96)/log(2)/3))")
+    max=$( python -c "from math import *; print int(floor(log($RAM/16/2^3)/log(2)/3))")
+#    max=$( python -c "from math import *; print int(floor(log($RAM/96)/log(2)/3))")
 fi
 if [ "$1" = "conv3" ]; then
     outdir=timings3r
     prune=no
     explicit=no
-    start=2
-    stop=7
+    start=4
+    stop=18
     max=$( python -c "from math import *; print int(floor(log($RAM/192)/log(2)/3))")
 fi
 
