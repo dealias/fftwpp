@@ -1,5 +1,16 @@
 #!/bin/sh
 
+# script for timing convolution routines.
+# usage: timing <program> [start] [stop] [implicit=yes/no] [explicit[yes/no]
+# where program is one of: 
+# cconv, cconv2, cconv3, conv, conv2, conv3, tconv, or tconv2
+
+# an optional start or stop value X gives a problem size of 2^X.
+# implicit or explicit routines can be turned on or off by entering
+# "yes" or "no" at the appropriate location. The script will automatically
+# decrease stop values if the provided value produces a computation
+# that does not fit in the computer's RAM.
+
 # typical start/stop values:
 # 1D runs: 6 20
 # 2D runs: 6 13 (12 for tconv2)
@@ -23,7 +34,7 @@ RAM=$(free  | head -n 2 | sed '1,1d' | awk '{ print  $2 '})
 
 RAM=$( echo 1024*$RAM | bc)
 
-echo $RAM
+#echo $RAM
 max=10000
 
 
@@ -65,8 +76,9 @@ if [ "$1" = "conv2" ]; then
     prune=yes
     start=8
     stop=14
-    max=$( asy -c floor\(0.5*log\($RAM/96\)/log\(2\)\) )
+    max=$( python -c "from math import *; print int(floor(0.5*log($RAM/96)/log(2)))")
 fi
+
 if [ "$1" = "cconv" ]; then
     outdir=timings1c
     N=$N0
@@ -78,8 +90,7 @@ if [ "$1" = "cconv2" ]; then
     prune=yes
     start=8
     stop=12
-    max=$( asy -c floor\(0.5*log\($RAM/64\)/log\(2\)\) )
-
+    max=$( python -c "from math import *; print int(floor(0.5*log($RAM/64)/log(2)))")
 fi
 if [ "$1" = "tconv" ]; then
     shift=2;
@@ -104,7 +115,7 @@ if [ "$1" = "cconv3" ]; then
     prune=yes
     start=2
     stop=18
-    max=$( asy -c  floor\(log\($RAM/64\)/log\(2\)/3\) )
+    max=$( python -c "from math import *; print int(floor(log($RAM/96)/log(2)/3))")
 fi
 if [ "$1" = "conv3" ]; then
     outdir=timings3r
@@ -112,12 +123,8 @@ if [ "$1" = "conv3" ]; then
     explicit=no
     start=2
     stop=7
-    max=$( asy -c  floor\(log\($RAM/192\)/\(log\(2\)*3\)\) )
-    echo $stop
+    max=$( python -c "from math import *; print int(floor(log($RAM/192)/log(2)/3))")
 fi
-
-echo max=$max
-echo stop=$stop
 
 if [ $stop -ge $max ]; then
     stop=$max
@@ -163,7 +170,7 @@ echo Timing:
 
 i=$start;
 while (test $i -le $stop); do
-    echo $i
+    echo -n $i " "
     m=$( echo 2^$i | bc)
     if [ "$implicit" = "yes" ]; then
 	#echo implicit
@@ -186,3 +193,4 @@ while (test $i -le $stop); do
     fi
     i=$((i+1))
 done
+echo
