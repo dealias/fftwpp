@@ -74,7 +74,7 @@ if [ "$1" = "conv2" ]; then
     prune=yes
     start=8
     stop=16
-    max=$( python -c "from math import *; print int(floor(log($RAM/16/3^2)/log(2)/2))")
+    max=$( python -c "from math import *; print int(floor(log($RAM/8/3^2)/log(2)/2))")
     #max=$( python -c "from math import *; print int(floor(0.5*log($RAM/96)/log(2)))")
 fi
 
@@ -108,7 +108,8 @@ if [ "$1" = "tconv2" ]; then
     outdir=timings2t
     prune=yes
     start=8
-    stop=12
+    stop=18
+    max=$( python -c "from math import *; print int(floor(log($RAM/8/3/4^2)/log(2)/2))")
 fi
 if [ "$1" = "cconv3" ]; then
     outdir=timings3c
