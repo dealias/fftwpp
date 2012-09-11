@@ -20,6 +20,8 @@ if(name == "") name=getstring("program name");
 string dir;
 string prunelabel="$y$-pruned";
 
+bool expl=true;
+
 if(name == "conv") dir="timings1r";
 if(name == "cconv") dir="timings1c";
 if(name == "tconv") dir="timings1t";
@@ -29,16 +31,22 @@ if(name == "tconv2") dir="timings2t";
 if(name == "cconv3") {
   dir="timings3c"; prunelabel="$xz$-pruned"; legendmargin=8;
 }
+if(name == "conv3") {
+  dir="timings3r";
+  expl=false;
+}
   
 real d=1;
 if(find(name,"2") >= 0) d=2;
 if(find(name,"3") >= 0) d=3;
 
-file fin=input(dir+"/explicit").line();
-real[][] a=fin.dimension(0,0);
-a=transpose(a);
-me=a[0]; e=a[1]; le=a[2]; he=a[3];
-
+if(expl) {
+  file fin=input(dir+"/explicit").line();
+  real[][] a=fin.dimension(0,0);
+  a=transpose(a);
+  me=a[0]; e=a[1]; le=a[2]; he=a[3];
+}
+  
 file fin=input(dir+"/implicit").line();
 real[][] a=fin.dimension(0,0);
 a=transpose(a);
@@ -68,21 +76,23 @@ pen Lp=fontsize(8pt);
 
 real[] f(real[] x) {return 1e-9*x^d*log(x^d)/log(2);}
 
- // error bars:
-e /= f(me);
-he /= f(me);
-le /= f(me);
-if(drawerrorbars)
-  errorbars(me,e,0*me,he,0*me,le,Pen(0));
-draw(graph(me,e,e > 0),Pentype(0),Label("explicit",Pen(0)+Lp),mark0);
-
-if(pruned) {
-  p /= f(mp);
-  hp /= f(mp);
-  lp /= f(mp);
+if(expl) {
+  // error bars:
+  e /= f(me);
+  he /= f(me);
+  le /= f(me);
   if(drawerrorbars)
-    errorbars(mp,p,0*mp,hp,0*mp,lp,Pen(2));
-  draw(graph(mp,p,p > 0),Pentype(2)+Dotted,Label(prunelabel,Pen(2)+Lp),mark2);
+    errorbars(me,e,0*me,he,0*me,le,Pen(0));
+  draw(graph(me,e,e > 0),Pentype(0),Label("explicit",Pen(0)+Lp),mark0);
+
+  if(pruned) {
+    p /= f(mp);
+    hp /= f(mp);
+    lp /= f(mp);
+    if(drawerrorbars)
+      errorbars(mp,p,0*mp,hp,0*mp,lp,Pen(2));
+    draw(graph(mp,p,p > 0),Pentype(2)+Dotted,Label(prunelabel,Pen(2)+Lp),mark2);
+  }
 }
 
 i /= f(mi);
@@ -117,3 +127,8 @@ yaxis("time/($N"+D+"\log_2 N"+D+"$) (ns)",LeftRight,RightTicks);
 legendlinelength=0.6cm;
 legendmargin=5;
 attach(legend(),point(NW),17SE+2N);
+
+real mean(real[] a){return sum(a)/a.length;};
+if(expl) {
+  write("speedup="+(string)(mean(e)/mean(i)));
+}
