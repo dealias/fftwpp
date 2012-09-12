@@ -89,7 +89,7 @@ if [ "$1" = "cconv2" ]; then
     prune=yes
     start=8
     stop=15
-    max=$( python -c "from math import *; print int(floor(log($RAM/16/2^2)/log(2)/2))")
+    max=$( python -c "from math import *; print int(floor(log($RAM/16/2/2^2)/log(2)/2))")
 #    max=$( python -c "from math import *; print int(floor(0.5*log($RAM/64)/log(2)))")
 fi
 if [ "$1" = "tconv" ]; then
