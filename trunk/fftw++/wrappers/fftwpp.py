@@ -11,7 +11,7 @@ from ctypes import *
 __all__ = [ 'Convolution' ] #, 'HConvolution' ]
 
 # load fftwpp shared library
-clib = CDLL('_fftwpp.so')
+clib = CDLL('./_fftwpp.so')
 
 # prototypes
 clib.fftwpp_create_hconv1d.restype = c_void_p
@@ -322,7 +322,7 @@ class Convolution(object):
 
         self._convolve(self.cptr, f, g)
 
-
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
+
