@@ -1,14 +1,35 @@
-
 import numpy as np
 import fftwpp
 
+N = 8
+
+f = np.zeros(N)
+g = np.zeros(N)
+
+
+i=0
+while i < len(f) :
+    print i
+    f[i]=i
+    g[i]=i*i
+    i += 1
+    
+
+conv = fftwpp.Convolution(f.shape)
+conv.convolve(f, g)
+print f
+
+
 L = 2*np.pi
-N = 32
 
 x, y = np.mgrid[0.0:L:L/N, 0.0:L:L/N]
 
+#print x
+
 z1 = np.fft.fftn(np.sin(x))
 z2 = np.fft.fftn(np.sin(5*y))
+
+print z1.shape
 
 conv = fftwpp.Convolution(z1.shape)
 conv.convolve(z1, z2)
@@ -16,7 +37,8 @@ z1 = z1 / N**2
 
 z3 = np.fft.fftn(np.sin(x)*np.sin(5*y))
 
-print np.allclose(z3, z1)
+# check if the arrays are close
+#print np.allclose(z3, z1)
 
 N = 16
 L = 2*np.pi
@@ -30,9 +52,9 @@ assert g.shape == (N, N, N)
 c = fftwpp.Convolution(f.shape)
 c.convolve(f, g)
 
-print np.allclose(f/N**3, np.fft.fftn(np.sin(x)*np.sin(5*y)*np.sin(z)))
 
-
+# check if the arrays are close
+#print np.allclose(f/N**3, np.fft.fftn(np.sin(x)*np.sin(5*y)*np.sin(z)))
 
 
 # x = np.arange(0.0, L, L/N)

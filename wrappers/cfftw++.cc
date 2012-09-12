@@ -6,8 +6,6 @@
  * Author: Matthew Emmett <memmett@unc.edu>
  */
 
-#include <iostream>
-
 #include "Complex.h"
 #include "fftw++.h"
 #include "convolution.h"
@@ -19,29 +17,41 @@ namespace fftwpp {
     // 1d
     ImplicitHConvolution *fftwpp_create_hconv1d(unsigned int m);
     void fftwpp_hconv1d_delete(ImplicitHConvolution *conv);
-    void fftwpp_hconv1d_convolve(ImplicitHConvolution *conv, double *a, double *b);
+    void fftwpp_hconv1d_convolve(ImplicitHConvolution *conv, 
+				 double *a, double *b);
 
     ImplicitConvolution *fftwpp_create_conv1d(unsigned int m);
     void fftwpp_conv1d_delete(ImplicitConvolution *conv);
-    void fftwpp_conv1d_convolve(ImplicitConvolution *conv, double *a, double *b);
+    void fftwpp_conv1d_convolve(ImplicitConvolution *conv, 
+				double *a, double *b);
 
     // 2d
-    ImplicitHConvolution2 *fftwpp_create_hconv2d(unsigned int mx, unsigned int my);
+    ImplicitHConvolution2 *fftwpp_create_hconv2d(unsigned int mx, 
+						 unsigned int my);
     void fftwpp_hconv2d_delete(ImplicitHConvolution2 *conv);
-    void fftwpp_hconv2d_convolve(ImplicitHConvolution2 *conv, double *a, double *b);
+    void fftwpp_hconv2d_convolve(ImplicitHConvolution2 *conv, 
+				 double *a, double *b);
 
-    ImplicitConvolution2 *fftwpp_create_conv2d(unsigned int mx, unsigned int my);
+    ImplicitConvolution2 *fftwpp_create_conv2d(unsigned int mx, 
+					       unsigned int my);
     void fftwpp_conv2d_delete(ImplicitConvolution2 *conv);
-    void fftwpp_conv2d_convolve(ImplicitConvolution2 *conv, double *a, double *b);
+    void fftwpp_conv2d_convolve(ImplicitConvolution2 *conv, 
+				double *a, double *b);
 
     // 3d
-    ImplicitHConvolution3 *fftwpp_create_hconv3d(unsigned int mx, unsigned int my, unsigned int mz);
+    ImplicitHConvolution3 *fftwpp_create_hconv3d(unsigned int mx, 
+						 unsigned int my, 
+						 unsigned int mz);
     void fftwpp_hconv3d_delete(ImplicitHConvolution3 *conv);
-    void fftwpp_hconv3d_convolve(ImplicitHConvolution3 *conv, double *a, double *b);
+    void fftwpp_hconv3d_convolve(ImplicitHConvolution3 *conv, 
+				 double *a, double *b);
 
-    ImplicitConvolution3 *fftwpp_create_conv3d(unsigned int mx, unsigned int my, unsigned int mz);
+    ImplicitConvolution3 *fftwpp_create_conv3d(unsigned int mx, 
+					       unsigned int my, 
+					       unsigned int mz);
     void fftwpp_conv3d_delete(ImplicitConvolution3 *conv);
-    void fftwpp_conv3d_convolve(ImplicitConvolution3 *conv, double *a, double *b);
+    void fftwpp_conv3d_convolve(ImplicitConvolution3 *conv, 
+				double *a, double *b);
   }
 
   // 1d wrappers
@@ -49,7 +59,8 @@ namespace fftwpp {
     return new ImplicitHConvolution(m);
   }
 
-  void fftwpp_hconv1d_convolve(ImplicitHConvolution *conv, double *a, double *b) {
+  void fftwpp_hconv1d_convolve(ImplicitHConvolution *conv, 
+			       double *a, double *b) {
     conv->convolve((Complex *) a, (Complex *) b);
   }
 
@@ -70,11 +81,13 @@ namespace fftwpp {
   }
 
   // 2d wrappers
-  ImplicitHConvolution2 *fftwpp_create_hconv2d(unsigned int mx, unsigned int my) {
+  ImplicitHConvolution2 *fftwpp_create_hconv2d(unsigned int mx, 
+					       unsigned int my) {
     return new ImplicitHConvolution2(mx, my);
   }
 
-  void fftwpp_hconv2d_convolve(ImplicitHConvolution2 *conv, double *a, double *b) {
+  void fftwpp_hconv2d_convolve(ImplicitHConvolution2 *conv, 
+			       double *a, double *b) {
     conv->convolve((Complex *) a, (Complex *) b);
   }
 
@@ -86,7 +99,8 @@ namespace fftwpp {
     return new ImplicitConvolution2(mx, my);
   }
 
-  void fftwpp_conv2d_convolve(ImplicitConvolution2 *conv, double *a, double *b) {
+  void fftwpp_conv2d_convolve(ImplicitConvolution2 *conv, 
+			      double *a, double *b) {
     conv->convolve((Complex *) a, (Complex *) b);
   }
 
@@ -95,11 +109,14 @@ namespace fftwpp {
   }
 
   // 3d wrappers
-  ImplicitHConvolution3 *fftwpp_create_hconv3d(unsigned int mx, unsigned int my, unsigned int mz) {
+  ImplicitHConvolution3 *fftwpp_create_hconv3d(unsigned int mx, 
+					       unsigned int my, 
+					       unsigned int mz) {
     return new ImplicitHConvolution3(mx, my, mz);
   }
 
-  void fftwpp_hconv3d_convolve(ImplicitHConvolution3 *conv, double *a, double *b) {
+  void fftwpp_hconv3d_convolve(ImplicitHConvolution3 *conv, 
+			       double *a, double *b) {
     conv->convolve((Complex *) a, (Complex *) b);
   }
 
@@ -107,11 +124,14 @@ namespace fftwpp {
     delete conv;
   }
 
-  ImplicitConvolution3 *fftwpp_create_conv3d(unsigned int mx, unsigned int my, unsigned int mz) {
+  ImplicitConvolution3 *fftwpp_create_conv3d(unsigned int mx, 
+					     unsigned int my, 
+					     unsigned int mz) {
     return new ImplicitConvolution3(mx, my, mz);
   }
 
-  void fftwpp_conv3d_convolve(ImplicitConvolution3 *conv, double *a, double *b) {
+  void fftwpp_conv3d_convolve(ImplicitConvolution3 *conv, 
+			      double *a, double *b) {
     conv->convolve((Complex *) a, (Complex *) b);
   }
 
