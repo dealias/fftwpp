@@ -20,6 +20,6 @@ _fftwpp.so: ../fftw++.cc cfftw++.cc ../convolution.cc
 	$(CC) -fPIC $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
 
 clean:
-	rm -f _fftwpp.so
+	rm -f _fftwpp.so fftwpp.pyc
 
 .PHONY: clean
