@@ -6,8 +6,10 @@
  * Author: Matthew Emmett <memmett@unc.edu>
  */
 
+#ifdef  __cplusplus
 #include "Complex.h"
 #include "fftw++.h"
+#include "cfftw++.h"
 #include "convolution.h"
 
 namespace fftwpp {
@@ -139,3 +141,5 @@ namespace fftwpp {
     delete conv;
   }
 }
+
+#endif //__cplusplus

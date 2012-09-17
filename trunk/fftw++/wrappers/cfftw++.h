@@ -5,7 +5,17 @@
  * Author: Matthew Emmett <memmett@unc.edu>
  */
 
-typedef struct ImplicitHConvolution hconv1d_t;
 
-hconv1d_t *fftwpp_create_hconv1d(unsigned int m);
-void fftwpp_hconv1d_convolve(hconv1d_t *conv, double *a, double *b);
+#ifndef CFFTWPP_H
+#define CFFTWPP_H
+#ifdef  __cplusplus
+#include "fftw++.h"
+
+//ImplicitHConvolution *fftwpp_create_hconv1d(unsigned int m);
+//void fftwpp_hconv1d_convolve(ImplicitHConvolution *conv, double *a, double *b);
+
+
+
+#endif //  __cplusplus
+typedef struct ImplicitHConvolution ImplicitHConvolution;
+#endif // CFFTWPP_H
