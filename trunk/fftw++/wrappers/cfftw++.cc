@@ -10,10 +10,36 @@
 
 #ifdef  __cplusplus
 #include "Complex.h"
-#include "fftw++.h"
+//#include "fftw++.h"
 #include "cfftw++.h"
 #include "convolution.h"
 #include <iostream> // temp
+
+/* temp functions for cexampel */
+void cppinit(Complex * f, unsigned int m) 
+{
+  for(unsigned int i=0; i < m; ++i) {
+    f[i]=Complex(2.0*i,6);
+  }
+}
+
+void cppshow(Complex * f, unsigned int n) {
+  for(unsigned int i=0; i < n; ++i) {
+    std::cout << f[i] << std::endl;
+  }
+}
+
+void cppinit2(Complex *f, Complex *g, unsigned int m) 
+{
+  for(unsigned int i=0; i < m; i += m) {
+    Complex *fi=f+i;
+    Complex *gi=g+i;
+    for(unsigned int k=0; k < m; k++) fi[k]=Complex(k,k+1);
+    for(unsigned int k=0; k < m; k++) gi[k]=Complex(k,2*k+1);
+  }
+}
+
+
 
 namespace array {
   extern "C" {
@@ -24,30 +50,16 @@ namespace array {
 
     // FIXME: add delete option too!
 
-    void init(Complex * f, unsigned int n) {
-      for(unsigned int i=0; i < n; ++i) {
-	f[i]=2.0*i;
-      }
+/* temp functions for cexample */
+    void init(double * f, unsigned int n) {
+      cppinit((Complex *) f,n);
     }
-
-    void show(Complex * f, unsigned int n) {
-      for(unsigned int i=0; i < n; ++i) {
-	std::cout << f[i] << std::endl;
-      }
+    void show(double * f, unsigned int n) {
+      cppshow((Complex *) f,n);
     }
-    
-    void init2(Complex *f, Complex *g, unsigned int m) 
-    {
-      for(unsigned int i=0; i < m; i += m) {
-	Complex *fi=f+i;
-	Complex *gi=g+i;
-	for(unsigned int k=0; k < m; k++) fi[k]=Complex(k,k+1);
-	for(unsigned int k=0; k < m; k++) gi[k]=Complex(k,2*k+1);
-      }
+    void init2(double *f, double *g, unsigned int m) {
+      cppinit2((Complex *)f,(Complex *)g,m);
     }
-
-
-
 
   }
 }
