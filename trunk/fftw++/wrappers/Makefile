@@ -30,12 +30,12 @@ cfftw++.o: cfftw++.cc cfftw++.h convolution.o fftw++.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -c cfftw++.cc -o $@
 
 cexample: cexample.c cfftw++.o convolution.o fftw++.o
-	$(CC) $^  $(CFLAGS) $(LDFLAGS) -o $@
+	$(C) $^  $(CFLAGS) $(LDFLAGS) -o $@  -lstdc++
 
 _fftwpp.so: ../fftw++.cc cfftw++.cc ../convolution.cc
 	$(CC) -fPIC $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
 
 clean:
-	rm -f *.so fftwpp.pyc *.o cexample *.h.gch
+	rm -f *.so *.pyc *.o cexample *.h.gch
 
 .PHONY: clean

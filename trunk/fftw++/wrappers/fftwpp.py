@@ -14,41 +14,42 @@ __all__ = [ 'Convolution' , 'HConvolution' ]
 clib = CDLL('./_fftwpp.so')
 
 # prototypes
-clib.fftwpp_create_hconv1d.restype = c_void_p
-clib.fftwpp_create_hconv1d.argtypes = [ c_int ]
-clib.fftwpp_hconv1d_convolve.argtypes = [ c_void_p,
-                                          ndpointer(dtype=np.complex128),
-                                          ndpointer(dtype=np.complex128) ]
-
 clib.fftwpp_create_conv1d.restype = c_void_p
 clib.fftwpp_create_conv1d.argtypes = [ c_int ]
 clib.fftwpp_conv1d_convolve.argtypes = [ c_void_p,
                                           ndpointer(dtype=np.complex128),
                                           ndpointer(dtype=np.complex128) ]
 
-clib.fftwpp_create_hconv2d.restype = c_void_p
-clib.fftwpp_create_hconv2d.argtypes = [ c_int, c_int ]
-clib.fftwpp_hconv2d_convolve.argtypes = [ c_void_p,
+clib.fftwpp_create_hconv1d.restype = c_void_p
+clib.fftwpp_create_hconv1d.argtypes = [ c_int ]
+clib.fftwpp_hconv1d_convolve.argtypes = [ c_void_p,
                                           ndpointer(dtype=np.complex128),
                                           ndpointer(dtype=np.complex128) ]
 
-clib.fftwpp_create_conv2d.restype = c_void_p
-clib.fftwpp_create_conv2d.argtypes = [ c_int, c_int ]
-clib.fftwpp_conv2d_convolve.argtypes = [ c_void_p,
-                                          ndpointer(dtype=np.complex128),
-                                          ndpointer(dtype=np.complex128) ]
+# FIXME: uncomment this region when ready.
+# clib.fftwpp_create_hconv2d.restype = c_void_p
+# clib.fftwpp_create_hconv2d.argtypes = [ c_int, c_int ]
+# clib.fftwpp_hconv2d_convolve.argtypes = [ c_void_p,
+#                                           ndpointer(dtype=np.complex128),
+#                                           ndpointer(dtype=np.complex128) ]
 
-clib.fftwpp_create_hconv3d.restype = c_void_p
-clib.fftwpp_create_hconv3d.argtypes = [ c_int, c_int, c_int ]
-clib.fftwpp_hconv3d_convolve.argtypes = [ c_void_p,
-                                          ndpointer(dtype=np.complex128),
-                                          ndpointer(dtype=np.complex128) ]
+# clib.fftwpp_create_conv2d.restype = c_void_p
+# clib.fftwpp_create_conv2d.argtypes = [ c_int, c_int ]
+# clib.fftwpp_conv2d_convolve.argtypes = [ c_void_p,
+#                                           ndpointer(dtype=np.complex128),
+#                                           ndpointer(dtype=np.complex128) ]
 
-clib.fftwpp_create_conv3d.restype = c_void_p
-clib.fftwpp_create_conv3d.argtypes = [ c_int, c_int, c_int ]
-clib.fftwpp_conv3d_convolve.argtypes = [ c_void_p,
-                                          ndpointer(dtype=np.complex128),
-                                          ndpointer(dtype=np.complex128) ]
+# clib.fftwpp_create_hconv3d.restype = c_void_p
+# clib.fftwpp_create_hconv3d.argtypes = [ c_int, c_int, c_int ]
+# clib.fftwpp_hconv3d_convolve.argtypes = [ c_void_p,
+#                                           ndpointer(dtype=np.complex128),
+#                                           ndpointer(dtype=np.complex128) ]
+
+# clib.fftwpp_create_conv3d.restype = c_void_p
+# clib.fftwpp_create_conv3d.argtypes = [ c_int, c_int, c_int ]
+# clib.fftwpp_conv3d_convolve.argtypes = [ c_void_p,
+#                                           ndpointer(dtype=np.complex128),
+#                                           ndpointer(dtype=np.complex128) ]
 
 
 ###############################################################################
