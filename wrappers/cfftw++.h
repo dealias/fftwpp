@@ -10,12 +10,19 @@
 #ifndef CFFTWPP_H
 #define CFFTWPP_H
 
+typedef struct Complex Complex;
+
 typedef struct ImplicitConvolution ImplicitConvolution;
 typedef struct ImplicitHConvolution ImplicitHConvolution;
 
 #ifdef  __cplusplus
 
 #include "fftw++.h"
+
+Complex *create_ComplexAlign(unsigned int n);
+void init(Complex *f, unsigned int n); // temp
+void show(Complex *f, unsigned int n); // temp
+void init2(Complex *f, Complex *g, unsigned int m); // temp
 
 ImplicitConvolution *fftwpp_create_conv1d(unsigned int m);
 void fftwpp_conv1d_convolve(ImplicitConvolution *conv, double *a, double *b);
