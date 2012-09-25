@@ -13,11 +13,51 @@
 #include "fftw++.h"
 #include "cfftw++.h"
 #include "convolution.h"
+#include <iostream> // temp
+
+namespace array {
+  extern "C" {
+    // Complex arrays
+    Complex *create_ComplexAlign(unsigned int n) {
+      return fftwpp::ComplexAlign(n);
+    }
+
+    // FIXME: add delete option too!
+
+    void init(Complex * f, unsigned int n) {
+      for(unsigned int i=0; i < n; ++i) {
+	f[i]=2.0*i;
+      }
+    }
+
+    void show(Complex * f, unsigned int n) {
+      for(unsigned int i=0; i < n; ++i) {
+	std::cout << f[i] << std::endl;
+      }
+    }
+    
+    void init2(Complex *f, Complex *g, unsigned int m) 
+    {
+      for(unsigned int i=0; i < m; i += m) {
+	Complex *fi=f+i;
+	Complex *gi=g+i;
+	for(unsigned int k=0; k < m; k++) fi[k]=Complex(k,k+1);
+	for(unsigned int k=0; k < m; k++) gi[k]=Complex(k,2*k+1);
+      }
+    }
+
+
+
+
+  }
+}
 
 namespace fftwpp {
 
   // prototypes
   extern "C" {
+    // FIXME: why prototype and impliment in same file?
+
     // 1d complex wrappers
     ImplicitConvolution *fftwpp_create_conv1d(unsigned int m);
     void fftwpp_conv1d_delete(ImplicitConvolution *conv);
