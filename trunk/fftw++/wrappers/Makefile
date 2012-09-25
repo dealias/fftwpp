@@ -18,28 +18,22 @@ FFTW=../fftw++
 EXTRA=$(FFTW) ../convolution
 ALL=$(EXTRA)
 
-all: _fftwpp.so convolution.o #cfftw++.h.gch
+all: _fftwpp.so cexample
 
 fftw++.o: ../fftw++.cc ../fftw++.h
-	$(CC) -c $^ -o $@ 
+	$(CC) -c  $(CFLAGS) ../fftw++.cc -o $@  $(LDFLAGS)
 
-convolution.o: ../convolution.h ../convolution.cc
+convolution.o: ../convolution.h ../convolution.cc fftw++.o
 	$(CC) $(CFLAGS) -c -o $@ ../convolution.cc $(LDFLAGS)
 
-convolution: convolution convolution.o
-	$(CC) $(CFLAGS) convolution.o $(EXTRA:=.o) $(LDFLAGS)
+cfftw++.o: cfftw++.cc cfftw++.h convolution.o fftw++.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -c cfftw++.cc -o $@
+
+cexample: cexample.c cfftw++.o convolution.o fftw++.o
+	$(CC) $^  $(CFLAGS) $(LDFLAGS) -o $@
 
 _fftwpp.so: ../fftw++.cc cfftw++.cc ../convolution.cc
 	$(CC) -fPIC $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
-
-cfftw++.o: cfftw++.cc ../convolution.o ../fftw++.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -c $^ -o $@
-
-cexample.o: cexample.c
-	$(C)  -c -fPIC $^ $(LDFLAGS) -o $@
-
-cexample: cexample.o  cfftw++.o
-	$(CC) $^  $(CFLAGS) $(LDFLAGS) -o $@
 
 clean:
 	rm -f *.so fftwpp.pyc *.o cexample *.h.gch

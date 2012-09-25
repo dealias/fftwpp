@@ -8,14 +8,17 @@
 
 #ifndef CFFTWPP_H
 #define CFFTWPP_H
-#ifdef  __cplusplus
+
+//#ifdef  __cplusplus
 #include "fftw++.h"
 
-//ImplicitHConvolution *fftwpp_create_hconv1d(unsigned int m);
-//void fftwpp_hconv1d_convolve(ImplicitHConvolution *conv, double *a, double *b);
-
-
-
-#endif //  __cplusplus
 typedef struct ImplicitHConvolution ImplicitHConvolution;
+
+ImplicitHConvolution *fftwpp_create_hconv1d(unsigned int m);
+void fftwpp_hconv1d_convolve(ImplicitHConvolution *conv, double *a, double *b);
+
+
+
+//#endif //  __cplusplus
+
 #endif // CFFTWPP_H
