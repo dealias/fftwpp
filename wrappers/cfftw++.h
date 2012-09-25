@@ -2,23 +2,29 @@
  *
  * Not all of the FFTW++ routines are wrapped.
  *
- * Author: Matthew Emmett <memmett@unc.edu>
+ * Authors: 
+ * Matthew Emmett <memmett@unc.edu> and 
+ * Malcolm Roberts <malcolm.i.w.roberts@gmail.com>
  */
-
 
 #ifndef CFFTWPP_H
 #define CFFTWPP_H
 
-//#ifdef  __cplusplus
+typedef struct ImplicitConvolution ImplicitConvolution;
+typedef struct ImplicitHConvolution ImplicitHConvolution;
+
+#ifdef  __cplusplus
+
 #include "fftw++.h"
 
-typedef struct ImplicitHConvolution ImplicitHConvolution;
+ImplicitConvolution *fftwpp_create_conv1d(unsigned int m);
+void fftwpp_conv1d_convolve(ImplicitConvolution *conv, double *a, double *b);
 
 ImplicitHConvolution *fftwpp_create_hconv1d(unsigned int m);
 void fftwpp_hconv1d_convolve(ImplicitHConvolution *conv, double *a, double *b);
 
 
+#endif
 
-//#endif //  __cplusplus
 
-#endif // CFFTWPP_H
+#endif

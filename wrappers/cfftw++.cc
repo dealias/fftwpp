@@ -3,7 +3,9 @@
  * These C callable wrappers make the Python wrapper fairly easy.  Not
  * all of the FFTW++ routines are wrapped.
  *
- * Author: Matthew Emmett <memmett@unc.edu>
+ * Authors: 
+ * Matthew Emmett <memmett@unc.edu> and 
+ * Malcolm Roberts <malcolm.i.w.roberts@gmail.com>
  */
 
 #ifdef  __cplusplus
@@ -16,20 +18,17 @@ namespace fftwpp {
 
   // prototypes
   extern "C" {
-    // 1d
-    ImplicitHConvolution *fftwpp_create_hconv1d(unsigned int m);
-    void fftwpp_hconv1d_delete(ImplicitHConvolution *conv);
-    void fftwpp_hconv1d_convolve(ImplicitHConvolution *conv, 
-				 double *a, double *b);
-
-    /*
-
+    // 1d complex wrappers
     ImplicitConvolution *fftwpp_create_conv1d(unsigned int m);
     void fftwpp_conv1d_delete(ImplicitConvolution *conv);
     void fftwpp_conv1d_convolve(ImplicitConvolution *conv, 
 				double *a, double *b);
 
-    */
+    // 1d Hermitian wrappers
+    ImplicitHConvolution *fftwpp_create_hconv1d(unsigned int m);
+    void fftwpp_hconv1d_delete(ImplicitHConvolution *conv);
+    void fftwpp_hconv1d_convolve(ImplicitHConvolution *conv, 
+				 double *a, double *b);
 
     /*
     // 2d
@@ -63,12 +62,23 @@ namespace fftwpp {
   } // extern 'C'
 
 
-  // 1d wrappers
+  // 1d wrappers complex wrappers
+  ImplicitConvolution *fftwpp_create_conv1d(unsigned int m) {
+    return new ImplicitConvolution(m);
+  }
+
+  void fftwpp_conv1d_convolve(ImplicitConvolution *conv, double *a, double *b){
+    conv->convolve((Complex *) a, (Complex *) b);
+  }
+
+  void fftwpp_conv1d_delete(ImplicitConvolution *conv) {
+    delete conv;
+  }
+
+  // 1d wrappers Hermitian symmetric
   ImplicitHConvolution *fftwpp_create_hconv1d(unsigned int m) {
     return new ImplicitHConvolution(m);
   }
-
-
 
   void fftwpp_hconv1d_convolve(ImplicitHConvolution *conv, 
 			       double *a, double *b) {
@@ -78,22 +88,6 @@ namespace fftwpp {
   void fftwpp_hconv1d_delete(ImplicitHConvolution *conv) {
     delete conv;
   }
-
-  /*
-
-  ImplicitConvolution *fftwpp_create_conv1d(unsigned int m) {
-    return new ImplicitConvolution(m);
-  }
-
-  void fftwpp_conv1d_convolve(ImplicitConvolution *conv, double *a, double *b) {
-    conv->convolve((Complex *) a, (Complex *) b);
-  }
-
-  void fftwpp_conv1d_delete(ImplicitConvolution *conv) {
-    delete conv;
-  }
-
-  */
 
   /*
   // 2d wrappers
