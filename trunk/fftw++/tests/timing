@@ -176,7 +176,7 @@ while (test $i -le $stop); do
     m=$( echo 2^$i | bc)
     if [ "$implicit" = "yes" ]; then
 	#echo implicit
-	output="$m \t $(./$1 -m $m -i -n $N| grep -A 1 Implicit | tail -n 1)"
+	output="$m  $(./$1 -m $m -i -n $N| grep -A 1 Implicit | tail -n 1)"
 	echo $EOPTS $output | cat >> $outdir/implicit
     fi
 
@@ -185,11 +185,11 @@ while (test $i -le $stop); do
     fi
     if [ "$explicit" = "yes" ]; then
 	#echo explicit
-	output="$m \t $(./$1 -m $m -e -n $N| grep -A 1 Explicit | tail -n 1)"
+	output="$m  $(./$1 -m $m -e -n $N| grep -A 1 Explicit | tail -n 1)"
 	echo $EOPTS $output | cat >> $outdir/explicit
 	if [ "$prune" = "yes" ]; then
 	    #echo prune
-	    output="$m \t $(./$1 -m $m -p -n $N| grep -A 1 Pruned | tail -n 1)"
+	    output="$m  $(./$1 -m $m -p -n $N| grep -A 1 Pruned | tail -n 1)"
 	    echo $EOPTS $output | cat >> $outdir/pruned
 	fi
     fi

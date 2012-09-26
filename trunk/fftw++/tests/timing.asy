@@ -5,6 +5,7 @@ size(175,200,IgnoreAspect);
 barfactor=10;
 
 bool drawerrorbars=true;
+//drawerrorbars=false;
 
 scale(Log,Linear);
 real[] me,e,le,he;
@@ -12,9 +13,11 @@ real[] mi,i,li,hi;
 real[] mp,p,lp,hp;
 
 string name;
+string base;
 
 usersetting();
 
+if(base == "") base=getstring("base directory");
 if(name == "") name=getstring("program name");
 
 string dir;
@@ -41,18 +44,18 @@ if(find(name,"2") >= 0) d=2;
 if(find(name,"3") >= 0) d=3;
 
 if(expl) {
-  file fin=input(dir+"/explicit").line();
+  file fin=input(base+"/"+dir+"/explicit").line();
   real[][] a=fin.dimension(0,0);
   a=transpose(a);
   me=a[0]; e=a[1]; le=a[2]; he=a[3];
 }
   
-file fin=input(dir+"/implicit").line();
+file fin=input(base+"/"+dir+"/implicit").line();
 real[][] a=fin.dimension(0,0);
 a=transpose(a);
 mi=a[0]; i=a[1]; li=a[2]; hi=a[3];
 
-file fin=input(dir+"/pruned",check=false).line();
+file fin=input(base+"/"+dir+"/pruned",check=false).line();
 bool pruned=!error(fin);
 if(pruned) {
   real[][] a=fin.dimension(0,0);
@@ -104,7 +107,7 @@ draw(graph(mi,i,i > 0),Pentype(1),Label("implicit",Pen(1)+Lp),mark1);
 
 // fitting information; requires running rfit under R.
 real[] f;
-file fin=input(dir+"/implicit.p",check=false).line();
+file fin=input(base+"/"+dir+"/implicit.p",check=false).line();
 if(!error(fin)) {
   real[][] A=fin.dimension(0,0);
   real fcurve(real m) {
