@@ -5,10 +5,12 @@ size(175,200,IgnoreAspect);
 scale(Log,Log(true,true));
 real[] mp,p,mu,u,mP,P;
 
+string base;
 string name;
 
 usersetting();
 
+if(base == "") base=getstring("base directory");
 if(name == "") name=getstring("program name");
 
 string dir;
@@ -16,12 +18,12 @@ if(name == "conv") dir="timings1r/error.";
 else if(name == "cconv") dir="timings1c/error.";
 else abort("error test not implemented for "+name);
 
-file fin=input(dir+"explicit").line();
+file fin=input(base+"/"+dir+"explicit").line();
 real[][] a=fin.dimension(0,0);
 a=transpose(a);
 mp=a[0]; p=a[1];
 
-file fin=input(dir+"implicit").line();
+file fin=input(base+"/"+dir+"implicit").line();
 real[][] a=fin.dimension(0,0);
 a=transpose(a);
 mu=a[0]; u=a[1];
