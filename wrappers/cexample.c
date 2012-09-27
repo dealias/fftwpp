@@ -37,6 +37,7 @@ int main()
   printf("\n1d non-centered complex convolution:\n");
   ImplicitConvolution *cconv=fftwpp_create_conv1d(m);
   fftwpp_conv1d_convolve(cconv,f,g);
+  fftwpp_conv1d_delete(cconv);
   show(f,m);
 
   init(f,g,m); /* reset the inputs */
@@ -44,6 +45,7 @@ int main()
   printf("\n1d centered Hermitian-symmetric complex convolution:\n");
   ImplicitHConvolution *conv=fftwpp_create_hconv1d(m);
   fftwpp_hconv1d_convolve(conv,f,g);
+  fftwpp_hconv1d_delete(conv);
   show(f,m);
 
   return 0;
