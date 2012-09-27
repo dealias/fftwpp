@@ -37,7 +37,7 @@ namespace fftwpp {
     ImplicitHConvolution *fftwpp_create_hconv1d(unsigned int m);
     void fftwpp_hconv1d_delete(ImplicitHConvolution *conv);
     void fftwpp_hconv1d_convolve(ImplicitHConvolution *conv, 
-				 double *a, double *b);
+				 double __complex__*a, double __complex__ *b);
 
     /*
     // 2d
@@ -91,7 +91,7 @@ namespace fftwpp {
   }
 
   void fftwpp_hconv1d_convolve(ImplicitHConvolution *conv, 
-			       double *a, double *b) {
+			       double __complex__  *a, double __complex__  *b) {
     conv->convolve((Complex *) a, (Complex *) b);
   }
 
