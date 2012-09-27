@@ -30,7 +30,7 @@ cfftw++.o: cfftw++.cc cfftw++.h convolution.o fftw++.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -c cfftw++.cc -o $@
 
 cexample: cexample.c cfftw++.o convolution.o fftw++.o
-	$(C) $^  $(CFLAGS) $(LDFLAGS) -o $@  -lstdc++
+	$(C) $^  $(CFLAGS) $(LDFLAGS) -o $@  -lstdc++ -std=c99
 
 _fftwpp.so: ../fftw++.cc cfftw++.cc ../convolution.cc
 	$(CC) -fPIC $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
