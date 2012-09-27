@@ -10,10 +10,8 @@
 
 #ifdef  __cplusplus
 #include "Complex.h"
-//#include "fftw++.h"
 #include "cfftw++.h"
 #include "convolution.h"
-#include <iostream> // temp
 #include<complex.h>
 
 
