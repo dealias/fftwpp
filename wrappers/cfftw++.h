@@ -22,6 +22,7 @@ void fftwpp_conv1d_convolve(ImplicitConvolution *conv,
 			    double __complex__ *a, double __complex__  *b);
 
 ImplicitHConvolution *fftwpp_create_hconv1d(unsigned int m);
-void fftwpp_hconv1d_convolve(ImplicitHConvolution *conv, double *a, double *b);
+void fftwpp_hconv1d_convolve(ImplicitHConvolution *conv, 
+			     double __complex__ *a, double __complex__  *b);
 
 #endif

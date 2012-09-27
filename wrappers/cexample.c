@@ -21,25 +21,29 @@ void show(double complex *f, unsigned int m)
 int main()
 {
   printf("Example of calling fftw++ convolutions from C:\n");
-  unsigned int m=8;
+  unsigned int m=8; /* problem size */
   
-  double complex z1 = 1.0 + 3.0 * I;
-  printf("Starting values: Z1 = %.2f + %.2fi\n", creal(z1), cimag(z1));
-
+  /* input arrays must be aligned */
   double complex *f=create_complexAlign(m);
   double complex *g=create_complexAlign(m);
  
-  init(f,g,m);
-  printf("input f:\n");
+  init(f,g,m); /* set the input data */
+
+  printf("\ninput f:\n");
   show(f,m);
-  printf("input g:\n");
+  printf("\ninput g:\n");
   show(g,m);
   
-  printf("problem size=%u\n",m);
+  printf("\n1d non-centered complex convolution:\n");
+  ImplicitConvolution *cconv=fftwpp_create_conv1d(m);
+  fftwpp_conv1d_convolve(cconv,f,g);
+  show(f,m);
 
-  ImplicitConvolution *conv=fftwpp_create_conv1d(m);
-  fftwpp_conv1d_convolve(conv,f,g);
-  printf("1d non-centered complex convolution:\n");
+  init(f,g,m); /* reset the inputs */
+
+  printf("\n1d centered Hermitian-symmetric complex convolution:\n");
+  ImplicitHConvolution *conv=fftwpp_create_hconv1d(m);
+  fftwpp_hconv1d_convolve(conv,f,g);
   show(f,m);
 
   return 0;
