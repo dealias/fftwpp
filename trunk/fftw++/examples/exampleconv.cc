@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
     for(unsigned int i=0; i < m; i++) 
       cout << f[i] << "\t" << g[i] << endl;
     
-    {
+    { // 1d non-centered complex convolution
       cout << endl << "non-centered complex convolution:" << endl;
       ImplicitConvolution C(m);
       C.convolve(f,g);
@@ -67,7 +67,8 @@ int main(int argc, char* argv[])
     }
     
     init(f,g);
-    {
+
+    { // 1d centered Hermitian-symmetric complex convolution
       cout << endl << "centered Hermitian-symmetric convolution:" << endl;
       ImplicitHConvolution C(m);
       C.convolve(f,g);
@@ -78,16 +79,17 @@ int main(int argc, char* argv[])
     deleteAlign(f);
   }
 
-  { // 2D convolutions:
+  { // 1d non-centered complex convolution
     cout << endl << "2D non-centered complex convolution:" << endl;
     size_t align=sizeof(Complex);
     array2<Complex> f(mx,my,align);
     array2<Complex> g(mx,my,align);
     init(f,g);
-    cout << f << endl;
+    cout << "f:" << endl << f << endl;
+    cout << "g:" << endl << g << endl;
     ImplicitConvolution2 C(mx,my);
     C.convolve(f,g);
-    cout << f << endl;
+    cout << "non-centered complex convolution:" << endl << f << endl;
   }
 
   return 0;
