@@ -10,8 +10,8 @@ string name;
 
 usersetting();
 
-if(base == "") base=getstring("base directory");
-if(name == "") name=getstring("program name");
+if(base == "") base=getstring("base directory",".");
+if(name == "") name=getstring("program name","cconv");
 
 string dir;
 if(name == "conv") dir="timings1r/error.";

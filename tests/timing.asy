@@ -17,8 +17,8 @@ string base;
 
 usersetting();
 
-if(base == "") base=getstring("base directory");
-if(name == "") name=getstring("program name");
+if(base == "") base=getstring("base directory",".");
+if(name == "") name=getstring("program name","cconv");
 
 string dir;
 string prunelabel="$y$-pruned";
