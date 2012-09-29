@@ -3,7 +3,7 @@
 #include "Array.h"
 
 // Compile with:
-// g++ -fopenmp exampleconv.cc convolution.cc fftw++.cc -lfftw3 -lfftw3_omp
+// g++ -I .. -fopenmp exampleconv.cc ../convolution.cc ../fftw++.cc -lfftw3 -lfftw3_omp
 
 using namespace std;
 using namespace Array;
