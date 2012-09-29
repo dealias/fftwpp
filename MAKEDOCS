@@ -1,0 +1,1 @@
+In root directory of fftw++, run the command 'doxygen ./fftw++.doxycfg' to create documentation in a new 'docs' subdirectory.
