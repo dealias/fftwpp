@@ -39,7 +39,10 @@ cexample: cexample.c cfftw++.o convolution.o fftw++.o
 fexample.o: fexample.f90
 	$(F) $^ $(FFLAGS) -c -o $@ -ffree-form $(LDFLAGS)
 
-fexample: fexample.o cfftw++.o convolution.o fftw++.o
+ffftwpp.o: ffftwpp.f90
+	$(F) $^ $(FFLAGS) -c -o $@ -ffree-form $(LDFLAGS)
+
+fexample: fexample.o cfftw++.o convolution.o fftw++.o ffftwpp.o
 	$(F) $^ $(FFLAGS) -o $@ -lstdc++ -ffree-form  $(LDFLAGS) 
 
 _fftwpp.so: ../fftw++.cc cfftw++.cc ../convolution.cc
