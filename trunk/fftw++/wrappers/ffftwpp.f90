@@ -17,11 +17,22 @@ module fftwpp_module
      end function C_create_hconv1d
   end interface
 
-  public :: hconv1d_type, new_hconv1d
+  interface
+     subroutine C_delete_hconv1d(this) bind(C,name="fftwpp_conv1d_delete")
+       import
+       type(C_ptr), intent(inout) :: this
+     end subroutine C_delete_hconv1d
+  end interface
+
+  public :: hconv1d_type, new_hconv1d, del_hconv1d
   
   interface new_hconv1d
      module procedure create_hconv1d
   end interface new_hconv1d
+
+  interface del_hconv1d
+     module procedure delete_hconv1d
+  end interface del_hconv1d
 
 contains
 
@@ -30,5 +41,11 @@ contains
     integer(C_int), value :: m
     this%object = C_create_hconv1d(m)
   end subroutine create_hconv1d
+
+  subroutine delete_hconv1d(this)
+    type(hconv1d_type), intent(inout) :: this
+    call C_delete_hconv1d(this%object)
+    this%object = C_NULL_ptr
+  end subroutine delete_hconv1d
 
 end module fftwpp_module
