@@ -111,7 +111,7 @@ public:
   void convolve(Complex **F, Complex **G, Complex *u, Complex **V,
                 unsigned int offset=0);
   
-  // F and G are pointers to M distinct data blocks each of size m,
+  // F and G are distinct pointers to M distinct data blocks each of size m,
   // shifted by offset (contents not preserved).
   // The output is returned in F[0].
   void convolve(Complex **F, Complex **G, unsigned int offset=0) {
@@ -209,7 +209,7 @@ public:
   void convolve(Complex **F, Complex **G, Complex **U, Complex *v,
                 Complex *w, unsigned int offset=0);
   
-  // F and G are pointers to M distinct data blocks each of size m,
+  // F and G are distinct pointers to M distinct data blocks each of size m,
   // shifted by offset (contents not preserved).
   // The output is returned in F[0].
   void convolve(Complex **F, Complex **G, unsigned int offset=0) {
@@ -443,7 +443,7 @@ public:
     xfftpad->forwards(F[0]+offset,u2);
   }
   
-  // F and G are pointers to M distinct data blocks each of size mx*my,
+  // F and G are distinct pointers to M distinct data blocks each of size mx*my,
   // shifted by offset (contents not preserved).
   // The output is returned in F[0].
   void convolve(Complex **F, Complex **G, unsigned int offset=0) {
@@ -632,8 +632,8 @@ public:
     delete yconvolve;
   }
   
-  // F and G are pointers to M distinct data blocks each of size (2mx-1)*my,
-  // shifted by offset (contents not preserved).
+  // F and G are distinct pointers to M distinct data blocks each of size 
+  // (2mx-1)*my, shifted by offset (contents not preserved).
   // The output is returned in F[0].
   void convolve(Complex **F, Complex **G, Complex ***U, Complex **v, Complex **w,
                 Complex **U2, Complex **V2, bool symmetrize=true,
@@ -800,8 +800,8 @@ public:
     }
   }
   
-  // F and G are pointers to M distinct data blocks each of size mx*my*mz,
-  // shifted by offset (contents not preserved).
+  // F and G are distinct pointers to M distinct data blocks each of size
+  // mx*my*mz, shifted by offset (contents not preserved).
   // The output is returned in F[0].
   void convolve(Complex **F, Complex **G, Complex **u, Complex ***V,
                 Complex ***U2, Complex ***V2, Complex **U3, Complex **V3,
@@ -960,8 +960,8 @@ public:
     }
   }
   
-  // F and G are pointers to M distinct data blocks each of size 
-  // (2mx-1)*(2my-1)*mz,   // shifted by offset (contents not preserved).
+  // F and G are distinct pointers to M distinct data blocks each of size 
+  // (2mx-1)*(2my-1)*mz, shifted by offset (contents not preserved).
   // The output is returned in F[0].
   void convolve(Complex **F, Complex **G, Complex ***U, Complex **v, Complex **w,
                 Complex ***U2, Complex ***V2, Complex **U3, Complex **V3,
@@ -1068,14 +1068,13 @@ public:
     initpointers(W,w);
   }
   
-  // u, v, and w are distinct temporary arrays each of size m+1.
+  // u, v, and w are distinct temporary arrays each of size (m+1)*M.
   ImplicitHTConvolution(unsigned int m, Complex *u, Complex *v,
                         Complex *w, unsigned int M=1) :
     m(m), u(u), v(v), w(w), M(M), allocated(false) {
     init();
   }
   
-  // u, v, and w are distinct temporary arrays each of size m+1.
   ImplicitHTConvolution(unsigned int m, unsigned int M=1) : 
     m(m), u(ComplexAlign(m*M+M)), v(ComplexAlign(m*M+M)),
     w(ComplexAlign(m*M+M)), M(M), allocated(true) {
@@ -1104,9 +1103,9 @@ public:
                 Complex *u, Complex *v, Complex **W,
                 unsigned int offset=0);
   
-  // In-place implicitly dealiased convolution.
-  // The input arrays f, g, and h are each of size m+1 (contents not preserved).
-  // The output is returned in f.
+  // F, G, and H are distinct pointers to M distinct data blocks each of size
+  // m+1, shifted by offset (contents not preserved).
+  // The output is returned in F[0].
   void convolve(Complex **F, Complex **G, Complex **H, unsigned int offset=0) {
     convolve(F,G,H,u,v,W,offset);
   }
@@ -1117,6 +1116,127 @@ public:
   }
 };
 
+// In-place implicitly dealiased Hermitian ternary convolution.
+// Special case G=H, M=1.
+class ImplicitHFGGConvolution : public ThreadBase {
+protected:
+  unsigned int m;
+  Complex *u,*v;
+  unsigned int s;
+  rcfft1d *rc, *rco;
+  crfft1d *cr, *cro;
+  Complex *ZetaH, *ZetaL;
+  bool allocated;
+  unsigned int twom;
+  unsigned int stride;
+public:  
+  void init() {
+    twom=2*m;
+    stride=twom+2;
+    
+    rc=new rcfft1d(twom,u);
+    cr=new crfft1d(twom,u);
+    
+    rco=new rcfft1d(twom,(double *) u,v);
+    cro=new crfft1d(twom,v,(double *) u);
+    
+    threads=cro->Threads();
+    
+    s=BuildZeta(4*m,m,ZetaH,ZetaL);
+  }
+  
+  // u and v are distinct temporary arrays each of size m+1.
+  ImplicitHFGGConvolution(unsigned int m, Complex *u, Complex *v) :
+    m(m), u(u), v(v), allocated(false) {
+    init();
+  }
+  
+  ImplicitHFGGConvolution(unsigned int m) : 
+    m(m), u(ComplexAlign(m+1)), v(ComplexAlign(m+1)), allocated(true) {
+    init();
+  }
+  
+  ~ImplicitHFGGConvolution() {
+    if(allocated) {
+      deleteAlign(v);
+      deleteAlign(u);
+    }
+    deleteAlign(ZetaL);
+    deleteAlign(ZetaH);
+    delete cro;
+    delete rco;
+    delete cr;
+    delete rc;
+  }
+  
+  void mult(double *a, double *b);
+  
+  void convolve(Complex *f, Complex *g, Complex *u, Complex *v);
+  
+  // f and g are distinct pointers to data of size m+1 (contents not preserved).
+  // The output is returned in f.
+  void convolve(Complex *f, Complex *g) {
+    convolve(f,g,u,v);
+  }
+};
+
+// In-place implicitly dealiased Hermitian ternary convolution.
+// Special case F=G=H, M=1.
+class ImplicitHFFFConvolution : public ThreadBase {
+protected:
+  unsigned int m;
+  Complex *u;
+  unsigned int s;
+  rcfft1d *rc;
+  crfft1d *cr;
+  Complex *ZetaH, *ZetaL;
+  bool allocated;
+  unsigned int twom;
+  unsigned int stride;
+public:
+  void mult(double *a);
+  
+  void init() {
+    twom=2*m;
+    stride=twom+2;
+    
+    rc=new rcfft1d(twom,u);
+    cr=new crfft1d(twom,u);
+    
+    threads=cr->Threads();
+    
+    s=BuildZeta(4*m,m,ZetaH,ZetaL);
+  }
+  
+  // u is a distinct temporary array of size m+1.
+  ImplicitHFFFConvolution(unsigned int m, Complex *u) :
+    m(m), u(u), allocated(false) {
+    init();
+  }
+  
+  ImplicitHFFFConvolution(unsigned int m) :
+    m(m), u(ComplexAlign(m+1)), allocated(true) {
+    init();
+  }
+  
+  ~ImplicitHFFFConvolution() {
+    if(allocated)
+      deleteAlign(u);
+    
+    deleteAlign(ZetaL);
+    deleteAlign(ZetaH);
+    delete cr;
+    delete rc;
+  }
+  
+  void convolve(Complex *f, Complex *u);
+  // f is a pointer to data of size m+1 (contents not preserved).
+  // The output is returned in f.
+  void convolve(Complex *f) {
+    convolve(f,u);
+  }
+};
+  
 // Compute the scrambled virtual 2m-padded complex Fourier transform of M
 // complex vectors, each of length 2m with the Fourier origin at index m.
 // The arrays in and out (which may coincide), along
@@ -1323,8 +1443,8 @@ public:
     xfftpad->forwards(F[0]+offset,u2);
   }
   
-  // F, G, and H are pointers to M distinct data blocks each of size 2mx*(my+1),
-  // shifted by offset (contents not preserved).
+  // F, G, and H are distinct pointers to M distinct data blocks each of size
+  // 2mx*(my+1), shifted by offset (contents not preserved).
   // The output is returned in F[0].
   void convolve(Complex **F, Complex **G, Complex **H, bool symmetrize=true,
                 unsigned int offset=0) {
@@ -1337,6 +1457,201 @@ public:
   }
 };
 
+// In-place implicitly dealiased 2D Hermitian ternary convolution.
+// Special case G=H, M=1.
+class ImplicitHFGGConvolution2 : public ThreadBase {
+protected:
+  unsigned int mx,my;
+  Complex *u1,*v1;
+  Complex *u2,*v2;
+  fft0bipad *xfftpad;
+  ImplicitHFGGConvolution *yconvolve;
+  bool allocated;
+  Complex **u,**v;
+public:  
+  void initpointers(Complex **&u, Complex **&v, unsigned int threads) {
+    u=new Complex *[threads];
+    v=new Complex *[threads];
+    unsigned int my1=my+1;
+    for(unsigned int i=0; i < threads; ++i) {
+      unsigned int imy1=i*my1;
+      u[i]=u1+imy1;
+      v[i]=v1+imy1;
+    }
+  }
+    
+  void deletepointers(Complex **&u, Complex **&v) {
+    delete [] v;
+    delete [] u;
+  }
+    
+  void init() {
+    xfftpad=new fft0bipad(mx,my,my+1,u2);
+    threads=maxthreads=fftw::maxthreads;
+    
+    yconvolve=new ImplicitHFGGConvolution(my,u1,v1);
+    yconvolve->Threads(1);
+
+    initpointers(u,v,threads);
+  }
+  
+  // u1 and v1 are temporary arrays of size (my+1);
+  // u2 and v2 are temporary arrays of size 2mx*(my+1).
+  ImplicitHFGGConvolution2(unsigned int mx, unsigned int my,
+                         Complex *u1, Complex *v1,
+                         Complex *u2, Complex *v2) :
+    mx(mx), my(my), u1(u1), v1(v1), u2(u2), v2(v2), allocated(false) {
+    init();
+  }
+  
+  ImplicitHFGGConvolution2(unsigned int mx, unsigned int my) :
+    mx(mx), my(my),
+    u1(ComplexAlign((my+1)*fftw::maxthreads)),
+    v1(ComplexAlign((my+1)*fftw::maxthreads)),
+    u2(ComplexAlign(2*mx*(my+1))),
+    v2(ComplexAlign(2*mx*(my+1))),
+    allocated(true) {
+    init();
+  }
+  
+  ~ImplicitHFGGConvolution2() {
+    deletepointers(u,v);
+    
+    delete yconvolve;
+    delete xfftpad;
+    
+    if(allocated) {
+      deleteAlign(v2);
+      deleteAlign(u2);
+      deleteAlign(v1);
+      deleteAlign(u1);
+    }
+  }
+  
+  void convolve(Complex *f, Complex *g,
+                Complex **u, Complex **v,
+                Complex *u2, Complex *v2, bool symmetrize=true) {
+    unsigned int my1=my+1;
+    unsigned int mu=2*mx*my1;
+    
+    if(symmetrize)
+      HermitianSymmetrizeX(mx,my1,mx,f);
+    xfftpad->backwards(f,u2);
+    
+    if(symmetrize)
+      HermitianSymmetrizeX(mx,my1,mx,g);
+    xfftpad->backwards(g,v2);
+    
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif    
+    for(unsigned int i=0; i < mu; i += my1) {
+      unsigned int thread=get_thread_num();
+      yconvolve->convolve(f+i,g+i,u[thread],v[thread]);
+    }
+    
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif    
+    for(unsigned int i=0; i < mu; i += my1) {
+      unsigned int thread=get_thread_num();
+      yconvolve->convolve(u2+i,v2+i,u[thread],v[thread]);
+    }
+
+    xfftpad->forwards(f,u2);
+  }
+  
+  void convolve(Complex *f, Complex *g, bool symmetrize=true) {
+    convolve(f,g,u,v,u2,v2,symmetrize);
+  }
+};
+
+// In-place implicitly dealiased 2D Hermitian ternary convolution.
+// Special case F=G=H, M=1.
+class ImplicitHFFFConvolution2 : public ThreadBase {
+protected:
+  unsigned int mx,my;
+  Complex *u1;
+  Complex *u2;
+  fft0bipad *xfftpad;
+  ImplicitHFFFConvolution *yconvolve;
+  bool allocated;
+  Complex **u;
+public:  
+  void initpointers(Complex **&u, unsigned int threads) {
+    u=new Complex *[threads];
+    unsigned int my1=my+1;
+    for(unsigned int i=0; i < threads; ++i)
+      u[i]=u1+i*my1;
+  }
+    
+  void deletepointers(Complex **&u) {
+    delete [] u;
+  }
+    
+  void init() {
+    xfftpad=new fft0bipad(mx,my,my+1,u2);
+    threads=maxthreads=fftw::maxthreads;
+    
+    yconvolve=new ImplicitHFFFConvolution(my,u1);
+    yconvolve->Threads(1);
+    initpointers(u,threads);
+  }
+  
+  // u1 is a temporary array of size my+1;
+  // u2 is a temporary arrays of size 2mx*(my+1).
+  ImplicitHFFFConvolution2(unsigned int mx, unsigned int my,
+                           Complex *u1, Complex *u2) :
+    mx(mx), my(my), u1(u1), u2(u2), allocated(false) {
+    init();
+  }
+  
+  ImplicitHFFFConvolution2(unsigned int mx, unsigned int my) :
+    mx(mx), my(my),
+    u1(ComplexAlign((my+1)*fftw::maxthreads)),
+    u2(ComplexAlign(2*mx*(my+1))),
+    allocated(true) {
+    init();
+  }
+  
+  ~ImplicitHFFFConvolution2() {
+    deletepointers(u);
+    delete yconvolve;
+    delete xfftpad;
+    
+    if(allocated) {
+      deleteAlign(u2);
+      deleteAlign(u1);
+    }
+  }
+  
+  void convolve(Complex *f, Complex **u, Complex *u2, bool symmetrize=true) {
+    unsigned int my1=my+1;
+    unsigned int mu=2*mx*my1;
+    
+    if(symmetrize)
+      HermitianSymmetrizeX(mx,my1,mx,f);
+    xfftpad->backwards(f,u2);
+    
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif    
+    for(unsigned int i=0; i < mu; i += my1)
+      yconvolve->convolve(f+i,u[get_thread_num()]);
+    
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif    
+    for(unsigned int i=0; i < mu; i += my1)
+     yconvolve->convolve(u2+i,u[get_thread_num()]);
+
+    xfftpad->forwards(f,u2);
+  }
+  
+  void convolve(Complex *f, bool symmetrize=true) {
+    convolve(f,u,u2,symmetrize);
+  }
+};
 
 }
 
