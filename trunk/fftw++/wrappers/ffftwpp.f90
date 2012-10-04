@@ -10,7 +10,7 @@ module fftwpp_module
   end type hconv1d_type
   
   interface
-     function C_create_hconv1d(m) result(this) bind(C,name="fftwpp_create_conv1d")
+     function C_create_hconv1d(m) result(this) bind(C,name="fftwpp_create_hconv1d")
        import
        type(C_ptr) :: this
        integer(C_int), value :: m
@@ -18,17 +18,15 @@ module fftwpp_module
   end interface
   
   interface
-     subroutine C_delete_hconv1d(this) bind(C,name="fftwpp_conv1d_delete")
+     subroutine C_delete_hconv1d(this) bind(C,name="fftwpp_hconv1d_delete")
        import
- 
        type(C_ptr), intent(inout) :: this
      end subroutine C_delete_hconv1d
   end interface
 
   interface
-     subroutine C_convolve_hconv1d(this,f,g) bind(C,name="fftwpp_conv1d_convolve")
+     subroutine C_convolve_hconv1d(this,f,g) bind(C,name="fftwpp_hconv1d_convolve")
        import
-!       complex(C_DOUBLE_COMPLEX), pointer, intent(in) :: f(:), g(:)
        type(C_PTR) :: f,g
        type(C_ptr), intent(inout) :: this
      end subroutine C_convolve_hconv1d
@@ -64,13 +62,9 @@ contains
 
   subroutine convolve_hconv1d(this,f,g)
     type(hconv1d_type), intent(inout) :: this
-    !complex(C_DOUBLE_COMPLEX), pointer, intent(in) :: f(:), g(:)
-    !complex(C_DOUBLE_COMPLEX), pointer, intent(in) :: f(:), g(:)
     type(C_PTR) :: f,g
     call C_convolve_hconv1d(this%object,f,g)
   end subroutine convolve_hconv1d
-
-
 
 end module fftwpp_module
 
