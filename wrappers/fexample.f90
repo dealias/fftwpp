@@ -4,57 +4,41 @@ program fexample
   use, intrinsic :: ISO_C_Binding !FIXME: use only.... to clean up namespace?
   implicit NONE
   include 'fftw3.f03' !FIXME: have to link the file to pwd right now. Makefile?
-  integer(C_SIZE_T) :: mm
-
-  
-  integer :: m, i
-  complex :: z =(2,3)
-  complex :: cf, cg
-  double complex pf, pg ! these should be ponters....
-  ! double real, pointer :: pd
-  complex*16, dimension(:), allocatable, target :: g, f
+  integer(C_SIZE_T) :: m
+  integer :: i
   
   type(hconv1d_type) :: conv
-  complex(C_DOUBLE_COMPLEX), pointer :: ff(:), gg(:)
-  complex(C_DOUBLE_COMPLEX), pointer :: arr(:)
-  type(C_PTR) :: p
-  
-  write(*,*) loc(p)
-!  p=create_complexAlign(m);
-  p = fftw_alloc_complex(int(mm, C_SIZE_T)) ! allocate 
-!  p = fftw_alloc_real(int(mm, C_SIZE_T)) ! allocate 
-  write(*,*) loc(p)
-  write(*,*) loc(arr)
-  call c_f_pointer(p, arr, [mm])
-  write(*,*) loc(arr)  
+  complex(C_DOUBLE_COMPLEX), pointer :: f(:), g(:)
+  type(C_PTR) :: pf, pg
+ 
+  m=8 ! problem size
 
-!  arr=1.0
-!  write(*,*) arr(:)
-!  write(*,*) p
-  
-  write(*,*) "asdfasdf"
+  write(*,*) "allocate memory:"
+  write(*,*) associated(f)
+  pf = fftw_alloc_complex(int(m, C_SIZE_T)) ! allocate 
+  call c_f_pointer(pf, f, [m])
+  pg = fftw_alloc_complex(int(m, C_SIZE_T)) ! allocate 
+  call c_f_pointer(pg, g, [m])
+  write(*,*) associated(f)
 
-  write(*,*) z
-
-  m=8
-
-  ! FIXME: need to align memory here
-  allocate(f(m))
-  allocate(g(m))
-!  pd => f
-
+  ! initialize arrays
   do i=0,m-1
      f(i+1)=cmplx(i,(i+1))
      g(i+1)=cmplx(i,(2*i +1))
      print*,f(i+1)
   end do
 
-
+  ! convolve
   call new_hconv1d(conv,m)
-  !call conv_hconv1d(conv,cf,cg) ! FIXME: pass pointers to arrays
+  call conv_hconv1d(conv,pf,pg) ! FIXME: segfaults
   !call del_hconv1d(conv) !FIXME: segfaults
 
-  deallocate(f)
-  deallocate(g)
+  ! output of result
+  do i=1,m
+     print*,f(i)
+  end do
+
+  !deallocate(f) ! needs to be done with fftw_delete or some such thing.
+  !deallocate(g)
 
 end program fexample
