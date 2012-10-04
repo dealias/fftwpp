@@ -1,5 +1,6 @@
 module fftwpp_module
-  use, intrinsic :: ISO_C_Binding, only: C_int, C_ptr, C_NULL_ptr
+!  use, intrinsic :: ISO_C_Binding, only: C_int, C_ptr, C_NULL_ptr
+  use, intrinsic :: ISO_C_Binding !FIXME: use only.... to clean up namespace?
   implicit none
   private
   
@@ -7,7 +8,6 @@ module fftwpp_module
      private
      type(C_ptr) :: object = C_NULL_ptr
   end type hconv1d_type
-  !ImplicitConvolution_type
   
   interface
      function C_create_hconv1d(m) result(this) bind(C,name="fftwpp_create_conv1d")
@@ -16,7 +16,7 @@ module fftwpp_module
        integer(C_int), value :: m
      end function C_create_hconv1d
   end interface
-
+  
   interface
      subroutine C_delete_hconv1d(this) bind(C,name="fftwpp_conv1d_delete")
        import
@@ -28,7 +28,8 @@ module fftwpp_module
   interface
      subroutine C_convolve_hconv1d(this,f,g) bind(C,name="fftwpp_conv1d_convolve")
        import
-       complex :: f,g
+!       complex(C_DOUBLE_COMPLEX), pointer, intent(in) :: f(:), g(:)
+       type(C_PTR) :: f,g
        type(C_ptr), intent(inout) :: this
      end subroutine C_convolve_hconv1d
   end interface
@@ -63,8 +64,13 @@ contains
 
   subroutine convolve_hconv1d(this,f,g)
     type(hconv1d_type), intent(inout) :: this
-    complex, intent(inout) :: f,g
+    !complex(C_DOUBLE_COMPLEX), pointer, intent(in) :: f(:), g(:)
+    !complex(C_DOUBLE_COMPLEX), pointer, intent(in) :: f(:), g(:)
+    type(C_PTR) :: f,g
     call C_convolve_hconv1d(this%object,f,g)
   end subroutine convolve_hconv1d
 
+
+
 end module fftwpp_module
+
