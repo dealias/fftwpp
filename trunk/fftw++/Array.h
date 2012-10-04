@@ -18,7 +18,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA. */
 #ifndef __Array_h__
 #define __Array_h__ 1
 
-#define __ARRAY_H_VERSION__ 1.46
+#define __ARRAY_H_VERSION__ 1.47
 
 // Defining NDEBUG improves optimization but disables argument checking.
 // Defining __NOARRAY2OPT inhibits special optimization of Array2[].
@@ -470,8 +470,8 @@ class array2 : public array1<T> {
   }
   T* operator () () const {return this->v;}
 	
-  array2<T>& operator = (T a) {Load(a); return *this;}
-  array2<T>& operator = (T *a) {Load(a); return *this;}
+  array2<T>& operator = (T a) {this->Load(a); return *this;}
+  array2<T>& operator = (T *a) {this->Load(a); return *this;}
   array2<T>& operator = (const array2<T>& A) {
     __checkEqual(nx,A.Nx(),2,1);
     __checkEqual(ny,A.Ny(),2,2);
@@ -593,13 +593,13 @@ class array3 : public array1<T> {
   }
   T* operator () () const {return this->v;}
 	
-  array3<T>& operator = (T a) {Load(a); return *this;}
-  array3<T>& operator = (T *a) {Load(a); return *this;}
+  array3<T>& operator = (T a) {this->Load(a); return *this;}
+  array3<T>& operator = (T *a) {this->Load(a); return *this;}
   array3<T>& operator = (const array3<T>& A) {
     __checkEqual(nx,A.Nx(),3,1);
     __checkEqual(ny,A.Ny(),3,2);
     __checkEqual(nz,A.Nz(),3,3);
-    Load(A());
+    this->Load(A());
     A.Purge(); 
     return *this;
   }
@@ -713,14 +713,14 @@ class array4 : public array1<T> {
   }
   T* operator () () const {return this->v;}
 	
-  array4<T>& operator = (T a) {Load(a); return *this;}
-  array4<T>& operator = (T *a) {Load(a); return *this;}
+  array4<T>& operator = (T a) {this->Load(a); return *this;}
+  array4<T>& operator = (T *a) {this->Load(a); return *this;}
   array4<T>& operator = (const array4<T>& A) {
     __checkEqual(nx,A.Nx(),4,1);
     __checkEqual(ny,A.Ny(),4,2);
     __checkEqual(nz,A.Nz(),4,3);
     __checkEqual(nw,A.N4(),4,4);
-    Load(A());
+    this->Load(A());
     A.Purge();
     return *this;
   }
@@ -843,15 +843,15 @@ class array5 : public array1<T> {
   }
   T* operator () () const {return this->v;}
 	
-  array5<T>& operator = (T a) {Load(a); return *this;}
-  array5<T>& operator = (T *a) {Load(a); return *this;}
+  array5<T>& operator = (T a) {this->Load(a); return *this;}
+  array5<T>& operator = (T *a) {this->Load(a); return *this;}
   array5<T>& operator = (const array5<T>& A) {
     __checkEqual(nx,A.Nx(),5,1);
     __checkEqual(ny,A.Ny(),5,2);
     __checkEqual(nz,A.Nz(),5,3);
     __checkEqual(nw,A.N4(),5,4);
     __checkEqual(nv,A.N5(),5,5);
-    Load(A());
+    this->Load(A());
     A.Purge();
     return *this;
   }
@@ -915,7 +915,7 @@ std::istream& operator >> (std::istream& s, const array5<T>& A)
 #ifdef NDEBUG
 #define __check(i,n,o,dim,m)
 #else
-#define __check(i,n,o,dim,m) Check(i-o,n,dim,m,o)
+#define __check(i,n,o,dim,m) this->Check(i-o,n,dim,m,o)
 #endif
 
 template<class T>
@@ -979,19 +979,19 @@ class Array1 : public array1<T> {
   Array1<T> operator + (int i) const {return Array1<T>(this->size-i,this->v+i,ox);}
   void Set(T *a) {this->v=a; Offsets(); this->clear(this->allocated);}
 	
-  Array1<T>& operator = (T a) {Load(a); return *this;}
-  Array1<T>& operator = (const T *a) {Load(a); return *this;}
+  Array1<T>& operator = (T a) {this->Load(a); return *this;}
+  Array1<T>& operator = (const T *a) {this->Load(a); return *this;}
   Array1<T>& operator = (const Array1<T>& A) {
     __checkEqual(this->size,A.Size(),1,1);
     __checkEqual(ox,A.Ox(),1,1);
-    Load(A());
+    this->Load(A());
     A.Purge();
     return *this;
   }
   Array1<T>& operator = (const array1<T>& A) {
     __checkEqual(this->size,A.Size(),1,1);
     __checkEqual(ox,0,1,1);
-    Load(A());
+    this->Load(A());
     A.Purge();
     return *this;
   }
@@ -1063,8 +1063,8 @@ class Array2 : public array2<T> {
   T* operator () () const {return voff;}
   void Set(T *a) {this->v=a; Offsets(); this->clear(this->allocated);}
 	
-  Array2<T>& operator = (T a) {Load(a); return *this;}
-  Array2<T>& operator = (T *a) {Load(a); return *this;}
+  Array2<T>& operator = (T a) {this->Load(a); return *this;}
+  Array2<T>& operator = (T *a) {this->Load(a); return *this;}
   Array2<T>& operator = (const Array2<T>& A) {
     __checkEqual(this->nx,A.Nx(),2,1);
     __checkEqual(this->ny,A.Ny(),2,2);
@@ -1149,8 +1149,8 @@ class Array3 : public array3<T> {
   T* operator () () const {return voff;}
   void Set(T *a) {this->v=a; Offsets(); this->clear(this->allocated);}
 	
-  Array3<T>& operator = (T a) {Load(a); return *this;}
-  Array3<T>& operator = (T *a) {Load(a); return *this;}
+  Array3<T>& operator = (T a) {this->Load(a); return *this;}
+  Array3<T>& operator = (T *a) {this->Load(a); return *this;}
   Array3<T>& operator = (const Array3<T>& A) {
     __checkEqual(this->nx,A.Nx(),3,1);
     __checkEqual(this->ny,A.Ny(),3,2);
@@ -1158,7 +1158,7 @@ class Array3 : public array3<T> {
     __checkEqual(ox,A.Ox(),3,1);
     __checkEqual(oy,A.Oy(),3,2);
     __checkEqual(oz,A.Oz(),3,3);
-    Load(A());
+    this->Load(A());
     A.Purge(); 
     return *this;
   }
@@ -1169,7 +1169,7 @@ class Array3 : public array3<T> {
     __checkEqual(ox,0,3,1);
     __checkEqual(oy,0,3,2);
     __checkEqual(oz,0,3,3);
-    Load(A());
+    this->Load(A());
     A.Purge(); 
     return *this;
   }
@@ -1248,8 +1248,8 @@ class Array4 : public array4<T> {
   T* operator () () const {return voff;}
   void Set(T *a) {this->v=a; Offsets(); this->clear(this->allocated);}
 	
-  Array4<T>& operator = (T a) {Load(a); return *this;}
-  Array4<T>& operator = (T *a) {Load(a); return *this;}
+  Array4<T>& operator = (T a) {this->Load(a); return *this;}
+  Array4<T>& operator = (T *a) {this->Load(a); return *this;}
   
   Array4<T>& operator = (const Array4<T>& A) {
     __checkEqual(this->nx,A.Nx(),4,1);
@@ -1260,7 +1260,7 @@ class Array4 : public array4<T> {
     __checkEqual(oy,A.Oy(),4,2);
     __checkEqual(oz,A.Oz(),4,3);
     __checkEqual(ow,A.O4(),4,4);
-    Load(A());
+    this->Load(A());
     A.Purge();
     return *this;
   }
@@ -1277,7 +1277,7 @@ class Array4 : public array4<T> {
     __checkEqual(oy,0,4,2);
     __checkEqual(oz,0,4,3);
     __checkEqual(ow,0,4,4);
-    Load(A());
+    this->Load(A());
     A.Purge();
     return *this;
   }
@@ -1360,8 +1360,8 @@ class Array5 : public array5<T> {
   T* operator () () const {return voff;}
   void Set(T *a) {this->v=a; Offsets(); this->clear(this->allocated);}
 	
-  Array5<T>& operator = (T a) {Load(a); return *this;}
-  Array5<T>& operator = (T *a) {Load(a); return *this;}
+  Array5<T>& operator = (T a) {this->Load(a); return *this;}
+  Array5<T>& operator = (T *a) {this->Load(a); return *this;}
   
   Array5<T>& operator = (const Array5<T>& A) {
     __checkEqual(this->nx,A.Nx(),5,1);
@@ -1374,7 +1374,7 @@ class Array5 : public array5<T> {
     __checkEqual(oz,A.Oz(),5,3);
     __checkEqual(ow,A.O4(),5,4);
     __checkEqual(ov,A.O5(),5,5);
-    Load(A());
+    this->Load(A());
     A.Purge();
     return *this;
   }
@@ -1389,7 +1389,7 @@ class Array5 : public array5<T> {
     __checkEqual(oz,0,5,3);
     __checkEqual(ow,0,5,4);
     __checkEqual(ov,0,5,5);
-    Load(A());
+    this->Load(A());
     A.Purge();
     return *this;
   }
