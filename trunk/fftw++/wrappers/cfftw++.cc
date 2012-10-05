@@ -90,10 +90,15 @@ namespace fftwpp {
 
   void fftwpp_hconv1d_convolve(ImplicitHConvolution *conv, 
 			       double __complex__  *a, double __complex__  *b) {
+    // FIXME: temp debugging output
+    std::cout << "fftwpp_hconv1d_convolve" << std::endl;
+    std::cout << "conv=" << conv << std::endl;
     conv->convolve((Complex *) a, (Complex *) b);
   }
 
   void fftwpp_hconv1d_delete(ImplicitHConvolution *conv) {
+    // FIXME: temp debugging output
+    std::cout << conv << std::endl;
     delete conv;
   }
 
