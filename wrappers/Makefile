@@ -42,13 +42,13 @@ cexample: cexample.c cfftw++.o convolution.o fftw++.o
 #fftwpp_module.mod: 
 #	$(F) $^ $(FFLAGS) -c -o $@ -ffree-form $(LDFLAGS)
 
-fexample: ffftwpp.f90 fexample.f90 cfftw++.o convolution.o fftw++.o 
-	$(F) $^ $(FFLAGS) -o $@ -lstdc++ -ffree-form  $(LDFLAGS) 
+fexample: fexample.f90 fftwpp.f90 cfftw++.o convolution.o fftw++.o
+	$(F) $^ $(FFLAGS) -o $@ -lstdc++ $(LDFLAGS) 
 
 _fftwpp.so: ../fftw++.cc cfftw++.cc ../convolution.cc
 	$(CC) -fPIC $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
 
 clean:
-	rm -f cexample fexample *.so *.pyc *.o  *.h.gch
+	rm -f cexample fexample *.so *.pyc *.o  *.h.gch ../*.o ../*.d *.mod
 
 .PHONY: clean
