@@ -3,9 +3,10 @@
 #
 
 IDIR =../
+FFTWIDIR=/usr/local/include/
 
 CC=g++
-CFLAGS=-fopenmp -g -Wall -ansi -O3 -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native -I$(IDIR)
+CFLAGS=-fopenmp -g -Wall -ansi -O3 -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native -I$(IDIR) -I$(FFTWIDIR)
 C=gcc
 F=gfortran
 
@@ -36,14 +37,14 @@ cfftw++.o: cfftw++.cc cfftw++.h convolution.o fftw++.o
 cexample: cexample.c cfftw++.o convolution.o fftw++.o
 	$(C) $^  $(CFLAGS) $(LDFLAGS) -o $@  -lstdc++ -std=c99
 
-#fexample.o: fexample.f90
-#	$(F) $^ $(FFLAGS) -c -o $@ -ffree-form $(LDFLAGS)
+fftwpp.o: fftwpp.f90
+	$(F) -c fftwpp.f90
 
-#fftwpp_module.mod: 
-#	$(F) $^ $(FFLAGS) -c -o $@ -ffree-form $(LDFLAGS)
+fftwpp.mod: fftwpp.o fftwpp.f90
+	@true
 
-fexample: fexample.f90 fftwpp.f90 cfftw++.o convolution.o fftw++.o
-	$(F) $^ $(FFLAGS) -o $@ -lstdc++ $(LDFLAGS) 
+fexample: fexample.f90 fftwpp.o cfftw++.o convolution.o fftw++.o
+	$(F) $^ $(FFLAGS) -o $@ -lstdc++ $(LDFLAGS) -I$(FFTWIDIR)
 
 _fftwpp.so: ../fftw++.cc cfftw++.cc ../convolution.cc
 	$(CC) -fPIC $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
