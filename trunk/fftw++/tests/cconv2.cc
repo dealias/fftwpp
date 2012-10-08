@@ -1,6 +1,7 @@
 #include "Complex.h"
 #include "convolution.h"
 #include "explicit.h"
+#include "direct.h"
 #include "utils.h"
 #include "Array.h"
 #include <omp.h>

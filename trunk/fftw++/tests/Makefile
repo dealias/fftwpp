@@ -18,7 +18,7 @@ LDFLAGS=-lfftw3 -lfftw3_omp -lm
 
 FILES=conv cconv conv2 cconv2 conv3 cconv3 tconv tconv2
 FFTW=../fftw++
-EXTRA=$(FFTW) ../convolution ../explicit
+EXTRA=$(FFTW) ../convolution ../explicit direct
 ALL=$(FILES) $(EXTRA)
 
 all: $(FILES)
