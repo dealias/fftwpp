@@ -43,7 +43,7 @@ const double hsqrt3=0.5*sqrt3;
 const Complex zeta3(-0.5,hsqrt3);
 
 unsigned int BuildZeta(unsigned int n, unsigned int m,
-                       Complex *&ZetaH, Complex *&ZetaL)
+                       Complex *&ZetaH, Complex *&ZetaL, unsigned int threads)
 {
   unsigned int s=(int) sqrt((double) m);
   unsigned int t=m/s;
@@ -53,7 +53,7 @@ unsigned int BuildZeta(unsigned int n, unsigned int m,
   ZetaH=ComplexAlign(t);
   
 #ifndef FFTWPP_SINGLE_THREAD
-#pragma omp parallel for
+#pragma omp parallel for num_threads(threads)
 #endif    
   for(unsigned int a=0; a < t; ++a) {
     double theta=s*a*arg;
@@ -61,7 +61,7 @@ unsigned int BuildZeta(unsigned int n, unsigned int m,
   }
   ZetaL=ComplexAlign(s);
 #ifndef FFTWPP_SINGLE_THREAD
-#pragma omp parallel for
+#pragma omp parallel for num_threads(threads)
 #endif    
   for(unsigned int b=0; b < s; ++b) {
     double theta=b*arg;
