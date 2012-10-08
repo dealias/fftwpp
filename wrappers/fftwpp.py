@@ -26,16 +26,21 @@ clib.fftwpp_hconv1d_convolve.argtypes = [ c_void_p,
                                           ndpointer(dtype=np.complex128),
                                           ndpointer(dtype=np.complex128) ]
 
-# FIXME: uncomment this region when ready.
-# clib.fftwpp_create_hconv2d.restype = c_void_p
-# clib.fftwpp_create_hconv2d.argtypes = [ c_int, c_int ]
-# clib.fftwpp_hconv2d_convolve.argtypes = [ c_void_p,
-#                                           ndpointer(dtype=np.complex128),
-#                                           ndpointer(dtype=np.complex128) ]
+clib.fftwpp_create_conv2d.restype = c_void_p
+clib.fftwpp_create_conv2d.argtypes = [ c_int, c_int ]
+clib.fftwpp_conv2d_convolve.argtypes = [ c_void_p,
+                                         ndpointer(dtype=np.complex128),
+                                         ndpointer(dtype=np.complex128) ]
 
-# clib.fftwpp_create_conv2d.restype = c_void_p
-# clib.fftwpp_create_conv2d.argtypes = [ c_int, c_int ]
-# clib.fftwpp_conv2d_convolve.argtypes = [ c_void_p,
+clib.fftwpp_create_hconv2d.restype = c_void_p
+clib.fftwpp_create_hconv2d.argtypes = [ c_int, c_int ]
+clib.fftwpp_hconv2d_convolve.argtypes = [ c_void_p,
+                                          ndpointer(dtype=np.complex128),
+                                          ndpointer(dtype=np.complex128) ]
+
+# clib.fftwpp_create_conv3d.restype = c_void_p
+# clib.fftwpp_create_conv3d.argtypes = [ c_int, c_int, c_int ]
+# clib.fftwpp_conv3d_convolve.argtypes = [ c_void_p,
 #                                           ndpointer(dtype=np.complex128),
 #                                           ndpointer(dtype=np.complex128) ]
 
@@ -44,13 +49,6 @@ clib.fftwpp_hconv1d_convolve.argtypes = [ c_void_p,
 # clib.fftwpp_hconv3d_convolve.argtypes = [ c_void_p,
 #                                           ndpointer(dtype=np.complex128),
 #                                           ndpointer(dtype=np.complex128) ]
-
-# clib.fftwpp_create_conv3d.restype = c_void_p
-# clib.fftwpp_create_conv3d.argtypes = [ c_int, c_int, c_int ]
-# clib.fftwpp_conv3d_convolve.argtypes = [ c_void_p,
-#                                           ndpointer(dtype=np.complex128),
-#                                           ndpointer(dtype=np.complex128) ]
-
 
 ###############################################################################
 # convolution classes
@@ -350,7 +348,7 @@ class HConvolution(object):
     >>> assert f.shape == (N,)
 
     Now, construct the convolution object and convolve::
-
+#FIXME: should be a HConvolution?
     >>> c = fftwpp.Convolution(f.shape)
     >>> c.convolve(f, g)
 
@@ -435,7 +433,7 @@ class HConvolution(object):
             self._delete = clib.fftwpp_hconv1d_delete
         elif self.dim == 2:
 #             self.cptr = clib.fftwpp_create_hconv2d(c_int(ny), c_int(ny))
-            self.cptr = clib.fftwpp_create_hconv2d(*shape)
+            self.cptr = clib.fftwpp_create_hconv2d(*shape) # FIXME???
             self._convolve = clib.fftwpp_hconv2d_convolve
             self._delete = clib.fftwpp_hconv2d_delete
         elif self.dim == 3:
