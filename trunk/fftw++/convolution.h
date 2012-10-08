@@ -33,7 +33,7 @@ extern const Complex zeta3;
 
 // Build the factored zeta tables.
 unsigned int BuildZeta(unsigned int n, unsigned int m,
-                       Complex *&ZetaH, Complex *&ZetaL);
+                       Complex *&ZetaH, Complex *&ZetaL, unsigned int threads=1);
 
 class ThreadBase
 {
@@ -74,7 +74,7 @@ public:
     
     threads=Forwards->Threads();
 
-    s=BuildZeta(2*m,m,ZetaH,ZetaL);
+    s=BuildZeta(2*m,m,ZetaH,ZetaL,threads);
     
     initpointers(V,v);
   }
@@ -165,7 +165,7 @@ public:
     
     threads=cro->Threads();
     
-    s=BuildZeta(3*m,2*c == m ? c : c+1,ZetaH,ZetaL);
+    s=BuildZeta(3*m,2*c == m ? c : c+1,ZetaH,ZetaL,threads);
     
     initpointers(U,u);
   }
@@ -253,7 +253,7 @@ public:
     
     threads=Forwards->Threads();
     
-    s=BuildZeta(2*m,m,ZetaH,ZetaL);
+    s=BuildZeta(2*m,m,ZetaH,ZetaL,threads);
   }
   
   ~fftpad() {
@@ -1063,7 +1063,7 @@ public:
     
     threads=cro->Threads();
     
-    s=BuildZeta(4*m,m,ZetaH,ZetaL);
+    s=BuildZeta(4*m,m,ZetaH,ZetaL,threads);
     
     initpointers(W,w);
   }
@@ -1142,7 +1142,7 @@ public:
     
     threads=cro->Threads();
     
-    s=BuildZeta(4*m,m,ZetaH,ZetaL);
+    s=BuildZeta(4*m,m,ZetaH,ZetaL,threads);
   }
   
   // u and v are distinct temporary arrays each of size m+1.
@@ -1205,7 +1205,7 @@ public:
     
     threads=cr->Threads();
     
-    s=BuildZeta(4*m,m,ZetaH,ZetaL);
+    s=BuildZeta(4*m,m,ZetaH,ZetaL,threads);
   }
   
   // u is a distinct temporary array of size m+1.
@@ -1267,7 +1267,7 @@ public:
     
     threads=Forwards->Threads();
     
-    s=BuildZeta(4*m,twom,ZetaH,ZetaL);
+    s=BuildZeta(4*m,twom,ZetaH,ZetaL,threads);
   }
   
   ~fft0bipad() {
