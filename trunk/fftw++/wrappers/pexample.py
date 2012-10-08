@@ -2,6 +2,7 @@
 
 import numpy as np
 import fftwpp
+print "Example of calling fftw++ convolutions from python:"
 
 N = 8
 
@@ -13,19 +14,19 @@ def init(f,g):
         k += 1
     return;
 
-f = np.empty(N,'complex')
-g = np.empty(N,'complex')
+f = np.ndarray(shape=(N), dtype=complex)
+g = np.ndarray(shape=(N), dtype=complex)
 
 init(f,g)
 
-print "input:"
-print
+print "input f:"
 print f
 print
+print "input g:"
 print g
 
 print
-print "non-centered convolution:"
+print "1d non-centered complex convolution:"
 conv = fftwpp.Convolution(f.shape)
 conv.convolve(f,g)
 print f
@@ -33,15 +34,10 @@ print f
 init(f,g)
 
 print
-print "centered convolution:"
+print "1d centered Hermitian-symmetric complex convolution:"
 hconv = fftwpp.HConvolution(f.shape)
 hconv.convolve(f,g)
 print f
-
-
-
-print
-print "2d convolutions:"
 
 def init2(f,g):
     a=0
@@ -56,17 +52,29 @@ def init2(f,g):
 
 mx=4
 my=4
+
+print
+print "2d non-centered complex convolution:"
 x = np.ndarray(shape=(mx,my), dtype=complex)
 y = np.ndarray(shape=(mx,my), dtype=complex)
 
 init2(x,y)
 
-print
-print "non-centered convolution:"
 conv = fftwpp.Convolution(x.shape)
 conv.convolve(x,y)
 print x
 
+
+print
+print "2d non-centered complex convolution:"
+hx = np.ndarray(shape=(2*mx-1,my), dtype=complex)
+hy = np.ndarray(shape=(2*mx-1,my), dtype=complex)
+
+#init2(hx,hy)
+#print hx
+#hconv2 = fftwpp.HConvolution(mx,my)
+#hconv2.convolve(hx,hy) # FIXME: segfault
+#print hx
 
 # FIXME: 2D Hermitian convolution wrapper is broken
 
