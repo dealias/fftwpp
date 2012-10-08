@@ -5,7 +5,7 @@ program fexample
   use, intrinsic :: ISO_C_Binding !FIXME: use only.... to clean up namespace?
   implicit NONE
   include 'fftw3.f03' !FIXME: have to link the file to pwd right now. Makefile?
-  integer(C_SIZE_T) :: m
+  integer(c_int) :: m
   integer :: i
   
 !  type(hconv1d_type) :: conv
