@@ -21,8 +21,22 @@ namespace fftwpp {
 
   // prototypes
   extern "C" {
+
+    // wrappers for allocating aligned memory arrays
+    double *create_doubleAlign(unsigned int n) {
+      return (double  * ) fftwpp::doubleAlign(n); 
+    }
+
+    void delete_doubleAlign(double * p) {
+      deleteAlign(p);
+    }
+
     double __complex__  *create_complexAlign(unsigned int n) {
       return (double __complex__ * ) fftwpp::ComplexAlign(n); 
+    }
+
+    void delete_complexAlign(double __complex__ * p) {
+      deleteAlign(p);
     }
 
     // 1d complex wrappers
@@ -51,22 +65,21 @@ namespace fftwpp {
     void fftwpp_hconv2d_convolve(ImplicitHConvolution2 *conv, 
 				 double *a, double *b);
 
-    /*
-    // 3d
-    ImplicitHConvolution3 *fftwpp_create_hconv3d(unsigned int mx, 
-						 unsigned int my, 
-						 unsigned int mz);
-    void fftwpp_hconv3d_delete(ImplicitHConvolution3 *conv);
-    void fftwpp_hconv3d_convolve(ImplicitHConvolution3 *conv, 
-				 double *a, double *b);
-
+    // 3d complex wrappers
     ImplicitConvolution3 *fftwpp_create_conv3d(unsigned int mx, 
 					       unsigned int my, 
 					       unsigned int mz);
     void fftwpp_conv3d_delete(ImplicitConvolution3 *conv);
     void fftwpp_conv3d_convolve(ImplicitConvolution3 *conv, 
 				double *a, double *b);
-    */
+
+    // 3d Hermitian symmetric  wrappers
+    ImplicitHConvolution3 *fftwpp_create_hconv3d(unsigned int mx, 
+						 unsigned int my, 
+						 unsigned int mz);
+    void fftwpp_hconv3d_delete(ImplicitHConvolution3 *conv);
+    void fftwpp_hconv3d_convolve(ImplicitHConvolution3 *conv, 
+				 double *a, double *b);
   } // extern 'C'
 
 
@@ -115,7 +128,6 @@ namespace fftwpp {
   // 2d centered Hermitian-symmetric convolution
   ImplicitHConvolution2 *fftwpp_create_hconv2d(unsigned int mx, 
 					       unsigned int my) {
-    std::cout << "ImplicitHConvolution2" << std::endl;
     return new ImplicitHConvolution2(mx, my);
   }
 
@@ -128,7 +140,6 @@ namespace fftwpp {
     delete conv;
   }
 
-  /*
   // 3d non-centered complex convolution
   ImplicitConvolution3 *fftwpp_create_conv3d(unsigned int mx, 
 					     unsigned int my, 
@@ -144,9 +155,7 @@ namespace fftwpp {
   void fftwpp_conv3d_delete(ImplicitConvolution3 *conv) {
     delete conv;
   }
-  */
 
-  /*
   // 3d centered Hermitian-symmetric convolution
   ImplicitHConvolution3 *fftwpp_create_hconv3d(unsigned int mx, 
 					       unsigned int my, 
@@ -162,8 +171,6 @@ namespace fftwpp {
   void fftwpp_hconv3d_delete(ImplicitHConvolution3 *conv) {
     delete conv;
   }
-
-  */
 }
 
 #endif //__cplusplus

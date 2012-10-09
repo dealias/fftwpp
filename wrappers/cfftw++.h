@@ -10,8 +10,11 @@
 #ifndef CFFTWPP_H
 #define CFFTWPP_H
 
-
+// wrappers for allocating aligned memory arrays
+double *create_doublealign(unsigned int n);
+void delete_complexAlign(double __complex__ * p);
 double __complex__  *create_complexAlign(unsigned int n);
+void delete_complexAlign(double __complex__ * p);
 
 // 1d complex non-centered convolution
 typedef struct ImplicitConvolution ImplicitConvolution;
@@ -40,5 +43,21 @@ ImplicitHConvolution2 *fftwpp_create_hconv2d(unsigned int mx, unsigned int my);
 void fftwpp_hconv2d_convolve(ImplicitHConvolution2 *conv, 
 			    double __complex__ *a, double __complex__  *b);
 void fftwpp_hconv2d_delete(ImplicitHConvolution2 *conv);
+
+// 3d complex non-centered convolution
+typedef struct ImplicitConvolution3 ImplicitConvolution3;
+ImplicitConvolution3 *fftwpp_create_conv3d(unsigned int mx, unsigned int my, 
+					   unsigned int mz);
+void fftwpp_conv3d_convolve(ImplicitConvolution3 *conv, 
+			    double __complex__ *a, double __complex__  *b);
+void fftwpp_conv3d_delete(ImplicitConvolution3 *conv);
+
+// 3d Hermitian-symmetric centered convolution
+typedef struct ImplicitHConvolution3 ImplicitHConvolution3;
+ImplicitHConvolution3 *fftwpp_create_hconv3d(unsigned int mx, unsigned int my, 
+					   unsigned int mz);
+void fftwpp_hconv3d_convolve(ImplicitHConvolution3 *conv, 
+			    double __complex__ *a, double __complex__  *b);
+void fftwpp_hconv3d_delete(ImplicitHConvolution3 *conv);
 
 #endif
