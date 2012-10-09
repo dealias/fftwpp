@@ -32,7 +32,7 @@ void show2(double complex** F,
 {
   for(unsigned int i=0; i < mx; ++i) {
     for(unsigned int j=0; j < my; j++) {
-      printf("(%.2f,%.2f) ", creal(F[i][j]), cimag(F[i][j]));
+      printf("(%.0f,%.0f) ", creal(F[i][j]), cimag(F[i][j]));
     }
     printf("\n");
   }
@@ -44,9 +44,10 @@ void pshow2(double complex* f,
   int i,j,pos=0;
   for(i=0; i < mx; i++) {
     for(j=0; j < my; j++) {
-      printf("(%.2f,%.2f) ", creal(f[pos]), cimag(f[pos]));
+      printf("(%.1f,%.1f) ", creal(f[pos]), cimag(f[pos]));
       pos++;
     }
+    //   pos++;
     printf("\n");
   }
 }
@@ -281,35 +282,46 @@ int main()
     
     unsigned int mx=4, my=4;  /* problem size */
     unsigned int Mx=2*mx, my1=my+1;
-    unsigned int Mxy1=Mx*my1;
+    unsigned int Mxy1=(Mx+1)*my1;
 
     double complex *e=create_complexAlign(Mxy1);
     double complex *f=create_complexAlign(Mxy1);
     double complex *g=create_complexAlign(Mxy1);
-    
-    int i,j,pos=0;
-    for(i=0; i < 2*mx-1; i++) {
+    int i;
+    for(i=0; i < Mxy1; i++) {
+      e[i]=0.0;
+      f[i]=0.0;
+      g[i]=0.0;
+    }
+
+    int j,pos;
+    unsigned int stop=2*mx-1;
+    for(i=0; i < stop; i++) {
+      int ii=i+1;
       for(j=0; j < my; j++) {
+	pos=ii*(my+1)+j;
 	e[pos]=i+I*j;
-	f[pos]=(i+1)+I*(j+2);
-	g[pos]=(2*i)+I*(j+1);
-	pos++;
+	f[pos]=2.0*((i+1.0)+I*(j+2.0));
+	g[pos]=0.5*((2.0*i)+I*(j+1.0));
       }
     }
     printf("\ninput e:\n");
-    pshow2(e,2*mx-1,my);
+    pshow2(e,2*mx,my1);
     printf("\ninput f:\n");
-    pshow2(f,2*mx-1,my);
+    pshow2(f,2*mx,my1);
     printf("\ninput g:\n");
-    pshow2(g,2*mx-1,my);
+    pshow2(g,2*mx,my1);
 
-    /* FIXME: htconv2 ouptut not correct. Data not in correct order?*/
     ImplicitHTConvolution2 *conv=fftwpp_create_htconv2d(mx,my);
     fftwpp_htconv2d_convolve(conv,e,f,g);
     fftwpp_htconv2d_delete(conv);
 
-    printf("\noutput:\n");
-    pshow2(e,2*mx-1,my);
+    /* set unused array elements to zero for presentation's sake */
+    for(i=0; i < my1; i++) e[i]=0.0;
+    for(i=0; i < 2*mx; i++) e[i*my1+mx]=0.0;
+
+    printf("\noutput:\n");    
+    pshow2(e,2*mx,my1);
 
   }
 
