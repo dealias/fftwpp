@@ -80,6 +80,20 @@ namespace fftwpp {
     void fftwpp_hconv3d_delete(ImplicitHConvolution3 *conv);
     void fftwpp_hconv3d_convolve(ImplicitHConvolution3 *conv, 
 				 double *a, double *b);
+
+    // 1d centered Hermitian-symmetric ternary  convolution
+    ImplicitHTConvolution *fftwpp_create_htconv1d(unsigned int mx);
+    void fftwpp_htconv1d_convolve(ImplicitHTConvolution *conv, 
+				double *a, double *b, double *c);
+    void fftwpp_htconv1d_delete(ImplicitHTConvolution *conv);
+
+    // 2d centered Hermitian-symmetric ternary  convolution
+    ImplicitHTConvolution2 *fftwpp_create_htconv2d(unsigned int mx, 
+						   unsigned int my);
+    void fftwpp_htconv2d_convolve(ImplicitHTConvolution2 *conv, 
+				double *a, double *b, double *c);
+    void fftwpp_htconv2d_delete(ImplicitHTConvolution2 *conv);
+
   } // extern 'C'
 
 
@@ -162,15 +176,40 @@ namespace fftwpp {
 					       unsigned int mz) {
     return new ImplicitHConvolution3(mx, my, mz);
   }
-
   void fftwpp_hconv3d_convolve(ImplicitHConvolution3 *conv, 
 			       double *a, double *b) {
     conv->convolve((Complex *) a, (Complex *) b);
   }
-
   void fftwpp_hconv3d_delete(ImplicitHConvolution3 *conv) {
     delete conv;
   }
+
+  // 1d centered Hermitian-symmetric ternary  convolution
+  ImplicitHTConvolution *fftwpp_create_htconv1d(unsigned int mx) {
+    return new ImplicitHTConvolution(mx);
+  }
+  void fftwpp_htconv1d_convolve(ImplicitHTConvolution *conv, 
+				double *a, double *b, double *c) {
+    conv->convolve((Complex *) a, (Complex *) b, (Complex *) c);
+  }
+  void fftwpp_htconv1d_delete(ImplicitHTConvolution *conv) {
+    delete conv;
+  }
+
+  // 2d centered Hermitian-symmetric ternary  convolution
+  ImplicitHTConvolution2 *fftwpp_create_htconv2d(unsigned int mx, 
+						 unsigned int my) {
+    return new ImplicitHTConvolution2(mx,my);
+  }
+  void fftwpp_htconv2d_convolve(ImplicitHTConvolution2 *conv, 
+				double *a, double *b, double *c) {
+    conv->convolve((Complex *) a, (Complex *) b, (Complex *) c);
+  }
+  void fftwpp_htconv2d_delete(ImplicitHTConvolution2 *conv) {
+    delete conv;
+  }
+
+  
 }
 
 #endif //__cplusplus

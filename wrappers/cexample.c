@@ -38,6 +38,19 @@ void show2(double complex** F,
   }
 }
 
+void pshow2(double complex* f, 
+	   unsigned int mx, unsigned int my)
+{
+  int i,j,pos=0;
+  for(i=0; i < mx; i++) {
+    for(j=0; j < my; j++) {
+      printf("(%.2f,%.2f) ", creal(f[pos]), cimag(f[pos]));
+      pos++;
+    }
+    printf("\n");
+  }
+}
+
 void init3(double complex *f, double complex *g, 
 	   unsigned int mx, unsigned int my, unsigned int mz)
 {
@@ -202,6 +215,7 @@ int main()
     delete_complexAlign(f);
 
   }
+
   {
     printf("\n3d non-centered complex convolution:\n");
     
@@ -228,6 +242,77 @@ int main()
     delete_complexAlign(g);
     delete_complexAlign(f);
   }
+
+  /* Ternary convolutions */
+  {
+    printf("\n1d centered Hermitian-symmetric ternary convolution:\n");
+    unsigned int m=12; /* problem size */
+    unsigned int m1=m+1;
+    double complex *e=create_complexAlign(m1);
+    double complex *f=create_complexAlign(m1);
+    double complex *g=create_complexAlign(m1);
+
+    e[0]=1.0;
+    f[0]=1.0;
+    g[0]=2.0;
+    for(unsigned int k=1; k < m; k++) {
+      e[k]=k+I*(k+1);
+      f[k]=k+I*(k+1);
+      g[k]=k+I*(2*k+1);
+    }
+    
+    printf("\ninput e:\n");
+    show(e,m);
+    printf("\ninput f:\n");
+    show(f,m);
+    printf("\ninput g:\n");
+    show(g,m);
+
+    ImplicitHTConvolution *conv=fftwpp_create_htconv1d(m);
+    fftwpp_htconv1d_convolve(conv,e,f,g);
+    fftwpp_htconv1d_delete(conv);
+    printf("\noutput:\n");
+    show(e,m);
+
+  }
+
+  {
+    printf("\n2d centered Hermitian-symmetric ternary convolution:\n");
+    
+    unsigned int mx=4, my=4;  /* problem size */
+    unsigned int Mx=2*mx, my1=my+1;
+    unsigned int Mxy1=Mx*my1;
+
+    double complex *e=create_complexAlign(Mxy1);
+    double complex *f=create_complexAlign(Mxy1);
+    double complex *g=create_complexAlign(Mxy1);
+    
+    int i,j,pos=0;
+    for(i=0; i < 2*mx-1; i++) {
+      for(j=0; j < my; j++) {
+	e[pos]=i+I*j;
+	f[pos]=(i+1)+I*(j+2);
+	g[pos]=(2*i)+I*(j+1);
+	pos++;
+      }
+    }
+    printf("\ninput e:\n");
+    pshow2(e,2*mx-1,my);
+    printf("\ninput f:\n");
+    pshow2(f,2*mx-1,my);
+    printf("\ninput g:\n");
+    pshow2(g,2*mx-1,my);
+
+    /* FIXME: htconv2 ouptut not correct. Data not in correct order?*/
+    ImplicitHTConvolution2 *conv=fftwpp_create_htconv2d(mx,my);
+    fftwpp_htconv2d_convolve(conv,e,f,g);
+    fftwpp_htconv2d_delete(conv);
+
+    printf("\noutput:\n");
+    pshow2(e,2*mx-1,my);
+
+  }
+
   return 0;
 }
 

@@ -49,7 +49,7 @@ typedef struct ImplicitConvolution3 ImplicitConvolution3;
 ImplicitConvolution3 *fftwpp_create_conv3d(unsigned int mx, unsigned int my, 
 					   unsigned int mz);
 void fftwpp_conv3d_convolve(ImplicitConvolution3 *conv, 
-			    double __complex__ *a, double __complex__  *b);
+			    double __complex__ *a, double __complex__ *b);
 void fftwpp_conv3d_delete(ImplicitConvolution3 *conv);
 
 // 3d Hermitian-symmetric centered convolution
@@ -57,7 +57,23 @@ typedef struct ImplicitHConvolution3 ImplicitHConvolution3;
 ImplicitHConvolution3 *fftwpp_create_hconv3d(unsigned int mx, unsigned int my, 
 					   unsigned int mz);
 void fftwpp_hconv3d_convolve(ImplicitHConvolution3 *conv, 
-			    double __complex__ *a, double __complex__  *b);
+			    double __complex__ *a, double __complex__ *b);
 void fftwpp_hconv3d_delete(ImplicitHConvolution3 *conv);
+
+// 1d Hermitian-symmetric ternary convolution
+typedef struct ImplicitHTConvolution ImplicitHTConvolution;
+ImplicitHTConvolution *fftwpp_create_htconv1d(unsigned int m);
+void fftwpp_htconv1d_convolve(ImplicitHTConvolution *conv, 
+			      double __complex__ *a, double __complex__ *b,
+			      double __complex__ *c);
+void fftwpp_htconv1d_delete(ImplicitHTConvolution *conv);
+
+// 2d Hermitian-symmetric ternary convolution
+typedef struct ImplicitHTConvolution2 ImplicitHTConvolution2;
+ImplicitHTConvolution2 *fftwpp_create_htconv2d(unsigned int mx,unsigned int my);
+void fftwpp_htconv2d_convolve(ImplicitHTConvolution2 *conv, 
+			      double __complex__ *a, double __complex__ *b,
+			      double __complex__ *c);
+void fftwpp_htconv2d_delete(ImplicitHTConvolution2 *conv);
 
 #endif
