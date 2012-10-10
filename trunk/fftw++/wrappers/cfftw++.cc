@@ -41,14 +41,21 @@ namespace fftwpp {
       fftw::maxthreads=nthreads;
     }
     
-    // 1d complex wrappers
+    // 1d complex non-centered convolution
     ImplicitConvolution *fftwpp_create_conv1d(unsigned int m);
+    ImplicitConvolution *fftwpp_create_conv1d_work(unsigned int m,
+						   double __complex__ *u, 
+						   double __complex__ *v);
     void fftwpp_conv1d_delete(ImplicitConvolution *conv);
     void fftwpp_conv1d_convolve(ImplicitConvolution *conv, 
 				double __complex__ *a, double __complex__ *b);
 
-    // 1d Hermitian wrappers
+    // 1d Hermitian-symmetric entered convolution
     ImplicitHConvolution *fftwpp_create_hconv1d(unsigned int m);
+    ImplicitHConvolution *fftwpp_create_hconv1d_work(unsigned int m,
+						     double __complex__ *u, 
+						     double __complex__ *v, 
+						     double __complex__ *w);
     void fftwpp_hconv1d_delete(ImplicitHConvolution *conv);
     void fftwpp_hconv1d_convolve(ImplicitHConvolution *conv, 
 				 double __complex__*a, double __complex__ *b);
@@ -104,6 +111,13 @@ namespace fftwpp {
     return new ImplicitConvolution(m);
   }
 
+  ImplicitConvolution *fftwpp_create_conv1d_work(unsigned int m,
+						 double __complex__ *u, 
+						 double __complex__ *v) {
+    return new ImplicitConvolution(m,(Complex *) u,(Complex *) v);
+  }
+
+
   void fftwpp_conv1d_convolve(ImplicitConvolution *conv, 
 			      double __complex__ *a, double __complex__  *b){
     conv->convolve((Complex *) a, (Complex *) b);
@@ -118,6 +132,14 @@ namespace fftwpp {
     return new ImplicitHConvolution(m);
   }
 
+  ImplicitHConvolution *fftwpp_create_hconv1d_work(unsigned int m,
+						   double __complex__ *u, 
+						   double __complex__ *v, 
+						   double __complex__ *w) {
+    return new ImplicitHConvolution(m, (Complex *) u, (Complex *) v, 
+				    (Complex *) w);
+  }
+  
   void fftwpp_hconv1d_convolve(ImplicitHConvolution *conv, 
 			       double __complex__  *a, double __complex__  *b) {
     conv->convolve((Complex *) a, (Complex *) b);

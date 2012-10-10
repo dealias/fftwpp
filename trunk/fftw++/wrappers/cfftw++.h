@@ -23,6 +23,9 @@ void set_fftwpp_maxthreads(unsigned int nthreads);
 // 1d complex non-centered convolution
 typedef struct ImplicitConvolution ImplicitConvolution;
 ImplicitConvolution *fftwpp_create_conv1d(unsigned int m);
+ImplicitConvolution *fftwpp_create_conv1d_work(unsigned int m,
+					       double __complex__ *u, 
+					       double __complex__ *v);
 void fftwpp_conv1d_convolve(ImplicitConvolution *conv, 
 			    double __complex__ *a, double __complex__  *b);
 void fftwpp_conv1d_delete(ImplicitConvolution *conv);
@@ -30,6 +33,10 @@ void fftwpp_conv1d_delete(ImplicitConvolution *conv);
 // 1d Hermitian-symmetric entered convolution
 typedef struct ImplicitHConvolution ImplicitHConvolution;
 ImplicitHConvolution *fftwpp_create_hconv1d(unsigned int m);
+ImplicitHConvolution *fftwpp_create_hconv1d_work(unsigned int m,
+						 double __complex__ *u,
+						 double __complex__ *v,
+						 double __complex__ *w);
 void fftwpp_hconv1d_convolve(ImplicitHConvolution *conv, 
 			     double __complex__ *a, double __complex__  *b);
 void fftwpp_hconv1d_delete(ImplicitHConvolution *conv);

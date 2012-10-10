@@ -80,6 +80,11 @@ int main()
   /* 1D examples */
   { 
     unsigned int m=8; /* problem size */
+
+    /* optional work arrays */
+    double complex *u=create_complexAlign(m);
+    double complex *v=create_complexAlign(m);
+    double complex *w=create_complexAlign(3);
     
     /* input arrays must be aligned */
     double complex *f=create_complexAlign(m);
@@ -93,7 +98,8 @@ int main()
     show(g,m);
     
     printf("\n1d non-centered complex convolution:\n");
-    ImplicitConvolution *cconv=fftwpp_create_conv1d(m);
+    /* ImplicitConvolution *cconv=fftwpp_create_conv1d(m); */
+    ImplicitConvolution *cconv=fftwpp_create_conv1d_work(m,u,v);
     fftwpp_conv1d_convolve(cconv,f,g);
     fftwpp_conv1d_delete(cconv);
     show(f,m);
@@ -101,7 +107,9 @@ int main()
     init(f,g,m); /* reset the inputs */
     
     printf("\n1d centered Hermitian-symmetric complex convolution:\n");
-    ImplicitHConvolution *conv=fftwpp_create_hconv1d(m);
+  
+     /* ImplicitHConvolution *conv=fftwpp_create_hconv1d(m); */
+    ImplicitHConvolution *conv=fftwpp_create_hconv1d_work(m,u,v,w);
     fftwpp_hconv1d_convolve(conv,f,g);
     fftwpp_hconv1d_delete(conv);
     show(f,m);
@@ -110,6 +118,9 @@ int main()
     delete_complexAlign(g);
     delete_complexAlign(f);
 
+    delete_complexAlign(u);
+    delete_complexAlign(v);
+    delete_complexAlign(w);
   }
 
    /* 2D examples */
