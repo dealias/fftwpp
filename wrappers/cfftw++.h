@@ -16,6 +16,10 @@ void delete_complexAlign(double __complex__ * p);
 double __complex__  *create_complexAlign(unsigned int n);
 void delete_complexAlign(double __complex__ * p);
 
+// wrappers for multiple threads
+unsigned int get_fftwpp_maxthreads();
+void set_fftwpp_maxthreads(unsigned int nthreads);
+
 // 1d complex non-centered convolution
 typedef struct ImplicitConvolution ImplicitConvolution;
 ImplicitConvolution *fftwpp_create_conv1d(unsigned int m);

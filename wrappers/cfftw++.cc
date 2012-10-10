@@ -14,9 +14,6 @@
 #include "convolution.h"
 #include<complex.h>
 
-
-
-
 namespace fftwpp {
 
   // prototypes
@@ -26,19 +23,24 @@ namespace fftwpp {
     double *create_doubleAlign(unsigned int n) {
       return (double  * ) fftwpp::doubleAlign(n); 
     }
-
     void delete_doubleAlign(double * p) {
       deleteAlign(p);
     }
-
     double __complex__  *create_complexAlign(unsigned int n) {
       return (double __complex__ * ) fftwpp::ComplexAlign(n); 
     }
-
     void delete_complexAlign(double __complex__ * p) {
       deleteAlign(p);
     }
 
+    // wrappers for multiple threads
+    unsigned int get_fftwpp_maxthreads() {
+      return fftw::maxthreads;
+    }
+    void set_fftwpp_maxthreads(unsigned int nthreads) {
+      fftw::maxthreads=nthreads;
+    }
+    
     // 1d complex wrappers
     ImplicitConvolution *fftwpp_create_conv1d(unsigned int m);
     void fftwpp_conv1d_delete(ImplicitConvolution *conv);
