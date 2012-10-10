@@ -63,6 +63,12 @@ namespace fftwpp {
     // 2d complex wrappers
     ImplicitConvolution2 *fftwpp_create_conv2d(unsigned int mx, 
 					       unsigned int my);
+    ImplicitConvolution2 *fftwpp_create_conv2d_work(unsigned int mx, 
+						    unsigned int my,
+						    double __complex__ *u1, 
+						    double __complex__ *v1,
+						    double __complex__ *u2, 
+						    double __complex__ *v2);
     void fftwpp_conv2d_delete(ImplicitConvolution2 *conv);
     void fftwpp_conv2d_convolve(ImplicitConvolution2 *conv, 
 				double *a, double *b);
@@ -70,6 +76,13 @@ namespace fftwpp {
     // 2d Hermitian symmetric  wrappers
     ImplicitHConvolution2 *fftwpp_create_hconv2d(unsigned int mx, 
 						 unsigned int my);
+    ImplicitHConvolution2 *fftwpp_create_hconv2d_work(unsigned int mx, 
+						      unsigned int my,
+						      double __complex__ *u1, 
+						      double __complex__ *v1,
+						      double __complex__ *w1,
+						      double __complex__ *u2, 
+						      double __complex__ *v2);
     void fftwpp_hconv2d_delete(ImplicitHConvolution2 *conv);
     void fftwpp_hconv2d_convolve(ImplicitHConvolution2 *conv, 
 				 double *a, double *b);
@@ -78,6 +91,15 @@ namespace fftwpp {
     ImplicitConvolution3 *fftwpp_create_conv3d(unsigned int mx, 
 					       unsigned int my, 
 					       unsigned int mz);
+    ImplicitConvolution3 *fftwpp_create_conv3d_work(unsigned int mx, 
+						    unsigned int my, 
+						    unsigned int mz,
+						    double __complex__ *u1, 
+						    double __complex__ *v1, 
+						    double __complex__ *u2, 
+						    double __complex__ *v2, 
+						    double __complex__ *u3, 
+						    double __complex__ *v3);
     void fftwpp_conv3d_delete(ImplicitConvolution3 *conv);
     void fftwpp_conv3d_convolve(ImplicitConvolution3 *conv, 
 				double *a, double *b);
@@ -86,12 +108,27 @@ namespace fftwpp {
     ImplicitHConvolution3 *fftwpp_create_hconv3d(unsigned int mx, 
 						 unsigned int my, 
 						 unsigned int mz);
+
+    ImplicitHConvolution3 *fftwpp_create_hconv3d_work(unsigned int mx, 
+						      unsigned int my, 
+						      unsigned int mz,
+						      double __complex__ *u1, 
+						      double __complex__ *v1, 
+						      double __complex__ *w1,
+						      double __complex__ *u2, 
+						      double __complex__ *v2,
+						      double __complex__ *u3, 
+						      double __complex__ *v3);
     void fftwpp_hconv3d_delete(ImplicitHConvolution3 *conv);
     void fftwpp_hconv3d_convolve(ImplicitHConvolution3 *conv, 
 				 double *a, double *b);
 
     // 1d centered Hermitian-symmetric ternary  convolution
     ImplicitHTConvolution *fftwpp_create_htconv1d(unsigned int mx);
+    ImplicitHTConvolution *fftwpp_create_htconv1d_work(unsigned int m,
+						       double __complex__ *u, 
+						       double __complex__ *v,
+						       double __complex__ *w);
     void fftwpp_htconv1d_convolve(ImplicitHTConvolution *conv, 
 				double *a, double *b, double *c);
     void fftwpp_htconv1d_delete(ImplicitHTConvolution *conv);
@@ -99,6 +136,14 @@ namespace fftwpp {
     // 2d centered Hermitian-symmetric ternary  convolution
     ImplicitHTConvolution2 *fftwpp_create_htconv2d(unsigned int mx, 
 						   unsigned int my);
+    ImplicitHTConvolution2 *fftwpp_create_htconv2d_work(unsigned int mx,
+							unsigned int my,
+							double __complex__ *u1, 
+							double __complex__ *v1, 
+							double __complex__ *w1,
+							double __complex__ *u2,
+							double __complex__ *v2, 
+							double __complex__ *w2);
     void fftwpp_htconv2d_convolve(ImplicitHTConvolution2 *conv, 
 				double *a, double *b, double *c);
     void fftwpp_htconv2d_delete(ImplicitHTConvolution2 *conv);
@@ -153,7 +198,15 @@ namespace fftwpp {
   ImplicitConvolution2 *fftwpp_create_conv2d(unsigned int mx, unsigned int my) {
     return new ImplicitConvolution2(mx, my);
   }
-
+  ImplicitConvolution2 *fftwpp_create_conv2d_work(unsigned int mx, 
+						  unsigned int my,
+						  double __complex__ *u1, 
+						  double __complex__ *v1,
+						  double __complex__ *u2, 
+						  double __complex__ *v2) {
+    return new ImplicitConvolution2(mx, my,(Complex *) u1, (Complex *) v1, 
+				    (Complex *) u2, (Complex *) v2);
+  }
   void fftwpp_conv2d_convolve(ImplicitConvolution2 *conv, 
 			      double *a, double *b) {
     conv->convolve((Complex *) a, (Complex *) b);
@@ -169,6 +222,17 @@ namespace fftwpp {
     return new ImplicitHConvolution2(mx, my);
   }
 
+  ImplicitHConvolution2 *fftwpp_create_hconv2d_work(unsigned int mx, 
+						    unsigned int my,
+						    double __complex__ *u1, 
+						    double __complex__ *v1,
+						    double __complex__ *w1,
+						    double __complex__ *u2, 
+						    double __complex__ *v2) {
+    return new ImplicitHConvolution2(mx, my,(Complex *) u1,(Complex *)  v1,
+				     (Complex *) w1,(Complex *)  u2,
+				     (Complex *) v2);
+  }
   void fftwpp_hconv2d_convolve(ImplicitHConvolution2 *conv, 
 			       double *a, double *b) {
     conv->convolve((Complex *) a, (Complex *) b);
@@ -185,6 +249,21 @@ namespace fftwpp {
     return new ImplicitConvolution3(mx, my, mz);
   }
 
+  ImplicitConvolution3 *fftwpp_create_conv3d_work(unsigned int mx, 
+						  unsigned int my, 
+						  unsigned int mz,
+						  double __complex__ *u1, 
+						  double __complex__ *v1, 
+						  double __complex__ *u2, 
+						  double __complex__ *v2, 
+						  double __complex__ *u3, 
+						  double __complex__ *v3) {
+    return new ImplicitConvolution3(mx, my, mz,
+				    (Complex *) u1,  (Complex *) v1,
+				    (Complex *) u2,  (Complex *) v2,
+				    (Complex *) u3,  (Complex *) v3);
+  }
+  
   void fftwpp_conv3d_convolve(ImplicitConvolution3 *conv, 
 			      double *a, double *b) {
     conv->convolve((Complex *) a, (Complex *) b);
@@ -200,6 +279,24 @@ namespace fftwpp {
 					       unsigned int mz) {
     return new ImplicitHConvolution3(mx, my, mz);
   }
+
+  ImplicitHConvolution3 *fftwpp_create_hconv3d_work(unsigned int mx, 
+						    unsigned int my, 
+						    unsigned int mz,
+						    double __complex__ *u1, 
+						    double __complex__ *v1, 
+						    double __complex__ *w1,
+						    double __complex__ *u2, 
+						    double __complex__ *v2,
+						    double __complex__ *u3, 
+						    double __complex__ *v3) {
+    return new ImplicitHConvolution3(mx, my,  mz,
+				     (Complex *) u1, (Complex *) v1,
+				     (Complex *) w1,
+				     (Complex *) u2, (Complex *) v2,
+				     (Complex *) u3, (Complex *) v3);
+
+  }
   void fftwpp_hconv3d_convolve(ImplicitHConvolution3 *conv, 
 			       double *a, double *b) {
     conv->convolve((Complex *) a, (Complex *) b);
@@ -212,6 +309,14 @@ namespace fftwpp {
   ImplicitHTConvolution *fftwpp_create_htconv1d(unsigned int mx) {
     return new ImplicitHTConvolution(mx);
   }
+  ImplicitHTConvolution *fftwpp_create_htconv1d_work(unsigned int m,
+						     double __complex__ *u, 
+						     double __complex__ *v,
+						     double __complex__ *w) {
+    return new ImplicitHTConvolution(m, (Complex *) u, (Complex *) v,
+				     (Complex *) w);
+  }
+
   void fftwpp_htconv1d_convolve(ImplicitHTConvolution *conv, 
 				double *a, double *b, double *c) {
     conv->convolve((Complex *) a, (Complex *) b, (Complex *) c);
@@ -224,6 +329,20 @@ namespace fftwpp {
   ImplicitHTConvolution2 *fftwpp_create_htconv2d(unsigned int mx, 
 						 unsigned int my) {
     return new ImplicitHTConvolution2(mx,my);
+  }
+  ImplicitHTConvolution2 *fftwpp_create_htconv2d_work(unsigned int mx,
+						      unsigned int my,
+						      double __complex__ *u1, 
+						      double __complex__ *v1, 
+						      double __complex__ *w1,
+						      double __complex__ *u2,
+						      double __complex__ *v2, 
+						      double __complex__ *w2) {
+    return new ImplicitHTConvolution2(mx,my, 
+				      (Complex *) u1,  (Complex *) v1,  
+				      (Complex *) w1,
+				      (Complex *) u2,  (Complex *) v2,  
+				      (Complex *) w2);
   }
   void fftwpp_htconv2d_convolve(ImplicitHTConvolution2 *conv, 
 				double *a, double *b, double *c) {
