@@ -27,18 +27,7 @@ void init2(double complex** F, double complex** G,
   }
 }
 
-void show2(double complex** F, 
-	   unsigned int mx, unsigned int my)
-{
-  for(unsigned int i=0; i < mx; ++i) {
-    for(unsigned int j=0; j < my; j++) {
-      printf("(%.0f,%.0f) ", creal(F[i][j]), cimag(F[i][j]));
-    }
-    printf("\n");
-  }
-}
-
-void pshow2(double complex* f, 
+void show2(double complex* f, 
 	   unsigned int mx, unsigned int my)
 {
   int i,j,pos=0;
@@ -47,7 +36,6 @@ void pshow2(double complex* f,
       printf("(%.1f,%.1f) ", creal(f[pos]), cimag(f[pos]));
       pos++;
     }
-    //   pos++;
     printf("\n");
   }
 }
@@ -86,8 +74,10 @@ void show3(double complex *f,
 int main()
 {
   printf("Example of calling fftw++ convolutions from C:\n");
+
+  set_fftwpp_maxthreads(2);
   
-  // 1D examples
+  /* 1D examples */
   { 
     unsigned int m=8; /* problem size */
     
@@ -116,20 +106,20 @@ int main()
     fftwpp_hconv1d_delete(conv);
     show(f,m);
 
-    // free memory
+    /* free memory */
     delete_complexAlign(g);
     delete_complexAlign(f);
 
   }
 
-  // 2D examples
+   /* 2D examples */
   { 
     printf("\n2d non-centered complex convolution:\n");
     unsigned int mx=4, my=4;  /* problem size */
     double complex *f=create_complexAlign(mx*my);
     double complex *g=create_complexAlign(mx*my);
 
-    // 2D arrays for convenience
+    /* 2D arrays for convenience */
     double complex* (F)[mx];
     double complex* (G)[mx];
     int i;
@@ -141,15 +131,15 @@ int main()
     init2(F,G,mx,my);
 
     printf("\ninput f:\n");
-    show2(F,mx,my);
+    show2(f,mx,my);
     printf("\ninput g:\n");
-    show2(G,mx,my);
+    show2(g,mx,my);
     
     ImplicitConvolution2 *cconv=fftwpp_create_conv2d(mx,my);
     fftwpp_conv2d_convolve(cconv,f,g);
     fftwpp_conv2d_delete(cconv);
     printf("\noutput:\n");
-    show2(F,mx,my);
+    show2(f,mx,my);
     
     delete_complexAlign(g);
     delete_complexAlign(f);
@@ -164,7 +154,7 @@ int main()
     double complex *f=create_complexAlign(Mx*my);
     double complex *g=create_complexAlign(Mx*my);
     
-    // 2D arrays for convenience
+    /* 2D arrays for convenience */
     double complex* (F)[Mx];
     double complex* (G)[Mx];
     int i;
@@ -176,22 +166,22 @@ int main()
     init2(F,G,Mx,my);
     
     printf("\ninput f:\n");
-    show2(F,Mx,my);
+    show2(f,Mx,my);
     printf("\ninput g:\n");
-    show2(G,Mx,my);
+    show2(g,Mx,my);
     
     ImplicitHConvolution2 *conv=fftwpp_create_hconv2d(mx,my);
     fftwpp_hconv2d_convolve(conv,f,g);
     fftwpp_hconv2d_delete(conv);
 
     printf("\noutput:\n");
-    show2(F,Mx,my);
+    show2(f,Mx,my);
 
     delete_complexAlign(g);
     delete_complexAlign(f);
   }
 
-  // 3D examples
+   /* 3D examples */
   {
     printf("\n3d non-centered complex convolution:\n");
     
@@ -306,11 +296,11 @@ int main()
       }
     }
     printf("\ninput e:\n");
-    pshow2(e,2*mx,my1);
+    show2(e,2*mx,my1);
     printf("\ninput f:\n");
-    pshow2(f,2*mx,my1);
+    show2(f,2*mx,my1);
     printf("\ninput g:\n");
-    pshow2(g,2*mx,my1);
+    show2(g,2*mx,my1);
 
     ImplicitHTConvolution2 *conv=fftwpp_create_htconv2d(mx,my);
     fftwpp_htconv2d_convolve(conv,e,f,g);
@@ -321,7 +311,7 @@ int main()
     for(i=0; i < 2*mx; i++) e[i*my1+mx]=0.0;
 
     printf("\noutput:\n");    
-    pshow2(e,2*mx,my1);
+    show2(e,2*mx,my1);
 
   }
 
