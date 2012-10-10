@@ -74,21 +74,23 @@ void show3(double complex *f,
 int main()
 {
   printf("Example of calling fftw++ convolutions from C:\n");
+  
+  unsigned int nthreads=2;
 
-  set_fftwpp_maxthreads(2);
+  set_fftwpp_maxthreads(nthreads);
   
   /* 1D examples */
   { 
     unsigned int m=8; /* problem size */
 
+    /* input arrays must be aligned */
+    double complex *f=create_complexAlign(m);
+    double complex *g=create_complexAlign(m);
+
     /* optional work arrays */
     double complex *u=create_complexAlign(m);
     double complex *v=create_complexAlign(m);
     double complex *w=create_complexAlign(3);
-    
-    /* input arrays must be aligned */
-    double complex *f=create_complexAlign(m);
-    double complex *g=create_complexAlign(m);
     
     init(f,g,m); /* set the input data */
     
@@ -130,6 +132,12 @@ int main()
     double complex *f=create_complexAlign(mx*my);
     double complex *g=create_complexAlign(mx*my);
 
+    /* optional work arrays */
+    double complex *u1=create_complexAlign(my*nthreads);
+    double complex *v1=create_complexAlign(my*nthreads);
+    double complex *u2=create_complexAlign(mx*my);
+    double complex *v2=create_complexAlign(mx*my);
+
     /* 2D arrays for convenience */
     double complex* (F)[mx];
     double complex* (G)[mx];
@@ -146,7 +154,8 @@ int main()
     printf("\ninput g:\n");
     show2(g,mx,my);
     
-    ImplicitConvolution2 *cconv=fftwpp_create_conv2d(mx,my);
+    /* ImplicitConvolution2 *cconv=fftwpp_create_conv2d(mx,my); */
+    ImplicitConvolution2 *cconv=fftwpp_create_conv2d_work(mx,my,u1,v1,u2,v2);
     fftwpp_conv2d_convolve(cconv,f,g);
     fftwpp_conv2d_delete(cconv);
     printf("\noutput:\n");
@@ -154,7 +163,11 @@ int main()
     
     delete_complexAlign(g);
     delete_complexAlign(f);
-  
+
+    delete_complexAlign(v1);
+    delete_complexAlign(u1);
+    delete_complexAlign(v2);
+    delete_complexAlign(u2);
   }
 
   {
@@ -164,6 +177,14 @@ int main()
     unsigned int Mx=2*mx-1;
     double complex *f=create_complexAlign(Mx*my);
     double complex *g=create_complexAlign(Mx*my);
+
+    /* optional work arrays */
+    double complex *u1=create_complexAlign((my/2+1)*nthreads);
+    double complex *v1=create_complexAlign((my/2+1)*nthreads);
+    double complex *w1=create_complexAlign(3*nthreads);
+    double complex *u2=create_complexAlign((mx+1)*my);
+    double complex *v2=create_complexAlign((mx+1)*my);
+
     
     /* 2D arrays for convenience */
     double complex* (F)[Mx];
@@ -181,7 +202,9 @@ int main()
     printf("\ninput g:\n");
     show2(g,Mx,my);
     
-    ImplicitHConvolution2 *conv=fftwpp_create_hconv2d(mx,my);
+    /* ImplicitHConvolution2 *conv=fftwpp_create_hconv2d(mx,my); */
+    ImplicitHConvolution2 *conv=fftwpp_create_hconv2d_work(mx,my,
+							   u1,v1,w1,u2,v2);
     fftwpp_hconv2d_convolve(conv,f,g);
     fftwpp_hconv2d_delete(conv);
 
@@ -190,6 +213,12 @@ int main()
 
     delete_complexAlign(g);
     delete_complexAlign(f);
+
+    delete_complexAlign(w1);
+    delete_complexAlign(v1);
+    delete_complexAlign(u1);
+    delete_complexAlign(v2);
+    delete_complexAlign(u2);
   }
 
    /* 3D examples */
@@ -200,6 +229,14 @@ int main()
     unsigned int mxyz=mx*my*mz;
     double complex *f=create_complexAlign(mxyz);
     double complex *g=create_complexAlign(mxyz);
+
+    /* optional work arrays */
+    double complex *u1=create_complexAlign(mz*nthreads);
+    double complex *v1=create_complexAlign(mz*nthreads);
+    double complex *u2=create_complexAlign(my*my*nthreads);
+    double complex *v2=create_complexAlign(mz*my*nthreads);
+    double complex *u3=create_complexAlign(mx*my*mz);
+    double complex *v3=create_complexAlign(mx*my*mz);
     
     init3(f,g,mx,my,mz);
     printf("\ninput f:\n");
@@ -216,6 +253,13 @@ int main()
     delete_complexAlign(g);
     delete_complexAlign(f);
 
+    delete_complexAlign(v1);
+    delete_complexAlign(u1);
+    delete_complexAlign(v2);
+    delete_complexAlign(u2);
+    delete_complexAlign(v3);
+    delete_complexAlign(u3);
+
   }
 
   {
@@ -228,14 +272,26 @@ int main()
     unsigned int mxyz=Mx*My*mz;
     double complex *f=create_complexAlign(mxyz);
     double complex *g=create_complexAlign(mxyz);
-    
+
+    /* optional work arrays */
+    double complex *u1=create_complexAlign((mz/2+1)*nthreads);
+    double complex *v1=create_complexAlign((mz/2+1)*nthreads);
+    double complex *w1=create_complexAlign(3*nthreads);
+    double complex *u2=create_complexAlign((my+1)*mz*nthreads);
+    double complex *v2=create_complexAlign((my+1)*mz*nthreads);
+    double complex *u3=create_complexAlign((mx+1)*(2*my-1)*mz);
+    double complex *v3=create_complexAlign((mx+1)*(2*my-1)*mz);
+
     init3(f,g,Mx,My,mz);
     printf("\ninput f:\n");
     show3(f,Mx,My,mz);
     printf("\ninput g:\n");
     show3(g,Mx,My,mz);
     
-    ImplicitHConvolution3 *conv=fftwpp_create_hconv3d(mx,my,mz);
+    /* ImplicitHConvolution3 *conv=fftwpp_create_hconv3d(mx,my,mz); */
+    ImplicitHConvolution3 *conv=fftwpp_create_hconv3d_work(mx,my,mz,
+							   u1,v1,w1,
+							   u2,v2,u3,v3);
     fftwpp_hconv3d_convolve(conv,f,g); 
     fftwpp_hconv3d_delete(conv);
     
@@ -243,6 +299,14 @@ int main()
     show3(f,Mx,My,mz);
     delete_complexAlign(g);
     delete_complexAlign(f);
+
+    delete_complexAlign(w1);
+    delete_complexAlign(v1);
+    delete_complexAlign(u1);
+    delete_complexAlign(v2);
+    delete_complexAlign(u2);
+    delete_complexAlign(v3);
+    delete_complexAlign(u3);
   }
 
   /* Ternary convolutions */
@@ -253,6 +317,11 @@ int main()
     double complex *e=create_complexAlign(m1);
     double complex *f=create_complexAlign(m1);
     double complex *g=create_complexAlign(m1);
+
+    /* optional work arrays */
+    double complex *u=create_complexAlign(m1);
+    double complex *v=create_complexAlign(m1);
+    double complex *w=create_complexAlign(m1);
 
     e[0]=1.0;
     f[0]=1.0;
@@ -270,12 +339,20 @@ int main()
     printf("\ninput g:\n");
     show(g,m);
 
-    ImplicitHTConvolution *conv=fftwpp_create_htconv1d(m);
+    /* ImplicitHTConvolution *conv=fftwpp_create_htconv1d(m); */
+    ImplicitHTConvolution *conv=fftwpp_create_htconv1d_work(m,u,v,w);
     fftwpp_htconv1d_convolve(conv,e,f,g);
     fftwpp_htconv1d_delete(conv);
     printf("\noutput:\n");
     show(e,m);
 
+    delete_complexAlign(g);
+    delete_complexAlign(f);
+    delete_complexAlign(e);
+
+    delete_complexAlign(w);
+    delete_complexAlign(v);
+    delete_complexAlign(u);
   }
 
   {
@@ -288,6 +365,14 @@ int main()
     double complex *e=create_complexAlign(Mxy1);
     double complex *f=create_complexAlign(Mxy1);
     double complex *g=create_complexAlign(Mxy1);
+
+    double complex *u1=create_complexAlign(my1*nthreads);
+    double complex *v1=create_complexAlign(my1*nthreads);
+    double complex *w1=create_complexAlign(my1*nthreads);
+    double complex *u2=create_complexAlign(Mxy1);
+    double complex *v2=create_complexAlign(Mxy1);
+    double complex *w2=create_complexAlign(Mxy1);
+
     int i;
     for(i=0; i < Mxy1; i++) {
       e[i]=0.0;
@@ -313,7 +398,10 @@ int main()
     printf("\ninput g:\n");
     show2(g,2*mx,my1);
 
-    ImplicitHTConvolution2 *conv=fftwpp_create_htconv2d(mx,my);
+    /* ImplicitHTConvolution2 *conv=fftwpp_create_htconv2d(mx,my); */
+    ImplicitHTConvolution2 *conv=fftwpp_create_htconv2d_work(mx,my,
+							     u1,v1,w1,
+							     u2,v2,w2);
     fftwpp_htconv2d_convolve(conv,e,f,g);
     fftwpp_htconv2d_delete(conv);
 
@@ -324,6 +412,16 @@ int main()
     printf("\noutput:\n");    
     show2(e,2*mx,my1);
 
+    delete_complexAlign(e);
+    delete_complexAlign(f);
+    delete_complexAlign(g);
+
+    delete_complexAlign(u1);
+    delete_complexAlign(v1);
+    delete_complexAlign(w1);
+    delete_complexAlign(u2);
+    delete_complexAlign(v2);
+    delete_complexAlign(w2);
   }
 
   return 0;
