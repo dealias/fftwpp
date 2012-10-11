@@ -71,11 +71,41 @@ void show3(double complex *f,
   }
 }
 
+int hash(double complex *a, unsigned int m)
+{
+  int hash=0;
+  unsigned int i;
+  for(i=0; i<m; ++i) {
+    hash= (hash+(324723947+(int)(creal(a[i])+0.5)))^93485734985;
+    hash= (hash+(324723947+(int)(cimag(a[i])+0.5)))^93485734985;
+  }
+  return hash;
+}
+
+int hasht2(double complex *a, unsigned int mx, unsigned int my)
+{
+  int hash=0;
+  unsigned int i;
+  
+    int j,pos;
+    unsigned int stop=2*mx-1;
+    for(i=0; i < stop; i++) {
+      int ii=i+1;
+      for(j=0; j < my; j++) {
+	pos=ii*(my+1)+j;
+	hash= (hash+(324723947+(int)(creal(a[pos])+0.5)))^93485734985;
+	hash= (hash+(324723947+(int)(cimag(a[pos])+0.5)))^93485734985;
+      }
+    }
+  return hash;
+}
 int main()
 {
   printf("Example of calling fftw++ convolutions from C:\n");
   
   unsigned int nthreads=2;
+
+  int returnflag=0;
 
   set_fftwpp_maxthreads(nthreads);
   
@@ -94,27 +124,41 @@ int main()
     
     init(f,g,m); /* set the input data */
     
+    /*
     printf("\ninput f:\n");
     show(f,m);
     printf("\ninput g:\n");
     show(g,m);
-    
+    */    
+
     printf("\n1d non-centered complex convolution:\n");
     /* ImplicitConvolution *cconv=fftwpp_create_conv1d(m); */
     ImplicitConvolution *cconv=fftwpp_create_conv1d_work(m,u,v);
     fftwpp_conv1d_convolve(cconv,f,g);
     fftwpp_conv1d_delete(cconv);
     show(f,m);
-    
-    init(f,g,m); /* reset the inputs */
+    if(m == 8) {
+      if(hash(f,m) != -1208058208) {
+	printf("ImplicitConvolution output incorecct.\n");
+	returnflag += 1;
+      }
+    }
+
+    init(f,g,m);
     
     printf("\n1d centered Hermitian-symmetric complex convolution:\n");
-  
-     /* ImplicitHConvolution *conv=fftwpp_create_hconv1d(m); */
+    /* ImplicitHConvolution *conv=fftwpp_create_hconv1d(m); */
     ImplicitHConvolution *conv=fftwpp_create_hconv1d_work(m,u,v,w);
     fftwpp_hconv1d_convolve(conv,f,g);
     fftwpp_hconv1d_delete(conv);
     show(f,m);
+
+    if(m == 8) {
+      if(hash(f,m) != -1208087538) {
+	printf("ImplicitHConvolution output incorecct.\n");
+	returnflag += 2;
+      }
+    }
 
     /* free memory */
     delete_complexAlign(g);
@@ -149,18 +193,27 @@ int main()
 
     init2(F,G,mx,my);
 
+    /*
     printf("\ninput f:\n");
     show2(f,mx,my);
     printf("\ninput g:\n");
     show2(g,mx,my);
-    
+    */    
+
     /* ImplicitConvolution2 *cconv=fftwpp_create_conv2d(mx,my); */
     ImplicitConvolution2 *cconv=fftwpp_create_conv2d_work(mx,my,u1,v1,u2,v2);
     fftwpp_conv2d_convolve(cconv,f,g);
     fftwpp_conv2d_delete(cconv);
     printf("\noutput:\n");
     show2(f,mx,my);
-    
+
+    if(mx==4 && my==4) {
+      if(hash(f,mx*my) != -268695633) {
+	printf("ImplicitConvolution2 output incorecct.\n");
+	returnflag += 4;
+      }
+    }
+
     delete_complexAlign(g);
     delete_complexAlign(f);
 
@@ -197,11 +250,13 @@ int main()
 
     init2(F,G,Mx,my);
     
+    /*
     printf("\ninput f:\n");
     show2(f,Mx,my);
     printf("\ninput g:\n");
     show2(g,Mx,my);
-    
+    */    
+
     /* ImplicitHConvolution2 *conv=fftwpp_create_hconv2d(mx,my); */
     ImplicitHConvolution2 *conv=fftwpp_create_hconv2d_work(mx,my,
 							   u1,v1,w1,u2,v2);
@@ -210,6 +265,14 @@ int main()
 
     printf("\noutput:\n");
     show2(f,Mx,my);
+    if(mx==4 && my==4) {
+      if(hash(f,Mx*my) != -947771835) {
+	printf("ImplicitHConvolution2 output incorecct.\n");
+	returnflag += 8;
+      }
+    }
+ 
+    
 
     delete_complexAlign(g);
     delete_complexAlign(f);
@@ -239,17 +302,29 @@ int main()
     double complex *v3=create_complexAlign(mx*my*mz);
     
     init3(f,g,mx,my,mz);
+
+    /*
     printf("\ninput f:\n");
     show3(f,mx,my,mz);
     printf("\ninput g:\n");
     show3(g,mx,my,mz);
-    
+    */    
+
     ImplicitConvolution3 *cconv=fftwpp_create_conv3d(mx,my,mz);
     fftwpp_conv3d_convolve(cconv,f,g); 
     fftwpp_conv3d_delete(cconv);
     
     printf("\noutput:\n");
     show3(f,mx,my,mz);
+
+    if(mx==4 && my==4 && mz==4) {
+      if(hash(f,mx*my*mz) != 1073436205) {
+	printf("ImplicitConvolution3 output incorecct.\n");
+	returnflag += 16;
+      }
+    }
+    
+
     delete_complexAlign(g);
     delete_complexAlign(f);
 
@@ -283,11 +358,14 @@ int main()
     double complex *v3=create_complexAlign((mx+1)*(2*my-1)*mz);
 
     init3(f,g,Mx,My,mz);
+
+    /*
     printf("\ninput f:\n");
     show3(f,Mx,My,mz);
     printf("\ninput g:\n");
     show3(g,Mx,My,mz);
-    
+    */    
+
     /* ImplicitHConvolution3 *conv=fftwpp_create_hconv3d(mx,my,mz); */
     ImplicitHConvolution3 *conv=fftwpp_create_hconv3d_work(mx,my,mz,
 							   u1,v1,w1,
@@ -295,8 +373,16 @@ int main()
     fftwpp_hconv3d_convolve(conv,f,g); 
     fftwpp_hconv3d_delete(conv);
     
+    if(mx==4 && my==4 && mz==4) {
+      if(hash(f,mxyz) != -472674783) {
+	printf("ImplicitHConvolution3 output incorecct.\n");
+	returnflag += 32;
+      }
+    }
+    
     printf("\noutput:\n");
     show3(f,Mx,My,mz);
+
     delete_complexAlign(g);
     delete_complexAlign(f);
 
@@ -331,13 +417,15 @@ int main()
       f[k]=k+I*(k+1);
       g[k]=k+I*(2*k+1);
     }
-    
+
+    /*    
     printf("\ninput e:\n");
     show(e,m);
     printf("\ninput f:\n");
     show(f,m);
     printf("\ninput g:\n");
     show(g,m);
+    */
 
     /* ImplicitHTConvolution *conv=fftwpp_create_htconv1d(m); */
     ImplicitHTConvolution *conv=fftwpp_create_htconv1d_work(m,u,v,w);
@@ -345,6 +433,13 @@ int main()
     fftwpp_htconv1d_delete(conv);
     printf("\noutput:\n");
     show(e,m);
+
+    if(m==12) {
+      if(hash(e,m) != -778218684) {
+	printf("ImplicitHTConvolution output incorecct.\n");
+	returnflag += 64;
+      }
+    }
 
     delete_complexAlign(g);
     delete_complexAlign(f);
@@ -391,12 +486,15 @@ int main()
 	g[pos]=0.5*((2.0*i)+I*(j+1.0));
       }
     }
+
+    /*
     printf("\ninput e:\n");
     show2(e,2*mx,my1);
     printf("\ninput f:\n");
     show2(f,2*mx,my1);
     printf("\ninput g:\n");
     show2(g,2*mx,my1);
+    */
 
     /* ImplicitHTConvolution2 *conv=fftwpp_create_htconv2d(mx,my); */
     ImplicitHTConvolution2 *conv=fftwpp_create_htconv2d_work(mx,my,
@@ -409,8 +507,15 @@ int main()
     for(i=0; i < my1; i++) e[i]=0.0;
     for(i=0; i < 2*mx; i++) e[i*my1+mx]=0.0;
 
-    printf("\noutput:\n");    
+    printf("\noutput:\n");
     show2(e,2*mx,my1);
+
+    if(mx==4 && my==4) {
+      if(hasht2(e,mx,my) != 1432369516) {
+	printf("ImplicitHTConvolution2 output incorecct.\n");
+	returnflag += 128;
+      }
+    }
 
     delete_complexAlign(e);
     delete_complexAlign(f);
@@ -424,7 +529,7 @@ int main()
     delete_complexAlign(w2);
   }
 
-  return 0;
+  return returnflag;
 }
 
 
