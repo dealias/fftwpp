@@ -1,53 +1,54 @@
 #
-# Makefile for the Python wrapper of FFTW++
+# Makefile for FFTW++ wrappers.
 #
 
-IDIR =../
+# compilers
+
+CC = g++
+C  = gcc
+F  = gfortran
+
+# flags
+
+CFLAGS  = -I.. -I$HOME/opt/include
+#CFLAGS += -g -Wall 
+CFLAGS += -fPIC -fopenmp
+CFLAGS += -msse2 -mfpmath=sse -march=native
+CFLAGS += -DNDEBUG -Ofast 
+
 FFTWIDIR=/usr/local/include/
 
-CC=g++
-CFLAGS=-fopenmp -g -Wall -ansi -O3 -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native -I$(IDIR) -I$(FFTWIDIR)
-C=gcc
-F=gfortran
+FFLAGS  = -I$HOME/opt/include
+FFLAGS += -fopenmp
 
-FFLAGS=-fopenmp
+LDFLAGS = -L$HOME/opt/lib -lfftw3 -lfftw3_omp -lm -lstdc++
 
-
-#CFLAGS+=-O3 -DNDEBUG
-#CFLAGS+=-fomit-frame-pointer -fstrict-aliasing -ffast-math
-#CFLAGS+=-msse2 -mfpmath=sse -march=native
-
-LDFLAGS=-lfftw3 -lfftw3_omp -lm
-
-FFTW=../fftw++
-EXTRA=$(FFTW) ../convolution
-ALL=$(EXTRA)
+# targets
 
 all: _fftwpp.so cexample fexample
 
-fftw++.o: ../fftw++.cc ../fftw++.h
-	$(CC) -c  $(CFLAGS) ../fftw++.cc 	-o $@  $(LDFLAGS)
+# rules
 
-convolution.o: ../convolution.h ../convolution.cc fftw++.o
-	$(CC) $(CFLAGS) -c -o $@ ../convolution.cc $(LDFLAGS)
+fftw++.o: ../fftw++.cc ../fftw++.h
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+convolution.o: ../convolution.cc ../convolution.h fftw++.o
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 cfftw++.o: cfftw++.cc cfftw++.h convolution.o fftw++.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -c cfftw++.cc -o $@
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 cexample: cexample.c cfftw++.o convolution.o fftw++.o
-	$(C) $^  $(CFLAGS) $(LDFLAGS) -o $@  -lstdc++ -std=c99
+	$(C) $(CFLAGS) -std=c99 -o $@ $^ $(LDFLAGS)
 
 fftwpp.o: fftwpp.f90
-	$(F) -c fftwpp.f90
-
-fftwpp.mod: fftwpp.o fftwpp.f90
-	@true
+	$(F) -c -o $@ $<
 
 fexample: fexample.f90 fftwpp.o cfftw++.o convolution.o fftw++.o
-	$(F) $^ $(FFLAGS) -o $@ -lstdc++ $(LDFLAGS) -I$(FFTWIDIR)
+	$(F) $(FFLAGS) -o $@ $^ $(LDFLAGS) -I$(FFTWIDIR)
 
-_fftwpp.so: ../fftw++.cc cfftw++.cc ../convolution.cc
-	$(CC) -fPIC $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
+_fftwpp.so: fftw++.o cfftw++.o convolution.o
+	$(CC) $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
 
 clean:
 	rm -f cexample fexample *.so *.pyc *.o  *.h.gch ../*.o ../*.d *.mod
