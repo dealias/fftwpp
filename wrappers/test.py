@@ -6,36 +6,48 @@ import os
 import subprocess
 import sys
 
-flag=0
+returnflag=0
 
 command = ["./cexample"]
 with open(os.devnull, "w") as fnull:
-    cresult = subprocess.call(command, stdout = fnull, stderr = fnull)
+    result = subprocess.call(command, stdout = fnull, stderr = fnull)
 
-if cresult == 0:
-    print "cexample succesful"
+if result == 0:
+    print "cexample\tok"
 else:
-    print "cexample FAILED"
-    flag += 1
+    print "cexample\tFAILED"
+    returnflag += 1
 
 command = ["python", "fftwpp.py"]
 with open(os.devnull, "w") as fnull:
-    presult = subprocess.call(command)
+    result = subprocess.call(command)
 
-if presult == 0:
-    print "fftwpp.py succesful"
+if result == 0:
+    print "fftwpp.py\tok"
 else:
-    print "fftwpp.py FAILED"
-    flag += 1
+    print "fftwpp.py\tFAILED"
+    returnflag += 1
+
+command = ["python", "pexample.py"]
+with open(os.devnull, "w") as fnull:
+    result = subprocess.call(command, stdout = fnull, stderr = fnull)
+
+if result == 0:
+    print "pexample.py\tok"
+else:
+    print "pexample.py\tFAILED"
+    returnflag += 1
 
 command = ["./fexample"]
 with open(os.devnull, "w") as fnull:
-    fresult = subprocess.call(command, stdout = fnull, stderr = fnull)
+    result = subprocess.call(command, stdout = fnull, stderr = fnull)
 
-if fresult == 0:
-    print "fexample succesful"
+
+
+if result == 0:
+    print "fexample\tok"
 else:
-    print "fexample FAILED"
-    flag += 1
+    print "fexample\tFAILED"
+    returnflag += 1
 
-sys.exit(flag)
+sys.exit(returnflag)

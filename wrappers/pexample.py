@@ -2,9 +2,13 @@
 
 import numpy as np
 import fftwpp
+import sys
+
 print "Example of calling fftw++ convolutions from python:"
 
 N = 8
+
+returnflag=0
 
 def init(f,g):
     k=0
@@ -87,3 +91,4 @@ hy = np.ndarray(shape=(2*mx-1,my), dtype=complex)
 #print x
 
 
+sys.exit(returnflag)
