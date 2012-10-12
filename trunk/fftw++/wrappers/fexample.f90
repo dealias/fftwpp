@@ -5,7 +5,7 @@ program fexample
   implicit NONE
   include 'fftw3.f03'
   integer(c_int) :: m
-  integer :: i
+  integer :: i, flag
   
   complex(C_DOUBLE_COMPLEX), pointer :: f(:), g(:)
   type(C_PTR) :: pf, pg, hconv1d, cconv1d
@@ -14,6 +14,8 @@ program fexample
 
   m=8 ! problem size
 
+  flag=0 ! return value for tests
+  
   !allocate memory:
   pf = fftw_alloc_complex(int(m, C_SIZE_T))
   call c_f_pointer(pf, f, [m])
@@ -33,9 +35,11 @@ program fexample
 
   write(*,*)
   write(*,*) "1d non-centered complex convolution:"
-  cconv1d=cconv1d_create(m)   !Create non-centered convolution:
-  call cconv1d_convolve(cconv1d,pf,pg)   !convolve:
-  call delete_cconv1d(cconv1d) !delete C++ object and free work memory
+  cconv1d=cconv1d_create(m)
+  call cconv1d_convolve(cconv1d,pf,pg)
+  call delete_cconv1d(cconv1d)
+
+  ! FIXME: add output test.
 
   call output(f,m)
 
@@ -43,14 +47,32 @@ program fexample
 
   write(*,*)
   write(*,*) "1d centered Hermitian-symmetric complex convolution:"
-  hconv1d=hconv1d_create(m) !Create Hermitian-symmetric centered convolution:
-  call hconv1d_convolve(hconv1d,pf,pg) ! convolve
-  call delete_hconv1d(hconv1d)   !delete C++ object and free work memory
+  hconv1d=hconv1d_create(m)
+  call hconv1d_convolve(hconv1d,pf,pg)
+  call delete_hconv1d(hconv1d)
+
+  ! FIXME: add output test.
+
   call output(f,m)
+  i=hash1(f,m)
 
   ! memory-aligned arrays need to be deleted using FFTW.
   call fftw_free(pf)
   call fftw_free(pg)
+
+  ! 2d non-centered complex convolution
+  
+  ! 2d centered Hermitian convolution
+
+  ! 3d non-centered complex convolution
+  
+  ! 3d centered Hermitian convolution
+
+  ! 1d centered Hermitian ternary convolution
+
+  ! 2d centered Hermitian ternary convolution
+
+  call EXIT(flag)
 
   contains
     

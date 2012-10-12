@@ -28,4 +28,14 @@ else:
     print "fftwpp.py FAILED"
     flag += 1
 
+command = ["./fexample"]
+with open(os.devnull, "w") as fnull:
+    fresult = subprocess.call(command, stdout = fnull, stderr = fnull)
+
+if fresult == 0:
+    print "fexample succesful"
+else:
+    print "fexample FAILED"
+    flag += 1
+
 sys.exit(flag)

@@ -38,16 +38,19 @@ convolution.o: ../convolution.cc ../convolution.h fftw++.o
 cfftw++.o: cfftw++.cc cfftw++.h convolution.o fftw++.o
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-cexample: cexample.c cfftw++.o convolution.o fftw++.o
+chash.o: chash.cc chash.h
+	$(CC)  $(CFLAGS) -c -o $@ $<
+
+cexample: cexample.c cfftw++.o convolution.o fftw++.o chash.o
 	$(C) $(CFLAGS) -std=c99 -o $@ $^ $(LDFLAGS)
 
 fftwpp.o: fftwpp.f90
 	$(F) -c -o $@ $<
 
-fexample: fexample.f90 fftwpp.o cfftw++.o convolution.o fftw++.o
+fexample: fexample.f90 fftwpp.o cfftw++.o convolution.o fftw++.o chash.o
 	$(F) $(FFLAGS) -o $@ $^ $(LDFLAGS) -I$(FFTWIDIR)
 
-_fftwpp.so: fftw++.o cfftw++.o convolution.o
+_fftwpp.so: fftw++.o cfftw++.o convolution.o chash.o
 	$(CC) $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
 
 clean:

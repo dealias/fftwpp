@@ -50,7 +50,6 @@ extern "C" {
       return new ImplicitConvolution(m,(Complex *) u,(Complex *) v);
     }
 
-
     void fftwpp_conv1d_convolve(ImplicitConvolution *conv, 
 				double __complex__ *a, double __complex__ *b) {
       conv->convolve((Complex *) a, (Complex *) b);
