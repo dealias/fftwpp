@@ -46,11 +46,11 @@ clib.fftwpp_conv3d_convolve.argtypes = [ c_void_p,
                                           ndpointer(dtype=np.complex128),
                                           ndpointer(dtype=np.complex128) ]
 
-# clib.fftwpp_create_hconv3d.restype = c_void_p
-# clib.fftwpp_create_hconv3d.argtypes = [ c_int, c_int, c_int ]
-# clib.fftwpp_hconv3d_convolve.argtypes = [ c_void_p,
-#                                           ndpointer(dtype=np.complex128),
-#                                           ndpointer(dtype=np.complex128) ]
+clib.fftwpp_create_hconv3d.restype = c_void_p
+clib.fftwpp_create_hconv3d.argtypes = [ c_int, c_int, c_int ]
+clib.fftwpp_hconv3d_convolve.argtypes = [ c_void_p,
+                                          ndpointer(dtype=np.complex128),
+                                          ndpointer(dtype=np.complex128) ]
 
 
 class Convolution(object):
@@ -289,23 +289,24 @@ class HConvolution(object):
 
         if isinstance(shape, int):
             shape = (shape,)
-
+            
         self.dim   = len(shape)
         self.shape = tuple(shape)
 
         if self.dim == 1:
-#             self.cptr = clib.fftwpp_create_hconv1d(c_int(shape[0]))
-            self.cptr = clib.fftwpp_create_hconv1d(*shape)
+            self.cptr = clib.fftwpp_create_hconv1d(c_int(shape[0]))
+            #self.cptr = clib.fftwpp_create_hconv1d(*shape)
             self._convolve = clib.fftwpp_hconv1d_convolve
             self._delete = clib.fftwpp_hconv1d_delete
         elif self.dim == 2:
-#             self.cptr = clib.fftwpp_create_hconv2d(c_int(ny), c_int(ny))
-            self.cptr = clib.fftwpp_create_hconv2d(*shape) # FIXME???
+            self.cptr = clib.fftwpp_create_hconv2d(c_int((shape[0]+1)/2),
+                                                   c_int(shape[1]))
             self._convolve = clib.fftwpp_hconv2d_convolve
             self._delete = clib.fftwpp_hconv2d_delete
         elif self.dim == 3:
-#             self.cptr = clib.fftwpp_create_hconv3d(c_int(shape[0]/2), c_int(shape[1]/2), c_int(shape[2]))
-            self.cptr = clib.fftwpp_create_hconv3d(*shape)
+            self.cptr = clib.fftwpp_create_hconv3d(c_int((shape[0]+1)/2), 
+                                                   c_int((shape[1]+1)/2), 
+                                                   c_int(shape[2]))
             self._convolve = clib.fftwpp_hconv3d_convolve
             self._delete = clib.fftwpp_hconv3d_delete
         else:
