@@ -66,29 +66,64 @@ init2(x,y)
 
 conv = fftwpp.Convolution(x.shape)
 conv.convolve(x,y)
+
+
+print
+print "2d centered Hermitian-symmetric convolution:"
+mx=4
+my=4
+mz=4
+hx = np.ndarray(shape=(2*mx-1,my), dtype=complex)
+hy = np.ndarray(shape=(2*mx-1,my), dtype=complex)
+
+init2(hx,hy)
+print hx
+hconv2 = fftwpp.HConvolution(hx.shape)
+hconv2.convolve(hx,hy)
+print hx
+
+
+print
+print "3d non-centered complex convolution:"
+
+x = np.ndarray(shape=(mx,my,mz), dtype=complex)
+y = np.ndarray(shape=(mx,my,mz), dtype=complex)
+
+def init3(f,g):
+    a=0
+    while a < f.shape[0] :
+        b=0
+        while b < f.shape[1] :
+            c=0
+            while c < f.shape[2] :
+                f[a][b][c]=np.complex(a+c,b+c)
+                g[a][b][c]=np.complex(2*a+c,b+1+c)
+                c += 1
+            b += 1
+        a += 1
+    return;
+
+init3(x,y)
+
+conv = fftwpp.Convolution(x.shape)
+conv.convolve(x,y)
 print x
 
 
 print
-print "2d non-centered complex convolution:"
-hx = np.ndarray(shape=(2*mx-1,my), dtype=complex)
-hy = np.ndarray(shape=(2*mx-1,my), dtype=complex)
+print "3d centered Hermitian-symmetric convolution:"
+mx=4
+my=4
+mz=4
+hx = np.ndarray(shape=(2*mx-1,2*my-1,mz), dtype=complex)
+hy = np.ndarray(shape=(2*mx-1,2*my-1,mz), dtype=complex)
 
-#init2(hx,hy)
+init3(hx,hy)
 #print hx
-#hconv2 = fftwpp.HConvolution(mx,my)
-#hconv2.convolve(hx,hy) # FIXME: segfault
-#print hx
+conv = fftwpp.HConvolution(hx.shape)
+conv.convolve(hx,hy)
+print hx
 
-# FIXME: 2D Hermitian convolution wrapper is broken
-
-#init2(x,y)
-
-#print
-#print "centered convolution:"
-#conv = fftwpp.HConvolution(x.shape)
-#conv.convolve(x,y)
-#print x
 
 
 sys.exit(returnflag)

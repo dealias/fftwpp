@@ -25,7 +25,7 @@ LDFLAGS = -L$HOME/opt/lib -lfftw3 -lfftw3_omp -lm -lstdc++
 
 # targets
 
-all: _fftwpp.so cexample fexample
+all: _fftwpp.so _chash.so cexample fexample
 
 # rules
 
@@ -53,7 +53,10 @@ fhash.o: fhash.f90
 fexample: fexample.f90 fftwpp.o fhash.o cfftw++.o convolution.o fftw++.o chash.o
 	$(F) $(FFLAGS) -o $@ $^ $(LDFLAGS) -I$(FFTWIDIR)
 
-_fftwpp.so: fftw++.o cfftw++.o convolution.o chash.o
+_fftwpp.so: fftw++.o cfftw++.o convolution.o
+	$(CC) $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
+
+_chash.so: chash.o
 	$(CC) $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
 
 clean:
