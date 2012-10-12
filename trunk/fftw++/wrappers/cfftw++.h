@@ -3,12 +3,16 @@
  * Not all of the FFTW++ routines are wrapped.
  *
  * Authors: 
- * Matthew Emmett <memmett@unc.edu> and 
+ * Matthew Emmett <memmett@gmail.com> and 
  * Malcolm Roberts <malcolm.i.w.roberts@gmail.com>
  */
 
-#ifndef CFFTWPP_H
-#define CFFTWPP_H
+#ifndef _CFFTWPP_H_
+#define _CFFTWPP_H_
+
+#ifdef  __cplusplus
+namespace fftwpp { extern "C" {
+#endif
 
 // wrappers for allocating aligned memory arrays
 double *create_doublealign(unsigned int n);
@@ -131,5 +135,9 @@ void fftwpp_htconv2d_convolve(ImplicitHTConvolution2 *conv,
 			      double __complex__ *a, double __complex__ *b,
 			      double __complex__ *c);
 void fftwpp_htconv2d_delete(ImplicitHTConvolution2 *conv);
+
+#ifdef  __cplusplus
+} }
+#endif
 
 #endif
