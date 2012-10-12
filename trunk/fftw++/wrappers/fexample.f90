@@ -1,11 +1,12 @@
 program fexample
   use fftwpp
+  use fhash
 
   use, intrinsic :: ISO_C_Binding !FIXME: use only.... to clean up namespace?
   implicit NONE
   include 'fftw3.f03'
   integer(c_int) :: m
-  integer :: i, flag
+  integer :: returnflag
   
   complex(C_DOUBLE_COMPLEX), pointer :: f(:), g(:)
   type(C_PTR) :: pf, pg, hconv1d, cconv1d
@@ -14,7 +15,7 @@ program fexample
 
   m=8 ! problem size
 
-  flag=0 ! return value for tests
+  returnflag=0 ! return value for tests
   
   !allocate memory:
   pf = fftw_alloc_complex(int(m, C_SIZE_T))
@@ -39,9 +40,12 @@ program fexample
   call cconv1d_convolve(cconv1d,pf,pg)
   call delete_cconv1d(cconv1d)
 
-  ! FIXME: add output test.
-
   call output(f,m)
+
+  if( hash1(pf,m).ne.-1208058208 ) then
+     write(*,*) "ImplicitConvolution output incorecct."
+     returnflag = returnflag+1
+  end if
 
   call init(f,g,m) ! reset input data
 
@@ -51,11 +55,13 @@ program fexample
   call hconv1d_convolve(hconv1d,pf,pg)
   call delete_hconv1d(hconv1d)
 
-  ! FIXME: add output test.
-
   call output(f,m)
-  i=hash1(f,m)
 
+  if( hash1(pf,m).ne.-1208087538 ) then
+     write(*,*) "ImplicitHConvolution output incorecct."
+     returnflag = returnflag+2
+  end if
+  
   ! memory-aligned arrays need to be deleted using FFTW.
   call fftw_free(pf)
   call fftw_free(pg)
@@ -72,7 +78,7 @@ program fexample
 
   ! 2d centered Hermitian ternary convolution
 
-  call EXIT(flag)
+  call EXIT(returnflag)
 
   contains
     

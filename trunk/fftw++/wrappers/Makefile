@@ -47,7 +47,10 @@ cexample: cexample.c cfftw++.o convolution.o fftw++.o chash.o
 fftwpp.o: fftwpp.f90
 	$(F) -c -o $@ $<
 
-fexample: fexample.f90 fftwpp.o cfftw++.o convolution.o fftw++.o chash.o
+fhash.o: fhash.f90
+	$(F) -c -o $@ $<
+
+fexample: fexample.f90 fftwpp.o fhash.o cfftw++.o convolution.o fftw++.o chash.o
 	$(F) $(FFLAGS) -o $@ $^ $(LDFLAGS) -I$(FFTWIDIR)
 
 _fftwpp.so: fftw++.o cfftw++.o convolution.o chash.o
