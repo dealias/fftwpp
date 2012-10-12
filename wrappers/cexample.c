@@ -1,5 +1,6 @@
 #include<stdio.h>
 #include "cfftw++.h"
+#include "chash.h"
 #include<complex.h>
 
 void init(double complex *f, double complex *g, unsigned int m) 
@@ -71,34 +72,6 @@ void show3(double complex *f,
   }
 }
 
-int hash(double complex *a, unsigned int m)
-{
-  int hash=0;
-  unsigned int i;
-  for(i=0; i<m; ++i) {
-    hash= (hash+(324723947+(int)(creal(a[i])+0.5)))^93485734985;
-    hash= (hash+(324723947+(int)(cimag(a[i])+0.5)))^93485734985;
-  }
-  return hash;
-}
-
-int hasht2(double complex *a, unsigned int mx, unsigned int my)
-{
-  int hash=0;
-  unsigned int i;
-  
-    int j,pos;
-    unsigned int stop=2*mx-1;
-    for(i=0; i < stop; i++) {
-      int ii=i+1;
-      for(j=0; j < my; j++) {
-	pos=ii*(my+1)+j;
-	hash= (hash+(324723947+(int)(creal(a[pos])+0.5)))^93485734985;
-	hash= (hash+(324723947+(int)(cimag(a[pos])+0.5)))^93485734985;
-      }
-    }
-  return hash;
-}
 int main()
 {
   printf("Example of calling fftw++ convolutions from C:\n");
