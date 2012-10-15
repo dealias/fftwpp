@@ -1,10 +1,16 @@
 #!/usr/bin/python
 
+import sys
 import numpy as np
 import fftwpp
-import sys
+
+import ctypes
+hashlib = ctypes.CDLL("./_chash.so")
 
 print "Example of calling fftw++ convolutions from python:"
+
+def hash(f,N):
+    return hashlib.hash(f.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),N)
 
 N = 8
 
@@ -35,6 +41,10 @@ conv = fftwpp.Convolution(f.shape)
 conv.convolve(f,g)
 print f
 
+if (hash(f,N) != -1208058208 ):
+    returnflag += 1
+    print "ImplicitConvolution output incorect."
+
 init(f,g)
 
 print
@@ -42,6 +52,14 @@ print "1d centered Hermitian-symmetric complex convolution:"
 hconv = fftwpp.HConvolution(f.shape)
 hconv.convolve(f,g)
 print f
+
+if (hash(f,N) != -1208087538 ):
+    returnflag += 2
+    print "ImplicitHConvolution output incorect."
+
+
+print
+print "2d non-centered complex convolution:"
 
 def init2(f,g):
     a=0
@@ -57,8 +75,6 @@ def init2(f,g):
 mx=4
 my=4
 
-print
-print "2d non-centered complex convolution:"
 x = np.ndarray(shape=(mx,my), dtype=complex)
 y = np.ndarray(shape=(mx,my), dtype=complex)
 
@@ -66,6 +82,10 @@ init2(x,y)
 
 conv = fftwpp.Convolution(x.shape)
 conv.convolve(x,y)
+print x
+if (hash(x,mx*my) != -268695633 ):
+    returnflag += 4
+    print "ImplicitConvolution2 output incorect."
 
 
 print
@@ -82,6 +102,9 @@ hconv2 = fftwpp.HConvolution(hx.shape)
 hconv2.convolve(hx,hy)
 print hx
 
+if (hash(hx,(2*mx-1)*my) != -947771835 ):
+    returnflag += 8
+    print "ImplicitHConvolution2 output incorect."
 
 print
 print "3d non-centered complex convolution:"
@@ -108,7 +131,9 @@ init3(x,y)
 conv = fftwpp.Convolution(x.shape)
 conv.convolve(x,y)
 print x
-
+if (hash(x,mx*my*mz) != 1073436205 ):
+    returnflag += 16
+    print "ImplicitConvolution3 output incorect."
 
 print
 print "3d centered Hermitian-symmetric convolution:"
@@ -124,6 +149,9 @@ conv = fftwpp.HConvolution(hx.shape)
 conv.convolve(hx,hy)
 print hx
 
+if (hash(hx,(2*mx-1)*(2*my-1)*mz) != -472674783 ):
+    returnflag += 32
+    print "ImplicitConvolution3 output incorect."
 
 
 sys.exit(returnflag)
