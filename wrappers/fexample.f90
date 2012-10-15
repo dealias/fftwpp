@@ -17,7 +17,9 @@ program fexample
   
   write(*,*) "Example of calling fftw++ convolutions from Fortran:"
 
-  nthreads=1
+  nthreads=2
+
+  call set_fftwpp_maxthreads(nthreads);
 
   ! 1D convolutions:
   m=8 ! problem size
@@ -147,15 +149,15 @@ program fexample
   call init2(ff,gg,mmx,my)
   
   ! pass work arrays to constructor
-  pu1 = fftw_alloc_complex(int(my/2+1*nthreads, C_SIZE_T))
-  pv1 = fftw_alloc_complex(int(my/2+1*nthreads, C_SIZE_T))
+  pu1 = fftw_alloc_complex(int((my/2+1)*nthreads, C_SIZE_T))
+  pv1 = fftw_alloc_complex(int((my/2+1)*nthreads, C_SIZE_T))
   pw1 = fftw_alloc_complex(int(3*nthreads, C_SIZE_T))
   pu2 = fftw_alloc_complex(int((mx+1)*my*nthreads, C_SIZE_T))
   pv2 = fftw_alloc_complex(int((mx+1)*my*nthreads, C_SIZE_T))
   pconv=hconv2d_create_work(mx,my,pu1,pv1,pw1,pu2,pv2)
 
   ! constructor allocates work arrays:
-  ! pconv=hconv2d_create(mx,my)
+  !pconv=hconv2d_create(mx,my)
   call hconv2d_convolve(pconv,pf,pg)
   call delete_hconv2d(pconv)
 
