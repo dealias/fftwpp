@@ -9,12 +9,23 @@ C  = gcc
 F  = gfortran
 
 # flags
-
 CFLAGS  = -I.. -I$HOME/opt/include
 #CFLAGS += -g -Wall 
-CFLAGS += -fPIC -fopenmp
 CFLAGS += -msse2 -mfpmath=sse -march=native
-CFLAGS += -DNDEBUG -Ofast 
+CFLAGS += -fPIC
+CFLAGS += -DNDEBUG
+
+a:=$(shell which icpc 2>&1 | tail -c5)
+ifeq ($(a),icpc)
+CC = icc
+C  = icc
+F  = ifort 
+#CFLAGS=-O3 -ansi-alias -malign-double -fp-model fast=2 -openmp -I$(IDIR)
+CFLAGS += -openmp -Ofast 
+else
+CFLAGS += -fopenmp
+endif
+
 
 FFTWIDIR=/usr/local/include/
 
