@@ -1,6 +1,23 @@
 module fftwpp
   use iso_c_binding
 
+  ! interfaces for setting number of threads for convolution routines
+  interface
+     subroutine set_fftwpp_maxthreads(nthreads) &
+          bind(c, name='set_fftwpp_maxthreads')
+       use iso_c_binding
+       integer(c_int), intent(in), value :: nthreads
+     end subroutine set_fftwpp_maxthreads
+  end interface
+
+  interface
+     integer(c_int) function get_fftwpp_maxthreads() &
+          bind(c, name='get_fftwpp_maxthreads')
+       use iso_c_binding
+!       integer(c_int), intent(in), value :: nthreads
+     end function get_fftwpp_maxthreads
+  end interface
+
   ! 1d complex non-centered convolution
   interface
      type(c_ptr) function cconv1d_create(m) &
