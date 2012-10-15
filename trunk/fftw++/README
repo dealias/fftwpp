@@ -69,6 +69,30 @@ example3r.cc
 exampleconv.cc
 
 
+
+Wrappers for the convolution routines are available for C, Fortran,
+and Python. Examples are given in the wrappers/ directory. The C
+wrapper may be found in cfftw++.h and cfftw++.cc, the Fortran wrapper
+in fftwpp.f90, and the Python wrapper in fftwpp.py. A unit-testing
+script, test.py, is also available. Results for the given input data
+are checked with a simple hash.
+
+The following programs are available in the wrappers directory:
+
+Using C to call multi-threaded 1D, 2D, and 3D binary convolutions and
+1D and 2D ternary convolutions, with and without passing work arrays:
+cexample.c
+
+Using Fortran to call multi-threaded 1D, 2D, and 3D binary
+convolutions, with and without passing work arrays:
+fexample.f90
+
+Using Python to call single-threaded 1D, 2D, and 3D binary convolutions
+(work arrays are created by the constructor): 
+pexample.py
+
+
+
 The following programs are provided in tests/, along with various
 timing and error analysis scritps.  Asymptote
 (http://asymptote.sourceforge.net/) scripts are provided for
