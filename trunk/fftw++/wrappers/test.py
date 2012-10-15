@@ -26,7 +26,7 @@ if result == 0:
     print "fftwpp.py\tok"
 else:
     print "fftwpp.py\tFAILED"
-    returnflag += 1
+    returnflag += 2
 
 command = ["python", "pexample.py"]
 with open(os.devnull, "w") as fnull:
@@ -36,18 +36,16 @@ if result == 0:
     print "pexample.py\tok"
 else:
     print "pexample.py\tFAILED"
-    returnflag += 1
+    returnflag += 4
 
 command = ["./fexample"]
 with open(os.devnull, "w") as fnull:
     result = subprocess.call(command, stdout = fnull, stderr = fnull)
 
-
-
 if result == 0:
     print "fexample\tok"
 else:
     print "fexample\tFAILED"
-    returnflag += 1
+    returnflag += 8
 
 sys.exit(returnflag)

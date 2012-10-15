@@ -114,7 +114,7 @@ int main()
     /* compare hash of output for unit test: */
     if(m == 8) {
       if(hash(f,m) != -1208058208) {
-	printf("ImplicitConvolution output incorecct.\n");
+	printf("ImplicitConvolution output incorect.\n");
 	returnflag += 1;
       }
     }
@@ -131,7 +131,7 @@ int main()
     /* compare hash of output for unit test: */
     if(m == 8) {
       if(hash(f,m) != -1208087538) {
-	printf("ImplicitHConvolution output incorecct.\n");
+	printf("ImplicitHConvolution output incorect.\n");
 	returnflag += 2;
       }
     }
@@ -186,7 +186,7 @@ int main()
     /* compare hash of output for unit test: */
     if(mx==4 && my==4) {
       if(hash(f,mx*my) != -268695633) {
-	printf("ImplicitConvolution2 output incorecct.\n");
+	printf("ImplicitConvolution2 output incorect.\n");
 	returnflag += 4;
       }
     }
@@ -246,7 +246,7 @@ int main()
     /* compare hash of output for unit test: */
     if(mx==4 && my==4) {
       if(hash(f,Mx*my) != -947771835) {
-	printf("ImplicitHConvolution2 output incorecct.\n");
+	printf("ImplicitHConvolution2 output incorect.\n");
 	returnflag += 8;
       }
     }
@@ -297,7 +297,7 @@ int main()
     /* compare hash of output for unit test: */
     if(mx==4 && my==4 && mz==4) {
       if(hash(f,mx*my*mz) != 1073436205) {
-	printf("ImplicitConvolution3 output incorecct.\n");
+	printf("ImplicitConvolution3 output incorect.\n");
 	returnflag += 16;
       }
     }
@@ -353,7 +353,7 @@ int main()
     /* compare hash of output for unit test: */    
     if(mx==4 && my==4 && mz==4) {
       if(hash(f,mxyz) != -472674783) {
-	printf("ImplicitHConvolution3 output incorecct.\n");
+	printf("ImplicitHConvolution3 output incorect.\n");
 	returnflag += 32;
       }
     }
@@ -416,7 +416,7 @@ int main()
     /* compare hash of output for unit test: */
     if(m==12) {
       if(hash(e,m) != -778218684) {
-	printf("ImplicitHTConvolution output incorecct.\n");
+	printf("ImplicitHTConvolution output incorect.\n");
 	returnflag += 64;
       }
     }
@@ -493,7 +493,7 @@ int main()
     /* compare hash of output for unit test: */
     if(mx==4 && my==4) {
       if(hasht2(e,mx,my) != 1432369516) {
-	printf("ImplicitHTConvolution2 output incorecct.\n");
+	printf("ImplicitHTConvolution2 output incorect.\n");
 	returnflag += 128;
       }
     }
