@@ -5,17 +5,19 @@ program fexample
   use, intrinsic :: ISO_C_Binding !FIXME: use only.... to clean up namespace?
   implicit NONE
   include 'fftw3.f03'
-  integer(c_int) :: m, mx, my, mz, i, j, k, mmx, mmy, mxyz
+  integer(c_int) :: m, mx, my, mz, i, j, k, mmx, mmy, mxyz, nthreads
   integer :: returnflag
   
-  complex(C_DOUBLE_COMPLEX), pointer :: f(:), g(:), ff(:,:), gg(:,:), &
-       fff(:,:,:),  ggg(:,:,:)
+  complex(C_DOUBLE_COMPLEX), pointer :: f(:), g(:), &
+       ff(:,:), gg(:,:), fff(:,:,:),  ggg(:,:,:)
   type(C_PTR) :: pf, pg, pconv
+  type(C_PTR) :: pu, pv, pw, pu2, pv2, pu1, pv1, pw1, pu3, pv3
 
   returnflag=0 ! return value for tests
   
   write(*,*) "Example of calling fftw++ convolutions from Fortran:"
 
+  nthreads=1
 
   ! 1D convolutions:
   m=8 ! problem size
@@ -39,7 +41,15 @@ program fexample
 
   write(*,*)
   write(*,*) "1d non-centered complex convolution:"
-  pconv=cconv1d_create(m)
+
+  ! pass work arrays to constructor:
+  pu = fftw_alloc_complex(int(m, C_SIZE_T))
+  pv = fftw_alloc_complex(int(m, C_SIZE_T))
+  pconv=cconv1d_create_work(m,pu,pv)
+  
+  ! constructor allocates work arrays:
+  ! pconv=cconv1d_create(m)
+  
   call cconv1d_convolve(pconv,pf,pg)
   call delete_cconv1d(pconv)
 
@@ -54,7 +64,13 @@ program fexample
 
   write(*,*)
   write(*,*) "1d centered Hermitian-symmetric complex convolution:"
-  pconv=hconv1d_create(m)
+
+  ! using optional work arrays
+  pw = fftw_alloc_complex(int(3, C_SIZE_T))
+  pconv=hconv1d_create_work(m,pu,pv,pw)
+
+  ! generate work arrays in constructor
+  ! pconv=hconv1d_create(m)
   call hconv1d_convolve(pconv,pf,pg)
   call delete_hconv1d(pconv)
 
@@ -65,10 +81,14 @@ program fexample
      returnflag = returnflag+2
   end if
   
-  ! memory-aligned arrays need to be deleted using FFTW.
   call fftw_free(pf)
   call fftw_free(pg)
 
+  ! free work arrays
+  call fftw_free(pu)
+  call fftw_free(pv)
+  call fftw_free(pw)
+  
   ! 2d non-centered complex convolution
 
   write(*,*)
@@ -83,8 +103,17 @@ program fexample
   call c_f_pointer(pg, gg, [mx,my])
   
   call init2(ff,gg,mx,my)
-  
-  pconv=cconv2d_create(mx,my)
+
+  ! construct passing work arrays:
+  pu1 = fftw_alloc_complex(int(my*nthreads, C_SIZE_T))
+  pv1 = fftw_alloc_complex(int(my*nthreads, C_SIZE_T))
+  pu2 = fftw_alloc_complex(int(mx*my, C_SIZE_T))
+  pv2 = fftw_alloc_complex(int(mx*my, C_SIZE_T))
+  pconv=cconv2d_create_work(mx,my,pu1,pv1,pu2,pv2)
+
+  ! constructor allocates work arrays:
+  !pconv=cconv2d_create(mx,my)
+
   call cconv2d_convolve(pconv,pf,pg)
   call delete_cconv2d(pconv)
   
@@ -98,8 +127,13 @@ program fexample
   call fftw_free(pf)
   call fftw_free(pg)
 
-  ! 2d centered Hermitian convolution
+  ! free work arrays
+  call fftw_free(pu1)
+  call fftw_free(pv1)
+  call fftw_free(pu2)
+  call fftw_free(pv2)
 
+  ! 2d centered Hermitian convolution
   write(*,*)
   write(*,*) "2d centered Hermitian-symmetric complex convolution:"
 
@@ -111,8 +145,17 @@ program fexample
   call c_f_pointer(pg, gg, [my,mmx])
   
   call init2(ff,gg,mmx,my)
+  
+  ! pass work arrays to constructor
+  pu1 = fftw_alloc_complex(int(my/2+1*nthreads, C_SIZE_T))
+  pv1 = fftw_alloc_complex(int(my/2+1*nthreads, C_SIZE_T))
+  pw1 = fftw_alloc_complex(int(3*nthreads, C_SIZE_T))
+  pu2 = fftw_alloc_complex(int((mx+1)*my*nthreads, C_SIZE_T))
+  pv2 = fftw_alloc_complex(int((mx+1)*my*nthreads, C_SIZE_T))
+  pconv=hconv2d_create_work(mx,my,pu1,pv1,pw1,pu2,pv2)
 
-  pconv=hconv2d_create(mx,my)
+  ! constructor allocates work arrays:
+  ! pconv=hconv2d_create(mx,my)
   call hconv2d_convolve(pconv,pf,pg)
   call delete_hconv2d(pconv)
 
@@ -125,6 +168,13 @@ program fexample
 
   call fftw_free(pf)
   call fftw_free(pg)
+
+  ! free work arrays
+  call fftw_free(pu1)
+  call fftw_free(pv1)
+  call fftw_free(pw1)
+  call fftw_free(pu2)
+  call fftw_free(pv2)
 
   ! 3d non-centered complex convolution
   
@@ -141,7 +191,17 @@ program fexample
 
   call init3(fff,ggg,mx,my,mz)
   
-  pconv=cconv3d_create(mx,my,mz)
+  ! pass work arrays to constructor
+  pu3 = fftw_alloc_complex(int(mx*my*mz, C_SIZE_T))
+  pv3 = fftw_alloc_complex(int(mx*my*mz, C_SIZE_T))
+  pu2 = fftw_alloc_complex(int(my*mz*nthreads, C_SIZE_T))
+  pv2 = fftw_alloc_complex(int(my*mz*nthreads, C_SIZE_T))
+  pu1 = fftw_alloc_complex(int(mz*nthreads, C_SIZE_T))
+  pv1 = fftw_alloc_complex(int(mz*nthreads, C_SIZE_T))
+  pconv=cconv3d_create_work(mx,my,mz,pu1,pv1,pu2,pv2,pu3,pv3)
+
+  ! constructor allocates work arrays:
+  ! pconv=cconv3d_create(mx,my,mz)
   call cconv3d_convolve(pconv,pf,pg)
   call delete_cconv3d(pconv)
 
@@ -154,6 +214,14 @@ program fexample
 
   call fftw_free(pf)
   call fftw_free(pg)
+
+  ! free work arrays
+  call fftw_free(pu1)
+  call fftw_free(pv1)
+  call fftw_free(pu2)
+  call fftw_free(pv2)
+  call fftw_free(pu3)
+  call fftw_free(pv3)
 
   ! 3d centered Hermitian convolution
   write(*,*)
@@ -171,8 +239,20 @@ program fexample
   call c_f_pointer(pg, ggg, [mz,mmy,mmx])
 
   call init3(fff,ggg,mmx,mmy,mz)
+  
+  
+  ! pass work arrays to constructor:
+  pu1 = fftw_alloc_complex(int((mz/2+1)*nthreads, C_SIZE_T))
+  pv1 = fftw_alloc_complex(int((mz/2+1)*nthreads, C_SIZE_T))
+  pw1 = fftw_alloc_complex(int(3*nthreads, C_SIZE_T))
+  pu2 = fftw_alloc_complex(int((my+1)*mz*nthreads, C_SIZE_T))
+  pv2 = fftw_alloc_complex(int((my+1)*mz*nthreads, C_SIZE_T))
+  pu3 = fftw_alloc_complex(int((mx+1)*(2*my-1)*mz, C_SIZE_T))
+  pv3 = fftw_alloc_complex(int((mx+1)*(2*my-1)*mz, C_SIZE_T))
+  pconv=hconv3d_create_work(mx,my,mz,pu1,pv1,pw1,pu2,pv2,pu3,pv3)
 
-  pconv=hconv3d_create(mx,my,mz)
+  ! constructor allocates work arrays:
+  ! pconv=hconv3d_create(mx,my,mz)
   call hconv3d_convolve(pconv,pf,pg)
   call delete_hconv3d(pconv)
 
@@ -185,9 +265,14 @@ program fexample
 
   call fftw_free(pf)
   call fftw_free(pg)
-  ! 1d centered Hermitian ternary convolution
 
-  ! 2d centered Hermitian ternary convolution
+  call fftw_free(pu1)
+  call fftw_free(pv1)
+  call fftw_free(pw1)
+  call fftw_free(pu2)
+  call fftw_free(pv2)
+  call fftw_free(pu3)
+  call fftw_free(pv3)
 
   call EXIT(returnflag)
 

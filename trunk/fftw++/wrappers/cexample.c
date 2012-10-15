@@ -93,7 +93,6 @@ int main()
     /* optional work arrays */
     double complex *u=create_complexAlign(m);
     double complex *v=create_complexAlign(m);
-    double complex *w=create_complexAlign(3);
     
     init(f,g,m); /* set the input data */
     
@@ -121,6 +120,9 @@ int main()
 
     init(f,g,m);
     
+    /* optional work arrays (one more for the Hermitian convolution) */
+    double complex *w=create_complexAlign(3);
+
     printf("\n1d centered Hermitian-symmetric complex convolution:\n");
     /* ImplicitHConvolution *conv=fftwpp_create_hconv1d(m); */
     ImplicitHConvolution *conv=fftwpp_create_hconv1d_work(m,u,v,w);
