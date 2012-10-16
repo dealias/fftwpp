@@ -71,6 +71,6 @@ _chash.so: chash.o
 	$(CC) $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
 
 clean:
-	rm -f cexample fexample *.so *.pyc *.o  *.h.gch ../*.o ../*.d *.mod
+	rm -f cexample fexample *.so *.pyc *.o *.h.gch *.mod
 
 .PHONY: clean
