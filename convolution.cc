@@ -385,7 +385,6 @@ void ImplicitHConvolution::convolve(Complex **F, Complex **G,
                                     Complex **U, Complex *v, Complex *w,
                                     unsigned int offset)
 {
-#undef __SSE2__
   Complex *u=U[0];
   
   if(m == 1) {
@@ -688,7 +687,6 @@ void ImplicitHConvolution::convolve(Complex **F, Complex **G,
   
   if(even)
     f[c]=(T-gcm1[c].re*zeta3-u[c].re*conj(zeta3))*ninv;
-#define __SSE2__
 }
 
 void fftpad::backwards(Complex *f, Complex *u)
