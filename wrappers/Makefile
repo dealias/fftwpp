@@ -29,7 +29,7 @@ endif
 
 FFTWIDIR=/usr/local/include/
 
-FFLAGS  = -I$HOME/opt/include
+FFLAGS  = -I/usr/include -I$HOME/opt/include
 FFLAGS += -fopenmp
 
 LDFLAGS = -L$HOME/opt/lib -lfftw3 -lfftw3_omp -lm -lstdc++
