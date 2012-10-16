@@ -16,11 +16,13 @@ MAKEDEPEND=$(CFLAGS) -O0 -M -DDEPEND
 #LDFLAGS=-lfftw3 -lfftw3_threads -lm
 LDFLAGS=-lfftw3 -lfftw3_omp -lm
 
+vpath %.cc ../
+
 FILES=example0 example0r example1 example1r example2 example2r \
 example3 example3r exampleconv
 
-FFTW=../fftw++
-EXTRA=$(FFTW) ../convolution
+FFTW=fftw++
+EXTRA=$(FFTW) convolution
 ALL=$(FILES) $(EXTRA)
 
 all: $(FILES)
