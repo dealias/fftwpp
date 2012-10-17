@@ -3,6 +3,7 @@
 import sys
 import numpy as np
 import fftwpp
+import pyfftw
 
 import ctypes
 hashlib = ctypes.CDLL("./_chash.so")
@@ -24,8 +25,8 @@ def init(f,g):
         k += 1
     return;
 
-f = np.ndarray(shape=(N), dtype=complex)
-g = np.ndarray(shape=(N), dtype=complex)
+f = pyfftw.n_byte_align_empty((N), 16, dtype=np.complex128)
+g = pyfftw.n_byte_align_empty((N), 16, dtype=np.complex128)
 
 init(f,g)
 
@@ -75,8 +76,8 @@ def init2(f,g):
 mx=4
 my=4
 
-x = np.ndarray(shape=(mx,my), dtype=complex)
-y = np.ndarray(shape=(mx,my), dtype=complex)
+x = pyfftw.n_byte_align_empty((mx,my), 16, dtype=np.complex128)
+y = pyfftw.n_byte_align_empty((mx,my), 16, dtype=np.complex128)
 
 init2(x,y)
 
@@ -93,8 +94,8 @@ print "2d centered Hermitian-symmetric convolution:"
 mx=4
 my=4
 mz=4
-hx = np.ndarray(shape=(2*mx-1,my), dtype=complex)
-hy = np.ndarray(shape=(2*mx-1,my), dtype=complex)
+hx = pyfftw.n_byte_align_empty((2*mx-1,my), 16, dtype=np.complex128)
+hy = pyfftw.n_byte_align_empty((2*mx-1,my), 16, dtype=np.complex128)
 
 init2(hx,hy)
 print hx
@@ -109,8 +110,8 @@ if (hash(hx,(2*mx-1)*my) != -947771835 ):
 print
 print "3d non-centered complex convolution:"
 
-x = np.ndarray(shape=(mx,my,mz), dtype=complex)
-y = np.ndarray(shape=(mx,my,mz), dtype=complex)
+x = pyfftw.n_byte_align_empty((mx,my,mz), 16, dtype=np.complex128)
+y = pyfftw.n_byte_align_empty((mx,my,mz), 16, dtype=np.complex128)
 
 def init3(f,g):
     a=0
@@ -140,8 +141,8 @@ print "3d centered Hermitian-symmetric convolution:"
 mx=4
 my=4
 mz=4
-hx = np.ndarray(shape=(2*mx-1,2*my-1,mz), dtype=complex)
-hy = np.ndarray(shape=(2*mx-1,2*my-1,mz), dtype=complex)
+hx = pyfftw.n_byte_align_empty((2*mx-1,2*my-1,mz), 16, dtype=np.complex128)
+hy = pyfftw.n_byte_align_empty((2*mx-1,2*my-1,mz), 16, dtype=np.complex128)
 
 init3(hx,hy)
 #print hx
