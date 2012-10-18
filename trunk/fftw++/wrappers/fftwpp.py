@@ -15,6 +15,12 @@ __all__ = [ 'Convolution' , 'HConvolution' ]
 base = os.path.dirname(os.path.abspath(__file__))
 clib = CDLL(os.path.join(base, '_fftwpp.so'))
 
+def fftwpp_set_maxthreads(nthreads):
+    clib.set_fftwpp_maxthreads(nthreads)
+
+def fftwpp_get_maxthreads():
+    return clib.get_fftwpp_maxthreads()
+
 # prototypes
 clib.fftwpp_create_conv1d.restype = c_void_p
 clib.fftwpp_create_conv1d.argtypes = [ c_int ]

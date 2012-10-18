@@ -13,9 +13,12 @@ print "Example of calling fftw++ convolutions from python:"
 def hash(f,N):
     return hashlib.hash(f.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),N)
 
-N = 8
+nthreads=2
+fftwpp.fftwpp_set_maxthreads(nthreads)
 
 returnflag=0
+
+N = 8
 
 def init(f,g):
     k=0
