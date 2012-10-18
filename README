@@ -80,17 +80,21 @@ are checked with a simple hash.
 The following programs are available in the wrappers directory:
 
 Using C to call multi-threaded 1D, 2D, and 3D binary convolutions and
-1D and 2D ternary convolutions, with and without passing work arrays:
+1D and 2D ternary convolutions, with and without passing work arrays,
+where the operation in physical space may correspond to either a
+scalar multiplication (M=1) or a dot product (M>1): 
 cexample.c
 
 Using Fortran to call multi-threaded 1D, 2D, and 3D binary
-convolutions, with and without passing work arrays:
+convolutions, with and without passing work arrays, where the
+operation in physical space may correspond to either a scalar
+multiplication (mm=1) or a dot product (mm>1):
 fexample.f90
 
-Using Python to call single-threaded 1D, 2D, and 3D binary convolutions
-(work arrays are created by the constructor): 
+Using Python to call multi-threaded 1D, 2D, and 3D binary convolutions
+(for scalar multiplication (M1) and withwork arrays are created by the
+constructor ):
 pexample.py
-
 
 
 The following programs are provided in tests/, along with various
