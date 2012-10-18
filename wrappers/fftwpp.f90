@@ -28,12 +28,29 @@ module fftwpp
   end interface
 
   interface
+     type(c_ptr) function cconv1d_create_dot(m,mm) &
+          bind(c, name='fftwpp_create_conv1d_dot')
+       use iso_c_binding
+       integer(c_int), intent(in), value :: m, mm
+     end function cconv1d_create_dot
+  end interface
+
+  interface
      type(c_ptr) function cconv1d_create_work(m,u,v) &
           bind(c, name='fftwpp_create_conv1d_work')
        use iso_c_binding
        integer(c_int), intent(in), value :: m
        type(c_ptr), intent(in), value :: u, v
      end function cconv1d_create_work
+  end interface
+
+  interface
+     type(c_ptr) function cconv1d_create_work_dot(m,u,v,mm) &
+          bind(c, name='fftwpp_create_conv1d_work_dot')
+       use iso_c_binding
+       integer(c_int), intent(in), value :: m, mm
+       type(c_ptr), intent(in), value :: u, v
+     end function cconv1d_create_work_dot
   end interface
 
   interface
@@ -60,12 +77,29 @@ module fftwpp
   end interface
 
   interface
+     type(c_ptr) function hconv1d_create_dot(m,mm) &
+          bind(c, name='fftwpp_create_hconv1d_dot')
+       use iso_c_binding
+       integer(c_int), intent(in), value :: m, mm
+     end function hconv1d_create_dot
+  end interface
+
+  interface
      type(c_ptr) function hconv1d_create_work(m,u,v,w) &
           bind(c, name='fftwpp_create_hconv1d_work')
        use iso_c_binding
        integer(c_int), intent(in), value :: m
        type(c_ptr), intent(in), value :: u, v,w
      end function hconv1d_create_work
+  end interface
+
+  interface
+     type(c_ptr) function hconv1d_create_work_dot(m,u,v,w,mm) &
+          bind(c, name='fftwpp_create_hconv1d_work_dot')
+       use iso_c_binding
+       integer(c_int), intent(in), value :: m, mm
+       type(c_ptr), intent(in), value :: u, v,w
+     end function hconv1d_create_work_dot
   end interface
 
   interface
@@ -84,6 +118,22 @@ module fftwpp
 
   ! 2d complex non-centered convolution
   interface
+     type(c_ptr) function cconv2d_create(mx,my) &
+          bind(c, name='fftwpp_create_conv2d')
+       use iso_c_binding
+       integer(c_int), intent(in), value :: mx, my
+     end function cconv2d_create
+  end interface
+
+  interface
+     type(c_ptr) function cconv2d_create_dot(mx,my,mm) &
+          bind(c, name='fftwpp_create_conv2d_dot')
+       use iso_c_binding
+       integer(c_int), intent(in), value :: mx, my,mm
+     end function cconv2d_create_dot
+  end interface
+
+  interface
      type(c_ptr) function cconv2d_create_work(mx,my,u1,u2,v1,v2) &
           bind(c, name='fftwpp_create_conv2d_work')
        use iso_c_binding
@@ -93,11 +143,12 @@ module fftwpp
   end interface
 
   interface
-     type(c_ptr) function cconv2d_create(mx,my) &
-          bind(c, name='fftwpp_create_conv2d')
+     type(c_ptr) function cconv2d_create_work_dot(mx,my,u1,u2,v1,v2,mm) &
+          bind(c, name='fftwpp_create_conv2d_work_dot')
        use iso_c_binding
-       integer(c_int), intent(in), value :: mx, my
-     end function cconv2d_create
+       integer(c_int), intent(in), value :: mx, my, mm
+       type(c_ptr), intent(in), value :: u1, v1, u2, v2
+     end function cconv2d_create_work_dot
   end interface
 
   interface
@@ -124,12 +175,29 @@ module fftwpp
   end interface
 
   interface
+     type(c_ptr) function hconv2d_create_dot(mx,my,mm) &
+          bind(c, name='fftwpp_create_hconv2d_dot')
+       use iso_c_binding
+       integer(c_int), intent(in), value :: mx, my, mm
+     end function hconv2d_create_dot
+  end interface
+
+  interface
      type(c_ptr) function hconv2d_create_work(mx,my,u1,v1,w1,u2,v2) &
           bind(c, name='fftwpp_create_hconv2d_work')
        use iso_c_binding
        integer(c_int), intent(in), value :: mx, my
        type(c_ptr), intent(in), value :: u1, v1, w1, u2, v2
      end function hconv2d_create_work
+  end interface
+
+  interface
+     type(c_ptr) function hconv2d_create_work_dot(mx,my,u1,v1,w1,u2,v2,mm) &
+          bind(c, name='fftwpp_create_hconv2d_work_dot')
+       use iso_c_binding
+       integer(c_int), intent(in), value :: mx, my
+       type(c_ptr), intent(in), value :: u1, v1, w1, u2, v2
+     end function hconv2d_create_work_dot
   end interface
 
   interface
@@ -156,12 +224,29 @@ module fftwpp
   end interface
 
   interface
+     type(c_ptr) function cconv3d_create_dot(mx,my,mz,mm) &
+          bind(c, name='fftwpp_create_conv3d_dot')
+       use iso_c_binding
+       integer(c_int), intent(in), value :: mx, my, mz, mm
+     end function cconv3d_create_dot
+  end interface
+
+  interface
      type(c_ptr) function cconv3d_create_work(mx,my,mz,u1,v1,u2,v2,u3,v3) &
           bind(c, name='fftwpp_create_conv3d_work')
        use iso_c_binding
        integer(c_int), intent(in), value :: mx, my, mz
        type(c_ptr), intent(in), value :: u1, v1, u2, v2, u3, v3
      end function cconv3d_create_work
+  end interface
+
+  interface
+     type(c_ptr) function cconv3d_create_work_dot(mx,my,mz,u1,v1,u2,v2,u3,v3,mm)&
+          bind(c, name='fftwpp_create_conv3d_work_dot')
+       use iso_c_binding
+       integer(c_int), intent(in), value :: mx, my, mz, mm
+       type(c_ptr), intent(in), value :: u1, v1, u2, v2, u3, v3
+     end function cconv3d_create_work_dot
   end interface
 
   interface
@@ -188,12 +273,29 @@ module fftwpp
   end interface
 
   interface
+     type(c_ptr) function hconv3d_create_dot(mx,my,mz,mm) &
+          bind(c, name='fftwpp_create_hconv3d_dot')
+       use iso_c_binding
+       integer(c_int), intent(in), value :: mx, my, mz, mm
+     end function hconv3d_create_dot
+  end interface
+
+  interface
      type(c_ptr) function hconv3d_create_work(mx,my,mz,u1,v1,w1,u2,v2,u3,v3) &
           bind(c, name='fftwpp_create_hconv3d_work')
        use iso_c_binding
        integer(c_int), intent(in), value :: mx, my, mz
        type(c_ptr), intent(in), value :: u1, v1, w1, u2, v2, u3, v3
      end function hconv3d_create_work
+  end interface
+
+  interface
+     type(c_ptr) function hconv3d_create_work_dot(mx,my,mz,u1,v1,w1,u2,v2,u3,v3,mm) &
+          bind(c, name='fftwpp_create_hconv3d_work_dot')
+       use iso_c_binding
+       integer(c_int), intent(in), value :: mx, my, mz, mm
+       type(c_ptr), intent(in), value :: u1, v1, w1, u2, v2, u3, v3
+     end function hconv3d_create_work_dot
   end interface
 
   interface
