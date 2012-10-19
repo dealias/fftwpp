@@ -38,6 +38,9 @@ ImplicitConvolution *fftwpp_create_conv1d_work_dot(unsigned int m,
 						   unsigned int M);
 void fftwpp_conv1d_convolve(ImplicitConvolution *conv, 
 			    double __complex__ *a, double __complex__  *b);
+void fftwpp_conv1d_convolve_dot(ImplicitConvolution *conv, 
+				double __complex__ **a, 
+				double __complex__ **b);
 void fftwpp_conv1d_delete(ImplicitConvolution *conv);
 
 // 1d Hermitian-symmetric entered convolution
@@ -56,6 +59,9 @@ ImplicitHConvolution *fftwpp_create_hconv1d_work_dot(unsigned int m,
 						     unsigned int M);
 void fftwpp_hconv1d_convolve(ImplicitHConvolution *conv, 
 			     double __complex__ *a, double __complex__  *b);
+void fftwpp_hconv1d_convolve_dot(ImplicitHConvolution *conv, 
+				 double __complex__ **a, 
+				 double __complex__ **b);
 void fftwpp_hconv1d_delete(ImplicitHConvolution *conv);
 
 // 2d complex non-centered convolution
@@ -78,7 +84,9 @@ ImplicitConvolution2 *fftwpp_create_conv2d_work_dot(unsigned int mx,
 						    unsigned int M);
 
 void fftwpp_conv2d_convolve(ImplicitConvolution2 *conv, 
-			    double __complex__ *a, double __complex__  *b);
+			    double __complex__ *a, double __complex__ *b);
+void fftwpp_conv2d_convolve_dot(ImplicitConvolution2 *conv, 
+				double __complex__ **a, double __complex__ **b);
 void fftwpp_conv2d_delete(ImplicitConvolution2 *conv);
 
 // 2d Hermitian-symmetric centered convolution
@@ -103,7 +111,10 @@ ImplicitHConvolution2 *fftwpp_create_hconv2d_work_dot(unsigned int mx,
 						      double __complex__ *v2,
 						      unsigned int M);
 void fftwpp_hconv2d_convolve(ImplicitHConvolution2 *conv, 
-			    double __complex__ *a, double __complex__  *b);
+			    double __complex__ *a, double __complex__ *b);
+void fftwpp_hconv2d_convolve_dot(ImplicitHConvolution2 *conv, 
+				 double __complex__ **a, 
+				 double __complex__ **b);
 void fftwpp_hconv2d_delete(ImplicitHConvolution2 *conv);
 
 // 3d complex non-centered convolution
@@ -119,8 +130,14 @@ ImplicitConvolution3 *fftwpp_create_conv3d_work(unsigned int mx,
 						double __complex__ *v2,
 						double __complex__ *u3,
 						double __complex__ *v3);
+ImplicitConvolution3 *fftwpp_create_conv3d_dot(unsigned int mx, 
+					       unsigned int my, 
+					       unsigned int mz,
+					       unsigned int M);
 void fftwpp_conv3d_convolve(ImplicitConvolution3 *conv, 
 			    double __complex__ *a, double __complex__ *b);
+void fftwpp_conv3d_convolve_dot(ImplicitConvolution3 *conv, 
+				double __complex__ **a, double __complex__ **b);
 void fftwpp_conv3d_delete(ImplicitConvolution3 *conv);
 
 // 3d Hermitian-symmetric centered convolution
@@ -154,6 +171,9 @@ ImplicitHConvolution3 *fftwpp_create_hconv3d_work_dot(unsigned int mx,
 						      unsigned int M);
 void fftwpp_hconv3d_convolve(ImplicitHConvolution3 *conv, 
 			    double __complex__ *a, double __complex__ *b);
+void fftwpp_hconv3d_convolve_dot(ImplicitHConvolution3 *conv, 
+				 double __complex__ **a, 
+				 double __complex__ **b);
 void fftwpp_hconv3d_delete(ImplicitHConvolution3 *conv);
 
 // 1d Hermitian-symmetric ternary convolution
@@ -173,6 +193,10 @@ ImplicitHTConvolution *fftwpp_create_htconv1d_work_dot(unsigned int m,
 void fftwpp_htconv1d_convolve(ImplicitHTConvolution *conv, 
 			      double __complex__ *a, double __complex__ *b,
 			      double __complex__ *c);
+void fftwpp_htconv1d_convolve_dot(ImplicitHTConvolution *conv, 
+				  double __complex__ **a, 
+				  double __complex__ **b,
+				  double __complex__ **c);
 void fftwpp_htconv1d_delete(ImplicitHTConvolution *conv);
 
 // 2d Hermitian-symmetric ternary convolution
@@ -201,6 +225,10 @@ ImplicitHTConvolution2 *fftwpp_create_htconv2d_work_dot(unsigned int mx,
 void fftwpp_htconv2d_convolve(ImplicitHTConvolution2 *conv, 
 			      double __complex__ *a, double __complex__ *b,
 			      double __complex__ *c);
+void fftwpp_htconv2d_convolve_dot(ImplicitHTConvolution2 *conv, 
+				  double __complex__ **a, 
+				  double __complex__ **b,
+				  double __complex__ **c);
 void fftwpp_htconv2d_delete(ImplicitHTConvolution2 *conv);
 
 #ifdef  __cplusplus
