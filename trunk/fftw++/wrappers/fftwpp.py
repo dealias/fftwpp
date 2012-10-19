@@ -75,14 +75,11 @@ class Convolution(object):
     >>> import numpy as np
     >>> import fftwpp
     >>> import pyfftw
-    >>> N = 32
-    >>> L = 2*np.pi
-    >>> x = np.arange(0.0, L, L/N)
+    >>> N = 8
     >>> f = pyfftw.n_byte_align_empty((N), 16, dtype=np.complex128)
     >>> g = pyfftw.n_byte_align_empty((N), 16, dtype=np.complex128)
-    >>> #f = np.fft.fftn(np.sin(x))
-    >>> #g = np.fft.fftn(np.sin(x))
-
+    >>> for i in range(len(f)): f[i]=np.complex(i,i+1)
+    >>> for i in range(len(g)): g[i]=np.complex(i,2*i+1)
 
     At this point, both ``f`` and ``g`` have shape ``(N,)``::
 
@@ -95,9 +92,9 @@ class Convolution(object):
 
     The convolution is now in ``f``::
 
-    # >>> # np.allclose(np.fft.ifft(f)/32, np.sin(x)*np.sin(5*x))
-    # # True
-
+    >>> np.allclose(f, [  -1.  +0.j,   -5.  +2.j,  -13.  +9.j,  -26. +24.j, \
+    -45. +50.j,-71. +90.j, -105.+147.j, -148.+224.j])
+    True
 
     Two dimensional convolutions
     ----------------------------
@@ -107,11 +104,17 @@ class Convolution(object):
     >>> import numpy as np
     >>> import fftwpp
     >>> import pyfftw
-    >>> N = 32
-    >>> L = 2*np.pi
-    >>> x, y = np.mgrid[0.0:L:L/N, 0.0:L:L/N]
+    >>> N = 4
     >>> f = pyfftw.n_byte_align_empty((N,N), 16, dtype=np.complex128)
     >>> g = pyfftw.n_byte_align_empty((N,N), 16, dtype=np.complex128)
+    >>> for i in range(len(f)):
+    ...     for j in range(len(f[i])):
+    ...             f[i][j]=np.complex(i,j)
+    ...
+    >>> for i in range(len(g)):
+    ...     for j in range(len(g[i])):
+    ...             g[i][j]=np.complex(2*i,j+1)
+    ...
 
     At this point, both ``f`` and ``g`` have shape ``(N, N)``::
 
@@ -125,10 +128,6 @@ class Convolution(object):
 
     Again, the convolution is now in ``f``::
 
-    # FIXME
-    >>> #np.allclose(f/N**2, np.fft.fftn(np.sin(x)*np.sin(5*y)))
-    True
-
 
     Three dimensional convolutions
     ------------------------------
@@ -138,15 +137,15 @@ class Convolution(object):
     >>> import numpy as np
     >>> import fftwpp
     >>> import pyfftw
-    >>> N = 32
-    >>> L = 2*np.pi
-    >>> x, y, z = np.mgrid[0.0:L:L/N, 0.0:L:L/N, 0.0:L:L/N]
+    >>> N = 4
     >>> f = pyfftw.n_byte_align_empty((N,N,N), 16, dtype=np.complex128)
     >>> g = pyfftw.n_byte_align_empty((N,N,N), 16, dtype=np.complex128)
-
-    #FIXME
-    >>> #f = np.fft.fftn(np.sin(x)*np.sin(z))
-    >>> #g = np.fft.fftn(np.sin(5*y))
+    >>> for i in range(len(f)):
+    ...     for j in range(len(f[i])):
+    ...             for k in range(len(f[i][j])):
+    ...                     f[i][j][k]=np.complex(i+k,j+k)
+    ...                     g[i][j][k]=np.complex(2*i+k,j+1+k)
+    ... 
 
     At this point, both ``f`` and ``g`` have shape ``(N, N, N)``::
 
@@ -159,11 +158,6 @@ class Convolution(object):
     >>> c.convolve(f, g)
 
     Again, the convolution is now in ``f``::
-
-    FIXME
-    >>> #np.allclose(f/N**3, np.fft.fftn(np.sin(x)*np.sin(5*y)*np.sin(z)))
-    True
-
 
     """
 
@@ -223,24 +217,26 @@ class HConvolution(object):
     >>> import numpy as np
     >>> import fftwpp
     >>> import pyfftw
-    >>> N = 32
-    >>> L = 2*np.pi
-    >>> x = np.arange(0.0, L, L/N)
+    >>> N = 8
     >>> f = pyfftw.n_byte_align_empty((N), 16, dtype=np.complex128)
     >>> g = pyfftw.n_byte_align_empty((N), 16, dtype=np.complex128)
+    >>> for i in range(len(f)):
+    ...     f[i]=np.complex(i,i+1)
+    ...     g[i]=np.complex(i,2*i+1)
 
     At this point, both ``f`` and ``g`` have shape ``(N,)``::
 
     >>> assert f.shape == (N,)
 
     Now, construct the convolution object and convolve::
-    >>> #c = fftwpp.HConvolution(N)
-    >>> #c.convolve(f, g)
+    >>> c = fftwpp.HConvolution(N)
+    >>> c.convolve(f, g)
 
     The convolution is now in ``f``::
 
-    # >>> # np.allclose(np.fft.ifft(f)/32, np.sin(x)*np.sin(5*x))
-    # # True
+    >>> np.allclose(f, [ 1022.  +0.j,   828. -12.j,   635. -15.j,   449.  -6.j,\
+    275. +18.j,   118. +60.j,   -17.+123.j,  -125.+210.j])
+    True
 
 
     Two dimensional convolutions
@@ -251,26 +247,22 @@ class HConvolution(object):
     >>> import numpy as np
     >>> import fftwpp
     >>> import pyfftw
-    >>> N = 2*8-1
-    >>> L = 2*np.pi
-    >>> x, y = np.mgrid[0.0:L:L/N, 0.0:L:L/N]
-    >>> #f = np.fft.fftn(np.sin(x))
-    >>> #g = np.fft.fftn(np.sin(5*y))
-
-    At this point, both ``f`` and ``g`` have shape ``(N, N)``::
-
-    >>> #assert f.shape == (N, N)
-    >>> #assert g.shape == (N, N)
+    >>> Nx = 4
+    >>> Ny = 4
+    >>> f = pyfftw.n_byte_align_empty((2*Nx-1,Ny), 16, dtype=np.complex128)
+    >>> g = pyfftw.n_byte_align_empty((2*Nx-1,Ny), 16, dtype=np.complex128)
+    >>> for i in range(len(f)):
+    ...     for j in range(len(f[i])):
+    ...             f[i][j]=np.complex(i,j)
+    ...             g[i][j]=np.complex(2*i,j+1)
+    ... 
 
     Now, construct the convolution object and convolve::
 
-    >>> #c = fftwpp.Convolution(f.shape)
-    >>> #c.convolve(f, g)
+    >>> c = fftwpp.HConvolution(f.shape)
+    >>> c.convolve(f, g)
 
     Again, the convolution is now in ``f``::
-
-    >>> #np.allclose(f/N**2, np.fft.fftn(np.sin(x)*np.sin(5*y)))
-    True
 
 
     Three dimensional convolutions
@@ -281,21 +273,20 @@ class HConvolution(object):
     >>> import numpy as np
     >>> import fftwpp
     >>> import pyfftw
-    >>> N = 32
-    >>> L = 2*np.pi
-    >>> x, y, z = np.mgrid[0.0:L:L/N, 0.0:L:L/N, 0.0:L:L/N]
-    >>> #f = np.fft.fftn(np.sin(x)*np.sin(z))
-    >>> #g = np.fft.fftn(np.sin(5*y))
+    >>> Nx=4
+    >>> Ny=4
+    >>> Nz=4
+    >>> f =  pyfftw.n_byte_align_empty((2*Nx-1,2*Ny-1,Nz),
+    ... 16, dtype=np.complex128)
+    >>> g =  pyfftw.n_byte_align_empty((2*Nx-1,2*Ny-1,Nz),
+    ... 16, dtype=np.complex128)
+    
 
-    At this point, both ``f`` and ``g`` have shape ``(N, N, N)``::
-
-    >>> #assert f.shape == (N, N, N)
-    >>> #assert g.shape == (N, N, N)
 
     Now, construct the convolution object and convolve::
 
-    >>> #c = fftwpp.Convolution(f.shape)
-    >>> #c.convolve(f, g)
+    >>> c = fftwpp.HConvolution(f.shape)
+    >>> c.convolve(f, g)
 
     Again, the convolution is now in ``f``::
 
