@@ -148,7 +148,6 @@ hx = pyfftw.n_byte_align_empty((2*mx-1,2*my-1,mz), 16, dtype=np.complex128)
 hy = pyfftw.n_byte_align_empty((2*mx-1,2*my-1,mz), 16, dtype=np.complex128)
 
 init3(hx,hy)
-#print hx
 conv = fftwpp.HConvolution(hx.shape)
 conv.convolve(hx,hy)
 print hx
