@@ -65,6 +65,12 @@ extern "C" {
 				double __complex__ *a, double __complex__ *b) {
       conv->convolve((Complex *) a, (Complex *) b);
     }
+    void fftwpp_conv1d_convolve_dot(ImplicitConvolution *conv, 
+				  double __complex__ **a, 
+				  double __complex__ **b) {
+      conv->convolve((Complex **) a, (Complex **) b);
+    }
+
 
     void fftwpp_conv1d_delete(ImplicitConvolution *conv) {
       delete conv;
@@ -99,6 +105,13 @@ extern "C" {
 				 double __complex__ *a, double __complex__ *b) {
       conv->convolve((Complex *) a, (Complex *) b);
     }
+
+    void fftwpp_hconv1d_convolve_dot(ImplicitHConvolution *conv, 
+				     double __complex__ **a, 
+				     double __complex__ **b) {
+      conv->convolve((Complex **) a, (Complex **) b);
+    }
+
 
     void fftwpp_hconv1d_delete(ImplicitHConvolution *conv) {
       delete conv;
@@ -139,6 +152,12 @@ extern "C" {
     void fftwpp_conv2d_convolve(ImplicitConvolution2 *conv, 
 				double __complex__ *a, double __complex__ *b) {
       conv->convolve((Complex *) a, (Complex *) b);
+    }
+    
+    void fftwpp_conv2d_convolve_dot(ImplicitConvolution2 *conv, 
+     				    double __complex__ **a, 
+				    double __complex__ **b) {
+      conv->convolve((Complex **) a, (Complex **) b);
     }
 
     void fftwpp_conv2d_delete(ImplicitConvolution2 *conv) {
@@ -184,6 +203,12 @@ extern "C" {
 				 double __complex__ *a, double __complex__ *b) {
       conv->convolve((Complex *) a, (Complex *) b);
     }
+    void fftwpp_hconv2d_convolve_dot(ImplicitHConvolution2 *conv, 
+				     double __complex__ **a, 
+				     double __complex__ **b) {
+      conv->convolve((Complex **) a, (Complex **) b);
+    }
+
 
     void fftwpp_hconv2d_delete(ImplicitHConvolution2 *conv) {
       delete conv;
@@ -236,6 +261,11 @@ extern "C" {
     void fftwpp_conv3d_convolve(ImplicitConvolution3 *conv, 
 				double __complex__ *a, double __complex__ *b) {
       conv->convolve((Complex *) a, (Complex *) b);
+    }
+    void fftwpp_conv3d_convolve_dot(ImplicitConvolution3 *conv, 
+				    double __complex__ **a, 
+				    double __complex__ **b) {
+      conv->convolve((Complex **) a, (Complex **) b);
     }
 
     void fftwpp_conv3d_delete(ImplicitConvolution3 *conv) {
@@ -295,6 +325,11 @@ extern "C" {
 				 double __complex__ *a, double __complex__ *b) {
       conv->convolve((Complex *) a, (Complex *) b);
     }
+    void fftwpp_hconv3d_convolve_dot(ImplicitHConvolution3 *conv, 
+				     double __complex__ **a, 
+				     double __complex__ **b) {
+      conv->convolve((Complex **) a, (Complex **) b);
+    }
     void fftwpp_hconv3d_delete(ImplicitHConvolution3 *conv) {
       delete conv;
     }
@@ -328,6 +363,12 @@ extern "C" {
 				  double __complex__ *b, 
 				  double __complex__ *c) {
       conv->convolve((Complex *) a, (Complex *) b, (Complex *) c);
+    }
+    void fftwpp_htconv1d_convolve_dot(ImplicitHTConvolution *conv, 
+				      double __complex__ **a, 
+				      double __complex__ **b, 
+				      double __complex__ **c) {
+      conv->convolve((Complex **) a, (Complex **) b, (Complex **) c);
     }
     void fftwpp_htconv1d_delete(ImplicitHTConvolution *conv) {
       delete conv;
@@ -378,6 +419,12 @@ extern "C" {
 				  double __complex__ *b,
 				  double __complex__ *c) {
       conv->convolve((Complex *) a, (Complex *) b, (Complex *) c);
+    }
+    void fftwpp_htconv2d_convolve_dot(ImplicitHTConvolution2 *conv, 
+				      double __complex__ **a, 
+				      double __complex__ **b,
+				      double __complex__ **c) {
+      conv->convolve((Complex **) a, (Complex **) b, (Complex **) c);
     }
     void fftwpp_htconv2d_delete(ImplicitHTConvolution2 *conv) {
       delete conv;
