@@ -123,6 +123,9 @@ void fftwpp_hconv2d_convolve(ImplicitHConvolution2 *conv,
 void fftwpp_hconv2d_convolve_dot(ImplicitHConvolution2 *conv, 
 				 double __complex__ **a, 
 				 double __complex__ **b);
+void fftwpp_hconv2d_convolve_dotf(ImplicitHConvolution2 *conv, 
+				  double __complex__ *a, 
+				  double __complex__ *b);
 void fftwpp_hconv2d_delete(ImplicitHConvolution2 *conv);
 
 // 3d complex non-centered convolution
@@ -146,6 +149,8 @@ void fftwpp_conv3d_convolve(ImplicitConvolution3 *conv,
 			    double __complex__ *a, double __complex__ *b);
 void fftwpp_conv3d_convolve_dot(ImplicitConvolution3 *conv, 
 				double __complex__ **a, double __complex__ **b);
+void fftwpp_conv3d_convolve_dotf(ImplicitConvolution3 *conv, 
+				 double __complex__ *a, double __complex__ *b);
 void fftwpp_conv3d_delete(ImplicitConvolution3 *conv);
 
 // 3d Hermitian-symmetric centered convolution

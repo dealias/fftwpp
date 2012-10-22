@@ -204,7 +204,10 @@ extern "C" {
 	B[s]=(Complex *) b+sm;
       }
       conv->convolve((Complex **) A, (Complex **) B);
+      delete[] A;      
+      delete[] B;
     }
+
 
     void fftwpp_conv2d_delete(ImplicitConvolution2 *conv) {
       delete conv;
@@ -253,6 +256,24 @@ extern "C" {
 				     double __complex__ **a, 
 				     double __complex__ **b) {
       conv->convolve((Complex **) a, (Complex **) b);
+    }
+    void fftwpp_hconv2d_convolve_dotf(ImplicitHConvolution2 *conv, 
+				      double __complex__ *a, 
+				      double __complex__ *b) {
+      unsigned int M=conv->getM();
+      unsigned int mx=conv->getmx();
+      unsigned int my=conv->getmy();
+      unsigned int m=(2*mx-1)*my;
+      Complex **A=new Complex *[M];
+      Complex **B=new Complex *[M];
+      for(unsigned int s=0; s < M; ++s) {
+	unsigned int sm=s*m;
+	A[s]=(Complex *) a+sm;
+	B[s]=(Complex *) b+sm;
+      }
+      conv->convolve((Complex **) A, (Complex **) B);
+      delete[] A;      
+      delete[] B;
     }
 
 
@@ -312,6 +333,22 @@ extern "C" {
 				    double __complex__ **a, 
 				    double __complex__ **b) {
       conv->convolve((Complex **) a, (Complex **) b);
+    }
+    void fftwpp_conv3d_convolve_dotf(ImplicitConvolution3 *conv, 
+				     double __complex__ *a, 
+				     double __complex__ *b) {
+      unsigned int M=conv->getM();
+      unsigned int m=conv->getmx()*conv->getmy()*conv->getmz();
+      Complex **A=new Complex *[M];
+      Complex **B=new Complex *[M];
+      for(unsigned int s=0; s < M; ++s) {
+	unsigned int sm=s*m;
+	A[s]=(Complex *) a+sm;
+	B[s]=(Complex *) b+sm;
+      }
+      conv->convolve((Complex **) A, (Complex **) B);
+      delete[] A;
+      delete[] B;
     }
 
     void fftwpp_conv3d_delete(ImplicitConvolution3 *conv) {
@@ -375,6 +412,25 @@ extern "C" {
 				     double __complex__ **a, 
 				     double __complex__ **b) {
       conv->convolve((Complex **) a, (Complex **) b);
+    }
+    void fftwpp_hconv3d_convolve_dotf(ImplicitHConvolution3 *conv, 
+				      double __complex__ *a, 
+				      double __complex__ *b) {
+      unsigned int mx=conv->getmx();
+      unsigned int my=conv->getmy();
+      unsigned int mz=conv->getmz();
+      unsigned int m=(2*mx-1)*(2*my-1)*mz;
+      unsigned int M=conv->getM();
+      Complex **A=new Complex *[M];
+      Complex **B=new Complex *[M];
+      for(unsigned int s=0; s < M; ++s) {
+	unsigned int sm=s*m;
+	A[s]=(Complex *) a+sm;
+	B[s]=(Complex *) b+sm;
+      }
+      conv->convolve((Complex **) A, (Complex **) B);
+      delete[] A;      
+      delete[] B;
     }
     void fftwpp_hconv3d_delete(ImplicitHConvolution3 *conv) {
       delete conv;
