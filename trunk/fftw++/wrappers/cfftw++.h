@@ -41,6 +41,9 @@ void fftwpp_conv1d_convolve(ImplicitConvolution *conv,
 void fftwpp_conv1d_convolve_dot(ImplicitConvolution *conv, 
 				double __complex__ **a, 
 				double __complex__ **b);
+void fftwpp_conv1d_convolve_dotf(ImplicitConvolution *conv, 
+				 double __complex__ *a, 
+				 double __complex__ *b);
 void fftwpp_conv1d_delete(ImplicitConvolution *conv);
 
 // 1d Hermitian-symmetric entered convolution
@@ -62,6 +65,9 @@ void fftwpp_hconv1d_convolve(ImplicitHConvolution *conv,
 void fftwpp_hconv1d_convolve_dot(ImplicitHConvolution *conv, 
 				 double __complex__ **a, 
 				 double __complex__ **b);
+void fftwpp_hconv1d_convolve_dotf(ImplicitHConvolution *conv, 
+				  double __complex__ *a, 
+				  double __complex__ *b);
 void fftwpp_hconv1d_delete(ImplicitHConvolution *conv);
 
 // 2d complex non-centered convolution

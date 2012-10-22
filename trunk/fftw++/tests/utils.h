@@ -88,4 +88,15 @@ inline void usage(int n, bool test=false, bool Explicit=true)
   exit(1);
 }
 
+inline int hash(Complex* f, unsigned int m)
+{
+  int h=0;
+  unsigned int i;
+  for(i=0; i<m; ++i) {
+    h= (h+ (324723947+(int)(f[i].im+0.5)))^93485734985;
+    h= (h+ (324723947+(int)(f[i].im+0.5)))^93485734985;
+  }
+  return h;
+}
+
 #endif
