@@ -93,6 +93,8 @@ void fftwpp_conv2d_convolve(ImplicitConvolution2 *conv,
 			    double __complex__ *a, double __complex__ *b);
 void fftwpp_conv2d_convolve_dot(ImplicitConvolution2 *conv, 
 				double __complex__ **a, double __complex__ **b);
+void fftwpp_conv2d_convolve_dotf(ImplicitConvolution2 *conv, 
+				 double __complex__ *a, double __complex__ *b);
 void fftwpp_conv2d_delete(ImplicitConvolution2 *conv);
 
 // 2d Hermitian-symmetric centered convolution

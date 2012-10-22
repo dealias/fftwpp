@@ -191,6 +191,20 @@ extern "C" {
 				    double __complex__ **b) {
       conv->convolve((Complex **) a, (Complex **) b);
     }
+    void fftwpp_conv2d_convolve_dotf(ImplicitConvolution2 *conv, 
+				     double __complex__ *a, 
+				     double __complex__ *b) {
+      unsigned int M=conv->getM();
+      unsigned int m=conv->getmx()*conv->getmy();
+      Complex **A=new Complex *[M];
+      Complex **B=new Complex *[M];
+      for(unsigned int s=0; s < M; ++s) {
+	unsigned int sm=s*m;
+	A[s]=(Complex *) a+sm;
+	B[s]=(Complex *) b+sm;
+      }
+      conv->convolve((Complex **) A, (Complex **) B);
+    }
 
     void fftwpp_conv2d_delete(ImplicitConvolution2 *conv) {
       delete conv;
