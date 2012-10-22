@@ -5,11 +5,12 @@ program fexample
   use, intrinsic :: ISO_C_Binding !FIXME: use only.... to clean up namespace?
   implicit NONE
   include 'fftw3.f03'
-  integer(c_int) :: m, mx, my, mz, i, j, k, mmx, mmy, mxyz, nthreads, mdot
+  integer(c_int) :: m, mx, my, mz, i, j, k, mmx, mmy, mxyz, nthreads, mdot, im
   integer :: returnflag
   
   complex(C_DOUBLE_COMPLEX), pointer :: f(:), g(:), fm(:), gm(:),  &
-       ff(:,:), gg(:,:), fff(:,:,:),  ggg(:,:,:)
+       ff(:,:), gg(:,:), ffm(:,:) , ggm(:,:), &
+       fff(:,:,:),  ggg(:,:,:)
   type(C_PTR) :: pf, pg, pconv
   type(C_PTR) :: pu, pv, pw, pu2, pv2, pu1, pv1, pw1, pu3, pv3
   type(C_PTR), pointer:: pfdot(:), pgdot(:)
@@ -102,7 +103,7 @@ program fexample
   ! pw = fftw_alloc_complex(int(3*mdot, C_SIZE_T))
   ! pconv=hconv1d_create_work(m,pu,pv,pw)
 
-  ! allocate work arrays in constructor
+  ! allocate work arrays in constructor (for mdot > 1)
   pf = fftw_alloc_complex(int(m*mdot, C_SIZE_T))
   pg = fftw_alloc_complex(int(m*mdot, C_SIZE_T))
   pconv=hconv1d_create_dot(m,mdot)
@@ -148,27 +149,50 @@ program fexample
   ! 2D problem size
   mx=4
   my=4
-  
-  pf = fftw_alloc_complex(int(mx*my, C_SIZE_T))
-  pg = fftw_alloc_complex(int(mx*my, C_SIZE_T))
-  call c_f_pointer(pf, ff, [mx,my])
-  call c_f_pointer(pg, gg, [mx,my])
-  
-  call init2(ff,gg,mx,my)
+  mdot=2
+  ! constructor allocates work arrays:
+  ! pf = fftw_alloc_complex(int(mx*my, C_SIZE_T))
+  ! pg = fftw_alloc_complex(int(mx*my, C_SIZE_T))
+  ! pconv=cconv2d_create(mx,my)
 
   ! construct passing work arrays:
-  pu1 = fftw_alloc_complex(int(my*nthreads, C_SIZE_T))
-  pv1 = fftw_alloc_complex(int(my*nthreads, C_SIZE_T))
-  pu2 = fftw_alloc_complex(int(mx*my, C_SIZE_T))
-  pv2 = fftw_alloc_complex(int(mx*my, C_SIZE_T))
-  pconv=cconv2d_create_work(mx,my,pu1,pv1,pu2,pv2)
+  ! pf = fftw_alloc_complex(int(mx*my, C_SIZE_T))
+  ! pg = fftw_alloc_complex(int(mx*my, C_SIZE_T))
+  ! pu1 = fftw_alloc_complex(int(my*nthreads, C_SIZE_T))
+  ! pv1 = fftw_alloc_complex(int(my*nthreads, C_SIZE_T))
+  ! pu2 = fftw_alloc_complex(int(mx*my, C_SIZE_T))
+  ! pv2 = fftw_alloc_complex(int(mx*my, C_SIZE_T))
+  ! pconv=cconv2d_create_work(mx,my,pu1,pv1,pu2,pv2)
 
   ! constructor allocates work arrays:
-  !pconv=cconv2d_create(mx,my)
+  pf = fftw_alloc_complex(int(mx*my*mdot, C_SIZE_T))
+  pg = fftw_alloc_complex(int(mx*my*mdot, C_SIZE_T))
+  pconv=cconv2d_create_dot(mx,my,mdot)
 
-  call cconv2d_convolve(pconv,pf,pg)
+  call c_f_pointer(pf, ff, [mx,my*mdot])
+  call c_f_pointer(pg, gg, [mx,my*mdot])
+  
+  m=mx*my
+
+  do i=0,mdot-1
+     im=i*m
+     ffm => ff(im+1:im+mx,1:my)
+     ggm => gg(im+1:im+mx,1:my)
+     call init2(ffm,ggm,mx,my)
+  end do
+
+  ! call init2(ff,gg,mx,my)
+
+  !call cconv2d_convolve(pconv,pf,pg)
+  call cconv2d_convolve_dot(pconv,pf,pg)
   call delete_cconv2d(pconv)
   
+  i=1,mx
+     do j=1,my
+        ff(i,j) = ff(i,j)/dble(mdot)
+     end do
+  end do
+
   call output2(ff,mx,my)
   
   if( hash1(pf,mx*my).ne.-268695633 ) then
@@ -180,10 +204,10 @@ program fexample
   call fftw_free(pg)
 
   ! free work arrays
-  call fftw_free(pu1)
-  call fftw_free(pv1)
-  call fftw_free(pu2)
-  call fftw_free(pv2)
+  ! call fftw_free(pu1)
+  ! call fftw_free(pv1)
+  ! call fftw_free(pu2)
+  ! call fftw_free(pv2)
 
   ! 2d centered Hermitian convolution
   write(*,*)
@@ -354,7 +378,20 @@ program fexample
          end do
       end do
     end subroutine init2
-    
+
+    subroutine init2p(f,g,mx,my)
+      use, intrinsic :: ISO_C_Binding
+      implicit NONE
+      integer :: i, j
+      integer(c_int), intent(in) :: mx, my
+      complex(C_DOUBLE_COMPLEX), pointer, intent(inout) :: f(:), g(:)
+      do i=0,mx-1
+         do j=0,my-1
+            f((j+1)*my+i+1)=cmplx(i,j)
+            g((j+1)*my+i+1)=cmplx(2*i,j+1)
+         end do
+      end do
+    end subroutine init2p
 
     subroutine init3(f,g,mx,my,mz)
       use, intrinsic :: ISO_C_Binding

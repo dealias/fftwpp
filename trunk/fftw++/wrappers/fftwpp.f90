@@ -180,7 +180,7 @@ module fftwpp
 
   interface
      type(c_ptr) function cconv2d_create_work_dot(mx,my,u1,u2,v1,v2,mm) &
-          bind(c, name='fftwpp_create_conv2d_work_dot')
+          bind(c, name='fftwpp_create_conv2d_work_dotf')
        use iso_c_binding
        implicit none
        integer(c_int), intent(in), value :: mx, my, mm
@@ -194,6 +194,15 @@ module fftwpp
        implicit none
        type(c_ptr), intent(in), value :: p,f,g
      end subroutine cconv2d_convolve
+  end interface
+
+  interface
+     subroutine cconv2d_convolve_dot(p,f,g) &
+          bind(c, name='fftwpp_conv2d_convolve_dotf')
+       use iso_c_binding
+       implicit none
+       type(c_ptr), intent(in), value :: p,f,g
+     end subroutine cconv2d_convolve_dot
   end interface
 
   interface
