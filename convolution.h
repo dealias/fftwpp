@@ -621,6 +621,10 @@ public:
     initpointers(U,v,w,threads);
   }
     
+  unsigned int getmx() {return mx;}
+  unsigned int getmy() {return my;}
+  unsigned int getM() {return M;}
+
   // u1 and v1 are temporary arrays of size (my/2+1)*M*fftw::maxthreads.
   // w1 is a temporary array of size 3*M*fftw::maxthreads.
   // u2 and v2 are temporary arrays of size (mx+1)*my*M;
@@ -767,6 +771,11 @@ public:
     initpointers(U3,V3,u3,v3);
   }
   
+  unsigned int getmx() {return mx;}
+  unsigned int getmy() {return my;}
+  unsigned int getmz() {return mz;}
+  unsigned int getM() {return M;}
+
   // u1 and v1 are temporary arrays of size mz*M.
   // u2 and v2 are temporary arrays of size my*mz*M.
   // u3 and v3 are temporary arrays of size mx*my*mz*M.
@@ -923,6 +932,11 @@ public:
     initpointers(U3,V3,u3,v3);
   }
   
+  unsigned int getmx() {return mx;}
+  unsigned int getmy() {return my;}
+  unsigned int getmz() {return mz;}
+  unsigned int getM() {return M;}
+
   // u1 and v1 are temporary arrays of size (mz/2+1)*M.
   // w1 is a temporary array of size 3*M.
   // u2 and v2 are temporary array of size (my+1)*mz*M.

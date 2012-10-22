@@ -261,6 +261,15 @@ module fftwpp
   end interface
 
   interface
+     subroutine hconv2d_convolve_dot(p,f,g) &
+          bind(c, name='fftwpp_hconv2d_convolve_dotf')
+       use iso_c_binding
+       implicit none
+       type(c_ptr), intent(in), value :: p,f,g
+     end subroutine hconv2d_convolve_dot
+  end interface
+
+  interface
      subroutine delete_hconv2d(p) bind(c, name='fftwpp_hconv2d_delete')
        use iso_c_binding
        implicit none
@@ -314,6 +323,16 @@ module fftwpp
        type(c_ptr), intent(in), value :: p,f,g
      end subroutine cconv3d_convolve
   end interface
+
+  interface
+     subroutine cconv3d_convolve_dot(p,f,g) &
+          bind(c, name='fftwpp_conv3d_convolve_dotf')
+       use iso_c_binding
+       implicit none
+       type(c_ptr), intent(in), value :: p,f,g
+     end subroutine cconv3d_convolve_dot
+  end interface
+
 
   interface
      subroutine delete_cconv3d(p) bind(c, name='fftwpp_conv3d_delete')
@@ -370,6 +389,15 @@ module fftwpp
      end subroutine hconv3d_convolve
   end interface
 
+  interface
+     subroutine hconv3d_convolve_dot(p,f,g) &
+          bind(c, name='fftwpp_hconv3d_convolve_dotf')
+       use iso_c_binding
+       implicit none
+       type(c_ptr), intent(in), value :: p,f,g
+     end subroutine hconv3d_convolve_dot
+  end interface
+  
   interface
      subroutine delete_hconv3d(p) bind(c, name='fftwpp_hconv3d_delete')
        use iso_c_binding
