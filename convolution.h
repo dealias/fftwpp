@@ -58,6 +58,9 @@ protected:
   Complex **V;
   bool allocated;
 public:  
+  unsigned int getm() {return m;}
+  unsigned int getM() {return M;}
+
   void initpointers(Complex **&V, Complex *v) {
     V=new Complex *[M];
     for(unsigned int s=0; s < M; ++s) 
@@ -141,6 +144,9 @@ public:
   Complex *ZetaH,*ZetaL;
   Complex **U;
   bool allocated;
+
+  unsigned int getm() {return m;}
+  unsigned int getM() {return M;}
 
   void initpointers(Complex **&U, Complex *u) {
     U=new Complex *[M];

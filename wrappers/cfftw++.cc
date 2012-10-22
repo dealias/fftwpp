@@ -71,6 +71,22 @@ extern "C" {
       conv->convolve((Complex **) a, (Complex **) b);
     }
 
+    void fftwpp_conv1d_convolve_dotf(ImplicitConvolution *conv, 
+				     double __complex__ *a, 
+				     double __complex__ *b) {
+      unsigned int M=conv->getM();
+      unsigned int m=conv->getm();
+      Complex **A=new Complex *[M];
+      Complex **B=new Complex *[M];
+      for(unsigned int s=0; s < M; ++s) {
+	unsigned int sm=s*m;
+	A[s]=(Complex *) a+sm;
+	B[s]=(Complex *) b+sm;
+      }
+      conv->convolve((Complex **) A, (Complex **) B);
+      delete[] B;      
+      delete[] A;
+    }
 
     void fftwpp_conv1d_delete(ImplicitConvolution *conv) {
       delete conv;
@@ -112,6 +128,22 @@ extern "C" {
       conv->convolve((Complex **) a, (Complex **) b);
     }
 
+    void fftwpp_hconv1d_convolve_dotf(ImplicitHConvolution *conv, 
+				      double __complex__ *a, 
+				      double __complex__ *b) {
+      unsigned int M=conv->getM();
+      unsigned int m=conv->getm();
+      Complex **A=new Complex *[M];
+      Complex **B=new Complex *[M];
+      for(unsigned int s=0; s < M; ++s) {
+	unsigned int sm=s*m;
+	A[s]=(Complex *) a+sm;
+	B[s]=(Complex *) b+sm;
+      }
+      conv->convolve((Complex **) A, (Complex **) B);
+      delete[] B;      
+      delete[] A;
+    }
 
     void fftwpp_hconv1d_delete(ImplicitHConvolution *conv) {
       delete conv;

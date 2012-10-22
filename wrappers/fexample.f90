@@ -5,13 +5,14 @@ program fexample
   use, intrinsic :: ISO_C_Binding !FIXME: use only.... to clean up namespace?
   implicit NONE
   include 'fftw3.f03'
-  integer(c_int) :: m, mx, my, mz, i, j, k, mmx, mmy, mxyz, nthreads
+  integer(c_int) :: m, mx, my, mz, i, j, k, mmx, mmy, mxyz, nthreads, mdot
   integer :: returnflag
   
-  complex(C_DOUBLE_COMPLEX), pointer :: f(:), g(:), &
+  complex(C_DOUBLE_COMPLEX), pointer :: f(:), g(:), fm(:), gm(:),  &
        ff(:,:), gg(:,:), fff(:,:,:),  ggg(:,:,:)
   type(C_PTR) :: pf, pg, pconv
   type(C_PTR) :: pu, pv, pw, pu2, pv2, pu1, pv1, pw1, pu3, pv3
+  type(C_PTR), pointer:: pfdot(:), pgdot(:)
 
   returnflag=0 ! return value for tests
   
@@ -19,41 +20,56 @@ program fexample
 
   nthreads=2
 
+  mdot=2 ! dimension of dot-product
+
   call set_fftwpp_maxthreads(nthreads);
 
   ! 1D convolutions:
-  m=8 ! problem size
-  
-  !allocate memory:
-  pf = fftw_alloc_complex(int(m, C_SIZE_T))
-  pg = fftw_alloc_complex(int(m, C_SIZE_T))
-  call c_f_pointer(pf, f, [m])
-  call c_f_pointer(pg, g, [m])
-
-  ! initialize arrays
-  call init(f,g,m)
-
-!  write(*,*)
-!  write(*,*) "input f:"
-!  call output(f,m)
-
-!  write(*,*)
-!  write(*,*) "input g:"
-!  call output(g,m)
-
   write(*,*)
   write(*,*) "1d non-centered complex convolution:"
 
-  ! pass work arrays to constructor:
-  pu = fftw_alloc_complex(int(m, C_SIZE_T))
-  pv = fftw_alloc_complex(int(m, C_SIZE_T))
-  pconv=cconv1d_create_work(m,pu,pv)
-  
+  m=8 ! problem size
+
   ! constructor allocates work arrays:
   ! pconv=cconv1d_create(m)
+  ! pf = fftw_alloc_complex(int(m, C_SIZE_T))
+  ! pg = fftw_alloc_complex(int(m, C_SIZE_T))
+
+  ! pass work arrays to constructor:
+  !  pu = fftw_alloc_complex(int(m, C_SIZE_T))
+  !  pv = fftw_alloc_complex(int(m, C_SIZE_T))
+  !  pconv=cconv1d_create_work(m,pu,pv)
+    
+  ! create work arrays for dot-product convolution
+  pf = fftw_alloc_complex(int(m*mdot, C_SIZE_T))
+  pg = fftw_alloc_complex(int(m*mdot, C_SIZE_T))
+  pconv=cconv1d_create_dot(m,mdot)
   
-  call cconv1d_convolve(pconv,pf,pg)
+  call c_f_pointer(pf, f, [m*mdot])
+  call c_f_pointer(pg, g, [m*mdot])
+  do i=0,mdot-1
+     fm => f(i*m+1:i*(m+1))
+     gm => g(i*m+1:i*(m+1))
+     call init(fm,gm,m)
+  end do
+
+  ! write(*,*)
+  ! write(*,*) "input f:"
+  ! call output(f,m)
+  
+  ! write(*,*)
+  ! write(*,*) "input g:"
+  ! call output(g,m)
+
+  ! call the convolution routine
+  ! call cconv1d_convolve(pconv,pf,pg)
+  call cconv1d_convolve_dot(pconv,pf,pg)
   call delete_cconv1d(pconv)
+
+  call c_f_pointer(pf, f, [m])
+  do i=1,m
+     f(i) = f(i)/dble(mdot)
+  end do
 
   call output(f,m)
 
@@ -62,19 +78,53 @@ program fexample
      returnflag = returnflag+1
   end if
 
-  call init(f,g,m) ! reset input data
+  call fftw_free(pf)
+  call fftw_free(pg)
 
+  ! free work arrays
+  ! call fftw_free(pu)
+  ! call fftw_free(pv)
+  
   write(*,*)
   write(*,*) "1d centered Hermitian-symmetric complex convolution:"
 
-  ! using optional work arrays
-  pw = fftw_alloc_complex(int(3, C_SIZE_T))
-  pconv=hconv1d_create_work(m,pu,pv,pw)
+  m=8 ! problem size
+  mdot=1
 
-  ! generate work arrays in constructor
+  ! allocate work arrays in constructor
+  ! pf = fftw_alloc_complex(int(m, C_SIZE_T))
+  ! pg = fftw_alloc_complex(int(m, C_SIZE_T))
   ! pconv=hconv1d_create(m)
-  call hconv1d_convolve(pconv,pf,pg)
+  
+  ! or pass work arrays to constructor:
+  ! pu = fftw_alloc_complex(int(m*mdot, C_SIZE_T))
+  ! pv = fftw_alloc_complex(int(m*mdot, C_SIZE_T))
+  ! pw = fftw_alloc_complex(int(3*mdot, C_SIZE_T))
+  ! pconv=hconv1d_create_work(m,pu,pv,pw)
+
+  ! allocate work arrays in constructor
+  pf = fftw_alloc_complex(int(m*mdot, C_SIZE_T))
+  pg = fftw_alloc_complex(int(m*mdot, C_SIZE_T))
+  pconv=hconv1d_create_dot(m,mdot)
+
+  call c_f_pointer(pf, f, [m*mdot])
+  call c_f_pointer(pg, g, [m*mdot])
+  call init(f,g,m) ! reset input data
+
+  do i=0,mdot-1
+     fm => f(i*m+1:i*(m+1))
+     gm => g(i*m+1:i*(m+1))
+     call init(fm,gm,m)
+  end do
+
+!  call hconv1d_convolve(pconv,pf,pg)
+  call hconv1d_convolve_dot(pconv,pf,pg)
   call delete_hconv1d(pconv)
+
+  call c_f_pointer(pf, f, [m])
+  do i=1,m
+     f(i) = f(i)/dble(mdot)
+  end do
 
   call output(f,m)
 
@@ -87,9 +137,9 @@ program fexample
   call fftw_free(pg)
 
   ! free work arrays
-  call fftw_free(pu)
-  call fftw_free(pv)
-  call fftw_free(pw)
+  ! call fftw_free(pu)
+  ! call fftw_free(pv)
+  ! call fftw_free(pw)
   
   ! 2d non-centered complex convolution
 
@@ -279,7 +329,6 @@ program fexample
   call EXIT(returnflag)
 
   contains
-    
     subroutine init(f,g,m)
       use, intrinsic :: ISO_C_Binding
       implicit NONE
