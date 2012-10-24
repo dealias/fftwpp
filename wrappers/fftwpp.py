@@ -11,9 +11,7 @@ from ctypes import *
 
 def complex_align(shape):
     dtype = np.dtype(np.complex128)
-    nbytes = dtype.itemsize
-    for x in shape:
-        nbytes *= x
+    nbytes = np.prod(shape)*dtype.itemsize
     buf = np.empty(nbytes + 16, dtype=np.uint8)
     start_index = -buf.ctypes.data % 16
     return buf[start_index:start_index + nbytes].view(dtype).reshape(shape)
