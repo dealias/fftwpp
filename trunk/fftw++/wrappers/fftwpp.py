@@ -9,6 +9,15 @@ import os
 from numpy.ctypeslib import ndpointer
 from ctypes import *
 
+def complex_align(shape):
+    dtype = np.dtype(np.complex128)
+    nbytes = dtype.itemsize
+    for x in shape:
+        nbytes *= x
+    buf = np.empty(nbytes + 16, dtype=np.uint8)
+    start_index = -buf.ctypes.data % 16
+    return buf[start_index:start_index + nbytes].view(dtype).reshape(shape)
+
 __all__ = [ 'Convolution' , 'HConvolution' ]
 
 # load fftwpp shared library
@@ -25,8 +34,8 @@ def fftwpp_get_maxthreads():
 clib.fftwpp_create_conv1d.restype = c_void_p
 clib.fftwpp_create_conv1d.argtypes = [ c_int ]
 clib.fftwpp_conv1d_convolve.argtypes = [ c_void_p,
-                                          ndpointer(dtype=np.complex128),
-                                          ndpointer(dtype=np.complex128) ]
+                                         ndpointer(dtype=np.complex128),
+                                         ndpointer(dtype=np.complex128) ]
 
 clib.fftwpp_create_hconv1d.restype = c_void_p
 clib.fftwpp_create_hconv1d.argtypes = [ c_int ]
@@ -74,10 +83,9 @@ class Convolution(object):
 
     >>> import numpy as np
     >>> import fftwpp
-    >>> import pyfftw
     >>> N = 8
-    >>> f = pyfftw.n_byte_align_empty((N), 16, dtype=np.complex128)
-    >>> g = pyfftw.n_byte_align_empty((N), 16, dtype=np.complex128)
+    >>> f = fftwpp.complex_align([N])
+    >>> g = fftwpp.complex_align([N])
     >>> for i in range(len(f)): f[i]=np.complex(i,i+1)
     >>> for i in range(len(g)): g[i]=np.complex(i,2*i+1)
 
@@ -103,10 +111,9 @@ class Convolution(object):
 
     >>> import numpy as np
     >>> import fftwpp
-    >>> import pyfftw
     >>> N = 4
-    >>> f = pyfftw.n_byte_align_empty((N,N), 16, dtype=np.complex128)
-    >>> g = pyfftw.n_byte_align_empty((N,N), 16, dtype=np.complex128)
+    >>> f = fftwpp.complex_align([N,N])
+    >>> g = fftwpp.complex_align([N,N])
     >>> for i in range(len(f)):
     ...     for j in range(len(f[i])):
     ...             f[i][j]=np.complex(i,j)
@@ -136,10 +143,9 @@ class Convolution(object):
 
     >>> import numpy as np
     >>> import fftwpp
-    >>> import pyfftw
     >>> N = 4
-    >>> f = pyfftw.n_byte_align_empty((N,N,N), 16, dtype=np.complex128)
-    >>> g = pyfftw.n_byte_align_empty((N,N,N), 16, dtype=np.complex128)
+    >>> f = fftwpp.complex_align([N,N,N])
+    >>> g = fftwpp.complex_align([N,N,N])
     >>> for i in range(len(f)):
     ...     for j in range(len(f[i])):
     ...             for k in range(len(f[i][j])):
@@ -216,10 +222,9 @@ class HConvolution(object):
 
     >>> import numpy as np
     >>> import fftwpp
-    >>> import pyfftw
     >>> N = 8
-    >>> f = pyfftw.n_byte_align_empty((N), 16, dtype=np.complex128)
-    >>> g = pyfftw.n_byte_align_empty((N), 16, dtype=np.complex128)
+    >>> f = fftwpp.complex_align([N])
+    >>> g = fftwpp.complex_align([N])
     >>> for i in range(len(f)):
     ...     f[i]=np.complex(i,i+1)
     ...     g[i]=np.complex(i,2*i+1)
@@ -246,11 +251,10 @@ class HConvolution(object):
 
     >>> import numpy as np
     >>> import fftwpp
-    >>> import pyfftw
     >>> Nx = 4
     >>> Ny = 4
-    >>> f = pyfftw.n_byte_align_empty((2*Nx-1,Ny), 16, dtype=np.complex128)
-    >>> g = pyfftw.n_byte_align_empty((2*Nx-1,Ny), 16, dtype=np.complex128)
+    >>> f = fftwpp.complex_align([2*Nx-1,Ny])
+    >>> g = fftwpp.complex_align([2*Nx-1,Ny])
     >>> for i in range(len(f)):
     ...     for j in range(len(f[i])):
     ...             f[i][j]=np.complex(i,j)
@@ -272,16 +276,11 @@ class HConvolution(object):
 
     >>> import numpy as np
     >>> import fftwpp
-    >>> import pyfftw
     >>> Nx=4
     >>> Ny=4
     >>> Nz=4
-    >>> f =  pyfftw.n_byte_align_empty((2*Nx-1,2*Ny-1,Nz),
-    ... 16, dtype=np.complex128)
-    >>> g =  pyfftw.n_byte_align_empty((2*Nx-1,2*Ny-1,Nz),
-    ... 16, dtype=np.complex128)
-    
-
+    >>> f =  fftwpp.complex_align([2*Nx-1,2*Ny-1,Nz])
+    >>> g =  fftwpp.complex_align([2*Nx-1,2*Ny-1,Nz])
 
     Now, construct the convolution object and convolve::
 
