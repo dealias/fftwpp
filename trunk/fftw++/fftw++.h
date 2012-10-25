@@ -351,20 +351,25 @@ public:
     plan=plan1;
     
     if(maxthreads > 1) {
-      double sum=0.0;
       double sum2=0.0;
       unsigned int N=1;
       const unsigned int microseconds=1000000;
       unsigned int limit=(int) (testseconds*microseconds);
+      double begin=totalseconds();
+      double lastseconds=begin;
+      double stop=begin+testseconds;
       for(; N < limit; ++N) {
-        seconds();
         fft(in,out);
-        double t=seconds();	
-        sum += t;
-        sum2 += t*t;
-        if(sum > testseconds)
+        double t=totalseconds();
+        double seconds=t-lastseconds;
+        sum2 += seconds*seconds;
+        lastseconds=t;
+        if(t > stop)
           break;
       }
+
+      double end=totalseconds();
+      double sum=end-begin;
       double mean1=sum/N;
       double stdev1=stdev(N,sum,sum2);
         
@@ -377,14 +382,21 @@ public:
       if(!plan) noplan();
 
       if(plan) {
-        sum=0.0; 
-        seconds();
-        for(unsigned int i=1; i <= N; ++i) {
-          seconds();
+        double begin=totalseconds();
+        double lastseconds=begin;
+        double stop=begin+testseconds;
+        N=1;
+        for(; N < limit; ++N) {
           fft(in,out);
-          double t=seconds();	
-          sum += t;
+          double t=totalseconds();
+          double seconds=t-lastseconds;
+          sum2 += seconds*seconds;
+          lastseconds=t;
+          if(t > stop)
+            break;
         }
+        double end=totalseconds();
+        double sum=end-begin;
         double mean2=sum/N;
         
         if(mean2 > mean1-stdev1) {
