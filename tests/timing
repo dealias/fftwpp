@@ -174,7 +174,7 @@ echo Timing:
 
 i=$start;
 while (test $i -le $stop); do
-    echo -n $i " "
+    echo -n $i" "
     m=$( echo 2^$i | bc)
     if [ "$implicit" = "yes" ]; then
 	#echo implicit
