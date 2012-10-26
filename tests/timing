@@ -27,18 +27,14 @@ if [ "$1" = "" ]; then
 fi
 
 # total system RAM:
-RAM=$(free  | head -n 2 | sed '1,1d' | awk '{ print  $2 '})
+#RAM=$(free  | head -n 2 | sed '1,1d' | awk '{ print  $2 '})
 
 # for available RAM, use:
-#RAM=$(free  | head -n 3 | sed '1,1d' | awk '{ print  $2 '})
-
-#RAM=$( echo 1024*$RAM | bc)
-RAM=$( echo 512*$RAM | bc)
-
+RAM=$(free  | head -n 2 | sed '1,1d' | awk '{ print  $3 '})
+RAM=$( echo 1024*$RAM | bc)
 
 #echo $RAM
 max=10000
-
 
 N0=10000000
 if [ "$HOSTTYPE" = "x86_64-linux" ]; then
@@ -130,10 +126,6 @@ if [ "$1" = "conv3" ]; then
     max=$( python -c "from math import *; print int(floor(log($RAM/192)/log(2)/3))")
 fi
 
-if [ $stop -ge $max ]; then
-    stop=$max
-fi
-
 if [ "$outdir" = "" ]; then
     echo "wrong program name!"
     exit
@@ -169,6 +161,11 @@ fi
 if [ "$3" != "" ]; then
     stop=$3
 fi
+
+if [ $stop -ge $max ]; then
+    stop=$max
+fi
+
 echo $start to $stop
 echo Timing:
 
