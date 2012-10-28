@@ -127,7 +127,7 @@ cconv3.cc
 conv3.cc
 
 The latest developmental source code of fftw++ is available via Subversion:
-svn co https://fftwpp.svn.sourceforge.net/svnroot/fftwpp/trunk/fftw++
+svn co https://svn.code.sf.net/p/fftwpp/code/trunk/fftw++
 
 All source files in the FFTW++ project, unless explicitly noted otherwise,
 are released under version 3 (or later) of the GNU Lesser General Public
