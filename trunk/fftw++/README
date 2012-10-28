@@ -32,7 +32,7 @@ Multithreaded routines require linking with a multithreaded FFTW implementation;
 multithreading can be disabled by adding -DFFTWPP_SINGLE_THREAD to CFLAGS. 
 
 FFTW++ can also exploit the high-performance Array class available at
-http://www.math.ualberta.ca/~bowman/Array (version 1.46 or higher),
+http://www.math.ualberta.ca/~bowman/Array (version 1.47 or higher),
 designed for scientific computing. The arrays in that package do
 memory bounds checking in debugging mode, but can be optimized by
 specifying the -DNDEBUG compilation option (1D arrays optimize
@@ -82,23 +82,23 @@ The following programs are available in the wrappers directory:
 Using C to call multi-threaded 1D, 2D, and 3D binary convolutions and
 1D and 2D ternary convolutions, with and without passing work arrays,
 where the operation in physical space may correspond to either a
-scalar multiplication (M=1) or a dot product (M>1): 
+scalar multiplication (M=1) or a dot product (M > 1): 
 cexample.c
 
 Using Fortran to call multi-threaded 1D, 2D, and 3D binary
 convolutions, with and without passing work arrays, where the
 operation in physical space may correspond to either a scalar
-multiplication (mm=1) or a dot product (mm>1):
+multiplication (mm=1) or a dot product (mm > 1):
 fexample.f90
 
 Using Python to call multi-threaded 1D, 2D, and 3D binary convolutions
-(for scalar multiplication (M1) and withwork arrays are created by the
-constructor ):
+(for scalar multiplication (M=1) and with work arrays created by the
+constructor):
 pexample.py
 
 
 The following programs are provided in tests/, along with various
-timing and error analysis scritps.  Asymptote
+timing and error analysis scripts.  Asymptote
 (http://asymptote.sourceforge.net/) scripts are provided for
 visualizing the output.
 
