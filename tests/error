@@ -49,7 +49,7 @@ fi
 echo Calculating error:
 i=$start;
 while (test $i -le $stop); do
-    echo -n $i " "
+    echo -n $i" "
     m=$( echo 2^$i | bc)
     echo $EOPTS  "$m \t $(nice -n 19 ./$1 -i -N1 -t -m $m | grep error | sed s/error=//)"| cat >> $outdir/error.implicit
     if [ "$divisor" != "0" ]; then
