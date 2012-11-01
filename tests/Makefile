@@ -18,14 +18,6 @@ MAKEDEPEND=$(CFLAGS) -O0 -M -DDEPEND
 #LDFLAGS = -lfftw3 -lfftw3_threads -lm
 LDFLAGS = -lfftw3 -lfftw3_omp -lm
 
-# set LIBPATH via export LIBPATH=$HOME/lib for local fftw installs
-ifeq ($(strip $(LIBPATH)),)
-else
-LDFLAGS +=-L$(LIBPATH)
-#LDFLAGS =-L.
-endif
-
-
 vpath %.cc ../
 
 FFTW=fftw++
