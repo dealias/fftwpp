@@ -9,7 +9,7 @@ C  = gcc
 F  = gfortran
 
 # flags
-CFLAGS  = -I.. -I$HOME/opt/include
+CFLAGS  = -I.. #-I$HOME/opt/include
 #CFLAGS += -g -Wall 
 CFLAGS += -msse2 -mfpmath=sse -march=native
 CFLAGS += -fPIC
@@ -29,10 +29,22 @@ endif
 
 FFTWIDIR=/usr/local/include/
 
-FFLAGS  = -I/usr/include -I$HOME/opt/include
+FFLAGS  = -I/usr/include #-I$HOME/opt/include
 FFLAGS += -fopenmp
 
-LDFLAGS = -L$HOME/opt/lib -lfftw3 -lfftw3_omp -lm -lstdc++
+LDFLAGS = -lfftw3 -lfftw3_omp -lm -lstdc++
+
+
+# set LIBPATH via export LIBPATH=$HOME/lib for local fftw installs
+ifeq ($(strip $(LIBPATH)),)
+else
+LDFLAGS +=-L$(LIBPATH)
+endif
+
+ifeq ($(strip $(FORTRAN_INCLUDE_PATH)),)
+else
+FIFLAGS =-I$(FORTRAN_INCLUDE_PATH)
+endif
 
 # targets
 
@@ -62,7 +74,7 @@ fhash.o: fhash.f90
 	$(F) -c -o $@ $<
 
 fexample: fexample.f90 fftwpp.o fhash.o cfftw++.o convolution.o fftw++.o chash.o
-	$(F) $(FFLAGS) -o $@ $^ $(LDFLAGS) -I$(FFTWIDIR)
+	$(F) $(FFLAGS) -o $@ $^ $(LDFLAGS) -I$(FFTWIDIR) $(FIFLAGS)
 
 _fftwpp.so: fftw++.o cfftw++.o convolution.o
 	$(CC) $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
