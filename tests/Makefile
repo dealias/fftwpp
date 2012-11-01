@@ -13,8 +13,18 @@ CFLAGS=-O3 -ansi-alias -malign-double -fp-model fast=2 -openmp -I$(IDIR)
 endif
 
 MAKEDEPEND=$(CFLAGS) -O0 -M -DDEPEND
-#LDFLAGS=-lfftw3 -lfftw3_threads -lm
-LDFLAGS=-lfftw3 -lfftw3_omp -lm
+
+
+#LDFLAGS = -lfftw3 -lfftw3_threads -lm
+LDFLAGS = -lfftw3 -lfftw3_omp -lm
+
+# set LIBPATH via export LIBPATH=$HOME/lib for local fftw installs
+ifeq ($(strip $(LIBPATH)),)
+else
+LDFLAGS +=-L$(LIBPATH)
+#LDFLAGS =-L.
+endif
+
 
 vpath %.cc ../
 
