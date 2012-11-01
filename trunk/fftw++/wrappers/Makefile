@@ -35,12 +35,6 @@ FFLAGS += -fopenmp
 LDFLAGS = -lfftw3 -lfftw3_omp -lm -lstdc++
 
 
-# set LIBPATH via export LIBPATH=$HOME/lib for local fftw installs
-ifeq ($(strip $(LIBPATH)),)
-else
-LDFLAGS +=-L$(LIBPATH)
-endif
-
 ifeq ($(strip $(FORTRAN_INCLUDE_PATH)),)
 else
 FIFLAGS =-I$(FORTRAN_INCLUDE_PATH)
