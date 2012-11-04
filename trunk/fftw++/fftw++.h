@@ -198,7 +198,7 @@ protected:
   fftw_plan plan;
   bool inplace;
   
-  unsigned int Dist(unsigned int n, unsigned int stride, unsigned int dist) {
+  unsigned int Dist(unsigned int n, int stride, int dist) {
     return dist ? dist : ((stride == 1) ? n : 1);
   }
   
@@ -517,9 +517,9 @@ public:
   
   void fftNormalized(Complex *in, Complex *out,
                      unsigned int nx, unsigned int M,
-                     unsigned int stride, unsigned int dist) {
-    if(stride == 1 && dist == nx) fftw::fftNormalized(in,out);
-    else if(stride == nx && dist == 1) fftw::fftNormalized(in,out);
+                     int stride, int dist) {
+    if(stride == 1 && dist == (int) nx) fftw::fftNormalized(in,out);
+    else if(stride == (int) nx && dist == 1) fftw::fftNormalized(in,out);
     else {
       out=Setout(in,out);
       Execute(in,out);
@@ -600,11 +600,11 @@ public:
 class mfft1d : public fftw {
   unsigned int nx;
   unsigned int M;
-  unsigned int stride;
-  unsigned int dist;
+  int stride;
+  int dist;
 public:  
-  mfft1d(unsigned int nx, int sign, unsigned int M=1, unsigned int stride=1,
-         unsigned int dist=0, Complex *in=NULL, Complex *out=NULL) 
+  mfft1d(unsigned int nx, int sign, unsigned int M=1, int stride=1,
+         int dist=0, Complex *in=NULL, Complex *out=NULL) 
     : fftw(2*((nx-1)*stride+(M-1)*Dist(nx,stride,dist)+1),sign,nx),
       nx(nx), M(M), stride(stride), dist(Dist(nx,stride,dist))
   {Setup(in,out);} 
@@ -744,16 +744,16 @@ public:
 class mrcfft1d : public fftw {
   unsigned int nx;
   unsigned int M;
-  unsigned int stride;
-  unsigned int dist;
+  int stride;
+  int dist;
 public:  
-  mrcfft1d(unsigned int nx, unsigned int M=1, unsigned int stride=1,
-           unsigned int dist=0, Complex *out=NULL) 
+  mrcfft1d(unsigned int nx, unsigned int M=1, int stride=1,
+           int dist=0, Complex *out=NULL) 
     : fftw(2*(nx/2*stride+(M-1)*Dist(nx,stride,dist)+1),-1,nx), nx(nx), M(M),
       stride(stride), dist(Dist(nx,stride,dist)) {Setup(out);} 
   
-  mrcfft1d(unsigned int nx, unsigned int M=1, unsigned int stride=1,
-           unsigned int dist=0, double *in=NULL, Complex *out=NULL) 
+  mrcfft1d(unsigned int nx, unsigned int M=1, int stride=1,
+           int dist=0, double *in=NULL, Complex *out=NULL) 
     : fftw(2*(nx/2*stride+(M-1)*Dist(nx,stride,dist)+1),-1,nx), nx(nx), M(M),
       stride(stride), dist(Dist(nx,stride,dist)) {Setup(in,out);} 
   
@@ -800,11 +800,11 @@ public:
 class mcrfft1d : public fftw {
   unsigned int nx;
   unsigned int M;
-  unsigned int stride;
-  unsigned int dist;
+  int stride;
+  int dist;
 public:
-  mcrfft1d(unsigned int nx, unsigned int M=1, unsigned int stride=1,
-           unsigned int dist=0, Complex *in=NULL, double *out=NULL) 
+  mcrfft1d(unsigned int nx, unsigned int M=1, int stride=1,
+           int dist=0, Complex *in=NULL, double *out=NULL) 
     : fftw((realsize(nx,in,out)-2)*stride+2*(M-1)*Dist(nx,stride,dist)+2,1,nx),
       nx(nx), M(M), stride(stride), dist(Dist(nx,stride,dist)) {Setup(in,out);}
   
