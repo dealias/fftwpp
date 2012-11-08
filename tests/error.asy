@@ -2,8 +2,8 @@ include graph;
 
 size(175,200,IgnoreAspect);
 
-//scale(Log,Log(true,true));
-scale(Log,Linear);
+scale(Log,Log(true,true));
+
 real[] mp,p,mu,u,mP,P;
 
 string base;
@@ -39,13 +39,13 @@ marker mark0=marker(g0,Draw(Pen(0)+solid));
 marker mark1=marker(g1,Draw(Pen(1)+solid));
 
 pen lp=fontsize(8pt);
-draw(graph(mp,p/sqrt(log(mp)),p>0),
+draw(graph(mp,p/sqrt(log(mp)/log(2)),p>0),
      Pentype(0),Label("explicit",Pen(0)+lp),mark0);
-draw(graph(mu,u/sqrt(log(mu)),u>0),
+draw(graph(mu,u/sqrt(log(mu)/log(2)),u>0),
      Pentype(1),Label("implicit",Pen(1)+lp),mark1);
 
 xaxis("$m$",BottomTop,LeftTicks);
-yaxis("normalized error",LeftRight,RightTicks);
+yaxis("normalized error/$\sqrt{\log_2 m}$",LeftRight,RightTicks);
 
 legendlinelength=0.6cm;
 legendmargin=5;
