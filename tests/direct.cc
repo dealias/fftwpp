@@ -1,7 +1,5 @@
-#include "Complex.h"
 #include "convolution.h"
 #include "direct.h"
-#include "explicit.h"
 
 namespace fftwpp {
 
@@ -44,8 +42,8 @@ void DirectHConvolution2::convolve(Complex *h, Complex *f, Complex *g,
   unsigned int xorigin=mx-1;
     
   if(symmetrize) {
-    HermitianSymmetrizeX(mx,my,xorigin,f);
-    HermitianSymmetrizeX(mx,my,xorigin,g);
+    HermitianSymmetrizeX(mx,my,f);
+    HermitianSymmetrizeX(mx,my,g);
   }
     
   int xstart=-(int)xorigin;
@@ -98,8 +96,8 @@ void DirectHConvolution3::convolve(Complex *h, Complex *f, Complex *g,
   unsigned int ny=2*my-1;
   
   if(symmetrize) {
-    HermitianSymmetrizeXY(mx,my,mz,ny,xorigin,yorigin,f);
-    HermitianSymmetrizeXY(mx,my,mz,ny,xorigin,yorigin,g);
+    HermitianSymmetrizeXY(mx,my,mz,f);
+    HermitianSymmetrizeXY(mx,my,mz,g);
   }
     
   int xstart=-(int) xorigin;
@@ -163,9 +161,9 @@ void DirectHTConvolution2::convolve(Complex *h, Complex *e, Complex *f,
                                     Complex *g, bool symmetrize)
 {
   if(symmetrize) {
-    HermitianSymmetrizeX(mx,my,mx-1,e);
-    HermitianSymmetrizeX(mx,my,mx-1,f);
-    HermitianSymmetrizeX(mx,my,mx-1,g);
+    HermitianSymmetrizeX(mx,my,e);
+    HermitianSymmetrizeX(mx,my,f);
+    HermitianSymmetrizeX(mx,my,g);
   }
     
   unsigned int xorigin=mx-1;

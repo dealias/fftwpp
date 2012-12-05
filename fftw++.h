@@ -30,15 +30,6 @@
 #include <omp.h>
 #endif
 
-inline int get_max_threads() 
-{
-#ifdef FFTWPP_SINGLE_THREAD
-  return 1;
-#else
-  return omp_get_max_threads();
-#endif  
-}
-
 inline int get_thread_num() 
 {
 #ifdef FFTWPP_SINGLE_THREAD
@@ -198,7 +189,7 @@ protected:
   fftw_plan plan;
   bool inplace;
   
-  unsigned int Dist(unsigned int n, int stride, int dist) {
+  unsigned int Dist(unsigned int n, ptrdiff_t stride, ptrdiff_t dist) {
     return dist ? dist : ((stride == 1) ? n : 1);
   }
   
@@ -214,13 +205,12 @@ protected:
     return realsize(n,(Complex *) in,out);
   }
   
-  static std::ifstream ifWisdom;
-  static std::ofstream ofWisdom;
   static bool Wise;
   static const double twopi;
   unsigned int threads;
   
 public:
+  static unsigned int effort;
   static unsigned int maxthreads;
   static double testseconds;
   
@@ -296,18 +286,15 @@ public:
     }
   }
 
-  static unsigned int effort;
-  static const char *WisdomName;
-  
+  static bool autothreads;
   fftw(unsigned int doubles, int sign, unsigned int n=0) : 
     doubles(doubles), sign(sign), norm(1.0/(n ? n : (doubles+1)/2)),
     plan(NULL) {
-    static bool initialize=true;
-    if(initialize) {
+    if(autothreads) {
 #ifndef FFTWPP_SINGLE_THREAD
       fftw_init_threads();
 #endif      
-      initialize=false;
+      autothreads=false;
     }
   }
   
@@ -330,6 +317,13 @@ public:
     exit(1);
   }
   
+  void planThreads(unsigned int threads) {
+#ifndef FFTWPP_SINGLE_THREAD
+    omp_set_num_threads(threads);
+    fftw_plan_with_nthreads(threads);
+#endif    
+  }
+  
   void Setup(Complex *in, Complex *out=NULL) {
     if(!Wise) LoadWisdom();
     bool alloc=!in;
@@ -343,9 +337,7 @@ public:
 #endif    
     inplace=(out==in);
     
-#ifndef FFTWPP_SINGLE_THREAD
-    fftw_plan_with_nthreads(1);
-#endif    
+    planThreads(1);
     fftw_plan plan1=Plan(in,out);
     if(!plan1) noplan();
     plan=plan1;
@@ -371,11 +363,8 @@ public:
       double mean1=sum/N;
       double stdev1=stdev(N,sum,sum2);
         
-      threads=get_max_threads();
-      if(maxthreads > threads) maxthreads=threads;
-#ifndef FFTWPP_SINGLE_THREAD
-      fftw_plan_with_nthreads(maxthreads);
-#endif
+      threads=maxthreads;
+      planThreads(threads);
       plan=Plan(in,out);
       if(!plan) noplan();
 
@@ -416,18 +405,8 @@ public:
   void Setup(Complex *in, double *out) {Setup(in,(Complex *) out);}
   void Setup(double *in, Complex *out=NULL) {Setup((Complex *) in,out);}
   
-  void LoadWisdom() {
-    ifWisdom.open(WisdomName);
-    fftwpp_import_wisdom(GetWisdom,ifWisdom);
-    ifWisdom.close();
-    Wise=true;
-  }
-
-  void SaveWisdom() {
-    ofWisdom.open(WisdomName);
-    fftwpp_export_wisdom(PutWisdom,ofWisdom);
-    ofWisdom.close();
-  }
+  void LoadWisdom();
+  void SaveWisdom();
   
   virtual void Execute(Complex *in, Complex *out, bool=false) {
     fftw_execute_dft(plan,(fftw_complex *) in,(fftw_complex *) out);
@@ -517,7 +496,7 @@ public:
   
   void fftNormalized(Complex *in, Complex *out,
                      unsigned int nx, unsigned int M,
-                     int stride, int dist) {
+                     ptrdiff_t stride, ptrdiff_t dist) {
     if(stride == 1 && dist == (int) nx) fftw::fftNormalized(in,out);
     else if(stride == (int) nx && dist == 1) fftw::fftNormalized(in,out);
     else {
@@ -600,11 +579,11 @@ public:
 class mfft1d : public fftw {
   unsigned int nx;
   unsigned int M;
-  int stride;
-  int dist;
+  ptrdiff_t stride;
+  ptrdiff_t dist;
 public:  
-  mfft1d(unsigned int nx, int sign, unsigned int M=1, int stride=1,
-         int dist=0, Complex *in=NULL, Complex *out=NULL) 
+  mfft1d(unsigned int nx, int sign, unsigned int M=1, ptrdiff_t stride=1,
+         ptrdiff_t dist=0, Complex *in=NULL, Complex *out=NULL) 
     : fftw(2*((nx-1)*stride+(M-1)*Dist(nx,stride,dist)+1),sign,nx),
       nx(nx), M(M), stride(stride), dist(Dist(nx,stride,dist))
   {Setup(in,out);} 
@@ -744,16 +723,16 @@ public:
 class mrcfft1d : public fftw {
   unsigned int nx;
   unsigned int M;
-  int stride;
-  int dist;
+  ptrdiff_t stride;
+  ptrdiff_t dist;
 public:  
-  mrcfft1d(unsigned int nx, unsigned int M=1, int stride=1,
-           int dist=0, Complex *out=NULL) 
+  mrcfft1d(unsigned int nx, unsigned int M=1, ptrdiff_t stride=1,
+           ptrdiff_t dist=0, Complex *out=NULL) 
     : fftw(2*(nx/2*stride+(M-1)*Dist(nx,stride,dist)+1),-1,nx), nx(nx), M(M),
       stride(stride), dist(Dist(nx,stride,dist)) {Setup(out);} 
   
-  mrcfft1d(unsigned int nx, unsigned int M=1, int stride=1,
-           int dist=0, double *in=NULL, Complex *out=NULL) 
+  mrcfft1d(unsigned int nx, unsigned int M=1, ptrdiff_t stride=1,
+           ptrdiff_t dist=0, double *in=NULL, Complex *out=NULL) 
     : fftw(2*(nx/2*stride+(M-1)*Dist(nx,stride,dist)+1),-1,nx), nx(nx), M(M),
       stride(stride), dist(Dist(nx,stride,dist)) {Setup(in,out);} 
   
@@ -800,11 +779,11 @@ public:
 class mcrfft1d : public fftw {
   unsigned int nx;
   unsigned int M;
-  int stride;
-  int dist;
+  ptrdiff_t stride;
+  ptrdiff_t dist;
 public:
-  mcrfft1d(unsigned int nx, unsigned int M=1, int stride=1,
-           int dist=0, Complex *in=NULL, double *out=NULL) 
+  mcrfft1d(unsigned int nx, unsigned int M=1, ptrdiff_t stride=1,
+           ptrdiff_t dist=0, Complex *in=NULL, double *out=NULL) 
     : fftw((realsize(nx,in,out)-2)*stride+2*(M-1)*Dist(nx,stride,dist)+2,1,nx),
       nx(nx), M(M), stride(stride), dist(Dist(nx,stride,dist)) {Setup(in,out);}
   

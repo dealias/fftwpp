@@ -1,4 +1,3 @@
-#include "Complex.h"
 #include "convolution.h"
 
 namespace fftwpp {

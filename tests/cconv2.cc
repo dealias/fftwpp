@@ -1,4 +1,3 @@
-#include "Complex.h"
 #include "convolution.h"
 #include "explicit.h"
 #include "direct.h"
@@ -64,7 +63,7 @@ void add(Complex *f, Complex *F)
 
 int main(int argc, char* argv[])
 {
-  fftw::maxthreads=get_max_threads();
+  fftw::maxthreads=omp_get_max_threads();
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
@@ -74,7 +73,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptM:N:m:x:y:n:");
+    int c = getopt(argc,argv,"hdeiptM:N:m:x:y:n:T:");
     if (c == -1) break;
 		
     switch (c) {
@@ -115,6 +114,9 @@ int main(int argc, char* argv[])
       case 'n':
         N0=atoi(optarg);
         break;
+      case 'T':
+        fftw::maxthreads=atoi(optarg);
+        break;
       case 'h':
       default:
         usage(2);
@@ -147,11 +149,6 @@ int main(int argc, char* argv[])
   double *T=new double[N];
 
   if(Implicit) {
-    // NB: if openmp is present, the convolution may use get_max_threads()
-    // so it needs to know the max number of threads in order to allocate
-    // sub-convolutions.
-
-
     ImplicitConvolution2 C(mx,my,M);
     unsigned int mxy=mx*my;
     Complex **F=new Complex *[M];

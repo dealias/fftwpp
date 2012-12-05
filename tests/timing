@@ -20,7 +20,7 @@ start=0
 stop=0
 
 if [ "$1" = "" ]; then
-    echo Usage: $0 "["conv\|cconv\|tconv\|conv2\|cconv2\|tconv2\|cconv3\|conv3"]" "["start"]" "["stop"]" "["implicit: yes/no"]" "["explicit: yes/no"]"
+    echo Usage: $0 "["cconv\|conv\|tconv\|conv2\|cconv2\|tconv2\|cconv3\|conv3"]" "["start"]" "["stop"]" "["implicit: yes/no"]" "["explicit: yes/no"]"
     echo start and stop values are optional.
     echo yes and no arguments are optional
     exit

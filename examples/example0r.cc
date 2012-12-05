@@ -8,7 +8,7 @@ using namespace fftwpp;
 
 int main()
 {
-  fftw::maxthreads=get_max_threads();
+  fftw::maxthreads=omp_get_max_threads();
   
   unsigned int n=4;
   unsigned int np=n/2+1;
