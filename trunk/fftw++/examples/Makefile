@@ -1,6 +1,6 @@
 IDIR =../
 
-CC=g++
+CXX=g++
 CFLAGS=-fopenmp -g -Wall -ansi -O3 -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native -I$(IDIR)
 
 #For valgrind:
@@ -8,7 +8,7 @@ CFLAGS=-fopenmp -g -Wall -ansi -O3 -DNDEBUG -fomit-frame-pointer -fstrict-aliasi
 
 a:=$(shell which icpc 2>&1 | tail -c5)
 ifeq ($(a),icpc)
-CC=icpc
+CXX=icpc
 CFLAGS=-O3 -ansi-alias -malign-double -fp-model fast=2 -openmp -I$(IDIR)
 endif
 
@@ -18,8 +18,9 @@ LDFLAGS=-lfftw3 -lfftw3_omp -lm
 
 vpath %.cc ../
 
-FILES=example0 example0r example1 example1r example2 example2r \
-example3 example3r exampleconv
+FILES=\
+example0 example0r example1 example1r example2 example2r example3 example3r \
+examplecconv exampleconv examplecconv2 exampleconv2 examplecconv3 exampleconv3
 
 FFTW=fftw++
 EXTRA=$(FFTW) convolution
@@ -28,37 +29,52 @@ ALL=$(FILES) $(EXTRA)
 all: $(FILES)
 
 icpc: all
-	CC=icpc
+	CXX=icpc
 
 convolution: convolution convolution.o
-	$(CC) $(CFLAGS) convolution.o $(EXTRA:=.o) $(LDFLAGS)
+	$(CXX) $(CFLAGS) convolution.o $(EXTRA:=.o) $(LDFLAGS)
 
 example0: example0.o $(FFTW:=.o)
-	$(CC) $(CFLAGS) example0.o $(FFTW:=.o) $(LDFLAGS) -o example0
+	$(CXX) $(CFLAGS) example0.o $(FFTW:=.o) $(LDFLAGS) -o example0
 
 example0r: example0r.o $(FFTW:=.o)
-	$(CC) $(CFLAGS) example0r.o $(FFTW:=.o) $(LDFLAGS) -o example0r
+	$(CXX) $(CFLAGS) example0r.o $(FFTW:=.o) $(LDFLAGS) -o example0r
 
 example1: example1.o $(FFTW:=.o)
-	$(CC) $(CFLAGS) example1.o $(FFTW:=.o) $(LDFLAGS) -o example1
+	$(CXX) $(CFLAGS) example1.o $(FFTW:=.o) $(LDFLAGS) -o example1
 
 example1r: example1r.o $(FFTW:=.o)
-	$(CC) $(CFLAGS) example1r.o $(FFTW:=.o) $(LDFLAGS) -o example1r
+	$(CXX) $(CFLAGS) example1r.o $(FFTW:=.o) $(LDFLAGS) -o example1r
 
 example2: example2.o $(FFTW:=.o)
-	$(CC) $(CFLAGS) example2.o $(FFTW:=.o) $(LDFLAGS) -o example2
+	$(CXX) $(CFLAGS) example2.o $(FFTW:=.o) $(LDFLAGS) -o example2
 
 example2r: example2r.o $(FFTW:=.o)
-	$(CC) $(CFLAGS) example2r.o $(FFTW:=.o) $(LDFLAGS) -o example2r
+	$(CXX) $(CFLAGS) example2r.o $(FFTW:=.o) $(LDFLAGS) -o example2r
 
 example3: example3.o $(FFTW:=.o)
-	$(CC) $(CFLAGS) example3.o $(FFTW:=.o) $(LDFLAGS) -o example3
+	$(CXX) $(CFLAGS) example3.o $(FFTW:=.o) $(LDFLAGS) -o example3
 
 example3r: example3r.o $(FFTW:=.o)
-	$(CC) $(CFLAGS) example3r.o $(FFTW:=.o) $(LDFLAGS) -o example3r
+	$(CXX) $(CFLAGS) example3r.o $(FFTW:=.o) $(LDFLAGS) -o example3r
+
+examplecconv: examplecconv.o $(EXTRA:=.o)
+	$(CXX) $(CFLAGS) examplecconv.o $(EXTRA:=.o) $(LDFLAGS) -o examplecconv
 
 exampleconv: exampleconv.o $(EXTRA:=.o)
-	$(CC) $(CFLAGS) exampleconv.o $(EXTRA:=.o) $(LDFLAGS) -o exampleconv
+	$(CXX) $(CFLAGS) exampleconv.o $(EXTRA:=.o) $(LDFLAGS) -o exampleconv
+
+examplecconv2: examplecconv2.o $(EXTRA:=.o)
+	$(CXX) $(CFLAGS) examplecconv2.o $(EXTRA:=.o) $(LDFLAGS) -o examplecconv2
+
+exampleconv2: exampleconv2.o $(EXTRA:=.o)
+	$(CXX) $(CFLAGS) exampleconv2.o $(EXTRA:=.o) $(LDFLAGS) -o exampleconv2
+
+examplecconv3: examplecconv3.o $(EXTRA:=.o)
+	$(CXX) $(CFLAGS) examplecconv3.o $(EXTRA:=.o) $(LDFLAGS) -o examplecconv3
+
+exampleconv3: exampleconv3.o $(EXTRA:=.o)
+	$(CXX) $(CFLAGS) exampleconv3.o $(EXTRA:=.o) $(LDFLAGS) -o exampleconv3
 
 clean:  FORCE
 	rm -rf $(ALL) $(ALL:=.o) $(ALL:=.d)

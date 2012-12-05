@@ -77,7 +77,7 @@ marker mark2=marker(g2,Draw(Pen(2)+solid));
 
 pen Lp=fontsize(8pt);
 
-real[] f(real[] x) {return 1e-9*x^d*log(x^d)/log(2);}
+real[] f(real[] x) {return 1e-9*x^d*d*log(x)/log(2);}
 
 if(expl) {
   // error bars:

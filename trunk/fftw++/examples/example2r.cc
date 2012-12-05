@@ -10,7 +10,7 @@ using namespace fftwpp;
 
 int main()
 {
-  fftw::maxthreads=get_max_threads();
+  fftw::maxthreads=omp_get_max_threads();
   
   unsigned int nx=4, ny=5;
   unsigned int nyp=ny/2+1;

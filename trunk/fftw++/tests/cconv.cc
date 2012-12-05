@@ -1,4 +1,3 @@
-#include "Complex.h"
 #include "convolution.h"
 #include "explicit.h"
 #include "direct.h"
@@ -52,7 +51,7 @@ void add(Complex *f, Complex *F)
 
 int main(int argc, char* argv[])
 {
-  fftw::maxthreads=get_max_threads();
+  fftw::maxthreads=omp_get_max_threads();
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
@@ -62,7 +61,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptM:N:m:n:");
+    int c = getopt(argc,argv,"hdeiptM:N:m:n:T:");
     if (c == -1) break;
 		
     switch (c) {
@@ -95,6 +94,9 @@ int main(int argc, char* argv[])
         break;
       case 'n':
         N0=atoi(optarg);
+        break;
+      case 'T':
+        fftw::maxthreads=atoi(optarg);
         break;
       case 'h':
       default:
