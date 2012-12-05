@@ -746,9 +746,9 @@ inline void show(Complex *f, unsigned int nx, unsigned int ny,
     }
     
     for(int p=1; p < group.size; p++) {
-      int length=2, source=p, tag=p;
-      int pdims[2];
-      MPI_Recv(&pdims,length,MPI_INT,source,tag,group.active,&stat);
+      int source=p, tag=p;
+      unsigned int pdims[2];
+      MPI_Recv(&pdims,2,MPI_UNSIGNED,source,tag,group.active,&stat);
 
       unsigned int px=pdims[0], py=pdims[1];
       unsigned int n=px*py;
@@ -767,9 +767,9 @@ inline void show(Complex *f, unsigned int nx, unsigned int ny,
       delete [] C;
     }
   } else {
-    int length=2, dest=0, tag=group.rank;
-    int dims[]={nx,ny};
-    MPI_Send(&dims,length,MPI_INT,dest,tag,group.active);
+    int dest=0, tag=group.rank;
+    unsigned int dims[]={nx,ny};
+    MPI_Send(&dims,2,MPI_UNSIGNED,dest,tag,group.active);
     int n=nx*ny;
     tag += group.size;
     MPI_Send(f,2*n,MPI_DOUBLE,dest,tag,group.active);
@@ -795,12 +795,12 @@ inline void show(Complex *f, unsigned int nx, unsigned int ny,
     }
     
     for(int p=1; p < group.size; p++) {
-      int length=3, source=p, tag=p;
-      int pdims[3];
-      MPI_Recv(&pdims,length,MPI_INT,source,tag,group.active,&stat);
+      int source=p, tag=p;
+      unsigned int pdims[3];
+      MPI_Recv(&pdims,3,MPI_UNSIGNED,source,tag,group.active,&stat);
 
       unsigned int px=pdims[0], py=pdims[1], pz=pdims[2];
-      unsigned int n=px*pz*pz;
+      int n=px*pz*pz;
       Complex *C=new Complex[n];
       tag += group.size;
       MPI_Recv(C,2*n,MPI_DOUBLE,source,tag,group.active,&stat);
@@ -819,9 +819,9 @@ inline void show(Complex *f, unsigned int nx, unsigned int ny,
       delete [] C;
     }
   } else {
-    int length=3, dest=0, tag=group.rank;
-    int dims[]={nx,ny,nz};
-    MPI_Send(&dims,length,MPI_INT,dest,tag,group.active);
+    int dest=0, tag=group.rank;
+    unsigned int dims[]={nx,ny,nz};
+    MPI_Send(&dims,3,MPI_UNSIGNED,dest,tag,group.active);
     int n=nx*ny*nz;
     tag += group.size;
     MPI_Send(f,2*n,MPI_DOUBLE,dest,tag,group.active);
