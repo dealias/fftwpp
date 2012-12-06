@@ -102,4 +102,4 @@ legendmargin=5;
 attach(legend(),point(E),10E);
 
 
-label(name+": (MPI nodes)$\times{}$(threads/node)",point(N),5N);
+label(name+": (MPI procs)$\times{}$(threads/proc)",point(N),5N);
