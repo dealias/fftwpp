@@ -8,7 +8,7 @@ from math import *
 import os
 
 def main(argv):
-    usage='Usage: timings.py -a<start> -b<stop> -p<cconv2,conv2,cconv3,conv3> -T<number of threads per node> -P<number of nodes> -A<quoted arg list for timed program> -M <quoted arg list for mpiexec>' 
+    usage='Usage: timings.py -a<start> -b<stop> -p<cconv2,conv2,cconv3,conv3> -T<number of threads per node> -P<number of nodes> -A<quoted arg list for timed program> -M <quoted arg list for mpiexec> -r<implicit/explicit>' 
 
     P=1
     T=1
@@ -18,8 +18,9 @@ def main(argv):
     M=""
     a=4
     b=8
+    r="implicit"
     try:
-        opts, args = getopt.getopt(argv,"p:T:P:a:b:A:M:")
+        opts, args = getopt.getopt(argv,"p:T:P:a:b:A:M:r:")
     except getopt.GetoptError:
         print usage
         sys.exit(2)
@@ -39,6 +40,9 @@ def main(argv):
             A+=str(arg)
         elif opt in ("-M"):
             M+=str(arg)
+        elif opt in ("-r"):
+            r=str(arg)
+
 
     if p == "":
         print "please specify a program with -p"
@@ -57,26 +61,32 @@ def main(argv):
         outdir="timings3r"
 
     if outdir == "":
-        print "empty outdir"
+        print "empty outdir: please select a different program!"
+        print
         print usage
         sys.exit(2)
 
     outdir=outdir+"/"+str(P)+"x"+str(T)
     command="mpiexec "+M+" -n "+str(P)+" ./"+str(p)
 
-    print "output in "+outdir+"/implicit"
+    print "output in "+outdir+"/"+r
 
     print "command: "+command+cargs+A
     os.system("mkdir -p "+outdir)
-    os.system("rm -f "+outdir+"/implicit")
+    os.system("rm -f "+outdir+"/"+r)
+
+    
+    rname="Implicit"
+    if r == "explicit":
+        rname="Explicit"
 
     for i in range(a,b):
         print i,
         sys.stdout.flush()
         run=command+cargs+" -m"+str(int(pow(2,i)))+A
-        grepc=" | grep -A 1 Implicit | tail -n 1"
-        cat=" | cat >> "+outdir+"/implicit"
-        #print run
+        grepc=" | grep -A 1 "+rname+" | tail -n 1"
+        cat=" | cat >> "+outdir+"/"+r
+        print run
         os.system("echo "+str(pow(2,i))+"\t $("+run+grepc+")"+cat)
 
 if __name__ == "__main__":
