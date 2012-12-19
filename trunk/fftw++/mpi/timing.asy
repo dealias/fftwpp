@@ -17,11 +17,9 @@ real[][] mi,i,li,hi;
 string[] runnames;
 
 string name;
-string base;
 usersetting();
 
-if(base == "") base=getstring("base directory",".");
-if(name == "") name=getstring("program name","cconv");
+if(name == "") name=getstring("program name","cconv2");
 int nn;
 
 string dir;
@@ -55,7 +53,7 @@ while(flag) {
   run=substr(runs,lastpos,pos-lastpos);
   if(flag) {
     //write(run);
-    file fin=input(base+"/"+dir+"/"+run+"/implicit").line();
+    file fin=input(run).line();
     real[][] a=fin.dimension(0,0);
     a=transpose(a);
     mi[n]=copy(a[0]); i[n]=copy(a[1]); li[n]=copy(a[2]); hi[n]=copy(a[3]);
