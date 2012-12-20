@@ -150,11 +150,10 @@ if(gtype == "scaling") {
   label("strong scaling: "+name,point(N),5N);
 
   string lrunnames=runnames[0];
-  for(int b=1; b < M.length; ++b) {
+  for(int b=1; b < nn; ++b) {
     lrunnames += "\newline ";
     lrunnames += runnames[b];
   }
-  write(lrunnames);
   label(minipage(lrunnames),point(S),10S+3W);
 }
 
