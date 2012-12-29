@@ -9,7 +9,8 @@ import os
 
 def main(argv):
     usage='Usage: timings.py -a<start> -b<stop> -p<cconv2,conv2,cconv3,conv3> -T<number of threads per node> -P<number of nodes> -A<quoted arg list for timed program> -M <quoted arg list for mpiexec> -r<implicit/explicit>' 
-
+    
+    Tset=0
     P=1
     T=1
     p=""
@@ -28,6 +29,7 @@ def main(argv):
         if opt in ("-p"):
             p=arg
         elif opt in ("-T"):
+            Tset=1
             cargs+=" -T"+str(arg)
             T=arg
         elif opt in ("-P"):
@@ -79,6 +81,9 @@ def main(argv):
     rname="Implicit"
     if r == "explicit":
         rname="Explicit"
+        if Tset == 1:
+            print "cannot use multiple threads with explicit: try without -T"
+            sys.exit(2)
 
     for i in range(a,b):
         print i,
@@ -87,7 +92,7 @@ def main(argv):
         grepc=" | grep -A 1 "+rname+" | tail -n 1"
         cat=" | cat >> "+outdir+"/"+r
         print run
-        os.system("echo "+str(pow(2,i))+"\t $("+run+grepc+")"+cat)
+        os.system("echo "+"$("+run+grepc+")"+cat)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

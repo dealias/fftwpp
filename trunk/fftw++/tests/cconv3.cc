@@ -164,7 +164,7 @@ int main(int argc, char* argv[])
       T[i]=seconds();
     }
     
-    timings("Implicit",T,N);
+    timings("Implicit",mx,T,N);
     
     if(Direct) {
       for(unsigned int i=0; i < mx; i++) 
@@ -197,7 +197,7 @@ int main(int argc, char* argv[])
       T[i]=seconds();
     }
     
-    timings(Pruned ? "Pruned" : "Explicit",T,N);
+    timings(Pruned ? "Pruned" : "Explicit",mx,T,N);
 
     if(Direct) {
       for(unsigned int i=0; i < mx; i++) 
@@ -228,7 +228,7 @@ int main(int argc, char* argv[])
     C.convolve(h,f,g);
     T[0]=seconds();
   
-    timings("Direct",T,1);
+    timings("Direct",mx,T,1);
 
     if(mx*my*mz < outlimit) {
       for(unsigned int i=0; i < mx; i++) {

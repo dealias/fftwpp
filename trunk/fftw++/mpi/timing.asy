@@ -9,7 +9,7 @@ bool drawerrorbars=true;
 
 string gtype=getstring("speed, mflops, or scaling","mflops");
 
-scale(Linear,Linear);
+scale(Linear,Log);
 if(gtype == "speed")
   scale(Log,Linear);
 if(gtype == "mflops")
