@@ -148,7 +148,7 @@ int main(int argc, char* argv[])
       }
     
       if(main) 
-        timings("Implicit",T,N);
+        timings("Implicit",mx,T,N);
    
       if(mx*my < outlimit) 
         show(f,mx,d.y,group);

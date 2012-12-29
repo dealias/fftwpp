@@ -146,7 +146,9 @@ int main(int argc, char **argv)
     T[i]=seconds();
   }  
 
-  if(rank == 0) timings("Explicit",T,N);
+  if(rank == 0) {
+    timings("Explicit",m,T,N);
+  }
   
   if(m0*m1<100) {
     if(rank == 0) cout << "output:" << endl;

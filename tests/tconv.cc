@@ -137,7 +137,7 @@ int main(int argc, char* argv[])
       T[i]=seconds();
     }
     
-    timings("Implicit",T,N);
+    timings("Implicit",m,T,N);
 
     if(Direct) for(unsigned int i=0; i < m; i++) h0[i]=e[i];
 
@@ -159,7 +159,7 @@ int main(int argc, char* argv[])
       T[i]=seconds();
     }
     
-    timings("Explicit",T,N);
+    timings("Explicit",m,T,N);
 
     if(m < 100) 
       for(unsigned int i=0; i < m; i++) cout << e[i] << endl;
@@ -174,7 +174,7 @@ int main(int argc, char* argv[])
     C.convolve(h,e,f,g);
     T[0]=seconds();
     
-    timings("Direct",T,1);
+    timings("Direct",m,T,1);
 
     if(m < 100) 
       for(unsigned int i=0; i < m; i++) cout << h[i] << endl;

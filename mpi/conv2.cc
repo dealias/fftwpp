@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
         if(main) T[i]=seconds();
       }
       if(main)
-        timings("Implicit",T,N);
+        timings("Implicit",mx,T,N);
 
       delete [] G;
       delete [] F;
