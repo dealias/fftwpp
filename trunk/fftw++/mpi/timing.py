@@ -94,5 +94,7 @@ def main(argv):
         print run
         os.system("echo "+"$("+run+grepc+")"+cat)
 
+    os.system("sed -i 's/[ \t]*$//' "+outdir+"/"+r)
+    os.system("sed -i '/^$/d' "+outdir+"/"+r)
 if __name__ == "__main__":
     main(sys.argv[1:])
