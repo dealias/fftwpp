@@ -110,7 +110,9 @@ if(gtype == "scaling") {
   real[][] s;
   real[] M=mi[0];
   //write(M);
-  
+
+
+  // first run is the comparison case:
   real[] s0;
   for(int b=0; b < M.length; ++b) {
     for(int a=0; a < mi[0].length; ++a) {
@@ -121,7 +123,8 @@ if(gtype == "scaling") {
     }
   }
   //write(s0);
-  
+
+  // all other runs are compared with comparison case:
   for(int b=0; b < M.length; ++b) {
     s.push(new real[]);
     for(int p=1; p < nn; ++p) {
@@ -141,12 +144,14 @@ if(gtype == "scaling") {
       A[b].push(i);
   }
 
+  marker mark1=marker(scale(0.6mm)*polygon(3+0),Draw(Pen(0)+solid));
+  draw(graph(A[0],1.0+0*A[0]),invisible);
   for(int b=0; b < M.length; ++b) {
     marker mark1=marker(scale(0.6mm)*polygon(3+b),Draw(Pen(b)+solid));
     draw(graph(A[b],s[b]),Pen(b),Label((string) M[b]),mark1);
   }
   yaxis("speedup",LeftRight,RightTicks);
-  xaxis(BottomTop,LeftTicks);
+  xaxis("Run (see below)",BottomTop,LeftTicks);
   label("strong scaling: "+name,point(N),5N);
 
   string lrunnames=runnames[0];
