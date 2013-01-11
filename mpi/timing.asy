@@ -149,17 +149,27 @@ if(gtype == "scaling") {
   for(int b=0; b < M.length; ++b) {
     marker mark1=marker(scale(0.6mm)*polygon(3+b),Draw(Pen(b)+solid));
     draw(graph(A[b],s[b]),Pen(b),Label((string) M[b]),mark1);
+    
   }
+
+  for(int a=0; a < A[0].length; ++a) {
+    label(rotate(90)*runnames[a+1],(A[0][a],0),S);
+  }
+
   yaxis("speedup",LeftRight,RightTicks);
-  xaxis("Run (see below)",BottomTop,LeftTicks);
+  xaxis(BottomTop,NoTicks);
+  //  xaxis("Run (see below)",BottomTop,LeftTicks);
   label("strong scaling: "+name,point(N),5N);
 
+  label("base: "+runnames[0],point(N),1N);
+  
+  
   string lrunnames=runnames[0];
   for(int b=1; b < nn; ++b) {
     lrunnames += "\newline ";
     lrunnames += runnames[b];
   }
-  label(minipage(lrunnames),point(S),10S+3W);
+  //label(minipage(lrunnames),point(S),10S+3W);
 }
 
 legendlinelength=0.6cm;
