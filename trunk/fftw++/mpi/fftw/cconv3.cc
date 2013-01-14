@@ -166,9 +166,9 @@ int main(int argc, char **argv)
   init(f,g,local_0_start,local_n0,N0,N1,N2,m0,m1,m2);
 
 
-  show(f,local_0_start,local_n0,N1,N2,m0,m1,m2,0);
+  //show(f,local_0_start,local_n0,N1,N2,m0,m1,m2,0);
   //show(f,local_0_start,local_n0,N1,N2,N0,N1,N2,1);
-  show(g,local_0_start,local_n0,N1,N2,m0,m1,m2,1);
+  //show(g,local_0_start,local_n0,N1,N2,m0,m1,m2,1);
 
   double *T=new double[N];
   for(int i=0; i < N; ++i) {
