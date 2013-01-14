@@ -5,8 +5,23 @@
 #include "seconds.h"
 #include "timing.h"
 #include <stdlib.h>
+#include "Complex.h"
+#include "cmult-sse2.h"
 
 using namespace std;
+using namespace fftwpp;
+
+namespace fftwpp {
+#ifdef __SSE2__
+  const union uvec sse2_pm = {
+    { 0x00000000,0x00000000,0x00000000,0x80000000 }
+  };
+  
+  const union uvec sse2_mm = {
+    { 0x00000000,0x80000000,0x00000000,0x80000000 }
+  };
+#endif
+}
 
 // compile with
 // mpicxx -o cconv3 cconv3.cc -lfftw3_mpi -lfftw3 -lm
@@ -81,11 +96,19 @@ void init(fftw_complex *f, fftw_complex *g, int local_0_start, int local_n0,
 void convolve(fftw_complex *f, fftw_complex *g, double norm,
 	      int num, fftw_plan fplan, fftw_plan iplan) 
 {
-   fftw_mpi_execute_dft(fplan,f,f);
-   fftw_mpi_execute_dft(fplan,g,g);
-   for (int i = 0; i < num; ++i)
-     f[i] *= g[i]*norm;
-   fftw_mpi_execute_dft(iplan,f,f);
+  fftw_mpi_execute_dft(fplan,f,f);
+  fftw_mpi_execute_dft(fplan,g,g);
+  Complex *F = (Complex *) f;
+  Complex *G = (Complex *) g;
+#ifdef __SSE2__
+  Vec Ninv=LOAD(norm);
+  for (int k = 0; k < num; ++k)
+    STORE(F+k,Ninv*ZMULT(LOAD(F+k),LOAD(G+k)));
+#else
+  for (int k = 0; k < num; ++k)
+    f[k] *= g[k]*norm;
+#endif
+  fftw_mpi_execute_dft(iplan,f,f);
 }
 
 int main(int argc, char **argv)
