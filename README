@@ -1,5 +1,17 @@
         FFTW++: Fast Fourier Transform C++ Header Class for FFTW3 Library
-  Copyright (C) 2004-12 John C. Bowman and Malcolm Roberts, University of Alberta
+ 
+
+########################## MPI ##########################
+
+Hybrid OpenMP/MPI versions of the convolution routines in 2 and 3
+dimensions are available in the mpi directory.  Parallelization is
+accomplished using FFTW's MPI transpose routine, which has been
+adapted to provide both 1D ("slab") and 2D ("pencil") decompositions
+in computing 3 dimensional convolutions.
+
+mpi/fftw contains comparison code using FFTW's parallel MPI transform
+and explicit padding.
+Copyright (C) 2004-12 John C. Bowman and Malcolm Roberts, University of Alberta
                     http://fftwpp.sourceforge.net
 
 FFTW++ is a C++ header class for Version 3 of the highly optimized FFTW
@@ -47,6 +59,9 @@ ensure that the data is optimally aligned to sizeof(Complex), to
 enable the SIMD extensions.  The optional alignment check in fftw++.h
 can be disabled with the -DNO_CHECK_ALIGN compiler option.
 
+
+########################## Examples ##########################
+
 The following programs are provided in the examples directory:
 
 1D examples using ComplexAlign allocator:
@@ -65,10 +80,16 @@ example2r.cc
 example3.cc
 example3r.cc
 
-1D example of implicitly dealiased convolutions:
-exampleconv.cc
+Examples of implicitly dealiased convolutions on complex non-centered
+data in 1, 2, and 3 dimensions:
+examplecconv.cc, examplecconv2.cc, examplecconv3.cc
+
+Examples of implicitly dealiased convolutions on complex
+Hermitian-symmetric centered data in 1, 2, and 3 dimensions:
+exampleconv.cc, exampleconv2.cc, exampleconv3.cc
 
 
+########################## Wrappers ##########################
 
 Wrappers for the convolution routines are available for C, Fortran,
 and Python. Examples are given in the wrappers/ directory. The C
@@ -96,6 +117,20 @@ Using Python to call multi-threaded 1D, 2D, and 3D binary convolutions
 constructor):
 pexample.py
 
+
+########################## MPI ##########################
+
+Hybrid OpenMP/MPI versions of the convolution routines in 2 and 3
+dimensions are available in the mpi directory.  Parallelization is
+accomplished using FFTW's MPI transpose routine, which has been
+adapted to provide both 1D ("slab") and 2D ("pencil") decompositions
+in computing 3 dimensional convolutions.
+
+mpi/fftw contains comparison code using FFTW's parallel MPI transform
+and explicit padding.
+
+
+########################## Test Programs ##########################
 
 The following programs are provided in tests/, along with various
 timing and error analysis scripts.  Asymptote
@@ -125,6 +160,9 @@ cconv3.cc
 
 3D Hermitian convolution test:
 conv3.cc
+
+
+######################## Availability and License ########################
 
 The latest developmental source code of fftw++ is available via Subversion:
 svn co https://svn.code.sf.net/p/fftwpp/code/trunk/fftw++
