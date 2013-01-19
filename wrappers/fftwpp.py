@@ -212,7 +212,7 @@ class Convolution(object):
         
 
 class HConvolution(object):
-    """Implicitly zero-padded complex convolution class. FIXME
+    """Implicitly zero-padded complex Hermitian-symmetric convolution class.
 
     :param shape: shape/number of elements in the input arrays (int, tuple or list)
 
