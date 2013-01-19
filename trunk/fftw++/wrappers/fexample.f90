@@ -2,7 +2,7 @@ program fexample
   use fftwpp
   use fhash
 
-  use, intrinsic :: ISO_C_Binding !FIXME: use only.... to clean up namespace?
+  use, intrinsic :: ISO_C_Binding
   implicit NONE
   include 'fftw3.f03'
   integer(c_int) :: m, mx, my, mz, i, j, k, mmx, mmy, mxyz, nthreads, mdot, im
