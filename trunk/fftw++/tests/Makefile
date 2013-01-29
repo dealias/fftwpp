@@ -1,21 +1,34 @@
 IDIR =../
 
-CXX=g++
-CFLAGS=-fopenmp -g -Wall -ansi -O3 -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native -I$(IDIR)
+SHELL=/bin/sh
 
+CFLAGS = -O3
+
+# GNU compiler
+ifeq ($(shell $(CXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
+CFLAGS += -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
+	-fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native
 #For valgrind:
-#CFLAGS=-fopenmp -g -Wall -ansi -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -I$(IDIR)
-
-a:=$(shell which icpc 2>&1 | tail -c5)
-ifeq ($(a),icpc)
-CXX=icpc
-CFLAGS=-openmp -O3 -ansi-alias -malign-double -fp-model fast=2 -I$(IDIR)
+#CFLAGS=-fopenmp -g -Wall -ansi -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse
 endif
+
+#Intel compiler
+ifeq ($(shell $(CXX) -v 2>&1 | head -c 4),icpc)
+CFLAGS += -openmp -ansi-alias -malign-double -fp-model fast=2
+endif
+
+#IBM compiler
+ifeq ($(shell $(CXX) -qversion 2>&1 | head -c 3),xlc++_r)
+#CFLAGS = -O5 -P -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp
+CFLAGS = -O2 -qsmp
+endif
+
+CFLAGS += -I$(IDIR)
 
 MAKEDEPEND=$(CFLAGS) -O0 -M -DDEPEND
 
 #LDFLAGS = -lfftw3 -lfftw3_threads -lm
-LDFLAGS = -lfftw3 -lfftw3_omp -lm
+LDFLAGS = -lfftw3_omp -lfftw3 -lm
 
 vpath %.cc ../
 
@@ -26,14 +39,8 @@ ALL=$(FILES) $(EXTRA)
 
 all: $(FILES)
 
-icpc: all
-	CXX=icpc
-
-convolution: convolution convolution.o
-	$(CXX) $(CFLAGS) convolution.o $(EXTRA:=.o) $(LDFLAGS)
-
-seconds: seconds seconds.o
-	$(CXX) $(CFLAGS) seconds.o $(EXTRA:=.o) $(LDFLAGS)
+%.o : %.cc
+	$(CXX) $(CFLAGS) -o $@ -c $<
 
 conv: conv.o $(EXTRA:=.o)
 	$(CXX) $(CFLAGS) conv.o $(EXTRA:=.o) $(LDFLAGS) -o conv
@@ -63,8 +70,7 @@ clean:  FORCE
 	rm -rf $(ALL) $(ALL:=.o) $(ALL:=.d)
 
 .SUFFIXES: .c .cc .o .d
-.cc.o:
-	$(CXX) $(CFLAGS) $(INCL) -o $@ -c $<
+
 .cc.d:
 	@echo Creating $@; \
 	rm -f $@; \
