@@ -43,28 +43,28 @@ all: $(FILES)
 	$(CXX) $(CFLAGS) -o $@ -c $<
 
 conv: conv.o $(EXTRA:=.o)
-	$(CXX) $(CFLAGS) conv.o $(EXTRA:=.o) $(LDFLAGS) -o conv
+	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 cconv: cconv.o $(EXTRA:=.o)
-	$(CXX) $(CFLAGS) cconv.o $(EXTRA:=.o) $(LDFLAGS) -o cconv
+	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 conv2: conv2.o $(EXTRA:=.o)
-	$(CXX) $(CFLAGS) conv2.o $(EXTRA:=.o) $(LDFLAGS) -o conv2
+	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 cconv2: cconv2.o $(EXTRA:=.o)
-	$(CXX) $(CFLAGS) cconv2.o $(EXTRA:=.o) $(LDFLAGS) -o cconv2
+	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 conv3: conv3.o $(EXTRA:=.o)
-	$(CXX) $(CFLAGS) conv3.o $(EXTRA:=.o) $(LDFLAGS) -o conv3
+	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 cconv3: cconv3.o $(EXTRA:=.o)
-	$(CXX) $(CFLAGS) cconv3.o $(EXTRA:=.o) $(LDFLAGS) -o cconv3
+	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 tconv: tconv.o $(EXTRA:=.o)
-	$(CXX) $(CFLAGS) tconv.o $(EXTRA:=.o) $(LDFLAGS) -o tconv
+	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 tconv2: tconv2.o $(EXTRA:=.o)
-	$(CXX) $(CFLAGS) tconv2.o $(EXTRA:=.o) $(LDFLAGS) -o tconv2
+	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 clean:  FORCE
 	rm -rf $(ALL) $(ALL:=.o) $(ALL:=.d)
