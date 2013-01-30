@@ -1,16 +1,29 @@
 IDIR =../
 
-CXX=g++
-CFLAGS=-fopenmp -g -Wall -ansi -O3 -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native -I$(IDIR)
+SHELL=/bin/sh
 
+CFLAGS = -O3
+
+# GNU compiler
+ifeq ($(shell $(CXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
+CFLAGS += -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
+	-fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native
 #For valgrind:
-#CFLAGS=-fopenmp -g -Wall -ansi -O3 -DNDEBUG -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -I$(IDIR)
-
-a:=$(shell which icpc 2>&1 | tail -c5)
-ifeq ($(a),icpc)
-CXX=icpc
-CFLAGS=-O3 -ansi-alias -malign-double -fp-model fast=2 -openmp -I$(IDIR)
+#CFLAGS=-fopenmp -g -Wall -ansi -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse
 endif
+
+#Intel compiler
+ifeq ($(shell $(CXX) -v 2>&1 | head -c 4),icpc)
+CFLAGS += -openmp -ansi-alias -malign-double -fp-model fast=2
+endif
+
+#IBM compiler
+ifeq ($(shell $(CXX) -qversion 2>&1 | head -c 3),xlc++_r)
+#CFLAGS = -O5 -P -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp
+CFLAGS = -O2 -qsmp
+endif
+
+CFLAGS += -I$(IDIR)
 
 MAKEDEPEND=$(CFLAGS) -O0 -M -DDEPEND
 #LDFLAGS=-lfftw3 -lfftw3_threads -lm
@@ -28,58 +41,56 @@ ALL=$(FILES) $(EXTRA)
 
 all: $(FILES)
 
-icpc: all
-	CXX=icpc
-
-convolution: convolution convolution.o
-	$(CXX) $(CFLAGS) convolution.o $(EXTRA:=.o) $(LDFLAGS)
+%.o : %.cc
+	$(CXX) $(CFLAGS) -o $@ -c $<
 
 example0: example0.o $(FFTW:=.o)
-	$(CXX) $(CFLAGS) example0.o $(FFTW:=.o) $(LDFLAGS) -o example0
+	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 example0r: example0r.o $(FFTW:=.o)
-	$(CXX) $(CFLAGS) example0r.o $(FFTW:=.o) $(LDFLAGS) -o example0r
+	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 example1: example1.o $(FFTW:=.o)
-	$(CXX) $(CFLAGS) example1.o $(FFTW:=.o) $(LDFLAGS) -o example1
+	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 example1r: example1r.o $(FFTW:=.o)
-	$(CXX) $(CFLAGS) example1r.o $(FFTW:=.o) $(LDFLAGS) -o example1r
+	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 example2: example2.o $(FFTW:=.o)
-	$(CXX) $(CFLAGS) example2.o $(FFTW:=.o) $(LDFLAGS) -o example2
+	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 example2r: example2r.o $(FFTW:=.o)
-	$(CXX) $(CFLAGS) example2r.o $(FFTW:=.o) $(LDFLAGS) -o example2r
+	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 example3: example3.o $(FFTW:=.o)
-	$(CXX) $(CFLAGS) example3.o $(FFTW:=.o) $(LDFLAGS) -o example3
+	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 example3r: example3r.o $(FFTW:=.o)
-	$(CXX) $(CFLAGS) example3r.o $(FFTW:=.o) $(LDFLAGS) -o example3r
+	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 examplecconv: examplecconv.o $(EXTRA:=.o)
-	$(CXX) $(CFLAGS) examplecconv.o $(EXTRA:=.o) $(LDFLAGS) -o examplecconv
+	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 exampleconv: exampleconv.o $(EXTRA:=.o)
-	$(CXX) $(CFLAGS) exampleconv.o $(EXTRA:=.o) $(LDFLAGS) -o exampleconv
+	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 examplecconv2: examplecconv2.o $(EXTRA:=.o)
-	$(CXX) $(CFLAGS) examplecconv2.o $(EXTRA:=.o) $(LDFLAGS) -o examplecconv2
+	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 exampleconv2: exampleconv2.o $(EXTRA:=.o)
-	$(CXX) $(CFLAGS) exampleconv2.o $(EXTRA:=.o) $(LDFLAGS) -o exampleconv2
+	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 examplecconv3: examplecconv3.o $(EXTRA:=.o)
-	$(CXX) $(CFLAGS) examplecconv3.o $(EXTRA:=.o) $(LDFLAGS) -o examplecconv3
+	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 exampleconv3: exampleconv3.o $(EXTRA:=.o)
-	$(CXX) $(CFLAGS) exampleconv3.o $(EXTRA:=.o) $(LDFLAGS) -o exampleconv3
+	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 clean:  FORCE
 	rm -rf $(ALL) $(ALL:=.o) $(ALL:=.d)
 
 .SUFFIXES: .c .cc .o .d
+
 .cc.o:
 	$(CXX) $(CFLAGS) $(INCL) -o $@ -c $<
 .cc.d:
