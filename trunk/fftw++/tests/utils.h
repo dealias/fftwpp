@@ -3,7 +3,9 @@
 
 #include <iostream>
 #include "seconds.h"
+#ifdef __need_getopt
 #include "getopt.h"
+#endif
 #include "timing.h"
  
 #ifdef _WIN32

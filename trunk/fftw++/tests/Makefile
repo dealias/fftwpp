@@ -1,31 +1,29 @@
 IDIR =../
 
-SHELL=/bin/sh
-
-CFLAGS = -O3
+CXXFLAGS = -O3
 
 # GNU compiler
 ifeq ($(shell $(CXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
-CFLAGS += -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
+CXXFLAGS += -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
 	-fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native
 #For valgrind:
-#CFLAGS=-fopenmp -g -Wall -ansi -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse
+#CXXFLAGS=-fopenmp -g -Wall -ansi -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse
 endif
 
 #Intel compiler
 ifeq ($(shell $(CXX) -v 2>&1 | head -c 4),icpc)
-CFLAGS += -openmp -ansi-alias -malign-double -fp-model fast=2
+CXXFLAGS += -openmp -ansi-alias -malign-double -fp-model fast=2
 endif
 
 #IBM compiler
-ifeq ($(shell $(CXX) -qversion 2>&1 | head -c 3),xlc++_r)
-#CFLAGS = -O5 -P -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp
-CFLAGS = -O2 -qsmp
+ifeq ($(shell $(CXX) -qversion 2>&1 | head -c 3),IBM)
+#CXXFLAGS = -O5 -P -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp
+CXXFLAGS = -O3 -qsmp
 endif
 
-CFLAGS += -I$(IDIR)
+CXXFLAGS += -I$(IDIR) -I$(CPLUS_INCLUDE_PATH) -L$(LIBRARY_PATH)
 
-MAKEDEPEND=$(CFLAGS) -O0 -M -DDEPEND
+MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
 
 #LDFLAGS = -lfftw3 -lfftw3_threads -lm
 LDFLAGS = -lfftw3_omp -lfftw3 -lm
@@ -40,31 +38,31 @@ ALL=$(FILES) $(EXTRA)
 all: $(FILES)
 
 %.o : %.cc
-	$(CXX) $(CFLAGS) -o $@ -c $<
+	$(CXX) $(CXXFLAGS) -o $@ -c $<
 
 conv: conv.o $(EXTRA:=.o)
-	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 cconv: cconv.o $(EXTRA:=.o)
-	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 conv2: conv2.o $(EXTRA:=.o)
-	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 cconv2: cconv2.o $(EXTRA:=.o)
-	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 conv3: conv3.o $(EXTRA:=.o)
-	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 cconv3: cconv3.o $(EXTRA:=.o)
-	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 tconv: tconv.o $(EXTRA:=.o)
-	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 tconv2: tconv2.o $(EXTRA:=.o)
-	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 clean:  FORCE
 	rm -rf $(ALL) $(ALL:=.o) $(ALL:=.d)

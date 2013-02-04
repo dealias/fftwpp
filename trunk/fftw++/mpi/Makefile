@@ -1,37 +1,35 @@
+ifndef MPICXX
+MPICXX=mpic++
+endif
+
 IDIR =../
 UDIR =../tests/
 
-SHELL=/bin/sh
-CFLAGS = -O3
-
-#ifndef CXX
-CXX=mpic++
-#endif
+CXXFLAGS = -O3
 
 # GNU compiler
-ifeq ($(shell $(CXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
-CFLAGS += -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
+ifeq ($(shell $(MPICXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
+CXXFLAGS += -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
 	-fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native
 #For valgrind:
-#CFLAGS=-fopenmp -g -Wall -ansi -fomit-frame-pointer -fstrict-aliasing \
+#CXXFLAGS=-fopenmp -g -Wall -ansi -fomit-frame-pointer -fstrict-aliasing \
 #	 -ffast-math -msse2 -mfpmath=sse
 endif
 
 #Intel compiler
-ifeq ($(shell $(CXX) -v 2>&1 | head -c 4),icpc)
-CFLAGS += -openmp -ansi-alias -malign-double -fp-model fast=2
+ifeq ($(shell $(MPICXX) -v 2>&1 | head -c 4),icpc)
+CXXFLAGS += -openmp -ansi-alias -malign-double -fp-model fast=2
 endif
 
 #IBM compiler
-ifeq ($(shell $(CXX) -qversion 2>&1 | head -c 3),xlc++_r)
-#CFLAGS = -O5 -P -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp
-CFLAGS = -O2 -qsmp
-# FIXME
+ifeq ($(shell $(MPICXX) -qversion 2>&1 | head -c 3),IBM)
+#CXXFLAGS = -O5 -P -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp
+CXXFLAGS = -O3 -qsmp
 endif
 
-CFLAGS += -I$(IDIR) -I$(UDIR)
+CXXFLAGS += -I$(IDIR) -I$(UDIR) -I$(CPLUS_INCLUDE_PATH) -L$(LIBRARY_PATH)
 
-MAKEDEPEND=$(CFLAGS) -O0 -M -DDEPEND
+MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
 
 #LDFLAGS = -lfftw3_mpi -lfftw3 -lfftw3_threads -lm
 LDFLAGS = -lfftw3_mpi -lfftw3_omp -lfftw3 -lm
@@ -46,33 +44,33 @@ ALL=$(FILES) $(EXTRA)
 all: $(FILES)
 
 %.o : %.cc
-	$(CXX) $(CFLAGS) -o $@ -c $<
+	$(MPICXX) $(CXXFLAGS) -o $@ -c $<
 
 cconv2: cconv2.o $(EXTRA:=.o)
-	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
+	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 conv2: conv2.o $(EXTRA:=.o)
-	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
+	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 cconv3: cconv3.o $(EXTRA:=.o)
-	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
+	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 conv3: conv3.o $(EXTRA:=.o)
-	$(CXX) $(CFLAGS) $^ $(LDFLAGS) -o $@
+	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 testmpi: testmpi.cc
-	$(CXX) $^ -lfftw3_mpi -lfftw3 -lm -o $@
+	$(MPICXX) $^ -lfftw3_mpi -lfftw3 -lm -o $@
 
 clean:  FORCE
 	rm -rf $(ALL) $(ALL:=.o) $(ALL:=.d)
 
 .SUFFIXES: .c .cc .o .d
 .cc.o:
-	$(CXX) $(CFLAGS) $(INCL) -o $@ -c $<
+	$(MPICXX) $(CXXFLAGS) $(INCL) -o $@ -c $<
 .cc.d:
 	@echo Creating $@; \
 	rm -f $@; \
-	${CXX} $(MAKEDEPEND) $(INCL) $< > $@.$$$$ 2>/dev/null && \
+	${MPICXX} $(MAKEDEPEND) $(INCL) $< > $@.$$$$ 2>/dev/null && \
 	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
 	rm -f $@.$$$$
 
