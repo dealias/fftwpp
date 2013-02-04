@@ -1,10 +1,10 @@
 IDIR =../
 
-CXXFLAGS = -O3
+CXXFLAGS= -O3
 
 # GNU compiler
 ifeq ($(shell $(CXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
-CXXFLAGS += -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
+CXXFLAGS+= -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
 	-fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native
 #For valgrind:
 #CXXFLAGS=-fopenmp -g -Wall -ansi -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse
@@ -12,16 +12,16 @@ endif
 
 #Intel compiler
 ifeq ($(shell $(CXX) -v 2>&1 | head -c 4),icpc)
-CXXFLAGS += -openmp -ansi-alias -malign-double -fp-model fast=2
+CXXFLAGS+= -openmp -ansi-alias -malign-double -fp-model fast=2
 endif
 
 #IBM compiler
 ifeq ($(shell $(CXX) -qversion 2>&1 | head -c 3),IBM)
 #CXXFLAGS = -O5 -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp
-CXXFLAGS = -O3 -qsmp
+CXXFLAGS= -O3 -qsmp
 endif
 
-CXXFLAGS += -I$(IDIR) -I$(CPLUS_INCLUDE_PATH) -L$(LIBRARY_PATH)
+CXXFLAGS+= -I$(IDIR) -I$(CPLUS_INCLUDE_PATH) -L$(LIBRARY_PATH)
 
 MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
 #LDFLAGS= -lfftw3_threads -lfftw3 -lm

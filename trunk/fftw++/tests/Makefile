@@ -1,6 +1,6 @@
 IDIR =../
 
-CXXFLAGS = -O3
+CXXFLAGS= -O3
 
 # GNU compiler
 ifeq ($(shell $(CXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
@@ -17,8 +17,8 @@ endif
 
 #IBM compiler
 ifeq ($(shell $(CXX) -qversion 2>&1 | head -c 3),IBM)
-#CXXFLAGS = -O5 -P -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp
-CXXFLAGS = -O3 -qsmp
+#CXXFLAGS= -O5 -P -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp
+CXXFLAGS= -O3 -qsmp
 endif
 
 CXXFLAGS += -I$(IDIR) -I$(CPLUS_INCLUDE_PATH) -L$(LIBRARY_PATH)
