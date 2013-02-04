@@ -73,29 +73,40 @@ unsigned int BuildZeta(unsigned int n, unsigned int m,
 void ImplicitConvolution::mult(Complex *a, Complex **B, unsigned int offset) {
   if(M == 1) { // a[k]=a[k]*b[k]
     Complex *B0=B[0]+offset;
+#ifdef __SSE2__
     PARALLEL(
       for(unsigned int k=0; k < m; ++k) {
         Complex *p=a+k;
-#ifdef __SSE2__      
         STORE(p,ZMULT(LOAD(p),LOAD(B0+k)));
+      }
+      )
 #else
+    PARALLEL(
+      for(unsigned int k=0; k < m; ++k) {
+        Complex *p=a+k;
         Complex ak=*p;
         Complex bk=*(B0+k);
         p->re=ak.re*bk.re-ak.im*bk.im;
         p->im=ak.re*bk.im+ak.im*bk.re;
-#endif      
       }
       )
+#endif
       } else if(M == 2) {
     Complex *a1=a+m;
     Complex *B0=B[0]+offset;
     Complex *B1=B[1]+offset;
+
+#ifdef __SSE2__
     PARALLEL(
       for(unsigned int k=0; k < m; ++k) {
         Complex *p=a+k;
-#ifdef __SSE2__
         STORE(p,ZMULT(LOAD(p),LOAD(B0+k))+ZMULT(LOAD(a1+k),LOAD(B1+k)));
+      }
+      )
 #else
+    PARALLEL(
+      for(unsigned int k=0; k < m; ++k) {
+        Complex *p=a+k;
         Complex ak=*p;
         Complex bk=B0[k];
         double re=ak.re*bk.re-ak.im*bk.im;
@@ -106,22 +117,27 @@ void ImplicitConvolution::mult(Complex *a, Complex **B, unsigned int offset) {
         im += ak.re*bk.im+ak.im*bk.re; 
         p->re=re;
         p->im=im;
-#endif      
       }
       )
+#endif
       } else if(M == 3) {
     Complex *a1=a+m;
     Complex *a2=a+2*m;
     Complex *B0=B[0]+offset;
     Complex *B1=B[1]+offset;
     Complex *B2=B[2]+offset;
+#ifdef __SSE2__
     PARALLEL(
       for(unsigned int k=0; k < m; ++k) {
         Complex *p=a+k;
-#ifdef __SSE2__
         STORE(p,ZMULT(LOAD(p),LOAD(B0+k))+ZMULT(LOAD(a1+k),LOAD(B1+k))
               +ZMULT(LOAD(a2+k),LOAD(B2+k)));
+      }
+      )
 #else
+    PARALLEL(
+      for(unsigned int k=0; k < m; ++k) {
+        Complex *p=a+k;
         Complex ak=*p;
         Complex bk=B0[k];
         double re=ak.re*bk.re-ak.im*bk.im;
@@ -136,22 +152,27 @@ void ImplicitConvolution::mult(Complex *a, Complex **B, unsigned int offset) {
         im += ak.re*bk.im+ak.im*bk.re; 
         p->re=re;
         p->im=im;
-#endif      
       }
       )
+#endif
       } else {
     Complex *A=a-offset;
     Complex *B0=B[0];
     unsigned int stop=offset+m;
+#ifdef __SSE2__
     PARALLEL(
       for(unsigned int k=offset; k < stop; ++k) {
         Complex *p=A+k;
-#ifdef __SSE2__      
         Vec sum=ZMULT(LOAD(p),LOAD(B0+k));
         for(unsigned int i=1; i < M; ++i)
           sum += ZMULT(LOAD(p+m*i),LOAD(B[i]+k));
         STORE(p,sum);
+      }
+      )
 #else
+    PARALLEL(
+      for(unsigned int k=offset; k < stop; ++k) {
+        Complex *p=A+k;
         Complex ak=*p;
         Complex bk=B0[k];
         double re=ak.re*bk.re-ak.im*bk.im;
@@ -164,9 +185,9 @@ void ImplicitConvolution::mult(Complex *a, Complex **B, unsigned int offset) {
         }
         p->re=re;
         p->im=im;
-#endif      
       }
       )
+#endif
       }
 }
 
@@ -188,11 +209,12 @@ void ImplicitConvolution::convolve(Complex **F, Complex **G,
   for(unsigned int i=0; i < M; ++i) {
     Complex *f=F[i]+offset;
     Complex *g=G[i]+offset;
+
+#ifdef __SSE2__
     PARALLEL(
       for(unsigned int K=0; K < m; K += s) {
         Complex *ZetaL0=ZetaL-K;
         unsigned int stop=min(K+s,m);
-#ifdef __SSE2__      
         Vec Zeta=LOAD(ZetaH+K/s);
         Vec X=UNPACKL(Zeta,Zeta);
         Vec Y=UNPACKH(CONJ(Zeta),Zeta);
@@ -205,7 +227,13 @@ void ImplicitConvolution::convolve(Complex **F, Complex **G,
           STORE(fki,ZMULT(Zetak,Fki));
           STORE(gki,ZMULT(Zetak,Gki));
         }
+      }
+      )
 #else
+    PARALLEL(
+      for(unsigned int K=0; K < m; K += s) {
+        Complex *ZetaL0=ZetaL-K;
+        unsigned int stop=min(K+s,m);
         Complex *p=ZetaH+K/s;
         double Hre=p->re;
         double Him=p->im;
@@ -222,9 +250,9 @@ void ImplicitConvolution::convolve(Complex **F, Complex **G,
           Q->re=Re*gk.re-Im*gk.im;
           Q->im=Im*gk.re+Re*gk.im;
         }
-#endif      
       }
       )
+#endif
       Backwards->fft(f,v+i*m);
     Backwards->fft(g,f);
   }
@@ -236,14 +264,12 @@ void ImplicitConvolution::convolve(Complex **F, Complex **G,
   Forwards->fft(v,u);
 
   double ninv=0.5/m;
-#ifdef __SSE2__      
+#ifdef __SSE2__
   Vec Ninv=LOAD(ninv);
-#endif    
   PARALLEL(
     for(unsigned int K=0; K < m; K += s) {
       unsigned int stop=min(K+s,m);
       Complex *ZetaL0=ZetaL-K;
-#ifdef __SSE2__
       Vec Zeta=Ninv*LOAD(ZetaH+K/s);
       Vec X=UNPACKL(Zeta,Zeta);
       Vec Y=UNPACKH(CONJ(Zeta),Zeta);
@@ -252,7 +278,13 @@ void ImplicitConvolution::convolve(Complex **F, Complex **G,
         Complex *fk=f+k;
         STORE(fk,ZMULTC(Zetak,LOAD(u+k))+Ninv*LOAD(fk));
       }
-#else      
+      }
+    )
+#else
+  PARALLEL(
+    for(unsigned int K=0; K < m; K += s) {
+      unsigned int stop=min(K+s,m);
+      Complex *ZetaL0=ZetaL-K;
       Complex *p=ZetaH+K/s;
       double Hre=ninv*p->re;
       double Him=ninv*p->im;
@@ -266,9 +298,9 @@ void ImplicitConvolution::convolve(Complex **F, Complex **G,
         p->re=ninv*fk.re+Re*fkm.re+Im*fkm.im;
         p->im=ninv*fk.im-Im*fkm.re+Re*fkm.im;
       }
-#endif
     }
     )
+#endif
     }
 
 // Reverse and conjugate an array of length m.
@@ -297,44 +329,48 @@ void ImplicitHConvolution::mult(double *a, double **B, unsigned int offset)
   unsigned int m1=m-1;
   if(M == 1) { // a[k]=a[k]*b[k]
     double *B0=B[0]+offset;
+#ifdef __SSE2__
     PARALLEL(
-#ifdef __SSE2__        
       for(unsigned int k=0; k < m1; k += 2) {
         double *p=a+k;
         STORE(p,LOAD(p)*LOAD(B0+k));
       }
       if(odd)
         a[m1] *= B0[m1];
-#else       
+      )
+#else
+    PARALLEL(
       for(unsigned int k=0; k < m; ++k)
         a[k] *= B0[k];
-#endif
       )
+#endif
       } else if(M == 2) {
     double *a1=a+stride;
     double *B0=B[0]+offset;
     double *B1=B[1]+offset;
+#ifdef __SSE2__
     PARALLEL(
-#ifdef __SSE2__        
       for(unsigned int k=0; k < m1; k += 2) {
         double *ak=a+k;
         STORE(ak,LOAD(ak)*LOAD(B0+k)+LOAD(a1+k)*LOAD(B1+k));
       }
       if(odd)
         a[m1]=a[m1]*B0[m1]+a1[m1]*B1[m1];
-#else        
+      )
+#else
+    PARALLEL(
       for(unsigned int k=0; k < m; ++k)
         a[k]=a[k]*B0[k]+a1[k]*B1[k];
-#endif        
       )
+#endif
       } else if(M == 3) {
     double *a1=a+stride;
     double *a2=a1+stride;
     double *B0=B[0]+offset;
     double *B1=B[1]+offset;
     double *B2=B[2]+offset;
+#ifdef __SSE2__
     PARALLEL(
-#ifdef __SSE2__        
       for(unsigned int k=0; k < m1; k += 2) {
         double *ak=a+k;
         STORE(ak,LOAD(ak)*LOAD(B0+k)+LOAD(a1+k)*LOAD(B1+k)+
@@ -342,17 +378,19 @@ void ImplicitHConvolution::mult(double *a, double **B, unsigned int offset)
       }
       if(odd)
         a[m1]=a[m1]*B0[m1]+a1[m1]*B1[m1]+a2[m1]*B2[m1];
-#else        
+      )
+#else
+    PARALLEL(
       for(unsigned int k=0; k < m; ++k)
         a[k]=a[k]*B0[k]+a1[k]*B1[k]+a2[k]*B2[k];
-#endif        
       )
+#endif
       } else {
     double *A=a-offset;
     double *B0=B[0];
     unsigned int stop=m1+offset;
+#ifdef __SSE2__
     PARALLEL(
-#ifdef __SSE2__        
       for(unsigned int k=offset; k < stop; k += 2) {
         double *p=A+k;
         Vec sum=LOAD(p)*LOAD(B0+k);
@@ -367,7 +405,9 @@ void ImplicitHConvolution::mult(double *a, double **B, unsigned int offset)
           sum += p[i*stride]*B[i][stop];
         *p=sum;
       }
-#else        
+      )
+#else
+    PARALLEL(
       for(unsigned int k=offset; k <= stop; ++k) {
         double *p=A+k;
         double sum=(*p)*B0[k];
@@ -375,8 +415,9 @@ void ImplicitHConvolution::mult(double *a, double **B, unsigned int offset)
           sum += p[i*stride]*B[i][k];
         *p=sum;
       }
-#endif        
       )
+#endif
+
       }
 }
 
@@ -626,13 +667,10 @@ void ImplicitHConvolution::convolve(Complex **F, Complex **G,
   Vec Ninv=LOAD(ninv);
   Vec Mhalf=LOAD(-0.5);
   Vec HSqrt3=LOAD(hsqrt3);
-#endif
-  
   PARALLEL(
     for(unsigned int K=0; K < start; K += s) {
       Complex *ZetaL0=ZetaL-K;
       unsigned int stop=min(K+s,start);
-#ifdef __SSE2__      
       Vec Zeta=Ninv*LOAD(ZetaH+K/s);
       Vec X=UNPACKL(Zeta,Zeta);
       Vec Y=UNPACKH(CONJ(Zeta),Zeta);
@@ -646,8 +684,14 @@ void ImplicitHConvolution::convolve(Complex **F, Complex **G,
         Vec S=F1+F2;
         STORE(p,F0+S);
         STORE(s,CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2));
-      }
+      }  
+    }
+    )
 #else
+  PARALLEL(
+    for(unsigned int K=0; K < start; K += s) {
+      Complex *ZetaL0=ZetaL-K;
+      unsigned int stop=min(K+s,start);
       Complex *p=ZetaH+K/s;
       double Hre=ninv*p->re;
       double Him=ninv*p->im;
@@ -672,10 +716,9 @@ void ImplicitHConvolution::convolve(Complex **F, Complex **G,
         s->re=f0re-0.5*sre-hsqrt3*(f1im-f2im);
         s->im=-f0im+0.5*sim-hsqrt3*(f1re-f2re);
       }
-#endif    
     }
     )
-    
+#endif
     unsigned int a=start/s;
   Complex Zetak0=ninv*ZetaH[a]*ZetaL[start-s*a];
   S *= ninv;
@@ -690,23 +733,33 @@ void ImplicitHConvolution::convolve(Complex **F, Complex **G,
 
 void fftpad::backwards(Complex *f, Complex *u)
 {
+#ifdef __SSE2__
   PARALLEL(
     for(unsigned int K=0; K < m; K += s) {
       Complex *ZetaL0=ZetaL-K;
       unsigned int stop=min(K+s,m);
-#ifdef __SSE2__      
-      Vec H=LOAD(ZetaH+K/s);
+      Complex H=ZetaH[K/s];
       for(unsigned int k=K; k < stop; ++k) {
-        Vec Zetak=ZMULT(H,LOAD(ZetaL0+k));
-        Vec X=UNPACKL(Zetak,Zetak);
-        Vec Y=UNPACKH(CONJ(Zetak),Zetak);
+        Complex L=ZetaL0[k];
+        double Re=H.re*L.re-H.im*L.im;
+        double Im=H.re*L.im+H.im*L.re;
         unsigned int kstride=k*stride;
         Complex *fk=f+kstride;
         Complex *uk=u+kstride;
-        for(unsigned int i=0; i < M; ++i)
-          STORE(uk+i,ZMULT(X,Y,LOAD(fk+i)));
-      }
+        for(unsigned int i=0; i < M; ++i) {
+          Complex *p=uk+i;
+          Complex fki=*(fk+i);
+          p->re=Re*fki.re-Im*fki.im;
+          p->im=Im*fki.re+Re*fki.im;
+        }
+      }  
+    }
+    )
 #else
+  PARALLEL(
+    for(unsigned int K=0; K < m; K += s) {
+      Complex *ZetaL0=ZetaL-K;
+      unsigned int stop=min(K+s,m);
       Complex H=ZetaH[K/s];
       for(unsigned int k=K; k < stop; ++k) {
         Complex L=ZetaL0[k];
@@ -722,9 +775,9 @@ void fftpad::backwards(Complex *f, Complex *u)
           p->im=Im*fki.re+Re*fki.im;
         }
       }
-#endif      
     }
     )
+#endif
   
     Backwards->fft(f);
   Backwards->fft(u);
@@ -734,16 +787,13 @@ void fftpad::forwards(Complex *f, Complex *u)
 {
   Forwards->fft(f);
   Forwards->fft(u);
-
   double ninv=0.5/m;
 #ifdef __SSE2__
   Vec Ninv=LOAD(ninv);
-#endif    
   PARALLEL(
     for(unsigned int K=0; K < m; K += s) {
       Complex *ZetaL0=ZetaL-K;
       unsigned int stop=min(K+s,m);
-#ifdef __SSE2__      
       Vec H=Ninv*LOAD(ZetaH+K/s);
       for(unsigned int k=K; k < stop; ++k) {
         Vec Zetak=ZMULT(H,LOAD(ZetaL0+k));
@@ -757,7 +807,13 @@ void fftpad::forwards(Complex *f, Complex *u)
           STORE(p,LOAD(p)*Ninv+ZMULT(X,Y,LOAD(uk+i)));
         }
       }
+    }
+    )
 #else
+  PARALLEL(
+    for(unsigned int K=0; K < m; K += s) {
+      Complex *ZetaL0=ZetaL-K;
+      unsigned int stop=min(K+s,m);
       Complex H=ninv*ZetaH[K/s];
       for(unsigned int k=K; k < stop; ++k) {
         Complex L=ZetaL0[k];
@@ -774,9 +830,9 @@ void fftpad::forwards(Complex *f, Complex *u)
           p->im=ninv*fki.im-Im*fkm.re+Re*fkm.im;
         }
       }
-#endif     
     }
     )
+#endif
     }
 
 void fft0pad::backwards(Complex *f, Complex *u)
@@ -969,34 +1025,38 @@ void ImplicitHTConvolution::mult(double *a, double *b, double **C,
   unsigned int twom=2*m;
   if(M == 1) { // a[k]=a[k]*b[k]*c[k]
     double *C0=C[0]+offset;
+#ifdef __SSE2__
     PARALLEL(
-#ifdef __SSE2__      
       for(unsigned int k=0; k < twom; k += 2) {
         double *ak=a+k;
         STORE(ak,LOAD(ak)*LOAD(b+k)*LOAD(C0+k));
       }
-#else  
+      )
+#else
+    PARALLEL(
       for(unsigned int k=0; k < twom; ++k)
         a[k] *= b[k]*C0[k];
-#endif        
       )
+#endif
       } else if(M == 2) {
     double *a1=a+stride;
     double *b1=b+stride;
     double *C0=C[0]+offset;
     double *C1=C[1]+offset;
+#ifdef __SSE2__
     PARALLEL(
-#ifdef __SSE2__        
       for(unsigned int k=0; k < twom; k += 2) {
         double *ak=a+k;
         STORE(ak,LOAD(ak)*LOAD(b+k)*LOAD(C0+k)+
               LOAD(a1+k)*LOAD(b1+k)*LOAD(C1+k));
-      }
-#else        
+      }  
+      )
+#else
+    PARALLEL(
       for(unsigned int k=0; k < twom; ++k)
         a[k]=a[k]*b[k]*C0[k]+a1[k]*b1[k]*C1[k];
-#endif        
       )
+#endif
       } else if(M == 3) {
     double *a1=a+stride;
     double *a2=a1+stride;
@@ -1005,26 +1065,29 @@ void ImplicitHTConvolution::mult(double *a, double *b, double **C,
     double *C0=C[0]+offset;
     double *C1=C[1]+offset;
     double *C2=C[2]+offset;
+#ifdef __SSE2__
     PARALLEL(
-#ifdef __SSE2__        
       for(unsigned int k=0; k < twom; k += 2) {
         double *ak=a+k;
         STORE(ak,LOAD(ak)*LOAD(b+k)*LOAD(C0+k)+
               LOAD(a1+k)*LOAD(b1+k)*LOAD(C1+k)+
               LOAD(a2+k)*LOAD(b2+k)*LOAD(C2+k));
       }
-#else        
+      )
+#else
+    PARALLEL(
+      
       for(unsigned int k=0; k < twom; ++k)
         a[k]=a[k]*b[k]*C0[k]+a1[k]*b1[k]*C1[k]+a2[k]*b2[k]*C2[k];
-#endif        
       )
+#endif
       } else {
     double *A=a-offset;
     double *B=b-offset;
     double *C0=C[0];
     unsigned int stop=twom+offset;
-    PARALLEL(
-#ifdef __SSE2__        
+#ifdef __SSE2__
+    PARALLEL(   
       for(unsigned int k=offset; k < stop; k += 2) {
         double *p=A+k;
         double *q=B+k;
@@ -1034,8 +1097,10 @@ void ImplicitHTConvolution::mult(double *a, double *b, double **C,
           sum += LOAD(p+istride)*LOAD(q+istride)*LOAD(C[i]+k);
         }
         STORE(p,sum);
-      }
-#else        
+      }   
+      )
+#else
+    PARALLEL(
       for(unsigned int k=offset; k < stop; ++k) {
         double *p=A+k;
         double *q=B+k;
@@ -1046,8 +1111,8 @@ void ImplicitHTConvolution::mult(double *a, double *b, double **C,
         }
         *p=sum;
       }
-#endif        
       )
+#endif
       }
 }
 
@@ -1072,11 +1137,11 @@ void ImplicitHTConvolution::convolve(Complex **F, Complex **G, Complex **H,
       vi += m1;
       wi += m1;
     }
+#ifdef __SSE2__
     PARALLEL(
       for(unsigned int K=0; K < m; K += s) {
         Complex *ZetaL0=ZetaL-K;
         unsigned int stop=min(K+s,m);
-#ifdef __SSE2__      
         Vec Zeta=LOAD(ZetaH+K/s);
         Vec X=UNPACKL(Zeta,Zeta);
         Vec Y=UNPACKH(CONJ(Zeta),Zeta);
@@ -1089,7 +1154,13 @@ void ImplicitHTConvolution::convolve(Complex **F, Complex **G, Complex **H,
           STORE(vi+k,ZMULT(Zetak,Gk));
           STORE(wi+k,ZMULT(Zetak,Hk));
         }
+      }  
+      )
 #else
+    PARALLEL(
+      for(unsigned int K=0; K < m; K += s) {
+        Complex *ZetaL0=ZetaL-K;
+        unsigned int stop=min(K+s,m);
         Complex *p=ZetaH+K/s;
         double Hre=p->re;
         double Him=p->im;
@@ -1110,10 +1181,9 @@ void ImplicitHTConvolution::convolve(Complex **F, Complex **G, Complex **H,
           R->re=Re*hk.re-Im*hk.im;
           R->im=Im*hk.re+Re*hk.im;
         }
-#endif      
       }  
       )
-  
+#endif
       ui[m]=0.0;
     vi[m]=0.0;
     wi[m]=0.0;
@@ -1152,12 +1222,10 @@ void ImplicitHTConvolution::convolve(Complex **F, Complex **G, Complex **H,
   double ninv=0.25/m;
 #ifdef __SSE2__      
   Vec Ninv=LOAD(ninv);
-#endif    
   PARALLEL(
     for(unsigned int K=0; K < m; K += s) {
       Complex *ZetaL0=ZetaL-K;
       unsigned int stop=min(K+s,m);
-#ifdef __SSE2__
       Vec Zeta=Ninv*LOAD(ZetaH+K/s);
       Vec X=UNPACKL(Zeta,Zeta);
       Vec Y=UNPACKH(CONJ(Zeta),Zeta);
@@ -1166,7 +1234,13 @@ void ImplicitHTConvolution::convolve(Complex **F, Complex **G, Complex **H,
         Complex *fk=f+k;
         STORE(fk,ZMULTC(Zetak,LOAD(u+k))+Ninv*LOAD(fk));
       }
-#else      
+    }
+    )
+#else
+  PARALLEL(
+    for(unsigned int K=0; K < m; K += s) {
+      Complex *ZetaL0=ZetaL-K;
+      unsigned int stop=min(K+s,m);
       Complex *p=ZetaH+K/s;
       double Hre=ninv*p->re;
       double Him=ninv*p->im;
@@ -1180,38 +1254,40 @@ void ImplicitHTConvolution::convolve(Complex **F, Complex **G, Complex **H,
         p->re=ninv*fk.re+Re*fkm.re+Im*fkm.im;
         p->im=ninv*fk.im-Im*fkm.re+Re*fkm.im;
       }
-#endif      
     }
     )
+#endif
     }
 
 // a[k]=a[k]*b[k]*b[k]
 void ImplicitHFGGConvolution::mult(double *a, double *b)
 {
   unsigned int twom=2*m;
+#ifdef __SSE2__
   PARALLEL(
-#ifdef __SSE2__      
     for(unsigned int k=0; k < twom; k += 2) {
       double *ak=a+k;
       STORE(ak,LOAD(ak)*LOAD(ak)*LOAD(b+k));
     }
-#else  
+    )
+#else
+  PARALLEL(
     for(unsigned int k=0; k < twom; ++k) {
       double ak=a[k];
       a[k]=ak*ak*b[k];
     }
-#endif        
     )
+#endif
     }
 
 void ImplicitHFGGConvolution::convolve(Complex *f, Complex *g,
                                        Complex *u, Complex *v)
 {
+#ifdef __SSE2__
   PARALLEL(
     for(unsigned int K=0; K < m; K += s) {
       Complex *ZetaL0=ZetaL-K;
       unsigned int stop=min(K+s,m);
-#ifdef __SSE2__      
       Vec Zeta=LOAD(ZetaH+K/s);
       Vec X=UNPACKL(Zeta,Zeta);
       Vec Y=UNPACKH(CONJ(Zeta),Zeta);
@@ -1222,7 +1298,13 @@ void ImplicitHFGGConvolution::convolve(Complex *f, Complex *g,
         STORE(u+k,ZMULT(Zetak,Fk));
         STORE(v+k,ZMULT(Zetak,Gk));
       }
+    }  
+    )
 #else
+  PARALLEL(
+    for(unsigned int K=0; K < m; K += s) {
+      Complex *ZetaL0=ZetaL-K;
+      unsigned int stop=min(K+s,m);
       Complex *p=ZetaH+K/s;
       double Hre=p->re;
       double Him=p->im;
@@ -1239,9 +1321,10 @@ void ImplicitHFGGConvolution::convolve(Complex *f, Complex *g,
         Q->re=Re*gk.re-Im*gk.im;
         Q->im=Im*gk.re+Re*gk.im;
       }
-#endif      
     }  
     )
+#endif
+
   
     u[m]=0.0;
   v[m]=0.0;
@@ -1264,12 +1347,10 @@ void ImplicitHFGGConvolution::convolve(Complex *f, Complex *g,
   double ninv=0.25/m;
 #ifdef __SSE2__      
   Vec Ninv=LOAD(ninv);
-#endif    
   PARALLEL(
     for(unsigned int K=0; K < m; K += s) {
       Complex *ZetaL0=ZetaL-K;
       unsigned int stop=min(K+s,m);
-#ifdef __SSE2__
       Vec Zeta=Ninv*LOAD(ZetaH+K/s);
       Vec X=UNPACKL(Zeta,Zeta);
       Vec Y=UNPACKH(CONJ(Zeta),Zeta);
@@ -1278,7 +1359,13 @@ void ImplicitHFGGConvolution::convolve(Complex *f, Complex *g,
         Complex *fk=f+k;
         STORE(fk,ZMULTC(Zetak,LOAD(u+k))+Ninv*LOAD(fk));
       }
-#else      
+    }
+    )
+#else
+  PARALLEL(
+    for(unsigned int K=0; K < m; K += s) {
+      Complex *ZetaL0=ZetaL-K;
+      unsigned int stop=min(K+s,m);
       Complex *p=ZetaH+K/s;
       double Hre=ninv*p->re;
       double Him=ninv*p->im;
@@ -1292,44 +1379,52 @@ void ImplicitHFGGConvolution::convolve(Complex *f, Complex *g,
         p->re=ninv*fk.re+Re*fkm.re+Im*fkm.im;
         p->im=ninv*fk.im-Im*fkm.re+Re*fkm.im;
       }
-#endif      
     }
     )
+#endif
     }
 
 // a[k]=a[k]^3
 void ImplicitHFFFConvolution::mult(double *a)
 {
   unsigned int twom=2*m;
+#ifdef __SSE2__
   PARALLEL(
-#ifdef __SSE2__      
     for(unsigned int k=0; k < twom; k += 2) {
       double *p=a+k;
       Vec ak=LOAD(p);
       STORE(p,ak*ak*ak);
-    }
-#else  
+    }        
+    )
+#else
+  PARALLEL(
     for(unsigned int k=0; k < twom; ++k) {
       double ak=a[k];
       a[k]=ak*ak*ak;
     }
-#endif        
     )
+#endif
     }
   
 void ImplicitHFFFConvolution::convolve(Complex *f, Complex *u)
 {
+#ifdef __SSE2__
   PARALLEL(
     for(unsigned int K=0; K < m; K += s) {
       Complex *ZetaL0=ZetaL-K;
       unsigned int stop=min(K+s,m);
-#ifdef __SSE2__      
       Vec Zeta=LOAD(ZetaH+K/s);
       Vec X=UNPACKL(Zeta,Zeta);
       Vec Y=UNPACKH(CONJ(Zeta),Zeta);
       for(unsigned int k=K; k < stop; ++k)
         STORE(u+k,ZMULT(ZMULT(X,Y,LOAD(ZetaL0+k)),LOAD(f+k)));
+    }  
+    )
 #else
+  PARALLEL(
+    for(unsigned int K=0; K < m; K += s) {
+      Complex *ZetaL0=ZetaL-K;
+      unsigned int stop=min(K+s,m);
       Complex *p=ZetaH+K/s;
       double Hre=p->re;
       double Him=p->im;
@@ -1342,10 +1437,9 @@ void ImplicitHFFFConvolution::convolve(Complex *f, Complex *u)
         P->re=Re*fk.re-Im*fk.im;
         P->im=Im*fk.re+Re*fk.im;
       }
-#endif      
     }  
     )
-  
+#endif  
     u[m]=0.0;
   cr->fft(u);
   mult((double *) u);
@@ -1358,20 +1452,24 @@ void ImplicitHFFFConvolution::convolve(Complex *f, Complex *u)
   double ninv=0.25/m;
 #ifdef __SSE2__      
   Vec Ninv=LOAD(ninv);
-#endif    
   PARALLEL(
     for(unsigned int K=0; K < m; K += s) {
       Complex *ZetaL0=ZetaL-K;
       unsigned int stop=min(K+s,m);
-#ifdef __SSE2__
       Vec Zeta=Ninv*LOAD(ZetaH+K/s);
       Vec X=UNPACKL(Zeta,Zeta);
       Vec Y=UNPACKH(CONJ(Zeta),Zeta);
       for(unsigned int k=K; k < stop; ++k) {
         Complex *p=f+k;
         STORE(p,ZMULTC(ZMULT(X,Y,LOAD(ZetaL0+k)),LOAD(u+k))+Ninv*LOAD(p));
-      }
-#else      
+      } 
+    }
+    )
+#else
+  PARALLEL(
+    for(unsigned int K=0; K < m; K += s) {
+      Complex *ZetaL0=ZetaL-K;
+      unsigned int stop=min(K+s,m);
       Complex *p=ZetaH+K/s;
       double Hre=ninv*p->re;
       double Him=ninv*p->im;
@@ -1385,9 +1483,9 @@ void ImplicitHFFFConvolution::convolve(Complex *f, Complex *u)
         p->re=ninv*fk.re+Re*fkm.re+Im*fkm.im;
         p->im=ninv*fk.im-Im*fkm.re+Re*fkm.im;
       }
-#endif      
     }
     )
+#endif
     }
 
 
@@ -1399,11 +1497,11 @@ void fft0bipad::backwards(Complex *f, Complex *u)
     u[i]=0.0;
     
   unsigned int twom=2*m;
+#ifdef __SSE2__
   PARALLEL(
     for(unsigned int K=0; K < twom; K += s) {
       Complex *ZetaL0=ZetaL-K;
       unsigned int stop=min(K+s,twom);
-#ifdef __SSE2__      
       Vec H=-LOAD(ZetaH+K/s);
       for(unsigned int k=max(1,K); k < stop; ++k) {
         Vec Zetak=ZMULT(H,LOAD(ZetaL0+k));
@@ -1415,7 +1513,13 @@ void fft0bipad::backwards(Complex *f, Complex *u)
         for(unsigned int i=0; i < M; ++i)
           STORE(uk+i,ZMULTI(X,Y,LOAD(fk+i)));
       }
+    }
+    )
 #else
+  PARALLEL(
+    for(unsigned int K=0; K < twom; K += s) {
+      Complex *ZetaL0=ZetaL-K;
+      unsigned int stop=min(K+s,twom);
       Complex H=ZetaH[K/s];
       for(unsigned int k=max(1,K); k < stop; ++k) {
         Complex L=ZetaL0[k];
@@ -1431,9 +1535,9 @@ void fft0bipad::backwards(Complex *f, Complex *u)
           p->im=Im*fki.re+Re*fki.im;
         }
       }
-#endif      
     }
     )
+#endif
     
     Backwards->fft(f);
   Backwards->fft(u);
@@ -1445,15 +1549,13 @@ void fft0bipad::forwards(Complex *f, Complex *u)
   Forwards->fft(u);
 
   double ninv=0.25/m;
+  unsigned int twom=2*m;
 #ifdef __SSE2__
   Vec Ninv=LOAD(ninv);
-#endif    
-  unsigned int twom=2*m;
   PARALLEL(
     for(unsigned int K=0; K < twom; K += s) {
       Complex *ZetaL0=ZetaL-K;
       unsigned int stop=min(K+s,twom);
-#ifdef __SSE2__      
       Vec H=Ninv*LOAD(ZetaH+K/s);
       for(unsigned int k=max(1,K); k < stop; ++k) {
         Vec Zetak=ZMULT(H,LOAD(ZetaL0+k));
@@ -1467,7 +1569,13 @@ void fft0bipad::forwards(Complex *f, Complex *u)
           STORE(p,LOAD(p)*Ninv+ZMULTI(X,Y,LOAD(uk+i)));
         }
       }
-#else        
+    }
+    )
+#else
+  PARALLEL(
+    for(unsigned int K=0; K < twom; K += s) {
+      Complex *ZetaL0=ZetaL-K;
+      unsigned int stop=min(K+s,twom);
       Complex H=ninv*ZetaH[K/s];
       for(unsigned int k=max(1,K); k < stop; ++k) {
         Complex L=ZetaL0[k];
@@ -1484,9 +1592,9 @@ void fft0bipad::forwards(Complex *f, Complex *u)
           p->im=ninv*fki.im+Im*fkm.re+Re*fkm.im;
         }
       }
-#endif     
     }
     )
+#endif
     }
 
 }

@@ -47,19 +47,17 @@ void ExplicitConvolution::convolve(Complex *f, Complex *g)
       
   double ninv=1.0/n;
 #ifdef __SSE2__      
-  Vec Ninv=LOAD(ninv);
-#endif
-  
+  Vec Ninv=LOAD(ninv);  
   PARALLEL(
-#ifdef __SSE2__      
     for(unsigned int k=0; k < n; ++k)
       STORE(f+k,Ninv*ZMULT(LOAD(f+k),LOAD(g+k)));
-#else    
+    )
+#else
+  PARALLEL(
     for(unsigned int k=0; k < n; ++k)
       f[k] *= g[k]*ninv;
-#endif    
     )
-        
+#endif
     forwards(f);
 }
 
@@ -152,17 +150,16 @@ void ExplicitConvolution2::convolve(Complex *f, Complex *g)
   double ninv=1.0/n;
 #ifdef __SSE2__      
   Vec Ninv=LOAD(ninv);
-#endif  
   PARALLEL(
-#ifdef __SSE2__      
     for(unsigned int k=0; k < n; ++k)
       STORE(f+k,Ninv*ZMULT(LOAD(f+k),LOAD(g+k)));
-#else    
+    )
+#else
+  PARALLEL(
     for(unsigned int k=0; k < n; ++k)
       f[k] *= g[k]*ninv;
-#endif    
     )
-        
+#endif        
     forwards(f);
 }
 
@@ -356,19 +353,17 @@ void ExplicitConvolution3::convolve(Complex *f, Complex *g)
   unsigned int n=nx*ny*nz;
   double ninv=1.0/n;
 #ifdef __SSE2__      
-  Vec Ninv=LOAD(ninv);
-#endif
-  
+  Vec Ninv=LOAD(ninv);  
   PARALLEL(
-    for(unsigned int k=0; k < n; ++k) {
-#ifdef __SSE2__      
+    for(unsigned int k=0; k < n; ++k)
       STORE(f+k,Ninv*ZMULT(LOAD(f+k),LOAD(g+k)));
-#else    
-      f[k] *= g[k]*ninv;
-#endif    
-    }
     )
-    
+#else
+  PARALLEL(
+    for(unsigned int k=0; k < n; ++k)
+      f[k] *= g[k]*ninv;
+    )
+#endif    
     forwards(f);
 }
 
