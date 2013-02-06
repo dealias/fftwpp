@@ -417,7 +417,6 @@ void ImplicitHConvolution::mult(double *a, double **B, unsigned int offset)
       }
       )
 #endif
-
       }
 }
 
@@ -719,6 +718,7 @@ void ImplicitHConvolution::convolve(Complex **F, Complex **G,
     }
     )
 #endif
+    
     unsigned int a=start/s;
   Complex Zetak0=ninv*ZetaH[a]*ZetaL[start-s*a];
   S *= ninv;
@@ -738,21 +738,17 @@ void fftpad::backwards(Complex *f, Complex *u)
     for(unsigned int K=0; K < m; K += s) {
       Complex *ZetaL0=ZetaL-K;
       unsigned int stop=min(K+s,m);
-      Complex H=ZetaH[K/s];
+      Vec H=LOAD(ZetaH+K/s);
       for(unsigned int k=K; k < stop; ++k) {
-        Complex L=ZetaL0[k];
-        double Re=H.re*L.re-H.im*L.im;
-        double Im=H.re*L.im+H.im*L.re;
+        Vec Zetak=ZMULT(H,LOAD(ZetaL0+k));
+        Vec X=UNPACKL(Zetak,Zetak);
+        Vec Y=UNPACKH(CONJ(Zetak),Zetak);
         unsigned int kstride=k*stride;
         Complex *fk=f+kstride;
         Complex *uk=u+kstride;
-        for(unsigned int i=0; i < M; ++i) {
-          Complex *p=uk+i;
-          Complex fki=*(fk+i);
-          p->re=Re*fki.re-Im*fki.im;
-          p->im=Im*fki.re+Re*fki.im;
-        }
-      }  
+        for(unsigned int i=0; i < M; ++i)
+          STORE(uk+i,ZMULT(X,Y,LOAD(fk+i)));
+      }
     }
     )
 #else
@@ -787,6 +783,7 @@ void fftpad::forwards(Complex *f, Complex *u)
 {
   Forwards->fft(f);
   Forwards->fft(u);
+  
   double ninv=0.5/m;
 #ifdef __SSE2__
   Vec Ninv=LOAD(ninv);
@@ -1076,7 +1073,6 @@ void ImplicitHTConvolution::mult(double *a, double *b, double **C,
       )
 #else
     PARALLEL(
-      
       for(unsigned int k=0; k < twom; ++k)
         a[k]=a[k]*b[k]*C0[k]+a1[k]*b1[k]*C1[k]+a2[k]*b2[k]*C2[k];
       )
@@ -1184,6 +1180,7 @@ void ImplicitHTConvolution::convolve(Complex **F, Complex **G, Complex **H,
       }  
       )
 #endif
+      
       ui[m]=0.0;
     vi[m]=0.0;
     wi[m]=0.0;
@@ -1325,7 +1322,6 @@ void ImplicitHFGGConvolution::convolve(Complex *f, Complex *g,
     )
 #endif
 
-  
     u[m]=0.0;
   v[m]=0.0;
     
@@ -1440,6 +1436,7 @@ void ImplicitHFFFConvolution::convolve(Complex *f, Complex *u)
     }  
     )
 #endif  
+    
     u[m]=0.0;
   cr->fft(u);
   mult((double *) u);
@@ -1487,7 +1484,6 @@ void ImplicitHFFFConvolution::convolve(Complex *f, Complex *u)
     )
 #endif
     }
-
 
 void fft0bipad::backwards(Complex *f, Complex *u)
 {
