@@ -1,5 +1,6 @@
 #include "mpiconvolution.h"
 #include "utils.h"
+#include "mpiutils.h"
 
 using namespace std;
 using namespace fftwpp;
@@ -39,12 +40,14 @@ int main(int argc, char* argv[])
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif
+  bool dohash=false;
+  int retval=0;
   
 #ifdef __GNUC__ 
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"heiptM:N:m:x:y:n:T:");
+    int c = getopt(argc,argv,"heipHM:N:m:x:y:n:T:");
     if (c == -1) break;
                 
     switch (c) {
@@ -64,6 +67,9 @@ int main(int argc, char* argv[])
         Implicit=false;
         Pruned=true;
         break;
+      case 'H':
+        dohash=true;
+	break;
       case 'M':
         M=atoi(optarg);
         break;
@@ -157,6 +163,20 @@ int main(int argc, char* argv[])
     }
     if(nx*my < outlimit) 
       show(f,nx,d.y,group);
+
+    // check if the hash of the rounded output matches a known value
+    if(dohash) {
+      int hashval=hash(f,mx,d.y,group);
+      if(group.rank == 0) cout << hashval << endl;
+      if(mx == 4 && my == 4) {
+	if(hashval != -268659210) {
+	  retval=1;
+	  if(group.rank == 0) cout << "error: hash does not match" << endl;
+	} else {
+	  if(group.rank == 0) cout << "hash value OK." << endl;
+	}
+      }
+    }
     
     deleteAlign(g);
     deleteAlign(f);
@@ -166,5 +186,5 @@ int main(int argc, char* argv[])
   
   MPI_Finalize();
   
-  return 0;
+  return retval;
 }
