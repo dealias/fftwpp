@@ -38,7 +38,7 @@ vpath %.cc ../
 
 FFTW=fftw++
 FILES=cconv2 conv2 cconv3 conv3
-EXTRA=$(FFTW) convolution mpiconvolution mpiutils
+EXTRA=$(FFTW) convolution mpiutils
 ALL=$(FILES) $(EXTRA)
 
 all: $(FILES)
