@@ -3,17 +3,18 @@
 
 #include <iostream>
 #include "seconds.h"
-#include <getopt.h>
 #include "timing.h"
  
 #ifdef _WIN32
-
+#include "getopt.h"
 inline double cbrt(double x) 
 {
   if(x == 0.0) return 0.0;
   static double third=1.0/3.0;
   return x > 0.0 ? exp(third*log(x)) : -exp(third*log(-x));
 }
+#else
+#include <getopt.h>
 #endif
 
 inline void usage(int n, bool test=false, bool Explicit=true)
