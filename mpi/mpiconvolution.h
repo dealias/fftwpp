@@ -261,7 +261,8 @@ public:
                                    d.communicator,FFTW_MPI_TRANSPOSED_IN);
     if(!intranspose) transposeError("inH2");
     uintranspose=
-      fftw_mpi_plan_many_transpose(my,mx1,2,du.block,0,(double*) u2,(double*) u2,
+      fftw_mpi_plan_many_transpose(my,mx1,2,du.block,0,
+				   (double*) u2,(double*) u2,
                                    du.communicator,FFTW_MPI_TRANSPOSED_IN);
     if(!uintranspose) transposeError("uinH2");
     outtranspose=
@@ -269,7 +270,8 @@ public:
                                    d.communicator,FFTW_MPI_TRANSPOSED_OUT);
     if(!outtranspose) transposeError("outH2");
     uouttranspose=
-      fftw_mpi_plan_many_transpose(mx1,my,2,0,du.block,(double*) u2,(double*) u2,
+      fftw_mpi_plan_many_transpose(mx1,my,2,0,du.block,
+				   (double*) u2,(double*) u2,
                                    du.communicator,FFTW_MPI_TRANSPOSED_OUT);
     if(!uouttranspose) transposeError("uoutH2");
     SaveWisdom(d.communicator);
@@ -328,7 +330,8 @@ public:
   // F and G are distinct pointers to M distinct data blocks each of size 
   // (2mx-1)*my, shifted by offset (contents not preserved).
   // The output is returned in F[0].
-  void convolve(Complex **F, Complex **G, Complex ***U, Complex **v, Complex **w,
+  void convolve(Complex **F, Complex **G, Complex ***U, 
+		Complex **v, Complex **w,
                 Complex **U2, Complex **V2, bool symmetrize=true,
                 unsigned int offset=0) {
     Complex *u2=U2[0];
@@ -608,7 +611,8 @@ public:
       uouttranspose=
         fftw_mpi_plan_many_transpose(mx1,d.ny,2*du.z,0,du.yblock,
                                      (double*) u3,(double*) u3,
-                                     du.xy.communicator,FFTW_MPI_TRANSPOSED_OUT);
+                                     du.xy.communicator,
+				     FFTW_MPI_TRANSPOSED_OUT);
       if(!uouttranspose) transposeError("uoutH3");
       SaveWisdom(d.xy.communicator);
     }
@@ -729,104 +733,6 @@ public:
     convolve(&f,&g,symmetrize);
   }
 };
-
-inline void show(Complex *f, unsigned int nx, unsigned int ny,
-                 const MPIgroup& group)
-{ 
-  MPI_Status stat;
-  
-  if(group.rank == 0) {
-    std::cout << "process " << 0 << ":" <<  std::endl;
-    unsigned c=0;
-    for(unsigned int i=0; i < nx; i++) {
-      for(unsigned int j=0; j < ny; j++) {
-        std::cout << f[c++] << "\t";
-      }
-      std::cout << std::endl;
-    }
-    
-    for(int p=1; p < group.size; p++) {
-      int source=p, tag=p;
-      unsigned int pdims[2];
-      MPI_Recv(&pdims,2,MPI_UNSIGNED,source,tag,group.active,&stat);
-
-      unsigned int px=pdims[0], py=pdims[1];
-      unsigned int n=px*py;
-      Complex *C=new Complex[n];
-      tag += group.size;
-      MPI_Recv(C,2*n,MPI_DOUBLE,source,tag,group.active,&stat);
-      
-      std::cout << "process " << p << ":" <<  std::endl;
-      unsigned int c=0;
-      for(unsigned int i=0; i < px; i++) {
-        for(unsigned int j=0; j < py; j++) {
-          std::cout << C[c++] << "\t";
-        }
-        std::cout << std::endl;
-      }
-      delete [] C;
-    }
-  } else {
-    int dest=0, tag=group.rank;
-    unsigned int dims[]={nx,ny};
-    MPI_Send(&dims,2,MPI_UNSIGNED,dest,tag,group.active);
-    int n=nx*ny;
-    tag += group.size;
-    MPI_Send(f,2*n,MPI_DOUBLE,dest,tag,group.active);
-  }
-}
-  
-inline void show(Complex *f, unsigned int nx, unsigned int ny,
-                 unsigned int nz, const MPIgroup& group)
-{
-  MPI_Status stat;
-  
-  if(group.rank ==0) {
-    std::cout << "process " << 0 << ":" <<  std::endl;
-    unsigned c=0;
-    for(unsigned int i=0; i < nx; i++) {
-      for(unsigned int j=0; j < ny; j++) {
-        for(unsigned int k=0; k < nz; k++) {
-          std::cout << f[c++] << "\t";
-        }
-        std::cout << std::endl;
-      }
-      std::cout << std::endl;
-    }
-    
-    for(int p=1; p < group.size; p++) {
-      int source=p, tag=p;
-      unsigned int pdims[3];
-      MPI_Recv(&pdims,3,MPI_UNSIGNED,source,tag,group.active,&stat);
-
-      unsigned int px=pdims[0], py=pdims[1], pz=pdims[2];
-      int n=px*pz*pz;
-      Complex *C=new Complex[n];
-      tag += group.size;
-      MPI_Recv(C,2*n,MPI_DOUBLE,source,tag,group.active,&stat);
-      
-      std::cout << "process " << p << ":" <<  std::endl;
-      unsigned int c=0;
-      for(unsigned int i=0; i < px; i++) {
-        for(unsigned int j=0; j < py; j++) {
-          for(unsigned int k=0; k < pz; k++) {
-            std::cout << C[c++]  << "\t";
-          }
-          std::cout << std::endl;
-        }
-        std::cout << std::endl;
-      }
-      delete [] C;
-    }
-  } else {
-    int dest=0, tag=group.rank;
-    unsigned int dims[]={nx,ny,nz};
-    MPI_Send(&dims,3,MPI_UNSIGNED,dest,tag,group.active);
-    int n=nx*ny*nz;
-    tag += group.size;
-    MPI_Send(f,2*n,MPI_DOUBLE,dest,tag,group.active);
-  }
-}
 
 } // namespace fftwpp
 
