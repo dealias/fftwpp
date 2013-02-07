@@ -10,6 +10,10 @@ using namespace fftwpp;
 
 int main() 
 {
+#ifndef FFTWPP_SINGLE_THREAD
+  fftw::maxthreads=omp_get_max_threads();
+#endif
+
   unsigned int nx=4, ny=5, nz=6;
   size_t align=sizeof(Complex);
   

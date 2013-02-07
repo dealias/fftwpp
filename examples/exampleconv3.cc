@@ -37,7 +37,9 @@ inline void init(array3<Complex>& f, array3<Complex>& g, unsigned int M=1)
 
 int main(int argc, char* argv[])
 {
+#ifndef FFTWPP_SINGLE_THREAD
   fftw::maxthreads=omp_get_max_threads();
+#endif
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
