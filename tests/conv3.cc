@@ -60,10 +60,8 @@ unsigned int padding(unsigned int m)
 
 int main(int argc, char* argv[])
 {
-#ifndef FFTWPP_SINGLE_THREAD
-  fftw::maxthreads=omp_get_max_threads();
-#endif  
-
+  fftw::maxthreads=get_max_threads();
+  
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif  

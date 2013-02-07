@@ -39,6 +39,15 @@ inline int get_thread_num()
 #endif  
 }
 
+inline int get_max_threads() 
+{
+#ifdef FFTWPP_SINGLE_THREAD
+  return 0;
+#else
+  return omp_get_max_threads();
+#endif  
+}
+
 #ifndef __Complex_h__
 #include <complex>
 typedef std::complex<double> Complex;
