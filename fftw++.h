@@ -42,7 +42,7 @@ inline int get_thread_num()
 inline int get_max_threads() 
 {
 #ifdef FFTWPP_SINGLE_THREAD
-  return 0;
+  return 1;
 #else
   return omp_get_max_threads();
 #endif  
