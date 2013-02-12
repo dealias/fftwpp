@@ -2,38 +2,46 @@
 # Makefile for FFTW++ wrappers.
 #
 
-# compilers
+CXXFLAGS=-I.. -msse2 -mfpmath=sse -march=native -fPIC -DNDEBUG
+CFLAGS=-I.. -msse2 -mfpmath=sse -march=native -fPIC -DNDEBUG
 
-CC = g++
-C  = gcc
-F  = gfortran
-
-# flags
-CFLAGS  = -I.. #-I$HOME/opt/include
-#CFLAGS += -g -Wall 
-CFLAGS += -msse2 -mfpmath=sse -march=native
-CFLAGS += -fPIC
-CFLAGS += -DNDEBUG
-
-a:=$(shell which icpc 2>&1 | tail -c5)
-ifeq ($(a),icpc)
-CC = icc
-C  = icc
-F  = ifort 
-#CFLAGS=-O3 -ansi-alias -malign-double -fp-model fast=2 -openmp -I$(IDIR)
-CFLAGS += -openmp -Ofast 
-else
+# GNU compiler
+ifeq ($(shell $(CXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
+CXX=g++
+CC=gcc
+FC=gfortran
+CXXFLAGS+= -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
+	-fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native
 CFLAGS += -fopenmp
+FFLAGS = -fopenmp
 endif
 
+#Intel compiler
+ifeq ($(shell $(CXX) -v 2>&1 | head -c 4),icpc)
+CXX=icpc
+CC=icc
+FC=ifort
+CFLAGS += -openmp -Ofast
+CXXFLAGS += -openmp -Ofast
+FFLAGS = -openmp
+endif
 
-FFTWIDIR=/usr/local/include/
+#IBM compiler
+ifeq ($(shell $(CXX) -qversion 2>&1 | head -c 3),IBM)
+CXX=mpixlcxx_r
+CC=mpixlc_r
+FC=mpixlf90_r
+CXXFLAGS= -O3 -qsmp -I.. -I$(CPLUS_INCLUDE_PATH)
+CFLAGS= -O3 -qsmp 
+FFLGAS=-qsmp
+endif
 
-FFLAGS  = -I/usr/include #-I$HOME/opt/include
-FFLAGS += -fopenmp
+ifeq ($(strip $(LD_LIBRARY_PATH)),)
+else
+LDFLAGS +=-L$(LD_LIBRARY_PATH)
+endif
 
-LDFLAGS = -lfftw3 -lfftw3_omp -lm -lstdc++
-
+LDFLAGS += -lfftw3_omp -lfftw3 -lm -lstdc++
 
 ifeq ($(strip $(FORTRAN_INCLUDE_PATH)),)
 else
@@ -47,34 +55,34 @@ all: _fftwpp.so _chash.so cexample fexample
 # rules
 
 fftw++.o: ../fftw++.cc ../fftw++.h
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LDFLAGS)
 
 convolution.o: ../convolution.cc ../convolution.h fftw++.o
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LDFLAGS)
 
 cfftw++.o: cfftw++.cc cfftw++.h convolution.o fftw++.o
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LDFLAGS)
 
 chash.o: chash.cc chash.h
-	$(CC)  $(CFLAGS) -c -o $@ $<
+	$(CXX)  $(CXXFLAGS) -c -o $@ $< $(LDFLAGS)
 
 cexample: cexample.c cfftw++.o convolution.o fftw++.o chash.o
-	$(C) $(CFLAGS) -std=c99 -o $@ $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -std=c99 -o $@ $^ $(LDFLAGS)
 
 fftwpp.o: fftwpp.f90
-	$(F) -c -o $@ $<
+	$(FC)  $(FFLAGS) -c -o $@ $< $(LDFLAGS)
 
 fhash.o: fhash.f90
-	$(F) -c -o $@ $<
+	$(FC)  $(FFLAGS) -c -o $@ $< $(LDFLAGS)
 
 fexample: fexample.f90 fftwpp.o fhash.o cfftw++.o convolution.o fftw++.o chash.o
-	$(F) $(FFLAGS) -o $@ $^ $(LDFLAGS) -I$(FFTWIDIR) $(FIFLAGS)
+	$(FC) $(FFLAGS) -o $@ $^ $(FIFLAGS) $(LDFLAGS)
 
 _fftwpp.so: fftw++.o cfftw++.o convolution.o
-	$(CC) $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -shared -o $@ $^ $(LDFLAGS)
 
 _chash.so: chash.o
-	$(CC) $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -shared -o $@ $^ $(LDFLAGS)
 
 clean:
 	rm -f cexample fexample *.so *.pyc *.o *.h.gch *.mod
