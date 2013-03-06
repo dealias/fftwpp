@@ -12,7 +12,7 @@ do
 done
 
 start=6
-stop=11
+stop=10
 for i in cconv2 conv2 tconv2
 do
     echo $i:
@@ -20,7 +20,7 @@ do
 done
 
 start=2
-stop=8
+stop=6
 
 echo cconv3
 ./timing cconv3 $start $stop
