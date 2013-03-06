@@ -126,8 +126,25 @@ accomplished using FFTW's MPI transpose routine, which has been
 adapted to provide both 1D ("slab") and 2D ("pencil") decompositions
 in computing 3 dimensional convolutions.
 
-mpi/fftw contains comparison code using FFTW's parallel MPI transform
-and explicit padding.
+cconv2.cc and cconv3.cc are examples of two- and three-dimensional
+complex non-centered convolutions.
+
+conv2.cc and conv3.cc are examples of two- and three-dimensional
+Hermitian-symmetric complex centered convolutions.
+
+timing.py is a script which performs timing tests for mpi-based
+convolutions.
+
+pret.py is a python-based unit testing script which checks the hash
+value of the result of the default convolution.
+
+ignorance.sh is a script to remove lines containing fftw_mpi_transpose
+from widsom3.txt in order to get around a bug in FFTW 3.3.3's MPI
+transpose routine for problems with two points in at least one
+dimension.
+
+mpi/explicit contains comparison code using FFTW's parallel MPI
+transform and explicit padding.
 
 
 ########################## Test Programs ##########################
