@@ -7,10 +7,10 @@ barfactor=10;
 bool drawerrorbars=true;
 //drawerrorbars=false;
 
-string gtype=getstring("speed, mflops, or scaling","mflops");
+string gtype=getstring("time, mflops, scaling, or speedup","mflops");
 
 scale(Linear,Log);
-if(gtype == "speed")
+if(gtype == "time" || gtype == "speedup")
   scale(Log,Linear);
 if(gtype == "mflops")
   scale(Log,Log);
@@ -71,7 +71,7 @@ colorPen[2]=deepgreen;
 pen Lp=fontsize(8pt);
 
 real[] f(real[] x) {
-  if(gtype == "speed")
+  if(gtype == "time")
     return 1e-9*x^d*d*log(x)/log(2);
   if(gtype == "mflops")
     return 5*1e-6*x^d*d*log(x)/log(2);
@@ -80,16 +80,16 @@ real[] f(real[] x) {
 
 string D=d > 1 ? "^"+(string) d : "";
 
-if(gtype != "scaling") {
+if(gtype == "time" || gtype == "mflops") {
   for(int p=0; p < nn; ++p) {
     marker mark1=marker(scale(0.6mm)*polygon(3+p),Draw(Pen(p)+solid));
     if(gtype == "mflops")
       i[p] = f(mi[p])/i[p];
-    if(gtype == "speed")
+    if(gtype == "time")
       i[p] /= f(mi[p]);
     hi[p] /= f(mi[p]);
     li[p] /= f(mi[p]);
-    if(drawerrorbars && gtype == "speed")
+    if(drawerrorbars && gtype == "time")
       errorbars(mi[p],i[p],0*mi[p],hi[p],0*mi[p],li[p],Pen(p));
     draw(graph(mi[p],i[p],i[p] > 0),Pentype(p),
 	 Label(runnames[p],Pen(p)+Lp),mark1);
@@ -98,12 +98,27 @@ if(gtype != "scaling") {
   xaxis("$N$",BottomTop,LeftTicks);
   if(gtype=="mflops")
     yaxis("``mflops\": $5N"+D+"\log_2 N"+D+"$/time (ms)",LeftRight,RightTicks);
-  if(gtype=="speed")
+  if(gtype=="time")
     yaxis("time/($N"+D+"\log_2 N"+D+"$) (ns)",LeftRight,RightTicks);
 
-  
-
   label(name+": (MPI procs)$\times{}$(threads/proc)",point(N),5N);
+}
+
+if(gtype == "speedup") {
+  for(int p=1; p < nn; ++p) {
+    int penp=p-1;
+    marker mark1=marker(scale(0.6mm)*polygon(3+p),Draw(Pen(penp)+solid));
+    i[p] = i[0]/i[p];
+    draw(graph(mi[p],i[p],i[p] > 0),Pentype(penp),
+	 Label(runnames[p],Pen(penp)+Lp),mark1);
+  }
+  
+  xaxis("$N$",BottomTop,LeftTicks);
+
+  yaxis("relative speed",LeftRight,RightTicks);
+
+  label(name+": speedup relative to ",point(N),7N);
+  label(runnames[0],point(N),3N);
 }
 
 if(gtype == "scaling") {
@@ -171,6 +186,8 @@ if(gtype == "scaling") {
   }
   //label(minipage(lrunnames),point(S),10S+3W);
 }
+
+
 
 legendlinelength=0.6cm;
 legendmargin=5;
