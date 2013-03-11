@@ -9,10 +9,12 @@
 #include "cmult-sse2.h"
 
 using namespace std;
+
+#ifdef __SSE2__
 using namespace fftwpp;
 
 namespace fftwpp {
-#ifdef __SSE2__
+
   const union uvec sse2_pm = {
     { 0x00000000,0x00000000,0x00000000,0x80000000 }
   };
@@ -20,8 +22,9 @@ namespace fftwpp {
   const union uvec sse2_mm = {
     { 0x00000000,0x80000000,0x00000000,0x80000000 }
   };
-#endif
+
 }
+#endif
 
 // compile with
 // mpicxx -o cconv2 cconv2.cc -lfftw3_mpi -lfftw3 -lm
