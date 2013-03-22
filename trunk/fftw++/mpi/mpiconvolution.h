@@ -5,6 +5,7 @@
 #include <fftw3-mpi.h>
 #include "convolution.h"
 #include <vector>
+#include <mpi/mpiutils.h>
 
 namespace fftwpp {
 
@@ -60,6 +61,13 @@ public:
       matrix();
   }
 };
+
+void show(Complex *f, unsigned int nx, unsigned int ny, const MPIgroup& group);
+void show(Complex *f, unsigned int nx, unsigned int ny, unsigned int nz,
+          const MPIgroup& group);
+int hash(Complex *f, unsigned int nx, unsigned int ny, const MPIgroup& group);
+int hash(Complex *f, unsigned int nx, unsigned int ny, unsigned int nz,
+         const MPIgroup& group);
 
 // Class to compute the local array dimensions and storage requirements for
 // distributing the y index among multiple MPI processes.
@@ -150,19 +158,45 @@ class ImplicitConvolution2MPI : public ImplicitConvolution2 {
 protected:
   dimensions d;
   fftw_plan intranspose,outtranspose;
+  Complex *w2;
+  Complex **W2;
+  MPI_Request *utranspose;
+  bool alltoall; // Use faster nonblocking alltoall block transpose
 public:  
   
   void inittranspose() {
-    intranspose=
-      fftw_mpi_plan_many_transpose(my,mx,2,d.block,0,(double*) u2,(double*) u2,
-                                   d.communicator,FFTW_MPI_TRANSPOSED_IN);
-    if(!intranspose) transposeError("in2");
+    int size;
+    MPI_Comm_size(d.communicator,&size);
+    alltoall=mx % size == 0 && my % size == 0;
 
-    outtranspose=
-      fftw_mpi_plan_many_transpose(mx,my,2,0,d.block,(double*) u2,(double*) u2,
-                                   d.communicator,FFTW_MPI_TRANSPOSED_OUT);
-    if(!outtranspose) transposeError("out2");
-    SaveWisdom(d.communicator);
+    if(alltoall) {
+      int rank;
+      MPI_Comm_rank(d.communicator,&rank);
+      if(rank == 0) {
+        std::cout << "Using fast alltoall block transpose";
+#if MPI_VERSION >= 3
+        std::cout << " (NONBLOCKING MPI 3.0 version)";
+#endif
+        std::cout << std::endl;        
+      }
+      w2=ComplexAlign(d.n*M);
+      W2=new Complex *[M];
+      for(unsigned int s=0; s < M; ++s)
+        W2[s]=w2+s*d.n;
+    
+      utranspose=new MPI_Request[M];
+    } else {
+      intranspose=
+        fftw_mpi_plan_many_transpose(my,mx,2,d.block,0,(double*) u2,(double*) u2,
+                                     d.communicator,FFTW_MPI_TRANSPOSED_IN);
+      if(!intranspose) transposeError("in2");
+
+      outtranspose=
+        fftw_mpi_plan_many_transpose(mx,my,2,0,d.block,(double*) u2,(double*) u2,
+                                     d.communicator,FFTW_MPI_TRANSPOSED_OUT);
+      if(!outtranspose) transposeError("out2");
+      SaveWisdom(d.communicator);
+    }
   }
 
   // u1 and v1 are temporary arrays of size my*M*threads.
@@ -185,8 +219,19 @@ public:
   }
   
   virtual ~ImplicitConvolution2MPI() {
-    fftw_destroy_plan(intranspose);
-    fftw_destroy_plan(outtranspose);
+    if(alltoall) {
+      delete [] utranspose;
+      delete [] W2;
+      deleteAlign(w2);
+    } else {
+      fftw_destroy_plan(outtranspose);
+      fftw_destroy_plan(intranspose);
+    }
+  }
+  
+  void transpose(Complex *in, Complex *out, bool intransposed,
+                 MPI_Request *request=NULL) {
+    ::transpose(in,out,mx,d.y,d.x,my,intransposed,d.communicator,request);
   }
   
   void pretranspose(Complex **F, unsigned int offset=0) {
@@ -210,26 +255,72 @@ public:
   
   void convolve(Complex **F, Complex **G, Complex **u, Complex ***V,
                 Complex **U2, Complex **V2, unsigned int offset=0) {
-    Complex *u2=U2[0];
-    Complex *v2=V2[0];
+      Complex *u2=U2[0];
+      Complex *v2=V2[0];
     
-    backwards(F,u2,d.n,offset);
-    backwards(G,v2,d.n,offset);
+    if(alltoall) {
+      MPI_Request ftranspose,gtranspose,wtranspose;
+  
+      for(unsigned int s=0; s < M; ++s) {
+        Complex *f=F[s]+offset;
+        Complex *u=u2+s*d.n;
+        xfftpad->expand(f,u);
+        xfftpad->Backwards->fft(f);
+        transpose(f,w2+s*d.n,true,&ftranspose);
+        Complex *g=G[s]+offset;
+        xfftpad->expand(g,v2+s*d.n);
+        xfftpad->Backwards->fft(g);
+        Wait(&ftranspose);
+        transpose(g,f,true,&gtranspose);
+        xfftpad->Backwards->fft(u);
+        Wait(&gtranspose);
+        transpose(u,g,true,utranspose+s);
+      }
     
-    pretranspose(F,offset);
-    pretranspose(u2);
-    pretranspose(G,offset);
-    pretranspose(v2);
-    unsigned int size=d.x*my;
+      unsigned int size=d.x*my;
+      subconvolution(W2,F,u,V,offset,size+offset);
+      
+      Complex *f=F[0]+offset;
+      transpose(w2,f,false,&wtranspose);
     
-    subconvolution(F,G,u,V,offset,size+offset);
-    subconvolution(U2,V2,u,V,0,size);
+      for(unsigned int s=0; s < M; ++s) {
+        Complex *v=v2+s*d.n;
+        xfftpad->Backwards->fft(v);
+        Complex *u=u2+s*d.n;
+        Wait(utranspose+s);
+        transpose(v,u,true,utranspose+s);
+      }
     
-    Complex *f=F[0]+offset;
-    posttranspose(f);
-    posttranspose(u2);
+      Wait(&wtranspose);
+      xfftpad->Forwards->fft(f);
     
-    forwards(f,u2);
+      for(unsigned int s=0; s < M; ++s)
+        Wait(utranspose+s);
+    
+      subconvolution(G,U2,u,V,0,size);
+      transpose(G[0]+offset,u2,false);
+    
+      xfftpad->Forwards->fft(u2);
+      xfftpad->reduce(f,u2);
+    } else {
+      backwards(F,u2,d.n,offset);
+      backwards(G,v2,d.n,offset);
+    
+      pretranspose(F,offset);
+      pretranspose(u2);
+      pretranspose(G,offset);
+      pretranspose(v2);
+      unsigned int size=d.x*my;
+    
+      subconvolution(F,G,u,V,offset,size+offset);
+      subconvolution(U2,V2,u,V,0,size);
+    
+      Complex *f=F[0]+offset;
+      posttranspose(f);
+      posttranspose(u2);
+    
+      forwards(f,u2);
+    }
   }
   
   // F and G are distinct pointers to M distinct data blocks each of size mx*d.y,

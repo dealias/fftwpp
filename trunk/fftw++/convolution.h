@@ -248,11 +248,12 @@ class fftpad {
   unsigned int stride;
   unsigned int dist;
   unsigned int s;
-  mfft1d *Backwards; 
-  mfft1d *Forwards;
   Complex *ZetaH, *ZetaL;
   unsigned int threads;
 public:  
+  mfft1d *Backwards; 
+  mfft1d *Forwards;
+  
   fftpad(unsigned int m, unsigned int M,
          unsigned int stride, Complex *u=NULL) : m(m), M(M), stride(stride) {
     Backwards=new mfft1d(m,1,M,stride,1,u);
@@ -269,6 +270,9 @@ public:
     delete Forwards;
     delete Backwards;
   }
+  
+  void expand(Complex *f, Complex *u);
+  void reduce(Complex *f, Complex *u);
   
   void backwards(Complex *f, Complex *u);
   void forwards(Complex *f, Complex *u);

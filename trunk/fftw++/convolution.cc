@@ -731,7 +731,7 @@ void ImplicitHConvolution::convolve(Complex **F, Complex **G,
     f[c]=(T-gcm1[c].re*zeta3-u[c].re*conj(zeta3))*ninv;
 }
 
-void fftpad::backwards(Complex *f, Complex *u)
+void fftpad::expand(Complex *f, Complex *u)
 {
 #ifdef __SSE2__
   PARALLEL(
@@ -774,16 +774,17 @@ void fftpad::backwards(Complex *f, Complex *u)
     }
     )
 #endif
+    }
   
-    Backwards->fft(f);
+void fftpad::backwards(Complex *f, Complex *u)
+{
+  expand(f,u);
+  Backwards->fft(f);
   Backwards->fft(u);
 }
-  
-void fftpad::forwards(Complex *f, Complex *u)
+
+void fftpad::reduce(Complex *f, Complex *u)
 {
-  Forwards->fft(f);
-  Forwards->fft(u);
-  
   double ninv=0.5/m;
 #ifdef __SSE2__
   Vec Ninv=LOAD(ninv);
@@ -831,6 +832,13 @@ void fftpad::forwards(Complex *f, Complex *u)
     )
 #endif
     }
+
+void fftpad::forwards(Complex *f, Complex *u)
+{
+  Forwards->fft(f);
+  Forwards->fft(u);
+  reduce(f,u);
+}
 
 void fft0pad::backwards(Complex *f, Complex *u)
 {
