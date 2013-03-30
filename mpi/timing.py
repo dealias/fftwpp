@@ -8,7 +8,7 @@ from math import *
 import os
 
 def main(argv):
-    usage='Usage: timings.py -a<start> -b<stop> -p<cconv2,conv2,cconv3,conv3> -T<number of threads per node> -P<number of nodes> -A<quoted arg list for timed program> -M <quoted arg list for mpiexec> -r<implicit/explicit>' 
+    usage='Usage: timings.py -a<start> -b<stop> -p<cconv2,conv2,cconv3,conv3> -T<number of threads per node> -P<number of nodes> -A<quoted arg list for timed program> -M <quoted arg list for mpi run command> -r<implicit/explicit> -l<name of mpi run command>' 
     
     Tset=0
     P=1
@@ -20,8 +20,9 @@ def main(argv):
     a=4
     b=8
     r="implicit"
+    l="mpiexec"
     try:
-        opts, args = getopt.getopt(argv,"p:T:P:a:b:A:M:r:")
+        opts, args = getopt.getopt(argv,"p:T:P:a:b:A:M:r:l:")
     except getopt.GetoptError:
         print usage
         sys.exit(2)
@@ -44,6 +45,8 @@ def main(argv):
             M+=str(arg)
         elif opt in ("-r"):
             r=str(arg)
+        elif opt in ("-l"):
+            l=str(arg)
 
 
     if p == "":
@@ -69,7 +72,7 @@ def main(argv):
         sys.exit(2)
 
     outdir=outdir+"/"+str(P)+"x"+str(T)
-    command="mpiexec "+M+" -n "+str(P)+" ./"+str(p)
+    command=l+" "+M+" --np "+str(P)+" : ./"+str(p)
 
     print "output in "+outdir+"/"+r
 
@@ -88,11 +91,16 @@ def main(argv):
     for i in range(a,b):
         print i,
         sys.stdout.flush()
-        run=command+cargs+" -m"+str(int(pow(2,i)))+A
+        run=command+cargs+" -m "+str(int(pow(2,i)))+A
         grepc=" | grep -A 1 "+rname+" | tail -n 1"
         cat=" | cat >> "+outdir+"/"+r
         print run
+        #print "echo "+"$("+run+grepc+")"+cat
         os.system("echo "+"$("+run+grepc+")"+cat)
+        #print run+grepc+" "+cat
+        #os.system(run+grepc+" "+cat)
+        #print run
+        #os.system(run)
 
     os.system("sed -i 's/[ \t]*$//' "+outdir+"/"+r)
     os.system("sed -i '/^$/d' "+outdir+"/"+r)
