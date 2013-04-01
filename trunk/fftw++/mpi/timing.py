@@ -72,7 +72,8 @@ def main(argv):
         sys.exit(2)
 
     outdir=outdir+"/"+str(P)+"x"+str(T)
-    command=l+" "+M+" --np "+str(P)+" : ./"+str(p)
+#    command=l+" "+M+" --np "+str(P)+" : ./"+str(p)
+    command=l+"  --np "+str(P)+" "+M+"  ./"+str(p)
 
     print "output in "+outdir+"/"+r
 
