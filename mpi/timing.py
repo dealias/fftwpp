@@ -60,18 +60,26 @@ def main(argv):
    
     if p == "cconv2":
         if RAM != 0:
-            #b=int(floor(log(RAM/16/2/2^2)/log(2)/2))
-            b=int(floor(0.5*log(RAM/64)/log(2)))
+            if r != "explicit":
+                b=int(floor(0.5*log(RAM/64)/log(2)))
+            else:
+                b=int(floor(log(RAM/16/2/2**2)/log(2)/2))
         outdir="timings2c"
     if p == "conv2":
         if RAM != 0:
-            #print int(floor(log(RAM/8/3^2)/log(2)/2))
-            b= int(floor(0.5*log(RAM/96)/log(2)))
+            if r != "explicit":
+                b= int(floor(0.5*log(RAM/96)/log(2)))
+            else:
+                b=int(floor(log(RAM/8/3**2)/log(2)/2))
+
         outdir="timings2r"
     if p == "cconv3":
         if RAM != 0:
-           #b=int(floor(log(RAM/16/2^3)/log(2)/3))
-           b=int(floor(log(RAM/96)/log(2)/3))
+            if r != "explicit":
+                b=int(floor(log(RAM/96)/log(2)/3))
+            else:
+                b=int(floor(log(RAM/16/2**3)/log(2)/3))
+
         outdir="timings3c"
     if p == "conv3":
         if RAM != 0:
