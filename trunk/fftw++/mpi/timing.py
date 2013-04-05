@@ -108,7 +108,7 @@ def main(argv):
 
     print "output in "+outdir+"/"+r
 
-    print "command: "+command+cargs+A
+    print "command: "+command+cargs+" "+A
     os.system("mkdir -p "+outdir)
     os.system("rm -f "+outdir+"/"+r)
 
@@ -123,7 +123,7 @@ def main(argv):
     for i in range(a,b+1):
         print i,
         sys.stdout.flush()
-        run=command+cargs+" -m "+str(int(pow(2,i)))+A
+        run=command+cargs+" -m "+str(int(pow(2,i)))+" "+A
         grepc=" | grep -A 1 "+rname+" | tail -n 1"
         cat=" | cat >> "+outdir+"/"+r
         print run
