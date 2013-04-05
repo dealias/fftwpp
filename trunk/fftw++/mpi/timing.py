@@ -17,7 +17,7 @@ def main(argv):
     cargs=""
     A=""
     M=""
-    a=4
+    a=0
     b=8
     r="implicit"
     l="mpiexec"
@@ -59,6 +59,8 @@ def main(argv):
     outdir=""
    
     if p == "cconv2":
+        if a == 0:
+            a=int(ceil(log(P)/(log(2))))
         if RAM != 0:
             if r != "explicit":
                 b=int(floor(0.5*log(RAM/64)/log(2)))
@@ -66,6 +68,8 @@ def main(argv):
                 b=int(floor(log(RAM/16/2/2**2)/log(2)/2))
         outdir="timings2c"
     if p == "conv2":
+        if a == 0:
+            a=int(ceil(log(P)/(log(2))))
         if RAM != 0:
             if r != "explicit":
                 b= int(floor(0.5*log(RAM/96)/log(2)))
@@ -74,6 +78,8 @@ def main(argv):
 
         outdir="timings2r"
     if p == "cconv3":
+        if a == 0:
+            a=int(ceil(log(P)/(2*log(2))))
         if RAM != 0:
             if r != "explicit":
                 b=int(floor(log(RAM/96)/log(2)/3))
@@ -82,6 +88,8 @@ def main(argv):
 
         outdir="timings3c"
     if p == "conv3":
+        if a == 0:
+            a=int(ceil(log(P)/(2*log(2))))
         if RAM != 0:
             b=int(floor(log(RAM/192)/log(2)/3))
         outdir="timings3r"
