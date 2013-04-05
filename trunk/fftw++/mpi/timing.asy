@@ -108,7 +108,18 @@ if(gtype == "speedup") {
   for(int p=1; p < nn; ++p) {
     int penp=p-1;
     marker mark1=marker(scale(0.6mm)*polygon(3+p),Draw(Pen(penp)+solid));
-    i[p] = i[0]/i[p];
+    for(int b=0; b < mi[p].length; ++b) {
+      bool found=false;
+      for(int a=0; a < mi[0].length; ++a) {
+	if(mi[0][a] == mi[p][b]) {
+	  i[p][b] = i[0][a]/i[p][b];
+	  found=true;
+	}
+      }
+      if(!found)
+	i[p][b]=0.0;
+    }
+
     draw(graph(mi[p],i[p],i[p] > 0),Pentype(penp),
 	 Label(runnames[p],Pen(penp)+Lp),mark1);
   }
