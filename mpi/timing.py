@@ -20,7 +20,7 @@ def main(argv):
     a=0
     b=8
     r="implicit"
-    l="mpiexec"
+    l="mpiexec --np"
     RAM=0
     try:
         opts, args = getopt.getopt(argv,"p:T:P:a:b:A:M:r:l:R:")
@@ -104,7 +104,7 @@ def main(argv):
         sys.exit(2)
 
     outdir=outdir+"/"+str(P)+"x"+str(T)
-    command=l+"  --np "+str(P)+" "+M+"  ./"+str(p)
+    command=l+str(P)+" "+M+"  ./"+str(p)
 
     print "output in "+outdir+"/"+r
 
@@ -122,11 +122,11 @@ def main(argv):
 
     for i in range(a,b+1):
         print i,
-        sys.stdout.flush()
         run=command+cargs+" -m "+str(int(pow(2,i)))+" "+A
         grepc=" | grep -A 1 "+rname+" | tail -n 1"
         cat=" | cat >> "+outdir+"/"+r
         print run
+        sys.stdout.flush()
         #print "echo "+"$("+run+grepc+")"+cat
         os.system("echo "+"$("+run+grepc+")"+cat)
         #print run+grepc+" "+cat
