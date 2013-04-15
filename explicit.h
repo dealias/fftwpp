@@ -35,7 +35,7 @@ public:
 };
 
 // In-place explicitly dealiased 1D Hermitian convolution.
-class ExplicitHConvolution {
+class ExplicitHConvolution : public ThreadBase {
 protected:
   unsigned int n,m;
   rcfft1d *rc;
@@ -175,7 +175,7 @@ public:
 };
 
 // In-place explicitly dealiased 3D complex convolution.
-class ExplicitConvolution3 {
+ class ExplicitConvolution3 : public ThreadBase {
 protected:
   unsigned int nx,ny,nz;
   unsigned int mx,my,mz;
@@ -227,7 +227,7 @@ public:
 };
 
 // In-place explicitly dealiased Hermitian ternary convolution.
-class ExplicitHTConvolution {
+class ExplicitHTConvolution : public ThreadBase  {
 protected:
   unsigned int n;
   unsigned int m;
@@ -263,7 +263,7 @@ public:
 };
 
 // In-place explicitly dealiased 2D Hermitian ternary convolution.
-class ExplicitHTConvolution2 {
+class ExplicitHTConvolution2 : public ThreadBase {
 protected:
   unsigned int nx,ny;
   unsigned int mx,my;
