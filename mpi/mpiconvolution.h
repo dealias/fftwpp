@@ -577,6 +577,12 @@ public:
   }
 };
 
+class range {
+public:
+  unsigned int n;
+  int start;
+};
+
 // Enforce 3D Hermiticity using specified (x,y > 0,z=0) and (x >= 0,y=0,z=0)
 // data.
 // u is a work array of size d.nx.
@@ -595,49 +601,39 @@ inline void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
     d.XYplane=new MPI_Comm;
     MPI_Comm_split(d.active,d.z0 == 0,0,d.XYplane);
     if(d.z0 != 0) return;
-    d.reflect=new int[d.y];
     MPI_Comm_rank(*d.XYplane,&rank);
     MPI_Comm_size(*d.XYplane,&size);
+    d.reflect=new int[d.y];
+    range *indices=new range[size];
+    indices[rank].n=d.y;
+    indices[rank].start=d.y0;
+    MPI_Allgather(MPI_IN_PLACE,0,MPI_INT,indices,
+                  sizeof(range)/sizeof(MPI_INT),MPI_INT,*d.XYplane);
+  
     if(rank == 0) {
       int *process=new int[d.ny];
-      unsigned int *y0=new unsigned int[size];
-      unsigned int *y=new unsigned int[size];
-      y0[0]=d.y0;
-      y[0]=d.y;
-      unsigned int stop=d.y0+d.y;
-      for(unsigned int j=d.y0; j < stop; ++j)
-        process[j]=0;
-      for(int p=1; p < size; ++p) {
-        unsigned int indices[2];
-        MPI_Recv(indices,2,MPI_UNSIGNED,p,0,*d.XYplane,&stat);
-        y0[p]=indices[0];
-        y[p]=indices[1];
-        unsigned int stop=y0[p]+y[p];
-        for(unsigned int j=y0[p]; j < stop; ++j)
+      for(int p=0; p < size; ++p) {
+        unsigned int stop=indices[p].start+indices[p].n;
+        for(unsigned int j=indices[p].start; j < stop; ++j)
           process[j]=p;
       }
-      for(unsigned int j=0; j < y[0]; ++j)
-        d.reflect[j]=process[2*yorigin-y0[0]-j];
+    
+      for(unsigned int j=0; j < indices[0].n; ++j)
+        d.reflect[j]=process[2*yorigin-indices[0].start-j];
       for(int p=1; p < size; ++p) {
-        for(unsigned int j=0; j < y[p]; ++j)
-          MPI_Send(process+2*yorigin-y0[p]-j,1,MPI_INT,p,j,*d.XYplane);
+        for(unsigned int j=0; j < indices[p].n; ++j)
+          MPI_Send(process+2*yorigin-indices[p].start-j,1,MPI_INT,p,j,*d.XYplane);
       }
-      delete [] y;
-      delete [] y0;
       delete [] process;
     } else {
-      unsigned int indices[2]={d.y0,d.y};
-      MPI_Send(indices,2,MPI_UNSIGNED,0,0,*d.XYplane);
-        
       for(unsigned int j=0; j < d.y; ++j)
         MPI_Recv(d.reflect+j,1,MPI_INT,0,j,*d.XYplane,&stat);
     }
+    delete [] indices;
   }
   if(d.z0 != 0) return;
-  
   MPI_Comm_rank(*d.XYplane,&rank);
-  MPI_Comm_size(*d.XYplane,&size);
-  
+
   unsigned int stride=d.y*d.z;
   unsigned int offset=2*yorigin-d.y0;
   unsigned int start=(yorigin > d.y0) ? yorigin-d.y0 : 0;
