@@ -46,7 +46,6 @@ public:
   void Threads(unsigned int nthreads) {threads=nthreads;}
 };
   
-
 // In-place implicitly dealiased 1D complex convolution.
 class ImplicitConvolution : public ThreadBase {
 protected:
@@ -57,30 +56,26 @@ protected:
   fft1d *Backwards,*Forwards;
   Complex *ZetaH, *ZetaL;
   Complex **V;
-  bool allocated, Vallocated;
+  bool allocated;
 public:  
   unsigned int getm() {return m;}
-  void setm(unsigned int m0) {m=m0;}
   unsigned int getM() {return M;}
 
   void initpointers(Complex **&V, Complex *v) {
     V=new Complex *[M];
     for(unsigned int s=0; s < M; ++s) 
       V[s]=v+s*m;
-    Vallocated=true;
   }
   
   void deletepointers(Complex **&V) {
-    if(Vallocated) delete [] V;
+    delete [] V;
   }
   
-  virtual void init() {
+  void init() {
     Backwards=new fft1d(m,1,u,v);
     Forwards=new fft1d(m,-1,u,v);
     
     threads=Forwards->Threads();
-
-    threads=1;
 
     s=BuildZeta(2*m,m,ZetaH,ZetaL,threads);
     
@@ -90,19 +85,18 @@ public:
   // m is the number of Complex data values.
   // u and v are distinct temporary arrays each of size m*M.
   // M is the number of data blocks (each corresponding to a dot product term).
- ImplicitConvolution(): allocated(false), Vallocated(false) {}
- ImplicitConvolution(unsigned int m, Complex *u, Complex *v, unsigned int M=1)
-   : m(m), u(u), v(v), M(M), allocated(false), Vallocated(false) {
+  ImplicitConvolution(unsigned int m, Complex *u, Complex *v, unsigned int M=1)
+    : m(m), u(u), v(v), M(M), allocated(false) {
     init();
   }
   
   ImplicitConvolution(unsigned int m, unsigned int M=1)
     : m(m), u(ComplexAlign(m*M)), v(ComplexAlign(m*M)), M(M),
-      allocated(true), Vallocated(false){
+      allocated(true) {
     init();
   }
   
-  virtual ~ImplicitConvolution() {
+  ~ImplicitConvolution() {
     deletepointers(V);
     
     if(allocated) {
@@ -115,35 +109,24 @@ public:
     delete Backwards;
   }
   
-  void mult(Complex *a, Complex **B, unsigned int m, unsigned int M,
-	    unsigned int offset=0);
+  void mult(Complex *a, Complex **B, unsigned int offset=0);
   
   void convolve(Complex **F, Complex **G, Complex *u, Complex **V,
-                unsigned int offset=0,
-		void (*pmult)(Complex *,Complex **,
-			      unsigned int,unsigned int,unsigned int)=NULL);
+                unsigned int offset=0);
   
   // F and G are distinct pointers to M distinct data blocks each of size m,
   // shifted by offset (contents not preserved).
   // The output is returned in F[0].
-  void convolve(Complex **F, Complex **G, unsigned int offset=0, 
-		void (*pmult)(Complex *,Complex **, 
-			      unsigned int,unsigned int,
-			      unsigned int)=NULL) {
-    convolve(F,G,u,V,offset,pmult);
+  void convolve(Complex **F, Complex **G, unsigned int offset=0) {
+    convolve(F,G,u,V,offset);
   }
   
   // Constructor for special case M=1:
-  virtual void convolve(Complex *f, Complex *g, 
-		void (*pmult)(Complex *,Complex **, 
-			      unsigned int,unsigned int,
-			      unsigned int)=NULL){
-    convolve(&f,&g,0,pmult);
+  void convolve(Complex *f, Complex *g) {
+    convolve(&f,&g);
   }
-
-  void itwiddle(Complex *f);
-  void twiddleadd(Complex *f, Complex *u);
 };
+
 
 // In-place implicitly dealiased 1D Hermitian convolution.
 class ImplicitHConvolution : public ThreadBase {
