@@ -71,7 +71,6 @@ unsigned int BuildZeta(unsigned int n, unsigned int m,
 
 // a[0][k]=sum_i a[i][k]*b[i][k]
 void ImplicitConvolution::mult(Complex *a, Complex **B, 
-			       unsigned int m, unsigned int M, 
 			       unsigned int offset) {
   if(M == 1) { // a[k]=a[k]*b[k]
     Complex *B0=B[0]+offset;
@@ -193,60 +192,28 @@ void ImplicitConvolution::mult(Complex *a, Complex **B,
       }
 }
 
+
 void ImplicitConvolution::convolve(Complex **F, Complex **G,
                                    Complex *u, Complex **V,
-				   unsigned int offset,
-				   void (*pmult)(Complex *,Complex **, 
-						 unsigned int,unsigned int,
-						 unsigned int))
+                                   unsigned int offset)
 {
   // all 6M FFTs are out-of-place
   Complex *v=V[0];
 
-  // transform fields to x-space (even points)
   for(unsigned int i=0; i < M; ++i) {
     unsigned int im=i*m;
     Backwards->fft(F[i]+offset,u+im);
     Backwards->fft(G[i]+offset,v+im);
   }
-    
-  // multiply even points
-  if(pmult != NULL)
-      (*pmult)(u,V,m,M,0);
-  else
-    mult(u,V,m,M);
+  
+  mult(u,V);
 
-  // transform fields to x-space (odd points)
   for(unsigned int i=0; i < M; ++i) {
     Complex *f=F[i]+offset;
     Complex *g=G[i]+offset;
-    itwiddle(f);
-    Backwards->fft(f,v+i*m);
-    itwiddle(g);
-    Backwards->fft(g,f);
-  }
-    
-  // multiply odd points
-  if(pmult != NULL)
-    (*pmult)(v,F,m,M,offset);
-  else
-    mult(v,F,m,M,offset);
-  
-  // transform even and odd points to Fourier space
-  Complex *f=F[0]+offset;
-  Forwards->fft(u,f);
-  Forwards->fft(v,u);
 
-  // do the final stage of the FFT to phsycial space
-  twiddleadd(f,u);
-}
-
-// multiply by twiddle factor to prep for inverse FFT for odd modes
-void ImplicitConvolution::itwiddle(Complex *f)
-{
-  /*
 #ifdef __SSE2__
-  PARALLEL(
+    PARALLEL(
       for(unsigned int K=0; K < m; K += s) {
         Complex *ZetaL0=ZetaL-K;
         unsigned int stop=min(K+s,m);
@@ -256,15 +223,17 @@ void ImplicitConvolution::itwiddle(Complex *f)
         for(unsigned int k=K; k < stop; ++k) {
           Vec Zetak=ZMULT(X,Y,LOAD(ZetaL0+k));
           Complex *fki=f+k;
+          Complex *gki=g+k;
           Vec Fki=LOAD(fki);
+          Vec Gki=LOAD(gki);
           STORE(fki,ZMULT(Zetak,Fki));
+          STORE(gki,ZMULT(Zetak,Gki));
         }
       }
       )
 #else
     PARALLEL(
-  */
-  for(unsigned int K=0; K < m; K += s) {
+      for(unsigned int K=0; K < m; K += s) {
         Complex *ZetaL0=ZetaL-K;
         unsigned int stop=min(K+s,m);
         Complex *p=ZetaH+K/s;
@@ -272,23 +241,30 @@ void ImplicitConvolution::itwiddle(Complex *f)
         double Him=p->im;
         for(unsigned int k=K; k < stop; ++k) {
           Complex *P=f+k;
+          Complex *Q=g+k;
           Complex fk=*P;
+          Complex gk=*Q;
           Complex L=*(ZetaL0+k);
           double Re=Hre*L.re-Him*L.im;
           double Im=Hre*L.im+Him*L.re;
           P->re=Re*fk.re-Im*fk.im;
           P->im=Im*fk.re+Re*fk.im;
+          Q->re=Re*gk.re-Im*gk.im;
+          Q->im=Im*gk.re+Re*gk.im;
         }
       }
-      /*
       )
 #endif
-      */
-}
+      Backwards->fft(f,v+i*m);
+    Backwards->fft(g,f);
+  }
+    
+  mult(v,F,offset);
 
-// final stage of FFT: weight by twiddle and add fields.
-void ImplicitConvolution::twiddleadd(Complex *f, Complex *u)
-{
+  Complex *f=F[0]+offset;
+  Forwards->fft(u,f);
+  Forwards->fft(v,u);
+
   double ninv=0.5/m;
 #ifdef __SSE2__
   Vec Ninv=LOAD(ninv);
