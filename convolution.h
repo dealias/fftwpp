@@ -34,8 +34,8 @@ extern const Complex zeta3;
 
 // Build the factored zeta tables.
 unsigned int BuildZeta(unsigned int n, unsigned int m,
-                       Complex *&ZetaH, Complex *&ZetaL, unsigned int threads=1);
-
+                       Complex *&ZetaH, Complex *&ZetaL,
+                       unsigned int threads=1);
 class ThreadBase
 {
 protected:
@@ -910,8 +910,8 @@ public:
   // mx*my*mz, shifted by offset (contents not preserved).
   // The output is returned in F[0].
   virtual void convolve(Complex **F, Complex **G, Complex **u, Complex ***V,
-                        Complex ***U2, Complex ***V2, Complex **U3, Complex **V3,
-                        unsigned int offset=0) {
+                        Complex ***U2, Complex ***V2, Complex **U3,
+                        Complex **V3, unsigned int offset=0) {
     Complex *u3=U3[0];
     Complex *v3=V3[0];
     unsigned int myz=my*mz;
@@ -1784,16 +1784,16 @@ public:
 // In-place implicitly dealiased 1D complex convolution using
 // as many pointers as possible
 class pImplicitConvolution : public ThreadBase {
- private:
+private:
   unsigned int m, M, Mout, s;
   fft1d *Backwards0;
   fft1d *Backwards,*Forwards;
   Complex *ZetaH, *ZetaL;
 
- public:
- pImplicitConvolution(unsigned int m, unsigned int M=2, unsigned int Mout=1,
-		      unsigned int threads=fftw::maxthreads)
-   : ThreadBase(threads), m(m), M(M), Mout(Mout) {
+public:
+  pImplicitConvolution(unsigned int m, unsigned int M=2, unsigned int Mout=1,
+                       unsigned int threads=fftw::maxthreads)
+    : ThreadBase(threads), m(m), M(M), Mout(Mout) {
 
     s=BuildZeta(2*m,m,ZetaH,ZetaL,threads);
     
@@ -1831,11 +1831,11 @@ private:
   fftpad *xfftpad;
   pImplicitConvolution *yconvolve;
 public:
- pImplicitConvolution2(unsigned int mx, unsigned int my, 
-		      unsigned int M=2, unsigned int Mout=1,
-		      unsigned int threads=fftw::maxthreads,
-		      unsigned int ny=0, unsigned int stride=0) :
-  ThreadBase(threads), mx(mx), my(my), M(M), Mout(Mout) {
+  pImplicitConvolution2(unsigned int mx, unsigned int my, 
+                        unsigned int M=2, unsigned int Mout=1,
+                        unsigned int threads=fftw::maxthreads,
+                        unsigned int ny=0, unsigned int stride=0) :
+    ThreadBase(threads), mx(mx), my(my), M(M), Mout(Mout) {
     
     nx=mx;
     ny=my;
@@ -1874,16 +1874,16 @@ private:
   fftpad *xfftpad;
   pImplicitConvolution2 *yzconvolve;
 public:
- pImplicitConvolution3(unsigned int mx, unsigned int my,  unsigned int mz, 
-		       unsigned int M=2, unsigned int Mout=1,
-		       unsigned int threads=fftw::maxthreads,
-		       unsigned int ny=0, unsigned int stride=0) :
-  ThreadBase(threads), mx(mx), my(my), mz(mz), M(M), Mout(Mout) {
+  pImplicitConvolution3(unsigned int mx, unsigned int my,  unsigned int mz, 
+                        unsigned int M=2, unsigned int Mout=1,
+                        unsigned int threads=fftw::maxthreads,
+                        unsigned int ny=0, unsigned int stride=0) :
+    ThreadBase(threads), mx(mx), my(my), mz(mz), M(M), Mout(Mout) {
 
     nx=mx;
     ny=my;
     nz=mz;
-    //set(...,stride); // TODO: this is for some MPI stuffs
+    //set(...,stride); // TODO: this is for some MPI stuff
     size=nx*ny*nz;
 
     unsigned int nyz=ny*nz;

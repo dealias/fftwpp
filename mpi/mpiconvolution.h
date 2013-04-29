@@ -187,13 +187,15 @@ public:
       utranspose=new MPI_Request[M];
     } else {
       intranspose=
-        fftw_mpi_plan_many_transpose(my,mx,2,d.block,0,(double*) u2,(double*) u2,
-                                     d.communicator,FFTW_MPI_TRANSPOSED_IN);
+        fftw_mpi_plan_many_transpose(my,mx,2,d.block,0,(double*) u2,
+                                     (double*) u2,d.communicator,
+                                     FFTW_MPI_TRANSPOSED_IN);
       if(!intranspose) transposeError("in2");
 
       outtranspose=
-        fftw_mpi_plan_many_transpose(mx,my,2,0,d.block,(double*) u2,(double*) u2,
-                                     d.communicator,FFTW_MPI_TRANSPOSED_OUT);
+        fftw_mpi_plan_many_transpose(mx,my,2,0,d.block,(double*) u2,
+                                     (double*) u2,d.communicator,
+                                     FFTW_MPI_TRANSPOSED_OUT);
       if(!outtranspose) transposeError("out2");
       SaveWisdom(d.communicator);
     }
@@ -258,8 +260,8 @@ public:
   void convolve(Complex **F, Complex **G, Complex **u, Complex ***V,
                 Complex **U2, Complex **V2, unsigned int offset=0);
   
-  // F and G are distinct pointers to M distinct data blocks each of size mx*d.y,
-  // shifted by offset (contents not preserved).
+  // F and G are distinct pointers to M distinct data blocks each of size
+  // mx*d.y, shifted by offset (contents not preserved).
   // The output is returned in F[0].
   void convolve(Complex **F, Complex **G, unsigned int offset=0) {
     convolve(F,G,u,V,U2,V2,offset);
@@ -287,16 +289,18 @@ public:
                                    d.communicator,FFTW_MPI_TRANSPOSED_IN);
     if(!intranspose) transposeError("inH2");
     uintranspose=
-      fftw_mpi_plan_many_transpose(my,mx1,2,du.block,0,(double*) u2,(double*) u2,
-                                   du.communicator,FFTW_MPI_TRANSPOSED_IN);
+      fftw_mpi_plan_many_transpose(my,mx1,2,du.block,0,(double*) u2,
+                                   (double*) u2,du.communicator,
+                                   FFTW_MPI_TRANSPOSED_IN);
     if(!uintranspose) transposeError("uinH2");
     outtranspose=
       fftw_mpi_plan_many_transpose(nx,my,2,0,d.block,(double*) f,(double*) f,
                                    d.communicator,FFTW_MPI_TRANSPOSED_OUT);
     if(!outtranspose) transposeError("outH2");
     uouttranspose=
-      fftw_mpi_plan_many_transpose(mx1,my,2,0,du.block,(double*) u2,(double*) u2,
-                                   du.communicator,FFTW_MPI_TRANSPOSED_OUT);
+      fftw_mpi_plan_many_transpose(mx1,my,2,0,du.block,(double*) u2,
+                                   (double*) u2,du.communicator,
+                                   FFTW_MPI_TRANSPOSED_OUT);
     if(!uouttranspose) transposeError("uoutH2");
     SaveWisdom(d.communicator);
   }
@@ -311,7 +315,7 @@ public:
                            const dimensions& d, const dimensions& du,
                            Complex *f, Complex *u1, Complex *v1, Complex *w1,
                            Complex *u2, Complex *v2, unsigned int M=1,
-                          unsigned int threads=fftw::maxthreads) :
+                           unsigned int threads=fftw::maxthreads) :
     ImplicitHConvolution2(mx,my,u1,v1,w1,u2,v2,M,threads,d.y,10*du.n),
     d(d), du(du) {
     inittranspose(f);
@@ -354,8 +358,8 @@ public:
   // F and G are distinct pointers to M distinct data blocks each of size 
   // (2mx-1)*my, shifted by offset (contents not preserved).
   // The output is returned in F[0].
-  void convolve(Complex **F, Complex **G, Complex ***U, Complex **v, Complex **w,
-                Complex **U2, Complex **V2, bool symmetrize=true,
+  void convolve(Complex **F, Complex **G, Complex ***U, Complex **v,
+                Complex **w, Complex **U2, Complex **V2, bool symmetrize=true,
                 unsigned int offset=0);
 
   
@@ -506,7 +510,8 @@ public:
       uouttranspose=
         fftw_mpi_plan_many_transpose(mx1,d.ny,2*du.z,0,du.yblock,
                                      (double*) u3,(double*) u3,
-                                     du.xy.communicator,FFTW_MPI_TRANSPOSED_OUT);
+                                     du.xy.communicator,
+                                     FFTW_MPI_TRANSPOSED_OUT);
       if(!uouttranspose) transposeError("uoutH3");
       SaveWisdom(d.xy.communicator);
     }
@@ -585,12 +590,12 @@ public:
   }
   
   void HermitianSymmetrize(Complex *f, Complex *u) {
-      HermitianSymmetrizeXYMPI(mx,my,d,f,u);
+    HermitianSymmetrizeXYMPI(mx,my,d,f,u);
   }
   
-  void convolve(Complex **F, Complex **G, Complex ***U, Complex **v, Complex **w,
-                Complex ***U2, Complex ***V2, Complex **U3, Complex **V3,
-                bool symmetrize=true, unsigned int offset=0);
+  void convolve(Complex **F, Complex **G, Complex ***U, Complex **v,
+                Complex **w, Complex ***U2, Complex ***V2, Complex **U3,
+                Complex **V3, bool symmetrize=true, unsigned int offset=0);
   
   void convolve(Complex **F, Complex **G, bool symmetrize=true,
                 unsigned int offset=0) {
