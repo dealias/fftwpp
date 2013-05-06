@@ -9,7 +9,7 @@ import os
 
 
 def main(argv):
-    usage='Usage: timings.py -a<start> -b<stop> -p<cconv,cconv2,cconv3,conv,conv2,conv3,tconv,tconv2> -T<number of threads> -A<quoted arg list for timed program> -r<implicit/explicit> -l<name of mpi run command> -R<ram in gigabytes>' 
+    usage='Usage: timings.py -a<start> -b<stop> -p<cconv,cconv2,cconv3,conv,conv2,conv3,tconv,tconv2> -T<number of threads> -A<quoted arg list for timed program> -r<implicit/explicit> -R<ram in gigabytes>' 
     bset=0
     dorun=1
     Tset=0
