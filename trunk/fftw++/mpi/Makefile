@@ -17,7 +17,7 @@ CXXFLAGS += -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
 endif
 
 #Intel compiler
-ifeq ($(shell $(MPICXX) -v 2>&1 | head -c 4),icpc)
+ifeq ($(shell $(MPICXX) -v 2>&1 | head -c 7),mpiicpc)
 CXXFLAGS += -openmp -ansi-alias -malign-double -fp-model fast=2
 endif
 
