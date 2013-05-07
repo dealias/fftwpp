@@ -8,7 +8,7 @@ UDIR =../tests/
 CXXFLAGS= -O3
 
 # GNU compiler
-ifeq ($(shell $(CXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
+ifeq ($(shell $(MPICXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
 CXXFLAGS += -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
 	-fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native
 #For valgrind:
@@ -17,12 +17,12 @@ CXXFLAGS += -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
 endif
 
 #Intel compiler
-ifeq ($(shell $(CXX) -v 2>&1 | head -c 4),icpc)
+ifeq ($(shell $(MPICXX) -v 2>&1 | head -c 4),icpc)
 CXXFLAGS += -openmp -ansi-alias -malign-double -fp-model fast=2
 endif
 
 #IBM compiler
-ifeq ($(shell $(CXX) -qversion 2>&1 | head -c 3),IBM)
+ifeq ($(shell $(MPICXX) -qversion 2>&1 | head -c 3),IBM)
 #CXXFLAGS= -O5 -P -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp
 CXXFLAGS= -O3 -qsmp
 endif
