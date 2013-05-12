@@ -31,7 +31,7 @@ LDFLAGS = -lfftw3_omp -lfftw3 -lm
 vpath %.cc ../
 
 FFTW=fftw++
-FILES=conv cconv conv2 cconv2 conv3 cconv3 tconv tconv2
+FILES=conv cconv conv2 cconv2 conv3 cconv3 tconv tconv2 pcconv
 EXTRA=$(FFTW) convolution explicit direct
 ALL=$(FILES) $(EXTRA)
 
@@ -62,6 +62,9 @@ tconv: tconv.o $(EXTRA:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 tconv2: tconv2.o $(EXTRA:=.o)
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
+pcconv: pcconv.o $(EXTRA:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 clean:  FORCE

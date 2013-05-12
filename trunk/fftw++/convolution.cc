@@ -1616,32 +1616,27 @@ void pImplicitConvolution::convolve(Complex **F, Complex **U1,
   (*pmult)(U1,m,M,0);
   
   // iFFT for odd points
-  for(unsigned int i=0; i < M; ++i) {
-    Complex *f=F[i]+offset;
-    itwiddle(f);
-    Backwards0->fft(f);
-  }
+  itwiddle(F,M);
+  for(unsigned int i=0; i < M; ++i)
+    Backwards0->fft(F[i]+offset);
   
   // multiply odd points
   (*pmult)(F,m,M,offset);
   
   // return to Fourier space
-  double ninv=0.5/(double) m;
   for(unsigned int i=0; i < Mout; ++i) {
     Complex *f=F[i]+offset;
     Complex *u=U1[i];
     Forwards->fft(f);
-    twiddle(f);
     Forwards->fft(u);
-    
-    for(unsigned int j=0; j <m; ++j)
-      f[j]=(f[j]+u[j])*ninv;
+    twiddleadd(f,u);
   }
 }
 
+
 // multiply by twiddle factor to prep for inverse FFT for odd modes
-void pImplicitConvolution::itwiddle(Complex *f)
-{
+void pImplicitConvolution::itwiddle(Complex **F, unsigned int M)
+{  
 #ifdef __SSE2__
   PARALLEL(
     for(unsigned int K=0; K < m; K += s) {
@@ -1652,12 +1647,16 @@ void pImplicitConvolution::itwiddle(Complex *f)
       Vec Y=UNPACKH(CONJ(Zeta),Zeta);
       for(unsigned int k=K; k < stop; ++k) {
         Vec Zetak=ZMULT(X,Y,LOAD(ZetaL0+k));
-        Complex *fki=f+k;
-        Vec Fki=LOAD(fki);
-        STORE(fki,ZMULT(Zetak,Fki));
+
+	for(unsigned int i=0; i < M; ++i) {
+	  Complex *fki=F[i]+k;
+	  Vec Fki=LOAD(fki);
+	  STORE(fki,ZMULT(Zetak,Fki));
+	}
+	
       }
     }
-    )
+    	   )
 #else
     PARALLEL(
       for(unsigned int K=0; K < m; K += s) {
@@ -1666,24 +1665,30 @@ void pImplicitConvolution::itwiddle(Complex *f)
         Complex *p=ZetaH+K/s;
         double Hre=p->re;
         double Him=p->im;
-        for(unsigned int k=K; k < stop; ++k) {
-          Complex *P=f+k;
-          Complex fk=*P;
-          Complex L=*(ZetaL0+k);
-          double Re=Hre*L.re-Him*L.im;
-          double Im=Hre*L.im+Him*L.re;
-          P->re=Re*fk.re-Im*fk.im;
-          P->im=Im*fk.re+Re*fk.im;
-        }
+	for(unsigned int i=0; i < M; ++i) {
+	  Complex *f=F[i];
+	  for(unsigned int k=K; k < stop; ++k) {
+	    Complex *P=f+k;
+	    Complex fk=*P;
+	    Complex L=*(ZetaL0+k);
+	    double Re=Hre*L.re-Him*L.im;
+	    double Im=Hre*L.im+Him*L.re;
+	    P->re=Re*fk.re-Im*fk.im;
+	    P->im=Im*fk.re+Re*fk.im;
+	  }
+	}
       }
       )
 #endif
     }
 
-// multiply by twiddle factor to prep for inverse FFT for odd modes
-void pImplicitConvolution::twiddle(Complex *f)
+
+// multiply by twiddle factor to prep for inverse FFT for odd modes, add
+void pImplicitConvolution::twiddleadd(Complex *f, Complex *u)
 {
+  double ninv=0.5/m;
 #ifdef __SSE2__
+  Vec Ninv=LOAD(ninv);
   PARALLEL(
     for(unsigned int K=0; K < m; K += s) {
       Complex *ZetaL0=ZetaL-K;
@@ -1695,10 +1700,11 @@ void pImplicitConvolution::twiddle(Complex *f)
         Vec Zetak=ZMULT(X,Y,LOAD(ZetaL0+k));
         Complex *fki=f+k;
         Vec Fki=LOAD(fki);
-        STORE(fki,ZMULT(CONJ(Zetak),Fki));
+        STORE(fki,Ninv*(ZMULT(CONJ(Zetak),Fki)+LOAD(u+k)));
+        //STORE(fki,Ninv*(LOAD(u+k)+ZMULT(CONJ(Zetak)),Fki));
       }
     }
-    )
+	   )
 #else
     PARALLEL(
       for(unsigned int K=0; K < m; K += s) {
@@ -1709,14 +1715,16 @@ void pImplicitConvolution::twiddle(Complex *f)
         double Him=-p->im;
         for(unsigned int k=K; k < stop; ++k) {
           Complex *P=f+k;
+          Complex *U=u+k;
           Complex fk=*P;
           Complex L=*(ZetaL0+k);
-	  L=conj(L); // FIXME: this could be optimised
-          double Re=Hre*L.re-Him*L.im;
-          double Im=Hre*L.im+Him*L.re;
+          double Re=Hre*L.re+Him*L.im;
+          double Im=-Hre*L.im+Him*L.re;
           P->re=Re*fk.re-Im*fk.im;
           P->im=Im*fk.re+Re*fk.im;
-        }
+	  P->re=ninv*(P->re + U->re);
+	  P->im=ninv*(P->im + U->im);
+	}	  
       }
   
       )
