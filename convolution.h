@@ -44,6 +44,7 @@ public:
   ThreadBase() {threads=fftw::maxthreads;}
   ThreadBase(unsigned int threads) : threads(threads) {}
   void Threads(unsigned int nthreads) {threads=nthreads;}
+  unsigned int Threads() {return threads;}
 };
   
 // In-place implicitly dealiased 1D complex convolution.
@@ -1795,8 +1796,6 @@ public:
                        unsigned int threads=fftw::maxthreads)
     : ThreadBase(threads), m(m), M(M), Mout(Mout) {
 
-    s=BuildZeta(2*m,m,ZetaH,ZetaL,threads);
-    
     Complex* U0=ComplexAlign(m);  // FIXME: clean up memory in init
     Complex* U1=ComplexAlign(m);
     Backwards=new fft1d(m,1,U0,U1);
@@ -1804,7 +1803,12 @@ public:
     Forwards=new fft1d(m,-1,U0);
     deleteAlign(U1);
     deleteAlign(U0);
-  }
+
+    threads=Forwards->Threads();
+    Threads(threads);
+
+    s=BuildZeta(2*m,m,ZetaH,ZetaL,threads);
+}
   
   ~pImplicitConvolution() {
     delete Backwards0; 
@@ -1818,8 +1822,8 @@ public:
 		void (*pmult)(Complex **,unsigned int,
 			      unsigned int,unsigned int),
 		unsigned int offset=0);
-  void itwiddle(Complex *f);
-  void twiddle(Complex *f);
+  void itwiddle(Complex **F, unsigned int M);
+  void twiddleadd(Complex *f, Complex *u);
 };
 
 // In-place implicitly dealiased 2D complex convolution.
