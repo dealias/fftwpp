@@ -18,7 +18,30 @@ real[][] mi,i,li,hi;
 string[] runnames;
 
 string name;
+string runs;
+string runlegs;
 usersetting();
+
+
+bool myleg=((runlegs== "") ? false: true);
+bool flag=true;
+int n=-1;
+int lastpos=0;
+string legends[];
+if(myleg) {
+  string runleg;
+  while(flag) {
+    ++n;
+    int pos=find(runlegs,",",lastpos);
+    if(lastpos == -1) {runleg=""; flag=false;}
+    
+    runleg=substr(runlegs,lastpos,pos-lastpos);
+
+    lastpos=pos > 0 ? pos+1 : -1;
+    if(flag) legends.push(runleg);
+  }
+}
+lastpos=0;
 
 if(name == "") name=getstring("program name","cconv2");
 int nn;
@@ -42,11 +65,10 @@ real d=1;
 if(find(name,"2") >= 0) d=2;
 if(find(name,"3") >= 0) d=3;
 
-string runs=getstring("subdirs");
+if(runs == "") runs=getstring("subdirs");
 string run;
-int n=-1;
-bool flag=true;
-int lastpos;
+n=-1;
+flag=true;
 while(flag) {
   ++n;
   int pos=find(runs,",",lastpos);
@@ -92,7 +114,7 @@ if(gtype == "time" || gtype == "mflops") {
     if(drawerrorbars && gtype == "time")
       errorbars(mi[p],i[p],0*mi[p],hi[p],0*mi[p],li[p],Pen(p));
     draw(graph(mi[p],i[p],i[p] > 0),Pentype(p),
-	 Label(runnames[p],Pen(p)+Lp),mark1);
+	 Label(myleg ? legends[p] : runnames[p],Pen(p)+Lp),mark1);
   }
   
   xaxis("$N$",BottomTop,LeftTicks);
@@ -101,7 +123,7 @@ if(gtype == "time" || gtype == "mflops") {
   if(gtype=="time")
     yaxis("time/($N"+D+"\log_2 N"+D+"$) (ns)",LeftRight,RightTicks);
 
-  label(name+": (MPI procs)$\times{}$(threads/proc)",point(N),5N);
+  //label(name+": (MPI procs)$\times{}$(threads/proc)",point(N),5N);
 }
 
 if(gtype == "speedup") {
