@@ -1,6 +1,6 @@
 include graph;
 
-size(175,300,IgnoreAspect);
+size(175,200,IgnoreAspect);
 
 barfactor=10;
 
@@ -12,8 +12,10 @@ string gtype=getstring("time, mflops, scaling, or speedup","mflops");
 scale(Linear,Log);
 if(gtype == "time" || gtype == "speedup")
   scale(Log,Linear);
-if(gtype == "mflops")
+if(gtype == "mflops") {
   scale(Log,Log);
+  size(300,400,IgnoreAspect);
+}
 real[][] mi,i,li,hi;
 string[] runnames;
 
@@ -154,6 +156,7 @@ if(gtype == "speedup") {
   label(runnames[0],point(N),3N);
 }
 
+
 if(gtype == "scaling") {
   real[][] s;
   real[] M=mi[0];
@@ -175,7 +178,7 @@ if(gtype == "scaling") {
   // all other runs are compared with comparison case:
   for(int b=0; b < M.length; ++b) {
     s.push(new real[]);
-    for(int p=1; p < nn; ++p) {
+    for(int p=0; p < nn; ++p) {
       for(int a=0; a < mi[p].length; ++a) {
 	if(mi[p][a] == M[b]) {
 	  s[b].push(s0[b]/i[p][a]);
@@ -200,8 +203,21 @@ if(gtype == "scaling") {
     
   }
 
+  int last=M.length-1;
+  real[] linearscaling=new real[A[last].length];
+  for(int i=0; i < A[last].length; ++i) {
+    linearscaling[i]=2^i;
+    // this is based on geometric spacing in number of procs
+  }
+  draw(graph(A[last],linearscaling),black+dashed);
+  
+  //dot(Label("(3,5)",align=S),Scale((3,5)));
+  int plin=quotient(linearscaling.length,2);
+  label("linear",Scale((A[last][plin],linearscaling[plin])),NW);
+  
+  
   for(int a=0; a < A[0].length; ++a) {
-    label(rotate(90)*runnames[a+1],(A[0][a],0),S);
+    //label(rotate(90)*runnames[a+1],(A[0][a],0),S);
   }
 
   yaxis("speedup",LeftRight,RightTicks);
