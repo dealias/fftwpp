@@ -1,6 +1,14 @@
 include graph;
 
-size(175,200,IgnoreAspect);
+// usage:
+// asy -f pdf timing.asy
+
+// or:
+// asy -f pdf timing.asy -u "runlegs=\"1k,2k,3k,4k\""
+// to specify the legend.
+
+//size(175,200,IgnoreAspect);
+size(350,400,IgnoreAspect);
 
 barfactor=10;
 
@@ -145,7 +153,7 @@ if(gtype == "speedup") {
     }
 
     draw(graph(mi[p],i[p],i[p] > 0),Pentype(penp),
-	 Label(runnames[p],Pen(penp)+Lp),mark1);
+	 Label(myleg ? legends[p] : runnames[p],Pen(penp)+Lp),mark1);
   }
   
   xaxis("$N$",BottomTop,LeftTicks);
@@ -161,7 +169,6 @@ if(gtype == "scaling") {
   real[][] s;
   real[] M=mi[0];
   //write(M);
-
 
   // first run is the comparison case:
   real[] s0;
@@ -196,11 +203,10 @@ if(gtype == "scaling") {
   }
 
   marker mark1=marker(scale(0.6mm)*polygon(3+0),Draw(Pen(0)+solid));
-  draw(graph(A[0],1.0+0*A[0]),invisible);
+  //  draw(graph(A[0],1.0+0*A[0]),invisible);
   for(int b=0; b < M.length; ++b) {
     marker mark1=marker(scale(0.6mm)*polygon(3+b),Draw(Pen(b)+solid));
-    draw(graph(A[b],s[b]),Pen(b),Label((string) M[b]),mark1);
-    
+    draw(graph(A[b],s[b]),Pen(b),Label("$"+(string) M[b]+"^"+(string)d+"$"),mark1);
   }
 
   int last=M.length-1;
@@ -211,21 +217,30 @@ if(gtype == "scaling") {
   }
   draw(graph(A[last],linearscaling),black+dashed);
   
-  //dot(Label("(3,5)",align=S),Scale((3,5)));
   int plin=quotient(linearscaling.length,2);
   label("linear",Scale((A[last][plin],linearscaling[plin])),NW);
-  
-  
-  for(int a=0; a < A[0].length; ++a) {
-    //label(rotate(90)*runnames[a+1],(A[0][a],0),S);
+
+  /*
+  for(int a=0; a < A[A.length-1].length; ++a) {
+    if(myleg)
+      label(rotate(90)*(myleg ? legends[a] : runnames[a]),
+	    (A[A.length-1][a],0),S);
   }
-
+  label("(3,5)",Scale((3,5)));
+  */
+  
   yaxis("speedup",LeftRight,RightTicks);
-  xaxis(BottomTop,NoTicks);
-  //  xaxis("Run (see below)",BottomTop,LeftTicks);
-  label("strong scaling: "+name,point(N),5N);
 
-  label("base: "+runnames[0],point(N),1N);
+  if(myleg)
+    xaxis("Number of cores",BottomTop,LeftTicks(new string(real x) {
+	  return legends[round(x)];}));
+  else
+    xaxis(BottomTop);
+
+  //xaxis("Run (see below)",BottomTop,LeftTicks);
+  label("Strong scaling: "+name,point(N),3N);
+
+  //label("base: "+runnames[0],point(N),1N);
   
   
   string lrunnames=runnames[0];
@@ -240,4 +255,5 @@ if(gtype == "scaling") {
 
 legendlinelength=0.6cm;
 legendmargin=5;
+
 attach(legend(),point(E),10E);
