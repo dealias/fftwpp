@@ -62,6 +62,13 @@ def main(argv):
             M+=str(arg)
         elif opt in ("-r"):
             r=str(arg)
+            if(r != "explicit"):
+                if(r != "implicit"):
+                    print r
+                    print "is not a valid entry for -r"
+                    print "please specify -r \"implicit \" or -r \"explicit \""
+                    sys.exit(2)
+                
         elif opt in ("-l"):
             l=str(arg)
         elif opt in ("-R"):
@@ -76,19 +83,21 @@ def main(argv):
         sys.exit(2)
 
     outdir=""
-   
+    a=0
 
     # if both the max problem size and the ram are unset, go up to 2^8
     if (b == 0 and RAM == 0):
         b=8
-    # if RAM is set, but not the max problem size, RAM determines the
-    # problem size on its own.
+    # if RAM is set and the max problem size is not set, then RAM
+    # determines the problem size on its own.
     if (b == 0 and RAM != 0):
         b=sys.maxint
 
+    print(r)
+
     if p == "cconv2":
         if a == 0:
-            a=int(ceil(log(P)/(log(2))))
+            a=int(floor(log(P)/(log(2))))
         if RAM != 0:
             if r != "explicit":
                 b=min(b,int(floor(0.5*log(RAM/64)/log(2))))
@@ -97,7 +106,7 @@ def main(argv):
         outdir="timings2c"
     if p == "conv2":
         if a == 0:
-            a=int(ceil(log(P)/(log(2))))
+            a=int(floor(log(P)/(log(2))))
         if RAM != 0:
             if r != "explicit":
                 b=min(b,int(floor(0.5*log(RAM/96)/log(2))))
@@ -107,17 +116,19 @@ def main(argv):
         outdir="timings2r"
     if p == "cconv3":
         if a == 0:
-            a=int(ceil(log(P)/(2*log(2))))
+            if r != "explicit":
+                a=int(floor(log(P)/(2*log(2))))
+            else:
+                a=int(floor(log(P)/(log(2))))
         if RAM != 0:
             if r != "explicit":
                 b=min(b,int(floor(log(RAM/96)/log(2)/3)))
             else:
                 b=min(b,int(floor(log(RAM/16/2**3)/log(2)/3)))
-
         outdir="timings3c"
     if p == "conv3":
         if a == 0:
-            a=int(ceil(log(P)/(2*log(2))))
+            a=int(floor(log(P)/(2*log(2))))
         if RAM != 0:
             b=min(b,int(floor(log(RAM/192)/log(2)/3)))
         outdir="timings3r"
