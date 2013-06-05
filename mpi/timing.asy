@@ -7,8 +7,7 @@ include graph;
 // asy -f pdf timing.asy -u "runlegs=\"1k,2k,3k,4k\""
 // to specify the legend.
 
-//size(175,200,IgnoreAspect);
-size(350,400,IgnoreAspect);
+size(175,200,IgnoreAspect);
 
 barfactor=10;
 
@@ -215,11 +214,13 @@ if(gtype == "scaling") {
     linearscaling[i]=2^i;
     // this is based on geometric spacing in number of procs
   }
-  draw(graph(A[last],linearscaling),black+dashed);
-  
+  draw(graph(A[last],linearscaling),black+dashed,"linear");
+
+  /*
   int plin=quotient(linearscaling.length,2);
   label("linear",Scale((A[last][plin],linearscaling[plin])),NW);
-
+  */
+  
   /*
   for(int a=0; a < A[A.length-1].length; ++a) {
     if(myleg)
