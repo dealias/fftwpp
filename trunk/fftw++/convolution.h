@@ -76,7 +76,7 @@ public:
     Backwards=new fft1d(m,1,u,v);
     Forwards=new fft1d(m,-1,u,v);
     
-    threads=Forwards->Threads();
+    threads=std::min(threads,Forwards->Threads());
 
     s=BuildZeta(2*m,m,ZetaH,ZetaL,threads);
     
@@ -86,8 +86,9 @@ public:
   // m is the number of Complex data values.
   // u and v are distinct temporary arrays each of size m*M.
   // M is the number of data blocks (each corresponding to a dot product term).
-  ImplicitConvolution(unsigned int m, Complex *u, Complex *v, unsigned int M=1)
-    : m(m), u(u), v(v), M(M), allocated(false) {
+  ImplicitConvolution(unsigned int m, Complex *u, Complex *v, unsigned int M=1,
+                      unsigned int threads=fftw::maxthreads)
+    : ThreadBase(threads), m(m), u(u), v(v), M(M), allocated(false) {
     init();
   }
   
@@ -170,7 +171,7 @@ public:
     rco=new rcfft1d(m,(double *) u,v);
     cro=new crfft1d(m,v,(double *) u);
     
-    threads=cro->Threads();
+    threads=std::min(threads,cro->Threads());
     
     s=BuildZeta(3*m,2*c == m ? c : c+1,ZetaH,ZetaL,threads);
     
@@ -182,8 +183,9 @@ public:
   // w is a temporary array of size 3*M.
   // M is the number of data blocks (each corresponding to a dot product term).
   ImplicitHConvolution(unsigned int m, Complex *u, Complex *v, Complex *w,
-                       unsigned int M=1)
-    : m(m), c(m/2), u(u), v(v), w(w), M(M), allocated(false) {
+                       unsigned int M=1, unsigned int threads=fftw::maxthreads)
+    : ThreadBase(threads), m(m), c(m/2), u(u), v(v), w(w), M(M),
+      allocated(false) {
     init();
   }
 
@@ -345,6 +347,7 @@ protected:
   bool outerthread;
 public:  
   void initpointers(Complex **&u, Complex ***&V, unsigned int threads) {
+    if(!outerthread) threads=1;
     u=new Complex *[threads];
     V=new Complex **[threads];
     unsigned int stride=my*M;
@@ -357,6 +360,7 @@ public:
   }
     
   void deletepointers(Complex **&u, Complex ***&V, unsigned int threads) {
+    if(!outerthread) threads=1;
     for(unsigned int i=0; i < threads; ++i)
       yconvolve->deletepointers(V[i]);
     delete [] V;
@@ -381,11 +385,9 @@ public:
   
   void init(unsigned int ny, unsigned int stride) {
     xfftpad=new fftpad(mx,ny,ny,u2);
-    yconvolve=new ImplicitConvolution(my,u1,v1,M);
-    outerthread=mx >= threads;
-    yconvolve->Threads(outerthread ? 1 : threads);
-    
-    initpointers(u,V,outerthread ? threads : 1);
+    outerthread=threads > 1 && mx >= threads;
+    yconvolve=new ImplicitConvolution(my,u1,v1,M,outerthread ? 1 : threads);
+    initpointers(u,V,threads);
     initpointers2(U2,V2,u2,v2,stride);
   }
   
@@ -432,7 +434,7 @@ public:
   
   virtual ~ImplicitConvolution2() {
     deletepointers2(U2,V2);
-    deletepointers(u,V,outerthread ? threads : 1);
+    deletepointers(u,V,threads);
     
     delete yconvolve;
     delete xfftpad;
@@ -628,9 +630,11 @@ protected:
   ImplicitHConvolution *yconvolve;
   Complex ***U;
   Complex **w,**v;
+  bool outerthread;
 public:
   void initpointers(Complex ***&U, Complex **&v, Complex **&w,
                     unsigned int threads) {
+    if(!outerthread) threads=1;
     U=new Complex **[threads];
     v=new Complex *[threads];
     w=new Complex *[threads];
@@ -648,6 +652,7 @@ public:
     
   void deletepointers(Complex ***&U, Complex **&v, Complex **&w,
                       unsigned int threads) {
+    if(!outerthread) threads=1;
     for(unsigned int i=0; i < threads; ++i)
       yconvolve->deletepointers(U[i]);
       
@@ -657,8 +662,8 @@ public:
   }
   
   void initconvolve() {
-    yconvolve=new ImplicitHConvolution(my,u1,v1,w1,M);
-    yconvolve->Threads(1);
+    outerthread=threads > 1 && mx+1 >= threads;
+    yconvolve=new ImplicitHConvolution(my,u1,v1,w1,M,outerthread ? 1 : threads);
     initpointers(U,v,w,threads);
   }
     
@@ -706,12 +711,18 @@ public:
                       Complex ***U, Complex **v, Complex **w,
                       unsigned int start, unsigned int stop) {
     unsigned int stride=my;
+    if(outerthread) {
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif    
-    for(unsigned int i=start; i < stop; i += stride) {
-      unsigned int thread=get_thread_num();
-      yconvolve->convolve(F,G,U[thread],v[thread],w[thread],i);
+      for(unsigned int i=start; i < stop; i += stride) {
+        unsigned int thread=get_thread_num();
+        yconvolve->convolve(F,G,U[thread],v[thread],w[thread],i);
+      }
+    } else {
+      for(unsigned int i=start; i < stop; i += stride) {
+        yconvolve->convolve(F,G,U[0],v[0],w[0],i);
+      }
     }
   }  
   
