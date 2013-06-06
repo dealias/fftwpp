@@ -342,6 +342,7 @@ protected:
   bool allocated;
   Complex **u;
   Complex ***V;
+  bool outerthread;
 public:  
   void initpointers(Complex **&u, Complex ***&V, unsigned int threads) {
     u=new Complex *[threads];
@@ -381,9 +382,10 @@ public:
   void init(unsigned int ny, unsigned int stride) {
     xfftpad=new fftpad(mx,ny,ny,u2);
     yconvolve=new ImplicitConvolution(my,u1,v1,M);
-    yconvolve->Threads(1);
+    outerthread=mx >= threads;
+    yconvolve->Threads(outerthread ? 1 : threads);
     
-    initpointers(u,V,threads);
+    initpointers(u,V,outerthread ? threads : 1);
     initpointers2(U2,V2,u2,v2,stride);
   }
   
@@ -430,7 +432,7 @@ public:
   
   virtual ~ImplicitConvolution2() {
     deletepointers2(U2,V2);
-    deletepointers(u,V,threads);
+    deletepointers(u,V,outerthread ? threads : 1);
     
     delete yconvolve;
     delete xfftpad;
@@ -451,12 +453,18 @@ public:
 
   void subconvolution(Complex **F, Complex **G, Complex **u, Complex ***V,
                       unsigned int start, unsigned int stop) {
+    if(outerthread) {
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif    
-    for(unsigned int i=start; i < stop; i += my) {
-      unsigned int thread=get_thread_num();
-      yconvolve->convolve(F,G,u[thread],V[thread],i);
+      for(unsigned int i=start; i < stop; i += my) {
+        unsigned int thread=get_thread_num();
+        yconvolve->convolve(F,G,u[thread],V[thread],i);
+      }
+    } else {
+      for(unsigned int i=start; i < stop; i += my) {
+        yconvolve->convolve(F,G,u[0],V[0],i);
+      }
     }
   }
   
