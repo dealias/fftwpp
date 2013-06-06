@@ -179,7 +179,7 @@ int main(int argc, char* argv[])
         for(unsigned int j=0; j < my; j++)
           cout << f[i][j] << "\t";
         cout << endl;
-      } else cout << f[1][1] << endl;
+      } else cout << f[0][0] << endl;
     cout << endl;
     
     delete [] G;
