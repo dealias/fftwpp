@@ -23,6 +23,8 @@ if(gtype == "mflops") {
   scale(Log,Log);
   size(300,400,IgnoreAspect);
 }
+
+
 real[][] mi,i,li,hi;
 string[] runnames;
 
@@ -165,70 +167,63 @@ if(gtype == "speedup") {
 
 
 if(gtype == "scaling") {
-  real[][] s;
-  real[] M=mi[0];
-  //write(M);
-
-  // first run is the comparison case:
-  real[] s0;
-  for(int b=0; b < M.length; ++b) {
-    for(int a=0; a < mi[0].length; ++a) {
-      for(int a=0; a < mi[0].length; ++a) {
-	if(mi[0][a] == M[b])
-	  s0[b]=i[0][a];
+ 
+  // find all values of problem size
+  real[] thems;
+  bool found=false;
+  for(int a=0; a < mi.length; ++a) {
+    for(int b=0; b < mi[a].length; ++b) {
+      real m=mi[a][b];
+      found=false;
+      for(int c=0; c < thems.length; ++c) {
+	if(thems[c]==m)
+	  found=true;
       }
+      if(!found)
+	thems.push(m);
     }
   }
-  //write(s0);
+  real[][] y;
+  real[][] ym;
+  real[][] x;
 
-  // all other runs are compared with comparison case:
-  for(int b=0; b < M.length; ++b) {
-    s.push(new real[]);
-    for(int p=0; p < nn; ++p) {
-      for(int a=0; a < mi[p].length; ++a) {
-	if(mi[p][a] == M[b]) {
-	  s[b].push(s0[b]/i[p][a]);
+  for(int c=0; c < thems.length; ++c) {
+    real m=thems[c];
+    y[c]=new real[];
+    x[c]=new real[];
+    ym[c]=new real[];
+    for(int a=0; a < mi.length; ++a) {
+      for(int b=0; b < mi[a].length; ++b) {
+	if(m == mi[a][b]) {
+	  x[c].push(a);
+	  y[c].push(i[a][b]);
+	  ym[c].push(m);
 	}
       }
     }
   }
-  //write(s);
-
-  real[][] A;
-  for(int b=0; b < M.length; ++b) {
-    A.push(new real[]);
-    for(int i=0; i < s[b].length; ++i)
-      A[b].push(i);
-  }
-
-  marker mark1=marker(scale(0.6mm)*polygon(3+0),Draw(Pen(0)+solid));
-  //  draw(graph(A[0],1.0+0*A[0]),invisible);
-  for(int b=0; b < M.length; ++b) {
-    marker mark1=marker(scale(0.6mm)*polygon(3+b),Draw(Pen(b)+solid));
-    draw(graph(A[b],s[b]),Pen(b),Label("$"+(string) M[b]+"^"+(string)d+"$"),mark1);
-  }
-
-  int last=M.length-1;
-  real[] linearscaling=new real[A[last].length];
-  for(int i=0; i < A[last].length; ++i) {
-    linearscaling[i]=2^i;
-    // this is based on geometric spacing in number of procs
-  }
-  draw(graph(A[last],linearscaling),black+dashed,"linear");
-
-  /*
-  int plin=quotient(linearscaling.length,2);
-  label("linear",Scale((A[last][plin],linearscaling[plin])),NW);
-  */
   
-  /*
-  for(int a=0; a < A[A.length-1].length; ++a) {
-    if(myleg)
-      label(rotate(90)*(myleg ? legends[a] : runnames[a]),
-	    (A[A.length-1][a],0),S);
+  real[][] s;
+  for(int c=0; c < y.length; ++c) {
+    s[c]=new real[];
+    for(int d=0; d < y[c].length; ++d) {
+      s[c].push((y[c][0]/y[c][d])*2^x[c][0]);
+    }
   }
-  label("(3,5)",Scale((3,5)));
-  */
+  
+  for(int c=0; c < y.length; ++c) {
+    marker mark1=marker(scale(0.6mm)*polygon(3+c),Draw(Pen(c)+solid));
+    draw(graph(x[c],s[c]),Pen(c),Label("$"+(string) thems[c]+"^"+(string)d+"$"),mark1);
+  }
+  
+  real[] linearscaling=new real[nn];
+  real[] linearscalingx=new real[nn];
+  for(int i=0; i < nn; ++i) {
+    linearscaling[i]=2^i;
+    linearscalingx[i]=i;
+    //this is based on geometric spacing in number of procs
+  }
+  draw(graph(linearscalingx,linearscaling),black+dashed,"linear");
   
   yaxis("speedup",LeftRight,RightTicks);
 
@@ -238,18 +233,8 @@ if(gtype == "scaling") {
   else
     xaxis(BottomTop);
 
-  //xaxis("Run (see below)",BottomTop,LeftTicks);
   label("Strong scaling: "+name,point(N),3N);
 
-  //label("base: "+runnames[0],point(N),1N);
-  
-  
-  string lrunnames=runnames[0];
-  for(int b=1; b < nn; ++b) {
-    lrunnames += "\newline ";
-    lrunnames += runnames[b];
-  }
-  //label(minipage(lrunnames),point(S),10S+3W);
 }
 
 
