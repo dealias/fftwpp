@@ -7,7 +7,7 @@ include graph;
 // asy -f pdf timing.asy -u "runlegs=\"1k,2k,3k,4k\""
 // to specify the legend.
 
-size(175,200,IgnoreAspect);
+size(250,300,IgnoreAspect);
 
 barfactor=10;
 
@@ -207,23 +207,41 @@ if(gtype == "scaling") {
   for(int c=0; c < y.length; ++c) {
     s[c]=new real[];
     for(int d=0; d < y[c].length; ++d) {
-      s[c].push((y[c][0]/y[c][d])*2^x[c][0]);
+      s[c].push((y[c][0]/y[c][d]));
     }
   }
   
+  bool[] drawlin=new bool[x.length];
+  for(int a=0; a < x.length; ++a) {
+    drawlin[a]=true;
+  }
+  for(int a=0; a < x.length; ++a) {
+    for(int b=0; b < a; ++b) {
+      if(x[a][0] == x[b][0]) {
+	if(x[a].length < x[b].length) {
+	  drawlin[a]=false;
+	} else {
+	  drawlin[b]=false;
+	  drawlin[a]=true;
+	}
+      }
+    }
+  }
+  
+  //draw(graph(x[c],2^(x[c]-x[c][0])),black+dashed);
+
+  bool linleg=true;
   for(int c=0; c < y.length; ++c) {
     marker mark1=marker(scale(0.6mm)*polygon(3+c),Draw(Pen(c)+solid));
     draw(graph(x[c],s[c]),Pen(c),Label("$"+(string) thems[c]+"^"+(string)d+"$"),mark1);
+    if(drawlin[c]) {
+      if(linleg) {
+	draw(graph(x[c],2^(x[c]-x[c][0])),black+dashed);
+	linleg=false;
+      } else {
+	draw(graph(x[c],2^(x[c]-x[c][0])),black+dashed);      }
+    }
   }
-  
-  real[] linearscaling=new real[nn];
-  real[] linearscalingx=new real[nn];
-  for(int i=0; i < nn; ++i) {
-    linearscaling[i]=2^i;
-    linearscalingx[i]=i;
-    //this is based on geometric spacing in number of procs
-  }
-  draw(graph(linearscalingx,linearscaling),black+dashed,"linear");
   
   yaxis("speedup",LeftRight,RightTicks);
 
@@ -235,6 +253,8 @@ if(gtype == "scaling") {
 
   label("Strong scaling: "+name,point(N),3N);
 
+  yequals(1,grey);
+  
 }
 
 
