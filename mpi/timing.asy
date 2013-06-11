@@ -4,8 +4,11 @@ include graph;
 // asy -f pdf timing.asy
 
 // or:
-// asy -f pdf timing.asy -u "runlegs=\"1k,2k,3k,4k\""
+// asy -f pdf timing.asy -u "runlegs=\"1k,2k,4k,8k\""
 // to specify the legend.
+
+// Note that the scaling figures assumes subsequent test double the
+// number of cores.
 
 size(250,300,IgnoreAspect);
 
@@ -17,8 +20,11 @@ bool drawerrorbars=true;
 string gtype=getstring("time, mflops, scaling, or speedup","mflops");
 
 scale(Linear,Log);
-if(gtype == "time" || gtype == "speedup")
+if(gtype == "time")
   scale(Log,Linear);
+if(gtype == "speedup") {
+ scale(Log,Log);
+}
 if(gtype == "mflops") {
   scale(Log,Log);
   size(300,400,IgnoreAspect);
@@ -138,31 +144,49 @@ if(gtype == "time" || gtype == "mflops") {
 }
 
 if(gtype == "speedup") {
-  for(int p=1; p < nn; ++p) {
-    int penp=p-1;
-    marker mark1=marker(scale(0.6mm)*polygon(3+p),Draw(Pen(penp)+solid));
-    for(int b=0; b < mi[p].length; ++b) {
-      bool found=false;
-      for(int a=0; a < mi[0].length; ++a) {
-	if(mi[0][a] == mi[p][b]) {
-	  i[p][b] = i[0][a]/i[p][b];
-	  found=true;
-	}
-      }
-      if(!found)
-	i[p][b]=0.0;
-    }
 
-    draw(graph(mi[p],i[p],i[p] > 0),Pentype(penp),
-	 Label(myleg ? legends[p] : runnames[p],Pen(penp)+Lp),mark1);
+  int runples=getint("how many runs are compared at once?");
+
+  int gnum=-1;
+  bool plotme;
+  for(int p=0; p < nn; ++p) {
+    if(p % runples != 0) {
+      ++gnum;
+      plotme=true;
+    } else {
+      plotme=false;
+    }
+    
+    int basep=p - (p % runples);
+    if(plotme) {
+
+      // find the matching problem sizes
+      for(int b=0; b < mi[p].length; ++b) {
+	bool found=false;
+	for(int a=0; a < mi[basep].length; ++a) {
+	  if(mi[basep][a] == mi[p][b]) {
+	    // if we have a matching problem size, determine the speedup
+	    i[p][b] = i[basep][a]/i[p][b];
+	    found=true;
+	  }
+	}
+	if(!found)
+	  i[p][b]=0.0;
+      }
+
+      marker mark1=marker(scale(0.6mm)*polygon(3+gnum),Draw(Pen(gnum)+solid));
+      draw(graph(mi[p],i[p],i[p] > 0),Pentype(gnum),
+	   Label(myleg ? legends[gnum] : runnames[p],Pen(gnum)+Lp),mark1);
+    }
+    
   }
   
   xaxis("$N$",BottomTop,LeftTicks);
 
   yaxis("relative speed",LeftRight,RightTicks);
 
-  label(name+": speedup relative to ",point(N),7N);
-  label(runnames[0],point(N),3N);
+  //  label(name+": speedup relative to ",point(N),7N);
+  //  label(runnames[0],point(N),3N);
 }
 
 
