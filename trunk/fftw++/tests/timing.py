@@ -18,7 +18,7 @@ def main(argv):
     cargs=""
     A=""
     a=6
-    b=8
+    b=0
     r="implicit"
     RAM=0
     try:
@@ -54,9 +54,18 @@ def main(argv):
 
     outdir=""
    
+    # if both the max problem size and the ram are unset, go up to 2^8
+    if (b == 0 and RAM == 0):
+        b=8
+    # if RAM is set and the max problem size is not set, then RAM
+    # determines the problem size on its own.
+    if (b == 0 and RAM != 0):
+        b=sys.maxint
+
+
     if p == "cconv":
         if RAM != 0:
-            b=int(floor(log(RAM/4)/log(2)))
+            b=min(int(floor(log(RAM/4)/log(2))),b)
             b=min(b,14) # because we aren't crazy
         outdir="timings1c"
         if(r == "pruned"):
@@ -65,21 +74,21 @@ def main(argv):
     if p == "cconv2":
         if RAM != 0:
             if r == "implicit":
-                b=int(floor(0.5*log(RAM/64)/log(2)))
+                b=min(int(floor(0.5*log(RAM/64)/log(2))),b)
             else:
-                b=int(floor(log(RAM/16/2/2**2)/log(2)/2))
+                b=min(int(floor(log(RAM/16/2/2**2)/log(2)/2)),b)
         outdir="timings2c"
     if p == "cconv3":
         if RAM != 0:
             if r== "implicit":
-                b=int(floor(log(RAM/96)/log(2)/3))
+                b=min(int(floor(log(RAM/96)/log(2)/3)),b)
             else:
-                b=int(floor(log(RAM/16/2**3)/log(2)/3))
+                b=min(int(floor(log(RAM/16/2**3)/log(2)/3)),b)
         outdir="timings3c"
 
     if p == "conv":
         if RAM != 0:
-            b=int(floor(log(RAM/6)/log(2)))
+            b=min(int(floor(log(RAM/6)/log(2))),b)
             b=min(b,14) # because we aren't crazy
         outdir="timings1r"
         if(r == "pruned"):
@@ -88,13 +97,13 @@ def main(argv):
     if p == "conv2":
         if RAM != 0:
             if r == "implicit":
-                b= int(floor(0.5*log(RAM/96)/log(2)))
+                b=min(int(floor(0.5*log(RAM/96)/log(2))),b)
             else:
-                b=int(floor(log(RAM/8/3**2)/log(2)/2))
+                b=min(int(floor(log(RAM/8/3**2)/log(2)/2)),b)
         outdir="timings2r"
     if p == "conv3":
         if RAM != 0:
-            b=int(floor(log(RAM/192)/log(2)/3))
+            b=min(int(floor(log(RAM/192)/log(2)/3)),b)
         outdir="timings3r"
         if(r != "implicit"):
             print p+" has no "+r+" option"
