@@ -12,46 +12,44 @@ void ImplicitConvolution2MPI::convolve(Complex **F, Complex **G,
   Complex *v2=V2[0];
     
   if(alltoall) {
-    MPI_Request ftranspose,gtranspose,wtranspose;
-  
+    Complex *us=u2;
     for(unsigned int s=0; s < M; ++s) {
       Complex *f=F[s]+offset;
-      Complex *u=u2+s*d.n;
-      xfftpad->expand(f,u);
+      us=u2+s*d.n;
+      xfftpad->expand(f,us);
       xfftpad->Backwards->fft(f);
-      transpose(f,w2+s*d.n,true,&ftranspose);
+      if(s > 0) T->inwait(us);
+      T->inTransposed(f);
       Complex *g=G[s]+offset;
       xfftpad->expand(g,v2+s*d.n);
       xfftpad->Backwards->fft(g);
-      Wait(&ftranspose);
-      transpose(g,f,true,&gtranspose);
-      xfftpad->Backwards->fft(u);
-      Wait(&gtranspose);
-      transpose(u,g,true,utranspose+s);
+      T->inwait(f);
+      T->inTransposed(g);
+      xfftpad->Backwards->fft(us);
+      T->inwait(g);
+      T->inTransposed(us);
     }
     
     unsigned int size=d.x*my;
-    subconvolution(W2,F,u,V,offset,size+offset);
-      
-    Complex *f=F[0]+offset;
-    transpose(w2,f,false,&wtranspose);
+    subconvolution(F,G,u,V,offset,size+offset);
     
+    Complex *f=F[0]+offset;
+    T->inwait(us);
+    T->outTransposed(f);
+    
+    Complex *v=v2;
     for(unsigned int s=0; s < M; ++s) {
-      Complex *v=v2+s*d.n;
+      v=v2+s*d.n;
       xfftpad->Backwards->fft(v);
-      Complex *u=u2+s*d.n;
-      Wait(utranspose+s);
-      transpose(v,u,true,utranspose+s);
+      s == 0 ? T->outwait(f) : T->inwait(v);
+      T->inTransposed(v);
     }
     
-    Wait(&wtranspose);
     xfftpad->Forwards->fft(f);
-    
-    for(unsigned int s=0; s < M; ++s)
-      Wait(utranspose+s);
-    
-    subconvolution(G,U2,u,V,0,size);
-    transpose(G[0]+offset,u2,false);
+    T->inwait(v);
+    subconvolution(U2,V2,u,V,0,size);
+    T->outTransposed(u2);
+    T->outwait(u2);
     
     xfftpad->Forwards->fft(u2);
     xfftpad->reduce(f,u2);

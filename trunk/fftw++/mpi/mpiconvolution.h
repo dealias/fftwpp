@@ -5,7 +5,7 @@
 #include <fftw3-mpi.h>
 #include "convolution.h"
 #include <vector>
-#include <mpi/mpiutils.h>
+#include "mpi/mpitranspose.h"
 
 namespace fftwpp {
 
@@ -158,18 +158,18 @@ class ImplicitConvolution2MPI : public ImplicitConvolution2 {
 protected:
   dimensions d;
   fftw_plan intranspose,outtranspose;
-  Complex *w2;
-  Complex **W2;
-  MPI_Request *utranspose;
-  bool alltoall; // Use faster nonblocking alltoall block transpose
+  bool alltoall; // Use experimental nonblocking transpose
+  transpose *T;
 public:  
   
   void inittranspose() {
     int size;
     MPI_Comm_size(d.communicator,&size);
     alltoall=mx % size == 0 && my % size == 0;
+    alltoall=false;
 
     if(alltoall) {
+      T=new transpose(mx,d.y,d.x,my);
       int rank;
       MPI_Comm_rank(d.communicator,&rank);
       if(rank == 0) {
@@ -179,12 +179,6 @@ public:
 #endif
         std::cout << std::endl;        
       }
-      w2=ComplexAlign(d.n*M);
-      W2=new Complex *[M];
-      for(unsigned int s=0; s < M; ++s)
-        W2[s]=w2+s*d.n;
-    
-      utranspose=new MPI_Request[M];
     } else {
       intranspose=
         fftw_mpi_plan_many_transpose(my,mx,2,d.block,0,(double*) u2,
@@ -209,36 +203,28 @@ public:
                           Complex *u1, Complex *v1, Complex *u2, Complex *v2,
                           unsigned int M=1,
                           unsigned int threads=fftw::maxthreads) :
-    ImplicitConvolution2(mx,my,u1,v1,u2,v2,M,threads,d.y,d.n), d(d) {
+    ImplicitConvolution2(mx,my,u1,v1,u2,v2,M,threads,d.x,d.y,d.n), d(d) {
     inittranspose();
   }
   
   ImplicitConvolution2MPI(unsigned int mx, unsigned int my, const dimensions& d,
                           unsigned int M=1,
                           unsigned int threads=fftw::maxthreads) :
-    ImplicitConvolution2(mx,my,M,threads,d.y,d.n), d(d) {
+    ImplicitConvolution2(mx,my,M,threads,d.x,d.y,d.n), d(d) {
     inittranspose();
   }
   
   virtual ~ImplicitConvolution2MPI() {
-    if(alltoall) {
-      delete [] utranspose;
-      delete [] W2;
-      deleteAlign(w2);
-    } else {
+    if(!alltoall) {
       fftw_destroy_plan(outtranspose);
       fftw_destroy_plan(intranspose);
     }
   }
   
-  void transpose(Complex *in, Complex *out, bool intransposed,
-                 MPI_Request *request=NULL) {
-    ::transpose(in,out,mx,d.y,d.x,my,intransposed,d.communicator,request);
-  }
-  
   void pretranspose(Complex **F, unsigned int offset=0) {
     for(unsigned int s=0; s < M; ++s) {
       double *f=(double *) (F[s]+offset);
+//      T->InTransposed((Complex *) f);
       fftw_mpi_execute_r2r(intranspose,f,f);
     }
   }
@@ -247,16 +233,16 @@ public:
     unsigned int stride=d.n;
     for(unsigned int s=0; s < M; ++s) {
       double *u=(double *) u2+s*stride;
+//      T->InTransposed((Complex *) u);
       fftw_mpi_execute_r2r(intranspose,u,u);
     }
   }
   
   void posttranspose(Complex *f) {
+//    T->InTransposed(f);
     fftw_mpi_execute_r2r(outtranspose,(double *) f,(double *) f);
   }
   
-  void blah();
-
   void convolve(Complex **F, Complex **G, Complex **u, Complex ***V,
                 Complex **U2, Complex **V2, unsigned int offset=0);
   
@@ -316,7 +302,7 @@ public:
                            Complex *f, Complex *u1, Complex *v1, Complex *w1,
                            Complex *u2, Complex *v2, unsigned int M=1,
                            unsigned int threads=fftw::maxthreads) :
-    ImplicitHConvolution2(mx,my,u1,v1,w1,u2,v2,M,threads,d.y,10*du.n),
+    ImplicitHConvolution2(mx,my,u1,v1,w1,u2,v2,M,threads,d.x,d.y,10*du.n),
     d(d), du(du) {
     inittranspose(f);
   }
@@ -325,7 +311,7 @@ public:
                            const dimensions& d, const dimensions& du,
                            Complex *f, unsigned int M=1,
                            unsigned int threads=fftw::maxthreads) :
-    ImplicitHConvolution2(mx,my,M,threads,d.y,du.n), d(d), du(du) {
+    ImplicitHConvolution2(mx,my,M,threads,d.x,d.y,du.n), d(d), du(du) {
     inittranspose(f);
   }
   
