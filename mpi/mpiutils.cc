@@ -1,44 +1,5 @@
 #include "mpi/mpiconvolution.h"
 
-// Globally transpose an N x M matrix distributed over the second dimension.
-// Here "in" is a local N x m matrix and "out" is a local n x M matrix.
-// Both N and M must be divisible by the number of processors.
-// If m and n are both 1 then "in" may be NULL, in which case an in-place
-// transpose on "out" is performed.
-// An additional local transposition is applied to the input (output) matrix if
-// intranspose=true (false).
-void transpose(Complex *in, Complex *out, unsigned int N, unsigned int m,
-               unsigned int n, unsigned int M, bool intransposed,
-               MPI_Comm& communicator, MPI_Request *request)
-{
-  bool outofplace=in || m > 1 || n > 1;
-   
-  MPI_Datatype block;
-  MPI_Datatype Block;
-
-  MPI_Type_vector(n,2*m,2*M,MPI_DOUBLE,&block);
-  MPI_Type_create_resized(block,0,2*m*sizeof(double),&Block);
-  MPI_Type_commit(&Block);
-  void *inbuf=outofplace ? in : MPI_IN_PLACE;
-  
-  MPI_Request Request;
-  
-  if(intransposed)
-    MPI_Ialltoall(inbuf,2*n*m,MPI_DOUBLE,out,1,Block,communicator,
-                  request ? request : &Request);
-  else
-    MPI_Ialltoall(inbuf,1,Block,out,2*n*m,MPI_DOUBLE,communicator,
-                  request ? request : &Request);
-#if MPI_VERSION >= 3
-  MPI_Status status;
-  if(!request)
-    MPI_Wait(&Request,&status);
-#endif  
-  
-  MPI_Type_free(&Block);
-  MPI_Type_free(&block);
-}
-
 namespace fftwpp {
 
 // output the contents of a 2D complex array

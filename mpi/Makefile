@@ -17,14 +17,14 @@ CXXFLAGS += -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
 endif
 
 #Intel compiler
-ifeq ($(shell $(MPICXX) -v 2>&1 | head -c 7),mpiicpc)
+ifeq ($(shell $(MPICXX) --version 2>&1 | head -c 4),icpc)
 CXXFLAGS += -openmp -ansi-alias -malign-double -fp-model fast=2
 endif
 
 #IBM compiler
 ifeq ($(shell $(MPICXX) -qversion 2>&1 | head -c 3),IBM)
 #CXXFLAGS= -O5 -P -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp
-CXXFLAGS= -O3 -qsmp
+CXXFLAGS += -qsmp
 endif
 
 CXXFLAGS += -I$(IDIR) -I$(UDIR) -I$(CPLUS_INCLUDE_PATH) -L$(LIBRARY_PATH)
@@ -38,7 +38,7 @@ vpath %.cc ../
 
 FFTW=fftw++
 FILES=cconv2 conv2 cconv3 conv3
-EXTRA=$(FFTW) convolution mpiconvolution mpiutils
+EXTRA=$(FFTW) convolution mpiconvolution mpiutils mpitranspose
 ALL=$(FILES) $(EXTRA)
 
 all: $(FILES)
