@@ -19,9 +19,9 @@ private:
   Complex *work;
   MPI_Comm communicator;
   bool allocated;
-  int *request;
-  int Request;
-  int srequest;
+  MPI_Request *request;
+  MPI_Request Request;
+  MPI_Request srequest;
   int size;
   int rank;
   int splitsize;
@@ -69,12 +69,13 @@ public:
       MPI_Comm_size(split,&splitsize);
       MPI_Comm_rank(split,&splitrank);
     }
-#if !ALLTOALL    
-    request=new int[std::max((unsigned int) splitsize-1,d-1)];
+    
+#if ALLTOALL    
+    request=new MPI_Request[d-1];
+#else    
+    request=new MPI_Request[std::max((unsigned int) splitsize-1,d-1)];
     sched=new int[splitsize];
     fill1_comm_sched(sched,splitrank,splitsize);
-#else    
-    request=new int[d-1];
 #endif    
   }
   
@@ -84,8 +85,8 @@ public:
     
 #if !ALLTOALL
     delete[] sched;
+#endif
     delete[] request;
-#endif    
   }
   
 // Globally transpose data, applying an additional local transposition
