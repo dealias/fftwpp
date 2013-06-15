@@ -1,15 +1,19 @@
-#include "mpi/mpiconvolution.h"
+#include <mpi.h>
+#include "../Complex.h"
 
 namespace fftwpp {
 
-// output the contents of a 2D complex array
-void show(Complex *f, unsigned int nx, unsigned int ny, const MPIgroup& group)
+void show(Complex *f, unsigned int nx, unsigned int ny,
+          const MPI_Comm& communicator=MPI_COMM_WORLD)
 { 
   MPI_Status stat;
+  int size,rank;
+  MPI_Comm_size(communicator,&size);
+  MPI_Comm_rank(communicator,&rank);
   
-  if(group.rank == 0) {
+  if(rank == 0) {
     std::cout << "process " << 0 << ":" <<  std::endl;
-    unsigned c=0;
+    unsigned int c=0;
     for(unsigned int i=0; i < nx; i++) {
       for(unsigned int j=0; j < ny; j++) {
         std::cout << f[c++] << "\t";
@@ -17,16 +21,16 @@ void show(Complex *f, unsigned int nx, unsigned int ny, const MPIgroup& group)
       std::cout << std::endl;
     }
     
-    for(int p=1; p < group.size; p++) {
+    for(int p=1; p < size; p++) {
       int source=p, tag=p;
       unsigned int pdims[2];
-      MPI_Recv(&pdims,2,MPI_UNSIGNED,source,tag,group.active,&stat);
+      MPI_Recv(&pdims,2,MPI_UNSIGNED,source,tag,communicator,&stat);
 
       unsigned int px=pdims[0], py=pdims[1];
       unsigned int n=px*py;
       Complex *C=new Complex[n];
-      tag += group.size;
-      MPI_Recv(C,2*n,MPI_DOUBLE,source,tag,group.active,&stat);
+      tag += size;
+      MPI_Recv(C,2*n,MPI_DOUBLE,source,tag,communicator,&stat);
       
       std::cout << "process " << p << ":" <<  std::endl;
       unsigned int c=0;
@@ -39,22 +43,24 @@ void show(Complex *f, unsigned int nx, unsigned int ny, const MPIgroup& group)
       delete [] C;
     }
   } else {
-    int dest=0, tag=group.rank;
+    int dest=0, tag=rank;
     unsigned int dims[]={nx,ny};
-    MPI_Send(&dims,2,MPI_UNSIGNED,dest,tag,group.active);
+    MPI_Send(&dims,2,MPI_UNSIGNED,dest,tag,communicator);
     int n=nx*ny;
-    tag += group.size;
-    MPI_Send(f,2*n,MPI_DOUBLE,dest,tag,group.active);
+    tag += size;
+    MPI_Send(f,2*n,MPI_DOUBLE,dest,tag,communicator);
   }
 }
 
-// output the contents of a 3D complex array
 void show(Complex *f, unsigned int nx, unsigned int ny, unsigned int nz,
-          const MPIgroup& group)
+          const MPI_Comm& communicator=MPI_COMM_WORLD)
 {
   MPI_Status stat;
+  int size,rank;
+  MPI_Comm_size(communicator,&size);
+  MPI_Comm_rank(communicator,&rank);
   
-  if(group.rank ==0) {
+  if(rank ==0) {
     std::cout << "process " << 0 << ":" <<  std::endl;
     unsigned c=0;
     for(unsigned int i=0; i < nx; i++) {
@@ -67,16 +73,16 @@ void show(Complex *f, unsigned int nx, unsigned int ny, unsigned int nz,
       std::cout << std::endl;
     }
     
-    for(int p=1; p < group.size; p++) {
+    for(int p=1; p < size; p++) {
       int source=p, tag=p;
       unsigned int pdims[3];
-      MPI_Recv(&pdims,3,MPI_UNSIGNED,source,tag,group.active,&stat);
+      MPI_Recv(&pdims,3,MPI_UNSIGNED,source,tag,communicator,&stat);
 
       unsigned int px=pdims[0], py=pdims[1], pz=pdims[2];
       int n=px*pz*pz;
       Complex *C=new Complex[n];
-      tag += group.size;
-      MPI_Recv(C,2*n,MPI_DOUBLE,source,tag,group.active,&stat);
+      tag += size;
+      MPI_Recv(C,2*n,MPI_DOUBLE,source,tag,communicator,&stat);
       
       std::cout << "process " << p << ":" <<  std::endl;
       unsigned int c=0;
@@ -92,23 +98,26 @@ void show(Complex *f, unsigned int nx, unsigned int ny, unsigned int nz,
       delete [] C;
     }
   } else {
-    int dest=0, tag=group.rank;
+    int dest=0, tag=rank;
     unsigned int dims[]={nx,ny,nz};
-    MPI_Send(&dims,3,MPI_UNSIGNED,dest,tag,group.active);
+    MPI_Send(&dims,3,MPI_UNSIGNED,dest,tag,communicator);
     int n=nx*ny*nz;
-    tag += group.size;
-    MPI_Send(f,2*n,MPI_DOUBLE,dest,tag,group.active);
+    tag += size;
+    MPI_Send(f,2*n,MPI_DOUBLE,dest,tag,communicator);
   }
 }
 
-// hash-check for 2D arrays
-int hash(Complex *f, unsigned int nx, unsigned int ny, const MPIgroup& group)
+int hash(Complex *f, unsigned int nx, unsigned int ny,
+         const MPI_Comm& communicator=MPI_COMM_WORLD)
 { 
-  MPI_Barrier(group.active);
+  MPI_Barrier(communicator);
   MPI_Status stat;
   int hash=0;
+  int size,rank;
+  MPI_Comm_size(communicator,&size);
+  MPI_Comm_rank(communicator,&rank);
   
-  if(group.rank == 0) {
+  if(rank == 0) {
     unsigned c=0;
     for(unsigned int j=0; j < ny; j++) {
       for(unsigned int i=0; i < nx; i++) {
@@ -118,16 +127,16 @@ int hash(Complex *f, unsigned int nx, unsigned int ny, const MPIgroup& group)
       }
     }
 
-    for(int p=1; p < group.size; p++) {
+    for(int p=1; p < size; p++) {
       int source=p, tag=p;
       unsigned int pdims[2];
-      MPI_Recv(&pdims,2,MPI_UNSIGNED,source,tag,group.active,&stat);
+      MPI_Recv(&pdims,2,MPI_UNSIGNED,source,tag,communicator,&stat);
 
       unsigned int px=pdims[0], py=pdims[1];
       unsigned int n=px*py;
       Complex *C=new Complex[n];
-      tag += group.size;
-      MPI_Recv(C,2*n,MPI_DOUBLE,source,tag,group.active,&stat);
+      tag += size;
+      MPI_Recv(C,2*n,MPI_DOUBLE,source,tag,communicator,&stat);
       
       unsigned int c=0;
       for(unsigned int j=0; j < py; j++) {
@@ -140,32 +149,34 @@ int hash(Complex *f, unsigned int nx, unsigned int ny, const MPIgroup& group)
       delete [] C;
     }
     
-    for(int p=1; p < group.size; p++) {
-      int tag=p+2*group.size;
-      MPI_Send(&hash,1,MPI_INT,p,tag,group.active);
+    for(int p=1; p < size; p++) {
+      int tag=p+2*size;
+      MPI_Send(&hash,1,MPI_INT,p,tag,communicator);
     }
   } else {
-    int dest=0, tag=group.rank;
+    int dest=0, tag=rank;
     unsigned int dims[]={nx,ny};
-    MPI_Send(&dims,2,MPI_UNSIGNED,dest,tag,group.active);
+    MPI_Send(&dims,2,MPI_UNSIGNED,dest,tag,communicator);
     int n=nx*ny;
-    tag += group.size;
-    MPI_Send(f,2*n,MPI_DOUBLE,dest,tag,group.active);
+    tag += size;
+    MPI_Send(f,2*n,MPI_DOUBLE,dest,tag,communicator);
 
-    tag += group.size;
-    MPI_Recv(&hash,1,MPI_INT,0,tag,group.active,&stat);
+    tag += size;
+    MPI_Recv(&hash,1,MPI_INT,0,tag,communicator,&stat);
   }
   return hash;
 }
 
-// return a hash of the contents of a 3D complex array
 int hash(Complex *f, unsigned int nx, unsigned int ny, unsigned int nz,
-         const MPIgroup& group)
+         MPI_Comm communicator=MPI_COMM_WORLD)
 {
   MPI_Status stat;
   int hash=0;
+  int size,rank;
+  MPI_Comm_size(communicator,&size);
+  MPI_Comm_rank(communicator,&rank);
   
-  if(group.rank ==0) {
+  if(rank ==0) {
     unsigned c=0;
     for(unsigned int j=0; j < ny; j++) {
       for(unsigned int i=0; i < nx; i++) {
@@ -177,16 +188,16 @@ int hash(Complex *f, unsigned int nx, unsigned int ny, unsigned int nz,
       }
     }
     
-    for(int p=1; p < group.size; p++) {
+    for(int p=1; p < size; p++) {
       int source=p, tag=p;
       unsigned int pdims[3];
-      MPI_Recv(&pdims,3,MPI_UNSIGNED,source,tag,group.active,&stat);
+      MPI_Recv(&pdims,3,MPI_UNSIGNED,source,tag,communicator,&stat);
 
       unsigned int px=pdims[0], py=pdims[1], pz=pdims[2];
       int n=px*pz*pz;
       Complex *C=new Complex[n];
-      tag += group.size;
-      MPI_Recv(C,2*n,MPI_DOUBLE,source,tag,group.active,&stat);
+      tag += size;
+      MPI_Recv(C,2*n,MPI_DOUBLE,source,tag,communicator,&stat);
       
       unsigned int c=0;
       for(unsigned int j=0; j < py; j++) {
@@ -201,20 +212,20 @@ int hash(Complex *f, unsigned int nx, unsigned int ny, unsigned int nz,
       delete [] C;
     }
 
-    for(int p=1; p < group.size; p++) {
-      int tag=p+2*group.size;
-      MPI_Send(&hash,1,MPI_INT,p,tag,group.active);
+    for(int p=1; p < size; p++) {
+      int tag=p+2*size;
+      MPI_Send(&hash,1,MPI_INT,p,tag,communicator);
     }
   } else {
-    int dest=0, tag=group.rank;
+    int dest=0, tag=rank;
     unsigned int dims[]={nx,ny,nz};
-    MPI_Send(&dims,3,MPI_UNSIGNED,dest,tag,group.active);
+    MPI_Send(&dims,3,MPI_UNSIGNED,dest,tag,communicator);
     int n=nx*ny*nz;
-    tag += group.size;
-    MPI_Send(f,2*n,MPI_DOUBLE,dest,tag,group.active);
+    tag += size;
+    MPI_Send(f,2*n,MPI_DOUBLE,dest,tag,communicator);
     
-    tag += group.size;
-    MPI_Recv(&hash,1,MPI_INT,0,tag,group.active,&stat);
+    tag += size;
+    MPI_Recv(&hash,1,MPI_INT,0,tag,communicator,&stat);
   }
   return hash;
 }

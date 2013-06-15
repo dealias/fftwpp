@@ -162,11 +162,11 @@ int main(int argc, char* argv[])
       delete [] F;
     }
     if(nx*my < outlimit) 
-      show(f,nx,d.y,group);
+      show(f,nx,d.y,group.active);
 
     // check if the hash of the rounded output matches a known value
     if(dohash) {
-      int hashval=hash(f,mx,d.y,group);
+      int hashval=hash(f,mx,d.y,group.active);
       if(group.rank == 0) cout << hashval << endl;
       if(mx == 4 && my == 4) {
 	if(hashval != -268659210) {
