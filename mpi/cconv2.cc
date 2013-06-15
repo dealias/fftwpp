@@ -163,11 +163,11 @@ int main(int argc, char* argv[])
         timings("Implicit",mx,T,N);
    
       if(mx*my < outlimit)
-	show(f,mx,d.y,group);
+	show(f,mx,d.y,group.active);
 
       // check if the hash of the rounded output matches a known value
       if(dohash) {
-	int hashval=hash(f,mx,d.y,group);
+	int hashval=hash(f,mx,d.y,group.active);
 	if(group.rank == 0) cout << hashval << endl;
 	if(mx == 4 && my == 4) {
 	  if(hashval != -268695821) {

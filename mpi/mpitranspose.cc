@@ -11,9 +11,10 @@ void transpose::inTransposed(Complex *data)
 {
   if(size == 1) return;
   Complex *in, *out;
-  unsigned int length=n*m;
+  unsigned int Lm=L*m;
+  unsigned int length=n*Lm;
   if(d > 1) {
-    unsigned int stride=N/d*m;
+    unsigned int stride=N/d*Lm;
     unsigned int lengthsize=length*sizeof(Complex);
     unsigned int q=size/d;
     for(unsigned int p=0; p < q; ++p) {
@@ -70,9 +71,10 @@ void transpose::inwait(Complex *data)
 #endif    
   }
 
+  unsigned int Lm=L*m;
   if(d > 1) {
-    unsigned int stride=N/d*m;
-    unsigned int length=n*m;
+    unsigned int length=n*Lm;
+    unsigned int stride=N/d*Lm;
     unsigned int lengthsize=length*sizeof(Complex);
     unsigned int q=size/d;
     for(unsigned int p=0; p < q; ++p) {
@@ -99,44 +101,47 @@ void transpose::inwait(Complex *data)
     MPI_Waitall(d-1,request,MPI_STATUSES_IGNORE);
   }
     
+  unsigned int LM=L*M;
   if(n > 1) {
-    if(d > 1) memcpy(work,data,n*M*sizeof(Complex));
-    unsigned int stop=m*size;
-    unsigned int msize=m*sizeof(Complex);
+    if(d > 1) memcpy(work,data,LM*n*sizeof(Complex));
+    unsigned int stop=Lm*size;
+    unsigned int msize=Lm*sizeof(Complex);
     for(unsigned int i=0; i < n; ++i) {
-      Complex *in=data+M*i;
-      Complex *out=work+m*i;
-      for(unsigned int p=0; p < stop; p += m)
+      Complex *in=data+LM*i;
+      Complex *out=work+Lm*i;
+      for(unsigned int p=0; p < stop; p += Lm)
         memcpy(in+p,out+p*n,msize);
     }
   } else if(d == 1)
-    memcpy(data,work,n*M*sizeof(Complex));
+    memcpy(data,work,LM*n*sizeof(Complex));
 }  
     
 void transpose::outTransposed(Complex *data)
 {
   if(size == 1) return;
           
+  unsigned int Lm=L*m;
+  unsigned int LM=L*M;
   if(n > 1) {
     if(d > 1) 
-      memcpy(work,data,n*M*sizeof(Complex));
-    unsigned int stop=m*size;
-    unsigned int msize=m*sizeof(Complex);
+      memcpy(work,data,LM*n*sizeof(Complex));
+    unsigned int stop=Lm*size;
+    unsigned int msize=Lm*sizeof(Complex);
     for(unsigned int i=0; i < n; ++i) {
-      Complex *out=work+M*i;
-      Complex *in=data+m*i;
-      for(unsigned int p=0; p < stop; p += m)
+      Complex *out=work+LM*i;
+      Complex *in=data+Lm*i;
+      for(unsigned int p=0; p < stop; p += Lm)
         memcpy(in+p*n,out+p,msize);
     }
   } else if(d == 1)
-    memcpy(work,data,n*M*sizeof(Complex));
+    memcpy(work,data,LM*n*sizeof(Complex));
 
-  unsigned int length=n*m;
+  unsigned int length=n*Lm;
   Complex *in,*out;
   if(d > 1) {
     unsigned int q=size/d;
     unsigned int r=rank/q;
-    unsigned int stride=N/d*m;
+    unsigned int stride=N/d*Lm;
     for(unsigned int p=0; p < d; ++p) {
       if(p != r) {
         int inc=(p-r)*q;
@@ -207,9 +212,10 @@ void transpose::outwait(Complex *data)
 #endif    
   }
     
+  unsigned int Lm=L*m;
   if(d > 1) {
-    unsigned int stride=N/d*m;
-    unsigned int length=n*m;
+    unsigned int stride=N/d*Lm;
+    unsigned int length=n*Lm;
     unsigned int lengthsize=length*sizeof(Complex);
     unsigned int q=size/d;
     for(unsigned int p=0; p < q; ++p) {

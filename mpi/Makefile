@@ -2,10 +2,10 @@ ifndef MPICXX
 MPICXX=mpic++
 endif
 
-IDIR =../
-UDIR =../tests/
+IDIR=../
+UDIR=../tests/
 
-CXXFLAGS= -O3
+CXXFLAGS=-O3
 
 # GNU compiler
 ifeq ($(shell $(MPICXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
@@ -38,35 +38,36 @@ vpath %.cc ../
 
 FFTW=fftw++
 FILES=cconv2 conv2 cconv3 conv3
-EXTRA=$(FFTW) convolution mpiconvolution mpiutils mpitranspose
+UTILS=$(FFTW) mpiutils mpitranspose
+EXTRA=$(UTILS) convolution mpiconvolution
 ALL=$(FILES) $(EXTRA)
 
 all: $(FILES)
 
 %.o : %.cc
-	$(MPICXX) $(CXXFLAGS) -o $@ -c $<
+	$(MPICXX) $(CXXFLAGS) $(OPTS) -o $@ -c $<
 
 cconv2: cconv2.o $(EXTRA:=.o)
-	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
 conv2: conv2.o $(EXTRA:=.o)
-	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
 cconv3: cconv3.o $(EXTRA:=.o)
-	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
 conv3: conv3.o $(EXTRA:=.o)
-	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
-testmpi: testmpi.cc
-	$(MPICXX) $^ -lfftw3_mpi -lfftw3 -lm -o $@
+testmpi: testmpi.cc $(UTILS:=.o)
+	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
 clean:  FORCE
 	rm -rf $(ALL) $(ALL:=.o) $(ALL:=.d)
 
 .SUFFIXES: .c .cc .o .d
 .cc.o:
-	$(MPICXX) $(CXXFLAGS) $(INCL) -o $@ -c $<
+	$(MPICXX) $(CXXFLAGS) $(OPTS) $(INCL) -o $@ -c $<
 .cc.d:
 	@echo Creating $@; \
 	rm -f $@; \

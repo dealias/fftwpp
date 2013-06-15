@@ -4,17 +4,19 @@
 #include <iostream>
 #include <cstdlib>
 
-#define ALLTOALL 0
+#define ALLTOALL 1
 
 void fill1_comm_sched(int *sched, int which_pe, int npes);
 
-// Globally transpose an N x M matrix distributed over the second dimension.
+// Globally transpose an N x M matrix of blocks of L complex elements
+// distributed over the second dimension.
 // Here "in" is a local N x m matrix and "out" is a local n x M matrix.
 // Currently, both N and M must be divisible by the number of processors.
-// work is a temporary array of size N*m.
+// work is a temporary array of size N*m*L.
 class transpose {
 private:
   unsigned int N,m,n,M;
+  unsigned int L;
   bool wait;
   Complex *work;
   MPI_Comm communicator;
@@ -34,9 +36,9 @@ public: //temp
 
 public:
   transpose(unsigned int N, unsigned int m, unsigned int n,
-            unsigned int M, Complex *work=NULL,
+            unsigned int M, unsigned int L=1, Complex *work=NULL,
             MPI_Comm communicator=MPI_COMM_WORLD) : 
-    N(N), m(m), n(n), M(M), work(work), communicator(communicator),
+    N(N), m(m), n(n), M(M), L(L), work(work), communicator(communicator),
     allocated(false) {
     d=1;
     wait=false;
@@ -54,7 +56,7 @@ public:
     }
 
     if(work == NULL) {
-      this->work=new Complex[N*m];
+      this->work=new Complex[N*m*L];
       allocated=true;
     }
     
