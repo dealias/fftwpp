@@ -1,3 +1,5 @@
+#define NEW 0
+
 #ifndef __mpiconvolution_h__
 #define __mpiconvolution_h__ 1
   
@@ -167,6 +169,9 @@ public:
     MPI_Comm_size(d.communicator,&size);
     alltoall=mx % size == 0 && my % size == 0;
     alltoall=false;
+#if NEW    
+    if(!alltoall) T=new transpose(mx,d.y,d.x,my);
+#endif    
 
     if(alltoall) {
       T=new transpose(mx,d.y,d.x,my);
@@ -223,18 +228,24 @@ public:
   
   void pretranspose(Complex **F, unsigned int offset=0) {
     for(unsigned int s=0; s < M; ++s) {
-//      T->InTransposed(F[s]+offset);
+#if NEW      
+      T->InTransposed(F[s]+offset);
+#else      
       double *f=(double *) (F[s]+offset);
       fftw_mpi_execute_r2r(intranspose,f,f);
+#endif      
     }
   }
   
   void pretranspose(Complex *u2) {
     unsigned int stride=d.n;
     for(unsigned int s=0; s < M; ++s) {
-//      T->InTransposed(u2+s*stride);
+#if NEW      
+      T->InTransposed(u2+s*stride);
+#else      
       double *u=(double *) (u2+s*stride);
       fftw_mpi_execute_r2r(intranspose,u,u);
+#endif      
     }
   }
   
@@ -374,7 +385,9 @@ public:
     MPI_Comm_size(d.communicator,&size);
     alltoall=mx % size == 0 && my % size == 0;
     alltoall=false;
-//  if(!alltoall) T=new transpose(mx,d.y,d.x,my,d.z);
+#if NEW    
+    if(!alltoall) T=new transpose(mx,d.y,d.x,my,d.z);
+#endif    
 
     if(alltoall) {
       T=new transpose(mx,d.y,d.x,my,d.z);
@@ -450,24 +463,33 @@ public:
   
   void pretranspose(Complex **F, unsigned int offset=0) {
     for(unsigned int s=0; s < M; ++s) {
-//      T->InTransposed(F[s]+offset);
+#if NEW    
+      T->InTransposed(F[s]+offset);
+#else      
       double *f=(double *) (F[s]+offset);
       fftw_mpi_execute_r2r(intranspose,f,f);
+#endif      
     }
   }
   
   void pretranspose(Complex *u3) {
     unsigned int stride=d.n;
     for(unsigned int s=0; s < M; ++s) {
-//      T->InTransposed(u2+s*stride);
+#if NEW    
+      T->InTransposed(u2+s*stride);
+#else      
       double *u=(double *) (u3+s*stride);
       fftw_mpi_execute_r2r(intranspose,u,u);
+#endif      
     }
   }
   
   void posttranspose(Complex *f) {
-//    T->OutTransposed(f);
+#if NEW    
+    T->OutTransposed(f);
+#else
     fftw_mpi_execute_r2r(outtranspose,(double *) f,(double *) f);
+#endif    
   }
   
   void convolve(Complex **F, Complex **G, Complex **u, Complex ***V,
