@@ -121,7 +121,7 @@ public:
   unsigned int z0;
   dimensions xy;
   dimensions yz;
-  MPI_Comm active;
+  MPI_Comm communicator;
   unsigned int yblock,zblock; // requested block size
   MPI_Comm *XYplane;          // Used by HermitianSymmetrizeXYMPI
   int *reflect;               // Used by HermitianSymmetrizeXYMPI
@@ -129,7 +129,7 @@ public:
   dimensions3(unsigned int nx, unsigned int ny,
               unsigned int Ny, unsigned int nz,
               const MPIgroup& group) : nx(nx), ny(ny), nz(nz),
-                                       active(group.active),
+                                       communicator(group.active),
                                        yblock(group.yblock),
                                        zblock(group.zblock), XYplane(NULL) {
     xy=dimensions(nx,ny,group.communicator,yblock,zblock);
@@ -223,8 +223,8 @@ public:
   
   void pretranspose(Complex **F, unsigned int offset=0) {
     for(unsigned int s=0; s < M; ++s) {
+//      T->InTransposed(F[s]+offset);
       double *f=(double *) (F[s]+offset);
-//      T->InTransposed((Complex *) f);
       fftw_mpi_execute_r2r(intranspose,f,f);
     }
   }
@@ -232,14 +232,14 @@ public:
   void pretranspose(Complex *u2) {
     unsigned int stride=d.n;
     for(unsigned int s=0; s < M; ++s) {
-      double *u=(double *) u2+s*stride;
-//      T->InTransposed((Complex *) u);
+//      T->InTransposed(u2+s*stride);
+      double *u=(double *) (u2+s*stride);
       fftw_mpi_execute_r2r(intranspose,u,u);
     }
   }
   
   void posttranspose(Complex *f) {
-//    T->InTransposed(f);
+//    T->OutTransposed(f);
     fftw_mpi_execute_r2r(outtranspose,(double *) f,(double *) f);
   }
   
@@ -332,7 +332,7 @@ public:
   void pretranspose(Complex *u2) {
     unsigned int stride=du.n;
     for(unsigned int s=0; s < M; ++s) {
-      double *u=(double *) u2+s*stride;
+      double *u=(double *) (u2+s*stride);
       fftw_mpi_execute_r2r(uintranspose,u,u);
     }
   }
@@ -366,19 +366,39 @@ protected:
   dimensions3 d;
   unsigned int innerthreads;
   fftw_plan intranspose,outtranspose;
+  bool alltoall; // Use experimental nonblocking transpose
+  transpose *T;
 public:  
   void inittranspose() {
-    intranspose=
-      fftw_mpi_plan_many_transpose(my,mx,2*d.z,d.yblock,0,
-                                   (double*) u3,(double*) u3,
-                                   d.xy.communicator,FFTW_MPI_TRANSPOSED_IN);
-    if(!intranspose) transposeError("in3");
-    outtranspose=
-      fftw_mpi_plan_many_transpose(mx,my,2*d.z,0,d.yblock,
-                                   (double*) u3,(double*) u3,
-                                   d.xy.communicator,FFTW_MPI_TRANSPOSED_OUT);
-    if(!outtranspose) transposeError("out3");
-    SaveWisdom(d.xy.communicator);
+    int size;
+    MPI_Comm_size(d.communicator,&size);
+    alltoall=mx % size == 0 && my % size == 0;
+    alltoall=false;
+
+    if(alltoall) {
+      T=new transpose(mx,d.y,d.x,my,d.z);
+      int rank;
+      MPI_Comm_rank(d.communicator,&rank);
+      if(rank == 0) {
+        std::cout << "Using fast alltoall block transpose";
+#if MPI_VERSION >= 3
+        std::cout << " (NONBLOCKING MPI 3.0 version)";
+#endif
+        std::cout << std::endl;        
+      }
+    } else {
+      intranspose=
+        fftw_mpi_plan_many_transpose(my,mx,2*d.z,d.yblock,0,
+                                     (double*) u3,(double*) u3,
+                                     d.xy.communicator,FFTW_MPI_TRANSPOSED_IN);
+      if(!intranspose) transposeError("in3");
+      outtranspose=
+        fftw_mpi_plan_many_transpose(mx,my,2*d.z,0,d.yblock,
+                                     (double*) u3,(double*) u3,
+                                     d.xy.communicator,FFTW_MPI_TRANSPOSED_OUT);
+      if(!outtranspose) transposeError("out3");
+      SaveWisdom(d.xy.communicator);
+    }
   }
 
   void initMPI() {
@@ -421,8 +441,10 @@ public:
   }
   
   virtual ~ImplicitConvolution3MPI() {
-    fftw_destroy_plan(intranspose);
-    fftw_destroy_plan(outtranspose);
+    if(!alltoall) {
+      fftw_destroy_plan(intranspose);
+      fftw_destroy_plan(outtranspose);
+    }
   }
   
   void pretranspose(Complex **F, unsigned int offset=0) {
@@ -435,7 +457,7 @@ public:
   void pretranspose(Complex *u3) {
     unsigned int stride=d.n;
     for(unsigned int s=0; s < M; ++s) {
-      double *u=(double *) u3+s*stride;
+      double *u=(double *) (u3+s*stride);
       fftw_mpi_execute_r2r(intranspose,u,u);
     }
   }
@@ -566,7 +588,7 @@ public:
   void pretranspose(Complex *u3) {
     unsigned int stride=du.n;
     for(unsigned int s=0; s < M; ++s) {
-      double *u=(double *) u3+s*stride;
+      double *u=(double *) (u3+s*stride);
       fftw_mpi_execute_r2r(uintranspose,u,u);
     }
   }
