@@ -374,6 +374,7 @@ public:
     MPI_Comm_size(d.communicator,&size);
     alltoall=mx % size == 0 && my % size == 0;
     alltoall=false;
+//  if(!alltoall) T=new transpose(mx,d.y,d.x,my,d.z);
 
     if(alltoall) {
       T=new transpose(mx,d.y,d.x,my,d.z);
@@ -449,6 +450,7 @@ public:
   
   void pretranspose(Complex **F, unsigned int offset=0) {
     for(unsigned int s=0; s < M; ++s) {
+//      T->InTransposed(F[s]+offset);
       double *f=(double *) (F[s]+offset);
       fftw_mpi_execute_r2r(intranspose,f,f);
     }
@@ -457,12 +459,14 @@ public:
   void pretranspose(Complex *u3) {
     unsigned int stride=d.n;
     for(unsigned int s=0; s < M; ++s) {
+//      T->InTransposed(u2+s*stride);
       double *u=(double *) (u3+s*stride);
       fftw_mpi_execute_r2r(intranspose,u,u);
     }
   }
   
   void posttranspose(Complex *f) {
+//    T->OutTransposed(f);
     fftw_mpi_execute_r2r(outtranspose,(double *) f,(double *) f);
   }
   
