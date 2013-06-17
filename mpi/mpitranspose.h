@@ -41,10 +41,13 @@ public:
     N(N), m(m), n(n), M(M), L(L), work(work), communicator(communicator),
     allocated(false) {
     d=1;
-    wait=false;
+    wait=true;
+    
     MPI_Comm_size(communicator,&size);
     if(size == 1) return;
     MPI_Comm_rank(communicator,&rank);
+    if(rank == 0)
+      std::cout << "d=" << d << ", wait=" << wait << std::endl;
     
     if(N % size != 0 || M % size != 0) {
       if(rank == 0)
