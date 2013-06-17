@@ -12,7 +12,7 @@
 using namespace std;
 using namespace fftwpp;
 
-#define SHOW 0
+#define SHOW 1
 
 inline unsigned int ceilquotient(unsigned int a, unsigned int b)
 {
@@ -40,8 +40,9 @@ int main(int argc, char **argv)
 {
   
 #if SHOW
-  const unsigned int N0=8, N1=8;
+//  const unsigned int N0=8, N1=8;
 //  const unsigned int N0=8, N1=4;
+  const unsigned int N0=4, N1=4;
 #else
 //  const unsigned int N0=8, N1=4;
 //  const unsigned int N0=8, N1=8;
@@ -61,7 +62,7 @@ int main(int argc, char **argv)
   Complex *data;
   ptrdiff_t n0,n0start;
   ptrdiff_t n1,n1start;
-  const unsigned int N2=10;
+  const unsigned int N2=1;
   
 //  int provided;
   MPI_Init(&argc,&argv);
@@ -152,6 +153,11 @@ int main(int argc, char **argv)
     if(rank == 0) 
       posttime += seconds();
 
+#if SHOW
+    if(rank == 0) cout << "\ntranspose:\n" << endl;
+    show(data,n0,N1*N2);
+#endif
+    
 #ifndef OLD
     T.outTransposed(data);
 #else  
@@ -167,17 +173,16 @@ int main(int argc, char **argv)
   }
   
   if(rank == 0) {
-    cout << commtime/N << endl;
+    cout << endl << commtime/N << endl;
     cout << (commtime+posttime)/N << endl;
     cout << endl;
     cout << outcommtime/N << endl;
     cout << (outcommtime+outposttime)/N << endl;
   }
   
-  if(rank == 0) cout << "\noriginal:\n" << endl;
 #if SHOW  
+  if(rank == 0) cout << "\noriginal:\n" << endl;
   show(data,N0,n1*N2);
-//  show(data,n0,N1*N2);
 #endif  
   
 #ifdef OLD  

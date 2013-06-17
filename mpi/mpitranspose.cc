@@ -63,6 +63,7 @@ void transpose::inTransposed(Complex *data)
   
 void transpose::inwait(Complex *data)
 {
+  if(size == 1) return;
   if(!wait) {
 #if ALLTOALL
     MPI_Wait(&Request,&status);
@@ -119,20 +120,18 @@ void transpose::inwait(Complex *data)
 void transpose::outTransposed(Complex *data)
 {
   if(size == 1) return;
-          
   unsigned int Lm=L*m;
   unsigned int LM=L*M;
   if(n > 1) {
-    if(d > 1) 
-      memcpy(work,data,LM*n*sizeof(Complex));
     unsigned int stop=Lm*size;
     unsigned int msize=Lm*sizeof(Complex);
     for(unsigned int i=0; i < n; ++i) {
-      Complex *out=work+LM*i;
-      Complex *in=data+Lm*i;
+      Complex *outi=data+LM*i;
+      Complex *ini=work+Lm*i;
       for(unsigned int p=0; p < stop; p += Lm)
-        memcpy(in+p*n,out+p,msize);
+        memcpy(ini+p*n,outi+p,msize);
     }
+    if(d > 1) memcpy(data,work,LM*n*sizeof(Complex));    
   } else if(d == 1)
     memcpy(work,data,LM*n*sizeof(Complex));
 
@@ -204,6 +203,7 @@ void transpose::outTransposed(Complex *data)
 
 void transpose::outwait(Complex *data) 
 {
+  if(size == 1) return;
   if(!wait) {
 #if ALLTOALL
     MPI_Wait(&Request,&status);

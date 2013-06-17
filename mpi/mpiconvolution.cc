@@ -15,10 +15,11 @@ void ImplicitConvolution2MPI::convolve(Complex **F, Complex **G,
     Complex *us=u2;
     for(unsigned int s=0; s < M; ++s) {
       Complex *f=F[s]+offset;
+      Complex *u0=us;
       us=u2+s*d.n;
       xfftpad->expand(f,us);
       xfftpad->Backwards->fft(f);
-      if(s > 0) T->inwait(us);
+      if(s > 0) T->inwait(u0);
       T->inTransposed(f);
       Complex *g=G[s]+offset;
       xfftpad->expand(g,v2+s*d.n);
@@ -39,9 +40,10 @@ void ImplicitConvolution2MPI::convolve(Complex **F, Complex **G,
     
     Complex *v=v2;
     for(unsigned int s=0; s < M; ++s) {
+      Complex *v0=v;
       v=v2+s*d.n;
       xfftpad->Backwards->fft(v);
-      s == 0 ? T->outwait(f) : T->inwait(v);
+      s == 0 ? T->outwait(f) : T->inwait(v0);
       T->inTransposed(v);
     }
     
@@ -72,7 +74,6 @@ void ImplicitConvolution2MPI::convolve(Complex **F, Complex **G,
     
     forwards(f,u2);
   }
-
 }
   
 void ImplicitHConvolution2MPI::convolve(Complex **F, Complex **G, 
@@ -115,25 +116,72 @@ void ImplicitConvolution3MPI::convolve(Complex **F, Complex **G,
   Complex *u3=U3[0];
   Complex *v3=V3[0];
     
-  backwards(F,u3,d.n,offset);
-  backwards(G,v3,d.n,offset);
+  if(alltoall) {
+    Complex *us=u3;
+    for(unsigned int s=0; s < M; ++s) {
+      Complex *f=F[s]+offset;
+      Complex *u0=us;
+      us=u3+s*d.n;
+      xfftpad->expand(f,us);
+      xfftpad->Backwards->fft(f);
+      if(s > 0) T->inwait(u0);
+      T->inTransposed(f);
+      Complex *g=G[s]+offset;
+      xfftpad->expand(g,v3+s*d.n);
+      xfftpad->Backwards->fft(g);
+      T->inwait(f);
+      T->inTransposed(g);
+      xfftpad->Backwards->fft(us);
+      T->inwait(g);
+      T->inTransposed(us);
+    }
     
-  pretranspose(F,offset);
-  pretranspose(u3);
-  pretranspose(G,offset);
-  pretranspose(v3);
+    unsigned int stride=my*d.z;
+    unsigned int size=d.x*stride;
+    subconvolution(F,G,u,V,U2,V2,offset,size+offset,stride);
     
-  unsigned int stride=my*d.z;
-  unsigned int size=d.x*stride;
+    Complex *f=F[0]+offset;
+    T->inwait(us);
+    T->outTransposed(f);
     
-  subconvolution(F,G,u,V,U2,V2,offset,size+offset,stride);
-  subconvolution(U3,V3,u,V,U2,V2,0,size,stride);
+    Complex *v=v3;
+    for(unsigned int s=0; s < M; ++s) {
+      Complex *v0=v;
+      v=v3+s*d.n;
+      xfftpad->Backwards->fft(v);
+      s == 0 ? T->outwait(f) : T->inwait(v0);
+      T->inTransposed(v);
+    }
+    
+    xfftpad->Forwards->fft(f);
+    T->inwait(v);
+    subconvolution(U3,V3,u,V,U2,V2,0,size,stride);
+    T->outTransposed(u3);
+    T->outwait(u3);
+    
+    xfftpad->Forwards->fft(u3);
+    xfftpad->reduce(f,u3);
+  } else {
+    backwards(F,u3,d.n,offset);
+    backwards(G,v3,d.n,offset);
+    
+    pretranspose(F,offset);
+    pretranspose(u3);
+    pretranspose(G,offset);
+    pretranspose(v3);
+    
+    unsigned int stride=my*d.z;
+    unsigned int size=d.x*stride;
+    
+    subconvolution(F,G,u,V,U2,V2,offset,size+offset,stride);
+    subconvolution(U3,V3,u,V,U2,V2,0,size,stride);
    
-  Complex *f=F[0]+offset;
-  posttranspose(f);
-  posttranspose(u3);
+    Complex *f=F[0]+offset;
+    posttranspose(f);
+    posttranspose(u3);
     
-  forwards(f,u3);
+    forwards(f,u3);
+  }
 }
 
 // Enforce 3D Hermiticity using specified (x,y > 0,z=0) and (x >= 0,y=0,z=0)
@@ -152,7 +200,7 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
   unsigned int yorigin=my-1;
   if(d.XYplane == NULL) {
     d.XYplane=new MPI_Comm;
-    MPI_Comm_split(d.active,d.z0 == 0,0,d.XYplane);
+    MPI_Comm_split(d.communicator,d.z0 == 0,0,d.XYplane);
     if(d.z0 != 0) return;
     MPI_Comm_rank(*d.XYplane,&rank);
     MPI_Comm_size(*d.XYplane,&size);
