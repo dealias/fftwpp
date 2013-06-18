@@ -267,8 +267,6 @@ void ExplicitHConvolution2::convolve(Complex **F, Complex **G, bool symmetrize)
 
   double *f=(double *) F[0];
   double *g=(double *) G[0];
-  double *f1=(double *) F[1];
-  double *g1=(double *) G[1];
   
   if(M == 1) {
     PARALLEL(
@@ -280,6 +278,8 @@ void ExplicitHConvolution2::convolve(Complex **F, Complex **G, bool symmetrize)
       }
       )
       } else if(M == 2) {
+    double *f1=(double *) F[1];
+    double *g1=(double *) G[1];
     PARALLEL(
       for(unsigned int i=0; i < nx; ++i) {
         unsigned int nyp2i=nyp2*i;
