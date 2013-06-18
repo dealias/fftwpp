@@ -1,4 +1,4 @@
-#define NEW 0
+#define NEW 1
 
 #ifndef __mpiconvolution_h__
 #define __mpiconvolution_h__ 1
@@ -476,7 +476,7 @@ public:
     unsigned int stride=d.n;
     for(unsigned int s=0; s < M; ++s) {
 #if NEW    
-      T->InTransposed(u2+s*stride);
+      T->InTransposed(u3+s*stride);
 #else      
       double *u=(double *) (u3+s*stride);
       fftw_mpi_execute_r2r(intranspose,u,u);
