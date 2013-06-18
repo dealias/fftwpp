@@ -120,6 +120,7 @@ class ExplicitHConvolution2 : public ThreadBase {
 protected:
   unsigned int nx,ny;
   unsigned int mx,my;
+  unsigned int M;
   bool prune; // Skip Fourier transforming rows containing all zeroes?
   mfft1d *xBackwards;
   mfft1d *xForwards;
@@ -132,9 +133,10 @@ protected:
   Complex *ZetaH,*ZetaL;
 public:  
   ExplicitHConvolution2(unsigned int nx, unsigned int ny, 
-                        unsigned int mx, unsigned int my, Complex *f,
+                        unsigned int mx, unsigned int my,
+                        Complex *f, unsigned int M=1,
                         bool pruned=false) :
-    nx(nx), ny(ny), mx(mx), my(my), prune(pruned) {
+    nx(nx), ny(ny), mx(mx), my(my), M(M), prune(pruned) {
     threads=fftw::maxthreads;
     unsigned int nyp=ny/2+1;
     // Odd nx requires interleaving of shift with x and y transforms.
@@ -171,11 +173,16 @@ public:
   void pad(Complex *f);
   void backwards(Complex *f, bool shift=true);
   void forwards(Complex *f);
-  void convolve(Complex *f, Complex *g, bool symmetrize=true);
+  void convolve(Complex **F, Complex **G, bool symmetrize=true);
+  
+  // Constructor for special case M=1:
+  void convolve(Complex *f, Complex *g, bool symmetrize=true) {
+    convolve(&f,&g,symmetrize);
+  }
 };
 
 // In-place explicitly dealiased 3D complex convolution.
- class ExplicitConvolution3 : public ThreadBase {
+class ExplicitConvolution3 : public ThreadBase {
 protected:
   unsigned int nx,ny,nz;
   unsigned int mx,my,mz;
@@ -328,4 +335,3 @@ public:
 #endif
 
 }
-
