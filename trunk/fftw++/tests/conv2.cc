@@ -29,7 +29,7 @@ inline void init(array2<Complex>& f, array2<Complex>& g, unsigned int M=1)
 {
   unsigned int offset=Explicit ? nx/2-mx+1 : 0;
   unsigned int stop=2*mx-1;
-  unsigned int stopoffset=stop+2*offset-1;
+  unsigned int stopoffset=stop+(Explicit ? 2*offset-1 : 0);
   double factor=1.0/sqrt((double) M);
   for(unsigned int s=0; s < M; ++s) {
     double S=sqrt(1.0+s);
