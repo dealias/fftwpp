@@ -97,15 +97,8 @@ int main(int argc, char* argv[])
   }
 
   int provided;
-  MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
+  MPI_Init_thread(&argc,&argv,MPI_THREAD_MULTIPLE,&provided);
 
-  if(provided < MPI_THREAD_FUNNELED) {
-    fftw::maxthreads=1;
-  } else {
-    fftw_init_threads();
-    fftw_mpi_init();
-  }
-  
   if(my == 0) my=mx;
 
   if(N == 0) {
@@ -114,6 +107,18 @@ int main(int argc, char* argv[])
   }
   
   MPIgroup group(my);
+
+  if(group.size > 1 && provided < MPI_THREAD_FUNNELED) {
+    fftw::maxthreads=1;
+  } else {
+    fftw_init_threads();
+    fftw_mpi_init();
+  }
+
+  if(group.rank == 0) {
+    cout << "provided: " << provided << endl;
+    cout << "fftw::maxthreads: " << fftw::maxthreads << endl;
+  }
   
   if(group.rank == 0) {
     cout << "Configuration: " 

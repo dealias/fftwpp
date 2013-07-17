@@ -40,7 +40,7 @@ ALL=$(FILES) $(EXTRA)
 
 all: $(FILES)
 
-%.o : %.cc
+%.o : %.cc %.h
 	$(CXX) $(CXXFLAGS) -o $@ -c $<
 
 example0: example0.o $(FFTW:=.o)

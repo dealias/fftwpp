@@ -35,16 +35,17 @@ MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
 LDFLAGS = -lfftw3_mpi -lfftw3_omp -lfftw3 -lm
 
 vpath %.cc ../
+vpath %.h ../
 
 FFTW=fftw++
-FILES=cconv2 conv2 cconv3 conv3
+FILES=cconv2 conv2 cconv3 conv3 cfft2 cfft3
 UTILS=$(FFTW) mpiutils mpitranspose
 EXTRA=$(UTILS) convolution mpiconvolution
 ALL=$(FILES) $(EXTRA)
 
 all: $(FILES)
 
-%.o : %.cc
+%.o : %.cc %.h
 	$(MPICXX) $(CXXFLAGS) $(OPTS) -o $@ -c $<
 
 cconv2: cconv2.o $(EXTRA:=.o)
@@ -58,6 +59,12 @@ cconv3: cconv3.o $(EXTRA:=.o)
 
 conv3: conv3.o $(EXTRA:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
+
+cfft2: cfft2.o $(EXTRA:=.o)
+	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
+cfft3: cfft3.o $(EXTRA:=.o) mpiutils.o
+	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 testmpi: testmpi.cc $(UTILS:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
