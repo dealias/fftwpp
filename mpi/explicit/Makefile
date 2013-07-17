@@ -33,7 +33,7 @@ LDFLAGS = -lfftw3_mpi -lfftw3_omp -lfftw3 -lm
 
 vpath %.cc ../../
 
-FILES=cconv2 cconv3
+FILES=cconv2 cconv3 conv2
 
 all: $(FILES)
 
@@ -41,6 +41,9 @@ cconv2: cconv2.cc
 	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 cconv3: cconv3.cc
+	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
+conv2: conv2.cc
 	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 clean:

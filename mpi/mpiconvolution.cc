@@ -10,7 +10,7 @@ void ImplicitConvolution2MPI::convolve(Complex **F, Complex **G,
 
   Complex *u2=U2[0];
   Complex *v2=V2[0];
-    
+  
   if(alltoall) {
     Complex *us=u2;
     for(unsigned int s=0; s < M; ++s) {
@@ -143,7 +143,7 @@ void ImplicitConvolution3MPI::convolve(Complex **F, Complex **G,
     Complex *f=F[0]+offset;
     T->inwait(us);
     T->outTransposed(f);
-    
+  
     Complex *v=v3;
     for(unsigned int s=0; s < M; ++s) {
       Complex *v0=v;
@@ -175,7 +175,7 @@ void ImplicitConvolution3MPI::convolve(Complex **F, Complex **G,
     
     subconvolution(F,G,u,V,U2,V2,offset,size+offset,stride);
     subconvolution(U3,V3,u,V,U2,V2,0,size,stride);
-   
+  
     Complex *f=F[0]+offset;
     posttranspose(f);
     posttranspose(u3);
@@ -268,7 +268,7 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
   }
 }
 
-void ImplicitHConvolution3MPI::convolve(Complex **F, Complex **G, 
+void ImplicitHConvolution3MPI::convolve(Complex **F, Complex **G,
                                         Complex ***U, Complex **v, 
                                         Complex **w,
                                         Complex ***U2, Complex ***V2, 
@@ -301,4 +301,141 @@ void ImplicitHConvolution3MPI::convolve(Complex **F, Complex **G,
   forwards(f,u3);
 }
 
-} //namespace fftwpp
+
+void cfft2MPI::Forwards(Complex *f,bool finaltranspose)
+{
+  if(alltoall) {
+    std::cout << "cfft2MPI does not have alltoall enabled; aborting." 
+	      << std::endl;
+    exit(1);
+    
+  } else {
+
+#if 1
+    // fft in x-direction    
+    xForwards->fft(f);
+    
+    // Ttranspose
+    fftw_mpi_execute_r2r(transpose,(double *)f,(double *)f);
+    
+    // fft in y-direction
+    yForwards->fft(f);
+    
+    // Transpose back:
+    if(finaltranspose)
+      fftw_mpi_execute_r2r(transpose,(double *)f,(double *)f);
+#else
+    // fft in x-direction    
+    xForwards->fft(f);
+    
+    // Ttranspose
+    fftw_mpi_execute_r2r(intranspose,(double *)f,(double *)f);
+    
+    // fft in y-direction
+    yForwards->fft(f); // FIXME: in this case, we need to mess with stride.
+    
+    // Transpose back:
+    if(finaltranspose)
+      fftw_mpi_execute_r2r(outtranspose,(double *)f,(double *)f);
+#endif
+  }
+}
+
+void cfft2MPI::Backwards(Complex *f,bool finaltranspose)
+{
+  if(alltoall) {
+    std::cout << "cfft2MPI does not have alltoall enabled; aborting." 
+	      << std::endl;
+    exit(1);
+    
+  } else {
+    // Transpose back:
+    if(finaltranspose)
+      fftw_mpi_execute_r2r(transpose,(double *)f,(double *)f);
+
+    // fft in y-direction
+    yBackwards->fft(f);
+
+    
+    // Ttranspose
+    fftw_mpi_execute_r2r(transpose,(double *)f,(double *)f);
+    
+    // fft in x-direction    
+    xBackwards->fft(f);
+    
+  }
+}
+
+void cfft2MPI::Normalize(Complex *f) 
+{
+  double overN=1.0/(d.nx*d.ny);
+  for(unsigned int i=0; i < d.n; ++i) f[i] *= overN;
+}
+
+void cfft3MPI::Forwards(Complex *f,bool finaltranspose)
+{
+  if(alltoall) {
+    std::cout << "cfft2MPI does not have alltoall enabled; aborting." 
+	      << std::endl;
+    exit(1);
+    
+  } else {
+
+    // fft in x-direction    
+    xForwards->fft(f);
+    
+    // Ttranspose
+    fftw_mpi_execute_r2r(transpose,(double *)f,(double *)f);
+  
+    // fft in y-direction
+    yForwards->fft(f);
+    
+    // Ttranspose:
+    // FIXME: what goes here?
+  
+    // fft in z-direction
+    yForwards->fft(f);
+    
+    // Transpose back:
+    if(finaltranspose)
+      fftw_mpi_execute_r2r(transpose,(double *)f,(double *)f);
+  }
+}
+
+void cfft3MPI::Backwards(Complex *f,bool finaltranspose)
+{
+  if(alltoall) {
+    std::cout << "cfft2MPI does not have alltoall enabled; aborting." 
+	      << std::endl;
+    exit(1);
+    
+  } else {
+    // Transpose back:
+    if(finaltranspose)
+      fftw_mpi_execute_r2r(transpose,(double *)f,(double *)f);
+
+    // fft in z-direction:
+    zBackwards->fft(f);
+
+    // Transpose again:
+    // FIXME
+
+    // fft in y-direction:
+    yBackwards->fft(f);
+    
+    // Ttranspose
+    fftw_mpi_execute_r2r(transpose,(double *)f,(double *)f);
+    
+    // fft in x-direction    
+    xBackwards->fft(f);
+  }
+}
+
+void cfft3MPI::Normalize(Complex *f) 
+{
+  double overN=1.0/(d.nx*d.ny*d.nz);
+  for(unsigned int i=0; i < d.n; ++i) f[i] *= overN;
+}
+
+
+} // namespace fftwpp

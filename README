@@ -1,16 +1,5 @@
         FFTW++: Fast Fourier Transform C++ Header Class for FFTW3 Library
  
-
-########################## MPI ##########################
-
-Hybrid OpenMP/MPI versions of the convolution routines in 2 and 3
-dimensions are available in the mpi directory.  Parallelization is
-accomplished using FFTW's MPI transpose routine, which has been
-adapted to provide both 1D ("slab") and 2D ("pencil") decompositions
-in computing 3 dimensional convolutions.
-
-mpi/fftw contains comparison code using FFTW's parallel MPI transform
-and explicit padding.
 Copyright (C) 2004-12 John C. Bowman and Malcolm Roberts, University of Alberta
                     http://fftwpp.sourceforge.net
 
@@ -59,6 +48,16 @@ ensure that the data is optimally aligned to sizeof(Complex), to
 enable the SIMD extensions.  The optional alignment check in fftw++.h
 can be disabled with the -DNO_CHECK_ALIGN compiler option.
 
+########################## MPI ##########################
+
+Hybrid OpenMP/MPI versions of the convolution routines in 2 and 3
+dimensions are available in the mpi/ directory.  Parallelization is
+accomplished using FFTW's MPI transpose routine, which has been
+adapted to provide both 1D ("slab") and 2D ("pencil") decompositions
+in computing 3 dimensional convolutions.
+
+mpi/fftw/ contains comparison code using FFTW's parallel MPI transform
+and explicit padding.
 
 ########################## Examples ##########################
 
@@ -85,8 +84,11 @@ data in 1, 2, and 3 dimensions:
 examplecconv.cc, examplecconv2.cc, examplecconv3.cc
 
 Examples of implicitly dealiased convolutions on complex
-Hermitian-symmetric centered data in 1, 2, and 3 dimensions:
-exampleconv.cc, exampleconv2.cc, exampleconv3.cc
+Hermitian-symmetric centered data in 1, 2, and 3 dimensions using
+function-pointers to specify the operation to be performed in the
+transformed space (allowing more general types of convolutions to be
+performed):
+examplepconv.cc, examplepconv2.cc, examplepconv3.cc
 
 
 ########################## Wrappers ##########################
@@ -131,6 +133,9 @@ complex non-centered convolutions.
 
 conv2.cc and conv3.cc are examples of two- and three-dimensional
 Hermitian-symmetric complex centered convolutions.
+
+cfft2.cc is an example of a two-dimensional hybrid MPI/OpenMP FFT
+using a 1D data decomposition.
 
 timing.py is a script which performs timing tests for mpi-based
 convolutions.
@@ -178,6 +183,9 @@ cconv3.cc
 3D Hermitian convolution test:
 conv3.cc
 
+In addition, the file pcconv.cc has examples for 1D, 2D, and 3D
+complex convolutions using function pointers, which allows a more
+general multiplication to be performed.
 
 ######################## Availability and License ########################
 

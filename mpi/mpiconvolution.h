@@ -642,6 +642,174 @@ public:
   }
 };
 
+
+// In-place MPI/OpenMPI  2D complex FFT.
+// FIXME: complete documentation.
+class cfft2MPI : public ThreadBase {
+ private:
+  unsigned int mx, my;
+  dimensions d;
+  mfft1d *xForwards;
+  mfft1d *xBackwards;
+  mfft1d *yForwards;
+  mfft1d *yBackwards;
+  Complex *f;
+ protected:
+  fftw_plan transpose;
+  fftw_plan intranspose, outtranspose;
+  MPI_Request* utranspose;
+  bool alltoall; // Use faster nonblocking alltoall block transpose
+ public:
+  void inittranspose(Complex* f) {
+    int size;
+    MPI_Comm_size(d.communicator,&size);
+    alltoall=mx % size == 0 && my % size == 0;
+
+    alltoall=false; // FIXME: temp
+
+    if(alltoall) {
+      int rank;
+      MPI_Comm_rank(d.communicator,&rank);
+      if(rank == 0) {
+        std::cout << "Using fast alltoall block transpose";
+#if MPI_VERSION >= 3
+        std::cout << " (NONBLOCKING MPI 3.0 version)";
+#endif
+        std::cout << std::endl;        
+      }
+    
+      utranspose=new MPI_Request;
+    } else {
+      transpose=
+	fftw_mpi_plan_many_transpose(mx,my,2,0,d.block,
+				     (double *)f, (double *)f,
+				     d.communicator,FFTW_ESTIMATE);
+      if(!transpose) transposeError("normal transpose");
+      
+      intranspose=
+	fftw_mpi_plan_many_transpose(mx,my,2,0,d.block,
+				     (double *)f, (double *)f,
+				     d.communicator,FFTW_MPI_TRANSPOSED_IN);
+      if(!intranspose) transposeError("intranspose");
+      
+      outtranspose=
+	fftw_mpi_plan_many_transpose(mx,my,2,0,d.block,
+				     (double *)f, (double *)f,
+				     d.communicator,FFTW_MPI_TRANSPOSED_OUT);
+      if(!outtranspose) transposeError("outtranspose");
+      
+      SaveWisdom(d.communicator);
+    }
+  }
+  
+  // threads is the number of threads to use in the outer subconvolution loop.
+  // FIXME: is threads set correctly?
+ cfft2MPI(const dimensions& d, Complex *f,
+	  unsigned int threads=fftw::maxthreads) : d(d) {
+    mx=d.nx;
+    my=d.ny;
+    inittranspose(f);
+ 
+    xForwards=new mfft1d(d.nx,-1,d.y);
+    xBackwards=new mfft1d(d.nx,1,d.y);
+
+    yForwards=new mfft1d(d.ny,-1,d.x);
+    yBackwards=new mfft1d(d.ny,1,d.x);
+  }
+  
+  virtual ~cfft2MPI() {
+    if(alltoall) {
+      delete utranspose;
+    } else {
+      fftw_destroy_plan(transpose);
+    }
+  }
+
+  void Forwards(Complex *f, bool finaltranspose=true);
+  void Backwards(Complex *f, bool finaltranspose=true);
+  void Normalize(Complex *f);
+};
+
+// In-place MPI/OpenMPI 3D complex FFT.
+// FIXME: complete documentation.
+class cfft3MPI : public ThreadBase {
+ private:
+  unsigned int mx, my, mz;
+  dimensions3 d;
+  mfft1d *xForwards;
+  mfft1d *xBackwards;
+  mfft1d *yForwards;
+  mfft1d *yBackwards;
+  mfft1d *zForwards;
+  mfft1d *zBackwards;
+  Complex *f;
+ protected:
+  fftw_plan transpose;
+  fftw_plan intranspose, outtranspose;
+  MPI_Request* utranspose;
+  bool alltoall; // Use faster nonblocking alltoall block transpose
+ public:
+  void inittranspose(Complex* f) {
+    int size;
+    //MPI_Comm_size(d.communicator,&size); // FIXME
+    alltoall=mx % size == 0 && my % size == 0;
+
+    alltoall=false; // FIXME: temp
+
+    if(alltoall) {
+      int rank;
+      //MPI_Comm_rank(d.communicator,&rank); // FIXME
+      if(rank == 0) {
+        std::cout << "Using fast alltoall block transpose";
+#if MPI_VERSION >= 3
+        std::cout << " (NONBLOCKING MPI 3.0 version)";
+#endif
+        std::cout << std::endl;        
+      }
+    
+      utranspose=new MPI_Request;
+    } else {
+
+      // FIXME: define tranposes
+      
+      //SaveWisdom(d.communicator); // FIXME
+    }
+  }
+  
+  // threads is the number of threads to use in the outer subconvolution loop.
+  // FIXME: is threads set correctly?
+ cfft3MPI(const dimensions3& d, Complex *f,
+	  unsigned int threads=fftw::maxthreads) : d(d) {
+    mx=d.nx;
+    my=d.ny;
+    mz=d.nz;
+    inittranspose(f);
+ 
+    // FIXME: these are probably wrong, yo.
+    xForwards=new mfft1d(d.nx,-1,d.y);
+    xBackwards=new mfft1d(d.nx,1,d.y);
+
+    yForwards=new mfft1d(d.ny,-1,d.x);
+    yBackwards=new mfft1d(d.ny,1,d.x);
+
+    zForwards=new mfft1d(d.ny,-1,d.x);
+    zBackwards=new mfft1d(d.ny,1,d.x);
+  }
+  
+  virtual ~cfft3MPI() {
+    if(alltoall) {
+      delete utranspose;
+    } else {
+      fftw_destroy_plan(transpose);
+    }
+  }
+
+  void Forwards(Complex *f, bool finaltranspose=true);
+  void Backwards(Complex *f, bool finaltranspose=true);
+  void Normalize(Complex *f);
+};
+
+
 } // namespace fftwpp
 
 #endif
