@@ -53,13 +53,16 @@ int main(int argc, char* argv[])
   cout << "f:" << endl << f << endl;
   cout << "g:" << endl << g << endl;
   
+  /*
   cout << "input after symmetrization (done automatically):" << endl;
   HermitianSymmetrizeX(mx,my,mx-1,f);
   HermitianSymmetrizeX(mx,my,mx-1,g);
   cout << "f:" << endl << f << endl;
   cout << "g:" << endl << g << endl;
+  */
   
-  ImplicitHConvolution2 C(mx,my);
+  bool symmetrize=true;
+  ImplicitHConvolution2 C(mx,my,symmetrize);
   C.convolve(f,g);
   cout << "output:" << endl << f << endl;
 

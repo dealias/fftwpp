@@ -30,8 +30,7 @@ LDFLAGS= -lfftw3_omp -lfftw3 -lm
 vpath %.cc ../
 
 FILES=\
-example0 example0r example1 example1r example2 example2r example3 example3r \
-examplecconv exampleconv examplecconv2 exampleconv2 examplecconv3 exampleconv3 \
+example0 example0r example0m example1 example1r example2 example2r example3 example3r examplecconv exampleconv examplecconv2 exampleconv2 examplecconv3 exampleconv3 \
 examplepcconv examplepcconv2 examplepcconv3
 
 FFTW=fftw++
@@ -47,6 +46,9 @@ example0: example0.o $(FFTW:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 example0r: example0r.o $(FFTW:=.o)
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
+example0m: example0m.o $(FFTW:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 example1: example1.o $(FFTW:=.o)
