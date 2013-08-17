@@ -9,8 +9,8 @@ using namespace fftwpp;
 
 int main()
 {
-  fftw::maxthreads=4;
-  unsigned int T=1;
+  fftw::maxthreads=1;
+  unsigned int T=4;
   
   unsigned int M=4096;
   unsigned int n=4096; 
@@ -30,9 +30,7 @@ int main()
 #pragma omp parallel for num_threads(T)
   for(int i=0; i < T; ++i)
     Forward.fft(f+i*K);
-  }
   
-  for(int j=0; j < N; ++j) {
 #pragma omp parallel for num_threads(T)
   for(int i=0; i < T; ++i)
     Backward.fftNormalized(f+i*K);
