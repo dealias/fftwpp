@@ -1,4 +1,4 @@
-#define NEW 1
+#define NEW 0
 
 #ifndef __mpiconvolution_h__
 #define __mpiconvolution_h__ 1

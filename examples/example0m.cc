@@ -9,11 +9,13 @@ using namespace fftwpp;
 
 int main()
 {
-  fftw::maxthreads=1;
-  unsigned int T=4;
+  fftw::maxthreads=4;
+  unsigned int T=1;
   
-  unsigned int M=4096;
-  unsigned int n=4096; 
+  unsigned int M=8192;
+  unsigned int n=8192;
+  unsigned int N=10;
+
   Complex *f=ComplexAlign(n*M);
   unsigned int K=M/T;
     
@@ -24,20 +26,23 @@ int main()
 	
   seconds();
   
-  unsigned int N=100;
-  
-  for(int j=0; j < N; ++j) {
+  for(unsigned int j=0; j < N; ++j) {
 #pragma omp parallel for num_threads(T)
-  for(int i=0; i < T; ++i)
-    Forward.fft(f+i*K);
+    for(unsigned int i=0; i < T; ++i)
+      Forward.fft(f+K*i);
   
 #pragma omp parallel for num_threads(T)
-  for(int i=0; i < T; ++i)
-    Backward.fftNormalized(f+i*K);
+    for(unsigned int i=0; i < T; ++i)
+      Backward.fftNormalized(f+K*i);
   }
 	
-//  for(unsigned int i=0; i < n; i++) cout << f[i] << endl;
   cout << seconds() << endl;
   
-  FFTWdelete(f);
+  Complex sum=0.0;
+  for(unsigned int i=0; i < n*M; i++) 
+    sum += f[i];
+  
+  cout << sum << endl;
+  
+  deleteAlign(f);
 }

@@ -507,16 +507,17 @@ public:
                      unsigned int nx, unsigned int M,
                      size_t stride, size_t dist) {
     if(stride == 1 && dist == nx) fftw::fftNormalized(in,out);
-    else if(stride == nx && dist == 1) fftw::fftNormalized(in,out);
     else {
       out=Setout(in,out);
       Execute(in,out);
+      Complex *stop=out+nx*stride;
+      unsigned int Mdist=M*dist;
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif
-      for(unsigned int k=0; k < M; k++) {
-        for(unsigned int j=0; j < nx; j++) {
-          out[j*stride+k*dist] *= norm;
+      for(Complex *p=out; p < stop; p += stride) {
+         for(unsigned int k=0; k < Mdist; k += dist) {
+          p[k] *= norm;
         }
       }
     }

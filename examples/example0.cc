@@ -23,5 +23,5 @@ int main()
 	
   for(unsigned int i=0; i < n; i++) cout << f[i] << endl;
   
-  FFTWdelete(f);
+  deleteAlign(f);
 }
