@@ -37,6 +37,17 @@ unsigned int BuildZeta(unsigned int n, unsigned int m,
                        Complex *&ZetaH, Complex *&ZetaL,
                        unsigned int threads=1);
 
+class ThreadBase
+{
+protected:
+  unsigned int threads;
+public:  
+  ThreadBase() {threads=fftw::maxthreads;}
+  ThreadBase(unsigned int threads) : threads(threads) {}
+  void Threads(unsigned int nthreads) {threads=nthreads;}
+  unsigned int Threads() {return threads;}
+};
+
 // In-place implicitly dealiased 1D complex convolution.
 class ImplicitConvolution : public ThreadBase {
 protected:
@@ -407,8 +418,8 @@ public:
                        unsigned int stride=0) :
     ThreadBase(threads), mx(mx), my(my), u1(u1), v1(v1), u2(u2), v2(v2), M(M),
     allocated(false) {
-    outerthreads(nx);
     set(nx,ny,stride);
+    outerthreads(nx);
     init(nx,ny,stride);
   }
   
@@ -417,11 +428,11 @@ public:
                        unsigned int nx=0, unsigned int ny=0,
                        unsigned int stride=0) : 
     ThreadBase(threads), mx(mx), my(my), M(M), allocated(true) {
+    set(nx,ny,stride);
     unsigned int Threads=outerthreads(nx);
     unsigned int n1=my*M*Threads;
     u1=ComplexAlign(n1);
     v1=ComplexAlign(n1);
-    set(nx,ny,stride);
     unsigned int n2=stride*M;
     u2=ComplexAlign(n2);
     v2=ComplexAlign(n2);
@@ -595,8 +606,8 @@ public:
                             unsigned int stride=0) :
     ThreadBase(threads), mx(mx), my(my), u1(u1), v1(v1), w1(w1), u2(u2), v2(v2),
     M(M), allocated(false) {
-    outerthreads(nx);
     set(nx,ny,stride);
+    outerthreads(nx);
     init(nx,ny,stride);
   }
   
@@ -605,12 +616,12 @@ public:
                             unsigned int nx=0, unsigned int ny=0,
                             unsigned int stride=0) :
     ThreadBase(threads), mx(mx), my(my), M(M) {
+    set(nx,ny,stride);
     unsigned int Threads=outerthreads(nx);
     unsigned n1=(my/2+1)*M*Threads;
     u1=ComplexAlign(n1);
     v1=ComplexAlign(n1);
     w1=ComplexAlign(3*M*Threads);
-    set(nx,ny,stride);
     unsigned int n2=stride*M;
     u2=ComplexAlign(n2);
     v2=ComplexAlign(n2);

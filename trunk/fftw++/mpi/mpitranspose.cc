@@ -10,6 +10,8 @@
 void transpose::inTransposed(Complex *data)
 {
   if(size == 1) return;
+  
+  // Outer transpose size/d x size/d blocks each of dimension d x d
   Complex *in, *out;
   unsigned int Lm=L*m;
   unsigned int length=n*Lm;
@@ -72,6 +74,7 @@ void transpose::inwait(Complex *data)
 #endif    
   }
 
+  // Inner transpose each d x d block
   unsigned int Lm=L*m;
   if(d > 1) {
     unsigned int length=n*Lm;
@@ -120,6 +123,8 @@ void transpose::inwait(Complex *data)
 void transpose::outTransposed(Complex *data)
 {
   if(size == 1) return;
+  
+  // Inner transpose each d x d block
   unsigned int Lm=L*m;
   unsigned int LM=L*M;
   if(n > 1) {
@@ -155,6 +160,8 @@ void transpose::outTransposed(Complex *data)
       
     MPI_Waitall(d-1,request,MPI_STATUSES_IGNORE);
       
+  // Outer transpose size/d x size/d blocks each of dimension d x d
+  
     unsigned int lengthsize=length*sizeof(Complex);
     for(unsigned int p=0; p < q; ++p) {
       unsigned int lengthp=length*p;
