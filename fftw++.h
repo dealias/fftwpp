@@ -525,19 +525,6 @@ public:
 
 };
 
-
-class ThreadBase
-{
-protected:
-  unsigned int threads;
-public:  
-  ThreadBase() {threads=fftw::maxthreads;}
-  ThreadBase(unsigned int threads) : threads(threads) {}
-  void Threads(unsigned int nthreads) {threads=nthreads;}
-  unsigned int Threads() {return threads;}
-};
-
-
 // Compute the complex Fourier transform of n complex values.
 // Before calling fft(), the arrays in and out (which may coincide) must be
 // allocated as Complex[n].

@@ -250,8 +250,11 @@ public:
   }
   
   void posttranspose(Complex *f) {
-//    T->OutTransposed(f);
+#if NEW    
+    T->OutTransposed(f);
+#else    
     fftw_mpi_execute_r2r(outtranspose,(double *) f,(double *) f);
+#endif    
   }
   
   void convolve(Complex **F, Complex **G, Complex **u, Complex ***V,
