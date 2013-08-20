@@ -229,7 +229,7 @@ public:
   
   // Inplace shift of Fourier origin to (nx/2,0) for even nx.
   static void Shift(Complex *data, unsigned int nx, unsigned int ny,
-                    int sign=0, unsigned int threads=1) {
+                    unsigned int threads) {
     const unsigned int nyp=ny/2+1;
     Complex *pstop=data+nx*nyp;
     if(nx % 2 == 0) {
@@ -248,7 +248,7 @@ public:
 
   // Out-of-place shift of Fourier origin to (nx/2,0) for even nx.
   static void Shift(double *data, unsigned int nx, unsigned int ny,
-                    int sign=0, unsigned int threads=1) {
+                    unsigned int threads) {
     if(nx % 2 == 0) {
       double *pstop=data+nx*ny;
       int pinc=2*ny;
@@ -266,7 +266,7 @@ public:
 
   // Inplace shift of Fourier origin to (nx/2,ny/2,0) for even nx and ny.
   static void Shift(Complex *data, unsigned int nx, unsigned int ny,
-                    unsigned int nz, int sign=0, unsigned int threads=1) {
+                    unsigned int nz, unsigned int threads) {
     const unsigned int nzp=nz/2+1;
     const unsigned int nyzp=ny*nzp;
     if(nx % 2 == 0 && ny % 2 == 0) {
@@ -292,7 +292,7 @@ public:
 
   // Out-of-place shift of Fourier origin to (nx/2,ny/2,0) for even nx and ny.
   static void Shift(double *data, unsigned int nx, unsigned int ny,
-                    unsigned int nz, int sign=0, unsigned int threads=1) {
+                    unsigned int nz, unsigned int threads) {
     const unsigned int nyz=ny*nz;
     if(nx % 2 == 0 && ny % 2 == 0) {
       const unsigned int pinc=2*nz;
@@ -940,8 +940,8 @@ public:
   
   void Execute(Complex *in, Complex *out, bool shift=false) {
     if(shift) {
-     if(inplace) Shift(in,nx,ny,-1,threads);
-     else Shift((double *) in,nx,ny,-1,threads);
+     if(inplace) Shift(in,nx,ny,threads);
+     else Shift((double *) in,nx,ny,threads);
     }
     fftw_execute_dft_r2c(plan,(double *) in,(fftw_complex *) out);
   }
@@ -1001,8 +1001,8 @@ public:
   void Execute(Complex *in, Complex *out, bool shift=false) {
     fftw_execute_dft_c2r(plan,(fftw_complex *) in,(double *) out);
     if(shift) {
-      if(inplace) Shift(out,nx,ny,1,threads);
-      else Shift((double *) out,nx,ny,1,threads);
+      if(inplace) Shift(out,nx,ny,threads);
+      else Shift((double *) out,nx,ny,threads);
     }
   }
 };
@@ -1108,8 +1108,8 @@ public:
   
   void Execute(Complex *in, Complex *out, bool shift=false) {
     if(shift) {
-      if(inplace) Shift(in,nx,ny,nz,-1,threads);
-      else Shift((double *) in,nx,ny,nz,-1,threads);
+      if(inplace) Shift(in,nx,ny,nz,threads);
+      else Shift((double *) in,nx,ny,nz,threads);
     }
     fftw_execute_dft_r2c(plan,(double *) in,(fftw_complex *) out);
   }
@@ -1176,8 +1176,8 @@ public:
   void Execute(Complex *in, Complex *out, bool shift=false) {
     fftw_execute_dft_c2r(plan,(fftw_complex *) in,(double *) out);
     if(shift) {
-      if(inplace) Shift(out,nx,ny,nz,1,threads);
-      else Shift((double *) out,nx,ny,nz,1,threads);
+      if(inplace) Shift(out,nx,ny,nz,threads);
+      else Shift((double *) out,nx,ny,nz,threads);
     }
   }
 };
