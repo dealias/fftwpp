@@ -18,6 +18,7 @@ int main()
   
   array2<double> f(nx,ny,align);
   array2<Complex> g(nx,nyp,align);
+// array2<double> f(nx,2*nyp,(double *) g()); // For in-place transforms
   
   rcfft2d Forward(ny,f,g);
   crfft2d Backward(ny,g,f);
@@ -28,11 +29,11 @@ int main()
 	
   cout << f << endl;
 
-  Forward.fft0(f,g);
+  Forward.fft(f,g);
   
   cout << g << endl;
   
-  Backward.fft0Normalized(g,f);
+  Backward.fftNormalized(g,f);
   
   cout << f << endl;
 }

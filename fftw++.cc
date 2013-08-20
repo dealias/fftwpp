@@ -12,6 +12,8 @@ const char *WisdomName="wisdom3.txt";
 unsigned int fftw::maxthreads=1;
 double fftw::testseconds=0.1; // Time limit for threading efficiency tests
 
+const char *fftw::oddshift="Shift is not implemented for odd nx";
+
 void fftw::LoadWisdom() {
   std::ifstream ifWisdom;
   ifWisdom.open(WisdomName);

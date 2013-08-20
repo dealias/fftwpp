@@ -18,7 +18,8 @@ int main()
   
   array3<double> f(nx,ny,nz,align);
   array3<Complex> g(nx,ny,nzp,align);
-  
+//  array3<double> f(nx,ny,2*nzp,(double *) g()); // For in-place transforms
+ 
   rcfft3d Forward3(nz,f,g);
   crfft3d Backward3(nz,g,f);
   
