@@ -225,7 +225,9 @@ public:
   
   unsigned int Threads() {return threads;}
   
-  // Inplace shift of Fourier origin to (nx/2,0).
+  static const char *oddshift;
+  
+  // Inplace shift of Fourier origin to (nx/2,0) for even nx.
   static void Shift(Complex *data, unsigned int nx, unsigned int ny,
                     int sign=0, unsigned int threads=1) {
     const unsigned int nyp=ny/2+1;
@@ -239,27 +241,12 @@ public:
         for(unsigned int j=0; j < nyp; j++) p[j]=-p[j];
       }
     } else {
-      if(sign) {
-        unsigned int c=nx/2;
-        double arg=twopi*c/nx; 
-#ifndef FFTWPP_SINGLE_THREAD
-#pragma omp parallel for num_threads(threads)
-#endif
-        for(unsigned int i=0; i < nx; i++) {
-          double iarg=i*arg;
-          Complex zeta(cos(iarg),sign*sin(iarg));
-          Complex *datai=data+i*nyp;
-          for(unsigned int j=0; j < nyp; j++) datai[j] *= zeta;
-        }
-      } else {
-        std::cerr << "Shift for odd nx must be signed" 
-                  << std::endl;
-        exit(1);
-      }
+      std::cerr << oddshift << std::endl;
+      exit(1);
     }
   }
 
-  // Out-of-place shift of Fourier origin to (nx/2,0).
+  // Out-of-place shift of Fourier origin to (nx/2,0) for even nx.
   static void Shift(double *data, unsigned int nx, unsigned int ny,
                     int sign=0, unsigned int threads=1) {
     if(nx % 2 == 0) {
@@ -272,13 +259,12 @@ public:
         for(unsigned int j=0; j < ny; j++) p[j]=-p[j];
       }
     } else {
-      std::cerr << "Out-of-place shift is not implemented for odd nx"
-                << std::endl;
+      std::cerr << oddshift << std::endl;
       exit(1);
     }
   }
 
-  // Inplace shift of Fourier origin to (nx/2,ny/2,0).
+  // Inplace shift of Fourier origin to (nx/2,ny/2,0) for even nx and ny.
   static void Shift(Complex *data, unsigned int nx, unsigned int ny,
                     unsigned int nz, int sign=0, unsigned int threads=1) {
     const unsigned int nzp=nz/2+1;
@@ -299,34 +285,12 @@ public:
         }
       }
     } else {
-      if(sign) {
-        unsigned int cx=nx/2;
-        double argx=twopi*cx/nx;
-        unsigned int cy=ny/2;
-        double argy=twopi*cy/ny;
-#ifndef FFTWPP_SINGLE_THREAD
-#pragma omp parallel for num_threads(threads)
-#endif
-        for(unsigned i=0; i < nx; i++) {
-          double iarg=i*argx;
-          Complex zetax(cos(iarg),sign*sin(iarg));
-          Complex *datai=data+nyzp*i;
-          for(unsigned j=0; j < ny; j++) {
-            double jarg=j*argy;
-            Complex zeta=zetax*Complex(cos(jarg),sign*sin(jarg));
-            Complex *dataij=datai+nzp*j;
-            for(unsigned int k=0; k < nzp; k++) dataij[k] *= zeta;
-          }
-        }
-      } else {
-        std::cerr << "Shift for odd nx or ny must be signed" 
-                  << std::endl;
-        exit(1);
-      }
+      std::cerr << oddshift << "or odd ny" << std::endl;
+      exit(1);
     }
   }
 
-  // Out-of-place shift of Fourier origin to (nx/2,ny/2,0).
+  // Out-of-place shift of Fourier origin to (nx/2,ny/2,0) for even nx and ny.
   static void Shift(double *data, unsigned int nx, unsigned int ny,
                     unsigned int nz, int sign=0, unsigned int threads=1) {
     const unsigned int nyz=ny*nz;
@@ -346,8 +310,7 @@ public:
         }
       }
     } else {
-      std::cerr << "Out-of-place shift is not implemented for odd nx or ny"
-                << std::endl;
+      std::cerr << oddshift << "or odd ny" << std::endl;
       exit(1);
     }
   }
