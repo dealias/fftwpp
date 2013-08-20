@@ -1,5 +1,5 @@
 /* Fast Fourier transform C++ header class for the FFTW3 Library
-   Copyright (C) 2004-12 John C. Bowman, University of Alberta
+   Copyright (C) 2004-13 John C. Bowman, University of Alberta
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -225,13 +225,16 @@ public:
   
   unsigned int Threads() {return threads;}
   
-  // Shift the Fourier origin to (nx/2,0).
+  // Inplace shift of Fourier origin to (nx/2,0).
   static void Shift(Complex *data, unsigned int nx, unsigned int ny,
-                    int sign=0) {
+                    int sign=0, unsigned int threads=1) {
     const unsigned int nyp=ny/2+1;
     Complex *pstop=data+nx*nyp;
     if(nx % 2 == 0) {
       int pinc=2*nyp;
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif
       for(Complex *p=data+nyp; p < pstop; p += pinc) {
         for(unsigned int j=0; j < nyp; j++) p[j]=-p[j];
       }
@@ -239,6 +242,9 @@ public:
       if(sign) {
         unsigned int c=nx/2;
         double arg=twopi*c/nx; 
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif
         for(unsigned int i=0; i < nx; i++) {
           double iarg=i*arg;
           Complex zeta(cos(iarg),sign*sin(iarg));
@@ -246,22 +252,44 @@ public:
           for(unsigned int j=0; j < nyp; j++) datai[j] *= zeta;
         }
       } else {
-        std::cerr << "Shift for odd nx must be signed and interleaved" 
+        std::cerr << "Shift for odd nx must be signed" 
                   << std::endl;
         exit(1);
       }
     }
   }
 
-  // Shift the Fourier origin to (nx/2,ny/2,0).
+  // Out-of-place shift of Fourier origin to (nx/2,0).
+  static void Shift(double *data, unsigned int nx, unsigned int ny,
+                    int sign=0, unsigned int threads=1) {
+    if(nx % 2 == 0) {
+      double *pstop=data+nx*ny;
+      int pinc=2*ny;
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif
+      for(double *p=data+ny; p < pstop; p += pinc) {
+        for(unsigned int j=0; j < ny; j++) p[j]=-p[j];
+      }
+    } else {
+      std::cerr << "Out-of-place shift is not implemented for odd nx"
+                << std::endl;
+      exit(1);
+    }
+  }
+
+  // Inplace shift of Fourier origin to (nx/2,ny/2,0).
   static void Shift(Complex *data, unsigned int nx, unsigned int ny,
-                    unsigned int nz, int sign=0) {
+                    unsigned int nz, int sign=0, unsigned int threads=1) {
     const unsigned int nzp=nz/2+1;
     const unsigned int nyzp=ny*nzp;
     if(nx % 2 == 0 && ny % 2 == 0) {
       const unsigned int pinc=2*nzp;
       Complex *pstop=data;
       Complex *p=data;
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif
       for(unsigned i=0; i < nx; i++) {
         if(i % 2) p -= nzp;
         else p += nzp;
@@ -276,6 +304,9 @@ public:
         double argx=twopi*cx/nx;
         unsigned int cy=ny/2;
         double argy=twopi*cy/ny;
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif
         for(unsigned i=0; i < nx; i++) {
           double iarg=i*argx;
           Complex zetax(cos(iarg),sign*sin(iarg));
@@ -288,13 +319,39 @@ public:
           }
         }
       } else {
-        std::cerr << "Shift for odd nx or ny must be signed and interleaved" 
+        std::cerr << "Shift for odd nx or ny must be signed" 
                   << std::endl;
         exit(1);
       }
     }
   }
 
+  // Out-of-place shift of Fourier origin to (nx/2,ny/2,0).
+  static void Shift(double *data, unsigned int nx, unsigned int ny,
+                    unsigned int nz, int sign=0, unsigned int threads=1) {
+    const unsigned int nyz=ny*nz;
+    if(nx % 2 == 0 && ny % 2 == 0) {
+      const unsigned int pinc=2*nz;
+      double *pstop=data;
+      double *p=data;
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif
+      for(unsigned i=0; i < nx; i++) {
+        if(i % 2) p -= nz;
+        else p += nz;
+        pstop += nyz;
+        for(; p < pstop; p += pinc) {
+          for(unsigned int k=0; k < nz; k++) p[k]=-p[k];
+        }
+      }
+    } else {
+      std::cerr << "Out-of-place shift is not implemented for odd nx or ny"
+                << std::endl;
+      exit(1);
+    }
+  }
+  
   static bool autothreads;
   fftw(unsigned int doubles, int sign, unsigned int n=0) : 
     doubles(doubles), sign(sign), norm(1.0/(n ? n : (doubles+1)/2)),
@@ -464,10 +521,16 @@ public:
   
   void Normalize(Complex *out) {
     unsigned int stop=(doubles+1)/2;
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif
     for(unsigned int i=0; i < stop; i++) out[i] *= norm;
   }
 
   void Normalize(double *out) {
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif
     for(unsigned int i=0; i < doubles; i++) out[i] *= norm;
   }
   
@@ -874,6 +937,8 @@ public:
 //
 //   rcfft2d Forward(nx,ny,in,out);
 //   Forward.fft(in,out);       // Origin of Fourier domain at (0,0)
+//   Forward.fft0(in,out);      // Origin of Fourier domain at (nx/2,0);
+//                                 input destroyed.
 //
 // In-place usage:
 //
@@ -911,7 +976,10 @@ public:
   }
   
   void Execute(Complex *in, Complex *out, bool shift=false) {
-    if(shift && inplace) Shift(in,nx,ny);
+    if(shift) {
+     if(inplace) Shift(in,nx,ny,-1,threads);
+     else Shift((double *) in,nx,ny,-1,threads);
+    }
     fftw_execute_dft_r2c(plan,(double *) in,(fftw_complex *) out);
   }
 };
@@ -969,7 +1037,10 @@ public:
   
   void Execute(Complex *in, Complex *out, bool shift=false) {
     fftw_execute_dft_c2r(plan,(fftw_complex *) in,(double *) out);
-    if(shift) Shift(out,nx,ny);
+    if(shift) {
+      if(inplace) Shift(out,nx,ny,1,threads);
+      else Shift((double *) out,nx,ny,1,threads);
+    }
   }
 };
 
@@ -1032,7 +1103,8 @@ public:
 //
 //   rcfft3d Forward(nx,ny,nz,in,out);
 //   Forward.fft(in,out);       // Origin of Fourier domain at (0,0)
-//
+//   Forward.fft0(in,out);      // Origin of Fourier domain at (nx/2,ny/2,0);
+//                                 input destroyed
 // In-place usage:
 //
 //   rcfft3d Forward(nx,ny,nz);
@@ -1072,7 +1144,10 @@ public:
   }
   
   void Execute(Complex *in, Complex *out, bool shift=false) {
-    if(shift && inplace) Shift(in,nx,ny,nz);
+    if(shift) {
+      if(inplace) Shift(in,nx,ny,nz,-1,threads);
+      else Shift((double *) in,nx,ny,nz,-1,threads);
+    }
     fftw_execute_dft_r2c(plan,(double *) in,(fftw_complex *) out);
   }
 };
@@ -1137,7 +1212,10 @@ public:
   
   void Execute(Complex *in, Complex *out, bool shift=false) {
     fftw_execute_dft_c2r(plan,(fftw_complex *) in,(double *) out);
-    if(shift) Shift(out,nx,ny,nz);
+    if(shift) {
+      if(inplace) Shift(out,nx,ny,nz,1,threads);
+      else Shift((double *) out,nx,ny,nz,1,threads);
+    }
   }
 };
   
