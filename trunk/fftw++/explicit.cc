@@ -222,7 +222,7 @@ void ExplicitHConvolution2::backwards(Complex *f, bool shift)
   if(prune) {
     xBackwards->fft(f);
     if(nx % 2 == 0) {
-      if(shift) fftw::Shift(f,nx,ny);
+      if(shift) fftw::Shift(f,nx,ny,threads);
     } else oddShift(nx,ny,f,-1,s,ZetaH,ZetaL);
     yBackwards->fft(f);
   } else {
@@ -238,7 +238,7 @@ void ExplicitHConvolution2::forwards(Complex *f)
   if(prune) {
     yForwards->fft(f);
     if(nx % 2 == 0) {
-      fftw::Shift(f,nx,ny);
+      fftw::Shift(f,nx,ny,threads);
     } else oddShift(nx,ny,f,1,s,ZetaH,ZetaL);
     xForwards->fft(f);
   } else
@@ -478,7 +478,7 @@ void ExplicitHTConvolution2::backwards(Complex *f, bool shift)
   if(prune) {
     xBackwards->fft(f);
     if(nx % 2 == 0) {
-      if(shift) fftw::Shift(f,nx,ny);
+      if(shift) fftw::Shift(f,nx,ny,threads);
     } else oddShift(nx,ny,f,-1,s,ZetaH,ZetaL);
     yBackwards->fft(f);
   } else
@@ -490,7 +490,7 @@ void ExplicitHTConvolution2::forwards(Complex *f, bool shift)
   if(prune) {
     yForwards->fft(f);
     if(nx % 2 == 0) {
-      if(shift) fftw::Shift(f,nx,ny);
+      if(shift) fftw::Shift(f,nx,ny,threads);
     } else oddShift(nx,ny,f,1,s,ZetaH,ZetaL);
     xForwards->fft(f);
   } else
