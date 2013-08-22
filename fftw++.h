@@ -353,7 +353,7 @@ public:
 #endif    
   }
   
-  void Setup(Complex *in, Complex *out=NULL) {
+  void Setup(Complex *in, Complex *out=NULL, bool threaded=1) {
     if(!Wise) LoadWisdom();
     bool alloc=!in;
     if(alloc) in=ComplexAlign((doubles+1)/2);
@@ -367,6 +367,7 @@ public:
     inplace=(out==in);
     
     planThreads(1);
+    threads=1;
     fftw_plan plan1=Plan(in,out);
     if(!plan1) noplan();
     plan=plan1;
@@ -424,8 +425,7 @@ public:
           threads=maxthreads;
         }
       }
-    } else
-      threads=1;
+    }
     
     if(alloc) Array::deleteAlign(in,(doubles+1)/2);
     SaveWisdom();
@@ -615,21 +615,50 @@ public:
 class mfft1d : public fftw {
   unsigned int nx;
   unsigned int M;
+  unsigned int T,Q,R;
   size_t stride;
   size_t dist;
+  fftw_plan plan2;
+  fftw_plan plan1;
 public:  
   mfft1d(unsigned int nx, int sign, unsigned int M=1, size_t stride=1,
          size_t dist=0, Complex *in=NULL, Complex *out=NULL) 
     : fftw(2*((nx-1)*stride+(M-1)*Dist(nx,stride,dist)+1),sign,nx),
       nx(nx), M(M), stride(stride), dist(Dist(nx,stride,dist))
-  {Setup(in,out);} 
+  {
+    T=std::min(M,maxthreads);
+    Q=M/T;
+    R=M-Q*T;
+    Setup(in,out);
+  } 
   
   fftw_plan Plan(Complex *in, Complex *out) {
     int n=(int) nx;
-    return fftw_plan_many_dft(1,&n,M,
+    if(R > 0) {
+     plan2=fftw_plan_many_dft(1,&n,Q+1,
                               (fftw_complex *) in,NULL,stride,dist,
                               (fftw_complex *) out,NULL,stride,dist,
                               sign,effort);
+     if(threads == 1) plan1=plan2;
+    }
+    return fftw_plan_many_dft(1,&n,Q,
+                              (fftw_complex *) in,NULL,stride,dist,
+                              (fftw_complex *) out,NULL,stride,dist,
+                              sign,effort);
+  }
+  
+  void Execute(Complex *in, Complex *out, bool=false) {
+    if(threads == 1) plan2=plan1;
+    unsigned int extra=T-R;
+
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(T)
+#endif
+    for(unsigned int i=0; i < T; ++i) {
+      unsigned int offset=i < extra ? Q*i : Q*i+i-extra;
+      fftw_execute_dft(i < extra ? plan : plan2,(fftw_complex *) in+offset,
+                       (fftw_complex *) out+offset);
+    }
   }
   
   void fftNormalized(Complex *in, Complex *out=NULL) {
