@@ -131,6 +131,12 @@ int main(int argc, char* argv[])
   
   MPIgroup group(my,mz);
   
+  if(group.rank == 0) {
+    cout << "Configuration: " 
+         << group.size << " nodes X " << fftw::maxthreads 
+         << " threads/node" << endl;
+  }
+  
   if(group.rank < group.size) {
     bool main=group.rank == 0;
     if(main) {
