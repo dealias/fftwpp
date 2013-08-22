@@ -754,14 +754,14 @@ class cfft3MPI : public ThreadBase {
  public:
   void inittranspose(Complex* f) {
     int size;
-    //MPI_Comm_size(d.communicator,&size); // FIXME
-    alltoall=mx % size == 0 && my % size == 0;
+    MPI_Comm_size(d.communicator,&size); // FIXME
+//    alltoall=mx % size == 0 && my % size == 0;
 
     alltoall=false; // FIXME: temp
 
     if(alltoall) {
       int rank;
-      //MPI_Comm_rank(d.communicator,&rank); // FIXME
+      MPI_Comm_rank(d.communicator,&rank); // FIXME
       if(rank == 0) {
         std::cout << "Using fast alltoall block transpose";
 #if MPI_VERSION >= 3
