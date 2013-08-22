@@ -168,7 +168,6 @@ public:
     int size;
     MPI_Comm_size(d.communicator,&size);
     alltoall=mx % size == 0 && my % size == 0;
-    alltoall=false;
 #if NEW    
     if(!alltoall) T=new transpose(mx,d.y,d.x,my);
 #endif    
@@ -387,7 +386,6 @@ public:
     int size;
     MPI_Comm_size(d.communicator,&size);
     alltoall=mx % size == 0 && my % size == 0;
-    alltoall=false;
 #if NEW    
     if(!alltoall) T=new transpose(mx,d.y,d.x,my,d.z);
 #endif    
@@ -668,8 +666,6 @@ class cfft2MPI : public ThreadBase {
     MPI_Comm_size(d.communicator,&size);
     alltoall=mx % size == 0 && my % size == 0;
 
-    alltoall=false; // FIXME: temp
-
     if(alltoall) {
       int rank;
       MPI_Comm_rank(d.communicator,&rank);
@@ -733,6 +729,7 @@ class cfft2MPI : public ThreadBase {
   void Normalize(Complex *f);
 };
 
+#if 1
 // In-place MPI/OpenMPI 3D complex FFT.
 // FIXME: complete documentation.
 class cfft3MPI : public ThreadBase {
@@ -755,9 +752,7 @@ class cfft3MPI : public ThreadBase {
   void inittranspose(Complex* f) {
     int size;
     MPI_Comm_size(d.communicator,&size); // FIXME
-//    alltoall=mx % size == 0 && my % size == 0;
-
-    alltoall=false; // FIXME: temp
+    alltoall=mx % size == 0 && my % size == 0;
 
     if(alltoall) {
       int rank;
@@ -811,7 +806,7 @@ class cfft3MPI : public ThreadBase {
   void Backwards(Complex *f, bool finaltranspose=true);
   void Normalize(Complex *f);
 };
-
+#endif
 
 } // namespace fftwpp
 

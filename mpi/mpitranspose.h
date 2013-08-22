@@ -17,7 +17,6 @@ class transpose {
 private:
   unsigned int N,m,n,M;
   unsigned int L;
-  bool wait;
   Complex *work;
   MPI_Comm communicator;
   bool allocated;
@@ -41,13 +40,12 @@ public:
     N(N), m(m), n(n), M(M), L(L), work(work), communicator(communicator),
     allocated(false) {
     d=1;
-    wait=true;
     
     MPI_Comm_size(communicator,&size);
     if(size == 1) return;
     MPI_Comm_rank(communicator,&rank);
     if(rank == 0)
-      std::cout << "d=" << d << ", wait=" << wait << std::endl;
+      std::cout << "d=" << d << ", ALLTOALL=" << ALLTOALL << std::endl;
     
     if(N % size != 0 || M % size != 0) {
       if(rank == 0)
