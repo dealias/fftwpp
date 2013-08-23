@@ -24,38 +24,26 @@ bool Direct=false, Implicit=true, Explicit=false, Test=false;
 
 unsigned int threads;
 
+// a[0][k] *= a[1][k]
 void pmult(Complex **A,
            unsigned int m, unsigned int M,
            unsigned int offset) {
   Complex* A0=A[0];
   Complex* A1=A[1];
   
-  if(threads > 1) {
-#pragma omp parallel for num_threads(threads)
-    for(unsigned int k=0; k < m; ++k) {
-      Complex *p=A0+k;
-      STORE(p,ZMULT(LOAD(p),LOAD(A1+k)));
-    }
-  } else {
-    for(unsigned int k=0; k < m; ++k) {
-      Complex *p=A0+k;
-      STORE(p,ZMULT(LOAD(p),LOAD(A1+k)));
-    }
-  }
-
-/*
+#ifdef __SSE2__
   PARALLEL(
-	   for(unsigned int k=0; k < m; ++k) {
-	     Complex *p=A0+k;
-	     STORE(p,ZMULT(LOAD(p),LOAD(A1+k)));
-	   }
-	   )
-*/
-
- // for(unsigned int i=0; i < m; ++i) {
- //    A0[i] *= A1[i];
-    //}
- 
+    for(unsigned int j=0; j < m; ++j) {
+      Complex *p=A0+j;
+      STORE(p,ZMULT(LOAD(p),LOAD(A1+j)));
+    }
+    )
+#else
+  PARALLEL(
+    for(unsigned int j=0; j < m; ++j)
+      A0[j] *= A1[j];
+    )
+#endif
 }
 
 inline void init(Complex *f, Complex *g, unsigned int M=1)

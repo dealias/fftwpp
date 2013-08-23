@@ -19,6 +19,21 @@
 #include "fftw++.h"
 #include "cmult-sse2.h"
 
+#ifndef FFTWPP_SINGLE_THREAD
+#define PARALLEL(code)                                  \
+  if(threads > 1) {                                     \
+    _Pragma("omp parallel for num_threads(threads)")    \
+      code                                              \
+      } else {                                          \
+    code                                                \
+      }
+#else
+#define PARALLEL(code)                          \
+  {                                             \
+    code                                        \
+      }
+#endif
+
 namespace fftwpp {
 
 #ifndef __convolution_h__
@@ -1822,31 +1837,76 @@ public:
 // as many pointers as possible
 class pImplicitConvolution : public ThreadBase {
 private:
-  unsigned int m, M, Mout, s;
+  unsigned int m;
+  Complex **U;
+  unsigned int M;
+  Complex *u;
+  unsigned int Mout;
+  bool pointers;
+  bool allocated;
+  unsigned int s;
+  Complex *ZetaH, *ZetaL;
   fft1d *Backwards0;
   fft1d *Backwards,*Forwards;
-  Complex *ZetaH, *ZetaL;
 
 public:
-  pImplicitConvolution(unsigned int m, unsigned int M=2, unsigned int Mout=1,
-                       unsigned int threads=fftw::maxthreads)
-    : ThreadBase(threads), m(m), M(M), Mout(Mout) {
+  void initpointers(Complex **&U, Complex *u) {
+    U=new Complex *[M];
+    for(unsigned int s=0; s < M; ++s) 
+      U[s]=u+s*m;
+  }
+  
+  void deletepointers(Complex **&U) {
+    delete [] U;
+  }
 
-    Complex* U0=ComplexAlign(m);  // FIXME: clean up memory in init
-    Complex* U1=ComplexAlign(m);
+  void init() {
+    Complex* U0=U[0];
+    Complex* U1=M == 1 ? ComplexAlign(m) : U[1];
     Backwards=new fft1d(m,1,U0,U1);
     Backwards0=new fft1d(m,1,U0);
     Forwards=new fft1d(m,-1,U0);
-    deleteAlign(U1);
-    deleteAlign(U0);
+    if(M == 1) deleteAlign(U1);
 
-    threads=Forwards->Threads();
-    Threads(threads);
-
+    threads=std::min(threads,Forwards->Threads());
     s=BuildZeta(2*m,m,ZetaH,ZetaL,threads);
-}
+  }
+  
+  // m is the number of Complex data values.
+  // U is an array of M distinct work arrays each of size m.
+  pImplicitConvolution(unsigned int m, Complex **U, unsigned int M=2,
+                       unsigned int Mout=1,
+                       unsigned int threads=fftw::maxthreads)
+    : ThreadBase(threads), m(m), U(U), M(M), Mout(Mout), pointers(false),
+      allocated(false) {
+    init();
+  }
+  
+  // m is the number of Complex data values.
+  // u is a work array of M*m Complex values.
+  pImplicitConvolution(unsigned int m, Complex *u,
+                       unsigned int M=2, unsigned int Mout=1,
+                       unsigned int threads=fftw::maxthreads)
+    : ThreadBase(threads), m(m), M(M), u(u), Mout(Mout), pointers(true),
+      allocated(false) {
+    initpointers(U,u);
+    init();
+  }
+  
+  // m is the number of Complex data values.
+  pImplicitConvolution(unsigned int m,
+                       unsigned int M=2, unsigned int Mout=1,
+                       unsigned int threads=fftw::maxthreads)
+    : ThreadBase(threads), m(m), M(M), u(ComplexAlign(m*M)), Mout(Mout),
+      pointers(true), allocated(true) {
+    initpointers(U,u);
+    init();
+  }
   
   ~pImplicitConvolution() {
+    if(pointers) deletepointers(U);
+   if(allocated) deleteAlign(u);
+    
     delete Backwards0; 
     delete Backwards;
     delete Forwards;
@@ -1854,10 +1914,26 @@ public:
     deleteAlign(ZetaL);
   }
 
-  void convolve(Complex **F, Complex **U1,
+  void convolve(Complex **F, Complex **U,
 		void (*pmult)(Complex **,unsigned int,
 			      unsigned int,unsigned int),
 		unsigned int offset=0);
+  
+  // F is an array of M pointers to distinct data blocks each of size m,
+  // shifted by offset (contents not preserved).
+  void convolve(Complex **F,
+		void (*pmult)(Complex **,unsigned int,
+			      unsigned int,unsigned int),
+		unsigned int offset=0);
+  
+  /*
+  // Constructor for special case M=1:
+  void convolve(Complex *f, Complex *g) {
+    Complex F[2]={f,g};
+    convolve(F,binarymult);
+  }
+  */
+  
   void itwiddle(Complex **F, unsigned int M);
   void twiddleadd(Complex *f, Complex *u);
 };

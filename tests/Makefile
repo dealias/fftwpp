@@ -1,6 +1,6 @@
 IDIR =../
 
-CXXFLAGS= -O3
+CXXFLAGS= -O3 $(DEFS)
 
 # GNU compiler
 ifeq ($(shell $(CXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
