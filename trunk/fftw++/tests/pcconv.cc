@@ -46,6 +46,24 @@ void pmult(Complex **A,
 #endif
 }
 
+void pmult2(Complex **A,
+            unsigned int m, unsigned int M,
+            unsigned int offset) {
+  Complex* A0=A[0];
+  Complex* A1=A[1];
+  Complex* A2=A[2];
+  Complex* A3=A[3];
+  
+#ifdef __SSE2__
+    PARALLEL(
+      for(unsigned int j=0; j < m; ++j) {
+        Complex *p=A0+j;
+        STORE(p,ZMULT(LOAD(p),LOAD(A2+j))+ZMULT(LOAD(A1+j),LOAD(A3+j)));
+      }
+      )
+#endif
+}
+
 inline void init(Complex *f, Complex *g, unsigned int M=1)
 {
   unsigned int Mm=M*m;
@@ -154,30 +172,21 @@ int main(int argc, char* argv[])
   double *T=new double[N];
 
   if(Implicit) {
-    pImplicitConvolution C(m);
+    pImplicitConvolution C(m,2*M);
  
     threads=C.Threads();
 
-    //ImplicitConvolution C(m,M);
-    Complex **F=new Complex *[M];
-    Complex **G=new Complex *[M];
+    Complex **F=new Complex *[2*M];
     for(unsigned int s=0; s < M; ++s) {
       unsigned int sm=s*m;
       F[s]=f+sm;
-      G[s]=g+sm;
+      F[M+s]=g+sm;
     }
-    
-    Complex **FF=new Complex*[2];
-    FF[0]=f;
-    FF[1]=g;
-    Complex **U1=new Complex*[2];
-    U1[0]=ComplexAlign(m);
-    U1[1]=ComplexAlign(m);
     
     for(unsigned int i=0; i < N; ++i) {
       init(f,g,M);
       seconds();
-      C.convolve(FF,U1,&pmult);
+      C.convolve(F,M == 1 ? pmult : pmult2);
 
       //      C.convolve(F,G);
 //      C.convolve(f,g);
@@ -191,7 +200,6 @@ int main(int argc, char* argv[])
     else cout << f[0] << endl;
     if(Test || Direct) for(unsigned int i=0; i < m; i++) h0[i]=f[i];
     
-    delete [] G;
     delete [] F;
   }
   
