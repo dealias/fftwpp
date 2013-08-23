@@ -1674,39 +1674,35 @@ void pImplicitConvolution::twiddleadd(Complex *f, Complex *u)
   Vec Ninv=LOAD(ninv);
   PARALLEL(
     for(unsigned int K=0; K < m; K += s) {
-      Complex *ZetaL0=ZetaL-K;
       unsigned int stop=min(K+s,m);
-      Vec Zeta=LOAD(ZetaH+K/s);
+      Complex *ZetaL0=ZetaL-K;
+      Vec Zeta=Ninv*LOAD(ZetaH+K/s);
       Vec X=UNPACKL(Zeta,Zeta);
       Vec Y=UNPACKH(CONJ(Zeta),Zeta);
       for(unsigned int k=K; k < stop; ++k) {
         Vec Zetak=ZMULT(X,Y,LOAD(ZetaL0+k));
         Complex *fki=f+k;
-        Vec Fki=LOAD(fki);
-        STORE(fki,Ninv*(ZMULT(CONJ(Zetak),Fki)+LOAD(u+k)));
-        //STORE(fki,Ninv*(LOAD(u+k)+ZMULT(CONJ(Zetak)),Fki));
+        STORE(fki,ZMULTC(Zetak,LOAD(fki))+Ninv*LOAD(u+k));
       }
     }
     )
 #else
     PARALLEL(
       for(unsigned int K=0; K < m; K += s) {
-        Complex *ZetaL0=ZetaL-K;
         unsigned int stop=min(K+s,m);
+        Complex *ZetaL0=ZetaL-K;
         Complex *p=ZetaH+K/s;
-        double Hre=p->re;
-        double Him=-p->im;
+        double Hre=ninv*p->re;
+        double Him=ninv*p->im;
         for(unsigned int k=K; k < stop; ++k) {
           Complex *P=f+k;
-          Complex *U=u+k;
           Complex fk=*P;
+          Complex U=*(u+k);
           Complex L=*(ZetaL0+k);
-          double Re=Hre*L.re+Him*L.im;
-          double Im=-Hre*L.im+Him*L.re;
-          P->re=Re*fk.re-Im*fk.im;
-          P->im=Im*fk.re+Re*fk.im;
-	  P->re=ninv*(P->re + U->re);
-	  P->im=ninv*(P->im + U->im);
+          double Re=Hre*L.re-Him*L.im;
+          double Im=Hre*L.im+Him*L.re;
+	  P->re=ninv*U.re+Re*fk.re+Im*fk.im;
+	  P->im=ninv*U.im-Im*fk.re+Re*fk.im;
 	}	  
       }
   
