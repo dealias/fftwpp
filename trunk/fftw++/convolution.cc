@@ -12,21 +12,6 @@ const union uvec sse2_mm = {
 };
 #endif
 
-#ifndef FFTWPP_SINGLE_THREAD
-#define PARALLEL(code)                                  \
-  if(threads > 1) {                                     \
-    _Pragma("omp parallel for num_threads(threads)")    \
-      code                                              \
-      } else {                                          \
-    code                                                \
-      }
-#else
-#define PARALLEL(code)                          \
-  {                                             \
-    code                                        \
-      }
-#endif
-
 inline unsigned int min(unsigned int a, unsigned int b)
 {
   return (a < b) ? a : b;
@@ -1603,17 +1588,17 @@ void fft0bipad::forwards(Complex *f, Complex *u)
 #endif
     }
 
-void pImplicitConvolution::convolve(Complex **F, Complex **U1,
+void pImplicitConvolution::convolve(Complex **F, Complex **U,
 				    void (*pmult)(Complex **,unsigned int,
 						  unsigned int,unsigned int),
 				    unsigned int offset)
 {
   // iFFT for even points
   for(unsigned int i=0; i < M; ++i)
-    Backwards->fft(F[i]+offset,U1[i]);
+    Backwards->fft(F[i]+offset,U[i]);
   
   // multiply even points
-  (*pmult)(U1,m,M,0);
+  (*pmult)(U,m,M,0);
   
   // iFFT for odd points
   itwiddle(F,M);
@@ -1626,7 +1611,7 @@ void pImplicitConvolution::convolve(Complex **F, Complex **U1,
   // return to Fourier space
   for(unsigned int i=0; i < Mout; ++i) {
     Complex *f=F[i]+offset;
-    Complex *u=U1[i];
+    Complex *u=U[i];
     Forwards->fft(f);
     Forwards->fft(u);
     twiddleadd(f,u);
@@ -1647,13 +1632,11 @@ void pImplicitConvolution::itwiddle(Complex **F, unsigned int M)
       Vec Y=UNPACKH(CONJ(Zeta),Zeta);
       for(unsigned int k=K; k < stop; ++k) {
         Vec Zetak=ZMULT(X,Y,LOAD(ZetaL0+k));
-
 	for(unsigned int i=0; i < M; ++i) {
 	  Complex *fki=F[i]+k;
 	  Vec Fki=LOAD(fki);
 	  STORE(fki,ZMULT(Zetak,Fki));
 	}
-	
       }
     }
     )
