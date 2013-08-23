@@ -655,8 +655,9 @@ public:
 #pragma omp parallel for num_threads(T)
 #endif
     for(unsigned int i=0; i < T; ++i) {
-      unsigned int offset=i < extra ? Q*i : Q*i+i-extra;
-      fftw_execute_dft(i < extra ? plan : plan2,(fftw_complex *) in+offset,
+      bool normal=i < extra;
+      unsigned int offset=normal ? Q*i : Q*i+i-extra;
+      fftw_execute_dft(normal ? plan : plan2,(fftw_complex *) in+offset,
                        (fftw_complex *) out+offset);
     }
   }

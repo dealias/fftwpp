@@ -1656,7 +1656,7 @@ void pImplicitConvolution::itwiddle(Complex **F, unsigned int M)
 	
       }
     }
-    	   )
+    )
 #else
     PARALLEL(
       for(unsigned int K=0; K < m; K += s) {
@@ -1704,7 +1704,7 @@ void pImplicitConvolution::twiddleadd(Complex *f, Complex *u)
         //STORE(fki,Ninv*(LOAD(u+k)+ZMULT(CONJ(Zetak)),Fki));
       }
     }
-	   )
+    )
 #else
     PARALLEL(
       for(unsigned int K=0; K < m; K += s) {
