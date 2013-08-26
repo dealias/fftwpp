@@ -23,7 +23,8 @@ scale(Linear,Log);
 if(gtype == "time")
   scale(Log,Linear);
 if(gtype == "speedup") {
- scale(Log,Log);
+  //scale(Log,Log);
+  scale(Log,Linear);
 }
 if(gtype == "mflops") {
   scale(Log,Log);
@@ -145,7 +146,7 @@ if(gtype == "time" || gtype == "mflops") {
 
 if(gtype == "speedup") {
 
-  int runples=getint("how many runs are compared at once?");
+  int runples=getint("how many runs are compared at once");
 
   int gnum=-1;
   bool plotme;
