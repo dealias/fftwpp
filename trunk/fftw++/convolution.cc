@@ -26,6 +26,8 @@ const double sqrt3=sqrt(3.0);
 const double hsqrt3=0.5*sqrt3;
 const Complex zeta3(-0.5,hsqrt3);
 
+// Returns the square-root (or thereabouts) of the size of the
+// problem, which will then be used for looping.
 unsigned int BuildZeta(unsigned int n, unsigned int m,
                        Complex *&ZetaH, Complex *&ZetaL, unsigned int threads)
 {
@@ -1776,5 +1778,62 @@ void pImplicitConvolution3::convolve(Complex **F,
   for(unsigned int i=0; i < Mout; ++i)
     xfftpad->forwards(F[i]+offset,U3[i]);
 }
+
+void multbinary(Complex **F,
+           unsigned int m, unsigned int M,
+           unsigned int offset) {
+  // This multiplication routine is for binary convolutions only and takes
+  // exactly two inputs.
+  
+  Complex* F0=F[0];
+  Complex* F1=F[1];
+  
+  // FIXME: improve?
+  unsigned int threads=fftw::maxthreads;
+  
+#ifdef __SSE2__
+  PARALLEL(
+    for(unsigned int j=0; j < m; ++j) {
+      Complex *p=F0+j;
+      STORE(p,ZMULT(LOAD(p),LOAD(F1+j)));
+    }
+    )
+#else
+  PARALLEL(
+    for(unsigned int j=0; j < m; ++j)
+      F0[j] *= F1[j];
+    )
+#endif
+}
+
+// F[0][j] = F[0][j]*F[1][j] + F[2][j]*F[3][j]
+void multbinarydot(Complex **F,
+            unsigned int m, unsigned int M,
+            unsigned int offset) {
+  Complex* F0=F[0];
+  Complex* F1=F[1];
+  Complex* F2=F[2];
+  Complex* F3=F[3];
+  
+  // FIXME: improve?
+  unsigned int threads=fftw::maxthreads;
+
+#ifdef __SSE2__
+    PARALLEL(
+      for(unsigned int j=0; j < m; ++j) {
+        Complex *F0j=F0+j;
+        STORE(F0j,ZMULT(LOAD(F0j),LOAD(F1+j))
+	      +ZMULT(LOAD(F2+j),LOAD(F3+j)));
+      }
+      )
+#else
+    PARALLEL(
+       for(unsigned int j=0; j < m; ++j)
+	 F0[j]=F0[j]*F1[j] + F2[j]*F3[j];
+      )
+
+#endif
+}
+
 
 } // namespace fftwpp
