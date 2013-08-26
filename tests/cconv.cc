@@ -130,6 +130,19 @@ int main(int argc, char* argv[])
   double *T=new double[N];
 
   if(Implicit) {
+    
+    /*
+    init(f,g,M);
+    cout << "input:" << endl;
+    for(unsigned int s=0; s < M; ++s) {
+      for(unsigned int k=0; k < m; ++k)
+	cout << f[k+s*m] << " ";
+      cout << endl; for(unsigned int k=0; k < m; ++k)
+	cout << g[k+s*m] << " ";
+      cout << endl;
+    }
+    */
+
     ImplicitConvolution C(m,M);
     Complex **F=new Complex *[M];
     Complex **G=new Complex *[M];
@@ -150,7 +163,9 @@ int main(int argc, char* argv[])
 
     if(m < 100) 
       for(unsigned int i=0; i < m; i++) cout << f[i] << endl;
-    else cout << f[0] << endl;
+    else 
+      cout << f[0] << endl;
+
     if(Test || Direct) for(unsigned int i=0; i < m; i++) h0[i]=f[i];
     
     delete [] G;

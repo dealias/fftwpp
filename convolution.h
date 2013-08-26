@@ -75,8 +75,6 @@ protected:
   Complex **V;
   bool allocated;
 public:  
-  unsigned int getm() {return m;}
-  unsigned int getM() {return M;}
 
   void initpointers(Complex **&V, Complex *v) {
     V=new Complex *[M];
@@ -162,9 +160,6 @@ public:
   Complex *ZetaH,*ZetaL;
   Complex **U;
   bool allocated;
-
-  unsigned int getm() {return m;}
-  unsigned int getM() {return M;}
 
   void initpointers(Complex **&U, Complex *u) {
     U=new Complex *[M];
@@ -409,10 +404,6 @@ public:
     initpointers2(U2,V2,u2,v2,stride);
   }
   
-  unsigned int getmx() {return mx;}
-  unsigned int getmy() {return my;}
-  unsigned int getM() {return M;}
-
   void set(unsigned int& nx, unsigned int& ny, unsigned int& stride) {
     if(nx == 0) nx=mx;
     if(ny == 0) {
@@ -697,10 +688,6 @@ public:
     initpointers(U,v,w,outerthread ? threads : 1);
   }
     
-  unsigned int getmx() {return mx;}
-  unsigned int getmy() {return my;}
-  unsigned int getM() {return M;}
-
   // u1 and v1 are temporary arrays of size (my/2+1)*M*threads.
   // w1 is a temporary array of size 3*M*threads.
   // u2 and v2 are temporary arrays of size (mx+1)*my*M;
@@ -860,11 +847,6 @@ public:
     } else yzconvolve=NULL;
   }
   
-  unsigned int getmx() {return mx;}
-  unsigned int getmy() {return my;}
-  unsigned int getmz() {return mz;}
-  unsigned int getM() {return M;}
-
   void set(unsigned int& ny,unsigned int& nz,
            unsigned int& stride2, unsigned int& stride3) {
     if(ny == 0) {
@@ -1055,11 +1037,6 @@ public:
     } else yzconvolve=NULL;
   }
   
-  unsigned int getmx() {return mx;}
-  unsigned int getmy() {return my;}
-  unsigned int getmz() {return mz;}
-  unsigned int getM() {return M;}
-
   void set(unsigned int& ny,unsigned int& nz,
            unsigned int& stride2, unsigned int& stride3) {
     if(ny == 0) {
@@ -2034,6 +2011,18 @@ public:
 		unsigned int offset=0);
 };
 
-}
+// Sample multplication for binary convolutions for use with
+// function-pointer convolutions.
+// F[0][j] *= F[1][j]
+void multbinary(Complex **F,
+           unsigned int m, unsigned int M,
+           unsigned int offset);
+
+// F[0][j] = F[0][j]*F[1][j] + F[2][j]*F[3][j]
+void multbinarydot(Complex **F,
+           unsigned int m, unsigned int M,
+           unsigned int offset);
+
+} //end namespace fftwpp
 
 #endif
