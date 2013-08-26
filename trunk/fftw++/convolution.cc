@@ -1595,22 +1595,22 @@ void pImplicitConvolution::convolve(Complex **F, Complex **U,
 				    unsigned int offset)
 {
   // iFFT for even points
-  for(unsigned int i=0; i < M; ++i)
+  for(unsigned int i=0; i < A; ++i)
     Backwards->fft(F[i]+offset,U[i]);
   
   // multiply even points
-  (*pmult)(U,m,M,0);
+  (*pmult)(U,m,A,0);
   
   // iFFT for odd points
-  itwiddle(F,M,offset);
-  for(unsigned int i=0; i < M; ++i)
+  itwiddle(F,A,offset);
+  for(unsigned int i=0; i < A; ++i)
     Backwards0->fft(F[i]+offset);
   
   // multiply odd points
-  (*pmult)(F,m,M,offset);
+  (*pmult)(F,m,A,offset);
   
   // return to Fourier space
-  for(unsigned int i=0; i < Mout; ++i) {
+  for(unsigned int i=0; i < B; ++i) {
     Complex *f=F[i]+offset;
     Complex *u=U[i];
     Forwards->fft(f);
@@ -1619,9 +1619,8 @@ void pImplicitConvolution::convolve(Complex **F, Complex **U,
   }
 }
 
-
 // multiply by twiddle factor to prep for inverse FFT for odd modes
-void pImplicitConvolution::itwiddle(Complex **F, unsigned int M,
+void pImplicitConvolution::itwiddle(Complex **F, unsigned int A,
                                     unsigned int offset)
 {  
 #ifdef __SSE2__
@@ -1635,7 +1634,7 @@ void pImplicitConvolution::itwiddle(Complex **F, unsigned int M,
       for(unsigned int k=K; k < stop; ++k) {
         Vec Zetak=ZMULT(X,Y,LOAD(ZetaL0+k));
         unsigned int koffset=k+offset;
-	for(unsigned int i=0; i < M; ++i) {
+	for(unsigned int i=0; i < A; ++i) {
 	  Complex *fki=F[i]+koffset;
 	  STORE(fki,ZMULT(Zetak,LOAD(fki)));
 	}
@@ -1655,7 +1654,7 @@ void pImplicitConvolution::itwiddle(Complex **F, unsigned int M,
           double Re=Hre*L.re-Him*L.im;
           double Im=Hre*L.im+Him*L.re;
           unsigned int koffset=k+offset;
-          for(unsigned int i=0; i < M; ++i) {
+          for(unsigned int i=0; i < A; ++i) {
             Complex *fki=F[i]+koffset;
 	    Complex fk=*fki;
 	    P->re=Re*fk.re-Im*fk.im;
@@ -1732,13 +1731,13 @@ void pImplicitConvolution2::convolve(Complex **F, Complex **U2, Complex ***U1,
 						   unsigned int,unsigned int),
 				     unsigned int offset)
 {
-  for(unsigned int i=0; i < M; ++i)
+  for(unsigned int i=0; i < A; ++i)
     xfftpad->backwards(F[i]+offset,U2[i]);
 
   subconvolution(F,U1,offset,size+offset,pmult);
   subconvolution(U2,U1,0,size,pmult);
  
-  for(unsigned int i=0; i < Mout; ++i)
+  for(unsigned int i=0; i < B; ++i)
     xfftpad->forwards(F[i]+offset,U2[i]);
 }
 
@@ -1769,18 +1768,18 @@ void pImplicitConvolution3::convolve(Complex **F,
 						   unsigned int,unsigned int),
 				     unsigned int offset)
 {
-  for(unsigned int i=0; i < M; ++i)
+  for(unsigned int i=0; i < A; ++i)
     xfftpad->backwards(F[i]+offset,U3[i]);
 
   subconvolution(F,U2,U1,offset,size+offset,pmult);
   subconvolution(U3,U2,U1,0,size,pmult);
 
-  for(unsigned int i=0; i < Mout; ++i)
+  for(unsigned int i=0; i < B; ++i)
     xfftpad->forwards(F[i]+offset,U3[i]);
 }
 
 void multbinary(Complex **F,
-           unsigned int m, unsigned int M,
+           unsigned int m, unsigned int A,
            unsigned int offset) {
   // This multiplication routine is for binary convolutions only and takes
   // exactly two inputs.
@@ -1808,7 +1807,7 @@ void multbinary(Complex **F,
 
 // F[0][j] = F[0][j]*F[1][j] + F[2][j]*F[3][j]
 void multbinarydot(Complex **F,
-            unsigned int m, unsigned int M,
+            unsigned int m, unsigned int A,
             unsigned int offset) {
   Complex* F0=F[0];
   Complex* F1=F[1];
