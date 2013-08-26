@@ -1911,7 +1911,7 @@ public:
   }
   */
   
-  void itwiddle(Complex **F, unsigned int M);
+  void itwiddle(Complex **F, unsigned int M, unsigned int offset);
   void twiddleadd(Complex *f, Complex *u);
 };
 
