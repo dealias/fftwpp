@@ -63,61 +63,12 @@ int main(int argc, char* argv[])
   // Create convolution object C:
   pImplicitConvolution3 C(mx,my,mz,A,B);
   
-  // Set up work arrays:
-  Complex **U3;
-  Complex ***U2;
-  Complex ****U1;
-  
-  U3=new Complex*[A];
-  for(unsigned int i=0; i < A; ++i)
-    U3[i]=ComplexAlign(mx*my*mz);
-  
-  U2=new Complex**[fftw::maxthreads];
-  for(unsigned int t=0; t < fftw::maxthreads; ++t) {
-    U2[t]=new Complex*[A];
-    for(unsigned int i=0; i < A; ++i) {
-      U2[t][i]=ComplexAlign(my*mz);
-    }
-  }
-
-  U1=new Complex***[fftw::maxthreads];
-  for(unsigned int t=0; t < fftw::maxthreads; ++t) {
-    U1[t]=new Complex**[A];
-    U1[t][0]=new Complex*[1];
-    for(unsigned int i=0; i < A; ++i) {
-      U1[t][0][i]=ComplexAlign(mz);
-    }
-  }
-  
   // Perform the convolution:
-  unsigned int offset=0;
-  C.convolve(f,U3,U2,U1,pmult,offset);
+  C.convolve(f,pmult);
 
   // Display output:
-  cout << "output:" << f0 << endl;
-
-  // Free 1D work arrays:
-  for(unsigned int t=0; t < fftw::maxthreads; ++t) {
-    for(unsigned int i=0; i < A; ++i)
-      deleteAlign(U1[t][0][i]);
-    delete[] U1[t][0];
-    delete[] U1[t];
-  }
-  delete[] U1;
-
-  // Free 2D work arrays:
-  for(unsigned int t=0; t < fftw::maxthreads; ++t) {
-    for(unsigned int i=0; i < A; ++i)
-      deleteAlign(U2[t][i]);
-    delete[] U2[t];
-  }
-  delete[] U2;
-
-  // Free 3D work arrays:
-  for(unsigned int i=0; i < A; ++i)
-    deleteAlign(U3[i]);
-  delete[] U3;
-
+  cout << "output:" << endl << f0 << endl;
+  
   // Free input arrays:
   for(unsigned int s=0; s < A; ++s) 
     deleteAlign(f[s]);

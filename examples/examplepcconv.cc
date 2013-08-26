@@ -57,24 +57,14 @@ int main(int argc, char* argv[])
   // Creat a convolution object C:
   pImplicitConvolution C(m,A,B);
 
-  // Allocate work arrays:
-  Complex **U=new Complex *[A];
-  for(unsigned int i=0; i < A; ++i) 
-    U[i]=ComplexAlign(m);
-
   // Perform the convolution:
-  C.convolve(f,U,mult);
-  //C.convolve(f,U,multbinary);
+  C.convolve(f,mult); // Use "mult" for the multiplication.
+  //C.convolve(f); // Use the default binary mulitplication.
   
   // Display output:
   cout << "\noutput:\nf[0]" << endl;
   for(unsigned int i=0; i < m; i++) 
     cout << f[0][i] << endl;
-
-  // Free work arrays:
-  for(unsigned int s=0; s < A; ++s) 
-    deleteAlign(U[s]);
-  delete[] U;
     
   // Free input arrays:
   for(unsigned int s=0; s < A; ++s) 

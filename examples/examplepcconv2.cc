@@ -60,37 +60,11 @@ int main(int argc, char* argv[])
   // Creat a convolution object C:
   pImplicitConvolution2 C(mx,my,A,B);
 
-  // Set up 2D work array:
-  Complex **U2=new Complex *[A];
-  for(unsigned int i=0; i < A; ++i) 
-    U2[i]=ComplexAlign(mx*my);
-
-  // Set up 1D work array:
-  Complex ***U1=new Complex **[fftw::maxthreads];
-  for(unsigned int t=0; t < fftw::maxthreads; ++t) {
-    U1[t]=new Complex*[A];
-    for(unsigned int i=0; i < A; ++i)
-      U1[t][i]=ComplexAlign(my);
-  }
-
   // Perform the convolution:
-  C.convolve(f,U2,U1,pmult,0);
+  C.convolve(f,pmult,0);
 
   // Display output:
   cout << "output:" << f0 << endl;
-
-  // Free 1D work arrays:
-  for(unsigned int t=0; t < fftw::maxthreads; ++t) {
-    for(unsigned int i=0; i < A; ++i)
-      deleteAlign(U1[t][i]);
-    delete[] U1[t];
-  }
-  delete[] U1;
-
-  // Free 2D work arrays:
-  for(unsigned int i=0; i < A; ++i) 
-    deleteAlign(U2[i]);
-  delete[] U2;
 
   // Free input arrays:
   for(unsigned int s=0; s < A; ++s) 
