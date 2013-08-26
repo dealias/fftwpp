@@ -2,81 +2,100 @@
 #include "convolution.h"
 #include "Array.h"
 
-// Compile with:
-// g++ -I .. -fopenmp examplecconv2.cc ../convolution.cc ../fftw++.cc -lfftw3 -lfftw3_omp
-
 using namespace std;
 using namespace Array;
 using namespace fftwpp;
 
-// size of problem
-unsigned int m=8;
-
-unsigned int mx=4;
-unsigned int my=4;
-
-void pmult(Complex **A,
+void pmult(Complex **f,
            unsigned int m, unsigned int M,
            unsigned int offset) {
-  Complex* a0=A[0]+offset;
-  Complex* a1=A[1]+offset;
-  for(unsigned int i=0; i < m; ++i) {
-    //cout << a0[i] << "\t" << a1[i] << endl;
-    a0[i] *= a1[i];
-  }
+  Complex* f0=f[0]+offset;
+  Complex* f1=f[1]+offset;
+  for(unsigned int j=0; j < m; ++j)
+    f0[j] *= f1[j];
 }
 
-inline void init(array2<Complex>& f, array2<Complex>& g) 
+inline void init(array2<Complex> &f0, array2<Complex> &f1, 
+		 unsigned int mx, unsigned int my) 
 {
-    for(unsigned int i=0; i < mx; ++i) {
-      for(unsigned int j=0; j < my; j++) {
-        f[i][j]=Complex(i,j);
-        g[i][j]=Complex(2*i,j+1);
-      }
+  for(unsigned int i=0; i < mx; ++i) {
+    for(unsigned int j=0; j < my; ++j) {
+      f0[i][j]=Complex(i,j);
+      f1[i][j]=Complex(2*i,j+1);
     }
+  }
 }
 
 int main(int argc, char* argv[])
 {
+  cout << "2D non-centered complex convolution:" << endl;
+  
+  // Set maximum number of threads to be used:
   fftw::maxthreads=get_max_threads();
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
 
-  // 2d non-centered complex convolution
-  cout << endl << "2D non-centered complex convolution:" << endl;
-  size_t align=sizeof(Complex);
-  array2<Complex> f(mx,my,align);
-  array2<Complex> g(mx,my,align);
-  init(f,g);
-  cout << "input:" << endl;
-  cout << "f:" << endl << f << endl;
-  cout << "g:" << endl << g << endl;
-
-  unsigned int Min=2, Mout=2;
+  // Problem Size:
+  unsigned int mx=4;
+  unsigned int my=4;
   
-  pImplicitConvolution2 C(mx,my,Min,Mout);
-  Complex **FF=new Complex *[Min];
-  FF[0]=f;
-  FF[1]=g;
+  unsigned int A=2; // Number of inputs
+  unsigned int B=1; // Number of outputs
 
+  // Allocate input arrays:
+  Complex **f = new Complex *[A];
+  for(unsigned int s=0; s < A; ++s)
+    f[s]=ComplexAlign(mx*my);
+  
+  // Set up the input:
+  array2<Complex> f0(mx,my,f[0]);
+  array2<Complex> f1(mx,my,f[1]);
+  init(f0,f1,mx,my);
+  cout << "input:" << endl;
+  cout << "f[0]:" << endl << f0 << endl;
+  cout << "f[1]:" << endl << f1 << endl;
 
-  Complex **U2=new Complex *[Min];
-  for(unsigned int i=0; i < Min; ++i) 
+  // Creat a convolution object C:
+  pImplicitConvolution2 C(mx,my,A,B);
+
+  // Set up 2D work array:
+  Complex **U2=new Complex *[A];
+  for(unsigned int i=0; i < A; ++i) 
     U2[i]=ComplexAlign(mx*my);
+
+  // Set up 1D work array:
   Complex ***U1=new Complex **[fftw::maxthreads];
   for(unsigned int t=0; t < fftw::maxthreads; ++t) {
-    U1[t]=new Complex*[Min];
-    for(unsigned int i=0; i < Min; ++i) {
+    U1[t]=new Complex*[A];
+    for(unsigned int i=0; i < A; ++i)
       U1[t][i]=ComplexAlign(my);
-    }
   }
 
-  C.convolve(FF,U2,U1,pmult,0);
+  // Perform the convolution:
+  C.convolve(f,U2,U1,pmult,0);
 
-  cout << "output:" << endl;
-  cout << f << endl;
+  // Display output:
+  cout << "output:" << f0 << endl;
+
+  // Free 1D work arrays:
+  for(unsigned int t=0; t < fftw::maxthreads; ++t) {
+    for(unsigned int i=0; i < A; ++i)
+      deleteAlign(U1[t][i]);
+    delete[] U1[t];
+  }
+  delete[] U1;
+
+  // Free 2D work arrays:
+  for(unsigned int i=0; i < A; ++i) 
+    deleteAlign(U2[i]);
+  delete[] U2;
+
+  // Free input arrays:
+  for(unsigned int s=0; s < A; ++s) 
+    deleteAlign(f[s]);
+  delete[] f;
 
   return 0;
 }

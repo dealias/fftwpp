@@ -1893,13 +1893,15 @@ public:
 
   void convolve(Complex **F, Complex **U,
 		void (*pmult)(Complex **,unsigned int,
-			      unsigned int,unsigned int), unsigned int offset=0);
+			      unsigned int,unsigned int), 
+		unsigned int offset=0);
   
   // F is an array of M pointers to distinct data blocks each of size m,
   // shifted by offset (contents not preserved).
   void convolve(Complex **F,
 		void (*pmult)(Complex **,unsigned int,
-			      unsigned int,unsigned int), unsigned int offset=0) {
+			      unsigned int,unsigned int), 
+		unsigned int offset=0) {
     convolve(F,U,pmult,offset);
   }
   
