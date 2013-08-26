@@ -26,8 +26,7 @@ const double sqrt3=sqrt(3.0);
 const double hsqrt3=0.5*sqrt3;
 const Complex zeta3(-0.5,hsqrt3);
 
-// Returns the square-root (or thereabouts) of the size of the
-// problem, which will then be used for looping.
+// Build zeta table, returning the floor of the square root of m.
 unsigned int BuildZeta(unsigned int n, unsigned int m,
                        Complex *&ZetaH, Complex *&ZetaL, unsigned int threads)
 {
@@ -1603,7 +1602,7 @@ void pImplicitConvolution::convolve(Complex **F, Complex **U,
   (*pmult)(U,m,M,0);
   
   // iFFT for odd points
-  itwiddle(F,M);
+  itwiddle(F,M,offset);
   for(unsigned int i=0; i < M; ++i)
     Backwards0->fft(F[i]+offset);
   
@@ -1622,7 +1621,8 @@ void pImplicitConvolution::convolve(Complex **F, Complex **U,
 
 
 // multiply by twiddle factor to prep for inverse FFT for odd modes
-void pImplicitConvolution::itwiddle(Complex **F, unsigned int M)
+void pImplicitConvolution::itwiddle(Complex **F, unsigned int M,
+                                    unsigned int offset)
 {  
 #ifdef __SSE2__
   PARALLEL(
@@ -1634,10 +1634,10 @@ void pImplicitConvolution::itwiddle(Complex **F, unsigned int M)
       Vec Y=UNPACKH(CONJ(Zeta),Zeta);
       for(unsigned int k=K; k < stop; ++k) {
         Vec Zetak=ZMULT(X,Y,LOAD(ZetaL0+k));
+        unsigned int koffset=k+offset;
 	for(unsigned int i=0; i < M; ++i) {
-	  Complex *fki=F[i]+k;
-	  Vec Fki=LOAD(fki);
-	  STORE(fki,ZMULT(Zetak,Fki));
+	  Complex *fki=F[i]+koffset;
+	  STORE(fki,ZMULT(Zetak,LOAD(fki)));
 	}
       }
     }
@@ -1650,14 +1650,14 @@ void pImplicitConvolution::itwiddle(Complex **F, unsigned int M)
         Complex *p=ZetaH+K/s;
         double Hre=p->re;
         double Him=p->im;
-	for(unsigned int i=0; i < M; ++i) {
-	  Complex *f=F[i];
-	  for(unsigned int k=K; k < stop; ++k) {
-	    Complex *P=f+k;
-	    Complex fk=*P;
-	    Complex L=*(ZetaL0+k);
-	    double Re=Hre*L.re-Him*L.im;
-	    double Im=Hre*L.im+Him*L.re;
+        for(unsigned int k=K; k < stop; ++k) {
+          Complex L=*(ZetaL0+k);
+          double Re=Hre*L.re-Him*L.im;
+          double Im=Hre*L.im+Him*L.re;
+          unsigned int koffset=k+offset;
+          for(unsigned int i=0; i < M; ++i) {
+            Complex *fki=F[i]+koffset;
+	    Complex fk=*fki;
 	    P->re=Re*fk.re-Im*fk.im;
 	    P->im=Im*fk.re+Re*fk.im;
 	  }
