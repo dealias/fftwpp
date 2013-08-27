@@ -71,6 +71,9 @@ pcconv: pcconv.o $(EXTRA:=.o)
 pcconv2: pcconv2.o $(EXTRA:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
+pcconv3: pcconv3.o $(EXTRA:=.o)
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
 clean:  FORCE
 	rm -rf $(ALL) $(ALL:=.o) $(ALL:=.d)
 
