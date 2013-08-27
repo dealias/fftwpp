@@ -9,7 +9,7 @@ import os
 
 
 def main(argv):
-    usage='Usage: timings.py -a<start> -b<stop> -p<cconv,cconv2,cconv3,conv,conv2,conv3,tconv,tconv2,pcconv> -T<number of threads> -A<quoted arg list for timed program> -r<implicit/explicit> -R<ram in gigabytes>' 
+    usage='Usage: timings.py -a<start> -b<stop> -p<cconv,cconv2,cconv3,conv,conv2,conv3,tconv,tconv2,pcconv,pcconv2> -T<number of threads> -A<quoted arg list for timed program> -r<implicit/explicit> -R<ram in gigabytes>' 
     bset=0
     dorun=1
     Tset=0
@@ -132,6 +132,13 @@ def main(argv):
         if(r == "pruned"):
             print p+" has no pruned option"
             dorun=0
+    if p == "pcconv2":
+        if RAM != 0:
+            if r == "implicit":
+                b=min(int(floor(0.5*log(RAM/64)/log(2))),b)
+            else:
+                b=min(int(floor(log(RAM/16/2/2**2)/log(2)/2)),b)
+        outdir="timings2cp"
 
     if outdir == "":
         print "empty outdir: please select a different program!"

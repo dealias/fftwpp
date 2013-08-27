@@ -32,7 +32,7 @@ vpath %.cc ../
 vpath %.h ../
 
 FFTW=fftw++
-FILES=conv cconv conv2 cconv2 conv3 cconv3 tconv tconv2 pcconv
+FILES=conv cconv conv2 cconv2 conv3 cconv3 tconv tconv2 pcconv pcconv2
 EXTRA=$(FFTW) convolution explicit direct
 ALL=$(FILES) $(EXTRA)
 
@@ -66,6 +66,9 @@ tconv2: tconv2.o $(EXTRA:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 pcconv: pcconv.o $(EXTRA:=.o)
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
+pcconv2: pcconv2.o $(EXTRA:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 clean:  FORCE
