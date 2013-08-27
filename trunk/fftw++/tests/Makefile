@@ -32,7 +32,7 @@ vpath %.cc ../
 vpath %.h ../
 
 FFTW=fftw++
-FILES=conv cconv conv2 cconv2 conv3 cconv3 tconv tconv2 pcconv pcconv2
+FILES=conv cconv conv2 cconv2 conv3 cconv3 tconv tconv2 pcconv pcconv2 pcconv3
 EXTRA=$(FFTW) convolution explicit direct
 ALL=$(FILES) $(EXTRA)
 
