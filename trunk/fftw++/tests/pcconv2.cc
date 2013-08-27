@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
         Test=true;
         break;
       case 'm':
-        m=atoi(optarg);
+        mx=my=atoi(optarg);
         break;
       case 'T':
         fftw::maxthreads=atoi(optarg);
@@ -129,7 +129,7 @@ int main(int argc, char* argv[])
       T[i]=seconds();
     }
 
-    timings("Implicit",m,T,N);
+    timings("Implicit",mx,T,N);
 
     // Display output:
     if(m < 100) 
