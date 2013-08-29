@@ -31,7 +31,7 @@ private:
   MPI_Status status;
   MPI_Comm split;
 public: //temp  
-  unsigned int d;
+  unsigned int b;
 
 public:
   transpose(unsigned int N, unsigned int m, unsigned int n,
@@ -39,13 +39,13 @@ public:
             MPI_Comm communicator=MPI_COMM_WORLD) : 
     N(N), m(m), n(n), M(M), L(L), work(work), communicator(communicator),
     allocated(false) {
-    d=1;
+    b=1;
     
     MPI_Comm_size(communicator,&size);
     if(size == 1) return;
     MPI_Comm_rank(communicator,&rank);
     if(rank == 0)
-      std::cout << "d=" << d << ", ALLTOALL=" << ALLTOALL << std::endl;
+      std::cout << "b=" << b << ", ALLTOALL=" << ALLTOALL << std::endl;
     
     if(N % size != 0 || M % size != 0) {
       if(rank == 0)
@@ -61,22 +61,22 @@ public:
       allocated=true;
     }
     
-    if(d > (unsigned int) size) d=size;
-    if(d == 1) {
+    if(b > (unsigned int) size) b=size;
+    if(b == 1) {
       split=communicator;
       splitsize=size;
       splitrank=rank;
     } else {
-      unsigned int q=size/d;
+      unsigned int q=size/b;
       MPI_Comm_split(communicator,rank/q,0,&split);
       MPI_Comm_size(split,&splitsize);
       MPI_Comm_rank(split,&splitrank);
     }
     
 #if ALLTOALL    
-    request=new MPI_Request[d-1];
+    request=new MPI_Request[b-1];
 #else    
-    request=new MPI_Request[std::max((unsigned int) splitsize-1,d-1)];
+    request=new MPI_Request[std::max((unsigned int) splitsize-1,b-1)];
     sched=new int[splitsize];
     fill1_comm_sched(sched,splitrank,splitsize);
 #endif    

@@ -116,7 +116,6 @@ int main(int argc, char **argv)
 
 #ifndef OLD
   transpose T(N0,n1,n0,N1,N2);
-  if(rank == 0) cout << "\nGROUP: " << T.d << endl;
   init(data,N0,n1,N2,n1start);
   T.inTransposed(data);
   T.inwait(data);
