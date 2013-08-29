@@ -11,19 +11,19 @@ void transpose::inTransposed(Complex *data)
 {
   if(size == 1) return;
   
-  // Outer transpose size/d x size/d blocks each of dimension d x d
+  // Outer transpose size/b x size/b blocks each of dimension b x b
   Complex *in, *out;
   unsigned int Lm=L*m;
   unsigned int length=n*Lm;
-  if(d > 1) {
-    unsigned int stride=N/d*Lm;
+  if(b > 1) {
+    unsigned int stride=N/b*Lm;
     unsigned int lengthsize=length*sizeof(Complex);
-    unsigned int q=size/d;
+    unsigned int q=size/b;
     for(unsigned int p=0; p < q; ++p) {
       unsigned int lengthp=length*p;
       Complex *datap=data+lengthp;
-      Complex *workp=work+d*lengthp;
-      for(unsigned int i=0; i < d; ++i)
+      Complex *workp=work+b*lengthp;
+      for(unsigned int i=0; i < b; ++i)
         memcpy(workp+length*i,datap+stride*i,lengthsize);
     }
     out=work;
@@ -33,7 +33,7 @@ void transpose::inTransposed(Complex *data)
     in=work;
   }
     
-  unsigned int blocksize=d*length;
+  unsigned int blocksize=b*length;
   unsigned int doubles=2*blocksize;
     
 #if ALLTOALL
@@ -63,23 +63,23 @@ void transpose::inwait(Complex *data)
     MPI_Waitall(splitsize-1,request,MPI_STATUSES_IGNORE);
 #endif    
 
-  // Inner transpose each d x d block
+  // Inner transpose each b x b block
   unsigned int Lm=L*m;
-  if(d > 1) {
+  if(b > 1) {
     unsigned int length=n*Lm;
-    unsigned int stride=N/d*Lm;
+    unsigned int stride=N/b*Lm;
     unsigned int lengthsize=length*sizeof(Complex);
-    unsigned int q=size/d;
+    unsigned int q=size/b;
     for(unsigned int p=0; p < q; ++p) {
       unsigned int lengthp=length*p;
       Complex *workp=work+lengthp;
-      Complex *datap=data+d*lengthp;
-      for(unsigned int i=0; i < d; ++i)
+      Complex *datap=data+b*lengthp;
+      for(unsigned int i=0; i < b; ++i)
         memcpy(workp+stride*i,datap+length*i,lengthsize);
     }
     
     unsigned int r=rank/q;
-    for(unsigned int p=0; p < d; ++p) {
+    for(unsigned int p=0; p < b; ++p) {
       if(p != r) {
         int inc=(p-r)*q;
         MPI_Irecv(data+p*stride,2*stride,MPI_DOUBLE,rank+inc,0,communicator,
@@ -91,12 +91,12 @@ void transpose::inwait(Complex *data)
       else memcpy(data+r*stride,work+r*stride,stride*sizeof(Complex));
     }
       
-    MPI_Waitall(d-1,request,MPI_STATUSES_IGNORE);
+    MPI_Waitall(b-1,request,MPI_STATUSES_IGNORE);
   }
     
   unsigned int LM=L*M;
   if(n > 1) {
-    if(d > 1) memcpy(work,data,LM*n*sizeof(Complex));
+    if(b > 1) memcpy(work,data,LM*n*sizeof(Complex));
     unsigned int stop=Lm*size;
     unsigned int msize=Lm*sizeof(Complex);
     for(unsigned int i=0; i < n; ++i) {
@@ -105,7 +105,7 @@ void transpose::inwait(Complex *data)
       for(unsigned int p=0; p < stop; p += Lm)
         memcpy(in+p,out+p*n,msize);
     }
-  } else if(d == 1)
+  } else if(b == 1)
     memcpy(data,work,LM*n*sizeof(Complex));
 }  
     
@@ -113,7 +113,7 @@ void transpose::outTransposed(Complex *data)
 {
   if(size == 1) return;
   
-  // Inner transpose each d x d block
+  // Inner transpose each b x b block
   unsigned int Lm=L*m;
   unsigned int LM=L*M;
   if(n > 1) {
@@ -125,17 +125,17 @@ void transpose::outTransposed(Complex *data)
       for(unsigned int p=0; p < stop; p += Lm)
         memcpy(ini+p*n,outi+p,msize);
     }
-    if(d > 1) memcpy(data,work,LM*n*sizeof(Complex));    
-  } else if(d == 1)
+    if(b > 1) memcpy(data,work,LM*n*sizeof(Complex));    
+  } else if(b == 1)
     memcpy(work,data,LM*n*sizeof(Complex));
 
   unsigned int length=n*Lm;
   Complex *in,*out;
-  if(d > 1) {
-    unsigned int q=size/d;
+  if(b > 1) {
+    unsigned int q=size/b;
     unsigned int r=rank/q;
-    unsigned int stride=N/d*Lm;
-    for(unsigned int p=0; p < d; ++p) {
+    unsigned int stride=N/b*Lm;
+    for(unsigned int p=0; p < b; ++p) {
       if(p != r) {
         int inc=(p-r)*q;
         MPI_Irecv(work+p*stride,2*stride,MPI_DOUBLE,rank+inc,0,communicator,
@@ -147,16 +147,16 @@ void transpose::outTransposed(Complex *data)
       else memcpy(work+r*stride,data+r*stride,stride*sizeof(Complex));
     }
       
-    MPI_Waitall(d-1,request,MPI_STATUSES_IGNORE);
+    MPI_Waitall(b-1,request,MPI_STATUSES_IGNORE);
       
-  // Outer transpose size/d x size/d blocks each of dimension d x d
+  // Outer transpose size/b x size/b blocks each of dimension b x b
   
     unsigned int lengthsize=length*sizeof(Complex);
     for(unsigned int p=0; p < q; ++p) {
       unsigned int lengthp=length*p;
       Complex *workp=work+lengthp;
-      Complex *datap=data+d*lengthp;
-      for(unsigned int i=0; i < d; ++i)
+      Complex *datap=data+b*lengthp;
+      for(unsigned int i=0; i < b; ++i)
         memcpy(datap+length*i,workp+stride*i,lengthsize);
     }
     out=data;
@@ -166,7 +166,7 @@ void transpose::outTransposed(Complex *data)
     in=data;
   }
       
-  unsigned int blocksize=d*length;
+  unsigned int blocksize=b*length;
   unsigned int doubles=2*blocksize;
     
 #if ALLTOALL
@@ -198,16 +198,16 @@ void transpose::outwait(Complex *data)
 #endif    
     
   unsigned int Lm=L*m;
-  if(d > 1) {
-    unsigned int stride=N/d*Lm;
+  if(b > 1) {
+    unsigned int stride=N/b*Lm;
     unsigned int length=n*Lm;
     unsigned int lengthsize=length*sizeof(Complex);
-    unsigned int q=size/d;
+    unsigned int q=size/b;
     for(unsigned int p=0; p < q; ++p) {
       unsigned int lengthp=length*p;
       Complex *datap=data+lengthp;
-      Complex *workp=work+d*lengthp;
-      for(unsigned int i=0; i < d; ++i)
+      Complex *workp=work+b*lengthp;
+      for(unsigned int i=0; i < b; ++i)
         memcpy(datap+stride*i,workp+length*i,lengthsize);
     }
   }
