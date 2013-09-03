@@ -10,6 +10,7 @@ using namespace fftwpp;
 
 int main()
 {
+  cout << "2D complex to complex in-place FFT" << endl;
   fftw::maxthreads=get_max_threads();
 
   unsigned int nx=4, ny=5;
@@ -24,13 +25,13 @@ int main()
     for(unsigned int j=0; j < ny; j++) 
       f(i,j)=Complex(i,j);
 
-  cout << f << endl;
+  cout << "\ninput:\n" << f;
   
   Forward2.fft(f);
   
-  cout << f << endl;
+  cout << "\noutput:\n" << f;
   
   Backward2.fftNormalized(f);
 
-  cout << f << endl;
+  cout << "\nback to input:\n" << f;
 }

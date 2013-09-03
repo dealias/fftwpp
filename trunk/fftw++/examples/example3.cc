@@ -10,6 +10,8 @@ using namespace fftwpp;
 
 int main() 
 {
+  cout << "3D complex to complex in-place FFT" << endl;
+
   fftw::maxthreads=get_max_threads();
   
   unsigned int nx=4, ny=5, nz=6;
@@ -25,13 +27,13 @@ int main()
       for(unsigned int k=0; k < nz; k++) 
       f(i,j,k)=i+j+k;
 	
-  cout << f << endl;
+  cout << "\ninput:\n" << f;
   
   Forward3.fft(f);
   
-  cout << f << endl;
+  cout << "\noutput:\n" << f;
   
   Backward3.fftNormalized(f);
   
-  cout << f << endl;
+  cout << "\nback to input:\n" << f;
 }

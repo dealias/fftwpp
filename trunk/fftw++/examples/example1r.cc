@@ -10,6 +10,8 @@ using namespace fftwpp;
 
 int main()
 {
+  cout << "1D real to complex out-of-place FFT" << endl;
+  
   fftw::maxthreads=get_max_threads();
   
   unsigned int n=5;
@@ -23,12 +25,14 @@ int main()
   crfft1d Backward(n,g,f);
   
   for(unsigned int i=0; i < n; i++) f[i]=i;
+
+  cout << "\ninput:" << f << endl;
 	
   Forward.fft(f,g);
   
-  cout << g << endl;
+  cout << "\noutput:" << g << endl;
   
   Backward.fftNormalized(g,f);
   
-  cout << f << endl;
+  cout << "\nback to input:" << f << endl;
 }

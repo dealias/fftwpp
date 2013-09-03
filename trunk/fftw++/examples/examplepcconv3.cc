@@ -30,8 +30,8 @@ inline void init(array3<Complex>& f0, array3<Complex>& f1,
 
 int main(int argc, char* argv[])
 {
-  // 3d non-centered complex convolution
-  cout << endl << "3D non-centered complex convolution:" << endl;
+  cout << "3D non-centered complex convolution using function-pointers:" 
+       << endl;
 
   // Set maximum number of threads to be used:
   fftw::maxthreads=get_max_threads();
@@ -55,10 +55,10 @@ int main(int argc, char* argv[])
   array3<Complex> f0(mx,my,mz,f[0]);
   array3<Complex> f1(mx,my,mz,f[1]);
 
-  cout << "input:" << endl;
+  cout << "\ninput:" << endl;
   init(f0,f1,mx,my,mz);
-  cout << "f[0]:" << endl << f0 << endl;
-  cout << "f[1]:" << endl << f1 << endl;
+  cout << "f[0]:" << endl << f0;
+  cout << "f[1]:" << endl << f1;
 
   // Create convolution object C:
   pImplicitConvolution3 C(mx,my,mz,A,B);
@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
   C.convolve(f,pmult);
 
   // Display output:
-  cout << "output:" << endl << f0 << endl;
+  cout << "output:\n" << f0;
   
   // Free input arrays:
   for(unsigned int s=0; s < A; ++s) 

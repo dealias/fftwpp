@@ -34,15 +34,13 @@ int main(int argc, char* argv[])
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
   
-   // 1d non-centered complex convolution
-    
   // allocate arrays:
   Complex *f=ComplexAlign(m);
   Complex *g=ComplexAlign(m);
   
-  cout << endl << "non-centered complex convolution:" << endl;
+  cout << "1d non-centered complex convolution:" << endl;
   init(f,g);
-  cout << "input:\nf\tg" << endl;
+  cout << "\ninput:\nf\tg" << endl;
   for(unsigned int i=0; i < m; i++) 
     cout << f[i] << "\t" << g[i] << endl;
   

@@ -35,14 +35,14 @@ int main(int argc, char* argv[])
 #endif  
   
   // 1d centered Hermitian-symmetric complex convolution
-  cout << endl << "centered Hermitian-symmetric convolution:" << endl;
+  cout << "1D centered Hermitian-symmetric convolution:" << endl;
 
   // allocate arrays:
   Complex *f=ComplexAlign(m);
   Complex *g=ComplexAlign(m);
 
   init(f,g);
-  cout << "input:\nf\tg" << endl;
+  cout << "\ninput:\nf\tg" << endl;
   for(unsigned int i=0; i < m; i++) 
     cout << f[i] << "\t" << g[i] << endl;
   

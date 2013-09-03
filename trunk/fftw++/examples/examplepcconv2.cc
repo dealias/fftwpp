@@ -28,7 +28,8 @@ inline void init(array2<Complex> &f0, array2<Complex> &f1,
 
 int main(int argc, char* argv[])
 {
-  cout << "2D non-centered complex convolution:" << endl;
+  cout << "2D non-centered complex convolution using function-pointers:" 
+       << endl;
   
   // Set maximum number of threads to be used:
   fftw::maxthreads=get_max_threads();
@@ -53,7 +54,7 @@ int main(int argc, char* argv[])
   array2<Complex> f0(mx,my,f[0]);
   array2<Complex> f1(mx,my,f[1]);
   init(f0,f1,mx,my);
-  cout << "input:" << endl;
+  cout << "\ninput:" << endl;
   cout << "f[0]:" << endl << f0 << endl;
   cout << "f[1]:" << endl << f1 << endl;
 
@@ -64,7 +65,7 @@ int main(int argc, char* argv[])
   C.convolve(f,pmult,0);
 
   // Display output:
-  cout << "output:" << f0 << endl;
+  cout << "output:\n" << f0;
 
   // Free input arrays:
   for(unsigned int s=0; s < A; ++s) 
