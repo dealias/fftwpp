@@ -334,60 +334,16 @@ void cfft2MPI::BackwardsNormalized(Complex *f,bool finaltranspose)
 
 void cfft3MPI::Forwards(Complex *f,bool finaltranspose)
 {
-  if(alltoall) {
-    exit(1);
-    //    T->outTransposed(f);
-    
-  } else {
+  xForwards->fft(f);
 
-    // fft in x-direction    
-    xForwards->fft(f);
-    
-    // Ttranspose
-    fftw_mpi_execute_r2r(transpose,(double *)f,(double *)f);
-  
-    // fft in y-direction
-    yForwards->fft(f);
-    
-    // Ttranspose:
-    // FIXME: what goes here?
-  
-    // fft in z-direction
-    yForwards->fft(f);
-    
-    // Transpose back:
-    if(finaltranspose)
-      fftw_mpi_execute_r2r(transpose,(double *)f,(double *)f);
-  }
+  fftw_mpi_execute_r2r(yzintranspose,(double *)f,(double *)f);
+
+  // FIXME: perofmr 2D fft here?
 }
 
 void cfft3MPI::Backwards(Complex *f,bool finaltranspose)
 {
-  if(alltoall) {
-    std::cout << "cfft2MPI does not have alltoall enabled; aborting." 
-	      << std::endl;
-    exit(1);
-    
-  } else {
-    // Transpose back:
-    if(finaltranspose)
-      fftw_mpi_execute_r2r(transpose,(double *)f,(double *)f);
-
-    // fft in z-direction:
-    zBackwards->fft(f);
-
-    // Transpose again:
-    // FIXME
-
-    // fft in y-direction:
-    yBackwards->fft(f);
-    
-    // Ttranspose
-    fftw_mpi_execute_r2r(transpose,(double *)f,(double *)f);
-    
-    // fft in x-direction    
-    xBackwards->fft(f);
-  }
+  // FIXME
 }
 
 void cfft3MPI::Normalize(Complex *f) 
