@@ -115,12 +115,8 @@ int main(int argc, char* argv[])
     cfft2MPI fft(d,f);
     MPI_Barrier(group.active);
     if(group.rank == 0)
-      cout << "Initialized after " << seconds() << " seconds." << endl;
+      cout << "Initialized after " << seconds() << " seconds." << endl;    
 
-    init(f,d);
-    if(mx*my < outlimit)
-      show(f,mx,d.y,group.active);
-  
     bool dofinaltranspose=false;
 
     for(unsigned int i=0; i < N; ++i) {
@@ -132,11 +128,26 @@ int main(int argc, char* argv[])
       T[i]=seconds();
     }
     
-    if(main) 
-      timings("Implicit",mx,T,N);
+    if(main) timings("FFT timing:",mx,T,N);
 
-    if(mx*my < outlimit)
-      show(f,mx,d.y,group.active);
+    if(mx*my < outlimit) {
+      init(f,d);
+
+      if(main) cout << "\ninput:" << endl;
+      show(f,d.nx,d.y,group.active);
+      //show(f,1,d.x*d.ny,group.active);
+
+      fft.Forwards(f,dofinaltranspose);
+
+      if(main) cout << "\noutput:" << endl;
+      show(f,d.ny,d.x,group.active);
+      // show(f,1,d.x*d.ny,group.active);
+      // if(main) d.show();
+      fft.Backwards(f,dofinaltranspose);
+      fft.Normalize(f);
+      if(main) cout << "\noutput:" << endl;
+      show(f,d.nx,d.y,group.active);
+    }
 
     deleteAlign(f);
     

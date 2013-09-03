@@ -304,66 +304,20 @@ void ImplicitHConvolution3MPI::convolve(Complex **F, Complex **G,
 
 void cfft2MPI::Forwards(Complex *f,bool finaltranspose)
 {
-  if(alltoall) {
-    std::cout << "cfft2MPI does not have alltoall enabled; aborting." 
-	      << std::endl;
-    exit(1);
-    
-  } else {
-
-#if 1
-    // fft in x-direction    
-    xForwards->fft(f);
-    
-    // Ttranspose
-    fftw_mpi_execute_r2r(transpose,(double *)f,(double *)f);
-    
-    // fft in y-direction
-    yForwards->fft(f);
-    
-    // Transpose back:
-    if(finaltranspose)
-      fftw_mpi_execute_r2r(transpose,(double *)f,(double *)f);
-#else
-    // fft in x-direction    
-    xForwards->fft(f);
-    
-    // Ttranspose
-    fftw_mpi_execute_r2r(intranspose,(double *)f,(double *)f);
-    
-    // fft in y-direction
-    yForwards->fft(f); // FIXME: in this case, we need to mess with stride.
-    
-    // Transpose back:
-    if(finaltranspose)
-      fftw_mpi_execute_r2r(outtranspose,(double *)f,(double *)f);
-#endif
-  }
+  yForwards->fft(f);
+  fftw_mpi_execute_r2r(intranspose,(double *)f,(double *)f);
+  xForwards->fft(f);
+  if(finaltranspose)
+    fftw_mpi_execute_r2r(outtranspose,(double *)f,(double *)f);
 }
 
 void cfft2MPI::Backwards(Complex *f,bool finaltranspose)
 {
-  if(alltoall) {
-    std::cout << "cfft2MPI does not have alltoall enabled; aborting." 
-	      << std::endl;
-    exit(1);
-    
-  } else {
-    // Transpose back:
-    if(finaltranspose)
-      fftw_mpi_execute_r2r(transpose,(double *)f,(double *)f);
-
-    // fft in y-direction
-    yBackwards->fft(f);
-
-    
-    // Ttranspose
-    fftw_mpi_execute_r2r(transpose,(double *)f,(double *)f);
-    
-    // fft in x-direction    
-    xBackwards->fft(f);
-    
-  }
+  if(finaltranspose)
+    fftw_mpi_execute_r2r(intranspose,(double *)f,(double *)f);
+  xBackwards->fft(f);
+  fftw_mpi_execute_r2r(outtranspose,(double *)f,(double *)f);
+  yBackwards->fft(f);
 }
 
 void cfft2MPI::Normalize(Complex *f) 
@@ -372,12 +326,17 @@ void cfft2MPI::Normalize(Complex *f)
   for(unsigned int i=0; i < d.n; ++i) f[i] *= overN;
 }
 
+void cfft2MPI::BackwardsNormalized(Complex *f,bool finaltranspose)
+{
+  Backwards(f,finaltranspose);
+  Normalize(f);
+}
+
 void cfft3MPI::Forwards(Complex *f,bool finaltranspose)
 {
   if(alltoall) {
-    std::cout << "cfft2MPI does not have alltoall enabled; aborting." 
-	      << std::endl;
     exit(1);
+    //    T->outTransposed(f);
     
   } else {
 

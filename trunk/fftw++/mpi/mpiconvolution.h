@@ -104,6 +104,14 @@ public:
     x0=start1;
     y0=start0;
   }
+
+  void show() {
+    std::cout << "nx=" << nx << "\tny="<<ny << std::endl;
+    std::cout << "x=" << x << "\ty="<<y << std::endl;
+    std::cout << "x0=" << x0 << "\ty0="<< y0 << std::endl;
+    std::cout << "n=" << n << std::endl;
+    std::cout << "block=" << block << std::endl;
+  }
 };
 
 //         local matrix is nx X   y  X z
@@ -176,7 +184,7 @@ public:
 #if MPI_VERSION >= 3
         std::cout << " (NONBLOCKING MPI 3.0 version)";
 #endif
-        std::cout << std::endl;        
+        std::cout << std::endl;
       }
     } else {
       intranspose=
@@ -624,49 +632,26 @@ class cfft2MPI : public ThreadBase {
   mfft1d *yBackwards;
   Complex *f;
  protected:
-  fftw_plan transpose;
-  fftw_plan intranspose, outtranspose;
-  MPI_Request* utranspose;
-  bool alltoall; // Use faster nonblocking alltoall block transpose
+  fftw_plan intranspose,outtranspose;
  public:
   void inittranspose(Complex* f) {
     int size;
     MPI_Comm_size(d.communicator,&size);
-    alltoall=mx % size == 0 && my % size == 0;
+    intranspose=
+      fftw_mpi_plan_many_transpose(my,mx,2,d.block,0,
+				   (double*) f,(double*) f,
+				   d.communicator,
+				   FFTW_ESTIMATE);
+    if(!intranspose) transposeError("in2");
 
-    if(alltoall) {
-      int rank;
-      MPI_Comm_rank(d.communicator,&rank);
-      if(rank == 0) {
-        std::cout << "Using fast alltoall block transpose";
-#if MPI_VERSION >= 3
-        std::cout << " (NONBLOCKING MPI 3.0 version)";
-#endif
-        std::cout << std::endl;        
-      }
-    
-      utranspose=new MPI_Request;
-    } else {
-      transpose=
-	fftw_mpi_plan_many_transpose(mx,my,2,0,d.block,
-				     (double *)f, (double *)f,
-				     d.communicator,FFTW_ESTIMATE);
-      if(!transpose) transposeError("normal transpose");
-      
-      intranspose=
-	fftw_mpi_plan_many_transpose(mx,my,2,0,d.block,
-				     (double *)f, (double *)f,
-				     d.communicator,FFTW_MPI_TRANSPOSED_IN);
-      if(!intranspose) transposeError("intranspose");
-      
-      outtranspose=
-	fftw_mpi_plan_many_transpose(mx,my,2,0,d.block,
-				     (double *)f, (double *)f,
-				     d.communicator,FFTW_MPI_TRANSPOSED_OUT);
-      if(!outtranspose) transposeError("outtranspose");
-      
-      SaveWisdom(d.communicator);
-    }
+    outtranspose=
+      fftw_mpi_plan_many_transpose(mx,my,2,d.block,0,
+				   (double*) f,(double*) f,
+				   d.communicator,
+				   FFTW_ESTIMATE);
+    if(!outtranspose) transposeError("out2");
+    SaveWisdom(d.communicator);
+
   }
   
   // threads is the number of threads to use in the outer subconvolution loop.
@@ -677,24 +662,26 @@ class cfft2MPI : public ThreadBase {
     my=d.ny;
     inittranspose(f);
  
-    xForwards=new mfft1d(d.nx,-1,d.y);
-    xBackwards=new mfft1d(d.nx,1,d.y);
+    // x-direction FFTs are of length d.nx, with d.y performed, stride is d.y,
+    // dist (spacing between first elemetns of the vecotrs) is 1
+    xForwards=new mfft1d(d.nx,-1,d.y,d.y,1);
+    xBackwards=new mfft1d(d.nx,1,d.y,d.y,1);
 
-    yForwards=new mfft1d(d.ny,-1,d.x);
-    yBackwards=new mfft1d(d.ny,1,d.x);
+    // y-direction FFTs are of length d.ny, with d.x performed, stride is d.x
+    // dist (spacing between first elemetns of the vecotrs) is 1
+    yForwards=new mfft1d(d.ny,-1,d.x,d.x,1);
+    yBackwards=new mfft1d(d.ny,1,d.x,d.x,1);
   }
   
   virtual ~cfft2MPI() {
-    if(alltoall) {
-      delete utranspose;
-    } else {
-      fftw_destroy_plan(transpose);
-    }
+    fftw_destroy_plan(intranspose);
+    fftw_destroy_plan(outtranspose);
   }
 
   void Forwards(Complex *f, bool finaltranspose=true);
   void Backwards(Complex *f, bool finaltranspose=true);
   void Normalize(Complex *f);
+  void BackwardsNormalized(Complex *f, bool finaltranspose=true);
 };
 
 #if 1
