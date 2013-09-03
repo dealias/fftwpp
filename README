@@ -82,14 +82,14 @@ example3r.cc
 Examples of implicitly dealiased convolutions on complex non-centered
 data in 1, 2, and 3 dimensions:
 examplecconv.cc, examplecconv2.cc, examplecconv3.cc
+More general types of convolutions (for example, self-convolutions)
+can be performed by passing a function pointer, as shown in the
+following examples:
+examplepcconv.cc, examplepcconv2.cc, examplepcconv3.cc
 
 Examples of implicitly dealiased convolutions on complex
-Hermitian-symmetric centered data in 1, 2, and 3 dimensions using
-function-pointers to specify the operation to be performed in the
-transformed space (allowing more general types of convolutions to be
-performed):
-examplepconv.cc, examplepconv2.cc, examplepconv3.cc
-
+Hermitian-symmetric centered data in 1, 2, and 3 dimensions:
+exampleconv.cc, exampleconv2.cc, exampleconv3.cc
 
 ########################## Wrappers ##########################
 
