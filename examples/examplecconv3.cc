@@ -41,22 +41,21 @@ int main(int argc, char* argv[])
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
 
-  // 3d non-centered complex convolution
-  cout << endl << "3D non-centered complex convolution:" << endl;
+  cout << "3D non-centered complex convolution:" << endl;
+
   size_t align=sizeof(Complex);
   array3<Complex> f(mx,my,mz,align);
   array3<Complex> g(mx,my,mz,align);
 
-  cout << "input:" << endl;
+  cout << "\ninput:" << endl;
   init(f,g);
-  cout << "f:" << endl << f << endl;
-  cout << "g:" << endl << g << endl;
+  cout << "f:" << endl << f;
+  cout << "g:" << endl << g;
 
   ImplicitConvolution3 C(mx,my,mz);
   C.convolve(f,g);
 
-  cout << "output:" << endl;
-  cout << f << endl;
+  cout << "\noutput:" << endl << f;
 
   return 0;
 }

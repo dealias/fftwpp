@@ -43,9 +43,7 @@ int main(int argc, char* argv[])
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
   
-
-  // 2d Hermitian-symmetric centered convolution
-  cout << endl << "3D centered Hermitian-symmetric convolution:" << endl;
+  cout << "3D centered Hermitian-symmetric convolution:" << endl;
 
   size_t align=sizeof(Complex);
   array3<Complex> f(2*mx-1,2*my-1,mz,align);
@@ -53,8 +51,8 @@ int main(int argc, char* argv[])
 
   init(f,g);
   cout << "\ninput:" << endl;
-  cout << "f:" << endl << f << endl;
-  cout << "g:" << endl << g << endl;
+  cout << "f:" << endl << f;
+  cout << "g:" << endl << g;
   
   /*
   cout << "input after symmetrization (done automatically):" << endl;
@@ -67,7 +65,7 @@ int main(int argc, char* argv[])
   bool symmetrize=true;
   ImplicitHConvolution3 C(mx,my,mz,symmetrize);
   C.convolve(f,g);
-  cout << "output:" << endl << f << endl;
+  cout << "output:" << endl << f;
 
   return 0;
 }

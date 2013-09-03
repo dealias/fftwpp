@@ -30,7 +30,8 @@ inline void init(Complex **f, unsigned int m)
 
 int main(int argc, char* argv[])
 {
-  cout << "Non-centered complex convolution:" << endl;
+  cout << "1D non-centered complex convolution using function-pointers:" 
+       << endl;
 
   // Set maximum number of threads to be used:
   fftw::maxthreads=get_max_threads();
@@ -50,7 +51,7 @@ int main(int argc, char* argv[])
   
   // Set up the input:
   init(f,m);
-  cout << "input:\nf[0]\tg[0]" << endl;
+  cout << "\ninput:\nf[0]\tg[0]" << endl;
   for(unsigned int i=0; i < m; i++) 
     cout << f[0][i] << "\t" << f[1][i] << endl;
 
