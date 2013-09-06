@@ -304,20 +304,18 @@ void ImplicitHConvolution3MPI::convolve(Complex **F, Complex **G,
 
 void cfft2MPI::Forwards(Complex *f,bool finaltranspose)
 {
-  yForwards->fft(f);
-  fftw_mpi_execute_r2r(intranspose,(double *)f,(double *)f);
   xForwards->fft(f);
-  if(finaltranspose)
-    fftw_mpi_execute_r2r(outtranspose,(double *)f,(double *)f);
+  fftw_mpi_execute_r2r(intranspose,(double *)f,(double *)f);
+  yForwards->fft(f);
+  if(finaltranspose) fftw_mpi_execute_r2r(outtranspose,(double *)f,(double *)f);
 }
 
 void cfft2MPI::Backwards(Complex *f,bool finaltranspose)
 {
-  if(finaltranspose)
-    fftw_mpi_execute_r2r(intranspose,(double *)f,(double *)f);
-  xBackwards->fft(f);
-  fftw_mpi_execute_r2r(outtranspose,(double *)f,(double *)f);
+  if(finaltranspose) fftw_mpi_execute_r2r(intranspose,(double *)f,(double *)f);
   yBackwards->fft(f);
+  fftw_mpi_execute_r2r(outtranspose,(double *)f,(double *)f);
+  xBackwards->fft(f);
 }
 
 void cfft2MPI::Normalize(Complex *f) 
@@ -334,11 +332,14 @@ void cfft2MPI::BackwardsNormalized(Complex *f,bool finaltranspose)
 
 void cfft3MPI::Forwards(Complex *f,bool finaltranspose)
 {
-  xForwards->fft(f);
+  //xForwards->fft(f);
+
+  fftw_mpi_execute_r2r(xyintranspose,(double *)f,(double *)f);
 
   fftw_mpi_execute_r2r(yzintranspose,(double *)f,(double *)f);
+  fftw_mpi_execute_r2r(yzintranspose,(double *)(f+1),(double *)(f+1));
 
-  // FIXME: perofmr 2D fft here?
+  // FIXME: perform 2D fft here?
 }
 
 void cfft3MPI::Backwards(Complex *f,bool finaltranspose)

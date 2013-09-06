@@ -156,6 +156,7 @@ public:
     std::cout << "nx=" << nx << "\tny="<<ny << "\tnz="<<nz << std::endl;
     std::cout << "x=" << x << "\ty="<<y << "\tz="<<z << std::endl;
     std::cout << "x0=" << x0 << "\ty0="<< y0 << "\tz0="<<z0 << std::endl;
+    std::cout << "yz.x=" << yz.x << std::endl;
     std::cout << "n=" << n << std::endl;
     std::cout << "yblock=" << yblock << "\tzblock=" << zblock << std::endl;
   }
@@ -646,17 +647,19 @@ class cfft2MPI : public ThreadBase {
     int size;
     MPI_Comm_size(d.communicator,&size);
     intranspose=
-      fftw_mpi_plan_many_transpose(my,mx,2,d.block,0,
+      fftw_mpi_plan_many_transpose(my,mx,2,
+				   d.block,0,
 				   (double*) f,(double*) f,
 				   d.communicator,
-				   FFTW_ESTIMATE);
+				   FFTW_MPI_TRANSPOSED_IN);
     if(!intranspose) transposeError("in");
 
     outtranspose=
-      fftw_mpi_plan_many_transpose(mx,my,2,d.block,0,
+      fftw_mpi_plan_many_transpose(mx,my,2,
+				   0,d.block,
 				   (double*) f,(double*) f,
 				   d.communicator,
-				   FFTW_ESTIMATE);
+				   FFTW_MPI_TRANSPOSED_OUT);
     if(!outtranspose) transposeError("out");
     SaveWisdom(d.communicator);
 
@@ -669,16 +672,12 @@ class cfft2MPI : public ThreadBase {
     mx=d.nx;
     my=d.ny;
     inittranspose(f);
- 
-    // x-direction FFTs are of length d.nx, with d.y performed, stride is d.y,
-    // dist (spacing between first elemetns of the vectors) is 1
+
     xForwards=new mfft1d(d.nx,-1,d.y,d.y,1);
     xBackwards=new mfft1d(d.nx,1,d.y,d.y,1);
-
-    // y-direction FFTs are of length d.ny, with d.x performed, stride is d.x
-    // dist (spacing between first elemetns of the vectors) is 1
-    yForwards=new mfft1d(d.ny,-1,d.x,d.x,1);
-    yBackwards=new mfft1d(d.ny,1,d.x,d.x,1);
+ 
+    yForwards=new mfft1d(d.ny,-1,d.x,1,d.ny);
+    yBackwards=new mfft1d(d.ny,1,d.x,1,d.ny);
   }
   
   virtual ~cfft2MPI() {
@@ -692,7 +691,6 @@ class cfft2MPI : public ThreadBase {
   void BackwardsNormalized(Complex *f, bool finaltranspose=true);
 };
 
-#if 1
 // In-place MPI/OpenMPI 3D complex FFT.
 // FIXME: complete documentation.
 class cfft3MPI : public ThreadBase {
@@ -716,12 +714,12 @@ class cfft3MPI : public ThreadBase {
     xyintranspose=
       fftw_mpi_plan_many_transpose(d.nx,d.ny,2*d.z,d.yblock,0,
 				   (double*) f,(double*) f,
-				   d.communicator,
+				   d.xy.communicator,
 				   FFTW_ESTIMATE);
     if(!xyintranspose) transposeError("xyin");
     
     yzintranspose=
-      fftw_mpi_plan_many_transpose(d.ny,d.x,2*d.z,d.zblock,0,
+      fftw_mpi_plan_many_transpose(d.yz.x,d.yz.x,2*d.x,0,0,
 				   (double*) f,(double*) f,
 				   d.xy.communicator,
 				   FFTW_ESTIMATE);
@@ -756,7 +754,6 @@ class cfft3MPI : public ThreadBase {
   void Backwards(Complex *f, bool finaltranspose=true);
   void Normalize(Complex *f);
 };
-#endif
 
 } // namespace fftwpp
 

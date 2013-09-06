@@ -61,10 +61,10 @@ conv3: conv3.o $(EXTRA:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
 cfft2: cfft2.o $(EXTRA:=.o)
-	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
 cfft3: cfft3.o $(EXTRA:=.o) mpiutils.o
-	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
 testmpi: testmpi.cc $(UTILS:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
