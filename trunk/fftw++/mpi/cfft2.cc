@@ -108,6 +108,15 @@ int main(int argc, char* argv[])
 
     dimensions d(mx,my,group.active,group.yblock);
   
+    for(int i=0; i < group.size; ++i) {
+      MPI_Barrier(group.active);
+      if(i == group.rank) {
+	cout << "process " << i << " dimensions:" << endl;
+	d.show();
+	cout << endl;
+      }
+    }
+
     Complex *f=ComplexAlign(d.n);
   
     double *T=new double[N];
@@ -118,13 +127,14 @@ int main(int argc, char* argv[])
       cout << "Initialized after " << seconds() << " seconds." << endl;    
 
     bool dofinaltranspose=false;
-
+    dofinaltranspose=true;
+    
     for(unsigned int i=0; i < N; ++i) {
       init(f,d);
       seconds();
       fft.Forwards(f,dofinaltranspose);
-      //fft.Backwards(f,dofinaltranspose);
-      //fft.Normalize(f);
+      fft.Backwards(f,dofinaltranspose);
+      fft.Normalize(f);
       T[i]=seconds();
     }
     
@@ -135,18 +145,18 @@ int main(int argc, char* argv[])
 
       if(main) cout << "\ninput:" << endl;
       show(f,d.nx,d.y,group.active);
-      //show(f,1,d.x*d.ny,group.active);
+      show(f,1,d.x*d.ny,group.active);
 
       fft.Forwards(f,dofinaltranspose);
 
       if(main) cout << "\noutput:" << endl;
       show(f,d.ny,d.x,group.active);
-      // show(f,1,d.x*d.ny,group.active);
-      // if(main) d.show();
+      show(f,1,d.x*d.ny,group.active);
       fft.Backwards(f,dofinaltranspose);
       fft.Normalize(f);
       if(main) cout << "\noutput:" << endl;
       show(f,d.nx,d.y,group.active);
+      show(f,1,d.x*d.ny,group.active);
     }
 
     deleteAlign(f);
