@@ -651,7 +651,7 @@ class cfft2MPI : public ThreadBase {
 				   d.block,0,
 				   (double*) f,(double*) f,
 				   d.communicator,
-				   FFTW_MPI_TRANSPOSED_IN);
+				   FFTW_MPI_TRANSPOSED_OUT);
     if(!intranspose) transposeError("in");
 
     outtranspose=
@@ -659,7 +659,7 @@ class cfft2MPI : public ThreadBase {
 				   0,d.block,
 				   (double*) f,(double*) f,
 				   d.communicator,
-				   FFTW_MPI_TRANSPOSED_OUT);
+				   FFTW_MPI_TRANSPOSED_IN);
     if(!outtranspose) transposeError("out");
     SaveWisdom(d.communicator);
 
@@ -717,6 +717,13 @@ class cfft3MPI : public ThreadBase {
 				   d.xy.communicator,
 				   FFTW_MPI_TRANSPOSED_OUT);
     if(!xyintranspose) transposeError("xyin");
+
+    xyouttranspose=
+      fftw_mpi_plan_many_transpose(d.ny,d.nx,2*d.z,d.yblock,0,
+				   (double*) f,(double*) f,
+				   d.xy.communicator,
+				   FFTW_MPI_TRANSPOSED_IN);
+    if(!xyouttranspose) transposeError("xyout");
     
     yzintranspose=
       fftw_mpi_plan_many_transpose(d.ny,d.nz,2*d.x,d.zblock,0,
@@ -725,8 +732,15 @@ class cfft3MPI : public ThreadBase {
 				   FFTW_MPI_TRANSPOSED_OUT);
     if(!yzintranspose) transposeError("yzin");
 
-    // FIXME: define tranposes
-    
+    yzouttranspose=
+      fftw_mpi_plan_many_transpose(d.nz,d.ny,2*d.x,d.zblock,0,
+				   (double*) f,(double*) f,
+				   d.yz.communicator,
+				   FFTW_MPI_TRANSPOSED_IN);
+    if(!yzouttranspose) transposeError("yzout");
+
+    // FIXME: xz tranpose?  Do I have to do both xy and yz?
+
     SaveWisdom(d.communicator);
   }
   
@@ -740,10 +754,13 @@ class cfft3MPI : public ThreadBase {
     inittranspose(f);
  
     xForwards=new mfft1d(d.nx,-1,d.y*d.z,d.y*d.z,1);
+    xBackwards=new mfft1d(d.nx,1,d.y*d.z,d.y*d.z,1);
+
     yForwards=new mfft1d(d.ny,-1,d.x*d.z,d.x*d.z,1);
+    yBackwards=new mfft1d(d.ny,1,d.x*d.z,d.x*d.z,1);
+
     zForwards=new mfft1d(d.nz,-1,d.x*d.yz.x,d.x*d.yz.x,1);
-    // FIXME
-    
+    zBackwards=new mfft1d(d.nz,1,d.x*d.yz.x,d.x*d.yz.x,1);
   }
   
   virtual ~cfft3MPI() {

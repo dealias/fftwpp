@@ -156,15 +156,14 @@ int main(int argc, char* argv[])
       show(f,1,d.nx*d.y*d.z,group.active);
       
       fft.Forwards(f,dofinaltranspose);
-      /*
-	
-	if(main) cout << "\noutput:" << endl;
-	show(f,d.ny,d.x,group.active);
-	// show(f,1,d.x*d.ny,group.active);
-	// if(main) d.show();
-	fft.Backwards(f,dofinaltranspose);
-	fft.Normalize(f);
-      */
+      
+      if(main) cout << "\noutput:" << endl;
+      show(f,d.ny,d.x,group.active);
+      // show(f,1,d.x*d.ny,group.active);
+            
+      fft.Backwards(f,dofinaltranspose);
+      fft.Normalize(f);
+
       if(main) cout << "\noutput:" << endl;
       show(f,d.nx,d.y,d.z,group.active);
       show(f,1,d.nx*d.y*d.z,group.active);
