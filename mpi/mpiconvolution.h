@@ -715,14 +715,14 @@ class cfft3MPI : public ThreadBase {
       fftw_mpi_plan_many_transpose(d.nx,d.ny,2*d.z,d.yblock,0,
 				   (double*) f,(double*) f,
 				   d.xy.communicator,
-				   FFTW_ESTIMATE);
+				   FFTW_MPI_TRANSPOSED_OUT);
     if(!xyintranspose) transposeError("xyin");
     
     yzintranspose=
-      fftw_mpi_plan_many_transpose(d.yz.x,d.yz.x,2*d.x,0,0,
+      fftw_mpi_plan_many_transpose(d.ny,d.nz,2*d.x,d.zblock,0,
 				   (double*) f,(double*) f,
-				   d.xy.communicator,
-				   FFTW_ESTIMATE);
+				   d.yz.communicator,
+				   FFTW_MPI_TRANSPOSED_OUT);
     if(!yzintranspose) transposeError("yzin");
 
     // FIXME: define tranposes

@@ -139,6 +139,16 @@ int main(int argc, char* argv[])
       delete [] T;
     */
     if(mx*my*mz < outlimit) {
+
+      for(int i=0; i < group.size; ++i) {
+	MPI_Barrier(group.active);
+	if(i == group.rank) {
+	  cout << "process " << i << " dimensions:" << endl;
+	  d.show();
+	  cout << endl;
+	}
+      }
+
       init(f,d);
 
       if(main) cout << "\ninput:" << endl;
@@ -160,6 +170,8 @@ int main(int argc, char* argv[])
       show(f,1,d.nx*d.y*d.z,group.active);
 
       if(main) d.show();
+
+
 
     }
 

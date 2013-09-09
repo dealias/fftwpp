@@ -335,9 +335,7 @@ void cfft3MPI::Forwards(Complex *f,bool finaltranspose)
   //xForwards->fft(f);
 
   fftw_mpi_execute_r2r(xyintranspose,(double *)f,(double *)f);
-
   fftw_mpi_execute_r2r(yzintranspose,(double *)f,(double *)f);
-  fftw_mpi_execute_r2r(yzintranspose,(double *)(f+1),(double *)(f+1));
 
   // FIXME: perform 2D fft here?
 }
