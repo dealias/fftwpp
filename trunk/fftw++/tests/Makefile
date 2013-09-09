@@ -29,7 +29,6 @@ MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
 LDFLAGS = -lfftw3_omp -lfftw3 -lm
 
 vpath %.cc ../
-vpath %.h ../
 
 FFTW=fftw++
 FILES=conv cconv conv2 cconv2 conv3 cconv3 tconv tconv2 pcconv pcconv2 pcconv3
