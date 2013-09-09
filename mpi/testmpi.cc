@@ -106,15 +106,13 @@ int main(int argc, char **argv)
   fftw_plan inplan=fftw_mpi_plan_many_transpose(N1,N0,2*N2,block,0,
                                                 (double*) data,(double*) data,
                                                 MPI_COMM_WORLD,
-                                                FFTW_MPI_TRANSPOSED_IN);
+                                                 FFTW_MPI_TRANSPOSED_IN);
   fftw_plan outplan=fftw_mpi_plan_many_transpose(N0,N1,2*N2,0,block,
                                                  (double*) data,(double*) data,
                                                  MPI_COMM_WORLD,
                                                  FFTW_MPI_TRANSPOSED_OUT);
   fftwpp::SaveWisdom(MPI_COMM_WORLD);
-#endif
-
-#ifndef OLD
+#else
   transpose T(N0,n1,n0,N1,N2);
   init(data,N0,n1,N2,n1start);
   T.inTransposed(data);
