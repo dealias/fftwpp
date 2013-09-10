@@ -124,20 +124,20 @@ int main(int argc, char* argv[])
     cfft3MPI fft(d,f);
     
     bool dofinaltranspose=false;
-    /*
-      double *T=new double[N];
-      for(unsigned int i=0; i < N; ++i) {
+    
+    double *T=new double[N];
+    for(unsigned int i=0; i < N; ++i) {
       init(f,d);
       seconds();
       fft.Forwards(f,dofinaltranspose);
-      //fft.Backwards(f,dofinaltranspose);
-      //fft.Normalize(f);
+      fft.Backwards(f,dofinaltranspose);
+      fft.Normalize(f);
       T[i]=seconds();
-      }
+    }
+    
+    if(main) timings("FFT timing:",mx,T,N);
+    delete [] T;
 
-      if(main) timings("FFT timing:",mx,T,N);
-      delete [] T;
-    */
     if(mx*my*mz < outlimit) {
 
       for(int i=0; i < group.size; ++i) {
