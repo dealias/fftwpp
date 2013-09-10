@@ -139,6 +139,7 @@ int main(int argc, char* argv[])
     }
     
     if(main) timings("FFT timing:",mx,T,N);
+    delete [] T;
 
     if(mx*my < outlimit) {
       init(f,d);
@@ -161,7 +162,6 @@ int main(int argc, char* argv[])
 
     deleteAlign(f);
     
-    delete [] T;
   }
   
   MPI_Finalize();

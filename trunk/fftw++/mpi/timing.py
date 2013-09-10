@@ -19,9 +19,10 @@ def main(argv):
         "\n -M <string> allows one to pass extra arguments to the mpi exec program "\
         "\n -r <implicit/explicit> specifies the type of convoution  "\
         "\n -l <string> specifies the name of the MPI launch program  "\
-        "\n -R <real value> spedifies the rame size "\
+        "\n -R <real value> spedifies the ram size, which is used in determing the maximum problem size. "\
         "\n -d specifies a dry run; commands are shown but no convolutions are computed\n "\
-        "\nfor example, try the command \n ./timing.py -pcconv2 -a 3 -b 4"
+        "\nfor example, try the command\n ./timing.py -pcconv2 -a 3 -b 4" \
+        "\nor, to see the command run, try\n ./timing.py -pcconv2 -a 3 -b 4 -d"\
 
     
     dryrun=False
@@ -76,6 +77,9 @@ def main(argv):
         elif opt in ("-d"):
             dryrun=True
 
+    if dryrun:
+        print "Dry run!  No output actually created."
+
     if p == "":
         print "please specify a program with -p"
         print usage
@@ -83,7 +87,7 @@ def main(argv):
         sys.exit(2)
 
     outdir=""
-    a=0
+
 
     # if both the max problem size and the ram are unset, go up to 2^8
     if (b == 0 and RAM == 0):
@@ -92,8 +96,6 @@ def main(argv):
     # determines the problem size on its own.
     if (b == 0 and RAM != 0):
         b=sys.maxint
-
-    print(r)
 
     if p == "cconv2":
         if a == 0:
@@ -132,6 +134,20 @@ def main(argv):
         if RAM != 0:
             b=min(b,int(floor(log(RAM/192)/log(2)/3)))
         outdir="timings3r"
+    if p == "cfft2":
+        if a == 0:
+            a=int(floor(log(P)/(log(2))))
+        if RAM != 0:
+            b=min(b,int(floor(log(RAM/16/2/2**2)/log(2)/2)))
+        outdir="timings2c"
+        r="fft"
+    if p == "cfft3":
+        if a == 0:
+            a=int(floor(log(P)/(2*log(2))))
+        if RAM != 0:
+            b=min(b,int(floor(log(RAM/96)/log(2)/3)))
+        outdir="timings3c"
+        r="fft"
 
     if RAM != 0:
         print "max problem size is "+str(2**b)
@@ -145,12 +161,12 @@ def main(argv):
     outdir=outdir+"/"+str(P)+"x"+str(T)
     command=l+" "+str(P)+" "+M+"  ./"+str(p)
 
-    print "output in "+outdir+"/"+r
+    print "Output in "+outdir+"/"+r
 
-    print "command: "+command+cargs+" "+A
-    os.system("mkdir -p "+outdir)
-    os.system("rm -f "+outdir+"/"+r)
-
+    if not dryrun:
+        print "command: "+command+cargs+" "+A
+        os.system("mkdir -p "+outdir)
+        os.system("rm -f "+outdir+"/"+r)
     
     rname="Implicit"
     if r == "explicit":
@@ -158,6 +174,8 @@ def main(argv):
         if Tset == 1:
             print "cannot use multiple threads with explicit: try without -T"
             sys.exit(2)
+    if r == "fft":
+        rname="FFT"
 
     for i in range(a,b+1):
         print i,
@@ -177,7 +195,7 @@ def main(argv):
         #os.system(run)
         sys.stdout.flush()
 
-    if dryrun == False:
+    if not dryrun:
         os.system("sed -i 's/[ \t]*$//' "+outdir+"/"+r)
         os.system("sed -i '/^$/d' "+outdir+"/"+r)
 if __name__ == "__main__":
