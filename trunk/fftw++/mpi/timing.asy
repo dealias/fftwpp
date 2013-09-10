@@ -64,26 +64,22 @@ lastpos=0;
 if(name == "") name=getstring("program name","cconv2");
 int nn;
 
-string dir;
 string prunelabel="$y$-pruned";
 
 bool expl=false;
 
-if(name == "conv2") dir="timings2r";
-if(name == "cconv2") dir="timings2c";
 if(name == "cconv3") {
-  dir="timings3c"; prunelabel="$xz$-pruned"; legendmargin=8;
+  prunelabel="$xz$-pruned"; legendmargin=8;
 }
-if(name == "conv3") {
-  dir="timings3r";
+if(name == "conv3")
   expl=false;
-}
+
   
 real d=1;
 if(find(name,"2") >= 0) d=2;
 if(find(name,"3") >= 0) d=3;
 
-if(runs == "") runs=getstring("subdirs");
+if(runs == "") runs=getstring("files");
 string run;
 n=-1;
 flag=true;
