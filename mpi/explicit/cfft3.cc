@@ -1,3 +1,4 @@
+#include <mpi.h>
 #include <complex.h>
 #include <fftw3-mpi.h>
 #include <iostream>
