@@ -58,7 +58,7 @@ int main(int argc, char **argv)
     switch (c) {
       case 0:
         break;
-      case 'n':
+      case 'N':
         N=atoi(optarg);
         break;
       case 'm':
