@@ -31,17 +31,20 @@ int main(int argc, char **argv)
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"N:m:");
+    int c = getopt(argc,argv,"N:m:T:");
     if (c == -1) break;
     
     switch (c) {
       case 0:
         break;
-      case 'n':
+      case 'N':
         N=atoi(optarg);
         break;
       case 'm':
         m=atoi(optarg);
+        break;
+      case 'T':
+        nthreads=atoi(optarg);
         break;
     }
   }
