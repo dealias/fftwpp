@@ -23,31 +23,10 @@ namespace fftwpp {
 }
 #endif
 
-// compile with
-// mpicxx -o cconv2 cconv2.cc -lfftw3_mpi -lfftw3 -lm
-
-void convolve(fftw_complex *f, fftw_complex *g, double norm,
-	      int num, fftw_plan fplan, fftw_plan iplan) 
-{
-  fftw_mpi_execute_dft(fplan,f,f);
-  fftw_mpi_execute_dft(fplan,g,g);
-  Complex *F = (Complex *) f;
-  Complex *G = (Complex *) g;
-#ifdef __SSE2__
-  Vec Ninv=LOAD(norm);
-  for (int k = 0; k < num; ++k)
-    STORE(F+k,Ninv*ZMULT(LOAD(F+k),LOAD(G+k)));
-#else
-  for (int k = 0; k < num; ++k)
-    f[k] *= g[k]*norm;
-#endif
-  fftw_mpi_execute_dft(iplan,f,f);
-}
-
 int main(int argc, char **argv)
 {
-
   int N=4, m=4;
+  int nthreads=1; // Number of threads
 #ifdef __GNUC__	
   optind=0;
 #endif	
@@ -70,20 +49,28 @@ int main(int argc, char **argv)
   const unsigned int m0 = m, m1 = m;
   const unsigned int N0 = 2*m0, N1 = 2*m1;
   fftw_plan fplan, iplan;
-  fftw_complex *f, *g;
+  fftw_complex *f;
   ptrdiff_t alloc_local, local_n0, local_0_start;
+  int threads_ok;
+  int provided;
+  MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &provided);
+  threads_ok = provided >= MPI_THREAD_FUNNELED;
   
-  MPI_Init(&argc, &argv);
-  fftw_mpi_init();
-
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  if(threads_ok) threads_ok = fftw_init_threads();
+  fftw_mpi_init();
+  
+  if(threads_ok)
+    fftw_plan_with_nthreads(nthreads);
+  else 
+    if(rank ==0) cout << "threads not ok!" << endl;
   
   /* get local data size and allocate */
   alloc_local = fftw_mpi_local_size_2d(N0,N1,MPI_COMM_WORLD,
 				       &local_n0, &local_0_start);
   f=fftw_alloc_complex(alloc_local);
-  g=fftw_alloc_complex(alloc_local);
   
   /* create plan for in-place DFT */
   fplan=fftw_mpi_plan_dft_2d(N0,N1,f,f,MPI_COMM_WORLD,FFTW_FORWARD,
@@ -91,42 +78,19 @@ int main(int argc, char **argv)
   iplan=fftw_mpi_plan_dft_2d(N0,N1,f,f,MPI_COMM_WORLD,FFTW_BACKWARD,
 			     FFTW_ESTIMATE | FFTW_MPI_TRANSPOSED_OUT);
 
-  
-  initf(f,local_0_start,local_n0,N0,N1,m0,m1);
-  initg(g,local_0_start,local_n0,N0,N1,m0,m1);
-
-  // show(f,local_0_start,local_n0,N1,m0,m1,0);
-  // show(f,local_0_start,local_n0,N1,m0,m1,0);
-  //show(g,local_0_start,local_n0,N1,N0,N1,1);
-
-  // determine number of elements per process after tranpose
-  ptrdiff_t local_n1, local_1_start;
-  unsigned int transize=
-    fftw_mpi_local_size_2d_transposed(N0,N1,MPI_COMM_WORLD,
-   				      &local_n0, &local_0_start,
-   				      &local_n1, &local_1_start);
-  
   double *T=new double[N];
-
   for(int i=0; i < N; ++i) {
     initf(f,local_0_start,local_n0,N0,N1,m0,m1);
-    initg(g,local_0_start,local_n0,N0,N1,m0,m1);
-    double overN=1.0/((double) (N0*N1));
     seconds();
-    convolve(f,g,overN,transize,fplan,iplan);
+    fftw_mpi_execute_dft(fplan,f,f);
+    fftw_mpi_execute_dft(iplan,f,f);
     T[i]=seconds();
   }  
+  if(rank == 0) timings("FFT",m,T,N);
+  delete[] T;
 
-  if(rank == 0) timings("Explicit",m,T,N);
-  
-  if(m0*m1<100) {
-    if(rank == 0) cout << "output:" << endl;
-    show(f,local_0_start,local_n0,N1,m0,m1,2);
-  }
   fftw_destroy_plan(fplan);
   fftw_destroy_plan(iplan);
 
   MPI_Finalize();
-
-  return 0;
 }

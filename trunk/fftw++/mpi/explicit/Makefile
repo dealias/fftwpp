@@ -33,19 +33,41 @@ LDFLAGS = -lfftw3_mpi -lfftw3_omp -lfftw3 -lm
 
 vpath %.cc ../../
 
-FILES=cconv2 cconv3
+EXTRA=exmpiutils
+
+FILES=cconv2 cconv3 cfft2
 
 all: $(FILES)
 
-cconv2: cconv2.cc
+%.o : %.cc %.h
+	$(MPICXX) $(CXXFLAGS) $(OPTS) -o $@ -c $<
+
+cconv2: cconv2.o $(EXTRA:=.o)
 	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-cconv3: cconv3.cc
+cconv3: cconv3.o $(EXTRA:=.o)
 	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-conv2: conv2.cc
+conv2: conv2.o $(EXTRA:=.o)
+	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
+cfft2: cfft2.o $(EXTRA:=.o)
 	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 clean:
-	rm -rf cconv2 cconv3
+	rm -rf $(FILES) *.o *.d
 
+
+.SUFFIXES: .c .cc .o .d
+.cc.o:
+	$(MPICXX) $(CXXFLAGS) $(OPTS) $(INCL) -o $@ -c $<
+.cc.d:
+	@echo Creating $@; \
+	rm -f $@; \
+	${MPICXX} $(MAKEDEPEND) $(INCL) $< > $@.$$$$ 2>/dev/null && \
+	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+	rm -f $@.$$$$
+
+ifeq (,$(findstring clean,${MAKECMDGOALS}))
+-include $(ALL:=.d)
+endif
