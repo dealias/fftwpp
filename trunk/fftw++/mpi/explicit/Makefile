@@ -35,7 +35,7 @@ vpath %.cc ../../
 
 EXTRA=exmpiutils
 
-FILES=cconv2 cconv3 cfft2
+FILES=cconv2 cconv3 cfft2 cfft3
 
 all: $(FILES)
 
@@ -52,6 +52,9 @@ conv2: conv2.o $(EXTRA:=.o)
 	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 cfft2: cfft2.o $(EXTRA:=.o)
+	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
+cfft3: cfft3.o $(EXTRA:=.o)
 	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 clean:

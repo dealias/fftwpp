@@ -49,8 +49,9 @@ int main(int argc, char **argv)
     }
   }
 
-  const unsigned int m0 = m, m1 = m;
-  const unsigned int N0 = m0, N1 = m1;
+  const unsigned int m0 = m, m1 = m, m2=m;
+  const unsigned int N0 = m0, N1 = m1, N2 = m2;
+
   fftw_plan fplan, iplan;
   fftw_complex *f;
   ptrdiff_t alloc_local, local_n0, local_0_start;
@@ -71,14 +72,14 @@ int main(int argc, char **argv)
     if(rank ==0) cout << "threads not ok!" << endl;
   
   /* get local data size and allocate */
-  alloc_local = fftw_mpi_local_size_2d(N0,N1,MPI_COMM_WORLD,
+  alloc_local = fftw_mpi_local_size_3d(N0,N1,N2,MPI_COMM_WORLD,
 				       &local_n0, &local_0_start);
   f=fftw_alloc_complex(alloc_local);
   
   /* create plan for in-place DFT */
-  fplan=fftw_mpi_plan_dft_2d(N0,N1,f,f,MPI_COMM_WORLD,FFTW_FORWARD,
+  fplan=fftw_mpi_plan_dft_3d(N0,N1,N2,f,f,MPI_COMM_WORLD,FFTW_FORWARD,
 			     FFTW_ESTIMATE | FFTW_MPI_TRANSPOSED_IN);
-  iplan=fftw_mpi_plan_dft_2d(N0,N1,f,f,MPI_COMM_WORLD,FFTW_BACKWARD,
+  iplan=fftw_mpi_plan_dft_3d(N0,N1,N2,f,f,MPI_COMM_WORLD,FFTW_BACKWARD,
 			     FFTW_ESTIMATE | FFTW_MPI_TRANSPOSED_OUT);
 
   double *T=new double[N];

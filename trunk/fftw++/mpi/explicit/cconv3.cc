@@ -96,7 +96,8 @@ int main(int argc, char **argv)
   iplan=fftw_mpi_plan_dft_3d(N0,N1,N2,f,f,MPI_COMM_WORLD,FFTW_BACKWARD,
 			     FFTW_ESTIMATE | FFTW_MPI_TRANSPOSED_OUT);
 
-  init(f,g,local_0_start,local_n0,N0,N1,N2,m0,m1,m2);
+  initf(f,local_0_start,local_n0,N0,N1,N2,m0,m1,m2);
+  initg(g,local_0_start,local_n0,N0,N1,N2,m0,m1,m2);
 
 
   //show(f,local_0_start,local_n0,N1,N2,m0,m1,m2,0);
@@ -105,7 +106,8 @@ int main(int argc, char **argv)
 
   double *T=new double[N];
   for(int i=0; i < N; ++i) {
-    init(f,g,local_0_start,local_n0,N0,N1,N2,m0,m1,m2);
+    initf(f,local_0_start,local_n0,N0,N1,N2,m0,m1,m2);
+    initg(g,local_0_start,local_n0,N0,N1,N2,m0,m1,m2);
     double overN=1.0/((double) (N0*N1*N2));
     seconds();
     convolve(f,g,overN,transize,fplan,iplan);
@@ -118,7 +120,6 @@ int main(int argc, char **argv)
     if(rank == 0) cout << "output:" << endl;
     show(f,local_0_start,local_n0,N1,N2,m0,m1,m2,2);
   }
-
 
   fftw_destroy_plan(fplan);
   fftw_destroy_plan(iplan);
