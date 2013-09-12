@@ -1813,13 +1813,13 @@ public:
 // function-pointer convolutions.
 // F[0][j] *= F[1][j]
 void multbinary(Complex **F,
-           unsigned int m, unsigned int M,
-           unsigned int offset);
+                unsigned int m, unsigned int M,
+                unsigned int offset);
 
 // F[0][j] = F[0][j]*F[1][j] + F[2][j]*F[3][j]
 void multbinarydot(Complex **F,
-           unsigned int m, unsigned int M,
-           unsigned int offset);
+                   unsigned int m, unsigned int M,
+                   unsigned int offset);
 
 // In-place implicitly dealiased 1D complex convolution using
 // as many pointers as possible
@@ -1893,7 +1893,7 @@ public:
   
   ~pImplicitConvolution() {
     if(pointers) deletepointers(U);
-   if(allocated) deleteAlign(u);
+    if(allocated) deleteAlign(u);
     
     delete Backwards0; 
     delete Backwards;
@@ -1903,16 +1903,16 @@ public:
   }
 
   void convolve(Complex **F, Complex **U,
-		void (*pmult)(Complex **,unsigned int,
-			      unsigned int,unsigned int), 
-		unsigned int offset=0);
+                void (*pmult)(Complex **,unsigned int,
+                              unsigned int,unsigned int), 
+                unsigned int offset=0);
   
   // F is an array of A pointers to distinct data blocks each of size m,
   // shifted by offset (contents not preserved).
   void convolve(Complex **F,
-		void (*pmult)(Complex **,unsigned int,
-			      unsigned int,unsigned int), 
-		unsigned int offset=0) {
+                void (*pmult)(Complex **,unsigned int,
+                              unsigned int,unsigned int), 
+                unsigned int offset=0) {
     convolve(F,U,pmult,offset);
   }
   
@@ -1942,7 +1942,7 @@ public:
                         unsigned int A=2, unsigned int B=1,
                         unsigned int threads=fftw::maxthreads,
                         unsigned int ny=0, unsigned int stride=0) :
-  ThreadBase(threads), mx(mx), my(my), A(A), B(B), allocated(true) {
+    ThreadBase(threads), mx(mx), my(my), A(A), B(B), allocated(true) {
     
     nx=mx;
     ny=my;
@@ -1966,18 +1966,18 @@ public:
 
   void subconvolution(Complex **F, Complex ***W1,
                       unsigned int start, unsigned int stop,
-		      void (*pmult)(Complex **,unsigned int,
-				    unsigned int,unsigned int));
+                      void (*pmult)(Complex **,unsigned int,
+                                    unsigned int,unsigned int));
   
   void convolve(Complex **F, Complex **U2, Complex ***U1,
-		void (*pmult)(Complex **,unsigned int, 
-			      unsigned int,unsigned int),
-		unsigned int offset=0);
+                void (*pmult)(Complex **,unsigned int, 
+                              unsigned int,unsigned int),
+                unsigned int offset=0);
   
   void convolve(Complex **F,
-		void (*pmult)(Complex **,unsigned int, 
-			      unsigned int,unsigned int),
-		unsigned int offset=0) {
+                void (*pmult)(Complex **,unsigned int, 
+                              unsigned int,unsigned int),
+                unsigned int offset=0) {
     convolve(F,U2,U1,pmult,offset);
   }
   
@@ -1992,7 +1992,7 @@ public:
     for(unsigned int t=0; t < threads; ++t) {
       U1[t]=new Complex*[A];
       for(unsigned int i=0; i < A; ++i)
-	U1[t][i]=ComplexAlign(my);
+        U1[t][i]=ComplexAlign(my);
     }
   }
 
@@ -2000,7 +2000,7 @@ public:
     // Free 1D work arrays:
     for(unsigned int t=0; t < fftw::maxthreads; ++t) {
       for(unsigned int i=0; i < A; ++i)
-	deleteAlign(U1[t][i]);
+        deleteAlign(U1[t][i]);
       delete[] U1[t];
     }
     delete[] U1;
@@ -2029,7 +2029,7 @@ public:
                         unsigned int A=2, unsigned int B=1,
                         unsigned int threads=fftw::maxthreads,
                         unsigned int ny=0, unsigned int stride=0) :
-  ThreadBase(threads), mx(mx), my(my), mz(mz), A(A), B(B), allocated(true) {
+    ThreadBase(threads), mx(mx), my(my), mz(mz), A(A), B(B), allocated(true) {
 
     nx=mx;
     ny=my;
@@ -2058,7 +2058,7 @@ public:
     for(unsigned int t=0; t < threads; ++t) {
       U2[t]=new Complex*[A];
       for(unsigned int i=0; i < A; ++i)
-	U2[t][i]=ComplexAlign(my*mz);
+        U2[t][i]=ComplexAlign(my*mz);
     }
 
     U1=new Complex***[threads];
@@ -2066,7 +2066,7 @@ public:
       U1[t]=new Complex**[1];
       U1[t][0]=new Complex*[A];
       for(unsigned int i=0; i < A; ++i)
-	U1[t][0][i]=ComplexAlign(mz);
+        U1[t][0][i]=ComplexAlign(mz);
     }
   }
   
@@ -2074,7 +2074,7 @@ public:
     // Free 1D work arrays:
     for(unsigned int t=0; t < threads; ++t) {
       for(unsigned int i=0; i < A; ++i)
-	deleteAlign(U1[t][0][i]);
+        deleteAlign(U1[t][0][i]);
       delete[] U1[t][0];
       delete[] U1[t];
     }
@@ -2083,7 +2083,7 @@ public:
     // Free 2D work arrays:
     for(unsigned int t=0; t < threads; ++t) {
       for(unsigned int i=0; i < A; ++i)
-	deleteAlign(U2[t][i]);
+        deleteAlign(U2[t][i]);
       delete[] U2[t];
     }
     delete[] U2;
@@ -2101,26 +2101,26 @@ public:
   }
 
   void subconvolution(Complex **F,
-		      Complex ***U2,
-		      Complex ****U1,
+                      Complex ***U2,
+                      Complex ****U1,
                       unsigned int start, unsigned int stop,
-		      void (*pmult)(Complex **,unsigned int,
-				    unsigned int,unsigned int));
+                      void (*pmult)(Complex **,unsigned int,
+                                    unsigned int,unsigned int));
 
   void convolve(Complex **F,
-		Complex **U3,
-		Complex ***U2,
-		Complex ****U1,
-		void (*pmult)(Complex **,
-			      unsigned int,
-			      unsigned int,unsigned int),
-		unsigned int offset=0);
+                Complex **U3,
+                Complex ***U2,
+                Complex ****U1,
+                void (*pmult)(Complex **,
+                              unsigned int,
+                              unsigned int,unsigned int),
+                unsigned int offset=0);
 
   void convolve(Complex **F,
-		void (*pmult)(Complex **,
-			      unsigned int,
-			      unsigned int,unsigned int),
-		unsigned int offset=0) {
+                void (*pmult)(Complex **,
+                              unsigned int,
+                              unsigned int,unsigned int),
+                unsigned int offset=0) {
     convolve(F,U3,U2,U1,pmult,offset);
   }
 };
