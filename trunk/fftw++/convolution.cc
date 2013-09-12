@@ -1655,8 +1655,8 @@ void pImplicitConvolution::itwiddle(Complex **F, unsigned int A,
           double Im=Hre*L.im+Him*L.re;
           unsigned int koffset=k+offset;
           for(unsigned int i=0; i < A; ++i) {
-            Complex *fki=F[i]+koffset;
-	    Complex fk=*fki;
+            Complex *P=F[i]+koffset;
+	    Complex fk=*P;
 	    P->re=Re*fk.re-Im*fk.im;
 	    P->im=Im*fk.re+Re*fk.im;
 	  }
