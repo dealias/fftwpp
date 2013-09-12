@@ -37,16 +37,16 @@ void transpose::inTransposed(Complex *data)
   unsigned int doubles=2*blocksize;
     
 #if ALLTOALL
-    MPI_Ialltoall(out,doubles,MPI_DOUBLE,in,doubles,MPI_DOUBLE,split,
-                  &Request);
+  MPI_Ialltoall(out,doubles,MPI_DOUBLE,in,doubles,MPI_DOUBLE,split,
+                &Request);
 #else
   for(int p=0; p < splitsize; ++p) {
     int P=sched[p];
     if(P != splitrank) {
-        MPI_Irecv(in+P*blocksize,doubles,MPI_DOUBLE,P,0,split,
-                  request+(P < splitrank ? P : P-1));
-        MPI_Isend(out+P*blocksize,doubles,MPI_DOUBLE,P,0,split,&srequest);
-        MPI_Request_free(&srequest);
+      MPI_Irecv(in+P*blocksize,doubles,MPI_DOUBLE,P,0,split,
+                request+(P < splitrank ? P : P-1));
+      MPI_Isend(out+P*blocksize,doubles,MPI_DOUBLE,P,0,split,&srequest);
+      MPI_Request_free(&srequest);
     }
   }
   memcpy(in+splitrank*blocksize,out+splitrank*blocksize,
@@ -58,9 +58,9 @@ void transpose::inwait(Complex *data)
 {
   if(size == 1) return;
 #if ALLTOALL
-    MPI_Wait(&Request,&status);
+  Wait(&Request);
 #else
-    MPI_Waitall(splitsize-1,request,MPI_STATUSES_IGNORE);
+  MPI_Waitall(splitsize-1,request,MPI_STATUSES_IGNORE);
 #endif    
 
   // Inner transpose each individual b x b block
@@ -170,8 +170,8 @@ void transpose::outTransposed(Complex *data)
   unsigned int doubles=2*blocksize;
     
 #if ALLTOALL
-    MPI_Ialltoall(out,doubles,MPI_DOUBLE,in,doubles,MPI_DOUBLE,split,
-                  &Request);
+  MPI_Ialltoall(out,doubles,MPI_DOUBLE,in,doubles,MPI_DOUBLE,split,
+                &Request);
 
 #else
   for(int p=0; p < splitsize; ++p) {
@@ -192,9 +192,9 @@ void transpose::outwait(Complex *data)
 {
   if(size == 1) return;
 #if ALLTOALL
-    MPI_Wait(&Request,&status);
+  Wait(&Request);
 #else
-    MPI_Waitall(splitsize-1,request,MPI_STATUSES_IGNORE);
+  MPI_Waitall(splitsize-1,request,MPI_STATUSES_IGNORE);
 #endif    
     
   unsigned int Lm=L*m;
@@ -263,4 +263,3 @@ void fill1_comm_sched(int *sched, int which_pe, int npes)
   }
 //  assert(s == npes);
 }
-

@@ -28,7 +28,6 @@ private:
   int splitsize;
   int splitrank;
   int *sched;
-  MPI_Status status;
   MPI_Comm split;
 public: //temp  
   unsigned int b;
@@ -129,8 +128,7 @@ inline void Wait(MPI_Request *)
 #else
 inline void Wait(MPI_Request *request)
 { 
-  MPI_Status status;
-  MPI_Wait(request,&status);
+  MPI_Wait(request,MPI_STATUS_IGNORE);
 }
 #endif
 
