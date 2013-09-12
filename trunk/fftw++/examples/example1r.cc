@@ -26,13 +26,13 @@ int main()
   
   for(unsigned int i=0; i < n; i++) f[i]=i;
 
-  cout << "\ninput:" << f << endl;
+  cout << endl << "input:" << endl << f << endl;
 	
   Forward.fft(f,g);
   
-  cout << "\noutput:" << g << endl;
+  cout << endl << "output:" << endl << g << endl;
   
   Backward.fftNormalized(g,f);
   
-  cout << "\nback to input:" << f << endl;
+  cout << endl << "back to input:" << endl << f << endl;
 }
