@@ -2,6 +2,8 @@
 # Makefile for FFTW++ wrappers.
 #
 
+CXXFLAGS=$(DEFS)
+
 CXXFLAGS=-I.. -msse2 -mfpmath=sse -march=native -fPIC -DNDEBUG
 CFLAGS=-I.. -msse2 -mfpmath=sse -march=native -fPIC -DNDEBUG
 

@@ -1,24 +1,33 @@
 IDIR =../
 
-CXXFLAGS= -O3 $(DEFS)
+CXXFLAGS=$(DEFS)
 
 # GNU compiler
 ifeq ($(shell $(CXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
-CXXFLAGS += -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
+CXXFLAGS += -O3 -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
 	-fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native
 #For valgrind:
 #CXXFLAGS=-fopenmp -g -Wall -ansi -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse
+ifndef FFTWPP_SINGLE_THREAD
+CXXFLAGS += -fopenmp
+endif
 endif
 
 #Intel compiler
 ifeq ($(shell $(CXX) -v 2>&1 | head -c 4),icpc)
-CXXFLAGS += -openmp -ansi-alias -malign-double -fp-model fast=2
+CXXFLAGS += -fast  -ansi-alias -malign-double -fp-model fast=2
+ifndef FFTWPP_SINGLE_THREAD
+CXXFLAGS += -openmp
+endif
 endif
 
 #IBM compiler
 ifeq ($(shell $(CXX) -qversion 2>&1 | head -c 3),IBM)
 #CXXFLAGS= -O5 -P -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp
-CXXFLAGS= -O3 -qsmp
+CXXFLAGS= -O3
+ifndef FFTWPP_SINGLE_THREAD
+CXXFLAGS += -qsmp
+endif
 endif
 
 CXXFLAGS += -I$(IDIR) -I$(CPLUS_INCLUDE_PATH) -L$(LIBRARY_PATH)
