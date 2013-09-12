@@ -75,6 +75,8 @@ protected:
   Complex **V;
   bool allocated;
 public:  
+  unsigned int getm() {return m;}
+  unsigned int getM() {return M;}
 
   void initpointers(Complex **&V, Complex *v) {
     V=new Complex *[M];
@@ -160,6 +162,9 @@ public:
   Complex *ZetaH,*ZetaL;
   Complex **U;
   bool allocated;
+
+  unsigned int getm() {return m;}
+  unsigned int getM() {return M;}
 
   void initpointers(Complex **&U, Complex *u) {
     U=new Complex *[M];
@@ -357,6 +362,10 @@ protected:
   Complex ***V;
   bool outerthread;
 public:  
+  unsigned int getmx() {return mx;}
+  unsigned int getmy() {return my;}
+  unsigned int getM() {return M;}
+
   void initpointers(Complex **&u, Complex ***&V, unsigned int threads) {
     u=new Complex *[threads];
     V=new Complex **[threads];
@@ -566,8 +575,8 @@ protected:
   Complex **U2,**V2;
   bool allocated;
   bool outerthread;
-public:  
-  
+public:
+
   void initpointers2(Complex **&U2, Complex **&V2, Complex *u2, Complex *v2,
                      unsigned int stride) 
   {
@@ -656,6 +665,10 @@ protected:
   Complex ***U;
   Complex **w,**v;
 public:
+  unsigned int getmx() {return mx;}
+  unsigned int getmy() {return my;}
+  unsigned int getM() {return M;}
+
   void initpointers(Complex ***&U, Complex **&v, Complex **&w,
                     unsigned int threads) {
     U=new Complex **[threads];
@@ -797,6 +810,11 @@ protected:
   Complex ***V;
   Complex ***U2,***V2;
 public:  
+  unsigned int getmx() {return mx;}
+  unsigned int getmy() {return my;}
+  unsigned int getmz() {return mz;}
+  unsigned int getM() {return M;}
+
   void initpointers2(Complex ***&U2, Complex ***&V2, unsigned int threads,
                      unsigned int stride2) {
     U2=new Complex **[threads];
@@ -986,7 +1004,11 @@ protected:
   Complex ***U;
   Complex **v,**w;
   Complex ***U2,***V2;
-public:  
+public:     
+  unsigned int getmx() {return mx;}
+  unsigned int getmy() {return my;}
+  unsigned int getmz() {return mz;}
+  unsigned int getM() {return M;}
   
   void initpointers2(Complex ***&U2, Complex ***&V2, unsigned int threads,
                      unsigned int stride2) {

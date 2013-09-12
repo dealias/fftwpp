@@ -100,6 +100,10 @@ in fftwpp.f90, and the Python wrapper in fftwpp.py. A unit-testing
 script, test.py, is also available. Results for the given input data
 are checked with a simple hash.
 
+Compilation uses the environment variables CPLUS_INCLUDE_PATH to tell
+the compiler where to find fftw3.h, and FORTRAN_INCLUDE_PATH to
+indicate to the compiler the location of fftw3.f03 from FFTW.
+
 The following programs are available in the wrappers directory:
 
 Using C to call multi-threaded 1D, 2D, and 3D binary convolutions and
