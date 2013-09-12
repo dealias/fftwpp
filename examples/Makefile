@@ -1,10 +1,10 @@
 IDIR =../
 
-CXXFLAGS= -O3
+CXXFLAGS=$(DEFS)
 
 # GNU compiler
 ifeq ($(shell $(CXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
-CXXFLAGS+= -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
+CXXFLAGS+= -O3 -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
 	-fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native
 #For valgrind:
 #CXXFLAGS=-fopenmp -g -Wall -ansi -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse
@@ -12,7 +12,7 @@ endif
 
 #Intel compiler
 ifeq ($(shell $(CXX) -v 2>&1 | head -c 4),icpc)
-CXXFLAGS+= -openmp -ansi-alias -malign-double -fp-model fast=2
+CXXFLAGS+= -fast -openmp -ansi-alias -malign-double -fp-model fast=2
 endif
 
 #IBM compiler
