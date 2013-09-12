@@ -29,13 +29,13 @@ int main()
     for(unsigned int j=0; j < ny; j++) 
       f(i,j)=i+j;
 	
-  cout << "\ninput:\n" << f;
+  cout << endl << "input:" << endl << f;
 
-  Forward.fft(f,g);
+  Forward.fft0(f,g);
   
-  cout << "\noutput:\n" << g;
+  cout << endl << "output:" << endl << g;
   
-  Backward.fftNormalized(g,f);
+  Backward.fft0Normalized(g,f);
   
-  cout << "\nback to input:\n" << f;
+  cout << endl << "back to input:" << endl << f;
 }

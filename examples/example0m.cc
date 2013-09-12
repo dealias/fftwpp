@@ -14,9 +14,9 @@ int main()
   fftw::maxthreads=4;
   unsigned int T=1;
   
-  unsigned int M=8;
+  unsigned int M=10;
   unsigned int n=8;
-  unsigned int N=10;
+  unsigned int N=1;
 
   Complex *f=ComplexAlign(n*M);
   unsigned int K=M/T;
@@ -26,9 +26,18 @@ int main()
 
   for(unsigned int i=0; i < n*M; i++) f[i]=i;
 
-  if(n < 100) {
-    cout << "\neach input contains:" << endl;
-    for(unsigned int i=0; i < n; i++) cout << f[i] << endl;
+  unsigned int outlimit=100;
+  
+  if(n*M < outlimit) {
+    cout << endl << "input:" << endl;
+    for(unsigned int i=0; i < n; i++) {
+      for(unsigned int j=0; j < M; j++) {
+        Complex value=n*j+i;
+        f[M*i+j]=value;
+        cout << value << "\t";
+      }
+      cout << endl;
+    }
   }
 
   // Timing test:
@@ -44,19 +53,25 @@ int main()
       Backward.fftNormalized(f+K*i);
   }
   
-  cout << seconds() << " is how many seconds the transform took" <<endl;
-
-  if(n < 100) {
-    cout << "\nback to input:" << endl;
-    for(unsigned int i=0; i < n; i++) cout << f[i] << endl;
-  }
+  double time=seconds();
   
+  if(n*M < outlimit) {
+    cout << endl << "back to input:" << endl;
+    for(unsigned int i=0; i < n; i++) {
+      for(unsigned int j=0; j < M; j++) {
+        cout << f[M*i+j] << "\t";
+      }
+      cout << endl;
+    }
+  }
+
+  cout << endl << "average seconds: " << time/N << endl;
+
   Complex sum=0.0;
   for(unsigned int i=0; i < n*M; i++) 
     sum += f[i];
 
-  cout << "sum of outputs (used for error-checking): " << sum << endl;
+  cout << endl << "sum of outputs (used for error-checking): " << sum << endl;
   
-
   deleteAlign(f);
 }

@@ -231,13 +231,14 @@ public:
   static void Shift(Complex *data, unsigned int nx, unsigned int ny,
                     unsigned int threads) {
     const unsigned int nyp=ny/2+1;
-    Complex *pstop=data+nx*nyp;
+    unsigned int stop=nx*nyp;
     if(nx % 2 == 0) {
-      int pinc=2*nyp;
+      unsigned int inc=2*nyp;
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif
-      for(Complex *p=data+nyp; p < pstop; p += pinc) {
+      for(unsigned int i=nyp; i < stop; i += inc) {
+        Complex *p=data+i;
         for(unsigned int j=0; j < nyp; j++) p[j]=-p[j];
       }
     } else {
@@ -250,12 +251,13 @@ public:
   static void Shift(double *data, unsigned int nx, unsigned int ny,
                     unsigned int threads) {
     if(nx % 2 == 0) {
-      double *pstop=data+nx*ny;
-      int pinc=2*ny;
+      unsigned int stop=nx*ny;
+      unsigned int inc=2*ny;
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif
-      for(double *p=data+ny; p < pstop; p += pinc) {
+      for(unsigned int i=ny; i < stop; i += inc) {
+        double *p=data+i;
         for(unsigned int j=0; j < ny; j++) p[j]=-p[j];
       }
     } else {
@@ -536,14 +538,16 @@ public:
     else {
       out=Setout(in,out);
       Execute(in,out);
-      Complex *stop=out+nx*stride;
-      unsigned int Mdist=M*dist;
+
+      unsigned int stop=nx*stride;
+      Complex *outMdist=out+M*dist;
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif
-      for(Complex *p=out; p < stop; p += stride) {
-         for(unsigned int k=0; k < Mdist; k += dist) {
-          p[k] *= norm;
+      for(unsigned int i=0; i < stop; i += stride) {
+        Complex *pstop=outMdist+i;
+         for(Complex *p=out+i; p < pstop; p += dist) {
+          *p *= norm;
         }
       }
     }
