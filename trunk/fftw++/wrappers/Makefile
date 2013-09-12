@@ -33,9 +33,19 @@ ifeq ($(shell $(CXX) -qversion 2>&1 | head -c 3),IBM)
 CXX=mpixlcxx_r
 CC=mpixlc_r
 FC=mpixlf90_r
-CXXFLAGS= -O3 -qsmp -I.. -I$(CPLUS_INCLUDE_PATH)
+CXXFLAGS= -O3 -qsmp -I..
 CFLAGS= -O3 -qsmp 
 FFLGAS=-qsmp
+endif
+
+ifeq ($(strip $(CPLUS_INCLUDE_PATH)),)
+else
+CXXFLAGS +=-L$(CPLUS_INCLUDE_PATH)
+endif
+
+ifeq ($(strip $(FORTRAN_INCLUDE_PATH)),)
+else
+FIFLAGS =-I$(FORTRAN_INCLUDE_PATH)
 endif
 
 ifeq ($(strip $(LD_LIBRARY_PATH)),)
@@ -45,16 +55,7 @@ endif
 
 LDFLAGS += -lfftw3_omp -lfftw3 -lm -lstdc++
 
-ifeq ($(strip $(FORTRAN_INCLUDE_PATH)),)
-else
-FIFLAGS =-I$(FORTRAN_INCLUDE_PATH)
-endif
-
-# targets
-
 all: _fftwpp.so _chash.so cexample fexample
-
-# rules
 
 fftw++.o: ../fftw++.cc ../fftw++.h
 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LDFLAGS)
