@@ -12,17 +12,15 @@ int main()
   cout << "Multiple 1D complex to complex in-place FFTs" << endl;
 
   fftw::maxthreads=4;
-  unsigned int T=1;
   
   unsigned int M=10;
   unsigned int n=8;
-  unsigned int N=1;
+  unsigned int N=10;
 
   Complex *f=ComplexAlign(n*M);
-  unsigned int K=M/T;
     
-  mfft1d Forward(n,-1,K,M,1);
-  mfft1d Backward(n,1,K,M,1);
+  mfft1d Forward(n,-1,M,M,1);
+  mfft1d Backward(n,1,M,M,1);
 
   for(unsigned int i=0; i < n*M; i++) f[i]=i;
 
@@ -44,13 +42,8 @@ int main()
   seconds();
   
   for(unsigned int j=0; j < N; ++j) {
-#pragma omp parallel for num_threads(T)
-    for(unsigned int i=0; i < T; ++i)
-      Forward.fft(f+K*i);
-  
-#pragma omp parallel for num_threads(T)
-    for(unsigned int i=0; i < T; ++i)
-      Backward.fftNormalized(f+K*i);
+    Forward.fft(f);
+    Backward.fftNormalized(f);
   }
   
   double time=seconds();
