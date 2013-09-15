@@ -355,7 +355,34 @@ public:
 #endif    
   }
   
-  void Setup(Complex *in, Complex *out=NULL, bool threaded=1) {
+  class statistics {
+  public:
+    double mean;
+    double stdev;
+    statistics() : mean(0.0), stdev(0.0) {} 
+    statistics(double mean, double stdev) : mean(mean), stdev(stdev) {}
+  };
+  
+  statistics time(Complex *in, Complex *out) {
+    double begin=totalseconds();
+    double lastseconds=begin;
+    double stop=begin+testseconds;
+    double sum2=0.0;
+    unsigned int N=1;
+    for(;;++N) {
+      fft(in,out);
+      double t=totalseconds();
+      double seconds=t-lastseconds;
+      sum2 += seconds*seconds;
+      lastseconds=t;
+      if(t > stop)
+        break;
+    }
+    double sum=totalseconds()-begin;
+    return statistics(sum/N,stdev(N,sum,sum2));
+  }
+  
+  statistics Setup(Complex *in, Complex *out=NULL, bool threaded=1) {
     if(!Wise) LoadWisdom();
     bool alloc=!in;
     if(alloc) in=ComplexAlign((doubles+1)/2);
@@ -374,63 +401,29 @@ public:
     if(!plan1) noplan();
     plan=plan1;
     
+    statistics S;
     if(maxthreads > 1) {
-      double sum2=0.0;
-      unsigned int N=1;
-      double begin=totalseconds();
-      double lastseconds=begin;
-      double stop=begin+testseconds;
-      for(;;++N) {
-        fft(in,out);
-        double t=totalseconds();
-        double seconds=t-lastseconds;
-        sum2 += seconds*seconds;
-        lastseconds=t;
-        if(t > stop)
-          break;
-      }
-
-      double end=totalseconds();
-      double sum=end-begin;
-      double mean1=sum/N;
-      double stdev1=stdev(N,sum,sum2);
-        
+      S=time(in,out);
       threads=maxthreads;
       planThreads(threads);
       plan=Plan(in,out);
-      if(!plan) noplan();
-
       if(plan) {
-        double begin=totalseconds();
-        double lastseconds=begin;
-        double stop=begin+testseconds;
-        N=1;
-        for(;;++N) {
-          fft(in,out);
-          double t=totalseconds();
-          double seconds=t-lastseconds;
-          sum2 += seconds*seconds;
-          lastseconds=t;
-          if(t > stop)
-            break;
-        }
-        double end=totalseconds();
-        double sum=end-begin;
-        double mean2=sum/N;
-        
-        if(mean2 > mean1-stdev1) {
+        statistics S2=time(in,out);
+        if(S2.mean > S.mean-S.stdev) {
           threads=1;
           fftw_destroy_plan(plan);
           plan=plan1;
         } else {
+          S=S2;
           fftw_destroy_plan(plan1);
           threads=maxthreads;
         }
-      }
+      } else noplan();
     }
     
     if(alloc) Array::deleteAlign(in,(doubles+1)/2);
     SaveWisdom();
+    return S;
   }
   
   void Setup(Complex *in, double *out) {Setup(in,(Complex *) out);}
@@ -622,18 +615,47 @@ class mfft1d : public fftw {
   unsigned int T,Q,R;
   size_t stride;
   size_t dist;
-  fftw_plan plan2;
   fftw_plan plan1;
+  fftw_plan plan2;
+  fftw_plan planT1;
 public:  
   mfft1d(unsigned int nx, int sign, unsigned int M=1, size_t stride=1,
          size_t dist=0, Complex *in=NULL, Complex *out=NULL) 
     : fftw(2*((nx-1)*stride+(M-1)*Dist(nx,stride,dist)+1),sign,nx),
-      nx(nx), M(M), stride(stride), dist(Dist(nx,stride,dist))
+      nx(nx), M(M), stride(stride), dist(Dist(nx,stride,dist)),
+      plan1(NULL), plan2(NULL)
   {
+    T=1;
+    Q=M;
+    R=0;
+    statistics S1=Setup(in,out);
+    planT1=plan;
+    
     T=std::min(M,maxthreads);
-    Q=M/T;
-    R=M-Q*T;
-    Setup(in,out);
+    if(T > 1) {
+      Q=M/T;
+      R=M-Q*T;
+      statistics ST=Setup(in,out);
+    
+      if(R > 0 && threads == 1) {
+        fftw_destroy_plan(plan2);
+        plan2=plan1;
+      }
+
+      if(ST.mean > S1.mean-S1.stdev) {
+        fftw_destroy_plan(plan);
+        if(R > 0) {
+          fftw_destroy_plan(plan2);
+          plan2=NULL;
+        }
+        T=1;
+        Q=M;
+        R=0;
+        plan=planT1;
+      } else {
+        fftw_destroy_plan(planT1);
+      }
+    }
   } 
   
   fftw_plan Plan(Complex *in, Complex *out) {
@@ -643,6 +665,7 @@ public:
                               (fftw_complex *) in,NULL,stride,dist,
                               (fftw_complex *) out,NULL,stride,dist,
                               sign,effort);
+     if(!plan2) noplan();
      if(threads == 1) plan1=plan2;
     }
     return fftw_plan_many_dft(1,&n,Q,
@@ -651,18 +674,25 @@ public:
                               sign,effort);
   }
   
+  ~mfft1d() {
+    if(plan2) fftw_destroy_plan(plan2);
+  }
+  
   void Execute(Complex *in, Complex *out, bool=false) {
-    if(threads == 1) plan2=plan1;
-    unsigned int extra=T-R;
+    if(T == 1) {
+      fftw_execute_dft(plan,(fftw_complex *) in,(fftw_complex *) out);
+    } else {
+      unsigned int extra=T-R;
 
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(T)
 #endif
-    for(unsigned int i=0; i < T; ++i) {
-      bool normal=i < extra;
-      unsigned int offset=normal ? Q*i : Q*i+i-extra;
-      fftw_execute_dft(normal ? plan : plan2,(fftw_complex *) in+offset,
-                       (fftw_complex *) out+offset);
+      for(unsigned int i=0; i < T; ++i) {
+        bool normal=i < extra;
+        unsigned int offset=normal ? Q*i : Q*i+i-extra;
+        fftw_execute_dft(normal ? plan : plan2,(fftw_complex *) in+offset,
+                         (fftw_complex *) out+offset);
+      }
     }
   }
   
