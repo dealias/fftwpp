@@ -1110,7 +1110,7 @@ public:
     init(ny,nz,stride2,stride3);
   }
   
-  ~ImplicitHConvolution3() {
+  virtual ~ImplicitHConvolution3() {
     if(yzconvolve) {
       deletepointers3(U3,V3);
       deletepointers2(U2,V2,threads);
