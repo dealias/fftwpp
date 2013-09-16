@@ -39,7 +39,7 @@ void transpose::inTransposed(Complex *data)
 void transpose::inwait(Complex *data)
 {
   if(size == 1) return;
-  Wait(splitsize-1,request,alltoall);
+  Wait(splitsize-1,request,sched);
 
   // Inner transpose each individual b x b block
   unsigned int Lm=L*m;
@@ -127,7 +127,7 @@ void transpose::outTransposed(Complex *data)
 void transpose::outwait(Complex *data) 
 {
   if(size == 1) return;
-  Wait(splitsize-1,request,alltoall);
+  Wait(splitsize-1,request,sched);
     
   unsigned int Lm=L*m;
   if(b > 1) {

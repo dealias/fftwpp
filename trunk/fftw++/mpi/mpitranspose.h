@@ -31,7 +31,6 @@ private:
   MPI_Comm split2;
 public: //temp  
   unsigned int b;
-  bool alltoall;
 
 public:
   transpose(unsigned int N, unsigned int m, unsigned int n,
@@ -40,7 +39,7 @@ public:
     N(N), m(m), n(n), M(M), L(L), work(work), communicator(communicator),
     allocated(false) {
     b=4;
-    alltoall=false;
+    bool alltoall=true;
     
     MPI_Comm_size(communicator,&size);
     if(size == 1) return;
@@ -95,10 +94,8 @@ public:
   ~transpose() {
     if(size == 1) return;
     
-    if(alltoall) {
-      delete[] sched2;
-      delete[] sched;
-    }
+    if(sched2) delete[] sched2;
+    if(sched) delete[] sched;
     delete[] request;
     if(allocated) delete[] work;
   }
@@ -187,19 +184,18 @@ inline int MPI_Ialltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype,
   return MPI_Alltoall(sendbuf,sendcount,sendtype,recvbuf,recvcount,recvtype,
                       comm);
 }
-inline void Wait(int count, MPI_Request *request, bool alltoall)
+inline void Wait(int count, MPI_Request *request, int *sched=NULL)
 { 
-#if !alltoall
-  MPI_Waitall(count,request,MPI_STATUSES_IGNORE);
-#endif
+  if(sched)
+    MPI_Waitall(count,request,MPI_STATUSES_IGNORE);
 }
 #else
-inline void Wait(int count, MPI_Request *request, bool alltoall)
+inline void Wait(int count, MPI_Request *request, int *sched=NULL)
 { 
-  if(alltoall)
-    MPI_Wait(request,MPI_STATUS_IGNORE);
-  else
+  if(sched)
     MPI_Waitall(count,request,MPI_STATUSES_IGNORE);
+  else
+    MPI_Wait(request,MPI_STATUS_IGNORE);
 }
 #endif
 
