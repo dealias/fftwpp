@@ -38,7 +38,7 @@ public:
             MPI_Comm communicator=MPI_COMM_WORLD) : 
     N(N), m(m), n(n), M(M), L(L), work(work), communicator(communicator),
     allocated(false) {
-    b=4;
+    b=1;
     bool alltoall=true;
     
     MPI_Comm_size(communicator,&size);
@@ -81,13 +81,16 @@ public:
       request=new MPI_Request[1];
       sched=sched2=NULL;
     } else {
-    request=new MPI_Request[std::max(splitsize,split2size)-1];
+      request=new MPI_Request[std::max(splitsize,split2size)-1];
     
-    sched=new int[splitsize];
-    fill1_comm_sched(sched,splitrank,splitsize);
+      sched=new int[splitsize];
+      fill1_comm_sched(sched,splitrank,splitsize);
     
-    sched2=new int[split2size];
-    fill1_comm_sched(sched2,split2rank,split2size);
+      if(b > 1) {
+        sched2=new int[split2size];
+        fill1_comm_sched(sched2,split2rank,split2size);
+      } else
+        sched2=NULL;
     }
   }
   
