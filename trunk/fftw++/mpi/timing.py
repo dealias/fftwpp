@@ -10,8 +10,8 @@ import os
 def main(argv):
     usage='Usage: timings.py -a<start> -b<stop> -p<cconv2,conv2,cconv3,conv3> -T<number of threads per node> -P<number of nodes> -A<quoted arg list for timed program> -M <quoted arg list for mpi run command> -r<implicit/explicit> -l<name of mpi run command> -R<ram in gigabytes> -d' 
     helpnotes=\
-        "\n -a <int> speficies the max exponent of the min problem size "\
-        "\n -b <int> speficies the max exponent of the max problem size "\
+        "\n -a <int> specifies the max exponent of the min problem size "\
+        "\n -b <int> specifies the max exponent of the max problem size "\
         "\n -p <program name> speficies the program name "\
         "\n -P <int> specifies the number of MPI process "\
         "\n -T <int> specifies the number of OpenMP threads per MPI process"\
@@ -148,7 +148,7 @@ def main(argv):
             b=min(b,int(floor(log(RAM/96)/log(2)/3)))
         outdir="timings3c"
         r="fft"
-    if p == "testmpi":
+    if p == "transpose":
         if a == 0:
             a=int(floor(log(P)/log(2)))
         if b == 0:
