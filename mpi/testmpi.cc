@@ -12,8 +12,6 @@
 using namespace std;
 using namespace fftwpp;
 
-#define SHOW 1
-
 inline unsigned int ceilquotient(unsigned int a, unsigned int b)
 {
   return (a+b-1)/b;
@@ -38,27 +36,41 @@ void init(Complex *data, unsigned int N0, unsigned int n1, unsigned int N2,
   
 int main(int argc, char **argv)
 {
-  
-#if SHOW
-  const unsigned int N0=8, N1=8;
-//  const unsigned int N0=8, N1=4;
-//  const unsigned int N0=4, N1=4;
-#else
-//  const unsigned int N0=8, N1=4;
-//  const unsigned int N0=8, N1=8;
-//  const unsigned int N0=4, N1=8;
-//  const unsigned int N0=16, N1=8;
-//  const unsigned int N0=8, N1=16;
-//  const unsigned int N0=16, N1=16;
-//  const unsigned int N0=32, N1=32;
-//  const unsigned int N0=128, N1=128;
-//  const unsigned int N0=256, N1=256;
-  const unsigned int N0=1024, N1=1024;
-//  const unsigned int N0=2048, N1=2048;
-//  const unsigned int N0=4096, N1=4096;
-//  const unsigned int N0=8192, N1=8192;
-//  const unsigned int N0=32768, N1=32768;
+
+  unsigned int N0=1024, N1=1024;
+
+  const unsigned int showlimit=1024;
+  int N=1000;
+
+#ifdef __GNUC__ 
+  optind=0;
 #endif  
+  for (;;) {
+    int c = getopt(argc,argv,"N:m:x:y:T:");
+    if (c == -1) break;
+                
+    switch (c) {
+      case 0:
+        break;
+      case 'N':
+        N=atoi(optarg);
+        break;
+      case 'm':
+        N0=N1=atoi(optarg);
+        break;
+      case 'x':
+        N0=atoi(optarg);
+        break;
+      case 'y':
+        N1=atoi(optarg);
+        break;
+      case 'T':
+        fftw::maxthreads=atoi(optarg);
+        break;
+    }
+  }
+
+    
   Complex *data;
   ptrdiff_t n0,n0start;
   ptrdiff_t n1,n1start;
@@ -122,19 +134,15 @@ int main(int argc, char **argv)
 #endif  
   
   init(data,N0,n1,N2,n1start);
-#if SHOW  
-  show(data,N0,n1*N2);
-#endif  
+
+  if(N0*N1 < showlimit)
+    show(data,N0,n1*N2);
   
   double commtime=0;
   double posttime=0;
   double outcommtime=0;
   double outposttime=0;
-#if SHOW
-  int N=1;
-#else  
-  int N=1000;
-#endif  
+
   for(int k=0; k < N; ++k) {
     if(rank == 0) seconds();
 #ifndef OLD
@@ -150,10 +158,12 @@ int main(int argc, char **argv)
     if(rank == 0) 
       posttime += seconds();
 
-#if SHOW
-    if(rank == 0) cout << "\ntranspose:\n" << endl;
-    show(data,n0,N1*N2);
-#endif
+    if(N0*N1 < showlimit && N == 1){
+      // output tranposed array if the problem size is small and only
+      // one iteration is being performed.
+      if(rank == 0) cout << "\ntranspose:\n" << endl;
+      show(data,n0,N1*N2);
+    }
     
 #ifndef OLD
     T.outTransposed(data);
@@ -177,10 +187,10 @@ int main(int argc, char **argv)
     cout << (outcommtime+outposttime)/N << endl;
   }
   
-#if SHOW  
-  if(rank == 0) cout << "\noriginal:\n" << endl;
-  show(data,N0,n1*N2);
-#endif  
+  if(N0*N1 < showlimit) {  
+    if(rank == 0) cout << "\noriginal:\n" << endl;
+    show(data,N0,n1*N2);
+  }
   
 #ifdef OLD  
   fftw_destroy_plan(inplan);
