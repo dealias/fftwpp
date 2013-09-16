@@ -3,8 +3,7 @@
 
 #include <iostream>
 #include <cstdlib>
-
-#define ALLTOALL 1
+#include <cstring>
 
 void fill1_comm_sched(int *sched, int which_pe, int npes);
 
@@ -21,16 +20,18 @@ private:
   MPI_Comm communicator;
   bool allocated;
   MPI_Request *request;
-  MPI_Request Request;
-  MPI_Request srequest;
   int size;
   int rank;
   int splitsize;
   int splitrank;
-  int *sched;
+  int split2size;
+  int split2rank;
+  int *sched, *sched2;
   MPI_Comm split;
+  MPI_Comm split2;
 public: //temp  
   unsigned int b;
+  bool alltoall;
 
 public:
   transpose(unsigned int N, unsigned int m, unsigned int n,
@@ -38,13 +39,14 @@ public:
             MPI_Comm communicator=MPI_COMM_WORLD) : 
     N(N), m(m), n(n), M(M), L(L), work(work), communicator(communicator),
     allocated(false) {
-    b=1;
+    b=4;
+    alltoall=false;
     
     MPI_Comm_size(communicator,&size);
     if(size == 1) return;
     MPI_Comm_rank(communicator,&rank);
     if(rank == 0)
-      std::cout << "b=" << b << ", ALLTOALL=" << ALLTOALL << std::endl;
+      std::cout << "b=" << b << ", alltoall=" << alltoall << std::endl;
     
     if(N % size != 0 || M % size != 0) {
       if(rank == 0)
@@ -70,25 +72,35 @@ public:
       MPI_Comm_split(communicator,rank/q,0,&split);
       MPI_Comm_size(split,&splitsize);
       MPI_Comm_rank(split,&splitrank);
+      
+      MPI_Comm_split(communicator,rank % q,0,&split2);
+      MPI_Comm_size(split2,&split2size);
+      MPI_Comm_rank(split2,&split2rank);
     }
     
-#if ALLTOALL    
-    request=new MPI_Request[b-1];
-#else    
-    request=new MPI_Request[std::max((unsigned int) splitsize-1,b-1)];
+    if(alltoall) {
+      request=new MPI_Request[1];
+      sched=sched2=NULL;
+    } else {
+    request=new MPI_Request[std::max(splitsize,split2size)-1];
+    
     sched=new int[splitsize];
     fill1_comm_sched(sched,splitrank,splitsize);
-#endif    
+    
+    sched2=new int[split2size];
+    fill1_comm_sched(sched2,split2rank,split2size);
+    }
   }
   
   ~transpose() {
     if(size == 1) return;
-    if(allocated) delete[] work;
     
-#if !ALLTOALL
-    delete[] sched;
-#endif
+    if(alltoall) {
+      delete[] sched2;
+      delete[] sched;
+    }
     delete[] request;
+    if(allocated) delete[] work;
   }
   
 // Globally transpose data, applying an additional local transposition
@@ -114,6 +126,59 @@ public:
   void outwait(Complex *data);
 };
 
+inline int Ialltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
+                     void *recvbuf, int recvcount, MPI_Datatype recvtype, 
+                     MPI_Comm comm, MPI_Request *request, int *sched=NULL)
+{
+  if(!sched)
+    return MPI_Ialltoall(sendbuf,sendcount,sendtype,recvbuf,recvcount,recvtype,
+                         comm,request);
+  else {
+    int size;
+    int rank;
+    MPI_Comm_size(comm,&size);
+    MPI_Comm_rank(comm,&rank);
+    int sendsize;
+    MPI_Type_size(sendtype,&sendsize);
+    sendsize *= sendcount;
+    int recvsize;
+    MPI_Type_size(recvtype,&recvsize);
+    recvsize *= recvcount;
+    for(int p=0; p < size; ++p) {
+      int P=sched[p];
+      if(P != rank) {
+        MPI_Irecv((char *) recvbuf+P*sendsize,sendcount,sendtype,P,0,comm,
+                  request+(P < rank ? P : P-1));
+        MPI_Request srequest;
+        MPI_Isend((char *) sendbuf+P*recvsize,recvcount,recvtype,P,0,comm,
+                  &srequest);
+        MPI_Request_free(&srequest);
+      }
+    }
+  
+    memcpy((char *) recvbuf+rank*recvsize,(char *) sendbuf+rank*sendsize,
+           sendsize);
+    return 0;
+  }
+}
+
+inline int Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
+                    void *recvbuf, int recvcount, MPI_Datatype recvtype, 
+                    MPI_Comm comm, MPI_Request *request, int *sched=NULL)
+{
+  if(!sched)
+    return MPI_Alltoall(sendbuf,sendcount,sendtype,recvbuf,recvcount,recvtype,
+                        comm);
+  else {
+    int size;
+    MPI_Comm_size(comm,&size);
+    Ialltoall(sendbuf,sendcount,sendtype,recvbuf,recvcount,recvtype,comm,
+              request,sched);
+    MPI_Waitall(size-1,request,MPI_STATUSES_IGNORE);
+    return 0;
+  }
+}
+
 #if MPI_VERSION < 3
 inline int MPI_Ialltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
                          void *recvbuf, int recvcount, MPI_Datatype recvtype, 
@@ -122,13 +187,19 @@ inline int MPI_Ialltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype,
   return MPI_Alltoall(sendbuf,sendcount,sendtype,recvbuf,recvcount,recvtype,
                       comm);
 }
-inline void Wait(MPI_Request *)
+inline void Wait(int count, MPI_Request *request, bool alltoall)
 { 
+#if !alltoall
+  MPI_Waitall(count,request,MPI_STATUSES_IGNORE);
+#endif
 }
 #else
-inline void Wait(MPI_Request *request)
+inline void Wait(int count, MPI_Request *request, bool alltoall)
 { 
-  MPI_Wait(request,MPI_STATUS_IGNORE);
+  if(alltoall)
+    MPI_Wait(request,MPI_STATUS_IGNORE);
+  else
+    MPI_Waitall(count,request,MPI_STATUSES_IGNORE);
 }
 #endif
 

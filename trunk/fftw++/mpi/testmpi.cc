@@ -40,9 +40,9 @@ int main(int argc, char **argv)
 {
   
 #if SHOW
-//  const unsigned int N0=8, N1=8;
+  const unsigned int N0=8, N1=8;
 //  const unsigned int N0=8, N1=4;
-  const unsigned int N0=4, N1=4;
+//  const unsigned int N0=4, N1=4;
 #else
 //  const unsigned int N0=8, N1=4;
 //  const unsigned int N0=8, N1=8;
