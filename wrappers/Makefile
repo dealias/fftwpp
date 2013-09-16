@@ -43,9 +43,10 @@ else
 CXXFLAGS +=-L$(CPLUS_INCLUDE_PATH)
 endif
 
+FIFLAGS += -I/usr/include
 ifeq ($(strip $(FORTRAN_INCLUDE_PATH)),)
 else
-FIFLAGS =-I$(FORTRAN_INCLUDE_PATH)
+FIFLAGS +=-I$(FORTRAN_INCLUDE_PATH)
 endif
 
 ifeq ($(strip $(LD_LIBRARY_PATH)),)
