@@ -3,7 +3,6 @@
 
 #include <mpi.h>
 #include "../Complex.h"
-#include <cstring>
 
 #include "mpi/mpitranspose.h"
 
@@ -33,35 +32,14 @@ void transpose::inTransposed(Complex *data)
     in=work;
   }
     
-  unsigned int blocksize=b*length;
-  unsigned int doubles=2*blocksize;
-    
-#if ALLTOALL
-  MPI_Ialltoall(out,doubles,MPI_DOUBLE,in,doubles,MPI_DOUBLE,split,
-                &Request);
-#else
-  for(int p=0; p < splitsize; ++p) {
-    int P=sched[p];
-    if(P != splitrank) {
-      MPI_Irecv(in+P*blocksize,doubles,MPI_DOUBLE,P,0,split,
-                request+(P < splitrank ? P : P-1));
-      MPI_Isend(out+P*blocksize,doubles,MPI_DOUBLE,P,0,split,&srequest);
-      MPI_Request_free(&srequest);
-    }
-  }
-  memcpy(in+splitrank*blocksize,out+splitrank*blocksize,
-         blocksize*sizeof(Complex));
-#endif
+  unsigned int doubles=2*b*length;
+  Ialltoall(out,doubles,MPI_DOUBLE,in,doubles,MPI_DOUBLE,split,request,sched);
 }
   
 void transpose::inwait(Complex *data)
 {
   if(size == 1) return;
-#if ALLTOALL
-  Wait(&Request);
-#else
-  MPI_Waitall(splitsize-1,request,MPI_STATUSES_IGNORE);
-#endif    
+  Wait(splitsize-1,request,alltoall);
 
   // Inner transpose each individual b x b block
   unsigned int Lm=L*m;
@@ -78,20 +56,8 @@ void transpose::inwait(Complex *data)
         memcpy(workp+stride*i,datap+length*i,lengthsize);
     }
     
-    unsigned int r=rank/q;
-    for(unsigned int p=0; p < b; ++p) {
-      if(p != r) {
-        int inc=(p-r)*q;
-        MPI_Irecv(data+p*stride,2*stride,MPI_DOUBLE,rank+inc,0,communicator,
-                  request+(p < r ? p : p-1));
-        MPI_Isend(work+p*stride,2*stride,MPI_DOUBLE,rank+inc,0,communicator,
-                  &srequest);
-        MPI_Request_free(&srequest);
-      }
-      else memcpy(data+r*stride,work+r*stride,stride*sizeof(Complex));
-    }
-      
-    MPI_Waitall(b-1,request,MPI_STATUSES_IGNORE);
+    Alltoall(work,2*stride,MPI_DOUBLE,data,2*stride,MPI_DOUBLE,split2,
+             request,sched2);
   }
     
   unsigned int LM=L*M;
@@ -133,21 +99,9 @@ void transpose::outTransposed(Complex *data)
   Complex *in,*out;
   if(b > 1) {
     unsigned int q=size/b;
-    unsigned int r=rank/q;
     unsigned int stride=N/b*Lm;
-    for(unsigned int p=0; p < b; ++p) {
-      if(p != r) {
-        int inc=(p-r)*q;
-        MPI_Irecv(work+p*stride,2*stride,MPI_DOUBLE,rank+inc,0,communicator,
-                  request+(p < r ? p : p-1));
-        MPI_Isend(data+p*stride,2*stride,MPI_DOUBLE,rank+inc,0,communicator,
-                  &srequest);
-        MPI_Request_free(&srequest);
-      }
-      else memcpy(work+r*stride,data+r*stride,stride*sizeof(Complex));
-    }
-      
-    MPI_Waitall(b-1,request,MPI_STATUSES_IGNORE);
+    Alltoall(data,2*stride,MPI_DOUBLE,work,2*stride,MPI_DOUBLE,split2,
+             request,sched2);
       
     unsigned int lengthsize=length*sizeof(Complex);
     for(unsigned int p=0; p < q; ++p) {
@@ -166,36 +120,14 @@ void transpose::outTransposed(Complex *data)
       
   // Outer transpose N/b x N/b matrix of b x b blocks
   
-  unsigned int blocksize=b*length;
-  unsigned int doubles=2*blocksize;
-    
-#if ALLTOALL
-  MPI_Ialltoall(out,doubles,MPI_DOUBLE,in,doubles,MPI_DOUBLE,split,
-                &Request);
-
-#else
-  for(int p=0; p < splitsize; ++p) {
-    int P=sched[p];
-    if(P != splitrank) {
-      MPI_Irecv(in+P*blocksize,doubles,MPI_DOUBLE,P,0,split,
-                request+(P < splitrank ? P : P-1));
-      MPI_Isend(out+P*blocksize,doubles,MPI_DOUBLE,P,0,split,&srequest);
-      MPI_Request_free(&srequest);
-    }
-  }
-  memcpy(in+splitrank*blocksize,out+splitrank*blocksize,
-         blocksize*sizeof(Complex));
-#endif
+  unsigned int doubles=2*b*length;
+  Ialltoall(out,doubles,MPI_DOUBLE,in,doubles,MPI_DOUBLE,split,request,sched);
 }
 
 void transpose::outwait(Complex *data) 
 {
   if(size == 1) return;
-#if ALLTOALL
-  Wait(&Request);
-#else
-  MPI_Waitall(splitsize-1,request,MPI_STATUSES_IGNORE);
-#endif    
+  Wait(splitsize-1,request,alltoall);
     
   unsigned int Lm=L*m;
   if(b > 1) {
