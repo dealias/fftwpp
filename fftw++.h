@@ -617,7 +617,6 @@ class mfft1d : public fftw {
   size_t dist;
   fftw_plan plan1;
   fftw_plan plan2;
-  fftw_plan planT1;
 public:  
   mfft1d(unsigned int nx, int sign, unsigned int M=1, size_t stride=1,
          size_t dist=0, Complex *in=NULL, Complex *out=NULL) 
@@ -629,7 +628,8 @@ public:
     Q=M;
     R=0;
     statistics S1=Setup(in,out);
-    planT1=plan;
+    fftw_plan planT1=plan;
+    unsigned int threads1=threads;
     
     T=std::min(M,maxthreads);
     if(T > 1) {
@@ -652,6 +652,7 @@ public:
         Q=M;
         R=0;
         plan=planT1;
+        threads=threads1;
       } else {
         fftw_destroy_plan(planT1);
       }
