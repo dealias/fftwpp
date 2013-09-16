@@ -126,6 +126,29 @@ public:
   void outwait(Complex *data);
 };
 
+#if MPI_VERSION < 3
+inline int MPI_Ialltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
+                         void *recvbuf, int recvcount, MPI_Datatype recvtype, 
+                         MPI_Comm comm, MPI_Request *)
+{
+  return MPI_Alltoall(sendbuf,sendcount,sendtype,recvbuf,recvcount,recvtype,
+                      comm);
+}
+inline void Wait(int count, MPI_Request *request, int *sched=NULL)
+{ 
+  if(sched)
+    MPI_Waitall(count,request,MPI_STATUSES_IGNORE);
+}
+#else
+inline void Wait(int count, MPI_Request *request, int *sched=NULL)
+{ 
+  if(sched)
+    MPI_Waitall(count,request,MPI_STATUSES_IGNORE);
+  else
+    MPI_Wait(request,MPI_STATUS_IGNORE);
+}
+#endif
+
 inline int Ialltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
                      void *recvbuf, int recvcount, MPI_Datatype recvtype, 
                      MPI_Comm comm, MPI_Request *request, int *sched=NULL)
@@ -178,28 +201,5 @@ inline int Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype,
     return 0;
   }
 }
-
-#if MPI_VERSION < 3
-inline int MPI_Ialltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
-                         void *recvbuf, int recvcount, MPI_Datatype recvtype, 
-                         MPI_Comm comm, MPI_Request *)
-{
-  return MPI_Alltoall(sendbuf,sendcount,sendtype,recvbuf,recvcount,recvtype,
-                      comm);
-}
-inline void Wait(int count, MPI_Request *request, int *sched=NULL)
-{ 
-  if(sched)
-    MPI_Waitall(count,request,MPI_STATUSES_IGNORE);
-}
-#else
-inline void Wait(int count, MPI_Request *request, int *sched=NULL)
-{ 
-  if(sched)
-    MPI_Waitall(count,request,MPI_STATUSES_IGNORE);
-  else
-    MPI_Wait(request,MPI_STATUS_IGNORE);
-}
-#endif
 
 #endif
