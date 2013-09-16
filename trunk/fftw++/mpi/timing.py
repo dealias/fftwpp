@@ -148,6 +148,13 @@ def main(argv):
             b=min(b,int(floor(log(RAM/96)/log(2)/3)))
         outdir="timings3c"
         r="fft"
+    if p == "testmpi":
+        if a == 0:
+            a=int(floor(log(P)/log(2)))
+        if b == 0:
+            b=10
+        r="transpose"
+        outdir="tran"
 
     if RAM != 0:
         print "max problem size is "+str(2**b)
@@ -176,6 +183,8 @@ def main(argv):
             sys.exit(2)
     if r == "fft":
         rname="FFT"
+    if r == "transpose":
+        rname="transpose"
 
     for i in range(a,b+1):
         print i,
