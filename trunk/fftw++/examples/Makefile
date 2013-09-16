@@ -1,10 +1,8 @@
 IDIR =../
 
-CXXFLAGS=$(DEFS)
-
 # GNU compiler
 ifeq ($(shell $(CXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
-CXXFLAGS+= -O3 -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
+CXXFLAGS=-O3 -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
 	-fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native
 #For valgrind:
 #CXXFLAGS=-fopenmp -g -Wall -ansi -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse
@@ -12,26 +10,26 @@ endif
 
 #Intel compiler
 ifeq ($(shell $(CXX) -v 2>&1 | head -c 4),icpc)
-CXXFLAGS+= -fast -openmp -ansi-alias -malign-double -fp-model fast=2
+CXXFLAGS=-O3 -fast -openmp -ansi-alias -malign-double -fp-model fast=2
 endif
 
 #IBM compiler
 ifeq ($(shell $(CXX) -qversion 2>&1 | head -c 3),IBM)
-#CXXFLAGS = -O5 -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp
-CXXFLAGS= -O3 -qsmp
+CXXFLAGS=-O5 -P -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp
 endif
 
-CXXFLAGS+= -I$(IDIR) -I$(CPLUS_INCLUDE_PATH) -L$(LIBRARY_PATH)
+CXXFLAGS += $(DEFS) -I$(IDIR) -I$(CPLUS_INCLUDE_PATH) -L$(LIBRARY_PATH)
 
 MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
+
 #LDFLAGS= -lfftw3_threads -lfftw3 -lm
 LDFLAGS= -lfftw3_omp -lfftw3 -lm
 
 vpath %.cc ../
 
-FILES=\
-example0 example0r example0m example1 example1r example2 example2r example3 example3r examplecconv exampleconv examplecconv2 exampleconv2 examplecconv3 exampleconv3 \
-examplepcconv examplepcconv2 examplepcconv3
+FILES=example0 example0r example0m example1 example1r example2 example2r \
+example3 example3r examplecconv exampleconv examplecconv2 exampleconv2 \
+examplecconv3 exampleconv3 examplepcconv examplepcconv2 examplepcconv3
 
 FFTW=fftw++
 EXTRA=$(FFTW) convolution
