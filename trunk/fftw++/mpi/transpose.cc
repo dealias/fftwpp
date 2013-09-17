@@ -1,3 +1,4 @@
+#include <mpi.h>
 #include <iostream>
 #include <fftw3-mpi.h>
 #include <cassert>
