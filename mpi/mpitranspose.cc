@@ -10,7 +10,7 @@ void transpose::inTransposed(Complex *data)
 {
   if(size == 1) return;
   
-  // Outer transpose N/b x N/b matrix of b x b blocks
+  // Outer transpose N/b x M/b matrix of b x b blocks
   Complex *in, *out;
   unsigned int Lm=L*m;
   unsigned int length=n*Lm;
@@ -118,7 +118,7 @@ void transpose::outTransposed(Complex *data)
     in=data;
   }
       
-  // Outer transpose N/b x N/b matrix of b x b blocks
+  // Outer transpose N/b x M/b matrix of b x b blocks
   
   unsigned int doubles=2*b*length;
   Ialltoall(out,doubles,MPI_DOUBLE,in,doubles,MPI_DOUBLE,split,request,sched);

@@ -23,13 +23,13 @@ void LoadWisdom(const MPI_Comm& active);
 void SaveWisdom(const MPI_Comm& active);
 }
 
-void init(Complex *data, unsigned int N0, unsigned int n1, unsigned int N2,
-  ptrdiff_t n1start) {
-  for(unsigned int i=0; i < N0; ++i) { 
-    for(unsigned int j=0; j < n1; ++j) {
-      for(unsigned int k=0; k < N2; ++k) {
-        data[(n1*i+j)*N2+k].re = i;
-        data[(n1*i+j)*N2+k].im = n1start+j;
+void init(Complex *data, unsigned int X, unsigned int y, unsigned int Z,
+  ptrdiff_t ystart) {
+  for(unsigned int i=0; i < X; ++i) { 
+    for(unsigned int j=0; j < y; ++j) {
+      for(unsigned int k=0; k < Z; ++k) {
+        data[(y*i+j)*Z+k].re = i;
+        data[(y*i+j)*Z+k].im = ystart+j;
       }
     }
   }
@@ -42,24 +42,24 @@ inline void usage()
   std::cerr << "-T\t\t number of threads" << std::endl;
   std::cerr << "-N\t\t number of iterations" << std::endl;
   std::cerr << "-m\t\t size" << std::endl;
-  std::cerr << "-x\t\t x size" << std::endl;
-  std::cerr << "-y\t\t y size" << std::endl;
+  std::cerr << "-X\t\t X size" << std::endl;
+  std::cerr << "-Y\t\t Y size" << std::endl;
+  std::cerr << "-Z\t\t Z size" << std::endl;
   exit(1);
 }
 
 int main(int argc, char **argv)
 {
 
-  unsigned int N0=1024, N1=1024;
-
+  unsigned int X=8, Y=8, Z=1;
   const unsigned int showlimit=1024;
-  int N=1000;
+  int N=10000;
 
 #ifdef __GNUC__ 
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"hN:m:x:y:T:");
+    int c = getopt(argc,argv,"hN:m:X:Y:Z:T:");
     if (c == -1) break;
                 
     switch (c) {
@@ -69,13 +69,16 @@ int main(int argc, char **argv)
         N=atoi(optarg);
         break;
       case 'm':
-        N0=N1=atoi(optarg);
+        X=Y=atoi(optarg);
         break;
-      case 'x':
-        N0=atoi(optarg);
+      case 'X':
+        X=atoi(optarg);
         break;
-      case 'y':
-        N1=atoi(optarg);
+      case 'Y':
+        Y=atoi(optarg);
+        break;
+      case 'Z':
+        Z=atoi(optarg);
         break;
       case 'T':
         fftw::maxthreads=atoi(optarg);
@@ -88,9 +91,8 @@ int main(int argc, char **argv)
 
     
   Complex *data;
-  ptrdiff_t n0,n0start;
-  ptrdiff_t n1,n1start;
-  const unsigned int N2=1;
+  ptrdiff_t x,xstart;
+  ptrdiff_t y,ystart;
   
 //  int provided;
   MPI_Init(&argc,&argv);
@@ -105,24 +107,24 @@ int main(int argc, char **argv)
   fftw_mpi_init();
      
   /* get local data size and allocate */
-  ptrdiff_t NN[2]={N1,N0};
-  unsigned int block=ceilquotient(N1,comm_size);
+  ptrdiff_t NN[2]={Y,X};
+  unsigned int block=ceilquotient(Y,comm_size);
 #ifdef OLD  
   ptrdiff_t alloc=
 #endif    
-    fftw_mpi_local_size_many_transposed(2,NN,N2,block,0,
-                                                      MPI_COMM_WORLD,&n1,
-                                                      &n1start,&n0,&n0start);
+    fftw_mpi_local_size_many_transposed(2,NN,Z,block,0,
+                                                      MPI_COMM_WORLD,&y,
+                                                      &ystart,&x,&xstart);
   if(rank == 0) {
-    cout << "n=" << n0 << endl;
-    cout << "m=" << n1 << endl;
-    cout << "N=" << N0 << endl;
-    cout << "M=" << N1 << endl;
+    cout << "x=" << x << endl;
+    cout << "y=" << y << endl;
+    cout << "X=" << X << endl;
+    cout << "Y=" << Y << endl;
     cout << endl;
   }
   
 #ifndef OLD
-  data=new Complex[N0*n1*N2];
+  data=new Complex[X*y*Z];
 #else  
   data=new Complex[alloc];
 #endif  
@@ -131,28 +133,29 @@ int main(int argc, char **argv)
   if(rank == 0) cout << "\nOLD\n" << endl;
   
   fftwpp::LoadWisdom(MPI_COMM_WORLD);
-  fftw_plan inplan=fftw_mpi_plan_many_transpose(N1,N0,2*N2,block,0,
+  fftw_plan inplan=fftw_mpi_plan_many_transpose(Y,X,2*Z,block,0,
                                                 (double*) data,(double*) data,
                                                 MPI_COMM_WORLD,
                                                  FFTW_MPI_TRANSPOSED_IN);
-  fftw_plan outplan=fftw_mpi_plan_many_transpose(N0,N1,2*N2,0,block,
+  fftw_plan outplan=fftw_mpi_plan_many_transpose(X,Y,2*Z,0,block,
                                                  (double*) data,(double*) data,
                                                  MPI_COMM_WORLD,
                                                  FFTW_MPI_TRANSPOSED_OUT);
   fftwpp::SaveWisdom(MPI_COMM_WORLD);
 #else
-  transpose T(N0,n1,n0,N1,N2);
-  init(data,N0,n1,N2,n1start);
+  transpose T(X,y,x,Y,Z);
+  init(data,X,y,Z,ystart);
   T.inTransposed(data);
   T.inwait(data);
   T.outTransposed(data);
   T.outwait(data);
 #endif  
   
-  init(data,N0,n1,N2,n1start);
+  init(data,X,y,Z,ystart);
 
-  if(N0*N1 < showlimit)
-    show(data,N0,n1*N2);
+  bool showoutput=X*Y < showlimit && N == 1;
+  if(showoutput)
+    show(data,X,y*Z);
   
   double commtime=0;
   double posttime=0;
@@ -174,11 +177,11 @@ int main(int argc, char **argv)
     if(rank == 0) 
       posttime += seconds();
 
-    if(N0*N1 < showlimit && N == 1){
+    if(showoutput) {
       // output tranposed array if the problem size is small and only
       // one iteration is being performed.
       if(rank == 0) cout << "\ntranspose:\n" << endl;
-      show(data,n0,N1*N2);
+      show(data,x,Y*Z);
     }
     
 #ifndef OLD
@@ -203,9 +206,9 @@ int main(int argc, char **argv)
     cout << (outcommtime+outposttime)/N << endl;
   }
   
-  if(N0*N1 < showlimit) {  
+  if(showoutput) {
     if(rank == 0) cout << "\noriginal:\n" << endl;
-    show(data,N0,n1*N2);
+    show(data,X,y*Z);
   }
   
 #ifdef OLD  
