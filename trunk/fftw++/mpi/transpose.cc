@@ -35,6 +35,18 @@ void init(Complex *data, unsigned int N0, unsigned int n1, unsigned int N2,
   }
 }
   
+inline void usage()
+{
+  std::cerr << "Options: " << std::endl;
+  std::cerr << "-h\t\t help" << std::endl;
+  std::cerr << "-T\t\t number of threads" << std::endl;
+  std::cerr << "-N\t\t number of iterations" << std::endl;
+  std::cerr << "-m\t\t size" << std::endl;
+  std::cerr << "-x\t\t x size" << std::endl;
+  std::cerr << "-y\t\t y size" << std::endl;
+  exit(1);
+}
+
 int main(int argc, char **argv)
 {
 
@@ -47,7 +59,7 @@ int main(int argc, char **argv)
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"N:m:x:y:T:");
+    int c = getopt(argc,argv,"hN:m:x:y:T:");
     if (c == -1) break;
                 
     switch (c) {
@@ -68,6 +80,9 @@ int main(int argc, char **argv)
       case 'T':
         fftw::maxthreads=atoi(optarg);
         break;
+      case 'h':
+      default:
+        usage();
     }
   }
 
