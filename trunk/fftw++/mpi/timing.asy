@@ -26,6 +26,10 @@ if(gtype == "speedup") {
   //scale(Log,Log);
   scale(Log,Linear);
 }
+if(gtype == "speeduplog") {
+  scale(Log,Log);
+  gtype="speedup";
+}
 if(gtype == "mflops") {
   scale(Log,Log);
   size(300,400,IgnoreAspect);
