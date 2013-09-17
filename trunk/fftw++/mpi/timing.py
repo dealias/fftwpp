@@ -19,6 +19,7 @@ def main(argv):
         "\n -M <string> allows one to pass extra arguments to the mpi exec program "\
         "\n -r <implicit/explicit> specifies the type of convoution  "\
         "\n -l <string> specifies the name of the MPI launch program  "\
+        "\n -s indicates that the MPI launcher does not take the number of processes as an argument  "\
         "\n -R <real value> spedifies the ram size, which is used in determing the maximum problem size. "\
         "\n -d specifies a dry run; commands are shown but no convolutions are computed\n "\
         "\nfor example, try the command\n ./timing.py -pcconv2 -a 3 -b 4" \
@@ -38,8 +39,9 @@ def main(argv):
     r="implicit"
     l="mpiexec --np"
     RAM=0
+    skipnum=False
     try:
-        opts, args = getopt.getopt(argv,"p:T:P:a:b:A:M:r:l:R:d")
+        opts, args = getopt.getopt(argv,"p:T:P:a:b:A:M:r:l:R:ds")
     except getopt.GetoptError:
         print usage
         print helpnotes
@@ -76,6 +78,8 @@ def main(argv):
             RAM=float(arg)*2**30
         elif opt in ("-d"):
             dryrun=True
+        elif opt in ("-s"):
+            skipnum=True
 
     if dryrun:
         print "Dry run!  No output actually created."
@@ -166,7 +170,13 @@ def main(argv):
         sys.exit(2)
 
     outdir=outdir+"/"+str(P)+"x"+str(T)
-    command=l+" "+str(P)+" "+M+"  ./"+str(p)
+    command=l+" "
+    if not skipnum:
+        command+=str(P)+" "
+    command+=M+"  ./"+str(p)
+#    command=l+" "+str(P)+" "+M+"  ./"+str(p)
+
+
 
     print "Output in "+outdir+"/"+r
 
