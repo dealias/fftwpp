@@ -5,39 +5,37 @@ endif
 IDIR=../
 UDIR=../tests/
 
-CXXFLAGS=$(DEFS)
-
 # GNU compiler
 ifeq ($(shell $(MPICXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
-CXXFLAGS += -O3 -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
+CXXFLAGS=-O3 -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
 	-fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native
 #For valgrind:
 #CXXFLAGS=-fopenmp -g -Wall -ansi -fomit-frame-pointer -fstrict-aliasing \
 #	 -ffast-math -msse2 -mfpmath=sse
-ifndef FFTWPP_SINGLE_THREAD
-CXXFLAGS += -fopenmp
-endif
 endif
 
 #Intel compiler
 ifeq ($(shell $(MPICXX) --version 2>&1 | head -c 4),icpc)
-CXXFLAGS += -O3 -ipo -ansi-alias -malign-double -fp-model fast=2
+CXXFLAGS=-O3 -openmp -ipo -ansi-alias -malign-double -fp-model fast=2
 # note that the -fast option forces static linkage
-ifndef FFTWPP_SINGLE_THREAD
-CXXFLAGS += -openmp
-endif
 endif
 
 #IBM compiler
 ifeq ($(shell $(MPICXX) -qversion 2>&1 | head -c 3),IBM)
-#CXXFLAGS= -O5 -P -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp
-CXXFLAGS += -O3
-ifndef FFTWPP_SINGLE_THREAD
-CXXFLAGS += -qsmp
-endif
+CXXFLAGS= -O5 -P -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp
 endif
 
-CXXFLAGS += -I$(IDIR) -I$(UDIR) -I$(CPLUS_INCLUDE_PATH) -L$(LIBRARY_PATH)
+CXXFLAGS += $(DEFS) -I$(IDIR) -I$(UDIR)
+
+ifeq ($(strip $(CPLUS_INCLUDE_PATH)),)
+else
+CXXFLAGS +=-I$(CPLUS_INCLUDE_PATH)
+endif
+ifeq ($(strip $(LIBRARY_PATH)),)
+else
+CXXFLAGS +=-I$(LIBRARY_PATH)
+endif
+
 
 MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
 
@@ -72,10 +70,10 @@ conv3: conv3.o $(EXTRA:=.o)
 cfft2: cfft2.o $(EXTRA:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
-cfft3: cfft3.o $(EXTRA:=.o) mpiutils.o
+cfft3: cfft3.o $(EXTRA:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
-testmpi: testmpi.cc $(UTILS:=.o)
+transpose: transpose.cc $(EXTRA:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
 clean:  FORCE

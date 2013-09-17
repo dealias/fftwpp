@@ -18,7 +18,16 @@ ifeq ($(shell $(CXX) -qversion 2>&1 | head -c 3),IBM)
 CXXFLAGS=-O5 -P -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp
 endif
 
-CXXFLAGS += $(DEFS) -I$(IDIR) -I$(CPLUS_INCLUDE_PATH) -L$(LIBRARY_PATH)
+CXXFLAGS += $(DEFS) -I$(IDIR)
+
+ifeq ($(strip $(CPLUS_INCLUDE_PATH)),)
+else
+CXXFLAGS +=-I$(CPLUS_INCLUDE_PATH)
+endif
+ifeq ($(strip $(LIBRARY_PATH)),)
+else
+CXXFLAGS +=-I$(LIBRARY_PATH)
+endif
 
 MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
 
