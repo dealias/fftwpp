@@ -195,6 +195,8 @@ def main(argv):
         rname="FFT"
     if r == "transpose":
         rname="transpose"
+    if a == 0:
+        a=1
 
     for i in range(a,b+1):
         print i,
