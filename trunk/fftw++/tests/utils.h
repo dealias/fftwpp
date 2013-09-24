@@ -28,6 +28,7 @@ inline void usage(int n, bool test=false, bool Explicit=true)
       std::cerr << "-p\t\t pruned explicitly padded convolution" << std::endl;
   }
   std::cerr << "-d\t\t direct convolution (slow)" << std::endl;
+  std::cerr << "-T\t\t number of threads" << std::endl;
   if(test)
   std::cerr << "-t\t\t accuracy test" << std::endl;
   std::cerr << "-N\t\t number of iterations" << std::endl;
