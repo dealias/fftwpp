@@ -1,3 +1,5 @@
+using namespace std;
+
 // mpic++ -O3 -fopenmp -g testmpi.cc fftw++.cc mpitranspose.cc -I ../ -lfftw3_mpi -lfftw3  -lm
 // mpirun -n 2 a.out
 
@@ -6,25 +8,53 @@
 
 #include "mpi/mpitranspose.h"
 
+inline void copy(Complex *from, Complex *to, unsigned int length)
+{
+  unsigned int size=length*sizeof(Complex);
+  memcpy(to,from,size);
+}
+
+// Out-of-place transpose an n x m matrix of blocks of size length from src 
+// to dest.
+inline void Transpose(Complex *src, Complex *dest,
+                      unsigned int n, unsigned int m, unsigned int length)
+{
+  if(n > 1 && m > 1) {
+    unsigned int size=length*sizeof(Complex);
+    unsigned int nstride=n*length;
+    unsigned int mstride=m*length;
+    for(unsigned int i=0; i < nstride; i += length) {
+      Complex *srci=src+i*m;
+      Complex *desti=dest+i;
+      for(unsigned int j=0; j < mstride; j += length)
+        memcpy(desti+j*n,srci+j,size);
+    }
+  } else
+    copy(src,dest,n*m*length);
+}
+
+inline void copy(Complex *src, Complex *dest,
+                 unsigned int count, unsigned int length,
+                 unsigned int srcstride, unsigned int deststride)
+{
+  unsigned int size=length*sizeof(Complex);
+  for(unsigned int i=0; i < count; ++i)
+    memcpy(dest+i*deststride,src+i*srcstride,size);
+}
+
 void transpose::inTransposed(Complex *data)
 {
   if(size == 1) return;
   
-  // Outer transpose N/b x M/b matrix of b x b blocks
+  // Outer transpose N/a x M/a matrix of a x a blocks
   Complex *in, *out;
   unsigned int Lm=L*m;
   unsigned int length=n*Lm;
-  if(b > 1) {
-    unsigned int stride=N/b*Lm;
-    unsigned int lengthsize=length*sizeof(Complex);
-    unsigned int q=size/b;
-    for(unsigned int p=0; p < q; ++p) {
-      unsigned int lengthp=length*p;
-      Complex *datap=data+lengthp;
-      Complex *workp=work+b*lengthp;
-      for(unsigned int i=0; i < b; ++i)
-        memcpy(workp+length*i,datap+stride*i,lengthsize);
-    }
+  if(a > 1) {
+    unsigned int stride=N/a*Lm;
+    unsigned int q=length*size/a;
+    for(unsigned int p=0; p < q; p += length)
+      copy(data+p,work+a*p,a,length,stride,length);
     out=work;
     in=data;
   } else {
@@ -32,7 +62,7 @@ void transpose::inTransposed(Complex *data)
     in=work;
   }
     
-  unsigned int doubles=2*b*length;
+  unsigned int doubles=2*a*length;
   Ialltoall(out,doubles,MPI_DOUBLE,in,doubles,MPI_DOUBLE,split,request,sched);
 }
   
@@ -41,18 +71,18 @@ void transpose::inwait(Complex *data)
   if(size == 1) return;
   Wait(splitsize-1,request,sched);
 
-  // Inner transpose each individual b x b block
+  // Inner transpose each individual a x a block
   unsigned int Lm=L*m;
-  if(b > 1) {
+  if(a > 1) {
     unsigned int length=n*Lm;
-    unsigned int stride=N/b*Lm;
+    unsigned int stride=N/a*Lm;
     unsigned int lengthsize=length*sizeof(Complex);
-    unsigned int q=size/b;
+    unsigned int q=size/a;
     for(unsigned int p=0; p < q; ++p) {
       unsigned int lengthp=length*p;
       Complex *workp=work+lengthp;
-      Complex *datap=data+b*lengthp;
-      for(unsigned int i=0; i < b; ++i)
+      Complex *datap=data+a*lengthp;
+      for(unsigned int i=0; i < a; ++i)
         memcpy(workp+stride*i,datap+length*i,lengthsize);
     }
     
@@ -62,7 +92,7 @@ void transpose::inwait(Complex *data)
     
   unsigned int LM=L*M;
   if(n > 1) {
-    if(b > 1) memcpy(work,data,LM*n*sizeof(Complex));
+    if(a > 1) memcpy(work,data,LM*n*sizeof(Complex));
     unsigned int stop=Lm*size;
     unsigned int msize=Lm*sizeof(Complex);
     for(unsigned int i=0; i < n; ++i) {
@@ -71,7 +101,7 @@ void transpose::inwait(Complex *data)
       for(unsigned int p=0; p < stop; p += Lm)
         memcpy(in+p,out+p*n,msize);
     }
-  } else if(b == 1)
+  } else if(a == 1)
     memcpy(data,work,LM*n*sizeof(Complex));
 }  
     
@@ -79,69 +109,24 @@ void transpose::outTransposed(Complex *data)
 {
   if(size == 1) return;
   
-  // Inner transpose each individual b x b block
-  unsigned int Lm=L*m;
-  unsigned int LM=L*M;
-  if(n > 1) {
-    unsigned int stop=Lm*size;
-    unsigned int msize=Lm*sizeof(Complex);
-    for(unsigned int i=0; i < n; ++i) {
-      Complex *outi=data+LM*i;
-      Complex *ini=work+Lm*i;
-      for(unsigned int p=0; p < stop; p += Lm)
-        memcpy(ini+p*n,outi+p,msize);
-    }
-    if(b > 1) memcpy(data,work,LM*n*sizeof(Complex));    
-  } else if(b == 1)
-    memcpy(work,data,LM*n*sizeof(Complex));
-
-  unsigned int length=n*Lm;
-  Complex *in,*out;
-  if(b > 1) {
-    unsigned int q=size/b;
-    unsigned int stride=N/b*Lm;
-    Alltoall(data,2*stride,MPI_DOUBLE,work,2*stride,MPI_DOUBLE,split2,
-             request,sched2);
-      
-    unsigned int lengthsize=length*sizeof(Complex);
-    for(unsigned int p=0; p < q; ++p) {
-      unsigned int lengthp=length*p;
-      Complex *workp=work+lengthp;
-      Complex *datap=data+b*lengthp;
-      for(unsigned int i=0; i < b; ++i)
-        memcpy(datap+length*i,workp+stride*i,lengthsize);
-    }
-    out=data;
-    in=work;
-  } else {
-    out=work;
-    in=data;
-  }
-      
-  // Outer transpose N/b x M/b matrix of b x b blocks
-  
-  unsigned int doubles=2*b*length;
-  Ialltoall(out,doubles,MPI_DOUBLE,in,doubles,MPI_DOUBLE,split,request,sched);
+  // Phase 1: Inner transpose each individual N/a x M/a block over b processes
+  Transpose(data,work,n*a,b,m*L);
+  unsigned int blocksize=n*a*m*L;
+  Ialltoall(work,2*blocksize,MPI_DOUBLE,data,2*blocksize,MPI_DOUBLE,split,
+            request,sched);
 }
 
 void transpose::outwait(Complex *data) 
 {
   if(size == 1) return;
   Wait(splitsize-1,request,sched);
-    
-  unsigned int Lm=L*m;
-  if(b > 1) {
-    unsigned int stride=N/b*Lm;
-    unsigned int length=n*Lm;
-    unsigned int lengthsize=length*sizeof(Complex);
-    unsigned int q=size/b;
-    for(unsigned int p=0; p < q; ++p) {
-      unsigned int lengthp=length*p;
-      Complex *datap=data+lengthp;
-      Complex *workp=work+b*lengthp;
-      for(unsigned int i=0; i < b; ++i)
-        memcpy(datap+stride*i,workp+length*i,lengthsize);
-    }
+  
+  if(a > 1) {
+    Transpose(data,work,n*b,a,m*L);
+  // Phase 2: Outer transpose b x b matrix of N/a x M/a blocks over a processes
+    unsigned int blocksize=n*b*m*L;
+    Alltoall(work,2*blocksize,MPI_DOUBLE,data,2*blocksize,MPI_DOUBLE,split2,
+             request,sched2);
   }
 }
   

@@ -30,7 +30,7 @@ private:
   MPI_Comm split;
   MPI_Comm split2;
 public: //temp  
-  unsigned int b;
+  unsigned int a,b;
 
 public:
   transpose(unsigned int N, unsigned int m, unsigned int n,
@@ -38,14 +38,17 @@ public:
             MPI_Comm communicator=MPI_COMM_WORLD) : 
     N(N), m(m), n(n), M(M), L(L), work(work), communicator(communicator),
     allocated(false) {
-    b=1;
+    a=3;
     bool alltoall=true;
     
     MPI_Comm_size(communicator,&size);
     if(size == 1) return;
+    if(a == (unsigned int) size) a=1;
+    b=size/a;
+      
     MPI_Comm_rank(communicator,&rank);
     if(rank == 0)
-      std::cout << "b=" << b << ", alltoall=" << alltoall << std::endl;
+      std::cout << "a=" << a << ", alltoall=" << alltoall << std::endl;
     
     if(N % size != 0 || M % size != 0) {
       if(rank == 0)
@@ -61,18 +64,17 @@ public:
       allocated=true;
     }
     
-    if(b > (unsigned int) size) b=size;
-    if(b == 1) {
+    if(a > (unsigned int) size) a=size;
+    if(a == 1) {
       split=communicator;
-      splitsize=size;
+      splitsize=split2size=size;
       splitrank=rank;
     } else {
-      unsigned int q=size/b;
-      MPI_Comm_split(communicator,rank/q,0,&split);
+      MPI_Comm_split(communicator,rank/b,0,&split);
       MPI_Comm_size(split,&splitsize);
       MPI_Comm_rank(split,&splitrank);
       
-      MPI_Comm_split(communicator,rank % q,0,&split2);
+      MPI_Comm_split(communicator,rank % b,0,&split2);
       MPI_Comm_size(split2,&split2size);
       MPI_Comm_rank(split2,&split2rank);
     }
@@ -86,7 +88,7 @@ public:
       sched=new int[splitsize];
       fill1_comm_sched(sched,splitrank,splitsize);
     
-      if(b > 1) {
+      if(a > 1) {
         sched2=new int[split2size];
         fill1_comm_sched(sched2,split2rank,split2size);
       } else
