@@ -5,6 +5,9 @@
 #include <cstdlib>
 #include <cstring>
 
+#include <fftw3.h>
+#include <fftw++.h>
+
 void fill1_comm_sched(int *sched, int which_pe, int npes);
 
 // Globally transpose an N x M matrix of blocks of L complex elements
@@ -29,21 +32,23 @@ private:
   int *sched, *sched2;
   MPI_Comm split;
   MPI_Comm split2;
+  fftw_plan T1,T2,T3;
 public: //temp  
   unsigned int a,b;
 
 public:
-  transpose(unsigned int N, unsigned int m, unsigned int n,
+  transpose(Complex *data, unsigned int N, unsigned int m, unsigned int n,
             unsigned int M, unsigned int L=1, Complex *work=NULL,
             MPI_Comm communicator=MPI_COMM_WORLD) : 
     N(N), m(m), n(n), M(M), L(L), work(work), communicator(communicator),
     allocated(false) {
-    a=3;
+    a=2;
     bool alltoall=true;
     
     MPI_Comm_size(communicator,&size);
     if(size == 1) return;
-    if(a == (unsigned int) size) a=1;
+    
+    if(a >= (unsigned int) size) a=1;
     b=size/a;
       
     MPI_Comm_rank(communicator,&rank);
@@ -64,7 +69,10 @@ public:
       allocated=true;
     }
     
-    if(a > (unsigned int) size) a=size;
+    T1=fftwpp::plan_transpose(n*a,b,m*L,data,this->work);
+    T2=fftwpp::plan_transpose(n*b,a,m*L,data,this->work);
+    T3=fftwpp::plan_transpose(N,m,L,data,this->work);
+    
     if(a == 1) {
       split=communicator;
       splitsize=split2size=size;
@@ -125,7 +133,7 @@ public:
     outwait(data);
   }
   
-  void outwait(Complex *data);
+  void outwait(Complex *data, bool localtranspose=false);
 };
 
 #if MPI_VERSION < 3
