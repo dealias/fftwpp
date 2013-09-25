@@ -548,6 +548,17 @@ public:
 
 };
 
+class ThreadBase
+{
+protected:
+  unsigned int threads;
+public:  
+  ThreadBase() {threads=fftw::maxthreads;}
+  ThreadBase(unsigned int threads) : threads(threads) {}
+  void Threads(unsigned int nthreads) {threads=nthreads;}
+  unsigned int Threads() {return threads;}
+};
+
 inline fftw_plan plan_transpose(int rows, int cols, int length, Complex *in,
                                 Complex *out)
 {

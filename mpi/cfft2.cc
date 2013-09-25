@@ -1,4 +1,4 @@
-#include "mpiconvolution.h"
+#include "mpifftw++.h"
 #include "utils.h"
 #include "mpiutils.h"
 
