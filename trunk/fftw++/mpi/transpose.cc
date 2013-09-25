@@ -1,13 +1,17 @@
 #include <mpi.h>
-#include <iostream>
 #include <fftw3-mpi.h>
-#include "mpiconvolution.h"
+#include "../Complex.h"
+#include "../seconds.h"
 #include "mpitranspose.h"
-#include "utils.h"
 #include "mpiutils.h"
 
 using namespace std;
 using namespace fftwpp;
+
+inline unsigned int ceilquotient(unsigned int a, unsigned int b)
+{
+  return (a+b-1)/b;
+}
 
 namespace fftwpp {
 void LoadWisdom(const MPI_Comm& active);
@@ -80,7 +84,10 @@ int main(int argc, char **argv)
     }
   }
 
+    
   Complex *data;
+  ptrdiff_t x,xstart;
+  ptrdiff_t y,ystart;
   
 //  int provided;
   MPI_Init(&argc,&argv);
@@ -90,49 +97,60 @@ int main(int argc, char **argv)
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
   
-  MPIgroup group(Y);
-
-  if(rank == 0) cout << "size=" << group.size << endl;
+  if(rank == 0) cout << "size=" << comm_size << endl;
   
   fftw_mpi_init();
      
   /* get local data size and allocate */
-    dimensions d(X,Y,group.active,group.yblock);
-  d.show();
-
+  ptrdiff_t NN[2]={Y,X};
+  unsigned int block=ceilquotient(Y,comm_size);
+#ifdef OLD  
+  ptrdiff_t alloc=
+#endif    
+    fftw_mpi_local_size_many_transposed(2,NN,Z,block,0,
+                                                      MPI_COMM_WORLD,&y,
+                                                      &ystart,&x,&xstart);
+  if(rank == 0) {
+    cout << "x=" << x << endl;
+    cout << "y=" << y << endl;
+    cout << "X=" << X << endl;
+    cout << "Y=" << Y << endl;
+    cout << endl;
+  }
+  
 #ifndef OLD
-  data=new Complex[d.nx*d.y*Z];
+  data=new Complex[X*y*Z];
 #else  
-  data=new Complex[d.n];
+  data=new Complex[alloc];
 #endif  
   
 #ifdef OLD
   if(rank == 0) cout << "\nOLD\n" << endl;
   
   fftwpp::LoadWisdom(MPI_COMM_WORLD);
-  fftw_plan inplan=fftw_mpi_plan_many_transpose(d.ny,d.nx,2*Z,block,0,
+  fftw_plan inplan=fftw_mpi_plan_many_transpose(Y,X,2*Z,block,0,
                                                 (double*) data,(double*) data,
                                                 MPI_COMM_WORLD,
                                                  FFTW_MPI_TRANSPOSED_IN);
-  fftw_plan outplan=fftw_mpi_plan_many_transpose(d.nx,d.ny,2*Z,0,block,
+  fftw_plan outplan=fftw_mpi_plan_many_transpose(X,Y,2*Z,0,block,
                                                  (double*) data,(double*) data,
                                                  MPI_COMM_WORLD,
                                                  FFTW_MPI_TRANSPOSED_OUT);
   fftwpp::SaveWisdom(MPI_COMM_WORLD);
 #else
-  transpose T(data,d.nx,d.y,d.x,d.ny,Z);
-  init(data,d.nx,d.y,Z,d.y0);
+  transpose T(data,X,y,x,Y,Z);
+  init(data,X,y,Z,ystart);
   T.inTransposed(data);
   T.inwait(data);
   T.outTransposed(data);
   T.outwait(data,true);
 #endif  
   
-  init(data,d.nx,d.y,Z,d.y0);
+  init(data,X,y,Z,ystart);
 
-  bool showoutput=d.nx*d.ny < showlimit && N == 1;
+  bool showoutput=X*Y < showlimit && N == 1;
   if(showoutput)
-    show(data,d.nx,d.y*Z);
+    show(data,X,y*Z);
   
   double commtime=0;
   double posttime=0;
@@ -156,7 +174,7 @@ int main(int argc, char **argv)
 
     if(showoutput) {
       if(rank == 0) cout << "\ntranspose:\n" << endl;
-      show(data,d.x,d.ny*Z);
+      show(data,x,Y*Z);
     }
     
 #ifndef OLD
@@ -183,8 +201,8 @@ int main(int argc, char **argv)
   
   if(showoutput) {
     if(rank == 0) cout << "\noriginal:\n" << endl;
-//    show(data,d.nx,y*Z);
-    show(data,d.y,d.nx*Z);
+//    show(data,X,y*Z);
+    show(data,y,X*Z);
   }
   
 #ifdef OLD  

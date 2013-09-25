@@ -1,12 +1,19 @@
 #ifndef __mpitranspose_h__
 #define __mpitranspose_h__ 1
 
-#include <iostream>
-#include <cstdlib>
-#include <cstring>
-
-#include <fftw3.h>
+#include <mpi.h>
+#include "../Complex.h"
 #include <fftw++.h>
+
+namespace fftwpp {
+
+inline void transposeError(const char *text) {
+  std::cout << "Cannot construct " << text << " transpose plan." << std::endl;
+  exit(-1);
+}
+
+void LoadWisdom(const MPI_Comm& active);
+void SaveWisdom(const MPI_Comm& active);
 
 void fill1_comm_sched(int *sched, int which_pe, int npes);
 
@@ -69,9 +76,9 @@ public:
       allocated=true;
     }
     
-    T1=fftwpp::plan_transpose(n*a,b,m*L,data,this->work);
-    T2=fftwpp::plan_transpose(n*b,a,m*L,data,this->work);
-    T3=fftwpp::plan_transpose(N,m,L,data,this->work);
+    T1=plan_transpose(n*a,b,m*L,data,this->work);
+    T2=plan_transpose(n*b,a,m*L,data,this->work);
+    T3=plan_transpose(N,m,L,data,this->work);
     
     if(a == 1) {
       split=communicator;
@@ -211,5 +218,7 @@ inline int Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype,
     return 0;
   }
 }
+
+} // end namespace fftwpp
 
 #endif

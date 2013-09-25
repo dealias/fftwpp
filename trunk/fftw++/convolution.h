@@ -52,17 +52,6 @@ unsigned int BuildZeta(unsigned int n, unsigned int m,
                        Complex *&ZetaH, Complex *&ZetaL,
                        unsigned int threads=1);
 
-class ThreadBase
-{
-protected:
-  unsigned int threads;
-public:  
-  ThreadBase() {threads=fftw::maxthreads;}
-  ThreadBase(unsigned int threads) : threads(threads) {}
-  void Threads(unsigned int nthreads) {threads=nthreads;}
-  unsigned int Threads() {return threads;}
-};
-
 // In-place implicitly dealiased 1D complex convolution.
 class ImplicitConvolution : public ThreadBase {
 protected:

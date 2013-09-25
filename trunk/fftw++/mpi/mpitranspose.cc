@@ -1,12 +1,6 @@
-using namespace std;
+#include "mpitranspose.h"
 
-// mpic++ -O3 -fopenmp -g testmpi.cc fftw++.cc mpitranspose.cc -I ../ -lfftw3_mpi -lfftw3  -lm
-// mpirun -n 2 a.out
-
-#include <mpi.h>
-#include "../Complex.h"
-
-#include "mpi/mpitranspose.h"
+namespace fftwpp {
 
 inline void copy(Complex *from, Complex *to, unsigned int length)
 {
@@ -41,6 +35,8 @@ inline void copy(Complex *src, Complex *dest,
   for(unsigned int i=0; i < count; ++i)
     memcpy(dest+i*deststride,src+i*srcstride,size);
 }
+
+
 
 void transpose::inTransposed(Complex *data)
 {
@@ -188,3 +184,5 @@ void fill1_comm_sched(int *sched, int which_pe, int npes)
   }
 //  assert(s == npes);
 }
+
+} // end namespace fftwpp

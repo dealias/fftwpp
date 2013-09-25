@@ -46,34 +46,37 @@ vpath %.cc ../
 
 FFTW=fftw++
 FILES=cconv2 conv2 cconv3 conv3 cfft2 cfft3 transpose
-UTILS=$(FFTW) mpiutils mpitranspose
-EXTRA=$(UTILS) convolution mpiconvolution
-ALL=$(FILES) $(EXTRA)
+UTILS=$(FFTW) mpiutils
+MPITRANSPOSE=$(UTILS) mpitranspose
+MPIFFT=$(MPITRANSPOSE) mpifftw++
+MPICONVOLUTION=$(MPIFFT) convolution mpiconvolution
+
+ALL=$(FILES) $(MPICONVOLUTION)
 
 all: $(FILES)
 
 %.o : %.cc %.h
 	$(MPICXX) $(CXXFLAGS) $(OPTS) -o $@ -c $<
 
-cconv2: cconv2.o $(EXTRA:=.o)
+cconv2: cconv2.o $(MPICONVOLUTION:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
-conv2: conv2.o $(EXTRA:=.o)
+conv2: conv2.o $(MPICONVOLUTION:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
-cconv3: cconv3.o $(EXTRA:=.o)
+cconv3: cconv3.o $(MPICONVOLUTION:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
-conv3: conv3.o $(EXTRA:=.o)
+conv3: conv3.o $(MPICONVOLUTION:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
-cfft2: cfft2.o $(EXTRA:=.o)
+cfft2: cfft2.o $(MPIFFT:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
-cfft3: cfft3.o $(EXTRA:=.o)
+cfft3: cfft3.o $(MPIFFT:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
-transpose: transpose.cc $(EXTRA:=.o)
+transpose: transpose.o $(MPITRANSPOSE:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
 clean:  FORCE

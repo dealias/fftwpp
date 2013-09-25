@@ -4,6 +4,7 @@
 #include <iostream>
 #include "seconds.h"
 #include "timing.h"
+#include "Complex.h"
  
 #ifdef _WIN32
 #include "getopt.h"
