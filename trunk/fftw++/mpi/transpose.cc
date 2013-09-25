@@ -53,7 +53,7 @@ int main(int argc, char **argv)
 
   unsigned int X=8, Y=8, Z=1;
   const unsigned int showlimit=1024;
-  int N=10000;
+  int N=1;
 
 #ifdef __GNUC__ 
   optind=0;
@@ -143,12 +143,12 @@ int main(int argc, char **argv)
                                                  FFTW_MPI_TRANSPOSED_OUT);
   fftwpp::SaveWisdom(MPI_COMM_WORLD);
 #else
-  transpose T(X,y,x,Y,Z);
+  transpose T(data,X,y,x,Y,Z);
   init(data,X,y,Z,ystart);
   T.inTransposed(data);
   T.inwait(data);
   T.outTransposed(data);
-  T.outwait(data);
+  T.outwait(data,true);
 #endif  
   
   init(data,X,y,Z,ystart);
@@ -178,8 +178,6 @@ int main(int argc, char **argv)
       posttime += seconds();
 
     if(showoutput) {
-      // output tranposed array if the problem size is small and only
-      // one iteration is being performed.
       if(rank == 0) cout << "\ntranspose:\n" << endl;
       show(data,x,Y*Z);
     }
@@ -192,7 +190,7 @@ int main(int argc, char **argv)
     if(rank == 0) 
       outcommtime += seconds();
 #ifndef OLD
-    T.outwait(data);
+    T.outwait(data,true);
 #endif
     if(rank == 0) 
       outposttime += seconds();
@@ -208,7 +206,8 @@ int main(int argc, char **argv)
   
   if(showoutput) {
     if(rank == 0) cout << "\noriginal:\n" << endl;
-    show(data,X,y*Z);
+//    show(data,X,y*Z);
+    show(data,y,X*Z);
   }
   
 #ifdef OLD  

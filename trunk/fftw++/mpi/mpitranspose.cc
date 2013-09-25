@@ -110,23 +110,31 @@ void transpose::outTransposed(Complex *data)
   if(size == 1) return;
   
   // Phase 1: Inner transpose each individual N/a x M/a block over b processes
-  Transpose(data,work,n*a,b,m*L);
+//  Transpose(data,work,n*a,b,m*L);
+  fftw_execute_dft(T1,(fftw_complex *) data,(fftw_complex *) work);
+
   unsigned int blocksize=n*a*m*L;
   Ialltoall(work,2*blocksize,MPI_DOUBLE,data,2*blocksize,MPI_DOUBLE,split,
             request,sched);
 }
 
-void transpose::outwait(Complex *data) 
+void transpose::outwait(Complex *data, bool localtranspose) 
 {
   if(size == 1) return;
   Wait(splitsize-1,request,sched);
   
   if(a > 1) {
-    Transpose(data,work,n*b,a,m*L);
+//    Transpose(data,work,n*b,a,m*L);
+    fftw_execute_dft(T2,(fftw_complex *) data,(fftw_complex *) work);
   // Phase 2: Outer transpose b x b matrix of N/a x M/a blocks over a processes
     unsigned int blocksize=n*b*m*L;
     Alltoall(work,2*blocksize,MPI_DOUBLE,data,2*blocksize,MPI_DOUBLE,split2,
              request,sched2);
+  }
+  if(localtranspose) {
+    fftw_execute_dft(T3,(fftw_complex *) data,(fftw_complex *) work);
+//  Transpose(data,work,N,m,L);
+    copy(work,data,N*m*L);
   }
 }
   
