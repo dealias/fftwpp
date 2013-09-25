@@ -4,6 +4,7 @@
 #include "../seconds.h"
 #include "mpitranspose.h"
 #include "mpiutils.h"
+#include <unistd.h>
 
 using namespace std;
 using namespace fftwpp;

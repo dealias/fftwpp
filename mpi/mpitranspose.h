@@ -4,6 +4,7 @@
 #include <mpi.h>
 #include "../Complex.h"
 #include <fftw++.h>
+#include <cstring>
 
 namespace fftwpp {
 
