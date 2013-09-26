@@ -40,7 +40,8 @@ private:
   int *sched, *sched2;
   MPI_Comm split;
   MPI_Comm split2;
-  fftw_plan T1,T2,T3;
+  fftw_plan Tin1,Tin2,Tin3;
+  fftw_plan Tout1,Tout2,Tout3;
 public: //temp  
   unsigned int a,b;
 
@@ -50,7 +51,7 @@ public:
             MPI_Comm communicator=MPI_COMM_WORLD) : 
     N(N), m(m), n(n), M(M), L(L), work(work), communicator(communicator),
     allocated(false) {
-    a=2;
+    a=4;
     bool alltoall=true;
     
     MPI_Comm_size(communicator,&size);
@@ -77,15 +78,20 @@ public:
       allocated=true;
     }
     
-    T1=plan_transpose(n*a,b,m*L,data,this->work);
-    T2=plan_transpose(n*b,a,m*L,data,this->work);
-    T3=plan_transpose(N,m,L,data,this->work);
+    Tin1=plan_transpose(m*a,b,n*L,data,this->work);
+    Tout1=plan_transpose(n*a,b,m*L,data,this->work);
     
+    Tin3=plan_transpose(M,n,L,data,this->work);
+    Tout3=plan_transpose(N,m,L,data,this->work);
+
     if(a == 1) {
-      split=communicator;
+      split=split2=communicator;
       splitsize=split2size=size;
-      splitrank=rank;
+      splitrank=split2rank=rank;
     } else {
+      Tin2=plan_transpose(m*b,a,n*L,data,this->work);
+      Tout2=plan_transpose(n*b,a,m*L,data,this->work);
+    
       MPI_Comm_split(communicator,rank/b,0,&split);
       MPI_Comm_size(split,&splitsize);
       MPI_Comm_rank(split,&splitrank);
@@ -108,15 +114,17 @@ public:
         sched2=new int[split2size];
         fill1_comm_sched(sched2,split2rank,split2size);
       } else
-        sched2=NULL;
+        sched2=sched;
     }
   }
   
   ~transpose() {
     if(size == 1) return;
     
-    if(sched2) delete[] sched2;
-    if(sched) delete[] sched;
+    if(sched) {
+      if(a > 1) delete[] sched2;
+      delete[] sched;
+    }
     delete[] request;
     if(allocated) delete[] work;
   }

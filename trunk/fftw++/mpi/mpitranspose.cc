@@ -27,78 +27,38 @@ inline void Transpose(Complex *src, Complex *dest,
     copy(src,dest,n*m*length);
 }
 
-inline void copy(Complex *src, Complex *dest,
-                 unsigned int count, unsigned int length,
-                 unsigned int srcstride, unsigned int deststride)
-{
-  unsigned int size=length*sizeof(Complex);
-  for(unsigned int i=0; i < count; ++i)
-    memcpy(dest+i*deststride,src+i*srcstride,size);
-}
-
-
-
 void transpose::inTransposed(Complex *data)
 {
   if(size == 1) return;
   
-  // Outer transpose N/a x M/a matrix of a x a blocks
-  Complex *in, *out;
-  unsigned int Lm=L*m;
-  unsigned int length=n*Lm;
-  if(a > 1) {
-    unsigned int stride=N/a*Lm;
-    unsigned int q=length*size/a;
-    for(unsigned int p=0; p < q; p += length)
-      copy(data+p,work+a*p,a,length,stride,length);
-    out=work;
-    in=data;
-  } else {
-    out=data;
-    in=work;
-  }
-    
-  unsigned int doubles=2*a*length;
-  Ialltoall(out,doubles,MPI_DOUBLE,in,doubles,MPI_DOUBLE,split,request,sched);
+//  Transpose(data,work,N,m,L);
+  fftw_execute_dft(Tout3,(fftw_complex *) data,(fftw_complex *) work);
+  
+  // Phase 1: Inner transpose each individual N/a x M/a block over b processes
+//  Transpose(work,data,m*a,b,n*L);
+  fftw_execute_dft(Tin1,(fftw_complex *) work,(fftw_complex *) data);
+
+  unsigned int blocksize=n*a*m*L;
+  Ialltoall(data,2*blocksize,MPI_DOUBLE,work,2*blocksize,MPI_DOUBLE,split,
+            request,sched);
 }
   
 void transpose::inwait(Complex *data)
 {
   if(size == 1) return;
   Wait(splitsize-1,request,sched);
-
-  // Inner transpose each individual a x a block
-  unsigned int Lm=L*m;
+  
+  // Phase 2: Outer transpose b x b matrix of N/a x M/a blocks over a processes
   if(a > 1) {
-    unsigned int length=n*Lm;
-    unsigned int stride=N/a*Lm;
-    unsigned int lengthsize=length*sizeof(Complex);
-    unsigned int q=size/a;
-    for(unsigned int p=0; p < q; ++p) {
-      unsigned int lengthp=length*p;
-      Complex *workp=work+lengthp;
-      Complex *datap=data+a*lengthp;
-      for(unsigned int i=0; i < a; ++i)
-        memcpy(workp+stride*i,datap+length*i,lengthsize);
-    }
-    
-    Alltoall(work,2*stride,MPI_DOUBLE,data,2*stride,MPI_DOUBLE,split2,
+//    Transpose(work,data,m*b,a,n*L);
+    fftw_execute_dft(Tin2,(fftw_complex *) work,(fftw_complex *) data);
+    unsigned int blocksize=n*b*m*L;
+    Alltoall(data,2*blocksize,MPI_DOUBLE,work,2*blocksize,MPI_DOUBLE,split2,
              request,sched2);
   }
-    
-  unsigned int LM=L*M;
-  if(n > 1) {
-    if(a > 1) memcpy(work,data,LM*n*sizeof(Complex));
-    unsigned int stop=Lm*size;
-    unsigned int msize=Lm*sizeof(Complex);
-    for(unsigned int i=0; i < n; ++i) {
-      Complex *in=data+LM*i;
-      Complex *out=work+Lm*i;
-      for(unsigned int p=0; p < stop; p += Lm)
-        memcpy(in+p,out+p*n,msize);
-    }
-  } else if(a == 1)
-    memcpy(data,work,LM*n*sizeof(Complex));
+  
+  fftw_execute_dft(Tin3,(fftw_complex *) work,(fftw_complex *) data);
+//  Transpose(work,data,M,n,L);
 }  
     
 void transpose::outTransposed(Complex *data)
@@ -107,7 +67,7 @@ void transpose::outTransposed(Complex *data)
   
   // Phase 1: Inner transpose each individual N/a x M/a block over b processes
 //  Transpose(data,work,n*a,b,m*L);
-  fftw_execute_dft(T1,(fftw_complex *) data,(fftw_complex *) work);
+  fftw_execute_dft(Tout1,(fftw_complex *) data,(fftw_complex *) work);
 
   unsigned int blocksize=n*a*m*L;
   Ialltoall(work,2*blocksize,MPI_DOUBLE,data,2*blocksize,MPI_DOUBLE,split,
@@ -119,16 +79,16 @@ void transpose::outwait(Complex *data, bool localtranspose)
   if(size == 1) return;
   Wait(splitsize-1,request,sched);
   
+  // Phase 2: Outer transpose b x b matrix of N/a x M/a blocks over a processes
   if(a > 1) {
 //    Transpose(data,work,n*b,a,m*L);
-    fftw_execute_dft(T2,(fftw_complex *) data,(fftw_complex *) work);
-  // Phase 2: Outer transpose b x b matrix of N/a x M/a blocks over a processes
+    fftw_execute_dft(Tout2,(fftw_complex *) data,(fftw_complex *) work);
     unsigned int blocksize=n*b*m*L;
     Alltoall(work,2*blocksize,MPI_DOUBLE,data,2*blocksize,MPI_DOUBLE,split2,
              request,sched2);
   }
   if(localtranspose) {
-    fftw_execute_dft(T3,(fftw_complex *) data,(fftw_complex *) work);
+    fftw_execute_dft(Tout3,(fftw_complex *) data,(fftw_complex *) work);
 //  Transpose(data,work,N,m,L);
     copy(work,data,N*m*L);
   }
