@@ -144,7 +144,7 @@ int main(int argc, char **argv)
   T.inTransposed(data);
   T.inwait(data);
   T.outTransposed(data);
-  T.outwait(data,true);
+  T.outwait(data);//,true);
 #endif  
   
   init(data,X,y,Z,ystart);
@@ -186,7 +186,7 @@ int main(int argc, char **argv)
     if(rank == 0) 
       outcommtime += seconds();
 #ifndef OLD
-    T.outwait(data,true);
+    T.outwait(data);//,true);
 #endif
     if(rank == 0) 
       outposttime += seconds();
@@ -202,8 +202,8 @@ int main(int argc, char **argv)
   
   if(showoutput) {
     if(rank == 0) cout << "\noriginal:\n" << endl;
-//    show(data,X,y*Z);
-    show(data,y,X*Z);
+    show(data,X,y*Z);
+//    show(data,y,X*Z);
   }
   
 #ifdef OLD  
