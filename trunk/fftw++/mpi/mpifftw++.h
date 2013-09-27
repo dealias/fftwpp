@@ -163,7 +163,7 @@ public:
 
 // In-place MPI/OpenMPI  2D complex FFT.
 // FIXME: complete documentation.
-class cfft2MPI : public ThreadBase {
+class cfft2MPI {
  private:
   unsigned int mx, my;
   dimensions d;
@@ -197,10 +197,7 @@ class cfft2MPI : public ThreadBase {
 
   }
   
-  // threads is the number of threads to use in the outer subconvolution loop.
-  // FIXME: is threads set correctly?
- cfft2MPI(const dimensions& d, Complex *f,
-	  unsigned int threads=fftw::maxthreads) : d(d) {
+ cfft2MPI(const dimensions& d, Complex *f) : d(d) {
     mx=d.nx;
     my=d.ny;
     inittranspose(f);
@@ -225,7 +222,7 @@ class cfft2MPI : public ThreadBase {
 
 // In-place MPI/OpenMPI 3D complex FFT.
 // FIXME: complete documentation.
-class cfft3MPI : public ThreadBase {
+class cfft3MPI {
  private:
   unsigned int mx, my, mz;
   dimensions3 d;
@@ -276,10 +273,7 @@ class cfft3MPI : public ThreadBase {
     SaveWisdom(d.communicator);
   }
   
-  // threads is the number of threads to use in the outer subconvolution loop.
-  // FIXME: is threads set correctly?
- cfft3MPI(const dimensions3& d, Complex *f,
-	  unsigned int threads=fftw::maxthreads) : d(d) {
+ cfft3MPI(const dimensions3& d, Complex *f) : d(d) {
     mx=d.nx;
     my=d.ny;
     mz=d.nz;
