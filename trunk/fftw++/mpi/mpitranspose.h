@@ -51,7 +51,7 @@ public:
             MPI_Comm communicator=MPI_COMM_WORLD) : 
     N(N), m(m), n(n), M(M), L(L), work(work), communicator(communicator),
     allocated(false) {
-    a=4;
+    a=1;
     bool alltoall=true;
     
     MPI_Comm_size(communicator,&size);
@@ -78,18 +78,18 @@ public:
       allocated=true;
     }
     
-    Tin1=plan_transpose(m*a,b,n*L,data,this->work);
     Tout1=plan_transpose(n*a,b,m*L,data,this->work);
-    
-    Tin3=plan_transpose(M,n,L,data,this->work);
     Tout3=plan_transpose(N,m,L,data,this->work);
 
     if(a == 1) {
       split=split2=communicator;
       splitsize=split2size=size;
       splitrank=split2rank=rank;
+      Tin1=plan_transpose(b,n*a,m*L,data,this->work);
     } else {
+      Tin1=plan_transpose(m*a,b,n*L,data,this->work);
       Tin2=plan_transpose(m*b,a,n*L,data,this->work);
+      Tin3=plan_transpose(M,n,L,data,this->work);
       Tout2=plan_transpose(n*b,a,m*L,data,this->work);
     
       MPI_Comm_split(communicator,rank/b,0,&split);

@@ -31,12 +31,14 @@ void transpose::inTransposed(Complex *data)
 {
   if(size == 1) return;
   
-//  Transpose(data,work,N,m,L);
-  fftw_execute_dft(Tout3,(fftw_complex *) data,(fftw_complex *) work);
-  
   // Phase 1: Inner transpose each individual N/a x M/a block over b processes
+  if(a > 1) {
+//  Transpose(data,work,N,m,L);
+    fftw_execute_dft(Tout3,(fftw_complex *) data,(fftw_complex *) work);
+  
 //  Transpose(work,data,m*a,b,n*L);
-  fftw_execute_dft(Tin1,(fftw_complex *) work,(fftw_complex *) data);
+    fftw_execute_dft(Tin1,(fftw_complex *) work,(fftw_complex *) data);
+  }
 
   unsigned int blocksize=n*a*m*L;
   Ialltoall(data,2*blocksize,MPI_DOUBLE,work,2*blocksize,MPI_DOUBLE,split,
@@ -55,10 +57,11 @@ void transpose::inwait(Complex *data)
     unsigned int blocksize=n*b*m*L;
     Alltoall(data,2*blocksize,MPI_DOUBLE,work,2*blocksize,MPI_DOUBLE,split2,
              request,sched2);
-  }
-  
-  fftw_execute_dft(Tin3,(fftw_complex *) work,(fftw_complex *) data);
 //  Transpose(work,data,M,n,L);
+    fftw_execute_dft(Tin3,(fftw_complex *) work,(fftw_complex *) data);
+  } else
+//    Transpose(work,data,b,n*a,m*L);
+    fftw_execute_dft(Tin1,(fftw_complex *) work,(fftw_complex *) data);
 }  
     
 void transpose::outTransposed(Complex *data)
