@@ -42,7 +42,6 @@ private:
   MPI_Comm split2;
   Transpose *Tin1,*Tin2,*Tin3;
   Transpose *Tout1,*Tout2,*Tout3;
-public: //temp  
   unsigned int a,b;
 
 public:
