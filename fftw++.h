@@ -429,8 +429,8 @@ public:
   void Setup(Complex *in, double *out) {Setup(in,(Complex *) out);}
   void Setup(double *in, Complex *out=NULL) {Setup((Complex *) in,out);}
   
-  void LoadWisdom();
-  void SaveWisdom();
+  static void LoadWisdom();
+  static void SaveWisdom();
   
   virtual void Execute(Complex *in, Complex *out, bool=false) {
     fftw_execute_dft(plan,(fftw_complex *) in,(fftw_complex *) out);
@@ -545,30 +545,63 @@ public:
       }
     }
   }
-
 };
 
-inline fftw_plan plan_transpose(int rows, int cols, int length, Complex *in,
-                                Complex *out)
-{
-  fftw_iodim dims[3];
+class fftwtranspose {
+  fftw_plan plan;
+  unsigned int a,b;
+  unsigned int nlength,mlength;
+  unsigned int outstride,instride;
+public:
+  fftwtranspose(Complex *in, Complex *out,
+                unsigned int rows, unsigned int cols, unsigned int length,
+                unsigned int threads=1) {
+    fftw_iodim dims[3];
 
-  dims[0].n  = rows;
-  dims[0].is = length*cols;
-  dims[0].os = length;
+    a=std::min(rows,threads);
+    b=std::min(cols,threads/a);
+    unsigned int n=rows/a;
+    unsigned int m=cols/b;
+    nlength=n*length;
+    mlength=m*length;
+    instride=cols;
+    outstride=rows;
+    
+    dims[0].n=n;
+    dims[0].is=instride*length;
+    dims[0].os=length;
 
-  dims[1].n  = cols;
-  dims[1].is = length;
-  dims[1].os = length*rows;
+    dims[1].n=m;
+    dims[1].is=length;
+    dims[1].os=outstride*length;
 
-  dims[2].n  = length;
-  dims[2].is = 1;
-  dims[2].os = 1;
+    dims[2].n=length;
+    dims[2].is=1;
+    dims[2].os=1;
 
-  return fftw_plan_guru_dft(0,NULL,3,dims,
+    plan=fftw_plan_guru_dft(0,NULL,3,dims,
                             (fftw_complex *) in,(fftw_complex *) out,
                             1,fftw::effort);
-}
+  }
+  
+  void transpose(Complex *in, Complex *out) {
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(a)
+#endif
+     for(unsigned int i=0; i < a; ++i) {
+       unsigned int I=i*nlength;
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(b)
+#endif
+        for(unsigned int j=0; j < b; ++j) {
+          unsigned int J=j*mlength;
+          fftw_execute_dft(plan,((fftw_complex *) in)+instride*I+J,
+                           ((fftw_complex *) out)+outstride*J+I);
+        }
+      }
+    
+  }
+};
 
 // Compute the complex Fourier transform of n complex values.
 // Before calling fft(), the arrays in and out (which may coincide) must be
@@ -679,6 +712,8 @@ public:
         fftw_destroy_plan(planT1);
       }
     }
+    std::cout << "T=" << T << std::endl;
+    std::cout << "threads=" << threads << std::endl;
   } 
   
   fftw_plan Plan(Complex *in, Complex *out) {

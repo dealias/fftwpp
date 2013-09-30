@@ -40,26 +40,45 @@ private:
   int *sched, *sched2;
   MPI_Comm split;
   MPI_Comm split2;
-  fftw_plan Tin1,Tin2,Tin3;
-  fftw_plan Tout1,Tout2,Tout3;
+  fftwtranspose *Tin1,*Tin2,*Tin3;
+  fftwtranspose *Tout1,*Tout2,*Tout3;
 public: //temp  
   unsigned int a,b;
 
 public:
   transpose(Complex *data, unsigned int N, unsigned int m, unsigned int n,
-            unsigned int M, unsigned int L=1, Complex *work=NULL,
-            MPI_Comm communicator=MPI_COMM_WORLD) : 
+            unsigned int M, unsigned int L=1,
+            Complex *work=NULL, unsigned int threads=fftw::maxthreads,
+            MPI_Comm communicator=MPI_COMM_WORLD) :
     N(N), m(m), n(n), M(M), L(L), work(work), communicator(communicator),
     allocated(false) {
     a=1;
     bool alltoall=true;
     
     MPI_Comm_size(communicator,&size);
-    if(size == 1) return;
+    
+    if(work == NULL) {
+      this->work=new Complex[N*m*L];
+      allocated=true;
+    }
     
     if(a >= (unsigned int) size) a=1;
     b=size/a;
       
+    Tout1=new fftwtranspose(data,this->work,n*a,b,m*L,threads);
+    Tout3=new fftwtranspose(data,this->work,N,m,L,threads);
+
+    if(a == 1) {
+      Tin1=new fftwtranspose(data,this->work,b,n*a,m*L,threads);
+    } else {
+      Tin1=new fftwtranspose(data,this->work,m*a,b,n*L,threads);
+      Tin2=new fftwtranspose(data,this->work,m*b,a,n*L,threads);
+      Tin3=new fftwtranspose(data,this->work,M,n,L,threads);
+      Tout2=new fftwtranspose(data,this->work,n*b,a,m*L,threads);
+    }
+    
+    if(size == 1) return;
+    
     MPI_Comm_rank(communicator,&rank);
     if(rank == 0)
       std::cout << "a=" << a << ", alltoall=" << alltoall << std::endl;
@@ -73,25 +92,11 @@ public:
       exit(0);
     }
 
-    if(work == NULL) {
-      this->work=new Complex[N*m*L];
-      allocated=true;
-    }
-    
-    Tout1=plan_transpose(n*a,b,m*L,data,this->work);
-    Tout3=plan_transpose(N,m,L,data,this->work);
-
     if(a == 1) {
       split=split2=communicator;
       splitsize=split2size=size;
       splitrank=split2rank=rank;
-      Tin1=plan_transpose(b,n*a,m*L,data,this->work);
     } else {
-      Tin1=plan_transpose(m*a,b,n*L,data,this->work);
-      Tin2=plan_transpose(m*b,a,n*L,data,this->work);
-      Tin3=plan_transpose(M,n,L,data,this->work);
-      Tout2=plan_transpose(n*b,a,m*L,data,this->work);
-    
       MPI_Comm_split(communicator,rank/b,0,&split);
       MPI_Comm_size(split,&splitsize);
       MPI_Comm_rank(split,&splitrank);
