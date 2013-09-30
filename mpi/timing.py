@@ -217,6 +217,12 @@ def main(argv):
         #os.system(run)
                 sys.stdout.flush()
     if r == "transpose":
+        rlist=["Tincomm","Tinpost","Toutcomm","Toutpost"]
+        for r in rlist:
+            if dryrun == False:
+                os.system("rm -f "+outdir+"/"+r)
+                print("rm -f "+outdir+"/"+r)
+
         for i in range(a,b+1):
             print i,
             run=command+cargs+" -m "+str(int(pow(2,i)))+" "+A
