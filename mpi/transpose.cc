@@ -3,6 +3,7 @@
 #include "../Complex.h"
 #include "../seconds.h"
 #include "mpitranspose.h"
+#include "utils.h"
 #include "mpiutils.h"
 #include <unistd.h>
 
@@ -157,10 +158,10 @@ int main(int argc, char **argv)
   if(showoutput)
     show(data,X,y*Z);
   
-  double commtime=0;
-  double posttime=0;
-  double outcommtime=0;
-  double outposttime=0;
+  double *Tcomm=new double[N];
+  double *Tpost=new double[N];
+  double *Toutcomm=new double[N];
+  double *Toutpost=new double[N];
 
   for(int k=0; k < N; ++k) {
     if(rank == 0) seconds();
@@ -169,13 +170,11 @@ int main(int argc, char **argv)
 #else  
     fftw_execute(inplan);
 #endif  
-    if(rank == 0) 
-      commtime += seconds();
+    Tcomm[k]=seconds();
 #ifndef OLD
     T.inwait(data);
 #endif
-    if(rank == 0) 
-      posttime += seconds();
+    Tpost[k]=seconds();
 
     if(showoutput) {
       if(rank == 0) cout << "\ntranspose:\n" << endl;
@@ -187,22 +186,19 @@ int main(int argc, char **argv)
 #else  
     fftw_execute(outplan);
 #endif  
-    if(rank == 0) 
-      outcommtime += seconds();
+    Toutcomm[k]=seconds();
 #ifndef OLD
     T.outwait(data);
 //    T.outwait(data,true);
 #endif
-    if(rank == 0) 
-      outposttime += seconds();
+    Toutpost[k]=seconds();
   }
   
   if(rank == 0) {
-    cout << endl << commtime/N << endl;
-    cout << (commtime+posttime)/N << endl;
-    cout << endl;
-    cout << outcommtime/N << endl;
-    cout << (outcommtime+outposttime)/N << endl;
+    timings("Tcomm",X,Tcomm,N);
+    timings("Tpost",X,Tpost,N);
+    timings("Toutcomm",X,Toutcomm,N);
+    timings("Toutpost",X,Toutpost,N);
   }
   
   if(showoutput) {
