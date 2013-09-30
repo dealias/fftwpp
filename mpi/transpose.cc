@@ -158,8 +158,8 @@ int main(int argc, char **argv)
   if(showoutput)
     show(data,X,y*Z);
   
-  double *Tcomm=new double[N];
-  double *Tpost=new double[N];
+  double *Tincomm=new double[N];
+  double *Tinpost=new double[N];
   double *Toutcomm=new double[N];
   double *Toutpost=new double[N];
 
@@ -170,11 +170,11 @@ int main(int argc, char **argv)
 #else  
     fftw_execute(inplan);
 #endif  
-    Tcomm[k]=seconds();
+    Tincomm[k]=seconds();
 #ifndef OLD
     T.inwait(data);
 #endif
-    Tpost[k]=seconds();
+    Tinpost[k]=seconds();
 
     if(showoutput) {
       if(rank == 0) cout << "\ntranspose:\n" << endl;
@@ -195,8 +195,8 @@ int main(int argc, char **argv)
   }
   
   if(rank == 0) {
-    timings("Tcomm",X,Tcomm,N);
-    timings("Tpost",X,Tpost,N);
+    timings("Tincomm",X,Tincomm,N);
+    timings("Tinpost",X,Tinpost,N);
     timings("Toutcomm",X,Toutcomm,N);
     timings("Toutpost",X,Toutpost,N);
   }

@@ -198,23 +198,41 @@ def main(argv):
     if a == 0:
         a=1
 
-    for i in range(a,b+1):
-        print i,
-        run=command+cargs+" -m "+str(int(pow(2,i)))+" "+A
-        grepc=" | grep -A 1 "+rname+" | tail -n 1"
-        cat=" | cat >> "+outdir+"/"+r
-        print run
-        sys.stdout.flush()
+    if not r == "transpose":
+        for i in range(a,b+1):
+            print i,
+            run=command+cargs+" -m "+str(int(pow(2,i)))+" "+A
+            grepc=" | grep -A 1 "+rname+" | tail -n 1"
+            cat=" | cat >> "+outdir+"/"+r
+            print run
+            sys.stdout.flush()
         #print "echo "+"$("+run+grepc+")"+cat
-        if dryrun == False:
-            os.system("echo "+"$("+run+grepc+")"+cat)
-        else:
-            print("echo "+"$("+run+grepc+")"+cat)
+            if dryrun == False:
+                os.system("echo "+"$("+run+grepc+")"+cat)
+            else:
+                print("echo "+"$("+run+grepc+")"+cat)
         #print run+grepc+" "+cat
         #os.system(run+grepc+" "+cat)
         #print run
         #os.system(run)
-        sys.stdout.flush()
+                sys.stdout.flush()
+    if r == "transpose":
+        for i in range(a,b+1):
+            print i,
+            run=command+cargs+" -m "+str(int(pow(2,i)))+" "+A
+            print run
+            rlist=["Tincomm","Tinpost","Toutcomm","Toutpost"]
+            for r in rlist:
+                rname=r
+                grepc=" | grep -A 1 "+rname+" | tail -n 1"
+                cat=" | cat >> "+outdir+"/"+r
+                sys.stdout.flush()
+                
+                if dryrun == False:
+                    os.system("echo "+"$("+run+grepc+")"+cat)
+                else:
+                    print("echo "+"$("+run+grepc+")"+cat)
+        
 
     if not dryrun:
         os.system("sed -i 's/[ \t]*$//' "+outdir+"/"+r)
