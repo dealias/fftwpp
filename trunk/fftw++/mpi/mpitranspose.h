@@ -23,7 +23,7 @@ void fill1_comm_sched(int *sched, int which_pe, int npes);
 // Here "in" is a local N x m matrix and "out" is a local n x M matrix.
 // Currently, both N and M must be divisible by the number of processors.
 // work is a temporary array of size N*m*L.
-class transpose {
+class mpitranspose {
 private:
   unsigned int N,m,n,M;
   unsigned int L;
@@ -40,16 +40,16 @@ private:
   int *sched, *sched2;
   MPI_Comm split;
   MPI_Comm split2;
-  fftwtranspose *Tin1,*Tin2,*Tin3;
-  fftwtranspose *Tout1,*Tout2,*Tout3;
+  Transpose *Tin1,*Tin2,*Tin3;
+  Transpose *Tout1,*Tout2,*Tout3;
 public: //temp  
   unsigned int a,b;
 
 public:
-  transpose(Complex *data, unsigned int N, unsigned int m, unsigned int n,
-            unsigned int M, unsigned int L=1,
-            Complex *work=NULL, unsigned int threads=fftw::maxthreads,
-            MPI_Comm communicator=MPI_COMM_WORLD) :
+  mpitranspose(Complex *data, unsigned int N, unsigned int m, unsigned int n,
+               unsigned int M, unsigned int L=1,
+               Complex *work=NULL, unsigned int threads=fftw::maxthreads,
+               MPI_Comm communicator=MPI_COMM_WORLD) :
     N(N), m(m), n(n), M(M), L(L), work(work), communicator(communicator),
     allocated(false) {
     a=1;
@@ -65,16 +65,16 @@ public:
     if(a >= (unsigned int) size) a=1;
     b=size/a;
       
-    Tout1=new fftwtranspose(data,this->work,n*a,b,m*L,threads);
-    Tout3=new fftwtranspose(data,this->work,N,m,L,threads);
+    Tout1=new Transpose(data,this->work,n*a,b,m*L,threads);
+    Tout3=new Transpose(data,this->work,N,m,L,threads);
 
     if(a == 1) {
-      Tin1=new fftwtranspose(data,this->work,b,n*a,m*L,threads);
+      Tin1=new Transpose(data,this->work,b,n*a,m*L,threads);
     } else {
-      Tin1=new fftwtranspose(data,this->work,m*a,b,n*L,threads);
-      Tin2=new fftwtranspose(data,this->work,m*b,a,n*L,threads);
-      Tin3=new fftwtranspose(data,this->work,M,n,L,threads);
-      Tout2=new fftwtranspose(data,this->work,n*b,a,m*L,threads);
+      Tin1=new Transpose(data,this->work,m*a,b,n*L,threads);
+      Tin2=new Transpose(data,this->work,m*b,a,n*L,threads);
+      Tin3=new Transpose(data,this->work,M,n,L,threads);
+      Tout2=new Transpose(data,this->work,n*b,a,m*L,threads);
     }
     
     if(size == 1) return;
@@ -123,7 +123,7 @@ public:
     }
   }
   
-  ~transpose() {
+  ~mpitranspose() {
     if(size == 1) return;
     
     if(sched) {

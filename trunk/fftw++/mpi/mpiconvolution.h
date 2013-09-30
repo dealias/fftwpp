@@ -171,7 +171,7 @@ protected:
   dimensions d;
   fftw_plan intranspose,outtranspose;
   bool alltoall; // Use experimental nonblocking transpose
-  transpose *T;
+  mpitranspose *T;
 public:  
   
   void inittranspose() {
@@ -180,7 +180,7 @@ public:
     alltoall=mx % size == 0 && my % size == 0;
 
     if(alltoall) {
-      T=new transpose(u2,mx,d.y,d.x,my); // FIXME: correct work array?
+      T=new mpitranspose(u2,mx,d.y,d.x,my);
       int rank;
       MPI_Comm_rank(d.communicator,&rank);
       if(rank == 0) {
@@ -375,7 +375,7 @@ protected:
   unsigned int innerthreads;
   fftw_plan intranspose,outtranspose;
   bool alltoall; // Use experimental nonblocking transpose
-  transpose *T;
+  mpitranspose *T;
 public:  
   void inittranspose() {
     int size;
@@ -383,7 +383,7 @@ public:
     alltoall=mx % size == 0 && my % size == 0;
 
     if(alltoall) {
-      T=new transpose(u3,mx,d.y,d.x,my,d.z); // FIXME: correct work array?
+      T=new mpitranspose(u3,mx,d.y,d.x,my,d.z);
       int rank;
       MPI_Comm_rank(d.communicator,&rank);
       if(rank == 0) {
