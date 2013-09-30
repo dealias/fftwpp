@@ -195,10 +195,10 @@ int main(int argc, char **argv)
   }
   
   if(rank == 0) {
-    timings("Tincomm",X,Tincomm,N);
-    timings("Tinpost",X,Tinpost,N);
-    timings("Toutcomm",X,Toutcomm,N);
-    timings("Toutpost",X,Toutpost,N);
+    timings("Tincomm",X,Tincomm,N,false);
+    timings("Tinpost",X,Tinpost,N,false);
+    timings("Toutcomm",X,Toutcomm,N,false);
+    timings("Toutpost",X,Toutpost,N,false);
   }
   
   if(showoutput) {
