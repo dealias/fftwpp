@@ -90,9 +90,9 @@ int main(int argc, char **argv)
   ptrdiff_t x,xstart;
   ptrdiff_t y,ystart;
   
-//  int provided;
-  MPI_Init(&argc,&argv);
-//  MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
+  int provided;
+//  MPI_Init(&argc,&argv);
+  MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
 
   int rank, comm_size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -116,6 +116,7 @@ int main(int argc, char **argv)
     cout << "y=" << y << endl;
     cout << "X=" << X << endl;
     cout << "Y=" << Y << endl;
+    cout << "N=" << N << endl;
     cout << endl;
   }
   
@@ -186,7 +187,8 @@ int main(int argc, char **argv)
     if(rank == 0) 
       outcommtime += seconds();
 #ifndef OLD
-    T.outwait(data);//,true);
+    T.outwait(data);
+//    T.outwait(data,true);
 #endif
     if(rank == 0) 
       outposttime += seconds();
