@@ -42,6 +42,7 @@ inline void usage()
   std::cerr << "-X\t\t X size" << std::endl;
   std::cerr << "-Y\t\t Y size" << std::endl;
   std::cerr << "-Z\t\t Z size" << std::endl;
+  std::cerr << "-L\t\t local transpose output" << std::endl;
   exit(1);
 }
 
@@ -51,12 +52,13 @@ int main(int argc, char **argv)
   unsigned int X=8, Y=8, Z=1;
   const unsigned int showlimit=1024;
   int N=1;
+  bool outtranspose=false;
 
 #ifdef __GNUC__ 
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"hN:m:X:Y:Z:T:");
+    int c = getopt(argc,argv,"hLN:m:T:X:Y:Z:");
     if (c == -1) break;
                 
     switch (c) {
@@ -64,6 +66,9 @@ int main(int argc, char **argv)
         break;
       case 'N':
         N=atoi(optarg);
+        break;
+      case 'L':
+        outtranspose=true;
         break;
       case 'm':
         X=Y=atoi(optarg);
@@ -149,7 +154,7 @@ int main(int argc, char **argv)
   T.inTransposed(data);
   T.inwait(data);
   T.outTransposed(data);
-  T.outwait(data);//,true);
+  T.outwait(data,outtranspose);
 #endif  
   
   init(data,X,y,Z,ystart);
@@ -188,8 +193,7 @@ int main(int argc, char **argv)
 #endif  
     Toutcomm[k]=seconds();
 #ifndef OLD
-    T.outwait(data);
-//    T.outwait(data,true);
+    T.outwait(data,outtranspose);
 #endif
     Toutpost[k]=seconds();
   }
@@ -202,9 +206,13 @@ int main(int argc, char **argv)
   }
   
   if(showoutput) {
-    if(rank == 0) cout << "\noriginal:\n" << endl;
-    show(data,X,y*Z);
-//    show(data,y,X*Z);
+    if(outtranspose) {
+      if(rank == 0) cout << "\nout:\n" << endl;
+      show(data,y,X*Z);
+    } else {
+      if(rank == 0) cout << "\noriginal:\n" << endl;
+      show(data,X,y*Z);
+    }
   }
   
 #ifdef OLD  
