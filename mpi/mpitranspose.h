@@ -56,13 +56,24 @@ public:
     bool alltoall=true;
     
     MPI_Comm_size(communicator,&size);
+    MPI_Comm_rank(communicator,&rank);
     
+    unsigned int usize=size;
+    if(usize > N || usize > M || N % usize != 0 || M % usize != 0) {
+      if(rank == 0)
+        std::cout << 
+          "ERROR: Matrix dimensions must be divisible by number of processors" 
+                  << std::endl << std::endl; 
+      MPI_Finalize();
+      exit(0);
+    }
+
     if(work == NULL) {
       this->work=new Complex[N*m*L];
       allocated=true;
     }
     
-    if(a >= (unsigned int) size) a=1;
+    if(a > (unsigned int) size) a=1;
     b=size/a;
       
     Tout1=new Transpose(data,this->work,n*a,b,m*L,threads);
@@ -79,19 +90,9 @@ public:
     
     if(size == 1) return;
     
-    MPI_Comm_rank(communicator,&rank);
     if(rank == 0)
       std::cout << "a=" << a << ", alltoall=" << alltoall << std::endl;
     
-    if(N % size != 0 || M % size != 0) {
-      if(rank == 0)
-        std::cout << 
-          "ERROR: Matrix dimensions must be divisible by number of processors" 
-                  << std::endl << std::endl; 
-      MPI_Finalize();
-      exit(0);
-    }
-
     if(a == 1) {
       split=split2=communicator;
       splitsize=split2size=size;

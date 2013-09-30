@@ -198,13 +198,6 @@ int main(int argc, char **argv)
     Toutpost[k]=seconds();
   }
   
-  if(rank == 0) {
-    timings("Tincomm",X,Tincomm,N,false);
-    timings("Tinpost",X,Tinpost,N,false);
-    timings("Toutcomm",X,Toutcomm,N,false);
-    timings("Toutpost",X,Toutpost,N,false);
-  }
-  
   if(showoutput) {
     if(outtranspose) {
       if(rank == 0) cout << "\nout:\n" << endl;
@@ -213,6 +206,14 @@ int main(int argc, char **argv)
       if(rank == 0) cout << "\noriginal:\n" << endl;
       show(data,X,y*Z);
     }
+  }
+  
+  if(rank == 0) {
+    timings("Tincomm",X,Tincomm,N,false);
+    timings("Tinpost",X,Tinpost,N,false);
+    cout << endl;
+    timings("Toutcomm",X,Toutcomm,N,false);
+    timings("Toutpost",X,Toutpost,N,false);
   }
   
 #ifdef OLD  
