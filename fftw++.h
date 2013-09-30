@@ -547,17 +547,17 @@ public:
   }
 };
 
-class fftwtranspose {
+class Transpose {
   fftw_plan plan;
   unsigned int a,b;
   unsigned int nlength,mlength;
   unsigned int instride,outstride;
   unsigned int threads;
 public:
-  fftwtranspose(Complex *in, Complex *out,
-                unsigned int rows, unsigned int cols, unsigned int length,
-                unsigned int threads=1) : instride(cols), outstride(rows),
-                                          threads(threads) {
+  Transpose(Complex *in, Complex *out,
+            unsigned int rows, unsigned int cols, unsigned int length,
+            unsigned int threads=1) : instride(cols), outstride(rows),
+                                      threads(threads) {
     fftw_iodim dims[3];
 
     a=std::min(rows,threads);
@@ -579,23 +579,21 @@ public:
     dims[2].is=1;
     dims[2].os=1;
 
-    plan=fftw_plan_guru_dft(0,NULL,3,dims,
-                            (fftw_complex *) in,(fftw_complex *) out,
-                            1,fftw::effort);
+    plan=fftw_plan_guru_dft(0,NULL,3,dims,(fftw_complex *) in,
+                            (fftw_complex *) out,1,fftw::effort);
   }
   
   void transpose(Complex *in, Complex *out) {
+#ifndef FFTWPP_SINGLE_THREAD
     if(threads == 1)
+#endif      
       fftw_execute_dft(plan,(fftw_complex *) in,(fftw_complex *) out);
+#ifndef FFTWPP_SINGLE_THREAD
     else {
-#ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(a)
-#endif
-     for(unsigned int i=0; i < a; ++i) {
-       unsigned int I=i*nlength;
-#ifndef FFTWPP_SINGLE_THREAD
+      for(unsigned int i=0; i < a; ++i) {
+        unsigned int I=i*nlength;
 #pragma omp parallel for num_threads(b)
-#endif
         for(unsigned int j=0; j < b; ++j) {
           unsigned int J=j*mlength;
           fftw_execute_dft(plan,(fftw_complex *) (in+instride*I+J),
@@ -603,6 +601,7 @@ public:
         }
       }
     }
+#endif
   }
 };
 

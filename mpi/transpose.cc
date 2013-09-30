@@ -144,7 +144,7 @@ int main(int argc, char **argv)
                                                  FFTW_MPI_TRANSPOSED_OUT);
   fftwpp::SaveWisdom(MPI_COMM_WORLD);
 #else
-  transpose T(data,X,y,x,Y,Z,NULL,fftw::maxthreads);
+  mpitranspose T(data,X,y,x,Y,Z,NULL,fftw::maxthreads);
   init(data,X,y,Z,ystart);
   T.inTransposed(data);
   T.inwait(data);
