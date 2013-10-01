@@ -339,7 +339,7 @@ public:
               << "-byte aligned: address " << p << std::endl;
   }
   
-  double stdev(unsigned int N, double sum, double sum2) {
+  static double stdev(unsigned int N, double sum, double sum2) {
     return N > 1 ? sqrt((sum2-sum*sum/N)/(N-1)) : 0.0;
   }
   
@@ -348,7 +348,7 @@ public:
     exit(1);
   }
   
-  void planThreads(unsigned int threads) {
+  static void planThreads(unsigned int threads) {
 #ifndef FFTWPP_SINGLE_THREAD
     omp_set_num_threads(threads);
     fftw_plan_with_nthreads(threads);
@@ -579,6 +579,7 @@ public:
     dims[2].is=1;
     dims[2].os=1;
 
+    fftw::planThreads(1);
     plan=fftw_plan_guru_dft(0,NULL,3,dims,(fftw_complex *) in,
                             (fftw_complex *) out,1,fftw::effort);
   }

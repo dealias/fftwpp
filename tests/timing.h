@@ -41,12 +41,13 @@ inline void stdev(double *T, unsigned int N, double mean, double &sigmaL,
 }
 
 inline void timings(const char* text, unsigned int m, double *T, 
-		    unsigned int N, bool sub=true)
+		    unsigned int N)
 {
   double sigmaL=0.0, sigmaH=0.0;
   double avg=mean(T,N);
   stdev(T,N,avg,sigmaL,sigmaH);
-  if(sub) avg -= emptytime(T,N);
+  avg -= emptytime(T,N);
+  if(avg < 0.0) avg=0.0;
   std::cout << std::endl 
 	    << text << ":\n" 
 	    << m << "\t" 
