@@ -56,7 +56,7 @@ public:
     MPI_Comm_size(communicator,&size);
     MPI_Comm_rank(communicator,&rank);
     
-    unsigned int K=log2(size)/2;
+    unsigned int K=0.5*log2(size)+0.5;
     a=(unsigned int ) 1 << K;
     b=size/a;
     if(N*M*L*sizeof(Complex) >= latency*size*(size-a-b)) {

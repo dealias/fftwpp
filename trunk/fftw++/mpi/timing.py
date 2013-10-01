@@ -240,7 +240,7 @@ def main(argv):
             rlist=["Tout"]
             for r in rlist:
                 rname=r
-                grepc=" | grep -A 1 "+rname+" | tail -n 1"
+                grepc=" | tee -a "+outdir+"/log | grep -A 1 "+rname+" | tail -n 1"
                 cat=" | cat >> "+outdir+"/"+r
                 sys.stdout.flush()
                 
