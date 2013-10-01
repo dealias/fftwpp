@@ -59,8 +59,7 @@ public:
     unsigned int K=log2(size)/2;
     a=(unsigned int ) 1 << K;
     b=size/a;
-    unsigned int ratio=N*M*L*sizeof(Complex)/(size*(size-a-b));
-    if(ratio >= latency) {
+    if(N*M*L*sizeof(Complex) >= latency*size*(size-a-b)) {
       a=1;
       b=size;
     }
