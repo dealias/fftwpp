@@ -147,7 +147,7 @@ int main(int argc, char **argv)
   fftw_plan outplan=fftw_mpi_plan_many_transpose(X,Y,2*Z,0,block,
                                                  (double*) data,(double*) data,
                                                  MPI_COMM_WORLD,
-                                                 FFTW_MPI_TRANSPOSED_OUT);
+                                                 outtranspose ? 0 : FFTW_MPI_TRANSPOSED_OUT);
   fftwpp::SaveWisdom(MPI_COMM_WORLD);
 #else
   mpitranspose T(data,X,y,x,Y,Z,NULL,fftw::maxthreads);
