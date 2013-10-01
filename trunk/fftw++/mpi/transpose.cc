@@ -125,6 +125,7 @@ int main(int argc, char **argv)
     cout << "y=" << y << endl;
     cout << "X=" << X << endl;
     cout << "Y=" << Y << endl;
+    cout << "Z=" << Z << endl;
     cout << "N=" << N << endl;
     cout << endl;
   }
