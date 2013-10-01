@@ -163,10 +163,10 @@ int main(int argc, char **argv)
   if(showoutput)
     show(data,X,y*Z);
   
-  double *Tincomm=new double[N];
-  double *Tinpost=new double[N];
-  double *Toutcomm=new double[N];
-  double *Toutpost=new double[N];
+  double *Tinqueue=new double[N];
+  double *Tin=new double[N];
+  double *Toutqueue=new double[N];
+  double *Tout=new double[N];
 
   for(int k=0; k < N; ++k) {
     if(rank == 0) seconds();
@@ -175,11 +175,11 @@ int main(int argc, char **argv)
 #else  
     fftw_execute(inplan);
 #endif  
-    Tincomm[k]=seconds();
+    Tinqueue[k]=seconds();
 #ifndef OLD
     T.inwait(data);
 #endif
-    Tinpost[k]=seconds();
+    Tin[k]=seconds();
 
     if(showoutput) {
       if(rank == 0) cout << "\ntranspose:\n" << endl;
@@ -191,11 +191,11 @@ int main(int argc, char **argv)
 #else  
     fftw_execute(outplan);
 #endif  
-    Toutcomm[k]=seconds();
+    Toutqueue[k]=seconds();
 #ifndef OLD
     T.outwait(data,outtranspose);
 #endif
-    Toutpost[k]=seconds();
+    Tout[k]=seconds();
   }
   
   if(showoutput) {
@@ -207,13 +207,18 @@ int main(int argc, char **argv)
       show(data,X,y*Z);
     }
   }
+
+  for(int k=0; k < N; ++k) {
+    Tin[k] += Tinqueue[k];
+    Tout[k] += Toutqueue[k];
+  }
   
   if(rank == 0) {
-    timings("Tincomm",X,Tincomm,N,false);
-    timings("Tinpost",X,Tinpost,N,false);
+    timings("Tinqueue",X,Tinqueue,N);
+    timings("Tin",X,Tin,N);
     cout << endl;
-    timings("Toutcomm",X,Toutcomm,N,false);
-    timings("Toutpost",X,Toutpost,N,false);
+    timings("Toutqueue",X,Toutqueue,N);
+    timings("Tout",X,Tout,N);
   }
   
 #ifdef OLD  

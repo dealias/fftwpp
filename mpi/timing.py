@@ -12,15 +12,15 @@ def main(argv):
     helpnotes=\
         "\n -a <int> specifies the max exponent of the min problem size "\
         "\n -b <int> specifies the max exponent of the max problem size "\
-        "\n -p <program name> speficies the program name "\
+        "\n -p <program name> specifies the program name "\
         "\n -P <int> specifies the number of MPI process "\
         "\n -T <int> specifies the number of OpenMP threads per MPI process"\
         "\n -A <string> allows one to pass extra arguments to the convolution program "\
         "\n -M <string> allows one to pass extra arguments to the mpi exec program "\
-        "\n -r <implicit/explicit> specifies the type of convoution  "\
+        "\n -r <implicit/explicit> specifies the type of convolution  "\
         "\n -l <string> specifies the name of the MPI launch program  "\
         "\n -s indicates that the MPI launcher does not take the number of processes as an argument  "\
-        "\n -R <real value> spedifies the ram size, which is used in determing the maximum problem size. "\
+        "\n -R <real value> specifies the ram size, which is used in determining the maximum problem size. "\
         "\n -d specifies a dry run; commands are shown but no convolutions are computed\n "\
         "\nfor example, try the command\n ./timing.py -pcconv2 -a 3 -b 4" \
         "\nor, to see the command run, try\n ./timing.py -pcconv2 -a 3 -b 4 -d"\
@@ -160,6 +160,14 @@ def main(argv):
         r="transpose"
         outdir="tran"
 
+    if p == "otranspose":
+        if a == 0:
+            a=int(floor(log(P)/log(2)))
+        if b == 0:
+            b=10
+        r="transpose"
+        outdir="otran"
+
     if RAM != 0:
         print "max problem size is "+str(2**b)
 
@@ -217,7 +225,8 @@ def main(argv):
         #os.system(run)
                 sys.stdout.flush()
     if r == "transpose":
-        rlist=["Tincomm","Tinpost","Toutcomm","Toutpost"]
+#        rlist=["Tinqueue","Tin","Toutqueue","Tout"]
+        rlist=["Tout"]
         for r in rlist:
             if dryrun == False:
                 os.system("rm -f "+outdir+"/"+r)
@@ -227,7 +236,8 @@ def main(argv):
             print i,
             run=command+cargs+" -m "+str(int(pow(2,i)))+" "+A
             print run
-            rlist=["Tincomm","Tinpost","Toutcomm","Toutpost"]
+#            rlist=["Tinqueue","Tin","Toutqueue","Tout"]
+            rlist=["Tout"]
             for r in rlist:
                 rname=r
                 grepc=" | grep -A 1 "+rname+" | tail -n 1"
