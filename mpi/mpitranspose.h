@@ -6,6 +6,8 @@
 #include <fftw++.h>
 #include <cstring>
 
+const int latency=4096; // Typical bandwidth saturation message size
+
 namespace fftwpp {
 
 inline void transposeError(const char *text) {
@@ -51,11 +53,19 @@ public:
                MPI_Comm communicator=MPI_COMM_WORLD) :
     N(N), m(m), n(n), M(M), L(L), work(work), communicator(communicator),
     allocated(false) {
-    a=1;
-    bool alltoall=true;
-    
     MPI_Comm_size(communicator,&size);
     MPI_Comm_rank(communicator,&rank);
+    
+    unsigned int K=log2(size)/2;
+    a=(unsigned int ) 1 << K;
+    b=size/a;
+    unsigned int ratio=N*M*L*sizeof(Complex)/(size*(size-a-b));
+    if(ratio >= latency) {
+      a=1;
+      b=size;
+    }
+    
+    bool alltoall=true;
     
     unsigned int usize=size;
     if(usize > N || usize > M || N % usize != 0 || M % usize != 0) {
@@ -72,9 +82,6 @@ public:
       allocated=true;
     }
     
-    if(a > (unsigned int) size) a=1;
-    b=size/a;
-      
     Tout1=new Transpose(data,this->work,n*a,b,m*L,threads);
     Tout3=new Transpose(data,this->work,N,m,L,threads);
 
