@@ -584,6 +584,8 @@ public:
                             (fftw_complex *) out,1,fftw::effort);
   }
   
+  ~Transpose() {if(plan) fftw_destroy_plan(plan);}
+  
   void transpose(Complex *in, Complex *out) {
 #ifndef FFTWPP_SINGLE_THREAD
     if(threads == 1)
