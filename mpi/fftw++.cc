@@ -13,7 +13,7 @@ MPI_Comm *active;
 unsigned int fftw::effort=FFTW_MEASURE;
 const char *WisdomName="wisdom3.txt";
 unsigned int fftw::maxthreads=1;
-double fftw::testseconds=0.1; // Time limit for threading efficiency tests
+double fftw::testseconds=1.0; // Time limit for threading efficiency tests
 
 void LoadWisdom(const MPI_Comm& active)
 {
