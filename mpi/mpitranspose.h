@@ -200,7 +200,7 @@ public:
     }
   }
   
-  void deallocate() {
+  void deallocate(bool final=false) {
     if(size == 1) return;
     if(sched) {
       if(a > 1) delete[] sched2;
@@ -208,9 +208,10 @@ public:
     }
     delete[] request;
     if(a > 1) {
-//      MPI_Comm_free(&split2); 
-//      MPI_Comm_free(&split); 
-      
+      if(!final) {
+        MPI_Comm_free(&split2); 
+        MPI_Comm_free(&split); 
+      }
       delete Tout2;
       delete Tin3;
       delete Tin2;
@@ -221,7 +222,7 @@ public:
   }
   
   ~mpitranspose() {
-    deallocate();
+    deallocate(true);
     delete Tout3;
     if(allocated) delete[] work;
   }
