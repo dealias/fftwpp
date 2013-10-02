@@ -22,7 +22,8 @@ endif
 
 #IBM compiler
 ifeq ($(shell $(MPICXX) -qversion 2>&1 | head -c 3),IBM)
-CXXFLAGS= -O5 -P -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp
+CXXFLAGS= -O5 -qsmp=speculative -qtune=qp -qipa -qarch=qp
+#CXXFLAGS= -O5 -P -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp
 endif
 
 CXXFLAGS += $(DEFS) -I$(IDIR) -I$(UDIR)
@@ -33,14 +34,14 @@ CXXFLAGS +=-I$(CPLUS_INCLUDE_PATH)
 endif
 ifeq ($(strip $(LIBRARY_PATH)),)
 else
-CXXFLAGS +=-I$(LIBRARY_PATH)
+LDFLAGS=-L$(LIBRARY_PATH)
 endif
 
 
 MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
 
 #LDFLAGS = -lfftw3_mpi -lfftw3 -lfftw3_threads -lm
-LDFLAGS = -lfftw3_mpi -lfftw3_omp -lfftw3 -lm
+LDFLAGS += -lfftw3_mpi -lfftw3_omp -lfftw3 -lm
 
 vpath %.cc ../
 

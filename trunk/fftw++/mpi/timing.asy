@@ -82,6 +82,7 @@ if(name == "conv3")
 real d=1;
 if(find(name,"2") >= 0) d=2;
 if(find(name,"3") >= 0) d=3;
+if(name == "transpose") d=0;
 
 if(runs == "") runs=getstring("files");
 string run;
@@ -111,6 +112,7 @@ colorPen[2]=deepgreen;
 pen Lp=fontsize(8pt);
 
 real[] f(real[] x) {
+  if(d==0) return x; // scaling
   if(gtype == "time")
     return 1e-9*x^d*d*log(x)/log(2);
   if(gtype == "mflops")
@@ -136,11 +138,18 @@ if(gtype == "time" || gtype == "mflops") {
   }
   
   xaxis("$N$",BottomTop,LeftTicks);
-  if(gtype=="mflops")
-    yaxis("``mflops\": $5N"+D+"\log_2 N"+D+"$/time (ms)",LeftRight,RightTicks);
-  if(gtype=="time")
-    yaxis("time/($N"+D+"\log_2 N"+D+"$) (ns)",LeftRight,RightTicks);
-
+  if(d > 0) {
+    if(gtype=="mflops")
+      yaxis("``mflops\": $5N"+D+"\log_2 N"+D+"$/time (ms)",LeftRight,
+	    RightTicks);
+    if(gtype=="time")
+      yaxis("time/($N"+D+"\log_2 N"+D+"$) (ns)",LeftRight,RightTicks);
+  } else {
+    if(gtype=="mflops")
+      yaxis("speed: 1/time (ms)",LeftRight,RightTicks);
+    if(gtype=="time")
+      yaxis("time (ns)",LeftRight,RightTicks);
+  }
   //label(name+": (MPI procs)$\times{}$(threads/proc)",point(N),5N);
 }
 
