@@ -4,8 +4,8 @@ size(350,300,IgnoreAspect);
 // sub 256 1; sub 128 2; sub 64 4; sub 32 8; sub 16 16
 // sub 1024 1;sub 512 2; sub 256 4; sub 128 8; sub 64 16
 
-int[] nodes={256,128,64,32,16};
-//int[] nodes={1024,512,256,128,64};
+//int[] nodes={256,128,64,32,16};
+int[] nodes={1024,512,256,128,64};
 
 int threads(int node) {return quotient(nodes[0],node);}
 

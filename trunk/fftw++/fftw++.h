@@ -352,38 +352,72 @@ public:
   }
   
   class statistics {
+    unsigned int N;
+    double A;
+    double varL;
+    double varH;
   public:
-    double mean;
-    double stdev;
-    statistics() : mean(0.0), stdev(0.0) {} 
-    statistics(double mean, double stdev) : mean(mean), stdev(stdev) {}
-    statistics(unsigned int N, double mean, double variance, double f=1.0) : 
-      mean(mean) {
+    statistics() : N(0), A(0.0), varL(0.0), varH(0.0) {} 
+    double count() {return N;}
+    double mean() {return A;}
+    void add(double t) {
+      ++N;
+      double diff=t-A;
+      A += diff/N;
+      double v=diff*(t-A);
+      if(diff < 0.0)
+        varL += v;
+      else
+        varH += v;
+    }
+    void add(double t, double sum) {
+      ++N;
+      double diff=t-A;
+      A=sum/N;
+      double v=diff*(t-A);
+      if(diff < 0.0)
+        varL += v;
+      else
+        varH += v;
+    }
+    double stdev(double var, double f) {
       double factor=N > f ? f/(N-f) : 0.0; 
-      stdev=sqrt(variance*factor);
+      return sqrt(var*factor);
+    }
+    double stdev() {
+      return stdev(varL+varH,1.0);
+    }
+    double stdevL() {
+      return stdev(varL,2.0);
+    }
+    double stdevH() {
+      return stdev(varH,2.0);
+    }
+    void output(const char *text, unsigned int m) {
+      std::cout << std::endl
+                << text << ":\n" 
+                << m << "\t" 
+                << A << "\t" 
+                << stdevL() << "\t" 
+                << stdevH() << std::endl << std::endl;
     }
   };
   
   statistics time(Complex *in, Complex *out) {
-    double mean=0.0;
-    double varL=0.0;
+    statistics S;
     double begin=totalseconds();
     double lastseconds=begin;
     double stop=begin+testseconds;
-    unsigned int N=1;
-    for(;;++N) {
+    for(;;) {
       fft(in,out);
       double t=totalseconds();
       double seconds=t-lastseconds;
-      double diff=seconds-mean;
-      mean=(t-begin)/N;
-      if(seconds < mean)
-        varL += diff*(seconds-mean);
+      S.add(seconds,t-begin);
       lastseconds=t;
       if(t > stop)
         break;
     }
-    return statistics(N,mean,varL,2.0);
+    return S;
   }
   
   statistics Setup(Complex *in, Complex *out=NULL, bool threaded=1) {
@@ -413,7 +447,7 @@ public:
       plan=Plan(in,out);
       if(plan) {
         statistics S2=time(in,out);
-        if(S2.mean > S.mean-S.stdev) {
+        if(S2.mean() > S.mean()-S.stdevL()) {
           threads=1;
           fftw_destroy_plan(plan);
           plan=plan1;
@@ -707,7 +741,7 @@ public:
         plan2=plan1;
       }
 
-      if(ST.mean > S1.mean-S1.stdev) {
+      if(ST.mean() > S1.mean()-S1.stdevL()) {
         fftw_destroy_plan(plan);
         if(R > 0) {
           fftw_destroy_plan(plan2);

@@ -164,10 +164,7 @@ int main(int argc, char **argv)
   if(showoutput)
     show(data,X,y*Z);
   
-  double *Tinqueue=new double[N];
-  double *Tin=new double[N];
-  double *Toutqueue=new double[N];
-  double *Tout=new double[N];
+  fftw::statistics Sinqueue,Sin,Soutqueue,Sout;
 
   for(int k=0; k < N; ++k) {
     if(rank == 0) seconds();
@@ -176,11 +173,12 @@ int main(int argc, char **argv)
 #else  
     fftw_execute(inplan);
 #endif  
-    Tinqueue[k]=seconds();
+    double Qin=seconds();
+    Sinqueue.add(Qin);
 #ifndef OLD
     T.inwait(data);
 #endif
-    Tin[k]=seconds();
+    Sin.add(seconds()+Qin);
 
     if(showoutput) {
       if(rank == 0) cout << "\ntranspose:\n" << endl;
@@ -192,11 +190,12 @@ int main(int argc, char **argv)
 #else  
     fftw_execute(outplan);
 #endif  
-    Toutqueue[k]=seconds();
+    double Qout=seconds();
+    Soutqueue.add(Qout);
 #ifndef OLD
     T.outwait(data,outtranspose);
 #endif
-    Tout[k]=seconds();
+    Sout.add(seconds()+Qout);
   }
   
   if(showoutput) {
@@ -209,17 +208,12 @@ int main(int argc, char **argv)
     }
   }
 
-  for(int k=0; k < N; ++k) {
-    Tin[k] += Tinqueue[k];
-    Tout[k] += Toutqueue[k];
-  }
-  
   if(rank == 0) {
-    timings("Tinqueue",X,Tinqueue,N);
-    timings("Tin",X,Tin,N);
+    Sinqueue.output("Tinqueue",X);
+    Sin.output("Tin",X);
     cout << endl;
-    timings("Toutqueue",X,Toutqueue,N);
-    timings("Tout",X,Tout,N);
+    Soutqueue.output("Toutqueue",X);
+    Sout.output("Tout",X);
   }
   
 #ifdef OLD  
