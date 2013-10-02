@@ -339,10 +339,6 @@ public:
               << "-byte aligned: address " << p << std::endl;
   }
   
-  static double stdev(unsigned int N, double sum, double sum2) {
-    return N > 1 ? sqrt((sum2-sum*sum/N)/(N-1)) : 0.0;
-  }
-  
   void noplan() {
     std::cerr << "Unable to construct FFTW plan" << std::endl;
     exit(1);
@@ -361,25 +357,33 @@ public:
     double stdev;
     statistics() : mean(0.0), stdev(0.0) {} 
     statistics(double mean, double stdev) : mean(mean), stdev(stdev) {}
+    statistics(unsigned int N, double mean, double variance, double f=1.0) : 
+      mean(mean) {
+      double factor=N > f ? f/(N-f) : 0.0; 
+      stdev=sqrt(variance*factor);
+    }
   };
   
   statistics time(Complex *in, Complex *out) {
+    double mean=0.0;
+    double varL=0.0;
     double begin=totalseconds();
     double lastseconds=begin;
     double stop=begin+testseconds;
-    double sum2=0.0;
     unsigned int N=1;
     for(;;++N) {
       fft(in,out);
       double t=totalseconds();
       double seconds=t-lastseconds;
-      sum2 += seconds*seconds;
+      double diff=seconds-mean;
+      mean=(t-begin)/N;
+      if(seconds < mean)
+        varL += diff*(seconds-mean);
       lastseconds=t;
       if(t > stop)
         break;
     }
-    double sum=totalseconds()-begin;
-    return statistics(sum/N,stdev(N,sum,sum2));
+    return statistics(N,mean,varL,2.0);
   }
   
   statistics Setup(Complex *in, Complex *out=NULL, bool threaded=1) {
