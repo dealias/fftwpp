@@ -45,7 +45,6 @@ private:
   Transpose *Tin1,*Tin2,*Tin3;
   Transpose *Tout1,*Tout2,*Tout3;
   unsigned int a,b;
-
 public:
   mpitranspose(Complex *data, unsigned int N, unsigned int m, unsigned int n,
                unsigned int M, unsigned int L=1,
@@ -55,16 +54,6 @@ public:
     allocated(false) {
     MPI_Comm_size(communicator,&size);
     MPI_Comm_rank(communicator,&rank);
-    
-    unsigned int K=0.5*log2(size)+0.5;
-    a=(unsigned int ) 1 << K;
-    b=size/a;
-    if(N*M*L*sizeof(Complex) >= latency*size*(size-a-b)) {
-      a=1;
-      b=size;
-    }
-    
-    bool alltoall=true;
     
     unsigned int usize=size;
     if(usize > N || usize > M || N % usize != 0 || M % usize != 0) {
@@ -81,8 +70,92 @@ public:
       allocated=true;
     }
     
-    Tout1=new Transpose(data,this->work,n*a,b,m*L,threads);
     Tout3=new Transpose(data,this->work,N,m,L,threads);
+    
+    if(size == 1)
+      return;
+    
+    unsigned int K=0.5*log2(size)+0.5;
+    a=(unsigned int ) 1 << K;
+    b=size/a;
+    
+    unsigned int AlltoAll=1;
+    if(N*M*L*sizeof(Complex) >= latency*size*(size-a-b)) {
+      a=1;
+      b=size;
+    } else {
+      if(rank == 0)
+        std::cout << "Timing:" << std::endl;
+    
+      a=1;
+      b=size;
+      init(data,true,threads);
+      OutTransposed(data); // Initialize communication buffers
+      if(threads > 1) {
+        init(data,false,threads);
+        OutTransposed(data); // Initialize communication buffers
+      }
+    
+      unsigned int A=0;
+      double T0=DBL_MAX;
+      bool first=true;
+      for(unsigned int alltoall=threads == 1; alltoall <= 1; ++alltoall) {
+        if(rank == 0) std::cout << "alltoall=" << alltoall << std::endl;
+        for(a=1; a < usize; a *= 2) {
+          b=size/a;
+          if(!first)
+            init(data,alltoall,threads);
+          first=false;
+          double T=time(data);
+          deallocate();
+          if(rank == 0) {
+            std::cout << "a=" << a << ":\tT=" << T << std::endl;
+            if(T < T0) {
+              T0=T;
+              A=a;
+              AlltoAll=alltoall;
+            }
+          }
+        }
+      }
+
+      unsigned int parm[]={A,AlltoAll};
+      MPI_Bcast(&parm,2,MPI_UNSIGNED,0,communicator);
+      A=parm[0];
+      AlltoAll=parm[1];
+      a=A;
+      b=size/a;
+    }
+    
+    if(rank == 0) std::cout << std::endl << "Using alltoall=" << AlltoAll
+                            << ", a=" << a << ":" << std::endl;
+    
+    init(data,AlltoAll,threads);
+  }
+  
+  double time(Complex *data) {
+    double sum=0.0;
+    unsigned int N=1;
+    double stop=totalseconds()+fftw::testseconds;
+    for(;;++N) {
+      int end;
+      double start=rank == 0 ? totalseconds() : 0.0;
+      OutTransposed(data);
+      if(rank == 0) {
+        double t=totalseconds();
+        double seconds=t-start;
+        sum += seconds;
+        end=t > stop;
+      }
+      MPI_Bcast(&end,1,MPI_INT,0,communicator);
+      if(end)
+        break;
+    }
+    return sum/N;
+  }
+
+  void init(Complex *data, bool alltoall, unsigned int threads) {
+    Tout1=new Transpose(data,this->work,n*a,b,m*L,threads);
 
     if(a == 1) {
       Tin1=new Transpose(data,this->work,b,n*a,m*L,threads);
@@ -94,9 +167,6 @@ public:
     }
     
     if(size == 1) return;
-    
-    if(rank == 0)
-      std::cout << "a=" << a << ", alltoall=" << alltoall << std::endl;
     
     if(a == 1) {
       split=split2=communicator;
@@ -129,14 +199,29 @@ public:
     }
   }
   
-  ~mpitranspose() {
+  void deallocate() {
     if(size == 1) return;
-    
     if(sched) {
       if(a > 1) delete[] sched2;
       delete[] sched;
     }
     delete[] request;
+    if(a > 1) {
+//      MPI_Comm_free(&split2); 
+//      MPI_Comm_free(&split); 
+      
+      delete Tout2;
+      delete Tin3;
+      delete Tin2;
+    }
+    delete Tin1;
+    delete Tout1;
+    
+  }
+  
+  ~mpitranspose() {
+    deallocate();
+    delete Tout3;
     if(allocated) delete[] work;
   }
   
