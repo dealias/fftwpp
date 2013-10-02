@@ -92,6 +92,7 @@ public:
       init(data,true,threads);
       OutTransposed(data); // Initialize communication buffers
       if(threads > 1) {
+        deallocate();
         init(data,false,threads);
         OutTransposed(data); // Initialize communication buffers
       }
