@@ -593,7 +593,7 @@ public:
       fftw_execute_dft(plan,(fftw_complex *) in,(fftw_complex *) out);
 #ifndef FFTWPP_SINGLE_THREAD
     else {
-      int A=a, B=threads/A;
+      int A=a, B=b;
 #pragma omp parallel for num_threads(A)
       for(unsigned int i=0; i < a; ++i) {
         unsigned int I=i*nlength;
