@@ -225,7 +225,7 @@ def main(argv):
         #os.system(run)
                 sys.stdout.flush()
     if r == "transpose":
-        rlist=["Tininit","Tinwait","Tin","Tininit","Toutwait","Tout"]
+        rlist=["Tininit","Tinwait","Tin","Toutinit","Toutwait","Tout"]
         for r in rlist:
             if dryrun == False:
                 os.system("rm -f "+outdir+"/"+r)
