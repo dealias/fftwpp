@@ -42,7 +42,7 @@ private:
   int *sched, *sched2;
   MPI_Comm split;
   MPI_Comm split2;
-  Transpose *Tin1,*Tin2,*Tin3;
+  Transpose *Tin1,*Tin2;
   Transpose *Tout1,*Tout2,*Tout3;
   unsigned int a,b;
 public:
@@ -157,13 +157,10 @@ public:
 
   void init(Complex *data, bool alltoall, unsigned int threads) {
     Tout1=new Transpose(data,this->work,n*a,b,m*L,threads);
+    Tin1=new Transpose(data,this->work,b,n*a,m*L,threads);
 
-    if(a == 1) {
-      Tin1=new Transpose(data,this->work,b,n*a,m*L,threads);
-    } else {
-      Tin1=new Transpose(data,this->work,m*a,b,n*L,threads);
-      Tin2=new Transpose(data,this->work,m*b,a,n*L,threads);
-      Tin3=new Transpose(data,this->work,M,n,L,threads);
+    if(a > 1) {
+      Tin2=new Transpose(data,this->work,a,n*b,m*L,threads);
       Tout2=new Transpose(data,this->work,n*b,a,m*L,threads);
     }
     
@@ -213,7 +210,6 @@ public:
         MPI_Comm_free(&split); 
       }
       delete Tout2;
-      delete Tin3;
       delete Tin2;
     }
     delete Tin1;
