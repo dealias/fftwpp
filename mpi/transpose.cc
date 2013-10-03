@@ -164,38 +164,56 @@ int main(int argc, char **argv)
   if(showoutput)
     show(data,X,y*Z);
   
-  fftw::statistics Sinqueue,Sin,Soutqueue,Sout;
+  fftw::statistics Sininit,Sinwait,Sin,Soutinit,Soutwait,Sout;
 
   for(int k=0; k < N; ++k) {
-    if(rank == 0) seconds();
+    double begin,Tinit,Twait,Tpost;
+    if(rank == 0) begin=totalseconds();
 #ifndef OLD
     T.inTransposed(data);
 #else  
     fftw_execute(inplan);
 #endif  
-    double Qin=seconds();
-    Sinqueue.add(Qin);
+    if(rank == 0) Tinit=totalseconds();
 #ifndef OLD
     T.inwait(data);
 #endif
-    Sin.add(seconds()+Qin);
+    if(rank == 0) Twait=totalseconds();
+#ifndef OLD
+    T.inpost(data);
+#endif
+    if(rank == 0) {
+      Tpost=totalseconds();
+      Sininit.add(Tinit-begin);
+      Sinwait.add(Twait-Tinit);
+      Sin.add(Tpost-begin);
+    }
 
     if(showoutput) {
       if(rank == 0) cout << "\ntranspose:\n" << endl;
       show(data,x,Y*Z);
     }
     
+    if(rank == 0) begin=totalseconds();
 #ifndef OLD
     T.outTransposed(data);
 #else  
     fftw_execute(outplan);
 #endif  
-    double Qout=seconds();
-    Soutqueue.add(Qout);
+    if(rank == 0) Tinit=totalseconds();
 #ifndef OLD
     T.outwait(data,outtranspose);
+#endif    
+    if(rank == 0) Twait=totalseconds();
+#ifndef OLD
+    T.outpost(data,outtranspose);
 #endif
-    Sout.add(seconds()+Qout);
+    if(rank == 0) {
+      Tpost=totalseconds();
+      Soutinit.add(Tinit-begin);
+      Soutwait.add(Twait-Tinit);
+      Sout.add(Tpost-begin);
+    }
   }
   
   if(showoutput) {
@@ -209,10 +227,12 @@ int main(int argc, char **argv)
   }
 
   if(rank == 0) {
-    Sinqueue.output("Tinqueue",X);
+    Sininit.output("Tininit",X);
+    Sinwait.output("Tinwait",X);
     Sin.output("Tin",X);
     cout << endl;
-    Soutqueue.output("Toutqueue",X);
+    Soutinit.output("Toutinit",X);
+    Soutwait.output("Toutwait",X);
     Sout.output("Tout",X);
   }
   

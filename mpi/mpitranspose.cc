@@ -13,27 +13,33 @@ void mpitranspose::inTransposed(Complex *data)
   if(size == 1) return;
   
   // Phase 1: Inner transpose each individual N/a x M/a matrix over b processes
+  unsigned int blocksize=n*a*m*L;
   if(a > 1) {
     Tout3->transpose(data,work); // N x m x L
     Tin1->transpose(work,data); // m*a x b x n*L
-  }
-
-  unsigned int blocksize=n*a*m*L;
-  Ialltoall(data,2*blocksize,MPI_DOUBLE,work,2*blocksize,MPI_DOUBLE,split,
-            request,sched);
+    Alltoall(data,2*blocksize,MPI_DOUBLE,work,2*blocksize,MPI_DOUBLE,split,
+              request,sched);
+    
+  // Phase 2: Outer transpose a x a matrix of N/a x M/a blocks over a processes
+    Tin2->transpose(work,data); // m*b x a n*L
+    unsigned int blocksize=n*b*m*L;
+    Ialltoall(data,2*blocksize,MPI_DOUBLE,work,2*blocksize,MPI_DOUBLE,split2,
+             request,sched2);
+  } else
+    Ialltoall(data,2*blocksize,MPI_DOUBLE,work,2*blocksize,MPI_DOUBLE,split,
+              request,sched);
 }
   
 void mpitranspose::inwait(Complex *data)
 {
   if(size == 1) return;
-  Wait(splitsize-1,request,sched);
-  
-  // Phase 2: Outer transpose a x a matrix of N/a x M/a blocks over a processes
+  Wait(split2size-1,request,sched2);
+}
+
+void mpitranspose::inpost(Complex *data)
+{
+  if(size == 1) return;
   if(a > 1) {
-    Tin2->transpose(work,data); // m*b x a n*L
-    unsigned int blocksize=n*b*m*L;
-    Alltoall(data,2*blocksize,MPI_DOUBLE,work,2*blocksize,MPI_DOUBLE,split2,
-             request,sched2);
     Tin3->transpose(work,data); // M x n x L
   } else
     Tin1->transpose(work,data); // b x n*a x m*L
@@ -46,24 +52,29 @@ void mpitranspose::outTransposed(Complex *data)
   // Phase 1: Inner transpose each individual N/a x M/a matrix over b processes
   Tout1->transpose(data,work); // n*a x b x m*L
   unsigned int blocksize=n*a*m*L;
-  Ialltoall(work,2*blocksize,MPI_DOUBLE,data,2*blocksize,MPI_DOUBLE,split,
-            request,sched);
+  if(a > 1) {
+    Alltoall(work,2*blocksize,MPI_DOUBLE,data,2*blocksize,MPI_DOUBLE,split,
+             request,sched);
+    // Phase 2: Outer transpose a x a matrix of N/a x M/a blocks over a processes
+    Tout2->transpose(data,work); // n*b x a x m*L
+    unsigned int blocksize=n*b*m*L;
+    Ialltoall(work,2*blocksize,MPI_DOUBLE,data,2*blocksize,MPI_DOUBLE,split2,
+             request,sched2);
+  }
+  else
+    Ialltoall(work,2*blocksize,MPI_DOUBLE,data,2*blocksize,MPI_DOUBLE,split,
+              request,sched);
 }
 
 void mpitranspose::outwait(Complex *data, bool localtranspose) 
 {
-  if(size > 1) {
-    Wait(splitsize-1,request,sched);
+  if(size > 1)
+    Wait(split2size-1,request,sched2);
+}
   
-    // Phase 2: Outer transpose a x a matrix of N/a x M/a blocks over a processes
-    if(a > 1) {
-      Tout2->transpose(data,work); // n*b x a x m*L
-      unsigned int blocksize=n*b*m*L;
-      Alltoall(work,2*blocksize,MPI_DOUBLE,data,2*blocksize,MPI_DOUBLE,split2,
-               request,sched2);
-    }
-  }
-  if(localtranspose) {
+void mpitranspose::outpost(Complex *data, bool localtranspose) 
+{
+   if(localtranspose) {
     Tout3->transpose(data,work); // N x m x L
     copy(work,data,N*m*L);
   }

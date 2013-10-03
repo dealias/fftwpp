@@ -225,7 +225,7 @@ def main(argv):
         #os.system(run)
                 sys.stdout.flush()
     if r == "transpose":
-        rlist=["Tinqueue","Tin","Toutqueue","Tout"]
+        rlist=["Tininit","Tinwait","Tin","Tininit","Toutwait","Tout"]
         for r in rlist:
             if dryrun == False:
                 os.system("rm -f "+outdir+"/"+r)
@@ -235,7 +235,6 @@ def main(argv):
             print i,
             run=command+cargs+" -m "+str(int(pow(2,i)))+" "+A
             print run
-            rlist=["Tinqueue","Tin","Toutqueue","Tout"]
             for r in rlist:
                 rname=r
                 grepc=" | tee -a "+outdir+"/log | grep -A 1 "+rname+" | tail -n 1"
