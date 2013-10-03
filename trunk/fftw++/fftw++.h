@@ -394,12 +394,11 @@ public:
       return stdev(varH,2.0);
     }
     void output(const char *text, unsigned int m) {
-      std::cout << std::endl
-                << text << ":\n" 
+      std::cout << text << ":\n" 
                 << m << "\t" 
                 << A << "\t" 
                 << stdevL() << "\t" 
-                << stdevH() << std::endl << std::endl;
+                << stdevH() << std::endl;
     }
   };
   

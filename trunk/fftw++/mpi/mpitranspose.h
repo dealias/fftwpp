@@ -232,6 +232,7 @@ public:
   void inTransposed(Complex *data);
   
   void inwait(Complex *data);
+  void inpost(Complex *data);
   
 // Globally transpose data, applying an additional local transposition
 // to the output.
@@ -240,14 +241,17 @@ public:
   void InTransposed(Complex *data) {
     inTransposed(data);
     inwait(data);
+    inpost(data);
   }
   
   void OutTransposed(Complex *data) {
     outTransposed(data);
     outwait(data);
+    outpost(data);
   }
   
   void outwait(Complex *data, bool localtranspose=false);
+  void outpost(Complex *data, bool localtranspose=false);
 };
 
 #if MPI_VERSION < 3
