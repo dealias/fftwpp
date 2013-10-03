@@ -167,7 +167,7 @@ int main(int argc, char **argv)
   fftw::statistics Sininit,Sinwait,Sin,Soutinit,Soutwait,Sout;
 
   for(int k=0; k < N; ++k) {
-    double begin,Tinit,Twait,Tpost;
+    double begin=0.0,Tinit=0.0,Twait=0.0;
     if(rank == 0) begin=totalseconds();
 #ifndef OLD
     T.inTransposed(data);
@@ -183,10 +183,9 @@ int main(int argc, char **argv)
     T.inpost(data);
 #endif
     if(rank == 0) {
-      Tpost=totalseconds();
+      Sin.add(totalseconds()-begin);
       Sininit.add(Tinit-begin);
       Sinwait.add(Twait-Tinit);
-      Sin.add(Tpost-begin);
     }
 
     if(showoutput) {
@@ -209,10 +208,9 @@ int main(int argc, char **argv)
     T.outpost(data,outtranspose);
 #endif
     if(rank == 0) {
-      Tpost=totalseconds();
+      Sout.add(totalseconds()-begin);
       Soutinit.add(Tinit-begin);
       Soutwait.add(Twait-Tinit);
-      Sout.add(Tpost-begin);
     }
   }
   
