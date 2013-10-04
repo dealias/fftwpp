@@ -370,16 +370,6 @@ public:
       else
         varH += v;
     }
-    void add(double t, double sum) {
-      ++N;
-      double diff=t-A;
-      A=sum/N;
-      double v=diff*(t-A);
-      if(diff < 0.0)
-        varL += v;
-      else
-        varH += v;
-    }
     double stdev(double var, double f) {
       double factor=N > f ? f/(N-f) : 0.0; 
       return sqrt(var*factor);
@@ -410,8 +400,7 @@ public:
     for(;;) {
       fft(in,out);
       double t=totalseconds();
-      double seconds=t-lastseconds;
-      S.add(seconds,t-begin);
+      S.add(t-lastseconds);
       lastseconds=t;
       if(t > stop)
         break;
