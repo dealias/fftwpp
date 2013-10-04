@@ -80,53 +80,38 @@ public:
     b=size/a;
     
     unsigned int AlltoAll=1;
-    if(N*M*L*sizeof(Complex) >= latency*size*(size-a-b)) {
-      a=1;
-      b=size;
-    } else {
-      if(rank == 0)
-        std::cout << "Timing:" << std::endl;
+    unsigned int alimit=(N*M*L*sizeof(Complex) >= latency*size*(size-a-b)) ?
+      2 : size;
     
-      a=1;
-      b=size;
-      init(data,true,threads);
-      OutTransposed(data); // Initialize communication buffers
-      if(threads > 1) {
+    if(rank == 0)
+      std::cout << "Timing:" << std::endl;
+    
+    unsigned int A=0;
+    double T0=DBL_MAX;
+    for(unsigned int alltoall=0; alltoall <= 1; ++alltoall) {
+      if(rank == 0) std::cout << "alltoall=" << alltoall << std::endl;
+      for(a=1; a < alimit; a *= 2) {
+        b=size/a;
+        init(data,alltoall,threads);
+        double T=time(data);
         deallocate();
-        init(data,false,threads);
-        OutTransposed(data); // Initialize communication buffers
-      }
-    
-      unsigned int A=0;
-      double T0=DBL_MAX;
-      bool first=true;
-      for(unsigned int alltoall=threads == 1; alltoall <= 1; ++alltoall) {
-        if(rank == 0) std::cout << "alltoall=" << alltoall << std::endl;
-        for(a=1; a < usize; a *= 2) {
-          b=size/a;
-          if(!first)
-            init(data,alltoall,threads);
-          first=false;
-          double T=time(data);
-          deallocate();
-          if(rank == 0) {
-            std::cout << "a=" << a << ":\tT=" << T << std::endl;
-            if(T < T0) {
-              T0=T;
-              A=a;
-              AlltoAll=alltoall;
-            }
+        if(rank == 0) {
+          std::cout << "a=" << a << ":\tT=" << T << std::endl;
+          if(T < T0) {
+            T0=T;
+            A=a;
+            AlltoAll=alltoall;
           }
         }
       }
-
-      unsigned int parm[]={A,AlltoAll};
-      MPI_Bcast(&parm,2,MPI_UNSIGNED,0,communicator);
-      A=parm[0];
-      AlltoAll=parm[1];
-      a=A;
-      b=size/a;
     }
+
+    unsigned int parm[]={A,AlltoAll};
+    MPI_Bcast(&parm,2,MPI_UNSIGNED,0,communicator);
+    A=parm[0];
+    AlltoAll=parm[1];
+    a=A;
+    b=size/a;
     
     if(rank == 0) std::cout << std::endl << "Using alltoall=" << AlltoAll
                             << ", a=" << a << ":" << std::endl;
@@ -137,6 +122,7 @@ public:
   double time(Complex *data) {
     double sum=0.0;
     unsigned int N=1;
+    OutTransposed(data); // Initialize communication buffers
     double stop=totalseconds()+fftw::testseconds;
     for(;;++N) {
       int end;
@@ -227,27 +213,34 @@ public:
 // to the input.
   void inTransposed(Complex *data);
   
-  void inwait(Complex *data);
+  void insync(Complex *data);
   void inpost(Complex *data);
+  void inwait(Complex *data) {
+    insync(data);
+    inpost(data);
+  }
+  
+  void InTransposed(Complex *data) {
+    inTransposed(data);
+    inwait(data);
+  }
+  
   
 // Globally transpose data, applying an additional local transposition
 // to the output.
   void outTransposed(Complex *data);
   
-  void InTransposed(Complex *data) {
-    inTransposed(data);
-    inwait(data);
-    inpost(data);
+  void outsync(Complex *data);
+  void outpost(Complex *data, bool localtranspose=false);
+  void outwait(Complex *data, bool localtranspose=false) {
+    outsync(data);
+    outpost(data,localtranspose);
   }
   
   void OutTransposed(Complex *data) {
     outTransposed(data);
     outwait(data);
-    outpost(data);
   }
-  
-  void outwait(Complex *data, bool localtranspose=false);
-  void outpost(Complex *data, bool localtranspose=false);
 };
 
 #if MPI_VERSION < 3

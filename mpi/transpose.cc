@@ -176,7 +176,7 @@ int main(int argc, char **argv)
 #endif  
     if(rank == 0) Tinit=totalseconds();
 #ifndef OLD
-    T.inwait(data);
+    T.insync(data);
 #endif
     if(rank == 0) Twait=totalseconds();
 #ifndef OLD
@@ -201,7 +201,7 @@ int main(int argc, char **argv)
 #endif  
     if(rank == 0) Tinit=totalseconds();
 #ifndef OLD
-    T.outwait(data,outtranspose);
+    T.outsync(data);
 #endif    
     if(rank == 0) Twait=totalseconds();
 #ifndef OLD
