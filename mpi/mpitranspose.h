@@ -125,13 +125,11 @@ public:
     double sum=0.0;
     unsigned int N=1;
     transpose(data,false); // Initialize communication buffers
-    wait(data);
     double stop=totalseconds()+fftw::testseconds;
     for(;;++N) {
       int end;
       double start=rank == 0 ? totalseconds() : 0.0;
       transpose(data,false);
-      wait(data);
       if(rank == 0) {
         double t=totalseconds();
         double seconds=t-start;
@@ -252,15 +250,15 @@ public:
     
     transpose1(data);
     // User computation
-    wait(data);
+    wait1(data);
 
     Guru Interface:
     
     transpose2(data);
-    // User computation 1
+    // User computation 0
     wait0(data);
-    // User computation 2      
-    wait(data);
+    // User computation 1      
+    wait1(data);
 */  
   
   void wait0(Complex *data) {
@@ -273,7 +271,7 @@ public:
     }
    }
   
-  void wait(Complex *data) {
+  void wait1(Complex *data) {
     if(inflag) {
       outsync1(data);
       if(outflag) NmTranspose(data);
@@ -286,7 +284,7 @@ public:
   
   void transpose(Complex *data, bool intranspose=true, bool outtranspose=true) {
     transpose1(data,intranspose,outtranspose);
-    wait(data);
+    wait1(data);
   }
   
   void transpose1(Complex *data, bool intranspose=true, bool outtranspose=true) {
