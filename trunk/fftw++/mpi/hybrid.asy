@@ -1,10 +1,12 @@
 import graph;
 
-// sub 256 1; sub 128 2; sub 64 4; sub 32 8; sub 16 16
-// sub 1024 1;sub 512 2; sub 256 4; sub 128 8; sub 64 16
+legendlinelength=1cm;
 
-//int[] nodes={256,128,64,32,16};
-int[] nodes={1024,512,256,128,64};
+// sub 256 1; sub 128 2; sub 64 4; sub 32 8;
+// sub 1024 1;sub 512 2; sub 256 4; sub 128 8;
+
+//int[] nodes={256,128,64,32};
+int[] nodes={1024,512,256,128};
 
 int threads(int node) {return quotient(nodes[0],node);}
 
@@ -55,14 +57,16 @@ for(int m=0; m < stop; ++m) {
     int[] x=sequence(it[m].length);
     size=string(mi[0][m]);
     draw(pic,graph(pic,x,it[m]/units),Pentype(1-j),text[j]+": "+math(size+"^2"),dot);
-    //  errorbars(pic,x,it[m],0*mit[m],hit[m],0*mit[m],lit[m],Pentype(1-j));
+    //    errorbars(pic,x,it[m],0*mit[m],hit[m],0*mit[m],lit[m],Pentype(1-j));
   }
 
-  xaxis(pic,BottomTop,LeftTicks(Step=1,new string(real x) {
+  xaxis(pic,"nodes $\times$ threads",BottomTop,
+        LeftTicks(Step=1,new string(real x) {
         int node=nodes[round(x)];
         return math(string(node)+"\times"+string(threads(node)));}));
   yaxis(pic,"time ($\mu$s)",LeftRight,RightTicks());
 
-  add(pic,legend(pic),point(pic,N),20S+5W);
+  //  add(pic,legend(pic),point(pic,E),15W);
+  add(pic,legend(pic),point(pic,E),35S+30W);
   shipout(outprefix()+size+"^2_"+string(nodes[0]),pic);
 }
