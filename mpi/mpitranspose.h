@@ -30,6 +30,7 @@ private:
   unsigned int N,m,n,M;
   unsigned int L;
   Complex *work;
+  unsigned int threads;
   MPI_Comm communicator;
   bool allocated;
   MPI_Request *request;
@@ -42,16 +43,18 @@ private:
   int *sched, *sched2;
   MPI_Comm split;
   MPI_Comm split2;
-  Transpose *Tin1,*Tin2;
+  Transpose *Tin1,*Tin2,*Tin3;
   Transpose *Tout1,*Tout2,*Tout3;
   unsigned int a,b;
+  bool inflag,outflag;
 public:
   mpitranspose(Complex *data, unsigned int N, unsigned int m, unsigned int n,
                unsigned int M, unsigned int L=1,
                Complex *work=NULL, unsigned int threads=fftw::maxthreads,
                MPI_Comm communicator=MPI_COMM_WORLD) :
-    N(N), m(m), n(n), M(M), L(L), work(work), communicator(communicator),
-    allocated(false) {
+    N(N), m(m), n(n), M(M), L(L), work(work), threads(threads),
+    communicator(communicator),
+    allocated(false), Tin3(NULL), Tout3(NULL) {
     MPI_Comm_size(communicator,&size);
     MPI_Comm_rank(communicator,&rank);
     
@@ -70,18 +73,17 @@ public:
       allocated=true;
     }
     
+    Tin3=new Transpose(data,this->work,n,M,L,threads);
     Tout3=new Transpose(data,this->work,N,m,L,threads);
     
-    if(size == 1)
+    if(size == 1) {
+      a=1;
       return;
-    
-    unsigned int K=0.5*log2(size)+0.5;
-    a=(unsigned int ) 1 << K;
-    b=size/a;
+    }
     
     unsigned int AlltoAll=1;
-    unsigned int alimit=(N*M*L*sizeof(Complex) >= latency*size*(size-a-b)) ?
-      2 : size;
+    unsigned int alimit=(N*M*L*sizeof(Complex) >= latency*usize*usize) ?
+      2 : usize;
     
     if(rank == 0)
       std::cout << "Timing:" << std::endl;
@@ -92,7 +94,7 @@ public:
       if(rank == 0) std::cout << "alltoall=" << alltoall << std::endl;
       for(a=1; a < alimit; a *= 2) {
         b=size/a;
-        init(data,alltoall,threads);
+        init(data,alltoall);
         double T=time(data);
         deallocate();
         if(rank == 0) {
@@ -116,18 +118,20 @@ public:
     if(rank == 0) std::cout << std::endl << "Using alltoall=" << AlltoAll
                             << ", a=" << a << ":" << std::endl;
     
-    init(data,AlltoAll,threads);
+    init(data,AlltoAll);
   }
   
   double time(Complex *data) {
     double sum=0.0;
     unsigned int N=1;
-    OutTransposed(data); // Initialize communication buffers
+    transpose(data,false); // Initialize communication buffers
+    wait(data);
     double stop=totalseconds()+fftw::testseconds;
     for(;;++N) {
       int end;
       double start=rank == 0 ? totalseconds() : 0.0;
-      OutTransposed(data);
+      transpose(data,false);
+      wait(data);
       if(rank == 0) {
         double t=totalseconds();
         double seconds=t-start;
@@ -141,7 +145,7 @@ public:
     return sum/N;
   }
 
-  void init(Complex *data, bool alltoall, unsigned int threads) {
+  void init(Complex *data, bool alltoall) {
     Tout1=new Transpose(data,this->work,n*a,b,m*L,threads);
     Tin1=new Transpose(data,this->work,b,n*a,m*L,threads);
 
@@ -205,42 +209,100 @@ public:
   
   ~mpitranspose() {
     deallocate(true);
-    delete Tout3;
+    if(Tout3) delete Tout3;
+    if(Tin3) delete Tin3;
     if(allocated) delete[] work;
   }
   
-// Globally transpose data, applying an additional local transposition
-// to the input.
-  void inTransposed(Complex *data);
+  void inphase0(Complex *data);
+  void inphase1(Complex *data);
   
-  void insync(Complex *data);
+  void insync0(Complex *data);
+  void insync1(Complex *data);
+  
   void inpost(Complex *data);
-  void inwait(Complex *data) {
-    insync(data);
-    inpost(data);
+  
+  void outphase0(Complex *data);
+  void outphase1(Complex *data);
+  
+  void outsync0(Complex *data);
+  void outsync1(Complex *data);
+  
+  void nMTranspose(Complex *data);
+  void NmTranspose(Complex *data);
+  
+ /* Globally transpose data, including local transposition
+    Beginner Interface:
+    
+    transpose(data);              n x M -> m x N
+    
+    To globally transpose data without local transposition of output:
+    
+    transpose(data,true,false);   n x M -> N x m
+     
+    To globally transpose data without local transposition of input:
+    
+    transpose(data,false,true);   N x m -> n x M
+    
+    To globally transpose data without local transposition of input or output:
+    
+    transpose(data,false,false);  N x m -> M x n
+    
+    Advanced Interface:
+    
+    transpose1(data);
+    // User computation
+    wait(data);
+
+    Guru Interface:
+    
+    transpose2(data);
+    // User computation 1
+    wait0(data);
+    // User computation 2      
+    wait(data);
+*/  
+  
+  void wait0(Complex *data) {
+    if(inflag) {
+      outsync0(data);
+      outphase1(data);
+    } else {
+      insync0(data);
+      inphase1(data);
+    }
+   }
+  
+  void wait(Complex *data) {
+    if(inflag) {
+      outsync1(data);
+      if(outflag) NmTranspose(data);
+    } else {
+      insync1(data);
+      inpost(data);
+      if(!outflag) nMTranspose(data);
+    }
+   }
+  
+  void transpose(Complex *data, bool intranspose=true, bool outtranspose=true) {
+    transpose1(data,intranspose,outtranspose);
+    wait(data);
   }
   
-  void InTransposed(Complex *data) {
-    inTransposed(data);
-    inwait(data);
+  void transpose1(Complex *data, bool intranspose=true, bool outtranspose=true) {
+    transpose2(data,intranspose,outtranspose);
+    wait0(data);
   }
   
-  
-// Globally transpose data, applying an additional local transposition
-// to the output.
-  void outTransposed(Complex *data);
-  
-  void outsync(Complex *data);
-  void outpost(Complex *data, bool localtranspose=false);
-  void outwait(Complex *data, bool localtranspose=false) {
-    outsync(data);
-    outpost(data,localtranspose);
+  void transpose2(Complex *data, bool intranspose=true, bool outtranspose=true) {
+    inflag=intranspose;
+    outflag=outtranspose;
+    if(inflag)
+      outphase0(data);
+    else
+      inphase0(data);
   }
   
-  void OutTransposed(Complex *data) {
-    outTransposed(data);
-    outwait(data);
-  }
 };
 
 #if MPI_VERSION < 3

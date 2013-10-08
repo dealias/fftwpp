@@ -8,96 +8,89 @@ inline void copy(Complex *from, Complex *to, unsigned int length)
   memcpy(to,from,size);
 }
 
-void mpitranspose::inTransposed(Complex *data)
+void mpitranspose::inphase0(Complex *data)
 {
   if(size == 1) return;
   
-  // Phase 2: Outer transpose a x a matrix of N/a x M/a blocks over a processes
   unsigned int blocksize=2*n*(a > 1 ? b : a)*m*L;
   Ialltoall(data,blocksize,MPI_DOUBLE,work,blocksize,MPI_DOUBLE,split2,
             request,sched2);
 }
   
-void mpitranspose::insync(Complex *data)
+void mpitranspose::insync0(Complex *data)
 {
   if(size == 1) return;
   Wait(split2size-1,request,sched2);
 }
 
-void mpitranspose::inpost(Complex *data)
+void mpitranspose::inphase1(Complex *data)
 {
-  if(size == 1) return;
   if(a > 1) {
     Tin2->transpose(work,data); // a x n*b x m*L
-    // Phase 1: Inner transpose each N/a x M/a matrix over b processes
     unsigned int blocksize=2*n*a*m*L;
-    Alltoall(data,blocksize,MPI_DOUBLE,work,blocksize,MPI_DOUBLE,split,
+    Ialltoall(data,blocksize,MPI_DOUBLE,work,blocksize,MPI_DOUBLE,split,
              request,sched);
   }
-  Tin1->transpose(work,data); // b x n*a x m*L
 }  
     
-/*
-void mpitranspose::inTransposed(Complex *data)
+void mpitranspose::insync1(Complex *data)
 {
-  if(size == 1) return;
-  
-  // Phase 2: Outer transpose a x a matrix of N/a x M/a blocks over a processes
-  if(a > 1) {
-    unsigned int blocksize=2*n*b*m*L;
-    Alltoall(data,blocksize,MPI_DOUBLE,work,blocksize,MPI_DOUBLE,split2,
-              request,sched2);
-    Tin2->transpose(work,data); // a x n*b x m*L
-  }
-  // Phase 1: Inner transpose each N/a x M/a matrix over b processes
-  unsigned int blocksize=2*n*a*m*L;
-  Ialltoall(data,blocksize,MPI_DOUBLE,work,blocksize,MPI_DOUBLE,split,
-            request,sched);
-}
-  
-void mpitranspose::insync(Complex *data)
-{
-  if(size == 1) return;
-  Wait(splitsize-1,request,sched);
+  if(a > 1)
+    Wait(splitsize-1,request,sched);
 }
 
 void mpitranspose::inpost(Complex *data)
 {
   if(size == 1) return;
   Tin1->transpose(work,data); // b x n*a x m*L
-}  
-*/
+}
 
-void mpitranspose::outTransposed(Complex *data)
+void mpitranspose::outphase0(Complex *data)
 {
   if(size == 1) return;
   
-  // Phase 1: Inner transpose each N/a x M/a matrix over b processes
+  // Inner transpose each N/a x M/a matrix over b processes
   Tout1->transpose(data,work); // n*a x b x m*L
   unsigned int blocksize=2*n*a*m*L;
-  if(a > 1) {
-    Alltoall(work,blocksize,MPI_DOUBLE,data,blocksize,MPI_DOUBLE,split,
-             request,sched);
-    // Phase 2: Outer transpose a x a matrix of N/a x M/a blocks over a processes
-    Tout2->transpose(data,work); // n*b x a x m*L
-    blocksize=2*n*b*m*L;
-  }
-  Ialltoall(work,blocksize,MPI_DOUBLE,data,blocksize,MPI_DOUBLE,split2,
-            request,sched2);
+  Ialltoall(work,blocksize,MPI_DOUBLE,data,blocksize,MPI_DOUBLE,split,
+            request,sched);
 }
 
-void mpitranspose::outsync(Complex *data) 
+void mpitranspose::outsync0(Complex *data) 
+{
+  if(a > 1)
+    Wait(splitsize-1,request,sched);
+}
+  
+void mpitranspose::outphase1(Complex *data) 
+{
+  if(a > 1) {
+  // Outer transpose a x a matrix of N/a x M/a blocks over a processes
+    Tout2->transpose(data,work); // n*b x a x m*L
+    unsigned int blocksize=2*n*b*m*L;
+    Ialltoall(work,blocksize,MPI_DOUBLE,data,blocksize,MPI_DOUBLE,split2,
+              request,sched2);
+  }
+}
+
+void mpitranspose::outsync1(Complex *data) 
 {
   if(size > 1)
     Wait(split2size-1,request,sched2);
 }
   
-void mpitranspose::outpost(Complex *data, bool localtranspose) 
+void mpitranspose::nMTranspose(Complex *data)
 {
-   if(localtranspose) {
-    Tout3->transpose(data,work); // N x m x L
-    copy(work,data,N*m*L);
-  }
+  if(!Tin3) Tin3=new Transpose(data,work,n,M,L,threads);
+  Tin3->transpose(data,work); // n X M x L
+  copy(work,data,n*M*L);
+}
+  
+void mpitranspose::NmTranspose(Complex *data)
+{
+  if(!Tout3) Tout3=new Transpose(data,work,N,m,L,threads);
+  Tout3->transpose(data,work); // N x m x L
+  copy(work,data,N*m*L);
 }
   
 /* Given a process which_pe and a number of processes npes, fills

@@ -151,11 +151,6 @@ int main(int argc, char **argv)
   fftwpp::SaveWisdom(MPI_COMM_WORLD);
 #else
   mpitranspose T(data,X,y,x,Y,Z,NULL,fftw::maxthreads);
-  init(data,X,y,Z,ystart);
-  T.inTransposed(data);
-  T.inwait(data);
-  T.outTransposed(data);
-  T.outwait(data,outtranspose);
 #endif  
   
   init(data,X,y,Z,ystart);
@@ -164,19 +159,27 @@ int main(int argc, char **argv)
   if(showoutput)
     show(data,X,y*Z);
   
-  fftw::statistics Sininit,Sinwait,Sin,Soutinit,Soutwait,Sout;
+  fftw::statistics Sininit,Sinwait0,Sinwait,Sin,Soutinit,Soutwait0,Soutwait,Sout;
 
   for(int k=0; k < N; ++k) {
-    double begin=0.0,Tinit=0.0,Twait=0.0;
+    double begin=0.0, Tinit0=0.0, Tinit=0.0, Twait0=0.0, Twait=0.0;
     if(rank == 0) begin=totalseconds();
 #ifndef OLD
-    T.inTransposed(data);
+    T.inphase0(data);
 #else  
     fftw_execute(inplan);
 #endif  
+    if(rank == 0) Tinit0=totalseconds();
+#ifndef OLD
+    T.insync0(data);
+#endif
+    if(rank == 0) Twait0=totalseconds();
+#ifndef OLD
+    T.inphase1(data);
+#endif
     if(rank == 0) Tinit=totalseconds();
 #ifndef OLD
-    T.insync(data);
+    T.insync1(data);
 #endif
     if(rank == 0) Twait=totalseconds();
 #ifndef OLD
@@ -184,7 +187,8 @@ int main(int argc, char **argv)
 #endif
     if(rank == 0) {
       Sin.add(totalseconds()-begin);
-      Sininit.add(Tinit-begin);
+      Sininit.add(Tinit0-begin);
+      Sinwait0.add(Twait0-Tinit0);
       Sinwait.add(Twait-Tinit);
     }
 
@@ -195,21 +199,30 @@ int main(int argc, char **argv)
     
     if(rank == 0) begin=totalseconds();
 #ifndef OLD
-    T.outTransposed(data);
+    T.outphase0(data);
 #else  
     fftw_execute(outplan);
 #endif  
+    if(rank == 0) Tinit0=totalseconds();
+#ifndef OLD
+    T.outsync0(data);
+#endif    
+    if(rank == 0) Twait0=totalseconds();
+#ifndef OLD
+    T.outphase1(data);
+#endif
     if(rank == 0) Tinit=totalseconds();
 #ifndef OLD
-    T.outsync(data);
+    T.outsync1(data);
 #endif    
     if(rank == 0) Twait=totalseconds();
 #ifndef OLD
-    T.outpost(data,outtranspose);
+    if(outtranspose) T.NmTranspose(data);
 #endif
     if(rank == 0) {
       Sout.add(totalseconds()-begin);
-      Soutinit.add(Tinit-begin);
+      Soutinit.add(Tinit0-begin);
+      Soutwait0.add(Twait0-Tinit0);
       Soutwait.add(Twait-Tinit);
     }
   }
@@ -226,10 +239,12 @@ int main(int argc, char **argv)
 
   if(rank == 0) {
     Sininit.output("Tininit",X);
+    Sinwait0.output("Tinwait0",X);
     Sinwait.output("Tinwait",X);
     Sin.output("Tin",X);
     cout << endl;
     Soutinit.output("Toutinit",X);
+    Soutwait0.output("Toutwait0",X);
     Soutwait.output("Toutwait",X);
     Sout.output("Tout",X);
   }
