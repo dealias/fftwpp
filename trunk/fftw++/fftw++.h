@@ -567,7 +567,7 @@ public:
 #endif
       for(unsigned int i=0; i < stop; i += stride) {
         Complex *pstop=outMdist+i;
-         for(Complex *p=out+i; p < pstop; p += dist) {
+        for(Complex *p=out+i; p < pstop; p += dist) {
           *p *= norm;
         }
       }
@@ -583,10 +583,20 @@ class Transpose {
   unsigned int threads;
   bool inplace;
 public:
+  void init(fftw_iodim *dims, double *in, double *out) {
+    plan=fftw_plan_guru_r2r(0,NULL,3,dims,in,out,NULL,fftw::effort);
+  }
+  
+  void init(fftw_iodim *dims, Complex *in, Complex *out) {
+    plan=fftw_plan_guru_dft(0,NULL,3,dims,(fftw_complex *) in,
+                            (fftw_complex *) out,1,fftw::effort);
+  }
+      
+  template<class T>
   Transpose(unsigned int rows, unsigned int cols, unsigned int length,
-            Complex *in, Complex *out=NULL,
-            unsigned int threads=1) : instride(cols), outstride(rows),
-                                      threads(threads) {
+            T *in, T *out=NULL, unsigned int threads=1) : 
+    instride(cols), outstride(rows), threads(threads) {
+    
     if(!out) out=in;
     inplace=(out==in);
     if(inplace) threads=1;
@@ -613,13 +623,21 @@ public:
     dims[2].os=1;
 
     fftw::planThreads(1);
-    plan=fftw_plan_guru_dft(0,NULL,3,dims,(fftw_complex *) in,
-                            (fftw_complex *) out,1,fftw::effort);
+    init(dims,in,out);
   }
   
   ~Transpose() {if(plan) fftw_destroy_plan(plan);}
   
-  void transpose(Complex *in, Complex *out=NULL) {
+  void execute(double *in, double *out) {
+    fftw_execute_r2r(plan,in,out);
+  }
+  
+  void execute(Complex *in, Complex *out) {
+    fftw_execute_dft(plan,(fftw_complex *) in, (fftw_complex *) out);
+  }
+  
+  template<class T>
+  void transpose(T *in, T *out=NULL) {
     if(!out) out=in;
     if(inplace ^ (out == in)) {
       std::cerr << "ERROR: Transpose " << inout << std::endl;
@@ -628,7 +646,7 @@ public:
 #ifndef FFTWPP_SINGLE_THREAD
     if(threads == 1)
 #endif      
-      fftw_execute_dft(plan,(fftw_complex *) in,(fftw_complex *) out);
+      execute(in,out);
 #ifndef FFTWPP_SINGLE_THREAD
     else {
       int A=a, B=b;
@@ -638,8 +656,7 @@ public:
 #pragma omp parallel for num_threads(B)
         for(unsigned int j=0; j < b; ++j) {
           unsigned int J=j*mlength;
-          fftw_execute_dft(plan,(fftw_complex *) (in+instride*I+J),
-                           (fftw_complex *) (out+outstride*J+I));
+          execute(in+instride*I+J,out+outstride*J+I);
         }
       }
     }
@@ -761,12 +778,12 @@ public:
   fftw_plan Plan(Complex *in, Complex *out) {
     int n=(int) nx;
     if(R > 0) {
-     plan2=fftw_plan_many_dft(1,&n,Q+1,
-                              (fftw_complex *) in,NULL,stride,dist,
-                              (fftw_complex *) out,NULL,stride,dist,
-                              sign,effort);
-     if(!plan2) noplan();
-     if(threads == 1) plan1=plan2;
+      plan2=fftw_plan_many_dft(1,&n,Q+1,
+                               (fftw_complex *) in,NULL,stride,dist,
+                               (fftw_complex *) out,NULL,stride,dist,
+                               sign,effort);
+      if(!plan2) noplan();
+      if(threads == 1) plan1=plan2;
     }
     return fftw_plan_many_dft(1,&n,Q,
                               (fftw_complex *) in,NULL,stride,dist,
@@ -1104,8 +1121,8 @@ public:
   
   void Execute(Complex *in, Complex *out, bool shift=false) {
     if(shift) {
-     if(inplace) Shift(in,nx,ny,threads);
-     else Shift((double *) in,nx,ny,threads);
+      if(inplace) Shift(in,nx,ny,threads);
+      else Shift((double *) in,nx,ny,threads);
     }
     fftw_execute_dft_r2c(plan,(double *) in,(fftw_complex *) out);
   }
