@@ -180,7 +180,7 @@ public:
     alltoall=mx % size == 0 && my % size == 0;
 
     if(alltoall) {
-      T=new mpitranspose(u2,mx,d.y,d.x,my);
+      T=new mpitranspose(mx,d.y,d.x,my,1,u2);
       int rank;
       MPI_Comm_rank(d.communicator,&rank);
       if(rank == 0) {
@@ -383,7 +383,7 @@ public:
     alltoall=mx % size == 0 && my % size == 0;
 
     if(alltoall) {
-      T=new mpitranspose(u3,mx,d.y,d.x,my,d.z);
+      T=new mpitranspose(mx,d.y,d.x,my,d.z,u3);
       int rank;
       MPI_Comm_rank(d.communicator,&rank);
       if(rank == 0) {

@@ -187,6 +187,8 @@ inline int fftwpp_import_wisdom(int (*g)(std::ifstream& s), std::ifstream &s)
 inline void PutWisdom(char c, std::ofstream& s) {s.put(c);}
 inline int GetWisdom(std::ifstream& s) {return s.get();}
 
+extern const char *inout;
+
 // Base clase for fft routines
 //
 class fftw {
@@ -471,7 +473,7 @@ public:
     if(!out) out=in;
 #endif    
     if(inplace ^ (out == in)) {
-      std::cerr << "ERROR: fft constructor and call must be both in place or both out of place" << std::endl; 
+      std::cerr << "ERROR: fft " << inout << std::endl;
       exit(1);
     }
     return out;
@@ -579,11 +581,17 @@ class Transpose {
   unsigned int nlength,mlength;
   unsigned int instride,outstride;
   unsigned int threads;
+  bool inplace;
 public:
-  Transpose(Complex *in, Complex *out,
-            unsigned int rows, unsigned int cols, unsigned int length,
+  Transpose(unsigned int rows, unsigned int cols, unsigned int length,
+            Complex *in, Complex *out=NULL,
             unsigned int threads=1) : instride(cols), outstride(rows),
                                       threads(threads) {
+    bool inplace;
+    if(!out) out=in;
+    inplace=(out==in);
+    if(inplace) threads=1;
+    
     fftw_iodim dims[3];
 
     a=std::min(rows,threads);
@@ -612,7 +620,12 @@ public:
   
   ~Transpose() {if(plan) fftw_destroy_plan(plan);}
   
-  void transpose(Complex *in, Complex *out) {
+  void transpose(Complex *in, Complex *out=NULL) {
+    if(!out) out=in;
+    if(inplace ^ (out == in)) {
+      std::cerr << "ERROR: Transpose " << inout << std::endl;
+      exit(1);
+    }
 #ifndef FFTWPP_SINGLE_THREAD
     if(threads == 1)
 #endif      

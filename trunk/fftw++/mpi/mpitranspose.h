@@ -48,9 +48,10 @@ private:
   unsigned int a,b;
   bool inflag,outflag;
 public:
-  mpitranspose(Complex *data, unsigned int N, unsigned int m, unsigned int n,
-               unsigned int M, unsigned int L=1,
-               Complex *work=NULL, unsigned int threads=fftw::maxthreads,
+  mpitranspose(unsigned int N, unsigned int m, unsigned int n,
+               unsigned int M, unsigned int L,
+               Complex *data, Complex *work=NULL,
+               unsigned int threads=fftw::maxthreads,
                MPI_Comm communicator=MPI_COMM_WORLD) :
     N(N), m(m), n(n), M(M), L(L), work(work), threads(threads),
     communicator(communicator),
@@ -69,12 +70,12 @@ public:
     }
 
     if(work == NULL) {
-      this->work=new Complex[N*m*L];
+      this->work=ComplexAlign(N*m*L);
       allocated=true;
     }
     
-    Tin3=new Transpose(data,this->work,n,M,L,threads);
-    Tout3=new Transpose(data,this->work,N,m,L,threads);
+    Tin3=new Transpose(n,M,L,data,this->work,threads);
+    Tout3=new Transpose(N,m,L,data,this->work,threads);
     
     if(size == 1) {
       a=1;
@@ -121,15 +122,22 @@ public:
     init(data,AlltoAll);
   }
   
+  mpitranspose(unsigned int N, unsigned int m, unsigned int n,
+               unsigned int M, Complex *data, Complex *work=NULL,
+               unsigned int threads=fftw::maxthreads,
+               MPI_Comm communicator=MPI_COMM_WORLD) {
+    mpitranspose(N,m,n,M,1,data,work,threads,communicator);
+  }
+    
   double time(Complex *data) {
     double sum=0.0;
     unsigned int N=1;
-    transpose(data,false); // Initialize communication buffers
+    transpose(data,true,false); // Initialize communication buffers
     double stop=totalseconds()+fftw::testseconds;
     for(;;++N) {
       int end;
       double start=rank == 0 ? totalseconds() : 0.0;
-      transpose(data,false);
+      transpose(data,true,false);
       if(rank == 0) {
         double t=totalseconds();
         double seconds=t-start;
@@ -144,12 +152,12 @@ public:
   }
 
   void init(Complex *data, bool alltoall) {
-    Tout1=new Transpose(data,this->work,n*a,b,m*L,threads);
-    Tin1=new Transpose(data,this->work,b,n*a,m*L,threads);
+    Tout1=new Transpose(n*a,b,m*L,data,this->work,threads);
+    Tin1=new Transpose(b,n*a,m*L,data,this->work,threads);
 
     if(a > 1) {
-      Tin2=new Transpose(data,this->work,a,n*b,m*L,threads);
-      Tout2=new Transpose(data,this->work,n*b,a,m*L,threads);
+      Tin2=new Transpose(a,n*b,m*L,data,this->work,threads);
+      Tout2=new Transpose(n*b,a,m*L,data,this->work,threads);
     }
     
     if(size == 1) return;
@@ -211,7 +219,7 @@ public:
     deallocate();
     if(Tout3) delete Tout3;
     if(Tin3) delete Tin3;
-    if(allocated) delete[] work;
+    if(allocated) deleteAlign(work);
   }
   
   void inphase0(Complex *data);
