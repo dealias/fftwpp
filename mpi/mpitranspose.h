@@ -48,14 +48,11 @@ private:
   unsigned int a,b;
   bool inflag,outflag;
 public:
-  mpitranspose(unsigned int N, unsigned int m, unsigned int n,
-               unsigned int M, unsigned int L,
-               Complex *data, Complex *work=NULL,
-               unsigned int threads=fftw::maxthreads,
-               MPI_Comm communicator=MPI_COMM_WORLD) :
-    N(N), m(m), n(n), M(M), L(L), work(work), threads(threads),
-    communicator(communicator),
-    allocated(false), Tin3(NULL), Tout3(NULL) {
+  void setup(Complex *data) {
+    allocated=false;
+    Tin3=NULL;
+    Tout3=NULL;
+    
     MPI_Comm_size(communicator,&size);
     MPI_Comm_rank(communicator,&rank);
     
@@ -73,9 +70,6 @@ public:
       this->work=ComplexAlign(N*m*L);
       allocated=true;
     }
-    
-    Tin3=new Transpose(n,M,L,data,this->work,threads);
-    Tout3=new Transpose(N,m,L,data,this->work,threads);
     
     if(size == 1) {
       a=1;
@@ -108,7 +102,7 @@ public:
         }
       }
     }
-
+    
     unsigned int parm[]={A,AlltoAll};
     MPI_Bcast(&parm,2,MPI_UNSIGNED,0,communicator);
     A=parm[0];
@@ -123,10 +117,23 @@ public:
   }
   
   mpitranspose(unsigned int N, unsigned int m, unsigned int n,
+               unsigned int M, unsigned int L,
+               Complex *data, Complex *work=NULL,
+               unsigned int threads=fftw::maxthreads,
+               MPI_Comm communicator=MPI_COMM_WORLD) :
+    N(N), m(m), n(n), M(M), L(L), work(work), threads(threads),
+    communicator(communicator) {
+    setup(data);
+  }
+  
+  
+  mpitranspose(unsigned int N, unsigned int m, unsigned int n,
                unsigned int M, Complex *data, Complex *work=NULL,
                unsigned int threads=fftw::maxthreads,
-               MPI_Comm communicator=MPI_COMM_WORLD) {
-    mpitranspose(N,m,n,M,1,data,work,threads,communicator);
+               MPI_Comm communicator=MPI_COMM_WORLD) :
+        N(N), m(m), n(n), M(M), L(1), work(work), threads(threads),
+    communicator(communicator) {
+    setup(data);
   }
     
   double time(Complex *data) {
