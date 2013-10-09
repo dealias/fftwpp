@@ -1,11 +1,16 @@
 #include "mpitranspose.h"
+#include "cmult-sse2.h"
 
 namespace fftwpp {
 
-inline void copy(Complex *from, Complex *to, unsigned int length)
+inline void copy(Complex *from, Complex *to, unsigned int length,
+                 unsigned int threads=1)
 {
-  unsigned int size=length*sizeof(Complex);
-  memcpy(to,from,size);
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif  
+for(unsigned int i=0; i < length; ++i)
+  to[i]=from[i];
 }
 
 void mpitranspose::inphase0(Complex *data)
@@ -81,16 +86,16 @@ void mpitranspose::outsync1(Complex *data)
   
 void mpitranspose::nMTranspose(Complex *data)
 {
-  if(!Tin3) Tin3=new Transpose(data,work,n,M,L,threads);
+  if(!Tin3) Tin3=new Transpose(n,M,L,data,work,threads);
   Tin3->transpose(data,work); // n X M x L
-  copy(work,data,n*M*L);
+  copy(work,data,n*M*L,threads);
 }
   
 void mpitranspose::NmTranspose(Complex *data)
 {
-  if(!Tout3) Tout3=new Transpose(data,work,N,m,L,threads);
+  if(!Tout3) Tout3=new Transpose(N,m,L,data,work,threads);
   Tout3->transpose(data,work); // N x m x L
-  copy(work,data,N*m*L);
+  copy(work,data,N*m*L,threads);
 }
   
 /* Given a process which_pe and a number of processes npes, fills

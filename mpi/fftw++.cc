@@ -15,6 +15,9 @@ const char *WisdomName="wisdom3.txt";
 unsigned int fftw::maxthreads=1;
 double fftw::testseconds=1.0; // Time limit for threading efficiency tests
 
+const char *fftw::oddshift="Shift is not implemented for odd nx";
+const char *inout="constructor and call must be both in place or both out of place";
+
 void LoadWisdom(const MPI_Comm& active)
 {
   int rank;

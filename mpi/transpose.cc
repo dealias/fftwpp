@@ -131,9 +131,9 @@ int main(int argc, char **argv)
   }
   
 #ifndef OLD
-  data=new Complex[X*y*Z];
+  data=ComplexAlign(X*y*Z);
 #else  
-  data=new Complex[alloc];
+  data=ComplexAlign(alloc);
 #endif  
   
 #ifdef OLD
@@ -150,10 +150,16 @@ int main(int argc, char **argv)
                                                  outtranspose ? 0 : FFTW_MPI_TRANSPOSED_OUT);
   fftwpp::SaveWisdom(MPI_COMM_WORLD);
 #else
-  mpitranspose T(data,X,y,x,Y,Z,NULL,fftw::maxthreads);
+  mpitranspose T(X,y,x,Y,Z,data,NULL,fftw::maxthreads);
 #endif  
   
   init(data,X,y,Z,ystart);
+#ifndef OLD  
+  // Initialize remaining plans.
+  T.transpose(data,false,true);
+  T.NmTranspose(data);
+  init(data,X,y,Z,ystart);
+#endif  
 
   bool showoutput=X*Y < showlimit && N == 1;
   if(showoutput)
