@@ -587,7 +587,6 @@ public:
             Complex *in, Complex *out=NULL,
             unsigned int threads=1) : instride(cols), outstride(rows),
                                       threads(threads) {
-    bool inplace;
     if(!out) out=in;
     inplace=(out==in);
     if(inplace) threads=1;
