@@ -10,16 +10,17 @@ using namespace fftwpp;
 
 int main()
 {
-  cout << "2D complex to complex in-place FFT" << endl;
+  cout << "Tranposition of complex variables using the Array class" << endl;
   fftw::maxthreads=get_max_threads();
 
   unsigned int nx=4, ny=4;
   size_t align=sizeof(Complex);
   
   array2<Complex> f(nx,ny,align);
+  array2<Complex> ft(ny,nx,align);
   
-  fft2d Forward2(-1,f);
-  fft2d Backward2(1,f);
+  Transpose T(nx,ny,1,f(),ft(),fftw::maxthreads);
+  Transpose Tinv(ny,nx,1,ft(),f(),fftw::maxthreads);
   
   for(unsigned int i=0; i < nx; i++) 
     for(unsigned int j=0; j < ny; j++) 
@@ -27,11 +28,11 @@ int main()
 
   cout << "\ninput:\n" << f;
   
-  Forward2.fft(f);
+  T.transpose(f(),ft());
+    
+  cout << "\noutput:\n" << ft;
   
-  cout << "\noutput:\n" << f;
-  
-  Backward2.fftNormalized(f);
+  Tinv.transpose(ft(),f());
 
   cout << "\nback to input:\n" << f;
 }
