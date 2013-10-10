@@ -14,7 +14,7 @@ int main()
 
   fftw::maxthreads=get_max_threads();
   
-  unsigned int nx=4, ny=5, nz=6;
+  unsigned int nx=2, ny=2, nz=2;
   size_t align=sizeof(Complex);
   
   array3<Complex> f(nx,ny,nz,align);
@@ -25,7 +25,7 @@ int main()
   for(unsigned int i=0; i < nx; i++) 
     for(unsigned int j=0; j < ny; j++) 
       for(unsigned int k=0; k < nz; k++) 
-      f(i,j,k)=i+j+k;
+	f(i,j,k)=Complex(10*k+i,j);
 	
   cout << "\ninput:\n" << f;
   

@@ -38,7 +38,8 @@ vpath %.cc ../
 
 FILES=example0 example0r example0m example1 example1r example2 example2r \
 example3 example3r examplecconv exampleconv examplecconv2 exampleconv2 \
-examplecconv3 exampleconv3 examplepcconv examplepcconv2 examplepcconv3
+examplecconv3 exampleconv3 examplepcconv examplepcconv2 examplepcconv3 \
+exampletranspose
 
 FFTW=fftw++
 EXTRA=$(FFTW) convolution
@@ -74,6 +75,9 @@ example3: example3.o $(FFTW:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 example3r: example3r.o $(FFTW:=.o)
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
+exampletranspose: exampletranspose.o $(FFTW:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 examplecconv: examplecconv.o $(EXTRA:=.o)
