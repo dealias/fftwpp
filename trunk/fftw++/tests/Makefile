@@ -2,7 +2,7 @@ IDIR =../
 
 # GNU compiler
 ifeq ($(shell $(CXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
-CXXFLAGS=-O3 -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
+CXXFLAGS=-Ofast -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
 	-fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native
 #For valgrind:
 #CXXFLAGS=-fopenmp -g -Wall -ansi -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse
@@ -37,7 +37,7 @@ LDFLAGS= -lfftw3_omp -lfftw3 -lm
 
 vpath %.cc ../
 
-FILES=conv cconv conv2 cconv2 conv3 cconv3 tconv tconv2 pcconv pcconv2 pcconv3
+FILES=conv cconv conv2 cconv2 conv3 cconv3 tconv tconv2 pcconv pcconv2 pcconv3 c2cfft2
 
 FFTW=fftw++
 EXTRA=$(FFTW) convolution explicit direct
@@ -79,6 +79,9 @@ pcconv2: pcconv2.o $(EXTRA:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 pcconv3: pcconv3.o $(EXTRA:=.o)
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
+c2cfft2: c2cfft2.o $(EXTRA:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 clean:  FORCE
