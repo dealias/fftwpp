@@ -1,0 +1,185 @@
+#include "../Complex.h"
+#include "Array.h"
+#include "fftw++.h"
+#include "utils.h"
+
+using namespace std;
+using namespace Array;
+using namespace fftwpp;
+
+// Number of iterations.
+unsigned int N0=10000000;
+unsigned int N=0;
+unsigned int mx=4;
+unsigned int my=4;
+
+bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
+
+inline void init(array2<Complex>& f) 
+{
+  for(unsigned int i=0; i < mx; ++i)
+    for(unsigned int j=0; j < my; j++)
+      f[i][j]=Complex(i,j);
+}
+  
+unsigned int outlimit=100;
+
+int main(int argc, char* argv[])
+{
+  fftw::maxthreads=get_max_threads();
+
+#ifndef __SSE2__
+  fftw::effort |= FFTW_NO_SIMD;
+#endif  
+  
+#ifdef __GNUC__	
+  optind=0;
+#endif	
+  for (;;) {
+    int c = getopt(argc,argv,"hN:m:x:y:n:T:");
+    if (c == -1) break;
+		
+    switch (c) {
+    case 0:
+      break;
+    case 'N':
+      N=atoi(optarg);
+      break;
+    case 'm':
+      mx=my=atoi(optarg);
+      break;
+    case 'x':
+      mx=atoi(optarg);
+      break;
+    case 'y':
+      my=atoi(optarg);
+      break;
+    case 'n':
+      N0=atoi(optarg);
+      break;
+    case 'T':
+      fftw::maxthreads=atoi(optarg);
+      break;
+    case 'h':
+    default:
+      usage(2);
+    }
+  }
+
+  if(my == 0) my=mx;
+
+  cout << "mx=" << mx << ", my=" << my << endl;
+  
+  if(N == 0) {
+    N=N0/mx/my;
+    if(N < 10) N=10;
+  }
+  cout << "N=" << N << endl;
+  
+  size_t align=sizeof(Complex);
+
+  array2<Complex> f(mx,my,align);
+  array2<Complex> g(mx,my,align);
+
+  double *T=new double[N];
+  
+  { // conventional FFT, in-place
+
+    fft2d Forward2(-1,f);
+    fft2d Backward2(1,f);
+    
+    for(unsigned int i=0; i < N; ++i) {
+      init(f);
+      seconds();
+      Forward2.fft(f);
+      Backward2.fftNormalized(f);
+      T[i]=seconds();
+    }
+    timings("fft-in",mx,T,N);
+  }
+  
+  { // conventional FFT, out-of-place
+
+    fft2d Forward2(-1,f,g);
+    fft2d Backward2(1,f,g);
+    
+    for(unsigned int i=0; i < N; ++i) {
+      init(f);
+      seconds();
+      Forward2.fft(f,g);
+      Backward2.fftNormalized(g,f);
+      T[i]=seconds();
+    }
+    timings("fft-out",mx,T,N);
+  }
+
+
+  { // using the transpose, in-place
+
+    Transpose Txy(mx,my,1,f(),f(),fftw::maxthreads);
+    Transpose Tyx(my,mx,1,f(),f(),fftw::maxthreads);
+  
+    mfft1d Forwardx(mx,-1,my,1,my);
+    mfft1d Backwardx(mx,1,my,1,my);
+
+    mfft1d Forwardy(my,-1,mx,1,mx);
+    mfft1d Backwardy(my,1,mx,1,mx);
+
+    for(unsigned int i=0; i < N; ++i) {
+      init(f);
+      seconds();
+
+      Forwardy.fft(f);
+      Txy.transpose(f());
+      Forwardx.fft(f);
+
+      Backwardx.fftNormalized(f);
+      Tyx.transpose(f());
+      Backwardy.fftNormalized(f);
+      T[i]=seconds();
+    }
+    timings("mfft-in",mx,T,N);
+  }
+
+  { // using the transpose, out-of-place
+
+    Transpose Txy(mx,my,1,f(),g(),fftw::maxthreads);
+    Transpose Tyx(my,mx,1,f(),g(),fftw::maxthreads);
+  
+    mfft1d Forwardx(mx,-1,my,1,my,f,g);
+    mfft1d Backwardx(mx,1,my,1,my,f,g);
+
+    mfft1d Forwardy(my,-1,mx,1,mx,f,g);
+    mfft1d Backwardy(my,1,mx,1,mx,f,g);
+
+    for(unsigned int i=0; i < N; ++i) {
+      init(f);
+      seconds();
+
+      Forwardy.fft(f,g);
+      Txy.transpose(g(),f());
+      Forwardx.fft(f,g);
+
+      Backwardx.fftNormalized(g,f);
+      Tyx.transpose(f(),g());
+      Backwardy.fftNormalized(g,f);
+      T[i]=seconds();
+    }
+    timings("mfft-out",mx,T,N);
+  }
+  
+
+  /*
+    if(mx*my < outlimit) {
+    for(unsigned int i=0; i < mx; i++) {
+    for(unsigned int j=0; j < my; j++)
+    cout << f[i][j] << "\t";
+    cout << endl;
+    } else cout << f[0][0] << endl;
+    }
+  */
+  delete [] T;
+  
+  return 0;
+}
+
