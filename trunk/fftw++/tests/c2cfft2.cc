@@ -113,7 +113,6 @@ int main(int argc, char* argv[])
     timings("fft2d, out-of-place",mx,T,N);
   }
 
-
   { // using the transpose, in-place
 
     Transpose Txy(mx,my,1,f(),f(),fftw::maxthreads);
@@ -132,9 +131,6 @@ int main(int argc, char* argv[])
       Forwardy.fft(f);
       Txy.transpose(f());
       Forwardx.fft(f);
-
-      //Tyx.transpose(f());
-      //Txy.transpose(f());
 
       Backwardx.fftNormalized(f);
       Tyx.transpose(f());
@@ -171,7 +167,67 @@ int main(int argc, char* argv[])
     timings("transpose and mfft, out-of-place",mx,T,N);
   }
   
+  { // full transpose, in-place
 
+    Transpose Txy(mx,my,1,f(),f(),fftw::maxthreads);
+    Transpose Tyx(my,mx,1,f(),f(),fftw::maxthreads);
+  
+    mfft1d Forwardx(mx,-1,my,1,my);
+    mfft1d Backwardx(mx,1,my,1,my);
+
+    mfft1d Forwardy(my,-1,mx,1,mx);
+    mfft1d Backwardy(my,1,mx,1,mx);
+
+    for(unsigned int i=0; i < N; ++i) {
+      init(f);
+      seconds();
+
+      Forwardy.fft(f);
+      Txy.transpose(f());
+      Forwardx.fft(f);
+
+      Tyx.transpose(f());
+      Txy.transpose(f());
+
+      Backwardx.fftNormalized(f);
+      Tyx.transpose(f());
+      Backwardy.fftNormalized(f);
+      T[i]=seconds();
+    }
+    timings("2 transposes and mfft, in-place",mx,T,N);
+  }
+
+  { // full transpose, out-of-place
+
+    Transpose Txy(mx,my,1,f(),g(),fftw::maxthreads);
+    Transpose Tyx(my,mx,1,f(),g(),fftw::maxthreads);
+  
+    mfft1d Forwardx(mx,-1,my,1,my,f,g);
+    mfft1d Backwardx(mx,1,my,1,my,f,g);
+
+    mfft1d Forwardy(my,-1,mx,1,mx,f,g);
+    mfft1d Backwardy(my,1,mx,1,mx,f,g);
+
+    for(unsigned int i=0; i < N; ++i) {
+      init(f);
+      seconds();
+
+      Forwardy.fft(f,g);
+      Txy.transpose(g(),f());
+      Forwardx.fft(f,g);
+      
+      Tyx.transpose(g(),f());
+      
+      Txy.transpose(f(),g());
+
+      Backwardx.fftNormalized(g,f);
+      Tyx.transpose(f(),g());
+      Backwardy.fftNormalized(g,f);
+      T[i]=seconds();
+    }
+    timings("2 transposes and mfft, out-of-place",mx,T,N);
+  }
+  
   { // using strides, in-place
 
     mfft1d Forwardx(mx,-1,my,my,1,f,f);

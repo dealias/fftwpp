@@ -47,13 +47,12 @@ inline void timings(const char* text, unsigned int m, unsigned int count,
 {
 //  mean -= emptytime(T,N);
 //  if(mean < 0.0) mean=0.0;
-  std::cout << std::endl 
-	    << text << ":\n" 
+  std::cout << text << ":\n" 
 	    << m << "\t" 
 	    << mean << "\t" 
 	    << sigmaL << "\t" 
 	    << sigmaH 
-	    << std::endl << std::endl;
+	    << std::endl;
 }
 
 inline void timings(const char* text, unsigned int m, double *T, 
