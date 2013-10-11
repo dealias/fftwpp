@@ -95,7 +95,7 @@ int main(int argc, char* argv[])
       Backward2.fftNormalized(f);
       T[i]=seconds();
     }
-    timings("fft-in",mx,T,N);
+    timings("fft2d, in-place",mx,T,N);
   }
   
   { // conventional FFT, out-of-place
@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
       Backward2.fftNormalized(g,f);
       T[i]=seconds();
     }
-    timings("fft-out",mx,T,N);
+    timings("fft2d, out-of-place",mx,T,N);
   }
 
 
@@ -133,12 +133,15 @@ int main(int argc, char* argv[])
       Txy.transpose(f());
       Forwardx.fft(f);
 
+      //Tyx.transpose(f());
+      //Txy.transpose(f());
+
       Backwardx.fftNormalized(f);
       Tyx.transpose(f());
       Backwardy.fftNormalized(f);
       T[i]=seconds();
     }
-    timings("mfft-in",mx,T,N);
+    timings("transpose and mfft, in-place",mx,T,N);
   }
 
   { // using the transpose, out-of-place
@@ -165,10 +168,55 @@ int main(int argc, char* argv[])
       Backwardy.fftNormalized(g,f);
       T[i]=seconds();
     }
-    timings("mfft-out",mx,T,N);
+    timings("transpose and mfft, out-of-place",mx,T,N);
   }
   
 
+  { // using strides, in-place
+
+    mfft1d Forwardx(mx,-1,my,my,1,f,f);
+    mfft1d Backwardx(mx,1,my,my,1,f,f);
+
+    mfft1d Forwardy(my,-1,mx,1,mx,f,f);
+    mfft1d Backwardy(my,1,mx,1,mx,f,f);
+
+    for(unsigned int i=0; i < N; ++i) {
+      init(f);
+      seconds();
+
+      Forwardy.fft(f);
+      Forwardx.fft(f);
+
+      Backwardx.fftNormalized(f);
+      Backwardy.fftNormalized(f);
+      T[i]=seconds();
+    }
+    timings("strided mfft in-place",mx,T,N);
+  }
+
+
+  { // using strides, out-of-place
+
+    mfft1d Forwardx(mx,-1,my,my,1,f,g);
+    mfft1d Backwardx(mx,1,my,my,1,f,g);
+
+    mfft1d Forwardy(my,-1,mx,1,mx,f,g);
+    mfft1d Backwardy(my,1,mx,1,mx,f,g);
+
+    for(unsigned int i=0; i < N; ++i) {
+      init(f);
+      seconds();
+
+      Forwardy.fft(f,g);
+      Forwardx.fft(g,f);
+
+      Backwardx.fftNormalized(f,g);
+      Backwardy.fftNormalized(g,f);
+      T[i]=seconds();
+    }
+    timings("strided mfft out-of-place",mx,T,N);
+  }
+  
   /*
     if(mx*my < outlimit) {
     for(unsigned int i=0; i < mx; i++) {
