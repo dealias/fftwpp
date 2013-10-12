@@ -6,7 +6,7 @@
 #include <fftw++.h>
 #include <cstring>
 
-const int latency=4096; // Typical bandwidth saturation message size
+const double latency=4096.0; // Typical bandwidth saturation message size
 
 namespace fftwpp {
 
@@ -77,7 +77,7 @@ public:
     }
     
     unsigned int AlltoAll=1;
-    unsigned int alimit=(N*M*L*sizeof(Complex) >= latency*usize*usize) ?
+    unsigned int alimit=(N*M*L*sizeof(Complex) >= latency*size*size) ?
       2 : usize;
     
     if(rank == 0)
