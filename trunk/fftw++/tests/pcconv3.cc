@@ -21,7 +21,7 @@ unsigned int M=1;
 bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
 void pmult(Complex **f,
-           unsigned int m, unsigned int M,
+           unsigned int m,
            unsigned int offset) {
   Complex* f0=f[0]+offset;
   Complex* f1=f[1]+offset;
@@ -147,55 +147,23 @@ int main(int argc, char* argv[])
     
     timings("Implicit",mx,T,N);
         
+    if(mx*my*mz < outlimit) 
+      for(unsigned int i=0; i < mx; i++) {
+        for(unsigned int j=0; j < my; j++) {
+          for(unsigned int k=0; k < mz; k++) 
+            cout << f0[i][j][k] << "\t";
+          cout << endl;
+        }
+        cout << endl;
+      } else cout << f0[0][0][0] << endl;
+    cout << endl;
+    
     // Free input arrays:
     for(unsigned int s=0; s < A; ++s) 
       deleteAlign(f[s]);
     delete[] f;
 
   }
-  
-  /*
-  if(Direct) {
-    array3<Complex> h(mx,my,mz,align);
-    array3<Complex> f(mx,my,mz,align);
-    array3<Complex> g(mx,my,mz,align);
-    DirectConvolution3 C(mx,my,mz);
-    init(f,g);
-    seconds();
-    C.convolve(h,f,g);
-    T[0]=seconds();
-  
-    timings("Direct",mx,T,1);
-
-    if(mx*my*mz < outlimit) {
-      for(unsigned int i=0; i < mx; i++) {
-        for(unsigned int j=0; j < my; j++) {
-          for(unsigned int k=0; k < mz; k++)
-            cout << h[i][j][k] << "\t";
-          cout << endl;
-        }
-        cout << endl;
-      }
-    } else cout << h[0][0][0] << endl;
-
-    { // compare implicit or explicit version with direct verion:
-      double error=0.0;
-      double norm=0.0;
-      for(unsigned int i=0; i < mx; i++) {
-        for(unsigned int j=0; j < my; j++) {
-	  for(unsigned int k=0; k < mz; k++) {
-	    error += abs2(h0[i][j][k]-h[i][j][k]);
-	    norm += abs2(h[i][j][k]);
-	  }
-	}
-      }
-      error=sqrt(error/norm);
-      cout << "error=" << error << endl;
-      if (error > 1e-12) cerr << "Caution! error=" << error << endl;
-    }
-
-  }
-  */
   
   delete [] T;
 
