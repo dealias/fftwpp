@@ -16,7 +16,7 @@ unsigned int N=0;
 bool Direct=false, Implicit=true, Explicit=false, Test=false;
 
 void pmult(Complex **f,
-           unsigned int m, unsigned int M,
+           unsigned int m,
            unsigned int offset) {
   Complex* f0=f[0]+offset;
   Complex* f1=f[1]+offset;

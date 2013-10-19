@@ -1590,26 +1590,25 @@ void fft0bipad::forwards(Complex *f, Complex *u)
     }
 
 void pImplicitConvolution::convolve(Complex **F, Complex **U,
-                                    void (*pmult)(Complex **,unsigned int,
+                                    void (*pmult)(Complex **,
                                                   unsigned int,unsigned int),
                                     unsigned int offset)
 {
-  // iFFT for even points
-  for(unsigned int i=0; i < A; ++i)
-    Backwards->fft(F[i]+offset,U[i]);
+  // Backwards FFT:
+  for(unsigned int i=0; i < A; ++i) {
+    Complex* Fi=F[i]+offset;
+    Backwards->fft(Fi,U[i]);
+    itwiddle(Fi);
+    Backwards0->fft(Fi);
+  }
   
   // multiply even points
-  (*pmult)(U,m,A,0);
-  
-  // iFFT for odd points
-  itwiddle(F,A,offset);
-  for(unsigned int i=0; i < A; ++i)
-    Backwards0->fft(F[i]+offset);
-  
+  (*pmult)(U,m,0);
+    
   // multiply odd points
-  (*pmult)(F,m,A,offset);
+  (*pmult)(F,m,offset);
   
-  // return to Fourier space
+  // Forwards FFT:
   for(unsigned int i=0; i < B; ++i) {
     Complex *f=F[i]+offset;
     Complex *u=U[i];
@@ -1620,51 +1619,48 @@ void pImplicitConvolution::convolve(Complex **F, Complex **U,
 }
 
 // multiply by twiddle factor to prep for inverse FFT for odd modes
-void pImplicitConvolution::itwiddle(Complex **F, unsigned int A,
-                                    unsigned int offset)
+void pImplicitConvolution::itwiddle(Complex *f)
 {  
 #ifdef __SSE2__
-  PARALLEL(
-    for(unsigned int K=0; K < m; K += s) {
-      Complex *ZetaL0=ZetaL-K;
-      unsigned int stop=min(K+s,m);
-      Vec Zeta=LOAD(ZetaH+K/s);
-      Vec X=UNPACKL(Zeta,Zeta);
-      Vec Y=UNPACKH(CONJ(Zeta),Zeta);
-      for(unsigned int k=K; k < stop; ++k) {
-        Vec Zetak=ZMULT(X,Y,LOAD(ZetaL0+k));
-        unsigned int koffset=k+offset;
-        for(unsigned int i=0; i < A; ++i) {
-          Complex *fki=F[i]+koffset;
-          STORE(fki,ZMULT(Zetak,LOAD(fki)));
-        }
-      }
-    }
-    )
-#else
     PARALLEL(
-      for(unsigned int K=0; K < m; K += s) {
-        Complex *ZetaL0=ZetaL-K;
-        unsigned int stop=min(K+s,m);
-        Complex *p=ZetaH+K/s;
-        double Hre=p->re;
-        double Him=p->im;
-        for(unsigned int k=K; k < stop; ++k) {
-          Complex L=*(ZetaL0+k);
-          double Re=Hre*L.re-Him*L.im;
-          double Im=Hre*L.im+Him*L.re;
-          unsigned int koffset=k+offset;
-          for(unsigned int i=0; i < A; ++i) {
-            Complex *P=F[i]+koffset;
-            Complex fk=*P;
-            P->re=Re*fk.re-Im*fk.im;
-            P->im=Im*fk.re+Re*fk.im;
-          }
-        }
-      }
-      )
-#endif
+  for(unsigned int K=0; K < m; K += s) {
+    Complex *ZetaL0=ZetaL-K;
+    unsigned int stop=min(K+s,m);
+    Vec Zeta=LOAD(ZetaH+K/s);
+    Vec X=UNPACKL(Zeta,Zeta);
+    Vec Y=UNPACKH(CONJ(Zeta),Zeta);
+
+    for(unsigned int k=K; k < stop; ++k) {
+      Vec Zetak=ZMULT(X,Y,LOAD(ZetaL0+k));
+	STORE(f+k,ZMULT(Zetak,LOAD(f+k)));
     }
+
+  }
+  )
+#else
+      PARALLEL(
+  for(unsigned int K=0; K < m; K += s) {
+    Complex *ZetaL0=ZetaL-K;
+    unsigned int stop=min(K+s,m);
+    Complex *p=ZetaH+K/s;
+    double Hre=p->re;
+    double Him=p->im;
+    for(unsigned int k=K; k < stop; ++k) {
+      Complex L=*(ZetaL0+k);
+      double Re=Hre*L.re-Him*L.im;
+      double Im=Hre*L.im+Him*L.re;
+      unsigned int koffset=k+offset;
+      for(unsigned int i=0; i < A; ++i) {
+	Complex *P=F[i]+koffset;
+	Complex fk=*P;
+	P->re=Re*fk.re-Im*fk.im;
+	P->im=Im*fk.re+Re*fk.im;
+      }
+    }
+  }
+	       )
+#endif
+}
 
 
 // multiply by twiddle factor to prep for inverse FFT for odd modes, add
@@ -1717,7 +1713,6 @@ void pImplicitConvolution2::subconvolution(Complex **F,
                                            unsigned int stop,
                                            void (*pmult)(Complex **,
                                                          unsigned int,
-                                                         unsigned int,
                                                          unsigned int)) {
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
@@ -1727,7 +1722,7 @@ void pImplicitConvolution2::subconvolution(Complex **F,
 }
 
 void pImplicitConvolution2::convolve(Complex **F, Complex **U2, Complex ***U1,
-                                     void (*pmult)(Complex **,unsigned int, 
+                                     void (*pmult)(Complex **,
                                                    unsigned int,unsigned int),
                                      unsigned int offset)
 {
@@ -1748,7 +1743,6 @@ void pImplicitConvolution3::subconvolution(Complex **F,
                                            unsigned int stop,
                                            void (*pmult)(Complex **,
                                                          unsigned int,
-                                                         unsigned int,
                                                          unsigned int)) {
   unsigned int stride=my*mz;
 #ifndef FFTWPP_SINGLE_THREAD
@@ -1764,7 +1758,7 @@ void pImplicitConvolution3::convolve(Complex **F,
                                      Complex **U3,
                                      Complex ***U2,
                                      Complex ****U1,
-                                     void (*pmult)(Complex **,unsigned int, 
+                                     void (*pmult)(Complex **,
                                                    unsigned int,unsigned int),
                                      unsigned int offset)
 {
@@ -1778,9 +1772,7 @@ void pImplicitConvolution3::convolve(Complex **F,
     xfftpad->forwards(F[i]+offset,U3[i]);
 }
 
-void multbinary(Complex **F,
-                unsigned int m, unsigned int A,
-                unsigned int offset) {
+void multbinary(Complex **F,unsigned int m,unsigned int offset) {
   // This multiplication routine is for binary convolutions only and takes
   // exactly two inputs.
   
@@ -1806,9 +1798,7 @@ void multbinary(Complex **F,
     }
 
 // F[0][j] = F[0][j]*F[1][j] + F[2][j]*F[3][j]
-void multbinarydot(Complex **F,
-                   unsigned int m, unsigned int A,
-                   unsigned int offset) {
+void multbinarydot(Complex **F,unsigned int m,unsigned int offset) {
   Complex* F0=F[0];
   Complex* F1=F[1];
   Complex* F2=F[2];
@@ -1829,6 +1819,121 @@ void multbinarydot(Complex **F,
     PARALLEL(
       for(unsigned int j=0; j < m; ++j)
         F0[j]=F0[j]*F1[j] + F2[j]*F3[j];
+      )
+
+#endif
+    }
+
+
+// F[0][j] = F[0][j]*F[1][j] + F[2][j]*F[3][j]
+void multbinarydot6(Complex **F,unsigned int m,unsigned int offset) {
+  Complex* F0=F[0];
+  Complex* F1=F[1];
+  Complex* F2=F[2];
+  Complex* F3=F[3];
+  Complex* F4=F[4];
+  Complex* F5=F[5];
+  
+  // FIXME: improve?
+  unsigned int threads=fftw::maxthreads;
+
+#ifdef __SSE2__
+  PARALLEL(
+    for(unsigned int j=0; j < m; ++j) {
+      Complex *F0j=F0+j;
+      STORE(F0j,ZMULT(LOAD(F0j),LOAD(F1+j))
+            +ZMULT(LOAD(F2+j),LOAD(F3+j))
+	    +ZMULT(LOAD(F4+j),LOAD(F5+j))
+	    );
+    }
+    )
+#else
+    PARALLEL(
+      for(unsigned int j=0; j < m; ++j)
+        F0[j]=F0[j]*F1[j] + F2[j]*F3[j] + F4[j]*F5[j];
+      )
+
+#endif
+    }
+
+// F[0][j] = F[0][j]*F[1][j] + F[2][j]*F[3][j]
+void multbinarydot8(Complex **F,unsigned int m,unsigned int offset) {
+  Complex* F0=F[0];
+  Complex* F1=F[1];
+  Complex* F2=F[2];
+  Complex* F3=F[3];
+  Complex* F4=F[4];
+  Complex* F5=F[5];
+  Complex* F6=F[6];
+  Complex* F7=F[7];
+  
+  
+  // FIXME: improve?
+  unsigned int threads=fftw::maxthreads;
+
+#ifdef __SSE2__
+  PARALLEL(
+    for(unsigned int j=0; j < m; ++j) {
+      Complex *F0j=F0+j;
+      STORE(F0j,ZMULT(LOAD(F0j),LOAD(F1+j))
+            +ZMULT(LOAD(F2+j),LOAD(F3+j))
+	    +ZMULT(LOAD(F4+j),LOAD(F5+j))
+	    +ZMULT(LOAD(F6+j),LOAD(F7+j))
+	    );
+    }
+    )
+#else
+    PARALLEL(
+      for(unsigned int j=0; j < m; ++j)
+        F0[j]=F0[j]*F1[j] + F2[j]*F3[j] + F4[j]*F5[j] + F6[j]*F7[j];
+      )
+
+#endif
+    }
+
+// F[0][j] = F[0][j]*F[1][j] + F[2][j]*F[3][j]
+void multbinarydot16(Complex **F,unsigned int m,unsigned int offset) {
+  Complex* F0=F[0];
+  Complex* F1=F[1];
+  Complex* F2=F[2];
+  Complex* F3=F[3];
+  Complex* F4=F[4];
+  Complex* F5=F[5];
+  Complex* F6=F[6];
+  Complex* F7=F[7];
+  Complex* F8=F[8];
+  Complex* F9=F[9];
+  Complex* F10=F[10];
+  Complex* F11=F[11];
+  Complex* F12=F[12];
+  Complex* F13=F[13];
+  Complex* F14=F[14];
+  Complex* F15=F[15];
+    
+  // FIXME: improve?
+  unsigned int threads=fftw::maxthreads;
+
+#ifdef __SSE2__
+  PARALLEL(
+    for(unsigned int j=0; j < m; ++j) {
+      Complex *F0j=F0+j;
+      STORE(F0j,
+	    ZMULT(LOAD(F0j),LOAD(F1+j))
+            +ZMULT(LOAD(F2+j),LOAD(F3+j))
+	    +ZMULT(LOAD(F4+j),LOAD(F5+j))
+	    +ZMULT(LOAD(F6+j),LOAD(F7+j))
+	    +ZMULT(LOAD(F8+j),LOAD(F9+j))
+	    +ZMULT(LOAD(F10+j),LOAD(F11+j))
+	    +ZMULT(LOAD(F12+j),LOAD(F13+j))
+	    +ZMULT(LOAD(F14+j),LOAD(F15+j))
+	    );
+    }
+    )
+#else
+    PARALLEL(
+      for(unsigned int j=0; j < m; ++j)
+        F0[j]=F0[j]*F1[j] + F2[j]*F3[j] + F4[j]*F5[j] + F6[j]*F7[j]
+	   + F8[j]*F9[j] + F10[j]*F11[j] + F12[j]*F13[j] + F14[j]*F15[j];
       )
 
 #endif

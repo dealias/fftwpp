@@ -1835,16 +1835,25 @@ public:
 // function-pointer convolutions.
 // F[0][j] *= F[1][j]
 void multbinary(Complex **F,
-                unsigned int m, unsigned int M,
+                unsigned int m,
                 unsigned int offset);
 
 // F[0][j] = F[0][j]*F[1][j] + F[2][j]*F[3][j]
 void multbinarydot(Complex **F,
-                   unsigned int m, unsigned int M,
+                   unsigned int m,
                    unsigned int offset);
+void multbinarydot6(Complex **F,
+		    unsigned int m,
+		    unsigned int offset);
+void multbinarydot8(Complex **F,
+		    unsigned int m,
+		    unsigned int offset);
+void multbinarydot16(Complex **F,
+		     unsigned int m,
+		     unsigned int offset);
 
 // In-place implicitly dealiased 1D complex convolution using
-// as many pointers as possible
+// function pointers for multiplication
 class pImplicitConvolution : public ThreadBase {
 private:
   unsigned int m;
@@ -1873,6 +1882,7 @@ public:
   void init() {
     Complex* U0=U[0];
     Complex* U1=A == 1 ? ComplexAlign(m) : U[1];
+
     Backwards=new fft1d(m,1,U0,U1);
     Backwards0=new fft1d(m,1,U0);
     Forwards=new fft1d(m,-1,U0);
@@ -1925,15 +1935,13 @@ public:
   }
 
   void convolve(Complex **F, Complex **U,
-                void (*pmult)(Complex **,unsigned int,
-                              unsigned int,unsigned int), 
+                void (*pmult)(Complex **,unsigned int,unsigned int), 
                 unsigned int offset=0);
   
   // F is an array of A pointers to distinct data blocks each of size m,
   // shifted by offset (contents not preserved).
   void convolve(Complex **F,
-                void (*pmult)(Complex **,unsigned int,
-                              unsigned int,unsigned int), 
+                void (*pmult)(Complex **,unsigned int,unsigned int), 
                 unsigned int offset=0) {
     convolve(F,U,pmult,offset);
   }
@@ -1944,7 +1952,7 @@ public:
     convolve(F,U,multbinary,0);
   }
   
-  void itwiddle(Complex **F, unsigned int A, unsigned int offset);
+  void itwiddle(Complex *f);
   void twiddleadd(Complex *f, Complex *u);
 };
 
@@ -1988,17 +1996,14 @@ public:
 
   void subconvolution(Complex **F, Complex ***W1,
                       unsigned int start, unsigned int stop,
-                      void (*pmult)(Complex **,unsigned int,
-                                    unsigned int,unsigned int));
+                      void (*pmult)(Complex **,unsigned int,unsigned int));
   
   void convolve(Complex **F, Complex **U2, Complex ***U1,
-                void (*pmult)(Complex **,unsigned int, 
-                              unsigned int,unsigned int),
+                void (*pmult)(Complex **,unsigned int,unsigned int),
                 unsigned int offset=0);
   
   void convolve(Complex **F,
-                void (*pmult)(Complex **,unsigned int, 
-                              unsigned int,unsigned int),
+                void (*pmult)(Complex **,unsigned int,unsigned int),
                 unsigned int offset=0) {
     convolve(F,U2,U1,pmult,offset);
   }
@@ -2126,22 +2131,17 @@ public:
                       Complex ***U2,
                       Complex ****U1,
                       unsigned int start, unsigned int stop,
-                      void (*pmult)(Complex **,unsigned int,
-                                    unsigned int,unsigned int));
+                      void (*pmult)(Complex **,unsigned int,unsigned int));
 
   void convolve(Complex **F,
                 Complex **U3,
                 Complex ***U2,
                 Complex ****U1,
-                void (*pmult)(Complex **,
-                              unsigned int,
-                              unsigned int,unsigned int),
+                void (*pmult)(Complex **,unsigned int,unsigned int),
                 unsigned int offset=0);
 
   void convolve(Complex **F,
-                void (*pmult)(Complex **,
-                              unsigned int,
-                              unsigned int,unsigned int),
+                void (*pmult)(Complex **,unsigned int,unsigned int),
                 unsigned int offset=0) {
     convolve(F,U3,U2,U1,pmult,offset);
   }
