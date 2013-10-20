@@ -159,18 +159,22 @@ def main(argv):
             b=min(int(floor(0.5*log(RAM/64)/log(2))),b)
         outdir="timings2c2c"
         r="fft"
+        rname="fft"
     if outdir == "":
         print "empty outdir: please select a different program!"
         print
         print usage
         sys.exit(2)
 
+    if not out == "":
+        r=out
 
     if(dorun == 1):
         if RAM != 0:
             print "max problem size is "+str(2**b)
 
-        rname="Implicit"
+        if r == "implicit":
+            rname="Implicit"
         if r == "explicit":
             rname="Explicit"
         if r == "pruned":
