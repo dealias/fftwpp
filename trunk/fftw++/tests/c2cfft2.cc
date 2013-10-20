@@ -27,6 +27,7 @@ unsigned int outlimit=100;
 int main(int argc, char* argv[])
 {
   fftw::maxthreads=get_max_threads();
+  int r=-1; // which of the 8 options do we do?  r=-1 does all of them.
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
@@ -36,7 +37,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"hN:m:x:y:n:T:");
+    int c = getopt(argc,argv,"hN:m:x:y:n:T:r:");
     if (c == -1) break;
 		
     switch (c) {
@@ -60,6 +61,9 @@ int main(int argc, char* argv[])
     case 'T':
       fftw::maxthreads=atoi(optarg);
       break;
+    case 'r':
+      r=atoi(optarg);
+      break;
     case 'h':
     default:
       usage(2);
@@ -82,9 +86,8 @@ int main(int argc, char* argv[])
   array2<Complex> g(mx,my,align);
 
   double *T=new double[N];
-  
-  { // conventional FFT, in-place
 
+  if(r == -1 || r == 0) { // conventional FFT, in-place
     fft2d Forward2(-1,f);
     fft2d Backward2(1,f);
     
@@ -98,7 +101,7 @@ int main(int argc, char* argv[])
     timings("fft2d, in-place",mx,T,N);
   }
   
-  { // conventional FFT, out-of-place
+   if(r == -1 || r == 1) { // conventional FFT, out-of-place
 
     fft2d Forward2(-1,f,g);
     fft2d Backward2(1,f,g);
@@ -113,7 +116,7 @@ int main(int argc, char* argv[])
     timings("fft2d, out-of-place",mx,T,N);
   }
 
-  { // using the transpose, in-place
+  if(r == -1 || r == 2)  { // using the transpose, in-place
 
     Transpose Txy(mx,my,1,f(),f(),fftw::maxthreads);
     Transpose Tyx(my,mx,1,f(),f(),fftw::maxthreads);
@@ -140,7 +143,7 @@ int main(int argc, char* argv[])
     timings("transpose and mfft, in-place",mx,T,N);
   }
 
-  { // using the transpose, out-of-place
+  if(r == -1 || r == 3)  { // using the transpose, out-of-place
 
     Transpose Txy(mx,my,1,f(),g(),fftw::maxthreads);
     Transpose Tyx(my,mx,1,f(),g(),fftw::maxthreads);
@@ -167,7 +170,7 @@ int main(int argc, char* argv[])
     timings("transpose and mfft, out-of-place",mx,T,N);
   }
   
-  { // full transpose, in-place
+   if(r == -1 || r == 4) { // full transpose, in-place
 
     Transpose Txy(mx,my,1,f(),f(),fftw::maxthreads);
     Transpose Tyx(my,mx,1,f(),f(),fftw::maxthreads);
@@ -197,7 +200,7 @@ int main(int argc, char* argv[])
     timings("2 transposes and mfft, in-place",mx,T,N);
   }
 
-  { // full transpose, out-of-place
+   if(r == -1 || r == 5) { // full transpose, out-of-place
 
     Transpose Txy(mx,my,1,f(),g(),fftw::maxthreads);
     Transpose Tyx(my,mx,1,f(),g(),fftw::maxthreads);
@@ -228,7 +231,7 @@ int main(int argc, char* argv[])
     timings("2 transposes and mfft, out-of-place",mx,T,N);
   }
   
-  { // using strides, in-place
+  if(r == -1 || r == 6)  { // using strides, in-place
 
     mfft1d Forwardx(mx,-1,my,my,1,f,f);
     mfft1d Backwardx(mx,1,my,my,1,f,f);
@@ -251,7 +254,7 @@ int main(int argc, char* argv[])
   }
 
 
-  { // using strides, out-of-place
+   if(r == -1 || r == 7) { // using strides, out-of-place
 
     mfft1d Forwardx(mx,-1,my,my,1,f,g);
     mfft1d Backwardx(mx,1,my,my,1,f,g);
