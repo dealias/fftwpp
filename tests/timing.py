@@ -9,7 +9,9 @@ import os
 
 
 def main(argv):
-    usage='Usage: timings.py -a<start> -b<stop> -p<cconv,cconv2,cconv3,conv,conv2,conv3,tconv,tconv2,pcconv,pcconv2,pcconv3> -T<number of threads> -A<quoted arg list for timed program> -r<implicit/explicit> -R<ram in gigabytes>' 
+    usage='Usage: timings.py -a<start> -b<stop> -p<cconv,cconv2,cconv3,conv,conv2,conv3,tconv,tconv2,pcconv,pcconv2,pcconv3> -T<number of threads> -A<quoted arg list for timed program> -r<implicit/explicit/pruned/fft> -R<ram in gigabytes> -d -o<output file name>' 
+
+    dryrun=False
     bset=0
     dorun=1
     Tset=0
@@ -19,10 +21,11 @@ def main(argv):
     A=""
     a=6
     b=0
+    out="implicit"
     r="implicit"
     RAM=0
     try:
-        opts, args = getopt.getopt(argv,"p:T:a:b:A:r:R:")
+        opts, args = getopt.getopt(argv,"dp:T:a:b:A:r:R:o:")
     except getopt.GetoptError:
         print usage
         sys.exit(2)
@@ -41,11 +44,15 @@ def main(argv):
             A+=str(arg)
         elif opt in ("-r"):
             r=str(arg)
-            if(r != "implicit" and r != "explicit" and r != "pruned"):
-                print "invalid run type: "+r
-                sys.exit(2)
         elif opt in ("-R"):
             RAM=float(arg)*2**30
+        elif opt in ("-d"):
+            dryrun=True
+        elif opt in ("-o"):
+            out=str(arg)
+
+    if dryrun:
+        print "Dry run!  No output actually created."
 
     if p == "":
         print "please specify a program with -p"
@@ -146,7 +153,12 @@ def main(argv):
                 b=min(int(floor(log(RAM/96)/log(2)/3)),b)
             else:
                 b=min(int(floor(log(RAM/16/2**3)/log(2)/3)),b)
-        outdir="timings3cp"
+        outdir="timings3cp"    
+    if p == "c2cfft2":
+        if RAM != 0:
+            b=min(int(floor(0.5*log(RAM/64)/log(2))),b)
+        outdir="timings2c2c"
+        r="fft"
     if outdir == "":
         print "empty outdir: please select a different program!"
         print
@@ -163,24 +175,28 @@ def main(argv):
             rname="Explicit"
         if r == "pruned":
             rname="rune"
-
-        outdir=outdir+"/"
+        if r == "fft":
+            rname="fft"
+            if not out == "":
+                r=out
+        
         command="./"+str(p)
 
         print "output in "+outdir+r
 
         print "command: "+command+cargs+" "+A
-        os.system("mkdir -p "+outdir)
-        os.system("rm -f "+outdir+"/"+r)
+        if not dryrun:
+            os.system("mkdir -p "+outdir)
+            os.system("rm -f "+outdir+"/"+r)
 
         for i in range(a,b+1):
             print i,
             run=command+cargs+" -m "+str(int(pow(2,i)))+" "+A
             if(r == "explicit"):
                 run += " -e"
-            elif(r == "pruned"):
+            if(r == "pruned"):
                 run += " -p"
-            else:
+            if r == "implicit":
                 run += " -i"
 
             grepc=" | grep -A 1 "+rname+" | tail -n 1"
@@ -188,11 +204,15 @@ def main(argv):
             print run
             sys.stdout.flush()
             #print("echo "+"$("+run+grepc+")"+cat)
-            os.system("echo "+"$("+run+grepc+")"+cat)
+            if not dryrun:
+                os.system("echo "+"$("+run+grepc+")"+cat)
+            else:
+                print("echo "+"$("+run+grepc+")"+cat)
             sys.stdout.flush()
 
         #clean up output
-        os.system("sed -i 's/[ \t]*$//' "+outdir+"/"+r)
-        os.system("sed -i '/^$/d' "+outdir+"/"+r) # remove empty lines
+        if not dryrun:
+            os.system("sed -i 's/[ \t]*$//' "+outdir+"/"+r)
+            os.system("sed -i '/^$/d' "+outdir+"/"+r) # remove empty lines
 if __name__ == "__main__":
     main(sys.argv[1:])
