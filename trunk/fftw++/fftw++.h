@@ -798,12 +798,13 @@ public:
     if(T == 1) {
       fftw_execute_dft(plan,(fftw_complex *) in,(fftw_complex *) out);
     } else {
-      unsigned int extra=T-R;
+      unsigned int Tdist=T*dist;
+      unsigned int extra=(T-R)*dist;
 
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(T)
 #endif
-      for(unsigned int i=0; i < T; ++i) {
+      for(unsigned int i=0; i < Tdist; i += dist) {
         bool normal=i < extra;
         unsigned int offset=normal ? Q*i : Q*i+i-extra;
         fftw_execute_dft(normal ? plan : plan2,(fftw_complex *) in+offset,
