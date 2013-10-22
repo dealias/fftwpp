@@ -24,8 +24,12 @@ def main(argv):
     out="implicit"
     r="implicit"
     RAM=0
+    outdir=""
+    rname="Implicit"
+    
+   
     try:
-        opts, args = getopt.getopt(argv,"dp:T:a:b:A:r:R:o:")
+        opts, args = getopt.getopt(argv,"dp:T:a:b:A:r:R:o:D:g:")
     except getopt.GetoptError:
         print usage
         sys.exit(2)
@@ -50,6 +54,10 @@ def main(argv):
             dryrun=True
         elif opt in ("-o"):
             out=str(arg)
+        elif opt in ("-D"):
+            outdir=str(arg)+"/"
+        elif opt in ("-g"):
+            rname=str(arg)
 
     if dryrun:
         print "Dry run!  No output actually created."
@@ -59,8 +67,6 @@ def main(argv):
         print usage
         sys.exit(2)
 
-    outdir=""
-   
     # if both the max problem size and the ram are unset, go up to 2^8
     if (b == 0 and RAM == 0):
         b=8
