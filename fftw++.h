@@ -582,21 +582,21 @@ class Transpose {
   unsigned int instride,outstride;
   unsigned int threads;
   bool inplace;
+  unsigned int size;
 public:
-  void init(fftw_iodim *dims, double *in, double *out) {
-    plan=fftw_plan_guru_r2r(0,NULL,3,dims,in,out,NULL,fftw::effort);
-  }
-  
-  void init(fftw_iodim *dims, Complex *in, Complex *out) {
-    plan=fftw_plan_guru_dft(0,NULL,3,dims,(fftw_complex *) in,
-                            (fftw_complex *) out,1,fftw::effort);
-  }
-      
   template<class T>
   Transpose(unsigned int rows, unsigned int cols, unsigned int length,
-            T *in, T *out=NULL, unsigned int threads=1) : 
-    instride(cols), outstride(rows), threads(threads) {
-    
+            T *in, T *out=NULL, unsigned int Threads=fftw::maxthreads) :
+    threads(Threads) {
+    size=sizeof(T);
+    if(size % sizeof(double) != 0) {
+      std::cerr << "ERROR: Transpose is not implemented for type of size " 
+                << size;
+      exit(1);
+    }
+    size /= sizeof(double);
+    length *= size;
+
     if(!out) out=in;
     inplace=(out==in);
     if(inplace) threads=1;
@@ -610,6 +610,10 @@ public:
     nlength=n*length;
     mlength=m*length;
     
+    instride=cols;
+    outstride=rows;
+    threads=threads;
+    
     dims[0].n=n;
     dims[0].is=instride*length;
     dims[0].os=length;
@@ -622,19 +626,12 @@ public:
     dims[2].is=1;
     dims[2].os=1;
 
-    fftw::planThreads(1);
-    init(dims,in,out);
+    fftw::planThreads(inplace ? Threads : 1);
+    plan=fftw_plan_guru_r2r(0,NULL,3,dims,(double *) in,
+                            (double *) out,NULL,fftw::effort);
   }
-  
+
   ~Transpose() {if(plan) fftw_destroy_plan(plan);}
-  
-  void execute(double *in, double *out) {
-    fftw_execute_r2r(plan,in,out);
-  }
-  
-  void execute(Complex *in, Complex *out) {
-    fftw_execute_dft(plan,(fftw_complex *) in, (fftw_complex *) out);
-  }
   
   template<class T>
   void transpose(T *in, T *out=NULL) {
@@ -646,7 +643,7 @@ public:
 #ifndef FFTWPP_SINGLE_THREAD
     if(threads == 1)
 #endif      
-      execute(in,out);
+        fftw_execute_r2r(plan,(double *) in,(double*) out);
 #ifndef FFTWPP_SINGLE_THREAD
     else {
       int A=a, B=b;
@@ -656,13 +653,15 @@ public:
 #pragma omp parallel for num_threads(B)
         for(unsigned int j=0; j < b; ++j) {
           unsigned int J=j*mlength;
-          execute(in+instride*I+J,out+outstride*J+I);
+          fftw_execute_r2r(plan,(double *) in+instride*I+J,
+                           (double *) out+outstride*J+I);
         }
       }
     }
 #endif
   }
 };
+
 
 // Compute the complex Fourier transform of n complex values.
 // Before calling fft(), the arrays in and out (which may coincide) must be
@@ -722,7 +721,7 @@ public:
 //
 // Notes:
 //   stride is the spacing between the elements of each Complex vector;
-//   dist is the spacing between the first elements of the vectors;
+//   dist is the spacing between the first elements of the vectors.
 //
 //
 class mfft1d : public fftw {
@@ -990,8 +989,8 @@ public:
 // Notes:
 //   stride is the spacing between the elements of each Complex vector;
 //   dist is the spacing between the first elements of the vectors;
-//   in contains the first n/2+1 Complex Fourier values.
-//   out contains the n real values stored as a Complex array;
+//   in contains the first n/2+1 Complex Fourier values;
+//   out contains the n real values stored as a Complex array.
 //
 class mcrfft1d : public fftw {
   unsigned int nx;
