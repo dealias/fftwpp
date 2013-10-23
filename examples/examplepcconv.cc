@@ -11,8 +11,7 @@ using namespace fftwpp;
 // convolution.h/cc, or, for four inputs and one output,
 // multbinarydot.  The offset argument is necessary for computing
 // multi-dimensional convolutions.
-void mult(Complex **f, unsigned int m, unsigned int M,
-           unsigned int offset) {
+void mult(Complex **f, unsigned int m, unsigned int offset) {
   Complex* f0=f[0]+offset;
   Complex* f1=f[1]+offset;
   for(unsigned int j=0; j < m; ++j)

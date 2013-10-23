@@ -6,9 +6,7 @@ using namespace std;
 using namespace Array;
 using namespace fftwpp;
 
-void pmult(Complex **f,
-           unsigned int m, unsigned int M,
-           unsigned int offset) {
+void pmult(Complex **f, unsigned int m, unsigned int offset) {
   Complex* f0=f[0]+offset;
   Complex* f1=f[1]+offset;
   for(unsigned int i=0; i < m; ++i)
