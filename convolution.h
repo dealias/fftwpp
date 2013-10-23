@@ -248,8 +248,8 @@ public:
 };
   
 
-// Compute the scrambled virtual m-padded complex Fourier transform of M complex
-// vectors, each of length m.
+// Compute the scrambled implicitly m-padded complex Fourier transform of M
+// complex vectors, each of length m.
 // The arrays in and out (which may coincide), along with the array u, must
 // be allocated as Complex[M*m].
 //
@@ -296,8 +296,8 @@ public:
   void forwards(Complex *f, Complex *u);
 };
   
-// Compute the scrambled virtual m-padded complex Fourier transform of M complex
-// vectors, each of length 2m-1 with the origin at index m-1
+// Compute the scrambled implicitly m-padded complex Fourier transform of M
+// complex vectors, each of length 2m-1 with the origin at index m-1
 // (i.e. physical wavenumber k=-m+1 to k=m-1).
 // The arrays in and out (which may coincide) must be allocated as
 // Complex[M*(2m-1)]. The array u must be allocated as Complex[M*(m+1)].
@@ -1407,7 +1407,7 @@ public:
   }
 };
   
-// Compute the scrambled virtual 2m-padded complex Fourier transform of M
+// Compute the scrambled implicitly 2m-padded complex Fourier transform of M
 // complex vectors, each of length 2m with the Fourier origin at index m.
 // The arrays in and out (which may coincide), along
 // with the array u, must be allocated as Complex[M*2m].
