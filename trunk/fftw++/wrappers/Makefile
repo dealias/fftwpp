@@ -40,13 +40,13 @@ endif
 
 ifeq ($(strip $(CPLUS_INCLUDE_PATH)),)
 else
-CXXFLAGS +=-L$(CPLUS_INCLUDE_PATH)
+CXXFLAGS +=-I$(CPLUS_INCLUDE_PATH)
 endif
 
-ifeq ($(strip $(FORTRAN_INCLUDE_PATH)),)
+ifeq ($(strip $(FORTRAN_INCLUDE_FLAGS)),)
 FIFLAGS += -I/usr/include
 else
-FIFLAGS +=-I$(FORTRAN_INCLUDE_PATH)
+FIFLAGS += $(FORTRAN_INCLUDE_FLAGS)
 endif
 
 ifeq ($(strip $(LD_LIBRARY_PATH)),)
