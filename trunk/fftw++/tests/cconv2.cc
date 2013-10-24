@@ -150,6 +150,7 @@ int main(int argc, char* argv[])
 
   if(Implicit) {
     ImplicitConvolution2 C(mx,my,M);
+    cout << "Using " << C.Threads() << " threads."<< endl;
     unsigned int mxy=mx*my;
     Complex **F=new Complex *[M];
     Complex **G=new Complex *[M];

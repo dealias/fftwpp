@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# a timing script for convolutions using OpenMP
+# a timing script for FFTs and convolutions using OpenMP
 
 import sys, getopt
 import numpy as np
@@ -9,7 +9,7 @@ import os
 
 
 def main(argv):
-    usage='Usage: timings.py -a<start> -b<stop> -p<cconv,cconv2,cconv3,conv,conv2,conv3,tconv,tconv2,pcconv,pcconv2,pcconv3> -T<number of threads> -A<quoted arg list for timed program> -r<implicit/explicit/pruned/fft> -R<ram in gigabytes> -d -o<output file name>' 
+    usage='Usage: \ntimings.py\n -a<start>\n -b<stop>\n -p<cconv,cconv2,cconv3,conv,conv2,conv3,tconv,tconv2,pcconv,pcconv2,pcconv3>\n -T<number of threads> -A<quoted arg list for timed program>\n -r<implicit/explicit/pruned/fft>\n -R<ram in gigabytes> -d -o<output file name>\n -D<outdir>\n -o<outfile>\n -<grep string>' 
 
     dryrun=False
     bset=0
@@ -27,7 +27,6 @@ def main(argv):
     outdir=""
     rname="Implicit"
     
-   
     try:
         opts, args = getopt.getopt(argv,"dp:T:a:b:A:r:R:o:D:g:")
     except getopt.GetoptError:
@@ -55,7 +54,7 @@ def main(argv):
         elif opt in ("-o"):
             out=str(arg)
         elif opt in ("-D"):
-            outdir=str(arg)+"/"
+            outdir=str(arg)
         elif opt in ("-g"):
             rname=str(arg)
 
@@ -80,7 +79,7 @@ def main(argv):
         if RAM != 0:
             b=min(int(floor(log(RAM/4)/log(2))),b)
             b=min(b,14) # because we aren't crazy
-        outdir="timings1c"
+        if outdir == "": outdir="timings1c"
         if(r == "pruned"):
             print p+" has no pruned option"
             dorun=0
@@ -90,20 +89,20 @@ def main(argv):
                 b=min(int(floor(0.5*log(RAM/64)/log(2))),b)
             else:
                 b=min(int(floor(log(RAM/16/2/2**2)/log(2)/2)),b)
-        outdir="timings2c"
+        if outdir == "": outdir="timings2c"
     if p == "cconv3":
         if RAM != 0:
             if r== "implicit":
                 b=min(int(floor(log(RAM/96)/log(2)/3)),b)
             else:
                 b=min(int(floor(log(RAM/16/2**3)/log(2)/3)),b)
-        outdir="timings3c"
+        if outdir == "": outdir="timings3c"
 
     if p == "conv":
         if RAM != 0:
             b=min(int(floor(log(RAM/6)/log(2))),b)
             b=min(b,14) # because we aren't crazy
-        outdir="timings1r"
+        if outdir == "": outdir="timings1r"
         if(r == "pruned"):
             print p+" has no pruned option"
             dorun=0
@@ -113,11 +112,11 @@ def main(argv):
                 b=min(int(floor(0.5*log(RAM/96)/log(2))),b)
             else:
                 b=min(int(floor(log(RAM/8/3**2)/log(2)/2)),b)
-        outdir="timings2r"
+        if outdir == "": outdir="timings2r"
     if p == "conv3":
         if RAM != 0:
             b=min(int(floor(log(RAM/192)/log(2)/3)),b)
-        outdir="timings3r"
+        if outdir == "": outdir="timings3r"
         if(r != "implicit"):
             print p+" has no "+r+" option"
             dorun=0
@@ -126,7 +125,7 @@ def main(argv):
         if RAM != 0:
             b=int(floor(log(RAM/6)/log(2)))
             b=min(b,14) # because we aren't crazy
-        outdir="timings1t"
+        if outdir == "": outdir="timings1t"
         if(r == "pruned"):
             print p+" has no pruned option"
             dorun=0
@@ -152,18 +151,18 @@ def main(argv):
                 b=min(int(floor(0.5*log(RAM/64)/log(2))),b)
             else:
                 b=min(int(floor(log(RAM/16/2/2**2)/log(2)/2)),b)
-        outdir="timings2cp"
+        if outdir == "": outdir="timings2cp"
     if p == "pcconv3":
         if RAM != 0:
             if r== "implicit":
                 b=min(int(floor(log(RAM/96)/log(2)/3)),b)
             else:
                 b=min(int(floor(log(RAM/16/2**3)/log(2)/3)),b)
-        outdir="timings3cp"    
+        if outdir == "": outdir="timings3cp"    
     if p == "c2cfft2":
         if RAM != 0:
             b=min(int(floor(0.5*log(RAM/64)/log(2))),b)
-        outdir="timings2c2c"
+        if outdir == "": outdir="timings2c2c"
         r="fft"
         rname="fft"
     if outdir == "":
@@ -172,8 +171,7 @@ def main(argv):
         print usage
         sys.exit(2)
 
-    if not out == "":
-        r=out
+    if out != "": r=out
 
     if(dorun == 1):
         if RAM != 0:
@@ -192,7 +190,7 @@ def main(argv):
         
         command="./"+str(p)
 
-        print "output in "+outdir+r
+        print "output in "+outdir+"/"+r
 
         print "command: "+command+cargs+" "+A
         if not dryrun:
