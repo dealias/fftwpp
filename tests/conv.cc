@@ -126,6 +126,7 @@ int main(int argc, char* argv[])
 
   if(Implicit) {
     ImplicitHConvolution C(m,M);
+    cout << "Using " << C.Threads() << " threads."<< endl;
     Complex **F=new Complex *[M];
     Complex **G=new Complex *[M];
     for(unsigned int s=0; s < M; ++s) {
