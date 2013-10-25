@@ -1592,6 +1592,7 @@ void pImplicitConvolution::convolve(Complex **F, Complex **U,
                                     multiplier *pmult,
                                     unsigned int offset)
 {
+  Complex *P[A];
   for(unsigned int i=0; i < A; ++i)
     P[i]=F[i]+offset;
   
