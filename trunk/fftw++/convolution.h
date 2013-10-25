@@ -1849,8 +1849,8 @@ multiplier multbinarydot6;
 multiplier multbinarydot8;
 multiplier multbinarydot16;
 
-static const struct general {} premult0_={};
-static const struct premult2 {} premult2_={};
+struct general {};
+struct premult2 {};
 
 // In-place implicitly dealiased 1D complex convolution using
 // function pointers for multiplication
@@ -1966,9 +1966,9 @@ public:
   inline void premult(Complex **F, unsigned int k, Vec& Zetak);
 
   template<class T>
-  void itwiddle(Complex **);
+  void premult(Complex **);
   
-  void twiddleadd(Complex *f, Complex *u);
+  void postmultadd(Complex *f, Complex *u);
 };
 
 // In-place implicitly dealiased 2D complex convolution.
