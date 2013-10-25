@@ -1602,8 +1602,8 @@ void pImplicitConvolution::convolve(Complex **F, Complex **U,
     
   (*pmult)(U,m,threads);
 
-  if(A == 2) itwiddle<premult2>(P);
-  else itwiddle<general>(P);
+  if(A == 2) premult<premult2>(P);
+  else premult<general>(P);
 
   if(binary) {
     Complex *f=P[0];
@@ -1615,10 +1615,9 @@ void pImplicitConvolution::convolve(Complex **F, Complex **U,
     (*pmult)(P,m,threads);
     Forwards0->fft(v,f);
     Forwards0->fft(U[0],v);
-    twiddleadd(f,v);
+    postmultadd(f,v);
   } else {
-    //itwiddle<general>(P);
-  // Forwards FFT:
+    // Forwards FFT:
     for(unsigned int i=0; i < A; ++i)
       Backwards0->fft(P[i]);
     (*pmult)(P,m,threads);
@@ -1627,7 +1626,7 @@ void pImplicitConvolution::convolve(Complex **F, Complex **U,
       Complex *u=U[i];
       Forwards->fft(f);
       Forwards->fft(u);
-      twiddleadd(f,u);
+      postmultadd(f,u);
     }
   }
 }
@@ -1656,9 +1655,9 @@ premult<premult2>(Complex **F, unsigned int k, Vec& Zetak)
 }
 #endif
 
-// multiply by twiddle factor to prep for inverse FFT for odd modes
+// multiply by root of unity to prepare for inverse FFT for odd modes
 template<class T>
-void pImplicitConvolution::itwiddle(Complex **F)
+void pImplicitConvolution::premult(Complex **F)
 {  
 #ifdef __SSE2__
   PARALLEL(
@@ -1699,8 +1698,8 @@ void pImplicitConvolution::itwiddle(Complex **F)
     }
 
 
-// multiply by twiddle factor to prep for inverse FFT for odd modes, add
-void pImplicitConvolution::twiddleadd(Complex *f, Complex *u)
+// multiply by root of unity to prepare and add for inverse FFT for odd modes
+void pImplicitConvolution::postmultadd(Complex *f, Complex *u)
 {
   double ninv=0.5/m;
 #ifdef __SSE2__
