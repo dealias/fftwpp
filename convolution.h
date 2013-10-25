@@ -1868,8 +1868,6 @@ private:
   fft1d *Backwards0,*Forwards0;
   fft1d *Backwards,*Forwards;
   bool binary;
-  Complex **P;
-
 public:
   void initpointers(Complex **&U, Complex *u) {
     U=new Complex *[A];
@@ -1890,8 +1888,6 @@ public:
     Complex* U1=A == 1 ? ComplexAlign(m) : U[1];
     Backwards=new fft1d(m,1,U0,U1);
     if(A == 1) deleteAlign(U1);
-    
-    P=new Complex*[A];
     
     if(binary) {
       Forwards0=new fft1d(m,-1,U0,U1);
@@ -1945,7 +1941,6 @@ public:
       delete Forwards;
       delete Backwards0; 
     }
-    delete P;
     delete Backwards;
     
     deleteAlign(ZetaH);
