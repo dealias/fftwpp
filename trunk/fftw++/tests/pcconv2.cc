@@ -37,7 +37,6 @@ int main(int argc, char* argv[])
 #endif  
   
   // Problem Size:
-  unsigned int m=4;
   unsigned int mx=4;
   unsigned int my=4;
 
@@ -92,10 +91,10 @@ int main(int argc, char* argv[])
   }
   cout << "N=" << N << endl;
   
-  Complex *h0=NULL;
-  if(Test || Direct) h0=ComplexAlign(m);
-
   double *T=new double[N];
+  array2<Complex> h0;
+  size_t align=sizeof(Complex);
+  if(Direct) h0.Allocate(mx,my,align);
 
   if(Implicit) {
     
@@ -130,46 +129,55 @@ int main(int argc, char* argv[])
     else 
       cout << f0[0][0] << endl;
 
-    if(Test || Direct) for(unsigned int i=0; i < m; i++) h0[i]=f0[0][i];
+    if(Test || Direct) {
+      for(unsigned int i=0; i < mx; ++i) {
+	for(unsigned int j=0; j < my; ++j) {
+	  h0[i][j]=f0[i][j];
+	}
+      }
+    }
     
     for(unsigned int s=0; s < A; ++s) 
       deleteAlign(f[s]);
     delete[] f;
   }
   
-  /*
-  
   if(Direct) {
-    DirectConvolution C(m);
-    init(f,g);
-    Complex *h=ComplexAlign(n);
+    array2<Complex> h(mx,my,align);
+    array2<Complex> f(mx,my,align);
+    array2<Complex> g(mx,my,align);
+    DirectConvolution2 C(mx,my);
+    init(f,g,mx,my);
     seconds();
     C.convolve(h,f,g);
-    T[0]=seconds();  
+    T[0]=seconds();
+  
+    timings("Direct",mx,T,1);
     
-    timings("Direct",m,T,1);
-
-    if(m < 100)
-      for(unsigned int i=0; i < m; i++) cout << h[i] << endl;
-    else cout << h[0] << endl;
+    if(mx*my < outlimit) 
+      for(unsigned int i=0; i < mx; i++) {
+        for(unsigned int j=0; j < my; j++)
+          cout << h[i][j] << "\t";
+        cout << endl;
+      } else cout << h[0][0] << endl;
 
     { // compare implicit or explicit version with direct verion:
       double error=0.0;
       cout << endl;
       double norm=0.0;
-      for(unsigned long long k=0; k < m; k++) {
-	error += abs2(h0[k]-h[k]);
-	norm += abs2(h[k]);
+      for(unsigned int i=0; i < mx; i++) {
+        for(unsigned int j=0; j < my; j++) {
+	  error += abs2(h0[i][j]-h[i][j]);
+	  norm += abs2(h[i][j]);
+	}
       }
       error=sqrt(error/norm);
       cout << "error=" << error << endl;
       if (error > 1e-12) cerr << "Caution! error=" << error << endl;
     }
-    
-    if(Test) for(unsigned int i=0; i < m; i++) h0[i]=h[i];
-    deleteAlign(h);
+
   }
-    
+  /*    
   if(Test) {
     Complex *h=ComplexAlign(n);
     // test accuracy of convolution methods:
