@@ -20,15 +20,6 @@ unsigned int M=1;
 
 bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
-void pmult(Complex **f,
-           unsigned int m,
-           unsigned int offset) {
-  Complex* f0=f[0]+offset;
-  Complex* f1=f[1]+offset;
-  for(unsigned int i=0; i < m; ++i)
-    f0[i] *= f1[i];
-}
-
 inline void init(array3<Complex>& f0, array3<Complex>& f1, 
 		 unsigned int mx, unsigned int my, unsigned int mz) 
 {
@@ -140,7 +131,7 @@ int main(int argc, char* argv[])
     for(unsigned int i=0; i < N; ++i) {
       init(f0,f1,mx,my,mz);
       seconds();
-      C.convolve(f,pmult);
+      C.convolve(f,multbinary);
 //      C.convolve(f,g);
       T[i]=seconds();
     }

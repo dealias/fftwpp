@@ -1831,26 +1831,26 @@ public:
   }
 };
 
-// Sample multplication for binary convolutions for use with
+#ifndef __SSE2__
+#define Vec Complex
+#endif
+
+typedef void multiplier(Complex **, unsigned int m, unsigned int threads); 
+  
+// Sample multiplier for binary convolutions for use with
 // function-pointer convolutions.
 // F[0][j] *= F[1][j]
-void multbinary(Complex **F,
-                unsigned int m,
-                unsigned int offset);
+multiplier multbinary;
 
 // F[0][j] = F[0][j]*F[1][j] + F[2][j]*F[3][j]
-void multbinarydot(Complex **F,
-                   unsigned int m,
-                   unsigned int offset);
-void multbinarydot6(Complex **F,
-		    unsigned int m,
-		    unsigned int offset);
-void multbinarydot8(Complex **F,
-		    unsigned int m,
-		    unsigned int offset);
-void multbinarydot16(Complex **F,
-		     unsigned int m,
-		     unsigned int offset);
+multiplier multbinarydot;
+
+multiplier multbinarydot6;
+multiplier multbinarydot8;
+multiplier multbinarydot16;
+
+static const struct general {} premult0_={};
+static const struct premult2 {} premult2_={};
 
 // In-place implicitly dealiased 1D complex convolution using
 // function pointers for multiplication
@@ -1865,8 +1865,10 @@ private:
   bool allocated;
   unsigned int s;
   Complex *ZetaH, *ZetaL;
-  fft1d *Backwards0;
+  fft1d *Backwards0,*Forwards0;
   fft1d *Backwards,*Forwards;
+  bool binary;
+  Complex **P;
 
 public:
   void initpointers(Complex **&U, Complex *u) {
@@ -1881,14 +1883,24 @@ public:
 
   void init() {
     Complex* U0=U[0];
+    
+    binary=(B == 1 && A == 2);
+//    binary=false;
+    
     Complex* U1=A == 1 ? ComplexAlign(m) : U[1];
-
     Backwards=new fft1d(m,1,U0,U1);
-    Backwards0=new fft1d(m,1,U0);
-    Forwards=new fft1d(m,-1,U0);
     if(A == 1) deleteAlign(U1);
+    
+    P=new Complex*[A];
+    
+    if(binary) {
+      Forwards0=new fft1d(m,-1,U0,U1);
+    } else {
+      Backwards0=new fft1d(m,1,U0);
+      Forwards=new fft1d(m,-1,U0);
+    }
 
-    threads=std::min(threads,Forwards->Threads());
+    threads=std::min(threads,Backwards->Threads());
     s=BuildZeta(2*m,m,ZetaH,ZetaL,threads);
   }
   
@@ -1927,22 +1939,25 @@ public:
     if(pointers) deletepointers(U);
     if(allocated) deleteAlign(u);
     
-    delete Backwards0; 
+    if(binary)
+      delete Forwards0;
+    else {
+      delete Forwards;
+      delete Backwards0; 
+    }
+    delete P;
     delete Backwards;
-    delete Forwards;
+    
     deleteAlign(ZetaH);
     deleteAlign(ZetaL);
   }
 
-  void convolve(Complex **F, Complex **U,
-                void (*pmult)(Complex **,unsigned int,unsigned int), 
+  void convolve(Complex **F, Complex **U, multiplier *pmult,
                 unsigned int offset=0);
   
   // F is an array of A pointers to distinct data blocks each of size m,
   // shifted by offset (contents not preserved).
-  void convolve(Complex **F,
-                void (*pmult)(Complex **,unsigned int,unsigned int), 
-                unsigned int offset=0) {
+  void convolve(Complex **F, multiplier *pmult, unsigned int offset=0) {
     convolve(F,U,pmult,offset);
   }
   
@@ -1952,7 +1967,12 @@ public:
     convolve(F,U,multbinary,0);
   }
   
-  void itwiddle(Complex *f);
+  template<class T>
+  inline void premult(Complex **F, unsigned int k, Vec& Zetak);
+
+  template<class T>
+  void itwiddle(Complex **);
+  
   void twiddleadd(Complex *f, Complex *u);
 };
 
@@ -1996,14 +2016,12 @@ public:
 
   void subconvolution(Complex **F, Complex ***W1,
                       unsigned int start, unsigned int stop,
-                      void (*pmult)(Complex **,unsigned int,unsigned int));
+                      multiplier *pmult);
   
   void convolve(Complex **F, Complex **U2, Complex ***U1,
-                void (*pmult)(Complex **,unsigned int,unsigned int),
-                unsigned int offset=0);
+                multiplier *pmult, unsigned int offset=0);
   
-  void convolve(Complex **F,
-                void (*pmult)(Complex **,unsigned int,unsigned int),
+  void convolve(Complex **F, multiplier *pmult,
                 unsigned int offset=0) {
     convolve(F,U2,U1,pmult,offset);
   }
@@ -2131,17 +2149,17 @@ public:
                       Complex ***U2,
                       Complex ****U1,
                       unsigned int start, unsigned int stop,
-                      void (*pmult)(Complex **,unsigned int,unsigned int));
+                      multiplier *pmult);
 
   void convolve(Complex **F,
                 Complex **U3,
                 Complex ***U2,
                 Complex ****U1,
-                void (*pmult)(Complex **,unsigned int,unsigned int),
+                multiplier *pmult,
                 unsigned int offset=0);
 
   void convolve(Complex **F,
-                void (*pmult)(Complex **,unsigned int,unsigned int),
+                multiplier *pmult,
                 unsigned int offset=0) {
     convolve(F,U3,U2,U1,pmult,offset);
   }

@@ -133,12 +133,18 @@ int main(int argc, char* argv[])
     cout << endl;
   }
   */
-  void (*pmult)(Complex **,unsigned int,unsigned int)=NULL;
-  if(A == 2) pmult=multbinary;
-  if(A == 4) pmult=multbinarydot;
-  if(A == 6) pmult=multbinarydot6;
-  if(A == 8) pmult=multbinarydot8;
-  if(A == 16) pmult=multbinarydot16;
+  multiplier *pmult;
+  
+  switch(A) {
+    case 2: pmult=multbinary; break;
+    case 4: pmult=multbinarydot; break;
+    case 6: pmult=multbinarydot6; break;
+    case 8: pmult=multbinarydot8; break;
+    case 16: pmult=multbinarydot16; break;
+    default: exit(1);
+      break;
+      
+  }
 
   for(unsigned int i=0; i < N; ++i) {
     init(f,A);

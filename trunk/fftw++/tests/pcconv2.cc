@@ -15,15 +15,6 @@ unsigned int N=0;
 
 bool Direct=false, Implicit=true, Explicit=false, Test=false;
 
-void pmult(Complex **f,
-           unsigned int m,
-           unsigned int offset) {
-  Complex* f0=f[0]+offset;
-  Complex* f1=f[1]+offset;
-  for(unsigned int j=0; j < m; ++j)
-    f0[j] *= f1[j];
-}
-
 inline void init(array2<Complex> &f0, array2<Complex> &f1, 
 		 unsigned int mx, unsigned int my) 
 {
@@ -34,6 +25,8 @@ inline void init(array2<Complex> &f0, array2<Complex> &f1,
     }
   }
 }
+
+unsigned int outlimit=100;
 
 int main(int argc, char* argv[])
 {
@@ -115,9 +108,9 @@ int main(int argc, char* argv[])
     array2<Complex> f0(mx,my,f[0]);
     array2<Complex> f1(mx,my,f[1]);
     init(f0,f1,mx,my);
-    cout << "input:" << endl;
-    cout << "f[0]:" << endl << f0 << endl;
-    cout << "f[1]:" << endl << f1 << endl;
+//    cout << "input:" << endl;
+//    cout << "f[0]:" << endl << f0 << endl;
+//    cout << "f[1]:" << endl << f1 << endl;
 
     // Creat a convolution object C:
     pImplicitConvolution2 C(mx,my,A,B);
@@ -125,14 +118,14 @@ int main(int argc, char* argv[])
     for(unsigned int i=0; i < N; ++i) {
       init(f0,f1,mx,my);
       seconds();
-      C.convolve(f,pmult,0);
+      C.convolve(f,multbinary);
       T[i]=seconds();
     }
 
     timings("Implicit",mx,T,N);
 
     // Display output:
-    if(m < 100) 
+    if(mx*my < outlimit) 
       cout << f0 << endl;
     else 
       cout << f0[0][0] << endl;
