@@ -138,6 +138,13 @@ int main(int argc, char* argv[])
     
     timings("Implicit",mx,T,N);
         
+    if(Direct) {
+      for(unsigned int i=0; i < mx; i++) 
+        for(unsigned int j=0; j < my; j++)
+	  for(unsigned int k=0; k < mz; k++)
+	    h0[i][j][k]=f0[i][j][k];
+    }
+
     if(mx*my*mz < outlimit) 
       for(unsigned int i=0; i < mx; i++) {
         for(unsigned int j=0; j < my; j++) {
@@ -156,6 +163,49 @@ int main(int argc, char* argv[])
 
   }
   
+
+  if(Direct) {
+    array3<Complex> h(mx,my,mz,align);
+    array3<Complex> f(mx,my,mz,align);
+    array3<Complex> g(mx,my,mz,align);
+    DirectConvolution3 C(mx,my,mz);
+    init(f,g,mx,my,mz);
+    seconds();
+    C.convolve(h,f,g);
+    T[0]=seconds();
+  
+    timings("Direct",mx,T,1);
+
+    if(mx*my*mz < outlimit) {
+      for(unsigned int i=0; i < mx; i++) {
+        for(unsigned int j=0; j < my; j++) {
+          for(unsigned int k=0; k < mz; k++)
+            cout << h[i][j][k] << "\t";
+          cout << endl;
+        }
+        cout << endl;
+      }
+    } else cout << h[0][0][0] << endl;
+
+    { // compare implicit or explicit version with direct verion:
+      double error=0.0;
+      double norm=0.0;
+      for(unsigned int i=0; i < mx; i++) {
+        for(unsigned int j=0; j < my; j++) {
+	  for(unsigned int k=0; k < mz; k++) {
+	    error += abs2(h0[i][j][k]-h[i][j][k]);
+	    norm += abs2(h[i][j][k]);
+	  }
+	}
+      }
+      error=sqrt(error/norm);
+      cout << "error=" << error << endl;
+      if (error > 1e-12) cerr << "Caution! error=" << error << endl;
+    }
+
+  }
+
+
   delete [] T;
 
   return 0;
