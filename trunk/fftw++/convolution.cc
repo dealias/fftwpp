@@ -1601,9 +1601,11 @@ void pImplicitConvolution::convolve(Complex **F, Complex **U,
     Backwards->fft(P[i],U[i]);
     
   (*pmult)(U,m,threads);
-  
+
+  if(A == 2) itwiddle<premult2>(P);
+  else itwiddle<general>(P);
+
   if(binary) {
-    itwiddle<premult2>(P);
     Complex *f=P[0];
     Complex *v=U[1];
     Backwards->fft(f,v);
@@ -1615,7 +1617,7 @@ void pImplicitConvolution::convolve(Complex **F, Complex **U,
     Forwards0->fft(U[0],v);
     twiddleadd(f,v);
   } else {
-    itwiddle<general>(P);
+    //itwiddle<general>(P);
   // Forwards FFT:
     for(unsigned int i=0; i < A; ++i)
       Backwards0->fft(P[i]);
