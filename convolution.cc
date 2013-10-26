@@ -1824,7 +1824,7 @@ void multbinary(Complex **F, unsigned int m, unsigned int threads) {
     }
 
 // F[0][j] = F[0][j]*F[1][j] + F[2][j]*F[3][j]
-void multbinarydot(Complex **F,unsigned int m, unsigned int threads) {
+void multbinarydot(Complex **F, unsigned int m, unsigned int threads) {
   Complex* F0=F[0];
   Complex* F1=F[1];
   Complex* F2=F[2];
@@ -1839,6 +1839,7 @@ void multbinarydot(Complex **F,unsigned int m, unsigned int threads) {
     }
     )
 #else
+    // TODO: Compare to optimized version
     PARALLEL(
       for(unsigned int j=0; j < m; ++j)
         F0[j]=F0[j]*F1[j] + F2[j]*F3[j];
