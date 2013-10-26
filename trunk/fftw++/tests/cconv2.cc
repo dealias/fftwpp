@@ -16,7 +16,8 @@ unsigned int nx=0;
 unsigned int ny=0;
 unsigned int mx=4;
 unsigned int my=4;
-unsigned int M=1;
+unsigned int M=1;   // Number of terms in dot product
+unsigned int A=2*M; // Number of independent inputs
 
 bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
@@ -98,6 +99,7 @@ int main(int argc, char* argv[])
         break;
       case 'M':
         M=atoi(optarg);
+        A=2*M;
         break;
       case 'N':
         N=atoi(optarg);
@@ -149,20 +151,33 @@ int main(int argc, char* argv[])
   double *T=new double[N];
 
   if(Implicit) {
-    ImplicitConvolution2 C(mx,my,M);
-    cout << "Using " << C.Threads() << " threads."<< endl;
+    multiplier *mult;
+  
+    switch(A) {
+      case 2: mult=multbinary; break;
+      case 4: mult=multbinarydot; break;
+      case 6: mult=multbinarydot6; break;
+      case 8: mult=multbinarydot8; break;
+      case 16: mult=multbinarydot16; break;
+      default: exit(1);
+        break;
+      
+    }
+
+    PImplicitConvolution2 C(mx,my,A);
+    cout << "threads=" << C.Threads() << endl << endl;;
+
     unsigned int mxy=mx*my;
-    Complex **F=new Complex *[M];
-    Complex **G=new Complex *[M];
+    Complex **F=new Complex *[A];
     for(unsigned int s=0; s < M; ++s) {
       unsigned int smxy=s*mxy;
-      F[s]=f+smxy;
-      G[s]=g+smxy;
+      F[2*s]=f+smxy;
+      F[2*s+1]=g+smxy;
     }
     for(unsigned int i=0; i < N; ++i) {
       init(f,g,M);
       seconds();
-      C.convolve(F,G);
+      C.convolve(F,mult);
 //      C.convolve(f,g);
       T[i]=seconds();
     }
@@ -183,7 +198,6 @@ int main(int argc, char* argv[])
       } else cout << f[0][0] << endl;
     cout << endl;
     
-    delete [] G;
     delete [] F;
   }
   

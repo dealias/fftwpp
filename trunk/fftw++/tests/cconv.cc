@@ -18,7 +18,9 @@ const Complex G(sqrt(5.0),sqrt(11.0));
 
 unsigned int m=11;
 unsigned int n=2*m;
-unsigned int M=1;
+
+unsigned int M=1;   // Number of terms in dot product
+unsigned int A=2*M; // Number of independent inputs
 
 bool Direct=false, Implicit=true, Explicit=false, Test=false;
 
@@ -82,6 +84,7 @@ int main(int argc, char* argv[])
         break;
       case 'M':
         M=atoi(optarg);
+        A=2*M;
         break;
       case 'N':
         N=atoi(optarg);
@@ -130,32 +133,32 @@ int main(int argc, char* argv[])
   double *T=new double[N];
 
   if(Implicit) {
+    multiplier *mult;
     
-    /*
-    init(f,g,M);
-    cout << "input:" << endl;
-    for(unsigned int s=0; s < M; ++s) {
-      for(unsigned int k=0; k < m; ++k)
-	cout << f[k+s*m] << " ";
-      cout << endl; for(unsigned int k=0; k < m; ++k)
-	cout << g[k+s*m] << " ";
-      cout << endl;
+    switch(A) {
+      case 2: mult=multbinary; break;
+      case 4: mult=multbinarydot; break;
+      case 6: mult=multbinarydot6; break;
+      case 8: mult=multbinarydot8; break;
+      case 16: mult=multbinarydot16; break;
+      default: exit(1);
+        break;
+      
     }
-    */
-
-    ImplicitConvolution C(m,M);
-    cout << "Using " << C.Threads() << " threads."<< endl;
-    Complex **F=new Complex *[M];
-    Complex **G=new Complex *[M];
+    
+    pImplicitConvolution C(m,A);
+    cout << "threads=" << C.Threads() << endl << endl;;
+    
+    Complex **F=new Complex *[A];
     for(unsigned int s=0; s < M; ++s) {
       unsigned int sm=s*m;
-      F[s]=f+sm;
-      G[s]=g+sm;
+      F[2*s]=f+sm;
+      F[2*s+1]=g+sm;
     }
     for(unsigned int i=0; i < N; ++i) {
       init(f,g,M);
       seconds();
-      C.convolve(F,G);
+      C.convolve(F,mult);
 //      C.convolve(f,g);
       T[i]=seconds();
     }
@@ -169,7 +172,7 @@ int main(int argc, char* argv[])
 
     if(Test || Direct) for(unsigned int i=0; i < m; i++) h0[i]=f[i];
     
-    delete [] G;
+
     delete [] F;
   }
   

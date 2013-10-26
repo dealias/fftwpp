@@ -650,10 +650,10 @@ public:
     convolve(F,U,pmult,offset);
   }
   
-  // F is an array of A pointers to distinct data blocks each of size m 
-  // (contents not preserved).
-  void convolve(Complex **F) {
-    convolve(F,U,multbinary,0);
+  // Binary convolution:
+  void convolve(Complex *f, Complex *g) {
+    Complex *F[]={f,g};
+    convolve(F,multbinary);
   }
   
   template<class T>
@@ -747,10 +747,10 @@ public:
   }
   
   PImplicitConvolution2(unsigned int mx, unsigned int my,
-                       unsigned int A=2, unsigned int B=1,
-                       unsigned int threads=fftw::maxthreads,
-                       unsigned int nx=0, unsigned int ny=0,
-                       unsigned int stride=0) : 
+                        unsigned int A=2, unsigned int B=1,
+                        unsigned int threads=fftw::maxthreads,
+                        unsigned int nx=0, unsigned int ny=0,
+                        unsigned int stride=0) : 
     ThreadBase(threads), mx(mx), my(my), A(A), B(B), allocated(true) {
     set(nx,ny,stride);
     unsigned Threads=outerthreads(nx);
@@ -795,9 +795,9 @@ public:
     }
   }
   
-  void forwards(Complex **F, Complex **U2) {
-    for(unsigned int a=0; a < B; ++a)
-    xfftpad->forwards(F[a],U2[a]);
+  void forwards(Complex **F, Complex **U2, unsigned int offset) {
+    for(unsigned int b=0; b < B; ++b)
+    xfftpad->forwards(F[b]+offset,U2[b]);
   }
   
   virtual void convolve(Complex **F, Complex ***U1, Complex **U2,
@@ -806,19 +806,19 @@ public:
     backwards(F,U2,size,offset);
     subconvolution(F,U1,pmult,offset,size+offset);
     subconvolution(U2,U1,pmult,0,size);
-    forwards(F,U2);
+    forwards(F,U2,offset);
   }
   
-  // F a pointer to A distinct data blocks each of size mx*my,
+  // F is a pointer to A distinct data blocks each of size mx*my,
   // shifted by offset (contents not preserved).
-  // The output is returned in F.
   void convolve(Complex **F, multiplier *pmult, unsigned int offset=0) {
     convolve(F,U1,U2,pmult,offset);
   }
-
-  // Convolution for special case A=1:
-  void convolve(Complex *f, multiplier *pmult) {
-    convolve(&f,pmult);
+  
+  // Binary convolution:
+  void convolve(Complex *f, Complex *g) {
+    Complex *F[]={f,g};
+    convolve(F,multbinary);
   }
 };
 
