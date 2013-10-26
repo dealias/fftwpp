@@ -525,6 +525,303 @@ public:
   }
 };
 
+#ifndef __SSE2__
+#define Vec Complex
+#endif
+
+typedef void multiplier(Complex **, unsigned int m, unsigned int threads); 
+  
+// Sample multiplier for binary convolutions for use with
+// function-pointer convolutions.
+// F[0][j] *= F[1][j]
+multiplier multbinary;
+
+// F[0][j] = F[0][j]*F[1][j] + F[2][j]*F[3][j]
+multiplier multbinarydot;
+
+multiplier multbinarydot6;
+multiplier multbinarydot8;
+multiplier multbinarydot16;
+
+struct general {};
+struct premult2 {};
+
+// In-place implicitly dealiased 1D complex convolution using
+// function pointers for multiplication
+class pImplicitConvolution : public ThreadBase {
+private:
+  unsigned int m;
+  Complex **U;
+  unsigned int A;
+  Complex *u;
+  unsigned int B;
+  bool pointers;
+  bool allocated;
+  unsigned int s;
+  Complex *ZetaH, *ZetaL;
+  fft1d *Backwards0,*Forwards0;
+  fft1d *Backwards,*Forwards;
+  bool binary;
+public:
+  void initpointers(Complex **&U, Complex *u) {
+    U=new Complex *[A];
+    for(unsigned int a=0; a < A; ++a) 
+      U[a]=u+a*m;
+  }
+  
+  void deletepointers(Complex **&U) {
+    delete [] U;
+  }
+
+  void init() {
+    Complex* U0=U[0];
+    
+    binary=(B == 1 && A == 2);
+//    binary=false;
+    
+    Complex* U1=A == 1 ? ComplexAlign(m) : U[1];
+    Backwards=new fft1d(m,1,U0,U1);
+    if(A == 1) deleteAlign(U1);
+    
+    if(binary) {
+      Forwards0=new fft1d(m,-1,U0,U1);
+    } else {
+      Backwards0=new fft1d(m,1,U0);
+      Forwards=new fft1d(m,-1,U0);
+    }
+
+    threads=std::min(threads,Backwards->Threads());
+    s=BuildZeta(2*m,m,ZetaH,ZetaL,threads);
+  }
+  
+  // m is the number of Complex data values.
+  // U is an array of A distinct work arrays each of size m.
+  pImplicitConvolution(unsigned int m, Complex **U, unsigned int A=2,
+                       unsigned int B=1,
+                       unsigned int threads=fftw::maxthreads)
+    : ThreadBase(threads), m(m), U(U), A(A), B(B), pointers(false),
+      allocated(false) {
+    init();
+  }
+  
+  // m is the number of Complex data values.
+  // u is a work array of A*m Complex values.
+  pImplicitConvolution(unsigned int m, Complex *u,
+                       unsigned int A=2, unsigned int B=1,
+                       unsigned int threads=fftw::maxthreads)
+    : ThreadBase(threads), m(m), A(A), u(u), B(B), pointers(true),
+      allocated(false) {
+    initpointers(U,u);
+    init();
+  }
+  
+  // m is the number of Complex data values.
+  pImplicitConvolution(unsigned int m,
+                       unsigned int A=2, unsigned int B=1,
+                       unsigned int threads=fftw::maxthreads)
+    : ThreadBase(threads), m(m), A(A), u(ComplexAlign(m*A)), B(B),
+      pointers(true), allocated(true) {
+    initpointers(U,u);
+    init();
+  }
+  
+  ~pImplicitConvolution() {
+    if(pointers) deletepointers(U);
+    if(allocated) deleteAlign(u);
+    
+    if(binary)
+      delete Forwards0;
+    else {
+      delete Forwards;
+      delete Backwards0; 
+    }
+    delete Backwards;
+    
+    deleteAlign(ZetaH);
+    deleteAlign(ZetaL);
+  }
+
+  void convolve(Complex **F, Complex **U, multiplier *pmult,
+                unsigned int offset=0);
+  
+  // F is an array of A pointers to distinct data blocks each of size m,
+  // shifted by offset (contents not preserved).
+  void convolve(Complex **F, multiplier *pmult, unsigned int offset=0) {
+    convolve(F,U,pmult,offset);
+  }
+  
+  // F is an array of A pointers to distinct data blocks each of size m 
+  // (contents not preserved).
+  void convolve(Complex **F) {
+    convolve(F,U,multbinary,0);
+  }
+  
+  template<class T>
+  inline void premult(Complex **F, unsigned int k, Vec& Zetak);
+
+  template<class T>
+  void premult(Complex **);
+  
+  void postmultadd(Complex *f, Complex *u);
+};
+
+// In-place implicitly dealiased 2D complex convolution.
+class PImplicitConvolution2 : public ThreadBase {
+protected:
+  unsigned int mx,my;
+  Complex *u1;
+  Complex *u2;
+  unsigned int A,B;
+  fftpad *xfftpad;
+  pImplicitConvolution *yconvolve;
+  Complex ***U1;
+  Complex **U2;
+  bool allocated;
+  bool outerthread;
+public:  
+  unsigned int getmx() {return mx;}
+  unsigned int getmy() {return my;}
+  unsigned int getA() {return A;}
+  unsigned int getB() {return B;}
+
+  void initpointers(Complex ***&U1, unsigned int threads) {
+    U1=new Complex **[threads];
+    unsigned int stride=my*A;
+    for(unsigned int t=0; t < threads; ++t)
+      yconvolve->initpointers(U1[t],u1+t*stride);
+  }
+    
+  void deletepointers(Complex ***&U1, unsigned int threads) {
+    for(unsigned int t=0; t < threads; ++t)
+      yconvolve->deletepointers(U1[t]);
+    delete [] U1;
+  }
+  
+  void initpointers2(Complex **&U2, Complex *u2, unsigned int stride) {
+    U2=new Complex *[A];
+    for(unsigned int a=0; a < A; ++a)
+      U2[a]=u2+a*stride;
+  }
+  
+  void deletepointers2(Complex **&U2) {
+    delete [] U2;
+  }
+  
+  unsigned int outerthreads(unsigned int nx) {
+    outerthread=threads > 1 && nx >= threads;
+    return outerthread ? threads : 1;
+  }
+  
+  void init(unsigned int nx, unsigned int ny, unsigned int stride) {
+    xfftpad=new fftpad(mx,ny,ny,u2);
+    yconvolve=new pImplicitConvolution(my,u1,A,B,outerthread ? 1 : threads);
+    initpointers(U1,outerthread ? threads : 1);
+    initpointers2(U2,u2,stride);
+  }
+  
+  void set(unsigned int& nx, unsigned int& ny, unsigned int& stride) {
+    if(nx == 0) nx=mx;
+    if(ny == 0) {
+      ny=my;
+      stride=mx*my;
+    }
+  }
+  
+  // u1 is temporary arrays of size my*A*threads.
+  // u2 is temporary arrays of size mx*my*A.
+  // A is the number of inputs.
+  // B is the number of outputs.
+  // threads is the number of threads to use in the outer subconvolution loop.
+  // nx, ny, and stride are for the MPI interface; should not be set directly.
+  PImplicitConvolution2(unsigned int mx, unsigned int my,
+                       Complex *u1, Complex *u2,
+                       unsigned int A=2, unsigned int B=1,
+                       unsigned int threads=fftw::maxthreads,
+                       unsigned int nx=0, unsigned int ny=0,
+                       unsigned int stride=0) :
+    ThreadBase(threads), mx(mx), my(my), u1(u1), u2(u2), A(A), B(B),
+    allocated(false) {
+    set(nx,ny,stride);
+    outerthreads(nx);
+    init(nx,ny,stride);
+  }
+  
+  PImplicitConvolution2(unsigned int mx, unsigned int my,
+                       unsigned int A=2, unsigned int B=1,
+                       unsigned int threads=fftw::maxthreads,
+                       unsigned int nx=0, unsigned int ny=0,
+                       unsigned int stride=0) : 
+    ThreadBase(threads), mx(mx), my(my), A(A), B(B), allocated(true) {
+    set(nx,ny,stride);
+    unsigned Threads=outerthreads(nx);
+    u1=ComplexAlign(my*A*Threads);
+    u2=ComplexAlign(stride*A);
+    allocated=true;
+    init(nx,ny,stride);
+  }
+  
+  virtual ~PImplicitConvolution2() {
+    deletepointers2(U2);
+    deletepointers(U1,outerthread ? threads : 1);
+    
+    delete yconvolve;
+    delete xfftpad;
+    
+    if(allocated) {
+      deleteAlign(u2);
+      deleteAlign(u1);
+    }
+  }
+  
+  void backwards(Complex **F, Complex **U2,
+                 unsigned int stride, unsigned int offset) {
+    for(unsigned int a=0; a < A; ++a)
+      xfftpad->backwards(F[a]+offset,U2[a]);
+  }
+
+  void subconvolution(Complex **F, Complex ***U1,
+                      multiplier *pmult, 
+                      unsigned int start, unsigned int stop) {
+    if(outerthread) {
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif    
+      for(unsigned int i=start; i < stop; i += my)
+        yconvolve->convolve(F,U1[get_thread_num()],pmult,i);
+    } else {
+      for(unsigned int i=start; i < stop; i += my) {
+        yconvolve->convolve(F,U1[0],pmult,i);
+      }
+    }
+  }
+  
+  void forwards(Complex **F, Complex **U2) {
+    for(unsigned int a=0; a < B; ++a)
+    xfftpad->forwards(F[a],U2[a]);
+  }
+  
+  virtual void convolve(Complex **F, Complex ***U1, Complex **U2,
+                        multiplier *pmult, unsigned int offset=0) {
+    unsigned int size=mx*my;
+    backwards(F,U2,size,offset);
+    subconvolution(F,U1,pmult,offset,size+offset);
+    subconvolution(U2,U1,pmult,0,size);
+    forwards(F,U2);
+  }
+  
+  // F a pointer to A distinct data blocks each of size mx*my,
+  // shifted by offset (contents not preserved).
+  // The output is returned in F.
+  void convolve(Complex **F, multiplier *pmult, unsigned int offset=0) {
+    convolve(F,U1,U2,pmult,offset);
+  }
+
+  // Convolution for special case A=1:
+  void convolve(Complex *f, multiplier *pmult) {
+    convolve(&f,pmult);
+  }
+};
+
 inline void HermitianSymmetrizeX(unsigned int mx, unsigned int my,
                                  unsigned int xorigin, Complex *f)
 {
@@ -1829,146 +2126,6 @@ public:
   void convolve(Complex *f, bool symmetrize=true) {
     convolve(f,u,u2,symmetrize);
   }
-};
-
-#ifndef __SSE2__
-#define Vec Complex
-#endif
-
-typedef void multiplier(Complex **, unsigned int m, unsigned int threads); 
-  
-// Sample multiplier for binary convolutions for use with
-// function-pointer convolutions.
-// F[0][j] *= F[1][j]
-multiplier multbinary;
-
-// F[0][j] = F[0][j]*F[1][j] + F[2][j]*F[3][j]
-multiplier multbinarydot;
-
-multiplier multbinarydot6;
-multiplier multbinarydot8;
-multiplier multbinarydot16;
-
-struct general {};
-struct premult2 {};
-
-// In-place implicitly dealiased 1D complex convolution using
-// function pointers for multiplication
-class pImplicitConvolution : public ThreadBase {
-private:
-  unsigned int m;
-  Complex **U;
-  unsigned int A;
-  Complex *u;
-  unsigned int B;
-  bool pointers;
-  bool allocated;
-  unsigned int s;
-  Complex *ZetaH, *ZetaL;
-  fft1d *Backwards0,*Forwards0;
-  fft1d *Backwards,*Forwards;
-  bool binary;
-public:
-  void initpointers(Complex **&U, Complex *u) {
-    U=new Complex *[A];
-    for(unsigned int s=0; s < A; ++s) 
-      U[s]=u+s*m;
-  }
-  
-  void deletepointers(Complex **&U) {
-    delete [] U;
-  }
-
-  void init() {
-    Complex* U0=U[0];
-    
-    binary=(B == 1 && A == 2);
-//    binary=false;
-    
-    Complex* U1=A == 1 ? ComplexAlign(m) : U[1];
-    Backwards=new fft1d(m,1,U0,U1);
-    if(A == 1) deleteAlign(U1);
-    
-    if(binary) {
-      Forwards0=new fft1d(m,-1,U0,U1);
-    } else {
-      Backwards0=new fft1d(m,1,U0);
-      Forwards=new fft1d(m,-1,U0);
-    }
-
-    threads=std::min(threads,Backwards->Threads());
-    s=BuildZeta(2*m,m,ZetaH,ZetaL,threads);
-  }
-  
-  // m is the number of Complex data values.
-  // U is an array of A distinct work arrays each of size m.
-  pImplicitConvolution(unsigned int m, Complex **U, unsigned int A=2,
-                       unsigned int B=1,
-                       unsigned int threads=fftw::maxthreads)
-    : ThreadBase(threads), m(m), U(U), A(A), B(B), pointers(false),
-      allocated(false) {
-    init();
-  }
-  
-  // m is the number of Complex data values.
-  // u is a work array of A*m Complex values.
-  pImplicitConvolution(unsigned int m, Complex *u,
-                       unsigned int A=2, unsigned int B=1,
-                       unsigned int threads=fftw::maxthreads)
-    : ThreadBase(threads), m(m), A(A), u(u), B(B), pointers(true),
-      allocated(false) {
-    initpointers(U,u);
-    init();
-  }
-  
-  // m is the number of Complex data values.
-  pImplicitConvolution(unsigned int m,
-                       unsigned int A=2, unsigned int B=1,
-                       unsigned int threads=fftw::maxthreads)
-    : ThreadBase(threads), m(m), A(A), u(ComplexAlign(m*A)), B(B),
-      pointers(true), allocated(true) {
-    initpointers(U,u);
-    init();
-  }
-  
-  ~pImplicitConvolution() {
-    if(pointers) deletepointers(U);
-    if(allocated) deleteAlign(u);
-    
-    if(binary)
-      delete Forwards0;
-    else {
-      delete Forwards;
-      delete Backwards0; 
-    }
-    delete Backwards;
-    
-    deleteAlign(ZetaH);
-    deleteAlign(ZetaL);
-  }
-
-  void convolve(Complex **F, Complex **U, multiplier *pmult,
-                unsigned int offset=0);
-  
-  // F is an array of A pointers to distinct data blocks each of size m,
-  // shifted by offset (contents not preserved).
-  void convolve(Complex **F, multiplier *pmult, unsigned int offset=0) {
-    convolve(F,U,pmult,offset);
-  }
-  
-  // F is an array of A pointers to distinct data blocks each of size m 
-  // (contents not preserved).
-  void convolve(Complex **F) {
-    convolve(F,U,multbinary,0);
-  }
-  
-  template<class T>
-  inline void premult(Complex **F, unsigned int k, Vec& Zetak);
-
-  template<class T>
-  void premult(Complex **);
-  
-  void postmultadd(Complex *f, Complex *u);
 };
 
 // In-place implicitly dealiased 2D complex convolution.
