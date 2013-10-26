@@ -1589,8 +1589,7 @@ void fft0bipad::forwards(Complex *f, Complex *u)
     }
 
 void pImplicitConvolution::convolve(Complex **F, Complex **U,
-                                    multiplier *pmult,
-                                    unsigned int offset)
+                                    multiplier *pmult, unsigned int offset)
 {
   Complex *P[A];
   for(unsigned int i=0; i < A; ++i)
@@ -1756,7 +1755,7 @@ void pImplicitConvolution2::subconvolution(Complex **F,
 }
 
 void pImplicitConvolution2::convolve(Complex **F, Complex **U2, Complex ***U1,
-                                    multiplier *pmult,
+                                     multiplier *pmult,
                                      unsigned int offset)
 {
   for(unsigned int i=0; i < A; ++i)
