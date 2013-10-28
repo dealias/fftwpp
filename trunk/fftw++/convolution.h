@@ -775,9 +775,9 @@ public:
       for(unsigned int i=start; i < stop; i += my)
         yconvolve[get_thread_num()]->convolve(F,pmult,i);
     } else {
-      for(unsigned int i=start; i < stop; i += my) {
-        yconvolve[0]->convolve(F,pmult,i);
-      }
+      pImplicitConvolution *yconvolve0=yconvolve[0];
+      for(unsigned int i=start; i < stop; i += my)
+        yconvolve0->convolve(F,pmult,i);
     }
   }
   
@@ -1397,12 +1397,12 @@ public:
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif    
-    for(unsigned int i=start; i < stop; i += stride) {
+    for(unsigned int i=start; i < stop; i += stride)
       yzconvolve[get_thread_num()]->convolve(F,pmult,i);
-    }
     } else {
+      pImplicitConvolution2 *yzconvolve0=yzconvolve[0];
       for(unsigned int i=start; i < stop; i += stride)
-        yzconvolve[0]->convolve(F,pmult,i);
+        yzconvolve0->convolve(F,pmult,i);
     }
   }
   
