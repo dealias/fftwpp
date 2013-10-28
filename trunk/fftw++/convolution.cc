@@ -1588,7 +1588,7 @@ void fft0bipad::forwards(Complex *f, Complex *u)
 #endif
     }
 
-void pImplicitConvolution::convolve(Complex **F, Complex **U,
+void pImplicitConvolution::convolve(Complex **F,
                                     multiplier *pmult, unsigned int offset)
 {
   Complex *P[A];
@@ -1740,66 +1740,6 @@ void pImplicitConvolution::postmultadd(Complex *f, Complex *u)
       )
 #endif
     }
-
-void pImplicitConvolution2::subconvolution(Complex **F,
-                                           Complex ***U1,
-                                           unsigned int start, 
-                                           unsigned int stop,
-                                           multiplier *pmult) {
-
-#ifndef FFTWPP_SINGLE_THREAD
-#pragma omp parallel for num_threads(threads)
-#endif
-  for(unsigned int i=start; i < stop; i += my)
-    yconvolve->convolve(F,U1[get_thread_num()],pmult,i);
-}
-
-void pImplicitConvolution2::convolve(Complex **F, Complex **U2, Complex ***U1,
-                                     multiplier *pmult,
-                                     unsigned int offset)
-{
-  for(unsigned int i=0; i < A; ++i)
-    xfftpad->backwards(F[i]+offset,U2[i]);
-
-  subconvolution(F,U1,offset,size+offset,pmult);
-  subconvolution(U2,U1,0,size,pmult);
- 
-  for(unsigned int i=0; i < B; ++i)
-    xfftpad->forwards(F[i]+offset,U2[i]);
-}
-
-void pImplicitConvolution3::subconvolution(Complex **F, 
-                                           Complex ***U2,
-                                           Complex ****U1,
-                                           unsigned int start, 
-                                           unsigned int stop,
-                                           multiplier *pmult) {
-  unsigned int stride=my*mz;
-#ifndef FFTWPP_SINGLE_THREAD
-#pragma omp parallel for num_threads(threads)
-#endif
-  for(unsigned int i=start; i < stop; i += stride) {
-    unsigned int t=get_thread_num();
-    yzconvolve->convolve(F,U2[t],U1[t],pmult,i);
-  }
-}
-
-void pImplicitConvolution3::convolve(Complex **F,
-                                     Complex **U3,
-                                     Complex ***U2,
-                                     Complex ****U1,
-                                     multiplier *pmult,
-                                     unsigned int offset)
-{
-  for(unsigned int i=0; i < A; ++i)
-    xfftpad->backwards(F[i]+offset,U3[i]);
-
-  subconvolution(F,U2,U1,offset,size+offset,pmult);
-  subconvolution(U3,U2,U1,0,size,pmult);
-
-  for(unsigned int i=0; i < B; ++i)
-    xfftpad->forwards(F[i]+offset,U3[i]);
-}
 
 void multbinary(Complex **F, unsigned int m, unsigned int threads) {
   // This multiplication routine is for binary convolutions only and takes

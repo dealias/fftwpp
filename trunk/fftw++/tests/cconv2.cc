@@ -161,10 +161,9 @@ int main(int argc, char* argv[])
       case 16: mult=multbinarydot16; break;
       default: exit(1);
         break;
-      
     }
 
-    PImplicitConvolution2 C(mx,my,A);
+    pImplicitConvolution2 C(mx,my,A);
     cout << "threads=" << C.Threads() << endl << endl;;
 
     unsigned int mxy=mx*my;

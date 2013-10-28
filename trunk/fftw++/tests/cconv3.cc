@@ -19,7 +19,8 @@ unsigned int nz=0;
 unsigned int mx=4;
 unsigned int my=4;
 unsigned int mz=4;
-unsigned int M=1;
+unsigned int M=1;   // Number of terms in dot product
+unsigned int A=2*M; // Number of independent inputs
 
 bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
@@ -147,20 +148,31 @@ int main(int argc, char* argv[])
   double *T=new double[N];
   
   if(Implicit) {
-    ImplicitConvolution3 C(mx,my,mz,M);
+    multiplier *mult;
+  
+    switch(A) {
+      case 2: mult=multbinary; break;
+      case 4: mult=multbinarydot; break;
+      case 6: mult=multbinarydot6; break;
+      case 8: mult=multbinarydot8; break;
+      case 16: mult=multbinarydot16; break;
+      default: exit(1);
+        break;
+    }
+
+    pImplicitConvolution3 C(mx,my,mz,A);
     cout << "Using " << C.Threads() << " threads."<< endl;
     unsigned int mxyz=mx*my*mz;
-    Complex **F=new Complex *[M];
-    Complex **G=new Complex *[M];
+    Complex **F=new Complex *[A];
     for(unsigned int s=0; s < M; ++s) {
       unsigned int smxyz=s*mxyz;
-      F[s]=f+smxyz;
-      G[s]=g+smxyz;
+      F[2*s]=f+smxyz;
+      F[2*s+1]=g+smxyz;
     }
     for(unsigned int i=0; i < N; ++i) {
       init(f,g,M);
       seconds();
-      C.convolve(F,G);
+      C.convolve(F,mult);
 //      C.convolve(f,g);
       T[i]=seconds();
     }
@@ -185,7 +197,6 @@ int main(int argc, char* argv[])
       } else cout << f[0][0][0] << endl;
     cout << endl;
     
-    delete [] G;
     delete [] F;
   }
   

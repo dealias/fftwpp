@@ -1,3 +1,4 @@
+using namespace std;
 /* Implicitly dealiased convolution routines.
    Copyright (C) 2010-2012 John C. Bowman and Malcolm Roberts, Univ. of Alberta
 
@@ -641,14 +642,9 @@ public:
     deleteAlign(ZetaL);
   }
 
-  void convolve(Complex **F, Complex **U, multiplier *pmult,
-                unsigned int offset=0);
-  
   // F is an array of A pointers to distinct data blocks each of size m,
   // shifted by offset (contents not preserved).
-  void convolve(Complex **F, multiplier *pmult, unsigned int offset=0) {
-    convolve(F,U,pmult,offset);
-  }
+  void convolve(Complex **F, multiplier *pmult, unsigned int offset=0);
   
   // Binary convolution:
   void convolve(Complex *f, Complex *g) {
@@ -666,37 +662,23 @@ public:
 };
 
 // In-place implicitly dealiased 2D complex convolution.
-class PImplicitConvolution2 : public ThreadBase {
+class pImplicitConvolution2 : public ThreadBase {
 protected:
   unsigned int mx,my;
   Complex *u1;
   Complex *u2;
   unsigned int A,B;
   fftpad *xfftpad;
-  pImplicitConvolution *yconvolve;
-  Complex ***U1;
+  pImplicitConvolution **yconvolve;
   Complex **U2;
   bool allocated;
-  bool outerthread;
+  unsigned int innerthreads;
 public:  
   unsigned int getmx() {return mx;}
   unsigned int getmy() {return my;}
   unsigned int getA() {return A;}
   unsigned int getB() {return B;}
 
-  void initpointers(Complex ***&U1, unsigned int threads) {
-    U1=new Complex **[threads];
-    unsigned int stride=my*A;
-    for(unsigned int t=0; t < threads; ++t)
-      yconvolve->initpointers(U1[t],u1+t*stride);
-  }
-    
-  void deletepointers(Complex ***&U1, unsigned int threads) {
-    for(unsigned int t=0; t < threads; ++t)
-      yconvolve->deletepointers(U1[t]);
-    delete [] U1;
-  }
-  
   void initpointers2(Complex **&U2, Complex *u2, unsigned int stride) {
     U2=new Complex *[A];
     for(unsigned int a=0; a < A; ++a)
@@ -707,15 +689,20 @@ public:
     delete [] U2;
   }
   
-  unsigned int outerthreads(unsigned int nx) {
-    outerthread=threads > 1 && nx >= threads;
-    return outerthread ? threads : 1;
+  void multithread(unsigned int nx) {
+    if(threads > 1 && nx >= threads) {
+      innerthreads=1;
+    } else {
+      innerthreads=threads;
+      threads=1;
+    }
   }
   
   void init(unsigned int nx, unsigned int ny, unsigned int stride) {
     xfftpad=new fftpad(mx,ny,ny,u2);
-    yconvolve=new pImplicitConvolution(my,u1,A,B,outerthread ? 1 : threads);
-    initpointers(U1,outerthread ? threads : 1);
+    yconvolve=new pImplicitConvolution*[threads];
+    for(unsigned int t=0; t < threads; ++t)
+      yconvolve[t]=new pImplicitConvolution(my,u1+t*my*A,A,B,innerthreads);
     initpointers2(U2,u2,stride);
   }
   
@@ -733,7 +720,7 @@ public:
   // B is the number of outputs.
   // threads is the number of threads to use in the outer subconvolution loop.
   // nx, ny, and stride are for the MPI interface; should not be set directly.
-  PImplicitConvolution2(unsigned int mx, unsigned int my,
+  pImplicitConvolution2(unsigned int mx, unsigned int my,
                        Complex *u1, Complex *u2,
                        unsigned int A=2, unsigned int B=1,
                        unsigned int threads=fftw::maxthreads,
@@ -742,29 +729,31 @@ public:
     ThreadBase(threads), mx(mx), my(my), u1(u1), u2(u2), A(A), B(B),
     allocated(false) {
     set(nx,ny,stride);
-    outerthreads(nx);
+    multithread(nx);
     init(nx,ny,stride);
   }
   
-  PImplicitConvolution2(unsigned int mx, unsigned int my,
+  pImplicitConvolution2(unsigned int mx, unsigned int my,
                         unsigned int A=2, unsigned int B=1,
                         unsigned int threads=fftw::maxthreads,
                         unsigned int nx=0, unsigned int ny=0,
                         unsigned int stride=0) : 
     ThreadBase(threads), mx(mx), my(my), A(A), B(B), allocated(true) {
     set(nx,ny,stride);
-    unsigned Threads=outerthreads(nx);
-    u1=ComplexAlign(my*A*Threads);
+    multithread(nx);
+    u1=ComplexAlign(my*A*threads);
     u2=ComplexAlign(stride*A);
     allocated=true;
     init(nx,ny,stride);
   }
   
-  virtual ~PImplicitConvolution2() {
+  virtual ~pImplicitConvolution2() {
     deletepointers2(U2);
-    deletepointers(U1,outerthread ? threads : 1);
     
-    delete yconvolve;
+    for(unsigned int t=0; t < threads; ++t)
+      delete yconvolve[t];
+    
+    delete [] yconvolve;
     delete xfftpad;
     
     if(allocated) {
@@ -773,24 +762,22 @@ public:
     }
   }
   
-  void backwards(Complex **F, Complex **U2,
-                 unsigned int stride, unsigned int offset) {
+  void backwards(Complex **F, Complex **U2, unsigned int offset) {
     for(unsigned int a=0; a < A; ++a)
       xfftpad->backwards(F[a]+offset,U2[a]);
   }
 
-  void subconvolution(Complex **F, Complex ***U1,
-                      multiplier *pmult, 
+  void subconvolution(Complex **F, multiplier *pmult, 
                       unsigned int start, unsigned int stop) {
-    if(outerthread) {
+    if(threads > 1) {
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif    
       for(unsigned int i=start; i < stop; i += my)
-        yconvolve->convolve(F,U1[get_thread_num()],pmult,i);
+        yconvolve[get_thread_num()]->convolve(F,pmult,i);
     } else {
       for(unsigned int i=start; i < stop; i += my) {
-        yconvolve->convolve(F,U1[0],pmult,i);
+        yconvolve[0]->convolve(F,pmult,i);
       }
     }
   }
@@ -800,19 +787,15 @@ public:
     xfftpad->forwards(F[b]+offset,U2[b]);
   }
   
-  virtual void convolve(Complex **F, Complex ***U1, Complex **U2,
-                        multiplier *pmult, unsigned int offset=0) {
-    unsigned int size=mx*my;
-    backwards(F,U2,size,offset);
-    subconvolution(F,U1,pmult,offset,size+offset);
-    subconvolution(U2,U1,pmult,0,size);
-    forwards(F,U2,offset);
-  }
-  
   // F is a pointer to A distinct data blocks each of size mx*my,
   // shifted by offset (contents not preserved).
-  void convolve(Complex **F, multiplier *pmult, unsigned int offset=0) {
-    convolve(F,U1,U2,pmult,offset);
+  virtual void convolve(Complex **F, multiplier *pmult,
+                        unsigned int offset=0) {
+    unsigned int size=mx*my;
+    backwards(F,U2,offset);
+    subconvolution(F,pmult,offset,size+offset);
+    subconvolution(U2,pmult,0,size);
+    forwards(F,U2,offset);
   }
   
   // Binary convolution:
@@ -1285,6 +1268,169 @@ public:
   }
 };
 
+// In-place implicitly dealiased 3D complex convolution.
+class pImplicitConvolution3 : public ThreadBase {
+protected:
+  unsigned int mx,my,mz;
+  Complex *u1;
+  Complex *u2;
+  Complex *u3;
+  unsigned int A,B;
+  fftpad *xfftpad;
+  pImplicitConvolution2 **yzconvolve;
+  Complex **U3;
+  bool allocated;
+  unsigned int innerthreads;
+public:  
+  unsigned int getmx() {return mx;}
+  unsigned int getmy() {return my;}
+  unsigned int getmz() {return mz;}
+  unsigned int getA() {return A;}
+  unsigned int getB() {return B;}
+
+  void initpointers3(Complex **&U3, Complex *u3, unsigned int stride) {
+    U3=new Complex *[A];
+    for(unsigned int a=0; a < A; ++a)
+      U3[a]=u3+a*stride;
+  }
+  
+  void deletepointers3(Complex **&U3) {
+    delete [] U3;
+  }
+  
+  void multithread(unsigned int nx) {
+    if(threads > 1 && nx >= threads) {
+      innerthreads=1;
+    } else {
+      innerthreads=threads;
+      threads=1;
+    }
+  }
+  
+  void init(unsigned int ny, unsigned int nz, unsigned int stride2,
+            unsigned int stride3) {
+    unsigned int nyz=ny*nz;
+    xfftpad=new fftpad(mx,nyz,nyz,u3);
+    
+    if(nz == mz) {
+    yzconvolve=new pImplicitConvolution2*[threads];
+    for(unsigned int t=0; t < threads; ++t)
+      yzconvolve[t]=new pImplicitConvolution2(my,mz,u1+t*mz*A*innerthreads,
+                                              u2+t*stride2*A,A,B,innerthreads);
+      initpointers3(U3,u3,stride3);
+    } else yzconvolve=NULL;
+  }
+  
+  void set(unsigned int& ny,unsigned int& nz,
+           unsigned int& stride2, unsigned int& stride3) {
+    if(ny == 0) {
+      ny=my;
+      nz=mz;
+      stride2=my*mz;
+      stride3=mx*my*mz;
+    }
+  }
+  
+  // u1 is a temporary array of size mz*A*threads.
+  // u2 is a temporary array of size my*mz*A*threads.
+  // u3 is a temporary array of size mx*my*mz*A.
+  // A is the number of inputs.
+  // B is the number of outputs.
+  // threads is the number of threads to use in the outer subconvolution loop.
+  // ny, nz, stride2, and stride3 are used by the MPI interface
+  // and should not be set directly.
+  pImplicitConvolution3(unsigned int mx, unsigned int my, unsigned int mz,
+                       Complex *u1, Complex *u2, Complex *u3,
+                        unsigned int A=2, unsigned int B=1, 
+                        unsigned int threads=fftw::maxthreads,
+                        unsigned int ny=0, unsigned int nz=0,
+                        unsigned int stride2=0, unsigned int stride3=0) :
+    ThreadBase(threads), mx(mx), my(my), mz(mz), u1(u1), u2(u2), u3(u3),
+    A(A), B(B), allocated(false) {
+    set(ny,nz,stride2,stride3);
+    multithread(mx);
+    init(ny,nz,stride2,stride3);
+  }
+
+  // ny, nz, stride2, and stride3 are used by the MPI interface
+  // and should not be set directly.
+  pImplicitConvolution3(unsigned int mx, unsigned int my, unsigned int mz,
+                        unsigned int A=2, unsigned int B=1, 
+                        unsigned int threads=fftw::maxthreads,
+                        unsigned int ny=0, unsigned int nz=0,
+                        unsigned int stride2=0, unsigned int stride3=0) :
+    ThreadBase(threads), mx(mx), my(my), mz(mz), A(A), B(B), allocated(true) {
+    multithread(mx);
+    unsigned int n1=mz*A*threads*innerthreads;
+    u1=ComplexAlign(n1);
+    set(ny,nz,stride2,stride3);
+    u2=ComplexAlign(stride2*A*threads);
+    u3=ComplexAlign(stride3*A);
+    init(ny,nz,stride2,stride3);
+  }
+  
+  virtual ~pImplicitConvolution3() {
+    if(yzconvolve) {
+      deletepointers3(U3);
+
+      for(unsigned int t=0; t < threads; ++t)
+        delete yzconvolve[t];
+      delete [] yzconvolve;
+    }
+    delete xfftpad;
+    
+    if(allocated) {
+      deleteAlign(u3);
+      deleteAlign(u2);
+      deleteAlign(u1);
+    }
+  }
+  
+  void backwards(Complex **F, Complex **U3, unsigned int offset) {
+    for(unsigned int a=0; a < A; ++a)
+      xfftpad->backwards(F[a]+offset,U3[a]);
+  }
+
+  void subconvolution(Complex **F, multiplier *pmult, 
+                      unsigned int start, unsigned int stop,
+                      unsigned int stride) {
+    if(threads > 1) {
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif    
+    for(unsigned int i=start; i < stop; i += stride) {
+      yzconvolve[get_thread_num()]->convolve(F,pmult,i);
+    }
+    } else {
+      for(unsigned int i=start; i < stop; i += stride)
+        yzconvolve[0]->convolve(F,pmult,i);
+    }
+  }
+  
+  void forwards(Complex **F, Complex **U3, unsigned int offset=0) {
+    for(unsigned int b=0; b < B; ++b)
+      xfftpad->forwards(F[b]+offset,U3[b]);
+  }
+  
+  // F is a pointer to A distinct data blocks each of size mx*my*mz,
+  // shifted by offset
+  virtual void convolve(Complex **F, multiplier *pmult, unsigned int offset=0) {
+    unsigned int myz=my*mz;
+    unsigned int size=mx*myz;
+    
+    backwards(F,U3,offset);
+    subconvolution(F,pmult,offset,size+offset,myz);
+    subconvolution(U3,pmult,0,size,myz);
+    forwards(F,U3,offset);
+  }
+  
+  // Binary convolution:
+  void convolve(Complex *f, Complex *g) {
+    Complex *F[]={f,g};
+    convolve(F,multbinary);
+  }
+};
+
 
 // In-place implicitly dealiased 3D Hermitian convolution.
 class ImplicitHConvolution3 : public ThreadBase {
@@ -1350,7 +1496,7 @@ public:
 
     if(nz == mz) {
       yzconvolve=new ImplicitHConvolution2(my,mz,u1,v1,w1,u2,v2,M,1);
-      yzconvolve->initpointers(U,v,w,threads);
+//      yzconvolve->initpointers(U,v,w,threads);
       initpointers2(U2,V2,threads,stride2);
       initpointers3(U3,V3,u3,v3,stride3);
     } else yzconvolve=NULL;
@@ -2125,195 +2271,6 @@ public:
   
   void convolve(Complex *f, bool symmetrize=true) {
     convolve(f,u,u2,symmetrize);
-  }
-};
-
-// In-place implicitly dealiased 2D complex convolution.
-class pImplicitConvolution2 : public ThreadBase {
-private:
-  unsigned int mx, my, nx, ny, size;
-  unsigned int A, B;
-  bool allocated;
-  Complex* Uinit;
-  fftpad *xfftpad;
-  pImplicitConvolution *yconvolve;
-  Complex **U2;
-  Complex ***U1;
-public:
-  pImplicitConvolution2(unsigned int mx, unsigned int my, 
-                        unsigned int A=2, unsigned int B=1,
-                        unsigned int threads=fftw::maxthreads,
-                        unsigned int ny=0, unsigned int stride=0) :
-    ThreadBase(threads), mx(mx), my(my), A(A), B(B), allocated(true) {
-    
-    nx=mx;
-    ny=my;
-    //set(ny,stride); // TODO: this is for some MPI stuffs
-    size=mx*my;
-
-    Uinit=ComplexAlign(mx*my);
-    xfftpad=new fftpad(mx,ny,ny,Uinit);
-    deleteAlign(Uinit);
-
-    yconvolve=new pImplicitConvolution(my,A,B,1);
-    yconvolve->Threads(1);
-    initworkarrays();
-  }
-
-  ~pImplicitConvolution2() {
-    delete xfftpad;
-    delete yconvolve;
-    if(allocated) freeworkarrays();
-  }
-
-  void subconvolution(Complex **F, Complex ***W1,
-                      unsigned int start, unsigned int stop,
-                      multiplier *pmult);
-  
-  void convolve(Complex **F, Complex **U2, Complex ***U1,
-                multiplier *pmult, unsigned int offset=0);
-  
-  void convolve(Complex **F, multiplier *pmult,
-                unsigned int offset=0) {
-    convolve(F,U2,U1,pmult,offset);
-  }
-  
-  void initworkarrays() {
-    // Set up 2D work array:
-    U2=new Complex *[A];
-    for(unsigned int i=0; i < A; ++i) 
-      U2[i]=ComplexAlign(mx*my);
-    
-    // Set up 1D work array:
-    U1=new Complex **[fftw::maxthreads];
-    for(unsigned int t=0; t < threads; ++t) {
-      U1[t]=new Complex*[A];
-      for(unsigned int i=0; i < A; ++i)
-        U1[t][i]=ComplexAlign(my);
-    }
-  }
-
-  void freeworkarrays() {
-    // Free 1D work arrays:
-    for(unsigned int t=0; t < fftw::maxthreads; ++t) {
-      for(unsigned int i=0; i < A; ++i)
-        deleteAlign(U1[t][i]);
-      delete[] U1[t];
-    }
-    delete[] U1;
-    
-    // Free 2D work arrays:
-    for(unsigned int i=0; i < A; ++i) 
-      deleteAlign(U2[i]);
-    delete[] U2;
-  }
-  
-};
-
-// In-place implicitly dealiased 3D complex convolution.
-class pImplicitConvolution3 : public ThreadBase {
-private:
-  unsigned int mx, my, mz, nx, ny, nz, size;
-  unsigned int A, B;
-  fftpad *xfftpad;
-  pImplicitConvolution2 *yzconvolve;
-  Complex **U3;
-  Complex ***U2;
-  Complex ****U1;
-  bool allocated;
-public:
-  pImplicitConvolution3(unsigned int mx, unsigned int my,  unsigned int mz, 
-                        unsigned int A=2, unsigned int B=1,
-                        unsigned int threads=fftw::maxthreads,
-                        unsigned int ny=0, unsigned int stride=0) :
-    ThreadBase(threads), mx(mx), my(my), mz(mz), A(A), B(B), allocated(true) {
-
-    nx=mx;
-    ny=my;
-    nz=mz;
-    //set(...,stride); // TODO: this is for some MPI stuff
-    size=nx*ny*nz;
-
-    unsigned int nyz=ny*nz;
-    
-    Complex* Uinit=ComplexAlign(size); // FIXME: clean this up.
-    xfftpad=new fftpad(mx,nyz,nyz,Uinit);
-    deleteAlign(Uinit);
-
-    yzconvolve=new pImplicitConvolution2(my,mz);
-    yzconvolve->Threads(1);
-    
-    initworkarrays(U3,U2,U1);
-  }
-  
-  void initworkarrays(Complex **&U3, Complex ***&U2, Complex ****&U1) {
-    U3=new Complex*[A];
-    for(unsigned int i=0; i < A; ++i)
-      U3[i]=ComplexAlign(mx*my*mz);
-  
-    U2=new Complex**[threads];
-    for(unsigned int t=0; t < threads; ++t) {
-      U2[t]=new Complex*[A];
-      for(unsigned int i=0; i < A; ++i)
-        U2[t][i]=ComplexAlign(my*mz);
-    }
-
-    U1=new Complex***[threads];
-    for(unsigned int t=0; t < threads; ++t) {
-      U1[t]=new Complex**[1];
-      U1[t][0]=new Complex*[A];
-      for(unsigned int i=0; i < A; ++i)
-        U1[t][0][i]=ComplexAlign(mz);
-    }
-  }
-  
-  void freeworkarrays(Complex **&U3, Complex ***&U2, Complex ****&U1) { 
-    // Free 1D work arrays:
-    for(unsigned int t=0; t < threads; ++t) {
-      for(unsigned int i=0; i < A; ++i)
-        deleteAlign(U1[t][0][i]);
-      delete[] U1[t][0];
-      delete[] U1[t];
-    }
-    delete[] U1;
-
-    // Free 2D work arrays:
-    for(unsigned int t=0; t < threads; ++t) {
-      for(unsigned int i=0; i < A; ++i)
-        deleteAlign(U2[t][i]);
-      delete[] U2[t];
-    }
-    delete[] U2;
-
-    // Free 3D work arrays:
-    for(unsigned int i=0; i < A; ++i)
-      deleteAlign(U3[i]);
-    delete[] U3;
-  }
-
-  ~pImplicitConvolution3() {
-    delete xfftpad;
-    delete yzconvolve;
-    if(allocated) freeworkarrays(U3,U2,U1);
-  }
-
-  void subconvolution(Complex **F,
-                      Complex ***U2,
-                      Complex ****U1,
-                      unsigned int start, unsigned int stop,
-                      multiplier *pmult);
-
-  void convolve(Complex **F,
-                Complex **U3,
-                Complex ***U2,
-                Complex ****U1,
-                multiplier *pmult,
-                unsigned int offset=0);
-
-  void convolve(Complex **F,
-                multiplier *pmult,
-                unsigned int offset=0) {
-    convolve(F,U3,U2,U1,pmult,offset);
   }
 };
 
