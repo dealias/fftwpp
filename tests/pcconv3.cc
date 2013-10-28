@@ -120,7 +120,6 @@ int main(int argc, char* argv[])
   if(Implicit) {
     pImplicitConvolution3 C(mx,my,mz,A,B);
 
-
     // Allocate input arrays:
     Complex **f = new Complex *[A];
     for(unsigned int s=0; s < A; ++s)
