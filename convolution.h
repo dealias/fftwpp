@@ -1,4 +1,3 @@
-using namespace std;
 /* Implicitly dealiased convolution routines.
    Copyright (C) 2010-2012 John C. Bowman and Malcolm Roberts, Univ. of Alberta
 
