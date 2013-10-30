@@ -2,16 +2,19 @@
 
 namespace fftwpp {
 
-void ImplicitConvolution2MPI::convolve(Complex **F, Complex **G, 
-                                       Complex **u, Complex ***V, 
-                                       Complex **U2, Complex **V2, 
+void ImplicitConvolution2MPI::convolve(Complex **F, multiplier *pmult,
                                        unsigned int offset)
 {
-
+//  Complex *P[A];
+//  for(unsigned int i=0; i < A; ++i)
+//    P[i]=F[i]+offset;
+  
+/*  
+  if(alltoall) {
+  
   Complex *u2=U2[0];
   Complex *v2=V2[0];
   
-  if(alltoall) {
     Complex *us=u2;
     for(unsigned int s=0; s < M; ++s) {
       Complex *f=F[s]+offset;
@@ -56,24 +59,21 @@ void ImplicitConvolution2MPI::convolve(Complex **F, Complex **G,
     xfftpad->Forwards->fft(u2);
     xfftpad->reduce(f,u2);
   } else {
-    backwards(F,u2,d.n,offset);
-    backwards(G,v2,d.n,offset);
-    
-    pretranspose(F,offset);
-    pretranspose(u2);
-    pretranspose(G,offset);
-    pretranspose(v2);
+*/  
+
+    backwards(F,U2,offset);
+
+    transpose(intranspose,A,F,offset);
+    transpose(intranspose,A,U2);
+
     unsigned int size=d.x*my;
+    subconvolution(F,pmult,offset,size+offset);
+    subconvolution(U2,pmult,0,size);
     
-    subconvolution(F,G,u,V,offset,size+offset);
-    subconvolution(U2,V2,u,V,0,size);
+    transpose(outtranspose,B,F,offset);
+    transpose(outtranspose,B,U2);
     
-    Complex *f=F[0]+offset;
-    posttranspose(f);
-    posttranspose(u2);
-    
-    forwards(f,u2);
-  }
+    forwards(F,U2,offset);
 }
   
 void ImplicitHConvolution2MPI::convolve(Complex **F, Complex **G, 
@@ -107,12 +107,10 @@ void ImplicitHConvolution2MPI::convolve(Complex **F, Complex **G,
     
 }
 
-void ImplicitConvolution3MPI::convolve(Complex **F, Complex **G, 
-                                       Complex **u, Complex ***V,
-                                       Complex ***U2, Complex ***V2, 
-                                       Complex **U3, Complex **V3,
+void ImplicitConvolution3MPI::convolve(Complex **F, multiplier *pmult,
                                        unsigned int offset) 
 {
+  /*
   Complex *u3=U3[0];
   Complex *v3=V3[0];
     
@@ -162,26 +160,22 @@ void ImplicitConvolution3MPI::convolve(Complex **F, Complex **G,
     xfftpad->Forwards->fft(u3);
     xfftpad->reduce(f,u3);
   } else {
-    backwards(F,u3,d.n,offset);
-    backwards(G,v3,d.n,offset);
+  */
+    backwards(F,U3,offset);
     
-    pretranspose(F,offset);
-    pretranspose(u3);
-    pretranspose(G,offset);
-    pretranspose(v3);
+    transpose(intranspose,A,F,offset);
+    transpose(intranspose,A,U3);
     
     unsigned int stride=my*d.z;
     unsigned int size=d.x*stride;
     
-    subconvolution(F,G,u,V,U2,V2,offset,size+offset,stride);
-    subconvolution(U3,V3,u,V,U2,V2,0,size,stride);
+    subconvolution(F,pmult,offset,size+offset,stride);
+    subconvolution(U3,pmult,0,size,stride);
   
-    Complex *f=F[0]+offset;
-    posttranspose(f);
-    posttranspose(u3);
+    transpose(outtranspose,B,F,offset);
+    transpose(outtranspose,B,U3);
     
-    forwards(f,u3);
-  }
+    forwards(F,U3,offset);
 }
 
 // Enforce 3D Hermiticity using specified (x,y > 0,z=0) and (x >= 0,y=0,z=0)

@@ -160,7 +160,7 @@ int main(int argc, char* argv[])
         break;
     }
 
-    pImplicitConvolution3 C(mx,my,mz,A);
+    ImplicitConvolution3 C(mx,my,mz,A);
     cout << "Using " << C.Threads() << " threads."<< endl;
     unsigned int mxyz=mx*my*mz;
     Complex **F=new Complex *[A];

@@ -112,7 +112,7 @@ int main(int argc, char* argv[])
 //    cout << "f[1]:" << endl << f1 << endl;
 
     // Creat a convolution object C:
-    pImplicitConvolution2 C(mx,my,A,B);
+    ImplicitConvolution2 C(mx,my,A,B);
 
     for(unsigned int i=0; i < N; ++i) {
       init(f0,f1,mx,my);

@@ -12,6 +12,7 @@ unsigned int mx=4;
 unsigned int my=4;
 unsigned int mz=4;
 unsigned int M=1;
+unsigned int A=2*M; // Number of independent inputs
 
 bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
@@ -115,13 +116,6 @@ int main(int argc, char* argv[])
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
 
-  if(provided < MPI_THREAD_FUNNELED) {
-    fftw::maxthreads=1;
-  } else {
-    fftw_init_threads();
-    fftw_mpi_init();
-  }
-  
   if(my == 0) my=mx;
 
   if(N == 0) {
@@ -130,6 +124,13 @@ int main(int argc, char* argv[])
   }
   
   MPIgroup group(my,mz);
+  
+  if(group.size > 1 && provided < MPI_THREAD_FUNNELED) {
+    fftw::maxthreads=1;
+  } else {
+    fftw_init_threads();
+    fftw_mpi_init();
+  }
   
   if(group.rank == 0) {
     cout << "Configuration: " 
@@ -155,15 +156,26 @@ int main(int argc, char* argv[])
 
     double *T=new double[N];
   
+      multiplier *mult;
+  
+      switch(A) {
+        case 2: mult=multbinary; break;
+        case 4: mult=multbinarydot; break;
+        case 6: mult=multbinarydot6; break;
+        case 8: mult=multbinarydot8; break;
+        case 16: mult=multbinarydot16; break;
+        default: exit(1);
+          break;
+      }
+
     if(Implicit) {
-      ImplicitConvolution3MPI C(mx,my,mz,d,M);
+      ImplicitConvolution3MPI C(mx,my,mz,d,A);
       unsigned int stride=d.n;
-      Complex **F=new Complex *[M];
-      Complex **G=new Complex *[M];
+      Complex **F=new Complex *[A];
       for(unsigned int s=0; s < M; ++s) {
         unsigned int sstride=s*stride;
-        F[s]=f+sstride;
-        G[s]=g+sstride;
+        F[2*s]=f+sstride;
+        F[2*s+1]=g+sstride;
       }
       MPI_Barrier(group.active);
       if(group.rank == 0)
@@ -171,14 +183,13 @@ int main(int argc, char* argv[])
       for(unsigned int i=0; i < N; ++i) {
         init(f,g,d,M);
         seconds();
-        C.convolve(F,G);
+        C.convolve(F,mult);
 //      C.convolve(f,g);
         T[i]=seconds();
       }
     
       if(main) 
         timings("Implicit",mx,T,N);
-      delete [] G;
       delete [] F;
     
       if(mx*my*mz < outlimit) 

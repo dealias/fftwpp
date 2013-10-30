@@ -146,7 +146,7 @@ int main(int argc, char* argv[])
       
     }
     
-    pImplicitConvolution C(m,A);
+    ImplicitConvolution C(m,A);
     fftw::SaveWisdom();
     cout << "threads=" << C.Threads() << endl << endl;;
     
