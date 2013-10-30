@@ -25,6 +25,7 @@
 #include <iostream>
 #include <fftw3.h>
 #include <cerrno>
+#include <map>
 
 #ifndef FFTWPP_SINGLE_THREAD
 #include <omp.h>
@@ -173,6 +174,8 @@ inline void deleteAlign(T *p)
 #define FFTWdouble doubleAlign
 #define FFTWdelete deleteAlign
 
+extern const char *WisdomName;
+
 inline void fftwpp_export_wisdom(void (*emitter)(char c, std::ofstream& s),
                                  std::ofstream& s)
 {
@@ -188,6 +191,15 @@ inline void PutWisdom(char c, std::ofstream& s) {s.put(c);}
 inline int GetWisdom(std::ifstream& s) {return s.get();}
 
 extern const char *inout;
+
+struct threaddata {
+  unsigned int threads;
+  double mean;
+  double stdev;
+  threaddata() : threads(0), mean(0.0), stdev(0.0) {}
+  threaddata(unsigned int threads, double mean, double stdev) :
+    threads(threads), mean(mean), stdev(stdev) {}
+};
 
 // Base clase for fft routines
 //
@@ -319,19 +331,20 @@ public:
     }
   }
   
-  static bool autothreads;
   fftw(unsigned int doubles, int sign, unsigned int n=0) : 
     doubles(doubles), sign(sign), norm(1.0/(n ? n : (doubles+1)/2)),
     plan(NULL) {
-    if(autothreads) {
+#ifndef MPI_VERSION
 #ifndef FFTWPP_SINGLE_THREAD
       fftw_init_threads();
 #endif      
-      autothreads=false;
-    }
+#endif      
   }
   
-  virtual ~fftw() {if(plan) fftw_destroy_plan(plan);}
+  virtual ~fftw() {
+    SaveWisdom();
+    if(plan) fftw_destroy_plan(plan);
+  }
   
   virtual fftw_plan Plan(Complex *in, Complex *out)=0;
   
@@ -373,7 +386,7 @@ public:
         varH += v;
     }
     double stdev(double var, double f) {
-      double factor=N > f ? f/(N-f) : 0.0; 
+      double factor=N > f ? f/(N-f) : 0.0;
       return sqrt(var*factor);
     }
     double stdev() {
@@ -394,24 +407,57 @@ public:
     }
   };
   
-  statistics time(Complex *in, Complex *out) {
-    statistics S;
-    double begin=totalseconds();
-    double lastseconds=begin;
-    double stop=begin+testseconds;
+  threaddata time(fftw_plan plan1, fftw_plan planT, Complex *in, Complex *out) {
+    statistics S,ST;
+    double stop=totalseconds()+testseconds;
+    threads=1;
+    plan=plan1;
+    fft(in,out);
+    threads=maxthreads;
+    plan=planT;
+    fft(in,out);
+    unsigned int N=1;
     for(;;) {
-      fft(in,out);
+      double t0=totalseconds();
+      threads=1;
+      plan=plan1;
+      for(unsigned int i=0; i < N; ++i)
+        fft(in,out);
+      double t1=totalseconds();
+      threads=maxthreads;
+      plan=planT;
+      for(unsigned int i=0; i < N; ++i)
+        fft(in,out);
       double t=totalseconds();
-      S.add(t-lastseconds);
-      lastseconds=t;
-      if(t > stop)
-        break;
+      S.add(t1-t0);
+      ST.add(t-t1);
+      if(S.mean() < 100.0/CLOCKS_PER_SEC) N *= 2;
+      if(S.count() >= 10) {
+        double error=S.stdev();
+        double diff=ST.mean()-S.mean();
+        if(diff >= 0.0 || t > stop) {
+          threads=1;
+          plan=plan1;
+          fftw_destroy_plan(planT);
+          break;
+        }
+        if(diff < -error) {
+          threads=maxthreads;
+          fftw_destroy_plan(plan1);
+          break;
+        }
+      }
     }
-    return S;
+    return threaddata(threads,S.mean(),S.stdev());
   }
   
-  statistics Setup(Complex *in, Complex *out=NULL, bool threaded=1) {
-    if(!Wise) LoadWisdom();
+  virtual threaddata lookup(bool) {return threaddata();}
+  virtual void store(bool inplace, const threaddata& data) {}
+  
+  threaddata Setup(Complex *in, Complex *out=NULL) {
+    static bool Wise=false;
+    if(!Wise) {LoadWisdom(); Wise=true;}
+    
     bool alloc=!in;
     if(alloc) in=ComplexAlign((doubles+1)/2);
 #ifndef NO_CHECK_ALIGN    
@@ -423,35 +469,25 @@ public:
 #endif    
     inplace=(out==in);
     
-    planThreads(1);
-    threads=1;
-    fftw_plan plan1=Plan(in,out);
-    if(!plan1) noplan();
-    plan=plan1;
+    threaddata data;
+    if(maxthreads > 1) data=lookup(inplace);
+    threads=data.threads > 0 ? maxthreads : 1;
+    planThreads(threads);
+    plan=Plan(in,out);
+    if(!plan) noplan();
     
-    statistics S;
-    if(maxthreads > 1) {
-      S=time(in,out);
+    if(data.threads == 0) {
       threads=maxthreads;
       planThreads(threads);
-      plan=Plan(in,out);
-      if(plan) {
-        statistics S2=time(in,out);
-        if(S2.mean() > S.mean()-S.stdevL()) {
-          threads=1;
-          fftw_destroy_plan(plan);
-          plan=plan1;
-        } else {
-          S=S2;
-          fftw_destroy_plan(plan1);
-          threads=maxthreads;
-        }
-      } else noplan();
+      fftw_plan planT=Plan(in,out);
+      if(planT)
+        data=time(plan,planT,in,out);
+      else noplan();
+      store(inplace,threaddata(threads,data.mean,data.stdev));
     }
     
     if(alloc) Array::deleteAlign(in,(doubles+1)/2);
-    SaveWisdom();
-    return S;
+    return data;
   }
   
   void Setup(Complex *in, double *out) {Setup(in,(Complex *) out);}
@@ -662,6 +698,75 @@ public:
   }
 };
 
+template<class T, class L>
+class Threadtable {
+public:
+  typedef std::map<T,threaddata,L> Table;
+
+  threaddata Lookup(Table& table, T key) {
+    typename Table::iterator p=table.find(key);
+    return p == table.end() ? threaddata() : p->second;
+  }
+  
+  void Store(Table& threadtable, T key, const threaddata& data) {
+    threadtable[key]=data;
+  }
+};
+
+struct keytype1 {
+  unsigned int nx;
+  unsigned int threads;
+  bool inplace;
+  keytype1(unsigned int nx, unsigned int threads, bool inplace) : 
+    nx(nx), inplace(inplace) {}
+};
+  
+struct keyless1 {
+  bool operator()(const keytype1& a, const keytype1& b) const {
+    return a.nx < b.nx || (a.nx == b.nx &&
+                           (a.threads < b.threads || (a.threads == b.threads &&
+                                                      a.inplace < b.inplace)));
+  }
+};
+
+struct keytype2 {
+  unsigned int nx;
+  unsigned int ny;
+  unsigned int threads;
+  bool inplace;
+  keytype2(unsigned int nx, unsigned int ny, unsigned int threads, bool inplace) : 
+    nx(nx), ny(ny), threads(threads), inplace(inplace) {}
+};
+  
+struct keyless2 {
+  bool operator()(const keytype2& a, const keytype2& b) const {
+    return a.nx < b.nx || (a.nx == b.nx && 
+                           (a.ny < b.ny || (a.ny == b.ny &&
+                           (a.threads < b.threads || (a.threads == b.threads &&
+                                                      a.inplace < b.inplace)))));
+  }
+};
+
+struct keytype3 {
+  unsigned int nx;
+  unsigned int ny;
+  unsigned int nz;
+  unsigned int threads;
+  bool inplace;
+  keytype3(unsigned int nx, unsigned int ny, unsigned int nz,
+           unsigned int threads, bool inplace) : 
+    nx(nx), ny(ny), nz(nz), threads(threads), inplace(inplace) {}
+};
+  
+struct keyless3 {
+  bool operator()(const keytype3& a, const keytype3& b) const {
+    return a.nx < b.nx || (a.nx == b.nx && 
+                           (a.ny < b.ny || (a.ny == b.ny &&
+                           (a.nz < b.nz || (a.nz == b.nz &&
+                           (a.threads < b.threads || (a.threads == b.threads &&
+                                                      a.inplace < b.inplace)))))));
+  }
+};
 
 // Compute the complex Fourier transform of n complex values.
 // Before calling fft(), the arrays in and out (which may coincide) must be
@@ -686,8 +791,9 @@ public:
 //   fft1d Backward(n,1);
 //   Backward.fft(in);
 //
-class fft1d : public fftw {
+class fft1d : public fftw, public Threadtable<keytype1,keyless1> {
   unsigned int nx;
+  static Table threadtable;
 public:  
   fft1d(unsigned int nx, int sign, Complex *in=NULL, Complex *out=NULL) 
     : fftw(2*nx,sign), nx(nx) {Setup(in,out);} 
@@ -697,6 +803,13 @@ public:
         const Array::array1<Complex>& out=Array::NULL1) 
     : fftw(2*in.Nx(),sign), nx(in.Nx()) {Setup(in,out);} 
 #endif  
+  
+  threaddata lookup(bool inplace) {
+    return this->Lookup(threadtable,keytype1(nx,maxthreads,inplace));
+  }
+  void store(bool inplace, const threaddata& data) {
+    this->Store(threadtable,keytype1(nx,maxthreads,inplace),data);
+  }
   
   fftw_plan Plan(Complex *in, Complex *out) {
     return fftw_plan_dft_1d(nx,(fftw_complex *) in,(fftw_complex *) out,
@@ -724,7 +837,7 @@ public:
 //   dist is the spacing between the first elements of the vectors.
 //
 //
-class mfft1d : public fftw {
+class mfft1d : public fftw, public Threadtable<keytype3,keyless3> {
   unsigned int nx;
   unsigned int M;
   unsigned int T,Q,R;
@@ -732,6 +845,7 @@ class mfft1d : public fftw {
   size_t dist;
   fftw_plan plan1;
   fftw_plan plan2;
+  static Table threadtable;
 public:  
   mfft1d(unsigned int nx, int sign, unsigned int M=1, size_t stride=1,
          size_t dist=0, Complex *in=NULL, Complex *out=NULL) 
@@ -742,7 +856,7 @@ public:
     T=1;
     Q=M;
     R=0;
-    statistics S1=Setup(in,out);
+    threaddata S1=Setup(in,out);
     fftw_plan planT1=plan;
     unsigned int threads1=threads;
     
@@ -750,14 +864,14 @@ public:
     if(T > 1) {
       Q=M/T;
       R=M-Q*T;
-      statistics ST=Setup(in,out);
+      threaddata ST=Setup(in,out);
     
       if(R > 0 && threads == 1) {
         fftw_destroy_plan(plan2);
         plan2=plan1;
       }
 
-      if(ST.mean() > S1.mean()-S1.stdevL()) {
+      if(ST.mean > S1.mean-S1.stdev) {
         fftw_destroy_plan(plan);
         if(R > 0) {
           fftw_destroy_plan(plan2);
@@ -773,6 +887,13 @@ public:
       }
     }
   } 
+  
+  threaddata lookup(bool inplace) {
+    return Lookup(threadtable,keytype3(nx,Q,R,maxthreads,inplace));
+  }
+  void store(bool inplace, const threaddata& data) {
+    Store(threadtable,keytype3(nx,Q,R,maxthreads,inplace),data);
+  }
   
   fftw_plan Plan(Complex *in, Complex *out) {
     int n=(int) nx;
@@ -837,8 +958,9 @@ public:
 //   in contains the n real values stored as a Complex array;
 //   out contains the first n/2+1 Complex Fourier values.
 //
-class rcfft1d : public fftw {
+class rcfft1d : public fftw, public Threadtable<keytype1,keyless1> {
   unsigned int nx;
+  static Table threadtable;
 public:  
   rcfft1d(unsigned int nx, Complex *out=NULL) 
     : fftw(2*(nx/2+1),-1,nx), nx(nx) {Setup(out);}
@@ -854,6 +976,13 @@ public:
           const Array::array1<Complex>& out=Array::NULL1)
     : fftw(realsize(nx,in(),out()),-1,nx), nx(nx) {Setup(in,out);} 
 #endif  
+  
+  threaddata lookup(bool inplace) {
+    return Lookup(threadtable,keytype1(nx,maxthreads,inplace));
+  }
+  void store(bool inplace, const threaddata& data) {
+    Store(threadtable,keytype1(nx,maxthreads,inplace),data);
+  }
   
   fftw_plan Plan(Complex *in, Complex *out) {
     return fftw_plan_dft_r2c_1d(nx,(double *) in,(fftw_complex *) out, effort);
@@ -885,8 +1014,9 @@ public:
 //   in contains the first n/2+1 Complex Fourier values.
 //   out contains the n real values stored as a Complex array;
 //
-class crfft1d : public fftw {
+class crfft1d : public fftw, public Threadtable<keytype1,keyless1> {
   unsigned int nx;
+  static Table threadtable;
 public:  
   crfft1d(unsigned int nx, double *out=NULL) 
     : fftw(2*(nx/2+1),1,nx), nx(nx) {Setup(out);} 
@@ -905,6 +1035,13 @@ public:
           const Array::array1<double>& out)
     : fftw(out.Size(),1,nx), nx(nx) {Setup(in,out);}
 #endif  
+  
+  threaddata lookup(bool inplace) {
+    return Lookup(threadtable,keytype1(nx,maxthreads,inplace));
+  }
+  void store(bool inplace, const threaddata& data) {
+    Store(threadtable,keytype1(nx,maxthreads,inplace),data);
+  }
   
   fftw_plan Plan(Complex *in, Complex *out) {
     return fftw_plan_dft_c2r_1d(nx,(fftw_complex *) in,(double *) out,effort);
@@ -937,11 +1074,12 @@ public:
 //   in contains the n real values stored as a Complex array;
 //   out contains the first n/2+1 Complex Fourier values.
 //
-class mrcfft1d : public fftw {
+class mrcfft1d : public fftw, public Threadtable<keytype2,keyless2> {
   unsigned int nx;
   unsigned int M;
   size_t stride;
   size_t dist;
+  static Table threadtable;
 public:  
   mrcfft1d(unsigned int nx, unsigned int M=1, size_t stride=1,
            size_t dist=0, Complex *out=NULL) 
@@ -952,6 +1090,13 @@ public:
            size_t dist=0, double *in=NULL, Complex *out=NULL) 
     : fftw(2*(nx/2*stride+(M-1)*Dist(nx,stride,dist)+1),-1,nx), nx(nx), M(M),
       stride(stride), dist(Dist(nx,stride,dist)) {Setup(in,out);} 
+  
+  threaddata lookup(bool inplace) {
+    return Lookup(threadtable,keytype2(nx,M,maxthreads,inplace));
+  }
+  void store(bool inplace, const threaddata& data) {
+    Store(threadtable,keytype2(nx,M,maxthreads,inplace),data);
+  }
   
   fftw_plan Plan(Complex *in, Complex *out) {
     int n=(int) nx;
@@ -993,16 +1138,24 @@ public:
 //   in contains the first n/2+1 Complex Fourier values;
 //   out contains the n real values stored as a Complex array.
 //
-class mcrfft1d : public fftw {
+class mcrfft1d : public fftw, public Threadtable<keytype2,keyless2> {
   unsigned int nx;
   unsigned int M;
   size_t stride;
   size_t dist;
+  static Table threadtable;
 public:
   mcrfft1d(unsigned int nx, unsigned int M=1, size_t stride=1,
            size_t dist=0, Complex *in=NULL, double *out=NULL) 
     : fftw((realsize(nx,in,out)-2)*stride+2*(M-1)*Dist(nx,stride,dist)+2,1,nx),
       nx(nx), M(M), stride(stride), dist(Dist(nx,stride,dist)) {Setup(in,out);}
+  
+  threaddata lookup(bool inplace) {
+    return Lookup(threadtable,keytype2(nx,M,maxthreads,inplace));
+  }
+  void store(bool inplace, const threaddata& data) {
+    Store(threadtable,keytype2(nx,M,maxthreads,inplace),data);
+  }
   
   fftw_plan Plan(Complex *in, Complex *out) {
     int n=(int) nx;
@@ -1047,9 +1200,10 @@ public:
 // Note:
 //   in[ny*i+j] contains the ny Complex values for each i=0,...,nx-1.
 //
-class fft2d : public fftw {
+class fft2d : public fftw, public Threadtable<keytype2,keyless2> {
   unsigned int nx;
   unsigned int ny;
+  static Table threadtable;
 public:  
   fft2d(unsigned int nx, unsigned int ny, int sign, Complex *in=NULL,
         Complex *out=NULL)
@@ -1060,6 +1214,13 @@ public:
         const Array::array2<Complex>& out=Array::NULL2) 
     : fftw(2*in.Size(),sign), nx(in.Nx()), ny(in.Ny()) {Setup(in,out);} 
 #endif  
+  
+  threaddata lookup(bool inplace) {
+    return this->Lookup(threadtable,keytype2(nx,ny,maxthreads,inplace));
+  }
+  void store(bool inplace, const threaddata& data) {
+    this->Store(threadtable,keytype2(nx,ny,maxthreads,inplace),data);
+  }
   
   fftw_plan Plan(Complex *in, Complex *out) {
     return fftw_plan_dft_2d(nx,ny,(fftw_complex *) in,(fftw_complex *) out,

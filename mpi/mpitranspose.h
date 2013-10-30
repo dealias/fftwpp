@@ -15,8 +15,8 @@ inline void transposeError(const char *text) {
   exit(-1);
 }
 
-void LoadWisdom(const MPI_Comm& active);
-void SaveWisdom(const MPI_Comm& active);
+void LoadWisdom(MPI_Comm *active);
+void SaveWisdom(MPI_Comm *active);
 
 void fill1_comm_sched(int *sched, int which_pe, int npes);
 
