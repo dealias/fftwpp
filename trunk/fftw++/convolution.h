@@ -1495,7 +1495,7 @@ public:
 
     if(nz == mz) {
       yzconvolve=new ImplicitHConvolution2(my,mz,u1,v1,w1,u2,v2,M,1);
-//      yzconvolve->initpointers(U,v,w,threads);
+      yzconvolve->initpointers(U,v,w,threads);
       initpointers2(U2,V2,threads,stride2);
       initpointers3(U3,V3,u3,v3,stride3);
     } else yzconvolve=NULL;
