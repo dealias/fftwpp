@@ -19,8 +19,6 @@ const Complex G(sqrt(5.0),sqrt(11.0));
 unsigned int m=11;
 unsigned int n=2*m;
 
-unsigned int M=1;   // Number of terms in dot product
-unsigned int A=2*M; // Number of independent inputs
 
 bool Direct=false, Implicit=true, Explicit=false, Test=false;
 
@@ -55,6 +53,8 @@ int main(int argc, char* argv[])
 {
   fftw::maxthreads=get_max_threads();
 
+  unsigned int M=1;   // Number of terms in dot product
+  unsigned int A=2*M; // Number of independent inputs
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
@@ -107,6 +107,8 @@ int main(int argc, char* argv[])
     }
   }
 
+  A=2*M;
+
   n=2*m;
   cout << "min padded buffer=" << n << endl;
   unsigned int log2n;
@@ -133,8 +135,12 @@ int main(int argc, char* argv[])
   double *T=new double[N];
 
   if(Implicit) {
+    unsigned int B=1;
+    ImplicitConvolution C(m,A,B);
+    fftw::SaveWisdom();
+    cout << "threads=" << C.Threads() << endl << endl;;
+
     multiplier *mult;
-    
     switch(A) {
       case 2: mult=multbinary; break;
       case 4: mult=multbinarydot; break;
@@ -143,12 +149,7 @@ int main(int argc, char* argv[])
       case 16: mult=multbinarydot16; break;
       default: exit(1);
         break;
-      
     }
-    
-    ImplicitConvolution C(m,A);
-    fftw::SaveWisdom();
-    cout << "threads=" << C.Threads() << endl << endl;;
     
     Complex **F=new Complex *[A];
     for(unsigned int s=0; s < M; ++s) {
@@ -156,6 +157,7 @@ int main(int argc, char* argv[])
       F[2*s]=f+sm;
       F[2*s+1]=g+sm;
     }
+
     for(unsigned int i=0; i < N; ++i) {
       init(f,g,M);
       seconds();
@@ -172,7 +174,6 @@ int main(int argc, char* argv[])
       cout << f[0] << endl;
 
     if(Test || Direct) for(unsigned int i=0; i < m; i++) h0[i]=f[i];
-    
 
     delete [] F;
   }

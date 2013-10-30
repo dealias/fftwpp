@@ -99,7 +99,6 @@ private:
   Complex *ZetaH, *ZetaL;
   fft1d *Backwards0,*Forwards0;
   fft1d *Backwards,*Forwards;
-  bool binary;
 public:
   void initpointers(Complex **&U, Complex *u) {
     U=new Complex *[A];
@@ -113,16 +112,13 @@ public:
 
   void init() {
     Complex* U0=U[0];
-    
-    binary=(B == 1 && A == 2);
-    
+        
     Complex* U1=A == 1 ? ComplexAlign(m) : U[1];
     Backwards=new fft1d(m,1,U0,U1);
+    Forwards0=new fft1d(m,-1,U0,U1);
     if(A == 1) deleteAlign(U1);
-    
-    if(binary) {
-      Forwards0=new fft1d(m,-1,U0,U1);
-    } else {
+
+    if(A >= B) {
       Backwards0=new fft1d(m,1,U0);
       Forwards=new fft1d(m,-1,U0);
     }
@@ -166,13 +162,12 @@ public:
     if(pointers) deletepointers(U);
     if(allocated) deleteAlign(u);
     
-    if(binary)
-      delete Forwards0;
-    else {
+    delete Forwards0;
+    delete Backwards;    
+    if(A >= B) {
       delete Forwards;
       delete Backwards0; 
     }
-    delete Backwards;
     
     deleteAlign(ZetaH);
     deleteAlign(ZetaL);

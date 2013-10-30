@@ -57,36 +57,51 @@ unsigned int BuildZeta(unsigned int n, unsigned int m,
 
 void ImplicitConvolution::convolve(Complex **F,
                                    multiplier *pmult, unsigned int offset)
-{
+{ 
   Complex *P[A];
   for(unsigned int i=0; i < A; ++i)
     P[i]=F[i]+offset;
   
-  // Backwards FFT:
+  // Backwards FFT (even indices):
   for(unsigned int i=0; i < A; ++i)
     Backwards->fft(P[i],U[i]);
-    
-  (*pmult)(U,m,threads);
+  (*pmult)(U,m,threads); // multiply even indices
 
+  // outer loop of FFT for odd indices:
   if(A == 2) premult<premult2>(P);
   else premult<general>(P);
 
-  if(binary) {
-    Complex *f=P[0];
-    Complex *v=U[1];
-    Backwards->fft(f,v);
-    Backwards->fft(P[1],f);
-    P[0]=v;
-    P[1]=f;
-    (*pmult)(P,m,threads);
-    Forwards0->fft(v,f);
-    Forwards0->fft(U[0],v);
-    postmultadd(f,v);
-  } else {
-    // Forwards FFT:
+  if(A > B) { // U[A-1] is free if A > B.
+    Complex *Odd[A];
+    Odd[A-1]=U[A-1];
+    for(unsigned int i=1; i < A; ++i) 
+      Odd[i-1]=P[i];
+
+    for(unsigned int i=A; i-- > 0;)  // unsigned ints are always positive
+      Backwards->fft(P[i],Odd[i]);
+    (*pmult)(Odd,m,threads); // multiply odd inidices
+    
+    // Return to original space
+    Complex *lastOdd=Odd[A-1];
+    for(unsigned int i=0; i < B; ++i) {
+      Complex *Pi=P[i];
+      Complex *Oddi=Odd[i];
+      Complex *Ui=U[i];
+      Forwards0->fft(Ui,lastOdd);
+      Forwards0->fft(Oddi,Pi);
+      postmultadd(Pi,lastOdd); // first argument must be in P[i].
+    }
+    
+  } else { 
+    // do in-place FFTs.
+    // Note that this could be optimised for the case B > A.
+
+    // Backwards FFT (odd indices):
     for(unsigned int i=0; i < A; ++i)
       Backwards0->fft(P[i]);
-    (*pmult)(P,m,threads);
+    (*pmult)(P,m,threads); // multiply odd inidices
+
+    // Return to original space:
     for(unsigned int i=0; i < B; ++i) {
       Complex *f=P[i];
       Complex *u=U[i];
