@@ -2,6 +2,44 @@
 
 namespace fftwpp {
 
+MPI_Comm *active;
+
+void LoadWisdom(const MPI_Comm& active)
+{
+  int rank;
+  MPI_Comm_rank(active,&rank);
+  if(rank == 0) {
+    std::ifstream ifWisdom;
+    ifWisdom.open(WisdomName);
+    fftwpp_import_wisdom(GetWisdom,ifWisdom);
+    ifWisdom.close();
+  }
+  fftw_mpi_broadcast_wisdom(active);
+}
+
+void SaveWisdom(const MPI_Comm& active)
+{
+  int rank;
+  MPI_Comm_rank(active,&rank);
+  fftw_mpi_gather_wisdom(active);
+  if(rank == 0) {
+    std::ofstream ofWisdom;
+    ofWisdom.open(WisdomName);
+    fftwpp_export_wisdom(PutWisdom,ofWisdom);
+    ofWisdom.close();
+  }
+}
+
+void MPILoadWisdom()
+{
+  LoadWisdom(*active);
+}
+  
+void MPISaveWisdom()
+{
+  SaveWisdom(*active);
+}
+
 void cfft2MPI::Forwards(Complex *f,bool finaltranspose)
 {
   xForwards->fft(f);

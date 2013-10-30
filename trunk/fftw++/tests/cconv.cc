@@ -147,6 +147,7 @@ int main(int argc, char* argv[])
     }
     
     pImplicitConvolution C(m,A);
+    fftw::SaveWisdom();
     cout << "threads=" << C.Threads() << endl << endl;;
     
     Complex **F=new Complex *[A];

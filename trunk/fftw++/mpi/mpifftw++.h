@@ -3,9 +3,20 @@
 
 #include "mpi/mpitranspose.h"
 #include <fftw3-mpi.h>
-#include <fftw++.h>
+#include "fftw++.h"
 
 namespace fftwpp {
+
+extern MPI_Comm *active;
+
+extern bool mpi;
+extern void (*loadwisdom)();
+extern void (*savewisdom)();
+
+void LoadWisdom(const MPI_Comm& active);
+void SaveWisdom(const MPI_Comm& active);
+void MPILoadWisdom();
+void MPISaveWisdom();
 
 inline unsigned int ceilquotient(unsigned int a, unsigned int b)
 {
@@ -30,6 +41,9 @@ public:
   void activate() {
     MPI_Comm_split(MPI_COMM_WORLD,rank < size,0,&active);
     fftwpp::active=&active;
+    mpi=true;
+    loadwisdom=MPILoadWisdom;
+    savewisdom=MPISaveWisdom;
   }
   
   void matrix() {
