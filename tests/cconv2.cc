@@ -163,7 +163,7 @@ int main(int argc, char* argv[])
         break;
     }
 
-    pImplicitConvolution2 C(mx,my,A);
+    ImplicitConvolution2 C(mx,my,A);
     cout << "threads=" << C.Threads() << endl << endl;;
 
     unsigned int mxy=mx*my;

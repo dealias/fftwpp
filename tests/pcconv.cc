@@ -119,7 +119,7 @@ int main(int argc, char* argv[])
   
   double *T=new double[N];
 
-  pImplicitConvolution C(m,A);
+  ImplicitConvolution C(m,A);
   Complex **f=new Complex *[A];
   for(unsigned int s=0; s < A; ++s)
     f[s]=ComplexAlign(m);

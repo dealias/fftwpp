@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
   double *T=new double[N];
   
   if(Implicit) {
-    pImplicitConvolution3 C(mx,my,mz,A,B);
+    ImplicitConvolution3 C(mx,my,mz,A,B);
 
     // Allocate input arrays:
     Complex **f = new Complex *[A];

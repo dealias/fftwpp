@@ -22,7 +22,8 @@ public:
   void inittranspose() {
     int size;
     MPI_Comm_size(d.communicator,&size);
-    alltoall=mx % size == 0 && my % size == 0;
+    alltoall=A == 2 && B == 1 && mx % size == 0 && my % size == 0;
+    alltoall=false;
 
     if(alltoall) {
       T=new mpitranspose(mx,d.y,d.x,my,1,u2);
@@ -51,22 +52,23 @@ public:
     }
   }
 
-  // u1 and v1 are temporary arrays of size my*M*threads.
-  // u2 and v2 are temporary arrays of size dimensions(mx,my).n*M.
-  // M is the number of data blocks (each corresponding to a dot product term).
+  // u1 is a temporary array of size my*A*threads.
+  // u2 is a temporary array of size dimensions(mx,my).n*A.
+  // A is the number of inputs.
+  // B is the number of outputs.
   // threads is the number of threads to use in the outer subconvolution loop.
   ImplicitConvolution2MPI(unsigned int mx, unsigned int my, const dimensions& d,
-                          Complex *u1, Complex *v1, Complex *u2, Complex *v2,
-                          unsigned int M=1,
+                          Complex *u1, Complex *u2, 
+                          unsigned int A=2, unsigned int B=1,
                           unsigned int threads=fftw::maxthreads) :
-    ImplicitConvolution2(mx,my,u1,v1,u2,v2,M,threads,d.x,d.y,d.n), d(d) {
+    ImplicitConvolution2(mx,my,u1,u2,A,B,threads,d.x,d.y,d.n), d(d) {
     inittranspose();
   }
   
   ImplicitConvolution2MPI(unsigned int mx, unsigned int my, const dimensions& d,
-                          unsigned int M=1,
+                          unsigned int A=2, unsigned int B=1,
                           unsigned int threads=fftw::maxthreads) :
-    ImplicitConvolution2(mx,my,M,threads,d.x,d.y,d.n), d(d) {
+    ImplicitConvolution2(mx,my,A,B,threads,d.x,d.y,d.n), d(d) {
     inittranspose();
   }
   
@@ -77,38 +79,22 @@ public:
     }
   }
   
-  void pretranspose(Complex **F, unsigned int offset=0) {
-    for(unsigned int s=0; s < M; ++s) {
-      double *f=(double *) (F[s]+offset);
-      fftw_mpi_execute_r2r(intranspose,f,f);
+  void transpose(fftw_plan plan, unsigned int A, Complex **F,
+                 unsigned int offset=0) {
+    for(unsigned int a=0; a < A; ++a) {
+      double *f=(double *) (F[a]+offset);
+      fftw_mpi_execute_r2r(plan,f,f);
     }
   }
   
-  void pretranspose(Complex *u2) {
-    unsigned int stride=d.n;
-    for(unsigned int s=0; s < M; ++s) {
-      double *u=(double *) (u2+s*stride);
-      fftw_mpi_execute_r2r(intranspose,u,u);
-    }
-  }
+  // F is a pointer to A distinct data blocks each of size mx*d.y,
+  // shifted by offset (contents not preserved).
+  void convolve(Complex **F, multiplier *pmult, unsigned int offset=0);
   
-  void posttranspose(Complex *f) {
-    fftw_mpi_execute_r2r(outtranspose,(double *) f,(double *) f);
-  }
-  
-  void convolve(Complex **F, Complex **G, Complex **u, Complex ***V,
-                Complex **U2, Complex **V2, unsigned int offset=0);
-  
-  // F and G are distinct pointers to M distinct data blocks each of size
-  // mx*d.y, shifted by offset (contents not preserved).
-  // The output is returned in F[0].
-  void convolve(Complex **F, Complex **G, unsigned int offset=0) {
-    convolve(F,G,u,V,U2,V2,offset);
-  }
-
-  // Convolution for special case M=1:
+  // Binary convolution:
   void convolve(Complex *f, Complex *g) {
-    convolve(&f,&g);
+    Complex *F[]={f,g};
+    convolve(F,multbinary);
   }
 };
 
@@ -217,7 +203,7 @@ public:
 class ImplicitConvolution3MPI : public ImplicitConvolution3 {
 protected:
   dimensions3 d;
-  unsigned int innerthreads;
+  unsigned int innermostthreads;
   fftw_plan intranspose,outtranspose;
   bool alltoall; // Use experimental nonblocking transpose
   mpitranspose *T;
@@ -226,6 +212,7 @@ public:
     int size;
     MPI_Comm_size(d.communicator,&size);
     alltoall=mx % size == 0 && my % size == 0;
+    alltoall=false;
 
     if(alltoall) {
       T=new mpitranspose(mx,d.y,d.x,my,d.z,u3);
@@ -255,39 +242,40 @@ public:
 
   void initMPI() {
     if(d.z < mz) {
-      yzconvolve=new ImplicitConvolution2MPI(my,mz,d.yz,u1,v1,u2,v2,M,
-                                             innerthreads);
-      yzconvolve->initpointers(u,V,innerthreads);
-      initpointers2(U2,V2,1,d.n2);
-      initpointers3(U3,V3,u3,v3,d.n);
+      for(unsigned int t=0; t < threads; ++t)
+        yzconvolve[t]=new ImplicitConvolution2MPI(my,mz,d.yz,
+                                                  u1+t*mz*A*innermostthreads,
+                                                  u2+t*d.n2*A,A,B,innermostthreads);
+      initpointers3(U3,u3,d.n);
     }
   }
   
-  // u1 and v1 are temporary arrays of size mz*M*threads.
-  // u2 and v2 are temporary arrays of size d.y*mz*M*(d.z < mz ? 1 : threads).
-  // u3 and v3 are temporary arrays of size d.n*M.
-  // M is the number of data blocks (each corresponding to a dot product term).
-  // threads is the number of threads to use within the innermost MPI node.
+  // u1 is a temporary array of size mz*A*threads.
+  // u2 is a temporary array of size d.y*mz*A*(d.z < mz ? 1 : threads).
+  // u3 is a temporary array of size d.n*M.
+  // A is the number of inputs.
+  // B is the number of outputs.
+  // threads is the number of threads to use within the outer subconvolution loop.
   ImplicitConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
                           const dimensions3& d,
-                          Complex *u1, Complex *v1,
-                          Complex *u2, Complex *v2,
-                          Complex *u3, Complex *v3, unsigned int M=1,
+                          Complex *u1, Complex *u2, Complex *u3, 
+                          unsigned int A=2, unsigned int B=1,
                           unsigned int threads=fftw::maxthreads) :
-    ImplicitConvolution3(mx,my,mz,u1,v1,u2,v2,u3,v3,M,
+    ImplicitConvolution3(mx,my,mz,u1,u2,u3,A,B,
                          d.z < mz ? 1 : threads,
-                         d.y,d.z,d.n2,d.n), d(d), innerthreads(threads) {
+                         d.y,d.z,d.n2,d.n), d(d), innermostthreads(threads) {
     initMPI();
     inittranspose();
   }
 
   ImplicitConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
-                          const dimensions3& d, unsigned int M=1,
+                          const dimensions3& d,
+                          unsigned int A=2, unsigned int B=1,
                           unsigned int threads=fftw::maxthreads) :
-    ImplicitConvolution3(mx,my,mz,M,
+    ImplicitConvolution3(mx,my,mz,A,B,
                          d.z < mz ? 1 : threads,
                          d.z < mz ? threads : 1,
-                         d.y,d.z,d.n2,d.n), d(d), innerthreads(threads) {
+                         d.y,d.z,d.n2,d.n), d(d), innermostthreads(threads) {
     initMPI();
     inittranspose();
   }
@@ -299,36 +287,20 @@ public:
     }
   }
   
-  void pretranspose(Complex **F, unsigned int offset=0) {
-    for(unsigned int s=0; s < M; ++s) {
-      double *f=(double *) (F[s]+offset);
-      fftw_mpi_execute_r2r(intranspose,f,f);
+  void transpose(fftw_plan plan, unsigned int A, Complex **F,
+                 unsigned int offset=0) {
+    for(unsigned int a=0; a < A; ++a) {
+      double *f=(double *) (F[a]+offset);
+      fftw_mpi_execute_r2r(plan,f,f);
     }
   }
   
-  void pretranspose(Complex *u3) {
-    unsigned int stride=d.n;
-    for(unsigned int s=0; s < M; ++s) {
-      double *u=(double *) (u3+s*stride);
-      fftw_mpi_execute_r2r(intranspose,u,u);
-    }
-  }
+  void convolve(Complex **F, multiplier *pmult, unsigned int offset=0);
   
-  void posttranspose(Complex *f) {
-    fftw_mpi_execute_r2r(outtranspose,(double *) f,(double *) f);
-  }
-  
-  void convolve(Complex **F, Complex **G, Complex **u, Complex ***V,
-                Complex ***U2, Complex ***V2, Complex **U3, Complex **V3,
-                unsigned int offset=0);
-  
-  void convolve(Complex **F, Complex **G, unsigned int offset=0) {
-    convolve(F,G,u,V,U2,V2,U3,V3,offset);
-  }
-  
-  // Constructor for special case M=1:
+  // Binary convolution:
   void convolve(Complex *f, Complex *g) {
-    convolve(&f,&g);
+    Complex *F[]={f,g};
+    convolve(F,multbinary);
   }
 };
 
@@ -345,7 +317,7 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
 class ImplicitHConvolution3MPI : public ImplicitHConvolution3 {
 protected:
   dimensions3 d,du;
-  unsigned int innerthreads;
+  unsigned int innermostthreads;
   fftw_plan intranspose,outtranspose;
   fftw_plan uintranspose,uouttranspose;
 public:  
@@ -380,8 +352,8 @@ public:
   void initMPI(Complex *f) {
     if(d.z < mz) {
       yzconvolve=new ImplicitHConvolution2MPI(my,mz,d.yz,du.yz,f,u1,v1,w1,u2,v2,
-                                              M,innerthreads);
-      yzconvolve->initpointers(U,v,w,innerthreads);
+                                              M,innermostthreads);
+      yzconvolve->initpointers(U,v,w,innermostthreads);
       initpointers2(U2,V2,1,du.n2);
       initpointers3(U3,V3,u3,v3,du.n);
     }
@@ -392,7 +364,7 @@ public:
   // u2 and v2 are temporary arrays of size du.n2*M*(d.z < mz ? 1 : threads).
   // u3 and v3 are temporary arrays of size du.n2*M.
   // M is the number of data blocks (each corresponding to a dot product term).
-  // threads is the number of threads to use within the innermost MPI node.
+  // threads is the number of threads to use within the outer subconvolution loop.
   // f is a temporary array of size d.n2 needed only during construction.
   ImplicitHConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
                            const dimensions3& d, const dimensions3& du,
@@ -403,7 +375,7 @@ public:
     ImplicitHConvolution3(mx,my,mz,u1,v1,w1,u2,v2,u3,v3,M,
                           d.z < mz ? 1 : threads,
                           d.y,d.z,du.n2,du.n),
-    d(d), du(du), innerthreads(threads) { 
+    d(d), du(du), innermostthreads(threads) { 
     initMPI(f);
     inittranspose(f);
   }
@@ -416,7 +388,7 @@ public:
                           d.z < mz ? 1 : threads,
                           d.z < mz ? threads : 1,
                           d.y,d.z,du.n2,du.n),
-    d(d), du(du), innerthreads(threads) { 
+    d(d), du(du), innermostthreads(threads) { 
     initMPI(f);
     inittranspose(f);
   }

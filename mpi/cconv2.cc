@@ -10,7 +10,8 @@ unsigned int N0=10000000;
 unsigned int N=0;
 unsigned int mx=4;
 unsigned int my=4;
-unsigned int M=1;
+unsigned int M=1;   // Number of terms in dot product
+unsigned int A=2*M; // Number of independent inputs
 
 bool Implicit=true, Explicit=false, Pruned=false;
 
@@ -143,14 +144,26 @@ int main(int argc, char* argv[])
     double *T=new double[N];
 
     if(Implicit) {
-      ImplicitConvolution2MPI C(mx,my,d,M);
-      Complex **F=new Complex *[M];
-      Complex **G=new Complex *[M];
+      multiplier *mult;
+  
+      switch(A) {
+        case 2: mult=multbinary; break;
+        case 4: mult=multbinarydot; break;
+        case 6: mult=multbinarydot6; break;
+        case 8: mult=multbinarydot8; break;
+        case 16: mult=multbinarydot16; break;
+        default: exit(1);
+          break;
+      }
+
+      ImplicitConvolution2MPI C(mx,my,d,A);
+      
+      Complex **F=new Complex *[A];
       unsigned int stride=d.n;
       for(unsigned int s=0; s < M; ++s) {
         unsigned int sstride=s*stride;
-        F[s]=f+sstride;
-        G[s]=g+sstride;
+        F[2*s]=f+sstride;
+        F[2*s+1]=g+sstride;
       }
 
       MPI_Barrier(group.active);
@@ -159,7 +172,7 @@ int main(int argc, char* argv[])
       for(unsigned int i=0; i < N; ++i) {
         init(f,g,d,M);
         seconds();
-        C.convolve(F,G);
+        C.convolve(F,mult);
 //      C.convolve(f,g);
         T[i]=seconds();
       }
@@ -184,7 +197,6 @@ int main(int argc, char* argv[])
 	}
       }
       
-      delete [] G;
       delete [] F;
     }
   

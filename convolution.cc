@@ -55,201 +55,118 @@ unsigned int BuildZeta(unsigned int n, unsigned int m,
   return s;
 }
 
-// a[0][k]=sum_i a[i][k]*b[i][k]
-void ImplicitConvolution::mult(Complex *a, Complex **B, 
-                               unsigned int offset) {
-  if(M == 1) { // a[k]=a[k]*b[k]
-    Complex *B0=B[0]+offset;
-#ifdef __SSE2__
-    PARALLEL(
-      for(unsigned int k=0; k < m; ++k) {
-        Complex *p=a+k;
-        STORE(p,ZMULT(LOAD(p),LOAD(B0+k)));
-      }
-      )
-#else
-      PARALLEL(
-        for(unsigned int k=0; k < m; ++k) {
-          Complex *p=a+k;
-          Complex ak=*p;
-          Complex bk=*(B0+k);
-          p->re=ak.re*bk.re-ak.im*bk.im;
-          p->im=ak.re*bk.im+ak.im*bk.re;
-        }
-        )
-#endif
-      } else if(M == 2) {
-    Complex *a1=a+m;
-    Complex *B0=B[0]+offset;
-    Complex *B1=B[1]+offset;
+void ImplicitConvolution::convolve(Complex **F,
+                                   multiplier *pmult, unsigned int offset)
+{
+  Complex *P[A];
+  for(unsigned int i=0; i < A; ++i)
+    P[i]=F[i]+offset;
+  
+  // Backwards FFT:
+  for(unsigned int i=0; i < A; ++i)
+    Backwards->fft(P[i],U[i]);
+    
+  (*pmult)(U,m,threads);
 
-#ifdef __SSE2__
-    PARALLEL(
-      for(unsigned int k=0; k < m; ++k) {
-        Complex *p=a+k;
-        STORE(p,ZMULT(LOAD(p),LOAD(B0+k))+ZMULT(LOAD(a1+k),LOAD(B1+k)));
-      }
-      )
-#else
-      PARALLEL(
-        for(unsigned int k=0; k < m; ++k) {
-          Complex *p=a+k;
-          Complex ak=*p;
-          Complex bk=B0[k];
-          double re=ak.re*bk.re-ak.im*bk.im;
-          double im=ak.re*bk.im+ak.im*bk.re;
-          ak=a1[k];
-          bk=B1[k];
-          re += ak.re*bk.re-ak.im*bk.im;
-          im += ak.re*bk.im+ak.im*bk.re; 
-          p->re=re;
-          p->im=im;
-        }
-        )
-#endif
-      } else if(M == 3) {
-    Complex *a1=a+m;
-    Complex *a2=a+2*m;
-    Complex *B0=B[0]+offset;
-    Complex *B1=B[1]+offset;
-    Complex *B2=B[2]+offset;
-#ifdef __SSE2__
-    PARALLEL(
-      for(unsigned int k=0; k < m; ++k) {
-        Complex *p=a+k;
-        STORE(p,ZMULT(LOAD(p),LOAD(B0+k))+ZMULT(LOAD(a1+k),LOAD(B1+k))
-              +ZMULT(LOAD(a2+k),LOAD(B2+k)));
-      }
-      )
-#else
-      PARALLEL(
-        for(unsigned int k=0; k < m; ++k) {
-          Complex *p=a+k;
-          Complex ak=*p;
-          Complex bk=B0[k];
-          double re=ak.re*bk.re-ak.im*bk.im;
-          double im=ak.re*bk.im+ak.im*bk.re;
-          ak=a1[k];
-          bk=B1[k];
-          re += ak.re*bk.re-ak.im*bk.im;
-          im += ak.re*bk.im+ak.im*bk.re; 
-          ak=a2[k];
-          bk=B2[k];
-          re += ak.re*bk.re-ak.im*bk.im;
-          im += ak.re*bk.im+ak.im*bk.re; 
-          p->re=re;
-          p->im=im;
-        }
-        )
-#endif
-      } else {
-    Complex *A=a-offset;
-    Complex *B0=B[0];
-    unsigned int stop=offset+m;
-#ifdef __SSE2__
-    PARALLEL(
-      for(unsigned int k=offset; k < stop; ++k) {
-        Complex *p=A+k;
-        Vec sum=ZMULT(LOAD(p),LOAD(B0+k));
-        for(unsigned int i=1; i < M; ++i)
-          sum += ZMULT(LOAD(p+m*i),LOAD(B[i]+k));
-        STORE(p,sum);
-      }
-      )
-#else
-      PARALLEL(
-        for(unsigned int k=offset; k < stop; ++k) {
-          Complex *p=A+k;
-          Complex ak=*p;
-          Complex bk=B0[k];
-          double re=ak.re*bk.re-ak.im*bk.im;
-          double im=ak.re*bk.im+ak.im*bk.re;
-          for(unsigned int i=1; i < M; ++i) {
-            Complex ak=p[m*i];
-            Complex bk=B[i][k];
-            re += ak.re*bk.re-ak.im*bk.im;
-            im += ak.re*bk.im+ak.im*bk.re; 
-          }
-          p->re=re;
-          p->im=im;
-        }
-        )
-#endif
-      }
+  if(A == 2) premult<premult2>(P);
+  else premult<general>(P);
+
+  if(binary) {
+    Complex *f=P[0];
+    Complex *v=U[1];
+    Backwards->fft(f,v);
+    Backwards->fft(P[1],f);
+    P[0]=v;
+    P[1]=f;
+    (*pmult)(P,m,threads);
+    Forwards0->fft(v,f);
+    Forwards0->fft(U[0],v);
+    postmultadd(f,v);
+  } else {
+    // Forwards FFT:
+    for(unsigned int i=0; i < A; ++i)
+      Backwards0->fft(P[i]);
+    (*pmult)(P,m,threads);
+    for(unsigned int i=0; i < B; ++i) {
+      Complex *f=P[i];
+      Complex *u=U[i];
+      Forwards->fft(f);
+      Forwards->fft(u);
+      postmultadd(f,u);
+    }
+  }
 }
 
-void ImplicitConvolution::convolve(Complex **F, Complex **G,
-                                   Complex *u, Complex **V,
-                                   unsigned int offset)
-{
-  // all 6M FFTs are out-of-place
-  Complex *v=V[0];
-
-  for(unsigned int i=0; i < M; ++i) {
-    unsigned int im=i*m;
-    Backwards->fft(F[i]+offset,u+im);
-    Backwards->fft(G[i]+offset,v+im);
-  }
-  
-  mult(u,V);
-
-  for(unsigned int i=0; i < M; ++i) {
-    Complex *f=F[i]+offset;
-    Complex *g=G[i]+offset;
-
 #ifdef __SSE2__
+template<class T>
+inline void ImplicitConvolution::
+premult(Complex **F, unsigned int k, Vec& Zetak)
+{
+  for(unsigned int i=0; i < A; ++i) {
+    Complex *fki=F[i]+k;
+    STORE(fki,ZMULT(Zetak,LOAD(fki)));
+  }
+}
+
+template<>
+inline void ImplicitConvolution::
+premult<premult2>(Complex **F, unsigned int k, Vec& Zetak)
+{
+  Complex *fk0=F[0]+k;
+  Complex *fk1=F[1]+k;
+  Vec Fk0=LOAD(fk0);
+  Vec Fk1=LOAD(fk1);
+  STORE(fk0,ZMULT(Zetak,Fk0));
+  STORE(fk1,ZMULT(Zetak,Fk1));
+}
+#endif
+
+// multiply by root of unity to prepare for inverse FFT for odd modes
+template<class T>
+void ImplicitConvolution::premult(Complex **F)
+{  
+#ifdef __SSE2__
+  PARALLEL(
+    for(unsigned int K=0; K < m; K += s) {
+      Complex *ZetaL0=ZetaL-K;
+      unsigned int stop=min(K+s,m);
+      Vec Zeta=LOAD(ZetaH+K/s);
+      Vec X=UNPACKL(Zeta,Zeta);
+      Vec Y=UNPACKH(CONJ(Zeta),Zeta);
+      for(unsigned int k=K; k < stop; ++k) {
+        Vec Zetak=ZMULT(X,Y,LOAD(ZetaL0+k));
+        premult<T>(F,k,Zetak);
+      }
+    }
+    )
+#else
     PARALLEL(
       for(unsigned int K=0; K < m; K += s) {
         Complex *ZetaL0=ZetaL-K;
         unsigned int stop=min(K+s,m);
-        Vec Zeta=LOAD(ZetaH+K/s);
-        Vec X=UNPACKL(Zeta,Zeta);
-        Vec Y=UNPACKH(CONJ(Zeta),Zeta);
+        Complex *p=ZetaH+K/s;
+        double Hre=p->re;
+        double Him=p->im;
         for(unsigned int k=K; k < stop; ++k) {
-          Vec Zetak=ZMULT(X,Y,LOAD(ZetaL0+k));
-          Complex *fki=f+k;
-          Complex *gki=g+k;
-          Vec Fki=LOAD(fki);
-          Vec Gki=LOAD(gki);
-          STORE(fki,ZMULT(Zetak,Fki));
-          STORE(gki,ZMULT(Zetak,Gki));
-        }
+          Complex L=*(ZetaL0+k);
+          double Re=Hre*L.re-Him*L.im;
+          double Im=Hre*L.im+Him*L.re;
+          for(unsigned int i=0; i < A; ++i) {
+            Complex *Fki=F[i]+k;
+	    Complex fk=*Fki;
+	    Fki->re=Re*fk.re-Im*fk.im;
+	    Fki->im=Im*fk.re+Re*fk.im;
+	  }
+	}
       }
       )
-#else
-      PARALLEL(
-        for(unsigned int K=0; K < m; K += s) {
-          Complex *ZetaL0=ZetaL-K;
-          unsigned int stop=min(K+s,m);
-          Complex *p=ZetaH+K/s;
-          double Hre=p->re;
-          double Him=p->im;
-          for(unsigned int k=K; k < stop; ++k) {
-            Complex *P=f+k;
-            Complex *Q=g+k;
-            Complex fk=*P;
-            Complex gk=*Q;
-            Complex L=*(ZetaL0+k);
-            double Re=Hre*L.re-Him*L.im;
-            double Im=Hre*L.im+Him*L.re;
-            P->re=Re*fk.re-Im*fk.im;
-            P->im=Im*fk.re+Re*fk.im;
-            Q->re=Re*gk.re-Im*gk.im;
-            Q->im=Im*gk.re+Re*gk.im;
-          }
-        }
-        )
 #endif
-      Backwards->fft(f,v+i*m);
-    Backwards->fft(g,f);
-  }
-    
-  mult(v,F,offset);
+    }
 
-  Complex *f=F[0]+offset;
-  Forwards->fft(u,f);
-  Forwards->fft(v,u);
 
+// multiply by root of unity to prepare and add for inverse FFT for odd modes
+void ImplicitConvolution::postmultadd(Complex *f, Complex *u)
+{
   double ninv=0.5/m;
 #ifdef __SSE2__
   Vec Ninv=LOAD(ninv);
@@ -262,8 +179,8 @@ void ImplicitConvolution::convolve(Complex **F, Complex **G,
       Vec Y=UNPACKH(CONJ(Zeta),Zeta);
       for(unsigned int k=K; k < stop; ++k) {
         Vec Zetak=ZMULT(X,Y,LOAD(ZetaL0+k));
-        Complex *fk=f+k;
-        STORE(fk,ZMULTC(Zetak,LOAD(u+k))+Ninv*LOAD(fk));
+        Complex *fki=f+k;
+        STORE(fki,ZMULTC(Zetak,LOAD(fki))+Ninv*LOAD(u+k));
       }
     }
     )
@@ -276,16 +193,17 @@ void ImplicitConvolution::convolve(Complex **F, Complex **G,
         double Hre=ninv*p->re;
         double Him=ninv*p->im;
         for(unsigned int k=K; k < stop; ++k) {
-          Complex *p=f+k;
-          Complex fk=*p;
-          Complex fkm=*(u+k);
+          Complex *P=f+k;
+          Complex fk=*P;
+          Complex U=*(u+k);
           Complex L=*(ZetaL0+k);
           double Re=Hre*L.re-Him*L.im;
-          double Im=Him*L.re+Hre*L.im;
-          p->re=ninv*fk.re+Re*fkm.re+Im*fkm.im;
-          p->im=ninv*fk.im-Im*fkm.re+Re*fkm.im;
-        }
+          double Im=Hre*L.im+Him*L.re;
+          P->re=ninv*U.re+Re*fk.re+Im*fk.im;
+          P->im=ninv*U.im-Im*fk.re+Re*fk.im;
+        }         
       }
+  
       )
 #endif
     }
@@ -1588,159 +1506,6 @@ void fft0bipad::forwards(Complex *f, Complex *u)
 #endif
     }
 
-void pImplicitConvolution::convolve(Complex **F,
-                                    multiplier *pmult, unsigned int offset)
-{
-  Complex *P[A];
-  for(unsigned int i=0; i < A; ++i)
-    P[i]=F[i]+offset;
-  
-  // Backwards FFT:
-  for(unsigned int i=0; i < A; ++i)
-    Backwards->fft(P[i],U[i]);
-    
-  (*pmult)(U,m,threads);
-
-  if(A == 2) premult<premult2>(P);
-  else premult<general>(P);
-
-  if(binary) {
-    Complex *f=P[0];
-    Complex *v=U[1];
-    Backwards->fft(f,v);
-    Backwards->fft(P[1],f);
-    P[0]=v;
-    P[1]=f;
-    (*pmult)(P,m,threads);
-    Forwards0->fft(v,f);
-    Forwards0->fft(U[0],v);
-    postmultadd(f,v);
-  } else {
-    // Forwards FFT:
-    for(unsigned int i=0; i < A; ++i)
-      Backwards0->fft(P[i]);
-    (*pmult)(P,m,threads);
-    for(unsigned int i=0; i < B; ++i) {
-      Complex *f=P[i];
-      Complex *u=U[i];
-      Forwards->fft(f);
-      Forwards->fft(u);
-      postmultadd(f,u);
-    }
-  }
-}
-
-#ifdef __SSE2__
-template<class T>
-inline void pImplicitConvolution::
-premult(Complex **F, unsigned int k, Vec& Zetak)
-{
-  for(unsigned int i=0; i < A; ++i) {
-    Complex *fki=F[i]+k;
-    STORE(fki,ZMULT(Zetak,LOAD(fki)));
-  }
-}
-
-template<>
-inline void pImplicitConvolution::
-premult<premult2>(Complex **F, unsigned int k, Vec& Zetak)
-{
-  Complex *fk0=F[0]+k;
-  Complex *fk1=F[1]+k;
-  Vec Fk0=LOAD(fk0);
-  Vec Fk1=LOAD(fk1);
-  STORE(fk0,ZMULT(Zetak,Fk0));
-  STORE(fk1,ZMULT(Zetak,Fk1));
-}
-#endif
-
-// multiply by root of unity to prepare for inverse FFT for odd modes
-template<class T>
-void pImplicitConvolution::premult(Complex **F)
-{  
-#ifdef __SSE2__
-  PARALLEL(
-    for(unsigned int K=0; K < m; K += s) {
-      Complex *ZetaL0=ZetaL-K;
-      unsigned int stop=min(K+s,m);
-      Vec Zeta=LOAD(ZetaH+K/s);
-      Vec X=UNPACKL(Zeta,Zeta);
-      Vec Y=UNPACKH(CONJ(Zeta),Zeta);
-      for(unsigned int k=K; k < stop; ++k) {
-        Vec Zetak=ZMULT(X,Y,LOAD(ZetaL0+k));
-        premult<T>(F,k,Zetak);
-      }
-    }
-    )
-#else
-    PARALLEL(
-      for(unsigned int K=0; K < m; K += s) {
-        Complex *ZetaL0=ZetaL-K;
-        unsigned int stop=min(K+s,m);
-        Complex *p=ZetaH+K/s;
-        double Hre=p->re;
-        double Him=p->im;
-        for(unsigned int k=K; k < stop; ++k) {
-          Complex L=*(ZetaL0+k);
-          double Re=Hre*L.re-Him*L.im;
-          double Im=Hre*L.im+Him*L.re;
-          for(unsigned int i=0; i < A; ++i) {
-            Complex *Fki=F[i]+k;
-	    Complex fk=*Fki;
-	    Fki->re=Re*fk.re-Im*fk.im;
-	    Fki->im=Im*fk.re+Re*fk.im;
-	  }
-	}
-      }
-      )
-#endif
-    }
-
-
-// multiply by root of unity to prepare and add for inverse FFT for odd modes
-void pImplicitConvolution::postmultadd(Complex *f, Complex *u)
-{
-  double ninv=0.5/m;
-#ifdef __SSE2__
-  Vec Ninv=LOAD(ninv);
-  PARALLEL(
-    for(unsigned int K=0; K < m; K += s) {
-      unsigned int stop=min(K+s,m);
-      Complex *ZetaL0=ZetaL-K;
-      Vec Zeta=Ninv*LOAD(ZetaH+K/s);
-      Vec X=UNPACKL(Zeta,Zeta);
-      Vec Y=UNPACKH(CONJ(Zeta),Zeta);
-      for(unsigned int k=K; k < stop; ++k) {
-        Vec Zetak=ZMULT(X,Y,LOAD(ZetaL0+k));
-        Complex *fki=f+k;
-        STORE(fki,ZMULTC(Zetak,LOAD(fki))+Ninv*LOAD(u+k));
-      }
-    }
-    )
-#else
-    PARALLEL(
-      for(unsigned int K=0; K < m; K += s) {
-        unsigned int stop=min(K+s,m);
-        Complex *ZetaL0=ZetaL-K;
-        Complex *p=ZetaH+K/s;
-        double Hre=ninv*p->re;
-        double Him=ninv*p->im;
-        for(unsigned int k=K; k < stop; ++k) {
-          Complex *P=f+k;
-          Complex fk=*P;
-          Complex U=*(u+k);
-          Complex L=*(ZetaL0+k);
-          double Re=Hre*L.re-Him*L.im;
-          double Im=Hre*L.im+Him*L.re;
-          P->re=ninv*U.re+Re*fk.re+Im*fk.im;
-          P->im=ninv*U.im-Im*fk.re+Re*fk.im;
-        }         
-      }
-  
-      )
-#endif
-    }
-
 void multbinary(Complex **F, unsigned int m, unsigned int threads) {
   // This multiplication routine is for binary convolutions only and takes
   // exactly two inputs.
@@ -1805,7 +1570,7 @@ void multbinarydot6(Complex **F, unsigned int m, unsigned int threads) {
       STORE(F0j,ZMULT(LOAD(F0j),LOAD(F1+j))
             +ZMULT(LOAD(F2+j),LOAD(F3+j))
 	    +ZMULT(LOAD(F4+j),LOAD(F5+j))
-	    );
+        );
     }
     )
 #else
@@ -1836,7 +1601,7 @@ void multbinarydot8(Complex **F, unsigned int m, unsigned int threads) {
             +ZMULT(LOAD(F2+j),LOAD(F3+j))
 	    +ZMULT(LOAD(F4+j),LOAD(F5+j))
 	    +ZMULT(LOAD(F6+j),LOAD(F7+j))
-	    );
+        );
     }
     )
 #else
@@ -1880,18 +1645,17 @@ void multbinarydot16(Complex **F, unsigned int m, unsigned int threads) {
 	    +ZMULT(LOAD(F10+j),LOAD(F11+j))
 	    +ZMULT(LOAD(F12+j),LOAD(F13+j))
 	    +ZMULT(LOAD(F14+j),LOAD(F15+j))
-	    );
+        );
     }
     )
 #else
     PARALLEL(
       for(unsigned int j=0; j < m; ++j)
         F0[j]=F0[j]*F1[j] + F2[j]*F3[j] + F4[j]*F5[j] + F6[j]*F7[j]
-	   + F8[j]*F9[j] + F10[j]*F11[j] + F12[j]*F13[j] + F14[j]*F15[j];
+          + F8[j]*F9[j] + F10[j]*F11[j] + F12[j]*F13[j] + F14[j]*F15[j];
       )
 
 #endif
     }
-
 
 } // namespace fftwpp
