@@ -174,6 +174,7 @@ inline void deleteAlign(T *p)
 #define FFTWdouble doubleAlign
 #define FFTWdelete deleteAlign
 
+extern bool mpi;
 extern const char *WisdomName;
 
 inline void fftwpp_export_wisdom(void (*emitter)(char c, std::ofstream& s),
@@ -334,10 +335,8 @@ public:
   fftw(unsigned int doubles, int sign, unsigned int n=0) : 
     doubles(doubles), sign(sign), norm(1.0/(n ? n : (doubles+1)/2)),
     plan(NULL) {
-#ifndef MPI_VERSION
 #ifndef FFTWPP_SINGLE_THREAD
-      fftw_init_threads();
-#endif      
+    if(!mpi) fftw_init_threads();
 #endif      
   }
   
@@ -476,7 +475,7 @@ public:
     plan=Plan(in,out);
     if(!plan) noplan();
     
-    if(data.threads == 0) {
+    if(maxthreads > 1 && data.threads == 0) {
       threads=maxthreads;
       planThreads(threads);
       fftw_plan planT=Plan(in,out);
