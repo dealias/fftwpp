@@ -17,7 +17,6 @@ unsigned int ny=0;
 unsigned int mx=4;
 unsigned int my=4;
 unsigned int M=1;   // Number of terms in dot product
-unsigned int A=2*M; // Number of independent inputs
 
 bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
@@ -99,7 +98,6 @@ int main(int argc, char* argv[])
         break;
       case 'M':
         M=atoi(optarg);
-        A=2*M;
         break;
       case 'N':
         N=atoi(optarg);
@@ -125,6 +123,8 @@ int main(int argc, char* argv[])
     }
   }
 
+  unsigned int A=2*M; // Number of independent inputs
+  
   if(my == 0) my=mx;
 
   nx=padding(mx);
@@ -159,8 +159,7 @@ int main(int argc, char* argv[])
       case 6: mult=multbinarydot6; break;
       case 8: mult=multbinarydot8; break;
       case 16: mult=multbinarydot16; break;
-      default: exit(1);
-        break;
+      default: cout << "M=" << M << " is not yet implemented" << endl; exit(1);
     }
 
     ImplicitConvolution2 C(mx,my,A);

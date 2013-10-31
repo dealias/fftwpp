@@ -58,7 +58,7 @@ unsigned int BuildZeta(unsigned int n, unsigned int m,
 void ImplicitConvolution::convolve(Complex **F,
                                    multiplier *pmult, unsigned int offset)
 { 
-  Complex *P[A];
+  Complex *P[max(A,B)];
   for(unsigned int i=0; i < A; ++i)
     P[i]=F[i]+offset;
   
@@ -67,39 +67,40 @@ void ImplicitConvolution::convolve(Complex **F,
     Backwards->fft(P[i],U[i]);
   (*pmult)(U,m,threads); // multiply even indices
 
-  // outer loop of FFT for odd indices:
-  if(A == 2) premult<premult2>(P);
-  else premult<general>(P);
+  switch(A) {
+    case 1: premult<premult1>(P); break;
+    case 2: premult<premult2>(P); break;
+    case 3: premult<premult3>(P); break;
+    case 4: premult<premult4>(P); break;
+    default: premult<general>(P);
+  }
 
-  if(A > B) { // U[A-1] is free if A > B.
-    Complex *Odd[A];
-    Odd[A-1]=U[A-1];
+  if(A > B) { // out-of-place FFTs: U[A-1] is free if A > B.
+    Complex *W[A];
+    W[A-1]=U[A-1];
     for(unsigned int i=1; i < A; ++i) 
-      Odd[i-1]=P[i];
+      W[i-1]=P[i];
 
-    for(unsigned int i=A; i-- > 0;)  // unsigned ints are always positive
-      Backwards->fft(P[i],Odd[i]);
-    (*pmult)(Odd,m,threads); // multiply odd inidices
+    for(unsigned int i=A; i-- > 0;) // Loop from A-1 to 0.
+      Backwards->fft(P[i],W[i]);
+    (*pmult)(W,m,threads); // multiply odd indices
     
     // Return to original space
-    Complex *lastOdd=Odd[A-1];
+    Complex *lastW=W[A-1];
     for(unsigned int i=0; i < B; ++i) {
       Complex *Pi=P[i];
-      Complex *Oddi=Odd[i];
-      Complex *Ui=U[i];
-      Forwards0->fft(Ui,lastOdd);
-      Forwards0->fft(Oddi,Pi);
-      postmultadd(Pi,lastOdd); // first argument must be in P[i].
+      Forwards0->fft(W[i],Pi);
+      Forwards0->fft(U[i],lastW);
+      postmultadd(Pi,lastW);
     }
     
   } else { 
-    // do in-place FFTs.
-    // Note that this could be optimised for the case B > A.
+    // in-place FFTs: this could be optimised for B > A.
 
     // Backwards FFT (odd indices):
     for(unsigned int i=0; i < A; ++i)
       Backwards0->fft(P[i]);
-    (*pmult)(P,m,threads); // multiply odd inidices
+    (*pmult)(P,m,threads); // multiply odd indices
 
     // Return to original space:
     for(unsigned int i=0; i < B; ++i) {
@@ -125,6 +126,15 @@ premult(Complex **F, unsigned int k, Vec& Zetak)
 
 template<>
 inline void ImplicitConvolution::
+premult<premult1>(Complex **F, unsigned int k, Vec& Zetak)
+{
+  Complex *fk0=F[0]+k;
+  Vec Fk0=LOAD(fk0);
+  STORE(fk0,ZMULT(Zetak,Fk0));
+}
+
+template<>
+inline void ImplicitConvolution::
 premult<premult2>(Complex **F, unsigned int k, Vec& Zetak)
 {
   Complex *fk0=F[0]+k;
@@ -134,7 +144,40 @@ premult<premult2>(Complex **F, unsigned int k, Vec& Zetak)
   STORE(fk0,ZMULT(Zetak,Fk0));
   STORE(fk1,ZMULT(Zetak,Fk1));
 }
-#endif
+
+template<>
+inline void ImplicitConvolution::
+premult<premult3>(Complex **F, unsigned int k, Vec& Zetak)
+{
+  Complex *fk0=F[0]+k;
+  Complex *fk1=F[1]+k;
+  Complex *fk2=F[2]+k;
+  Vec Fk0=LOAD(fk0);
+  Vec Fk1=LOAD(fk1);
+  Vec Fk2=LOAD(fk2);
+  STORE(fk0,ZMULT(Zetak,Fk0));
+  STORE(fk1,ZMULT(Zetak,Fk1));
+  STORE(fk2,ZMULT(Zetak,Fk2));
+}
+
+template<>
+inline void ImplicitConvolution::
+premult<premult4>(Complex **F, unsigned int k, Vec& Zetak)
+{
+  Complex *fk0=F[0]+k;
+  Complex *fk1=F[1]+k;
+  Complex *fk2=F[2]+k;
+  Complex *fk3=F[3]+k;
+  Vec Fk0=LOAD(fk0);
+  Vec Fk1=LOAD(fk1);
+  Vec Fk2=LOAD(fk2);
+  Vec Fk3=LOAD(fk3);
+  STORE(fk0,ZMULT(Zetak,Fk0));
+  STORE(fk1,ZMULT(Zetak,Fk1));
+  STORE(fk2,ZMULT(Zetak,Fk2));
+  STORE(fk3,ZMULT(Zetak,Fk3));
+}
+#endif    
 
 // multiply by root of unity to prepare for inverse FFT for odd modes
 template<class T>

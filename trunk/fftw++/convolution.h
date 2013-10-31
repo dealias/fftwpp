@@ -82,7 +82,10 @@ multiplier multbinarydot8;
 multiplier multbinarydot16;
 
 struct general {};
+struct premult1 {};
 struct premult2 {};
+struct premult3 {};
+struct premult4 {};
 
 // In-place implicitly dealiased 1D complex convolution using
 // function pointers for multiplication
@@ -128,7 +131,9 @@ public:
   }
   
   // m is the number of Complex data values.
-  // U is an array of A distinct work arrays each of size m.
+  // U is an array of C distinct work arrays each of size m, where C=max(A,B)
+  // A is the number of inputs.
+  // B is the number of outputs.
   ImplicitConvolution(unsigned int m, Complex **U, unsigned int A=2,
                       unsigned int B=1,
                       unsigned int threads=fftw::maxthreads)
@@ -159,6 +164,9 @@ public:
   }
   
   ~ImplicitConvolution() {
+    deleteAlign(ZetaH);
+    deleteAlign(ZetaL);
+    
     if(pointers) deletepointers(U);
     if(allocated) deleteAlign(u);
     
@@ -169,8 +177,6 @@ public:
       delete Backwards0; 
     }
     
-    deleteAlign(ZetaH);
-    deleteAlign(ZetaL);
   }
 
   // F is an array of A pointers to distinct data blocks each of size m,
@@ -187,7 +193,7 @@ public:
   inline void premult(Complex **F, unsigned int k, Vec& Zetak);
 
   template<class T>
-  void premult(Complex **);
+  void premult(Complex **F);
   
   void postmultadd(Complex *f, Complex *u);
 };
