@@ -198,30 +198,34 @@ void ImplicitConvolution::premult(Complex **F)
     }
     )
 #else
-    PARALLEL(
-      for(unsigned int K=0; K < m; K += s) {
-        Complex *ZetaL0=ZetaL-K;
-        unsigned int stop=min(K+s,m);
-        Complex *p=ZetaH+K/s;
-        double Hre=p->re;
-        double Him=p->im;
-        for(unsigned int k=K; k < stop; ++k) {
-          Complex L=*(ZetaL0+k);
-          double Re=Hre*L.re-Him*L.im;
-          double Im=Hre*L.im+Him*L.re;
-          for(unsigned int i=0; i < A; ++i) {
-            Complex *Fki=F[i]+k;
-	    Complex fk=*Fki;
-	    Fki->re=Re*fk.re-Im*fk.im;
-	    Fki->im=Im*fk.re+Re*fk.im;
-	  }
-	}
-      }
-      )
+    premult_nonSSE2(F);
 #endif
     }
 
-
+void ImplicitConvolution::premult_nonSSE2(Complex **F)
+{
+  PARALLEL(
+    for(unsigned int K=0; K < m; K += s) {
+      Complex *ZetaL0=ZetaL-K;
+      unsigned int stop=min(K+s,m);
+      Complex *p=ZetaH+K/s;
+      double Hre=p->re;
+      double Him=p->im;
+      for(unsigned int k=K; k < stop; ++k) {
+        Complex L=*(ZetaL0+k);
+        double Re=Hre*L.re-Him*L.im;
+        double Im=Hre*L.im+Him*L.re;
+        for(unsigned int i=0; i < A; ++i) {
+          Complex *Fki=F[i]+k;
+          Complex fk=*Fki;
+          Fki->re=Re*fk.re-Im*fk.im;
+          Fki->im=Im*fk.re+Re*fk.im;
+        }
+      }
+    }
+    )
+    }
+  
 // multiply by root of unity to prepare and add for inverse FFT for odd modes
 void ImplicitConvolution::postmultadd(Complex *f, Complex *u)
 {

@@ -470,7 +470,7 @@ public:
     
     threaddata data;
     if(maxthreads > 1) data=lookup(inplace);
-    threads=data.threads > 0 ? maxthreads : 1;
+    threads=data.threads > 0 ? data.threads : 1;
     planThreads(threads);
     plan=Plan(in,out);
     if(!plan) noplan();

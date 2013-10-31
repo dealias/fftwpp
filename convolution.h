@@ -192,6 +192,8 @@ public:
   template<class T>
   inline void premult(Complex **F, unsigned int k, Vec& Zetak);
 
+  void premult_nonSSE2(Complex **F);
+  
   template<class T>
   void premult(Complex **F);
   
