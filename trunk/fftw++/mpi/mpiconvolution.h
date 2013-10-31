@@ -22,8 +22,7 @@ public:
   void inittranspose() {
     int size;
     MPI_Comm_size(d.communicator,&size);
-    alltoall=A == 2 && B == 1 && mx % size == 0 && my % size == 0;
-    alltoall=false;
+    alltoall=mx % size == 0 && my % size == 0;
 
     if(alltoall) {
       T=new mpitranspose(mx,d.y,d.x,my,1,u2);
@@ -212,7 +211,6 @@ public:
     int size;
     MPI_Comm_size(d.communicator,&size);
     alltoall=mx % size == 0 && my % size == 0;
-    alltoall=false;
 
     if(alltoall) {
       T=new mpitranspose(mx,d.y,d.x,my,d.z,u3);
