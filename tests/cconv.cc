@@ -54,7 +54,6 @@ int main(int argc, char* argv[])
   fftw::maxthreads=get_max_threads();
 
   unsigned int M=1;   // Number of terms in dot product
-  unsigned int A=2*M; // Number of independent inputs
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
@@ -84,7 +83,6 @@ int main(int argc, char* argv[])
         break;
       case 'M':
         M=atoi(optarg);
-        A=2*M;
         break;
       case 'N':
         N=atoi(optarg);
@@ -107,8 +105,7 @@ int main(int argc, char* argv[])
     }
   }
 
-  A=2*M;
-
+  unsigned int A=2*M; // Number of independent inputs
   n=2*m;
   cout << "min padded buffer=" << n << endl;
   unsigned int log2n;
@@ -147,8 +144,7 @@ int main(int argc, char* argv[])
       case 6: mult=multbinarydot6; break;
       case 8: mult=multbinarydot8; break;
       case 16: mult=multbinarydot16; break;
-      default: exit(1);
-        break;
+      default: cout << "M=" << M << " is not yet implemented" << endl; exit(1);
     }
     
     Complex **F=new Complex *[A];
