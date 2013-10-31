@@ -3,6 +3,8 @@
 
 namespace fftwpp {
 
+bool mpitranspose::overlap=true;
+
 inline void copy(Complex *from, Complex *to, unsigned int length,
                  unsigned int threads=1)
 {

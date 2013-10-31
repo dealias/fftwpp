@@ -47,6 +47,7 @@ private:
   Transpose *Tout1,*Tout2,*Tout3;
   unsigned int a,b;
   bool inflag,outflag;
+  static bool overlap;
 public:
   void setup(Complex *data) {
     allocated=false;
@@ -278,7 +279,7 @@ public:
     wait1(data);
 */  
   
-  void wait0(Complex *data) {
+  void Wait0(Complex *data) {
     if(inflag) {
       outsync0(data);
       outphase1(data);
@@ -288,7 +289,7 @@ public:
     }
    }
   
-  void wait1(Complex *data) {
+  void Wait1(Complex *data) {
     if(inflag) {
       outsync1(data);
       if(outflag) NmTranspose(data);
@@ -298,6 +299,13 @@ public:
       if(!outflag) nMTranspose(data);
     }
    }
+  
+  void wait0(Complex *data) {
+    if(overlap) Wait0(data);
+  }
+  void wait1(Complex *data) {
+    if(overlap) Wait1(data);
+  }
   
   void transpose(Complex *data, bool intranspose=true, bool outtranspose=true) {
     transpose1(data,intranspose,outtranspose);
@@ -316,6 +324,10 @@ public:
       outphase0(data);
     else
       inphase0(data);
+    if(!overlap) {
+      Wait0(data);
+      Wait1(data);
+    }
   }
   
 };
