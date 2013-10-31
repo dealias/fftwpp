@@ -857,7 +857,6 @@ public:
     R=0;
     threaddata S1=Setup(in,out);
     fftw_plan planT1=plan;
-    unsigned int threads1=threads;
     
     T=std::min(M,maxthreads);
     if(T > 1) {
@@ -880,7 +879,7 @@ public:
         Q=M;
         R=0;
         plan=planT1;
-        threads=threads1;
+        threads=S1.threads;
       } else {
         fftw_destroy_plan(planT1);
       }
