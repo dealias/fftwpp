@@ -11,7 +11,6 @@ unsigned int N=0;
 unsigned int mx=4;
 unsigned int my=4;
 unsigned int M=1;   // Number of terms in dot product
-unsigned int A=2*M; // Number of independent inputs
 
 bool Implicit=true, Explicit=false, Pruned=false;
 
@@ -97,6 +96,8 @@ int main(int argc, char* argv[])
     }
   }
 
+  unsigned int A=2*M; // Number of independent inputs
+  
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
 

@@ -1,6 +1,35 @@
 #ifndef __mpitranspose_h__
 #define __mpitranspose_h__ 1
 
+/* Globally transpose data, including local transposition
+   Beginner Interface:
+   
+   transpose(data);              n x M -> m x N
+    
+   To globally transpose data without local transposition of output:
+   transpose(data,true,false);   n x M -> N x m
+     
+   To globally transpose data without local transposition of input:
+   transpose(data,false,true);   N x m -> n x M
+    
+   To globally transpose data without local transposition of input or output:
+   transpose(data,false,false);  N x m -> M x n
+    
+   Advanced Interface:
+    
+   transpose1(data);
+   // User computation
+   wait1(data);
+
+   Guru Interface:
+    
+   transpose2(data);
+   // User computation 0
+   wait0(data); // Typically longest when intranspose=false
+   // User computation 1      
+   wait2(data); // Typically longest when intranspose=true
+*/  
+  
 #include <mpi.h>
 #include "../Complex.h"
 #include <fftw++.h>
@@ -126,7 +155,7 @@ public:
     MPI_Bcast(&alimit,1,MPI_UNSIGNED,0,communicator);
 
     if(rank == 0)
-      std::cout << "Timing:" << std::endl;
+      std::cout << std::endl << "Timing:" << std::endl;
     
     unsigned int A=0;
     double T0=DBL_MAX;
@@ -291,38 +320,6 @@ public:
   void nMTranspose(Complex *data);
   void NmTranspose(Complex *data);
   
- /* Globally transpose data, including local transposition
-    Beginner Interface:
-    
-    transpose(data);              n x M -> m x N
-    
-    To globally transpose data without local transposition of output:
-    
-    transpose(data,true,false);   n x M -> N x m
-     
-    To globally transpose data without local transposition of input:
-    
-    transpose(data,false,true);   N x m -> n x M
-    
-    To globally transpose data without local transposition of input or output:
-    
-    transpose(data,false,false);  N x m -> M x n
-    
-    Advanced Interface:
-    
-    transpose1(data);
-    // User computation
-    wait1(data);
-
-    Guru Interface:
-    
-    transpose2(data);
-    // User computation 0
-    wait0(data);
-    // User computation 1      
-    wait1(data);
-*/  
-  
   void Wait0(Complex *data) {
     if(inflag) {
       outsync0(data);
@@ -347,18 +344,32 @@ public:
   void wait0(Complex *data) {
     if(overlap) Wait0(data);
   }
+  
   void wait1(Complex *data) {
+    if(overlap) {
+      if(!inflag) Wait0(data);
+      Wait1(data);
+    }
+  }
+  
+  void wait2(Complex *data) {
     if(overlap) Wait1(data);
   }
   
   void transpose(Complex *data, bool intranspose=true, bool outtranspose=true) {
+    inflag=intranspose;
     transpose1(data,intranspose,outtranspose);
-    wait1(data);
+    if(overlap) {
+      if(!inflag) Wait0(data);
+      Wait1(data);
+    }
   }
   
   void transpose1(Complex *data, bool intranspose=true, bool outtranspose=true) {
+    inflag=intranspose;
     transpose2(data,intranspose,outtranspose);
-    wait0(data);
+    if(inflag)
+      wait0(data);
   }
   
   void transpose2(Complex *data, bool intranspose=true, bool outtranspose=true) {
