@@ -6,8 +6,6 @@
 #include <fftw++.h>
 #include <cstring>
 
-const double latency=4096.0; // Typical bandwidth saturation message size
-
 namespace fftwpp {
 
 inline void transposeError(const char *text) {
@@ -20,6 +18,10 @@ void SaveWisdom(MPI_Comm *active);
 
 void fill1_comm_sched(int *sched, int which_pe, int npes);
 
+inline int Ialltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
+                     void *recvbuf, int recvcount, MPI_Datatype recvtype, 
+                     MPI_Comm comm, MPI_Request *request, int *sched);
+  
 // Globally transpose an N x M matrix of blocks of L complex elements
 // distributed over the second dimension.
 // Here "in" is a local N x m matrix and "out" is a local n x M matrix.
@@ -48,7 +50,47 @@ private:
   unsigned int a,b;
   bool inflag,outflag;
   static bool overlap;
+  static double safetyfactor;
 public:
+  
+  void poll(double *sendbuf, double *recvbuf, unsigned int N) {
+    MPI_Alltoall(sendbuf,N,MPI_DOUBLE,recvbuf,N,MPI_DOUBLE,communicator);
+  }
+  
+  // Estimate typical bandwidth saturation message size
+  double Latency() {
+    static double latency=0.0;
+    if(size == 1) return 0.0;
+    if(latency) return latency;
+    unsigned int N1=2;
+    unsigned int N2=10000;
+    double send[N2*size];
+    double recv[N2*size];
+    for(unsigned int i=0; i < N2; ++i)
+      send[N2*rank+i]=0.0;
+    unsigned int M=100;
+    double T1=0.0, T2=0.0;
+    poll(send,recv,N1);
+    poll(send,recv,N2);
+    for(unsigned int i=0; i < M; ++i) {
+      MPI_Barrier(communicator);
+      double t0=totalseconds();
+      poll(send,recv,N1);
+      MPI_Barrier(communicator);
+      double t1=totalseconds();
+      poll(send,recv,N2);
+      double t2=totalseconds();
+      T1 += t1-t0;
+      T2 += t2-t1;
+    }
+    if(rank == 0) {
+      double words=sizeof(double);
+      latency=(T1*(N2-N1)/(T2-T1)-N1)*words;
+      std::cout << "latency=" << latency << std::endl;
+    }
+    return latency;
+  }
+
   void setup(Complex *data) {
     allocated=false;
     Tin3=NULL;
@@ -78,9 +120,11 @@ public:
     }
     
     unsigned int AlltoAll=1;
+    double latency=safetyfactor*Latency();
     unsigned int alimit=(N*M*L*sizeof(Complex) >= latency*size*size) ?
       2 : usize;
-    
+    MPI_Bcast(&alimit,1,MPI_UNSIGNED,0,communicator);
+
     if(rank == 0)
       std::cout << "Timing:" << std::endl;
     

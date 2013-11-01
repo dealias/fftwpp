@@ -165,10 +165,10 @@ int main(int argc, char **argv)
   if(showoutput)
     show(data,X,y*Z);
   
-  fftw::statistics Sininit,Sinwait0,Sinwait,Sin,Soutinit,Soutwait0,Soutwait,Sout;
+  fftw::statistics Sininit,Sinwait0,Sinwait1,Sin,Soutinit,Soutwait0,Soutwait1,Sout;
 
   for(int k=0; k < N; ++k) {
-    double begin=0.0, Tinit0=0.0, Tinit=0.0, Twait0=0.0, Twait=0.0;
+    double begin=0.0, Tinit0=0.0, Tinit=0.0, Twait0=0.0, Twait1=0.0;
     if(rank == 0) begin=totalseconds();
 #ifndef OLD
     T.inphase0(data);
@@ -187,7 +187,7 @@ int main(int argc, char **argv)
 #ifndef OLD
     T.insync1(data);
 #endif
-    if(rank == 0) Twait=totalseconds();
+    if(rank == 0) Twait1=totalseconds();
 #ifndef OLD
     T.inpost(data);
 #endif
@@ -195,7 +195,7 @@ int main(int argc, char **argv)
       Sin.add(totalseconds()-begin);
       Sininit.add(Tinit0-begin);
       Sinwait0.add(Twait0-Tinit0);
-      Sinwait.add(Twait-Tinit);
+      Sinwait1.add(Twait1-Tinit);
     }
 
     if(showoutput) {
@@ -221,7 +221,7 @@ int main(int argc, char **argv)
 #ifndef OLD
     T.outsync1(data);
 #endif    
-    if(rank == 0) Twait=totalseconds();
+    if(rank == 0) Twait1=totalseconds();
 #ifndef OLD
     if(outtranspose) T.NmTranspose(data);
 #endif
@@ -229,7 +229,7 @@ int main(int argc, char **argv)
       Sout.add(totalseconds()-begin);
       Soutinit.add(Tinit0-begin);
       Soutwait0.add(Twait0-Tinit0);
-      Soutwait.add(Twait-Tinit);
+      Soutwait1.add(Twait1-Tinit);
     }
   }
   
@@ -246,12 +246,12 @@ int main(int argc, char **argv)
   if(rank == 0) {
     Sininit.output("Tininit",X);
     Sinwait0.output("Tinwait0",X);
-    Sinwait.output("Tinwait",X);
+    Sinwait1.output("Tinwait1",X);
     Sin.output("Tin",X);
     cout << endl;
     Soutinit.output("Toutinit",X);
     Soutwait0.output("Toutwait0",X);
-    Soutwait.output("Toutwait",X);
+    Soutwait1.output("Toutwait1",X);
     Sout.output("Tout",X);
   }
   
