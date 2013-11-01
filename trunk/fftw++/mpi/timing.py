@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 # a timing script for convolutions using MPI.
+import subprocess
 
 import sys, getopt
 import numpy as np
@@ -227,6 +228,8 @@ def main(argv):
     if r == "transpose":
         rlist=["Tininit","Tinwait0","Tinwait1","Tin",
                "Toutinit","Toutwait0","Toutwait1","Tout"]
+
+        # remove old output files
         for r in rlist:
             if dryrun == False:
                 os.system("rm -f "+outdir+"/"+r)
@@ -236,18 +239,50 @@ def main(argv):
             print i,
             run=command+cargs+" -m "+str(int(pow(2,i)))+" "+A
             print run
+
+            # run the run "run", record the output to out (and the err to err)
+            proc = subprocess.Popen([run], stdout=subprocess.PIPE, shell=True)
+            (out, err) = proc.communicate()
+
+            #print "program output:", out
+            #print "program cerr:", err
+            
+            # append output to log file:
+            os.system("touch "+outdir+"/log")
+            with open(outdir+"/log", "a") as logfile:
+                logfile.write(out)
+            
+            # put the output of this particular run in the runfile
+            runfile=outdir+"/run"
+            os.system("rm -f "+runfile)
+            os.system("touch "+runfile)
+            with open(outdir+"/run","a") as runout:
+                runout.write(out)
+
             for r in rlist:
                 rname=r
-                grepc=" | tee -a "+outdir+"/log | grep -A 1 "+rname+" | tail -n 1"
+                grepc=" | grep -A 1 "+rname+" | tail -n 1"
                 cat=" | cat >> "+outdir+"/"+r
                 sys.stdout.flush()
-                
-                if dryrun == False:
-                    os.system("echo "+"$("+run+grepc+")"+cat)
-                else:
-                    print("echo "+"$("+run+grepc+")"+cat)
-        
 
+                if not dryrun:
+                    # grep for the string.
+                    gproc = subprocess.Popen(["cat "+runfile+grepc], stdout=subprocess.PIPE, shell=True)
+                    (out, err) = gproc.communicate()
+                    
+                    # put the output of the grep in the output file:
+                    outfile=outdir+"/"+r
+                    os.system("touch "+outfile)
+                    with open(outfile,"a") as fileout:
+                        fileout.write(out)
+                else:
+                    print("cat "+runfile+grepc)
+        
+            # clean up the run file
+            if not dryrun:
+                os.system("rm -f "+runfile)
+
+    # the run might have produced errors or been killed: remove empty lines so asy doesn't choke.
     if not dryrun:
         os.system("sed -i 's/[ \t]*$//' "+outdir+"/"+r)
         os.system("sed -i '/^$/d' "+outdir+"/"+r)
