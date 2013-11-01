@@ -4,6 +4,7 @@
 namespace fftwpp {
 
 bool mpitranspose::overlap=true;
+double mpitranspose::safetyfactor=10.0; // For conservative latency estimate.
 
 inline void copy(Complex *from, Complex *to, unsigned int length,
                  unsigned int threads=1)
