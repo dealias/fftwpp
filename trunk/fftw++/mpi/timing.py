@@ -286,5 +286,6 @@ def main(argv):
     if not dryrun:
         os.system("sed -i 's/[ \t]*$//' "+outdir+"/"+r)
         os.system("sed -i '/^$/d' "+outdir+"/"+r)
+    print("\ntiming.py finished; time for beer.")
 if __name__ == "__main__":
     main(sys.argv[1:])
