@@ -83,7 +83,7 @@ private:
 public:
   
   void poll(double *sendbuf, double *recvbuf, unsigned int N) {
-    MPI_Alltoall(sendbuf,N,MPI_DOUBLE,recvbuf,N,MPI_DOUBLE,communicator);
+    MPI_Alltoall(sendbuf,N,MPI_DOUBLE,recvbuf,N,MPI_DOUBLE,split);
   }
   
   // Estimate typical bandwidth saturation message size
@@ -91,12 +91,18 @@ public:
     static double latency=0.0;
     if(size == 1) return 0.0;
     if(latency) return latency;
+    
+    unsigned int b=(unsigned int) sqrt(size);
+    MPI_Comm_split(communicator,rank/b,0,&split);
+    MPI_Comm_size(split,&splitsize);
+    MPI_Comm_rank(split,&splitrank);
+    
     unsigned int N1=2;
     unsigned int N2=10000;
-    double send[N2*size];
-    double recv[N2*size];
+    double send[N2*splitsize];
+    double recv[N2*splitsize];
     for(unsigned int i=0; i < N2; ++i)
-      send[N2*rank+i]=0.0;
+      send[N2*splitrank+i]=0.0;
     unsigned int M=100;
     double T1=0.0, T2=0.0;
     poll(send,recv,N1);
@@ -105,18 +111,19 @@ public:
       MPI_Barrier(communicator);
       double t0=totalseconds();
       poll(send,recv,N1);
-      MPI_Barrier(communicator);
       double t1=totalseconds();
-      poll(send,recv,N2);
+      MPI_Barrier(communicator);
       double t2=totalseconds();
+      poll(send,recv,N2);
+      double t3=totalseconds();
       T1 += t1-t0;
-      T2 += t2-t1;
+      T2 += t3-t2;
     }
     if(rank == 0) {
-      double words=sizeof(double);
-      latency=(T1*(N2-N1)/(T2-T1)-N1)*words;
+      latency=(T1*(N2-N1)/(T2-T1)-N1)*sizeof(double);
       std::cout << "latency=" << latency << std::endl;
     }
+    MPI_Comm_free(&split); 
     return latency;
   }
 
