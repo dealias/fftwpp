@@ -51,14 +51,15 @@ int main(int argc, char **argv)
 
   unsigned int X=8, Y=8, Z=1;
   const unsigned int showlimit=1024;
-  int N=1;
+  unsigned int N0=10000000;
+  int N=0;
   bool outtranspose=false;
 
 #ifdef __GNUC__ 
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"hLN:m:T:X:Y:Z:");
+    int c = getopt(argc,argv,"hLN:m:n:T:X:Y:Z:");
     if (c == -1) break;
                 
     switch (c) {
@@ -84,6 +85,9 @@ int main(int argc, char **argv)
         break;
       case 'T':
         fftw::maxthreads=atoi(optarg);
+        break;
+      case 'n':
+        N0=atoi(optarg);
         break;
       case 'h':
       default:
@@ -167,6 +171,13 @@ int main(int argc, char **argv)
   
   fftw::statistics Sininit,Sinwait0,Sinwait1,Sin,Soutinit,Soutwait0,Soutwait1,Sout;
 
+  if(N == 0) {
+    N=N0/(X*y);
+    if(N < 10) N=10;
+  }
+  if(rank == 0)
+    cout << "N=" << N << endl;
+  
   for(int k=0; k < N; ++k) {
     double begin=0.0, Tinit0=0.0, Tinit=0.0, Twait0=0.0, Twait1=0.0;
     if(rank == 0) begin=totalseconds();
