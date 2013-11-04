@@ -185,14 +185,12 @@ def main(argv):
     command+=M+"  ./"+str(p)
 #    command=l+" "+str(P)+" "+M+"  ./"+str(p)
 
-
-
     print "Output in "+outdir+"/"+r
 
     if not dryrun:
         print "command: "+command+cargs+" "+A
         os.system("mkdir -p "+outdir)
-        os.system("rm -f "+outdir+"/"+r)
+        #os.system("rm -f "+outdir+"/"+r)
     
     rname="Implicit"
     if r == "explicit":
@@ -207,43 +205,33 @@ def main(argv):
     if a == 0:
         a=1
 
-    if not r == "transpose":
-        for i in range(a,b+1):
-            print i,
-            run=command+cargs+" -m "+str(int(pow(2,i)))+" "+A
-            grepc=" | grep -A 1 "+rname+" | tail -n 1"
-            cat=" | cat >> "+outdir+"/"+r
-            print run
-            sys.stdout.flush()
-        #print "echo "+"$("+run+grepc+")"+cat
-            if dryrun == False:
-                os.system("echo "+"$("+run+grepc+")"+cat)
-            else:
-                print("echo "+"$("+run+grepc+")"+cat)
-        #print run+grepc+" "+cat
-        #os.system(run+grepc+" "+cat)
-        #print run
-        #os.system(run)
-                sys.stdout.flush()
     if r == "transpose":
         rlist=["Tininit","Tinwait0","Tinwait1","Tin",
                "Toutinit","Toutwait0","Toutwait1","Tout"]
+        rnamelist=rlist
+    else:
+        rlist=[r]
+        rnamelist=[rname]
 
-        # remove old output files
-        for r in rlist:
-            if dryrun == False:
-                os.system("rm -f "+outdir+"/"+r)
-                print("rm -f "+outdir+"/"+r)
+    # remove old output files
+    #for r in rlist:
+        #if dryrun == False:
+            #os.system("rm -f "+outdir+"/"+r)
+            #print("rm -f "+outdir+"/"+r)
 
-        for i in range(a,b+1):
-            print i,
-            run=command+cargs+" -m "+str(int(pow(2,i)))+" "+A
-            print run
-
+    for i in range(a,b+1):
+        print i,
+        m=str(int(pow(2,i))) # problem size
+        run=command+cargs+" -m "+m+" "+A
+        print run
+        runfile=outdir+"/run"
+        
+        # run the program, collect the output in out.
+        if not dryrun:
             # run the run "run", record the output to out (and the err to err)
             proc = subprocess.Popen([run], stdout=subprocess.PIPE, shell=True)
             (out, err) = proc.communicate()
-
+        
             #print "program output:", out
             #print "program cerr:", err
             
@@ -253,39 +241,52 @@ def main(argv):
                 logfile.write(out)
             
             # put the output of this particular run in the runfile
-            runfile=outdir+"/run"
-            os.system("rm -f "+runfile)
+
+            #os.system("rm -f "+runfile)
             os.system("touch "+runfile)
             with open(outdir+"/run","a") as runout:
                 runout.write(out)
+            
+        # loop over all cases
+        pos=0
+        while(pos < len(rlist)):
+            #print(rlist[pos],rnamelist[pos])
+            r=rlist[pos] # output file
+            rname=rnamelist[pos] # string for which we grep
+            pos += 1
 
-            for r in rlist:
-                rname=r
-                grepc=" | grep -A 1 "+rname+" | tail -n 1"
-                cat=" | cat >> "+outdir+"/"+r
-                sys.stdout.flush()
+            grepc=" | grep -A 1 "+rname+" | tail -n 1"
+            cat=" | cat >> "+outdir+"/"+r
+            sys.stdout.flush()
 
-                if not dryrun:
-                    # grep for the string.
-                    gproc = subprocess.Popen(["cat "+runfile+grepc], stdout=subprocess.PIPE, shell=True)
-                    (out, err) = gproc.communicate()
-                    
-                    # put the output of the grep in the output file:
-                    outfile=outdir+"/"+r
-                    os.system("touch "+outfile)
-                    with open(outfile,"a") as fileout:
-                        fileout.write(out)
-                else:
-                    print("cat "+runfile+grepc)
-        
-            # clean up the run file
             if not dryrun:
-                os.system("rm -f "+runfile)
+                    # grep for the string.
+                gproc = subprocess.Popen(["cat "+runfile+grepc], stdout=subprocess.PIPE, shell=True)
+                (out, err) = gproc.communicate()
+                    
+                # put the output of the grep in the output file:
+                outfile=outdir+"/"+r
+                os.system("touch "+outfile)
+                # remove lines starting with the current problem size:
+                os.system("sed -i '/^"+m+"[ \\t]/d' " +outfile)
+                with open(outfile,"a") as fileout:
+                    fileout.write(out)
+            else:
+                print("cat "+runfile+grepc)
+        
+        # clean up the run file (which is just temporary anyway)
+        if not dryrun:
+            os.system("rm -f "+runfile)
 
-    # the run might have produced errors or been killed: remove empty lines so asy doesn't choke.
+    # the run might have produced errors or been killed: remove empty
+    # lines so asy doesn't choke.  Also sort output.
     if not dryrun:
-        os.system("sed -i 's/[ \t]*$//' "+outdir+"/"+r)
-        os.system("sed -i '/^$/d' "+outdir+"/"+r)
-    print("\ntiming finished.")
+        for r in rlist:
+            outfile=outdir+"/"+r
+            os.system("sed -i 's/[ \t]*$//' "+outfile)
+            os.system("sed -i '/^$/d' "+outfile)
+            os.system("sort -g  "+outfile+ " -o "+outfile)
+
+    print("\ntiming finished.") # Definitely time for a beer.
 if __name__ == "__main__":
     main(sys.argv[1:])
