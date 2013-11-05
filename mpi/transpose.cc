@@ -124,6 +124,21 @@ int main(int argc, char **argv)
     fftw_mpi_local_size_many_transposed(2,NN,Z,block,0,
                                                       MPI_COMM_WORLD,&y,
                                                       &ystart,&x,&xstart);
+  if(N == 0) {
+    N=N0/(X*y);
+    if(N < 10) N=10;
+  }
+  
+  if(rank == 0) {
+    cout << "x=" << x << endl;
+    cout << "y=" << y << endl;
+    cout << "X=" << X << endl;
+    cout << "Y=" << Y << endl;
+    cout << "Z=" << Z << endl;
+    cout << "N=" << N << endl;
+    cout << endl;
+  }
+  
 #ifndef OLD
   data=ComplexAlign(X*y*Z);
 #else  
@@ -155,21 +170,6 @@ int main(int argc, char **argv)
   init(data,X,y,Z,ystart);
 #endif  
 
-  if(N == 0) {
-    N=N0/(X*y);
-    if(N < 10) N=10;
-  }
-  
-  if(rank == 0) {
-    cout << "x=" << x << endl;
-    cout << "y=" << y << endl;
-    cout << "X=" << X << endl;
-    cout << "Y=" << Y << endl;
-    cout << "Z=" << Z << endl;
-    cout << "N=" << N << endl;
-    cout << endl;
-  }
-  
   bool showoutput=X*Y < showlimit && N == 1;
   if(showoutput)
     show(data,X,y*Z);
