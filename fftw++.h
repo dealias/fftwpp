@@ -864,7 +864,7 @@ public:
       R=M-Q*T;
       threaddata ST=Setup(in,out);
     
-      if(R > 0 && threads == 1) {
+      if(R > 0 && threads == 1 && plan1 != plan2) {
         fftw_destroy_plan(plan2);
         plan2=plan1;
       }
