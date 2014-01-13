@@ -187,28 +187,13 @@ class cfft2MPI {
   mfft1d *yBackwards;
   Complex *f;
  protected:
-  fftw_plan intranspose,outtranspose;
+  mpitranspose *T;
  public:
   void inittranspose(Complex* f) {
     int size;
     MPI_Comm_size(d.communicator,&size);
-    intranspose=
-      fftw_mpi_plan_many_transpose(my,mx,2,
-				   d.block,0,
-				   (double*) f,(double*) f,
-				   d.communicator,
-				   FFTW_MPI_TRANSPOSED_OUT);
-    if(!intranspose) transposeError("in");
-
-    outtranspose=
-      fftw_mpi_plan_many_transpose(mx,my,2,
-				   0,d.block,
-				   (double*) f,(double*) f,
-				   d.communicator,
-				   FFTW_MPI_TRANSPOSED_IN);
-    if(!outtranspose) transposeError("out");
+    T=new mpitranspose(d.nx,d.y,d.x,d.ny,1,f);
     SaveWisdom(d.communicator);
-
   }
   
  cfft2MPI(const dimensions& d, Complex *f) : d(d) {
@@ -223,10 +208,7 @@ class cfft2MPI {
     yBackwards=new mfft1d(d.ny,1,d.x,1,d.ny);
   }
   
-  virtual ~cfft2MPI() {
-    fftw_destroy_plan(intranspose);
-    fftw_destroy_plan(outtranspose);
-  }
+  virtual ~cfft2MPI() {}
 
   void Forwards(Complex *f, bool finaltranspose=true);
   void Backwards(Complex *f, bool finaltranspose=true);

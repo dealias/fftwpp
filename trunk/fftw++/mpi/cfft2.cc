@@ -151,7 +151,7 @@ int main(int argc, char* argv[])
       fft.Forwards(f,dofinaltranspose);
 
       if(main) cout << "\noutput:" << endl;
-      show(f,d.ny,d.x,group.active);
+      show(f,d.x,d.ny,group.active);
       show(f,1,d.x*d.ny,group.active);
       fft.Backwards(f,dofinaltranspose);
       fft.Normalize(f);

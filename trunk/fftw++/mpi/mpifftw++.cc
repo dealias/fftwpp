@@ -43,16 +43,16 @@ void MPISaveWisdom()
 void cfft2MPI::Forwards(Complex *f,bool finaltranspose)
 {
   xForwards->fft(f);
-  fftw_mpi_execute_r2r(intranspose,(double *)f,(double *)f);
+  T->transpose(f,false,true);
   yForwards->fft(f);
-  if(finaltranspose) fftw_mpi_execute_r2r(outtranspose,(double *)f,(double *)f);
+  if(finaltranspose) T->transpose(f,true,false);
 }
 
 void cfft2MPI::Backwards(Complex *f,bool finaltranspose)
 {
-  if(finaltranspose) fftw_mpi_execute_r2r(intranspose,(double *)f,(double *)f);
+  if(finaltranspose) T->transpose(f,false,true);
   yBackwards->fft(f);
-  fftw_mpi_execute_r2r(outtranspose,(double *)f,(double *)f);
+  T->transpose(f,true,false);
   xBackwards->fft(f);
 }
 
