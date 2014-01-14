@@ -2,8 +2,6 @@
 #include "utils.h"
 #include "mpiutils.h"
 
-// run with 
-
 using namespace std;
 using namespace fftwpp;
 
@@ -12,8 +10,6 @@ unsigned int N0=10000000;
 unsigned int N=0;
 unsigned int mx=4;
 unsigned int my=4;
-
-bool Implicit=true, Explicit=false, Pruned=false;
 
 inline void init(Complex *f, dimensions d) 
 {

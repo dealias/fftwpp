@@ -2,8 +2,6 @@
 #include "utils.h"
 #include "mpiutils.h"
 
-// run with 
-
 using namespace std;
 using namespace fftwpp;
 
@@ -13,8 +11,6 @@ unsigned int N=0;
 unsigned int mx=4;
 unsigned int my=4;
 unsigned int mz=4;
-
-bool Implicit=true, Explicit=false, Pruned=false;
 
 inline void init(Complex *f, dimensions3 d) 
 {
@@ -122,7 +118,7 @@ int main(int argc, char* argv[])
     Complex *f=ComplexAlign(d.n);
     cfft3MPI fft(d,f);
     
-    bool dofinaltranspose=false;
+    bool dofinaltranspose=false; // FIXME: this must always be false for now.
     
     double *T=new double[N];
     for(unsigned int i=0; i < N; ++i) {
