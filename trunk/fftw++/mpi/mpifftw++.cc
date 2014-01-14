@@ -72,6 +72,7 @@ void cfft3MPI::Forwards(Complex *f,bool finaltranspose)
 {
   xForwards->fft(f);
   Txy->transpose(f,false,true);
+  // TODO: multithread?
   for(unsigned int i=0; i < d.x; i++) yForwards->fft(f+i*d.ny*d.z);
   Tyz->transpose(f,false,true);
   zForwards->fft(f);
@@ -83,6 +84,7 @@ void cfft3MPI::Backwards(Complex *f,bool finaltranspose)
   // FIXME: Tzx->transpose ?
   zBackwards->fft(f);
   Tyz->transpose(f,true,false);
+  // TODO: multithread?
   for(unsigned int i=0; i < d.x; i++) yBackwards->fft(f+i*d.ny*d.z);
   Txy->transpose(f,true,false);
   xBackwards->fft(f);

@@ -174,9 +174,22 @@ public:
   }
 };
   
-
-// In-place MPI/OpenMPI  2D complex FFT.
-// FIXME: complete documentation.
+// In-place OpenMP/MPI 2D complex FFT.
+// The input array of size mx,my,mz is Fourier-transformed.
+// The output may be left transposed or returned to the original
+// orientation.
+// Uses dimensions class for array (and transposed
+// array sizes).  Data must be allocated to size dimenions3::n.
+//
+// Example:
+// dimensions d(mx,my,group.active,group.yblock);
+// Complex *f=ComplexAlign(d.n);
+// cfft2MPI fft(d,f);
+// fft.Forwards(f,true);
+// fft.Backwards(f,true);
+// fft.Normalize(f);
+// 
+// If a transposed output is desired, call with fft.Forwards(f,false).
 class cfft2MPI {
  private:
   unsigned int mx, my;
@@ -217,7 +230,19 @@ class cfft2MPI {
 };
 
 // In-place OpenMP/MPI 3D complex FFT.
-// FIXME: complete documentation.
+// The input array of size mx,my,mz is Fourier-transformed with 
+// the output tranposed.  Uses dimensions3 class for array (and transposed
+// array sizes).  Data must be allocated to size dimenions3::n.
+//
+// Example:
+// dimensions3 d(mx,my,my,mz,group);
+// Complex *f=ComplexAlign(d.n);
+// cfft3MPI fft(d,f);
+// fft.Forwards(f,dofinaltranspose);
+// fft.Backwards(f,dofinaltranspose);
+// fft.Normalize(f);
+//
+// TODO: allow for non-transposed output.
 class cfft3MPI {
  private:
   unsigned int mx, my, mz;
@@ -265,9 +290,7 @@ class cfft3MPI {
     zBackwards=new mfft1d(d.nz,1,d.x*d.yz.x,1,d.nz);
   }
   
-  virtual ~cfft3MPI() {
-    // FIXME
-  }
+  virtual ~cfft3MPI() {}
 
   void Forwards(Complex *f, bool finaltranspose=true);
   void Backwards(Complex *f, bool finaltranspose=true);
