@@ -117,7 +117,6 @@ int main(int argc, char* argv[])
       cout << "zblock=" << group.zblock << endl;
     }
 
-
     dimensions3 d(mx,my,my,mz,group);
     
     Complex *f=ComplexAlign(d.n);
@@ -139,7 +138,7 @@ int main(int argc, char* argv[])
     delete [] T;
 
     if(mx*my*mz < outlimit) {
-
+      MPI_Barrier(group.active);
       for(int i=0; i < group.size; ++i) {
 	MPI_Barrier(group.active);
 	if(i == group.rank) {
@@ -148,34 +147,37 @@ int main(int argc, char* argv[])
 	  cout << endl;
 	}
       }
-
+      MPI_Barrier(group.active);
       init(f,d);
 
+      MPI_Barrier(group.active);
       if(main) cout << "\ninput:" << endl;
       show(f,d.nx,d.y,d.z,group.active);
-      show(f,1,d.nx*d.y*d.z,group.active);
+      MPI_Barrier(group.active);
+      // Uncomment following line to see the order in memory
+      //show(f,1,d.nx*d.y*d.z,group.active); 
+
       
       fft.Forwards(f,dofinaltranspose);
       
+      MPI_Barrier(group.active);
       if(main) cout << "\noutput:" << endl;
-      show(f,d.ny,d.x,group.active);
-      // show(f,1,d.x*d.ny,group.active);
-            
+      show(f,d.x,d.yz.x,d.nz,group.active);
+      MPI_Barrier(group.active);
+      // Uncomment following line to see the order in memory
+      //show(f,1,d.x*d.yz.x*d.nz,group.active);
+
       fft.Backwards(f,dofinaltranspose);
       fft.Normalize(f);
 
-      if(main) cout << "\noutput:" << endl;
+      if(main) cout << "\nback to input:" << endl;
       show(f,d.nx,d.y,d.z,group.active);
+      MPI_Barrier(group.active);
+      // Uncomment following line to see the order in memory
       show(f,1,d.nx*d.y*d.z,group.active);
-
-      if(main) d.show();
-
-
-
     }
 
     deleteAlign(f);
-    
   }
   
   MPI_Finalize();

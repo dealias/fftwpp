@@ -71,20 +71,20 @@ void cfft2MPI::BackwardsNormalized(Complex *f,bool finaltranspose)
 void cfft3MPI::Forwards(Complex *f,bool finaltranspose)
 {
   xForwards->fft(f);
-  fftw_mpi_execute_r2r(xyintranspose,(double *)f,(double *)f);
-  yForwards->fft(f);
-  fftw_mpi_execute_r2r(yzintranspose,(double *)f,(double *)f);
+  Txy->transpose(f,false,true);
+  for(unsigned int i=0; i < d.x; i++) yForwards->fft(f+i*d.ny*d.z);
+  Tyz->transpose(f,false,true);
   zForwards->fft(f);
-  // FIXME: xzintranspose?
+  // FIXME: Tzx->transpose ?
 }
 
 void cfft3MPI::Backwards(Complex *f,bool finaltranspose)
 {
-  // FIXME: xzouttranspose?
+  // FIXME: Tzx->transpose ?
   zBackwards->fft(f);
-  fftw_mpi_execute_r2r(yzouttranspose,(double *)f,(double *)f);
-  yBackwards->fft(f);
-  fftw_mpi_execute_r2r(xyouttranspose,(double *)f,(double *)f);
+  Tyz->transpose(f,true,false);
+  for(unsigned int i=0; i < d.x; i++) yBackwards->fft(f+i*d.ny*d.z);
+  Txy->transpose(f,true,false);
   xBackwards->fft(f);
 }
 

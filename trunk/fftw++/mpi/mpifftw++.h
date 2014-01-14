@@ -216,7 +216,7 @@ class cfft2MPI {
   void BackwardsNormalized(Complex *f, bool finaltranspose=true);
 };
 
-// In-place MPI/OpenMPI 3D complex FFT.
+// In-place OpenMP/MPI 3D complex FFT.
 // FIXME: complete documentation.
 class cfft3MPI {
  private:
@@ -230,42 +230,14 @@ class cfft3MPI {
   mfft1d *zBackwards;
   Complex *f;
  protected:
-  fftw_plan xyintranspose, xyouttranspose;
-  fftw_plan yzintranspose, yzouttranspose;
+  mpitranspose *Txy, *Tyz;
  public:
   void inittranspose(Complex* f) {
     int size;
     MPI_Comm_size(d.communicator,&size);
-    xyintranspose=
-      fftw_mpi_plan_many_transpose(d.nx,d.ny,2*d.z,d.yblock,0,
-				   (double*) f,(double*) f,
-				   d.xy.communicator,
-				   FFTW_MPI_TRANSPOSED_OUT);
-    if(!xyintranspose) transposeError("xyin");
-
-    xyouttranspose=
-      fftw_mpi_plan_many_transpose(d.ny,d.nx,2*d.z,d.yblock,0,
-				   (double*) f,(double*) f,
-				   d.xy.communicator,
-				   FFTW_MPI_TRANSPOSED_IN);
-    if(!xyouttranspose) transposeError("xyout");
-    
-    yzintranspose=
-      fftw_mpi_plan_many_transpose(d.ny,d.nz,2*d.x,d.zblock,0,
-				   (double*) f,(double*) f,
-				   d.yz.communicator,
-				   FFTW_MPI_TRANSPOSED_OUT);
-    if(!yzintranspose) transposeError("yzin");
-
-    yzouttranspose=
-      fftw_mpi_plan_many_transpose(d.nz,d.ny,2*d.x,d.zblock,0,
-				   (double*) f,(double*) f,
-				   d.yz.communicator,
-				   FFTW_MPI_TRANSPOSED_IN);
-    if(!yzouttranspose) transposeError("yzout");
-
+    Txy=new mpitranspose(d.nx,d.y,d.x,d.ny,d.z,f,d.xy.communicator);
+    Tyz=new mpitranspose(d.ny,d.z,d.yz.x,d.nz,d.x,f,d.yz.communicator);
     // FIXME: xz tranpose?  Do I have to do both xy and yz?
-
     SaveWisdom(d.communicator);
   }
   
@@ -275,14 +247,22 @@ class cfft3MPI {
     mz=d.nz;
     inittranspose(f);
  
-    xForwards=new mfft1d(d.nx,-1,d.y*d.z,d.y*d.z,1);
+    xForwards=new mfft1d(d.nx,-1,
+			 d.y*d.z, // M=howmany
+			 d.y*d.z, // stride
+			 1); // dist
     xBackwards=new mfft1d(d.nx,1,d.y*d.z,d.y*d.z,1);
+    yForwards=new mfft1d(d.ny,-1,
+			 d.z, // M=howmany
+			 d.z, // stride
+			 1); // dist
+    yBackwards=new mfft1d(d.ny,1,d.z,d.z,1);
 
-    yForwards=new mfft1d(d.ny,-1,d.x*d.z,d.x*d.z,1);
-    yBackwards=new mfft1d(d.ny,1,d.x*d.z,d.x*d.z,1);
-
-    zForwards=new mfft1d(d.nz,-1,d.x*d.yz.x,d.x*d.yz.x,1);
-    zBackwards=new mfft1d(d.nz,1,d.x*d.yz.x,d.x*d.yz.x,1);
+    zForwards=new mfft1d(d.nz,-1,
+			 d.x*d.yz.x, // M=howmany
+			 1, // stride
+			 d.nz); // dist
+    zBackwards=new mfft1d(d.nz,1,d.x*d.yz.x,1,d.nz);
   }
   
   virtual ~cfft3MPI() {

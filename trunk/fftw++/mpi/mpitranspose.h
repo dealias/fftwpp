@@ -207,7 +207,14 @@ public:
     setup(data);
   }
   
-  
+  mpitranspose(unsigned int N, unsigned int m, unsigned int n,
+               unsigned int M, unsigned int L,
+               Complex *data, MPI_Comm communicator) :
+    N(N), m(m), n(n), M(M), L(L), work(NULL), threads(fftw::maxthreads),
+    communicator(communicator) {
+    setup(data);
+  }
+    
   mpitranspose(unsigned int N, unsigned int m, unsigned int n,
                unsigned int M, Complex *data, Complex *work=NULL,
                unsigned int threads=fftw::maxthreads,
