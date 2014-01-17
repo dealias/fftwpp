@@ -3,10 +3,16 @@
 
 namespace fftwpp {
 
-bool mpitranspose::overlap=true;
-double mpitranspose::safetyfactor=2.0; // For conservative latency estimate.
+// We need to make instances of the types of transposes that we are
+// going to use so that the linker can find them:
 
-inline void copy(Complex *from, Complex *to, unsigned int length,
+template<class T>
+double mpitranspose<T>::safetyfactor=2.0; // For conservative latency estimate.
+template<class T>
+bool mpitranspose<T>::overlap=true;
+
+template<class T>
+inline void copy(T *from, T *to, unsigned int length,
                  unsigned int threads=1)
 {
 #ifndef FFTWPP_SINGLE_THREAD
@@ -16,85 +22,96 @@ for(unsigned int i=0; i < length; ++i)
   to[i]=from[i];
 }
 
-void mpitranspose::inphase0(Complex *data)
+template<class T>
+void mpitranspose<T>::inphase0(T *data)
 {
   if(size == 1) return;
   
-  unsigned int blocksize=2*n*(a > 1 ? b : a)*m*L;
-  Ialltoall(data,blocksize,MPI_DOUBLE,work,blocksize,MPI_DOUBLE,split2,
+  unsigned int blocksize=sizeof(T)*n*(a > 1 ? b : a)*m*L;
+  Ialltoall(data,blocksize,MPI_BYTE,work,blocksize,MPI_BYTE,split2,
             request,sched2);
 }
   
-void mpitranspose::insync0(Complex *data)
+template<class T>
+void mpitranspose<T>::insync0(T *data)
 {
   if(size == 1) return;
   Wait(split2size-1,request,sched2);
 }
 
-void mpitranspose::inphase1(Complex *data)
+template<class T>
+void mpitranspose<T>::inphase1(T *data)
 {
   if(a > 1) {
     Tin2->transpose(work,data); // a x n*b x m*L
-    unsigned int blocksize=2*n*a*m*L;
-    Ialltoall(data,blocksize,MPI_DOUBLE,work,blocksize,MPI_DOUBLE,split,
+    unsigned int blocksize=sizeof(T)*n*a*m*L;
+    Ialltoall(data,blocksize,MPI_BYTE,work,blocksize,MPI_BYTE,split,
              request,sched);
   }
 }  
-    
-void mpitranspose::insync1(Complex *data)
+
+template<class T>
+void mpitranspose<T>::insync1(T *data)
 {
   if(a > 1)
     Wait(splitsize-1,request,sched);
 }
 
-void mpitranspose::inpost(Complex *data)
+template<class T>
+void mpitranspose<T>::inpost(T *data)
 {
   if(size == 1) return;
   Tin1->transpose(work,data); // b x n*a x m*L
 }
 
-void mpitranspose::outphase0(Complex *data)
+template<class T>
+void mpitranspose<T>::outphase0(T *data)
 {
   if(size == 1) return;
   
   // Inner transpose each N/a x M/a matrix over b processes
   Tout1->transpose(data,work); // n*a x b x m*L
-  unsigned int blocksize=2*n*a*m*L;
-  Ialltoall(work,blocksize,MPI_DOUBLE,data,blocksize,MPI_DOUBLE,split,
+  unsigned int blocksize=sizeof(T)*n*a*m*L;
+  Ialltoall(work,blocksize,MPI_BYTE,data,blocksize,MPI_BYTE,split,
             request,sched);
 }
 
-void mpitranspose::outsync0(Complex *data) 
+template<class T>
+void mpitranspose<T>::outsync0(T *data) 
 {
   if(a > 1)
     Wait(splitsize-1,request,sched);
 }
-  
-void mpitranspose::outphase1(Complex *data) 
+
+template<class T> 
+void mpitranspose<T>::outphase1(T *data) 
 {
   if(a > 1) {
   // Outer transpose a x a matrix of N/a x M/a blocks over a processes
     Tout2->transpose(data,work); // n*b x a x m*L
-    unsigned int blocksize=2*n*b*m*L;
-    Ialltoall(work,blocksize,MPI_DOUBLE,data,blocksize,MPI_DOUBLE,split2,
+    unsigned int blocksize=sizeof(T)*n*b*m*L;
+    Ialltoall(work,blocksize,MPI_BYTE,data,blocksize,MPI_BYTE,split2,
               request,sched2);
   }
 }
 
-void mpitranspose::outsync1(Complex *data) 
+template<class T>
+void mpitranspose<T>::outsync1(T *data) 
 {
   if(size > 1)
     Wait(split2size-1,request,sched2);
 }
-  
-void mpitranspose::nMTranspose(Complex *data)
+
+template<class T>
+void mpitranspose<T>::nMTranspose(T *data)
 {
   if(!Tin3) Tin3=new Transpose(n,M,L,data,work,threads);
   Tin3->transpose(data,work); // n X M x L
   copy(work,data,n*M*L,threads);
 }
-  
-void mpitranspose::NmTranspose(Complex *data)
+
+template<class T>
+void mpitranspose<T>::NmTranspose(T *data)
 {
   if(!Tout3) Tout3=new Transpose(N,m,L,data,work,threads);
   Tout3->transpose(data,work); // N x m x L
@@ -151,5 +168,8 @@ void fill1_comm_sched(int *sched, int which_pe, int npes)
   }
 //  assert(s == npes);
 }
+
+template class fftwpp::mpitranspose<double>;
+template class fftwpp::mpitranspose<Complex>;
 
 } // end namespace fftwpp

@@ -34,6 +34,7 @@
 #include "../Complex.h"
 #include <fftw++.h>
 #include <cstring>
+#include <typeinfo>
 
 namespace fftwpp {
 
@@ -56,11 +57,12 @@ inline int Ialltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype,
 // Here "in" is a local N x m matrix and "out" is a local n x M matrix.
 // Currently, both N and M must be divisible by the number of processors.
 // work is a temporary array of size N*m*L.
+template<class T>
 class mpitranspose {
 private:
   unsigned int N,m,n,M;
   unsigned int L;
-  Complex *work;
+  T *work;
   unsigned int threads;
   MPI_Comm communicator;
   bool allocated;
@@ -82,8 +84,9 @@ private:
   static double safetyfactor;
 public:
   
-  void poll(double *sendbuf, double *recvbuf, unsigned int N) {
-    MPI_Alltoall(sendbuf,N,MPI_DOUBLE,recvbuf,N,MPI_DOUBLE,split);
+  void poll(T *sendbuf, T *recvbuf, unsigned int N) {
+    unsigned int sN=sizeof(T)*N;
+    MPI_Alltoall(sendbuf,sN,MPI_BYTE,recvbuf,sN,MPI_BYTE,split);
   }
   
   // Estimate typical bandwidth saturation message size
@@ -99,8 +102,8 @@ public:
     
     unsigned int N1=2;
     unsigned int N2=10000;
-    double send[N2*splitsize];
-    double recv[N2*splitsize];
+    T send[N2*splitsize];
+    T recv[N2*splitsize];
     for(unsigned int i=0; i < N2; ++i)
       send[N2*splitrank+i]=0.0;
     unsigned int M=100;
@@ -127,7 +130,7 @@ public:
     return latency;
   }
 
-  void setup(Complex *data) {
+  void setup(T *data) {
     allocated=false;
     Tin3=NULL;
     Tout3=NULL;
@@ -146,7 +149,10 @@ public:
     }
 
     if(work == NULL) {
-      this->work=ComplexAlign(N*m*L);
+      if(typeid(&work) == typeid(Complex))
+	this->work=(T*) ComplexAlign(N*m*L);
+      else
+	this->work=new T[N*m*L]; // FIXME: is this aligned with -malign=double?
       allocated=true;
     }
     
@@ -156,8 +162,9 @@ public:
     }
     
     unsigned int AlltoAll=1;
+    //    safetyfactor=2;
     double latency=safetyfactor*Latency();
-    unsigned int alimit=(N*M*L*sizeof(Complex) >= latency*size*size) ?
+    unsigned int alimit=(N*M*L*sizeof(T) >= latency*size*size) ?
       2 : usize;
     MPI_Bcast(&alimit,1,MPI_UNSIGNED,0,communicator);
 
@@ -171,12 +178,12 @@ public:
       for(a=1; a < alimit; a *= 2) {
         b=size/a;
         init(data,alltoall);
-        double T=time(data);
+        double t=time(data);
         deallocate();
         if(rank == 0) {
-          std::cout << "a=" << a << ":\tT=" << T << std::endl;
-          if(T < T0) {
-            T0=T;
+          std::cout << "a=" << a << ":\ttime=" << t << std::endl;
+          if(t < T0) {
+            T0=t;
             A=a;
             AlltoAll=alltoall;
           }
@@ -197,9 +204,11 @@ public:
     init(data,AlltoAll);
   }
   
+  mpitranspose(){}
+
   mpitranspose(unsigned int N, unsigned int m, unsigned int n,
                unsigned int M, unsigned int L,
-               Complex *data, Complex *work=NULL,
+               T *data, T *work=NULL,
                unsigned int threads=fftw::maxthreads,
                MPI_Comm communicator=MPI_COMM_WORLD) :
     N(N), m(m), n(n), M(M), L(L), work(work), threads(threads),
@@ -209,14 +218,14 @@ public:
   
   mpitranspose(unsigned int N, unsigned int m, unsigned int n,
                unsigned int M, unsigned int L,
-               Complex *data, MPI_Comm communicator) :
+               T *data, MPI_Comm communicator) :
     N(N), m(m), n(n), M(M), L(L), work(NULL), threads(fftw::maxthreads),
     communicator(communicator) {
     setup(data);
   }
     
   mpitranspose(unsigned int N, unsigned int m, unsigned int n,
-               unsigned int M, Complex *data, Complex *work=NULL,
+               unsigned int M, T *data, T *work=NULL,
                unsigned int threads=fftw::maxthreads,
                MPI_Comm communicator=MPI_COMM_WORLD) :
         N(N), m(m), n(n), M(M), L(1), work(work), threads(threads),
@@ -224,7 +233,7 @@ public:
     setup(data);
   }
     
-  double time(Complex *data) {
+  double time(T *data) {
     double sum=0.0;
     unsigned int N=1;
     transpose(data,true,false); // Initialize communication buffers
@@ -246,7 +255,7 @@ public:
     return sum/N;
   }
 
-  void init(Complex *data, bool alltoall) {
+  void init(T *data, bool alltoall) {
     Tout1=new Transpose(n*a,b,m*L,data,this->work,threads);
     Tin1=new Transpose(b,n*a,m*L,data,this->work,threads);
 
@@ -314,27 +323,33 @@ public:
     deallocate();
     if(Tout3) delete Tout3;
     if(Tin3) delete Tin3;
-    if(allocated) deleteAlign(work);
+    if(allocated) {
+      if(typeid(&work) == typeid(Complex))
+	deleteAlign(work);
+      else
+	delete[] work;
+    } 
+
   }
   
-  void inphase0(Complex *data);
-  void inphase1(Complex *data);
+  void inphase0(T *data);
+  void inphase1(T *data);
   
-  void insync0(Complex *data);
-  void insync1(Complex *data);
+  void insync0(T *data);
+  void insync1(T *data);
   
-  void inpost(Complex *data);
+  void inpost(T *data);
   
-  void outphase0(Complex *data);
-  void outphase1(Complex *data);
+  void outphase0(T *data);
+  void outphase1(T *data);
   
-  void outsync0(Complex *data);
-  void outsync1(Complex *data);
+  void outsync0(T *data);
+  void outsync1(T *data);
   
-  void nMTranspose(Complex *data);
-  void NmTranspose(Complex *data);
+  void nMTranspose(T *data);
+  void NmTranspose(T *data);
   
-  void Wait0(Complex *data) {
+  void Wait0(T *data) {
     if(inflag) {
       outsync0(data);
       outphase1(data);
@@ -344,7 +359,7 @@ public:
     }
    }
   
-  void Wait1(Complex *data) {
+  void Wait1(T *data) {
     if(inflag) {
       outsync1(data);
       if(outflag) NmTranspose(data);
@@ -355,22 +370,22 @@ public:
     }
    }
   
-  void wait0(Complex *data) {
+  void wait0(T *data) {
     if(overlap) Wait0(data);
   }
   
-  void wait1(Complex *data) {
+  void wait1(T *data) {
     if(overlap) {
       if(!inflag) Wait0(data);
       Wait1(data);
     }
   }
   
-  void wait2(Complex *data) {
+  void wait2(T *data) {
     if(overlap) Wait1(data);
   }
   
-  void transpose(Complex *data, bool intranspose=true, bool outtranspose=true) {
+  void transpose(T *data, bool intranspose=true, bool outtranspose=true) {
     inflag=intranspose;
     transpose1(data,intranspose,outtranspose);
     if(overlap) {
@@ -379,14 +394,14 @@ public:
     }
   }
   
-  void transpose1(Complex *data, bool intranspose=true, bool outtranspose=true) {
+  void transpose1(T *data, bool intranspose=true, bool outtranspose=true) {
     inflag=intranspose;
     transpose2(data,intranspose,outtranspose);
     if(inflag)
       wait0(data);
   }
   
-  void transpose2(Complex *data, bool intranspose=true, bool outtranspose=true) {
+  void transpose2(T *data, bool intranspose=true, bool outtranspose=true) {
     inflag=intranspose;
     outflag=outtranspose;
     if(inflag)

@@ -77,7 +77,7 @@ cfft2: cfft2.o $(MPIFFT:=.o)
 cfft3: cfft3.o $(MPIFFT:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
-transpose: transpose.o $(MPIFFT:=.o)
+transpose: transpose.o $(MPITRANSPOSE:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
 clean:  FORCE

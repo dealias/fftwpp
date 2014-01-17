@@ -16,7 +16,7 @@ protected:
   dimensions d;
   fftw_plan intranspose,outtranspose;
   bool alltoall; // Use experimental nonblocking transpose
-  mpitranspose *T;
+  mpitranspose<Complex> *T;
 public:  
   
   void inittranspose() {
@@ -25,7 +25,7 @@ public:
     alltoall=mx % size == 0 && my % size == 0;
 
     if(alltoall) {
-      T=new mpitranspose(mx,d.y,d.x,my,1,u2);
+      T=new mpitranspose<Complex>(mx,d.y,d.x,my,1,u2);
       int rank;
       MPI_Comm_rank(d.communicator,&rank);
       if(rank == 0) {
@@ -205,7 +205,7 @@ protected:
   unsigned int innermostthreads;
   fftw_plan intranspose,outtranspose;
   bool alltoall; // Use experimental nonblocking transpose
-  mpitranspose *T;
+  mpitranspose<Complex> *T;
 public:  
   void inittranspose() {
     int size;
@@ -213,7 +213,7 @@ public:
     alltoall=mx % size == 0 && my % size == 0;
 
     if(alltoall) {
-      T=new mpitranspose(mx,d.y,d.x,my,d.z,u3);
+      T=new mpitranspose<Complex>(mx,d.y,d.x,my,d.z,u3);
       int rank;
       MPI_Comm_rank(d.communicator,&rank);
       if(rank == 0) {

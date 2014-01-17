@@ -200,12 +200,14 @@ class cfft2MPI {
   mfft1d *yBackwards;
   Complex *f;
  protected:
-  mpitranspose *T;
+  mpitranspose<Complex> *T;
  public:
   void inittranspose(Complex* f) {
     int size;
     MPI_Comm_size(d.communicator,&size);
-    T=new mpitranspose(d.nx,d.y,d.x,d.ny,1,f);
+
+    T=new mpitranspose<Complex>(d.nx,d.y,d.x,d.ny,1,f);
+
     SaveWisdom(d.communicator);
   }
   
@@ -255,14 +257,14 @@ class cfft3MPI {
   mfft1d *zBackwards;
   Complex *f;
  protected:
-  mpitranspose *Txy, *Tyz;
+  mpitranspose<Complex> *Txy, *Tyz;
  public:
   void inittranspose(Complex* f) {
     int size;
     MPI_Comm_size(d.communicator,&size);
-    Txy=new mpitranspose(d.nx,d.y,d.x,d.ny,d.z,f,d.xy.communicator);
-    Tyz=new mpitranspose(d.ny,d.z,d.yz.x,d.nz,d.x,f,d.yz.communicator);
-    // FIXME: xz tranpose?  Do I have to do both xy and yz?
+    Txy=new mpitranspose<Complex>(d.nx,d.y,d.x,d.ny,d.z,f,d.xy.communicator);
+    Tyz=new mpitranspose<Complex>(d.ny,d.z,d.yz.x,d.nz,d.x,f,d.yz.communicator);
+    // FIXME: xz tranpose?
     SaveWisdom(d.communicator);
   }
   
