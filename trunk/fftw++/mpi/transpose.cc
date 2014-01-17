@@ -159,7 +159,7 @@ int main(int argc, char **argv)
                                                  outtranspose ? 0 : FFTW_MPI_TRANSPOSED_OUT);
   fftwpp::SaveWisdom(MPI_COMM_WORLD);
 #else
-  mpitranspose T(X,y,x,Y,Z,data,NULL,fftw::maxthreads);
+  mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,fftw::maxthreads);
 #endif  
   
   init(data,X,y,Z,ystart);
