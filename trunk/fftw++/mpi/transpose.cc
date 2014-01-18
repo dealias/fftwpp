@@ -166,7 +166,7 @@ int main(int argc, char **argv)
 #ifndef OLD  
   // Initialize remaining plans.
   T.transpose(data,false,true);
-  T.NmTranspose(data);
+  T.NmTranspose();
   init(data,X,y,Z,ystart);
 #endif  
 
@@ -180,25 +180,25 @@ int main(int argc, char **argv)
     double begin=0.0, Tinit0=0.0, Tinit=0.0, Twait0=0.0, Twait1=0.0;
     if(rank == 0) begin=totalseconds();
 #ifndef OLD
-    T.inphase0(data);
+    T.inphase0();
 #else  
     fftw_execute(inplan);
 #endif  
     if(rank == 0) Tinit0=totalseconds();
 #ifndef OLD
-    T.insync0(data);
+    T.insync0();
 #endif
     if(rank == 0) Twait0=totalseconds();
 #ifndef OLD
-    T.inphase1(data);
+    T.inphase1();
 #endif
     if(rank == 0) Tinit=totalseconds();
 #ifndef OLD
-    T.insync1(data);
+    T.insync1();
 #endif
     if(rank == 0) Twait1=totalseconds();
 #ifndef OLD
-    T.inpost(data);
+    T.inpost();
 #endif
     if(rank == 0) {
       Sin.add(totalseconds()-begin);
@@ -214,25 +214,25 @@ int main(int argc, char **argv)
     
     if(rank == 0) begin=totalseconds();
 #ifndef OLD
-    T.outphase0(data);
+    T.outphase0();
 #else  
     fftw_execute(outplan);
 #endif  
     if(rank == 0) Tinit0=totalseconds();
 #ifndef OLD
-    T.outsync0(data);
+    T.outsync0();
 #endif    
     if(rank == 0) Twait0=totalseconds();
 #ifndef OLD
-    T.outphase1(data);
+    T.outphase1();
 #endif
     if(rank == 0) Tinit=totalseconds();
 #ifndef OLD
-    T.outsync1(data);
+    T.outsync1();
 #endif    
     if(rank == 0) Twait1=totalseconds();
 #ifndef OLD
-    if(outtranspose) T.NmTranspose(data);
+    if(outtranspose) T.NmTranspose();
 #endif
     if(rank == 0) {
       Sout.add(totalseconds()-begin);

@@ -131,8 +131,7 @@ inline void newAlign(T *&v, size_t len, size_t align)
 template<class T>
 inline void deleteAlign(T *v, size_t len)
 {
-  for(size_t i=len-1; i > 0; i--) v[i].~T();
-  v[0].~T();
+  for(size_t i=len; i-- > 0;) v[i].~T();
 #ifdef HAVE_POSIX_MEMALIGN
   free(v);
 #else
