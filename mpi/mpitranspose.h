@@ -19,15 +19,15 @@
     
    transpose1(data);
    // User computation
-   wait1(data);
+   wait1();
 
    Guru Interface:
     
    transpose2(data);
    // User computation 0
-   wait0(data); // Typically longest when intranspose=false
+   wait0(); // Typically longest when intranspose=false
    // User computation 1      
-   wait2(data); // Typically longest when intranspose=true
+   wait2(); // Typically longest when intranspose=true
 */  
   
 #include <mpi.h>
@@ -38,6 +38,19 @@
 
 namespace fftwpp {
 
+extern double safetyfactor; // For conservative latency estimate.
+extern bool overlap; // Allow overlapped communication.
+
+template<class T>
+inline void copy(T *from, T *to, unsigned int length, unsigned int threads=1)
+{
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif  
+for(unsigned int i=0; i < length; ++i)
+  to[i]=from[i];
+}
+  
 inline void transposeError(const char *text) {
   std::cout << "Cannot construct " << text << " transpose plan." << std::endl;
   exit(-1);
@@ -47,6 +60,29 @@ void LoadWisdom(MPI_Comm *active);
 void SaveWisdom(MPI_Comm *active);
 
 void fill1_comm_sched(int *sched, int which_pe, int npes);
+
+#if MPI_VERSION < 3
+inline int MPI_Ialltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
+                         void *recvbuf, int recvcount, MPI_Datatype recvtype, 
+                         MPI_Comm comm, MPI_Request *)
+{
+  return MPI_Alltoall(sendbuf,sendcount,sendtype,recvbuf,recvcount,recvtype,
+                      comm);
+}
+inline void Wait(int count, MPI_Request *request, int *sched=NULL)
+{ 
+  if(sched)
+    MPI_Waitall(count,request,MPI_STATUSES_IGNORE);
+}
+#else
+inline void Wait(int count, MPI_Request *request, int *sched=NULL)
+{ 
+  if(sched)
+    MPI_Waitall(count,request,MPI_STATUSES_IGNORE);
+  else
+    MPI_Wait(request,MPI_STATUS_IGNORE);
+}
+#endif
 
 inline int Ialltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
                      void *recvbuf, int recvcount, MPI_Datatype recvtype, 
@@ -62,6 +98,7 @@ class mpitranspose {
 private:
   unsigned int N,m,n,M;
   unsigned int L;
+  T *data;
   T *work;
   unsigned int threads;
   MPI_Comm communicator;
@@ -80,8 +117,6 @@ private:
   Transpose *Tout1,*Tout2,*Tout3;
   unsigned int a,b;
   bool inflag,outflag;
-  static bool overlap;
-  static double safetyfactor;
 public:
   
   void poll(T *sendbuf, T *recvbuf, unsigned int N) {
@@ -149,10 +184,7 @@ public:
     }
 
     if(work == NULL) {
-      if(typeid(&work) == typeid(Complex))
-	this->work=(T*) ComplexAlign(N*m*L);
-      else
-	this->work=new T[N*m*L]; // FIXME: is this aligned with -malign=double?
+      Array::newAlign(this->work,N*m*L,sizeof(T));
       allocated=true;
     }
     
@@ -162,7 +194,6 @@ public:
     }
     
     unsigned int AlltoAll=1;
-    //    safetyfactor=2;
     double latency=safetyfactor*Latency();
     unsigned int alimit=(N*M*L*sizeof(T) >= latency*size*size) ?
       2 : usize;
@@ -323,74 +354,126 @@ public:
     deallocate();
     if(Tout3) delete Tout3;
     if(Tin3) delete Tin3;
-    if(allocated) {
-      if(typeid(&work) == typeid(Complex))
-	deleteAlign(work);
-      else
-	delete[] work;
-    } 
+    if(allocated)
+      Array::deleteAlign(work,N*m*L);
+  }
+  
+  void inphase0() {
+    if(size == 1) return;
+  
+    unsigned int blocksize=sizeof(T)*n*(a > 1 ? b : a)*m*L;
+    Ialltoall(data,blocksize,MPI_BYTE,work,blocksize,MPI_BYTE,split2,
+              request,sched2);
+  }
+  
+  void inphase1() {
+    if(a > 1) {
+      Tin2->transpose(work,data); // a x n*b x m*L
+      unsigned int blocksize=sizeof(T)*n*a*m*L;
+      Ialltoall(data,blocksize,MPI_BYTE,work,blocksize,MPI_BYTE,split,
+                request,sched);
+    }
+  }
 
+  void insync0() {
+    if(size == 1) return;
+    Wait(split2size-1,request,sched2);
   }
   
-  void inphase0(T *data);
-  void inphase1(T *data);
+  void insync1() {
+    if(a > 1)
+      Wait(splitsize-1,request,sched);
+  }
+
+  void inpost() {
+    if(size == 1) return;
+    Tin1->transpose(work,data); // b x n*a x m*L
+  }
   
-  void insync0(T *data);
-  void insync1(T *data);
+  void outphase0() {
+    if(size == 1) return;
   
-  void inpost(T *data);
+    // Inner transpose each N/a x M/a matrix over b processes
+    Tout1->transpose(data,work); // n*a x b x m*L
+    unsigned int blocksize=sizeof(T)*n*a*m*L;
+    Ialltoall(work,blocksize,MPI_BYTE,data,blocksize,MPI_BYTE,split,
+              request,sched);
+  }
   
-  void outphase0(T *data);
-  void outphase1(T *data);
+  void outphase1() {
+    if(a > 1) {
+      // Outer transpose a x a matrix of N/a x M/a blocks over a processes
+      Tout2->transpose(data,work); // n*b x a x m*L
+      unsigned int blocksize=sizeof(T)*n*b*m*L;
+      Ialltoall(work,blocksize,MPI_BYTE,data,blocksize,MPI_BYTE,split2,
+                request,sched2);
+    }
+  }
   
-  void outsync0(T *data);
-  void outsync1(T *data);
+  void outsync0() {
+    if(a > 1)
+    Wait(splitsize-1,request,sched);
+  }
   
-  void nMTranspose(T *data);
-  void NmTranspose(T *data);
+  void outsync1() {
+    if(size > 1)
+      Wait(split2size-1,request,sched2);
+  }
+    
+
+  void nMTranspose() {
+    if(!Tin3) Tin3=new Transpose(n,M,L,data,work,threads);
+    Tin3->transpose(data,work); // n X M x L
+    copy(work,data,n*M*L,threads);
+  }
   
-  void Wait0(T *data) {
+  void NmTranspose() {
+    if(!Tout3) Tout3=new Transpose(N,m,L,data,work,threads);
+    Tout3->transpose(data,work); // N x m x L
+    copy(work,data,N*m*L,threads);
+  }
+  
+  void Wait0() {
     if(inflag) {
-      outsync0(data);
-      outphase1(data);
+      outsync0();
+      outphase1();
     } else {
-      insync0(data);
-      inphase1(data);
+      insync0();
+      inphase1();
     }
    }
   
-  void Wait1(T *data) {
+  void Wait1() {
     if(inflag) {
-      outsync1(data);
-      if(outflag) NmTranspose(data);
+      outsync1();
+      if(outflag) NmTranspose();
     } else {
-      insync1(data);
-      inpost(data);
-      if(!outflag) nMTranspose(data);
+      insync1();
+      inpost();
+      if(!outflag) nMTranspose();
     }
    }
   
-  void wait0(T *data) {
-    if(overlap) Wait0(data);
+  void wait0() {
+    if(overlap) Wait0();
   }
   
-  void wait1(T *data) {
+  void wait1() {
     if(overlap) {
-      if(!inflag) Wait0(data);
-      Wait1(data);
+      if(!inflag) Wait0();
+      Wait1();
     }
   }
   
-  void wait2(T *data) {
-    if(overlap) Wait1(data);
+  void wait2() {
+    if(overlap) Wait1();
   }
   
   void transpose(T *data, bool intranspose=true, bool outtranspose=true) {
-    inflag=intranspose;
     transpose1(data,intranspose,outtranspose);
     if(overlap) {
-      if(!inflag) Wait0(data);
-      Wait1(data);
+      if(!inflag) Wait0();
+      Wait1();
     }
   }
   
@@ -398,46 +481,24 @@ public:
     inflag=intranspose;
     transpose2(data,intranspose,outtranspose);
     if(inflag)
-      wait0(data);
+      wait0();
   }
   
-  void transpose2(T *data, bool intranspose=true, bool outtranspose=true) {
+  void transpose2(T *Data, bool intranspose=true, bool outtranspose=true) {
+    data=Data;
     inflag=intranspose;
     outflag=outtranspose;
     if(inflag)
-      outphase0(data);
+      outphase0();
     else
-      inphase0(data);
+      inphase0();
     if(!overlap) {
-      Wait0(data);
-      Wait1(data);
+      Wait0();
+      Wait1();
     }
   }
   
 };
-
-#if MPI_VERSION < 3
-inline int MPI_Ialltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
-                         void *recvbuf, int recvcount, MPI_Datatype recvtype, 
-                         MPI_Comm comm, MPI_Request *)
-{
-  return MPI_Alltoall(sendbuf,sendcount,sendtype,recvbuf,recvcount,recvtype,
-                      comm);
-}
-inline void Wait(int count, MPI_Request *request, int *sched=NULL)
-{ 
-  if(sched)
-    MPI_Waitall(count,request,MPI_STATUSES_IGNORE);
-}
-#else
-inline void Wait(int count, MPI_Request *request, int *sched=NULL)
-{ 
-  if(sched)
-    MPI_Waitall(count,request,MPI_STATUSES_IGNORE);
-  else
-    MPI_Wait(request,MPI_STATUS_IGNORE);
-}
-#endif
 
 inline int Ialltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
                      void *recvbuf, int recvcount, MPI_Datatype recvtype, 
