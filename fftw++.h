@@ -607,7 +607,8 @@ public:
       }
     }
   }
-};
+  
+}; // class fftw
 
 class Transpose {
   fftw_plan plan;
@@ -1097,9 +1098,14 @@ public:
   
   fftw_plan Plan(Complex *in, Complex *out) {
     int n=(int) nx;
+    if(in != out) 
+      return fftw_plan_many_dft_r2c(1,&n,M,
+				    (double *) in,NULL,stride,dist,
+				    (fftw_complex *) out,NULL,stride,dist/2+1,
+				    effort);
     return fftw_plan_many_dft_r2c(1,&n,M,
-                                  (double *) in,NULL,stride,2*dist,
-                                  (fftw_complex *) out,NULL,stride,dist,
+                                  (double *) in,NULL,stride,dist,
+                                  (fftw_complex *) out,NULL,stride,dist/2,
                                   effort);
   }
   
@@ -1156,6 +1162,11 @@ public:
   
   fftw_plan Plan(Complex *in, Complex *out) {
     int n=(int) nx;
+    if(in != out)
+      return fftw_plan_many_dft_c2r(1,&n,M,
+				    (fftw_complex *) in,NULL,stride,dist,
+				    (double *) out,NULL,stride,2*(dist-1),
+				    effort);
     return fftw_plan_many_dft_c2r(1,&n,M,
                                   (fftw_complex *) in,NULL,stride,dist,
                                   (double *) out,NULL,stride,2*dist,
@@ -1166,8 +1177,23 @@ public:
     fftw_execute_dft_c2r(plan,(fftw_complex *) in,(double *) out);
   }
   
-  void fftNormalized(Complex *in, Complex *out=NULL) {
-    fftw::fftNormalized(in,out,(nx/2+1),M,stride,dist);
+  void fftNormalized(Complex *in, double *out=NULL) {
+    // TODO: improve threading (cf: mfft1d).
+    fftw_execute_dft_c2r(plan,(fftw_complex *) in,(double *) out);
+
+    unsigned int stop=nx*stride;
+    unsigned int odist=in == (Complex *) out ? 2*dist : 2*(dist-1);
+    double *outMdist=out+M*odist;
+
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif
+    for(unsigned int i=0; i < stop; i += stride) {
+      double *pstop=outMdist+i;
+      for(double *p=out+i; p < pstop; p += odist) {
+	*p *= norm;
+      }
+    }    
   }
 };
   

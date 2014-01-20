@@ -36,9 +36,10 @@ LDFLAGS= -lfftw3_omp -lfftw3 -lm
 
 vpath %.cc ../
 
-FILES=example0 example0r example0m example1 example1r example2 example2r \
-example3 example3r examplecconv exampleconv examplecconv2 exampleconv2 \
-examplecconv3 exampleconv3 exampletranspose
+FILES=example0 example0r example0m example0mr\
+	example1 example1r example2 example2r example3 example3r\
+	examplecconv exampleconv examplecconv2 exampleconv2 \
+	examplecconv3 exampleconv3 exampletranspose
 
 FFTW=fftw++
 EXTRA=$(FFTW) convolution
@@ -56,6 +57,9 @@ example0r: example0r.o $(FFTW:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 example0m: example0m.o $(FFTW:=.o)
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
+example0mr: example0mr.o $(FFTW:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 example1: example1.o $(FFTW:=.o)
