@@ -299,6 +299,63 @@ class cfft3MPI {
   void Normalize(Complex *f);
 };
 
+// FIXME
+class rcfft2MPI {
+ private:
+  unsigned int mx, my;
+  dimensions dr,dc;
+  mfft1d *xForwards;
+  mfft1d *xBackwards;
+  mrcfft1d *yForwards;
+  mcrfft1d *yBackwards;
+  Complex *f;
+  bool inplace;
+  unsigned int rdist;
+ protected:
+  mpitranspose<Complex> *T;
+ public:
+  void inittranspose(Complex* out) {
+    int size;
+    MPI_Comm_size(dr.communicator,&size); // FIXME: dr or dc?
+
+    T=new mpitranspose<Complex>(dc.nx,dc.y,dc.x,dc.ny,1,out);
+
+    SaveWisdom(dc.communicator);
+  }
+  
+ rcfft2MPI(const dimensions& dr, const dimensions& dc,
+	   double *f, Complex *g) : dr(dr), dc(dc), inplace((double*) g == f){
+    mx=dr.nx;
+    my=dc.ny;
+    //inittranspose(out); // FIXME: re-enable
+    
+    rdist=inplace ? dr.nx+2 : dr.nx;
+
+    xForwards=new mfft1d(dc.nx,-1,dc.y,dc.y,1);
+    xBackwards=new mfft1d(dc.nx,1,dc.y,dc.y,1);
+    yForwards=new mrcfft1d(dr.ny, // length
+			   dr.x, // howmany
+			   1, // stride
+			   rdist, // dist between the first elements of inputs
+			   f, // input
+			   g); // output
+    yBackwards=new mcrfft1d(dr.ny, // length or real output
+			   dc.x, // howmany
+			   1, // stride
+			   dc.ny,// dist between the first elements of inputs
+			   g, // input
+			   f); // output
+  }
+  
+  virtual ~rcfft2MPI() {}
+
+  void Forwards(double *f, Complex * g, bool finaltranspose=true);
+  void Backwards(Complex *g, double *f, bool finaltranspose=true);
+  //  void Normalize(Complex *f);
+  //  void BackwardsNormalized(Complex *f, bool finaltranspose=true);
+};
+
+
   
 } // end namespace fftwpp
 

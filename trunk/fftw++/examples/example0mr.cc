@@ -22,24 +22,22 @@ int main()
   unsigned int dist=ny;
   
   // For in-place transforms:
-  // array2<double> f(nx,2*nyp,(double *) g()); 
-  // unsigned int dist=ny+2;
+  //array2<double> f(nx,2*nyp,(double *) g()); 
+  //unsigned int dist=ny+2;
 
   mrcfft1d Forward(ny, // size
 		   nx, // how many
 		   1, // stride
-		   dist, // distance between the first elements of
-			 // each input vector
+		   dist, // distance between the start of each input vector
 		   f, // input
 		   g); // output
 
-  mcrfft1d Backward(ny, // size
-		   nx, // how many
-		   1, // stride
-		   nyp, // distance between the first elements of each
-			// input vector
-		   g, // input
-		   f); // output
+  mcrfft1d Backward(ny, // size (length of real output)
+		    nx, // how many
+		    1, // stride
+		    nyp, // distance between the start of each input vector
+		    g, // input
+		    f); // output
 
   // Initialize data:
   for(unsigned int i=0; i < nx; i++) 
@@ -52,7 +50,7 @@ int main()
   
   cout << endl << "output:" << endl << g;
   
-    Backward.fftNormalized(g,f);
+  Backward.fftNormalized(g,f);
   
   cout << endl << "back to input:" << endl << f;
 }

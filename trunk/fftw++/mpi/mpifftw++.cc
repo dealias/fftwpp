@@ -96,4 +96,50 @@ void cfft3MPI::Normalize(Complex *f)
   for(unsigned int i=0; i < d.n; ++i) f[i] *= overN;
 }
 
+
+void rcfft2MPI::Forwards(double *f, Complex *g, bool finaltranspose)
+{
+  // FIXME
+  //Complex *fc=(Complex *)f;
+
+  // shift Fourier origin:
+  for(unsigned int i=0; i < dr.x; i += 2)  {
+    double *fi=&f[i*rdist];
+    for(unsigned int j=0; j < dr.ny; j += 1)
+      fi[j] *= -1;
+  }
+
+  yForwards->fft(f,g);
+  // T->transpose(f,false,true);
+  xForwards->fft(g);
+  // if(finaltranspose) T->transpose(f,true,false);
+}
+
+void rcfft2MPI::Backwards(Complex *g, double *f, bool finaltranspose)
+{
+  // FIXME
+  // if(finaltranspose) T->transpose(f,false,true);
+  xBackwards->fft(g);
+  // T->transpose(f,true,false);
+  yBackwards->fft(g,f);
+
+  // FIXME: normalize conditionally
+
+  double norm=1.0/(dr.nx*dr.ny);
+  for(unsigned int i=0; i < dr.x; i++)  {
+    double *fi=&f[i*rdist];
+    for(unsigned int j=0; j < dr.ny; j++)
+      fi[j] *= norm;
+  }
+
+  // shift Fourier origin:
+  for(unsigned int i=0; i < dr.x; i += 2)  {
+    double *fi=&f[i*rdist];
+    for(unsigned int j=0; j < dr.ny; j += 1)
+      fi[j] *= -1;
+  }
+}
+
+
+
 } // end namespace fftwpp
