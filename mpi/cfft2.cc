@@ -115,8 +115,6 @@ int main(int argc, char* argv[])
 
     Complex *f=ComplexAlign(d.n);
   
-    double *T=new double[N];
-
     cfft2MPI fft(d,f);
     MPI_Barrier(group.active);
     if(group.rank == 0)
@@ -124,7 +122,28 @@ int main(int argc, char* argv[])
 
     bool dofinaltranspose=false;
     dofinaltranspose=true;
-    
+    if(mx*my < outlimit) {
+      init(f,d);
+
+      if(main) cout << "\ninput:" << endl;
+      show(f,d.nx,d.y,group.active);
+      //show(f,1,d.x*d.ny,group.active);
+
+      fft.Forwards(f,dofinaltranspose);
+
+      if(main) cout << "\noutput:" << endl;
+      show(f,d.ny,d.x,group.active);
+      //show(f,1,d.x*d.ny,group.active);
+
+      fft.Backwards(f,dofinaltranspose);
+      fft.Normalize(f);
+
+      if(main) cout << "\noutput:" << endl;
+      show(f,d.nx,d.y,group.active);
+      //show(f,1,d.x*d.ny,group.active);
+    }
+
+    double *T=new double[N];
     for(unsigned int i=0; i < N; ++i) {
       init(f,d);
       seconds();
@@ -132,29 +151,9 @@ int main(int argc, char* argv[])
       fft.Backwards(f,dofinaltranspose);
       fft.Normalize(f);
       T[i]=seconds();
-    }
-    
+    }    
     if(main) timings("FFT timing:",mx,T,N);
     delete [] T;
-
-    if(mx*my < outlimit) {
-      init(f,d);
-
-      if(main) cout << "\ninput:" << endl;
-      show(f,d.nx,d.y,group.active);
-      show(f,1,d.x*d.ny,group.active);
-
-      fft.Forwards(f,dofinaltranspose);
-
-      if(main) cout << "\noutput:" << endl;
-      show(f,d.x,d.ny,group.active);
-      show(f,1,d.x*d.ny,group.active);
-      fft.Backwards(f,dofinaltranspose);
-      fft.Normalize(f);
-      if(main) cout << "\noutput:" << endl;
-      show(f,d.nx,d.y,group.active);
-      show(f,1,d.x*d.ny,group.active);
-    }
 
     deleteAlign(f);
     

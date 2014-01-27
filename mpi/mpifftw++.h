@@ -199,14 +199,36 @@ class cfft2MPI {
   mfft1d *yForwards;
   mfft1d *yBackwards;
   Complex *f;
+  fftw_plan intranspose,outtranspose;
+  bool tranfftwpp;
  protected:
   mpitranspose<Complex> *T;
  public:
   void inittranspose(Complex* f) {
     int size;
     MPI_Comm_size(d.communicator,&size);
+    
+    tranfftwpp=T->divisible(size,d.nx,d.ny);
+    if(tranfftwpp) {
+      T=new mpitranspose<Complex>(d.nx,d.y,d.x,d.ny,1,f,d.communicator);
+    } else {
+      intranspose=
+	fftw_mpi_plan_many_transpose(d.ny,d.nx,2,
+				     0,d.block,
+				     (double*) f,(double*) f,
+				     d.communicator,
+				     FFTW_MPI_TRANSPOSED_IN);
+      if(!intranspose) transposeError("in");
 
-    T=new mpitranspose<Complex>(d.nx,d.y,d.x,d.ny,1,f);
+      outtranspose=
+	fftw_mpi_plan_many_transpose(d.ny,d.nx,2,
+				     0,d.block,
+				     (double*) f,(double*) f,
+				     d.communicator,
+				     FFTW_MPI_TRANSPOSED_OUT);
+      if(!outtranspose) transposeError("out");
+
+    }
 
     SaveWisdom(d.communicator);
   }
@@ -216,14 +238,19 @@ class cfft2MPI {
     my=d.ny;
     inittranspose(f);
 
-    xForwards=new mfft1d(d.nx,-1,d.y,d.y,1);
-    xBackwards=new mfft1d(d.nx,1,d.y,d.y,1);
+    xForwards=new mfft1d(d.nx,-1,d.y,d.y,1,f,f); 
+    xBackwards=new mfft1d(d.nx,1,d.y,d.y,1,f,f);
  
-    yForwards=new mfft1d(d.ny,-1,d.x,1,d.ny);
-    yBackwards=new mfft1d(d.ny,1,d.x,1,d.ny);
+    yForwards=new mfft1d(d.ny,-1,d.x,1,d.ny,f,f);
+    yBackwards=new mfft1d(d.ny,1,d.x,1,d.ny,f,f);
   }
   
-  virtual ~cfft2MPI() {}
+  virtual ~cfft2MPI() {
+    if(!tranfftwpp) {
+      fftw_destroy_plan(intranspose);
+      fftw_destroy_plan(outtranspose);
+    }
+  }
 
   void Forwards(Complex *f, bool finaltranspose=true);
   void Backwards(Complex *f, bool finaltranspose=true);
@@ -299,7 +326,21 @@ class cfft3MPI {
   void Normalize(Complex *f);
 };
 
-// FIXME
+// rcfft2MPI:
+// Real-to-complex and complex-to-real in-place and out-of-place
+// distributed FFTs.
+//
+// Basic interface:
+// Forwards(double *f, Complex * g, bool finaltranspose=true);
+// Backwards(Complex *g, double *f, bool finaltranspose=true);
+// 
+// Shift Fourier origin from (0,0) to (nx/2,0):
+// Forwards0(double *f, Complex * g, bool finaltranspose=true);
+// Backwards0(Complex *g, double *f, bool finaltranspose=true);
+//
+// Normalize:
+// BackwardsNormalized(Complex *g, double *f, bool finaltranspose=true);
+// Backwards0Normalized(Complex *g, double *f, bool finaltranspose=true);
 class rcfft2MPI {
  private:
   unsigned int mx, my;
@@ -311,14 +352,36 @@ class rcfft2MPI {
   Complex *f;
   bool inplace;
   unsigned int rdist;
+  bool tranfftwpp;
+  fftw_plan intranspose,outtranspose;
  protected:
   mpitranspose<Complex> *T;
  public:
   void inittranspose(Complex* out) {
     int size;
-    MPI_Comm_size(dr.communicator,&size); // FIXME: dr or dc?
+    MPI_Comm_size(dc.communicator,&size);
 
-    T=new mpitranspose<Complex>(dc.nx,dc.y,dc.x,dc.ny,1,out);
+    tranfftwpp=T->divisible(size,dc.nx,dc.ny);
+    std::cout <<  "tranfftwpp: " << tranfftwpp << std::endl;
+    if(tranfftwpp) {
+      T=new mpitranspose<Complex>(dc.nx,dc.y,dc.x,dc.ny,1,out,dc.communicator);
+    } else {
+      intranspose= 
+      	fftw_mpi_plan_many_transpose(dc.nx,dc.ny,2,
+      				     0,dc.block,
+      				     (double*) out,(double*) out,
+      				     dc.communicator,
+      				     FFTW_MPI_TRANSPOSED_OUT);
+      if(!intranspose) transposeError("in");
+
+      outtranspose=
+      	fftw_mpi_plan_many_transpose(dc.ny,dc.nx,2,
+      				     dc.block,0,
+      				     (double*) out,(double*) out,
+      				     dc.communicator,
+      				     FFTW_MPI_TRANSPOSED_IN);
+      if(!outtranspose) transposeError("out");
+    }
 
     SaveWisdom(dc.communicator);
   }
@@ -327,7 +390,7 @@ class rcfft2MPI {
 	   double *f, Complex *g) : dr(dr), dc(dc), inplace((double*) g == f){
     mx=dr.nx;
     my=dc.ny;
-    //inittranspose(out); // FIXME: re-enable
+    inittranspose(g);
     
     rdist=inplace ? dr.nx+2 : dr.nx;
 
@@ -345,13 +408,24 @@ class rcfft2MPI {
 			   dc.ny,// dist between the first elements of inputs
 			   g, // input
 			   f); // output
+
   }
   
-  virtual ~rcfft2MPI() {}
+  virtual ~rcfft2MPI() {
+    if(!tranfftwpp) {
+      fftw_destroy_plan(intranspose);
+      fftw_destroy_plan(outtranspose);
+    }
+  }
 
   void Forwards(double *f, Complex * g, bool finaltranspose=true);
+  void Forwards0(double *f, Complex * g, bool finaltranspose=true);
   void Backwards(Complex *g, double *f, bool finaltranspose=true);
-  //  void Normalize(Complex *f);
+  void Backwards0(Complex *g, double *f, bool finaltranspose=true);
+  void BackwardsNormalized(Complex *g, double *f, bool finaltranspose=true);
+  void Backwards0Normalized(Complex *g, double *f, bool finaltranspose=true);
+  void Shift(double *f);
+  void Normalize(double *f);
   //  void BackwardsNormalized(Complex *f, bool finaltranspose=true);
 };
 

@@ -118,6 +118,12 @@ private:
   unsigned int a,b;
   bool inflag,outflag;
 public:
+
+  bool divisible(int size, unsigned int M, unsigned int N) {
+    unsigned int usize=size;
+    
+    return !(usize > N || usize > M || N % usize != 0 || M % usize != 0);
+  }
   
   void poll(T *sendbuf, T *recvbuf, unsigned int N) {
     unsigned int sN=sizeof(T)*N;
@@ -173,8 +179,7 @@ public:
     MPI_Comm_size(communicator,&size);
     MPI_Comm_rank(communicator,&rank);
     
-    unsigned int usize=size;
-    if(usize > N || usize > M || N % usize != 0 || M % usize != 0) {
+    if(!divisible(size,M,N)) {
       if(rank == 0)
         std::cout << 
           "ERROR: Matrix dimensions must be divisible by number of processors" 
@@ -196,7 +201,7 @@ public:
     unsigned int AlltoAll=1;
     double latency=safetyfactor*Latency();
     unsigned int alimit=(N*M*L*sizeof(T) >= latency*size*size) ?
-      2 : usize;
+      2 : size;
     MPI_Bcast(&alimit,1,MPI_UNSIGNED,0,communicator);
 
     if(rank == 0)
