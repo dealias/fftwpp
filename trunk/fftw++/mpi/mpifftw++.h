@@ -7,8 +7,10 @@
 
 namespace fftwpp {
 
+// defined in mpifftw++.cc
 extern MPI_Comm *active;
 
+// defined in fftw++.cc
 extern bool mpi;
 extern void (*loadwisdom)();
 extern void (*savewisdom)();
@@ -22,8 +24,6 @@ inline unsigned int ceilquotient(unsigned int a, unsigned int b)
 {
   return (a+b-1)/b;
 }
-
-extern MPI_Comm *active;
 
 class MPIgroup {
 public:  
@@ -207,8 +207,8 @@ class cfft2MPI {
   void inittranspose(Complex* f) {
     int size;
     MPI_Comm_size(d.communicator,&size);
-    
     tranfftwpp=T->divisible(size,d.nx,d.ny);
+
     if(tranfftwpp) {
       T=new mpitranspose<Complex>(d.nx,d.y,d.x,d.ny,1,f,d.communicator);
     } else {
@@ -230,12 +230,14 @@ class cfft2MPI {
 
     }
 
-    SaveWisdom(d.communicator);
   }
   
  cfft2MPI(const dimensions& d, Complex *f) : d(d) {
+    LoadWisdom(d.communicator);
+
     mx=d.nx;
     my=d.ny;
+
     inittranspose(f);
 
     xForwards=new mfft1d(d.nx,-1,d.y,d.y,1,f,f); 
@@ -243,6 +245,7 @@ class cfft2MPI {
  
     yForwards=new mfft1d(d.ny,-1,d.x,1,d.ny,f,f);
     yBackwards=new mfft1d(d.ny,1,d.x,1,d.ny,f,f);
+    SaveWisdom(d.communicator);
   }
   
   virtual ~cfft2MPI() {
@@ -296,6 +299,8 @@ class cfft3MPI {
   }
   
  cfft3MPI(const dimensions3& d, Complex *f) : d(d) {
+    LoadWisdom(d.communicator);
+
     mx=d.nx;
     my=d.ny;
     mz=d.nz;
@@ -317,6 +322,8 @@ class cfft3MPI {
 			 1, // stride
 			 d.nz); // dist
     zBackwards=new mfft1d(d.nz,1,d.x*d.yz.x,1,d.nz);
+
+    SaveWisdom(d.communicator);
   }
   
   virtual ~cfft3MPI() {}
@@ -388,6 +395,8 @@ class rcfft2MPI {
   
  rcfft2MPI(const dimensions& dr, const dimensions& dc,
 	   double *f, Complex *g) : dr(dr), dc(dc), inplace((double*) g == f){
+    LoadWisdom(dc.communicator);
+
     mx=dr.nx;
     my=dc.ny;
     inittranspose(g);
@@ -409,6 +418,7 @@ class rcfft2MPI {
 			   g, // input
 			   f); // output
 
+    SaveWisdom(dc.communicator);
   }
   
   virtual ~rcfft2MPI() {

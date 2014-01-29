@@ -56,9 +56,6 @@ inline void transposeError(const char *text) {
   exit(-1);
 }
 
-void LoadWisdom(MPI_Comm *active);
-void SaveWisdom(MPI_Comm *active);
-
 void fill1_comm_sched(int *sched, int which_pe, int npes);
 
 #if MPI_VERSION < 3
