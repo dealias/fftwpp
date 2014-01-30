@@ -341,9 +341,8 @@ public:
   
   virtual ~fftw() {
     --Wise;
-    if(Wise == 0) {std::cout << "SaveWisdom" << std::endl;
+    if(Wise == 0)
       SaveWisdom();
-    }
     if(plan) fftw_destroy_plan(plan);
   }
   
