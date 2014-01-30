@@ -341,7 +341,7 @@ public:
   virtual ~fftw() {
     if(Wise > 0)
       --Wise;
-    else
+    if(Wise == 0)
       SaveWisdom();
     if(plan) fftw_destroy_plan(plan);
   }
