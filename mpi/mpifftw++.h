@@ -7,18 +7,11 @@
 
 namespace fftwpp {
 
-// defined in mpifftw++.cc
-extern MPI_Comm *active;
-
 // defined in fftw++.cc
 extern bool mpi;
-extern void (*loadwisdom)();
-extern void (*savewisdom)();
 
-void LoadWisdom(const MPI_Comm& active);
-void SaveWisdom(const MPI_Comm& active);
-void MPILoadWisdom();
-void MPISaveWisdom();
+void MPILoadWisdom(const MPI_Comm& active);
+void MPISaveWisdom(const MPI_Comm& active);
 
 inline unsigned int ceilquotient(unsigned int a, unsigned int b)
 {
@@ -40,10 +33,7 @@ public:
   
   void activate() {
     MPI_Comm_split(MPI_COMM_WORLD,rank < size,0,&active);
-    fftwpp::active=&active;
-    mpi=true;
-    loadwisdom=MPILoadWisdom;
-    savewisdom=MPISaveWisdom;
+    fftw::mpi=true;
   }
   
   void matrix() {
@@ -233,8 +223,6 @@ class cfft2MPI {
   }
   
  cfft2MPI(const dimensions& d, Complex *f) : d(d) {
-    LoadWisdom(d.communicator);
-
     mx=d.nx;
     my=d.ny;
 
@@ -245,7 +233,6 @@ class cfft2MPI {
  
     yForwards=new mfft1d(d.ny,-1,d.x,1,d.ny,f,f);
     yBackwards=new mfft1d(d.ny,1,d.x,1,d.ny,f,f);
-    SaveWisdom(d.communicator);
   }
   
   virtual ~cfft2MPI() {
@@ -295,12 +282,10 @@ class cfft3MPI {
     Txy=new mpitranspose<Complex>(d.nx,d.y,d.x,d.ny,d.z,f,d.xy.communicator);
     Tyz=new mpitranspose<Complex>(d.ny,d.z,d.yz.x,d.nz,d.x,f,d.yz.communicator);
     // FIXME: xz tranpose?
-    SaveWisdom(d.communicator);
+    MPISaveWisdom(d.communicator);
   }
   
  cfft3MPI(const dimensions3& d, Complex *f) : d(d) {
-    LoadWisdom(d.communicator);
-
     mx=d.nx;
     my=d.ny;
     mz=d.nz;
@@ -322,8 +307,6 @@ class cfft3MPI {
 			 1, // stride
 			 d.nz); // dist
     zBackwards=new mfft1d(d.nz,1,d.x*d.yz.x,1,d.nz);
-
-    SaveWisdom(d.communicator);
   }
   
   virtual ~cfft3MPI() {}
@@ -390,13 +373,11 @@ class rcfft2MPI {
       if(!outtranspose) transposeError("out");
     }
 
-    SaveWisdom(dc.communicator);
+    MPISaveWisdom(dc.communicator);
   }
   
  rcfft2MPI(const dimensions& dr, const dimensions& dc,
 	   double *f, Complex *g) : dr(dr), dc(dc), inplace((double*) g == f){
-    LoadWisdom(dc.communicator);
-
     mx=dr.nx;
     my=dc.ny;
     inittranspose(g);
@@ -417,8 +398,6 @@ class rcfft2MPI {
 			   dc.ny,// dist between the first elements of inputs
 			   g, // input
 			   f); // output
-
-    SaveWisdom(dc.communicator);
   }
   
   virtual ~rcfft2MPI() {

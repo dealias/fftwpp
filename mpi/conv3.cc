@@ -131,6 +131,7 @@ int main(int argc, char* argv[])
   unsigned int ny=2*my-1;
     
   MPIgroup group(ny,mz);
+  MPILoadWisdom(group.active);
   
   if(group.rank < group.size) {
     bool main=group.rank == 0;
@@ -205,6 +206,7 @@ int main(int argc, char* argv[])
     delete [] T;
   }
 
+  MPISaveWisdom(group.active);
   MPI_Finalize();
   
   return retval;

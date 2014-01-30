@@ -16,8 +16,8 @@ inline unsigned int ceilquotient(unsigned int a, unsigned int b)
 }
 
 namespace fftwpp {
-void LoadWisdom(const MPI_Comm& active);
-void SaveWisdom(const MPI_Comm& active);
+void MPILoadWisdom(const MPI_Comm& active);
+void MPISaveWisdom(const MPI_Comm& active);
 }
 
 void init(Complex *data, unsigned int X, unsigned int y, unsigned int Z,
@@ -148,7 +148,7 @@ int main(int argc, char **argv)
 #ifdef OLD
   if(rank == 0) cout << "\nOLD\n" << endl;
   
-  fftwpp::LoadWisdom(MPI_COMM_WORLD);
+  fftwpp::MPILoadWisdom(MPI_COMM_WORLD);
   fftw_plan inplan=fftw_mpi_plan_many_transpose(Y,X,2*Z,block,0,
                                                 (double*) data,(double*) data,
                                                 MPI_COMM_WORLD,
@@ -157,7 +157,7 @@ int main(int argc, char **argv)
                                                  (double*) data,(double*) data,
                                                  MPI_COMM_WORLD,
                                                  outtranspose ? 0 : FFTW_MPI_TRANSPOSED_OUT);
-  fftwpp::SaveWisdom(MPI_COMM_WORLD);
+  fftwpp::MPISaveWisdom(MPI_COMM_WORLD);
 #else
   mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,fftw::maxthreads);
 #endif  

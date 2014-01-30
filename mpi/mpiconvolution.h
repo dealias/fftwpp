@@ -47,7 +47,7 @@ public:
                                      (double*) u2,d.communicator,
                                      FFTW_MPI_TRANSPOSED_OUT);
       if(!outtranspose) transposeError("out2");
-      SaveWisdom(d.communicator);
+      MPISaveWisdom(d.communicator);
     }
   }
 
@@ -126,7 +126,7 @@ public:
                                    (double*) u2,du.communicator,
                                    FFTW_MPI_TRANSPOSED_OUT);
     if(!uouttranspose) transposeError("uoutH2");
-    SaveWisdom(d.communicator);
+    MPISaveWisdom(d.communicator);
   }
   
   // u1 and v1 are temporary arrays of size (my/2+1)*M*threads.
@@ -234,7 +234,7 @@ public:
                                      (double*) u3,(double*) u3,
                                      d.xy.communicator,FFTW_MPI_TRANSPOSED_OUT);
       if(!outtranspose) transposeError("out3");
-      SaveWisdom(d.xy.communicator);
+      MPISaveWisdom(d.xy.communicator);
     }
   }
 
@@ -343,7 +343,7 @@ public:
                                      du.xy.communicator,
                                      FFTW_MPI_TRANSPOSED_OUT);
       if(!uouttranspose) transposeError("uoutH3");
-      SaveWisdom(d.xy.communicator);
+      MPISaveWisdom(d.xy.communicator);
     }
   }
 

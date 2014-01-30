@@ -173,9 +173,6 @@ inline void deleteAlign(T *p)
 #define FFTWdouble doubleAlign
 #define FFTWdelete deleteAlign
 
-extern bool mpi;
-extern const char *WisdomName;
-
 inline void fftwpp_export_wisdom(void (*emitter)(char c, std::ofstream& s),
                                  std::ofstream& s)
 {
@@ -236,6 +233,8 @@ public:
   static unsigned int effort;
   static unsigned int maxthreads;
   static double testseconds;
+  static const char *WisdomName;
+  static bool mpi; // TODO: Remove when FFTW transpose routines are replaced
   
   unsigned int Threads() {return threads;}
   
@@ -340,8 +339,9 @@ public:
   }
   
   virtual ~fftw() {
-    --Wise;
-    if(Wise == 0)
+    if(Wise > 0)
+      --Wise;
+    else
       SaveWisdom();
     if(plan) fftw_destroy_plan(plan);
   }
