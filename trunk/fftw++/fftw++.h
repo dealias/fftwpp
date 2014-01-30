@@ -228,7 +228,7 @@ protected:
     return realsize(n,(Complex *) in,out);
   }
   
-  static bool Wise;
+  static unsigned int Wise;
   static const double twopi;
   unsigned int threads;
   
@@ -340,7 +340,10 @@ public:
   }
   
   virtual ~fftw() {
-    SaveWisdom();
+    --Wise;
+    if(Wise == 0) {std::cout << "SaveWisdom" << std::endl;
+      SaveWisdom();
+    }
     if(plan) fftw_destroy_plan(plan);
   }
   
@@ -453,8 +456,7 @@ public:
   virtual void store(bool inplace, const threaddata& data) {}
   
   threaddata Setup(Complex *in, Complex *out=NULL) {
-    static bool Wise=false;
-    if(!Wise) {LoadWisdom(); Wise=true;}
+    if(!Wise) {LoadWisdom(); ++Wise;}
     
     bool alloc=!in;
     if(alloc) in=ComplexAlign((doubles+1)/2);
