@@ -114,8 +114,14 @@ int main(int argc, char* argv[])
     }
 
     Complex *f=ComplexAlign(d.n);
-  
+
+    MPI_Barrier(group.active);
+    // Load wisdom
+    MPILoadWisdom(group.active);
+
+    // Create instance of FFT
     cfft2dMPI fft(d,f);
+
     MPI_Barrier(group.active);
     if(group.rank == 0)
       cout << "Initialized after " << seconds() << " seconds." << endl;    
@@ -157,6 +163,13 @@ int main(int argc, char* argv[])
 
     deleteAlign(f);
     
+    // Load wisdom
+
+    // FIXME: wisdom destroyed if load not present when using FFTW
+    // transpose (or with non-active processes?) unless load present
+    // here.
+    MPILoadWisdom(group.active); 
+    MPISaveWisdom(group.active);
   }
   
   MPI_Finalize();

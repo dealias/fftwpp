@@ -27,11 +27,13 @@ public:
   MPI_Comm communicator,communicator2; // 3D transpose communicators
   
   void init() {
+    // FIXME: this should always take a specific commuicator.
     MPI_Comm_rank(MPI_COMM_WORLD,&rank);
-    MPI_Comm_size(MPI_COMM_WORLD,&size); 
+    MPI_Comm_size(MPI_COMM_WORLD,&size);
   }
   
   void activate() {
+    // FIXME: this should always take a specific commuicator.
     MPI_Comm_split(MPI_COMM_WORLD,rank < size,0,&active);
     fftw::mpi=true;
   }
@@ -46,13 +48,15 @@ public:
     MPI_Comm_split(active,q,p,&communicator2);
   }
   
+  // FIXME: this should always take a specific commuicator.
   MPIgroup(unsigned int my) : my(my) {
     init();
     yblock=ceilquotient(my,size);
     size=ceilquotient(my,yblock);
     activate();
   }
-    
+  
+  // FIXME: this should always take a specific commuicator.  
   MPIgroup(unsigned int my, unsigned int mz, bool allowPencil=true) : my(my) {
     init();
     yblock=ceilquotient(my,size);
@@ -202,6 +206,7 @@ class cfft2dMPI {
     if(tranfftwpp) {
       T=new mpitranspose<Complex>(d.nx,d.y,d.x,d.ny,1,f,d.communicator);
     } else {
+      MPILoadWisdom(d.communicator);
       intranspose=
 	fftw_mpi_plan_many_transpose(d.ny,d.nx,2,
 				     0,d.block,
@@ -282,7 +287,6 @@ class cfft3dMPI {
     Txy=new mpitranspose<Complex>(d.nx,d.y,d.x,d.ny,d.z,f,d.xy.communicator);
     Tyz=new mpitranspose<Complex>(d.ny,d.z,d.yz.x,d.nz,d.x,f,d.yz.communicator);
     // FIXME: xz tranpose?
-    MPISaveWisdom(d.communicator);
   }
   
  cfft3dMPI(const dimensions3& d, Complex *f) : d(d) {
@@ -352,11 +356,18 @@ class rcfft2dMPI {
     MPI_Comm_size(dc.communicator,&size);
 
     tranfftwpp=T->divisible(size,dc.nx,dc.ny);
-    std::cout <<  "tranfftwpp: " << tranfftwpp << std::endl;
+    //    std::cout <<  "tranfftwpp: " << tranfftwpp << std::endl;
     if(tranfftwpp) {
       T=new mpitranspose<Complex>(dc.nx,dc.y,dc.x,dc.ny,1,out,dc.communicator);
     } else {
-      intranspose= 
+      /*
+      int rank;
+      MPI_Comm_rank(dc.communicator,&rank);
+      if(rank < size) 
+      */
+      fftw_mpi_init();
+      MPILoadWisdom(dc.communicator);
+      intranspose=
       	fftw_mpi_plan_many_transpose(dc.nx,dc.ny,2,
       				     0,dc.block,
       				     (double*) out,(double*) out,
@@ -372,8 +383,6 @@ class rcfft2dMPI {
       				     FFTW_MPI_TRANSPOSED_IN);
       if(!outtranspose) transposeError("out");
     }
-
-    MPISaveWisdom(dc.communicator);
   }
   
  rcfft2dMPI(const dimensions& dr, const dimensions& dc,
