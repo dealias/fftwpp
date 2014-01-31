@@ -137,7 +137,7 @@ int main(int argc, char* argv[])
     cout << "inplace: " << inplace  << endl;
 
     seconds();
-    rcfft2MPI fft(dr,dc,f,g);
+    rcfft2dMPI fft(dr,dc,f,g);
     MPI_Barrier(group.active);
     if(group.rank == 0)
       cout << "Initialized after " << seconds() << " seconds." << endl;    
