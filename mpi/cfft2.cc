@@ -115,7 +115,7 @@ int main(int argc, char* argv[])
 
     Complex *f=ComplexAlign(d.n);
   
-    cfft2MPI fft(d,f);
+    cfft2dMPI fft(d,f);
     MPI_Barrier(group.active);
     if(group.rank == 0)
       cout << "Initialized after " << seconds() << " seconds." << endl;    

@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
     dimensions3 d(mx,my,my,mz,group);
     
     Complex *f=ComplexAlign(d.n);
-    cfft3MPI fft(d,f);
+    cfft3dMPI fft(d,f);
     
     bool dofinaltranspose=false; // FIXME: this must always be false for now.
     

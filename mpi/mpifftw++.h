@@ -174,13 +174,13 @@ public:
 // Example:
 // dimensions d(mx,my,group.active,group.yblock);
 // Complex *f=ComplexAlign(d.n);
-// cfft2MPI fft(d,f);
+// cfft2dMPI fft(d,f);
 // fft.Forwards(f,true);
 // fft.Backwards(f,true);
 // fft.Normalize(f);
 // 
 // If a transposed output is desired, call with fft.Forwards(f,false).
-class cfft2MPI {
+class cfft2dMPI {
  private:
   unsigned int mx, my;
   dimensions d;
@@ -222,7 +222,7 @@ class cfft2MPI {
 
   }
   
- cfft2MPI(const dimensions& d, Complex *f) : d(d) {
+ cfft2dMPI(const dimensions& d, Complex *f) : d(d) {
     mx=d.nx;
     my=d.ny;
 
@@ -235,7 +235,7 @@ class cfft2MPI {
     yBackwards=new mfft1d(d.ny,1,d.x,1,d.ny,f,f);
   }
   
-  virtual ~cfft2MPI() {
+  virtual ~cfft2dMPI() {
     if(!tranfftwpp) {
       fftw_destroy_plan(intranspose);
       fftw_destroy_plan(outtranspose);
@@ -256,13 +256,13 @@ class cfft2MPI {
 // Example:
 // dimensions3 d(mx,my,my,mz,group);
 // Complex *f=ComplexAlign(d.n);
-// cfft3MPI fft(d,f);
+// cfft3dMPI fft(d,f);
 // fft.Forwards(f,dofinaltranspose);
 // fft.Backwards(f,dofinaltranspose);
 // fft.Normalize(f);
 //
 // TODO: allow for non-transposed output.
-class cfft3MPI {
+class cfft3dMPI {
  private:
   unsigned int mx, my, mz;
   dimensions3 d;
@@ -285,7 +285,7 @@ class cfft3MPI {
     MPISaveWisdom(d.communicator);
   }
   
- cfft3MPI(const dimensions3& d, Complex *f) : d(d) {
+ cfft3dMPI(const dimensions3& d, Complex *f) : d(d) {
     mx=d.nx;
     my=d.ny;
     mz=d.nz;
@@ -309,14 +309,14 @@ class cfft3MPI {
     zBackwards=new mfft1d(d.nz,1,d.x*d.yz.x,1,d.nz);
   }
   
-  virtual ~cfft3MPI() {}
+  virtual ~cfft3dMPI() {}
 
   void Forwards(Complex *f, bool finaltranspose=true);
   void Backwards(Complex *f, bool finaltranspose=true);
   void Normalize(Complex *f);
 };
 
-// rcfft2MPI:
+// rcfft2dMPI:
 // Real-to-complex and complex-to-real in-place and out-of-place
 // distributed FFTs.
 //
@@ -331,7 +331,7 @@ class cfft3MPI {
 // Normalize:
 // BackwardsNormalized(Complex *g, double *f, bool finaltranspose=true);
 // Backwards0Normalized(Complex *g, double *f, bool finaltranspose=true);
-class rcfft2MPI {
+class rcfft2dMPI {
  private:
   unsigned int mx, my;
   dimensions dr,dc;
@@ -376,7 +376,7 @@ class rcfft2MPI {
     MPISaveWisdom(dc.communicator);
   }
   
- rcfft2MPI(const dimensions& dr, const dimensions& dc,
+ rcfft2dMPI(const dimensions& dr, const dimensions& dc,
 	   double *f, Complex *g) : dr(dr), dc(dc), inplace((double*) g == f){
     mx=dr.nx;
     my=dc.ny;
@@ -400,7 +400,7 @@ class rcfft2MPI {
 			   f); // output
   }
   
-  virtual ~rcfft2MPI() {
+  virtual ~rcfft2dMPI() {
     if(!tranfftwpp) {
       fftw_destroy_plan(intranspose);
       fftw_destroy_plan(outtranspose);
