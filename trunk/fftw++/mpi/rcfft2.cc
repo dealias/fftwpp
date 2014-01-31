@@ -78,6 +78,7 @@ int main(int argc, char* argv[])
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_MULTIPLE,&provided);
 
+
   if(my == 0) my=mx;
 
   if(N == 0) {
@@ -104,13 +105,16 @@ int main(int argc, char* argv[])
          << group.size << " nodes X " << fftw::maxthreads 
          << " threads/node" << endl;
   }
-  
+
   if(group.rank < group.size) { // If the process is unused, then do nothing.
     bool main=group.rank == 0;
     if(main) {
       cout << "N=" << N << endl;
       cout << "mx=" << mx << ", my=" << my << endl;
     }
+
+    // Load wisdom
+    MPILoadWisdom(group.active);
 
     // real dimensions
     dimensions dr(mx,my,group.active,group.yblock); 
@@ -136,15 +140,12 @@ int main(int argc, char* argv[])
     bool inplace=(double*) g == f;
     cout << "inplace: " << inplace  << endl;
 
-    seconds();
+    // Create instance of FFT
     rcfft2dMPI fft(dr,dc,f,g);
-    MPI_Barrier(group.active);
-    if(group.rank == 0)
-      cout << "Initialized after " << seconds() << " seconds." << endl;    
     
     bool dofinaltranspose=false;
     //dofinaltranspose=true;
-    
+
     // sample output for small problems
     if(mx*my < outlimit) {
       init(f,dr,inplace);
@@ -173,26 +174,34 @@ int main(int argc, char* argv[])
       //show(f,1,dr.n,group.active);
     }
 
+
     // Timing
-    /*
-    double *T=new double[N];
-    for(unsigned int i=0; i < N; ++i) {
-      init(f,dr,inplace);
-      seconds();
-      fft.Forwards(f,dofinaltranspose);
-      fft.Backwards(f,dofinaltranspose);
-      fft.Normalize(f);
-      T[i]=seconds();
-    }
-    if(main) timings("FFT timing:",mx,T,N);
-    delete [] T;
-    */
+
+    // double *T=new double[N];
+    // for(unsigned int i=0; i < N; ++i) {
+    //   init(f,dr,inplace);
+    //   seconds();
+    //   fft.Forwards(f,dofinaltranspose);
+    //   fft.Backwards(f,dofinaltranspose);
+    //   fft.Normalize(f);
+    //   T[i]=seconds();
+    // }
+    // if(main) timings("FFT timing:",mx,T,N);
+    // delete [] T;
+
 
     if((double *) g != f) deleteAlign(f);
     deleteAlign(g);
     
+    // Save wisdom
+
+    // FIXME: wisdom destroyed if load not present when using FFTW
+    // transpose (or with non-active processes?) unless load present
+    // here.
+    MPILoadWisdom(group.active); 
+    MPISaveWisdom(group.active);
   }
-  
+
   MPI_Finalize();
   
   return retval;

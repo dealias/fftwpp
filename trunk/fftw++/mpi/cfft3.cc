@@ -116,6 +116,11 @@ int main(int argc, char* argv[])
     dimensions3 d(mx,my,my,mz,group);
     
     Complex *f=ComplexAlign(d.n);
+
+    // Load wisdom
+    MPILoadWisdom(group.active);
+
+    // Create instance of FFT
     cfft3dMPI fft(d,f);
     
     bool dofinaltranspose=false; // FIXME: this must always be false for now.
@@ -174,6 +179,9 @@ int main(int argc, char* argv[])
     }
 
     deleteAlign(f);
+
+    // Load wisdom
+    MPISaveWisdom(group.active);
   }
   
   MPI_Finalize();
