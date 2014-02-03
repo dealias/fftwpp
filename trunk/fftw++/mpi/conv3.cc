@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
   unsigned int nx=2*mx-1;
   unsigned int ny=2*my-1;
     
-  MPIgroup group(ny,mz);
+  MPIgroup group(MPI_COMM_WORLD,ny,mz);
   MPILoadWisdom(group.active);
   
   if(group.rank < group.size) {

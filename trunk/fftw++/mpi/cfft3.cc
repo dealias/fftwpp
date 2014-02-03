@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
     if(N < 10) N=10;
   }
   
-  MPIgroup group(my,mz);
+  MPIgroup group(MPI_COMM_WORLD,my,mz);
 
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED) {
     fftw::maxthreads=1;
