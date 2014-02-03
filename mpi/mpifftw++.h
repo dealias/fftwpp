@@ -26,15 +26,13 @@ public:
   MPI_Comm active;                     // active communicator 
   MPI_Comm communicator,communicator2; // 3D transpose communicators
   
-  void init() {
-    // FIXME: this should always take a specific commuicator.
-    MPI_Comm_rank(MPI_COMM_WORLD,&rank);
-    MPI_Comm_size(MPI_COMM_WORLD,&size);
+  void init(const MPI_Comm& comm) {
+    MPI_Comm_rank(comm,&rank);
+    MPI_Comm_size(comm,&size);
   }
   
-  void activate() {
-    // FIXME: this should always take a specific commuicator.
-    MPI_Comm_split(MPI_COMM_WORLD,rank < size,0,&active);
+  void activate(const MPI_Comm& comm) {
+    MPI_Comm_split(comm,rank < size,0,&active);
     fftw::mpi=true;
   }
   
@@ -48,21 +46,20 @@ public:
     MPI_Comm_split(active,q,p,&communicator2);
   }
   
-  // FIXME: this should always take a specific commuicator.
-  MPIgroup(unsigned int my) : my(my) {
-    init();
+  MPIgroup(const MPI_Comm& comm, unsigned int my) : my(my) {
+    init(comm);
     yblock=ceilquotient(my,size);
     size=ceilquotient(my,yblock);
-    activate();
+    activate(comm);
   }
   
-  // FIXME: this should always take a specific commuicator.  
-  MPIgroup(unsigned int my, unsigned int mz, bool allowPencil=true) : my(my) {
-    init();
+  MPIgroup(const MPI_Comm& comm, unsigned int my, unsigned int mz, 
+	   bool allowPencil=true) : my(my) {
+    init(comm);
     yblock=ceilquotient(my,size);
     zblock=allowPencil ? ceilquotient(mz,size*yblock/my) : mz;
     size=ceilquotient(my,yblock)*ceilquotient(mz,zblock);
-    activate();
+    activate(comm);
     if(rank < size)
       matrix();
   }

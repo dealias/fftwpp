@@ -115,7 +115,7 @@ int main(int argc, char* argv[])
   unsigned int nx=2*mx-1;
   unsigned int mx1=mx+1;
   
-  MPIgroup group(my);
+  MPIgroup group(MPI_COMM_WORLD,my);
   MPILoadWisdom(group.active);
   
   if(group.rank < group.size) {
