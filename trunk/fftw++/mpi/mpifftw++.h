@@ -175,13 +175,13 @@ public:
 // Example:
 // dimensions d(mx,my,group.active,group.yblock);
 // Complex *f=ComplexAlign(d.n);
-// cfft2dMPI fft(d,f);
+// fft2dMPI fft(d,f);
 // fft.Forwards(f,true);
 // fft.Backwards(f,true);
 // fft.Normalize(f);
 // 
 // If a transposed output is desired, call with fft.Forwards(f,false).
-class cfft2dMPI {
+class fft2dMPI {
  private:
   unsigned int mx, my;
   dimensions d;
@@ -224,7 +224,7 @@ class cfft2dMPI {
 
   }
   
- cfft2dMPI(const dimensions& d, Complex *f) : d(d) {
+ fft2dMPI(const dimensions& d, Complex *f) : d(d) {
     mx=d.nx;
     my=d.ny;
 
@@ -237,7 +237,7 @@ class cfft2dMPI {
     yBackwards=new mfft1d(d.ny,1,d.x,1,d.ny,f,f);
   }
   
-  virtual ~cfft2dMPI() {
+  virtual ~fft2dMPI() {
     if(!tranfftwpp) {
       fftw_destroy_plan(intranspose);
       fftw_destroy_plan(outtranspose);
@@ -258,13 +258,13 @@ class cfft2dMPI {
 // Example:
 // dimensions3 d(mx,my,my,mz,group);
 // Complex *f=ComplexAlign(d.n);
-// cfft3dMPI fft(d,f);
+// fft3dMPI fft(d,f);
 // fft.Forwards(f,dofinaltranspose);
 // fft.Backwards(f,dofinaltranspose);
 // fft.Normalize(f);
 //
 // TODO: allow for non-transposed output.
-class cfft3dMPI {
+class fft3dMPI {
  private:
   unsigned int mx, my, mz;
   dimensions3 d;
@@ -286,7 +286,7 @@ class cfft3dMPI {
     // FIXME: xz tranpose?
   }
   
- cfft3dMPI(const dimensions3& d, Complex *f) : d(d) {
+ fft3dMPI(const dimensions3& d, Complex *f) : d(d) {
     mx=d.nx;
     my=d.ny;
     mz=d.nz;
@@ -310,7 +310,7 @@ class cfft3dMPI {
     zBackwards=new mfft1d(d.nz,1,d.x*d.yz.x,1,d.nz);
   }
   
-  virtual ~cfft3dMPI() {}
+  virtual ~fft3dMPI() {}
 
   void Forwards(Complex *f, bool finaltranspose=true);
   void Backwards(Complex *f, bool finaltranspose=true);
@@ -357,11 +357,6 @@ class rcfft2dMPI {
     if(tranfftwpp) {
       T=new mpitranspose<Complex>(dc.nx,dc.y,dc.x,dc.ny,1,out,dc.communicator);
     } else {
-      /*
-      int rank;
-      MPI_Comm_rank(dc.communicator,&rank);
-      if(rank < size) 
-      */
       fftw_mpi_init();
       MPILoadWisdom(dc.communicator);
       intranspose=

@@ -46,7 +46,7 @@ LDFLAGS += -lfftw3_mpi -lfftw3_omp -lfftw3 -lm
 vpath %.cc ../
 
 FFTW=fftw++
-FILES=cconv2 conv2 cconv3 conv3 cfft2 cfft3 rcfft2 transpose
+FILES=cconv2 conv2 cconv3 conv3 fft2 fft3 rcfft2 transpose
 UTILS=$(FFTW) mpiutils
 MPITRANSPOSE=$(UTILS) mpitranspose
 MPIFFT=$(MPITRANSPOSE) mpifftw++
@@ -71,13 +71,13 @@ cconv3: cconv3.o $(MPICONVOLUTION:=.o)
 conv3: conv3.o $(MPICONVOLUTION:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
-cfft2: cfft2.o $(MPIFFT:=.o)
+fft2: fft2.o $(MPIFFT:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
 rcfft2: rcfft2.o $(MPIFFT:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
-cfft3: cfft3.o $(MPIFFT:=.o)
+fft3: fft3.o $(MPIFFT:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
 transpose: transpose.o $(MPITRANSPOSE:=.o)
