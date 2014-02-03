@@ -20,7 +20,7 @@ void MPISaveWisdom(const MPI_Comm& active)
     fftw::SaveWisdom();
 }
 
-void cfft2dMPI::Forwards(Complex *f,bool finaltranspose)
+void fft2dMPI::Forwards(Complex *f,bool finaltranspose)
 {
   xForwards->fft(f);
   if(tranfftwpp)
@@ -36,7 +36,7 @@ void cfft2dMPI::Forwards(Complex *f,bool finaltranspose)
   }
 }
 
-void cfft2dMPI::Backwards(Complex *f,bool finaltranspose)
+void fft2dMPI::Backwards(Complex *f,bool finaltranspose)
 {
   if(finaltranspose) {
     if(tranfftwpp)
@@ -52,19 +52,19 @@ void cfft2dMPI::Backwards(Complex *f,bool finaltranspose)
   xBackwards->fft(f);
 }
 
-void cfft2dMPI::Normalize(Complex *f)
+void fft2dMPI::Normalize(Complex *f)
 {
   double overN=1.0/(d.nx*d.ny);
   for(unsigned int i=0; i < d.n; ++i) f[i] *= overN;
 }
 
-void cfft2dMPI::BackwardsNormalized(Complex *f,bool finaltranspose)
+void fft2dMPI::BackwardsNormalized(Complex *f,bool finaltranspose)
 {
   Backwards(f,finaltranspose);
   Normalize(f);
 }
 
-void cfft3dMPI::Forwards(Complex *f,bool finaltranspose)
+void fft3dMPI::Forwards(Complex *f,bool finaltranspose)
 {
   xForwards->fft(f);
   Txy->transpose(f,false,true);
@@ -75,7 +75,7 @@ void cfft3dMPI::Forwards(Complex *f,bool finaltranspose)
   // FIXME: Tzx->transpose ?
 }
 
-void cfft3dMPI::Backwards(Complex *f,bool finaltranspose)
+void fft3dMPI::Backwards(Complex *f,bool finaltranspose)
 {
   // FIXME: Tzx->transpose ?
   zBackwards->fft(f);
@@ -86,7 +86,7 @@ void cfft3dMPI::Backwards(Complex *f,bool finaltranspose)
   xBackwards->fft(f);
 }
 
-void cfft3dMPI::Normalize(Complex *f)
+void fft3dMPI::Normalize(Complex *f)
 {
   double overN=1.0/(d.nx*d.ny*d.nz);
   for(unsigned int i=0; i < d.n; ++i) f[i] *= overN;
