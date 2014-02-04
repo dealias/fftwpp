@@ -1,6 +1,7 @@
 #include "mpifftw++.h"
 #include "utils.h"
 #include "mpiutils.h"
+#include <unistd.h>
 
 using namespace std;
 using namespace fftwpp;
@@ -14,14 +15,14 @@ unsigned int mz=4;
 
 inline void init(Complex *f, dimensions3 d) 
 {
-  for(unsigned int i=0; i < d.nx; ++i) {
-    unsigned int I=d.y*d.z*i;
-    for(unsigned int j=0; j < d.y; j++) {
-      unsigned int IJ=I+d.z*j;
+  unsigned int c=0;
+  for(unsigned int i=0; i < d.x; ++i) {
+    unsigned int ii=d.x0+i;
+    for(unsigned int j=0; j < d.yz.x; j++) {
       unsigned int jj=d.y0+j;
-      for(unsigned int k=0; k < d.z; k++) {
-	unsigned int kk=d.z0+k;
-	f[IJ+k]=Complex(10*kk+i,jj);
+      for(unsigned int k=0; k < d.nz; k++) {
+	unsigned int kk=k;
+	f[c++]=Complex(10*kk+ii,jj);
       }
     }
   }
@@ -83,7 +84,7 @@ int main(int argc, char* argv[])
     if(N < 10) N=10;
   }
   
-  MPIgroup group(MPI_COMM_WORLD,my,mz);
+  MPIgroup group(MPI_COMM_WORLD,mx,my,mz);
 
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED) {
     fftw::maxthreads=1;
@@ -118,13 +119,15 @@ int main(int argc, char* argv[])
     Complex *f=ComplexAlign(d.n);
 
     // Load wisdom
-    MPILoadWisdom(group.active);
+    //MPILoadWisdom(group.active);
 
     // Create instance of FFT
     fft3dMPI fft(d,f);
     
+    std::cout << "HERE" << std::endl;
     bool dofinaltranspose=false; // FIXME: this must always be false for now.
     
+    /*
     double *T=new double[N];
     for(unsigned int i=0; i < N; ++i) {
       init(f,d);
@@ -134,48 +137,41 @@ int main(int argc, char* argv[])
       fft.Normalize(f);
       T[i]=seconds();
     }
-    
     if(main) timings("FFT timing:",mx,T,N);
     delete [] T;
+    */
 
     if(mx*my*mz < outlimit) {
       MPI_Barrier(group.active);
       for(int i=0; i < group.size; ++i) {
-	MPI_Barrier(group.active);
-	if(i == group.rank) {
-	  cout << "process " << i << " dimensions:" << endl;
-	  d.show();
-	  cout << endl;
-	}
+      	MPI_Barrier(group.active);
+      	if(i == group.rank) {
+      	  cout << "process " << i << " dimensions:" << endl;
+      	  d.show();
+      	  cout << endl;
+      	}
+	usleep(500); // hack to get around dealing with cout and MPI
       }
       MPI_Barrier(group.active);
+
       init(f,d);
 
-      MPI_Barrier(group.active);
       if(main) cout << "\ninput:" << endl;
-      show(f,d.nx,d.y,d.z,group.active);
-      MPI_Barrier(group.active);
-      // Uncomment following line to see the order in memory
-      //show(f,1,d.nx*d.y*d.z,group.active); 
+      show(f,d.x,d.yz.x,d.nz,group.active);
+      //show(f,1,d.nx*d.y*d.z,group.active); // order in memory:
 
-      
       fft.Forwards(f,dofinaltranspose);
       
-      MPI_Barrier(group.active);
       if(main) cout << "\noutput:" << endl;
-      show(f,d.x,d.yz.x,d.nz,group.active);
-      MPI_Barrier(group.active);
-      // Uncomment following line to see the order in memory
-      //show(f,1,d.x*d.yz.x*d.nz,group.active);
+      show(f,d.nx,d.y,d.z,group.active);
+      //show(f,1,d.x*d.yz.x*d.nz,group.active); // order in memory:
 
       fft.Backwards(f,dofinaltranspose);
       fft.Normalize(f);
 
       if(main) cout << "\nback to input:" << endl;
-      show(f,d.nx,d.y,d.z,group.active);
-      MPI_Barrier(group.active);
-      // Uncomment following line to see the order in memory
-      show(f,1,d.nx*d.y*d.z,group.active);
+      show(f,d.x,d.yz.x,d.nz,group.active);
+      //show(f,1,d.nx*d.y*d.z,group.active); // order in memory:
     }
 
     deleteAlign(f);

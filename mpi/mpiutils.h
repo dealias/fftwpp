@@ -6,7 +6,7 @@ namespace fftwpp {
 // output the contents of a 2D array
 template<class ftype>
 void show(ftype *f, unsigned int nx, unsigned int ny,
-          const MPI_Comm& communicator=MPI_COMM_WORLD)
+          const MPI_Comm& communicator)
 { 
   MPI_Status stat;
   int size,rank;
@@ -57,7 +57,7 @@ void show(ftype *f, unsigned int nx, unsigned int ny,
 // output the contents of a 3D complex array
 template<class ftype>
 void show(ftype *f, unsigned int nx, unsigned int ny, unsigned int nz,
-          const MPI_Comm& communicator=MPI_COMM_WORLD)
+          const MPI_Comm& communicator)
 {
   MPI_Status stat;
   int size,rank;
@@ -113,11 +113,11 @@ void show(ftype *f, unsigned int nx, unsigned int ny, unsigned int nz,
 
 // hash-check for 2D arrays
 int hash(Complex *f, unsigned int nx, unsigned int ny,
-         const MPI_Comm& communicator=MPI_COMM_WORLD);
+         const MPI_Comm& communicator);
 
 // return a hash of the contents of a 3D complex array
 int hash(Complex *f, unsigned int nx, unsigned int ny, unsigned int nz,
-         MPI_Comm communicator=MPI_COMM_WORLD);
+         MPI_Comm communicator);
 
 } // namespace fftwpp
 

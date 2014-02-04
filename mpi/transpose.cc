@@ -172,7 +172,7 @@ int main(int argc, char **argv)
 
   bool showoutput=X*Y < showlimit && N == 1;
   if(showoutput)
-    show(data,X,y*Z);
+    show(data,X,y*Z,MPI_COMM_WORLD);
   
   fftw::statistics Sininit,Sinwait0,Sinwait1,Sin,Soutinit,Soutwait0,Soutwait1,Sout;
 
@@ -209,7 +209,7 @@ int main(int argc, char **argv)
 
     if(showoutput) {
       if(rank == 0) cout << "\ntranspose:\n" << endl;
-      show(data,x,Y*Z);
+      show(data,x,Y*Z,MPI_COMM_WORLD);
     }
     
     if(rank == 0) begin=totalseconds();
@@ -245,10 +245,10 @@ int main(int argc, char **argv)
   if(showoutput) {
     if(outtranspose) {
       if(rank == 0) cout << "\nout:\n" << endl;
-      show(data,y,X*Z);
+      show(data,y,X*Z,MPI_COMM_WORLD);
     } else {
       if(rank == 0) cout << "\noriginal:\n" << endl;
-      show(data,X,y*Z);
+      show(data,X,y*Z,MPI_COMM_WORLD);
     }
   }
 
