@@ -54,6 +54,7 @@ void fft2dMPI::Backwards(Complex *f,bool finaltranspose)
 
 void fft2dMPI::Normalize(Complex *f)
 {
+  // TODO: multithread
   double overN=1.0/(d.nx*d.ny);
   for(unsigned int i=0; i < d.n; ++i) f[i] *= overN;
 }
@@ -66,30 +67,41 @@ void fft2dMPI::BackwardsNormalized(Complex *f,bool finaltranspose)
 
 void fft3dMPI::Forwards(Complex *f,bool finaltranspose)
 {
-  xForwards->fft(f);
-  Txy->transpose(f,false,true);
-  // TODO: multithread?
-  for(unsigned int i=0; i < d.x; i++) yForwards->fft(f+i*d.ny*d.z);
-  Tyz->transpose(f,false,true);
   zForwards->fft(f);
-  // FIXME: Tzx->transpose ?
+
+  Txy->transpose(f,true,false);
+
+  unsigned int metastride=d.z*d.ny;
+  for(unsigned int i=0; i < d.x; ++i) yForwards->fft(f+i*metastride);
+
+  Tyz->transpose(f,true,false);
+
+  xForwards->fft(f);
+
+  // if(finaltranspose) Txz->transpose(f,false,true);
 }
 
 void fft3dMPI::Backwards(Complex *f,bool finaltranspose)
 {
-  // FIXME: Tzx->transpose ?
-  zBackwards->fft(f);
-  Tyz->transpose(f,true,false);
-  // TODO: multithread?
-  for(unsigned int i=0; i < d.x; i++) yBackwards->fft(f+i*d.ny*d.z);
-  Txy->transpose(f,true,false);
+  // if(finaltranspose) T??->transpose(f,false,true);
+
   xBackwards->fft(f);
+
+  Tyz->transpose(f,true,false);
+
+  unsigned int metastride=d.z*d.ny;
+  for(unsigned int i=0; i < d.x; ++i)  yBackwards->fft(f+i*metastride);
+
+  Txy->transpose(f,true,false);
+
+  zBackwards->fft(f);
 }
 
 void fft3dMPI::Normalize(Complex *f)
 {
   double overN=1.0/(d.nx*d.ny*d.nz);
-  for(unsigned int i=0; i < d.n; ++i) f[i] *= overN;
+  for(unsigned int i=0; i < d.n; ++i) 
+    f[i] *= overN;
 }
 
 void rcfft2dMPI::Forwards(double *f, Complex *g, bool finaltranspose)
@@ -128,13 +140,15 @@ void rcfft2dMPI::Backwards0(Complex *g, double *f, bool finaltranspose)
   Shift(f);
 }
 
-void rcfft2dMPI::BackwardsNormalized(Complex *g, double *f, bool finaltranspose)
+void rcfft2dMPI::BackwardsNormalized(Complex *g, double *f, 
+				     bool finaltranspose)
 {
   Backwards(g,f,finaltranspose);
   Normalize(f);
 }
 
-void rcfft2dMPI::Backwards0Normalized(Complex *g, double *f, bool finaltranspose)
+void rcfft2dMPI::Backwards0Normalized(Complex *g, double *f, 
+				      bool finaltranspose)
 {
   Backwards0(g,f,finaltranspose);
   Normalize(f);
@@ -151,7 +165,7 @@ void rcfft2dMPI::Normalize(double *f)
 }
 void rcfft2dMPI::Shift(double *f)
 {
-  // shift Fourier origin:
+  // Shift Fourier origin:
   for(unsigned int i=0; i < dr.x; i += 2)  {
     double *fi=&f[i*rdist];
     for(unsigned int j=0; j < dr.ny; j += 1)
@@ -159,4 +173,4 @@ void rcfft2dMPI::Shift(double *f)
   }
 }
 
-} // end namespace fftwpp
+} // End of namespace fftwpp

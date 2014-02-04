@@ -25,6 +25,7 @@ public:
   unsigned int yblock,zblock;
   MPI_Comm active;                     // active communicator 
   MPI_Comm communicator,communicator2; // 3D transpose communicators
+  MPI_Comm communicator3;
   
   void init(const MPI_Comm& comm) {
     MPI_Comm_rank(comm,&rank);
@@ -36,14 +37,19 @@ public:
     fftw::mpi=true;
   }
   
-  void matrix() {
+  void matrix(unsigned int mx, unsigned int my, unsigned int mz) {
     int major=ceilquotient(size,my);
     int p=rank % major;
     int q=rank / major;
   
     /* Split nodes into row and columns */ 
-    MPI_Comm_split(active,p,q,&communicator); 
-    MPI_Comm_split(active,q,p,&communicator2);
+    MPI_Comm_split(active,p,q,&communicator); // xy
+    MPI_Comm_split(active,q,p,&communicator2); // yz
+
+    major=ceilquotient(size,mz);
+    p=rank % major;
+    q=rank / major;
+    MPI_Comm_split(active,p,q,&communicator3); // xz
   }
   
   MPIgroup(const MPI_Comm& comm, unsigned int my) : my(my) {
@@ -53,7 +59,8 @@ public:
     activate(comm);
   }
   
-  MPIgroup(const MPI_Comm& comm, unsigned int my, unsigned int mz, 
+  MPIgroup(const MPI_Comm& comm, 
+	   unsigned int mx, unsigned int my, unsigned int mz, 
 	   bool allowPencil=true) : my(my) {
     init(comm);
     yblock=ceilquotient(my,size);
@@ -61,7 +68,7 @@ public:
     size=ceilquotient(my,yblock)*ceilquotient(mz,zblock);
     activate(comm);
     if(rank < size)
-      matrix();
+      matrix(mx,my,mz);
   }
 };
 
@@ -132,6 +139,7 @@ public:
   unsigned int z0;
   dimensions xy;
   dimensions yz;
+  dimensions xz;
   MPI_Comm communicator;
   unsigned int yblock,zblock; // requested block size
   MPI_Comm *XYplane;          // Used by HermitianSymmetrizeXYMPI
@@ -145,13 +153,14 @@ public:
                                        zblock(group.zblock), XYplane(NULL) {
     xy=dimensions(nx,ny,group.communicator,yblock,zblock);
     yz=dimensions(Ny,nz,group.communicator2,zblock);
+    xz=dimensions(nx,nz,group.communicator3,yblock);
     n=xy.n=std::max(xy.n,(xy.x+1)*yz.n);
     n2=yz.n;
     x=xy.x;
     y=xy.y;
     z=yz.y;
-    x0=0;
-    y0=xy.y0;
+    x0=xz.x0;
+    y0=yz.x0;
     z0=yz.y0;
   }
 
@@ -159,7 +168,7 @@ public:
     std::cout << "nx=" << nx << "\tny="<<ny << "\tnz="<<nz << std::endl;
     std::cout << "x=" << x << "\ty="<<y << "\tz="<<z << std::endl;
     std::cout << "x0=" << x0 << "\ty0="<< y0 << "\tz0="<<z0 << std::endl;
-    std::cout << "yz.x=" << yz.x << std::endl;
+    std::cout << "yz.x=" << yz.x << "\txz.x=" << xz.x << std::endl;
     std::cout << "n=" << n << std::endl;
     std::cout << "yblock=" << yblock << "\tzblock=" << zblock << std::endl;
   }
@@ -276,14 +285,12 @@ class fft3dMPI {
   mfft1d *zBackwards;
   Complex *f;
  protected:
-  mpitranspose<Complex> *Txy, *Tyz;
+  mpitranspose<Complex> *Txy, *Tyz, *Txz;
  public:
   void inittranspose(Complex* f) {
-    int size;
-    MPI_Comm_size(d.communicator,&size);
-    Txy=new mpitranspose<Complex>(d.nx,d.y,d.x,d.ny,d.z,f,d.xy.communicator);
-    Tyz=new mpitranspose<Complex>(d.ny,d.z,d.yz.x,d.nz,d.x,f,d.yz.communicator);
-    // FIXME: xz tranpose?
+    Txy=new mpitranspose<Complex>(d.ny,d.z,d.yz.x,d.nz,d.x,f,d.yz.communicator);
+    Tyz=new mpitranspose<Complex>(d.nx,d.y,d.x,d.ny,d.z,f,d.xy.communicator);
+    //Txz=new mpitranspose<Complex>(d.nx,d.z,d.xz.x,d.nz,d.y,f,d.xz.communicator);
   }
   
  fft3dMPI(const dimensions3& d, Complex *f) : d(d) {
@@ -292,22 +299,30 @@ class fft3dMPI {
     mz=d.nz;
     inittranspose(f);
  
+
     xForwards=new mfft1d(d.nx,-1,
 			 d.y*d.z, // M=howmany
 			 d.y*d.z, // stride
 			 1); // dist
     xBackwards=new mfft1d(d.nx,1,d.y*d.z,d.y*d.z,1);
+
     yForwards=new mfft1d(d.ny,-1,
 			 d.z, // M=howmany
 			 d.z, // stride
 			 1); // dist
-    yBackwards=new mfft1d(d.ny,1,d.z,d.z,1);
+    yBackwards=new mfft1d(d.ny,1,
+			  d.z,
+			  d.z,
+			  1);
 
     zForwards=new mfft1d(d.nz,-1,
 			 d.x*d.yz.x, // M=howmany
 			 1, // stride
 			 d.nz); // dist
-    zBackwards=new mfft1d(d.nz,1,d.x*d.yz.x,1,d.nz);
+    zBackwards=new mfft1d(d.nz,1,
+			  d.x*d.yz.x,
+			  1,
+			  d.nz);
   }
   
   virtual ~fft3dMPI() {}
