@@ -718,7 +718,7 @@ struct keytype1 {
   unsigned int threads;
   bool inplace;
   keytype1(unsigned int nx, unsigned int threads, bool inplace) : 
-    nx(nx), inplace(inplace) {}
+    nx(nx), threads(threads), inplace(inplace) {}
 };
   
 struct keyless1 {
@@ -734,16 +734,18 @@ struct keytype2 {
   unsigned int ny;
   unsigned int threads;
   bool inplace;
-  keytype2(unsigned int nx, unsigned int ny, unsigned int threads, bool inplace) : 
+  keytype2(unsigned int nx, unsigned int ny, unsigned int threads,
+           bool inplace) : 
     nx(nx), ny(ny), threads(threads), inplace(inplace) {}
 };
   
 struct keyless2 {
   bool operator()(const keytype2& a, const keytype2& b) const {
-    return a.nx < b.nx || (a.nx == b.nx && 
+    return a.nx < b.nx || (a.nx == b.nx &&
                            (a.ny < b.ny || (a.ny == b.ny &&
-                           (a.threads < b.threads || (a.threads == b.threads &&
-                                                      a.inplace < b.inplace)))));
+                                            (a.threads < b.threads ||
+                                             (a.threads == b.threads &&
+                                              a.inplace < b.inplace)))));
   }
 };
 
@@ -762,9 +764,11 @@ struct keyless3 {
   bool operator()(const keytype3& a, const keytype3& b) const {
     return a.nx < b.nx || (a.nx == b.nx && 
                            (a.ny < b.ny || (a.ny == b.ny &&
-                           (a.nz < b.nz || (a.nz == b.nz &&
-                           (a.threads < b.threads || (a.threads == b.threads &&
-                                                      a.inplace < b.inplace)))))));
+                                            (a.nz < b.nz ||
+                                             (a.nz == b.nz &&
+                                              (a.threads < b.threads ||
+                                               (a.threads == b.threads &&
+                                                a.inplace < b.inplace)))))));
   }
 };
 
