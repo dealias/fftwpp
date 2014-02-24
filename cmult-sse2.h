@@ -72,21 +72,25 @@ static inline void operator *=(Vec& a, const Vec& b)
 }
 #endif
 
+// Return (z.x,w.x)
 static inline Vec UNPACKL(const Vec& z, const Vec& w)
 {
   return _mm_unpacklo_pd(z,w);
 }
 
+// Return (z.y,w.y)
 static inline Vec UNPACKH(const Vec& z, const Vec& w)
 {
   return _mm_unpackhi_pd(z,w);
 }
 
+// Return (z.y,z.x)
 static inline Vec FLIP(const Vec& z)
 {
   return _mm_shuffle_pd(z,z,1);
 }
 
+// Return (z.x,-z.y)
 static inline Vec CONJ(const Vec& z)
 {
   return _mm_xor_pd(sse2_pm.v,z);
