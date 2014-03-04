@@ -18,7 +18,7 @@ unsigned int ny=0;
 unsigned int nz=0;
 unsigned int mx=4;
 unsigned int my=4;
-unsigned int mz=4;
+unsigned int mz=5;
 unsigned int nxp;
 unsigned int nyp;
 unsigned int nzp;
@@ -118,6 +118,8 @@ int main(int argc, char* argv[])
     }
   }
 
+  unsigned int A=2*M; // Number of independent inputs
+  
   nx=padding(mx);
   ny=padding(my);
   nz=padding(mz);
@@ -144,20 +146,28 @@ int main(int argc, char* argv[])
   double *T=new double[N];
 
   if(Implicit) {
-    ImplicitHConvolution3 C(mx,my,mz,M);
-    cout << "Using " << C.Threads() << " threads."<< endl;
-    Complex **F=new Complex *[M];
-    Complex **G=new Complex *[M];
+    ImplicitHConvolution3 C(mx,my,mz,A);
+    cout << "threads=" << C.Threads() << endl << endl;
+    
+    realmultiplier *mult;
+    switch(M) {
+      case 1: mult=multbinary; break;
+      case 2: mult=multbinary2; break;
+        
+      default: cerr << "M=" << M << " is not yet implemented" << endl; exit(1);
+    }
+
+    Complex **F=new Complex *[A];
     unsigned int mf=nxp*nyp*nzp;
     for(unsigned int s=0; s < M; ++s) {
       unsigned int smf=s*mf;
-      F[s]=f+smf;
-      G[s]=g+smf;
+      F[2*s]=f+smf;
+      F[2*s+1]=g+smf;
     }
     for(unsigned int i=0; i < N; ++i) {
       init(f,g,M);
       seconds();
-      C.convolve(F,G);
+      C.convolve(F,mult);
 //      C.convolve(f,g);
       T[i]=seconds();
     }
@@ -182,7 +192,6 @@ int main(int argc, char* argv[])
       }
     } else cout << f[0][0][0] << endl;
     
-    delete [] G;
     delete [] F;
   }
   
