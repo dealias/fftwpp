@@ -8,7 +8,7 @@ CXXFLAGS=-Ofast -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
 #CXXFLAGS+= -fprofile-generate 
 #CXXFLAGS+= -fprofile-use -fprofile-dir=.
 #For valgrind:
-#CXXFLAGS=-fopenmp -g -Wall -ansi -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse
+CXXFLAGS=-fopenmp -g -Wall -ansi -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse
 endif
 
 #Intel compiler

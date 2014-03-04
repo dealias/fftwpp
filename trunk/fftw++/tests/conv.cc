@@ -10,7 +10,7 @@ using namespace fftwpp;
 // Number of iterations.
 unsigned int N0=10000000;
 unsigned int N=0;
-unsigned int m=12;
+unsigned int m=11;
 unsigned int M=1;
   
 const Complex I(0.0,1.0);
@@ -41,6 +41,16 @@ inline void init(Complex *f, Complex *g, unsigned int M=1)
       for(unsigned int k=1; k < m; k++) gi[k]=gfactor*Complex(k,2*k+1);
     }
   }
+}
+
+unsigned int padding(unsigned int m)
+{
+  unsigned int n=3*m-2;
+  cout << "min padded buffer=" << n << endl;
+  unsigned int log2n;
+  // Choose next power of 2 for maximal efficiency.
+  for(log2n=0; n > ((unsigned int) 1 << log2n); log2n++);
+  return 1 << log2n;
 }
 
 int main(int argc, char* argv[])
@@ -98,12 +108,9 @@ int main(int argc, char* argv[])
     }
   }
 
-  unsigned int n=3*m-2;
-  cout << "min padded buffer=" << n << endl;
-  unsigned int log2n;
-  // Choose next power of 2 for maximal efficiency.
-  for(log2n=0; n > ((unsigned int) 1 << log2n); log2n++);
-  n=1 << log2n;
+  unsigned int A=2*M; // Number of independent inputs
+  unsigned int n=padding(m);
+  
   cout << "n=" << n << endl;
   cout << "m=" << m << endl;
   
@@ -125,19 +132,28 @@ int main(int argc, char* argv[])
   double* T=new double[N];
 
   if(Implicit) {
-    ImplicitHConvolution C(m,M);
-    cout << "Using " << C.Threads() << " threads."<< endl;
-    Complex **F=new Complex *[M];
-    Complex **G=new Complex *[M];
+    ImplicitHConvolution C(m,A);
+    cout << "threads=" << C.Threads() << endl << endl;
+    
+    realmultiplier *mult;
+    switch(M) {
+      case 1: mult=multbinary; break;
+      case 2: mult=multbinary2; break;
+        
+      default: cerr << "M=" << M << " is not yet implemented" << endl; exit(1);
+    }
+    
+    Complex **F=new Complex *[A];
     for(unsigned int s=0; s < M; ++s) {
       unsigned int sm=s*m;
-      F[s]=f+sm;
-      G[s]=g+sm;
+      F[2*s]=f+sm;
+      F[2*s+1]=g+sm;
     }
+
     for(unsigned int i=0; i < N; ++i) {
       init(f,g,M);
       seconds();
-      C.convolve(F,G);
+      C.convolve(F,mult);
 //      C.convolve(f,g);
       T[i]=seconds();
     }
@@ -150,7 +166,6 @@ int main(int argc, char* argv[])
     if(Test || Direct)
       for(unsigned int i=0; i < m; i++) h0[i]=f[i];
     
-    delete [] G;
     delete [] F;
   }
   

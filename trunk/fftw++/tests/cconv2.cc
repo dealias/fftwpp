@@ -153,12 +153,12 @@ int main(int argc, char* argv[])
   if(Implicit) {
     multiplier *mult;
   
-    switch(A) {
-      case 2: mult=multbinary; break;
-      case 4: mult=multbinarydot; break;
-      case 6: mult=multbinarydot6; break;
-      case 8: mult=multbinarydot8; break;
-      case 16: mult=multbinarydot16; break;
+    switch(M) {
+      case 1: mult=multbinary; break;
+      case 2: mult=multbinary2; break;
+      case 3: mult=multbinary3; break;
+      case 4: mult=multbinary4; break;
+      case 8: mult=multbinary8; break;
       default: cout << "M=" << M << " is not yet implemented" << endl; exit(1);
     }
 
