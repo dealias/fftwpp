@@ -266,8 +266,9 @@ void ImplicitHConvolution::convolve(Complex **F,
   unsigned int C=max(A,B);
   Complex *P0[C];
   Complex *P1[C];
-  double T[A];
+  Complex f1c[C];
   Complex S[A];
+  double T[A];
   
   // TODO: 9M-2 of 9M FFTs can be done out-of-place 
     
@@ -287,9 +288,6 @@ void ImplicitHConvolution::convolve(Complex **F,
       ui[0]=f->re;
     });
             
-  Complex f1c[A];
-  double fc[A],uc[A];
-
   Complex zeta3(-0.5,0.5*sqrt(3.0));
   Vec zeta1;
   
@@ -313,9 +311,7 @@ void ImplicitHConvolution::convolve(Complex **F,
         STORE(f1c+i,CONJ(A+B));
         
         double a=fi[c].re;
-        double b=sqrt3*fi[c].im;
-        fc[i]=2.0*a;
-        uc[i]=a+b;
+        S[i]=Complex(2.0*a,a+sqrt3*fi[c].im);
       });
   }
   
@@ -373,8 +369,8 @@ void ImplicitHConvolution::convolve(Complex **F,
     PARALLEL(for(unsigned int i=0; i < A; ++i) {
         Complex *fi=P0[i];
         Complex *ui=U[i];
-        fi[c]=fc[i];
-        ui[c]=uc[i];
+        fi[c]=S[i].re;
+        ui[c]=S[i].im;
       });
   }
   
@@ -419,12 +415,14 @@ void ImplicitHConvolution::convolve(Complex **F,
       rc->fft(f2);
       rc->fft(f1);
       double R=f1[0].re;
-      f1[0]=S[i];
-      if(even) {
-        Complex tmp=f1c[i];
-        f1c[i]=f1[1];
-        f1[1]=tmp;
-      }
+      if(i < A) {
+        f1[0]=S[i];
+        if(even) {
+          Complex tmp=f1c[i];
+          f1c[i]=f1[1];
+          f1[1]=tmp;
+        }
+      } else f1c[i]=f1[1];
       rc->fft(f0);
       f0[0]=(f0[0].re+R+f2[0].re)*ninv;
     });
