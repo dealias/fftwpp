@@ -251,13 +251,6 @@ public:
     Complex* U0=U[0];
 //    Complex* U1=A == 1 ? ComplexAlign(m) : U[1];
     
-    if(m != 2*c+1) {
-      std::cerr << 
-        "Implicit Hermitian convolutions are only implemented for odd m" 
-                << std::endl;
-      exit(1);
-    }
-    
     rc=new rcfft1d(m,U0);
     cr=new crfft1d(m,U0);
 
@@ -270,8 +263,8 @@ public:
     s=BuildZeta(3*m,c+2,ZetaH,ZetaL,threads);
   }
   
-  // m=2c+1 is the number of independent data values
-  // U is an array of max(A,B) distinct work arrays each of size c+1.
+  // m is the number of independent data values
+  // U is an array of max(A,B) distinct work arrays of size c+1, where c=m/2
   // A is the number of inputs.
   // B is the number of outputs.
   ImplicitHConvolution(unsigned int m, Complex **U, unsigned int A=2,
@@ -281,8 +274,8 @@ public:
     init();
   }
 
-  // m=2c+1 is the number of independent data values
-  // u is a work array of max(A,B)*(c+1) Complex values
+  // m is the number of independent data values
+  // u is a work array of max(A,B)*(c+1) Complex values, where c=m/2
   // A is the number of inputs.
   // B is the number of outputs.
   ImplicitHConvolution(unsigned int m, Complex *u, unsigned int A=2,
@@ -292,8 +285,8 @@ public:
     init();
   }
 
-  // m=2c+1 is the number of independent data values
-  // u is a work array of max(A,B)*(c+1) Complex values
+  // m is the number of independent data values
+  // u is a work array of max(A,B)*(c+1) Complex values, where c=m/2
   // A is the number of inputs.
   // B is the number of outputs.
   ImplicitHConvolution(unsigned int m, unsigned int A=2,

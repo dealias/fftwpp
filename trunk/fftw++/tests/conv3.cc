@@ -18,7 +18,7 @@ unsigned int ny=0;
 unsigned int nz=0;
 unsigned int mx=4;
 unsigned int my=4;
-unsigned int mz=5;
+unsigned int mz=4;
 unsigned int nxp;
 unsigned int nyp;
 unsigned int nzp;

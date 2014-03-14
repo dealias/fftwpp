@@ -16,7 +16,7 @@ unsigned int N=0;
 unsigned int nx=0;
 unsigned int ny=0;
 unsigned int mx=4;
-unsigned int my=5;
+unsigned int my=4;
 unsigned int nxp;
 unsigned int nyp;
 unsigned int M=1;
