@@ -23,18 +23,18 @@ int main()
   
   for(unsigned int i=0; i < n; i++) f[i]=i;
 	
-  cout << "\ninput:" << endl;
-  for(unsigned int i=0; i < n; i++) cout << f[i] << endl;
+  cout << "\ninput ("<<n<<" doubles):" << endl;
+  for(unsigned int i=0; i < n; i++) cout << f[i] << (i!=n-1 ? " " : "\n");
 
   Forward.fft(f,g);
   
-  cout << "\noutput:" << endl;
-  for(unsigned int i=0; i < np; i++) cout << g[i] << endl;
+  cout << "\noutput ("<<np<<" complex):" << endl;
+  for(unsigned int i=0; i < np; i++) cout << g[i] <<  (i!=np-1 ? " " : "\n");
   
   Backward.fftNormalized(g,f);
-	
+  
   cout << "\ntransformed back:" << endl;
-  for(unsigned int i=0; i < n; i++) cout << f[i] << endl;
+  for(unsigned int i=0; i < n; i++) cout << f[i] <<  (i!=n-1 ? " " : "\n");
   
   deleteAlign(g);
   deleteAlign(f);
