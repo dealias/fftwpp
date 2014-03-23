@@ -500,24 +500,25 @@ void ImplicitHConvolution::convolve(Complex **F,
     if(d == 1 && even) {
       PARALLEL(for(unsigned int i=0; i < B; ++i) {
           Complex *f0=P0[i];
-          Complex *p=f0+d;
-          Vec F0=LOAD(p)*Ninv;
+          Complex *fa=f0+d;
+          Vec F0=LOAD(fa)*Ninv;
           Vec F1=ZMULTC(Zetak,LOAD(f1c+i));
           Vec F2=ZMULT(Zetak,LOAD(U[i]+d));
           Vec S=F1+F2;
-          STORE(p,F0+S);
+          STORE(fa,F0+S);
           STORE(f0+m-d,CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2));
         });
     } else {
       PARALLEL(for(unsigned int i=0; i < B; ++i) {
           Complex *f0=P0[i];
-          Complex *p=f0+d;
-          Vec F0=LOAD(p)*Ninv;
-          Vec F1=ZMULTC(Zetak,LOAD(f0+m-d));
+          Complex *fa=f0+d;
+          Complex *fb=f0+m-d;
+          Vec F0=LOAD(fa)*Ninv;
+          Vec F1=ZMULTC(Zetak,LOAD(fb));
           Vec F2=ZMULT(Zetak,LOAD(U[i]+d));
           Vec S=F1+F2;
-          STORE(p,F0+S);
-          STORE(f0+m-d,CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2));
+          STORE(fa,F0+S);
+          STORE(fb,CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2));
         });
     }
   }
