@@ -160,7 +160,8 @@ public:
     y=xy.y;
     z=yz.y;
     x0=xz.x0;
-    y0=yz.x0;
+//    y0=yz.x0;
+    y0=xy.y0;
     z0=yz.y0;
   }
 
