@@ -42,8 +42,8 @@ void DirectHConvolution2::convolve(Complex *h, Complex *f, Complex *g,
   unsigned int xorigin=mx-1;
     
   if(symmetrize) {
-    HermitianSymmetrizeX(mx,my,f);
-    HermitianSymmetrizeX(mx,my,g);
+    HermitianSymmetrizeX(mx,my,mx-1,f);
+    HermitianSymmetrizeX(mx,my,mx-1,g);
   }
     
   int xstart=-(int)xorigin;
@@ -96,8 +96,8 @@ void DirectHConvolution3::convolve(Complex *h, Complex *f, Complex *g,
   unsigned int ny=2*my-1;
   
   if(symmetrize) {
-    HermitianSymmetrizeXY(mx,my,mz,f);
-    HermitianSymmetrizeXY(mx,my,mz,g);
+    HermitianSymmetrizeXY(mx,my,mz,mx-1,my-1,f);
+    HermitianSymmetrizeXY(mx,my,mz,mx-1,my-1,g);
   }
     
   int xstart=-(int) xorigin;
@@ -161,9 +161,9 @@ void DirectHTConvolution2::convolve(Complex *h, Complex *e, Complex *f,
                                     Complex *g, bool symmetrize)
 {
   if(symmetrize) {
-    HermitianSymmetrizeX(mx,my,e);
-    HermitianSymmetrizeX(mx,my,f);
-    HermitianSymmetrizeX(mx,my,g);
+    HermitianSymmetrizeX(mx,my,mx-1,e);
+    HermitianSymmetrizeX(mx,my,mx-1,f);
+    HermitianSymmetrizeX(mx,my,mx-1,g);
   }
     
   unsigned int xorigin=mx-1;

@@ -1321,7 +1321,7 @@ public:
 // nx*(ny/2+1) Complex values corresponding to the spectral values in the
 // half-plane ky >= 0, using phase sign +1.
 // Before calling fft(), the array in must be allocated as
-// Complex[nx*(ny+1)/2] and the array out must be allocated as
+// Complex[nx*(ny/2+1)] and the array out must be allocated as
 // double[nx*ny]. The arrays in and out may coincide,
 // allocated as Complex[nx*(ny/2+1)]. 
 //

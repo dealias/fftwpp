@@ -382,10 +382,11 @@ public:
 };
   
 // Compute the scrambled implicitly m-padded complex Fourier transform of M
-// complex vectors, each of length 2m-1 with the origin at index m-1
-// (i.e. physical wavenumber k=-m+1 to k=m-1).
+// complex vectors, each of length 2m with the origin at index m.
+// The first component of each vector is ignored; subsequent components
+// store the physical data for wavenumbers -m+1 to m-1).
 // The arrays in and out (which may coincide) must be allocated as
-// Complex[M*(2m-1)]. The array u must be allocated as Complex[M*(m+1)].
+// Complex[M*2m]. The array u must be allocated as Complex[M*m].
 //
 //   fft0pad fft(m,M,stride,u);
 //   fft.backwards(in,u);
@@ -402,13 +403,15 @@ class fft0pad {
   mfft1d *Backwards;
   mfft1d *Forwards;
   Complex *ZetaH, *ZetaL;
+  unsigned int threads;
 public:  
   fft0pad(unsigned int m, unsigned int M, unsigned int stride, Complex *u=NULL)
     : m(m), M(M), stride(stride) {
     Backwards=new mfft1d(m,1,M,stride,1,u);
     Forwards=new mfft1d(m,-1,M,stride,1,u);
     
-    s=BuildZeta(3*m,m,ZetaH,ZetaL);
+    threads=Forwards->Threads();
+    s=BuildZeta(3*m,m,ZetaH,ZetaL,threads);
   }
   
   ~fft0pad() {
@@ -586,22 +589,16 @@ inline void HermitianSymmetrizeX(unsigned int mx, unsigned int my,
     f[offset-i]=conj(f[offset+i]);
 }
 
-// Enforce 2D Hermiticity using specified (x >= 0,y=0) data.
-inline void HermitianSymmetrizeX(unsigned int mx, unsigned int my,
-                                 Complex *f)
-{
-  return HermitianSymmetrizeX(mx,my,mx-1,f);
-}
-                                 
 // Enforce 3D Hermiticity using specified (x,y > 0,z=0) and (x >= 0,y=0,z=0)
 // data.
 inline void HermitianSymmetrizeXY(unsigned int mx, unsigned int my,
-                                  unsigned int mz, Complex *f)
+                                  unsigned int mz, unsigned int xorigin,
+                                  unsigned int yorigin, Complex *f)
 {
-  int stride=(2*my-1)*mz;
+  int stride=(yorigin+my)*mz;
   int mxstride=mx*stride;
   unsigned int myz=my*mz;
-  unsigned int origin=(mx-1)*stride+myz-mz;
+  unsigned int origin=xorigin*stride+yorigin*mz;
   
   f[origin].im=0.0;
 
@@ -657,7 +654,7 @@ public:
     if(nx == 0) nx=mx;
     if(ny == 0) {
       ny=my;
-      stride=(mx+1)*my;
+      stride=mx*my;
     }
   }
   
@@ -720,8 +717,8 @@ public:
       yconvolve[t]=new ImplicitHConvolution(my,u1+t*(my/2+1)*A,A,B,innerthreads);
   }
     
-  // u1 is a temporary array of size (my/2+1)*M*threads.
-  // u2 is a temporary array of size (mx+1)*my*M;
+  // u1 is a temporary array of size (my/2+1)*A*threads.
+  // u2 is a temporary array of size mx*my*A;
   // A is the number of inputs.
   // B is the number of outputs.
   // threads is the number of threads to use in the outer subconvolution loop.
@@ -756,22 +753,23 @@ public:
     for(unsigned int a=0; a < A; ++a) {
       Complex *f=F[a]+offset;
       if(symmetrize)
-        HermitianSymmetrizeX(mx,ny,f);
+        HermitianSymmetrizeX(mx,ny,mx,f);
       xfftpad->backwards(f,U2[a]);
     }
   }
 
   void subconvolution(Complex **F, realmultiplier *pmult,
                       unsigned int start, unsigned int stop) {
+    unsigned int stride=my;
     if(threads > 1) {
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif    
-      for(unsigned int i=start; i < stop; i += my)
+      for(unsigned int i=start; i < stop; i += stride)
         yconvolve[get_thread_num()]->convolve(F,pmult,i);
     } else {
       ImplicitHConvolution *yconvolve0=yconvolve[0];
-      for(unsigned int i=start; i < stop; i += my)
+      for(unsigned int i=start; i < stop; i += stride)
         yconvolve0->convolve(F,pmult,i);
     }
   }  
@@ -782,12 +780,13 @@ public:
   }
   
   // F is a pointer to A distinct data blocks each of size 
-  // (2mx-1)*my, shifted by offset (contents not preserved).
+  // 2mx*my, shifted by offset (contents not preserved).
   virtual void convolve(Complex **F, realmultiplier *pmult,
                         bool symmetrize=true, unsigned int offset=0) {
+    unsigned int mxmy=mx*my;
     backwards(F,U2,my,symmetrize,offset);
-    subconvolution(F,pmult,offset,(2*mx-1)*my+offset);
-    subconvolution(U2,pmult,0,(mx+1)*my);
+    subconvolution(F,pmult,offset,2*mxmy+offset);
+    subconvolution(U2,pmult,0,mxmy);
     forwards(F,U2,offset);
   }
   
@@ -1018,16 +1017,16 @@ public:
   void set(unsigned int& ny,unsigned int& nz,
            unsigned int& stride2, unsigned int& stride3) {
     if(ny == 0) {
-      ny=2*my-1;
+      ny=2*my;
       nz=mz;
-      stride2=(my+1)*mz;
-      stride3=(mx+1)*ny*mz;
+      stride2=my*mz;
+      stride3=mx*ny*mz;
     }
   }
   
   // u1 is a temporary array of size (mz/2+1)*A*threads.
-  // u2 is a temporary array of size (my+1)*mz*A*threads.
-  // u3 is a temporary array of size (mx+1)*(2my-1)*mz*A.
+  // u2 is a temporary array of size my*mz*A*threads.
+  // u3 is a temporary array of size mx*2my*mz*A.
   // A is the number of inputs.
   // B is the number of outputs.
   // threads is the number of threads to use in the outer subconvolution loop.
@@ -1082,7 +1081,7 @@ public:
   }
   
   virtual void HermitianSymmetrize(Complex *f, Complex *u) {
-    HermitianSymmetrizeXY(mx,my,mz,f);
+    HermitianSymmetrizeXY(mx,my,mz,mx,my,f);
   }
   
   void backwards(Complex **F, Complex **U3, bool symmetrize,
@@ -1118,13 +1117,14 @@ public:
   }
   
   // F is a pointer to A distinct data blocks each of size
-  // (2mx-1)*(2my-1)*mz, shifted by offset (contents not preserved).
+  // 2mx*2my*mz, shifted by offset (contents not preserved).
   virtual void convolve(Complex **F, realmultiplier *pmult,
                         bool symmetrize=true, unsigned int offset=0) {
-    unsigned int nymz=(2*my-1)*mz;
+    unsigned int nymz=2*my*mz;
+    unsigned int usize=mx*nymz;
     backwards(F,U3,symmetrize,offset);
-    subconvolution(F,pmult,offset,(2*mx-1)*nymz+offset,nymz);
-    subconvolution(U3,pmult,0,(mx+1)*nymz,nymz);
+    subconvolution(F,pmult,offset,2*usize+offset,nymz);
+    subconvolution(U3,pmult,0,usize,nymz);
     forwards(F,U3,offset);
   }
     
