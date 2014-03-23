@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
       N0=atoi(optarg);
       break;
     case 'T':
-      fftw::maxthreads=atoi(optarg);
+      fftw::maxthreads=max(atoi(optarg),1);
       break;
     case 'r':
       r=atoi(optarg);

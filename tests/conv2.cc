@@ -25,11 +25,12 @@ bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
 unsigned int outlimit=100;
 
-inline void init(array2<Complex>& f, array2<Complex>& g, unsigned int M=1) 
+inline void init(array2<Complex>& f, array2<Complex>& g, unsigned int M=1,
+                 unsigned int extra=0)
 {
-  unsigned int offset=Explicit ? nx/2-mx+1 : 0;
+  unsigned int offset=Explicit ? nx/2-mx+1 : extra;
   unsigned int stop=2*mx-1;
-  unsigned int stopoffset=stop+(Explicit ? 2*offset-1 : 0);
+  unsigned int stopoffset=stop+(Explicit ? 2*offset-1 : extra);
   double factor=1.0/sqrt((double) M);
   for(unsigned int s=0; s < M; ++s) {
     double S=sqrt(1.0+s);
@@ -109,7 +110,7 @@ int main(int argc, char* argv[])
         N0=atoi(optarg);
         break;
       case 'T':
-        fftw::maxthreads=atoi(optarg);
+        fftw::maxthreads=max(atoi(optarg),1);
         break;
       case 'h':
       default:
@@ -136,7 +137,7 @@ int main(int argc, char* argv[])
   array2<Complex> h0;
   if(Direct && Implicit) h0.Allocate(mx,my,align);
 
-  nxp=Explicit ? nx : 2*mx-1;
+  nxp=Explicit ? nx : 2*mx;
   nyp=Explicit ? ny/2+1 : my;
   unsigned int nxp0=nxp*M;
   array2<Complex> f(nxp0,nyp,align);
@@ -165,7 +166,7 @@ int main(int argc, char* argv[])
     }
 
     for(unsigned int i=0; i < N; ++i) {
-      init(f,g,M);
+      init(f,g,M,1);
       seconds();
       C.convolve(F,mult);
 //      C.convolve(f,g);
@@ -177,15 +178,15 @@ int main(int argc, char* argv[])
     if(Direct) {
       for(unsigned int i=0; i < mx; i++) 
         for(unsigned int j=0; j < my; j++)
-	  h0[i][j]=f[i][j];
+	  h0[i][j]=f[i+1][j];
     }
     
     if(nxp*my < outlimit)
-      for(unsigned int i=0; i < nxp; i++) {
+      for(unsigned int i=1; i < nxp; i++) {
         for(unsigned int j=0; j < my; j++)
           cout << f[i][j] << "\t";
         cout << endl;
-      } else cout << f[0][0] << endl;
+      } else cout << f[1][0] << endl;
     cout << endl;
     
     delete [] F;
