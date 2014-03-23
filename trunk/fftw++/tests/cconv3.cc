@@ -264,7 +264,7 @@ int main(int argc, char* argv[])
 	  }
 	}
       }
-      error=sqrt(error/norm);
+      if(norm > 0) error=sqrt(error/norm);
       cout << "error=" << error << endl;
       if (error > 1e-12) cerr << "Caution! error=" << error << endl;
     }
