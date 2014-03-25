@@ -1,5 +1,10 @@
 #!/usr/bin/python -u
 
+# Error comparison for a variety of implicit and explicit convolutions
+# as compared to a direct convolution.  One problem size per program
+# (scaling of numerical error vs problem size is dominated by direct
+# convolution error).
+
 import sys # so that we can return a value at the end.
 from subprocess import * # 
 import re # regexp package

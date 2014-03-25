@@ -1,5 +1,10 @@
 #!/usr/bin/python
 
+# Script for reading the results of the directerror script and
+# determining the scaling of the numerical error as a function of
+# problem size (assuming that the fft's error is dominant and of order
+# of sqrt of the problem size).
+
 import csv
 import numpy
 import sys

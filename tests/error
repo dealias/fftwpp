@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Run conv and cconv, compare against analytic result.
+
 start=6
 stop=20
 
