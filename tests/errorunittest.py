@@ -1,7 +1,7 @@
 #!/usr/bin/python -u
 
 # unit-testing script for fftw++ (fftwpp.sf.net).
-# usage: ./unittest.py
+# usage: ./errortest.py
 # runs tests for error propagation in the tests directory
 
 from subprocess import *
@@ -37,6 +37,22 @@ for prog in error1:
         retval += 1
         print "\tNUMERICAL ERROR SCALING FAILED FOR "+prog
 print "...done."
+
+
+print "Checking error scaling:",
+p=Popen(['./checkerror.py'],stdout=PIPE,stderr=PIPE)
+p.returncode==0
+out, err = p.communicate() # capture output
+if not (p.returncode == 0):
+    print out
+    print
+    print err
+    print
+    retval += 1
+    print "\tSCRIPT checkerror.py FAILED"
+else:
+    print "OK"
+
 
 print
 
