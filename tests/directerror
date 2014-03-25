@@ -1,26 +1,44 @@
-#!/bin/sh
+#!/usr/bin/python -u
 
-# check that the implicit convolution routines reproduce a direct convolution
-# usage: ./directerror
+import sys # so that we can return a value at the end.
+from subprocess import * # 
+import re # regexp package
 
-echo "Comparison of implicit routine versus direct routine:"
-echo
+retval=0
 
-for i in cconv cconv2 cconv3 conv conv2 conv3 tconv tconv2
-do
-    /bin/echo -ne $i "implicit:  \t"
-    ./$i -N1 -i -d -M 1| grep ^error
-done
+print "Comparison of routine versus direct routine:"
+print "program\ttype\t\terror:"
+dlist=["cconv", "cconv2", "cconv3", "conv", "conv2", "conv3", "tconv", "tconv2"]
+for prog in dlist:
 
-echo
+    p=Popen(["./"+prog,"-N1","-i","-d","-N1"],stdout=PIPE,stderr=PIPE)
+    out, err = p.communicate() # capture output
+    if (p.returncode == 0): # did the process succeed?
+        m=re.search("(?<=error=)(.*)",out) # find the text after "error="
+        print prog +"\t"+"implicit\t"+ m.group(0)
+        if(float(m.group(0)) > 1e-10):
+            print "ERROR TOO LARGE"
+            retval+=1
+    else:
+        print prog+" FAILED"
+        retval+=1
 
-# NB: comparisons between explicit and direct are not yet implimented in 
-# conv2 tconv and tconv2
+elist=["cconv", "cconv2", "cconv3", "conv"] 
+for prog in elist:
 
-for i in cconv cconv2 cconv3 conv 
-do
-    /bin/echo -ne $i "explicit:  \t"
-    ./$i -N1 -e -d -M 1| grep ^error
-done
-echo
+    p=Popen(["./"+prog,"-N1","-e","-d","-N1"],stdout=PIPE,stderr=PIPE)
+    out, err = p.communicate() # capture output
+    if (p.returncode == 0): # did the process succeed?
+        m=re.search("(?<=error=)(.*)",out) # find the text after "error="
+        print prog +"\t"+"explicit\t"+ m.group(0)
+        if(float(m.group(0)) > 1e-10):
+            print "ERROR TOO LARGE"
+            retval+=1
+    else:
+        print prog+" FAILED"
+        retval+=1
 
+if(retval > 0):
+    print "ERROR: AT LEAST ONE TEST FAILED"
+
+sys.exit(retval)
