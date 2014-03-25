@@ -7,7 +7,10 @@ import re # regexp package
 retval=0
 
 print "Comparison of routine versus direct routine:"
+print
 print "program\ttype\t\terror:"
+print
+
 dlist=["cconv", "cconv2", "cconv3", "conv", "conv2", "conv3", "tconv", "tconv2"]
 for prog in dlist:
 
@@ -38,7 +41,11 @@ for prog in elist:
         print prog+" FAILED"
         retval+=1
 
-if(retval > 0):
-    print "ERROR: AT LEAST ONE TEST FAILED"
+print
+
+if(retval == 0):
+    print "OK\tall tests passed"
+else:
+    print "ERROR\tAT LEAST ONE TEST FAILED"
 
 sys.exit(retval)

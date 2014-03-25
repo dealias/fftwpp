@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 start=6
 stop=20
@@ -59,3 +59,5 @@ while (test $i -le $stop); do
     i=$((i+1))
 done
 echo
+
+exit 0
