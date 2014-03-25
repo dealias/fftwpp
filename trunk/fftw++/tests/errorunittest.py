@@ -1,8 +1,9 @@
 #!/usr/bin/python -u
 
-# unit-testing script for fftw++ (fftwpp.sf.net).
-# usage: ./errortest.py
-# runs tests for error propagation in the tests directory
+# Unit-testing script for numerical accuracy of convolutions implicit
+# and explicit convolutions.
+
+# usage: ./errorunittest.py
 
 from subprocess import *
 import os
@@ -11,7 +12,7 @@ import sys
 retval=0
 
 print "Checking error vs direct routine...",
-p=Popen(['./directerror'],stdout=PIPE,stderr=PIPE)
+p=Popen(['./directerror.py'],stdout=PIPE,stderr=PIPE)
 out, err = p.communicate() # capture output
 print "...done."
 if not (p.returncode == 0):
@@ -22,7 +23,7 @@ if not (p.returncode == 0):
     print
     print "\tDIRECTERROR FAILED"
 
-print "Checking error scaling...",
+print "Running error scaling...",
 error1=["cconv","conv"]
 for prog in error1:
     print(prog),
