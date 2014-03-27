@@ -17,19 +17,21 @@ bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
 unsigned int outlimit=200;
 
-inline void init(Complex *f, Complex *g, dimensions d, unsigned int M=1) 
+inline void init(Complex *f, Complex *g, dimensions d, unsigned int M=1,
+                 unsigned int extra=0) 
 {
   double factor=1.0/sqrt((double) M);
   for(unsigned int s=0; s < M; ++s) {
     double S=sqrt(1.0+s);
     double ffactor=S*factor;
     double gfactor=1.0/S*factor;
-    for(unsigned int i=0; i < d.nx; ++i) {
+    for(unsigned int i=extra; i < d.nx; ++i) {
       unsigned int I=s*d.n+d.y*i;
+      unsigned int ii=i-extra;
       for(unsigned int j=0; j < d.y; j++) {
         unsigned int jj=j+d.y0;
-        f[I+j]=ffactor*Complex(i,jj);
-        g[I+j]=gfactor*Complex(2*i,jj+1);
+        f[I+j]=ffactor*Complex(ii,jj);
+        g[I+j]=gfactor*Complex(2*ii,jj+1);
       }
     }
   }
@@ -97,37 +99,46 @@ int main(int argc, char* argv[])
     }
   }
 
+  unsigned int A=2*M; // Number of independent inputs
+  
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
 
-  if(provided < MPI_THREAD_FUNNELED) {
-    fftw::maxthreads=1;
-  } else {
-    fftw_init_threads();
-    fftw_mpi_init();
-  }
-  
   if(N == 0) {
     N=N0/mx/my;
     if(N < 10) N=10;
   }
   
-  unsigned int nx=2*mx-1;
-  unsigned int mx1=mx+1;
+  unsigned int nx=2*mx;
   
   MPIgroup group(MPI_COMM_WORLD,my);
   MPILoadWisdom(group.active);
   
+  if(group.size > 1 && provided < MPI_THREAD_FUNNELED) {
+    fftw::maxthreads=1;
+  } else {
+    fftw_init_threads();
+    fftw_mpi_init();
+  }
+
+  if(group.rank == 0) {
+    cout << "provided: " << provided << endl;
+    cout << "fftw::maxthreads: " << fftw::maxthreads << endl;
+    
+    cout << "Configuration: " 
+         << group.size << " nodes X " << fftw::maxthreads 
+         << " threads/node" << endl;
+  }
+  
   if(group.rank < group.size) {
     bool main=group.rank == 0;
     if(main) {
-      seconds();
       cout << "N=" << N << endl;
       cout << "mx=" << mx << ", my=" << my << endl;
     }
     
     dimensions d(nx,my,group.active,group.yblock);
-    dimensions du(mx1,my,group.active,group.yblock);
+    dimensions du(mx,my,group.active,group.yblock);
   
     unsigned int Mn=M*d.n;
   
@@ -137,33 +148,40 @@ int main(int argc, char* argv[])
     double *T=new double[N];
   
     if(Implicit) {
-      ImplicitHConvolution2MPI C(mx,my,d,du,f,M);
-      Complex **F=new Complex *[M];
-      Complex **G=new Complex *[M];
+      realmultiplier *mult;
+  
+      switch(M) {
+        case 1: mult=multbinary; break;
+        case 2: mult=multbinary2; break;
+        default: cout << "M=" << M << " is not yet implemented" << endl;
+          exit(1);
+      }
+
+      ImplicitHConvolution2MPI C(mx,my,d,du,f,A);
+      Complex **F=new Complex *[A];
       unsigned int stride=d.n;
       for(unsigned int s=0; s < M; ++s) {
         unsigned int sstride=s*stride;
-        F[s]=f+sstride;
-        G[s]=g+sstride;
+        F[2*s]=f+sstride;
+        F[2*s+1]=g+sstride;
       }
       MPI_Barrier(group.active);
       if(group.rank == 0)
         cout << "Initialized after " << seconds() << " seconds." << endl;
       for(unsigned int i=0; i < N; ++i) {
-        init(f,g,d,M);
+        init(f,g,d,M,1);
         if(main) seconds();
-        C.convolve(F,G);
+        C.convolve(F,mult);
         //C.convolve(f,g);
         if(main) T[i]=seconds();
       }
       if(main)
         timings("Implicit",mx,T,N);
 
-      delete [] G;
       delete [] F;
     }
     if(nx*my < outlimit) 
-      show(f,nx,d.y,group.active);
+      show(f,nx,d.y,group.active,1,0);
 
     // check if the hash of the rounded output matches a known value
     if(dohash) {

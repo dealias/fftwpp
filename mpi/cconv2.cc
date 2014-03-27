@@ -121,9 +121,7 @@ int main(int argc, char* argv[])
   if(group.rank == 0) {
     cout << "provided: " << provided << endl;
     cout << "fftw::maxthreads: " << fftw::maxthreads << endl;
-  }
-  
-  if(group.rank == 0) {
+
     cout << "Configuration: " 
          << group.size << " nodes X " << fftw::maxthreads 
          << " threads/node" << endl;
@@ -148,14 +146,14 @@ int main(int argc, char* argv[])
     if(Implicit) {
       multiplier *mult;
   
-      switch(A) {
-        case 2: mult=multbinary; break;
-        case 4: mult=multbinarydot; break;
-        case 6: mult=multbinarydot6; break;
-        case 8: mult=multbinarydot8; break;
-        case 16: mult=multbinarydot16; break;
-        default: exit(1);
-          break;
+      switch(M) {
+        case 1: mult=multbinary; break;
+        case 2: mult=multbinary2; break;
+        case 3: mult=multbinary3; break;
+        case 4: mult=multbinary4; break;
+        case 8: mult=multbinary8; break;
+        default: cout << "M=" << M << " is not yet implemented" << endl;
+          exit(1);
       }
 
       ImplicitConvolution2MPI C(mx,my,d,A);
@@ -173,10 +171,10 @@ int main(int argc, char* argv[])
         cout << "Initialized after " << seconds() << " seconds." << endl;
       for(unsigned int i=0; i < N; ++i) {
         init(f,g,d,M);
-        seconds();
+        if(main) seconds();
         C.convolve(F,mult);
 //      C.convolve(f,g);
-        T[i]=seconds();
+        if(main) T[i]=seconds();
       }
     
       if(main) 

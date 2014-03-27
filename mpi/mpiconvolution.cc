@@ -54,34 +54,24 @@ void ImplicitConvolution2MPI::convolve(Complex **F, multiplier *pmult,
   }
 }
   
-void ImplicitHConvolution2MPI::convolve(Complex **F, Complex **G, 
-                                        Complex ***U, Complex **v, 
-                                        Complex **w,
-                                        Complex **U2, Complex **V2, 
-                                        bool symmetrize,  unsigned int offset)
+void ImplicitHConvolution2MPI::convolve(Complex **F, realmultiplier *pmult,
+                                        bool symmetrize, unsigned int offset)
 {
-    
-  Complex *u2=U2[0];
-  Complex *v2=V2[0];
     
   if(d.y0 > 0) symmetrize=false;
     
-  backwards(F,u2,d.y,du.n,symmetrize,offset);
-  backwards(G,v2,d.y,du.n,symmetrize,offset);
+  backwards(F,U2,d.y,symmetrize,offset);
     
-  pretranspose(F,offset);
-  pretranspose(u2);
-  pretranspose(G,offset);
-  pretranspose(v2);
+  transpose(intranspose,A,F,offset);
+  transpose(uintranspose,A,U2);
     
-  subconvolution(F,G,U,v,w,offset,d.x*my+offset);
-  subconvolution(U2,V2,U,v,w,0,du.x*my);
+  subconvolution(F,pmult,offset,d.x*my+offset);
+  subconvolution(U2,pmult,0,du.x*my);
     
-  Complex *f=F[0]+offset;
-  posttranspose(outtranspose,f);
-  posttranspose(uouttranspose,u2);
+  transpose(outtranspose,B,F,offset);
+  transpose(uouttranspose,B,U2);
     
-  forwards(f,u2);
+  forwards(F,U2,offset);
     
 }
 
@@ -143,29 +133,38 @@ void ImplicitConvolution3MPI::convolve(Complex **F, multiplier *pmult,
 // data.
 // u is a work array of size d.nx.
 void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
-                              dimensions3& d, Complex *f, Complex *u)
+                              dimensions3& d, Complex *f,
+                              unsigned int nu, Complex *u0)
 {
   if(d.y == d.ny && d.z == d.nz) {
-    HermitianSymmetrizeXY(mx,my,d.nz,f);
+    HermitianSymmetrizeXY(mx,my,d.nz,mx,my,f);
     return;
   }
 
   MPI_Status stat;
   int rank,size;
-  unsigned int yorigin=my-1;
+  unsigned int extra=1;
+  unsigned int yorigin=my-1+extra;
+  unsigned int nx=d.nx-extra;
+  unsigned int y0=d.y0;
+  unsigned int dy=d.y;
+  unsigned int j0=y0 == 0 ? extra : 0;
+  unsigned int start=(yorigin > y0) ? yorigin-y0 : 0;
+  
   if(d.XYplane == NULL) {
     d.XYplane=new MPI_Comm;
     MPI_Comm_split(d.communicator,d.z0 == 0,0,d.XYplane);
     if(d.z0 != 0) return;
     MPI_Comm_rank(*d.XYplane,&rank);
     MPI_Comm_size(*d.XYplane,&size);
-    d.reflect=new int[d.y];
+    d.reflect=new int[dy];
     range *indices=new range[size];
-    indices[rank].n=d.y;
-    indices[rank].start=d.y0;
+    indices[rank].n=dy;
+    indices[rank].start=y0;
     MPI_Allgather(MPI_IN_PLACE,0,MPI_INT,indices,
                   sizeof(range)/sizeof(MPI_INT),MPI_INT,*d.XYplane);
   
+    
     if(rank == 0) {
       int *process=new int[d.ny];
       for(int p=0; p < size; ++p) {
@@ -174,16 +173,17 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
           process[j]=p;
       }
     
-      for(unsigned int j=0; j < indices[0].n; ++j)
-        d.reflect[j]=process[2*yorigin-indices[0].start-j];
+      for(unsigned int j=j0; j < dy; ++j)
+        d.reflect[j]=process[2*yorigin-y0-j];
       for(int p=1; p < size; ++p) {
-        for(unsigned int j=0; j < indices[p].n; ++j)
+        for(unsigned int j=indices[p].start == 0 ? extra : 0; j < indices[p].n;
+            ++j)
           MPI_Send(process+2*yorigin-indices[p].start-j,1,MPI_INT,p,j,
                    *d.XYplane);
       }
       delete [] process;
     } else {
-      for(unsigned int j=0; j < d.y; ++j)
+      for(unsigned int j=0; j < dy; ++j)
         MPI_Recv(d.reflect+j,1,MPI_INT,0,j,*d.XYplane,&stat);
     }
     delete [] indices;
@@ -191,21 +191,22 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
   if(d.z0 != 0) return;
   MPI_Comm_rank(*d.XYplane,&rank);
 
-  unsigned int stride=d.y*d.z;
-  unsigned int offset=2*yorigin-d.y0;
-  unsigned int start=(yorigin > d.y0) ? yorigin-d.y0 : 0;
-  for(unsigned int j=start; j < d.y; ++j) {
-    for(unsigned int i=0; i < d.nx; ++i)
+  Complex *u=(nu < nx) ? ComplexAlign(nx+1) : u0;
+  unsigned int stride=dy*d.z;
+  for(unsigned int j=start; j < dy; ++j) {
+    for(unsigned int i=0; i < nx; ++i)
       u[i]=conj(f[stride*(d.nx-1-i)+d.z*j]);
     int J=d.reflect[j];
-    if(J != rank)
-      MPI_Send(u,2*d.nx,MPI_DOUBLE,J,0,*d.XYplane);
+  if(J != rank)
+    MPI_Send(u,2*nx,MPI_DOUBLE,J,0,*d.XYplane);
     else {
-      if(d.y0+j != yorigin) {
-        for(unsigned int i=0; i < d.nx; ++i)
-          f[stride*i+d.z*(offset-j)]=u[i];
+      int offset=2*yorigin-y0;
+      if(y0+j != yorigin) {
+        unsigned int even=1-(J % 2);
+        for(unsigned int i=0; i < nx; ++i)
+          f[stride*(i-even)+d.z*(offset-j)]=u[i];
       } else {
-        unsigned int origin=stride*(mx-1)+d.z*j;
+        unsigned int origin=stride*mx+d.z*j;
         f[origin].im=0.0;
         unsigned int mxstride=mx*stride;
         for(unsigned int i=stride; i < mxstride; i += stride)
@@ -213,47 +214,39 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
       }
     }
   }
-  for(int j=std::min((int)d.y,(int)(yorigin-d.y0))-1; j >= 0; --j) {
+
+  for(unsigned int j=std::min(dy,start); j-- > j0;) {
     int J=d.reflect[j];
     if(J != rank) {
-      MPI_Recv(u,2*d.nx,MPI_DOUBLE,J,0,*d.XYplane,&stat);
-      for(unsigned int i=0; i < d.nx; ++i)
-        f[stride*i+d.z*j]=u[i];
+      MPI_Recv(u,2*nx,MPI_DOUBLE,J,0,*d.XYplane,&stat);
+      for(unsigned int i=0; i < nx; ++i)
+        f[stride*(i+extra)+d.z*j]=u[i];
     }
   }
+  
+  if(nu < nx) delete[] u;
 }
 
-void ImplicitHConvolution3MPI::convolve(Complex **F, Complex **G,
-                                        Complex ***U, Complex **v, 
-                                        Complex **w,
-                                        Complex ***U2, Complex ***V2, 
-                                        Complex **U3, Complex **V3,
+void ImplicitHConvolution3MPI::convolve(Complex **F, realmultiplier *pmult,
                                         bool symmetrize, unsigned int offset)
 {
-  Complex *u3=U3[0];
-  Complex *v3=V3[0];
-    
-  backwards(F,u3,du.n,symmetrize,offset);
-  backwards(G,v3,du.n,symmetrize,offset);
-    
+  backwards(F,U3,symmetrize,offset);
+
   if(d.y < d.ny) {
-    pretranspose(F,offset);
-    pretranspose(u3);
-    pretranspose(G,offset);
-    pretranspose(v3);
+    transpose(intranspose,A,F,offset);
+    transpose(uintranspose,A,U3);
   }
     
   unsigned int stride=d.ny*d.z;
-  subconvolution(F,G,U,v,w,U2,V2,offset,d.x*stride+offset,stride);
-  subconvolution(U3,V3,U,v,w,U2,V2,0,du.x*stride,stride);
+  subconvolution(F,pmult,offset,d.x*stride+offset,stride);
+  subconvolution(U3,pmult,0,du.x*stride,stride);
     
-  Complex *f=F[0]+offset;
   if(d.y < d.ny) {
-    posttranspose(outtranspose,f);
-    posttranspose(uouttranspose,u3);
+    transpose(outtranspose,B,F,offset);
+   transpose(uouttranspose,B,U3);
   }
     
-  forwards(f,u3);
+  forwards(F,U3,offset);
 }
 
 
