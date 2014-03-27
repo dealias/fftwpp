@@ -137,8 +137,10 @@ int main(int argc, char* argv[])
   cout << "N=" << N << endl;
   
   size_t align=sizeof(Complex);
+  
   array3<Complex> h0;
   if(Direct) h0.Allocate(mx,my,mz,align);
+  
   int nxp=Explicit ? nx : mx;
   int nyp=Explicit ? ny : my;
   int nzp=Explicit ? nz : mz;

@@ -841,8 +841,8 @@ public:
     unsigned int nyz=ny*nz;
     xfftpad=new fftpad(mx,nyz,nyz,u3);
     
-    yzconvolve=new ImplicitConvolution2*[threads];
     if(nz == mz) {
+      yzconvolve=new ImplicitConvolution2*[threads];
       for(unsigned int t=0; t < threads; ++t)
         yzconvolve[t]=new ImplicitConvolution2(my,mz,u1+t*mz*A*innerthreads,
                                                u2+t*stride2*A,A,B,innerthreads);
@@ -1004,12 +1004,13 @@ public:
     unsigned int nyz=ny*nz;
     xfftpad=new fft0pad(mx,nyz,nyz,u3);
 
-    yzconvolve=new ImplicitHConvolution2*[threads];
     if(nz == mz) {
+      yzconvolve=new ImplicitHConvolution2*[threads];
       for(unsigned int t=0; t < threads; ++t)
         yzconvolve[t]=new ImplicitHConvolution2(my,mz,
                                                 u1+t*(mz/2+1)*A*innerthreads,
-                                                u2+t*stride2*A,A,B,innerthreads);
+                                                u2+t*stride2*A,A,B,
+                                                innerthreads);
       initpointers3(U3,u3,stride3);
     } else yzconvolve=NULL;
   }
