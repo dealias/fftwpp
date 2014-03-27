@@ -154,8 +154,6 @@ public:
     xy=dimensions(nx,ny,group.communicator,yblock,zblock);
     yz=dimensions(Ny,nz,group.communicator2,zblock);
     xz=dimensions(nx,nz,group.communicator3,yblock);
-    n=xy.n=std::max(xy.n,(xy.x+1)*yz.n);
-    n2=yz.n;
     x=xy.x;
     y=xy.y;
     z=yz.y;
@@ -163,6 +161,8 @@ public:
 //    y0=yz.x0;
     y0=xy.y0;
     z0=yz.y0;
+    n=xy.n=std::max(xy.n,(ceilquotient(xy.n,y)+1)*(yz.n+1));
+    n2=yz.n;
   }
 
   void show() {
@@ -189,6 +189,7 @@ public:
 // fft.Forwards(f,true);
 // fft.Backwards(f,true);
 // fft.Normalize(f);
+// deleteAlign(f);
 // 
 // If a transposed output is desired, call with fft.Forwards(f,false).
 class fft2dMPI {
@@ -272,6 +273,7 @@ class fft2dMPI {
 // fft.Forwards(f,dofinaltranspose);
 // fft.Backwards(f,dofinaltranspose);
 // fft.Normalize(f);
+// deleteAlign(f);
 //
 // TODO: allow for non-transposed output.
 class fft3dMPI {

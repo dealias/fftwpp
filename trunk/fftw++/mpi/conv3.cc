@@ -17,22 +17,24 @@ bool Direct=false, Implicit=true;
 
 unsigned int outlimit=3000;
 
-inline void init(Complex *f, Complex *g, const dimensions3& d, unsigned int M=1)
+inline void init(Complex *f, Complex *g, const dimensions3& d, unsigned int M=1,
+                 unsigned int extra=0)
 {
   double factor=1.0/sqrt((double) M);
   for(unsigned int s=0; s < M; ++s) {
     double S=sqrt(1.0+s);
     double ffactor=S*factor;
     double gfactor=1.0/S*factor;
-    for(unsigned int i=0; i < d.nx; ++i) {
+    for(unsigned int i=extra; i < d.nx; ++i) {
       unsigned int I=s*d.n+d.y*d.z*i;
-      for(unsigned int j=0; j < d.y; ++j) {
+      unsigned int ii=i-extra;
+      for(unsigned int j=d.y0 == 0 ? extra : 0; j < d.y; ++j) {
         unsigned int IJ=I+d.z*j;
-        unsigned int jj=d.y0+j;
-        for(unsigned int k=0; k < d.z; ++k) {
-          unsigned int kk=d.z0+k;
-          f[IJ+k]=ffactor*Complex(i+kk,jj+kk);
-          g[IJ+k]=gfactor*Complex(2*i+kk,jj+1+kk);
+        unsigned int jj=d.y0-extra+j;
+          for(unsigned int k=0; k < d.z; ++k) {
+            unsigned int kk=d.z0+k;
+            f[IJ+k]=ffactor*Complex(ii+kk,jj+kk);
+            g[IJ+k]=gfactor*Complex(2*ii+kk,jj+1+kk);
         }
       }
     }
@@ -112,26 +114,37 @@ int main(int argc, char* argv[])
     }
   }
 
+  unsigned int A=2*M; // Number of independent inputs
+  
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
 
-  if(provided < MPI_THREAD_FUNNELED) {
+  if(N == 0) {
+    N=N0/mx/my/mz;
+    if(N < 10) N=10;
+  }
+    
+  unsigned int nx=2*mx;
+  unsigned int ny=2*my;
+    
+  MPIgroup group(MPI_COMM_WORLD,nx,ny,mz);
+  MPILoadWisdom(group.active);
+  
+  if(group.size > 1 && provided < MPI_THREAD_FUNNELED) {
     fftw::maxthreads=1;
   } else {
     fftw_init_threads();
     fftw_mpi_init();
   }
   
-  if(N == 0) {
-    N=N0/mx/my/mz;
-    if(N < 10) N=10;
+  if(group.rank == 0) {
+    cout << "provided: " << provided << endl;
+    cout << "fftw::maxthreads: " << fftw::maxthreads << endl;
+    
+    cout << "Configuration: " 
+         << group.size << " nodes X " << fftw::maxthreads 
+         << " threads/node" << endl;
   }
-    
-  unsigned int nx=2*mx-1;
-  unsigned int ny=2*my-1;
-    
-  MPIgroup group(MPI_COMM_WORLD,mx,ny,mz);
-  MPILoadWisdom(group.active);
   
   if(group.rank < group.size) {
     bool main=group.rank == 0;
@@ -146,7 +159,7 @@ int main(int argc, char* argv[])
     }
 
     dimensions3 d(nx,ny,ny,mz,group);
-    dimensions3 du(mx+1,ny,my+1,mz,group);
+    dimensions3 du(mx,ny,my,mz,group);
     
     unsigned int Mn=M*d.n;
     Complex *f=ComplexAlign(Mn);
@@ -154,36 +167,42 @@ int main(int argc, char* argv[])
 
     double *T=new double[N];
 
+    realmultiplier *mult;
+  
+    switch(M) {
+      case 1: mult=multbinary; break;
+      case 2: mult=multbinary2; break;
+      default: cout << "M=" << M << " is not yet implemented" << endl; exit(1);
+    }
+
     if(Implicit) {
-      ImplicitHConvolution3MPI C(mx,my,mz,d,du,f,M);
-      Complex **F=new Complex *[M];
-      Complex **G=new Complex *[M];
+      ImplicitHConvolution3MPI C(mx,my,mz,d,du,f,A);
+      Complex **F=new Complex *[A];
       unsigned int stride=d.n;
       for(unsigned int s=0; s < M; ++s) {
         unsigned int sstride=s*stride;
-        F[s]=f+sstride;
-        G[s]=g+sstride;
+        F[2*s]=f+sstride;
+        F[2*s+1]=g+sstride;
       }
       MPI_Barrier(group.active);
       if(main)
         cout << "Initialized after " << seconds() << " seconds." << endl;
       for(unsigned int i=0; i < N; ++i) {
-        init(f,g,d,M);
-        seconds();
-        C.convolve(F,G);
+        init(f,g,d,M,1);
+        if(main) seconds();
+        C.convolve(F,mult);
 //      C.convolve(f,g);
-        T[i]=seconds();
+        if(main) T[i]=seconds();
       }
     
       if(main) 
         timings("Implicit",mx,T,N);
     
-      delete [] G;
       delete [] F;
       
-      if(nx*ny*mz < outlimit) 
-        show(f,nx,d.y,d.z,group.active);
-
+      if(nx*ny*mz < outlimit)
+        show(f,nx,d.y,d.z,group.active,1,d.y0 == 0,0);
+  
       // check if the hash of the rounded output matches a known value
       if(dohash) {
 	int hashval=hash(f,nx,d.y,d.z,group.active);
