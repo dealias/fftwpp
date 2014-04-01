@@ -290,7 +290,7 @@ void ImplicitHConvolution::convolve(Complex **F,
     }
             
   Complex zeta3(-0.5,0.5*sqrt(3.0));
-  Vec zeta1;
+  Vec zeta1=LOAD(0.0);
   
   if(even) {
     unsigned int a=1/s;
