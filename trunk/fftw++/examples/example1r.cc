@@ -14,7 +14,7 @@ int main()
   
   fftw::maxthreads=get_max_threads();
   
-  unsigned int n=5;
+  unsigned int n=4;
   unsigned int np=n/2+1;
   size_t align=sizeof(Complex);
   
