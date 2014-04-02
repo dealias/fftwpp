@@ -880,8 +880,9 @@ void fft0padwide::backwards(Complex *f, Complex *u)
   Vec Mhalf=LOAD(-0.5);
   Vec Mhsqrt3=LOAD(-hsqrt3);
 #endif    
+  unsigned int inc=s;
   PARALLEL(
-    for(unsigned int K=0; K < m; K += s) {
+    for(unsigned int K=0; K < m; K += inc) {
       Complex *ZetaL0=ZetaL-K;
       unsigned int stop=min(K+s,m);
 #ifdef __SSE2__
@@ -971,8 +972,9 @@ void fft0padwide::forwards(Complex *f, Complex *u)
   Vec HSqrt3=LOAD(hsqrt3);
 #endif    
   
+  unsigned int inc=s;
   PARALLEL(
-    for(unsigned int K=0; K < m; K += s) {
+    for(unsigned int K=0; K < m; K += inc) {
       Complex *ZetaL0=ZetaL-K;
       unsigned int stop=min(K+s,m);
 #ifdef __SSE2__      
