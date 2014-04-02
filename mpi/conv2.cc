@@ -12,22 +12,23 @@ unsigned int nx=0;
 unsigned int mx=4;
 unsigned int my=4;
 unsigned int M=1;
+bool compact=true;
 
 bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
 unsigned int outlimit=200;
 
 inline void init(Complex *f, Complex *g, dimensions d, unsigned int M=1,
-                 unsigned int extra=0) 
+                 bool compact=true)
 {
   double factor=1.0/sqrt((double) M);
   for(unsigned int s=0; s < M; ++s) {
     double S=sqrt(1.0+s);
     double ffactor=S*factor;
     double gfactor=1.0/S*factor;
-    for(unsigned int i=extra; i < d.nx; ++i) {
+    for(unsigned int i=!compact; i < d.nx; ++i) {
       unsigned int I=s*d.n+d.y*i;
-      unsigned int ii=i-extra;
+      unsigned int ii=i-!compact;
       for(unsigned int j=0; j < d.y; j++) {
         unsigned int jj=j+d.y0;
         f[I+j]=ffactor*Complex(ii,jj);
@@ -49,11 +50,14 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"heipHM:N:m:x:y:n:T:");
+    int c = getopt(argc,argv,"heipHc:M:N:m:x:y:n:T:");
     if (c == -1) break;
                 
     switch (c) {
       case 0:
+        break;
+      case 'c':
+        compact=atoi(optarg) != 0;
         break;
       case 'e':
         Explicit=true;
@@ -100,6 +104,7 @@ int main(int argc, char* argv[])
   }
 
   unsigned int A=2*M; // Number of independent inputs
+  unsigned int B=1;   // Number of outputs
   
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
@@ -109,7 +114,7 @@ int main(int argc, char* argv[])
     if(N < 10) N=10;
   }
   
-  unsigned int nx=2*mx;
+  unsigned int nx=2*mx-compact;
   
   MPIgroup group(MPI_COMM_WORLD,my);
   MPILoadWisdom(group.active);
@@ -138,7 +143,7 @@ int main(int argc, char* argv[])
     }
     
     dimensions d(nx,my,group.active,group.yblock);
-    dimensions du(mx,my,group.active,group.yblock);
+    dimensions du(mx+compact,my,group.active,group.yblock);
   
     unsigned int Mn=M*d.n;
   
@@ -157,7 +162,7 @@ int main(int argc, char* argv[])
           exit(1);
       }
 
-      ImplicitHConvolution2MPI C(mx,my,d,du,f,A);
+      ImplicitHConvolution2MPI C(mx,my,d,du,f,A,B,compact);
       Complex **F=new Complex *[A];
       unsigned int stride=d.n;
       for(unsigned int s=0; s < M; ++s) {
@@ -169,7 +174,7 @@ int main(int argc, char* argv[])
       if(group.rank == 0)
         cout << "Initialized after " << seconds() << " seconds." << endl;
       for(unsigned int i=0; i < N; ++i) {
-        init(f,g,d,M,1);
+        init(f,g,d,M,compact);
         if(main) seconds();
         C.convolve(F,mult);
         //C.convolve(f,g);
@@ -181,10 +186,10 @@ int main(int argc, char* argv[])
       delete [] F;
     }
     if(nx*my < outlimit) 
-      show(f,nx,d.y,group.active,1,0);
+      show(f,nx,d.y,group.active,!compact,0);
 
     // check if the hash of the rounded output matches a known value
-    if(dohash) {
+    if(dohash && compact) {
       int hashval=hash(f,mx,d.y,group.active);
       if(group.rank == 0) cout << hashval << endl;
       if(mx == 4 && my == 4) {

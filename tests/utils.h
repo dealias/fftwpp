@@ -23,6 +23,8 @@ inline void usage(int n, bool test=false, bool Explicit=true)
   std::cerr << "Options: " << std::endl;
   std::cerr << "-h\t\t help" << std::endl;
   std::cerr << "-i\t\t implicitly padded convolution" << std::endl;
+  std::cerr << "-c\t\t compact data format [1] (0=false, 1=true)" 
+            << std::endl;
   if(Explicit) {
     std::cerr << "-e\t\t explicitly padded convolution" << std::endl;
     if(n > 1)
