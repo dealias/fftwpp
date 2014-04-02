@@ -714,17 +714,15 @@ void fft0pad::backwards(Complex *f, Complex *u)
         Complex *fk=f+kstride;
         Complex *fmk=fmstride+kstride;
         for(unsigned int i=0; i < M; ++i) {
-          Complex *fa=fk+i;
-          Complex *fb=fmk+i;
-          Vec Fa=LOAD(fa);
-          Vec Fb=LOAD(fb);
+          Vec Fa=LOAD(fk+i);
+          Vec Fb=LOAD(fmk+i);
         
           Vec B=Fa*Mhalf+Fb;
-          STORE(fa,Fa+Fb);
+          STORE(fk+i,Fa+Fb);
           Fa *= Mhsqrt3;
           Vec A=ZMULT(zetak,UNPACKL(B,Fa));
           B=ZMULTI(zetak,UNPACKH(B,Fa));
-          STORE(fb,A+B);
+          STORE(fmk+i,A+B);
           STORE(uk+i,CONJ(A-B));
         }
       }
@@ -766,7 +764,8 @@ void fft0pad::backwards(Complex *f, Complex *u)
         }
       }
 #endif
-    });
+    }
+    );
   
   Backwards->fft(f);
   Backwards->fft(fmstride);
@@ -811,15 +810,12 @@ void fft0pad::forwards(Complex *f, Complex *u)
         Complex *fmk=fmstride+kstride;
         Complex *uk=u+kstride;
         for(unsigned int i=0; i < M; ++i) {
-          Complex *fa=fk+i;
-          Complex *fb=fmk+i;
-
-          Vec F0=LOAD(fa)*Ninv;
-          Vec F1=ZMULTC(zetak,LOAD(fb));
+          Vec F0=LOAD(fk+i)*Ninv;
+          Vec F1=ZMULTC(zetak,LOAD(fmk+i));
           Vec F2=ZMULT(zetak,LOAD(uk+i));
           Vec S=F1+F2;
-          STORE(fa,F0+Mhalf*S+HSqrt3*ZMULTI(F1-F2));
-          STORE(fb,F0+S);
+          STORE(fk+i,F0+Mhalf*S+HSqrt3*ZMULTI(F1-F2));
+          STORE(fmk+i,F0+S);
         }
 #else
         Complex L=ZetaL0[k];
@@ -850,7 +846,8 @@ void fft0pad::forwards(Complex *f, Complex *u)
         }
 #endif      
       }
-    });
+    }
+    );
 }
 
 
