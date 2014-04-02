@@ -23,26 +23,27 @@ unsigned int nxp;
 unsigned int nyp;
 unsigned int nzp;
 unsigned int M=1;
+bool compact=true;
 
 bool Direct=false, Implicit=true;
 
 unsigned int outlimit=300;
 
 inline void init(array3<Complex>& f, array3<Complex>& g, unsigned int M=1,
-                 unsigned int extra=0) 
+                 bool compact=true)
 {
   unsigned int xstop=2*mx-1;
   unsigned int ystop=2*my-1;
-  unsigned int xstopoffset=xstop+extra;
+  unsigned int xstopoffset=xstop+!compact;
   double factor=1.0/sqrt((double) M);
   for(unsigned int s=0; s < M; ++s) {
     double S=sqrt(1.0+s);
     double ffactor=S*factor;
     double gfactor=1.0/S*factor;
     for(unsigned int i=0; i < xstop; ++i) {
-      unsigned int I=s*xstopoffset+i+extra;
+      unsigned int I=s*xstopoffset+i+!compact;
       for(unsigned int j=0; j < ystop; ++j) {
-        unsigned int J=j+extra;
+        unsigned int J=j+!compact;
         for(unsigned int k=0; k < mz; ++k) {
           f[I][J][k]=ffactor*Complex(i+k,j+k);
           g[I][J][k]=gfactor*Complex(2*i+k,j+1+k);
@@ -74,11 +75,14 @@ int main(int argc, char* argv[])
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptM:N:m:x:y:z:n:T:");
+    int c = getopt(argc,argv,"hdeiptc:M:N:m:x:y:z:n:T:");
     if (c == -1) break;
 		
     switch (c) {
       case 0:
+        break;
+      case 'c':
+        compact=atoi(optarg) != 0;
         break;
       case 'd':
         Direct=true;
@@ -123,6 +127,7 @@ int main(int argc, char* argv[])
   }
 
   unsigned int A=2*M; // Number of independent inputs
+  unsigned int B=1;   // Number of outputs
   
   nx=padding(mx);
   ny=padding(my);
@@ -138,8 +143,8 @@ int main(int argc, char* argv[])
   cout << "N=" << N << endl;
     
   size_t align=sizeof(Complex);
-  nxp=2*mx;
-  nyp=2*my;
+  nxp=2*mx-compact;
+  nyp=2*my-compact;
   nzp=mz;
   unsigned int nxp0=Implicit ? nxp*M : nxp;
   array3<Complex> h0;
@@ -150,7 +155,7 @@ int main(int argc, char* argv[])
   double *T=new double[N];
 
   if(Implicit) {
-    ImplicitHConvolution3 C(mx,my,mz,A);
+    ImplicitHConvolution3 C(mx,my,mz,A,B,compact);
     cout << "threads=" << C.Threads() << endl << endl;
     
     realmultiplier *mult;
@@ -169,7 +174,7 @@ int main(int argc, char* argv[])
       F[2*s+1]=g+smf;
     }
     for(unsigned int i=0; i < N; ++i) {
-      init(f,g,M,1);
+      init(f,g,M,compact);
       seconds();
       C.convolve(F,mult);
 //      C.convolve(f,g);
@@ -182,19 +187,19 @@ int main(int argc, char* argv[])
       for(unsigned int i=0; i < mx; i++) 
         for(unsigned int j=0; j < my; j++)
 	  for(unsigned int k=0; k < mz; k++)
-	    h0[i][j][k]=f[i+1][j+1][k];
+	    h0[i][j][k]=f[i+!compact][j+!compact][k];
     }
 
     if(nxp*nyp*mz < outlimit) {
-      for(unsigned int i=1; i < nxp; ++i) {
-        for(unsigned int j=1; j < nyp; ++j) {
+      for(unsigned int i=!compact; i < nxp; ++i) {
+        for(unsigned int j=!compact; j < nyp; ++j) {
           for(unsigned int k=0; k < mz; ++k)
             cout << f[i][j][k] << "\t";
           cout << endl;
         }
         cout << endl;
       }
-    } else cout << f[1][1][0] << endl;
+    } else cout << f[!compact][!compact][0] << endl;
     
     delete [] F;
   }

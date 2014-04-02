@@ -133,18 +133,18 @@ void ImplicitConvolution3MPI::convolve(Complex **F, multiplier *pmult,
 // data.
 // u is a work array of size d.nx.
 void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
-                              dimensions3& d, Complex *f,
+                              dimensions3& d, bool compact, Complex *f,
                               unsigned int nu, Complex *u0)
 {
   if(d.y == d.ny && d.z == d.nz) {
-    HermitianSymmetrizeXY(mx,my,d.nz,mx,my,f);
+    HermitianSymmetrizeXY(mx,my,d.nz,mx-compact,my-compact,f);
     return;
   }
 
   MPI_Status stat;
   int rank,size;
-  unsigned int extra=1;
-  unsigned int yorigin=my-1+extra;
+  unsigned int extra=!compact;
+  unsigned int yorigin=my-compact;
   unsigned int nx=d.nx-extra;
   unsigned int y0=d.y0;
   unsigned int dy=d.y;
@@ -164,7 +164,6 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
     MPI_Allgather(MPI_IN_PLACE,0,MPI_INT,indices,
                   sizeof(range)/sizeof(MPI_INT),MPI_INT,*d.XYplane);
   
-    
     if(rank == 0) {
       int *process=new int[d.ny];
       for(int p=0; p < size; ++p) {
@@ -206,7 +205,7 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
         for(unsigned int i=0; i < nx; ++i)
           f[stride*(i-even)+d.z*(offset-j)]=u[i];
       } else {
-        unsigned int origin=stride*mx+d.z*j;
+        unsigned int origin=stride*(mx-compact)+d.z*j;
         f[origin].im=0.0;
         unsigned int mxstride=mx*stride;
         for(unsigned int i=stride; i < mxstride; i += stride)

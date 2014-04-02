@@ -106,13 +106,14 @@ protected:
 public:  
   
   void inittranspose(Complex *f) {
-    unsigned int nx=2*mx;
+    unsigned int nx=2*mx-compact;
+    unsigned int mx1=mx+compact;
     intranspose=
       fftw_mpi_plan_many_transpose(my,nx,2,d.block,0,(double*) f,(double*) f,
                                    d.communicator,FFTW_MPI_TRANSPOSED_IN);
     if(!intranspose) transposeError("inH2");
     uintranspose=
-      fftw_mpi_plan_many_transpose(my,mx,2,du.block,0,(double*) u2,
+      fftw_mpi_plan_many_transpose(my,mx1,2,du.block,0,(double*) u2,
                                    (double*) u2,du.communicator,
                                    FFTW_MPI_TRANSPOSED_IN);
     if(!uintranspose) transposeError("uinH2");
@@ -121,7 +122,7 @@ public:
                                    d.communicator,FFTW_MPI_TRANSPOSED_OUT);
     if(!outtranspose) transposeError("outH2");
     uouttranspose=
-      fftw_mpi_plan_many_transpose(mx,my,2,0,du.block,(double*) u2,
+      fftw_mpi_plan_many_transpose(mx1,my,2,0,du.block,(double*) u2,
                                    (double*) u2,du.communicator,
                                    FFTW_MPI_TRANSPOSED_OUT);
     if(!uouttranspose) transposeError("uoutH2");
@@ -138,8 +139,9 @@ public:
                            const dimensions& d, const dimensions& du,
                            Complex *f, Complex *u1, Complex *u2,
                            unsigned int A=2, unsigned int B=1,
+                           bool compact=true,
                            unsigned int threads=fftw::maxthreads) :
-    ImplicitHConvolution2(mx,my,u1,u2,A,B,threads,d.x,d.y,du.n),
+    ImplicitHConvolution2(mx,my,u1,u2,A,B,compact,threads,d.x,d.y,du.n),
     d(d), du(du) {
     inittranspose(f);
   }
@@ -148,8 +150,10 @@ public:
                            const dimensions& d, const dimensions& du,
                            Complex *f,
                            unsigned int A=2, unsigned int B=1,
+                           bool compact=true,
                            unsigned int threads=fftw::maxthreads) :
-    ImplicitHConvolution2(mx,my,A,B,threads,d.x,d.y,du.n), d(d), du(du) {
+    ImplicitHConvolution2(mx,my,A,B,compact,threads,d.x,d.y,du.n), d(d),
+    du(du) {
     inittranspose(f);
   }
   
@@ -169,7 +173,7 @@ public:
   }
   
   // F is a pointer to A distinct data blocks each of size 
-  // 2mx*d.y, shifted by offset (contents not preserved).
+  // (2mx-compact)*d.y, shifted by offset (contents not preserved).
   void convolve(Complex **F, realmultiplier *pmult,
                 bool symmetrize=true, unsigned int offset=0);
 
@@ -295,7 +299,7 @@ public:
 };
 
 void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
-			      dimensions3& d, Complex *f,
+			      dimensions3& d, bool compact, Complex *f,
                               unsigned int nu, Complex *u);
  
 // In-place implicitly dealiased 3D complex convolution.
@@ -308,13 +312,14 @@ protected:
 public:  
   void inittranspose(Complex *f) {
     if(d.y < d.ny) {
+      unsigned int mx1=mx+compact;
       intranspose=
         fftw_mpi_plan_many_transpose(d.ny,d.nx,2*d.z,d.yblock,0,
                                      (double*) f,(double*) f,
                                      d.xy.communicator,FFTW_MPI_TRANSPOSED_IN);
       if(!intranspose) transposeError("inH3");
       uintranspose=
-        fftw_mpi_plan_many_transpose(d.ny,mx,2*du.z,du.yblock,0,
+        fftw_mpi_plan_many_transpose(d.ny,mx1,2*du.z,du.yblock,0,
                                      (double*) u3,(double*) u3,
                                      du.xy.communicator,FFTW_MPI_TRANSPOSED_IN);
       if(!uintranspose) transposeError("uinH3");
@@ -324,7 +329,7 @@ public:
                                      d.xy.communicator,FFTW_MPI_TRANSPOSED_OUT);
       if(!outtranspose) transposeError("outH3");
       uouttranspose=
-        fftw_mpi_plan_many_transpose(mx,d.ny,2*du.z,0,du.yblock,
+        fftw_mpi_plan_many_transpose(mx1,d.ny,2*du.z,0,du.yblock,
                                      (double*) u3,(double*) u3,
                                      du.xy.communicator,
                                      FFTW_MPI_TRANSPOSED_OUT);
@@ -355,8 +360,9 @@ public:
                            const dimensions3& d, const dimensions3& du,
                            Complex *f, Complex *u1, Complex *u2, Complex *u3,
                            unsigned int A=2, unsigned int B=1,
+                           bool compact=true,
                            unsigned int threads=fftw::maxthreads) :
-    ImplicitHConvolution3(mx,my,mz,u1,u2,u3,A,B,d.z < mz ? 1 : threads,
+    ImplicitHConvolution3(mx,my,mz,u1,u2,u3,A,B,compact,d.z < mz ? 1 : threads,
                           d.y,d.z,du.n2,du.n),
     d(d), du(du), innermostthreads(threads) { 
     initMPI(f);
@@ -366,8 +372,9 @@ public:
   ImplicitHConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
                            const dimensions3& d, const dimensions3& du,
                            Complex *f, unsigned int A=2, unsigned int B=1,
+                           bool compact=true,
                            unsigned int threads=fftw::maxthreads) :
-    ImplicitHConvolution3(mx,my,mz,A,B,
+    ImplicitHConvolution3(mx,my,mz,A,B,compact,
                           d.z < mz ? 1 : threads,
                           d.z < mz ? threads : 1,
                           d.y,d.z,du.n2,du.n),
@@ -394,11 +401,11 @@ public:
   }
   
   void HermitianSymmetrize(Complex *f, Complex *u) {
-    HermitianSymmetrizeXYMPI(mx,my,d,f,du.n,u);
+    HermitianSymmetrizeXYMPI(mx,my,d,compact,f,du.n,u);
   }
   
   // F is a pointer to A distinct data blocks each of size
-  // 2mx*d.y*d.z, shifted by offset (contents not preserved).
+  // (2mx-compact)*d.y*d.z, shifted by offset (contents not preserved).
   void convolve(Complex **F, realmultiplier *pmult, bool symmetrize=true,
                 unsigned int offset=0);
   

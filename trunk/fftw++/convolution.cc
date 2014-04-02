@@ -690,6 +690,187 @@ void fftpad::forwards(Complex *f, Complex *u)
 
 void fft0pad::backwards(Complex *f, Complex *u)
 {
+  unsigned int m1=m-1;
+  unsigned int m1stride=m1*stride;
+  Complex *fm1stride=f+m1stride;
+  for(unsigned int i=0; i < M; ++i)
+    u[i]=fm1stride[i];
+    
+#ifdef __SSE2__      
+  Vec Mhalf=LOAD(-0.5);
+  Vec Mhsqrt3=LOAD(-hsqrt3);
+#endif    
+  unsigned int stop=s;
+  
+  for(unsigned int K=0; K < m; K += s) {
+    Complex *ZetaL0=ZetaL-K;
+#ifdef __SSE2__
+    Vec H=LOAD(ZetaH+K/s);
+    for(unsigned int k=max(1,K); k < stop; ++k) {
+      Vec Zetak=ZMULT(H,LOAD(ZetaL0+k));
+      Vec X=UNPACKL(Zetak,Zetak);
+      Vec Y=UNPACKH(CONJ(Zetak),Zetak);
+      unsigned int kstride=k*stride;
+      Complex *uk=u+kstride;
+      Complex *fk=f+kstride;
+      Complex *fmk=fm1stride+kstride;
+      for(unsigned int i=0; i < M; ++i) {
+        Complex *p=fmk+i;
+        Complex *q=f+i;
+        Complex *r=fk+i;
+        Vec A=LOAD(p);
+        Vec B=LOAD(q);
+        Vec Z=B*Mhalf+A;
+        STORE(q,LOAD(r));
+        STORE(r,B+A);
+        B *= Mhsqrt3;
+        A=ZMULT(X,Y,UNPACKL(Z,B));
+        B=ZMULTI(X,Y,UNPACKH(Z,B));
+        STORE(p,A+B);
+        STORE(uk+i,CONJ(A-B));
+      }
+    }
+#else        
+    Complex H=ZetaH[K/s];
+    for(unsigned int k=max(1,K); k < stop; ++k) {
+      Complex L=ZetaL0[k];
+      double Re=H.re*L.re-H.im*L.im;
+      double Im=H.re*L.im+H.im*L.re;
+      unsigned int kstride=k*stride;
+      Complex *uk=u+kstride;
+      Complex *fk=f+kstride;
+      Complex *fmk=fm1stride+kstride;
+      for(unsigned int i=0; i < M; ++i) {
+        Complex *p=fmk+i;
+        Complex *q=f+i;
+        double fkre=q->re;
+        double fkim=q->im;
+        double fmkre=p->re;
+        double fmkim=p->im;
+        double re=-0.5*fkre+fmkre;
+        double im=-hsqrt3*fkre;
+        double Are=Re*re-Im*im;
+        double Aim=Re*im+Im*re;
+        re=fmkim-0.5*fkim;
+        im=-hsqrt3*fkim;
+        double Bre=-Re*im-Im*re;
+        double Bim=Re*re-Im*im;
+        p->re=Are+Bre;
+        p->im=Aim+Bim;
+        p=uk+i;
+        p->re=Are-Bre;
+        p->im=Bim-Aim;
+        p=fk+i;
+        q->re=p->re;
+        q->im=p->im;
+        p->re=fkre+fmkre;
+        p->im=fkim+fmkim;
+      }
+    }
+#endif
+    stop=min(stop+s,m);
+  }
+  
+  Backwards->fft(f);
+  Complex *umstride=u+m*stride;
+  for(unsigned int i=0; i < M; ++i) {
+    umstride[i]=fm1stride[i]; // Store extra value here.
+    fm1stride[i]=u[i];
+  }
+    
+  Backwards->fft(fm1stride);
+  Backwards->fft(u);
+}
+
+void fft0pad::forwards(Complex *f, Complex *u)
+{
+  unsigned int m1stride=(m-1)*stride;
+  Complex *fm1stride=f+m1stride;
+  Forwards->fft(fm1stride);
+  Complex *umstride=u+m*stride;
+  for(unsigned int i=0; i < M; ++i) {
+    Complex temp=umstride[i];
+    umstride[i]=fm1stride[i];
+    fm1stride[i]=temp;
+  }
+    
+  Forwards->fft(f);
+  Forwards->fft(u);
+
+  double ninv=1.0/(3.0*m);
+  for(unsigned int i=0; i < M; ++i)
+    umstride[i]=(umstride[i]+f[i]+u[i])*ninv;
+#ifdef __SSE2__      
+  Vec Ninv=LOAD(ninv);
+  Vec Mhalf=LOAD(-0.5);
+  Vec HSqrt3=LOAD(hsqrt3);
+#endif    
+  unsigned int stop=s;
+  
+  for(unsigned int K=0; K < m; K += s) {
+    Complex *ZetaL0=ZetaL-K;
+#ifdef __SSE2__      
+    Vec H=LOAD(ZetaH+K/s)*Ninv;
+#else
+    Complex H=ninv*ZetaH[K/s];
+#endif    
+    for(unsigned int k=max(1,K); k < stop; ++k) {
+#ifdef __SSE2__      
+      Vec Zetak=ZMULT(H,LOAD(ZetaL0+k));
+      Vec X=UNPACKL(Zetak,Zetak);
+      Vec Y=UNPACKH(CONJ(Zetak),Zetak);
+      unsigned int kstride=k*stride;
+      Complex *fk=f+kstride;
+      Complex *fm1k=fm1stride+kstride;
+      Complex *uk=u+kstride;
+      for(unsigned int i=0; i < M; ++i) {
+        Complex *p=fk+i;
+        Complex *q=fm1k+i;
+        Vec F0=LOAD(p)*Ninv;
+        Vec F1=ZMULT(X,-Y,LOAD(q));
+        Vec F2=ZMULT(X,Y,LOAD(uk+i));
+        Vec S=F1+F2;
+        STORE(p-stride,F0+Mhalf*S+HSqrt3*ZMULTI(F1-F2));
+        STORE(q,F0+S);
+      }
+#else
+      Complex L=ZetaL0[k];
+      double Re=H.re*L.re-H.im*L.im;
+      double Im=H.re*L.im+H.im*L.re;
+      unsigned int kstride=k*stride;
+      Complex *fk=f+kstride;
+      Complex *fm1k=fm1stride+kstride;
+      Complex *uk=u+kstride;
+      for(unsigned int i=0; i < M; ++i) {
+        Complex *p=fk+i;
+        Complex *q=fm1k+i;
+        Complex z=*q;
+        Complex r=uk[i];
+        double f0re=p->re*ninv;
+        double f0im=p->im*ninv;
+        double f1re=Re*z.re+Im*z.im;
+        double f1im=Re*z.im-Im*z.re;
+        double f2re=Re*r.re-Im*r.im;
+        double f2im=Re*r.im+Im*r.re;
+        double sre=f1re+f2re;
+        double sim=f1im+f2im;
+        p -= stride;
+        p->re=f0re-0.5*sre-hsqrt3*(f1im-f2im);
+        p->im=f0im-0.5*sim+hsqrt3*(f1re-f2re);
+        q->re=f0re+sre;
+        q->im=f0im+sim;
+      }
+#endif      
+    }
+    stop=min(stop+s,m);
+  }
+    
+  for(unsigned int i=0; i < M; ++i)
+    fm1stride[i]=umstride[i];
+}
+
+void fft0padwide::backwards(Complex *f, Complex *u)
+{
   unsigned int mstride=m*stride;
   Complex *fmstride=f+mstride;
   for(unsigned int i=0; i < M; ++i)
@@ -771,9 +952,8 @@ void fft0pad::backwards(Complex *f, Complex *u)
   Backwards->fft(fmstride);
   Backwards->fft(u);
 }
-  
 
-void fft0pad::forwards(Complex *f, Complex *u)
+void fft0padwide::forwards(Complex *f, Complex *u)
 {
   unsigned int mstride=m*stride;
   Complex *fmstride=f+mstride;
@@ -849,7 +1029,6 @@ void fft0pad::forwards(Complex *f, Complex *u)
     }
     );
 }
-
 
 // a[0][k]=sum_i a[i][k]*b[i][k]*c[i][k]
 void ImplicitHTConvolution::mult(double *a, double *b, double **C,

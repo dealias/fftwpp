@@ -56,14 +56,11 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"hdeipHM:N:m:x:y:z:n:T:");
+    int c = getopt(argc,argv,"heipHM:N:m:x:y:z:n:T:");
     if (c == -1) break;
                 
     switch (c) {
       case 0:
-        break;
-      case 'd':
-        Direct=true;
         break;
       case 'e':
         Explicit=true;
