@@ -115,8 +115,9 @@ int main(int argc, char* argv[])
   }
   
   unsigned int nx=2*mx-compact;
+  unsigned int ny=my+!compact;
   
-  MPIgroup group(MPI_COMM_WORLD,my);
+  MPIgroup group(MPI_COMM_WORLD,ny);
   MPILoadWisdom(group.active);
   
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED) {
@@ -142,8 +143,8 @@ int main(int argc, char* argv[])
       cout << "mx=" << mx << ", my=" << my << endl;
     }
     
-    dimensions d(nx,my,group.active,group.yblock);
-    dimensions du(mx+compact,my,group.active,group.yblock);
+    dimensions d(nx,ny,group.active,group.yblock);
+    dimensions du(mx+compact,ny,group.active,group.yblock);
   
     unsigned int Mn=M*d.n;
   
@@ -186,7 +187,9 @@ int main(int argc, char* argv[])
       delete [] F;
     }
     if(nx*my < outlimit) 
-      show(f,nx,d.y,group.active,!compact,0);
+      show(f,nx,d.y,
+           !compact,0,
+           nx,compact || d.y0+d.y < ny ? d.y : d.y-1,group.active);
 
     // check if the hash of the rounded output matches a known value
     if(dohash && compact) {

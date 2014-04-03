@@ -145,7 +145,7 @@ int main(int argc, char* argv[])
   size_t align=sizeof(Complex);
   nxp=2*mx-compact;
   nyp=2*my-compact;
-  nzp=mz;
+  nzp=mz+!compact;
   unsigned int nxp0=Implicit ? nxp*M : nxp;
   array3<Complex> h0;
   if(Direct) h0.Allocate(mx,my,mz,align);

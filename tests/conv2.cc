@@ -143,7 +143,7 @@ int main(int argc, char* argv[])
   if(Direct && Implicit) h0.Allocate(mx,my,align);
 
   nxp=Explicit ? nx : 2*mx-compact;
-  nyp=Explicit ? ny/2+1 : my;
+  nyp=Explicit ? ny/2+1 : my+!compact;
   unsigned int nxp0=nxp*M;
   array2<Complex> f(nxp0,nyp,align);
   array2<Complex> g(nxp0,nyp,align);

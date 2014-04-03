@@ -57,7 +57,6 @@ void ImplicitConvolution2MPI::convolve(Complex **F, multiplier *pmult,
 void ImplicitHConvolution2MPI::convolve(Complex **F, realmultiplier *pmult,
                                         bool symmetrize, unsigned int offset)
 {
-    
   if(d.y0 > 0) symmetrize=false;
     
   backwards(F,U2,d.y,symmetrize,offset);
@@ -65,8 +64,9 @@ void ImplicitHConvolution2MPI::convolve(Complex **F, realmultiplier *pmult,
   transpose(intranspose,A,F,offset);
   transpose(uintranspose,A,U2);
     
-  subconvolution(F,pmult,offset,d.x*my+offset);
-  subconvolution(U2,pmult,0,du.x*my);
+  unsigned int ny=my+!compact;
+  subconvolution(F,pmult,offset,d.x*ny+offset,ny);
+  subconvolution(U2,pmult,0,du.x*ny,ny);
     
   transpose(outtranspose,B,F,offset);
   transpose(uouttranspose,B,U2);
@@ -129,8 +129,7 @@ void ImplicitConvolution3MPI::convolve(Complex **F, multiplier *pmult,
   }
 }
 
-// Enforce 3D Hermiticity using specified (x,y > 0,z=0) and (x >= 0,y=0,z=0)
-// data.
+// Enforce 3D Hermiticity using specified (x,y > 0,z=0) and (x >= 0,y=0,z=0) data.
 // u is a work array of size d.nx.
 void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
                               dimensions3& d, bool compact, Complex *f,
@@ -196,8 +195,8 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
     for(unsigned int i=0; i < nx; ++i)
       u[i]=conj(f[stride*(d.nx-1-i)+d.z*j]);
     int J=d.reflect[j];
-  if(J != rank)
-    MPI_Send(u,2*nx,MPI_DOUBLE,J,0,*d.XYplane);
+    if(J != rank)
+      MPI_Send(u,2*nx,MPI_DOUBLE,J,0,*d.XYplane);
     else {
       int offset=2*yorigin-y0;
       if(y0+j != yorigin) {
@@ -242,7 +241,7 @@ void ImplicitHConvolution3MPI::convolve(Complex **F, realmultiplier *pmult,
     
   if(d.y < d.ny) {
     transpose(outtranspose,B,F,offset);
-   transpose(uouttranspose,B,U3);
+    transpose(uouttranspose,B,U3);
   }
     
   forwards(F,U3,offset);

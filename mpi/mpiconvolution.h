@@ -108,21 +108,22 @@ public:
   void inittranspose(Complex *f) {
     unsigned int nx=2*mx-compact;
     unsigned int mx1=mx+compact;
+    unsigned int ny=my+!compact;
     intranspose=
-      fftw_mpi_plan_many_transpose(my,nx,2,d.block,0,(double*) f,(double*) f,
+      fftw_mpi_plan_many_transpose(ny,nx,2,d.block,0,(double*) f,(double*) f,
                                    d.communicator,FFTW_MPI_TRANSPOSED_IN);
     if(!intranspose) transposeError("inH2");
     uintranspose=
-      fftw_mpi_plan_many_transpose(my,mx1,2,du.block,0,(double*) u2,
+      fftw_mpi_plan_many_transpose(ny,mx1,2,du.block,0,(double*) u2,
                                    (double*) u2,du.communicator,
                                    FFTW_MPI_TRANSPOSED_IN);
     if(!uintranspose) transposeError("uinH2");
     outtranspose=
-      fftw_mpi_plan_many_transpose(nx,my,2,0,d.block,(double*) f,(double*) f,
+      fftw_mpi_plan_many_transpose(nx,ny,2,0,d.block,(double*) f,(double*) f,
                                    d.communicator,FFTW_MPI_TRANSPOSED_OUT);
     if(!outtranspose) transposeError("outH2");
     uouttranspose=
-      fftw_mpi_plan_many_transpose(mx1,my,2,0,du.block,(double*) u2,
+      fftw_mpi_plan_many_transpose(mx1,ny,2,0,du.block,(double*) u2,
                                    (double*) u2,du.communicator,
                                    FFTW_MPI_TRANSPOSED_OUT);
     if(!uouttranspose) transposeError("uoutH2");
@@ -225,7 +226,7 @@ public:
   }
 
   void initMPI() {
-    if(d.z < mz) {
+    if(d.z < d.nz) {
       yzconvolve=new ImplicitConvolution2*[threads];
       for(unsigned int t=0; t < threads; ++t)
         yzconvolve[t]=new ImplicitConvolution2MPI(my,mz,d.yz,
@@ -339,13 +340,13 @@ public:
   }
 
   void initMPI(Complex *f) {
-    if(d.z < mz) {
+    if(d.z < d.nz) {
       yzconvolve=new ImplicitHConvolution2*[threads];
       for(unsigned int t=0; t < threads; ++t)
         yzconvolve[t]=
           new ImplicitHConvolution2MPI(my,mz,d.yz,du.yz,f,
                                        u1+t*(mz/2+1)*A*innermostthreads,
-                                       u2+t*du.n2*A,A,B,innermostthreads);
+                                       u2+t*du.n2*A,A,B,compact,innermostthreads);
       initpointers3(U3,u3,du.n);
     }
   }
@@ -378,7 +379,7 @@ public:
                           d.z < mz ? 1 : threads,
                           d.z < mz ? threads : 1,
                           d.y,d.z,du.n2,du.n),
-    d(d), du(du), innermostthreads(threads) { 
+                                d(d), du(du), innermostthreads(threads) { 
     initMPI(f);
     inittranspose(f);
   }
