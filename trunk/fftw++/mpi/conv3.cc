@@ -128,8 +128,9 @@ int main(int argc, char* argv[])
     
   unsigned int nx=2*mx-compact;
   unsigned int ny=2*my-compact;
+  unsigned int nz=mz+!compact;
     
-  MPIgroup group(MPI_COMM_WORLD,nx,ny,mz);
+  MPIgroup group(MPI_COMM_WORLD,nx,ny,nz);
   MPILoadWisdom(group.active);
   
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED) {
@@ -160,8 +161,8 @@ int main(int argc, char* argv[])
       cout << "zblock=" << group.zblock << endl;
     }
 
-    dimensions3 d(nx,ny,ny,mz,group);
-    dimensions3 du(mx+compact,ny,my+compact,mz,group);
+    dimensions3 d(nx,ny,ny,nz,group);
+    dimensions3 du(mx+compact,ny,my+compact,nz,group);
     
     unsigned int Mn=M*d.n;
     Complex *f=ComplexAlign(Mn);
@@ -203,7 +204,9 @@ int main(int argc, char* argv[])
       delete [] F;
       
       if(nx*ny*mz < outlimit)
-        show(f,nx,d.y,d.z,group.active,!compact,!compact && d.y0 == 0,0);
+        show(f,nx,d.y,d.z,
+             !compact,!compact && d.y0 == 0,0,
+             nx,d.y,compact || d.z0+d.z < nz ? d.z : d.z-1,group.active);
   
       // check if the hash of the rounded output matches a known value
       if(dohash && compact) {

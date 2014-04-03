@@ -451,7 +451,7 @@ class fft0padwide : public fft0pad {
   unsigned int threads;
 public:  
   fft0padwide(unsigned int m, unsigned int M, unsigned int stride,
-                    Complex *u=NULL) :  fft0pad(m,M,stride,u) {
+              Complex *u=NULL) :  fft0pad(m,M,stride,u) {
     threads=Forwards->Threads();
   }
 
@@ -678,8 +678,8 @@ public:
   void set(unsigned int &nx, unsigned int& ny, unsigned int& stride) {
     if(nx == 0) nx=mx;
     if(ny == 0) {
-      ny=my;
-      stride=(mx+compact)*my;
+      ny=my+!compact;
+      stride=(mx+compact)*ny;
     }
   }
   
@@ -746,7 +746,7 @@ public:
   }
     
   // u1 is a temporary array of size (my/2+1)*A*threads.
-  // u2 is a temporary array of size (mx+compact)*my*A;
+  // u2 is a temporary array of size (mx+compact)*(my+!compact)*A;
   // A is the number of inputs.
   // B is the number of outputs.
   // threads is the number of threads to use in the outer subconvolution loop.
@@ -789,8 +789,7 @@ public:
   }
 
   void subconvolution(Complex **F, realmultiplier *pmult,
-                      unsigned int start, unsigned int stop) {
-    unsigned int stride=my;
+                      unsigned int start, unsigned int stop, unsigned int stride) {
     if(threads > 1) {
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
@@ -810,12 +809,13 @@ public:
   }
   
   // F is a pointer to A distinct data blocks each of size 
-  // (2mx-compact)*my, shifted by offset (contents not preserved).
+  // (2mx-compact)*(my+!compact), shifted by offset (contents not preserved).
   virtual void convolve(Complex **F, realmultiplier *pmult,
                         bool symmetrize=true, unsigned int offset=0) {
-    backwards(F,U2,my,symmetrize,offset);
-    subconvolution(F,pmult,offset,(2*mx-compact)*my+offset);
-    subconvolution(U2,pmult,0,(mx+compact)*my);
+    unsigned ny=my+!compact;
+    backwards(F,U2,ny,symmetrize,offset);
+    subconvolution(F,pmult,offset,(2*mx-compact)*ny+offset,ny);
+    subconvolution(U2,pmult,0,(mx+compact)*ny,ny);
     forwards(F,U2,offset);
   }
   
@@ -1035,7 +1035,7 @@ public:
     xfftpad=compact ? new fft0pad(mx,nyz,nyz,u3) :
       new fft0padwide(mx,nyz,nyz,u3);
 
-    if(nz == mz) {
+    if(nz == mz+!compact) {
       yzconvolve=new ImplicitHConvolution2*[threads];
       for(unsigned int t=0; t < threads; ++t)
         yzconvolve[t]=new ImplicitHConvolution2(my,mz,
@@ -1050,15 +1050,15 @@ public:
            unsigned int& stride2, unsigned int& stride3) {
     if(ny == 0) {
       ny=2*my-compact;
-      nz=mz;
-      stride2=(my+compact)*mz;
-      stride3=(mx+compact)*ny*mz;
+      nz=mz+!compact;
+      stride2=(my+compact)*nz;
+      stride3=(mx+compact)*ny*nz;
     }
   }
   
   // u1 is a temporary array of size (mz/2+1)*A*threads.
-  // u2 is a temporary array of size (my+compact)*mz*A*threads.
-  // u3 is a temporary array of size (mx+compact)*(2my-compact)*mz*A.
+  // u2 is a temporary array of size (my+compact)*(mz+!compact)*A*threads.
+  // u3 is a temporary array of size (mx+compact)*(2my-compact)*(mz+!compact)*A.
   // A is the number of inputs.
   // B is the number of outputs.
   // threads is the number of threads to use in the outer subconvolution loop.
@@ -1114,7 +1114,7 @@ public:
   }
   
   virtual void HermitianSymmetrize(Complex *f, Complex *u) {
-    HermitianSymmetrizeXY(mx,my,mz,mx-compact,my-compact,f);
+    HermitianSymmetrizeXY(mx,my,mz+!compact,mx-compact,my-compact,f);
   }
   
   void backwards(Complex **F, Complex **U3, bool symmetrize,
@@ -1150,13 +1150,14 @@ public:
   }
   
   // F is a pointer to A distinct data blocks each of size
-  // (2mx-compact)*(2my-compact)*mz, shifted by offset (contents not preserved).
+  // (2mx-compact)*(2my-compact)*(mz+!compact), shifted by offset 
+  // (contents not preserved).
   virtual void convolve(Complex **F, realmultiplier *pmult,
                         bool symmetrize=true, unsigned int offset=0) {
-    unsigned int nymz=(2*my-compact)*mz;
+    unsigned int nynz=(2*my-compact)*(mz+!compact);
     backwards(F,U3,symmetrize,offset);
-    subconvolution(F,pmult,offset,(2*mx-compact)*nymz+offset,nymz);
-    subconvolution(U3,pmult,0,(mx+compact)*nymz,nymz);
+    subconvolution(F,pmult,offset,(2*mx-compact)*nynz+offset,nynz);
+    subconvolution(U3,pmult,0,(mx+compact)*nynz,nynz);
     forwards(F,U3,offset);
   }
     
