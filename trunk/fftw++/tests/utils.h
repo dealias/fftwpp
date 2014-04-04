@@ -18,13 +18,15 @@ inline double cbrt(double x)
 #include <getopt.h>
 #endif
 
-inline void usage(int n, bool test=false, bool Explicit=true)
+inline void usage(int n, bool test=false, bool Explicit=true, 
+		  bool compact=false)
 {
   std::cerr << "Options: " << std::endl;
   std::cerr << "-h\t\t help" << std::endl;
   std::cerr << "-i\t\t implicitly padded convolution" << std::endl;
-  std::cerr << "-c\t\t compact data format [1] (0=false, 1=true)" 
-            << std::endl;
+  if(compact) 
+    std::cerr << "-c\t\t compact data format [1] (0=false, 1=true)" 
+	      << std::endl;
   if(Explicit) {
     std::cerr << "-e\t\t explicitly padded convolution" << std::endl;
     if(n > 1)
@@ -32,8 +34,7 @@ inline void usage(int n, bool test=false, bool Explicit=true)
   }
   std::cerr << "-d\t\t direct convolution (slow)" << std::endl;
   std::cerr << "-T\t\t number of threads" << std::endl;
-  if(test)
-  std::cerr << "-t\t\t accuracy test" << std::endl;
+  if(test) std::cerr << "-t\t\t accuracy test" << std::endl;
   std::cerr << "-N\t\t number of iterations" << std::endl;
   std::cerr << "-M\t\t number of data blocks in dot product" << std::endl;
   std::cerr << "-m\t\t size" << std::endl;

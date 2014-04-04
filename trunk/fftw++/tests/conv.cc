@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
         break;
       case 'h':
       default:
-        usage(1,true);
+        usage(1,true,true,true);
     }
   }
 
