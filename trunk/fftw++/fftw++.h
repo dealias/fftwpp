@@ -236,7 +236,7 @@ public:
   static const char *WisdomName;
   static bool mpi; // TODO: Remove when FFTW transpose routines are replaced
   
-  unsigned int Threads() {return threads;}
+  virtual unsigned int Threads() {return threads;}
   
   static const char *oddshift;
   
@@ -890,6 +890,8 @@ public:
       }
     }
   } 
+  
+  unsigned int Threads() {return std::max(T,threads);}
   
   threaddata lookup(bool inplace) {
     return Lookup(threadtable,keytype3(nx,Q,R,maxthreads,inplace));
