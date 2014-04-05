@@ -648,10 +648,8 @@ void fftpad::reduce(Complex *f, Complex *u)
         unsigned int kstride=k*stride;
         Complex *uk=u+kstride;
         Complex *fk=f+kstride;
-        for(unsigned int i=0; i < M; ++i) {
-          Complex *p=fk+i;
-          STORE(p,LOAD(p)*Ninv+ZMULT(X,Y,LOAD(uk+i)));
-        }
+        for(unsigned int i=0; i < M; ++i)
+          STORE(fk+i,LOAD(fk+i)*Ninv+ZMULT(X,Y,LOAD(uk+i)));
       }
     }
     );
@@ -715,18 +713,15 @@ void fft0pad::backwards(Complex *f, Complex *u)
       Complex *fk=f+kstride;
       Complex *fmk=fm1stride+kstride;
       for(unsigned int i=0; i < M; ++i) {
-        Complex *p=fmk+i;
-        Complex *q=f+i;
-        Complex *r=fk+i;
-        Vec A=LOAD(p);
-        Vec B=LOAD(q);
+        Vec A=LOAD(fmk+i);
+        Vec B=LOAD(f+i);
         Vec Z=B*Mhalf+A;
-        STORE(q,LOAD(r));
-        STORE(r,B+A);
+        STORE(f+i,LOAD(fk+i));
+        STORE(fk+i,B+A);
         B *= Mhsqrt3;
         A=ZMULT(X,Y,UNPACKL(Z,B));
         B=ZMULTI(X,Y,UNPACKH(Z,B));
-        STORE(p,A+B);
+        STORE(fmk+i,A+B);
         STORE(uk+i,CONJ(A-B));
       }
     }
@@ -824,14 +819,12 @@ void fft0pad::forwards(Complex *f, Complex *u)
       Complex *fm1k=fm1stride+kstride;
       Complex *uk=u+kstride;
       for(unsigned int i=0; i < M; ++i) {
-        Complex *p=fk+i;
-        Complex *q=fm1k+i;
-        Vec F0=LOAD(p)*Ninv;
-        Vec F1=ZMULT(X,-Y,LOAD(q));
+        Vec F0=LOAD(fk+i)*Ninv;
+        Vec F1=ZMULT(X,-Y,LOAD(fm1k+i));
         Vec F2=ZMULT(X,Y,LOAD(uk+i));
         Vec S=F1+F2;
-        STORE(p-stride,F0+Mhalf*S+HSqrt3*ZMULTI(F1-F2));
-        STORE(q,F0+S);
+        STORE(fk+i-stride,F0+Mhalf*S+HSqrt3*ZMULTI(F1-F2));
+        STORE(fm1k+i,F0+S);
       }
 #else
       Complex L=ZetaL0[k];
