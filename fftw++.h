@@ -444,7 +444,7 @@ public:
         if(diff < -error) {
           threads=maxthreads;
           fftw_destroy_plan(plan1);
-          break;
+          return threaddata(threads,ST.mean(),ST.stdev());
         }
       }
     }
@@ -887,6 +887,7 @@ public:
         threads=S1.threads;
       } else {
         fftw_destroy_plan(planT1);
+        threads=ST.threads;
       }
     }
   } 
