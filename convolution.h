@@ -66,11 +66,18 @@ class ThreadBase
 {
 protected:
   unsigned int threads;
+  unsigned int innerthreads;
 public:  
   ThreadBase() {threads=fftw::maxthreads;}
   ThreadBase(unsigned int threads) : threads(threads) {}
   void Threads(unsigned int nthreads) {threads=nthreads;}
   unsigned int Threads() {return threads;}
+  
+  void multithread(unsigned int nx) {
+    innerthreads=threads;
+    threads=min(threads,nx);
+  }
+  
 };
 
 #ifndef __SSE2__
@@ -135,10 +142,12 @@ public:
     if(A < B) {
       Backwards=new fft1d(m,1,U0);
       Forwards=new fft1d(m,-1,U0);
-      threads=std::max(Backwards->Threads(),Forwards->Threads());
+      threads=std::min(threads,
+                       std::max(Backwards->Threads(),Forwards->Threads()));
     } else {
       ForwardsO=new fft1d(m,-1,U0,U1);
-      threads=std::max(BackwardsO->Threads(),ForwardsO->Threads());
+      threads=std::min(threads,
+                       std::max(BackwardsO->Threads(),ForwardsO->Threads()));
     }
     
     if(A == 1) deleteAlign(U1);
@@ -261,7 +270,7 @@ public:
     
     if(A == 1) deleteAlign(U1);
     
-    threads=std::max(rco->Threads(),cro->Threads());
+    threads=std::min(threads,std::max(rco->Threads(),cro->Threads()));
     s=BuildZeta(3*m,c+2,ZetaH,ZetaL,threads);
   }
   
@@ -364,7 +373,8 @@ public:
     Backwards=new mfft1d(m,1,M,stride,1,u);
     Forwards=new mfft1d(m,-1,M,stride,1,u);
     
-    threads=std::max(Backwards->Threads(), Forwards->Threads());
+    threads=std::min(fftw::maxthreads,
+                     std::max(Backwards->Threads(),Forwards->Threads()));
     
     s=BuildZeta(2*m,m,ZetaH,ZetaL,threads);
   }
@@ -454,7 +464,8 @@ class fft0padwide : public fft0pad {
 public:  
   fft0padwide(unsigned int m, unsigned int M, unsigned int stride,
               Complex *u=NULL) :  fft0pad(m,M,stride,u) {
-    threads=std::max(Backwards->Threads(),Forwards->Threads());
+    threads=std::min(fftw::maxthreads,
+                     std::max(Backwards->Threads(),Forwards->Threads()));
   }
 
   void backwards(Complex *f, Complex *u);
@@ -472,7 +483,6 @@ protected:
   ImplicitConvolution **yconvolve;
   Complex **U2;
   bool allocated;
-  unsigned int innerthreads;
 public:  
   unsigned int getmx() {return mx;}
   unsigned int getmy() {return my;}
@@ -487,15 +497,6 @@ public:
   
   void deletepointers2(Complex **&U2) {
     delete [] U2;
-  }
-  
-  void multithread(unsigned int nx) {
-    if(threads > 1 && nx >= threads) {
-      innerthreads=1;
-    } else {
-      innerthreads=threads;
-      threads=1;
-    }
   }
   
   void init(unsigned int nx, unsigned int ny, unsigned int stride) {
@@ -649,7 +650,6 @@ protected:
   Complex **U2,**V2;
   bool compact;
   bool allocated;
-  unsigned int innerthreads;
 public:
 
   void initpointers2(Complex **&U2, Complex *u2, unsigned int stride) 
@@ -661,15 +661,6 @@ public:
   
   void deletepointers2(Complex **&U2) {
     delete [] U2;
-  }
-  
-  void multithread(unsigned int nx) {
-    if(threads > 1 && nx >= threads) {
-      innerthreads=1;
-    } else {
-      innerthreads=threads;
-      threads=1;
-    }
   }
   
   void init(unsigned int nx, unsigned int ny, unsigned int stride) {
@@ -731,15 +722,6 @@ protected:
   ImplicitHConvolution **yconvolve;
   Complex ***U;
 public:
-  void multithread(unsigned int nx) {
-    if(threads > 1 && nx >= threads) {
-      innerthreads=1;
-    } else {
-      innerthreads=threads;
-      threads=1;
-    }
-  }
-  
   void initconvolve() {
     yconvolve=new ImplicitHConvolution*[threads];
     for(unsigned int t=0; t < threads; ++t)
@@ -840,7 +822,6 @@ protected:
   ImplicitConvolution2 **yzconvolve;
   Complex **U3;
   bool allocated;
-  unsigned int innerthreads;
 public:  
   unsigned int getmx() {return mx;}
   unsigned int getmy() {return my;}
@@ -856,15 +837,6 @@ public:
   
   void deletepointers3(Complex **&U3) {
     delete [] U3;
-  }
-  
-  void multithread(unsigned int nx) {
-    if(threads > 1 && nx >= threads) {
-      innerthreads=1;
-    } else {
-      innerthreads=threads;
-      threads=1;
-    }
   }
   
   void init(unsigned int ny, unsigned int nz, unsigned int stride2,
@@ -1004,7 +976,6 @@ protected:
   Complex **U3;
   bool compact;
   bool allocated;
-  unsigned int innerthreads;
 public:     
   unsigned int getmx() {return mx;}
   unsigned int getmy() {return my;}
@@ -1022,15 +993,6 @@ public:
     delete [] U3;
   }
     
-  void multithread(unsigned int nx) {
-    if(threads > 1 && nx >= threads) {
-      innerthreads=1;
-    } else {
-      innerthreads=threads;
-      threads=1;
-    }
-  }
-  
   void init(unsigned int ny, unsigned int nz, unsigned int stride2,
             unsigned int stride3) {
     unsigned int nyz=ny*nz;
@@ -1206,7 +1168,7 @@ public:
     rco=new rcfft1d(twom,(double *) u,v);
     cro=new crfft1d(twom,v,(double *) u);
     
-    threads=std::max(rco->Threads(),cro->Threads());
+    threads=std::min(threads,std::max(rco->Threads(),cro->Threads()));
     
     s=BuildZeta(4*m,m,ZetaH,ZetaL,threads);
     
@@ -1285,7 +1247,7 @@ public:
     rco=new rcfft1d(twom,(double *) u,v);
     cro=new crfft1d(twom,v,(double *) u);
     
-    threads=std::max(rco->Threads(),cro->Threads());
+    threads=std::min(threads,std::max(rco->Threads(),cro->Threads()));
     
     s=BuildZeta(4*m,m,ZetaH,ZetaL,threads);
   }
@@ -1348,7 +1310,7 @@ public:
     rc=new rcfft1d(twom,u);
     cr=new crfft1d(twom,u);
     
-    threads=std::max(rc->Threads(),cr->Threads());
+    threads=std::min(threads,std::max(rc->Threads(),cr->Threads()));
     
     s=BuildZeta(4*m,m,ZetaH,ZetaL,threads);
   }
@@ -1410,7 +1372,8 @@ public:
     Backwards=new mfft1d(twom,1,M,stride,1,f);
     Forwards=new mfft1d(twom,-1,M,stride,1,f);
     
-    threads=std::max(Backwards->Threads(),Forwards->Threads());
+    threads=std::min(threads,
+                     std::max(Backwards->Threads(),Forwards->Threads()));
     
     s=BuildZeta(4*m,twom,ZetaH,ZetaL,threads);
   }
