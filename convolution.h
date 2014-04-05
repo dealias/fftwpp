@@ -135,12 +135,16 @@ public:
     if(A < B) {
       Backwards=new fft1d(m,1,U0);
       Forwards=new fft1d(m,-1,U0);
-    } else
+      threads=std::min(threads,
+                       std::max(Backwards->Threads(),Forwards->Threads()));
+    } else {
       ForwardsO=new fft1d(m,-1,U0,U1);
+      threads=std::min(threads,
+                       std::max(BackwardsO->Threads(),ForwardsO->Threads()));
+    }
     
     if(A == 1) deleteAlign(U1);
 
-    threads=std::min(threads,BackwardsO->Threads());
     s=BuildZeta(2*m,m,ZetaH,ZetaL,threads);
   }
   
@@ -259,7 +263,7 @@ public:
     
     if(A == 1) deleteAlign(U1);
     
-    threads=std::min(threads,cr->Threads());
+    threads=std::min(threads,std::max(rco->Threads(),cro->Threads()));
     s=BuildZeta(3*m,c+2,ZetaH,ZetaL,threads);
   }
   
@@ -362,7 +366,8 @@ public:
     Backwards=new mfft1d(m,1,M,stride,1,u);
     Forwards=new mfft1d(m,-1,M,stride,1,u);
     
-    threads=Forwards->Threads();
+    threads=std::min(threads,
+                     std::max(Backwards->Threads(), Forwards->Threads()));
     
     s=BuildZeta(2*m,m,ZetaH,ZetaL,threads);
   }
@@ -419,7 +424,7 @@ public:
     delete Backwards;
   }
   
-  // TODO: Update
+  // TODO: Update also for noncompact data format
   // Unscramble indices.
   inline unsigned findex(unsigned i) {
     return i < m-1 ? 3*i : 3*i+4-3*m;
@@ -452,7 +457,8 @@ class fft0padwide : public fft0pad {
 public:  
   fft0padwide(unsigned int m, unsigned int M, unsigned int stride,
               Complex *u=NULL) :  fft0pad(m,M,stride,u) {
-    threads=Forwards->Threads();
+    threads=std::min(threads,
+                     std::max(Backwards->Threads(),Forwards->Threads()));
   }
 
   void backwards(Complex *f, Complex *u);
@@ -1204,7 +1210,7 @@ public:
     rco=new rcfft1d(twom,(double *) u,v);
     cro=new crfft1d(twom,v,(double *) u);
     
-    threads=cro->Threads();
+    threads=std::min(threads,std::max(rco->Threads(),cro->Threads()));
     
     s=BuildZeta(4*m,m,ZetaH,ZetaL,threads);
     
@@ -1283,7 +1289,7 @@ public:
     rco=new rcfft1d(twom,(double *) u,v);
     cro=new crfft1d(twom,v,(double *) u);
     
-    threads=cro->Threads();
+    threads=std::min(threads,std::max(rco->Threads(),cro->Threads()));
     
     s=BuildZeta(4*m,m,ZetaH,ZetaL,threads);
   }
@@ -1346,7 +1352,7 @@ public:
     rc=new rcfft1d(twom,u);
     cr=new crfft1d(twom,u);
     
-    threads=cr->Threads();
+    threads=std::min(threads,std::max(rc->Threads(),cr->Threads()));
     
     s=BuildZeta(4*m,m,ZetaH,ZetaL,threads);
   }
@@ -1408,7 +1414,8 @@ public:
     Backwards=new mfft1d(twom,1,M,stride,1,f);
     Forwards=new mfft1d(twom,-1,M,stride,1,f);
     
-    threads=Forwards->Threads();
+    threads=std::min(threads,
+                     std::max(Backwards->Threads(),Forwards->Threads()));
     
     s=BuildZeta(4*m,twom,ZetaH,ZetaL,threads);
   }
