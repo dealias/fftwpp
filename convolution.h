@@ -74,8 +74,12 @@ public:
   unsigned int Threads() {return threads;}
   
   void multithread(unsigned int nx) {
-    innerthreads=threads;
-    threads=min(threads,nx);
+    if(threads > 1 && nx >= threads) {
+      innerthreads=1;
+    } else {
+      innerthreads=threads;
+      threads=1;
+    }
   }
   
 };
@@ -373,8 +377,7 @@ public:
     Backwards=new mfft1d(m,1,M,stride,1,u);
     Forwards=new mfft1d(m,-1,M,stride,1,u);
     
-    threads=std::min(fftw::maxthreads,
-                     std::max(Backwards->Threads(),Forwards->Threads()));
+    threads=std::max(Backwards->Threads(),Forwards->Threads());
     
     s=BuildZeta(2*m,m,ZetaH,ZetaL,threads);
   }
@@ -463,10 +466,8 @@ class fft0padwide : public fft0pad {
   unsigned int threads;
 public:  
   fft0padwide(unsigned int m, unsigned int M, unsigned int stride,
-              Complex *u=NULL) :  fft0pad(m,M,stride,u) {
-    threads=std::min(fftw::maxthreads,
-                     std::max(Backwards->Threads(),Forwards->Threads()));
-  }
+              Complex *u=NULL) :
+    fft0pad(m,M,stride,u), threads(std::min(m,fftw::maxthreads)) {}
 
   void backwards(Complex *f, Complex *u);
   void forwards(Complex *f, Complex *u);
@@ -664,7 +665,11 @@ public:
   }
   
   void init(unsigned int nx, unsigned int ny, unsigned int stride) {
-    xfftpad=compact ? new fft0pad(mx,ny,ny,u2) : new fft0padwide(mx,ny,ny,u2);
+    unsigned int save=fftw::maxthreads;
+    fftw::maxthreads=threads;
+    xfftpad=compact ? new fft0pad(mx,ny,ny,u2) :
+      new fft0padwide(mx,ny,ny,u2);
+    fftw::maxthreads=save;
     initpointers2(U2,u2,stride);
   }
 
