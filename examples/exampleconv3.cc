@@ -63,8 +63,8 @@ int main(int argc, char* argv[])
   */
   
   bool symmetrize=true;
-  ImplicitHConvolution3 C(mx,my,mz,symmetrize);
-  C.convolve(f,g);
+  ImplicitHConvolution3 C(mx,my,mz);
+  C.convolve(f,g,symmetrize);
   cout << "output:" << endl << f;
 
   return 0;
