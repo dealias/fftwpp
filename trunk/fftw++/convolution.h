@@ -74,7 +74,7 @@ public:
   unsigned int Threads() {return threads;}
   
   void multithread(unsigned int nx) {
-    if(threads > 1 && nx >= threads) {
+    if(nx >= threads) {
       innerthreads=1;
     } else {
       innerthreads=threads;
@@ -889,17 +889,16 @@ public:
     init(ny,nz,stride2,stride3);
   }
 
-  // innermostthreads, ny, nz, stride2, and stride3 are used by the MPI
+  // ny, nz, stride2, and stride3 are used by the MPI
   // interface and should not be set directly.
   ImplicitConvolution3(unsigned int mx, unsigned int my, unsigned int mz,
                        unsigned int A=2, unsigned int B=1, 
                        unsigned int threads=fftw::maxthreads,
-                       unsigned int innermostthreads=1,
                        unsigned int ny=0, unsigned int nz=0,
                        unsigned int stride2=0, unsigned int stride3=0) :
     ThreadBase(threads), mx(mx), my(my), mz(mz), A(A), B(B), allocated(true) {
     multithread(mx);
-    u1=ComplexAlign(mz*A*threads*innerthreads*innermostthreads);
+    u1=ComplexAlign(mz*A*threads*innerthreads);
     set(ny,nz,stride2,stride3);
     u2=ComplexAlign(stride2*A*threads);
     u3=ComplexAlign(stride3*A);
@@ -1046,18 +1045,17 @@ public:
     init(ny,nz,stride2,stride3);
   }
   
-  // innermostthreads, ny, nz, stride2, and stride3 are used by the MPI
+  // ny, nz, stride2, and stride3 are used by the MPI
   // interface and should not be set directly.
   ImplicitHConvolution3(unsigned int mx, unsigned int my, unsigned int mz,
                         unsigned int A=2, unsigned int B=1, bool compact=true,
                         unsigned int threads=fftw::maxthreads,
-                        unsigned int innermostthreads=1,
                         unsigned int ny=0, unsigned int nz=0,
                         unsigned int stride2=0, unsigned int stride3=0) :
     ThreadBase(threads), mx(mx), my(my), mz(mz), A(A), B(B), compact(compact),
     allocated(true) {
     multithread(mx);
-    u1=ComplexAlign((mz/2+1)*A*threads*innerthreads*innermostthreads);
+    u1=ComplexAlign((mz/2+1)*A*threads*innerthreads);
     set(ny,nz,stride2,stride3);
     u2=ComplexAlign(stride2*A*threads);
     u3=ComplexAlign(stride3*A);

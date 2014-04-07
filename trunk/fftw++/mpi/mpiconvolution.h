@@ -23,6 +23,7 @@ public:
     int size;
     MPI_Comm_size(d.communicator,&size);
     alltoall=mx % size == 0 && my % size == 0;
+    alltoall=false;
 
     if(alltoall) {
       T=new mpitranspose<Complex>(mx,d.y,d.x,my,1,u2);
@@ -189,7 +190,6 @@ public:
 class ImplicitConvolution3MPI : public ImplicitConvolution3 {
 protected:
   dimensions3 d;
-  unsigned int innermostthreads;
   fftw_plan intranspose,outtranspose;
   bool alltoall; // Use experimental nonblocking transpose
   mpitranspose<Complex> *T;
@@ -198,6 +198,7 @@ public:
     int size;
     MPI_Comm_size(d.communicator,&size);
     alltoall=mx % size == 0 && my % size == 0;
+    alltoall=false;
 
     if(alltoall) {
       T=new mpitranspose<Complex>(mx,d.y,d.x,my,d.z,u3);
@@ -230,9 +231,9 @@ public:
       yzconvolve=new ImplicitConvolution2*[threads];
       for(unsigned int t=0; t < threads; ++t)
         yzconvolve[t]=new ImplicitConvolution2MPI(my,mz,d.yz,
-                                                  u1+t*mz*A*innermostthreads,
+                                                  u1+t*mz*A*innerthreads,
                                                   u2+t*d.n2*A,A,B,
-                                                  innermostthreads);
+                                                  innerthreads);
       initpointers3(U3,u3,d.n);
     }
   }
@@ -248,9 +249,7 @@ public:
                           Complex *u1, Complex *u2, Complex *u3, 
                           unsigned int A=2, unsigned int B=1,
                           unsigned int threads=fftw::maxthreads) :
-    ImplicitConvolution3(mx,my,mz,u1,u2,u3,A,B,
-                         d.z < mz ? 1 : threads,
-                         d.y,d.z,d.n2,d.n), d(d), innermostthreads(threads) {
+    ImplicitConvolution3(mx,my,mz,u1,u2,u3,A,B,threads,d.y,d.z,d.n2,d.n), d(d) {
     initMPI();
     inittranspose();
   }
@@ -259,10 +258,7 @@ public:
                           const dimensions3& d,
                           unsigned int A=2, unsigned int B=1,
                           unsigned int threads=fftw::maxthreads) :
-    ImplicitConvolution3(mx,my,mz,A,B,
-                         d.z < mz ? 1 : threads,
-                         d.z < mz ? threads : 1,
-                         d.y,d.z,d.n2,d.n), d(d), innermostthreads(threads) {
+    ImplicitConvolution3(mx,my,mz,A,B,threads,d.y,d.z,d.n2,d.n), d(d) {
     initMPI();
     inittranspose();
   }
@@ -307,7 +303,6 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
 class ImplicitHConvolution3MPI : public ImplicitHConvolution3 {
 protected:
   dimensions3 d,du;
-  unsigned int innermostthreads;
   fftw_plan intranspose,outtranspose;
   fftw_plan uintranspose,uouttranspose;
 public:  
@@ -345,8 +340,8 @@ public:
       for(unsigned int t=0; t < threads; ++t)
         yzconvolve[t]=
           new ImplicitHConvolution2MPI(my,mz,d.yz,du.yz,f,
-                                       u1+t*(mz/2+1)*A*innermostthreads,
-                                       u2+t*du.n2*A,A,B,compact,innermostthreads);
+                                       u1+t*(mz/2+1)*A*innerthreads,
+                                       u2+t*du.n2*A,A,B,compact,innerthreads);
       initpointers3(U3,u3,du.n);
     }
   }
@@ -363,9 +358,9 @@ public:
                            unsigned int A=2, unsigned int B=1,
                            bool compact=true,
                            unsigned int threads=fftw::maxthreads) :
-    ImplicitHConvolution3(mx,my,mz,u1,u2,u3,A,B,compact,d.z < mz ? 1 : threads,
-                          d.y,d.z,du.n2,du.n),
-    d(d), du(du), innermostthreads(threads) { 
+    ImplicitHConvolution3(mx,my,mz,u1,u2,u3,A,B,compact,threads,d.y,d.z,
+                          du.n2,du.n),
+    d(d), du(du) { 
     initMPI(f);
     inittranspose(f);
   }
@@ -375,11 +370,8 @@ public:
                            Complex *f, unsigned int A=2, unsigned int B=1,
                            bool compact=true,
                            unsigned int threads=fftw::maxthreads) :
-    ImplicitHConvolution3(mx,my,mz,A,B,compact,
-                          d.z < mz ? 1 : threads,
-                          d.z < mz ? threads : 1,
-                          d.y,d.z,du.n2,du.n),
-                                d(d), du(du), innermostthreads(threads) { 
+    ImplicitHConvolution3(mx,my,mz,A,B,compact,threads,d.y,d.z,du.n2,du.n),
+    d(d), du(du) { 
     initMPI(f);
     inittranspose(f);
   }
