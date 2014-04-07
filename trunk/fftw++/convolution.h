@@ -329,7 +329,15 @@ public:
   // F is an array of A pointers to distinct data blocks each of size m,
   // shifted by offset (contents not preserved).
   void convolve(Complex **F, realmultiplier *pmult, unsigned int offset=0);
+
+  void premult(Complex **F, 
+	       //Complex **crm, Complex **cr0, Complex **crp,
+	       unsigned int offset,
+	       Complex* f1c, Complex *S);
   
+  void postmultadd(Complex **crm, Complex **cr0, Complex **crp, Complex **Q);
+  void postmultadd0(Complex **crm, Complex **cr0, Complex **crp);
+
   // Binary convolution:
   void convolve(Complex *f, Complex *g) {
     Complex *F[]={f,g};
