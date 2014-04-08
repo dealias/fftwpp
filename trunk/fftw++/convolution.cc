@@ -266,7 +266,6 @@ void ImplicitHConvolution::premult(Complex ** F,
 {
   unsigned int C=max(A,B);
   Complex *P0[C];
-  //Complex *P1[C];
 
 #ifdef __SSE2__
   Vec Mhalf=LOAD(-0.5);
@@ -276,23 +275,19 @@ void ImplicitHConvolution::premult(Complex ** F,
     
   bool even=m == 2*c;
   unsigned int m1=m-1;
-  //unsigned int start=m1-c;
   for(unsigned int i=0; i < A; ++i) {
     Complex *f=F[i]+offset;
     P0[i]=f;
-    //P1[i]=f+start;
     Complex *ui=U[i];
     ui[0]=f->re;
   }
 
-  Vec zeta1=LOAD(0.0);
-            
   if(even) {
     unsigned int a=1/s;
     Vec Zeta=LOAD(ZetaH+a);
     Vec X=UNPACKL(Zeta,Zeta);
     Vec Y=UNPACKH(CONJ(Zeta),Zeta);
-    zeta1=ZMULT(X,Y,LOAD(ZetaL+1-s*a));
+    Vec zeta1=ZMULT(X,Y,LOAD(ZetaL+1-s*a));
     
     for(unsigned int i=0; i < A; ++i) {
       Complex *fi=P0[i];
@@ -408,11 +403,11 @@ void ImplicitHConvolution::postmultadd(Complex **crm, Complex **cr0,
 }
 
 void ImplicitHConvolution::postmultadd0(Complex **crm, Complex **cr0, 
-				       Complex **crp)
+                                        Complex **crp, Complex *f1c)
 {
-  double ninv=0.5/m;
+  double ninv=1.0/(3.0*m);
   Vec Ninv=LOAD(ninv);
-  bool even=m == 2*c;  
+  bool even=m == 2*c;
 
 #ifdef __SSE2__
   Vec Mhalf=LOAD(-0.5);
@@ -428,12 +423,14 @@ void ImplicitHConvolution::postmultadd0(Complex **crm, Complex **cr0,
   Vec X=UNPACKL(Zeta,Zeta);
   Vec Y=UNPACKH(CONJ(Zeta),Zeta);
   Vec Zetac1=ZMULT(X,Y,LOAD(ZetaL+c1-s*a));
-  Vec zeta1=LOAD(0.0);
-
 
 #ifdef __SSE2__      
     if(even && m > 2) {
-      zeta1 *= Ninv;
+      unsigned int a=1/s;
+      Vec Zeta=LOAD(ZetaH+a);
+      Vec X=UNPACKL(Zeta,Zeta);
+      Vec Y=UNPACKH(CONJ(Zeta),Zeta);
+      Vec zeta1=Ninv*ZMULT(X,Y,LOAD(ZetaL+1-s*a));
       Vec Zeta1=ZMULTC(zeta1,Zetac1);
       for(unsigned int i=0; i < B; ++i) {
         Complex *f0=cr0[i];
@@ -443,7 +440,7 @@ void ImplicitHConvolution::postmultadd0(Complex **crm, Complex **cr0,
         Complex *fA=f0+c;
         Complex *fB=f0+m-c;
         Vec F0=LOAD(fa)*Ninv;
-        Vec F1=ZMULTC(zeta1,LOAD(crp[i]+i));
+        Vec F1=ZMULTC(zeta1,LOAD(f1c+i));
         Vec F2=ZMULT(zeta1,LOAD(crm[i]+1));
         Vec S=F1+F2;
         F2=CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2);
@@ -509,7 +506,7 @@ void ImplicitHConvolution::postmultadd0(Complex **crm, Complex **cr0,
           Complex *f0=cr0[i];
           Complex *fa=f0+d;
           Vec F0=LOAD(fa)*Ninv;
-          Vec F1=ZMULTC(Zetak,LOAD(crp[i]));
+          Vec F1=ZMULTC(Zetak,LOAD(f1c+i));
           Vec F2=ZMULT(Zetak,LOAD(crm[i]+d));
           Vec S=F1+F2;
           STORE(fa,F0+S);
@@ -530,7 +527,6 @@ void ImplicitHConvolution::postmultadd0(Complex **crm, Complex **cr0,
       }
     }
 #endif  
-
 }
 
 
@@ -550,8 +546,7 @@ void ImplicitHConvolution::convolve(Complex **F,
   double *drm[A], *dr0[A], *drp[A]; // outputs of complex2real FFTs
 
   bool even=m == 2*c;
-  unsigned int m1=m-1;
-  unsigned int start=m1-c;
+  unsigned int start=m-1-c;
   for(unsigned int i=0; i < A; ++i) {
     Complex *f=F[i]+offset;
     cr0[i]=f;
@@ -646,7 +641,7 @@ void ImplicitHConvolution::convolve(Complex **F,
       rc->fft(f0);
       f0[0]=(f0[0].re+R+f2[0].re)*ninv;
     }
-    postmultadd0(crm,cr0,crp);
+    postmultadd0(crm,cr0,crp,f1c);
   }
 
 }
