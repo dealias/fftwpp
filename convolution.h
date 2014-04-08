@@ -336,7 +336,7 @@ public:
 	       Complex* f1c, Complex *S);
   
   void postmultadd(Complex **crm, Complex **cr0, Complex **crp, Complex **Q);
-  void postmultadd0(Complex **crm, Complex **cr0, Complex **crp);
+  void postmultadd0(Complex **crm, Complex **cr0, Complex **crp, Complex *f1c);
 
   // Binary convolution:
   void convolve(Complex *f, Complex *g) {
