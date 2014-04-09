@@ -23,6 +23,20 @@ if not (p.returncode == 0):
     print
     print "\tDIRECTERROR FAILED"
 
+
+print "Checking error vs test case...",
+p=Popen(['./error.py'],stdout=PIPE,stderr=PIPE)
+out, err = p.communicate() # capture output
+print "...done."
+if not (p.returncode == 0):
+    retval += 1
+    print out
+    print
+    print err
+    print
+    print "\tTEST CASE ERROR FAILED"
+
+
 print "Running error scaling...",
 error1=["cconv","conv"]
 for prog in error1:
