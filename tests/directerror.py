@@ -13,38 +13,40 @@ retval=0
 
 print "Comparison of routine versus direct routine:"
 print
-print "program\ttype\t\terror:"
+print "program\ttype\t\tsize\terror:"
 print
+
+mlist=[8,9] # problem sizes
 
 dlist=["cconv", "cconv2", "cconv3", "conv", "conv2", "conv3", "tconv", "tconv2"]
 for prog in dlist:
-
-    p=Popen(["./"+prog,"-N1","-i","-d","-N1"],stdout=PIPE,stderr=PIPE)
-    out, err = p.communicate() # capture output
-    if (p.returncode == 0): # did the process succeed?
-        m=re.search("(?<=error=)(.*)",out) # find the text after "error="
-        print prog +"\t"+"implicit\t"+ m.group(0)
-        if(float(m.group(0)) > 1e-10):
-            print "ERROR TOO LARGE"
+    for mval in mlist:
+        p=Popen(["./"+prog,"-N1","-i","-d","-m"+str(mval)],stdout=PIPE,stderr=PIPE)
+        out, err = p.communicate() # capture output
+        if (p.returncode == 0): # did the process succeed?
+            m=re.search("(?<=error=)(.*)",out) # find the text after "error="
+            print prog +"\t"+"implicit\t"+str(mval)+"\t"+m.group(0)
+            if(float(m.group(0)) > 1e-10):
+                print "ERROR TOO LARGE"
+                retval+=1
+        else:
+            print prog+" FAILED"
             retval+=1
-    else:
-        print prog+" FAILED"
-        retval+=1
 
 elist=["cconv", "cconv2", "cconv3", "conv"] 
 for prog in elist:
-
-    p=Popen(["./"+prog,"-N1","-e","-d","-N1"],stdout=PIPE,stderr=PIPE)
-    out, err = p.communicate() # capture output
-    if (p.returncode == 0): # did the process succeed?
-        m=re.search("(?<=error=)(.*)",out) # find the text after "error="
-        print prog +"\t"+"explicit\t"+ m.group(0)
-        if(float(m.group(0)) > 1e-10):
-            print "ERROR TOO LARGE"
+    for mval in mlist:
+        p=Popen(["./"+prog,"-N1","-e","-d","-m"+str(mval)],stdout=PIPE,stderr=PIPE)
+        out, err = p.communicate() # capture output
+        if (p.returncode == 0): # did the process succeed?
+            m=re.search("(?<=error=)(.*)",out) # find the text after "error="
+            print prog +"\t"+"explicit\t"+str(mval)+"\t"+m.group(0)
+            if(float(m.group(0)) > 1e-10):
+                print "ERROR TOO LARGE"
+                retval+=1
+        else:
+            print prog+" FAILED"
             retval+=1
-    else:
-        print prog+" FAILED"
-        retval+=1
 
 print
 
