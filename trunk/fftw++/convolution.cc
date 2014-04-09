@@ -434,24 +434,19 @@ void ImplicitHConvolution::postmultadd0(Complex **crm, Complex **cr0,
       Vec Zeta1=ZMULTC(zeta1,Zetac1);
       for(unsigned int i=0; i < B; ++i) {
         Complex *f0=cr0[i];
-        Complex *f2=crm[i];
-        Complex *fa=f0+1;
-        Complex *fb=f0+m1;
-        Complex *fA=f0+c;
-        Complex *fB=f0+m-c;
-        Vec F0=LOAD(fa)*Ninv;
+        Vec F0=LOAD(f0+1)*Ninv;
         Vec F1=ZMULTC(zeta1,LOAD(f1c+i));
         Vec F2=ZMULT(zeta1,LOAD(crm[i]+1));
         Vec S=F1+F2;
         F2=CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2);
-        STORE(fa,F0+S);
-        F0=LOAD(fA)*Ninv;
-        F1=ZMULTC(Zeta1,LOAD(fb));
-        STORE(fb,F2);
-        F2=ZMULT(Zeta1,LOAD(f2+c));
+        STORE(f0+1,F0+S);
+        F0=LOAD(f0+c)*Ninv;
+        F1=ZMULTC(Zeta1,LOAD(f0+m1));
+        STORE(f0+m1,F2);
+        F2=ZMULT(Zeta1,LOAD(crm[i]+c));
         S=F1+F2;
-        STORE(fA,F0+S);
-        STORE(fB,CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2));
+        STORE(f0+c,F0+S);
+        STORE(f0+m-c,CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2));
       }
     }
   
@@ -504,25 +499,22 @@ void ImplicitHConvolution::postmultadd0(Complex **crm, Complex **cr0,
       if(d == 1 && even) {
         for(unsigned int i=0; i < B; ++i) {
           Complex *f0=cr0[i];
-          Complex *fa=f0+d;
-          Vec F0=LOAD(fa)*Ninv;
+          Vec F0=LOAD(f0+d)*Ninv;
           Vec F1=ZMULTC(Zetak,LOAD(f1c+i));
           Vec F2=ZMULT(Zetak,LOAD(crm[i]+d));
           Vec S=F1+F2;
-          STORE(fa,F0+S);
+          STORE(f0+d,F0+S);
           STORE(f0+m-d,CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2));
         }
       } else {
         for(unsigned int i=0; i < B; ++i) {
           Complex *f0=cr0[i];
-          Complex *fa=f0+d;
-          Complex *fb=f0+m-d;
-          Vec F0=LOAD(fa)*Ninv;
-          Vec F1=ZMULTC(Zetak,LOAD(fb));
+          Vec F0=LOAD(f0+d)*Ninv;
+          Vec F1=ZMULTC(Zetak,LOAD(f0+m-d));
           Vec F2=ZMULT(Zetak,LOAD(U[i]+d));
           Vec S=F1+F2;
-          STORE(fa,F0+S);
-          STORE(fb,CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2));
+          STORE(f0+d,F0+S);
+          STORE(f0+m-d,CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2));
         }
       }
     }
