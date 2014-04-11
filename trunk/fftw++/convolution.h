@@ -381,9 +381,11 @@ public:
   mfft1d *Forwards;
   
   fftpad(unsigned int m, unsigned int M,
-         unsigned int stride, Complex *u=NULL) : m(m), M(M), stride(stride) {
-    Backwards=new mfft1d(m,1,M,stride,1,u);
-    Forwards=new mfft1d(m,-1,M,stride,1,u);
+         unsigned int stride, Complex *u=NULL,
+         unsigned int Threads=fftw::maxthreads)
+    : m(m), M(M), stride(stride), threads(std::min(m,Threads)) {
+    Backwards=new mfft1d(m,1,M,stride,1,u,NULL,threads);
+    Forwards=new mfft1d(m,-1,M,stride,1,u,NULL,threads);
     
     threads=std::max(Backwards->Threads(),Forwards->Threads());
     
@@ -426,10 +428,11 @@ protected:
   mfft1d *Forwards;
   mfft1d *Backwards;
   Complex *ZetaH, *ZetaL;
+  unsigned int threads;
 public:  
   fft0pad(unsigned int m, unsigned int M, unsigned int stride, Complex *u=NULL,
-          unsigned int threads=fftw::maxthreads)
-    : m(m), M(M), stride(stride) {
+          unsigned int Threads=fftw::maxthreads)
+    : m(m), M(M), stride(stride), threads(std::min(m,Threads)) {
     Backwards=new mfft1d(m,1,M,stride,1,u,NULL,threads);
     Forwards=new mfft1d(m,-1,M,stride,1,u,NULL,threads);
     
@@ -472,11 +475,10 @@ public:
 //   stride is the spacing between the elements of each Complex vector.
 //
 class fft0padwide : public fft0pad {
-  unsigned int threads;
 public:  
   fft0padwide(unsigned int m, unsigned int M, unsigned int stride,
               Complex *u=NULL, unsigned int threads=fftw::maxthreads) :
-    fft0pad(m,M,stride,u,threads), threads(std::min(m,threads)) {}
+    fft0pad(m,M,stride,u,threads) {}
 
   void backwards(Complex *f, Complex *u);
   void forwards(Complex *f, Complex *u);
