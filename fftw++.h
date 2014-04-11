@@ -204,6 +204,7 @@ class fftw {
 protected:
   unsigned int doubles; // number of double precision values in dataset
   int sign;
+  unsigned int threads;
   double norm;
 
   fftw_plan plan;
@@ -227,7 +228,6 @@ protected:
   
   static unsigned int Wise;
   static const double twopi;
-  unsigned int threads;
   
 public:
   static unsigned int effort;
@@ -330,9 +330,10 @@ public:
     }
   }
   
-  fftw(unsigned int doubles, int sign, unsigned int n=0) : 
-    doubles(doubles), sign(sign), norm(1.0/(n ? n : (doubles+1)/2)),
-    plan(NULL) {
+  fftw(unsigned int doubles, int sign, unsigned int threads,
+       unsigned int n=0) :
+    doubles(doubles), sign(sign), threads(threads), 
+    norm(1.0/(n ? n : doubles/2)), plan(NULL) {
 #ifndef FFTWPP_SINGLE_THREAD
     if(!mpi) fftw_init_threads();
 #endif      
@@ -408,7 +409,7 @@ public:
   };
   
   threaddata time(fftw_plan plan1, fftw_plan planT, Complex *in, Complex *out,
-    unsigned int Threads) {
+                  unsigned int Threads) {
     statistics S,ST;
     double stop=totalseconds()+testseconds;
     threads=1;
@@ -457,8 +458,7 @@ public:
   }
   virtual void store(bool inplace, const threaddata& data) {}
   
-  threaddata Setup(Complex *in, Complex *out=NULL,
-                   unsigned int Threads=maxthreads) {
+  threaddata Setup(Complex *in, Complex *out=NULL) {
     if(!Wise) {LoadWisdom(); ++Wise;}
     
     bool alloc=!in;
@@ -473,18 +473,16 @@ public:
     inplace=(out==in);
     
     threaddata data;
-    if(Threads > 1) data=lookup(inplace,Threads);
-    threads=data.threads > 0 ? data.threads : 1;
-    planThreads(threads);
+    if(threads > 1) data=lookup(inplace,threads);
+    planThreads(data.threads > 0 ? data.threads : 1);
     plan=Plan(in,out);
     if(!plan) noplan();
     
-    if(Threads > 1 && data.threads == 0) {
-      threads=Threads;
+    if(threads > 1 && data.threads == 0) {
       planThreads(threads);
       fftw_plan planT=Plan(in,out);
       if(planT)
-        data=time(plan,planT,in,out,Threads);
+        data=time(plan,planT,in,out,threads);
       else noplan();
       store(inplace,threaddata(threads,data.mean,data.stdev));
     }
@@ -493,10 +491,10 @@ public:
     return data;
   }
   
-  void Setup(Complex *in, double *out, unsigned int threads=maxthreads) {
-    Setup(in,(Complex *) out,threads);}
-  void Setup(double *in, Complex *out=NULL, unsigned int threads=maxthreads) {
-    Setup((Complex *) in,out,threads);
+  void Setup(Complex *in, double *out) {
+    Setup(in,(Complex *) out);}
+  void Setup(double *in, Complex *out=NULL) {
+    Setup((Complex *) in,out);
   }
   
   static void LoadWisdom();
@@ -685,7 +683,7 @@ public:
 #ifndef FFTWPP_SINGLE_THREAD
     if(threads == 1)
 #endif      
-        fftw_execute_r2r(plan,(double *) in,(double*) out);
+      fftw_execute_r2r(plan,(double *) in,(double*) out);
 #ifndef FFTWPP_SINGLE_THREAD
     else {
       int A=a, B=b;
@@ -806,14 +804,14 @@ class fft1d : public fftw, public Threadtable<keytype1,keyless1> {
   static Table threadtable;
 public:  
   fft1d(unsigned int nx, int sign, Complex *in=NULL, Complex *out=NULL,
-        unsigned int threads=maxthreads) 
-    : fftw(2*nx,sign), nx(nx) {Setup(in,out,threads);} 
+        unsigned int threads=maxthreads)
+    : fftw(2*nx,sign,threads), nx(nx) {Setup(in,out);} 
   
 #ifdef __Array_h__
   fft1d(int sign, const Array::array1<Complex>& in,
         const Array::array1<Complex>& out=Array::NULL1,
         unsigned int threads=maxthreads) 
-    : fftw(2*in.Nx(),sign), nx(in.Nx()) {Setup(in,out,threads);} 
+    : fftw(2*in.Nx(),sign,threads), nx(in.Nx()) {Setup(in,out);} 
 #endif  
   
   threaddata lookup(bool inplace, unsigned int threads) {
@@ -862,21 +860,22 @@ public:
   mfft1d(unsigned int nx, int sign, unsigned int M=1, size_t stride=1,
          size_t dist=0, Complex *in=NULL, Complex *out=NULL,
          unsigned int Threads=maxthreads) 
-    : fftw(2*((nx-1)*stride+(M-1)*Dist(nx,stride,dist)+1),sign,nx),
+    : fftw(2*((nx-1)*stride+(M-1)*Dist(nx,stride,dist)+1),sign,Threads,nx),
       nx(nx), M(M), stride(stride), dist(Dist(nx,stride,dist)),
       plan1(NULL), plan2(NULL)
   {
     T=1;
     Q=M;
     R=0;
-    threaddata S1=Setup(in,out,Threads);
+    threaddata S1=Setup(in,out);
     fftw_plan planT1=plan;
     
     T=std::min(M,Threads);
     if(T > 1) {
       Q=M/T;
       R=M-Q*T;
-      threaddata ST=Setup(in,out,Threads);
+      threads=Threads;
+      threaddata ST=Setup(in,out);
     
       if(R > 0 && threads == 1 && plan1 != plan2) {
         fftw_destroy_plan(plan2);
@@ -978,21 +977,21 @@ class rcfft1d : public fftw, public Threadtable<keytype1,keyless1> {
   static Table threadtable;
 public:  
   rcfft1d(unsigned int nx, Complex *out=NULL, unsigned int threads=maxthreads) 
-    : fftw(2*(nx/2+1),-1,nx), nx(nx) {Setup(out,(double*) NULL,threads);}
+    : fftw(2*(nx/2+1),-1,threads,nx), nx(nx) {Setup(out,(double*) NULL);}
   
   rcfft1d(unsigned int nx, double *in, Complex *out=NULL,
           unsigned int threads=maxthreads)  
-    : fftw(realsize(nx,in,out),-1,nx), nx(nx) {Setup(in,out,threads);}
+    : fftw(realsize(nx,in,out),-1,threads,nx), nx(nx) {Setup(in,out);}
   
 #ifdef __Array_h__
   rcfft1d(unsigned int nx, const Array::array1<Complex>& out,
           unsigned int threads=maxthreads)  
-    : fftw(out.Size(),-1,nx), nx(nx) {Setup(out,(double*) NULL,threads);} 
+    : fftw(out.Size(),-1,threads,nx), nx(nx) {Setup(out,(double*) NULL);} 
   
   rcfft1d(unsigned int nx, const Array::array1<double>& in, 
           const Array::array1<Complex>& out=Array::NULL1,
           unsigned int threads=maxthreads)
-    : fftw(realsize(nx,in(),out()),-1,nx), nx(nx) {Setup(in,out,threads);} 
+    : fftw(realsize(nx,in(),out()),-1,threads,nx), nx(nx) {Setup(in,out);} 
 #endif  
   
   threaddata lookup(bool inplace, unsigned int threads) {
@@ -1037,24 +1036,24 @@ class crfft1d : public fftw, public Threadtable<keytype1,keyless1> {
   static Table threadtable;
 public:  
   crfft1d(unsigned int nx, double *out=NULL, unsigned int threads=maxthreads) 
-    : fftw(2*(nx/2+1),1,nx), nx(nx) {Setup(out,NULL,threads);} 
+    : fftw(2*(nx/2+1),1,threads,nx), nx(nx) {Setup(out);} 
   
   crfft1d(unsigned int nx, Complex *in, double *out=NULL, 
           unsigned int threads=maxthreads)
-    : fftw(realsize(nx,in,out),1,nx), nx(nx) {Setup(in,out);} 
+    : fftw(realsize(nx,in,out),1,threads,nx), nx(nx) {Setup(in,out);} 
   
 #ifdef __Array_h__
   crfft1d(unsigned int nx, const Array::array1<double>& out,
           unsigned int threads=maxthreads)
-    : fftw(out.Size(),1,nx), nx(nx) {Setup(out,NULL,threads);}
+    : fftw(out.Size(),1,threads,nx), nx(nx) {Setup(out);}
   
   crfft1d(unsigned int nx, const Array::array1<Complex>& in,
           unsigned int threads=maxthreads)
-    : fftw(2*in.Size(),1,nx), nx(nx) {Setup(in,(double*) NULL,threads);}
+    : fftw(2*in.Size(),1,threads,nx), nx(nx) {Setup(in);}
   
   crfft1d(unsigned int nx, const Array::array1<Complex>& in,
           const Array::array1<double>& out)
-    : fftw(out.Size(),1,nx), nx(nx) {Setup(in,out);}
+    : fftw(out.Size(),1,threads,nx), nx(nx) {Setup(in,out);}
 #endif  
   
   threaddata lookup(bool inplace, unsigned int threads) {
@@ -1103,14 +1102,16 @@ class mrcfft1d : public fftw, public Threadtable<keytype2,keyless2> {
   static Table threadtable;
 public:  
   mrcfft1d(unsigned int nx, unsigned int M=1, size_t stride=1,
-           size_t dist=0, Complex *out=NULL) 
-    : fftw(2*(nx/2*stride+(M-1)*Dist(nx,stride,dist)+1),-1,nx), nx(nx), M(M),
-      stride(stride), dist(Dist(nx,stride,dist)) {Setup(out);} 
+           size_t dist=0, Complex *out=NULL, 
+           unsigned int threads=maxthreads) 
+    : fftw(2*(nx/2*stride+(M-1)*Dist(nx,stride,dist)+1),-1,threads,nx), nx(nx),
+      M(M), stride(stride), dist(Dist(nx,stride,dist)) {Setup(out);} 
   
   mrcfft1d(unsigned int nx, unsigned int M=1, size_t stride=1,
-           size_t dist=0, double *in=NULL, Complex *out=NULL) 
-    : fftw(2*(nx/2*stride+(M-1)*Dist(nx,stride,dist)+1),-1,nx), nx(nx), M(M),
-      stride(stride), dist(Dist(nx,stride,dist)) {Setup(in,out);} 
+           size_t dist=0, double *in=NULL, Complex *out=NULL,
+           unsigned int threads=maxthreads) 
+    : fftw(2*(nx/2*stride+(M-1)*Dist(nx,stride,dist)+1),-1,threads,nx), nx(nx),
+      M(M), stride(stride), dist(Dist(nx,stride,dist)) {Setup(in,out);} 
   
   threaddata lookup(bool inplace, unsigned int threads) {
     return Lookup(threadtable,keytype2(nx,M,threads,inplace));
@@ -1172,8 +1173,10 @@ class mcrfft1d : public fftw, public Threadtable<keytype2,keyless2> {
   static Table threadtable;
 public:
   mcrfft1d(unsigned int nx, unsigned int M=1, size_t stride=1,
-           size_t dist=0, Complex *in=NULL, double *out=NULL) 
-    : fftw((realsize(nx,in,out)-2)*stride+2*(M-1)*Dist(nx,stride,dist)+2,1,nx),
+           size_t dist=0, Complex *in=NULL, double *out=NULL,
+           unsigned int threads=maxthreads) 
+    : fftw((realsize(nx,in,out)-2)*stride+2*(M-1)*Dist(nx,stride,dist)+2,1,
+           threads,nx),
       nx(nx), M(M), stride(stride), dist(Dist(nx,stride,dist)) {Setup(in,out);}
   
   threaddata lookup(bool inplace, unsigned int threads) {
@@ -1252,13 +1255,14 @@ class fft2d : public fftw, public Threadtable<keytype2,keyless2> {
   static Table threadtable;
 public:  
   fft2d(unsigned int nx, unsigned int ny, int sign, Complex *in=NULL,
-        Complex *out=NULL)
-    : fftw(2*nx*ny,sign), nx(nx), ny(ny) {Setup(in,out);} 
+        Complex *out=NULL, unsigned int threads=maxthreads) 
+    : fftw(2*nx*ny,sign,threads), nx(nx), ny(ny) {Setup(in,out);} 
   
 #ifdef __Array_h__
   fft2d(int sign, const Array::array2<Complex>& in,
-        const Array::array2<Complex>& out=Array::NULL2) 
-    : fftw(2*in.Size(),sign), nx(in.Nx()), ny(in.Ny()) {Setup(in,out);} 
+        const Array::array2<Complex>& out=Array::NULL2, 
+        unsigned int threads=maxthreads) 
+    : fftw(2*in.Size(),sign,threads), nx(in.Nx()), ny(in.Ny()) {Setup(in,out);} 
 #endif  
   
   threaddata lookup(bool inplace, unsigned int threads) {
@@ -1305,20 +1309,28 @@ class rcfft2d : public fftw {
   unsigned int nx;
   unsigned int ny;
 public:  
-  rcfft2d(unsigned int nx, unsigned int ny, Complex *out=NULL)
-    : fftw(2*nx*(ny/2+1),-1,nx*ny), nx(nx), ny(ny) {Setup(out);} 
+  rcfft2d(unsigned int nx, unsigned int ny, Complex *out=NULL,
+          unsigned int threads=maxthreads) 
+    : fftw(2*nx*(ny/2+1),-1,threads,nx*ny), nx(nx), ny(ny) {Setup(out);} 
   
-  rcfft2d(unsigned int nx, unsigned int ny, double *in, Complex *out=NULL)
-    : fftw(nx*realsize(ny,in,out),-1,nx*ny), nx(nx), ny(ny) {Setup(in,out);} 
+  rcfft2d(unsigned int nx, unsigned int ny, double *in, Complex *out=NULL,
+          unsigned int threads=maxthreads) 
+    : fftw(nx*realsize(ny,in,out),-1,threads,nx*ny), nx(nx), ny(ny) {
+    Setup(in,out);
+  } 
   
 #ifdef __Array_h__
-  rcfft2d(unsigned int ny, const Array::array2<Complex>& out)
-    : fftw(out.Size(),-1,out.Nx()*ny), nx(out.Nx()), ny(ny) {Setup(out);} 
+  rcfft2d(unsigned int ny, const Array::array2<Complex>& out,
+          unsigned int threads=maxthreads) 
+    : fftw(out.Size(),-1,threads,out.Nx()*ny), nx(out.Nx()), ny(ny) {
+    Setup(out);
+  } 
   
   rcfft2d(unsigned int ny, const Array::array2<double>& in,
-          const Array::array2<Complex>& out=Array::NULL2)
-    : fftw(in.Nx()*realsize(ny,in(),out()),-1,in.Nx()*ny), nx(in.Nx()), ny(ny)
-  {Setup(in,out);} 
+          const Array::array2<Complex>& out=Array::NULL2,
+          unsigned int threads=maxthreads) 
+    : fftw(in.Nx()*realsize(ny,in(),out()),-1,threads,in.Nx()*ny),
+      nx(in.Nx()), ny(ny) {Setup(in,out);} 
 #endif
   
   fftw_plan Plan(Complex *in, Complex *out) {
@@ -1363,22 +1375,29 @@ class crfft2d : public fftw {
   unsigned int nx;
   unsigned int ny;
 public:  
-  crfft2d(unsigned int nx, unsigned int ny, Complex *in=NULL) :
-    fftw(2*nx*(ny/2+1),1,nx*ny), nx(nx), ny(ny) {Setup(in);} 
+  crfft2d(unsigned int nx, unsigned int ny, Complex *in=NULL,
+          unsigned int threads=maxthreads) :
+    fftw(2*nx*(ny/2+1),1,threads,nx*ny), nx(nx), ny(ny) {Setup(in);} 
   
-  crfft2d(unsigned int nx, unsigned int ny, Complex *in, double *out) :
-    fftw(nx*realsize(ny,in,out),1,nx*ny), nx(nx), ny(ny) {Setup(in,out);} 
+  crfft2d(unsigned int nx, unsigned int ny, Complex *in, double *out,
+          unsigned int threads=maxthreads)
+    : fftw(nx*realsize(ny,in,out),1,threads,nx*ny), nx(nx), ny(ny) {
+    Setup(in,out);
+  } 
   
 #ifdef __Array_h__
-  crfft2d(unsigned int ny, const Array::array2<double>& out)
-    : fftw(out.Size(),1,out.Nx()*ny), nx(out.Nx()), ny(ny) {Setup(out);} 
-  
-  crfft2d(unsigned int ny, const Array::array2<Complex>& in)
-    : fftw(2*in.Size(),1,in.Nx()*ny), nx(in.Nx()), ny(ny) {Setup(in);}
+  crfft2d(unsigned int ny, const Array::array2<double>& out,
+          unsigned int threads=maxthreads)
+    : fftw(out.Size(),1,threads,out.Nx()*ny), nx(out.Nx()), ny(ny) {Setup(out);}
+
+  crfft2d(unsigned int ny, const Array::array2<Complex>& in,
+          unsigned int threads=maxthreads) 
+    : fftw(2*in.Size(),1,threads,in.Nx()*ny), nx(in.Nx()), ny(ny) {Setup(in);}
   
   crfft2d(unsigned int ny, const Array::array2<Complex>& in,
-          const Array::array2<double>& out)
-    : fftw(out.Size(),1,in.Nx()*ny), nx(in.Nx()), ny(ny) {Setup(in,out);}
+          const Array::array2<double>& out,
+          unsigned int threads=maxthreads) 
+    : fftw(out.Size(),1,threads,in.Nx()*ny), nx(in.Nx()), ny(ny) {Setup(in,out);}
 #endif
   
   fftw_plan Plan(Complex *in, Complex *out) {
@@ -1428,13 +1447,15 @@ class fft3d : public fftw {
   unsigned int nz;
 public:  
   fft3d(unsigned int nx, unsigned int ny, unsigned int nz,
-        int sign, Complex *in=NULL, Complex *out=NULL)
-    : fftw(2*nx*ny*nz,sign), nx(nx), ny(ny), nz(nz) {Setup(in,out);} 
+        int sign, Complex *in=NULL, Complex *out=NULL,
+        unsigned int threads=maxthreads) 
+    : fftw(2*nx*ny*nz,sign,threads), nx(nx), ny(ny), nz(nz) {Setup(in,out);} 
   
 #ifdef __Array_h__
   fft3d(int sign, const Array::array3<Complex>& in,
-        const Array::array3<Complex>& out=Array::NULL3)
-    : fftw(2*in.Size(),sign), nx(in.Nx()), ny(in.Ny()), nz(in.Nz()) 
+        const Array::array3<Complex>& out=Array::NULL3,
+        unsigned int threads=maxthreads) 
+    : fftw(2*in.Size(),sign,threads), nx(in.Nx()), ny(in.Ny()), nz(in.Nz()) 
   {Setup(in,out);}
 #endif  
   
@@ -1472,20 +1493,23 @@ class rcfft3d : public fftw {
   unsigned int nz;
 public:  
   rcfft3d(unsigned int nx, unsigned int ny, unsigned int nz, Complex *out=NULL)
-    : fftw(2*nx*ny*(nz/2+1),-1,nx*ny*nz), nx(nx), ny(ny), nz(nz) {Setup(out);} 
+    : fftw(2*nx*ny*(nz/2+1),-1,threads,nx*ny*nz), nx(nx), ny(ny), nz(nz) {Setup(out);} 
   
   rcfft3d(unsigned int nx, unsigned int ny, unsigned int nz, double *in,
-          Complex *out=NULL) : fftw(nx*ny*realsize(nz,in,out),-1,nx*ny*nz),
-                               nx(nx), ny(ny), nz(nz) {Setup(in,out);} 
+          Complex *out=NULL, unsigned int threads=maxthreads) 
+    : fftw(nx*ny*realsize(nz,in,out),-1,threads,nx*ny*nz),
+      nx(nx), ny(ny), nz(nz) {Setup(in,out);} 
   
 #ifdef __Array_h__
-  rcfft3d(unsigned int nz, const Array::array3<Complex>& out)
-    : fftw(out.Size(),-1,out.Nx()*out.Ny()*nz),
+  rcfft3d(unsigned int nz, const Array::array3<Complex>& out,
+          unsigned int threads=maxthreads) 
+    : fftw(out.Size(),-1,threads,out.Nx()*out.Ny()*nz),
       nx(out.Nx()), ny(out.Ny()), nz(nz) {Setup(out);} 
   
   rcfft3d(unsigned int nz, const Array::array3<double>& in,
-          const Array::array3<Complex>& out=Array::NULL3)
-    : fftw(in.Nx()*in.Ny()*realsize(nz,in(),out()),-1,in.Size()),
+          const Array::array3<Complex>& out=Array::NULL3,
+          unsigned int threads=maxthreads) 
+    : fftw(in.Nx()*in.Ny()*realsize(nz,in(),out()),-1,threads,in.Size()),
       nx(in.Nx()), ny(in.Ny()), nz(nz) {Setup(in,out);} 
 #endif  
   
@@ -1532,27 +1556,31 @@ class crfft3d : public fftw {
   unsigned int ny;
   unsigned int nz;
 public:  
-  crfft3d(unsigned int nx, unsigned int ny, unsigned int nz, Complex *in=NULL)
-    : fftw(2*nx*ny*(nz/2+1),1,nx*ny*nz), nx(nx), ny(ny), nz(nz)
+  crfft3d(unsigned int nx, unsigned int ny, unsigned int nz, Complex *in=NULL,
+          unsigned int threads=maxthreads) 
+    : fftw(2*nx*ny*(nz/2+1),1,threads,nx*ny*nz), nx(nx), ny(ny), nz(nz)
   {Setup(in);} 
   
   crfft3d(unsigned int nx, unsigned int ny, unsigned int nz, Complex *in,
-          double *out=NULL) : 
-    fftw(nx*ny*(realsize(nz,in,out)),1,nx*ny*nz), nx(nx), ny(ny), nz(nz)
-  {Setup(in,out);} 
+          double *out=NULL, unsigned int threads=maxthreads) 
+    : fftw(nx*ny*(realsize(nz,in,out)),1,threads,nx*ny*nz), nx(nx), ny(ny),
+      nz(nz) {Setup(in,out);} 
   
 #ifdef __Array_h__
-  crfft3d(unsigned int nz, const Array::array3<double>& out)
-    : fftw(out.Size(),1,out.Nx()*out.Ny()*nz),
+  crfft3d(unsigned int nz, const Array::array3<double>& out,
+          unsigned int threads=maxthreads) 
+    : fftw(out.Size(),1,threads,out.Nx()*out.Ny()*nz),
       nx(out.Nx()), ny(out.Ny()), nz(nz) {Setup(out);} 
   
-  crfft3d(unsigned int nz, const Array::array3<Complex>& in)
-    : fftw(2*in.Size(),1,in.Nx()*in.Ny()*nz),
+  crfft3d(unsigned int nz, const Array::array3<Complex>& in,
+          unsigned int threads=maxthreads) 
+    : fftw(2*in.Size(),1,threads,in.Nx()*in.Ny()*nz),
       nx(in.Nx()), ny(in.Ny()), nz(nz) {Setup(in);} 
   
   crfft3d(unsigned int nz, const Array::array3<Complex>& in,
-          const Array::array3<double>& out)
-    : fftw(out.Size(),1,in.Nx()*in.Ny()*nz),
+          const Array::array3<double>& out,
+          unsigned int threads=maxthreads) 
+    : fftw(out.Size(),1,threads,in.Nx()*in.Ny()*nz),
       nx(in.Nx()), ny(in.Ny()), nz(nz) {Setup(in,out);} 
 #endif  
   
