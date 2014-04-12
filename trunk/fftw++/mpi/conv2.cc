@@ -18,7 +18,7 @@ bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
 unsigned int outlimit=200;
 
-inline void init(Complex *f, Complex *g, dimensions d, unsigned int M=1,
+inline void init(Complex *f, Complex *g, splity d, unsigned int M=1,
                  bool compact=true)
 {
   double factor=1.0/sqrt((double) M);
@@ -143,8 +143,8 @@ int main(int argc, char* argv[])
       cout << "mx=" << mx << ", my=" << my << endl;
     }
     
-    dimensions d(nx,ny,group.active,group.yblock);
-    dimensions du(mx+compact,ny,group.active,group.yblock);
+    splity d(nx,ny,group.active,group.block);
+    splity du(mx+compact,ny,group.active,group.block);
   
     unsigned int Mn=M*d.n;
   

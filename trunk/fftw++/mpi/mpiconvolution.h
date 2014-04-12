@@ -13,7 +13,7 @@ namespace fftwpp {
 // In-place implicitly dealiased 2D complex convolution.
 class ImplicitConvolution2MPI : public ImplicitConvolution2 {
 protected:
-  dimensions d;
+  splity d;
   fftw_plan intranspose,outtranspose;
   bool alltoall; // Use experimental nonblocking transpose
   mpitranspose<Complex> *T;
@@ -37,6 +37,7 @@ public:
         std::cout << std::endl;
       }
     } else {
+      std::cout << "**************************" << std::endl;
       intranspose=
         fftw_mpi_plan_many_transpose(my,mx,2,d.block,0,(double*) u2,
                                      (double*) u2,d.communicator,
@@ -53,11 +54,11 @@ public:
   }
 
   // u1 is a temporary array of size my*A*threads.
-  // u2 is a temporary array of size dimensions(mx,my).n*A.
+  // u2 is a temporary array of size splity(mx,my).n*A.
   // A is the number of inputs.
   // B is the number of outputs.
   // threads is the number of threads to use in the outer subconvolution loop.
-  ImplicitConvolution2MPI(unsigned int mx, unsigned int my, const dimensions& d,
+  ImplicitConvolution2MPI(unsigned int mx, unsigned int my, const splity& d,
                           Complex *u1, Complex *u2, 
                           unsigned int A=2, unsigned int B=1,
                           unsigned int threads=fftw::maxthreads) :
@@ -65,7 +66,7 @@ public:
     inittranspose();
   }
   
-  ImplicitConvolution2MPI(unsigned int mx, unsigned int my, const dimensions& d,
+  ImplicitConvolution2MPI(unsigned int mx, unsigned int my, const splity& d,
                           unsigned int A=2, unsigned int B=1,
                           unsigned int threads=fftw::maxthreads) :
     ImplicitConvolution2(mx,my,A,B,threads,d.x,d.y,d.n), d(d) {
@@ -101,7 +102,7 @@ public:
 // In-place implicitly dealiased 2D Hermitian convolution.
 class ImplicitHConvolution2MPI : public ImplicitHConvolution2 {
 protected:
-  dimensions d,du;
+  splity d,du;
   fftw_plan intranspose,outtranspose;
   fftw_plan uintranspose,uouttranspose;
 public:  
@@ -138,7 +139,7 @@ public:
   // threads is the number of threads to use in the outer subconvolution loop.
   // f is a temporary array of size d.n needed only during construction.
   ImplicitHConvolution2MPI(unsigned int mx, unsigned int my,
-                           const dimensions& d, const dimensions& du,
+                           const splity& d, const splity& du,
                            Complex *f, Complex *u1, Complex *u2,
                            unsigned int A=2, unsigned int B=1,
                            bool compact=true,
@@ -149,7 +150,7 @@ public:
   }
   
   ImplicitHConvolution2MPI(unsigned int mx, unsigned int my,
-                           const dimensions& d, const dimensions& du,
+                           const splity& d, const splity& du,
                            Complex *f,
                            unsigned int A=2, unsigned int B=1,
                            bool compact=true,
@@ -189,7 +190,7 @@ public:
 // In-place implicitly dealiased 3D complex convolution.
 class ImplicitConvolution3MPI : public ImplicitConvolution3 {
 protected:
-  dimensions3 d;
+  splityz d;
   fftw_plan intranspose,outtranspose;
   bool alltoall; // Use experimental nonblocking transpose
   mpitranspose<Complex> *T;
@@ -198,7 +199,7 @@ public:
     int size;
     MPI_Comm_size(d.communicator,&size);
     alltoall=mx % size == 0 && my % size == 0;
-    alltoall=false;
+//    alltoall=false;
 
     if(alltoall) {
       T=new mpitranspose<Complex>(mx,d.y,d.x,my,d.z,u3);
@@ -245,7 +246,7 @@ public:
   // B is the number of outputs.
   // threads is the number of threads to use in the outer subconvolution loop.
   ImplicitConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
-                          const dimensions3& d,
+                          const splityz& d,
                           Complex *u1, Complex *u2, Complex *u3, 
                           unsigned int A=2, unsigned int B=1,
                           unsigned int threads=fftw::maxthreads) :
@@ -255,7 +256,7 @@ public:
   }
 
   ImplicitConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
-                          const dimensions3& d,
+                          const splityz& d,
                           unsigned int A=2, unsigned int B=1,
                           unsigned int threads=fftw::maxthreads) :
     ImplicitConvolution3(mx,my,mz,A,B,threads,d.y,d.z,d.n2,d.n), d(d) {
@@ -296,13 +297,13 @@ public:
 };
 
 void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
-			      dimensions3& d, bool compact, Complex *f,
+			      splityz& d, bool compact, Complex *f,
                               unsigned int nu, Complex *u);
  
 // In-place implicitly dealiased 3D complex convolution.
 class ImplicitHConvolution3MPI : public ImplicitHConvolution3 {
 protected:
-  dimensions3 d,du;
+  splityz d,du;
   fftw_plan intranspose,outtranspose;
   fftw_plan uintranspose,uouttranspose;
 public:  
@@ -353,7 +354,7 @@ public:
   // B is the number of outputs.
   // threads is the number of threads to use in the outer subconvolution loop.
   ImplicitHConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
-                           const dimensions3& d, const dimensions3& du,
+                           const splityz& d, const splityz& du,
                            Complex *f, Complex *u1, Complex *u2, Complex *u3,
                            unsigned int A=2, unsigned int B=1,
                            bool compact=true,
@@ -366,7 +367,7 @@ public:
   }
 
   ImplicitHConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
-                           const dimensions3& d, const dimensions3& du,
+                           const splityz& d, const splityz& du,
                            Complex *f, unsigned int A=2, unsigned int B=1,
                            bool compact=true,
                            unsigned int threads=fftw::maxthreads) :

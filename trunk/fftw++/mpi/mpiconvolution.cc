@@ -132,7 +132,7 @@ void ImplicitConvolution3MPI::convolve(Complex **F, multiplier *pmult,
 // Enforce 3D Hermiticity using specified (x,y > 0,z=0) and (x >= 0,y=0,z=0) data.
 // u is a work array of size d.nx.
 void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
-                              dimensions3& d, bool compact, Complex *f,
+                              splityz& d, bool compact, Complex *f,
                               unsigned int nu, Complex *u0)
 {
   if(d.y == d.ny && d.z == d.nz) {

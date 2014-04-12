@@ -1,7 +1,12 @@
 #ifndef __mpitranspose_h__
 #define __mpitranspose_h__ 1
 
-/* Globally transpose data, including local transposition
+/* 
+Globally transpose an N x M matrix of blocks of L complex elements
+distributed over the second dimension.
+Here "in" is a local N x m matrix and "out" is a local n x M matrix.
+Currently, both N and M must be divisible by the number of processors.
+
    Beginner Interface:
    
    transpose(data);              n x M -> m x N
@@ -85,11 +90,6 @@ inline int Ialltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype,
                      void *recvbuf, int recvcount, MPI_Datatype recvtype, 
                      MPI_Comm comm, MPI_Request *request, int *sched);
   
-// Globally transpose an N x M matrix of blocks of L complex elements
-// distributed over the second dimension.
-// Here "in" is a local N x m matrix and "out" is a local n x M matrix.
-// Currently, both N and M must be divisible by the number of processors.
-// work is a temporary array of size N*m*L.
 template<class T>
 class mpitranspose {
 private:
@@ -239,6 +239,8 @@ public:
   
   mpitranspose(){}
 
+  // Here "in" is a local N x m matrix and "out" is a local n x M matrix.
+  // work is a temporary array of size N*m*L.
   mpitranspose(unsigned int N, unsigned int m, unsigned int n,
                unsigned int M, unsigned int L,
                T *data, T *work=NULL,

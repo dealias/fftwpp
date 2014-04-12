@@ -18,7 +18,7 @@ bool Direct=false, Implicit=true;
 
 unsigned int outlimit=3000;
 
-inline void init(Complex *f, Complex *g, const dimensions3& d, unsigned int M=1,
+inline void init(Complex *f, Complex *g, const splityz& d, unsigned int M=1,
                  bool compact=true)
 {
   double factor=1.0/sqrt((double) M);
@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
   unsigned int ny=2*my-compact;
   unsigned int nz=mz+!compact;
     
-  MPIgroup group(MPI_COMM_WORLD,nx,ny,nz);
+  MPIgroup group(MPI_COMM_WORLD,ny,nz);
   MPILoadWisdom(group.active);
   
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED) {
@@ -157,12 +157,12 @@ int main(int argc, char* argv[])
       cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
       cout << "nx=" << nx << ", ny=" << ny << ", mz=" << mz << endl;
       cout << "size=" << group.size << endl;
-      cout << "yblock=" << group.yblock << endl;
-      cout << "zblock=" << group.zblock << endl;
+      cout << "yblock=" << group.block << endl;
+      cout << "zblock=" << group.block2 << endl;
     }
 
-    dimensions3 d(nx,ny,ny,nz,group);
-    dimensions3 du(mx+compact,ny,my+compact,nz,group);
+    splityz d(nx,ny,nz,group,ny);
+    splityz du(mx+compact,ny,nz,group,my+compact);
     
     unsigned int Mn=M*d.n;
     Complex *f=ComplexAlign(Mn);
