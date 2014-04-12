@@ -15,7 +15,7 @@ unsigned int M=1;
 
 bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
-inline void init(Complex *f, Complex *g, const dimensions3& d, unsigned int M=1)
+inline void init(Complex *f, Complex *g, const splityz& d, unsigned int M=1)
 {
   double factor=1.0/sqrt((double) M);
   for(unsigned int s=0; s < M; ++s) {
@@ -121,7 +121,7 @@ int main(int argc, char* argv[])
     if(N < 10) N=10;
   }
   
-  MPIgroup group(MPI_COMM_WORLD,mx,my,mz);
+  MPIgroup group(MPI_COMM_WORLD,my,mz);
   MPILoadWisdom(group.active);
   
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED) {
@@ -146,11 +146,11 @@ int main(int argc, char* argv[])
       cout << "N=" << N << endl;
       cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
       cout << "size=" << group.size << endl;
-      cout << "yblock=" << group.yblock << endl;
-      cout << "zblock=" << group.zblock << endl;
+      cout << "yblock=" << group.block << endl;
+      cout << "zblock=" << group.block2 << endl;
     }
   
-    dimensions3 d(mx,my,my,mz,group);
+    splityz d(mx,my,mz,group);
     
     unsigned int Mn=M*d.n;
     Complex *f=ComplexAlign(Mn);

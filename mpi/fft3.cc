@@ -13,12 +13,12 @@ unsigned int mx=4;
 unsigned int my=4;
 unsigned int mz=4;
 
-inline void init(Complex *f, dimensions3 d) 
+inline void init(Complex *f, splitxy d) 
 {
   unsigned int c=0;
   for(unsigned int i=0; i < d.x; ++i) {
     unsigned int ii=d.x0+i;
-    for(unsigned int j=0; j < d.yz.x; j++) {
+    for(unsigned int j=0; j < d.y; j++) {
       unsigned int jj=d.y0+j;
       for(unsigned int k=0; k < d.nz; k++) {
 	unsigned int kk=k;
@@ -28,7 +28,7 @@ inline void init(Complex *f, dimensions3 d)
   }
 }
 
-unsigned int outlimit=100;
+unsigned int outlimit=3000;
 
 int main(int argc, char* argv[])
 {
@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
     if(N < 10) N=10;
   }
   
-  MPIgroup group(MPI_COMM_WORLD,mx,my,mz);
+  MPIgroup group(MPI_COMM_WORLD,mx,my);
 
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED) {
     fftw::maxthreads=1;
@@ -110,30 +110,24 @@ int main(int argc, char* argv[])
       cout << "N=" << N << endl;
       cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
       cout << "size=" << group.size << endl;
-      cout << "yblock=" << group.yblock << endl;
-      cout << "zblock=" << group.zblock << endl;
+      cout << "xblock=" << group.block << endl;
+      cout << "yblock=" << group.block2 << endl;
     }
 
-    dimensions3 d(mx,my,my,mz,group);
+    splitxy d(mx,my,mz,group);
     
-    Complex *f=ComplexAlign(d.n);
-
-    // Load wisdom
-    //MPILoadWisdom(group.active);
+    Complex *f=ComplexAlign(d.n*10);
 
     // Create instance of FFT
     fft3dMPI fft(d,f);
-    
-    std::cout << "HERE" << std::endl;
-    bool dofinaltranspose=false; // FIXME: this must always be false for now.
     
     /*
     double *T=new double[N];
     for(unsigned int i=0; i < N; ++i) {
       init(f,d);
       seconds();
-      fft.Forwards(f,dofinaltranspose);
-      fft.Backwards(f,dofinaltranspose);
+      fft.Forwards(f);
+      fft.Backwards(f);
       fft.Normalize(f);
       T[i]=seconds();
     }
@@ -146,7 +140,7 @@ int main(int argc, char* argv[])
       for(int i=0; i < group.size; ++i) {
       	MPI_Barrier(group.active);
       	if(i == group.rank) {
-      	  cout << "process " << i << " dimensions:" << endl;
+      	  cout << "process " << i << " splity:" << endl;
       	  d.show();
       	  cout << endl;
       	}
@@ -157,27 +151,22 @@ int main(int argc, char* argv[])
       init(f,d);
 
       if(main) cout << "\ninput:" << endl;
-      show(f,d.x,d.yz.x,d.nz,group.active);
-      //show(f,1,d.nx*d.y*d.z,group.active); // order in memory:
+      show(f,d.x,d.y,d.nz,group.active);
 
-      fft.Forwards(f,dofinaltranspose);
+      fft.Forwards(f);
       
+      std::cout << d.xy.y << std::endl;
       if(main) cout << "\noutput:" << endl;
-      show(f,d.nx,d.y,d.z,group.active);
-      //show(f,1,d.x*d.yz.x*d.nz,group.active); // order in memory:
+      show(f,d.nx,d.xy.y,d.z,group.active);
 
-      fft.Backwards(f,dofinaltranspose);
+      fft.Backwards(f);
       fft.Normalize(f);
 
       if(main) cout << "\nback to input:" << endl;
-      show(f,d.x,d.yz.x,d.nz,group.active);
-      //show(f,1,d.nx*d.y*d.z,group.active); // order in memory:
+      show(f,d.x,d.y,d.nz,group.active);
     }
 
     deleteAlign(f);
-
-    // Load wisdom
-    MPISaveWisdom(group.active);
   }
   
   MPI_Finalize();

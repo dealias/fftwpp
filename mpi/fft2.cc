@@ -11,13 +11,13 @@ unsigned int N=0;
 unsigned int mx=4;
 unsigned int my=4;
 
-inline void init(Complex *f, dimensions d) 
+inline void init(Complex *f, splitx d) 
 {
-  for(unsigned int i=0; i < d.nx; ++i) {
-    unsigned int I=d.y*i;
-    for(unsigned int j=0; j < d.y; j++) {
-      unsigned int jj=d.y0+j;
-      f[I+j]=Complex(i,jj);
+  unsigned int c=0;
+  for(unsigned int i=0; i < d.x; ++i) {
+    unsigned int ii=d.x0+i;
+    for(unsigned int j=0; j < d.ny; j++) {
+      f[c++]=Complex(ii,j);
     }
   }
 }
@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
     if(N < 10) N=10;
   }
   
-  MPIgroup group(MPI_COMM_WORLD,my);
+  MPIgroup group(MPI_COMM_WORLD,mx);
 
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED) {
     fftw::maxthreads=1;
@@ -102,22 +102,19 @@ int main(int argc, char* argv[])
       cout << "mx=" << mx << ", my=" << my << endl;
     } 
 
-    dimensions d(mx,my,group.active,group.yblock);
+    splitx d(mx,my,group.active,group.block);
   
     for(int i=0; i < group.size; ++i) {
       MPI_Barrier(group.active);
       if(i == group.rank) {
-	cout << "process " << i << " dimensions:" << endl;
+	cout << "process " << i << " splity:" << endl;
 	d.show();
 	cout << endl;
       }
     }
+    MPI_Barrier(group.active);
 
     Complex *f=ComplexAlign(d.n);
-
-    MPI_Barrier(group.active);
-    // Load wisdom
-    MPILoadWisdom(group.active);
 
     // Create instance of FFT
     fft2dMPI fft(d,f);
@@ -126,35 +123,30 @@ int main(int argc, char* argv[])
     if(group.rank == 0)
       cout << "Initialized after " << seconds() << " seconds." << endl;    
 
-    bool dofinaltranspose=false;
-    dofinaltranspose=true;
     if(mx*my < outlimit) {
       init(f,d);
 
       if(main) cout << "\ninput:" << endl;
-      show(f,d.nx,d.y,group.active);
-      //show(f,1,d.x*d.ny,group.active);
+      show(f,d.x,my,group.active);
 
-      fft.Forwards(f,dofinaltranspose);
+      fft.Forwards(f);
 
       if(main) cout << "\noutput:" << endl;
-      show(f,d.ny,d.x,group.active);
-      //show(f,1,d.x*d.ny,group.active);
+      show(f,mx,d.y,group.active);
 
-      fft.Backwards(f,dofinaltranspose);
+      fft.Backwards(f);
       fft.Normalize(f);
 
       if(main) cout << "\noutput:" << endl;
-      show(f,d.nx,d.y,group.active);
-      //show(f,1,d.x*d.ny,group.active);
+      show(f,d.x,my,group.active);
     }
 
     double *T=new double[N];
     for(unsigned int i=0; i < N; ++i) {
       init(f,d);
       seconds();
-      fft.Forwards(f,dofinaltranspose);
-      fft.Backwards(f,dofinaltranspose);
+      fft.Forwards(f);
+      fft.Backwards(f);
       fft.Normalize(f);
       T[i]=seconds();
     }    
@@ -162,14 +154,6 @@ int main(int argc, char* argv[])
     delete [] T;
 
     deleteAlign(f);
-    
-    // Load wisdom
-
-    // FIXME: wisdom destroyed if load not present when using FFTW
-    // transpose (or with non-active processes?) unless load present
-    // here.
-    MPILoadWisdom(group.active); 
-    MPISaveWisdom(group.active);
   }
   
   MPI_Finalize();

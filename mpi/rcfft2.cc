@@ -11,7 +11,7 @@ unsigned int N=0;
 unsigned int mx=4;
 unsigned int my=4;
 
-inline void init(double *f, dimensions dr, bool inplace) 
+inline void init(double *f, splity dr, bool inplace) 
 {
   unsigned int rdist=inplace ? dr.ny+2: dr.ny;
   for(unsigned int i=0; i < dr.x; i++)  {
@@ -22,7 +22,7 @@ inline void init(double *f, dimensions dr, bool inplace)
   }
 }
 
-inline void init(Complex *g, dimensions dc) 
+inline void init(Complex *g, splity dc) 
 {
   for(unsigned int i=0; i < dc.x; i++)  {
     for(unsigned int j=0; j < dc.ny; j++) {
@@ -116,16 +116,16 @@ int main(int argc, char* argv[])
     // Load wisdom
     MPILoadWisdom(group.active);
 
-    // real dimensions
-    dimensions dr(mx,my,group.active,group.yblock); 
-    // complex dimensions
+    // real splity
+    splity dr(mx,my,group.active,group.yblock); 
+    // complex splity
     unsigned int myp=my/2+1; // y-dimension of complex data
-    dimensions dc(mx,myp,group.active,group.yblock);
+    splity dc(mx,myp,group.active,group.yblock);
   
     for(int i=0; i < group.size; ++i) {
       MPI_Barrier(group.active);
       if(i == group.rank) {
-	cout << "process " << i << " dimensions:" << endl;
+	cout << "process " << i << " splity:" << endl;
 	dr.show();
 	cout << "complex case:" << endl;
 	dc.show();
@@ -143,9 +143,6 @@ int main(int argc, char* argv[])
     // Create instance of FFT
     rcfft2dMPI fft(dr,dc,f,g);
     
-    bool dofinaltranspose=false;
-    //dofinaltranspose=true;
-
     // sample output for small problems
     if(mx*my < outlimit) {
       init(f,dr,inplace);
@@ -157,14 +154,14 @@ int main(int argc, char* argv[])
       //show(g,dc.x,dc.ny,group.active);
       //show(g,1,dc.n,group.active);      
 
-      fft.Forwards(f,g,dofinaltranspose);
+      fft.Forwards(f,g);
 
       if(main) cout << "\noutput:" << endl;
        show(g,dc.nx,dc.y,group.active);
       // show(g,1,dc.n,group.active);
 
-      fft.Backwards(g,f,dofinaltranspose);
-      fft.Normalize(f);
+       fft.Backwards(g,f);
+       fft.Normalize(f);
 
       // if(main) cout << "\ntranposed back:" << endl;
       // show(g,dc.x,dc.ny,group.active);
@@ -181,8 +178,8 @@ int main(int argc, char* argv[])
     // for(unsigned int i=0; i < N; ++i) {
     //   init(f,dr,inplace);
     //   seconds();
-    //   fft.Forwards(f,dofinaltranspose);
-    //   fft.Backwards(f,dofinaltranspose);
+    //   fft.Forwards(f);
+    //   fft.Backwards(f);
     //   fft.Normalize(f);
     //   T[i]=seconds();
     // }

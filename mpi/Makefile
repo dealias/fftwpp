@@ -46,7 +46,7 @@ LDFLAGS += -lfftw3_mpi -lfftw3_omp -lfftw3 -lm
 vpath %.cc ../
 
 FFTW=fftw++
-FILES=cconv2 conv2 cconv3 conv3 fft2 fft3 rcfft2 transpose
+FILES=cconv2 conv2 cconv3 conv3 fft2 fft3 transpose
 UTILS=$(FFTW) mpiutils
 MPITRANSPOSE=$(UTILS) mpitranspose
 MPIFFT=$(MPITRANSPOSE) mpifftw++
