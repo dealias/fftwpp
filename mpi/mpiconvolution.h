@@ -37,7 +37,6 @@ public:
         std::cout << std::endl;
       }
     } else {
-      std::cout << "**************************" << std::endl;
       intranspose=
         fftw_mpi_plan_many_transpose(my,mx,2,d.block,0,(double*) u2,
                                      (double*) u2,d.communicator,
