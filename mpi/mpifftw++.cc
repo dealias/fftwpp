@@ -57,13 +57,18 @@ void fft2dMPI::BackwardsNormalized(Complex *f)
 
 void fft3dMPI::Forwards(Complex *f)
 {
-  zForwards->fft(f);
-
-  if(d.y < my) Tyz->transpose(f,true,false);
-
   unsigned int stride=d.z*d.ny;
-  for(unsigned int i=0; i < d.x; ++i) 
-    yForwards->fft(f+i*stride);
+  if(d.y < d.ny) {
+    zForwards->fft(f);
+
+    Tyz->transpose(f,true,false);
+
+    for(unsigned int i=0; i < d.x; ++i) 
+      yForwards->fft(f+i*stride);
+  } else {
+    for(unsigned int i=0; i < d.x; ++i) 
+      yzForwards->fft(f+i*stride);
+  }
 
   Txy->transpose(f,true,false);
 
@@ -77,12 +82,17 @@ void fft3dMPI::Backwards(Complex *f)
   Txy->transpose(f,false,true);
 
   unsigned int stride=d.z*d.ny;
+  if(d.y < d.ny) {
   for(unsigned int i=0; i < d.x; ++i)
     yBackwards->fft(f+i*stride);
 
-  if(d.y < my) Tyz->transpose(f,false,true);
+  Tyz->transpose(f,false,true);
 
   zBackwards->fft(f);
+  } else {
+    for(unsigned int i=0; i < d.x; ++i) 
+      yzBackwards->fft(f+i*stride);
+  }
 }
 
 void fft3dMPI::Normalize(Complex *f)

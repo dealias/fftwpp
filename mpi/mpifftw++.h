@@ -245,7 +245,7 @@ public:
 };
   
 // In-place OpenMP/MPI 2D complex FFT.
-// The input array of size mx,my,mz is Fourier-transformed into the output array.
+// Fourier transform an mx x my array, distributed first over x.
 // The array must be allocated as splitx::n Complex words.
 //
 // Example:
@@ -260,14 +260,12 @@ public:
 
 class fft2dMPI {
  private:
-  unsigned int mx,my;
   splitx d;
   mfft1d *xForwards,*xBackwards;
   mfft1d *yForwards,*yBackwards;
   Complex *f;
   fftw_plan intranspose,outtranspose;
   bool tranfftwpp;
- protected:
   mpitranspose<Complex> *T;
  public:
   void inittranspose(Complex* f) {
@@ -299,9 +297,6 @@ class fft2dMPI {
   }
   
  fft2dMPI(const splitx& d, Complex *f) : d(d) {
-    mx=d.nx;
-    my=d.ny;
-
     inittranspose(f);
 
     xForwards=new mfft1d(d.nx,-1,d.y,d.y,1,f,f); 
@@ -325,8 +320,8 @@ class fft2dMPI {
 };
 
 // In-place OpenMP/MPI 3D complex FFT.
-// Fourier transform a mx x my x mz, distributed first over x and then over y.
-// The array must be allocated as splitxy::n Complex words.
+// Fourier transform an mx x my x mz array, distributed first over x and
+// then over y. The array must be allocated as splitxy::n Complex words.
 //
 // Example:
 // MPIgroup group(MPI_COMM_WORLD,mx,my);
@@ -340,34 +335,33 @@ class fft2dMPI {
 //
 class fft3dMPI {
  private:
-  unsigned int mx,my,mz;
   splitxy d;
   mfft1d *xForwards,*xBackwards;
   mfft1d *yForwards,*yBackwards;
   mfft1d *zForwards,*zBackwards;
+  fft2d *yzForwards,*yzBackwards;
   Complex *f;
- protected:
   mpitranspose<Complex> *Txy,*Tyz;
  public:
-  void inittranspose(Complex* f) {
-    Txy=new mpitranspose<Complex>(d.nx,d.xy.y,d.x,d.ny,d.z,f,d.xy.communicator);
-    Tyz=new mpitranspose<Complex>(d.ny,d.z,d.y,d.nz,1,f,d.yz.communicator);
-  }
   
  fft3dMPI(const splitxy& d, Complex *f) : d(d) {
-    mx=d.nx;
-    my=d.ny;
-    mz=d.nz;
-    inittranspose(f);
- 
+    Txy=new mpitranspose<Complex>(d.nx,d.xy.y,d.x,d.ny,d.z,f,d.xy.communicator);
+    
     xForwards=new mfft1d(d.nx,-1,d.xy.y*d.z,d.xy.y*d.z,1);
     xBackwards=new mfft1d(d.nx,1,d.xy.y*d.z,d.xy.y*d.z,1);
 
-    yForwards=new mfft1d(d.ny,-1,d.z,d.z,1);
-    yBackwards=new mfft1d(d.ny,1,d.z,d.z,1);
+    if(d.y < d.ny) {
+      Tyz=new mpitranspose<Complex>(d.ny,d.z,d.y,d.nz,1,f,d.yz.communicator);
+      
+      yForwards=new mfft1d(d.ny,-1,d.z,d.z,1);
+      yBackwards=new mfft1d(d.ny,1,d.z,d.z,1);
 
-    zForwards=new mfft1d(d.nz,-1,d.x*d.y,1,d.nz);
-    zBackwards=new mfft1d(d.nz,1,d.x*d.y,1,d.nz);
+      zForwards=new mfft1d(d.nz,-1,d.x*d.y,1,d.nz);
+      zBackwards=new mfft1d(d.nz,1,d.x*d.y,1,d.nz);
+    } else {
+      yzForwards=new fft2d(d.ny,d.nz,-1,f);
+      yzBackwards=new fft2d(d.ny,d.nz,1,f);
+    }
   }
   
   virtual ~fft3dMPI() {}
