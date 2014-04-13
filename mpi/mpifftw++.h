@@ -307,6 +307,11 @@ class fft2dMPI {
   }
   
   virtual ~fft2dMPI() {
+    delete yBackwards;
+    delete yForwards;
+    delete xBackwards;
+    delete xForwards;
+    
     if(!tranfftwpp) {
       fftw_destroy_plan(intranspose);
       fftw_destroy_plan(outtranspose);
@@ -364,7 +369,22 @@ class fft3dMPI {
     }
   }
   
-  virtual ~fft3dMPI() {}
+  virtual ~fft3dMPI() {
+    if(d.y < d.ny) {
+      delete zBackwards;
+      delete zForwards;
+      delete yBackwards;
+      delete yForwards;
+      delete Tyz;
+    } else {
+      delete yzBackwards;
+      delete yzForwards;
+    }
+    
+    delete xBackwards;
+    delete xForwards;
+    delete Txy;
+  }
 
   void Forwards(Complex *f);
   void Backwards(Complex *f);
