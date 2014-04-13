@@ -43,8 +43,9 @@ void fft2dMPI::Backwards(Complex *f)
 void fft2dMPI::Normalize(Complex *f)
 {
   // TODO: multithread
-  unsigned int n=d.nx*d.ny;
-  double denom=1.0/n;
+  unsigned int N=d.nx*d.ny;
+  unsigned int n=d.x*d.ny;
+  double denom=1.0/N;
   for(unsigned int i=0; i < n; ++i) 
     f[i] *= denom;
 }
@@ -97,8 +98,9 @@ void fft3dMPI::Backwards(Complex *f)
 
 void fft3dMPI::Normalize(Complex *f)
 {
-  unsigned int n=d.nx*d.ny*d.nz;
-  double denom=1.0/n;
+  unsigned int N=d.nx*d.ny*d.nz;
+  unsigned int n=d.x*d.y*d.nz;
+  double denom=1.0/N;
   for(unsigned int i=0; i < n; ++i) 
     f[i] *= denom;
 }
