@@ -473,12 +473,15 @@ public:
     inplace=(out==in);
     
     threaddata data;
+    unsigned int Threads=threads;
     if(threads > 1) data=lookup(inplace,threads);
-    planThreads(data.threads > 0 ? data.threads : 1);
+    threads=data.threads > 0 ? data.threads : 1;
+    planThreads(threads);
     plan=Plan(in,out);
     if(!plan) noplan();
     
-    if(threads > 1 && data.threads == 0) {
+    if(Threads > 1 && data.threads == 0) {
+      threads=Threads;
       planThreads(threads);
       fftw_plan planT=Plan(in,out);
       if(planT)
