@@ -8,6 +8,7 @@
 import sys # so that we can return a value at the end.
 from subprocess import * # 
 import re # regexp package
+import random # for randum number generators
 
 retval=0
 
@@ -16,7 +17,8 @@ print
 print "program\ttype\t\tsize\terror:"
 print
 
-mlist=[8,9] # problem sizes
+
+mlist=[8,9,random.randint(1,64)] # problem sizes
 
 dlist=["cconv", "cconv2", "cconv3", "conv", "conv2", "conv3", "tconv", "tconv2"]
 for prog in dlist:

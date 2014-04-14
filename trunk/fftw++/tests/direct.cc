@@ -5,6 +5,9 @@ namespace fftwpp {
 
 void DirectConvolution::convolve(Complex *h, Complex *f, Complex *g)
 {
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for
+#endif
   for(unsigned int i=0; i < m; ++i) {
     Complex sum=0.0;
     for(unsigned int j=0; j <= i; ++j) sum += f[j]*g[i-j];
@@ -14,6 +17,9 @@ void DirectConvolution::convolve(Complex *h, Complex *f, Complex *g)
 
 void DirectHConvolution::convolve(Complex *h, Complex *f, Complex *g)
 {
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for
+#endif
   for(unsigned int i=0; i < m; ++i) {
     Complex sum=0.0;
     for(unsigned int j=0; j <= i; ++j) sum += f[j]*g[i-j];
@@ -25,6 +31,9 @@ void DirectHConvolution::convolve(Complex *h, Complex *f, Complex *g)
 
 void DirectConvolution2::convolve(Complex *h, Complex *f, Complex *g)
 {
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for
+#endif
   for(unsigned int i=0; i < mx; ++i) {
     for(unsigned int j=0; j < my; ++j) {
       Complex sum=0.0;
@@ -50,6 +59,9 @@ void DirectHConvolution2::convolve(Complex *h, Complex *f, Complex *g,
   int ystart=1-(int) my;
   int xstop=mx;
   int ystop=my;
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for
+#endif
   for(int kx=xstart; kx < xstop; ++kx) {
     for(int ky=0; ky < ystop; ++ky) {
       Complex sum=0.0;
@@ -74,6 +86,9 @@ void DirectHConvolution2::convolve(Complex *h, Complex *f, Complex *g,
 
 void DirectConvolution3::convolve(Complex *h, Complex *f, Complex *g)
 {
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for
+#endif
   for(unsigned int i=0; i < mx; ++i) {
     for(unsigned int j=0; j < my; ++j) {
       for(unsigned int k=0; k < mz; ++k) {
@@ -106,6 +121,9 @@ void DirectHConvolution3::convolve(Complex *h, Complex *f, Complex *g,
   int xstop=mx;
   int ystop=my;
   int zstop=mz;
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for
+#endif
   for(int kx=xstart; kx < xstop; ++kx) {
     for(int ky=ystart; ky < ystop; ++ky) {
       for(int kz=0; kz < zstop; ++kz) {
@@ -141,6 +159,7 @@ void DirectHTConvolution::convolve(Complex *h, Complex *e, Complex *f,
 {
   int stop=m;
   int start=1-m;
+#pragma omp parallel for
   for(int k=0; k < stop; ++k) {
     Complex sum=0.0;
     for(int p=start; p < stop; ++p) {
@@ -171,6 +190,7 @@ void DirectHTConvolution2::convolve(Complex *h, Complex *e, Complex *f,
   int xstop=mx;
   int ystop=my;
   int ystart=1-(int) my;
+#pragma omp parallel for
   for(int kx=xstart; kx < xstop; ++kx) {
     for(int ky=0; ky < ystop; ++ky) {
       Complex sum=0.0;
