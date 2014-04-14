@@ -20,6 +20,7 @@ ilist=["cconv", "conv"]
 for prog in ilist:
     for mval in mlist:
         p=Popen(["./"+prog,"-N1","-i","-t","-m"+str(mval)],stdout=PIPE,stderr=PIPE)
+        p.wait() # sets the return code
         out, err = p.communicate() # capture output
         if (p.returncode == 0): # did the process succeed?
             m=re.search("(?<=error=)(.*)",out) # find the text after "error="
@@ -35,6 +36,7 @@ elist=["cconv","conv"]
 for prog in elist:
     for mval in mlist:
         p=Popen(["./"+prog,"-N1","-e","-t"],stdout=PIPE,stderr=PIPE)
+        p.wait() # sets the return code
         out, err = p.communicate() # capture output
         if (p.returncode == 0): # did the process succeed?
             m=re.search("(?<=error=)(.*)",out) # find the text after "error="

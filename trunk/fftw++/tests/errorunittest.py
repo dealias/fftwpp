@@ -13,7 +13,7 @@ retval=0
 
 print "Checking error vs direct routine...",
 p=Popen(['./directerror.py'],stdout=PIPE,stderr=PIPE)
-p.returncode=0
+p.wait() # sets the return code
 out, err = p.communicate() # capture output
 print "...done."
 if not (p.returncode == 0):
@@ -27,7 +27,7 @@ if not (p.returncode == 0):
 
 print "Checking error vs test case...",
 p=Popen(['./error.py'],stdout=PIPE,stderr=PIPE)
-p.returncode=0
+p.wait() # sets the return code
 out, err = p.communicate() # capture output
 print "...done."
 if not (p.returncode == 0):
@@ -44,7 +44,7 @@ error1=["cconv","conv"]
 for prog in error1:
     print(prog),
     p=Popen(['./error',prog],stdout=PIPE,stderr=PIPE)
-    p.returncode=0
+    p.wait() # sets the return code
     out, err = p.communicate() # capture output
     if not (p.returncode == 0):
         print out
@@ -58,7 +58,7 @@ print "...done."
 
 print "Checking error scaling:",
 p=Popen(['./checkerror.py'],stdout=PIPE,stderr=PIPE)
-p.returncode=0
+p.wait() # sets the return code
 out, err = p.communicate() # capture output
 if not (p.returncode == 0):
     print out
