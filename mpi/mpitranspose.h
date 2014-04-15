@@ -129,9 +129,9 @@ public:
   
   // Estimate typical bandwidth saturation message size
   double Latency() {
-    static double latency=0.0;
+    static double latency=-1.0;
     if(size == 1) return 0.0;
-    if(latency) return latency;
+    if(latency >= 0) return latency;
     
     unsigned int b=(unsigned int) sqrt(size);
     MPI_Comm_split(communicator,rank/b,0,&split);
@@ -149,21 +149,20 @@ public:
     poll(send,recv,N1);
     poll(send,recv,N2);
     for(unsigned int i=0; i < M; ++i) {
-      MPI_Barrier(communicator);
+      MPI_Barrier(split);
       double t0=totalseconds();
       poll(send,recv,N1);
       double t1=totalseconds();
-      MPI_Barrier(communicator);
+      MPI_Barrier(split);
       double t2=totalseconds();
       poll(send,recv,N2);
       double t3=totalseconds();
       T1 += t1-t0;
       T2 += t3-t2;
     }
-    if(rank == 0) {
-      latency=(T1*(N2-N1)/(T2-T1)-N1)*sizeof(double);
+    latency=std::max(T1*(N2-N1)/(T2-T1)-N1,0.0)*sizeof(double);
+    if(rank == 0)
       std::cout << "latency=" << latency << std::endl;
-    }
     MPI_Comm_free(&split); 
     return latency;
   }

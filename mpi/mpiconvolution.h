@@ -23,10 +23,9 @@ public:
     int size;
     MPI_Comm_size(d.communicator,&size);
     alltoall=mx % size == 0 && my % size == 0;
-    alltoall=false;
 
     if(alltoall) {
-      T=new mpitranspose<Complex>(mx,d.y,d.x,my,1,u2);
+      T=new mpitranspose<Complex>(mx,d.y,d.x,my,1,u2,d.communicator);
       int rank;
       MPI_Comm_rank(d.communicator,&rank);
       if(rank == 0) {
@@ -196,16 +195,15 @@ protected:
 public:  
   void inittranspose() {
     int size;
-    MPI_Comm_size(d.communicator,&size);
+    MPI_Comm_size(d.xy.communicator,&size);
     alltoall=mx % size == 0 && my % size == 0;
-//    alltoall=false;
 
     if(alltoall) {
-      T=new mpitranspose<Complex>(mx,d.y,d.x,my,d.z,u3);
+      T=new mpitranspose<Complex>(mx,d.y,d.x,my,d.z,u3,d.xy.communicator);
       int rank;
       MPI_Comm_rank(d.communicator,&rank);
       if(rank == 0) {
-        std::cout << "Using fast alltoall block transpose";
+        std::cout << "Using fast alltoall 3D block transpose";
 #if MPI_VERSION >= 3
         std::cout << " (NONBLOCKING MPI 3.0 version)";
 #endif
@@ -250,8 +248,8 @@ public:
                           unsigned int A=2, unsigned int B=1,
                           unsigned int threads=fftw::maxthreads) :
     ImplicitConvolution3(mx,my,mz,u1,u2,u3,A,B,threads,d.y,d.z,d.n2,d.n), d(d) {
-    initMPI();
     inittranspose();
+    initMPI();
   }
 
   ImplicitConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
@@ -259,8 +257,8 @@ public:
                           unsigned int A=2, unsigned int B=1,
                           unsigned int threads=fftw::maxthreads) :
     ImplicitConvolution3(mx,my,mz,A,B,threads,d.y,d.z,d.n2,d.n), d(d) {
-    initMPI();
     inittranspose();
+    initMPI();
   }
   
   virtual ~ImplicitConvolution3MPI() {
