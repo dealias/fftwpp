@@ -20,11 +20,9 @@ const double G=sqrt(5.0);
 
 bool Direct=false, Implicit=true, Explicit=false, Test=false;
 
-//realmultiplier(double **, unsigned int m, unsigned int threads);
+unsigned int A, B; // number of inputs and outputs
 
-unsigned int A;
-
-// pair-wise binary multiply for even A and B=1
+// pair-wise binary multiply for even A and B=1.
 // NB: example function, not optimised or threaded.
 void mymult(double ** F, unsigned int m, unsigned int threads)
 {
@@ -32,7 +30,23 @@ void mymult(double ** F, unsigned int m, unsigned int threads)
     F[0][i] *= F[1][i];
     for(unsigned int a=2; a < A; a += 2) 
       F[0][i] += F[a][i]*F[a+1][i];
-  } 
+  }
+}
+
+// pair-wise binary multiply for even A.
+// NB: example function, not optimised or threaded.
+void mymultB(double ** F, unsigned int m, unsigned int threads)
+{
+  double* FB=new double[B];
+  for(unsigned int i=0; i < m; ++i) {
+    for(unsigned int b=0; b < B; b++) 
+      FB[b]=0.0;
+    for(unsigned int a=0; a < A; a += 2) 
+      FB[0] += F[a][i]*F[a+1][i];
+    for(unsigned int b=0; b < B; b++) 
+      F[b][i]=FB[b];
+  }
+  delete[] FB;
 }
 
 inline void init(Complex *f, Complex *g, unsigned int M=1) 
@@ -80,7 +94,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptM:N:m:n:T:");
+    int c = getopt(argc,argv,"hdeiptM:B:N:m:n:T:");
     if (c == -1) break;
 		
     switch (c) {
@@ -101,6 +115,9 @@ int main(int argc, char* argv[])
         break;
       case 'M':
         M=atoi(optarg);
+        break;
+      case 'B':
+        B=atoi(optarg);
         break;
       case 'N':
         N=atoi(optarg);
@@ -124,6 +141,7 @@ int main(int argc, char* argv[])
   }
 
   A=2*M; // Number of independent inputs
+  B=1; // Number of outputs
   unsigned int n=padding(m);
   
   cout << "n=" << n << endl;
@@ -151,12 +169,21 @@ int main(int argc, char* argv[])
     cout << "threads=" << C.Threads() << endl << endl;
     
     realmultiplier *mult;
-    switch(A) {
-    case 2: mult=multbinary; break;
-    case 4: mult=multbinary2; break;
-    default: 
+    if(B == 1) {
+      switch(A) {
+      case 2: mult=multbinary; break;
+      case 4: mult=multbinary2; break;
+      default:
+	if (A%2 == 0)
+	  mult=mymult;
+	else {
+	  cerr << "M=" << M << " is not yet implemented" << endl; 
+	  exit(1);
+	}
+      }
+    } else {
       if (A%2 == 0)
-	mult=mymult;
+	mult=mymultB;
       else {
 	cerr << "M=" << M << " is not yet implemented" << endl; 
 	exit(1);
