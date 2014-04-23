@@ -165,7 +165,7 @@ int main(int argc, char* argv[])
   double* T=new double[N];
 
   if(Implicit) {
-    ImplicitHConvolution C(m,A);
+    ImplicitHConvolution C(m,A,B);
     cout << "threads=" << C.Threads() << endl << endl;
     
     realmultiplier *mult;
