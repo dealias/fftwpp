@@ -20,6 +20,21 @@ const double G=sqrt(5.0);
 
 bool Direct=false, Implicit=true, Explicit=false, Test=false;
 
+//realmultiplier(double **, unsigned int m, unsigned int threads);
+
+unsigned int A;
+
+// pair-wise binary multiply for even A and B=1
+// NB: example function, not optimised or threaded.
+void mymult(double ** F, unsigned int m, unsigned int threads)
+{
+  for(unsigned int i=0; i < m; ++i) {
+    F[0][i] *= F[1][i];
+    for(unsigned int a=2; a < A; a += 2) 
+      F[0][i] += F[a][i]*F[a+1][i];
+  } 
+}
+
 inline void init(Complex *f, Complex *g, unsigned int M=1) 
 {
   unsigned int Mm=M*m;
@@ -108,7 +123,7 @@ int main(int argc, char* argv[])
     }
   }
 
-  unsigned int A=2*M; // Number of independent inputs
+  A=2*M; // Number of independent inputs
   unsigned int n=padding(m);
   
   cout << "n=" << n << endl;
@@ -136,11 +151,16 @@ int main(int argc, char* argv[])
     cout << "threads=" << C.Threads() << endl << endl;
     
     realmultiplier *mult;
-    switch(M) {
-      case 1: mult=multbinary; break;
-      case 2: mult=multbinary2; break;
-        
-      default: cerr << "M=" << M << " is not yet implemented" << endl; exit(1);
+    switch(A) {
+    case 2: mult=multbinary; break;
+    case 4: mult=multbinary2; break;
+    default: 
+      if (A%2 == 0)
+	mult=mymult;
+      else {
+	cerr << "M=" << M << " is not yet implemented" << endl; 
+	exit(1);
+      }
     }
     
     Complex **F=new Complex *[A];
