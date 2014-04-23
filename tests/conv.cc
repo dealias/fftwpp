@@ -22,7 +22,7 @@ bool Direct=false, Implicit=true, Explicit=false, Test=false;
 
 unsigned int A, B; // number of inputs and outputs
 
-// pair-wise binary multiply for even A and B=1.
+// Pair-wise binary multiply for even A and B=1.
 // NB: example function, not optimised or threaded.
 void mymult(double ** F, unsigned int m, unsigned int threads)
 {
@@ -33,24 +33,25 @@ void mymult(double ** F, unsigned int m, unsigned int threads)
   }
 }
 
-// pair-wise binary multiply for even A.
+// Pair-wise binary multiply for even A.
+// All of the B outputs are identical.
 // NB: example function, not optimised or threaded.
 void mymultB(double ** F, unsigned int m, unsigned int threads)
 {
-  double* FB=new double[B];
-  for(unsigned int i=0; i < m; ++i) {
+  mymult(F,m,threads);
+  // copy output
+  for(unsigned int i=0; i < m; ++i)
     for(unsigned int b=0; b < B; b++) 
-      FB[b]=0.0;
-    for(unsigned int a=0; a < A; a += 2) 
-      FB[0] += F[a][i]*F[a+1][i];
-    for(unsigned int b=0; b < B; b++) 
-      F[b][i]=FB[b];
-  }
-  delete[] FB;
+      F[b][i]=F[0][i];
 }
 
-inline void init(Complex *f, Complex *g, unsigned int M=1) 
+inline void init(Complex *f, Complex *g, unsigned int A=2) 
 {
+  if (A%2 != 0) {
+    cerr << "A=" << A << " is not yet implemented" << endl; 
+    exit(1);
+  }
+  unsigned int M=A/2;
   unsigned int Mm=M*m;
   double factor=1.0/sqrt((double) M);
   for(unsigned int i=0; i < Mm; i += m) {
@@ -86,6 +87,10 @@ int main(int argc, char* argv[])
 {
   fftw::maxthreads=get_max_threads();
 
+  A=2; // Number of inputs
+  B=1; // Number of outputs
+  unsigned int Bcheck=0; // Which output to check
+
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
@@ -94,7 +99,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptM:B:N:m:n:T:");
+    int c = getopt(argc,argv,"hdeiptM:B:b:N:m:n:T:");
     if (c == -1) break;
 		
     switch (c) {
@@ -115,9 +120,13 @@ int main(int argc, char* argv[])
         break;
       case 'M':
         M=atoi(optarg);
+	A=2*M; // Number of independent inputs
         break;
       case 'B':
         B=atoi(optarg);
+        break;
+      case 'b':
+        Bcheck=atoi(optarg);
         break;
       case 'N':
         N=atoi(optarg);
@@ -137,11 +146,11 @@ int main(int argc, char* argv[])
       case 'h':
       default:
         usage(1,true,true,true);
+	usageB();
+	exit(1);
     }
   }
 
-  A=2*M; // Number of independent inputs
-  B=1; // Number of outputs
   unsigned int n=padding(m);
   
   cout << "n=" << n << endl;
@@ -154,7 +163,7 @@ int main(int argc, char* argv[])
   cout << "N=" << N << endl;
   
   unsigned int np=Explicit ? n/2+1 : m;
-  if(Implicit) np *= M;
+  if(Implicit) np *= A;
     
   Complex *f=ComplexAlign(np);
   Complex *g=ComplexAlign(np);
@@ -167,38 +176,31 @@ int main(int argc, char* argv[])
   if(Implicit) {
     ImplicitHConvolution C(m,A,B);
     cout << "threads=" << C.Threads() << endl << endl;
+
+    if (A%2 != 0) {
+      cerr << "A=" << A << " is not yet implemented" << endl; 
+      exit(1);
+    }
     
     realmultiplier *mult;
     if(B == 1) {
       switch(A) {
       case 2: mult=multbinary; break;
       case 4: mult=multbinary2; break;
-      default:
-	if (A%2 == 0)
-	  mult=mymult;
-	else {
-	  cerr << "M=" << M << " is not yet implemented" << endl; 
-	  exit(1);
-	}
+      default: mult=mymult;
       }
-    } else {
-      if (A%2 == 0)
-	mult=mymultB;
-      else {
-	cerr << "M=" << M << " is not yet implemented" << endl; 
-	exit(1);
-      }
-    }
+    } else
+      mult=mymultB;
     
     Complex **F=new Complex *[A];
-    for(unsigned int s=0; s < M; ++s) {
+    for(unsigned int s=0; s < A/2; ++s) {
       unsigned int sm=s*m;
       F[2*s]=f+sm;
       F[2*s+1]=g+sm;
     }
 
     for(unsigned int i=0; i < N; ++i) {
-      init(f,g,M);
+      init(f,g,A);
       seconds();
       C.convolve(F,mult);
 //      C.convolve(f,g);
@@ -206,12 +208,12 @@ int main(int argc, char* argv[])
     }
 
     timings("Implicit",m,T,N);
-
+    
     if(m < 100) 
-      for(unsigned int i=0; i < m; i++) cout << f[i] << endl;
+      for(unsigned int i=0; i < m; i++) cout << F[Bcheck][i] << endl;
     else cout << f[0] << endl;
     if(Test || Direct)
-      for(unsigned int i=0; i < m; i++) h0[i]=f[i];
+      for(unsigned int i=0; i < m; i++) h0[i]=F[Bcheck][i];
     
     delete [] F;
   }

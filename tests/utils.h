@@ -44,8 +44,14 @@ inline void usage(int n, bool test=false, bool Explicit=true,
   }
   if(n > 2)
     std::cerr << "-z\t\t z size" << std::endl;
-  exit(1);
 }
+
+inline void usageB()
+{
+  std::cerr << "-B\t\t number of data blocks in output" << std::endl;
+  std::cerr << "-b\t\t which output block to check" << std::endl;
+}
+
 
 inline int hash(Complex* f, unsigned int m)
 {
