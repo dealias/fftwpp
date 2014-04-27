@@ -17,6 +17,7 @@ protected:
   fftw_plan intranspose,outtranspose;
   bool alltoall; // Use experimental nonblocking transpose
   mpitranspose<Complex> *T;
+  MPI_Comm global;
 public:  
   
   void inittranspose() {
@@ -25,9 +26,9 @@ public:
     alltoall=mx % size == 0 && my % size == 0;
 
     if(alltoall) {
-      T=new mpitranspose<Complex>(mx,d.y,d.x,my,1,u2,d.communicator);
+      T=new mpitranspose<Complex>(mx,d.y,d.x,my,1,u2,d.communicator,global);
       int rank;
-      MPI_Comm_rank(d.communicator,&rank);
+      MPI_Comm_rank(global,&rank);
       if(rank == 0) {
         std::cout << "Using fast alltoall block transpose";
 #if MPI_VERSION >= 3
@@ -59,15 +60,19 @@ public:
   ImplicitConvolution2MPI(unsigned int mx, unsigned int my, const splity& d,
                           Complex *u1, Complex *u2, 
                           unsigned int A=2, unsigned int B=1,
-                          unsigned int threads=fftw::maxthreads) :
-    ImplicitConvolution2(mx,my,u1,u2,A,B,threads,d.x,d.y,d.n), d(d) {
+                          unsigned int threads=fftw::maxthreads,
+                          MPI_Comm global=0) :
+    ImplicitConvolution2(mx,my,u1,u2,A,B,threads,d.x,d.y,d.n), d(d),
+    global(global ? global : d.communicator) {
     inittranspose();
   }
   
   ImplicitConvolution2MPI(unsigned int mx, unsigned int my, const splity& d,
                           unsigned int A=2, unsigned int B=1,
-                          unsigned int threads=fftw::maxthreads) :
-    ImplicitConvolution2(mx,my,A,B,threads,d.x,d.y,d.n), d(d) {
+                          unsigned int threads=fftw::maxthreads,
+                          MPI_Comm global=0) :
+    ImplicitConvolution2(mx,my,A,B,threads,d.x,d.y,d.n), d(d),
+    global(global ? global : d.communicator) {
     inittranspose();
   }
   
@@ -197,9 +202,11 @@ public:
     int size;
     MPI_Comm_size(d.xy.communicator,&size);
     alltoall=mx % size == 0 && my % size == 0;
+    alltoall=false;
 
     if(alltoall) {
-      T=new mpitranspose<Complex>(mx,d.y,d.x,my,d.z,u3,d.xy.communicator);
+      T=new mpitranspose<Complex>(mx,d.y,d.x,my,d.z,u3,d.xy.communicator,
+                                  d.communicator);
       int rank;
       MPI_Comm_rank(d.communicator,&rank);
       if(rank == 0) {
@@ -231,7 +238,7 @@ public:
         yzconvolve[t]=new ImplicitConvolution2MPI(my,mz,d.yz,
                                                   u1+t*mz*A*innerthreads,
                                                   u2+t*d.n2*A,A,B,
-                                                  innerthreads);
+                                                  innerthreads,d.communicator);
       initpointers3(U3,u3,d.n);
     }
   }
