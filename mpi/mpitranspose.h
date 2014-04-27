@@ -99,10 +99,12 @@ private:
   T *work;
   unsigned int threads;
   MPI_Comm communicator;
+  MPI_Comm global;
   bool allocated;
   MPI_Request *request;
   int size;
   int rank;
+  int globalrank;
   int splitsize;
   int splitrank;
   int split2size;
@@ -161,7 +163,7 @@ public:
       T2 += t3-t2;
     }
     latency=std::max(T1*(N2-N1)/(T2-T1)-N1,0.0)*sizeof(double);
-    if(rank == 0)
+    if(globalrank == 0)
       std::cout << "latency=" << latency << std::endl;
     MPI_Comm_free(&split); 
     return latency;
@@ -175,8 +177,10 @@ public:
     MPI_Comm_size(communicator,&size);
     MPI_Comm_rank(communicator,&rank);
     
+    MPI_Comm_rank(global,&globalrank);
+    
     if(!divisible(size,M,N)) {
-      if(rank == 0)
+      if(globalrank == 0)
         std::cout << 
           "ERROR: Matrix dimensions must be divisible by number of processors" 
                   << std::endl << std::endl; 
@@ -198,21 +202,21 @@ public:
     double latency=safetyfactor*Latency();
     unsigned int alimit=(N*M*L*sizeof(T) >= latency*size*size) ?
       2 : size;
-    MPI_Bcast(&alimit,1,MPI_UNSIGNED,0,communicator);
+    MPI_Bcast(&alimit,1,MPI_UNSIGNED,0,global);
 
-    if(rank == 0)
+    if(globalrank == 0)
       std::cout << std::endl << "Timing:" << std::endl;
     
     unsigned int A=0;
     double T0=DBL_MAX;
     for(unsigned int alltoall=0; alltoall <= 1; ++alltoall) {
-      if(rank == 0) std::cout << "alltoall=" << alltoall << std::endl;
+      if(globalrank == 0) std::cout << "alltoall=" << alltoall << std::endl;
       for(a=1; a < alimit; a *= 2) {
         b=size/a;
         init(data,alltoall);
         double t=time(data);
         deallocate();
-        if(rank == 0) {
+        if(globalrank == 0) {
           std::cout << "a=" << a << ":\ttime=" << t << std::endl;
           if(t < T0) {
             T0=t;
@@ -224,13 +228,13 @@ public:
     }
     
     unsigned int parm[]={A,AlltoAll};
-    MPI_Bcast(&parm,2,MPI_UNSIGNED,0,communicator);
+    MPI_Bcast(&parm,2,MPI_UNSIGNED,0,global);
     A=parm[0];
     AlltoAll=parm[1];
     a=A;
     b=size/a;
     
-    if(rank == 0) std::cout << std::endl << "Using alltoall=" << AlltoAll
+    if(globalrank == 0) std::cout << std::endl << "Using alltoall=" << AlltoAll
                             << ", a=" << a << ":" << std::endl;
     
     init(data,AlltoAll);
@@ -244,26 +248,27 @@ public:
                unsigned int M, unsigned int L,
                T *data, T *work=NULL,
                unsigned int threads=fftw::maxthreads,
-               MPI_Comm communicator=MPI_COMM_WORLD) :
+               MPI_Comm communicator=MPI_COMM_WORLD,
+               MPI_Comm global=0) :
     N(N), m(m), n(n), M(M), L(L), work(work), threads(threads),
-    communicator(communicator) {
+    communicator(communicator), global(global ? global : communicator) {
     setup(data);
   }
   
   mpitranspose(unsigned int N, unsigned int m, unsigned int n,
                unsigned int M, unsigned int L,
-               T *data, MPI_Comm communicator) :
+               T *data, MPI_Comm communicator, MPI_Comm global=0) :
     N(N), m(m), n(n), M(M), L(L), work(NULL), threads(fftw::maxthreads),
-    communicator(communicator) {
+    communicator(communicator), global(global ? global : communicator) {
     setup(data);
   }
     
   mpitranspose(unsigned int N, unsigned int m, unsigned int n,
                unsigned int M, T *data, T *work=NULL,
                unsigned int threads=fftw::maxthreads,
-               MPI_Comm communicator=MPI_COMM_WORLD) :
+               MPI_Comm communicator=MPI_COMM_WORLD, MPI_Comm global=0) :
         N(N), m(m), n(n), M(M), L(1), work(work), threads(threads),
-    communicator(communicator) {
+        communicator(communicator), global(global ? global : communicator) {
     setup(data);
   }
     
@@ -276,13 +281,13 @@ public:
       int end;
       double start=rank == 0 ? totalseconds() : 0.0;
       transpose(data,true,false);
-      if(rank == 0) {
+      if(globalrank == 0) {
         double t=totalseconds();
         double seconds=t-start;
         sum += seconds;
         end=t > stop;
       }
-      MPI_Bcast(&end,1,MPI_INT,0,communicator);
+      MPI_Bcast(&end,1,MPI_INT,0,global);
       if(end)
         break;
     }

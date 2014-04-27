@@ -84,7 +84,7 @@ public:
   unsigned int M;     // number of Complex words per matrix element 
   splity() {}
   splity(unsigned int nx, unsigned int ny, MPI_Comm communicator,
-             unsigned int Block=0, unsigned int M=1) 
+         unsigned int Block=0, unsigned int M=1) 
     : nx(nx), ny(ny), communicator(communicator), block(Block), M(M) {
     if(block == 0) {
       int size;
