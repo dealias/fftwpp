@@ -18,7 +18,7 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA. */
 #ifndef __Array_h__
 #define __Array_h__ 1
 
-#define __ARRAY_H_VERSION__ 1.47
+#define __ARRAY_H_VERSION__ 1.48
 
 // Defining NDEBUG improves optimization but disables argument checking.
 // Defining __NOARRAY2OPT inhibits special optimization of Array2[].
@@ -475,7 +475,7 @@ class array2 : public array1<T> {
   array2<T>& operator = (const array2<T>& A) {
     __checkEqual(nx,A.Nx(),2,1);
     __checkEqual(ny,A.Ny(),2,2);
-    Load(A());
+    this->Load(A());
     A.Purge();
     return *this;
   }
@@ -511,7 +511,7 @@ class array2 : public array1<T> {
   }
   
   void Identity() {
-    Load((T) 0);
+    this->Load((T) 0);
     __checkSize();
     unsigned int inc=ny+1;
     for(unsigned int i=0; i < this->size; i += inc) this->v[i]=(T) 1;
@@ -961,8 +961,8 @@ class Array1 : public array1<T> {
   Array1(unsigned int nx0, T *v0, int ox0=0) {
     Dimension(nx0,v0,ox0);
   }
-  Array1(T *v0) {
-    Dimension(INT_MAX,v0);
+  Array1(T *v0, int ox0=0) {
+    Dimension(INT_MAX,v0,ox0);
   }
 
 #ifdef NDEBUG
@@ -1070,7 +1070,7 @@ class Array2 : public array2<T> {
     __checkEqual(this->ny,A.Ny(),2,2);
     __checkEqual(ox,A.Ox(),2,1);
     __checkEqual(oy,A.Oy(),2,2);
-    Load(A());
+    this->Load(A());
     A.Purge();
     return *this;
   }
@@ -1079,7 +1079,7 @@ class Array2 : public array2<T> {
     __checkEqual(this->ny,A.Ny(),2,2);
     __checkEqual(ox,0,2,1);
     __checkEqual(oy,0,2,2);
-    Load(A());
+    this->Load(A());
     A.Purge();
     return *this;
   }
