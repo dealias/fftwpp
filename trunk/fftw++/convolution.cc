@@ -527,113 +527,108 @@ void ImplicitHConvolution::convolve(Complex **F,
                                     realmultiplier *pmult, unsigned int offset)
 {
   unsigned int C=max(A,B);
-  Complex f1c[C];
+  Complex cr1c[C];
   Complex S[A];
   double T[A];
   
   // TODO: 9M-2 of 9M FFTs can be done out-of-place 
 
   
-  Complex *crm[A], *cr0[A], *crp[A]; // inputs to complex2real FFTs
-  double *drm[A], *dr0[A], *drp[A]; // outputs of complex2real FFTs
+  Complex *cr2[A], *cr0[A], *cr1[A]; // inputs to complex2real FFTs
+  double *dr2[A], *dr0[A], *dr1[A]; // outputs of complex2real FFTs
 
   bool even=m == 2*c;
   unsigned int start=m-1-c;
   for(unsigned int i=0; i < A; ++i) {
     Complex *f=F[i]+offset;
     cr0[i]=f;
-    crp[i]=f+start;
+    cr1[i]=f+start;
     Complex *ui=U[i];
     ui[0]=f->re;
-    crm[i]=U[i];
+    cr2[i]=U[i];
   }
   
-  premult(F,
-	  //crm,cr0,crp,
-	  offset,f1c,S);
+  premult(F,offset,cr1c,S);
 
   Complex zeta3(-0.5,0.5*sqrt(3.0));
-
   
   for(unsigned int i=0; i < A; ++i) {
     // TODO: if A > B then this can be changed to make cr FFTs out-of-place
-    drm[i]=(double *) crm[i];
+    dr2[i]=(double *) cr2[i];
     dr0[i]=(double *) cr0[i];
-    drp[i]=(double *) crp[i];
+    dr1[i]=(double *) cr1[i];
   }
 
-  // r=-1:
+  // r=-1 (aka r=2):
   for(unsigned int i=0; i < A; ++i)
-    cr->fft(crm[i],drm[i]);
-  (*pmult)(drm,m,threads);
+    cr->fft(cr2[i],dr2[i]);
+  (*pmult)(dr2,m,threads);
 
   // r=0:
   for(unsigned int i=0; i < A; ++i) {
-    Complex *f0=cr0[i];
-    T[i]=f0[0].re;
-    cr->fft(f0,dr0[i]);
+    Complex *cr0i=cr0[i];
+    T[i]=cr0i[0].re;
+    cr->fft(cr0i,dr0[i]);
   }
   (*pmult)(dr0,m,threads);
     
   // r=1:
   for(unsigned int i=0; i < A; ++i) {
-    Complex *f1=crp[i];
-    S[i]=f1[0];
-    f1[0]=T[i];
+    Complex *cr1i=cr1[i];
+    S[i]=cr1i[0];
+    cr1i[0]=T[i];
     
     if(even) {
-      Complex tmp=f1c[i];
-      f1c[i]=f1[1];
-      f1[1]=tmp;
+      Complex tmp=cr1c[i];
+      cr1c[i]=cr1i[1];
+      cr1i[1]=tmp;
     }
-    cr->fft(crp[i],drp[i]);
+    cr->fft(cr1[i],dr1[i]);
   }
-  (*pmult)(drp,m,threads);
+  (*pmult)(dr1,m,threads);
   
   double ninv=1.0/(3.0*m);
 
   if(A >= 2*B) {
-    Complex **Q=crm+B;
+    Complex **Q=cr2+B;
     // Return to original space:
     for(unsigned int i=0; i < B; ++i) {
       Complex *f0=cr0[i];
-      Complex *f1=crp[i];
-      Complex *f2=crm[i];
+      Complex *cr1i=cr1[i];
+      Complex *f2=cr2[i];
       Complex *Qi=Q[i];
       rc->fft(f2);
-      rco->fft(f1,Qi);
+      rco->fft(cr1i,Qi);
       if(i < A)
-        f1[0]=S[i];
+        cr1i[0]=S[i];
       rc->fft(f0);
 
       f0[0]=(f0[0].re+Qi[0].re+f2[0].re)*ninv;
     }
 
-    postmultadd(crm,cr0,crp,Q);
+    postmultadd(cr2,cr0,cr1,Q);
 
   } else { 
-
-
     // Return to original space:
     for(unsigned int i=0; i < B; ++i) {
       Complex *f0=cr0[i];
-      Complex *f1=crp[i]; //f0+start;
-      Complex *f2=crm[i];
+      Complex *cr1i=cr1[i]; //f0+start;
+      Complex *f2=cr2[i];
       rc->fft(f2);
-      rc->fft(f1);
-      double R=f1[0].re;
+      rc->fft(cr1i);
+      double R=cr1i[0].re;
       if(i < A) {
-        f1[0]=S[i];
+        cr1i[0]=S[i];
         if(even) {
-          Complex tmp=f1c[i];
-          f1c[i]=f1[1];
-          f1[1]=tmp;
+          Complex tmp=cr1c[i];
+          cr1c[i]=cr1i[1];
+          cr1i[1]=tmp;
         }
-      } else f1c[i]=f1[1];
+      } else cr1c[i]=cr1i[1];
       rc->fft(f0);
       f0[0]=(f0[0].re+R+f2[0].re)*ninv;
     }
-    postmultadd0(crm,cr0,crp,f1c);
+    postmultadd0(cr2,cr0,cr1,cr1c);
   }
 
 }
