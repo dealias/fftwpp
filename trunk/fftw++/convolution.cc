@@ -562,8 +562,8 @@ void ImplicitHConvolution::convolve(Complex **F,
     }
     dr0[A-1]=(double *) cr2[A-1];
     
-    dr1[A-1]=(double *) cr1[A-1]; // temp
-    //dr1[A-1]=(double *) cr2[A-1];
+    //dr1[A-1]=(double *) cr1[A-1]; // temp
+    dr1[A-1]=(double *) cr2[A-1];
     
   } else {
     for(unsigned int i=0; i < A; ++i) {
@@ -599,7 +599,8 @@ void ImplicitHConvolution::convolve(Complex **F,
       cr1c[i]=cr1i[1];
       cr1i[1]=tmp;
     }
-    cr->fft(cr1[i],dr1[i]);
+    // NB: conditional to be replaced with out_of_place
+    (i == A-1 ? cro : cr)->fft(cr1[i],dr1[i]);
   }
   (*pmult)(dr1,m,threads);
   
