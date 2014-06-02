@@ -9,6 +9,8 @@ import csv
 import numpy
 import sys
 
+import os.path #for file-existence checking
+
 print "Error scaling for convolutions"
 print
 print "program\ttype\t\tconstant coefficient:"
@@ -21,18 +23,23 @@ C=[]
 d=0
 
 for filename in dirs:
-    a = []
-    csvReader = csv.reader(open(filename, 'rb'), delimiter='\t')
-    for row in csvReader:
-        a.append(row)
+    if (os.path.isfile(filename)):
+        a = []
+        csvReader = csv.reader(open(filename, 'rb'), delimiter='\t')
+        for row in csvReader:
+            a.append(row)
     
-    C.append(0.0)
-    i=0
-    while(i < len(a)):
-        C[d] += float(a[i][1])/numpy.sqrt(numpy.log(float(a[i][0])))
-        i += 1
-    C[d] /= float(len(a))
-    d += 1
+        C.append(0.0)
+        i=0
+        while(i < len(a)):
+            C[d] += float(a[i][1])/numpy.sqrt(numpy.log(float(a[i][0])))
+            i += 1
+        C[d] /= float(len(a))
+        d += 1
+    else:
+        print(prog+" does not exist; please compile.")
+        retval+=1
+
 
 print("cconv\timplicit\t"+str(C[0]))
 print("cconv\texplicit\t"+str(C[1]))
