@@ -8,6 +8,7 @@
 from subprocess import *
 import os
 import sys
+import os.path #for file-existence checking
 
 retval=0
 
@@ -42,17 +43,22 @@ if not (p.returncode == 0):
 print "Running error scaling...",
 error1=["cconv","conv"]
 for prog in error1:
-    print(prog),
-    p=Popen(['./error',prog],stdout=PIPE,stderr=PIPE)
-    p.wait() # sets the return code
-    out, err = p.communicate() # capture output
-    if not (p.returncode == 0):
-        print out
-        print
-        print err
-        print
-        retval += 1
-        print "\tNUMERICAL ERROR SCALING FAILED FOR "+prog
+    if (os.path.isfile(prog)):
+        print(prog),
+        p=Popen(['./error',prog,"6","15"],stdout=PIPE,stderr=PIPE)
+        p.wait() # sets the return code
+        out, err = p.communicate() # capture output
+        if not (p.returncode == 0):
+            print out
+            print
+            print err
+            print
+            retval += 1
+            print "\tNUMERICAL ERROR SCALING FAILED FOR "+prog
+    else:
+        print(prog+" does not exist; please compile.")
+        retval+=1
+
 print "...done."
 
 
