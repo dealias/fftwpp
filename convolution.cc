@@ -365,17 +365,15 @@ void ImplicitHConvolution::premult(Complex ** F,
   }
 }
 
-void ImplicitHConvolution::postmultadd(Complex **crm, Complex **cr0, 
-				       Complex **crp, Complex **Q)
+void ImplicitHConvolution::postmultadd(Complex **cr2, Complex **cr0, 
+				       Complex **cr2B)
 {
-  // Out of place version (with f1 stored in a separate array Q):
+  // Out of place version (with f1 stored in a separate array cr2B):
   double ninv=1.0/(3.0*m);
+#ifdef __SSE2__
   Vec Ninv=LOAD(ninv);
-#ifdef __SSE2__      
   Vec Mhalf=LOAD(-0.5);
   Vec HSqrt3=LOAD(hsqrt3);
-#else
-#endif
 
   PARALLEL(
 	   for(unsigned int K=0; K <= c; K += s) {
@@ -387,12 +385,12 @@ void ImplicitHConvolution::postmultadd(Complex **crm, Complex **cr0,
 	     for(unsigned int i=0; i < B; ++i) {
 	       Complex *f0=cr0[i];
 	       Complex *fm=f0+m;
-	       Complex *ui=crm[i];
-	       Complex *Qi=Q[i];
+	       Complex *ui=cr2[i];
+	       Complex *cr2Bi=cr2B[i];
 	       for(unsigned int k=max(1,K); k < stop; ++k) {
 		 Vec Zetak=ZMULT(X,Y,LOAD(ZetaL0+k));
 		 Vec F0=LOAD(f0+k)*Ninv;
-		 Vec F1=ZMULTC(Zetak,LOAD(Qi+k));
+		 Vec F1=ZMULTC(Zetak,LOAD(cr2Bi+k));
 		 Vec F2=ZMULT(Zetak,LOAD(ui+k));
 		 Vec S=F1+F2;
 		 STORE(f0+k,F0+S);
@@ -401,6 +399,7 @@ void ImplicitHConvolution::postmultadd(Complex **crm, Complex **cr0,
 	     }  
 	   }
 	   );
+#endif
 }
 
 void ImplicitHConvolution::postmultadd0(Complex **crm, Complex **cr0, 
@@ -608,20 +607,28 @@ void ImplicitHConvolution::convolve(Complex **F,
   double ninv=1.0/(3.0*m);
 
   if(out_of_place) {
+
+    // put dr1 into the second half of cr0.
     Complex **cr2B=cr2+B;
+    
     // Return to original space:
     for(unsigned int i=0; i < B; ++i) {
+
       // TODO: deal with cr0 and cr1 out-of-place
       Complex *cr0i=cr0[i];
       Complex *cr1i=cr1[i];
+
+      // put dr2 into the second half of cr0, save for postmultadd.
+      cr2[i]=cr0[i+B];
       Complex *cr2i=cr2[i];
+
       Complex *cr2Bi=cr2B[i];
       
       double *dr0i=dr0[i];
       double *dr1i=dr1[i];
       double *dr2i=dr2[i];
 
-      rc->fft(dr2i,cr2i);
+      rco->fft(dr2i,cr2i);
 
       rco->fft(dr1i,cr2Bi); // first
       if(i < A) cr1i[0]=S[i]; // second
@@ -629,8 +636,7 @@ void ImplicitHConvolution::convolve(Complex **F,
 
       cr0i[0]=(cr0i[0].re+cr2Bi[0].re+cr2i[0].re)*ninv;
     }
-
-    postmultadd(cr2,cr0,cr1,cr2B);
+    postmultadd(cr2,cr0,cr2B);
 
   } else { 
     // Return to original space:
