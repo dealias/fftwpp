@@ -571,52 +571,50 @@ void ImplicitHConvolution::convolve(Complex **F,
 
 
   // premult:
-
   premult(F,offset,cr1c,S);
 
 
   // Complex-to-real FFTs and pmults:
+  {
+    // r=-1 (aka r=2):
+    for(unsigned int i=0; i < A; ++i)
+      cr->fft(cr2[i],dr2[i]);
+    (*pmult)(dr2,m,threads);
 
-  // r=-1 (aka r=2):
-  for(unsigned int i=0; i < A; ++i)
-    cr->fft(cr2[i],dr2[i]);
-  (*pmult)(dr2,m,threads);
+    // r=0:
+    for(unsigned int i=0; i < A; ++i) {
+      Complex *cr0i=cr0[i];
+      T[i]=cr0i[0].re; // Store overlap to be used in r=1
 
-  // r=0:
-  for(unsigned int i=0; i < A; ++i) {
-    Complex *cr0i=cr0[i];
-    T[i]=cr0i[0].re; // Store overlap to be used in r=1
-
-    // TODO: remove second conditional
-    (out_of_place && i == A-1 ? cro : cr)->fft(cr0i,dr0[i]); 
-  }
-  (*pmult)(dr0,m,threads);
-    
-  // r=1:
-  for(unsigned int i=0; i < A; ++i) {
-    Complex *cr1i=cr1[i];
-    S[i]=cr1i[0]; // store overlap
-    cr1i[0]=T[i]; // Restore value from overlap
-    
-    if(even) {
-      Complex tmp=cr1c[i];
-      cr1c[i]=cr1i[1];
-      cr1i[1]=tmp;
+      // TODO: remove second conditional
+      (out_of_place && i == A-1 ? cro : cr)->fft(cr0i,dr0[i]); 
     }
+    (*pmult)(dr0,m,threads);
+    
+    // r=1:
+    for(unsigned int i=0; i < A; ++i) {
+      Complex *cr1i=cr1[i];
+      S[i]=cr1i[0]; // store overlap
+      cr1i[0]=T[i]; // Restore value from overlap
+    
+      if(even) {
+	Complex tmp=cr1c[i];
+	cr1c[i]=cr1i[1];
+	cr1i[1]=tmp;
+      }
 
-    // TODO: remove second conditional
-    (out_of_place && i == A-1 ? cro : cr)->fft(cr1[i],dr1[i]);
+      // TODO: remove second conditional
+      (out_of_place && i == A-1 ? cro : cr)->fft(cr1[i],dr1[i]);
+    }
+    (*pmult)(dr1,m,threads);
   }
-  (*pmult)(dr1,m,threads);
-
 
   // Real-to-complex FFTs and postmultadd:
-  
-  const double ninv=1.0/(3.0*m);
-
   if(out_of_place) {
     // Put dr1 into the second half of cr0:
     Complex **cr2B=cr2+B;
+
+    const double ninv=1.0/(3.0*m);
     
     // Return to original space:
     for(unsigned int i=0; i < B; ++i) {
@@ -648,8 +646,9 @@ void ImplicitHConvolution::convolve(Complex **F,
     }
     postmultadd(cr2,cr0,cr2B);
 
-  } else { 
+  } else { // FFTs are all in-place.
     // Return to original space:
+    const double ninv=1.0/(3.0*m);
     for(unsigned int i=0; i < B; ++i) {
       Complex *f0=cr0[i];
       Complex *cr1i=cr1[i]; //f0+start;
