@@ -526,13 +526,12 @@ void ImplicitHConvolution::postmultadd0(Complex **crm, Complex **cr0,
 void ImplicitHConvolution::convolve(Complex **F, 
                                     realmultiplier *pmult, unsigned int offset)
 {
+  // Set problem-size variables and pointers:
+
   unsigned int C=max(A,B);
   Complex cr1c[C];
   Complex S[A];
   double T[A];
-  
-  // TODO: 9M-2 of 9M FFTs can be done out-of-place 
-
   
   Complex *cr2[A], *cr0[A], *cr1[A]; // inputs to complex2real FFTs
   double *dr2[A], *dr0[A], *dr1[A]; // outputs of complex2real FFTs
@@ -547,10 +546,6 @@ void ImplicitHConvolution::convolve(Complex **F,
     ui[0]=f->re;
     cr2[i]=U[i];
   }
-  
-  premult(F,offset,cr1c,S);
-
-  Complex zeta3(-0.5,0.5*sqrt(3.0));
 
   const bool out_of_place=A >= 2*B;
   
@@ -574,6 +569,14 @@ void ImplicitHConvolution::convolve(Complex **F,
   for(unsigned int i=0; i < A; ++i)
     dr2[i]=(double *) cr2[i];
 
+
+  // premult:
+
+  premult(F,offset,cr1c,S);
+
+
+  // Complex-to-real FFTs and pmults:
+
   // r=-1 (aka r=2):
   for(unsigned int i=0; i < A; ++i)
     cr->fft(cr2[i],dr2[i]);
@@ -582,33 +585,37 @@ void ImplicitHConvolution::convolve(Complex **F,
   // r=0:
   for(unsigned int i=0; i < A; ++i) {
     Complex *cr0i=cr0[i];
-    T[i]=cr0i[0].re;
-    // NB: conditional to be replaced with out_of_place
-    (i == A-1 ? cro : cr)->fft(cr0i,dr0[i]); 
+    T[i]=cr0i[0].re; // Store overlap to be used in r=1
+
+    // TODO: remove second conditional
+    (out_of_place && i == A-1 ? cro : cr)->fft(cr0i,dr0[i]); 
   }
   (*pmult)(dr0,m,threads);
     
   // r=1:
   for(unsigned int i=0; i < A; ++i) {
     Complex *cr1i=cr1[i];
-    S[i]=cr1i[0];
-    cr1i[0]=T[i];
+    S[i]=cr1i[0]; // store overlap
+    cr1i[0]=T[i]; // Restore value from overlap
     
     if(even) {
       Complex tmp=cr1c[i];
       cr1c[i]=cr1i[1];
       cr1i[1]=tmp;
     }
-    // NB: conditional to be replaced with out_of_place
-    (i == A-1 ? cro : cr)->fft(cr1[i],dr1[i]);
+
+    // TODO: remove second conditional
+    (out_of_place && i == A-1 ? cro : cr)->fft(cr1[i],dr1[i]);
   }
   (*pmult)(dr1,m,threads);
+
+
+  // Real-to-complex FFTs and postmultadd:
   
-  double ninv=1.0/(3.0*m);
+  const double ninv=1.0/(3.0*m);
 
   if(out_of_place) {
-
-    // put dr1 into the second half of cr0.
+    // Put dr1 into the second half of cr0:
     Complex **cr2B=cr2+B;
     
     // Return to original space:
@@ -618,7 +625,7 @@ void ImplicitHConvolution::convolve(Complex **F,
       Complex *cr0i=cr0[i];
       Complex *cr1i=cr1[i];
 
-      // put dr2 into the second half of cr0, save for postmultadd.
+      // Put dr2 into the second half of cr0, save for postmultadd:
       cr2[i]=cr0[i+B];
       Complex *cr2i=cr2[i];
 
@@ -628,11 +635,14 @@ void ImplicitHConvolution::convolve(Complex **F,
       double *dr1i=dr1[i];
       double *dr2i=dr2[i];
 
+      // r=2 (=-1):
       rco->fft(dr2i,cr2i);
 
-      rco->fft(dr1i,cr2Bi); // first
-      if(i < A) cr1i[0]=S[i]; // second
-      rc->fft(dr0i,cr0i); // third
+      // r=1:
+      rco->fft(dr1i,cr2Bi); // first: transform r=1
+      if(i < A) cr1i[0]=S[i]; // second: Restore from before pmult 
+      // r=0:
+      rc->fft(dr0i,cr0i); // third: transform r=0
 
       cr0i[0]=(cr0i[0].re+cr2Bi[0].re+cr2i[0].re)*ninv;
     }
