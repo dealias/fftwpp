@@ -401,7 +401,7 @@ public:
   void outphase0() {
     if(size == 1) return;
   
-    // Inner transpose each N/a x M/a matrix over b processes
+    // Inner transpose a N/a x M/a matrices over each team of b processes
     Tout1->transpose(data,work); // n*a x b x m*L
     unsigned int blocksize=sizeof(T)*n*a*m*L;
     Ialltoall(work,blocksize,MPI_BYTE,data,blocksize,MPI_BYTE,split,

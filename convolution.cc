@@ -530,7 +530,7 @@ void ImplicitHConvolution::convolve(Complex **F,
 
   unsigned int C=max(A,B);
   Complex cr1c[C];
-  Complex S[A];
+  Complex S[C];
   double T[A];
   
   Complex *cr2[A], *cr0[A], *cr1[A]; // inputs to complex2real FFTs
@@ -573,7 +573,6 @@ void ImplicitHConvolution::convolve(Complex **F,
   // premult:
   premult(F,offset,cr1c,S);
 
-
   // Complex-to-real FFTs and pmults:
   {
     // r=-1 (aka r=2):
@@ -584,23 +583,26 @@ void ImplicitHConvolution::convolve(Complex **F,
     // r=0:
     for(unsigned int i=0; i < A; ++i) {
       Complex *cr0i=cr0[i];
-      T[i]=cr0i[0].re; // Store overlap to be used in r=1
+      T[i]=cr0i[0].re; // r=0, k=0
 
       // TODO: remove second conditional
       (out_of_place && i == A-1 ? cro : cr)->fft(cr0i,dr0[i]); 
     }
     (*pmult)(dr0,m,threads);
-    
+    for(unsigned int i=0; i < B; ++i) {
+      S[i].re=dr0[i][2*start];   // r=0, k=c-1 (c) for m=even (odd)
+      S[i].im=dr0[i][2*start+1];
+    }
+      
     // r=1:
     for(unsigned int i=0; i < A; ++i) {
       Complex *cr1i=cr1[i];
-      S[i]=cr1i[0]; // store overlap
-      cr1i[0]=T[i]; // Restore value from overlap
+      cr1i[0]=T[i];       // r=1, k=0
     
-      if(even) {
+      if(even) { 
 	Complex tmp=cr1c[i];
-	cr1c[i]=cr1i[1];
-	cr1i[1]=tmp;
+	cr1c[i]=cr1i[1];  // r=0, k=c
+	cr1i[1]=tmp;      // r=1, k=1
       }
 
       // TODO: remove second conditional
@@ -621,7 +623,6 @@ void ImplicitHConvolution::convolve(Complex **F,
 
       // TODO: deal with cr0 and cr1 out-of-place
       Complex *cr0i=cr0[i];
-      Complex *cr1i=cr1[i];
 
       // Put dr2 into the second half of cr0, save for postmultadd:
       cr2[i]=cr0[i+B];
@@ -638,7 +639,7 @@ void ImplicitHConvolution::convolve(Complex **F,
 
       // r=1:
       rco->fft(dr1i,cr2Bi); // first: transform r=1
-      if(i < A) cr1i[0]=S[i]; // second: Restore from before pmult 
+      cr0i[start]=S[i]; // r=0, k=c-1 (c) for m=even (odd)
       // r=0:
       rc->fft(dr0i,cr0i); // third: transform r=0
 
@@ -650,26 +651,23 @@ void ImplicitHConvolution::convolve(Complex **F,
     // Return to original space:
     const double ninv=1.0/(3.0*m);
     for(unsigned int i=0; i < B; ++i) {
-      Complex *f0=cr0[i];
-      Complex *cr1i=cr1[i]; //f0+start;
-      Complex *f2=cr2[i];
-      rc->fft(f2);
+      Complex *cr0i=cr0[i];
+      Complex *cr1i=cr1[i];
+      Complex *cr2i=cr2[i];
+      rc->fft(cr2i);
       rc->fft(cr1i);
       double R=cr1i[0].re;
-      if(i < A) {
-        cr1i[0]=S[i];
-        if(even) {
-          Complex tmp=cr1c[i];
-          cr1c[i]=cr1i[1];
-          cr1i[1]=tmp;
-        }
-      } else cr1c[i]=cr1i[1];
-      rc->fft(f0);
-      f0[0]=(f0[0].re+R+f2[0].re)*ninv;
+      cr0i[start]=S[i]; // r=0, k=c-1 (c) for m=even (odd)
+      if(even) {
+        Complex tmp=cr1c[i];
+        cr1c[i]=cr1i[1]; // r=1, k=1
+        cr1i[1]=tmp;    //  r=0, k=c
+      }
+      rc->fft(cr0i);
+      cr0i[0]=(cr0i[0].re+R+cr2i[0].re)*ninv;
     }
     postmultadd0(cr2,cr0,cr1,cr1c);
   }
-
 }
 
 
