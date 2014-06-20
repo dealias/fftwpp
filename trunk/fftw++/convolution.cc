@@ -554,7 +554,6 @@ void ImplicitHConvolution::convolve(Complex **F,
   
   if(out_of_place) {
     for(unsigned int i=0; i < A-1; ++i) {
-      // TODO: if A > B then this can be changed to make cr FFTs out-of-place
       dr0[i]=(double *) cr0[i+1];
       dr1[i]=(double *) cr1[i+1];
     }
@@ -591,7 +590,6 @@ void ImplicitHConvolution::convolve(Complex **F,
     for(unsigned int i=A; i-- > 0;) { // Loop from A-1 to 0.
       Complex *cr0i=cr0[i];
       T[i]=cr0i[0].re; // r=0, k=0
-      //(out_of_place && i == A-1 ? cro : cr)->fft(cr0i,dr0[i]);
       (out_of_place ? cro : cr)->fft(cr0i,dr0[i]); 
     }
     (*pmult)(dr0,m,threads);
@@ -611,7 +609,6 @@ void ImplicitHConvolution::convolve(Complex **F,
 	cr1c[i]=cr1i[1];  // r=0, k=c
 	cr1i[1]=tmp;      // r=1, k=1
       }
-      //(out_of_place && i == A-1 ? cro : cr)->fft(cr1[i],dr1[i]);
       (out_of_place ? cro : cr)->fft(cr1[i],dr1[i]);
     }
     (*pmult)(dr1,m,threads);
@@ -643,11 +640,9 @@ void ImplicitHConvolution::convolve(Complex **F,
       // r=0:
       Complex *cd=(Complex *)dr0i;
       cd[start]=S[i]; // r=0, k=c-1 (c) for m=even (odd)
-      //rc->fft(dr0i,cr0i); // third: transform r=0
       rco->fft(dr0i,cr0i); // third: transform r=0
-
       // r=2 (=-1):
-      rco->fft(dr2i,cr2i);
+      rco->fft(dr2i,cr2i); // fourth: transorm r=2
 
       cr0i[0]=(cr0i[0].re+cr2Bi[0].re+cr2i[0].re)*ninv;
     }
