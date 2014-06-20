@@ -531,7 +531,6 @@ void ImplicitHConvolution::convolve(Complex **F,
   unsigned int C=max(A,B);
   Complex cr1c[C];
   Complex S[C];
-  double T[A];
   
   Complex *cr2[A], *cr0[A], *cr1[A]; // inputs to complex2real FFTs
   double *dr2[A], *dr0[A], *dr1[A]; // outputs of complex2real FFTs
@@ -556,8 +555,6 @@ void ImplicitHConvolution::convolve(Complex **F,
       dr1[i]=(double *) cr1[i];
     }
     dr0[A-1]=(double *) cr2[A-1];
-    
-    //dr1[A-1]=(double *) cr1[A-1]; // temp
     dr1[A-1]=(double *) cr2[A-1];
     
   } else {
@@ -566,6 +563,8 @@ void ImplicitHConvolution::convolve(Complex **F,
       dr1[i]=(double *) cr1[i];
     }
   }
+  // r=2 is always in-place for the cr transform (TODO: perhaps change
+  // the order of premult to get around this?)
   for(unsigned int i=0; i < A; ++i)
     dr2[i]=(double *) cr2[i];
 
@@ -573,9 +572,11 @@ void ImplicitHConvolution::convolve(Complex **F,
   // premult:
   premult(F,offset,cr1c,S);
 
+
   // Complex-to-real FFTs and pmults:
   {
-    // r=-1 (aka r=2):
+    double T[A]; // deal with overlap between r=0 and r=1
+    // r=2 (aka r=-1):
     for(unsigned int i=0; i < A; ++i)
       cr->fft(cr2[i],dr2[i]);
     (*pmult)(dr2,m,threads);
