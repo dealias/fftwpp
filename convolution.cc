@@ -370,16 +370,16 @@ void ImplicitHConvolution::premult(Complex ** F,
   }
 }
 
+// Out of place version (with f1 stored in a separate array cr2B):
+// Assume that cr0 and cr1 are contiguous (and, in fact, overlapping).
 void ImplicitHConvolution::postmultadd(Complex **cr2, Complex **cr0, 
 				       Complex **cr2B)
 {
-  // Out of place version (with f1 stored in a separate array cr2B):
   double ninv=1.0/(3.0*m);
 #ifdef __SSE2__
   Vec Ninv=LOAD(ninv);
   Vec Mhalf=LOAD(-0.5);
   Vec HSqrt3=LOAD(hsqrt3);
-
   PARALLEL(
 	   for(unsigned int K=0; K <= c; K += s) {
 	     Complex *ZetaL0=ZetaL-K;
@@ -536,9 +536,8 @@ void ImplicitHConvolution::convolve(Complex **F,
   unsigned int C=max(A,B);
   Complex cr1c[C];
 
-  
-  Complex *cr2[A], *cr0[A], *cr1[A]; // inputs to complex2real FFTs
-  double *dr2[A], *dr0[A], *dr1[A]; // outputs of complex2real FFTs
+  Complex *cr0[A], *cr1[A], *cr2[A]; // inputs to complex2real FFTs
+  double  *dr0[A], *dr1[A], *dr2[A]; // outputs of complex2real FFTs
 
   bool even=m == 2*c;
   unsigned int start=m-1-c;
@@ -556,8 +555,8 @@ void ImplicitHConvolution::convolve(Complex **F,
   if(out_of_place) {
     for(unsigned int i=0; i < A-1; ++i) {
       // TODO: if A > B then this can be changed to make cr FFTs out-of-place
-      dr0[i]=(double *) cr0[i];
-      dr1[i]=(double *) cr1[i];
+      dr0[i]=(double *) cr0[i+1];
+      dr1[i]=(double *) cr1[i+1];
     }
     dr0[A-1]=(double *) cr2[A-1];
     dr1[A-1]=(double *) cr2[A-1];
@@ -581,6 +580,7 @@ void ImplicitHConvolution::convolve(Complex **F,
   // Complex-to-real FFTs and pmults:
   Complex S[B];
   {
+    // step 1:
     // r=2 (aka r=-1):
     for(unsigned int i=0; i < A; ++i)
       cr->fft(cr2[i],dr2[i]);
@@ -588,33 +588,31 @@ void ImplicitHConvolution::convolve(Complex **F,
 
     // r=0:
     double T[A]; // deal with overlap between r=0 and r=1
-    // for(unsigned int i=0; i < A; ++i) {
     for(unsigned int i=A; i-- > 0;) { // Loop from A-1 to 0.
       Complex *cr0i=cr0[i];
       T[i]=cr0i[0].re; // r=0, k=0
-      // TODO: remove second conditional
-      (out_of_place && i == A-1 ? cro : cr)->fft(cr0i,dr0[i]);
-      //(out_of_place ? cro : cr)->fft(cr0i,dr0[i]); 
+      //(out_of_place && i == A-1 ? cro : cr)->fft(cr0i,dr0[i]);
+      (out_of_place ? cro : cr)->fft(cr0i,dr0[i]); 
     }
     (*pmult)(dr0,m,threads);
+    // The last complex in r=0 is the first complex in r=1, so we have
+    // to save it.
     for(unsigned int i=0; i < B; ++i) {
-      S[i].re=dr0[i][2*start];   // r=0, k=c-1 (c) for m=even (odd)
-      S[i].im=dr0[i][2*start+1];
+      Complex *cd=(Complex *)dr0[i];
+      S[i]=cd[start];   // r=0, k=c-1 (c) for m=even (odd)
     }
-      
+    
     // r=1:
-    //for(unsigned int i=0; i < A; ++i) {
     for(unsigned int i=A; i-- > 0;) { // Loop from A-1 to 0.
       Complex *cr1i=cr1[i];
       cr1i[0]=T[i];       // r=1, k=0
-      if(even) { 
+      if(even) {
 	Complex tmp=cr1c[i];
 	cr1c[i]=cr1i[1];  // r=0, k=c
 	cr1i[1]=tmp;      // r=1, k=1
       }
-      // TODO: remove second conditional
-      (out_of_place && i == A-1 ? cro : cr)->fft(cr1[i],dr1[i]);
-      //(out_of_place ? cro : cr)->fft(cr1[i],dr1[i]);
+      //(out_of_place && i == A-1 ? cro : cr)->fft(cr1[i],dr1[i]);
+      (out_of_place ? cro : cr)->fft(cr1[i],dr1[i]);
     }
     (*pmult)(dr1,m,threads);
   }
@@ -628,29 +626,28 @@ void ImplicitHConvolution::convolve(Complex **F,
     
     // Return to original space:
     for(unsigned int i=0; i < B; ++i) {
-
-      // TODO: deal with cr0 and cr1 out-of-place
       Complex *cr0i=cr0[i];
 
       // Put dr2 into the second half of cr0, save for postmultadd:
       cr2[i]=cr0[i+B];
       Complex *cr2i=cr2[i];
-
       Complex *cr2Bi=cr2B[i];
       
       double *dr0i=dr0[i];
       double *dr1i=dr1[i];
       double *dr2i=dr2[i];
 
-      // r=2 (=-1):
-      rco->fft(dr2i,cr2i);
 
       // r=1:
       rco->fft(dr1i,cr2Bi); // first: transform r=1
-      //rc->fft(dr1i,cr2Bi); // first: transform r=1
-      cr0i[start]=S[i]; // r=0, k=c-1 (c) for m=even (odd)
       // r=0:
-      rc->fft(dr0i,cr0i); // third: transform r=0
+      Complex *cd=(Complex *)dr0i;
+      cd[start]=S[i]; // r=0, k=c-1 (c) for m=even (odd)
+      //rc->fft(dr0i,cr0i); // third: transform r=0
+      rco->fft(dr0i,cr0i); // third: transform r=0
+
+      // r=2 (=-1):
+      rco->fft(dr2i,cr2i);
 
       cr0i[0]=(cr0i[0].re+cr2Bi[0].re+cr2i[0].re)*ninv;
     }
