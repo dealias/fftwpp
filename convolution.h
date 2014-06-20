@@ -333,7 +333,7 @@ public:
   void premult(Complex **F, 
 	       //Complex **crm, Complex **cr0, Complex **crp,
 	       unsigned int offset,
-	       Complex* f1c, Complex *S);
+	       Complex* f1c);
   
   void postmultadd(Complex **cr2, Complex **cr0, Complex **Q);
   void postmultadd0(Complex **crm, Complex **cr0, Complex **crp, Complex *f1c);

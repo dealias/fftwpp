@@ -99,7 +99,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptM:B:b:N:m:n:T:");
+    int c = getopt(argc,argv,"hdeiptM:A:B:b:N:m:n:T:");
     if (c == -1) break;
 		
     switch (c) {
@@ -121,6 +121,9 @@ int main(int argc, char* argv[])
       case 'M':
         M=atoi(optarg);
 	A=2*M; // Number of independent inputs
+        break;
+      case 'A':
+        A=atoi(optarg);
         break;
       case 'B':
         B=atoi(optarg);
@@ -146,6 +149,7 @@ int main(int argc, char* argv[])
       case 'h':
       default:
         usage(1,true,true,true);
+	usageA();
 	usageB();
 	exit(1);
     }
