@@ -262,10 +262,11 @@ void ImplicitConvolution::postmultadd(Complex *f, Complex *u)
 
 void ImplicitHConvolution::premult(Complex ** F,
 				   unsigned int offset,
-				   Complex* f1c, Complex *S)
+				   Complex* f1c)
 {
   unsigned int C=max(A,B);
   Complex *P0[C];
+  Complex S[C]; // TODO: only used for even quantities
 
 #ifdef __SSE2__
   Vec Mhalf=LOAD(-0.5);
@@ -530,7 +531,7 @@ void ImplicitHConvolution::convolve(Complex **F,
 
   unsigned int C=max(A,B);
   Complex cr1c[C];
-  Complex S[C];
+
   
   Complex *cr2[A], *cr0[A], *cr1[A]; // inputs to complex2real FFTs
   double *dr2[A], *dr0[A], *dr1[A]; // outputs of complex2real FFTs
@@ -570,9 +571,9 @@ void ImplicitHConvolution::convolve(Complex **F,
 
 
   // premult:
-  premult(F,offset,cr1c,S);
+  premult(F,offset,cr1c);
 
-
+  Complex S[B];
   // Complex-to-real FFTs and pmults:
   {
     double T[A]; // deal with overlap between r=0 and r=1
