@@ -266,7 +266,8 @@ void ImplicitHConvolution::premult(Complex ** F,
 {
   unsigned int C=max(A,B);
   Complex *P0[C];
-  Complex S[C]; // TODO: only used for even quantities
+  Complex *S; // only used for even quantities
+
 
 #ifdef __SSE2__
   Vec Mhalf=LOAD(-0.5);
@@ -275,6 +276,8 @@ void ImplicitHConvolution::premult(Complex ** F,
 #endif
     
   bool even=m == 2*c;
+  if(even)
+    S = new Complex[A];
   unsigned int m1=m-1;
   for(unsigned int i=0; i < A; ++i) {
     Complex *f=F[i]+offset;
@@ -363,6 +366,7 @@ void ImplicitHConvolution::premult(Complex ** F,
       fi[c]=S[i].re;
       ui[c]=S[i].im;
     }
+    delete[] S;
   }
 }
 
@@ -573,22 +577,24 @@ void ImplicitHConvolution::convolve(Complex **F,
   // premult:
   premult(F,offset,cr1c);
 
-  Complex S[B];
+
   // Complex-to-real FFTs and pmults:
+  Complex S[B];
   {
-    double T[A]; // deal with overlap between r=0 and r=1
     // r=2 (aka r=-1):
     for(unsigned int i=0; i < A; ++i)
       cr->fft(cr2[i],dr2[i]);
     (*pmult)(dr2,m,threads);
 
     // r=0:
-    for(unsigned int i=0; i < A; ++i) {
+    double T[A]; // deal with overlap between r=0 and r=1
+    // for(unsigned int i=0; i < A; ++i) {
+    for(unsigned int i=A; i-- > 0;) { // Loop from A-1 to 0.
       Complex *cr0i=cr0[i];
       T[i]=cr0i[0].re; // r=0, k=0
-
       // TODO: remove second conditional
-      (out_of_place && i == A-1 ? cro : cr)->fft(cr0i,dr0[i]); 
+      (out_of_place && i == A-1 ? cro : cr)->fft(cr0i,dr0[i]);
+      //(out_of_place ? cro : cr)->fft(cr0i,dr0[i]); 
     }
     (*pmult)(dr0,m,threads);
     for(unsigned int i=0; i < B; ++i) {
@@ -597,18 +603,18 @@ void ImplicitHConvolution::convolve(Complex **F,
     }
       
     // r=1:
-    for(unsigned int i=0; i < A; ++i) {
+    //for(unsigned int i=0; i < A; ++i) {
+    for(unsigned int i=A; i-- > 0;) { // Loop from A-1 to 0.
       Complex *cr1i=cr1[i];
       cr1i[0]=T[i];       // r=1, k=0
-    
       if(even) { 
 	Complex tmp=cr1c[i];
 	cr1c[i]=cr1i[1];  // r=0, k=c
 	cr1i[1]=tmp;      // r=1, k=1
       }
-
       // TODO: remove second conditional
       (out_of_place && i == A-1 ? cro : cr)->fft(cr1[i],dr1[i]);
+      //(out_of_place ? cro : cr)->fft(cr1[i],dr1[i]);
     }
     (*pmult)(dr1,m,threads);
   }
@@ -641,6 +647,7 @@ void ImplicitHConvolution::convolve(Complex **F,
 
       // r=1:
       rco->fft(dr1i,cr2Bi); // first: transform r=1
+      //rc->fft(dr1i,cr2Bi); // first: transform r=1
       cr0i[start]=S[i]; // r=0, k=c-1 (c) for m=even (odd)
       // r=0:
       rc->fft(dr0i,cr0i); // third: transform r=0
