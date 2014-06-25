@@ -22,9 +22,10 @@ def main(argv):
     a=6
     b=0
     out="implicit"
-    r="implicit"
+    runtype="implicit"
     RAM=0
     outdir=""
+    outfile=""
     rname="Implicit"
     
     try:
@@ -46,7 +47,7 @@ def main(argv):
         elif opt in ("-A"):
             A+=str(arg)
         elif opt in ("-r"):
-            r=str(arg)
+            runtype=str(arg)
         elif opt in ("-R"):
             RAM=float(arg)*2**30
         elif opt in ("-d"):
@@ -74,6 +75,15 @@ def main(argv):
     if (b == 0 and RAM != 0):
         b=sys.maxint
 
+    if out == "":
+        if runtype == "implicit":
+            outfile="implicit"
+        if runtype == "explicit":
+            outfile="explicit"
+        if runtype == "pruned":
+            outfile="pruned"
+    else:
+        outfile=out
 
     if p == "cconv":
         if RAM != 0:
@@ -85,14 +95,14 @@ def main(argv):
             dorun=0
     if p == "cconv2":
         if RAM != 0:
-            if r == "implicit":
+            if runtype == "implicit":
                 b=min(int(floor(0.5*log(RAM/64)/log(2))),b)
             else:
                 b=min(int(floor(log(RAM/16/2/2**2)/log(2)/2)),b)
         if outdir == "": outdir="timings2c"
     if p == "cconv3":
         if RAM != 0:
-            if r== "implicit":
+            if runtype == "implicit":
                 b=min(int(floor(log(RAM/96)/log(2)/3)),b)
             else:
                 b=min(int(floor(log(RAM/16/2**3)/log(2)/3)),b)
@@ -103,12 +113,12 @@ def main(argv):
             b=min(int(floor(log(RAM/6)/log(2))),b)
             b=min(b,14) # because we aren't crazy
         if outdir == "": outdir="timings1r"
-        if(r == "pruned"):
+        if(runtype == "pruned"):
             print p+" has no pruned option"
             dorun=0
     if p == "conv2":
         if RAM != 0:
-            if r == "implicit":
+            if runtype == "implicit":
                 b=min(int(floor(0.5*log(RAM/96)/log(2))),b)
             else:
                 b=min(int(floor(log(RAM/8/3**2)/log(2)/2)),b)
@@ -117,7 +127,7 @@ def main(argv):
         if RAM != 0:
             b=min(int(floor(log(RAM/192)/log(2)/3)),b)
         if outdir == "": outdir="timings3r"
-        if(r != "implicit"):
+        if(runtype != "implicit"):
             print p+" has no "+r+" option"
             dorun=0
 
@@ -126,12 +136,12 @@ def main(argv):
             b=int(floor(log(RAM/6)/log(2)))
             b=min(b,14) # because we aren't crazy
         if outdir == "": outdir="timings1t"
-        if(r == "pruned"):
+        if(runtype == "pruned"):
             print p+" has no pruned option"
             dorun=0
     if p == "tconv2":
         if RAM != 0:
-            if r == "implicit":
+            if runtype == "implicit":
                 b=int(floor(log(RAM/(8*12))/(2*log(2))))
             else:
                 b=int(floor(log(RAM/(8*6))/(2*log(2))))
@@ -142,28 +152,28 @@ def main(argv):
             b=min(int(floor(log(RAM/4)/log(2))),b)
             b=min(b,14) # because we aren't crazy
         outdir="timings1cp"
-        if(r == "pruned"):
+        if(runtype == "pruned"):
             print p+" has no pruned option"
             dorun=0
     if p == "pcconv2":
         if RAM != 0:
-            if r == "implicit":
+            if runtype == "implicit":
                 b=min(int(floor(0.5*log(RAM/64)/log(2))),b)
             else:
                 b=min(int(floor(log(RAM/16/2/2**2)/log(2)/2)),b)
         if outdir == "": outdir="timings2cp"
     if p == "pcconv3":
         if RAM != 0:
-            if r== "implicit":
+            if runtype == "implicit":
                 b=min(int(floor(log(RAM/96)/log(2)/3)),b)
             else:
                 b=min(int(floor(log(RAM/16/2**3)/log(2)/3)),b)
-        if outdir == "": outdir="timings3cp"    
+        if outdir == "": outdir="timings3cp"
     if p == "c2cfft2":
         if RAM != 0:
             b=min(int(floor(0.5*log(RAM/64)/log(2))),b)
         if outdir == "": outdir="timings2c2c"
-        r="fft"
+        runtype="fft"
         rname="fft"
     if outdir == "":
         print "empty outdir: please select a different program!"
@@ -171,44 +181,41 @@ def main(argv):
         print usage
         sys.exit(2)
 
-    if out != "": r=out
 
     if(dorun == 1):
         if RAM != 0:
             print "max problem size is "+str(2**b)
 
-        if r == "implicit":
+        if runtype == "implicit":
             rname="Implicit"
-        if r == "explicit":
+        if runtype == "explicit":
             rname="Explicit"
-        if r == "pruned":
+        if runtype == "pruned":
             rname="rune"
-        if r == "fft":
+        if runtype == "fft":
             rname="fft"
-            if not out == "":
-                r=out
-        
+
         command="./"+str(p)
 
-        print "output in "+outdir+"/"+r
+        print "output in "+outdir+"/"+outfile
 
         print "command: "+command+cargs+" "+A
         if not dryrun:
             os.system("mkdir -p "+outdir)
-            os.system("rm -f "+outdir+"/"+r)
+            os.system("rm -f "+outdir+"/"+outfile)
 
         for i in range(a,b+1):
             print i,
             run=command+cargs+" -m "+str(int(pow(2,i)))+" "+A
-            if(r == "explicit"):
+            if(runtype == "explicit"):
                 run += " -e"
-            if(r == "pruned"):
+            if(runtype == "pruned"):
                 run += " -p"
-            if r == "implicit":
+            if(runtype == "implicit"):
                 run += " -i"
 
             grepc=" | grep -A 1 "+rname+" | tail -n 1"
-            cat=" | cat >> "+outdir+"/"+r
+            cat=" | cat >> "+outdir+"/"+outfile
             print run
             sys.stdout.flush()
             #print("echo "+"$("+run+grepc+")"+cat)
@@ -220,7 +227,7 @@ def main(argv):
 
         #clean up output
         if not dryrun:
-            os.system("sed -i 's/[ \t]*$//' "+outdir+"/"+r)
-            os.system("sed -i '/^$/d' "+outdir+"/"+r) # remove empty lines
+            os.system("sed -i 's/[ \t]*$//' "+outdir+"/"+outfile)
+            os.system("sed -i '/^$/d' "+outdir+"/"+outfile) # remove empty lines
 if __name__ == "__main__":
     main(sys.argv[1:])
