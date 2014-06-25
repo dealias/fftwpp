@@ -90,7 +90,7 @@ def main(argv):
             b=min(int(floor(log(RAM/4)/log(2))),b)
             b=min(b,14) # because we aren't crazy
         if outdir == "": outdir="timings1c"
-        if(r == "pruned"):
+        if(runtype == "pruned"):
             print p+" has no pruned option"
             dorun=0
     if p == "cconv2":
