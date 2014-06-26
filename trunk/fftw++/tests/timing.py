@@ -5,7 +5,9 @@
 import sys, getopt
 import numpy as np
 from math import *
+from subprocess import * # for popen, running processes
 import os
+import re # regexp package
 
 
 def main(argv):
@@ -195,39 +197,70 @@ def main(argv):
         if runtype == "fft":
             rname="fft"
 
-        command="./"+str(p)
-
         print "output in "+outdir+"/"+outfile
 
-        print "command: "+command+cargs+" "+A
         if not dryrun:
             os.system("mkdir -p "+outdir)
             os.system("rm -f "+outdir+"/"+outfile)
+            
+        cmd=["./"+str(p)]
+        if(runtype == "explicit"):
+            cmd.append("-e")
+        if(runtype == "pruned"):
+            cmd.append("-p")
+        if(runtype == "implicit"):
+            cmd.append("-i")
+        if(Tset):
+            cmd.append("-T"+T)
+            
+
+        print cmd
+
 
         for i in range(a,b+1):
-            print i,
-            run=command+cargs+" -m "+str(int(pow(2,i)))+" "+A
-            if(runtype == "explicit"):
-                run += " -e"
-            if(runtype == "pruned"):
-                run += " -p"
-            if(runtype == "implicit"):
-                run += " -i"
+            m=str(int(pow(2,i)))
+            print str(i)+" m="+str(m)
 
-            grepc=" | grep -A 1 "+rname+" | tail -n 1"
-            cat=" | cat >> "+outdir+"/"+outfile
-            print run
-            sys.stdout.flush()
-            #print("echo "+"$("+run+grepc+")"+cat)
-            if not dryrun:
-                os.system("echo "+"$("+run+grepc+")"+cat)
+            mcmd=cmd+["-m"+str(m)]
+
+            if dryrun:
+                print mcmd
             else:
-                print("echo "+"$("+run+grepc+")"+cat)
+                p=Popen(mcmd,stdout=PIPE,stderr=PIPE)
+                p.wait() # sets the return code
+                prc=p.returncode
+                out, err = p.communicate() # capture output
+                if (prc == 0): # did the process succeed?
+                    #print out
+                    outlines=out.split('\n')
+                    itline=0
+                    dataline=""
+                    while itline < len(outlines):
+                        line=outlines[itline]
+                        #print line
+                        re.search(rname,line)
+                        if re.search(rname, line) is not None:
+                            #print outlines[itline+1]
+                            dataline=outlines[itline+1]
+                            itline=len(outlines)
+                        itline += 1
+                    if not dataline == "":
+                        # append to output file
+                        with open(outdir+"/"+outfile, "a") as myfile:
+                            myfile.write(dataline+"\n")
+                    else:
+                        print "ERROR: no timing data found"
+                else:
+                    print "FAILURE:"
+                    print cmd
+                    print "with, return code:"
+                    print prc
+                    print "output:"
+                    print out
+                    print "error:"
+                    print err
+                    
             sys.stdout.flush()
 
-        #clean up output
-        if not dryrun:
-            os.system("sed -i 's/[ \t]*$//' "+outdir+"/"+outfile)
-            os.system("sed -i '/^$/d' "+outdir+"/"+outfile) # remove empty lines
 if __name__ == "__main__":
     main(sys.argv[1:])
