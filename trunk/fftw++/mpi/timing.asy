@@ -7,6 +7,12 @@ include graph;
 // asy -f pdf timing.asy -u "runlegs=\"1k,2k,4k,8k\""
 // to specify the legend.
 
+// asy -f pdf timing.asy -u "useN=true"
+// makes the legends use N instead of m.
+
+// asy -f pdf timing.asy -u "oldformat=true"
+// uses the same pens as in dealias.pdf
+
 // Note that the scaling figures assumes subsequent test double the
 // number of cores.
 
@@ -42,7 +48,11 @@ string[] runnames;
 string name;
 string runs;
 string runlegs;
+bool useN=false;
+bool oldformat=false;
+
 usersetting();
+string Nm=useN?"N":"m";
 
 
 bool myleg=((runlegs== "") ? false: true);
@@ -122,9 +132,31 @@ real[] f(real[] x) {
 
 string D=d > 1 ? "^"+(string) d : "";
 
+// FIXME: only for pruned case!
+pen barPen(int p) {
+  if(oldformat) {
+    if(p == 1)
+      return Pen(2);
+    if(p == 2)
+      return Pen(1);
+  }
+  return Pen(p);
+}
+
+pen linePen(int p) {
+  if(oldformat) {
+    if(p == 0)
+      return barPen(p)+dashed;
+    if(p == 1)
+      return barPen(p)+Dotted;
+    return barPen(p);
+  }
+  return Pentype(p);
+}
+
 if(gtype == "time" || gtype == "mflops") {
   for(int p=0; p < nn; ++p) {
-    marker mark1=marker(scale(0.6mm)*polygon(3+p),Draw(Pen(p)+solid));
+    marker mark1=marker(scale(0.6mm)*polygon(3+p),Draw(barPen(p)+solid));
     if(gtype == "mflops")
       i[p] = f(mi[p])/i[p];
     if(gtype == "time")
@@ -132,18 +164,18 @@ if(gtype == "time" || gtype == "mflops") {
     hi[p] /= f(mi[p]);
     li[p] /= f(mi[p]);
     if(drawerrorbars && gtype == "time")
-      errorbars(mi[p],i[p],0*mi[p],hi[p],0*mi[p],li[p],Pen(p));
-    draw(graph(mi[p],i[p],i[p] > 0),Pentype(p),
-	 Label(myleg ? legends[p] : runnames[p],Pen(p)+Lp),mark1);
+      errorbars(mi[p],i[p],0*mi[p],hi[p],0*mi[p],li[p],barPen(p));
+    draw(graph(mi[p],i[p],i[p] > 0),linePen(p),
+	 Label(myleg ? legends[p] : runnames[p],Lp+linePen(p)),mark1);
   }
   
-  xaxis("$N$",BottomTop,LeftTicks);
+  xaxis("$"+Nm+"$",BottomTop,LeftTicks);
   if(d > 0) {
     if(gtype=="mflops")
-      yaxis("``mflops\": $5N"+D+"\log_2 N"+D+"$/time (ms)",LeftRight,
+      yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ms)",LeftRight,
 	    RightTicks);
     if(gtype=="time")
-      yaxis("time/($N"+D+"\log_2 N"+D+"$) (ns)",LeftRight,RightTicks);
+      yaxis("time/($"+Nm+D+"\log_2 "+Nm+D+"$) (ns)",LeftRight,RightTicks);
   } else {
     if(gtype=="mflops")
       yaxis("speed: 1/time (ms)",LeftRight,RightTicks);
@@ -184,14 +216,14 @@ if(gtype == "speedup") {
 	  i[p][b]=0.0;
       }
 
-      marker mark1=marker(scale(0.6mm)*polygon(3+gnum),Draw(Pen(gnum)+solid));
-      draw(graph(mi[p],i[p],i[p] > 0),Pentype(gnum),
-	   Label(myleg ? legends[gnum] : runnames[p],Pen(gnum)+Lp),mark1);
+      marker mark1=marker(scale(0.6mm)*polygon(3+gnum),Draw(linePen(gnum)+solid));
+      draw(graph(mi[p],i[p],i[p] > 0),Pentype(gnum)+linePen(gnum),
+	   Label(myleg ? legends[gnum] : runnames[p],linePen(gnum)+Lp),mark1);
     }
     
   }
   
-  xaxis("$N$",BottomTop,LeftTicks);
+  xaxis("$"+Nm+"$",BottomTop,LeftTicks);
 
   yaxis("relative speed",LeftRight,RightTicks);
 
@@ -266,8 +298,8 @@ if(gtype == "scaling") {
 
   bool linleg=true;
   for(int c=0; c < y.length; ++c) {
-    marker mark1=marker(scale(0.6mm)*polygon(3+c),Draw(Pen(c)+solid));
-    draw(graph(x[c],s[c]),Pen(c),Label("$"+(string) thems[c]+"^"+(string)d+"$"),mark1);
+    marker mark1=marker(scale(0.6mm)*polygon(3+c),Draw(linePen(c)+solid));
+    draw(graph(x[c],s[c]),linePen(c),Label("$"+(string) thems[c]+"^"+(string)d+"$"),mark1);
     if(drawlin[c]) {
       if(linleg) {
 	draw(graph(x[c],2^(x[c]-x[c][0])),black+dashed);
