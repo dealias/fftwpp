@@ -69,6 +69,7 @@ if(myleg) {
     
     runleg=substr(runlegs,lastpos,pos-lastpos);
 
+
     lastpos=pos > 0 ? pos+1 : -1;
     if(flag) legends.push(runleg);
   }
@@ -94,6 +95,8 @@ if(find(name,"2") >= 0) d=2;
 if(find(name,"3") >= 0) d=3;
 if(name == "transpose") d=0;
 
+real ymin=infinity, ymax=-infinity;
+
 if(runs == "") runs=getstring("files");
 string run;
 n=-1;
@@ -113,6 +116,7 @@ while(flag) {
     lastpos=pos > 0 ? pos+1 : -1;
   }
 }
+
 nn=n;
 
 monoPen[0]=dashed;
@@ -158,7 +162,7 @@ string base10(real x) {
   return "$10^{"+string(x)+"}$";
 }
 // keep track of y bounds
-real ymin=-infinity, ymax=infinity;
+
 
 if(gtype == "time" || gtype == "mflops") {
   for(int p=0; p < nn; ++p) {
@@ -169,41 +173,64 @@ if(gtype == "time" || gtype == "mflops") {
       i[p] /= f(mi[p]);
     hi[p] /= f(mi[p]);
     li[p] /= f(mi[p]);
+
+    
+    for(int q=0; q < i[p].length; ++q) {
+      real ii=i[p][q];
+      ymin=min(ymin,ii);
+      ymax=max(ymax,ii);
+    }
+    
+    
     if(drawerrorbars && gtype == "time")
       errorbars(mi[p],i[p],0*mi[p],hi[p],0*mi[p],li[p],barPen(p));
     guide the_graph=graph(mi[p],i[p]);
     
     { // get the min and max
-      path p=the_graph;
-      if(min(p).y > ymin) ymin=min(p).y;
-      if(max(p).y < ymax) ymax=max(p).y;
+      //path p=the_graph;
+      //if(min(p).y > ymin) ymin=min(p).y;
+      //if(max(p).y < ymax) ymax=max(p).y;
     }
       
     draw(the_graph,linePen(p),
 	 Label(myleg ? legends[p] : runnames[p],Lp+linePen(p)),mark1);
   }
   
+write(ymin);
+write(ymax);
   xaxis("$"+Nm+"$",BottomTop,LeftTicks);
   if(d > 0) {
     if(gtype=="mflops") {
-      if(floor(ymax) >= ceil(ymin)) {
-	//      if(ymax-ymin > 0.5 || true) {
+      if(floor(ymax) <= ceil(ymin)) {
+	//if(ymax-ymin > 1) {
 	yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ms)",LeftRight,
 	      RightTicks);
       } else {
 	// write the yticks as 10^{...} equally divided in log-space.
 	
 	int decpow=floor(log10(ymax-ymin));
-	real fymin=floor(ymin*pow10(-decpow))*pow10(decpow);
-	real fymax=ceil(ymax*pow10(-decpow))*pow10(decpow);
-	
+
+	real d=ymax-ymin;
+	write(d);
+	d=pow10(ceil(log10(d)));
+	write("d10=",d);
+
+	real fymin=floor(ymin/d)*d;
+	write(fymin);
+	real fymax=ceil(ymax/d)*d;
+	write(fymax);
+	fymin=fymin;
+	fymax=fymax;
+
 	int nyticks=10;
 	real[] yticks;
 	for(int i=0; i <= nyticks; ++i)
-	  yticks.push(pow10(fymin+i*(fymax-fymin)/nyticks));
-
+	  yticks.push((fymin+i*(fymax-fymin)/nyticks));
+	write(yticks);
+	//yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ms)",LeftRight,
+	//    RightTicks(new string(real x) {return base10(log10(x));},yticks));
 	yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ms)",LeftRight,
-	      RightTicks(new string(real x) {return base10(log10(x));},yticks));
+	      RightTicks(defaultformat,yticks));
       }
       
     }
