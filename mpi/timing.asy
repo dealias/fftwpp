@@ -154,6 +154,12 @@ pen linePen(int p) {
   return Pentype(p);
 }
 
+string base10(real x) {
+  return "$10^{"+string(x)+"}$";
+}
+// keep track of y bounds
+real ymin=-infinity, ymax=infinity;
+
 if(gtype == "time" || gtype == "mflops") {
   for(int p=0; p < nn; ++p) {
     marker mark1=marker(scale(0.6mm)*polygon(3+p),Draw(barPen(p)+solid));
@@ -165,15 +171,42 @@ if(gtype == "time" || gtype == "mflops") {
     li[p] /= f(mi[p]);
     if(drawerrorbars && gtype == "time")
       errorbars(mi[p],i[p],0*mi[p],hi[p],0*mi[p],li[p],barPen(p));
-    draw(graph(mi[p],i[p],i[p] > 0),linePen(p),
+    guide the_graph=graph(mi[p],i[p]);
+    
+    { // get the min and max
+      path p=the_graph;
+      if(min(p).y > ymin) ymin=min(p).y;
+      if(max(p).y < ymax) ymax=max(p).y;
+    }
+      
+    draw(the_graph,linePen(p),
 	 Label(myleg ? legends[p] : runnames[p],Lp+linePen(p)),mark1);
   }
   
   xaxis("$"+Nm+"$",BottomTop,LeftTicks);
   if(d > 0) {
-    if(gtype=="mflops")
-      yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ms)",LeftRight,
-	    RightTicks);
+    if(gtype=="mflops") {
+      if(floor(ymax) >= ceil(ymin)) {
+	//      if(ymax-ymin > 0.5 || true) {
+	yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ms)",LeftRight,
+	      RightTicks);
+      } else {
+	// write the yticks as 10^{...} equally divided in log-space.
+	
+	int decpow=floor(log10(ymax-ymin));
+	real fymin=floor(ymin*pow10(-decpow))*pow10(decpow);
+	real fymax=ceil(ymax*pow10(-decpow))*pow10(decpow);
+	
+	int nyticks=10;
+	real[] yticks;
+	for(int i=0; i <= nyticks; ++i)
+	  yticks.push(pow10(fymin+i*(fymax-fymin)/nyticks));
+
+	yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ms)",LeftRight,
+	      RightTicks(new string(real x) {return base10(log10(x));},yticks));
+      }
+      
+    }
     if(gtype=="time")
       yaxis("time/($"+Nm+D+"\log_2 "+Nm+D+"$) (ns)",LeftRight,RightTicks);
   } else {
@@ -184,6 +217,7 @@ if(gtype == "time" || gtype == "mflops") {
   }
   //label(name+": (MPI procs)$\times{}$(threads/proc)",point(N),5N);
 }
+
 
 if(gtype == "speedup") {
 
