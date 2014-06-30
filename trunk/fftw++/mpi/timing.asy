@@ -195,9 +195,7 @@ if(gtype == "time" || gtype == "mflops") {
     draw(the_graph,linePen(p),
 	 Label(myleg ? legends[p] : runnames[p],Lp+linePen(p)),mark1);
   }
-  
-write(ymin);
-write(ymax);
+
   xaxis("$"+Nm+"$",BottomTop,LeftTicks);
   if(d > 0) {
     if(gtype=="mflops") {
@@ -211,22 +209,16 @@ write(ymax);
 	int decpow=floor(log10(ymax-ymin));
 
 	real d=ymax-ymin;
-	write(d);
 	d=pow10(ceil(log10(d)));
-	write("d10=",d);
 
-	real fymin=floor(ymin/d)*d;
-	write(fymin);
+	real fymin=ceil(ymin/d)*d;
 	real fymax=ceil(ymax/d)*d;
-	write(fymax);
-	fymin=fymin;
-	fymax=fymax;
 
 	int nyticks=10;
 	real[] yticks;
 	for(int i=0; i <= nyticks; ++i)
 	  yticks.push((fymin+i*(fymax-fymin)/nyticks));
-	write(yticks);
+	//write(yticks);
 	//yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ms)",LeftRight,
 	//    RightTicks(new string(real x) {return base10(log10(x));},yticks));
 	yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ms)",LeftRight,
