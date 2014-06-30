@@ -209,14 +209,17 @@ if(gtype == "time" || gtype == "mflops") {
 	int decpow=floor(log10(ymax-ymin));
 
 	real d=ymax-ymin;
-	d=pow10(ceil(log10(d)));
-
-	real fymin=ceil(ymin/d)*d;
+	d=pow10(floor(log10(d)));
+	
+	
+	real fymin=floor(ymin/d)*d;
 	real fymax=ceil(ymax/d)*d;
 
-	int nyticks=10;
+	// make sure we catch the order of magnitude if it's present.
+	int nyticks=floor((fymax-fymin)/d);
+
 	real[] yticks;
-	for(int i=0; i <= nyticks; ++i)
+	for(int i=0; i < nyticks; ++i)
 	  yticks.push((fymin+i*(fymax-fymin)/nyticks));
 	//write(yticks);
 	//yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ms)",LeftRight,
