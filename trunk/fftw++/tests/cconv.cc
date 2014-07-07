@@ -7,53 +7,64 @@
 using namespace std;
 using namespace fftwpp;
 
-// Number of iterations.
-unsigned int N0=10000000;
-unsigned int N=0;
   
+// Constants used for initialization and testing.
 const Complex I(0.0,1.0);
 const double E=exp(1.0);
-const Complex F(sqrt(3.0),sqrt(7.0));
-const Complex G(sqrt(5.0),sqrt(11.0));
-
-unsigned int m=11;
-unsigned int n=2*m;
-
+const Complex iF(sqrt(3.0),sqrt(7.0));
+const Complex iG(sqrt(5.0),sqrt(11.0));
 
 bool Direct=false, Implicit=true, Explicit=false, Test=false;
 
-inline void init(Complex *f, Complex *g, unsigned int M=1) 
+void xcorr_mult(Complex **F, unsigned int m, unsigned int threads)
 {
-  unsigned int Mm=M*m;
-  double factor=1.0/sqrt((double) M);
-  for(unsigned int i=0; i < Mm; i += m) {
-    double ffactor=(1.0+i)*factor;
-    double gfactor=1.0/(1.0+i)*factor;
-    Complex *fi=f+i;
-    Complex *gi=g+i;
-    if(Test) {
-      for(unsigned int k=0; k < m; k++) fi[k]=factor*F*pow(E,k*I);
-      for(unsigned int k=0; k < m; k++) gi[k]=factor*G*pow(E,k*I);
-//    for(unsigned int k=0; k < m; k++) fi[k]=factor*F*k;
-//    for(unsigned int k=0; k < m; k++) gi[k]=factor*G*k;
-  } else {
-      for(unsigned int k=0; k < m; k++) fi[k]=ffactor*Complex(k,k+1);
-      for(unsigned int k=0; k < m; k++) gi[k]=gfactor*Complex(k,2*k+1);
-    }
-  }
+  Complex* F0=F[0];
+  Complex* F1=F[1];
+  for(unsigned int j=0; j < m; ++j)
+    F0[j] *= F1[j];
 }
 
-void add(Complex *f, Complex *F) 
+inline void init(Complex **F, unsigned int m, unsigned int A) 
 {
-  for(unsigned int i=0; i < m; ++i)
-      f[i] += F[i];
+  if(A % 2 == 0) { // binary cse
+    unsigned int M=A/2;
+    double factor=1.0/sqrt((double) M);
+    for(unsigned int i=0; i < M; ++i) {
+      double ffactor=(1.0+i)*factor;
+      double gfactor=1.0/(1.0+i)*factor;
+      Complex *fi=F[i];
+      Complex *gi=F[M+i];
+      if(Test) {
+	for(unsigned int k=0; k < m; k++) fi[k]=factor*iF*pow(E,k*I);
+	for(unsigned int k=0; k < m; k++) gi[k]=factor*iG*pow(E,k*I);
+	//    for(unsigned int k=0; k < m; k++) fi[k]=factor*iF*k;
+	//    for(unsigned int k=0; k < m; k++) gi[k]=factor*iG*k;
+      } else {
+	for(unsigned int k=0; k < m; k++) fi[k]=ffactor*Complex(k,k+1);
+	for(unsigned int k=0; k < m; k++) gi[k]=gfactor*Complex(k,2*k+1);
+      }
+    }
+  } else {
+    for(unsigned int a=0; a < A; ++a) {
+      for(unsigned int k=0; k < m; ++k) {
+	F[a][k]=a*Complex(k,k+1);
+      }
+    }
+  }
 }
 
 int main(int argc, char* argv[])
 {
   fftw::maxthreads=get_max_threads();
 
-  unsigned int M=1;   // Number of terms in dot product
+  // Number of iterations.
+  unsigned int N0=10000000;
+  unsigned int N=0;
+  
+  unsigned int m=11; // Problem size
+  unsigned int A=2; // number of inputs
+  unsigned int B=1; // number of outputs
+  
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
@@ -62,7 +73,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptM:N:m:n:T:");
+    int c = getopt(argc,argv,"hdeiptA:B:M::N:m:n:T:");
     if (c == -1) break;
 		
     switch (c) {
@@ -81,8 +92,14 @@ int main(int argc, char* argv[])
         break;
       case 'p':
         break;
+      case 'A':
+        A=atoi(optarg);
+        break;
+      case 'B':
+        B=atoi(optarg);
+        break;
       case 'M':
-        M=atoi(optarg);
+        A=2*atoi(optarg);
         break;
       case 'N':
         N=atoi(optarg);
@@ -102,11 +119,13 @@ int main(int argc, char* argv[])
       case 'h':
       default:
         usage(1,true);
+	usageA();
+	usageB(false);
+	exit(0);
     }
   }
 
-  unsigned int A=2*M; // Number of independent inputs
-  n=2*m;
+  unsigned int n=2*m;
   cout << "min padded buffer=" << n << endl;
   unsigned int log2n;
   // Choose next power of 2 for maximal efficiency.
@@ -120,83 +139,81 @@ int main(int argc, char* argv[])
     if(N < 10) N=10;
   }
   cout << "N=" << N << endl;
-  
-  unsigned int np=Explicit ? n : m;
-  if(Implicit) np *= M;
-  Complex *f=ComplexAlign(np);
-  Complex *g=ComplexAlign(np);
 
+  // explicit and direct methods are only implemented for binary
+  // convolutions.
+  if(!Implicit)  A=2;
+
+  unsigned int np=Explicit ? n : m; // explicit version needs more
+				    // memory.  FIXME: is this what we
+				    // actually want?
+  Complex *f=ComplexAlign(A*np);
+  Complex **F=new Complex *[A];
+  for(unsigned int s=0; s < A; ++s)
+    F[s]=f+s*np;
+  
   Complex *h0=NULL;
   if(Test || Direct) h0=ComplexAlign(m);
 
   double *T=new double[N];
-
+  
   if(Implicit) {
-    ImplicitConvolution C(m,A);
+    ImplicitConvolution C(m,A,B);
     fftw::SaveWisdom();
     cout << "threads=" << C.Threads() << endl << endl;;
 
     multiplier *mult;
-    switch(M) {
-      case 1: mult=multbinary; break;
-      case 2: mult=multbinary2; break;
-      case 3: mult=multbinary3; break;
-      case 4: mult=multbinary4; break;
-      case 8: mult=multbinary8; break;
-      default: cerr << "M=" << M << " is not yet implemented" << endl; exit(1);
+    switch(A) {
+    case 2: mult=multbinary; break;
+    case 4: mult=multbinary2; break;
+    case 6: mult=multbinary3; break;
+    case 8: mult=multbinary4; break;
+    case 16: mult=multbinary8; break;
+    default: cerr << "A=" << A << " is not yet implemented" << endl; exit(1);
     }
     
-    Complex **F=new Complex *[A];
-    for(unsigned int s=0; s < M; ++s) {
-      unsigned int sm=s*m;
-      F[2*s]=f+sm;
-      F[2*s+1]=g+sm;
-    }
-
     for(unsigned int i=0; i < N; ++i) {
-      init(f,g,M);
+      init(F,m,A);
       seconds();
       C.convolve(F,mult);
-//      C.convolve(f,g);
+      //C.convolve(F[0],F[1]);
       T[i]=seconds();
     }
     
     timings("Implicit",m,T,N);
 
     if(m < 100) 
-      for(unsigned int i=0; i < m; i++) cout << f[i] << endl;
+      for(unsigned int i=0; i < m; i++) cout << F[1][i] << endl;
     else 
       cout << f[0] << endl;
 
-    if(Test || Direct) for(unsigned int i=0; i < m; i++) h0[i]=f[i];
-
-    delete [] F;
+    if(Test || Direct) for(unsigned int i=0; i < m; i++) h0[i]=F[0][i];
   }
   
   if(Explicit) {
-    ExplicitConvolution C(n,m,f);
+    ExplicitConvolution C(n,m,F[0]);
     for(unsigned int i=0; i < N; ++i) {
-      init(f,g);
+      init(F,m,A);
       seconds();
-      C.convolve(f,g);
+      C.convolve(F[0],F[1]);
       T[i]=seconds();
     }
-    
+
     timings("Explicit",m,T,N);
 
     if(m < 100) 
-      for(unsigned int i=0; i < m; i++) cout << f[i] << endl;
-    else cout << f[0] << endl;
+      for(unsigned int i=0; i < m; i++) cout << F[1][i] << endl;
+    else cout << F[0][0] << endl;
     cout << endl;
-    if(Test || Direct) for(unsigned int i=0; i < m; i++) h0[i]=f[i];
+    if(Test || Direct) for(unsigned int i=0; i < m; i++) h0[i]=F[0][i];
   }
   
   if(Direct) {
     DirectConvolution C(m);
-    init(f,g);
-    Complex *h=ComplexAlign(n);
+    init(F,m,A);
+    Complex *h=ComplexAlign(m);
     seconds();
-    C.convolve(h,f,g);
+    C.convolve(h,F[0],F[1]);
     T[0]=seconds();  
     
     timings("Direct",m,T,1);
@@ -230,8 +247,8 @@ int main(int argc, char* argv[])
     double norm=0.0;
     for(unsigned long long k=0; k < m; k++) {
       // exact solution for test case.
-      h[k]=F*G*(k+1)*pow(E,k*I);
-//      h[k]=F*G*(k*(k+1)/2.0*(k-(2*k+1)/3.0));
+      h[k]=iF*iG*(k+1)*pow(E,k*I);
+//      h[k]=iF*iG*(k*(k+1)/2.0*(k-(2*k+1)/3.0));
       error += abs2(h0[k]-h[k]);
       norm += abs2(h[k]);
     }
@@ -243,7 +260,7 @@ int main(int argc, char* argv[])
   }
 
   delete [] T;
-  deleteAlign(g);
+  delete [] F;
   deleteAlign(f);
 
   return 0;
