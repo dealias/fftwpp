@@ -16,38 +16,34 @@ unsigned int nx=0;
 unsigned int ny=0;
 unsigned int mx=4;
 unsigned int my=4;
-unsigned int M=1;   // Number of terms in dot product
 
 bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
-inline void init(array2<Complex>& f, array2<Complex>& g, unsigned int M=1) 
+inline void init(Complex **F, unsigned int mx, unsigned int my, unsigned int A) 
 {
-  double factor=1.0/sqrt((double) M);
-  for(unsigned int s=0; s < M; ++s) {
-    double S=sqrt(1.0+s);
-    double ffactor=S*factor;
-    double gfactor=1.0/S*factor;
-    for(unsigned int i=0; i < mx; ++i) {
-      unsigned int I=s*mx+i;
-      for(unsigned int j=0; j < my; j++) {
-        f[I][j]=ffactor*Complex(i,j);
-        g[I][j]=gfactor*Complex(2*i,j+1);
+  if(A%2 == 0) {
+    unsigned int M=A/2;
+    double factor=1.0/sqrt((double) M);
+    for(unsigned int s=0; s < M; ++s) {
+      double S=sqrt(1.0+s);
+      double ffactor=S*factor;
+      double gfactor=1.0/S*factor;
+      array2<Complex> f(mx,my,F[s]);
+      array2<Complex> g(mx,my,F[M+s]);
+      for(unsigned int i=0; i < mx; ++i) {
+	for(unsigned int j=0; j < my; j++) {
+	  f[i][j]=ffactor*Complex(i,j);
+	  g[i][j]=gfactor*Complex(2*i,j+1);
+	}
       }
     }
+  } else {
+    cerr << "Init not implemented for A=" << A << endl;
+    exit(1);
   }
 }
   
 unsigned int outlimit=100;
-
-unsigned int padding(unsigned int m)
-{
-  unsigned int n=2*m;
-  cout << "min padded buffer=" << n << endl;
-  unsigned int log2n;
-  // Choose next power of 2 for maximal efficiency.
-  for(log2n=0; n > ((unsigned int) 1 << log2n); log2n++);
-  return 1 << log2n;
-}
 
 void add(Complex *f, Complex *F) 
 {
@@ -65,6 +61,9 @@ int main(int argc, char* argv[])
 {
   fftw::maxthreads=get_max_threads();
 
+  unsigned int A=2;
+  unsigned int B=1;
+
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
@@ -73,7 +72,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptM:N:m:x:y:n:T:");
+    int c = getopt(argc,argv,"hdeiptA:B:M:N:m:x:y:n:T:");
     if (c == -1) break;
 		
     switch (c) {
@@ -96,8 +95,14 @@ int main(int argc, char* argv[])
         Implicit=false;
         Pruned=true;
         break;
+      case 'A':
+        A=atoi(optarg);
+        break;
+    case 'B':
+        A=atoi(optarg);
+        break;
       case 'M':
-        M=atoi(optarg);
+        A=2*atoi(optarg);
         break;
       case 'N':
         N=atoi(optarg);
@@ -123,12 +128,10 @@ int main(int argc, char* argv[])
     }
   }
 
-  unsigned int A=2*M; // Number of independent inputs
-  
   if(my == 0) my=mx;
 
-  nx=padding(mx);
-  ny=padding(my);
+  nx=cpadding(mx);
+  ny=cpadding(my);
 
   cout << "nx=" << nx << ", ny=" << ny << endl;
   cout << "mx=" << mx << ", my=" << my << endl;
@@ -139,44 +142,47 @@ int main(int argc, char* argv[])
   }
   cout << "N=" << N << endl;
   
+  // non-implicit convolutions only implemented for binary case.
+  if(!Implicit)
+    A=2;
+
   size_t align=sizeof(Complex);
   array2<Complex> h0;
   if(Direct) h0.Allocate(mx,my,align);
   int nxp=Explicit ? nx : mx;
   int nyp=Explicit ? ny : my;
-  if(Implicit) nxp *= M;
-  array2<Complex> f(nxp,nyp,align);
-  array2<Complex> g(nxp,nyp,align);
 
+  // Allocate input/ouput memory and set up pointers
+  Complex **F=new Complex *[A];
+  for(unsigned int a=0; a < A; ++a)
+    F[a]=ComplexAlign(nxp*nyp);
+
+  // For easy access of first element
+  array2<Complex> f(mx,my,F[0]);
+    
   double *T=new double[N];
-
+    
   if(Implicit) {
     multiplier *mult;
   
-    switch(M) {
-      case 1: mult=multbinary; break;
-      case 2: mult=multbinary2; break;
-      case 3: mult=multbinary3; break;
-      case 4: mult=multbinary4; break;
-      case 8: mult=multbinary8; break;
-      default: cout << "M=" << M << " is not yet implemented" << endl; exit(1);
+    switch(A) {
+    case 2: mult=multbinary; break;
+    case 4: mult=multbinary2; break;
+    case 6: mult=multbinary3; break;
+    case 8: mult=multbinary4; break;
+    case 16: mult=multbinary8; break;
+    default: cout << "Multiplication for A=" << A 
+		  << " is not yet implemented" << endl; exit(1);
     }
 
-    ImplicitConvolution2 C(mx,my,A);
+    ImplicitConvolution2 C(mx,my,A,B);
     cout << "threads=" << C.Threads() << endl << endl;;
 
-    unsigned int mxy=mx*my;
-    Complex **F=new Complex *[A];
-    for(unsigned int s=0; s < M; ++s) {
-      unsigned int smxy=s*mxy;
-      F[2*s]=f+smxy;
-      F[2*s+1]=g+smxy;
-    }
     for(unsigned int i=0; i < N; ++i) {
-      init(f,g,M);
+      init(F,mx,my,A);
       seconds();
       C.convolve(F,mult);
-//      C.convolve(f,g);
+//      C.convolve(F[0],F[1]);
       T[i]=seconds();
     }
     
@@ -188,23 +194,23 @@ int main(int argc, char* argv[])
 	  h0[i][j]=f[i][j];
     }
     
-    if(mx*my < outlimit) 
-      for(unsigned int i=0; i < mx; i++) {
+    if(mx*my < outlimit) {
+      for(unsigned int i=0; i < mx; i++)
         for(unsigned int j=0; j < my; j++)
           cout << f[i][j] << "\t";
-        cout << endl;
-      } else cout << f[0][0] << endl;
+      cout << endl;
+    } else {
+      cout << f[0][0] << endl;
+    }
     cout << endl;
-    
-    delete [] F;
   }
   
   if(Explicit) {
-    ExplicitConvolution2 C(nx,ny,mx,my,f,Pruned);
+    ExplicitConvolution2 C(nx,ny,mx,my,F[0],Pruned);
     for(unsigned int i=0; i < N; ++i) {
-      init(f,g);
+      init(F,nxp,nyp,A);
       seconds();
-      C.convolve(f,g);
+      C.convolve(F[0],F[1]);
       T[i]=seconds();
     }
 
@@ -213,31 +219,32 @@ int main(int argc, char* argv[])
     if(Direct) {
       for(unsigned int i=0; i < mx; i++)
         for(unsigned int j=0; j < my; j++)
-	  h0[i][j]=f[i][j];
+	  h0[i][j]=F[0][nxp*i+j];
     }
   
-
-    if(mx*my < outlimit) 
+    if(mx*my < outlimit) {
       for(unsigned int i=0; i < mx; i++) {
-        for(unsigned int j=0; j < my; j++)
-          cout << f[i][j] << "\t";
-        cout << endl;
-      } else cout << f[0][0] << endl;
+        for(unsigned int j=0; j < my; j++) {
+	  cout << F[0][nxp*i+j] << "\t";
+	}
+      cout << endl;
+      }
+    }
+    else
+      cout << F[0][0] << endl;
   }
 
   if(Direct) {
     array2<Complex> h(mx,my,align);
-    array2<Complex> f(mx,my,align);
-    array2<Complex> g(mx,my,align);
     DirectConvolution2 C(mx,my);
-    init(f,g);
+    init(F,mx,my,A);
     seconds();
-    C.convolve(h,f,g);
+    C.convolve(h,F[0],F[1]);
     T[0]=seconds();
   
     timings("Direct",mx,T,1);
     
-    if(mx*my < outlimit) 
+    if(mx*my < outlimit)
       for(unsigned int i=0; i < mx; i++) {
         for(unsigned int j=0; j < my; j++)
           cout << h[i][j] << "\t";
@@ -258,11 +265,12 @@ int main(int argc, char* argv[])
       cout << "error=" << error << endl;
       if (error > 1e-12) cerr << "Caution! error=" << error << endl;
     }
-
   }
   
   delete [] T;
+  for(unsigned int a=0; a < A; ++a)
+    deleteAlign(F[a]);
+  delete [] F;
   
   return 0;
 }
-

@@ -58,6 +58,25 @@ inline void usageB(bool littleb=true)
     std::cerr << "-b\t\t which output block to check" << std::endl;
 }
 
+unsigned int cpadding(unsigned int m)
+{
+  unsigned int n=2*m;
+  std::cout << "min padded buffer=" << n << std::endl;
+  unsigned int log2n;
+  // Choose next power of 2 for maximal efficiency.
+  for(log2n=0; n > ((unsigned int) 1 << log2n); log2n++);
+  return 1 << log2n;
+}
+
+unsigned int hpadding(unsigned int m)
+{
+  unsigned int n=3*m-2;
+  std::cout << "min padded buffer=" << n << std::endl;
+  unsigned int log2n;
+  // Choose next power of 2 for maximal efficiency.
+  for(log2n=0; n > ((unsigned int) 1 << log2n); log2n++);
+  return 1 << log2n;
+}
 
 inline int hash(Complex* f, unsigned int m)
 {
