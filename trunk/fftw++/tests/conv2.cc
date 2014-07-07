@@ -29,9 +29,10 @@ unsigned int outlimit=100;
 inline void init(array2<Complex>& f, array2<Complex>& g, unsigned int M=1,
                  bool compact=true)
 {
-  unsigned int offset=Explicit ? nx/2-mx+1 : !compact;
+  unsigned int coffset=compact ? 0 : 1;
+  unsigned int offset=Explicit ? nx/2-mx+1 : coffset;
   unsigned int stop=2*mx-1;
-  unsigned int stopoffset=stop+(Explicit ? 2*offset-1 : !compact);
+  unsigned int stopoffset=stop+(Explicit ? 2*offset-1 : coffset);
   double factor=1.0/sqrt((double) M);
   for(unsigned int s=0; s < M; ++s) {
     double S=sqrt(1.0+s);
@@ -142,8 +143,10 @@ int main(int argc, char* argv[])
   array2<Complex> h0;
   if(Direct && Implicit) h0.Allocate(mx,my,align);
 
-  nxp=Explicit ? nx : 2*mx-compact;
-  nyp=Explicit ? ny/2+1 : my+!compact;
+  unsigned int offset=compact ? 0 : 1;
+
+  nxp=Explicit ? nx : 2*mx-1+offset;
+  nyp=Explicit ? ny/2+1 : my+offset;
   unsigned int nxp0=nxp*M;
   array2<Complex> f(nxp0,nyp,align);
   array2<Complex> g(nxp0,nyp,align);
@@ -183,15 +186,15 @@ int main(int argc, char* argv[])
     if(Direct) {
       for(unsigned int i=0; i < mx; i++) 
         for(unsigned int j=0; j < my; j++)
-	  h0[i][j]=f[i+!compact][j];
+	  h0[i][j]=f[i+offset][j];
     }
     
     if(nxp*my < outlimit)
-      for(unsigned int i=!compact; i < nxp; i++) {
+      for(unsigned int i=offset; i < nxp; i++) {
         for(unsigned int j=0; j < my; j++)
           cout << f[i][j] << "\t";
         cout << endl;
-      } else cout << f[!compact][0] << endl;
+      } else cout << f[offset][0] << endl;
     cout << endl;
     
     delete [] F;

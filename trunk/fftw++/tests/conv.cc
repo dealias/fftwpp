@@ -101,16 +101,6 @@ void test(unsigned int m, unsigned int M, Complex *h0)
 
 }
 
-unsigned int padding(unsigned int m)
-{
-  unsigned int n=3*m-2;
-  cout << "min padded buffer=" << n << endl;
-  unsigned int log2n;
-  // Choose next power of 2 for maximal efficiency.
-  for(log2n=0; n > ((unsigned int) 1 << log2n); log2n++);
-  return 1 << log2n;
-}
-
 int main(int argc, char* argv[])
 {
   fftw::maxthreads=get_max_threads();
@@ -188,7 +178,7 @@ int main(int argc, char* argv[])
     }
   }
 
-  unsigned int n=padding(m);
+  unsigned int n=hpadding(m);
   
   cout << "n=" << n << endl;
   cout << "m=" << m << endl;
