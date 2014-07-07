@@ -51,10 +51,11 @@ inline void usageA()
   std::cerr << "-A\t\t number of data blocks in input" << std::endl;
 }
 
-inline void usageB()
+inline void usageB(bool littleb=true)
 {
   std::cerr << "-B\t\t number of data blocks in output" << std::endl;
-  std::cerr << "-b\t\t which output block to check" << std::endl;
+  if(littleb)
+    std::cerr << "-b\t\t which output block to check" << std::endl;
 }
 
 
