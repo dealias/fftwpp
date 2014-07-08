@@ -131,6 +131,9 @@ int main(int argc, char* argv[])
       case 'h':
       default:
         usage(2,false,true,true);
+	usageA();
+	usageB(false);
+	exit(0);
     }
   }
 

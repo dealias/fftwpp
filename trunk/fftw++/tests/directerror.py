@@ -19,51 +19,57 @@ print "program\ttype\t\tsize\terror:"
 print
 
 
-mlist=[8,9,random.randint(1,64)] # problem sizes
+mlist=[8,9,random.randint(1,32)] # problem sizes
 
-dlist=["cconv", "cconv2", "cconv3", "conv", "conv2", "conv3", "tconv", "tconv2"]
-for prog in dlist:
-    if (os.path.isfile(prog)):
-        for mval in mlist:
-            p=Popen(["./"+prog,"-N1","-i","-d","-m"+str(mval)],stdout=PIPE,stderr=PIPE)
-            p.wait() # sets the return code
-            prc=p.returncode
-            out, err = p.communicate() # capture output
-            if (prc == 0): # did the process succeed?
-                m=re.search("(?<=error=)(.*)",out) # find the text after "error="
-                print prog +"\t"+"implicit\t"+str(mval)+"\t"+m.group(0)
-                if(float(m.group(0)) > 1e-10):
-                    print "ERROR TOO LARGE"
-                    retval+=1
-            else:
-                print "./"+prog+" -N1"+" -i "+"-d "+"-m"+str(mval)+" FAILED with code "+str(prc)
-                retval+=1
-    else:
-        print(prog+" does not exist; please compile.")
-        retval+=1
 
+convlist=["conv", "conv2", "conv3", "cconv", "cconv2", "cconv3"]
+compactlist=["conv2", "conv3"]
+tconvlist=["tconv", "tconv2"]
 elist=["cconv", "cconv2", "cconv3", "conv"] 
-for prog in elist:
-    if (os.path.isfile(prog)):
-        for mval in mlist:
-            p=Popen(["./"+prog,"-N1","-e","-d","-m"+str(mval)],stdout=PIPE,stderr=PIPE)
-            p.wait() # sets the return code
-            if (p.returncode == 0): # did the process succeed?
+
+lists=[convlist,compactlist,tconvlist,elist]
+
+for list in lists:
+    typearg="-i"
+    name="implicit"
+    if list==compactlist:
+        name="non-compact"
+    if list==elist:
+        typearg="-e"
+        name="explicit"
+    for prog in list:
+        if (os.path.isfile(prog)): # check that file exists
+            for mval in mlist:
+                command=["./"+prog,"-N1",typearg,"-d","-m"+str(mval)];
+                if(list == compactlist):
+                    clist=["-c0"]
+                    command += clist
+                #print command
+                p=Popen(command,stdout=PIPE,stderr=PIPE)
+                p.wait() # sets the return code
+                prc=p.returncode
                 out, err = p.communicate() # capture output
-                m=re.search("(?<=error=)(.*)",out) # find the text after "error="
-                print prog +"\t"+"explicit\t"+str(mval)+"\t"+m.group(0)
-                if(float(m.group(0)) > 1e-10):
-                    print "ERROR TOO LARGE"
+                if (prc == 0): # did the process succeed?
+                    m=re.search("(?<=error=)(.*)",out) # find the text after "error="
+                    print prog +"\t"+name+"\t"+str(mval)+"\t"+m.group(0)
+                    if(float(m.group(0)) > 1e-10):
+                        print "ERROR TOO LARGE"
+                        retval+=1
+                else:
+                    print "FAILURE:"
+                    print command
+                    print "with, return code:"
+                    print prc
+                    print "output:"
+                    print out
+                    print "error:"
+                    print err
                     retval+=1
-            else:
-                print "./"+prog+" -N1"+" -e "+"-d "+"-m"+str(mval)+" FAILED with code "+str(prc)
-                retval+=1
-    else:
-        print(prog+" does not exist; please compile.")
-        retval+=1
+        else:
+            print(prog+" does not exist; please compile.")
+            retval+=1
 
 print
-
 if(retval == 0):
     print "OK\tall tests passed"
 else:
