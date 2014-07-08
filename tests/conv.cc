@@ -171,7 +171,7 @@ int main(int argc, char* argv[])
         break;
       case 'h':
       default:
-        usage(1,true,true,true);
+        usage(1,true,true,false);
 	usageA();
 	usageB();
 	exit(1);
