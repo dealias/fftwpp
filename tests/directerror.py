@@ -9,7 +9,7 @@ import re # regexp package
 import random # for randum number generators
 import os.path #for file-existence checking
 
-retval=0
+failures=0
 
 print "Comparison of routine versus direct routine:"
 print
@@ -30,6 +30,8 @@ elist=["cconv", "cconv2", "cconv3", "conv"]
 Alist=[2]
 
 lists=[convlist,compactlist,tconvlist,elist]
+
+ntests=0
 
 for list in lists:
     typearg="-i"
@@ -54,6 +56,7 @@ for list in lists:
 
                 for A in Alist:
                     command=["./"+prog,"-N1",typearg,"-d","-A"+str(A),"-m"+str(mval),"-T1"];
+                    ntests += 1
                     if(list == compactlist):
                         clist=["-c0"]
                         command += clist
@@ -68,7 +71,7 @@ for list in lists:
                         print "\t"+m.group(0),
                         if(float(m.group(0)) > 1e-10):
                             print "\tERROR TOO LARGE"
-                            retval+=1
+                            failures+=1
                         else:
                             print
                     else:
@@ -80,15 +83,20 @@ for list in lists:
                         print out
                         print "stderr:"
                         print err
-                        retval+=1
+                        failures+=1
         else:
             print(prog+" does not exist; please compile.")
-            retval+=1
+            failures+=1
 
 print
-if(retval == 0):
-    print "OK\tall tests passed"
-else:
-    print "ERROR\tAT LEAST ONE TEST FAILED"
 
-sys.exit(retval)
+print str(ntests)+" tests were performed with "+str(failures)+" failure(s)."
+
+print 
+
+if(failures == 0):
+    print "OK:\tall tests passed"
+else:
+    print "ERROR:\t"+str(failures)+" TEST(S) FAILED"
+
+sys.exit(failures)
