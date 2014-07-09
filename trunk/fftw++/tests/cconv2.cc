@@ -208,7 +208,7 @@ int main(int argc, char* argv[])
   if(Explicit) {
     ExplicitConvolution2 C(nx,ny,mx,my,F[0],Pruned);
     for(unsigned int i=0; i < N; ++i) {
-      init(F,nxp,nyp,A);
+      init(F,nxp,nyp,2);
       seconds();
       C.convolve(F[0],F[1]);
       T[i]=seconds();
@@ -237,7 +237,7 @@ int main(int argc, char* argv[])
   if(Direct) {
     array2<Complex> h(mx,my,align);
     DirectConvolution2 C(mx,my);
-    init(F,mx,my,A);
+    init(F,mx,my,2);
     seconds();
     C.convolve(h,F[0],F[1]);
     T[0]=seconds();
