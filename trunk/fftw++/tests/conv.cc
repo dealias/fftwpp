@@ -51,25 +51,25 @@ inline void init(Complex **F, unsigned int m,  unsigned int A)
       f[k]=iF*pow(iE,k*I);
     }
   }
-
-  unsigned int M=A/2;
-  unsigned int Mm=M*m;
-  double factor=1.0/sqrt((double) M);
-  for(unsigned int i=0; i < Mm; i += m) {
-    double ffactor=(1.0+i)*factor;
-    double gfactor=1.0/(1.0+i)*factor;
-    Complex *fi=F[i];
-    Complex *gi=F[i+M];
-    if(Test) {
-      for(unsigned int k=0; k < m; k++) fi[k]=factor*iF*pow(iE,k*I);
-      for(unsigned int k=0; k < m; k++) gi[k]=factor*iG*pow(iE,k*I);
-//    for(unsigned int k=0; k < m; k++) fi[k]=factor*iF*k;
-//    for(unsigned int k=0; k < m; k++) gi[k]=factor*iG*k;
-    } else {
-      fi[0]=1.0*ffactor;
-      for(unsigned int k=1; k < m; k++) fi[k]=ffactor*Complex(k,k+1);
-      gi[0]=2.0*gfactor;
-      for(unsigned int k=1; k < m; k++) gi[k]=gfactor*Complex(k,2*k+1);
+  if(A%2 == 0) {
+    unsigned int M=A/2;
+    double factor=1.0/sqrt((double) M);
+    for(unsigned int s=0; s < M; s++) {
+      double ffactor=(1.0+s)*factor;
+      double gfactor=1.0/(1.0+s)*factor;
+      Complex *fs=F[s];
+      Complex *gs=F[s+M];
+      if(Test) {
+	for(unsigned int k=0; k < m; k++) fs[k]=factor*iF*pow(iE,k*I);
+	for(unsigned int k=0; k < m; k++) gs[k]=factor*iG*pow(iE,k*I);
+	//    for(unsigned int k=0; k < m; k++) fs[k]=factor*iF*k;
+	//    for(unsigned int k=0; k < m; k++) gs[k]=factor*iG*k;
+      } else {
+	fs[0]=1.0*ffactor;
+	for(unsigned int k=1; k < m; k++) fs[k]=ffactor*Complex(k,k+1);
+	gs[0]=2.0*gfactor;
+	for(unsigned int k=1; k < m; k++) gs[k]=gfactor*Complex(k,2*k+1);
+      }
     }
   }
 }

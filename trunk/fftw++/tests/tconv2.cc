@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptM:N:m:x:y:n:T:");
+    int c = getopt(argc,argv,"hdeiptA:M:N:m:x:y:n:T:");
     if (c == -1) break;
 		
     switch (c) {
@@ -95,6 +95,9 @@ int main(int argc, char* argv[])
         break;
       case 'M':
         M=atoi(optarg);
+        break;
+      case 'A':
+        M=2*atoi(optarg);
         break;
       case 'N':
         N=atoi(optarg);

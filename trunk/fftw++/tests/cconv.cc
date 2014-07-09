@@ -26,22 +26,23 @@ void xcorr_mult(Complex **F, unsigned int m, unsigned int threads)
 
 inline void init(Complex **F, unsigned int m, unsigned int A) 
 {
-  if(A % 2 == 0) { // binary cse
+  if(A % 2 == 0) { // binary case
     unsigned int M=A/2;
     double factor=1.0/sqrt((double) M);
-    for(unsigned int i=0; i < M; ++i) {
-      double ffactor=(1.0+i)*factor;
-      double gfactor=1.0/(1.0+i)*factor;
-      Complex *fi=F[i];
-      Complex *gi=F[M+i];
+    for(unsigned int s=0; s < M; ++s) {
+      double ffactor=(1.0+s)*factor;
+      double gfactor=1.0/(1.0+s)*factor;
+
+      Complex *fs=F[s];
+      Complex *gs=F[M+s];
       if(Test) {
-	for(unsigned int k=0; k < m; k++) fi[k]=factor*iF*pow(E,k*I);
-	for(unsigned int k=0; k < m; k++) gi[k]=factor*iG*pow(E,k*I);
-	//    for(unsigned int k=0; k < m; k++) fi[k]=factor*iF*k;
-	//    for(unsigned int k=0; k < m; k++) gi[k]=factor*iG*k;
+	for(unsigned int k=0; k < m; k++) fs[k]=factor*iF*pow(E,k*I);
+	for(unsigned int k=0; k < m; k++) gs[k]=factor*iG*pow(E,k*I);
+	//    for(unsigned int k=0; k < m; k++) fs[k]=factor*iF*k;
+	//    for(unsigned int k=0; k < m; k++) gs[k]=factor*iG*k;
       } else {
-	for(unsigned int k=0; k < m; k++) fi[k]=ffactor*Complex(k,k+1);
-	for(unsigned int k=0; k < m; k++) gi[k]=gfactor*Complex(k,2*k+1);
+	for(unsigned int k=0; k < m; k++) fs[k]=ffactor*Complex(k,k+1);
+	for(unsigned int k=0; k < m; k++) gs[k]=gfactor*Complex(k,2*k+1);
       }
     }
   } else {
@@ -183,7 +184,7 @@ int main(int argc, char* argv[])
     timings("Implicit",m,T,N);
 
     if(m < 100) 
-      for(unsigned int i=0; i < m; i++) cout << F[1][i] << endl;
+      for(unsigned int i=0; i < m; i++) cout << F[0][i] << endl;
     else 
       cout << f[0] << endl;
 
@@ -210,7 +211,7 @@ int main(int argc, char* argv[])
   
   if(Direct) {
     DirectConvolution C(m);
-    init(F,m,A);
+    init(F,m,2);
     Complex *h=ComplexAlign(m);
     seconds();
     C.convolve(h,F[0],F[1]);

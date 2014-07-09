@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"hdeipM:N:m:n:T:");
+    int c = getopt(argc,argv,"hdeipA:M:N:m:n:T:");
     if (c == -1) break;
 		
     switch (c) {
@@ -71,6 +71,9 @@ int main(int argc, char* argv[])
       case 'M':
         M=atoi(optarg);
         break;
+      case 'A':
+        M=2*atoi(optarg);
+        break;
       case 'N':
         N=atoi(optarg);
         break;
@@ -86,6 +89,7 @@ int main(int argc, char* argv[])
       case 'h':
       default:
         usage(1);
+	exit(0);
     }
   }
 
