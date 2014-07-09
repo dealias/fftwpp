@@ -246,7 +246,7 @@ int main(int argc, char* argv[])
   if(Explicit) {
     ExplicitHConvolution C(n,m,f);
     for(unsigned int i=0; i < N; ++i) {
-      init(F,m,A);
+      init(F,m,2);
       seconds();
       C.convolve(F[0],F[1]);
       T[i]=seconds();
@@ -263,7 +263,7 @@ int main(int argc, char* argv[])
   
   if(Direct) {
     DirectHConvolution C(m);
-    init(F,m,A);
+    init(F,m,2);
     Complex *h=ComplexAlign(m);
     seconds();
     C.convolve(h,F[0],F[1]);
