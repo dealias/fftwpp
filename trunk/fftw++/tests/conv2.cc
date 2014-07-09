@@ -37,7 +37,6 @@ inline void init(Complex **F,
     unsigned int coffset=compact ? 0 : 1;
     unsigned int offset=Explicit ? nxp/2-mx+1 : coffset;
     unsigned int stop=2*mx-1;
-    unsigned int stopoffset=stop+(Explicit ? 2*offset-1 : coffset);
     double factor=1.0/sqrt((double) M);
     for(unsigned int s=0; s < M; ++s) {
       double S=sqrt(1.0+s);
