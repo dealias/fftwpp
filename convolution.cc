@@ -1745,28 +1745,28 @@ void multbinary(double **F, unsigned int m, unsigned int threads)
 #endif
 }
 
-// F[0][j]=F[0][j]*F[1][j]+F[2][j]*F[3][j]
+// F[0][j]=F[0][j]*F[2][j]+F[1][j]*F[3][j]
 void multbinary2(Complex **F, unsigned int m, unsigned int threads) {
   Complex* F0=F[0];
   Complex* F1=F[1];
   Complex* F2=F[2];
   Complex* F3=F[3];
   
-#ifdef __SSE2__
-  PARALLEL(for(unsigned int j=0; j < m; ++j) {
-      Complex *F0j=F0+j;
-      STORE(F0j,ZMULT(LOAD(F0j),LOAD(F1+j))
-            +ZMULT(LOAD(F2+j),LOAD(F3+j)));
-    });
-#else
+ #ifdef __SSE2__
+   PARALLEL(for(unsigned int j=0; j < m; ++j) {
+       Complex *F0j=F0+j;
+       STORE(F0j,ZMULT(LOAD(F0j),LOAD(F2+j))
+             +ZMULT(LOAD(F1+j),LOAD(F3+j)));
+     });
+ #else
   // TODO: Compare to optimized version
   PARALLEL(for(unsigned int j=0; j < m; ++j) {
-      F0[j]=F0[j]*F1[j]+F2[j]*F3[j];
+      F0[j]=F0[j]*F2[j] + F1[j]*F3[j];
     });
-#endif
+  #endif
 }
 
-// F[0][j]=F[0][j]*F[1][j]+F[2][j]*F[3][j]
+// F[0][j]=F[0][j]*F[2][j]+F[1][j]*F[3][j]
 void multbinary2(double **F, unsigned int m, unsigned int threads) {
   double* F0=F[0];
   double* F1=F[1];
@@ -1774,23 +1774,23 @@ void multbinary2(double **F, unsigned int m, unsigned int threads) {
   double* F3=F[3];
   
   unsigned int m1=m-1;
-#ifdef __SSE2__
-  PARALLEL(
-    for(unsigned int j=0; j < m1; j += 2) {
-      double *p=F0+j;
-      STORE(p,LOAD(p)*LOAD(F1+j)+LOAD(F2+j)*LOAD(F3+j));
-    }
-    );
-  if(m % 2)
-    F0[m1]=F0[m1]*F1[m1]+F2[m1]*F3[m1];
-#else
-  // TODO: Compare to optimized version
+ #ifdef __SSE2__
+   PARALLEL(
+     for(unsigned int j=0; j < m1; j += 2) {
+       double *F0j=F0+j;
+       STORE(F0j,LOAD(F0j)*LOAD(F2+j)+LOAD(F1+j)*LOAD(F3+j));
+     }
+     );
+   if(m % 2)
+     F0[m1]=F0[m1]*F2[m1]+F1[m1]*F3[m1];
+ #else
+   // TODO: Compare to optimized version
   PARALLEL(
     for(unsigned int j=0; j < m; ++j) {
-      F0[j]=F0[j]*F1[j]+F2[j]*F3[j];
+      F0[j]=F0[j]*F2[j] + F1[j]*F3[j];
     }
     );
-#endif
+  #endif
 }
 
 // F[0][j]=F[0][j]*F[1][j]+F[2][j]*F[3][j]+F[4][j]*F[5][j];
