@@ -19,8 +19,10 @@ print "program\ttype\t\tsize\tA\terror:"
 print
 
 
-mlist=[8,9,random.randint(1,16)] # problem sizes
-
+mlist=[8,9,random.randint(1,64)] # problem sizes
+# 2D and 3D direct convolutions can take forever, so we add limits:
+maxm2d=16;
+maxm3d=10;
 
 convlist=["conv", "conv2", "conv3", "cconv", "cconv2", "cconv3"]
 compactlist=["conv2", "conv3"]
@@ -39,12 +41,19 @@ for list in lists:
     if list==elist:
         typearg="-e"
         name="explicit"
-        Alist=[2]
+        Alist=[2] # values of A to be tested
     else:
-        Alist=[2,4]
+        Alist=[2,4] # values of A to be tested
     for prog in list:
         if (os.path.isfile(prog)): # check that file exists
             for mval in mlist:
+                if "2" in prog:
+                    if mval > maxm2d:
+                        mval=random.randint(1,maxm2d)
+                if "3" in prog:
+                    if mval > maxm3d:
+                        mval=random.randint(1,maxm3d)
+
                 for A in Alist:
                     command=["./"+prog,"-N1",typearg,"-d","-A"+str(A),"-m"+str(mval),"-T1"];
                     if(list == compactlist):
