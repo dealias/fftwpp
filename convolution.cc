@@ -54,19 +54,21 @@ void ImplicitConvolution::convolve(Complex **F,
     P[i]=F[i]+offset;
   
   // Backwards FFT (even indices):
-  for(unsigned int i=0; i < A; ++i)
+  for(unsigned int i=0; i < A; ++i) {
+    //std::cout << P[i] << " " << U[i] << std::endl;
     BackwardsO->fft(P[i],U[i]);
+  }
   (*pmult)(U,m,threads); // multiply even indices
 
   switch(A) {
-    case 1: premult<premult1>(P); break;
-    case 2: premult<premult2>(P); break;
-    case 3: premult<premult3>(P); break;
-    case 4: premult<premult4>(P); break;
-    default: premult<general>(P);
+  case 1: premult<premult1>(P); break;
+  case 2: premult<premult2>(P); break;
+  case 3: premult<premult3>(P); break;
+  case 4: premult<premult4>(P); break;
+  default: premult<general>(P);
   }
 
-  if(A > B) { // out-of-place FFTs: U[A-1] is free if A > B.
+  if(out_of_place) { // out-of-place FFTs: U[A-1] is free if A > B.
     Complex *W[A];
     W[A-1]=U[A-1];
     for(unsigned int i=1; i < A; ++i) 
@@ -95,11 +97,11 @@ void ImplicitConvolution::convolve(Complex **F,
 
     // Return to original space:
     for(unsigned int i=0; i < B; ++i) {
-      Complex *f=P[i];
-      Complex *u=U[i];
-      Forwards->fft(f);
-      Forwards->fft(u);
-      postmultadd(f,u);
+      Complex *fi=P[i];
+      Complex *ui=U[i];
+      Forwards->fft(fi);
+      Forwards->fft(ui);
+      postmultadd(fi,ui);
     }
   }
 }
