@@ -124,6 +124,7 @@ private:
   fft1d *Backwards,*Forwards;
   bool pointers;
   bool allocated;
+  bool out_of_place;
 public:
   void initpointers(Complex **&U, Complex *u) {
     unsigned int C=max(A,B);
@@ -138,14 +139,15 @@ public:
   }
 
   void init() {
+    out_of_place = A < B;
+
     Complex* U0=U[0];
     Complex* U1=A == 1 ? ComplexAlign(m) : U[1];
     
     BackwardsO=new fft1d(m,1,U0,U1);
-
-    if(A < B) {
-      Backwards=new fft1d(m,1,U0);
-      Forwards=new fft1d(m,-1,U0);
+    Backwards=new fft1d(m,1,U0);
+    Forwards=new fft1d(m,-1,U0);
+    if(out_of_place) {
       threads=std::min(threads,
                        std::max(Backwards->Threads(),Forwards->Threads()));
     } else {
