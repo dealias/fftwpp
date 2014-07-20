@@ -173,13 +173,7 @@ int main(int argc, char* argv[])
   double *T=new double[N];
   
   if(Implicit) {
-    
-    Complex **U=new Complex *[A];
-    for(unsigned int a=0; a < A; ++a)
-      U[a]=ComplexAlign(m);
-    // FIXME: A=1, B=1 doesn't automatically create correct U array.
-    
-    ImplicitConvolution C(m,U,A,B);
+    ImplicitConvolution C(m,A,B);
     fftw::SaveWisdom();
     cout << "threads=" << C.Threads() << endl << endl;;
 

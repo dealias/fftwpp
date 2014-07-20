@@ -189,14 +189,14 @@ public:
   // A is the number of inputs.
   // B is the number of outputs.
   ImplicitConvolution(unsigned int m,
-                      unsigned int A=2, unsigned int B=1,
-                      unsigned int threads=fftw::maxthreads)
-    : ThreadBase(threads), m(m), A(A), B(B), u(ComplexAlign(max(A,B)*m)),
-      allocated(true) {
+		      unsigned int A=2, unsigned int B=1,
+		      unsigned int threads=fftw::maxthreads)
+    : ThreadBase(threads), m(m), A(A), B(B), allocated(true) {
+    u=ComplexAlign(max(A,B)*m);
     initpointers(U,u);
     init();
   }
-  
+ 
   ~ImplicitConvolution() {
     deleteAlign(ZetaH);
     deleteAlign(ZetaL);
