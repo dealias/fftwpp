@@ -13,7 +13,19 @@ void DirectConvolution::convolve(Complex *h, Complex *f, Complex *g)
     for(unsigned int j=0; j <= i; ++j) sum += f[j]*g[i-j];
     h[i]=sum;
   }
-}       
+}
+
+void DirectConvolution::autoconvolve(Complex *h, Complex *f)
+{
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for
+#endif
+  for(unsigned int i=0; i < m; ++i) {
+    Complex sum=0.0;
+    for(unsigned int j=0; j <= i; ++j) sum += f[j]*f[i-j];
+    h[i]=sum;
+  }
+}
 
 void DirectHConvolution::convolve(Complex *h, Complex *f, Complex *g)
 {

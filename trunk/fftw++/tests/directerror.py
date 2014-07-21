@@ -22,6 +22,7 @@ mlist=[8,9,random.randint(1,64)] # problem sizes
 maxm2d=16;
 maxm3d=10;
 
+autolist=["cconv"]
 convlist=["conv", "conv2", "conv3", "cconv", "cconv2", "cconv3"]
 compactlist=["conv2", "conv3"]
 tconvlist=["tconv", "tconv2"]
@@ -29,7 +30,7 @@ elist=["cconv", "cconv2", "cconv3", "conv"]
 
 Alist=[2]
 
-lists=[convlist,compactlist,tconvlist,elist]
+lists=[convlist,compactlist,tconvlist,elist,autolist]
 
 ntests=0
 
@@ -44,6 +45,8 @@ for list in lists:
         Alist=[2] # values of A to be tested
     else:
         Alist=[2,4] # values of A to be tested
+    if list==autolist:
+        Alist=[1]
     for prog in list:
         if (os.path.isfile(prog)): # check that file exists
             for mval in mlist:
@@ -97,6 +100,7 @@ print
 if(failures == 0):
     print "OK:\tall tests passed"
 else:
+    print "*" * 80
     print "ERROR:\t"+str(failures)+" TEST(S) FAILED"
 
 sys.exit(failures)

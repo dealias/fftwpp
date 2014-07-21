@@ -1700,6 +1700,28 @@ void fft0bipad::forwards(Complex *f, Complex *u)
 
 // This multiplication routine is for binary convolutions and takes two inputs
 // of size m.
+// F[0][j] *= conj(F[0][j]);
+void mult_autocorrelation(Complex **F, unsigned int m, unsigned int threads)
+{
+  Complex* F0=F[0];
+  
+#ifdef __SSE2__
+  PARALLEL(
+    for(unsigned int j=0; j < m; ++j) {
+      Complex *p=F0+j;
+      STORE(p,ZMULT(LOAD(p),CONJ(LOAD(p))));
+    }
+    );
+#else
+  PARALLEL(
+	   for(unsigned int j=0; j < m; ++j)
+	     F0[j] *= conj(F0[j]);
+    );
+#endif
+}
+
+// This multiplication routine is for binary convolutions and takes two inputs
+// of size m.
 // F[0][j] *= F[1][j];
 void multbinary(Complex **F, unsigned int m, unsigned int threads)
 {
@@ -1717,6 +1739,26 @@ void multbinary(Complex **F, unsigned int m, unsigned int threads)
   PARALLEL(
     for(unsigned int j=0; j < m; ++j)
       F0[j] *= F1[j];
+    );
+#endif
+}
+
+// F[0][j] *= F[0][j];
+void mult_autoconvolution(Complex **F, unsigned int m, unsigned int threads)
+{
+  Complex* F0=F[0];
+  
+#ifdef __SSE2__
+  PARALLEL(
+    for(unsigned int j=0; j < m; ++j) {
+      Complex *p=F0+j;
+      STORE(p,ZMULT(LOAD(p),LOAD(p)));
+    }
+    );
+#else
+  PARALLEL(
+	   for(unsigned int j=0; j < m; ++j)
+	     F0[j] *= F0[j];
     );
 #endif
 }
