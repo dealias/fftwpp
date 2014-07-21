@@ -62,6 +62,7 @@ inline void init(Complex **F, unsigned int m, unsigned int A)
   } else {
     for(unsigned int a=0; a < A; ++a) {
       for(unsigned int k=0; k < m; ++k) {
+	//F[a][k]=(a+1)*Complex(k,k+1);
 	F[a][k]=(a+1)*Complex(k,k+1);
       }
     }
@@ -157,9 +158,9 @@ int main(int argc, char* argv[])
 
   // explicit and direct methods are only implemented for binary
   // convolutions.
-  if(!Implicit)  A=2;
+  if(!Implicit) A=2;
 
-  unsigned int np=Explicit ? n : m; // explicit version needs more
+  unsigned int np=Explicit ? n : m; // The explicit version needs more
 				    // memory.  FIXME: is this what we
 				    // actually want?
   Complex *f=ComplexAlign(A*np);
@@ -175,7 +176,7 @@ int main(int argc, char* argv[])
   if(Implicit) {
     ImplicitConvolution C(m,A,B);
     fftw::SaveWisdom();
-    cout << "threads=" << C.Threads() << endl << endl;;
+    cout << "threads=" << C.Threads() << endl << endl;
 
     multiplier *mult;
     switch(A) {
@@ -226,11 +227,16 @@ int main(int argc, char* argv[])
   
   if(Direct) {
     DirectConvolution C(m);
-    init(F,m,2);
+    if(A % 2 == 0 && A > 2)
+      A=2;
+    init(F,m,A);
     Complex *h=ComplexAlign(m);
     seconds();
-    C.convolve(h,F[0],F[1]);
-    T[0]=seconds();  
+    if(A % 2 == 0)
+      C.convolve(h,F[0],F[1]);
+    if(A == 1)
+      C.autoconvolve(h,F[0]);
+    T[0]=seconds();
     
     timings("Direct",m,T,1);
 
@@ -261,13 +267,36 @@ int main(int argc, char* argv[])
     double error=0.0;
     cout << endl;
     double norm=0.0;
+
+    bool testok=false;
+
+    // Exact solutions for test case.
+    if(A %2 == 0) {
+      testok=true;
+      for(unsigned long long k=0; k < m; k++) {
+	h[k]=iF*iG*(k+1)*pow(E,k*I);
+	//  h[k]=iF*iG*(k*(k+1)/2.0*(k-(2*k+1)/3.0));
+      }
+    }
+
+    // autoconvolution of f[k]=k
+    if(A == 1) {
+      testok=true;
+      for(unsigned long long k=0; k < m; k++)
+	h[k]=k*(0.5*k*(k+1)) - k*(k+1)*(2*k+1)/6.0;
+    }
+    
+    if(!testok) {
+      cout << "ERROR: no test case for A="<<A<<endl;
+      exit(1);
+      
+    }      
+
     for(unsigned long long k=0; k < m; k++) {
-      // exact solution for test case.
-      h[k]=iF*iG*(k+1)*pow(E,k*I);
-//      h[k]=iF*iG*(k*(k+1)/2.0*(k-(2*k+1)/3.0));
       error += abs2(h0[k]-h[k]);
       norm += abs2(h[k]);
     }
+
     if(norm > 0) error=sqrt(error/norm);
     cout << "error=" << error << endl;
     if (error > 1e-12)

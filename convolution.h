@@ -93,7 +93,8 @@ typedef void realmultiplier(double **, unsigned int m, unsigned int threads);
   
 // Sample multiplier for binary convolutions for use with
 // function-pointer convolutions.
-// F[0][j] *= F[1][j]
+multiplier mult_autoconvolution;
+multiplier mult_autocorrelation;
 multiplier multbinary;
 multiplier multbinary2;
 multiplier multbinary3;
@@ -206,9 +207,9 @@ public:
     
     delete ForwardsO;
     delete BackwardsO;    
-    if(A < B) {
+    if(out_of_place) {
       delete Forwards;
-      delete Backwards; 
+      delete Backwards;
     }
     
   }
@@ -217,12 +218,22 @@ public:
   // shifted by offset (contents not preserved).
   void convolve(Complex **F, multiplier *pmult, unsigned int offset=0);
   
+  void autoconvolve(Complex *f) {
+    Complex *F[]={f};
+    convolve(F,mult_autoconvolution);
+  }
+
+  void autocorrelate(Complex *f) {
+    Complex *F[]={f};
+    convolve(F,mult_autocorrelation);
+  }
+
   // Binary convolution:
   void convolve(Complex *f, Complex *g) {
     Complex *F[]={f,g};
     convolve(F,multbinary);
   }
-  
+    
   template<class T>
   inline void premult(Complex **F, unsigned int k, Vec& Zetak);
 
