@@ -1,0 +1,12 @@
+For release:
+
+speed test out-of-place conv
+finish mpi transpose when P does not divide N
+MPI speed test
+wrappers
+update documentation
+
+Future:
+finish MPI ffts
+
+consider FFTW_DESTROY_INPUT 
