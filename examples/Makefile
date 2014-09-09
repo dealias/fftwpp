@@ -20,19 +20,24 @@ endif
 
 CXXFLAGS += $(DEFS) -I$(IDIR)
 
-ifeq ($(strip $(CPLUS_INCLUDE_PATH)),)
+ifeq ($(strip $(FFTW_INCLUDE_PATH)),)
 else
-CXXFLAGS +=-I$(CPLUS_INCLUDE_PATH)
+CXXFLAGS+=-I$(FFTW_INCLUDE_PATH)
 endif
-ifeq ($(strip $(LIBRARY_PATH)),)
+
+LDFLAGS=
+ifeq ($(strip $(FFTW_LIB_PATH)),)
 else
-CXXFLAGS +=-I$(LIBRARY_PATH)
+LDFLAGS+=-L$(FFTW_LIB_PATH)
 endif
+
+
+
+
+#LDFLAGS=-lfftw3_threads -lfftw3 -lm
+LDFLAGS+=-lfftw3_omp -lfftw3 -lm
 
 MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
-
-#LDFLAGS= -lfftw3_threads -lfftw3 -lm
-LDFLAGS= -lfftw3_omp -lfftw3 -lm
 
 vpath %.cc ../
 
