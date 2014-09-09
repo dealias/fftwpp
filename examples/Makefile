@@ -20,14 +20,12 @@ endif
 
 CXXFLAGS += $(DEFS) -I$(IDIR)
 
-ifeq ($(strip $(FFTW_INCLUDE_PATH)),)
-else
+ifneq ($(strip $(FFTW_INCLUDE_PATH)),)
 CXXFLAGS+=-I$(FFTW_INCLUDE_PATH)
 endif
 
 LDFLAGS=
-ifeq ($(strip $(FFTW_LIB_PATH)),)
-else
+ifneq ($(strip $(FFTW_LIB_PATH)),)
 LDFLAGS+=-L$(FFTW_LIB_PATH)
 endif
 
