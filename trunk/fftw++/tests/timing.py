@@ -202,7 +202,6 @@ def main(argv):
         if not dryrun:
             os.system("mkdir -p "+outdir)
             os.system("rm -f "+outdir+"/"+outfile)
-            
         cmd=["./"+str(p)]
         if(runtype == "explicit"):
             cmd.append("-e")
@@ -212,6 +211,9 @@ def main(argv):
             cmd.append("-i")
         if(Tset):
             cmd.append("-T"+T)
+
+        if not A == "":
+            cmd.append(A);
             
 
         print cmd

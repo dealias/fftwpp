@@ -29,6 +29,8 @@ int main(int argc, char* argv[])
   fftw::maxthreads=get_max_threads();
   int r=-1; // which of the 8 options do we do?  r=-1 does all of them.
 
+  unsigned int stats=0; // Type of statistics used in timing test.
+
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
@@ -37,7 +39,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"hN:m:x:y:n:T:r:");
+    int c = getopt(argc,argv,"hN:m:x:y:n:T:S:r:");
     if (c == -1) break;
 		
     switch (c) {
@@ -60,6 +62,9 @@ int main(int argc, char* argv[])
       break;
     case 'T':
       fftw::maxthreads=max(atoi(optarg),1);
+      break;
+    case 'S':
+      stats=atoi(optarg);
       break;
     case 'r':
       r=atoi(optarg);
@@ -98,7 +103,7 @@ int main(int argc, char* argv[])
       Backward2.fftNormalized(f);
       T[i]=seconds();
     }
-    timings("fft2d, in-place",mx,T,N);
+    timings("fft2d, in-place",mx,T,N,stats);
   }
   
    if(r == -1 || r == 1) { // conventional FFT, out-of-place
@@ -113,7 +118,7 @@ int main(int argc, char* argv[])
       Backward2.fftNormalized(g,f);
       T[i]=seconds();
     }
-    timings("fft2d, out-of-place",mx,T,N);
+    timings("fft2d, out-of-place",mx,T,N,stats);
   }
 
   if(r == -1 || r == 2)  { // using the transpose, in-place
@@ -140,7 +145,7 @@ int main(int argc, char* argv[])
       Backwardy.fftNormalized(f);
       T[i]=seconds();
     }
-    timings("transpose and mfft, in-place",mx,T,N);
+    timings("transpose and mfft, in-place",mx,T,N,stats);
   }
 
   if(r == -1 || r == 3)  { // using the transpose, out-of-place
@@ -167,7 +172,7 @@ int main(int argc, char* argv[])
       Backwardy.fftNormalized(g,f);
       T[i]=seconds();
     }
-    timings("transpose and mfft, out-of-place",mx,T,N);
+    timings("transpose and mfft, out-of-place",mx,T,N,stats);
   }
   
    if(r == -1 || r == 4) { // full transpose, in-place
@@ -197,7 +202,7 @@ int main(int argc, char* argv[])
       Backwardy.fftNormalized(f);
       T[i]=seconds();
     }
-    timings("2 transposes and mfft, in-place",mx,T,N);
+    timings("2 transposes and mfft, in-place",mx,T,N,stats);
   }
 
    if(r == -1 || r == 5) { // full transpose, out-of-place
@@ -228,7 +233,7 @@ int main(int argc, char* argv[])
       Backwardy.fftNormalized(g,f);
       T[i]=seconds();
     }
-    timings("2 transposes and mfft, out-of-place",mx,T,N);
+    timings("2 transposes and mfft, out-of-place",mx,T,N,stats);
   }
   
   if(r == -1 || r == 6)  { // using strides, in-place
@@ -250,7 +255,7 @@ int main(int argc, char* argv[])
       Backwardy.fftNormalized(f);
       T[i]=seconds();
     }
-    timings("strided mfft in-place",mx,T,N);
+    timings("strided mfft in-place",mx,T,N,stats);
   }
 
 
@@ -273,7 +278,7 @@ int main(int argc, char* argv[])
       Backwardy.fftNormalized(g,f);
       T[i]=seconds();
     }
-    timings("strided mfft out-of-place",mx,T,N);
+    timings("strided mfft out-of-place",mx,T,N,stats);
   }
   
   /*

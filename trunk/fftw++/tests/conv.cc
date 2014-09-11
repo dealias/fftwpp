@@ -114,6 +114,9 @@ int main(int argc, char* argv[])
   B=1; // Number of outputs
   unsigned int Bcheck=0; // Which output to check
 
+  unsigned int stats=0; // Type of statistics used in timing test.
+
+
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
@@ -122,7 +125,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptM:A:B:b:N:m:n:T:");
+    int c = getopt(argc,argv,"hdeiptM:A:B:b:N:m:n:T:S:");
     if (c == -1) break;
 		
     switch (c) {
@@ -168,6 +171,9 @@ int main(int argc, char* argv[])
         break;
       case 'T':
         fftw::maxthreads=max(atoi(optarg),1);
+        break;
+      case 'S':
+        stats=atoi(optarg);
         break;
       case 'h':
       default:
@@ -233,7 +239,7 @@ int main(int argc, char* argv[])
       T[i]=seconds();
     }
 
-    timings("Implicit",m,T,N);
+    timings("Implicit",m,T,N,stats);
     
     if(m < 100) 
       for(unsigned int i=0; i < m; i++) cout << F[Bcheck][i] << endl;

@@ -81,6 +81,8 @@ int main(int argc, char* argv[])
   unsigned int A=2; // number of inputs
   unsigned int B=1; // number of outputs
   
+  unsigned int stats=0; // Type of statistics used in timing test.
+
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
@@ -89,7 +91,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptA:B:M::N:m:n:T:");
+    int c = getopt(argc,argv,"hdeiptA:B:M::N:m:n:S:T:");
     if (c == -1) break;
 		
     switch (c) {
@@ -131,6 +133,9 @@ int main(int argc, char* argv[])
         break;
       case 'T':
         fftw::maxthreads=max(atoi(optarg),1);
+        break;
+      case 'S':
+        stats=atoi(optarg);
         break;
       case 'h':
       default:
@@ -196,8 +201,8 @@ int main(int argc, char* argv[])
       //C.convolve(F[0],F[1]);
       T[i]=seconds();
     }
-    
-    timings("Implicit",m,T,N);
+
+    timings("Implicit",m,T,N,stats);
 
     if(m < 100) 
       for(unsigned int i=0; i < m; i++) cout << F[0][i] << endl;
@@ -216,7 +221,7 @@ int main(int argc, char* argv[])
       T[i]=seconds();
     }
 
-    timings("Explicit",m,T,N);
+    timings("Explicit",m,T,N,stats);
 
     if(m < 100) 
       for(unsigned int i=0; i < m; i++) cout << F[1][i] << endl;
