@@ -62,6 +62,8 @@ int main(int argc, char* argv[])
 {
   fftw::maxthreads=get_max_threads();
 
+  unsigned int stats=0; // Type of statistics used in timing test.
+
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
@@ -70,7 +72,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptA:M:N:m:x:y:n:T:");
+    int c = getopt(argc,argv,"hdeiptA:M:N:m:x:y:n:T:S:");
     if (c == -1) break;
 		
     switch (c) {
@@ -116,6 +118,9 @@ int main(int argc, char* argv[])
         break;
       case 'T':
         fftw::maxthreads=max(atoi(optarg),1);
+        break;
+      case 'S':
+        stats=atoi(optarg);
         break;
       case 'h':
       default:
@@ -169,7 +174,7 @@ int main(int argc, char* argv[])
       T[i]=seconds();
     }
     
-    timings("Implicit",mx,T,N);
+    timings("Implicit",mx,T,N,stats);
     
     if(Direct) {
       for(unsigned int i=0; i < mx; i++) 
@@ -199,7 +204,7 @@ int main(int argc, char* argv[])
       T[i]=seconds();
     }
     
-    timings(Pruned ? "Pruned" : "Explicit",mx,T,N);
+    timings(Pruned ? "Pruned" : "Explicit",mx,T,N,stats);
 
     if(Direct) {
       for(unsigned int i=0; i < mx; i++) 

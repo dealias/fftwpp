@@ -38,6 +38,10 @@ inline void usage(int n, bool test=false, bool Explicit=true,
   std::cerr << "-N\t\t number of iterations" << std::endl;
   std::cerr << "-M\t\t number of data blocks in dot product" << std::endl;
   std::cerr << "-m\t\t size" << std::endl;
+  std::cerr << "-S<int>\t\t stats used in timing test: " 
+	    << "0=mean, 1=min, 2=max, 3=median, "
+	    << "4=90th percentile, 5=80th percentile,65=50th percentile" 
+	    << std::endl;
   if(n > 1) {
     std::cerr << "-x\t\t x size" << std::endl;
     std::cerr << "-y\t\t y size" << std::endl;
