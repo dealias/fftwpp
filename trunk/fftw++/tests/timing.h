@@ -135,8 +135,9 @@ inline void stdev(double *T, unsigned int N, double mean,
     break;
   case MEDIAN:
     {
-      sigmaL=0.0;
-      sigmaH=0.0;
+      // Return 68% confidence intervals
+      sigmaL=mean-T[(int)ceil(N*(0.19))];
+      sigmaH=T[(int)ceil(N*0.81)]-mean;
     }
     break;
   case P90:
