@@ -21,7 +21,7 @@ def main(argv):
     -A<quoted arg list for timed program>
     -r<implicit/explicit/pruned/fft>
     -R<ram in gigabytes> 
-    -d
+    -d dry run
     -o<output file name>
     -D<outdir>
     -o<outfile>
