@@ -1133,8 +1133,8 @@ public:
 				    (fftw_complex *) out,NULL,stride,dist/2+1,
 				    effort);
     return fftw_plan_many_dft_r2c(1,&n,M,
-                                  (double *) in,NULL,stride,dist,
-                                  (fftw_complex *) out,NULL,stride,dist/2,
+                                  (double *) in,NULL,stride,2*dist,
+                                  (fftw_complex *) out,NULL,stride,dist,
                                   effort);
   }
   
