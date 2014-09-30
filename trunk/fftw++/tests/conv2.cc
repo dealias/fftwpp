@@ -212,7 +212,7 @@ int main(int argc, char* argv[])
   }
   
   if(Explicit) {
-    ExplicitHConvolution2 C(nx,ny,mx,my,f,2*A,Pruned);
+    ExplicitHConvolution2 C(nx,ny,mx,my,f,A/2,Pruned);
     
     for(unsigned int i=0; i < N; ++i) {
       init(F,mx,ny,nxp,nyp,A,true);
