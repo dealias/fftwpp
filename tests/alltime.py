@@ -9,7 +9,17 @@ import os
 
 
 def main(argv):
-    usage='Usage: FIXME' 
+    usage = '''
+    Usage:
+    \nalltime.py
+    -T<number of threads> 
+    -R<ram in gigabytes> 
+    -d dry run
+    -D<outdir>
+    -o<outfile>
+    -r<implicit/explicit/pruned/fft>
+    -A<quoted arg list for timed program>
+    '''
 
     dryrun=False
     r=0.0
@@ -17,6 +27,8 @@ def main(argv):
     nthreads=1
     r="implicit"
     out=""
+    A=""
+    runtype=""
 
     try:
         opts, args = getopt.getopt(argv,"dp:T:r:R:o:D:g:")
@@ -37,19 +49,39 @@ def main(argv):
             outdir=str(arg)
         elif opt in ("-g"):
             rname=str(arg)
+        elif opt in ("-A"):
+            A+=str(arg)
+        elif opt in ("-r"):
+            runtype=str(arg)
 
+    
     progs=[["cconv" , "conv", "tconv"], ["cconv2","conv2","tconv2"],["cconv3","conv3"]]
     ab=[[6,20],[6,10],[2,6]] # problem size limits
-
+    
+    if runtype == "explicit":
+        progs = [["cconv","conv"], ["cconv2","conv2"],["cconv3"]]
+    if runtype == "pruned":
+        progs = [["cconv2","conv2"],["cconv3"]]
+        ab=[[6,10],[2,6]] # problem size limits
+    if out == "":
+        out="implicit"
+        if runtype == "explicit":
+            out="explicit"
+        if runtype == "pruned":
+            out="pruned"
     i=0
-    while(i<3):
+    while(i<len(progs)):
         a=ab[i][0]
         b=ab[i][1]
         cmd="./timing.py -a"+str(a)+" -b"+str(b)
         if threadset:
-            cmd+=" -T"+str(nthreads)
+            cmd += " -T"+str(nthreads)
         if out != "":
-            cmd+=" -o"+out
+            cmd += " -o"+out
+        if runtype != "":
+            cmd += " -r"+runtype
+        if A != "":
+            cmd += " -o"+out
         for p in progs[i]:
             pcmd=cmd+" -p "+p
             print(pcmd)
