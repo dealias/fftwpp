@@ -11,7 +11,22 @@ import re # regexp package
 
 
 def main(argv):
-    usage='Usage: \ntimings.py\n -a<start>\n -b<stop>\n -p<cconv,cconv2,cconv3,conv,conv2,conv3,tconv,tconv2,pcconv,pcconv2,pcconv3>\n -T<number of threads> -A<quoted arg list for timed program>\n -r<implicit/explicit/pruned/fft>\n -R<ram in gigabytes> -d -o<output file name>\n -D<outdir>\n -o<outfile>\n -<grep string>' 
+    usage = '''
+    Usage:
+    \ntimings.py
+    -a<start>
+    -b<stop>
+    -p<cconv,cconv2,cconv3,conv,conv2,conv3,tconv,tconv2,pcconv,pcconv2,pcconv3>
+    -T<number of threads> 
+    -A<quoted arg list for timed program>
+    -r<implicit/explicit/pruned/fft>
+    -R<ram in gigabytes> 
+    -d
+    -o<output file name>
+    -D<outdir>
+    -o<outfile>
+    -<grep string>
+    '''
 
     dryrun=False
     bset=0
