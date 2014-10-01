@@ -102,6 +102,10 @@ def main(argv):
     else:
         outfile=out
 
+    hermitian=False
+    ternary=False
+
+
     if p == "cconv":
         if RAM != 0:
             b=min(int(floor(log(RAM/4)/log(2))),b)
@@ -126,6 +130,7 @@ def main(argv):
         if outdir == "": outdir="timings3c"
 
     if p == "conv":
+        hermitian=True
         if RAM != 0:
             b=min(int(floor(log(RAM/6)/log(2))),b)
             b=min(b,14) # because we aren't crazy
@@ -134,6 +139,7 @@ def main(argv):
             print p+" has no pruned option"
             dorun=0
     if p == "conv2":
+        hermitian=True
         if RAM != 0:
             if runtype == "implicit":
                 b=min(int(floor(0.5*log(RAM/96)/log(2))),b)
@@ -141,6 +147,7 @@ def main(argv):
                 b=min(int(floor(log(RAM/8/3**2)/log(2)/2)),b)
         if outdir == "": outdir="timings2r"
     if p == "conv3":
+        hermitian=True
         if RAM != 0:
             b=min(int(floor(log(RAM/192)/log(2)/3)),b)
         if outdir == "": outdir="timings3r"
@@ -149,6 +156,7 @@ def main(argv):
             dorun=0
 
     if p == "tconv":
+        ternary=True
         if RAM != 0:
             b=int(floor(log(RAM/6)/log(2)))
             b=min(b,14) # because we aren't crazy
@@ -157,6 +165,7 @@ def main(argv):
             print p+" has no pruned option"
             dorun=0
     if p == "tconv2":
+        ternary=True
         if RAM != 0:
             if runtype == "implicit":
                 b=int(floor(log(RAM/(8*12))/(2*log(2))))
@@ -233,10 +242,17 @@ def main(argv):
 
         print cmd
 
-
         for i in range(a,b+1):
-            m=str(int(pow(2,i)))
+            if not hermitian or runtype == "implicit": 
+                m=str(int(pow(2,i)))
+            else:
+                if not ternary:
+                    m=str(int((pow(2,i+1)+2)/3))
+                else:
+                    m=str(int((pow(2,i+2)+3)/4))
+                    
             print str(i)+" m="+str(m)
+            
 
             mcmd=cmd+["-m"+str(m)]
 
