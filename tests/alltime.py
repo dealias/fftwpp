@@ -73,11 +73,17 @@ def main(argv):
     while(i<len(progs)):
         a=ab[i][0]
         b=ab[i][1]
-        cmd="./timing.py -a"+str(a)+" -b"+str(b)
+        cmd = "./timing.py"
+        if r == 0.0:
+            cmd += " -a" + str(a)+" -b"+str(b)
+        else:
+            cmd += " -R"+str(r)
         if threadset:
             cmd += " -T"+str(nthreads)
         if out != "":
             cmd += " -o"+out
+        if runtype != "":
+            cmd += " -r"+runtype
         if runtype != "":
             cmd += " -r"+runtype
         if A != "":
