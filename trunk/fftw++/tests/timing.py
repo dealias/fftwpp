@@ -109,7 +109,7 @@ def main(argv):
     if p == "cconv":
         if RAM != 0:
             b=min(int(floor(log(RAM/4)/log(2))),b)
-            b=min(b,14) # because we aren't crazy
+            b=min(b,20) # because we aren't crazy
         if outdir == "": outdir="timings1c"
         if(runtype == "pruned"):
             print p+" has no pruned option"
@@ -133,7 +133,7 @@ def main(argv):
         hermitian=True
         if RAM != 0:
             b=min(int(floor(log(RAM/6)/log(2))),b)
-            b=min(b,14) # because we aren't crazy
+            b=min(b,20) # because we aren't crazy
         if outdir == "": outdir="timings1r"
         if(runtype == "pruned"):
             print p+" has no pruned option"
@@ -159,7 +159,7 @@ def main(argv):
         ternary=True
         if RAM != 0:
             b=int(floor(log(RAM/6)/log(2)))
-            b=min(b,14) # because we aren't crazy
+            b=min(b,20) # because we aren't crazy
         if outdir == "": outdir="timings1t"
         if(runtype == "pruned"):
             print p+" has no pruned option"
