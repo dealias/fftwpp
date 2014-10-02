@@ -22,7 +22,8 @@ def main(argv):
     '''
 
     dryrun=False
-    r=0.0
+    R=0
+
     threadset=False
     nthreads=1
     r="implicit"
@@ -40,7 +41,7 @@ def main(argv):
             threadset=True
             ntrheads=int(arg)
         elif opt in ("-R"):
-            r=float(arg)
+            R=float(arg)
         elif opt in ("-d"):
             dryrun=True
         elif opt in ("-o"):
@@ -54,7 +55,6 @@ def main(argv):
         elif opt in ("-r"):
             runtype=str(arg)
 
-    
     progs=[["cconv" , "conv", "tconv"], ["cconv2","conv2","tconv2"],["cconv3","conv3"]]
     ab=[[6,20],[6,10],[2,6]] # problem size limits
     
@@ -74,14 +74,14 @@ def main(argv):
         a=ab[i][0]
         b=ab[i][1]
         cmd = "./timing.py"
-        if r == 0.0:
-            cmd += " -a" + str(a)+" -b"+str(b)
+        if R == 0.0:
+            cmd += " -a " + str(a)+" -b "+str(b)
         else:
-            cmd += " -R"+str(r)
+            cmd += " -R "+str(R)
         if threadset:
             cmd += " -T"+str(nthreads)
         if out != "":
-            cmd += " -o"+out
+            cmd += " -o "+out
         if runtype != "":
             cmd += " -r"+runtype
         if runtype != "":
