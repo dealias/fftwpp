@@ -247,9 +247,9 @@ def main(argv):
                 m=str(int(pow(2,i)))
             else:
                 if not ternary:
-                    m=str(int((pow(2,i+1)+2)/3))
+                    m=str(int(floor((pow(2,i+1)+2)/3)))
                 else:
-                    m=str(int((pow(2,i+2)+3)/4))
+                    m=str(int(floor((pow(2,i+2)+3)/4)))
                     
             print str(i)+" m="+str(m)
             
