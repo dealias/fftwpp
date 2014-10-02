@@ -24,8 +24,7 @@ def main(argv):
     dryrun=False
     R=0
 
-    threadset=False
-    nthreads=1
+    nthreads=0
     r="implicit"
     out=""
     A=""
@@ -38,8 +37,7 @@ def main(argv):
         sys.exit(2)
     for opt, arg in opts:
         if opt in ("-T"):
-            threadset=True
-            ntrheads=int(arg)
+            nthreads=int(arg)
         elif opt in ("-R"):
             R=float(arg)
         elif opt in ("-d"):
@@ -78,7 +76,7 @@ def main(argv):
             cmd += " -a " + str(a)+" -b "+str(b)
         else:
             cmd += " -R "+str(R)
-        if threadset:
+        if not nthreads == 0 :
             cmd += " -T"+str(nthreads)
         if out != "":
             cmd += " -o "+out
