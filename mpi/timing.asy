@@ -38,6 +38,7 @@ if(gtype == "speeduplog") {
 }
 if(gtype == "mflops") {
   scale(Log,Log);
+  scale(Log,Linear);
   size(300,400,IgnoreAspect);
 }
 
@@ -97,6 +98,8 @@ if(name == "transpose") d=0;
 
 real ymin=infinity, ymax=-infinity;
 
+string[] runnames;
+
 if(runs == "") runs=getstring("files");
 string run;
 n=-1;
@@ -108,6 +111,7 @@ while(flag) {
   run=substr(runs,lastpos,pos-lastpos);
   if(flag) {
     write(run);
+    runnames.push(run);
     file fin=input(run).line();
     real[][] a=fin.dimension(0,0);
     a=transpose(a);
@@ -180,8 +184,7 @@ if(gtype == "time" || gtype == "mflops") {
       ymin=min(ymin,ii);
       ymax=max(ymax,ii);
     }
-    
-    
+
     if(drawerrorbars && gtype == "time")
       errorbars(mi[p],i[p],0*mi[p],hi[p],0*mi[p],li[p],barPen(p));
     guide the_graph=graph(mi[p],i[p]);
@@ -193,7 +196,7 @@ if(gtype == "time" || gtype == "mflops") {
     }
       
     draw(the_graph,linePen(p),
-	 Label(myleg ? legends[p] : runnames[p],Lp+linePen(p)),mark1);
+    	 Label(myleg ? legends[p] : texify(runnames[p]),Lp+linePen(p)),mark1);
   }
 
   xaxis("$"+Nm+"$",BottomTop,LeftTicks);
@@ -244,7 +247,8 @@ if(gtype == "time" || gtype == "mflops") {
 if(gtype == "speedup") {
 
   int runples=getint("how many runs are compared at once");
-
+  string compname="";
+  
   int gnum=-1;
   bool plotme;
   for(int p=0; p < nn; ++p) {
@@ -253,6 +257,7 @@ if(gtype == "speedup") {
       plotme=true;
     } else {
       plotme=false;
+      compname=runnames[p];
     }
     
     int basep=p - (p % runples);
@@ -272,9 +277,12 @@ if(gtype == "speedup") {
 	  i[p][b]=0.0;
       }
 
-      marker mark1=marker(scale(0.6mm)*polygon(3+gnum),Draw(linePen(gnum)+solid));
+      marker mark1=marker(scale(0.6mm)*polygon(3+gnum),
+			  Draw(linePen(gnum)+solid));
       draw(graph(mi[p],i[p],i[p] > 0),Pentype(gnum)+linePen(gnum),
-	   Label(myleg ? legends[gnum] : runnames[p],linePen(gnum)+Lp),mark1);
+	   Label(myleg ? legends[gnum] :
+		 texify(runnames[p])+" vs "+texify(compname),
+		 linePen(gnum)+Lp),mark1);
     }
     
   }
@@ -370,9 +378,18 @@ if(gtype == "scaling") {
   if(myleg)
     xaxis("Number of cores",BottomTop,LeftTicks(new string(real x) {
 	  return legends[round(x)];}));
-  else
-    xaxis(BottomTop);
+  else {
+    xaxis("Number of cores",
+	  BottomTop,LeftTicks(new string(real x) {
+	      return runnames[round(x)];
+	    })
+	  );
 
+    //frame label;
+    //label(label,rotate(angle)*TeXify(runnames),(0,0),N);
+    //xaxis(BottomTop);
+  }
+    
   label("Strong scaling: "+name,point(N),3N);
 
   yequals(1,grey);
