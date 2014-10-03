@@ -31,7 +31,7 @@ def main(argv):
     runtype=""
 
     try:
-        opts, args = getopt.getopt(argv,"dp:T:r:R:o:D:g:")
+        opts, args = getopt.getopt(argv,"dp:T:r:R:o:D:g:A:")
     except getopt.GetoptError:
         print usage
         sys.exit(2)
@@ -67,6 +67,8 @@ def main(argv):
             out="explicit"
         if runtype == "pruned":
             out="pruned"
+    print A
+
     i=0
     while(i<len(progs)):
         a=ab[i][0]
@@ -85,7 +87,7 @@ def main(argv):
         if runtype != "":
             cmd += " -r"+runtype
         if A != "":
-            cmd += " -o"+out
+            cmd += " -A\" "+A +"\""
         for p in progs[i]:
             pcmd=cmd+" -p "+p
             print(pcmd)
