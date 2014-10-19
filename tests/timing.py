@@ -38,7 +38,7 @@ def main(argv):
     A=""
     a=6
     b=0
-    out="implicit"
+    out=""
     runtype="implicit"
     RAM=0
     outdir=""
@@ -91,16 +91,6 @@ def main(argv):
     # determines the problem size on its own.
     if (b == 0 and RAM != 0):
         b=sys.maxint
-
-    if out == "":
-        if runtype == "implicit":
-            outfile="implicit"
-        if runtype == "explicit":
-            outfile="explicit"
-        if runtype == "pruned":
-            outfile="pruned"
-    else:
-        outfile=out
 
     hermitian=False
     ternary=False
@@ -195,6 +185,12 @@ def main(argv):
             else:
                 b=min(int(floor(log(RAM/16/2**3)/log(2)/3)),b)
         if outdir == "": outdir="timings3cp"
+    if p == "c2cfft1":
+        if RAM != 0:
+            b=min(int(floor(0.5*log(RAM/64)/log(2))),b)
+        if outdir == "": outdir="timings1c2c"
+        runtype="fft"
+        rname="fft"
     if p == "c2cfft2":
         if RAM != 0:
             b=min(int(floor(0.5*log(RAM/64)/log(2))),b)
@@ -207,6 +203,17 @@ def main(argv):
         print usage
         sys.exit(2)
 
+    if out == "":
+        if runtype == "implicit":
+            outfile="implicit"
+        if runtype == "explicit":
+            outfile="explicit"
+        if runtype == "pruned":
+            outfile="pruned"
+        if runtype == "fft":
+            outfile="fft"
+    else:
+        outfile=out
 
     if(dorun == 1):
         if RAM != 0:
