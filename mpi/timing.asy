@@ -381,7 +381,7 @@ if(gtype == "scaling") {
   else {
     xaxis("Number of cores",
 	  BottomTop,LeftTicks(new string(real x) {
-	      return runnames[round(x)];
+	      return texify(runnames[round(x)]);
 	    })
 	  );
 
