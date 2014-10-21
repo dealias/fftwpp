@@ -30,8 +30,8 @@ def main(argv):
 
     dryrun=False
     bset=0
-    dorun=1
-    Tset=0
+    dorun=True
+    Tset=False
     T=1
     p=""
     cargs=""
@@ -54,7 +54,7 @@ def main(argv):
         if opt in ("-p"):
             p=arg
         if opt in ("-T"):
-            Tset=1
+            Tset=True
             cargs+=" -T"+str(arg)
             T=arg
         elif opt in ("-a"):
@@ -103,7 +103,7 @@ def main(argv):
         if outdir == "": outdir="timings1c"
         if(runtype == "pruned"):
             print p+" has no pruned option"
-            dorun=0
+            dorun=False
     if p == "cconv2":
         if RAM != 0:
             if runtype == "implicit":
@@ -127,7 +127,7 @@ def main(argv):
         if outdir == "": outdir="timings1r"
         if(runtype == "pruned"):
             print p+" has no pruned option"
-            dorun=0
+            dorun=False
     if p == "conv2":
         hermitian=True
         if RAM != 0:
@@ -143,7 +143,7 @@ def main(argv):
         if outdir == "": outdir="timings3r"
         if(runtype != "implicit"):
             print p+" has no "+r+" option"
-            dorun=0
+            dorun=False
 
     if p == "tconv":
         ternary=True
@@ -153,7 +153,7 @@ def main(argv):
         if outdir == "": outdir="timings1t"
         if(runtype == "pruned"):
             print p+" has no pruned option"
-            dorun=0
+            dorun=False
     if p == "tconv2":
         ternary=True
         if RAM != 0:
@@ -170,7 +170,7 @@ def main(argv):
         outdir="timings1cp"
         if(runtype == "pruned"):
             print p+" has no pruned option"
-            dorun=0
+            dorun=False
     if p == "pcconv2":
         if RAM != 0:
             if runtype == "implicit":
@@ -215,7 +215,7 @@ def main(argv):
     else:
         outfile=out
 
-    if(dorun == 1):
+    if dorun:
         if RAM != 0:
             print "max problem size is "+str(2**b)
 
@@ -280,7 +280,8 @@ def main(argv):
                         #print line
                         re.search(rname,line)
                         if re.search(rname, line) is not None:
-                            #print outlines[itline+1]
+                            print outlines[itline]
+                            print outlines[itline+1]
                             dataline=outlines[itline+1]
                             itline=len(outlines)
                         itline += 1
