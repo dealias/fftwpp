@@ -62,6 +62,35 @@ inline void usageB(bool littleb=true)
     std::cerr << "-b\t\t which output block to check" << std::endl;
 }
 
+void fft_usage(int dim)
+{
+  std::cout << "Usage:\n"
+	    << "-h\thelp\n"
+	    << "-T\tnumber of threads\n"
+	    << "-N\tnumber of iterations\n"
+	    << "-m\tsize\n"
+	    << "-m\tsize\n";
+  
+  std::cout << "-r\ttype of run\n"
+	    << "\t\tr=-1: all runs\n"
+	    << "\t\tr=0: in-place\n"
+	    << "\t\tr=1: out-of-place\n";
+  if(dim > 1)
+    std::cout << "\t\tr=2: transpose, in-place\n"
+	      << "\t\tr=3: transpose, out-of-place\n"
+	      << "\t\tr=4: full transpose, in-place\n"
+	      << "\t\tr=5: full transpose, out-of-place\n"
+	      << "\t\tr=6: strided, in-place\n"
+	      << "\t\tr=7: strided, out-of-place\n";
+
+  std::cout << "-x\tsize in first dimension\n";
+  if(dim > 1)
+    std::cout << "-y\tsize in second dimension\n";
+  if(dim > 2)
+    std::cout << "-z\tsize in third dimension\n";
+  std::cout << std::endl;
+}
+
 unsigned int cpadding(unsigned int m)
 {
   unsigned int n=2*m;

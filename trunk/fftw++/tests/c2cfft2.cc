@@ -71,7 +71,8 @@ int main(int argc, char* argv[])
       break;
     case 'h':
     default:
-      usage(2);
+      fft_usage(2);
+      exit(0);
     }
   }
 
