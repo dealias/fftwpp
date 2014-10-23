@@ -38,7 +38,7 @@ MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
 
 vpath %.cc ../
 
-FILES=conv cconv conv2 cconv2 conv3 cconv3 tconv tconv2 c2cfft2
+FILES=conv cconv conv2 cconv2 conv3 cconv3 tconv tconv2 c2cfft2 c2cfft1
 
 FFTW=fftw++
 EXTRA=$(FFTW) convolution explicit direct
@@ -76,6 +76,10 @@ tconv2: tconv2.o $(EXTRA:=.o)
 c2cfft2: c2cfft2.o $(EXTRA:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
+c2cfft1: c2cfft1.o $(EXTRA:=.o)
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
+.PHONY: clean
 clean:  FORCE
 	rm -rf $(ALL) $(ALL:=.o) $(ALL:=.d)
 
