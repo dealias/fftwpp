@@ -68,7 +68,6 @@ void fft_usage(int dim)
 	    << "-h\thelp\n"
 	    << "-T\tnumber of threads\n"
 	    << "-N\tnumber of iterations\n"
-	    << "-m\tsize\n"
 	    << "-m\tsize\n";
   
   std::cout << "-r\ttype of run\n"

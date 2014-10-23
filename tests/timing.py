@@ -280,8 +280,8 @@ def main(argv):
                         #print line
                         re.search(rname,line)
                         if re.search(rname, line) is not None:
-                            print outlines[itline]
-                            print outlines[itline+1]
+                            print "\t"+str(outlines[itline])
+                            print "\t"+str(outlines[itline+1])
                             dataline=outlines[itline+1]
                             itline=len(outlines)
                         itline += 1
