@@ -288,8 +288,9 @@ void ImplicitHConvolution::premult(Complex ** F,
     ui[0]=f->re;
   }
 
+  unsigned int a=1/s;
   if(even) {
-    unsigned int a=1/s;
+#ifdef __SSE2__
     Vec Zeta=LOAD(ZetaH+a);
     Vec X=UNPACKL(Zeta,Zeta);
     Vec Y=UNPACKH(CONJ(Zeta),Zeta);
@@ -308,11 +309,14 @@ void ImplicitHConvolution::premult(Complex ** F,
       double a=fi[c].re;
       S[i]=Complex(2.0*a,a+sqrt3*fi[c].im);
     }
+#else
+    // FIXME: add non-SSE version
+#endif
   }
-  
+
+#ifdef __SSE2__  
   unsigned int c1=c+1;
   unsigned int d=c1/2;
-  unsigned int a=c1/s;
   Vec Zeta=LOAD(ZetaH+a);
   Vec X=UNPACKL(Zeta,Zeta);
   Vec Y=UNPACKH(CONJ(Zeta),Zeta);
@@ -360,7 +364,9 @@ void ImplicitHConvolution::premult(Complex ** F,
       }
     }
     );
-    
+#else
+  // FIXME: add non-SSE version
+#endif    
   if(even) {
     for(unsigned int i=0; i < A; ++i) {
       Complex *fi=P0[i];
@@ -413,23 +419,27 @@ void ImplicitHConvolution::postmultadd0(Complex **crm, Complex **cr0,
                                         Complex **crp, Complex *f1c)
 {
   double ninv=1.0/(3.0*m);
-  Vec Ninv=LOAD(ninv);
+
   bool even=m == 2*c;
 
-#ifdef __SSE2__
-  Vec Mhalf=LOAD(-0.5);
-  Vec HSqrt3=LOAD(hsqrt3);
-#else
-#endif
 
   unsigned int m1=m-1;  
   unsigned int c1=c+1;
   unsigned int d=c1/2;
   unsigned int a=c1/s;
+
+#ifdef __SSE2__
+  Vec Ninv=LOAD(ninv);
+  Vec Mhalf=LOAD(-0.5);
+  Vec HSqrt3=LOAD(hsqrt3);
+
   Vec Zeta=LOAD(ZetaH+a);
   Vec X=UNPACKL(Zeta,Zeta);
   Vec Y=UNPACKH(CONJ(Zeta),Zeta);
   Vec Zetac1=ZMULT(X,Y,LOAD(ZetaL+c1-s*a));
+#else
+  // FIXME: non-SSE version
+#endif
 
 #ifdef __SSE2__      
     if(even && m > 2) {
@@ -525,6 +535,8 @@ void ImplicitHConvolution::postmultadd0(Complex **crm, Complex **cr0,
         }
       }
     }
+#else
+    //FIXME: non-SSE version
 #endif  
 }
 
@@ -969,6 +981,7 @@ void fft0padwide::backwards(Complex *f, Complex *u)
   Vec Mhsqrt3=LOAD(-hsqrt3);
 #endif    
   unsigned int inc=s;
+  // FIXME: PARALLEL has to come after #ifdef
   PARALLEL(
     for(unsigned int K=0; K < m; K += inc) {
       Complex *ZetaL0=ZetaL-K;
@@ -1005,7 +1018,7 @@ void fft0padwide::backwards(Complex *f, Complex *u)
         unsigned int kstride=k*stride;
         Complex *uk=u+kstride;
         Complex *fk=f+kstride;
-        Complex *fmk=fm1stride+kstride;
+        Complex *fmk;//= fm1stride+ kstride; // FIXME: fm1stride not declared
         for(unsigned int i=0; i < M; ++i) {
           Complex *p=fmk+i;
           Complex *q=f+i;
@@ -1062,6 +1075,7 @@ void fft0padwide::forwards(Complex *f, Complex *u)
   
   unsigned int inc=s;
   PARALLEL(
+	   // FIXME: PARALLEL must come after "#ifdef"s
     for(unsigned int K=0; K < m; K += inc) {
       Complex *ZetaL0=ZetaL-K;
       unsigned int stop=min(K+s,m);
@@ -1093,7 +1107,7 @@ void fft0padwide::forwards(Complex *f, Complex *u)
         double Im=H.re*L.im+H.im*L.re;
         unsigned int kstride=k*stride;
         Complex *fk=f+kstride;
-        Complex *fm1k=fm1stride+kstride;
+        Complex *fm1k;// =fm1stride+kstride; // FIXME: fm1stride not declared
         Complex *uk=u+kstride;
         for(unsigned int i=0; i < M; ++i) {
           Complex *p=fk+i;
