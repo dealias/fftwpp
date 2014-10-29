@@ -8,6 +8,7 @@ from subprocess import * # so that we can run commands
 import re # regexp package
 import random # for randum number generators
 import os.path #for file-existence checking
+import math # for isnan
 
 failures=0
 
@@ -72,11 +73,14 @@ for list in lists:
                     if (prc == 0): # did the process succeed?
                         m=re.search("(?<=error=)(.*)",out) # find the text after "error="
                         print "\t"+m.group(0),
-                        if(float(m.group(0)) > 1e-10):
-                            print "\tERROR TOO LARGE"
+                        if (float(m.group(0)) > 1e-10) :
+                            print "\tERROR TOO LARGE!!!",
                             failures+=1
-                        else:
-                            print
+                        if math.isnan(float(m.group(0))) :
+                            print "\tERROR IS NaN!!!",
+                            failures+=1
+                        print
+
                     else:
                         print "\tFAILURE:"
                         print command
