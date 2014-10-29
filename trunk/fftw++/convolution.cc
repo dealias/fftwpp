@@ -280,7 +280,7 @@ void ImplicitHConvolution::premult(Complex ** F,
   bool even=m == 2*c;
   if(even)
     S = new Complex[A];
-  unsigned int m1=m-1;
+
   for(unsigned int i=0; i < A; ++i) {
     Complex *f=F[i]+offset;
     P0[i]=f;
@@ -289,6 +289,8 @@ void ImplicitHConvolution::premult(Complex ** F,
   }
 
   if(even) {
+#ifdef __SSE2__
+    unsigned int m1=m-1;
     unsigned int a=1/s;
     Vec Zeta=LOAD(ZetaH+a);
     Vec X=UNPACKL(Zeta,Zeta);
@@ -308,8 +310,12 @@ void ImplicitHConvolution::premult(Complex ** F,
       double a=fi[c].re;
       S[i]=Complex(2.0*a,a+sqrt3*fi[c].im);
     }
+#else
+    // FIXME: implement non-SSE case
+#endif
   }
   
+#ifdef __SSE2__
   unsigned int c1=c+1;
   unsigned int d=c1/2;
   unsigned int a=c1/s;
@@ -360,6 +366,9 @@ void ImplicitHConvolution::premult(Complex ** F,
       }
     }
     );
+#else
+  // FIXME: implement non-SSE2 case
+#endif
     
   if(even) {
     for(unsigned int i=0; i < A; ++i) {
@@ -377,8 +386,8 @@ void ImplicitHConvolution::premult(Complex ** F,
 void ImplicitHConvolution::postmultadd(Complex **cr2, Complex **cr0, 
 				       Complex **cr2B)
 {
-  double ninv=1.0/(3.0*m);
 #ifdef __SSE2__
+  double ninv=1.0/(3.0*m);
   Vec Ninv=LOAD(ninv);
   Vec Mhalf=LOAD(-0.5);
   Vec HSqrt3=LOAD(hsqrt3);
@@ -406,34 +415,32 @@ void ImplicitHConvolution::postmultadd(Complex **cr2, Complex **cr0,
 	     }  
 	   }
 	   );
+#else
+  //FIXME: implement non-SSE case
 #endif
 }
 
 void ImplicitHConvolution::postmultadd0(Complex **crm, Complex **cr0, 
                                         Complex **crp, Complex *f1c)
 {
+#ifdef __SSE2__
+  bool even=m == 2*c;
   double ninv=1.0/(3.0*m);
   Vec Ninv=LOAD(ninv);
-  bool even=m == 2*c;
-
-#ifdef __SSE2__
   Vec Mhalf=LOAD(-0.5);
   Vec HSqrt3=LOAD(hsqrt3);
-#else
-#endif
 
   unsigned int m1=m-1;  
   unsigned int c1=c+1;
   unsigned int d=c1/2;
-  unsigned int a=c1/s;
+  unsigned int a=1/s;
+
   Vec Zeta=LOAD(ZetaH+a);
   Vec X=UNPACKL(Zeta,Zeta);
   Vec Y=UNPACKH(CONJ(Zeta),Zeta);
   Vec Zetac1=ZMULT(X,Y,LOAD(ZetaL+c1-s*a));
 
-#ifdef __SSE2__      
     if(even && m > 2) {
-      unsigned int a=1/s;
       Vec Zeta=LOAD(ZetaH+a);
       Vec X=UNPACKL(Zeta,Zeta);
       Vec Y=UNPACKH(CONJ(Zeta),Zeta);
@@ -495,7 +502,6 @@ void ImplicitHConvolution::postmultadd0(Complex **crm, Complex **cr0,
         }
       }
       );
-
   
     if(d == D+1) {
       unsigned int a=d/s;
@@ -525,6 +531,8 @@ void ImplicitHConvolution::postmultadd0(Complex **crm, Complex **cr0,
         }
       }
     }
+#else
+    //FIXME: implement non-SSE case
 #endif  
 }
 
@@ -1005,7 +1013,7 @@ void fft0padwide::backwards(Complex *f, Complex *u)
         unsigned int kstride=k*stride;
         Complex *uk=u+kstride;
         Complex *fk=f+kstride;
-        Complex *fmk=fm1stride+kstride;
+        Complex *fmk;// =fm1stride+kstride; FIXME: fm1stride undefined
         for(unsigned int i=0; i < M; ++i) {
           Complex *p=fmk+i;
           Complex *q=f+i;
@@ -1093,7 +1101,7 @@ void fft0padwide::forwards(Complex *f, Complex *u)
         double Im=H.re*L.im+H.im*L.re;
         unsigned int kstride=k*stride;
         Complex *fk=f+kstride;
-        Complex *fm1k=fm1stride+kstride;
+        Complex *fm1k; // =fm1stride+kstride; //FIXME: fm1stride undefined 
         Complex *uk=u+kstride;
         for(unsigned int i=0; i < M; ++i) {
           Complex *p=fk+i;
