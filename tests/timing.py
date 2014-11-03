@@ -9,6 +9,78 @@ from subprocess import * # for popen, running processes
 import os
 import re # regexp package
 
+def max_m(p,RAM,runtype):
+    b=0
+    if p == "cconv":
+        b=min(int(floor(log(RAM/4)/log(2))),b)
+        b=min(b,20) # because we aren't crazy
+    if p == "cconv2":
+        if runtype == "implicit":
+            b=min(int(floor(0.5*log(RAM/64)/log(2))),b)
+        else:
+            b=min(int(floor(log(RAM/16/2/2**2)/log(2)/2)),b)
+    if p == "cconv3":
+       if runtype == "implicit":
+           b=min(int(floor(log(RAM/96)/log(2)/3)),b)
+       else:
+           b=min(int(floor(log(RAM/16/2**3)/log(2)/3)),b)
+
+    if p == "tconv":
+        b=int(floor(log(RAM/6)/log(2)))
+        b=min(b,20) # because we aren't crazy
+    if p == "tconv2":
+        if runtype == "implicit":
+            b=int(floor(log(RAM/(8*12))/(2*log(2))))
+        else:
+            b=int(floor(log(RAM/(8*6))/(2*log(2))))
+
+    if p == "conv":
+        b=min(int(floor(log(RAM/6)/log(2))),b)
+        b=min(b,20) # because we aren't crazy
+    if p == "conv2":
+        if runtype == "implicit":
+            b=min(int(floor(0.5*log(RAM/96)/log(2))),b)
+        else:
+            b=min(int(floor(log(RAM/8/3**2)/log(2)/2)),b)
+    if p == "conv3":
+        b=min(int(floor(log(RAM/192)/log(2)/3)),b)
+
+    if p == "c2cfft1":
+        b=min(int(floor(0.5*log(RAM/64)/log(2))),b)
+    if p == "c2cfft2":
+        b=min(int(floor(0.5*log(RAM/64)/log(2))),b)
+
+    return b
+
+def default_outdir(p):
+    outdir=""
+
+    if p == "cconv":
+        outdir="timings1c"
+    if p == "cconv2":
+        outdir="timings2c"
+    if p == "cconv3":
+        outdir="timings3c"
+
+    if p == "conv":
+        outdir="timings1r"
+    if p == "conv2":
+        outdir="timings2r"
+    if p == "conv3":
+        outdir="timings3r"
+
+    if p == "tconv":
+        outdir="timings1t"
+    if p == "tconv2":
+        outdir="timings2t"
+
+    if p == "c2cfft1":
+        outdir="timings1c2c"
+    if p == "c2cfft2":
+        outdir="timings2c2c"
+
+    return outdir
+
 
 def main(argv):
     usage = '''
@@ -95,113 +167,50 @@ def main(argv):
     hermitian=False
     ternary=False
 
-
     if p == "cconv":
-        if RAM != 0:
-            b=min(int(floor(log(RAM/4)/log(2))),b)
-            b=min(b,20) # because we aren't crazy
-        if outdir == "": outdir="timings1c"
         if(runtype == "pruned"):
             print p+" has no pruned option"
             dorun=False
-    if p == "cconv2":
-        if RAM != 0:
-            if runtype == "implicit":
-                b=min(int(floor(0.5*log(RAM/64)/log(2))),b)
-            else:
-                b=min(int(floor(log(RAM/16/2/2**2)/log(2)/2)),b)
-        if outdir == "": outdir="timings2c"
-    if p == "cconv3":
-        if RAM != 0:
-            if runtype == "implicit":
-                b=min(int(floor(log(RAM/96)/log(2)/3)),b)
-            else:
-                b=min(int(floor(log(RAM/16/2**3)/log(2)/3)),b)
-        if outdir == "": outdir="timings3c"
 
     if p == "conv":
         hermitian=True
-        if RAM != 0:
-            b=min(int(floor(log(RAM/6)/log(2))),b)
-            b=min(b,20) # because we aren't crazy
-        if outdir == "": outdir="timings1r"
         if(runtype == "pruned"):
             print p+" has no pruned option"
             dorun=False
     if p == "conv2":
         hermitian=True
-        if RAM != 0:
-            if runtype == "implicit":
-                b=min(int(floor(0.5*log(RAM/96)/log(2))),b)
-            else:
-                b=min(int(floor(log(RAM/8/3**2)/log(2)/2)),b)
-        if outdir == "": outdir="timings2r"
     if p == "conv3":
         hermitian=True
-        if RAM != 0:
-            b=min(int(floor(log(RAM/192)/log(2)/3)),b)
-        if outdir == "": outdir="timings3r"
         if(runtype != "implicit"):
             print p+" has no "+r+" option"
             dorun=False
 
     if p == "tconv":
         ternary=True
-        if RAM != 0:
-            b=int(floor(log(RAM/6)/log(2)))
-            b=min(b,20) # because we aren't crazy
-        if outdir == "": outdir="timings1t"
         if(runtype == "pruned"):
             print p+" has no pruned option"
             dorun=False
     if p == "tconv2":
         ternary=True
-        if RAM != 0:
-            if runtype == "implicit":
-                b=int(floor(log(RAM/(8*12))/(2*log(2))))
-            else:
-                b=int(floor(log(RAM/(8*6))/(2*log(2))))
-        outdir="timings2t"
 
-    if p == "pcconv":
-        if RAM != 0:
-            b=min(int(floor(log(RAM/4)/log(2))),b)
-            b=min(b,14) # because we aren't crazy
-        outdir="timings1cp"
-        if(runtype == "pruned"):
-            print p+" has no pruned option"
-            dorun=False
-    if p == "pcconv2":
-        if RAM != 0:
-            if runtype == "implicit":
-                b=min(int(floor(0.5*log(RAM/64)/log(2))),b)
-            else:
-                b=min(int(floor(log(RAM/16/2/2**2)/log(2)/2)),b)
-        if outdir == "": outdir="timings2cp"
-    if p == "pcconv3":
-        if RAM != 0:
-            if runtype == "implicit":
-                b=min(int(floor(log(RAM/96)/log(2)/3)),b)
-            else:
-                b=min(int(floor(log(RAM/16/2**3)/log(2)/3)),b)
-        if outdir == "": outdir="timings3cp"
     if p == "c2cfft1":
-        if RAM != 0:
-            b=min(int(floor(0.5*log(RAM/64)/log(2))),b)
-        if outdir == "": outdir="timings1c2c"
         runtype="fft"
         rname="fft"
     if p == "c2cfft2":
-        if RAM != 0:
-            b=min(int(floor(0.5*log(RAM/64)/log(2))),b)
-        if outdir == "": outdir="timings2c2c"
         runtype="fft"
         rname="fft"
+
     if outdir == "":
-        print "empty outdir: please select a different program!"
+        outdir=default_outdir(p)
+
+    if outdir == "":
+        print "empty outdir: please select a program or specify an outdir (-D)"
         print
         print usage
         sys.exit(2)
+
+    if RAM != 0:
+        b=max_m(p,RAM,runtype)
 
     if out == "":
         if runtype == "implicit":
