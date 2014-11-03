@@ -37,7 +37,7 @@ if(gtype == "speeduplog") {
   gtype="speedup";
 }
 if(gtype == "mflops") {
-  scale(Log,Log);
+  //scale(Log,Log);
   scale(Log,Linear);
   size(300,400,IgnoreAspect);
 }
@@ -51,8 +51,18 @@ string runs;
 string runlegs;
 bool useN=false;
 bool oldformat=false;
+string sscale="";
 
 usersetting();
+
+if(sscale != "") {
+  if(sscale == "loglog") scale(Log,Log);
+  if(sscale == "loglin") scale(Log,Linear);
+  if(sscale == "linlog") scale(Linear,Log);
+  if(sscale == "linlin") scale(Linear,Linear);
+}
+
+
 string Nm=useN?"N":"m";
 
 
@@ -90,11 +100,7 @@ if(name == "cconv3") {
 if(name == "conv3")
   expl=false;
 
-  
-real d=1;
-if(find(name,"2") >= 0) d=2;
-if(find(name,"3") >= 0) d=3;
-if(name == "transpose") d=0;
+real d=getreal("dimension of FFT involved",1);
 
 real ymin=infinity, ymax=-infinity;
 
@@ -178,7 +184,7 @@ if(gtype == "time" || gtype == "mflops") {
     hi[p] /= f(mi[p]);
     li[p] /= f(mi[p]);
 
-    
+
     for(int q=0; q < i[p].length; ++q) {
       real ii=i[p][q];
       ymin=min(ymin,ii);
@@ -202,9 +208,9 @@ if(gtype == "time" || gtype == "mflops") {
   xaxis("$"+Nm+"$",BottomTop,LeftTicks);
   if(d > 0) {
     if(gtype=="mflops") {
-      if(floor(ymax) <= ceil(ymin)) {
+      if(true || floor(ymax) <= ceil(ymin)) {
 	//if(ymax-ymin > 1) {
-	yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ms)",LeftRight,
+	yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ns)",LeftRight,
 	      RightTicks);
       } else {
 	// write the yticks as 10^{...} equally divided in log-space.
@@ -212,7 +218,7 @@ if(gtype == "time" || gtype == "mflops") {
 	int decpow=floor(log10(ymax-ymin));
 
 	real d=ymax-ymin;
-	d=pow10(floor(log10(d)));
+	d=pow10(ceil(log10(d)));
 	
 	
 	real fymin=floor(ymin/d)*d;
@@ -227,7 +233,7 @@ if(gtype == "time" || gtype == "mflops") {
 	//write(yticks);
 	//yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ms)",LeftRight,
 	//    RightTicks(new string(real x) {return base10(log10(x));},yticks));
-	yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ms)",LeftRight,
+	yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ns)",LeftRight,
 	      RightTicks(defaultformat,yticks));
       }
       
