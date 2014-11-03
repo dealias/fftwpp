@@ -13,9 +13,9 @@ int main()
 
   fftw::maxthreads=4;
   
-  unsigned int M=10;
-  unsigned int n=8;
-  unsigned int N=10;
+  unsigned int M=10; // Number of FFTs performed
+  unsigned int n=8; // Length of FFT
+  unsigned int N=10; // Number data points for timing test.
 
   Complex *f=ComplexAlign(n*M);
     

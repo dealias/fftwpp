@@ -9,13 +9,10 @@ using namespace fftwpp;
 
 // Number of iterations.
 unsigned int N0=10000000;
-unsigned int N=0;
-unsigned int mx=4;
-unsigned int my=4;
 
 bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
-inline void init(array2<Complex>& f) 
+inline void init(array2<Complex>& f, unsigned int mx, unsigned int my) 
 {
   for(unsigned int i=0; i < mx; ++i)
     for(unsigned int j=0; j < my; j++)
@@ -27,6 +24,10 @@ unsigned int outlimit=100;
 int main(int argc, char* argv[])
 {
   fftw::maxthreads=get_max_threads();
+
+  unsigned int N=0;
+  unsigned int mx=4;
+  unsigned int my=4;
 
   unsigned int stats=0; // Type of statistics used in timing test.
 
@@ -86,30 +87,44 @@ int main(int argc, char* argv[])
 
   array2<Complex> f(mx,my,align);
   array2<Complex> g(mx,my,align);
-
-  double *T=new double[N];
-
-    fft2d Forward2(-1,f);
-    fft2d Backward2(1,f);
-    
-    for(unsigned int i=0; i < N; ++i) {
-      init(f);
-      seconds();
-      Forward2.fft(f);
-      Backward2.fftNormalized(f);
-      T[i]=seconds();
-    }
-    timings("fft2d, in-place",mx,T,N,stats);
   
-  /*
-    if(mx*my < outlimit) {
+  mfft1d Forward(my,-1,mx,1,my);
+  mfft1d Backward(my,1,mx,1,my);
+
+  cout << "\nInput:" << endl;
+  init(f,mx,my);
+  if(mx*my < outlimit) {
     for(unsigned int i=0; i < mx; i++) {
-    for(unsigned int j=0; j < my; j++)
-    cout << f[i][j] << "\t";
-    cout << endl;
-    } else cout << f[0][0] << endl;
+      for(unsigned int j=0; j < my; j++)
+	cout << f[i][j] << "\t";
+      cout << endl;
     }
-  */
+  } else {
+    cout << f[0][0] << endl;
+  }
+
+  cout << "\nOutput:" << endl;
+  Forward.fft(f);
+  if(mx*my < outlimit) {
+    for(unsigned int i=0; i < mx; i++) {
+      for(unsigned int j=0; j < my; j++)
+	cout << f[i][j] << "\t";
+      cout << endl;
+    }
+  } else { 
+    cout << f[0][0] << endl;
+  }
+
+  cout << endl;
+  double *T=new double[N];
+  for(unsigned int i=0; i < N; ++i) {
+    init(f,mx,my);
+    seconds();
+    Forward.fft(f);
+    Backward.fftNormalized(f);
+    T[i]=seconds();
+  }
+  timings("fft2d, in-place",mx,T,N,stats);
   delete [] T;
   
   return 0;
