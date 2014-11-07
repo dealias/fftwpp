@@ -47,6 +47,8 @@ def max_m(p,RAM,runtype):
 
     if p == "fft1":
         b=min(int(floor(0.5*log(RAM/64)/log(2))),b)
+    if p == "mft1":
+        b=min(int(floor(0.5*log(RAM/64)/log(2))),b)
     if p == "ft2":
         b=min(int(floor(0.5*log(RAM/64)/log(2))),b)
 
@@ -76,6 +78,8 @@ def default_outdir(p):
 
     if p == "fft1":
         outdir="timingsf1"
+    if p == "mfft1":
+        outdir="timingsmf1"
     if p == "fft2":
         outdir="timingsf2"
 
@@ -194,6 +198,9 @@ def main(argv):
         ternary=True
 
     if p == "fft1":
+        runtype="fft"
+        rname="fft"
+    if p == "mfft1":
         runtype="fft"
         rname="fft"
     if p == "fft2":
