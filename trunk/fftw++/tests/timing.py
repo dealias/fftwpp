@@ -45,9 +45,9 @@ def max_m(p,RAM,runtype):
     if p == "conv3":
         b=min(int(floor(log(RAM/192)/log(2)/3)),b)
 
-    if p == "c2cfft1":
+    if p == "fft1":
         b=min(int(floor(0.5*log(RAM/64)/log(2))),b)
-    if p == "c2cfft2":
+    if p == "ft2":
         b=min(int(floor(0.5*log(RAM/64)/log(2))),b)
 
     return b
@@ -74,10 +74,10 @@ def default_outdir(p):
     if p == "tconv2":
         outdir="timings2t"
 
-    if p == "c2cfft1":
-        outdir="timings1c2c"
-    if p == "c2cfft2":
-        outdir="timings2c2c"
+    if p == "fft1":
+        outdir="timingsf1"
+    if p == "fft2":
+        outdir="timingsf2"
 
     return outdir
 
@@ -193,10 +193,10 @@ def main(argv):
     if p == "tconv2":
         ternary=True
 
-    if p == "c2cfft1":
+    if p == "fft1":
         runtype="fft"
         rname="fft"
-    if p == "c2cfft2":
+    if p == "fft2":
         runtype="fft"
         rname="fft"
 
