@@ -2,8 +2,10 @@ IDIR =../
 
 # GNU compiler
 ifeq ($(shell $(CXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
-CXXFLAGS=-Ofast -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
-	-fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native
+CXXFLAGS=-Ofast -g -Wall -ansi -DNDEBUG
+#CXXFLAGS+=-fopenmp
+CXXFLAGS+=-fomit-frame-pointer -fstrict-aliasing -ffast-math
+CXXFLAGS+=-msse2 -mfpmath=sse -march=native
 #CXXFLAGS+= -flto 
 #CXXFLAGS+= -fprofile-generate 
 #CXXFLAGS+= -fprofile-use -fprofile-dir=.

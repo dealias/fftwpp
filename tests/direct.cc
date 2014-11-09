@@ -5,7 +5,7 @@ namespace fftwpp {
 
 void DirectConvolution::convolve(Complex *h, Complex *f, Complex *g)
 {
-#ifndef FFTWPP_SINGLE_THREAD
+#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #pragma omp parallel for
 #endif
   for(unsigned int i=0; i < m; ++i) {
@@ -17,7 +17,7 @@ void DirectConvolution::convolve(Complex *h, Complex *f, Complex *g)
 
 void DirectConvolution::autoconvolve(Complex *h, Complex *f)
 {
-#ifndef FFTWPP_SINGLE_THREAD
+#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #pragma omp parallel for
 #endif
   for(unsigned int i=0; i < m; ++i) {
@@ -29,7 +29,7 @@ void DirectConvolution::autoconvolve(Complex *h, Complex *f)
 
 void DirectHConvolution::convolve(Complex *h, Complex *f, Complex *g)
 {
-#ifndef FFTWPP_SINGLE_THREAD
+#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #pragma omp parallel for
 #endif
   for(unsigned int i=0; i < m; ++i) {
@@ -43,7 +43,7 @@ void DirectHConvolution::convolve(Complex *h, Complex *f, Complex *g)
 
 void DirectConvolution2::convolve(Complex *h, Complex *f, Complex *g)
 {
-#ifndef FFTWPP_SINGLE_THREAD
+#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #pragma omp parallel for
 #endif
   for(unsigned int i=0; i < mx; ++i) {
@@ -71,7 +71,7 @@ void DirectHConvolution2::convolve(Complex *h, Complex *f, Complex *g,
   int ystart=1-(int) my;
   int xstop=mx;
   int ystop=my;
-#ifndef FFTWPP_SINGLE_THREAD
+#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #pragma omp parallel for
 #endif
   for(int kx=xstart; kx < xstop; ++kx) {
@@ -98,7 +98,7 @@ void DirectHConvolution2::convolve(Complex *h, Complex *f, Complex *g,
 
 void DirectConvolution3::convolve(Complex *h, Complex *f, Complex *g)
 {
-#ifndef FFTWPP_SINGLE_THREAD
+#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #pragma omp parallel for
 #endif
   for(unsigned int i=0; i < mx; ++i) {
@@ -133,7 +133,7 @@ void DirectHConvolution3::convolve(Complex *h, Complex *f, Complex *g,
   int xstop=mx;
   int ystop=my;
   int zstop=mz;
-#ifndef FFTWPP_SINGLE_THREAD
+#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #pragma omp parallel for
 #endif
   for(int kx=xstart; kx < xstop; ++kx) {
@@ -171,7 +171,9 @@ void DirectHTConvolution::convolve(Complex *h, Complex *e, Complex *f,
 {
   int stop=m;
   int start=1-m;
+#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #pragma omp parallel for
+#endif
   for(int k=0; k < stop; ++k) {
     Complex sum=0.0;
     for(int p=start; p < stop; ++p) {
@@ -202,7 +204,9 @@ void DirectHTConvolution2::convolve(Complex *h, Complex *e, Complex *f,
   int xstop=mx;
   int ystop=my;
   int ystart=1-(int) my;
+#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #pragma omp parallel for
+#endif
   for(int kx=xstart; kx < xstop; ++kx) {
     for(int ky=0; ky < ystop; ++ky) {
       Complex sum=0.0;
