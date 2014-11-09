@@ -27,25 +27,25 @@
 #include <cerrno>
 #include <map>
 
-#ifndef FFTWPP_SINGLE_THREAD
+#if !defined FFTWPP_SINGLE_THREAD && defined _OPENMP   
 #include <omp.h>
 #endif
 
 inline int get_thread_num() 
 {
-#ifdef FFTWPP_SINGLE_THREAD
-  return 0;
-#else
+#if !defined FFTWPP_SINGLE_THREAD && defined _OPENMP
   return omp_get_thread_num();
+#else
+  return 0;
 #endif  
 }
 
 inline int get_max_threads() 
 {
-#ifdef FFTWPP_SINGLE_THREAD
-  return 1;
-#else
+#if !defined FFTWPP_SINGLE_THREAD && defined _OPENMP
   return omp_get_max_threads();
+#else
+  return 1;
 #endif  
 }
 
@@ -249,7 +249,7 @@ public:
     unsigned int stop=nx*nyp;
     if(nx % 2 == 0) {
       unsigned int inc=2*nyp;
-#ifndef FFTWPP_SINGLE_THREAD
+#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #pragma omp parallel for num_threads(threads)
 #endif
       for(unsigned int i=nyp; i < stop; i += inc) {
@@ -268,7 +268,7 @@ public:
     if(nx % 2 == 0) {
       unsigned int stop=nx*ny;
       unsigned int inc=2*ny;
-#ifndef FFTWPP_SINGLE_THREAD
+#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #pragma omp parallel for num_threads(threads)
 #endif
       for(unsigned int i=ny; i < stop; i += inc) {
@@ -290,7 +290,7 @@ public:
       const unsigned int pinc=2*nzp;
       Complex *pstop=data;
       Complex *p=data;
-#ifndef FFTWPP_SINGLE_THREAD
+#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #pragma omp parallel for num_threads(threads)
 #endif
       for(unsigned i=0; i < nx; i++) {
@@ -315,7 +315,7 @@ public:
       const unsigned int pinc=2*nz;
       double *pstop=data;
       double *p=data;
-#ifndef FFTWPP_SINGLE_THREAD
+#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #pragma omp parallel for num_threads(threads)
 #endif
       for(unsigned i=0; i < nx; i++) {
@@ -336,7 +336,7 @@ public:
        unsigned int n=0) :
     doubles(doubles), sign(sign), threads(threads), 
     norm(1.0/(n ? n : doubles/2)), plan(NULL) {
-#ifndef FFTWPP_SINGLE_THREAD
+#if !defined FFTWPP_SINGLE_THREAD && defined _OPENMP
     if(!mpi) fftw_init_threads();
 #endif      
   }
@@ -363,7 +363,7 @@ public:
   }
   
   static void planThreads(unsigned int threads) {
-#ifndef FFTWPP_SINGLE_THREAD
+#if !defined FFTWPP_SINGLE_THREAD && defined _OPENMP
     omp_set_num_threads(threads);
     fftw_plan_with_nthreads(threads);
 #endif    
@@ -552,14 +552,14 @@ public:
   
   void Normalize(Complex *out) {
     unsigned int stop=(doubles+1)/2;
-#ifndef FFTWPP_SINGLE_THREAD
+#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #pragma omp parallel for num_threads(threads)
 #endif
     for(unsigned int i=0; i < stop; i++) out[i] *= norm;
   }
 
   void Normalize(double *out) {
-#ifndef FFTWPP_SINGLE_THREAD
+#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #pragma omp parallel for num_threads(threads)
 #endif
     for(unsigned int i=0; i < doubles; i++) out[i] *= norm;
@@ -607,7 +607,7 @@ public:
 
       unsigned int stop=nx*stride;
       Complex *outMdist=out+M*dist;
-#ifndef FFTWPP_SINGLE_THREAD
+#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #pragma omp parallel for num_threads(threads)
 #endif
       for(unsigned int i=0; i < stop; i += stride) {
@@ -685,11 +685,11 @@ public:
       std::cerr << "ERROR: Transpose " << inout << std::endl;
       exit(1);
     }
-#ifndef FFTWPP_SINGLE_THREAD
+#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
     if(threads == 1)
 #endif      
       fftw_execute_r2r(plan,(double *) in,(double*) out);
-#ifndef FFTWPP_SINGLE_THREAD
+#if !defined FFTWPP_SINGLE_THREAD && defined _OPENMP
     else {
       int A=a, B=b;
 #pragma omp parallel for num_threads(A)
@@ -941,7 +941,7 @@ public:
       unsigned int Tdist=T*dist;
       unsigned int extra=(T-R)*dist;
 
-#ifndef FFTWPP_SINGLE_THREAD
+#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #pragma omp parallel for num_threads(T)
 #endif
       for(unsigned int i=0; i < Tdist; i += dist) {
@@ -1216,7 +1216,7 @@ public:
     unsigned int odist=in == (Complex *) out ? 2*dist : 2*(dist-1);
     double *outMdist=out+M*odist;
 
-#ifndef FFTWPP_SINGLE_THREAD
+#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #pragma omp parallel for num_threads(threads)
 #endif
     for(unsigned int i=0; i < stop; i += stride) {

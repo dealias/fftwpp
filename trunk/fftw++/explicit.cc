@@ -4,7 +4,7 @@
 
 namespace fftwpp {
 
-#ifndef FFTWPP_SINGLE_THREAD
+#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #define PARALLEL(code)                                  \
   if(threads > 1) {                                     \
     _Pragma("omp parallel for num_threads(threads)")    \

@@ -19,7 +19,7 @@
 #include "fftw++.h"
 #include "cmult-sse2.h"
 
-#ifndef FFTWPP_SINGLE_THREAD
+#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #define PARALLEL(code)                                  \
   if(threads > 1) {                                     \
     _Pragma("omp parallel for num_threads(threads)")    \
@@ -596,7 +596,7 @@ public:
   void subconvolution(Complex **F, multiplier *pmult, 
                       unsigned int start, unsigned int stop) {
     if(threads > 1) {
-#ifndef FFTWPP_SINGLE_THREAD
+#if !defined FFTWPP_SINGLE_THREAD && defined _OPENMP 
 #pragma omp parallel for num_threads(threads)
 #endif    
       for(unsigned int i=start; i < stop; i += my)
@@ -801,7 +801,7 @@ public:
   void subconvolution(Complex **F, realmultiplier *pmult,
                       unsigned int start, unsigned int stop, unsigned int stride) {
     if(threads > 1) {
-#ifndef FFTWPP_SINGLE_THREAD
+#if !defined FFTWPP_SINGLE_THREAD && defined _OPENMP
 #pragma omp parallel for num_threads(threads)
 #endif    
       for(unsigned int i=start; i < stop; i += stride)
@@ -952,7 +952,7 @@ public:
                       unsigned int start, unsigned int stop,
                       unsigned int stride) {
     if(threads > 1) {
-#ifndef FFTWPP_SINGLE_THREAD
+#if !defined FFTWPP_SINGLE_THREAD && defined _OPENMP
 #pragma omp parallel for num_threads(threads)
 #endif    
       for(unsigned int i=start; i < stop; i += stride)
@@ -1120,7 +1120,7 @@ public:
                       unsigned int start, unsigned int stop,
                       unsigned int stride) {
     if(threads > 1) {
-#ifndef FFTWPP_SINGLE_THREAD
+#if !defined FFTWPP_SINGLE_THREAD && defined _OPENMP
 #pragma omp parallel for num_threads(threads)
 #endif    
       for(unsigned int i=start; i < stop; i += stride)
@@ -1558,7 +1558,7 @@ public:
       xfftpad->backwards(h,w2+s*mu);
     }
 
-#ifndef FFTWPP_SINGLE_THREAD
+#if !defined FFTWPP_SINGLE_THREAD && defined _OPENMP
 #pragma omp parallel for num_threads(threads)
 #endif    
     for(unsigned int i=0; i < mu; i += my1) {
@@ -1566,7 +1566,7 @@ public:
       yconvolve->convolve(F,G,H,u[thread],v[thread],W[thread],i+offset);
     }
     
-#ifndef FFTWPP_SINGLE_THREAD
+#if !defined FFTWPP_SINGLE_THREAD && defined _OPENMP
 #pragma omp parallel for num_threads(threads)
 #endif    
     for(unsigned int i=0; i < mu; i += my1) {
@@ -1679,7 +1679,7 @@ public:
       HermitianSymmetrizeX(mx,my1,mx,g);
     xfftpad->backwards(g,v2);
     
-#ifndef FFTWPP_SINGLE_THREAD
+#if !defined FFTWPP_SINGLE_THREAD && defined _OPENMP
 #pragma omp parallel for num_threads(threads)
 #endif    
     for(unsigned int i=0; i < mu; i += my1) {
@@ -1687,7 +1687,7 @@ public:
       yconvolve->convolve(f+i,g+i,u[thread],v[thread]);
     }
     
-#ifndef FFTWPP_SINGLE_THREAD
+#if !defined FFTWPP_SINGLE_THREAD && defined _OPENMP
 #pragma omp parallel for num_threads(threads)
 #endif    
     for(unsigned int i=0; i < mu; i += my1) {
@@ -1773,13 +1773,13 @@ public:
       HermitianSymmetrizeX(mx,my1,mx,f);
     xfftpad->backwards(f,u2);
     
-#ifndef FFTWPP_SINGLE_THREAD
+#if !defined FFTWPP_SINGLE_THREAD && defined _OPENMP
 #pragma omp parallel for num_threads(threads)
 #endif    
     for(unsigned int i=0; i < mu; i += my1)
       yconvolve->convolve(f+i,u[get_thread_num()]);
     
-#ifndef FFTWPP_SINGLE_THREAD
+#if !defined FFTWPP_SINGLE_THREAD && defined _OPENMP
 #pragma omp parallel for num_threads(threads)
 #endif    
     for(unsigned int i=0; i < mu; i += my1)
