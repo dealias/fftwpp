@@ -3,7 +3,7 @@ IDIR =../
 # GNU compiler
 ifeq ($(shell $(CXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
 CXXFLAGS=-Ofast -g -Wall -ansi -DNDEBUG
-#CXXFLAGS+=-fopenmp
+CXXFLAGS+=-fopenmp
 CXXFLAGS+=-fomit-frame-pointer -fstrict-aliasing -ffast-math
 CXXFLAGS+=-msse2 -mfpmath=sse -march=native
 #CXXFLAGS+= -flto 
