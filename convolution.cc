@@ -27,7 +27,7 @@ unsigned int BuildZeta(unsigned int n, unsigned int m,
   double arg=twopi/n;
   ZetaH=ComplexAlign(t);
   
-#ifndef FFTWPP_SINGLE_THREAD
+#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #pragma omp parallel for num_threads(threads)
 #endif    
   for(unsigned int a=0; a < t; ++a) {
@@ -35,7 +35,7 @@ unsigned int BuildZeta(unsigned int n, unsigned int m,
     ZetaH[a]=Complex(cos(theta),sin(theta));
   }
   ZetaL=ComplexAlign(s);
-#ifndef FFTWPP_SINGLE_THREAD
+#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #pragma omp parallel for num_threads(threads)
 #endif    
   for(unsigned int b=0; b < s; ++b) {
