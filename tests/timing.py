@@ -199,13 +199,10 @@ def main(argv):
 
     if p == "fft1":
         runtype="fft"
-        rname="fft"
     if p == "mfft1":
         runtype="fft"
-        rname="fft"
     if p == "fft2":
         runtype="fft"
-        rname="fft"
 
     if outdir == "":
         outdir=default_outdir(p)
@@ -235,14 +232,17 @@ def main(argv):
         if RAM != 0:
             print "max problem size is "+str(2**b)
 
-        if runtype == "implicit":
-            rname="Implicit"
-        if runtype == "explicit":
-            rname="Explicit"
-        if runtype == "pruned":
-            rname="rune"
-        if runtype == "fft":
-            rname="fft"
+        print "Search string for timing: "+rname
+
+        if rname == "":
+            if runtype == "implicit":
+                rname="Implicit"
+            if runtype == "explicit":
+                rname="Explicit"
+            if runtype == "pruned":
+                rname="rune"
+            if runtype == "fft":
+                rname="fft"
 
         print "output in "+outdir+"/"+outfile
 
