@@ -111,7 +111,7 @@ def main(argv):
     T=1
     p=""
     cargs=""
-    A=""
+    A=[]
     a=6
     b=0
     out=""
@@ -138,7 +138,7 @@ def main(argv):
         elif opt in ("-b"):
             b=int(arg)
         elif opt in ("-A"):
-            A+=str(arg)
+            A+=[str(arg)]
         elif opt in ("-r"):
             runtype=str(arg)
         elif opt in ("-R"):
@@ -259,10 +259,12 @@ def main(argv):
         if(Tset):
             cmd.append("-T"+T)
 
-        if not A == "":
-            cmd.append(A);
+        # Add the extra arguments to the program being timed.
+        i=0
+        while i < len(A):
+            cmd.append(A[i]);
+            i += 1
             
-
         print cmd
 
         for i in range(a,b+1):
