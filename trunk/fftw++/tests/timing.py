@@ -94,6 +94,7 @@ def main(argv):
     -p<cconv,cconv2,cconv3,conv,conv2,conv3,tconv,tconv2,pcconv,pcconv2,pcconv3>
     -T<number of threads> 
     -A<quoted arg list for timed program>
+    -B<pre-commands (eg srun)>
     -r<implicit/explicit/pruned/fft>
     -R<ram in gigabytes> 
     -d dry run
@@ -110,6 +111,7 @@ def main(argv):
     T=1
     p=""
     cargs=""
+    B=[]
     A=[]
     a=6
     b=0
@@ -121,7 +123,7 @@ def main(argv):
     rname="Implicit"
 
     try:
-        opts, args = getopt.getopt(argv,"hdp:T:a:b:A:r:R:o:D:g:")
+        opts, args = getopt.getopt(argv,"hdp:T:a:b:A:B:r:R:o:D:g:")
     except getopt.GetoptError:
         print "error in parsing arguments."
         print usage
@@ -139,6 +141,8 @@ def main(argv):
             b=int(arg)
         elif opt in ("-A"):
             A+=[str(arg)]
+        elif opt in ("-B"):
+            B+=[str(arg)]
         elif opt in ("-r"):
             runtype=str(arg)
         elif opt in ("-R"):
@@ -252,7 +256,14 @@ def main(argv):
         if not dryrun:
             os.system("mkdir -p "+outdir)
             os.system("rm -f "+outdir+"/"+outfile)
-        cmd=[str(p)]
+
+        cmd=[]
+        i=0
+        while i < len(B):
+            cmd.append(B[i]);
+            i += 1
+
+        cmd+=[str(p)]
         if(runtype == "explicit"):
             cmd.append("-e")
         if(runtype == "pruned"):
