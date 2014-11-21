@@ -1,9 +1,7 @@
 include graph;
-
 // usage:
 // asy -f pdf timing.asy
 
-// or:
 // asy -f pdf timing.asy -u "runlegs=\"1k,2k,4k,8k\""
 // to specify the legend.
 
@@ -12,6 +10,9 @@ include graph;
 
 // asy -f pdf timing.asy -u "oldformat=true"
 // uses the same pens as in dealias.pdf
+
+// asy timings.asy -u"sscale=\"loglog\""
+// forces the scale to be log-log.
 
 // Note that the scaling figures assumes subsequent test double the
 // number of cores.
@@ -49,7 +50,7 @@ string[] runnames;
 string name;
 string runs;
 string runlegs;
-bool useN=false;
+bool useN=true;
 bool oldformat=false;
 string sscale="";
 
@@ -210,7 +211,7 @@ if(gtype == "time" || gtype == "mflops") {
     if(gtype=="mflops") {
       if(true || floor(ymax) <= ceil(ymin)) {
 	//if(ymax-ymin > 1) {
-	yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ns)",LeftRight,
+	yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ns)${}^{-1}$",LeftRight,
 	      RightTicks);
       } else {
 	// write the yticks as 10^{...} equally divided in log-space.
@@ -231,7 +232,7 @@ if(gtype == "time" || gtype == "mflops") {
 	for(int i=0; i < nyticks; ++i)
 	  yticks.push((fymin+i*(fymax-fymin)/nyticks));
 	//write(yticks);
-	//yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ms)",LeftRight,
+	//yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ns)",LeftRight,
 	//    RightTicks(new string(real x) {return base10(log10(x));},yticks));
 	yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ns)",LeftRight,
 	      RightTicks(defaultformat,yticks));
@@ -242,7 +243,7 @@ if(gtype == "time" || gtype == "mflops") {
       yaxis("time/($"+Nm+D+"\log_2 "+Nm+D+"$) (ns)",LeftRight,RightTicks);
   } else {
     if(gtype=="mflops")
-      yaxis("speed: 1/time (ms)",LeftRight,RightTicks);
+      yaxis("speed: 1/time (ns)${}^{-1}$",LeftRight,RightTicks);
     if(gtype=="time")
       yaxis("time (ns)",LeftRight,RightTicks);
   }
