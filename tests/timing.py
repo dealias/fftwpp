@@ -87,8 +87,7 @@ def default_outdir(p):
 
 
 def main(argv):
-    usage = '''
-    Usage:
+    usage = '''Usage:
     \ntimings.py
     -a<start>
     -b<stop>
@@ -101,7 +100,7 @@ def main(argv):
     -o<output file name>
     -D<outdir>
     -o<outfile>
-    -<grep string>
+    -g<grep string>
     '''
 
     dryrun=False
@@ -120,10 +119,11 @@ def main(argv):
     outdir=""
     outfile=""
     rname="Implicit"
-    
+
     try:
-        opts, args = getopt.getopt(argv,"dp:T:a:b:A:r:R:o:D:g:")
+        opts, args = getopt.getopt(argv,"hdp:T:a:b:A:r:R:o:D:g:")
     except getopt.GetoptError:
+        print "error in parsing arguments."
         print usage
         sys.exit(2)
     for opt, arg in opts:
@@ -151,7 +151,10 @@ def main(argv):
             outdir=str(arg)
         elif opt in ("-g"):
             rname=str(arg)
-
+        elif opt in ("-h"):
+            print usage
+            sys.exit(0)
+            
     if dryrun:
         print "Dry run!  No output actually created."
 
@@ -249,7 +252,7 @@ def main(argv):
         if not dryrun:
             os.system("mkdir -p "+outdir)
             os.system("rm -f "+outdir+"/"+outfile)
-        cmd=["./"+str(p)]
+        cmd=[str(p)]
         if(runtype == "explicit"):
             cmd.append("-e")
         if(runtype == "pruned"):
