@@ -232,9 +232,9 @@ if(gtype == "time" || gtype == "mflops") {
 	for(int i=0; i < nyticks; ++i)
 	  yticks.push((fymin+i*(fymax-fymin)/nyticks));
 	//write(yticks);
-	//yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ns)",LeftRight,
+	//yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ns)${}^{-1}$",LeftRight,
 	//    RightTicks(new string(real x) {return base10(log10(x));},yticks));
-	yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ns)",LeftRight,
+	yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ns)${}^{-1}$",LeftRight,
 	      RightTicks(defaultformat,yticks));
       }
       
