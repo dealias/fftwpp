@@ -146,7 +146,7 @@ int main(int argc, char* argv[])
     }
   }
 
-  n=cpadding(m);
+  unsigned int n=cpadding(m);
 
   cout << "n=" << n << endl;
   cout << "m=" << m << endl;

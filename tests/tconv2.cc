@@ -48,16 +48,6 @@ inline void init(Array2<Complex>& e, Array2<Complex>& f, Array2<Complex>& g,
   }
 }
 
-unsigned int padding(unsigned int m)
-{
-  unsigned int n=4*m-3;
-  cout << "min padded buffer=" << n << endl;
-  unsigned int log2n;
-  // Choose next power of 2 for maximal efficiency.
-  for(log2n=0; n > ((unsigned int) 1 << log2n); log2n++);
-  return 1 << log2n;
-}
-
 int main(int argc, char* argv[])
 {
   fftw::maxthreads=get_max_threads();
@@ -128,8 +118,8 @@ int main(int argc, char* argv[])
     }
   }
 
-  nx=padding(mx);
-  ny=padding(my);
+  nx=tpadding(mx);
+  ny=tpadding(my);
   
   cout << "nx=" << nx << ", ny=" << ny << endl;
   cout << "mx=" << mx << ", my=" << my << endl;
