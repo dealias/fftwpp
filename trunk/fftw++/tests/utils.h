@@ -40,7 +40,7 @@ inline void usage(int n, bool test=false, bool Explicit=true,
   std::cerr << "-m\t\t size" << std::endl;
   std::cerr << "-S<int>\t\t stats used in timing test: " 
 	    << "0=mean, 1=min, 2=max, 3=median, "
-	    << "4=90th percentile, 5=80th percentile,65=50th percentile" 
+	    << "4=90th percentile, 5=80th percentile, 6=50th percentile" 
 	    << std::endl;
   if(n > 1) {
     std::cerr << "-x\t\t x size" << std::endl;
@@ -90,24 +90,23 @@ void fft_usage(int dim)
   std::cout << std::endl;
 }
 
-unsigned int cpadding(unsigned int m)
+unsigned int padding(unsigned int m)
 {
-  unsigned int n=2*m;
   std::cout << "min padded buffer=" << n << std::endl;
   unsigned int log2n;
   // Choose next power of 2 for maximal efficiency.
   for(log2n=0; n > ((unsigned int) 1 << log2n); log2n++);
   return 1 << log2n;
 }
+  
+unsigned int cpadding(unsigned int m)
+{
+  return padding(2*m);
+}
 
 unsigned int hpadding(unsigned int m)
 {
-  unsigned int n=3*m-2;
-  std::cout << "min padded buffer=" << n << std::endl;
-  unsigned int log2n;
-  // Choose next power of 2 for maximal efficiency.
-  for(log2n=0; n > ((unsigned int) 1 << log2n); log2n++);
-  return 1 << log2n;
+  return padding(3*m-2);
 }
 
 inline int hash(Complex* f, unsigned int m)

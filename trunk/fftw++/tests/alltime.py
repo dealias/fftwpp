@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# a timing script for running multiplit timing tests using timin.py
+# a timing script for running multiple timing tests using timing.py
 
 import sys, getopt
 import numpy as np

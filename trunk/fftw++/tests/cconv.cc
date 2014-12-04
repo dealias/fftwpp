@@ -146,12 +146,8 @@ int main(int argc, char* argv[])
     }
   }
 
-  unsigned int n=2*m;
-  cout << "min padded buffer=" << n << endl;
-  unsigned int log2n;
-  // Choose next power of 2 for maximal efficiency.
-  for(log2n=0; n > ((unsigned int) 1 << log2n); log2n++);
-  n=1 << log2n;
+  n=cpadding(m);
+
   cout << "n=" << n << endl;
   cout << "m=" << m << endl;
   
