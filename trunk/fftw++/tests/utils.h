@@ -90,7 +90,7 @@ void fft_usage(int dim)
   std::cout << std::endl;
 }
 
-unsigned int padding(unsigned int m)
+unsigned int padding(unsigned int n)
 {
   std::cout << "min padded buffer=" << n << std::endl;
   unsigned int log2n;
@@ -107,6 +107,11 @@ unsigned int cpadding(unsigned int m)
 unsigned int hpadding(unsigned int m)
 {
   return padding(3*m-2);
+}
+
+unsigned int tpadding(unsigned int m)
+{
+  return padding(4*m-3);
 }
 
 inline int hash(Complex* f, unsigned int m)
