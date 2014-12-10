@@ -28,7 +28,9 @@
 #include <map>
 
 #ifndef _OPENMP
+#ifndef FFTWPP_SINGLE_THREAD
 #define FFTWPP_SINGLE_THREAD
+#endif
 #endif
 
 #ifndef FFTWPP_SINGLE_THREAD
