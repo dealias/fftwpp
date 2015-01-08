@@ -27,7 +27,7 @@ unsigned int BuildZeta(unsigned int n, unsigned int m,
   double arg=twopi/n;
   ZetaH=ComplexAlign(t);
   
-#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
+#ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif    
   for(unsigned int a=0; a < t; ++a) {
@@ -35,7 +35,7 @@ unsigned int BuildZeta(unsigned int n, unsigned int m,
     ZetaH[a]=Complex(cos(theta),sin(theta));
   }
   ZetaL=ComplexAlign(s);
-#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
+#ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif    
   for(unsigned int b=0; b < s; ++b) {
@@ -279,8 +279,8 @@ void ImplicitHConvolution::premult(Complex ** F,
     
   bool even=m == 2*c;
   if(even)
-    S = new Complex[A];
-
+    S=new Complex[A];
+  unsigned int m1=m-1;
   for(unsigned int i=0; i < A; ++i) {
     Complex *f=F[i]+offset;
     P0[i]=f;
@@ -290,7 +290,26 @@ void ImplicitHConvolution::premult(Complex ** F,
 
   if(even) {
 #ifdef __SSE2__
-    unsigned int m1=m-1;
+    unsigned int a=1/s;
+    Vec Zeta=LOAD(ZetaH+a);
+    Vec X=UNPACKL(Zeta,Zeta);
+    Vec Y=UNPACKH(CONJ(Zeta),Zeta);
+    Vec zeta1=ZMULT(X,Y,LOAD(ZetaL+1-s*a));
+    
+    for(unsigned int i=0; i < A; ++i) {
+      Complex *fi=P0[i];
+      Vec Fa=LOAD(fi+1);
+      Vec Fb=LOAD(fi+m1);
+      Vec B=Fb*Mhalf+CONJ(Fa);
+      Fb *= HSqrt3;
+      Vec A=ZMULTC(zeta1,UNPACKL(B,Fb)); // Optimize?
+      B=ZMULTIC(zeta1,UNPACKH(B,Fb));
+      STORE(f1c+i,CONJ(A+B));
+        
+      double a=fi[c].re;
+      S[i]=Complex(2.0*a,a+sqrt3*fi[c].im);
+    }
+#else
     unsigned int a=1/s;
     Vec Zeta=LOAD(ZetaH+a);
     Vec X=UNPACKL(Zeta,Zeta);
@@ -310,12 +329,9 @@ void ImplicitHConvolution::premult(Complex ** F,
       double a=fi[c].re;
       S[i]=Complex(2.0*a,a+sqrt3*fi[c].im);
     }
-#else
-    // FIXME: implement non-SSE case
 #endif
   }
   
-#ifdef __SSE2__
   unsigned int c1=c+1;
   unsigned int d=c1/2;
   unsigned int a=c1/s;
@@ -366,9 +382,6 @@ void ImplicitHConvolution::premult(Complex ** F,
       }
     }
     );
-#else
-  // FIXME: implement non-SSE2 case
-#endif
     
   if(even) {
     for(unsigned int i=0; i < A; ++i) {
@@ -381,13 +394,13 @@ void ImplicitHConvolution::premult(Complex ** F,
   }
 }
 
-// Out of place version (with f1 stored in a separate array cr2B):
-// Assume that cr0 and cr1 are contiguous (and, in fact, overlapping).
-void ImplicitHConvolution::postmultadd(Complex **cr2, Complex **cr0, 
-				       Complex **cr2B)
+// Out of place version (with f1 stored in a separate array c2B):
+// Assume that c0 and c1 are contiguous (and, in fact, overlapping).
+void ImplicitHConvolution::postmultadd(Complex **c2, Complex **c0, 
+				       Complex **c2B)
 {
-#ifdef __SSE2__
   double ninv=1.0/(3.0*m);
+#ifdef __SSE2__
   Vec Ninv=LOAD(ninv);
   Vec Mhalf=LOAD(-0.5);
   Vec HSqrt3=LOAD(hsqrt3);
@@ -399,14 +412,14 @@ void ImplicitHConvolution::postmultadd(Complex **cr2, Complex **cr0,
 	     Vec X=UNPACKL(Zeta,Zeta);
 	     Vec Y=UNPACKH(CONJ(Zeta),Zeta);
 	     for(unsigned int i=0; i < B; ++i) {
-	       Complex *f0=cr0[i];
+	       Complex *f0=c0[i];
 	       Complex *fm=f0+m;
-	       Complex *ui=cr2[i];
-	       Complex *cr2Bi=cr2B[i];
+	       Complex *ui=c2[i];
+	       Complex *c2Bi=c2B[i];
 	       for(unsigned int k=max(1,K); k < stop; ++k) {
 		 Vec Zetak=ZMULT(X,Y,LOAD(ZetaL0+k));
 		 Vec F0=LOAD(f0+k)*Ninv;
-		 Vec F1=ZMULTC(Zetak,LOAD(cr2Bi+k));
+		 Vec F1=ZMULTC(Zetak,LOAD(c2Bi+k));
 		 Vec F2=ZMULT(Zetak,LOAD(ui+k));
 		 Vec S=F1+F2;
 		 STORE(f0+k,F0+S);
@@ -415,49 +428,50 @@ void ImplicitHConvolution::postmultadd(Complex **cr2, Complex **cr0,
 	     }  
 	   }
 	   );
-#else
-  //FIXME: implement non-SSE case
 #endif
 }
 
-void ImplicitHConvolution::postmultadd0(Complex **crm, Complex **cr0, 
-                                        Complex **crp, Complex *f1c)
+void ImplicitHConvolution::postmultadd0(Complex **c2, Complex **c0, 
+                                        Complex *f1c)
 {
-#ifdef __SSE2__
-  bool even=m == 2*c;
   double ninv=1.0/(3.0*m);
   Vec Ninv=LOAD(ninv);
+  bool even=m == 2*c;
+
+#ifdef __SSE2__
   Vec Mhalf=LOAD(-0.5);
   Vec HSqrt3=LOAD(hsqrt3);
+#endif
 
   unsigned int m1=m-1;  
   unsigned int c1=c+1;
   unsigned int d=c1/2;
-  unsigned int a=1/s;
-
+  unsigned int a=c1/s;
   Vec Zeta=LOAD(ZetaH+a);
   Vec X=UNPACKL(Zeta,Zeta);
   Vec Y=UNPACKH(CONJ(Zeta),Zeta);
   Vec Zetac1=ZMULT(X,Y,LOAD(ZetaL+c1-s*a));
 
+#ifdef __SSE2__      
     if(even && m > 2) {
+      unsigned int a=1/s;
       Vec Zeta=LOAD(ZetaH+a);
       Vec X=UNPACKL(Zeta,Zeta);
       Vec Y=UNPACKH(CONJ(Zeta),Zeta);
       Vec zeta1=Ninv*ZMULT(X,Y,LOAD(ZetaL+1-s*a));
       Vec Zeta1=ZMULTC(zeta1,Zetac1);
       for(unsigned int i=0; i < B; ++i) {
-        Complex *f0=cr0[i];
+        Complex *f0=c0[i];
         Vec F0=LOAD(f0+1)*Ninv;
         Vec F1=ZMULTC(zeta1,LOAD(f1c+i));
-        Vec F2=ZMULT(zeta1,LOAD(crm[i]+1));
+        Vec F2=ZMULT(zeta1,LOAD(c2[i]+1));
         Vec S=F1+F2;
         F2=CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2);
         STORE(f0+1,F0+S);
         F0=LOAD(f0+c)*Ninv;
         F1=ZMULTC(Zeta1,LOAD(f0+m1));
         STORE(f0+m1,F2);
-        F2=ZMULT(Zeta1,LOAD(crm[i]+c));
+        F2=ZMULT(Zeta1,LOAD(c2[i]+c));
         S=F1+F2;
         STORE(f0+c,F0+S);
         STORE(f0+m-c,CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2));
@@ -473,11 +487,11 @@ void ImplicitHConvolution::postmultadd0(Complex **crm, Complex **cr0,
         Vec X=UNPACKL(Zeta,Zeta);
         Vec Y=UNPACKH(CONJ(Zeta),Zeta);
         for(unsigned int i=0; i < B; ++i) {
-          Complex *fi=cr0[i];
+          Complex *fi=c0[i];
           Complex *fm=fi+m;
           Complex *fpc1=fi+c1;
           Complex *fmc1=fm-c1;
-          Complex *ui=crm[i];
+          Complex *ui=c2[i];
           Complex *upc1=ui+c1;
           for(unsigned int k=max(even+1,K); k < stop; ++k) {
             Vec zetak=ZMULT(X,Y,LOAD(ZetaL0+k));
@@ -485,7 +499,7 @@ void ImplicitHConvolution::postmultadd0(Complex **crm, Complex **cr0,
           
             Vec F0=LOAD(fi+k)*Ninv;
             Vec F1=ZMULTC(zetak,LOAD(fmc1+k));
-            Vec F2=ZMULT(zetak,LOAD(crm[i]+k));
+            Vec F2=ZMULT(zetak,LOAD(c2[i]+k));
             Vec S=F1+F2;
             F2=CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2);
             
@@ -502,6 +516,7 @@ void ImplicitHConvolution::postmultadd0(Complex **crm, Complex **cr0,
         }
       }
       );
+
   
     if(d == D+1) {
       unsigned int a=d/s;
@@ -511,17 +526,17 @@ void ImplicitHConvolution::postmultadd0(Complex **crm, Complex **cr0,
       Vec Zetak=ZMULT(X,Y,LOAD(ZetaL+d-s*a));
       if(d == 1 && even) {
         for(unsigned int i=0; i < B; ++i) {
-          Complex *f0=cr0[i];
+          Complex *f0=c0[i];
           Vec F0=LOAD(f0+d)*Ninv;
           Vec F1=ZMULTC(Zetak,LOAD(f1c+i));
-          Vec F2=ZMULT(Zetak,LOAD(crm[i]+d));
+          Vec F2=ZMULT(Zetak,LOAD(c2[i]+d));
           Vec S=F1+F2;
           STORE(f0+d,F0+S);
           STORE(f0+m-d,CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2));
         }
       } else {
         for(unsigned int i=0; i < B; ++i) {
-          Complex *f0=cr0[i];
+          Complex *f0=c0[i];
           Vec F0=LOAD(f0+d)*Ninv;
           Vec F1=ZMULTC(Zetak,LOAD(f0+m-d));
           Vec F2=ZMULT(Zetak,LOAD(U[i]+d));
@@ -531,8 +546,6 @@ void ImplicitHConvolution::postmultadd0(Complex **crm, Complex **cr0,
         }
       }
     }
-#else
-    //FIXME: implement non-SSE case
 #endif  
 }
 
@@ -544,140 +557,130 @@ void ImplicitHConvolution::convolve(Complex **F,
   // Set problem-size variables and pointers:
 
   unsigned int C=max(A,B);
-  Complex cr1c[C];
+  Complex c1c[C];
 
-  Complex *cr0[A], *cr1[A], *cr2[A]; // inputs to complex2real FFTs
-  double  *dr0[A], *dr1[A], *dr2[A]; // outputs of complex2real FFTs
+  Complex *C0[A], *C1[A], *c2[A]; // inputs to complex2real FFTs
+  double  *D0[A], *D1[A]; // outputs of complex2real FFTs
+  Complex **c0=C0, **c1=C1;
+  double **d0=D0, **d1=D1;
 
   bool even=m == 2*c;
-  unsigned int start=m-1-c;
+  unsigned int start=m-1-c; // c-1 (c) for m=even (odd)
   for(unsigned int i=0; i < A; ++i) {
     Complex *f=F[i]+offset;
-    cr0[i]=f;
-    cr1[i]=f+start;
+    c0[i]=f;
+    c1[i]=f+start;
     Complex *ui=U[i];
     ui[0]=f->re;
-    cr2[i]=U[i];
+    c2[i]=U[i];
   }
 
   const bool out_of_place=A >= 2*B;
+//  const bool out_of_place=false;
   
-  if(out_of_place) {
+  if(out_of_place) { 
     for(unsigned int i=0; i < A-1; ++i) {
-      dr0[i]=(double *) cr0[i+1];
-      dr1[i]=(double *) cr1[i+1];
+      d0[i]=(double *) c0[i+1];
+      d1[i]=(double *) c1[i+1];
     }
-    dr0[A-1]=(double *) cr2[A-1];
-    dr1[A-1]=(double *) cr2[A-1];
+    d0[A-1]=(double *) c2[A-1];
+    d1[A-1]=(double *) c2[A-1];
     
   } else {
-    for(unsigned int i=0; i < A; ++i) {
-      dr0[i]=(double *) cr0[i];
-      dr1[i]=(double *) cr1[i];
-    }
+    d0=(double **) c0;
+    d1=(double **) c1;
   }
-  // r=2 is always in-place for the cr transform (TODO: perhaps change
-  // the order of premult to get around this?)
-  for(unsigned int i=0; i < A; ++i)
-    dr2[i]=(double *) cr2[i];
-
+  double **d2=(double **) c2;
 
   // premult:
-  premult(F,offset,cr1c);
+  premult(F,offset,c1c);
 
 
   // Complex-to-real FFTs and pmults:
   Complex S[B];
   {
-    // step 1:
-    // r=2 (aka r=-1):
+    // r=2:
     for(unsigned int i=0; i < A; ++i)
-      cr->fft(cr2[i],dr2[i]);
-    (*pmult)(dr2,m,threads);
+      cr->fft(c2[i],d2[i]);
+    (*pmult)(d2,m,threads);
 
     // r=0:
     double T[A]; // deal with overlap between r=0 and r=1
     for(unsigned int i=A; i-- > 0;) { // Loop from A-1 to 0.
-      Complex *cr0i=cr0[i];
-      T[i]=cr0i[0].re; // r=0, k=0
-      (out_of_place ? cro : cr)->fft(cr0i,dr0[i]); 
+      Complex *c0i=c0[i];
+      T[i]=c0i[0].re; // r=0, k=0
+      (out_of_place ? cro : cr)->fft(c0i,d0[i]); 
     }
-    (*pmult)(dr0,m,threads);
-    // The last complex in r=0 is the first complex in r=1, so we have
-    // to save it.
-    for(unsigned int i=0; i < B; ++i) {
-      Complex *cd=(Complex *)dr0[i];
-      S[i]=cd[start];   // r=0, k=c-1 (c) for m=even (odd)
-    }
+    (*pmult)(d0,m,threads);
+    for(unsigned int i=0; i < B; ++i)
+      S[i]=((Complex *) d0[i])[start];   // r=0, k=start
     
     // r=1:
     for(unsigned int i=A; i-- > 0;) { // Loop from A-1 to 0.
-      Complex *cr1i=cr1[i];
-      cr1i[0]=T[i];       // r=1, k=0
+      Complex *c1i=c1[i];
+      c1i[0]=T[i];       // r=1, k=0
       if(even) {
-	Complex tmp=cr1c[i];
-	cr1c[i]=cr1i[1];  // r=0, k=c
-	cr1i[1]=tmp;      // r=1, k=1
+	Complex tmp=c1c[i];
+	c1c[i]=c1i[1];  // r=0, k=c
+	c1i[1]=tmp;      // r=1, k=1
       }
-      (out_of_place ? cro : cr)->fft(cr1[i],dr1[i]);
+      (out_of_place ? cro : cr)->fft(c1[i],d1[i]);
     }
-    (*pmult)(dr1,m,threads);
+    (*pmult)(d1,m,threads);
   }
 
   // Real-to-complex FFTs and postmultadd:
   if(out_of_place) {
-    // Put dr1 into the second half of cr0:
-    Complex **cr2B=cr2+B;
+    // Put d1 into the second half of c0:
+    Complex **c2B=c2+B;
 
     const double ninv=1.0/(3.0*m);
     
     // Return to original space:
     for(unsigned int i=0; i < B; ++i) {
-      Complex *cr0i=cr0[i];
+      Complex *c0i=c0[i];
 
-      // Put dr2 into the second half of cr0, save for postmultadd:
-      cr2[i]=cr0[i+B];
-      Complex *cr2i=cr2[i];
-      Complex *cr2Bi=cr2B[i];
+      double *d2i=d2[i];
+      // Put transformed d2 into the second half of c0, save for postmultadd:
+      c2[i]=c0[i+B];
+      Complex *c2i=c2[i];
+      Complex *c2Bi=c2B[i];
       
-      double *dr0i=dr0[i];
-      double *dr1i=dr1[i];
-      double *dr2i=dr2[i];
-
+      double *d0i=d0[i];
+      double *d1i=d1[i];
 
       // r=1:
-      rco->fft(dr1i,cr2Bi); // first: transform r=1
+      rco->fft(d1i,c2Bi);
       // r=0:
-      Complex *cd=(Complex *)dr0i;
-      cd[start]=S[i]; // r=0, k=c-1 (c) for m=even (odd)
-      rco->fft(dr0i,cr0i); // third: transform r=0
-      // r=2 (=-1):
-      rco->fft(dr2i,cr2i); // fourth: transorm r=2
+      ((Complex *) d0i)[start]=S[i]; // r=0, k=c-1 (c) for m=even (odd)
+      rco->fft(d0i,c0i);
+      // r=2:
+      rco->fft(d2i,c2i);
 
-      cr0i[0]=(cr0i[0].re+cr2Bi[0].re+cr2i[0].re)*ninv;
+      c0i[0]=(c0i[0].re+c2Bi[0].re+c2i[0].re)*ninv;
     }
-    postmultadd(cr2,cr0,cr2B);
+    postmultadd(c2,c0,c2B);
 
   } else { // FFTs are all in-place.
     // Return to original space:
     const double ninv=1.0/(3.0*m);
     for(unsigned int i=0; i < B; ++i) {
-      Complex *cr0i=cr0[i];
-      Complex *cr1i=cr1[i];
-      Complex *cr2i=cr2[i];
-      rc->fft(cr2i);
-      rc->fft(cr1i);
-      double R=cr1i[0].re;
-      cr0i[start]=S[i]; // r=0, k=c-1 (c) for m=even (odd)
+      Complex *c0i=c0[i];
+      Complex *c1i=c1[i];
+      Complex *c2i=c2[i];
+      rc->fft(c2i);
+      rc->fft(c1i);
+      double R=c1i[0].re;
+      c0i[start]=S[i]; // r=0, k=c-1 (c) for m=even (odd)
       if(even) {
-        Complex tmp=cr1c[i];
-        cr1c[i]=cr1i[1]; // r=1, k=1
-        cr1i[1]=tmp;    //  r=0, k=c
+        Complex tmp=c1c[i];
+        c1c[i]=c1i[1]; // r=1, k=1
+        c1i[1]=tmp;    //  r=0, k=c
       }
-      rc->fft(cr0i);
-      cr0i[0]=(cr0i[0].re+R+cr2i[0].re)*ninv;
+      rc->fft(c0i);
+      c0i[0]=(c0i[0].re+R+c2i[0].re)*ninv;
     }
-    postmultadd0(cr2,cr0,cr1,cr1c);
+    postmultadd0(c2,c0,c1c);
   }
 }
 
@@ -1013,7 +1016,7 @@ void fft0padwide::backwards(Complex *f, Complex *u)
         unsigned int kstride=k*stride;
         Complex *uk=u+kstride;
         Complex *fk=f+kstride;
-        Complex *fmk;// =fm1stride+kstride; FIXME: fm1stride undefined
+        Complex *fmk=fm1stride+kstride;
         for(unsigned int i=0; i < M; ++i) {
           Complex *p=fmk+i;
           Complex *q=f+i;
@@ -1101,7 +1104,7 @@ void fft0padwide::forwards(Complex *f, Complex *u)
         double Im=H.re*L.im+H.im*L.re;
         unsigned int kstride=k*stride;
         Complex *fk=f+kstride;
-        Complex *fm1k; // =fm1stride+kstride; //FIXME: fm1stride undefined 
+        Complex *fm1k=fm1stride+kstride;
         Complex *uk=u+kstride;
         for(unsigned int i=0; i < M; ++i) {
           Complex *p=fk+i;

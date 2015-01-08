@@ -348,8 +348,8 @@ public:
 	       unsigned int offset,
 	       Complex* f1c);
   
-  void postmultadd(Complex **cr2, Complex **cr0, Complex **Q);
-  void postmultadd0(Complex **crm, Complex **cr0, Complex **crp, Complex *f1c);
+  void postmultadd(Complex **c2, Complex **c0, Complex **Q);
+  void postmultadd0(Complex **c2, Complex **c0, Complex *f1c);
 
   // Binary convolution:
   void convolve(Complex *f, Complex *g) {
