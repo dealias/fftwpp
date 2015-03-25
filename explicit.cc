@@ -101,6 +101,7 @@ void ExplicitHConvolution::convolve(Complex *f, Complex *g)
 
 void ExplicitConvolution2::pad(Complex *f)
 {
+  // set the right-hand block to zero
   PARALLEL(
     for(unsigned int i=0; i < mx; ++i) {
       unsigned int nyi=ny*i;
@@ -110,15 +111,23 @@ void ExplicitConvolution2::pad(Complex *f)
     }
     )
     
-    PARALLEL(
-      for(unsigned int i=mx; i < nx; ++i) {
-        unsigned int nyi=ny*i;
-        unsigned int stop=nyi+ny;
-        for(unsigned int j=nyi; j < stop; ++j)
-          f[j]=0.0;
-      }
-      )
-    }
+  // set the lower slab to zero
+  const unsigned int start = mx * ny;
+  const unsigned int stop = nx * ny;
+  PARALLEL(
+	   for(unsigned int i = start; i < stop; ++i) {
+	     f[i] = 0.0;
+	   } 
+	   )
+    //  PARALLEL(
+    // for(unsigned int i=mx; i < nx; ++i) {
+    //   unsigned int nyi=ny*i;
+    //   unsigned int stop=nyi+ny;
+    //   for(unsigned int j=nyi; j < stop; ++j)
+    //     f[j]=0.0;
+    // }
+    //	   )
+}
 
 void ExplicitConvolution2::backwards(Complex *f)
 {
