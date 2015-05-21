@@ -26,7 +26,7 @@ void set_fftwpp_maxthreads(unsigned int nthreads);
 
 // 1d complex non-centered convolution
 typedef struct ImplicitConvolution ImplicitConvolution;
-ImplicitConvolution *fftwpp_create_conv1d(unsigned int m);
+ImplicitConvolution *fftwpp_create_conv1d(unsigned int nx);
 ImplicitConvolution *fftwpp_create_conv1d_dot(unsigned int m, 
 						  unsigned int M);
 ImplicitConvolution *fftwpp_create_conv1d_work(unsigned int m,

@@ -127,6 +127,9 @@ private:
   bool allocated;
   bool out_of_place;
 public:
+  // Accessor functions for wrappers.
+  unsigned int getm() {return m;}
+  
   void initpointers(Complex **&U, Complex *u) {
     unsigned int C=max(A,B);
     U=new Complex *[C];
