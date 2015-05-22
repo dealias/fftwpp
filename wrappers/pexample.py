@@ -13,7 +13,7 @@ fftwpp.fftwpp_set_maxthreads(nthreads)
 N = 8
 
 def init(f, g):
-    k=0
+    k = 0
     while k < len(f) :
         f[k] = np.complex(k, k + 1)
         g[k] = np.complex(k, 2 * k + 1)
@@ -89,9 +89,9 @@ print hx
 print
 print "3d non-centered complex convolution:"
 
-mx=4
-my=4
-mz=4
+mx = 4
+my = 4
+mz = 4
 
 x = fftwpp.complex_align([mx, my, mz])
 y = fftwpp.complex_align([mx, my, mz])
