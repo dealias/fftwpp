@@ -1,7 +1,7 @@
 # fftwpp.py - Python wrapper of the C callable FFTW+ wrapper.
 #
-# Author: Matthew Emmett <memmett@gmail.com>
-#
+# Authors: Matthew Emmett <memmett@gmail.com>
+#          Malcolm Roberts <malcolm.i.w.roberts@gmail.com>
 
 import numpy as np
 import os
@@ -31,10 +31,16 @@ def fftwpp_get_maxthreads():
 # Prototypes
 clib.fftwpp_create_conv1d.restype = c_void_p
 clib.fftwpp_create_conv1d.argtypes = [ c_int ]
+clib.fftwpp_create_conv1dAB.restype = c_void_p
+clib.fftwpp_create_conv1dAB.argtypes = [ c_int , c_int, c_int ]
 clib.fftwpp_conv1d_delete.argtypes = [ c_void_p ]
 clib.fftwpp_conv1d_convolve.argtypes = [ c_void_p,
                                          ndpointer(dtype = np.complex128),
                                          ndpointer(dtype = np.complex128) ]
+clib.fftwpp_conv1d_autoconvolve.argtypes = [ c_void_p,
+                                             ndpointer(dtype = np.complex128)]
+clib.fftwpp_conv1d_autocorrelate.argtypes = [ c_void_p,
+                                              ndpointer(dtype = np.complex128)]
 
 clib.fftwpp_create_hconv1d.restype = c_void_p
 clib.fftwpp_create_hconv1d.argtypes = [ c_int ]
@@ -335,6 +341,45 @@ class HConvolution(object):
         assert g.shape == self.shape
 
         self._convolve(self.cptr, f, g)
+
+class AutoConvolution(object):
+    """Implicitly zero-padded complex autoconvolution class.
+    FIXME: doc
+    """
+    def __init__(self, shape):
+
+        if isinstance(shape, int):
+            shape = (shape,)
+
+        self.dim   = len(shape)
+        self.shape = tuple(shape)
+        
+        if self.dim == 1:
+            self.cptr = clib.fftwpp_create_conv1dAB(shape[0], 1, 1)
+            self._autoconvolve = clib.fftwpp_conv1d_autoconvolve
+            self._autocorrelate = clib.fftwpp_conv1d_autocorrelate
+            self._delete = clib.fftwpp_conv1d_delete
+        else:
+            raise ValueError("invalid shape (length/dimension should be 1)")
+
+    def __del__(self):
+        self._delete(self.cptr)
+
+    def autoconvolve(self, f):
+        """
+        Compute the autoconvolution of *f*.
+        The convolution is performed in-place (*f* is over-written).
+        """
+        assert f.shape == self.shape
+        self._autoconvolve(self.cptr, f)
+
+    def autocorrelate(self, f):
+        """
+        Compute the autocorrelation of *f*.
+        The correlation is performed in-place (*f* is over-written).
+        """
+        assert f.shape == self.shape
+        self._autocorrelate(self.cptr, f)
 
 
 if __name__ == "__main__":

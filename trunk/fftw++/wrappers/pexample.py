@@ -23,25 +23,36 @@ def init(f, g):
 f = fftwpp.complex_align([N])
 g = fftwpp.complex_align([N])
 
+print
+print "1d non-centered complex convolution:"
 init(f, g)
-
 print "input f:"
 print f
 print
 print "input g:"
 print g
-
-print
-print "1d non-centered complex convolution:"
 conv = fftwpp.Convolution(f.shape)
 conv.convolve(f, g)
 print f
 
+print
+print "1d non-centered complex autoconvolution:"
 init(f, g)
+conv = fftwpp.AutoConvolution(f.shape)
+conv.autoconvolve(f)
+print f
+print
+print "1d non-centered complex autocorrelation:"
+init(f, g)
+conv.autocorrelate(f)
+print f
+print
+
 
 print
 print "1d centered Hermitian-symmetric complex convolution:"
 hconv = fftwpp.HConvolution(f.shape)
+init(f, g)
 hconv.convolve(f, g)
 print f
 
