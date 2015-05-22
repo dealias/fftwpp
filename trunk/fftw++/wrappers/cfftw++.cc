@@ -43,11 +43,10 @@ extern "C" {
     ImplicitConvolution *fftwpp_create_conv1d(unsigned int nx) {
       return new ImplicitConvolution(nx);
     }
-
-    // ImplicitConvolution *fftwpp_create_conv1d_dot(unsigned int m,
-    // 						  unsigned int M) {
-    //   return new ImplicitConvolution(m,M);
-    // }
+    
+    void fftwpp_conv1d_delete(ImplicitConvolution *conv) {
+      delete conv;
+    }
 
     // ImplicitConvolution *fftwpp_create_conv1d_work(unsigned int m,
     // 						   double __complex__ *u, 
@@ -88,20 +87,21 @@ extern "C" {
     //   delete[] A;
     // }
 
-    void fftwpp_conv1d_delete(ImplicitConvolution *conv) {
+    // 1d Hermitian symmetric wrappers
+    ImplicitHConvolution *fftwpp_create_hconv1d(unsigned int nx) {
+      return new ImplicitHConvolution(nx);
+    }
+
+    void fftwpp_hconv1d_delete(ImplicitHConvolution *conv) {
       delete conv;
     }
 
+    void fftwpp_hconv1d_convolve(ImplicitHConvolution *hconv, 
+				double __complex__ *a, double __complex__ *b) {
+      hconv->convolve((Complex *) a, (Complex *) b);
+    }
+    
     /*
-    // 1d Hermitian symmetric wrappers
-    ImplicitHConvolution *fftwpp_create_hconv1d(unsigned int m) {
-      return new ImplicitHConvolution(m);
-    }
-    ImplicitHConvolution *fftwpp_create_hconv1d_dot(unsigned int m,
-						    unsigned int M) {
-      return new ImplicitHConvolution(m,M);
-    }
-
     ImplicitHConvolution *fftwpp_create_hconv1d_work(unsigned int m,
 						     double __complex__ *u, 
 						     double __complex__ *v, 
@@ -146,17 +146,25 @@ extern "C" {
       delete[] A;
     }
 
-    void fftwpp_hconv1d_delete(ImplicitHConvolution *conv) {
-      delete conv;
-    }
     */
 
-    /*
     // 2d non-centered complex convolution
     ImplicitConvolution2 *fftwpp_create_conv2d(unsigned int mx, 
 					       unsigned int my) {
       return new ImplicitConvolution2(mx, my);
     }
+    
+    void fftwpp_conv2d_delete(ImplicitConvolution2 *conv) {
+      delete conv;
+    }
+    
+    void fftwpp_conv2d_convolve(ImplicitConvolution2 *cconv2, 
+				double __complex__ *a, double __complex__ *b) {
+      cconv2->convolve((Complex *) a, (Complex *) b);
+    }
+    
+    
+    /*
     ImplicitConvolution2 *fftwpp_create_conv2d_dot(unsigned int mx, 
 						   unsigned int my,
 						   unsigned int M) {
@@ -209,23 +217,25 @@ extern "C" {
       conv->convolve((Complex **) A, (Complex **) B);
       delete[] A;      
       delete[] B;
-    }
-
-    void fftwpp_conv2d_delete(ImplicitConvolution2 *conv) {
-      delete conv;
-    }
+      }
+    */
 
     // 2d centered Hermitian-symmetric convolution
-    ImplicitHConvolution2 *fftwpp_create_hconv2d(unsigned int mx, 
-						 unsigned int my) {
-      return new ImplicitHConvolution2(mx, my);
-    }
-    ImplicitHConvolution2 *fftwpp_create_hconv2d_dot(unsigned int mx, 
-						     unsigned int my,
-						     unsigned int M) {
-      return new ImplicitHConvolution2(mx, my, M);
+    ImplicitHConvolution2 *fftwpp_create_hconv2d(unsigned int nx, 
+						 unsigned int ny) {
+      return new ImplicitHConvolution2(nx, ny);
     }
 
+    void fftwpp_hconv2d_delete(ImplicitHConvolution2 *hconv2) {
+      delete hconv2;
+    }
+
+    void fftwpp_hconv2d_convolve(ImplicitHConvolution2 *hconv2, 
+				double __complex__ *a, double __complex__ *b) {
+      hconv2->convolve((Complex *) a, (Complex *) b);
+    }
+    
+    /*
     ImplicitHConvolution2 *fftwpp_create_hconv2d_work(unsigned int mx, 
 						      unsigned int my,
 						      double __complex__ *u1, 
@@ -277,20 +287,42 @@ extern "C" {
       delete[] A;      
       delete[] B;
     }
-
-
-    void fftwpp_hconv2d_delete(ImplicitHConvolution2 *conv) {
-      delete conv;
-    }
     */
 
-    /*
     // 3d non-centered complex convolution
-    ImplicitConvolution3 *fftwpp_create_conv3d(unsigned int mx, 
-					       unsigned int my, 
-					       unsigned int mz) {
-      return new ImplicitConvolution3(mx, my, mz);
+    ImplicitConvolution3 *fftwpp_create_conv3d(unsigned int nx, 
+					       unsigned int ny, 
+					       unsigned int nz) {
+      return new ImplicitConvolution3(nx, ny, nz);
     }
+
+    void fftwpp_conv3d_delete(ImplicitConvolution3 *cconv3) {
+      delete cconv3;
+    }
+
+    void fftwpp_conv3d_convolve(ImplicitConvolution3 *cconv3, 
+				double __complex__ *a, double __complex__ *b) {
+      cconv3->convolve((Complex *) a, (Complex *) b);
+    }
+
+
+    // 3d non-centered complex convolution
+    ImplicitHConvolution3 *fftwpp_create_hconv3d(unsigned int nx, 
+					       unsigned int ny, 
+					       unsigned int nz) {
+      return new ImplicitHConvolution3(nx, ny, nz);
+    }
+
+    void fftwpp_hconv3d_delete(ImplicitHConvolution3 *hconv3) {
+      delete hconv3;
+    }
+
+    void fftwpp_hconv3d_convolve(ImplicitHConvolution3 *hconv3, 
+				double __complex__ *a, double __complex__ *b) {
+      hconv3->convolve((Complex *) a, (Complex *) b);
+    }
+        
+    /*
     ImplicitConvolution3 *fftwpp_create_conv3d_dot(unsigned int mx, 
 						   unsigned int my, 
 						   unsigned int mz,
@@ -355,9 +387,6 @@ extern "C" {
       delete[] B;
     }
 
-    void fftwpp_conv3d_delete(ImplicitConvolution3 *conv) {
-      delete conv;
-    }
 
     // 3d centered Hermitian-symmetric convolution
     ImplicitHConvolution3 *fftwpp_create_hconv3d(unsigned int mx, 
