@@ -632,6 +632,16 @@ public:
     Complex *F[]={f,g};
     convolve(F,multbinary);
   }
+
+  void autoconvolve(Complex *f) {
+    Complex *F[]={f};
+    convolve(F,mult_autoconvolution);
+  }
+
+  void autocorrelate(Complex *f) {
+    Complex *F[]={f};
+    convolve(F,mult_autocorrelation);
+  }
 };
 
 inline void HermitianSymmetrizeX(unsigned int mx, unsigned int my,
@@ -988,6 +998,16 @@ public:
   void convolve(Complex *f, Complex *g) {
     Complex *F[]={f,g};
     convolve(F,multbinary);
+  }
+
+  void autoconvolve(Complex *f) {
+    Complex *F[]={f};
+    convolve(F,mult_autoconvolution);
+  }
+
+  void autocorrelate(Complex *f) {
+    Complex *F[]={f};
+    convolve(F,mult_autocorrelation);
   }
 };
 
