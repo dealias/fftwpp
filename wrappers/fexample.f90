@@ -1,6 +1,5 @@
 program fexample
   use fftwpp ! access the wrapper for FFTW++
-  use fhash  ! simple hash function used to verify test cases.
 
   use, intrinsic :: ISO_C_Binding
   implicit NONE
@@ -74,11 +73,6 @@ program fexample
 
   call output(f,m)
 
-  if( hash1(pf,m).ne.-1208058208 ) then
-     write(*,*) "ImplicitConvolution output incorect."
-     returnflag = returnflag+1
-  end if
-
   call fftw_free(pf)
   call fftw_free(pg)
 
@@ -127,11 +121,6 @@ program fexample
   end do
 
   call output(f,m)
-
-  if( hash1(pf,m).ne.-1208087538 ) then
-     write(*,*) "ImplicitHConvolution output incorect."
-     returnflag = returnflag+2
-  end if
 
   call fftw_free(pf)
   call fftw_free(pg)
@@ -194,11 +183,6 @@ program fexample
 
   call output2(ff,mx,my)
 
-  if( hash1(pf,mx*my).ne.-268695633 ) then
-     write(*,*) "ImplicitConvolution2 output incorect."
-     returnflag = returnflag+4
-  end if
-
   call fftw_free(pf)
   call fftw_free(pg)
 
@@ -259,11 +243,6 @@ program fexample
      end do
   end do
   call output2(ff,mmx,my)
-
-  if( hash1(pf,mmx*my).ne.-947771835 ) then
-     write(*,*) "ImplicitHConvolution2 output incorect."
-     returnflag = returnflag+4
-  end if
 
   call fftw_free(pf)
   call fftw_free(pg)
@@ -333,11 +312,6 @@ program fexample
   end do
 
   call output3(fff,mx,my,mz)
-
-  if( hash1(pf,mx*my*mz).ne.1073436205 ) then
-     write(*,*) "ImplicitConvolution3 output incorect."
-     returnflag = returnflag+4
-  end if
 
   call fftw_free(pf)
   call fftw_free(pg)
@@ -411,11 +385,6 @@ program fexample
   end do
 
   call output3(fff,mmx,mmy,mz)
-
-  if( hash1(pf,mxyz).ne.-472674783 ) then
-     write(*,*) "ImplicitHConvolution3 output incorect."
-     returnflag = returnflag+4
-  end if
 
   call fftw_free(pf)
   call fftw_free(pg)
