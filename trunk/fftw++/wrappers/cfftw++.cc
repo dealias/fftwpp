@@ -16,27 +16,30 @@
 extern "C" {
 
   namespace fftwpp {
-
-    // wrappers for allocating aligned memory arrays
+    // Wrappers for allocating aligned memory arrays
     double *create_doubleAlign(unsigned int n) {
-      return (double  * ) fftwpp::doubleAlign(n); 
+      return (double  *) fftwpp::doubleAlign(n); 
     }
+    
     void delete_doubleAlign(double * p) {
       deleteAlign(p);
     }
+
     double __complex__  *create_complexAlign(unsigned int n) {
       return (double __complex__ * ) fftwpp::ComplexAlign(n); 
     }
+
     void delete_complexAlign(double __complex__ * p) {
       deleteAlign(p);
     }
 
-    // wrappers for multiple threads
+    // Wrappers for multiple threads
     unsigned int get_fftwpp_maxthreads() {
       return fftw::maxthreads;
     }
+    
     void set_fftwpp_maxthreads(unsigned int nthreads) {
-      fftw::maxthreads=nthreads;
+      fftw::maxthreads = nthreads;
     }
     
     // 1d complex wrappers
@@ -44,10 +47,31 @@ extern "C" {
       return new ImplicitConvolution(nx);
     }
     
+    ImplicitConvolution *fftwpp_create_conv1dAB(unsigned int nx,
+					      unsigned int A,
+					      unsigned int B) {
+      return new ImplicitConvolution(nx, A, B);
+    }
+    
     void fftwpp_conv1d_delete(ImplicitConvolution *conv) {
       delete conv;
     }
 
+    void fftwpp_conv1d_convolve(ImplicitConvolution *conv, 
+				double __complex__ *a, double __complex__ *b) {
+      conv->convolve((Complex *) a, (Complex *) b);
+    }
+    
+    void fftwpp_conv1d_autoconvolve(ImplicitConvolution *conv, 
+				    double __complex__ *a) {
+      conv->autoconvolve((Complex *) a);
+    }
+
+    void fftwpp_conv1d_autocorrelate(ImplicitConvolution *conv, 
+				     double __complex__ *a) {
+      conv->autocorrelate((Complex *) a);
+    }
+    
     // ImplicitConvolution *fftwpp_create_conv1d_work(unsigned int m,
     // 						   double __complex__ *u, 
     // 						   double __complex__ *v) {
@@ -60,10 +84,6 @@ extern "C" {
     //   return new ImplicitConvolution(m,(Complex *) u,(Complex *) v, M);
     // }
 
-    void fftwpp_conv1d_convolve(ImplicitConvolution *conv, 
-				double __complex__ *a, double __complex__ *b) {
-      conv->convolve((Complex *) a, (Complex *) b);
-    }
     // void fftwpp_conv1d_convolve_dot(ImplicitConvolution *conv, 
     // 				  double __complex__ **a, 
     // 				  double __complex__ **b) {

@@ -71,7 +71,6 @@ clib.fftwpp_hconv3d_convolve.argtypes = [ c_void_p,
                                           ndpointer(dtype = np.complex128),
                                           ndpointer(dtype = np.complex128) ]
 
-
 class Convolution(object):
     """Implicitly zero-padded complex convolution class.
 
