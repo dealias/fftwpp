@@ -359,8 +359,18 @@ class AutoConvolution(object):
             self._autoconvolve = clib.fftwpp_conv1d_autoconvolve
             self._autocorrelate = clib.fftwpp_conv1d_autocorrelate
             self._delete = clib.fftwpp_conv1d_delete
+        elif self.dim == 2:
+            self.cptr = clib.fftwpp_create_conv2dAB(shape[0], 1, 1)
+            self._autoconvolve = clib.fftwpp_conv2d_autoconvolve
+            self._autocorrelate = clib.fftwpp_conv2d_autocorrelate
+            self._delete = clib.fftwpp_conv2d_delete
+        elif self.dim == 3:
+            self.cptr = clib.fftwpp_create_conv3dAB(shape[0], 1, 1)
+            self._autoconvolve = clib.fftwpp_conv3d_autoconvolve
+            self._autocorrelate = clib.fftwpp_conv3d_autocorrelate
+            self._delete = clib.fftwpp_conv3d_delete
         else:
-            raise ValueError("invalid shape (length/dimension should be 1)")
+            raise ValueError("invalid shape (length/dimension should be 1, 2, or 3)")
 
     def __del__(self):
         self._delete(self.cptr)
@@ -380,7 +390,6 @@ class AutoConvolution(object):
         """
         assert f.shape == self.shape
         self._autocorrelate(self.cptr, f)
-
 
 if __name__ == "__main__":
     import doctest
