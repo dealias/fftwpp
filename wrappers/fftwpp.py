@@ -11,14 +11,14 @@ from ctypes import *
 
 def complex_align(shape):
     dtype = np.dtype(np.complex128)
-    nbytes = np.prod(shape)*dtype.itemsize
-    buf = np.empty(nbytes + 16, dtype=np.uint8)
+    nbytes = np.prod(shape) * dtype.itemsize
+    buf = np.empty(nbytes + 16, dtype = np.uint8)
     start_index = -buf.ctypes.data % 16
     return buf[start_index:start_index + nbytes].view(dtype).reshape(shape)
 
 __all__ = [ 'Convolution' , 'HConvolution' ]
 
-# load fftwpp shared library
+# Load fftwpp shared library
 base = os.path.dirname(os.path.abspath(__file__))
 clib = CDLL(os.path.join(base, '_fftwpp.so'))
 
@@ -28,57 +28,57 @@ def fftwpp_set_maxthreads(nthreads):
 def fftwpp_get_maxthreads():
     return clib.get_fftwpp_maxthreads()
 
-# prototypes
+# Prototypes
 clib.fftwpp_create_conv1d.restype = c_void_p
 clib.fftwpp_create_conv1d.argtypes = [ c_int ]
 clib.fftwpp_conv1d_delete.argtypes = [ c_void_p ]
 clib.fftwpp_conv1d_convolve.argtypes = [ c_void_p,
-                                         ndpointer(dtype=np.complex128),
-                                         ndpointer(dtype=np.complex128) ]
+                                         ndpointer(dtype = np.complex128),
+                                         ndpointer(dtype = np.complex128) ]
 
 clib.fftwpp_create_hconv1d.restype = c_void_p
 clib.fftwpp_create_hconv1d.argtypes = [ c_int ]
 clib.fftwpp_hconv1d_delete.argtypes = [ c_void_p ]
 clib.fftwpp_hconv1d_convolve.argtypes = [ c_void_p,
-                                          ndpointer(dtype=np.complex128),
-                                          ndpointer(dtype=np.complex128) ]
+                                          ndpointer(dtype = np.complex128),
+                                          ndpointer(dtype = np.complex128) ]
 
 clib.fftwpp_create_conv2d.restype = c_void_p
 clib.fftwpp_create_conv2d.argtypes = [ c_int, c_int ]
 clib.fftwpp_conv2d_delete.argtypes = [ c_void_p ]
 clib.fftwpp_conv2d_convolve.argtypes = [ c_void_p,
-                                         ndpointer(dtype=np.complex128),
-                                         ndpointer(dtype=np.complex128) ]
+                                         ndpointer(dtype = np.complex128),
+                                         ndpointer(dtype = np.complex128) ]
 
 clib.fftwpp_create_hconv2d.restype = c_void_p
 clib.fftwpp_create_hconv2d.argtypes = [ c_int, c_int ]
 clib.fftwpp_hconv2d_delete.argtypes = [ c_void_p ]
 clib.fftwpp_hconv2d_convolve.argtypes = [ c_void_p,
-                                          ndpointer(dtype=np.complex128),
-                                          ndpointer(dtype=np.complex128) ]
+                                          ndpointer(dtype = np.complex128),
+                                          ndpointer(dtype = np.complex128) ]
 
 clib.fftwpp_create_conv3d.restype = c_void_p
 clib.fftwpp_create_conv3d.argtypes = [ c_int, c_int, c_int ]
 clib.fftwpp_conv3d_delete.argtypes = [ c_void_p ]
 clib.fftwpp_conv3d_convolve.argtypes = [ c_void_p,
-                                          ndpointer(dtype=np.complex128),
-                                          ndpointer(dtype=np.complex128) ]
+                                          ndpointer(dtype = np.complex128),
+                                          ndpointer(dtype = np.complex128) ]
 
 clib.fftwpp_create_hconv3d.restype = c_void_p
 clib.fftwpp_create_hconv3d.argtypes = [ c_int, c_int, c_int ]
 clib.fftwpp_hconv3d_delete.argtypes = [ c_void_p ]
 clib.fftwpp_hconv3d_convolve.argtypes = [ c_void_p,
-                                          ndpointer(dtype=np.complex128),
-                                          ndpointer(dtype=np.complex128) ]
+                                          ndpointer(dtype = np.complex128),
+                                          ndpointer(dtype = np.complex128) ]
 
 
 class Convolution(object):
     """Implicitly zero-padded complex convolution class.
 
-    :param shape: shape/number of elements in the input arrays (int, tuple or list)
+    :param shape: shape/number of elements in the input arrays (int,
+    tuple or list)
 
     The length of *shape* determines the dimension of the convolution.
-
 
     One dimensional convolutions
     ----------------------------
@@ -194,10 +194,8 @@ class Convolution(object):
         else:
             raise ValueError("invalid shape (length/dimension should be 1, 2, or 3)")
 
-
     def __del__(self):
         self._delete(self.cptr)
-
 
     def convolve(self, f, g):
         """Compute the convolution of *f* and *g*.
@@ -214,10 +212,10 @@ class Convolution(object):
 class HConvolution(object):
     """Implicitly zero-padded complex Hermitian-symmetric convolution class.
 
-    :param shape: shape/number of elements in the input arrays (int, tuple or list)
+    :param shape: shape/number of elements in the input arrays (int,
+    tuple or list)
 
     The length of *shape* determines the dimension of the convolution.
-
 
     One dimensional convolutions
     ----------------------------
@@ -230,8 +228,8 @@ class HConvolution(object):
     >>> f = fftwpp.complex_align([N])
     >>> g = fftwpp.complex_align([N])
     >>> for i in range(len(f)):
-    ...     f[i]=np.complex(i,i+1)
-    ...     g[i]=np.complex(i,2*i+1)
+    ...     f[i] = np.complex(i, i + 1)
+    ...     g[i] = np.complex(i, 2 * i + 1)
 
     At this point, both ``f`` and ``g`` have shape ``(N,)``::
 
@@ -257,12 +255,12 @@ class HConvolution(object):
     >>> import fftwpp
     >>> Nx = 4
     >>> Ny = 4
-    >>> f = fftwpp.complex_align([2*Nx-1,Ny])
-    >>> g = fftwpp.complex_align([2*Nx-1,Ny])
+    >>> f = fftwpp.complex_align([2 * Nx - 1, Ny])
+    >>> g = fftwpp.complex_align([2 * Nx - 1, Ny])
     >>> for i in range(len(f)):
     ...     for j in range(len(f[i])):
-    ...             f[i][j]=np.complex(i,j)
-    ...             g[i][j]=np.complex(2*i,j+1)
+    ...             f[i][j] = np.complex(i, j)
+    ...             g[i][j] = np.complex(2 * i, j + 1)
     ... 
 
     Now, construct the convolution object and convolve::
@@ -280,11 +278,11 @@ class HConvolution(object):
 
     >>> import numpy as np
     >>> import fftwpp
-    >>> Nx=4
-    >>> Ny=4
-    >>> Nz=4
-    >>> f =  fftwpp.complex_align([2*Nx-1,2*Ny-1,Nz])
-    >>> g =  fftwpp.complex_align([2*Nx-1,2*Ny-1,Nz])
+    >>> Nx = 4
+    >>> Ny = 4
+    >>> Nz = 4
+    >>> f = fftwpp.complex_align([2 * Nx - 1, 2 * Ny - 1, Nz])
+    >>> g = fftwpp.complex_align([2 * Nx - 1, 2 * Ny - 1, Nz])
 
     Now, construct the convolution object and convolve::
 
@@ -295,7 +293,6 @@ class HConvolution(object):
 
     >>> #np.allclose(f/N**3, np.fft.fftn(np.sin(x)*np.sin(5*y)*np.sin(z)))
     True
-
 
     """
 
@@ -313,23 +310,21 @@ class HConvolution(object):
             self._convolve = clib.fftwpp_hconv1d_convolve
             self._delete = clib.fftwpp_hconv1d_delete
         elif self.dim == 2:
-            self.cptr = clib.fftwpp_create_hconv2d(c_int((shape[0]+1)/2),
+            self.cptr = clib.fftwpp_create_hconv2d(c_int((shape[0] + 1) / 2),
                                                    c_int(shape[1]))
             self._convolve = clib.fftwpp_hconv2d_convolve
             self._delete = clib.fftwpp_hconv2d_delete
         elif self.dim == 3:
-            self.cptr = clib.fftwpp_create_hconv3d(c_int((shape[0]+1)/2), 
-                                                   c_int((shape[1]+1)/2), 
+            self.cptr = clib.fftwpp_create_hconv3d(c_int((shape[0] + 1) / 2), 
+                                                   c_int((shape[1] + 1) / 2), 
                                                    c_int(shape[2]))
             self._convolve = clib.fftwpp_hconv3d_convolve
             self._delete = clib.fftwpp_hconv3d_delete
         else:
             raise ValueError("invalid shape (length/dimension should be 1, 2, or 3)")
 
-
     def __del__(self):
         self._delete(self.cptr)
-
 
     def convolve(self, f, g):
         """Compute the convolution of *f* and *g*.
