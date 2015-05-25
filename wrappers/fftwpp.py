@@ -37,6 +37,9 @@ clib.fftwpp_conv1d_delete.argtypes = [ c_void_p ]
 clib.fftwpp_conv1d_convolve.argtypes = [ c_void_p,
                                          ndpointer(dtype = np.complex128),
                                          ndpointer(dtype = np.complex128) ]
+clib.fftwpp_conv1d_correlate.argtypes = [ c_void_p,
+                                          ndpointer(dtype = np.complex128),
+                                          ndpointer(dtype = np.complex128) ]
 clib.fftwpp_conv1d_autoconvolve.argtypes = [ c_void_p,
                                              ndpointer(dtype = np.complex128)]
 clib.fftwpp_conv1d_autocorrelate.argtypes = [ c_void_p,
@@ -55,6 +58,9 @@ clib.fftwpp_conv2d_delete.argtypes = [ c_void_p ]
 clib.fftwpp_conv2d_convolve.argtypes = [ c_void_p,
                                          ndpointer(dtype = np.complex128),
                                          ndpointer(dtype = np.complex128) ]
+clib.fftwpp_conv2d_correlate.argtypes = [ c_void_p,
+                                          ndpointer(dtype = np.complex128),
+                                          ndpointer(dtype = np.complex128) ]
 
 clib.fftwpp_create_hconv2d.restype = c_void_p
 clib.fftwpp_create_hconv2d.argtypes = [ c_int, c_int ]
@@ -67,6 +73,9 @@ clib.fftwpp_create_conv3d.restype = c_void_p
 clib.fftwpp_create_conv3d.argtypes = [ c_int, c_int, c_int ]
 clib.fftwpp_conv3d_delete.argtypes = [ c_void_p ]
 clib.fftwpp_conv3d_convolve.argtypes = [ c_void_p,
+                                          ndpointer(dtype = np.complex128),
+                                          ndpointer(dtype = np.complex128) ]
+clib.fftwpp_conv3d_correlate.argtypes = [ c_void_p,
                                           ndpointer(dtype = np.complex128),
                                           ndpointer(dtype = np.complex128) ]
 
@@ -187,14 +196,17 @@ class Convolution(object):
         if self.dim == 1:
             self.cptr = clib.fftwpp_create_conv1d(*shape)
             self._convolve = clib.fftwpp_conv1d_convolve
+            self._correlate = clib.fftwpp_conv1d_correlate
             self._delete = clib.fftwpp_conv1d_delete
         elif self.dim == 2:
             self.cptr = clib.fftwpp_create_conv2d(*shape)
             self._convolve = clib.fftwpp_conv2d_convolve
+            self._correlate = clib.fftwpp_conv2d_correlate
             self._delete = clib.fftwpp_conv2d_delete
         elif self.dim == 3:
             self.cptr = clib.fftwpp_create_conv3d(*shape)
             self._convolve = clib.fftwpp_conv3d_convolve
+            self._correlate = clib.fftwpp_conv3d_correlate
             self._delete = clib.fftwpp_conv3d_delete
         else:
             raise ValueError("invalid shape (length/dimension should be 1, 2, or 3)")
@@ -212,6 +224,17 @@ class Convolution(object):
         assert g.shape == self.shape
 
         self._convolve(self.cptr, f, g)
+
+    def correlate(self, f, g):
+        """Compute the convolution of *f* and *g*.
+
+        The convolution is performed in-place (*f* is over-written).
+        """
+
+        assert f.shape == self.shape
+        assert g.shape == self.shape
+
+        self._correlate(self.cptr, f, g)
         
 
 class HConvolution(object):

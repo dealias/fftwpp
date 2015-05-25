@@ -95,6 +95,7 @@ typedef void realmultiplier(double **, unsigned int m, unsigned int threads);
 // function-pointer convolutions.
 multiplier mult_autoconvolution;
 multiplier mult_autocorrelation;
+multiplier mult_correlation;
 multiplier multbinary;
 multiplier multbinary2;
 multiplier multbinary3;
@@ -235,6 +236,12 @@ public:
   void convolve(Complex *f, Complex *g) {
     Complex *F[]={f,g};
     convolve(F,multbinary);
+  }
+
+  // Binary correlation:
+  void correlate(Complex *f, Complex *g) {
+    Complex *F[]={f, g};
+    convolve(F,mult_correlation);
   }
     
   template<class T>
@@ -633,6 +640,12 @@ public:
     convolve(F,multbinary);
   }
 
+  // Binary correlation:
+  void correlate(Complex *f, Complex *g) {
+    Complex *F[]={f, g};
+    convolve(F,mult_correlation);
+  }
+
   void autoconvolve(Complex *f) {
     Complex *F[]={f};
     convolve(F,mult_autoconvolution);
@@ -998,6 +1011,12 @@ public:
   void convolve(Complex *f, Complex *g) {
     Complex *F[]={f,g};
     convolve(F,multbinary);
+  }
+
+  // Binary correlation:
+  void correlate(Complex *f, Complex *g) {
+    Complex *F[]={f, g};
+    convolve(F,mult_correlation);
   }
 
   void autoconvolve(Complex *f) {
