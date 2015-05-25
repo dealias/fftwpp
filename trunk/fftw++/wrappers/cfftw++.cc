@@ -61,6 +61,11 @@ extern "C" {
 				double __complex__ *a, double __complex__ *b) {
       conv->convolve((Complex *) a, (Complex *) b);
     }
+
+    void fftwpp_conv1d_correlate(ImplicitConvolution *conv, 
+				double __complex__ *a, double __complex__ *b) {
+      conv->correlate((Complex *) a, (Complex *) b);
+    }
     
     void fftwpp_conv1d_autoconvolve(ImplicitConvolution *conv, 
 				    double __complex__ *a) {
@@ -182,7 +187,12 @@ extern "C" {
 				double __complex__ *a, double __complex__ *b) {
       pconv->convolve((Complex *) a, (Complex *) b);
     }
-    
+
+    void fftwpp_conv2d_correlate(ImplicitConvolution2 *conv, 
+				double __complex__ *a, double __complex__ *b) {
+      conv->correlate((Complex *) a, (Complex *) b);
+    }
+
     void fftwpp_conv2d_autoconvolve(ImplicitConvolution2 *pconv, 
 				    double __complex__ *a) {
       pconv->autoconvolve((Complex *) a);
@@ -334,6 +344,11 @@ extern "C" {
       pconv->convolve((Complex *) a, (Complex *) b);
     }
     
+    void fftwpp_conv3d_correlate(ImplicitConvolution3 *conv, 
+				double __complex__ *a, double __complex__ *b) {
+      conv->correlate((Complex *) a, (Complex *) b);
+    }
+
     void fftwpp_conv3d_autoconvolve(ImplicitConvolution3 *pconv, 
 				    double __complex__ *a) {
       pconv->autoconvolve((Complex *) a);

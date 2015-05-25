@@ -1733,6 +1733,30 @@ void mult_autocorrelation(Complex **F, unsigned int m, unsigned int threads)
 
 // This multiplication routine is for binary convolutions and takes two inputs
 // of size m.
+// F[0][j] *= conj(F[0][j]);
+void mult_correlation(Complex **F, unsigned int m, unsigned int threads)
+{
+  Complex* F0=F[0];
+  Complex* F1=F[1];
+  
+#ifdef __SSE2__
+  PARALLEL(
+    for(unsigned int j=0; j < m; ++j) {
+      Complex *p=F0+j;
+      Complex *q=F1+j;
+      STORE(p,ZMULT(LOAD(p),CONJ(LOAD(q))));
+    }
+    );
+#else
+  PARALLEL(
+	   for(unsigned int j=0; j < m; ++j)
+	     F0[j] *= conj(F1[j]);
+    );
+#endif
+}
+
+// This multiplication routine is for binary convolutions and takes two inputs
+// of size m.
 // F[0][j] *= F[1][j];
 void multbinary(Complex **F, unsigned int m, unsigned int threads)
 {

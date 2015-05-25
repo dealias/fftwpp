@@ -33,6 +33,7 @@ print "input g:"
 print g
 conv = fftwpp.Convolution(f.shape)
 conv.convolve(f, g)
+#conv.correlate(f, g)
 print f
 
 print
@@ -80,6 +81,7 @@ init2(x, y)
 
 conv = fftwpp.Convolution(x.shape)
 conv.convolve(x, y)
+#conv.correlate(x, y)
 print x
 
 
@@ -125,6 +127,7 @@ init3(x, y)
 
 conv = fftwpp.Convolution(x.shape)
 conv.convolve(x, y)
+#conv.correlate(x, y)
 print x
 
 print
