@@ -212,12 +212,13 @@ int main(int argc, char* argv[])
   }
   
   if(Explicit) {
-    ExplicitHConvolution2 C(nx,ny,mx,my,f,A/2,Pruned);
+    unsigned int M=A/2;
+    ExplicitHConvolution2 C(nx,ny,mx,my,f,M,Pruned);
     
     for(unsigned int i=0; i < N; ++i) {
       init(F,mx,ny,nxp,nyp,A,true);
       seconds();
-      C.convolve(F[0],F[1]);
+      C.convolve(F,F+M);
       T[i]=seconds();
     }
 
