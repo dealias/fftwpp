@@ -216,7 +216,7 @@ int main(int argc, char* argv[])
     ExplicitHConvolution2 C(nx,ny,mx,my,f,M,Pruned);
     
     for(unsigned int i=0; i < N; ++i) {
-      init(F,mx,ny,nxp,nyp,A,true);
+      init(F,mx,my,nxp,nyp,A,true);
       seconds();
       C.convolve(F,F+M);
       T[i]=seconds();
