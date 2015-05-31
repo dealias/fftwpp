@@ -186,7 +186,7 @@ inline void timings(const char* text, unsigned int m, unsigned int count,
 }
 
 inline void timings(const char* text, unsigned int m, double *T, 
-		    unsigned int N, int algorithm=0)
+		    unsigned int N, int algorithm=MEAN)
 {
   double sigmaL=0.0, sigmaH=0.0;
   double avg=mean(T,N,algorithm);
