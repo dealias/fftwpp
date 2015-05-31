@@ -147,10 +147,6 @@ int main(int argc, char* argv[])
   }
   cout << "N=" << N << endl;
   
-  // non-implicit convolutions only implemented for binary case.
-  if(!Implicit)
-    A=2;
-
   size_t align=sizeof(Complex);
   array2<Complex> h0;
   if(Direct) h0.Allocate(mx,my,align);
@@ -211,9 +207,14 @@ int main(int argc, char* argv[])
   }
   
   if(Explicit) {
+    if(A != 2) {
+      cerr << "Explicit convolutions for A=" << A << " are not yet implemented" << endl;
+      exit(1);
+    }
+
     ExplicitConvolution2 C(nx,ny,mx,my,F[0],Pruned);
     for(unsigned int i=0; i < N; ++i) {
-      init(F,nxp,nyp,2);
+      init(F,nxp,nyp,A);
       seconds();
       C.convolve(F[0],F[1]);
       T[i]=seconds();
