@@ -225,13 +225,13 @@ int main(int argc, char* argv[])
     if(Direct) {
       for(unsigned int i=0; i < mx; i++)
         for(unsigned int j=0; j < my; j++)
-	  h0[i][j]=F[0][nxp*i+j];
+	  h0[i][j]=F[0][nyp*i+j];
     }
   
     if(mx*my < outlimit) {
       for(unsigned int i=0; i < mx; i++) {
         for(unsigned int j=0; j < my; j++) {
-	  cout << F[0][nxp*i+j] << "\t";
+	  cout << F[0][nyp*i+j] << "\t";
 	}
       cout << endl;
       }
