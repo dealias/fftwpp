@@ -24,7 +24,7 @@ bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
 
 inline void init(Complex **F, 
-		 unsigned int mx, unsigned int my, unsigned int mz, 
+		 unsigned int nxp, unsigned int nyp, unsigned int nzp, 
 		 unsigned int A) 
 {
   if(A %2 == 0) {
@@ -34,8 +34,8 @@ inline void init(Complex **F,
       double S=sqrt(1.0+s);
       double ffactor=S*factor;
       double gfactor=1.0/S*factor;
-      array3<Complex> f(mx,my,mz,F[s]);
-      array3<Complex> g(mx,my,mz,F[M+s]);
+      array3<Complex> f(nxp,nyp,nzp,F[s]);
+      array3<Complex> g(nxp,nyp,nzp,F[M+s]);
       for(unsigned int i=0; i < mx; ++i) {
 	for(unsigned int j=0; j < my; j++) {
 	  for(unsigned int k=0; k < mz; k++) {
@@ -213,10 +213,15 @@ int main(int argc, char* argv[])
   }
   
   if(Explicit) {
+    if(A != 2) {
+      cerr << "Explicit convolutions for A=" << A << " are not yet implemented" << endl;
+      exit(1);
+    }
+
     ExplicitConvolution3 C(nx,ny,nz,mx,my,mz,f,Pruned);
 
     for(unsigned int i=0; i < N; ++i) {
-      init(F,nx,ny,nz,2);
+      init(F,nxp,nyp,nzp,A);
       seconds();
       C.convolve(F[0],F[1]);
       T[i]=seconds();
@@ -227,14 +232,14 @@ int main(int argc, char* argv[])
       for(unsigned int i=0; i < mx; i++) 
         for(unsigned int j=0; j < my; j++)
 	  for(unsigned int k=0; k < mz; k++)
-	    h0[i][j][k]=F[0][i*nx*ny + j*ny + k];
+	    h0[i][j][k]=F[0][nyp*nzp*i+nzp*j+k];
     }
 
     if(mx*my*mz < outlimit) {
       for(unsigned int i=0; i < mx; i++) {
         for(unsigned int j=0; j < my; j++) {
           for(unsigned int k=0; k < mz; k++)
-            cout << F[0][i*nx*ny + j*ny + k] << " ";
+            cout << F[0][nyp*nzp*i+nzp*j+k] << " ";
           cout << endl;
         }
         cout << endl;

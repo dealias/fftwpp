@@ -19,7 +19,7 @@ unsigned int my=4;
 
 bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
-inline void init(Complex **F, unsigned int mx, unsigned int my, unsigned int A) 
+inline void init(Complex **F, unsigned int nxp, unsigned int nyp, unsigned int A) 
 {
   if(A%2 == 0) {
     unsigned int M=A/2;
@@ -28,8 +28,8 @@ inline void init(Complex **F, unsigned int mx, unsigned int my, unsigned int A)
       double S=sqrt(1.0+s);
       double ffactor=S*factor;
       double gfactor=1.0/S*factor;
-      array2<Complex> f(mx,my,F[s]);
-      array2<Complex> g(mx,my,F[M+s]);
+      array2<Complex> f(nxp,nyp,F[s]);
+      array2<Complex> g(nxp,nyp,F[M+s]);
       for(unsigned int i=0; i < mx; ++i) {
 	for(unsigned int j=0; j < my; j++) {
 	  f[i][j]=ffactor*Complex(i,j);
