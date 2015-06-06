@@ -345,7 +345,7 @@ void ExplicitConvolution3::pad(Complex *f)
     PARALLEL(
       for(unsigned int i=0; i < nx; ++i) {
         unsigned int nyzi=nyz*i;
-        for(unsigned int j=mx; j < ny; ++j) {
+        for(unsigned int j=my; j < ny; ++j) {
           unsigned int nyzij=nyzi+nz*j;
           unsigned int stop=nyzij+nz;
           for(unsigned int k=nyzij; k < stop; ++k)
