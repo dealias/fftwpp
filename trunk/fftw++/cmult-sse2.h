@@ -18,12 +18,13 @@
 #ifndef __cmult_sse2_h__
 #define __cmult_sse2_h__ 1
 
-#ifdef __SSE2__      
-
 #include "Complex.h"
-#include <emmintrin.h>
 
 namespace fftwpp {
+
+#ifdef __SSE2__
+
+#include <emmintrin.h>
 
 typedef __m128d Vec;
 
@@ -96,6 +97,109 @@ static inline Vec CONJ(const Vec& z)
   return _mm_xor_pd(sse2_pm.v,z);
 }
 
+static inline Vec LOAD(double x)
+{
+  return _mm_load1_pd(&x);
+}
+
+#else
+
+class Vec {
+public:
+  double x;
+  double y;
+  
+  Vec() {};
+  Vec(double x, double y) : x(x), y(y) {};
+  Vec(const Vec &v) : x(v.x), y(v.y) {};
+  Vec(const Complex &z) : x(z.re), y(z.im) {};
+  
+  const Vec& operator += (const Vec& v) {
+    x += v.x; 
+    y += v.y; 
+    return *this;
+  }
+  
+  const Vec& operator -= (const Vec& v) {
+    x -= v.x; 
+    y -= v.y; 
+    return *this;
+  }
+  
+  const Vec& operator *= (const Vec& v) {
+    x *= v.x; 
+    y *= v.y; 
+    return *this;
+  }
+};
+
+static inline Vec operator -(const Vec& a) 
+{
+  return Vec(-a.x,-a.y);
+}
+
+static inline Vec operator +(const Vec& a, const Vec& b)
+{
+  return Vec(a.x+b.x,a.y+b.y);
+}
+
+static inline Vec operator -(const Vec& a, const Vec& b)
+{
+    return Vec(a.x-b.x,a.y-b.y);
+}
+
+static inline Vec operator *(const Vec& a, const Vec& b)
+{
+    return Vec(a.x*b.x,a.y*b.y);
+}
+
+static inline Vec UNPACKL(const Vec& z, const Vec& w)
+{
+  return Vec(z.x,w.x);
+}
+
+static inline Vec UNPACKH(const Vec& z, const Vec& w)
+{
+  return Vec(z.y,w.y);
+}
+
+static inline Vec FLIP(const Vec& z)
+{
+  return Vec(z.y,z.x);
+}
+
+static inline Vec CONJ(const Vec& z)
+{
+  return Vec(z.x,-z.y);
+}
+
+static inline Vec LOAD(double x)
+{
+  return Vec(x,x);
+}
+
+#endif
+
+static inline Vec LOAD(const Complex *z)
+{
+  return *(const Vec *) z;
+}
+
+static inline void STORE(Complex *z, const Vec& v)
+{
+  *(Vec *) z = v;
+}
+
+static inline Vec LOAD(const double *z)
+{
+  return *(const Vec *) z;
+}
+
+static inline void STORE(double *z, const Vec& v)
+{
+  *(Vec *) z = v;
+}
+
 // Return I*z.
 static inline Vec ZMULTI(const Vec& z)
 {
@@ -137,33 +241,7 @@ static inline Vec ZMULTI(const Vec& x, const Vec& y, const Vec& w)
   return x*FLIP(z)+y*z;
 }
 
-static inline Vec LOAD(const Complex *z)
-{
-  return *(const Vec *) z;
-}
-
-static inline void STORE(Complex *z, const Vec& v)
-{
-  *(Vec *) z = v;
-}
-
-static inline Vec LOAD(const double *z)
-{
-  return *(const Vec *) z;
-}
-
-static inline void STORE(double *z, const Vec& v)
-{
-  *(Vec *) z = v;
-}
-
-static inline Vec LOAD(double z)
-{
-  return _mm_load1_pd(&z);
-}
 
 }
-
-#endif
 
 #endif
