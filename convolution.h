@@ -84,10 +84,6 @@ public:
   
 };
 
-#ifndef __SSE2__
-#define Vec Complex
-#endif
-
 typedef void multiplier(Complex **, unsigned int m, unsigned int threads); 
 typedef void realmultiplier(double **, unsigned int m, unsigned int threads); 
   
@@ -247,8 +243,6 @@ public:
   template<class T>
   inline void premult(Complex **F, unsigned int k, Vec& Zetak);
 
-  void premult_nonSSE2(Complex **F);
-  
   template<class T>
   void premult(Complex **F);
   
@@ -370,8 +364,6 @@ public:
   template<class T>
   inline void premult(Complex **F, unsigned int k, Vec& Zetak);
 
-  void premult_nonSSE2(Complex **F);
-  
   template<class T>
   void premult(Complex **F);
   
