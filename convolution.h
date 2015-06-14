@@ -461,14 +461,19 @@ public:
     delete Backwards;
   }
   
-  // TODO: Update also for noncompact data format
-  // Unscramble indices.
+  // Unscramble indices, returning spatial j value stored at index i
   inline unsigned findex(unsigned i) {
-    return i < m-1 ? 3*i : 3*i+4-3*m;
+    if(compact)
+      return i < m-1 ? 3*i : 3*i+4-3*m; // for i >= m-1: j=3*(i-(m-1))+1
+    else
+      return i < m ? 3*(i-1) : 3*(i-m)+1;
   }
 
   inline unsigned uindex(unsigned i) {
-    return i > 0 ? (i < m ? 3*i-1 : 3*m-3) : 3*m-1;
+    if(compact)
+      return i > 0 ? (i < m ? 3*i-1 : 3*m-3) : 3*m-1;
+    else
+      return i > 1 ? 3*i-4 : 3*m-1;
   }
 
   virtual void backwards(Complex *f, Complex *u);
