@@ -1,7 +1,7 @@
 #ifndef __mpifftwpp_h__
 #define __mpifftwpp_h__ 1
 
-#include "mpi/mpitranspose.h"
+#include "mpitranspose.h"
 #include <fftw3-mpi.h>
 #include "fftw++.h"
 

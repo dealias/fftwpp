@@ -1,4 +1,4 @@
-#include "mpi/mpifftw++.h"
+#include "mpifftw++.h"
 
 namespace fftwpp {
 

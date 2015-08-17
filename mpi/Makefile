@@ -78,7 +78,7 @@ rcfft2: rcfft2.o $(MPIFFT:=.o)
 fft3: fft3.o $(MPIFFT:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
-transpose: transpose.o $(MPITRANSPOSE:=.o)
+transpose: transpose.o $(MPIFFT:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
 clean:  FORCE

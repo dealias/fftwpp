@@ -36,10 +36,10 @@ Currently, both N and M must be divisible by the number of processors.
 */  
   
 #include <mpi.h>
-#include "../Complex.h"
-#include <fftw++.h>
 #include <cstring>
 #include <typeinfo>
+#include "../Complex.h"
+#include "../fftw++.h"
 
 namespace fftwpp {
 
@@ -179,6 +179,7 @@ public:
     
     MPI_Comm_rank(global,&globalrank);
     
+/*    
     if(!divisible(size,M,N)) {
       if(globalrank == 0)
         std::cout << 
@@ -187,7 +188,8 @@ public:
       MPI_Finalize();
       exit(0);
     }
-
+*/
+    
     if(work == NULL) {
       Array::newAlign(this->work,N*m*L,sizeof(T));
       allocated=true;

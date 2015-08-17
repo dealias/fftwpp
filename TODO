@@ -3,8 +3,7 @@ finish mpi transpose when P does not divide N
 MPI speed test
 wrappers
 update documentation
-non-SSE version
-Make sure that the PARALLEL pragma doesn't contain any :#ifdef"s
+Make sure that the PARALLEL pragma doesn't contain any "#ifdef"s
 
 Release done:
 speed test out-of-place conv: Done, seems to give 10% or so.
