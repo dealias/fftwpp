@@ -651,7 +651,7 @@ public:
 
     if(!out) out=in;
     inplace=(out==in);
-    if(inplace) threads=1;
+    if(inplace) threads=1; // TODO: Generalize to inplace
     
     fftw_iodim dims[3];
 

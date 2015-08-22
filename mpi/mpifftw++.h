@@ -13,11 +13,6 @@ extern bool mpi;
 void MPILoadWisdom(const MPI_Comm& active);
 void MPISaveWisdom(const MPI_Comm& active);
 
-inline unsigned int ceilquotient(unsigned int a, unsigned int b)
-{
-  return (a+b-1)/b;
-}
-
 // Distribute first over x, then (if allowpencil=true), over y.
 class MPIgroup {
 public:  

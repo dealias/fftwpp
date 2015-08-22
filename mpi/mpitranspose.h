@@ -1,6 +1,8 @@
 #ifndef __mpitranspose_h__
 #define __mpitranspose_h__ 1
 
+using namespace std; //****
+
 /* 
 Globally transpose an N x M matrix of blocks of L complex elements
 distributed over the second dimension.
@@ -56,6 +58,16 @@ for(unsigned int i=0; i < length; ++i)
   to[i]=from[i];
 }
   
+// Copy count blocks spaced stride apart to contiguous blocks in dest.
+template<class T>
+inline void copytoblock(T *src, T *dest,
+                        unsigned int count, unsigned int length,
+                        unsigned int stride, unsigned int threads=1)
+{
+  for(unsigned int i=0; i < count; ++i)
+    copy(src+i*stride,dest+i*length,length,threads);
+}
+
 inline void transposeError(const char *text) {
   std::cout << "Cannot construct " << text << " transpose plan." << std::endl;
   exit(-1);
@@ -64,7 +76,7 @@ inline void transposeError(const char *text) {
 void fill1_comm_sched(int *sched, int which_pe, int npes);
 
 #if MPI_VERSION < 3
-inline int MPI_Ialltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
+inline int MPI_Ialltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype,
                          void *recvbuf, int recvcount, MPI_Datatype recvtype, 
                          MPI_Comm comm, MPI_Request *)
 {
@@ -86,13 +98,128 @@ inline void Wait(int count, MPI_Request *request, int *sched=NULL)
 }
 #endif
 
-inline int Ialltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
-                     void *recvbuf, int recvcount, MPI_Datatype recvtype, 
-                     MPI_Comm comm, MPI_Request *request, int *sched);
+inline unsigned int ceilquotient(unsigned int a, unsigned int b)
+{
+  return (a+b-1)/b;
+}
+
+inline int localsize(int N, int size)
+{
+  int n=ceilquotient(N,size);
+  size=N/n;
+  if(N > n*size) ++size;
+  return size;
+}
+
+inline int localstart(int N, int rank, int size)
+{
+  return ceilquotient(N,size)*rank;
+}
+
+inline int localdimension(int N, int rank, int size)
+{
+  int n=ceilquotient(N,size);
+  int start=n*rank;
+  int extra=N-start;
+  if(extra < 0) extra=0;
+  if(n > extra) n=extra;
+  return n;
+}
+
+inline int Ialltoallv(void *sendbuf, int *sendcounts, int *senddisplacements,
+                      void *recvbuf, int *recvcounts, int *recvdisplacements,
+                      MPI_Comm comm, MPI_Request *request, int *sched=NULL)
+{
+  /*
+  if(rank == 0) {
+    sendcounts[0]=4*sizeof(Complex);
+    recvcounts[0]=4*sizeof(Complex);
+    sendcounts[1]=2*sizeof(Complex);
+    recvcounts[1]=2*sizeof(Complex);
+    
+    senddisplacements[0]=0;
+    recvdisplacements[0]=0;
+    senddisplacements[1]=4*sizeof(Complex);
+    recvdisplacements[1]=4*sizeof(Complex);
+  } else if(rank == 1) {
+    sendcounts[0]=2*sizeof(Complex);
+    recvcounts[0]=2*sizeof(Complex);
+    sendcounts[1]=1*sizeof(Complex);
+    recvcounts[1]=1*sizeof(Complex);
+    
+    senddisplacements[0]=0;
+    recvdisplacements[0]=0;
+    senddisplacements[1]=2*sizeof(Complex);
+    recvdisplacements[1]=2*sizeof(Complex);
+    }
+  */
+  
+//  return MPI_Alltoallv(sendbuf,sendcounts,senddisplacements,MPI_BYTE,recvbuf,
+//                        recvcounts,recvdisplacements,MPI_BYTE,comm);
+return MPI_Ialltoallv(sendbuf,sendcounts,senddisplacements,MPI_BYTE,recvbuf,
+                      recvcounts,recvdisplacements,MPI_BYTE,comm,request);
+}
+  
+inline int Ialltoall(void *sendbuf, int sendcount,
+                     void *recvbuf, int recvcount,
+                     MPI_Comm comm, MPI_Request *request, int *sched=NULL)
+{
+//  if(!sched)
+//    return MPI_Ialltoall(sendbuf,sendcount,MPI_BYTE,recvbuf,recvcount,MPI_BYTE,
+    return MPI_Alltoall(sendbuf,sendcount,MPI_BYTE,recvbuf,recvcount,MPI_BYTE,
+//                         comm,request);
+                         comm);
+    /*
+  else {
+    int size;
+    int rank;
+    MPI_Comm_size(comm,&size);
+    MPI_Comm_rank(comm,&rank);
+    int sendsize;
+    MPI_Type_size(MPI_BYTE,&sendsize);
+    sendsize *= sendcount;
+    int recvsize;
+    MPI_Type_size(MPI_BYTE,&recvsize);
+    recvsize *= recvcount;
+    for(int p=0; p < size; ++p) {
+      int P=sched[p];
+      if(P != rank) {
+        MPI_Irecv((char *) recvbuf+P*sendsize,sendcount,MPI_BYTE,P,0,comm,
+                  request+(P < rank ? P : P-1));
+        MPI_Request srequest;
+        MPI_Isend((char *) sendbuf+P*recvsize,recvcount,MPI_BYTE,P,0,comm,
+                  &srequest);
+        MPI_Request_free(&srequest);
+      }
+    }
+  
+    memcpy((char *) recvbuf+rank*recvsize,(char *) sendbuf+rank*sendsize,
+           sendsize);
+    return 0;
+  }
+    */
+}
+
+inline int Alltoall(void *sendbuf, int sendcount,
+                    void *recvbuf, int recvcount,
+                    MPI_Comm comm, MPI_Request *request, int *sched=NULL)
+{
+  if(!sched)
+    return MPI_Alltoall(sendbuf,sendcount,MPI_BYTE,recvbuf,recvcount,MPI_BYTE,
+                        comm);
+  else {
+    int size;
+    MPI_Comm_size(comm,&size);
+    Ialltoall(sendbuf,sendcount,recvbuf,recvcount,comm,request,sched);
+    MPI_Waitall(size-1,request,MPI_STATUSES_IGNORE);
+    return 0;
+  }
+}
   
 template<class T>
 class mpitranspose {
-private:
+//private:
+public: // ****
   unsigned int N,m,n,M;
   unsigned int L;
   T *data;
@@ -201,6 +328,7 @@ public:
     }
     
     unsigned int AlltoAll=1;
+
     double latency=safetyfactor*Latency();
     unsigned int alimit=(N*M*L*sizeof(T) >= latency*size*size) ?
       2 : size;
@@ -209,9 +337,11 @@ public:
     if(globalrank == 0)
       std::cout << std::endl << "Timing:" << std::endl;
     
+    /*
     unsigned int A=0;
     double T0=DBL_MAX;
-    for(unsigned int alltoall=0; alltoall <= 1; ++alltoall) {
+//    for(unsigned int alltoall=0; alltoall <= 1; ++alltoall) {
+    for(unsigned int alltoall=1; alltoall <= 1; ++alltoall) {
       if(globalrank == 0) std::cout << "alltoall=" << alltoall << std::endl;
       for(a=1; a < alimit; a *= 2) {
         b=size/a;
@@ -233,6 +363,10 @@ public:
     MPI_Bcast(&parm,2,MPI_UNSIGNED,0,global);
     A=parm[0];
     AlltoAll=parm[1];
+    */
+    
+    unsigned A=1; // *****
+    
     a=A;
     b=size/a;
     
@@ -278,11 +412,14 @@ public:
     double sum=0.0;
     unsigned int N=1;
     transpose(data,true,false); // Initialize communication buffers
+
     double stop=totalseconds()+fftw::testseconds;
     for(;;++N) {
       int end;
       double start=rank == 0 ? totalseconds() : 0.0;
       transpose(data,true,false);
+      
+      
       if(globalrank == 0) {
         double t=totalseconds();
         double seconds=t-start;
@@ -293,10 +430,12 @@ public:
       if(end)
         break;
     }
+
     return sum/N;
   }
 
   void init(T *data, bool alltoall) {
+    if(n == 0) return;
     Tout1=new Transpose(n*a,b,m*L,data,this->work,threads);
     Tin1=new Transpose(b,n*a,m*L,data,this->work,threads);
 
@@ -370,18 +509,59 @@ public:
   
   void inphase0() {
     if(size == 1) return;
-  
+    /*
     unsigned int blocksize=sizeof(T)*n*(a > 1 ? b : a)*m*L;
-    Ialltoall(data,blocksize,MPI_BYTE,work,blocksize,MPI_BYTE,split2,
-              request,sched2);
+//    Ialltoall(data,blocksize,work,blocksize,split2,request,sched2);
+//    MPI_Barrier(split);
+    
+    std::cout << "rank=" << rank << "n=" << n << " m=" << m << " a=" << a << " b=" << b << std::endl;
+    
+    copy(data,work,n*M*L,threads); // ***
+    Ialltoall(work,blocksize,data,blocksize,split2,request,sched2);
+    return;
+    */
+    
+  int *sendcounts=new int[size];
+  int *senddisplacements=new int[size];
+  int *recvcounts=new int[size];
+  int *recvdisplacements=new int[size];
+    
+    {
+      int ni;
+      int mi;
+      int M0=M;
+      int N0=N;
+      
+      int Si=0;
+      int Ri=0;
+    
+      size_t S=sizeof(T);
+      
+      for(int i=0; i < size; ++i) {
+        ni=ceilquotient(N0,size-i);
+        mi=ceilquotient(M0,size-i);
+        N0 -= ni;
+        M0 -= mi;
+        int si=m*ni*S;
+        int ri=n*mi*S;
+        sendcounts[i]=si;
+        recvcounts[i]=ri;
+        senddisplacements[i]=Si;
+        recvdisplacements[i]=Ri;
+        Si += si;
+        Ri += ri;
+      }
+    }
+
+    Ialltoallv(data,sendcounts,senddisplacements,work,recvcounts,
+               recvdisplacements,split2,request,sched2);
   }
   
   void inphase1() {
     if(a > 1) {
       Tin2->transpose(work,data); // a x n*b x m*L
       unsigned int blocksize=sizeof(T)*n*a*m*L;
-      Ialltoall(data,blocksize,MPI_BYTE,work,blocksize,MPI_BYTE,split,
-                request,sched);
+      Ialltoall(data,blocksize,work,blocksize,split,request,sched);
     }
   }
 
@@ -397,7 +577,25 @@ public:
 
   void inpost() {
     if(size == 1) return;
-    Tin1->transpose(work,data); // b x n*a x m*L
+    // Divisible case:
+    // Indivisible case:
+    int m=ceilquotient(M,b);
+    unsigned int lastblock=(m-(b*m-M))*L;
+    if(lastblock == 0)
+      Tin1->transpose(work,data); // b x n*a x m*L
+    else  {
+      unsigned int block=m*L;
+      unsigned int cols=n*a;
+      unsigned int istride=cols*block;
+      unsigned int last=b-1;
+      unsigned int ostride=last*block+lastblock;
+
+      for(unsigned int j=0; j < cols; ++j) {
+        Complex *dest=data+j*ostride;
+        copytoblock(work+j*block,dest,last,block,istride);
+        copy(work+j*lastblock+last*istride,dest+last*block,lastblock);
+      }
+    }
   }
   
   void outphase0() {
@@ -406,8 +604,7 @@ public:
     // Inner transpose a N/a x M/a matrices over each team of b processes
     Tout1->transpose(data,work); // n*a x b x m*L
     unsigned int blocksize=sizeof(T)*n*a*m*L;
-    Ialltoall(work,blocksize,MPI_BYTE,data,blocksize,MPI_BYTE,split,
-              request,sched);
+    Ialltoall(work,blocksize,data,blocksize,split,request,sched);
   }
   
   void outphase1() {
@@ -415,8 +612,7 @@ public:
       // Outer transpose a x a matrix of N/a x M/a blocks over a processes
       Tout2->transpose(data,work); // n*b x a x m*L
       unsigned int blocksize=sizeof(T)*n*b*m*L;
-      Ialltoall(work,blocksize,MPI_BYTE,data,blocksize,MPI_BYTE,split2,
-                request,sched2);
+      Ialltoall(work,blocksize,data,blocksize,split2,request,sched2);
     }
   }
   
@@ -509,59 +705,6 @@ public:
   }
   
 };
-
-inline int Ialltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
-                     void *recvbuf, int recvcount, MPI_Datatype recvtype, 
-                     MPI_Comm comm, MPI_Request *request, int *sched=NULL)
-{
-  if(!sched)
-    return MPI_Ialltoall(sendbuf,sendcount,sendtype,recvbuf,recvcount,recvtype,
-                         comm,request);
-  else {
-    int size;
-    int rank;
-    MPI_Comm_size(comm,&size);
-    MPI_Comm_rank(comm,&rank);
-    int sendsize;
-    MPI_Type_size(sendtype,&sendsize);
-    sendsize *= sendcount;
-    int recvsize;
-    MPI_Type_size(recvtype,&recvsize);
-    recvsize *= recvcount;
-    for(int p=0; p < size; ++p) {
-      int P=sched[p];
-      if(P != rank) {
-        MPI_Irecv((char *) recvbuf+P*sendsize,sendcount,sendtype,P,0,comm,
-                  request+(P < rank ? P : P-1));
-        MPI_Request srequest;
-        MPI_Isend((char *) sendbuf+P*recvsize,recvcount,recvtype,P,0,comm,
-                  &srequest);
-        MPI_Request_free(&srequest);
-      }
-    }
-  
-    memcpy((char *) recvbuf+rank*recvsize,(char *) sendbuf+rank*sendsize,
-           sendsize);
-    return 0;
-  }
-}
-
-inline int Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
-                    void *recvbuf, int recvcount, MPI_Datatype recvtype, 
-                    MPI_Comm comm, MPI_Request *request, int *sched=NULL)
-{
-  if(!sched)
-    return MPI_Alltoall(sendbuf,sendcount,sendtype,recvbuf,recvcount,recvtype,
-                        comm);
-  else {
-    int size;
-    MPI_Comm_size(comm,&size);
-    Ialltoall(sendbuf,sendcount,sendtype,recvbuf,recvcount,recvtype,comm,
-              request,sched);
-    MPI_Waitall(size-1,request,MPI_STATUSES_IGNORE);
-    return 0;
-  }
-}
 
 } // end namespace fftwpp
 

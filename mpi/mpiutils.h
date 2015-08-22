@@ -39,17 +39,21 @@ void show(ftype *f, unsigned int nx, unsigned int ny,
       unsigned int x0=dims[2], y0=dims[3];
       unsigned int x1=dims[4], y1=dims[5];
       unsigned int n=nx*ny;
-      ftype *C=new ftype[n];
-      MPI_Recv(C,sizeof(ftype)*n,MPI_BYTE,p,0,communicator,&stat);
+      if(n > 0) {
+        ftype *C=new ftype[n];
+        MPI_Recv(C,sizeof(ftype)*n,MPI_BYTE,p,0,communicator,&stat);
       
-      std::cout << "process " << p << ":" <<  std::endl;
-      show(C,nx,ny,x0,y0,x1,y1);
-      delete [] C;
+        std::cout << "process " << p << ":" <<  std::endl;
+        show(C,nx,ny,x0,y0,x1,y1);
+        delete [] C;
+      }
     }
   } else {
     unsigned int dims[]={nx,ny,x0,y0,x1,y1};
     MPI_Send(&dims,6,MPI_UNSIGNED,0,0,communicator);
-    MPI_Send(f,nx*ny*sizeof(ftype),MPI_BYTE,0,0,communicator);
+    unsigned int n=nx*ny;
+    if(n > 0)
+      MPI_Send(f,n*sizeof(ftype),MPI_BYTE,0,0,communicator);
   }
 }
   
@@ -99,18 +103,22 @@ void show(ftype *f, unsigned int nx, unsigned int ny, unsigned int nz,
       unsigned int nx=dims[0], ny=dims[1], nz=dims[2];
       unsigned int x0=dims[3], y0=dims[4], z0=dims[5];
       unsigned int x1=dims[6], y1=dims[7], z1=dims[8];
-      int n=nx*ny*nz;
-      ftype *C=new ftype[n];
-      MPI_Recv(C,n*sizeof(ftype),MPI_BYTE,p,0,communicator,&stat);
+      unsigned int n=nx*ny*nz;
+      if(n > 0) {
+        ftype *C=new ftype[n];
+        MPI_Recv(C,n*sizeof(ftype),MPI_BYTE,p,0,communicator,&stat);
       
-      std::cout << "process " << p << ":" <<  std::endl;
-      show(C,nx,ny,nz,x0,y0,z0,x1,y1,z1);
-      delete [] C;
+        std::cout << "process " << p << ":" <<  std::endl;
+        show(C,nx,ny,nz,x0,y0,z0,x1,y1,z1);
+        delete [] C;
+      }
     }
   } else {
     unsigned int dims[]={nx,ny,nz,x0,y0,z0,x1,y1,z1};
     MPI_Send(&dims,9,MPI_UNSIGNED,0,0,communicator);
-    MPI_Send(f,nx*ny*nz*sizeof(ftype),MPI_BYTE,0,0,communicator);
+    unsigned int n=nx*ny*nz;
+    if(n > 0)
+      MPI_Send(f,n*sizeof(ftype),MPI_BYTE,0,0,communicator);
   }
 }
 

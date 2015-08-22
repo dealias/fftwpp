@@ -16,11 +16,6 @@ unsigned int N0=10000000;
 int N=0;
 bool outtranspose=false;
 
-inline unsigned int ceilquotient(unsigned int a, unsigned int b)
-{
-  return (a+b-1)/b;
-}
-
 namespace fftwpp {
 void MPILoadWisdom(const MPI_Comm& active);
 void MPISaveWisdom(const MPI_Comm& active);
@@ -52,7 +47,7 @@ inline void usage()
   exit(1);
 }
 
-void fftwTranspose(int rank, int comm_size)
+void fftwTranspose(int rank, int size)
 {
   Complex *data;
   ptrdiff_t x,xstart;
@@ -60,7 +55,7 @@ void fftwTranspose(int rank, int comm_size)
   
   /* get local data size and allocate */
   ptrdiff_t NN[2]={Y,X};
-  unsigned int block=ceilquotient(Y,comm_size);
+  unsigned int block=ceilquotient(Y,size);
   ptrdiff_t alloc=
     fftw_mpi_local_size_many_transposed(2,NN,Z,block,0,
                                                       MPI_COMM_WORLD,&y,
@@ -163,19 +158,26 @@ void fftwTranspose(int rank, int comm_size)
   fftw_destroy_plan(outplan);
 }
   
-void transpose(int rank, int comm_size)
+void transpose(int rank, int size)
 {
   Complex *data;
-  ptrdiff_t x,xstart;
-  ptrdiff_t y,ystart;
   
-  /* get local data size and allocate */
-  ptrdiff_t NN[2]={Y,X};
-  unsigned int block=ceilquotient(Y,comm_size);
+  int xsize=localsize(X,size);
+  int ysize=localsize(Y,size);
+  size=max(xsize,ysize);
+  
+  int x=localdimension(X,rank,size);
+  int y=localdimension(Y,rank,size);
+  
+//  int xstart=localstart(X,rank,size);
+  int ystart=localstart(Y,rank,size);
+  
+  MPI_Comm active; 
+  MPI_Comm_split(MPI_COMM_WORLD,rank < size,0,&active);
 
-  fftw_mpi_local_size_many_transposed(2,NN,Z,block,0,
-                                      MPI_COMM_WORLD,&y,
-                                      &ystart,&x,&xstart);
+  cout << "rank=" << rank << " size=" << size << " x=" << x << " " <<
+    " y=" << y << endl;
+  
   if(N == 0) {
     N=N0/(X*y);
     if(N < 10) N=10;
@@ -192,15 +194,26 @@ void transpose(int rank, int comm_size)
   }
   
   data=ComplexAlign(X*y*Z);
-  mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,fftw::maxthreads);
+  mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,fftw::maxthreads,active);
   
   init(data,X,y,Z,ystart);
 
   // Initialize remaining plans.
+//    show(data,X,y*Z,MPI_COMM_WORLD);
+//  T.transpose(data,false,true);
   T.transpose(data,false,true);
+///  T.data=data;
+//    T.inphase0();
+//    if(rank == 0) cout << "\ntranspose:\n" << endl;
+//  show(data,x,Y*Z,MPI_COMM_WORLD);
+  
+//MPI_Finalize();
+//    exit(0);
+    
   T.NmTranspose();
   init(data,X,y,Z,ystart);
 
+  
   bool showoutput=X*Y < showlimit && N == 1;
   if(showoutput)
     show(data,X,y*Z,MPI_COMM_WORLD);
@@ -232,6 +245,8 @@ void transpose(int rank, int comm_size)
       if(rank == 0) cout << "\ntranspose:\n" << endl;
       show(data,x,Y*Z,MPI_COMM_WORLD);
     }
+
+    exit(0);
     
     if(rank == 0) begin=totalseconds();
     T.outphase0();
@@ -273,6 +288,7 @@ void transpose(int rank, int comm_size)
     Soutwait1.output("Toutwait1",X);
     Sout.output("Tout",X);
   }
+  
 }
 
 int main(int argc, char **argv)
@@ -321,21 +337,21 @@ int main(int argc, char **argv)
 //  MPI_Init(&argc,&argv);
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
 
-  int rank, comm_size;
+  int rank, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
   
   if(rank == 0) {
-    cout << "size=" << comm_size << endl;
+    cout << "size=" << size << endl;
     cout << "threads=" << fftw::maxthreads << endl;
   }
   
   fftw_mpi_init();
   
 #ifdef OLD
-  fftwTranspose(rank,comm_size);
+  fftwTranspose(rank,size);
 #else
-  transpose(rank,comm_size);
+  transpose(rank,size);
 #endif  
   
   MPI_Finalize();
