@@ -44,7 +44,7 @@ print "Running error scaling...",
 error1=["cconv","conv"]
 for prog in error1:
     if (os.path.isfile(prog)):
-        print(prog),
+        print(prog+"... "),
         p=Popen(['./error',prog,"6","15"],stdout=PIPE,stderr=PIPE)
         p.wait() # sets the return code
         out, err = p.communicate() # capture output

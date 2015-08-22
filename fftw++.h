@@ -678,9 +678,17 @@ public:
     dims[2].os=1;
 
     fftw::planThreads(1);
-    plan=fftw_plan_guru_r2r(0,NULL,3,dims,(double *) in,
-                            (double *) out,NULL,fftw::effort);
-  }
+
+    // A plan with rank=0 is a transpose.
+    plan=fftw_plan_guru_r2r(0, // int rank,
+			    NULL, // const fftw_iodim *dims,
+			    3, // int howmany_rank,
+			    dims, // const fftw_iodim *howmany_dims,
+			    (double *) in, // double *in,
+			    (double *) out, // double *out,
+			    NULL, // const fftw_r2r_kind *kind,
+			    fftw::effort); // unsigned flags
+    }
 
   ~Transpose() {if(plan) fftw_destroy_plan(plan);}
   
