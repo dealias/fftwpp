@@ -221,6 +221,7 @@ class mpitranspose {
 //private:
 public: // ****
   unsigned int N,m,n,M;
+  unsigned int m0,mp;
   unsigned int L;
   T *data;
   T *work;
@@ -306,6 +307,8 @@ public:
     
     MPI_Comm_rank(global,&globalrank);
     
+    m0=localdimension(M,0,size);
+    mp=localdimension(M,size-1,size);
 /*    
     if(!divisible(size,M,N)) {
       if(globalrank == 0)
@@ -578,13 +581,12 @@ public:
   void inpost() {
     if(size == 1) return;
     // Divisible case:
-    // Indivisible case:
-    int m=ceilquotient(M,b);
-    unsigned int lastblock=(m-(b*m-M))*L;
-    if(lastblock == 0)
+    if(m0 == mp)
       Tin1->transpose(work,data); // b x n*a x m*L
     else  {
-      unsigned int block=m*L;
+    // Indivisible case:
+      unsigned int lastblock=mp*L;
+      unsigned int block=m0*L;
       unsigned int cols=n*a;
       unsigned int istride=cols*block;
       unsigned int last=b-1;
