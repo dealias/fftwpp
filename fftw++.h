@@ -627,11 +627,33 @@ public:
   
 }; // class fftw
 
+template<class T>
+inline void copy(T *from, T *to, unsigned int length, unsigned int threads=1)
+{
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif  
+for(unsigned int i=0; i < length; ++i)
+  to[i]=from[i];
+}
+
+// Copy count blocks spaced stride apart to contiguous blocks in dest.
+template<class T>
+inline void copytoblock(T *src, T *dest,
+                        unsigned int count, unsigned int length,
+                        unsigned int stride, unsigned int threads=1)
+{
+  for(unsigned int i=0; i < count; ++i)
+    copy(src+i*stride,dest+i*length,length,threads);
+}
+
 class Transpose {
   fftw_plan plan;
   unsigned int a,b;
-  unsigned int nlength,mlength;
+  unsigned int n, m;
+  unsigned int length,nlength,mlength;
   unsigned int instride,outstride;
+  unsigned int rows, cols, l;
   unsigned int threads;
   bool inplace;
   unsigned int size;
@@ -639,7 +661,7 @@ public:
   template<class T>
   Transpose(unsigned int rows, unsigned int cols, unsigned int length,
             T *in, T *out=NULL, unsigned int threads=fftw::maxthreads) :
-    threads(threads) {
+  length(length), rows(rows), cols(cols), threads(threads) {
     size=sizeof(T);
     if(size % sizeof(double) != 0) {
       std::cerr << "ERROR: Transpose is not implemented for type of size " 
@@ -657,8 +679,8 @@ public:
 
     a=std::min(rows,threads);
     b=std::min(cols,threads/a);
-    unsigned int n=rows/a;
-    unsigned int m=cols/b;
+    n=rows/a;
+    m=cols/b;
     nlength=n*length;
     mlength=m*length;
     
@@ -720,8 +742,27 @@ public:
         }
       }
     }
+
+    const unsigned int outoffset = a * n;
+    const unsigned int extralength = 1;
+    const unsigned int stop = cols - outoffset;
+    for(unsigned int i = 0; i < stop; ++i) {
+      const unsigned int inoffset = a * m * n + i * cols;
+      for(unsigned int j = 0; j < cols; ++j) {
+
+	const unsigned int moffset = j * cols * length + i;
+	copytoblock((Complex *)in + inoffset + j,
+		    (Complex *)out + outoffset + moffset,
+		    1, // count
+		    extralength * length, // length
+		    cols, // stride
+		    threads);
+      }
+    }
+
 #endif
   }
+
 };
 
 template<class T, class L>
