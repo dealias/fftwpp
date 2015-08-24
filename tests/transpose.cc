@@ -18,7 +18,7 @@ inline void init(array2<Complex>& f)
 {
   for(unsigned int i=0; i < mx; ++i)
     for(unsigned int j=0; j < my; j++)
-      f[i][j]=Complex(i,j);
+      f[i][j]=Complex(i, j);
 }
   
 unsigned int outlimit=100;
@@ -82,7 +82,10 @@ int main(int argc, char* argv[])
   array2<Complex> f(mx,my,align);
   array2<Complex> g(mx,my,align);
 
-  Transpose transpose(mx, my, 1, f(), g());
+  Transpose transpose(mx, // rows
+		      my, // cols
+		      1, // length
+		      (Complex *)f(), (Complex *)g());
 
   if(N == 0) {
     init(f);
@@ -106,7 +109,7 @@ int main(int argc, char* argv[])
     for(unsigned int i=0; i < N; ++i) {
       init(f);
       seconds();
-      //transpose.fft(f,g);
+      transpose.transpose(f(),g());
       T[i]=seconds();
     }
 

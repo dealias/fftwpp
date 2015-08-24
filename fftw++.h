@@ -664,15 +664,18 @@ public:
     
     instride=cols;
     outstride=rows;
-    
-    dims[0].n=n;
+
+    // n, m, l
+    dims[0].n=n; 
     dims[0].is=instride*length;
     dims[0].os=length;
-
-    dims[1].n=m;
+    
+    // m, l, n
+    dims[1].n=m; 
     dims[1].is=length;
     dims[1].os=outstride*length;
 
+    // l, 1, 1
     dims[2].n=length;
     dims[2].is=1;
     dims[2].os=1;
