@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
   size_t align=sizeof(Complex);
 
   array2<Complex> f(mx,my,align);
-  array2<Complex> g(mx,my,align);
+  array2<Complex> g(my,mx,align);
 
   Transpose transpose(mx, // rows
 		      my, // cols

@@ -743,6 +743,7 @@ public:
       }
     }
 
+    /*
     const unsigned int outoffset = a * n;
     const unsigned int extralength = 1;
     const unsigned int stop = cols - outoffset;
@@ -759,6 +760,7 @@ public:
 		    threads);
       }
     }
+    */
 
 #endif
   }
