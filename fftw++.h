@@ -627,33 +627,13 @@ public:
   
 }; // class fftw
 
-template<class T>
-inline void copy(T *from, T *to, unsigned int length, unsigned int threads=1)
-{
-#ifndef FFTWPP_SINGLE_THREAD
-#pragma omp parallel for num_threads(threads)
-#endif  
-for(unsigned int i=0; i < length; ++i)
-  to[i]=from[i];
-}
-
-// Copy count blocks spaced stride apart to contiguous blocks in dest.
-template<class T>
-inline void copytoblock(T *src, T *dest,
-                        unsigned int count, unsigned int length,
-                        unsigned int stride, unsigned int threads=1)
-{
-  for(unsigned int i=0; i < count; ++i)
-    copy(src+i*stride,dest+i*length,length,threads);
-}
-
 class Transpose {
   fftw_plan plan;
+  fftw_plan plan2;
   unsigned int a,b;
-  unsigned int n, m;
-  unsigned int length,nlength,mlength;
-  unsigned int instride,outstride;
-  unsigned int rows, cols, l;
+  unsigned int nlength,mlength;
+  unsigned int rows,cols;
+  unsigned int iwide,jwide;
   unsigned int threads;
   bool inplace;
   unsigned int size;
@@ -661,7 +641,7 @@ public:
   template<class T>
   Transpose(unsigned int rows, unsigned int cols, unsigned int length,
             T *in, T *out=NULL, unsigned int threads=fftw::maxthreads) :
-  length(length), rows(rows), cols(cols), threads(threads) {
+  rows(rows), cols(cols), threads(threads) {
     size=sizeof(T);
     if(size % sizeof(double) != 0) {
       std::cerr << "ERROR: Transpose is not implemented for type of size " 
@@ -679,25 +659,23 @@ public:
 
     a=std::min(rows,threads);
     b=std::min(cols,threads/a);
-    n=rows/a;
-    m=cols/b;
+    unsigned int n=rows/a;
+    unsigned int m=cols/b;
+    
+    // If rows <= threads then a=rows and n=1.
+    // If rows >= threads then b=1 and m=cols.
+    
     nlength=n*length;
     mlength=m*length;
     
-    instride=cols;
-    outstride=rows;
-
-    // n, m, l
     dims[0].n=n; 
-    dims[0].is=instride*length;
+    dims[0].is=cols*length;
     dims[0].os=length;
     
-    // m, l, n
     dims[1].n=m; 
     dims[1].is=length;
-    dims[1].os=outstride*length;
+    dims[1].os=rows*length;
 
-    // l, 1, 1
     dims[2].n=length;
     dims[2].is=1;
     dims[2].os=1;
@@ -705,17 +683,29 @@ public:
     fftw::planThreads(1);
 
     // A plan with rank=0 is a transpose.
-    plan=fftw_plan_guru_r2r(0, // int rank,
-			    NULL, // const fftw_iodim *dims,
-			    3, // int howmany_rank,
-			    dims, // const fftw_iodim *howmany_dims,
-			    (double *) in, // double *in,
-			    (double *) out, // double *out,
-			    NULL, // const fftw_r2r_kind *kind,
-			    fftw::effort); // unsigned flags
-    }
+    plan=fftw_plan_guru_r2r(0,NULL,3,dims,(double *) in,(double *) out,
+			    NULL,fftw::effort);
+    
+    iwide=a;
+    jwide=b;
+    if(n*a < rows) { // Only happens when rows > threads.
+      iwide=a-1;
+      dims[0].n=rows-n*iwide;
+      plan2=fftw_plan_guru_r2r(0,NULL,3,dims,(double *) in,(double *) out,
+                              NULL,fftw::effort);
+    } else if(m*b < cols) { // Only happens when rows < threads.
+      jwide=b-1;
+      dims[1].n=cols-m*jwide;
+      plan2=fftw_plan_guru_r2r(0,NULL,3,dims,(double *) in,(double *) out,
+                               NULL,fftw::effort);
+    } else
+      plan2=NULL;
+  }
 
-  ~Transpose() {if(plan) fftw_destroy_plan(plan);}
+  ~Transpose() {
+    if(plan) fftw_destroy_plan(plan);
+    if(plan2) fftw_destroy_plan(plan2);
+  }
   
   template<class T>
   void transpose(T *in, T *out=NULL) {
@@ -737,31 +727,12 @@ public:
 #pragma omp parallel for num_threads(B)
         for(unsigned int j=0; j < b; ++j) {
           unsigned int J=j*mlength;
-          fftw_execute_r2r(plan,(double *) in+instride*I+J,
-                           (double *) out+outstride*J+I);
+          fftw_execute_r2r((i < iwide && j < jwide) ? plan : plan2,
+                           (double *) in+cols*I+J,
+                           (double *) out+rows*J+I);
         }
       }
     }
-
-    /*
-    const unsigned int outoffset = a * n;
-    const unsigned int extralength = 1;
-    const unsigned int stop = cols - outoffset;
-    for(unsigned int i = 0; i < stop; ++i) {
-      const unsigned int inoffset = a * m * n + i * cols;
-      for(unsigned int j = 0; j < cols; ++j) {
-
-	const unsigned int moffset = j * cols * length + i;
-	copytoblock((Complex *)in + inoffset + j,
-		    (Complex *)out + outoffset + moffset,
-		    1, // count
-		    extralength * length, // length
-		    cols, // stride
-		    threads);
-      }
-    }
-    */
-
 #endif
   }
 
