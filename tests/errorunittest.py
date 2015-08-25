@@ -10,10 +10,10 @@ import os
 import sys
 import os.path #for file-existence checking
 
-retval=0
+retval = 0
 
 print "Checking error vs direct routine...",
-p=Popen(['./directerror.py'],stdout=PIPE,stderr=PIPE)
+p = Popen(['./directerror.py'], stdout=PIPE, stderr=PIPE)
 p.wait() # sets the return code
 out, err = p.communicate() # capture output
 print "...done."
@@ -24,6 +24,20 @@ if not (p.returncode == 0):
     print err
     print
     print "\tDIRECTERROR FAILED"
+
+
+print "Checking local transpose...",
+p = Popen(['./transposetest.py'], stdout=PIPE, stderr=PIPE)
+p.wait() # sets the return code
+out, err = p.communicate() # capture output
+print "...done."
+if not (p.returncode == 0):
+    retval += 1
+    print out
+    print
+    print err
+    print
+    print "\tLOCAL TRANSPOSE FAILED"
 
 
 print "Checking error vs test case...",

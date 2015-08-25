@@ -14,11 +14,17 @@ unsigned int mx=4;
 unsigned int my=4;
 
 
-inline void init(array2<Complex>& f) 
+inline void init(array2<Complex>& f, bool transpose=false) 
 {
-  for(unsigned int i=0; i < mx; ++i)
-    for(unsigned int j=0; j < my; j++)
-      f[i][j]=Complex(i, j);
+  for(unsigned int i=0; i < mx; ++i) {
+    for(unsigned int j=0; j < my; j++) {
+      Complex val = Complex(i, j);
+      if(!transpose)
+	f[i][j]=val;
+      else
+	f[j][i]=val;
+    }
+  }
 }
   
 unsigned int outlimit=100;
@@ -103,6 +109,27 @@ int main(int argc, char* argv[])
       cout << g << endl;
     else 
       cout << g[0][0] << endl;
+
+    array2<Complex> f0(my,mx,align);
+    init(f0, true);
+    double errmax = 0.0;
+    for(unsigned int i = 0; i < my; ++i) {
+      for(unsigned int j = 0; j < mx; ++j) {
+	errmax = max(errmax, abs(g[i][j] - f0[i][j])); 
+      }
+    }
+    cout << "Output:" << endl;
+    if(mx*my < outlimit) 
+      cout << f0 << endl;
+    else 
+      cout << f0[0][0] << endl;
+
+    cout << "errmax: " << errmax << endl;
+    if(errmax > 0.0) {
+      cout << "Caution: error too large!" << endl;
+      return 1;
+    }
+
   } else {
     double *T=new double[N];
   
