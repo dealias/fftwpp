@@ -118,12 +118,6 @@ int main(int argc, char* argv[])
 	errmax = max(errmax, abs(g[i][j] - f0[i][j])); 
       }
     }
-    cout << "Output:" << endl;
-    if(mx*my < outlimit) 
-      cout << f0 << endl;
-    else 
-      cout << f0[0][0] << endl;
-
     cout << "errmax: " << errmax << endl;
     if(errmax > 0.0) {
       cout << "Caution: error too large!" << endl;

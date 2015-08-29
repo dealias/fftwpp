@@ -98,11 +98,6 @@ inline void Wait(int count, MPI_Request *request, int *sched=NULL)
 }
 #endif
 
-inline unsigned int ceilquotient(unsigned int a, unsigned int b)
-{
-  return (a+b-1)/b;
-}
-
 inline int localsize(int N, int size)
 {
   int n=ceilquotient(N,size);
@@ -119,8 +114,7 @@ inline int localstart(int N, int rank, int size)
 inline int localdimension(int N, int rank, int size)
 {
   int n=ceilquotient(N,size);
-  int start=n*rank;
-  int extra=N-start;
+  int extra=N-n*rank;
   if(extra < 0) extra=0;
   if(n > extra) n=extra;
   return n;
@@ -130,34 +124,8 @@ inline int Ialltoallv(void *sendbuf, int *sendcounts, int *senddisplacements,
                       void *recvbuf, int *recvcounts, int *recvdisplacements,
                       MPI_Comm comm, MPI_Request *request, int *sched=NULL)
 {
-  /*
-  if(rank == 0) {
-    sendcounts[0]=4*sizeof(Complex);
-    recvcounts[0]=4*sizeof(Complex);
-    sendcounts[1]=2*sizeof(Complex);
-    recvcounts[1]=2*sizeof(Complex);
-    
-    senddisplacements[0]=0;
-    recvdisplacements[0]=0;
-    senddisplacements[1]=4*sizeof(Complex);
-    recvdisplacements[1]=4*sizeof(Complex);
-  } else if(rank == 1) {
-    sendcounts[0]=2*sizeof(Complex);
-    recvcounts[0]=2*sizeof(Complex);
-    sendcounts[1]=1*sizeof(Complex);
-    recvcounts[1]=1*sizeof(Complex);
-    
-    senddisplacements[0]=0;
-    recvdisplacements[0]=0;
-    senddisplacements[1]=2*sizeof(Complex);
-    recvdisplacements[1]=2*sizeof(Complex);
-    }
-  */
-  
-//  return MPI_Alltoallv(sendbuf,sendcounts,senddisplacements,MPI_BYTE,recvbuf,
-//                        recvcounts,recvdisplacements,MPI_BYTE,comm);
-return MPI_Ialltoallv(sendbuf,sendcounts,senddisplacements,MPI_BYTE,recvbuf,
-                      recvcounts,recvdisplacements,MPI_BYTE,comm,request);
+  return MPI_Ialltoallv(sendbuf,sendcounts,senddisplacements,MPI_BYTE,recvbuf,
+                        recvcounts,recvdisplacements,MPI_BYTE,comm,request);
 }
   
 inline int Ialltoall(void *sendbuf, int sendcount,

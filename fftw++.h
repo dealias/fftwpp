@@ -627,13 +627,18 @@ public:
   
 }; // class fftw
 
+inline unsigned int ceilquotient(unsigned int a, unsigned int b)
+{
+  return (a+b-1)/b;
+}
+
 class Transpose {
   fftw_plan plan;
   fftw_plan plan2;
   unsigned int a,b;
   unsigned int nlength,mlength;
+  unsigned int ilast,jlast;
   unsigned int rows,cols;
-  unsigned int iwide,jwide;
   unsigned int threads;
   bool inplace;
   unsigned int size;
@@ -659,8 +664,9 @@ public:
 
     a=std::min(rows,threads);
     b=std::min(cols,threads/a);
-    unsigned int n=rows/a;
-    unsigned int m=cols/b;
+    
+    unsigned int n=ceilquotient(rows,a);
+    unsigned int m=ceilquotient(cols,b);
     
     // If rows <= threads then a=rows and n=1.
     // If rows >= threads then b=1 and m=cols.
@@ -686,20 +692,25 @@ public:
     plan=fftw_plan_guru_r2r(0,NULL,3,dims,(double *) in,(double *) out,
 			    NULL,fftw::effort);
     
-    iwide=a;
-    jwide=b;
-    if(n*a < rows) { // Only happens when rows > threads.
-      iwide=a-1;
-      dims[0].n=rows-n*iwide;
-      plan2=fftw_plan_guru_r2r(0,NULL,3,dims,(double *) in,(double *) out,
-                              NULL,fftw::effort);
-    } else if(m*b < cols) { // Only happens when rows < threads.
-      jwide=b-1;
-      dims[1].n=cols-m*jwide;
+    plan2=NULL;
+    ilast=a;
+    jlast=b;
+    
+    if(n*a > rows) { // Only happens when rows > threads.
+      a=ceilquotient(rows,n);
+      ilast=a-1;
+      dims[0].n=rows-n*ilast;
       plan2=fftw_plan_guru_r2r(0,NULL,3,dims,(double *) in,(double *) out,
                                NULL,fftw::effort);
-    } else
-      plan2=NULL;
+    } else { // Only happens when rows < threads.
+      if(m*b > cols) {
+        b=ceilquotient(cols,m);
+        jlast=b-1;
+        dims[1].n=cols-m*jlast;
+        plan2=fftw_plan_guru_r2r(0,NULL,3,dims,(double *) in,(double *) out,
+                                 NULL,fftw::effort);
+      }
+    }
   }
 
   ~Transpose() {
@@ -727,7 +738,7 @@ public:
 #pragma omp parallel for num_threads(B)
         for(unsigned int j=0; j < b; ++j) {
           unsigned int J=j*mlength;
-          fftw_execute_r2r((i < iwide && j < jwide) ? plan : plan2,
+          fftw_execute_r2r((i < ilast && j < jlast) ? plan : plan2,
                            (double *) in+cols*I+J,
                            (double *) out+rows*J+I);
         }
