@@ -132,12 +132,9 @@ inline int Ialltoall(void *sendbuf, int sendcount,
                      void *recvbuf, int recvcount,
                      MPI_Comm comm, MPI_Request *request, int *sched=NULL)
 {
-//  if(!sched)
-//    return MPI_Ialltoall(sendbuf,sendcount,MPI_BYTE,recvbuf,recvcount,MPI_BYTE,
-    return MPI_Alltoall(sendbuf,sendcount,MPI_BYTE,recvbuf,recvcount,MPI_BYTE,
-//                         comm,request);
-                         comm);
-    /*
+  if(!sched)
+    return MPI_Ialltoall(sendbuf,sendcount,MPI_BYTE,recvbuf,recvcount,MPI_BYTE,
+                         comm,request);
   else {
     int size;
     int rank;
@@ -165,7 +162,6 @@ inline int Ialltoall(void *sendbuf, int sendcount,
            sendsize);
     return 0;
   }
-    */
 }
 
 inline int Alltoall(void *sendbuf, int sendcount,
@@ -212,6 +208,7 @@ public: // ****
   Transpose *Tout1,*Tout2,*Tout3;
   unsigned int a,b;
   bool inflag,outflag;
+  bool uniform;
 public:
 
   bool divisible(int size, unsigned int M, unsigned int N) {
@@ -277,17 +274,9 @@ public:
     
     m0=localdimension(M,0,size);
     mp=localdimension(M,size-1,size);
-/*    
-    if(!divisible(size,M,N)) {
-      if(globalrank == 0)
-        std::cout << 
-          "ERROR: Matrix dimensions must be divisible by number of processors" 
-                  << std::endl << std::endl; 
-      MPI_Finalize();
-      exit(0);
-    }
-*/
     
+    uniform=divisible(size,M,N);
+      
     if(work == NULL) {
       Array::newAlign(this->work,N*m*L,sizeof(T));
       allocated=true;
@@ -480,24 +469,18 @@ public:
   
   void inphase0() {
     if(size == 1) return;
-    /*
-    unsigned int blocksize=sizeof(T)*n*(a > 1 ? b : a)*m*L;
-//    Ialltoall(data,blocksize,work,blocksize,split2,request,sched2);
-//    MPI_Barrier(split);
+    if(uniform) {
+      unsigned int blocksize=sizeof(T)*n*(a > 1 ? b : a)*m*L;
+      Ialltoall(data,blocksize,work,blocksize,split2,request,sched2);
+    } else {
     
-    std::cout << "rank=" << rank << "n=" << n << " m=" << m << " a=" << a << " b=" << b << std::endl;
+//    std::cout << "rank=" << rank << "n=" << n << " m=" << m << " a=" << a << " b=" << b << std::endl;
     
-    copy(data,work,n*M*L,threads); // ***
-    Ialltoall(work,blocksize,data,blocksize,split2,request,sched2);
-    return;
-    */
+      int *sendcounts=new int[size];
+      int *senddisplacements=new int[size];
+      int *recvcounts=new int[size];
+      int *recvdisplacements=new int[size];
     
-  int *sendcounts=new int[size];
-  int *senddisplacements=new int[size];
-  int *recvcounts=new int[size];
-  int *recvdisplacements=new int[size];
-    
-    {
       int ni;
       int mi;
       int M0=M;
@@ -522,10 +505,10 @@ public:
         Si += si;
         Ri += ri;
       }
-    }
 
-    Ialltoallv(data,sendcounts,senddisplacements,work,recvcounts,
-               recvdisplacements,split2,request,sched2);
+      Ialltoallv(data,sendcounts,senddisplacements,work,recvcounts,
+                 recvdisplacements,split2,request,sched2);
+    }
   }
   
   void inphase1() {
@@ -548,11 +531,9 @@ public:
 
   void inpost() {
     if(size == 1) return;
-    // Divisible case:
-    if(m0 == mp)
+    if(uniform)
       Tin1->transpose(work,data); // b x n*a x m*L
     else  {
-    // Indivisible case:
       unsigned int lastblock=mp*L;
       unsigned int block=m0*L;
       unsigned int cols=n*a;
