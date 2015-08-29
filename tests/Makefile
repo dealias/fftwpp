@@ -41,7 +41,7 @@ MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
 vpath %.cc ../
 
 FILES=conv cconv conv2 cconv2 conv3 cconv3 tconv tconv2 \
-	fft1 fft2 fft3 fft1r fft2r fft3r mfft1 transpose
+	fft1 fft2 fft3 fft1r fft2r fft3r mfft1 mfft1r transpose
 
 FFTW=fftw++
 EXTRA=$(FFTW) convolution explicit direct
@@ -95,6 +95,9 @@ fft3r: fft3r.o $(EXTRA:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 mfft1: mfft1.o $(EXTRA:=.o)
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
+mfft1r: mfft1r.o $(EXTRA:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 transpose: transpose.o $(EXTRA:=.o)
