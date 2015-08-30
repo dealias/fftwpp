@@ -68,17 +68,7 @@ inline void copytoblock(T *src, T *dest,
     copy(src+i*stride,dest+i*length,length,threads);
 }
 
-template<class T>
-inline void uncopy(T *from, T *to, unsigned int length, unsigned int threads=1)
-{
-#ifndef FFTWPP_SINGLE_THREAD
-#pragma omp parallel for num_threads(threads)
-#endif  
-for(unsigned int i=0; i < length; ++i)
-  from[i]=to[i];
-}
-
-// Copy count blocks spaced stride apart from contiguous blocks in dest.
+// Copy count blocks spaced stride apart from contiguous blocks in src.
 template<class T>
 inline void copyfromblock(T *src, T *dest,
                           unsigned int count, unsigned int length,
