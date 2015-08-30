@@ -166,6 +166,8 @@ void transpose(int rank, int size)
   int ysize=localsize(Y,size);
   size=max(xsize,ysize);
   
+  cout << "Size=" << size << endl;
+  
   int x=localdimension(X,rank,size);
   int y=localdimension(Y,rank,size);
   
@@ -175,6 +177,9 @@ void transpose(int rank, int size)
   MPI_Comm active; 
   MPI_Comm_split(MPI_COMM_WORLD,rank < size,0,&active);
 
+  
+  if(rank < size) {
+  
   cout << "rank=" << rank << " size=" << size << " x=" << x << " " <<
     " y=" << y << endl;
   
@@ -194,29 +199,29 @@ void transpose(int rank, int size)
   }
   
   data=ComplexAlign(X*y*Z);
-  mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,fftw::maxthreads,active);
   
   init(data,X,y,Z,ystart);
 
-  // Initialize remaining plans.
-//    show(data,X,y*Z,MPI_COMM_WORLD);
-//  T.transpose(data,false,true);
-  T.transpose(data,false,true);
-///  T.data=data;
-//    T.inphase0();
-//    if(rank == 0) cout << "\ntranspose:\n" << endl;
-//  show(data,x,Y*Z,MPI_COMM_WORLD);
-  
-//MPI_Finalize();
-//    exit(0);
+  show(data,X,y*Z,active);
     
+  // Initialize remaining plans.
+
+  mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,fftw::maxthreads,active);
+  init(data,X,y,Z,ystart);
+  T.transpose(data,false,true);
+  
+  show(data,x,Y*Z,active);
+  
+  MPI_Finalize();
+  exit(0);
+  
   T.NmTranspose();
   init(data,X,y,Z,ystart);
 
   
   bool showoutput=X*Y < showlimit && N == 1;
   if(showoutput)
-    show(data,X,y*Z,MPI_COMM_WORLD);
+    show(data,X,y*Z,active);
   
   fftw::statistics Sininit,Sinwait0,Sinwait1,Sin,Soutinit,Soutwait0,Soutwait1,Sout;
 
@@ -243,7 +248,7 @@ void transpose(int rank, int size)
 
     if(showoutput) {
       if(rank == 0) cout << "\ntranspose:\n" << endl;
-      show(data,x,Y*Z,MPI_COMM_WORLD);
+      show(data,x,Y*Z,active);
     }
 
     exit(0);
@@ -270,10 +275,10 @@ void transpose(int rank, int size)
   if(showoutput) {
     if(outtranspose) {
       if(rank == 0) cout << "\nout:\n" << endl;
-      show(data,y,X*Z,MPI_COMM_WORLD);
+      show(data,y,X*Z,active);
     } else {
       if(rank == 0) cout << "\noriginal:\n" << endl;
-      show(data,X,y*Z,MPI_COMM_WORLD);
+      show(data,X,y*Z,active);
     }
   }
 
@@ -289,6 +294,7 @@ void transpose(int rank, int size)
     Sout.output("Tout",X);
   }
   
+  }
 }
 
 int main(int argc, char **argv)
