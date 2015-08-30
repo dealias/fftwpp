@@ -202,7 +202,7 @@ void transpose(int rank, int size)
   
   init(data,X,y,Z,ystart);
 
-  show(data,X,y*Z,active);
+//  show(data,X,y*Z,active);
     
   // Initialize remaining plans.
 
@@ -210,14 +210,10 @@ void transpose(int rank, int size)
   init(data,X,y,Z,ystart);
   T.transpose(data,false,true);
   
-  show(data,x,Y*Z,active);
-  
-  MPI_Finalize();
-  exit(0);
+//  show(data,x,Y*Z,active);
   
   T.NmTranspose();
   init(data,X,y,Z,ystart);
-
   
   bool showoutput=X*Y < showlimit && N == 1;
   if(showoutput)
@@ -251,8 +247,6 @@ void transpose(int rank, int size)
       show(data,x,Y*Z,active);
     }
 
-    exit(0);
-    
     if(rank == 0) begin=totalseconds();
     T.outphase0();
     if(rank == 0) Tinit0=totalseconds();

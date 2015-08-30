@@ -68,6 +68,26 @@ inline void copytoblock(T *src, T *dest,
     copy(src+i*stride,dest+i*length,length,threads);
 }
 
+template<class T>
+inline void uncopy(T *from, T *to, unsigned int length, unsigned int threads=1)
+{
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif  
+for(unsigned int i=0; i < length; ++i)
+  from[i]=to[i];
+}
+
+// Copy count blocks spaced stride apart from contiguous blocks in dest.
+template<class T>
+inline void copyfromblock(T *src, T *dest,
+                          unsigned int count, unsigned int length,
+                          unsigned int stride, unsigned int threads=1)
+{
+  for(unsigned int i=0; i < count; ++i)
+    copy(src+i*length,dest+i*stride,length,threads);
+}
+
 inline void transposeError(const char *text) {
   std::cout << "Cannot construct " << text << " transpose plan." << std::endl;
   exit(-1);
@@ -433,12 +453,15 @@ public:
         MPI_Comm_free(&split2); 
         MPI_Comm_free(&split); 
       }
-      delete Tout2;
-      delete Tin2;
+      if(uniform) {
+        delete Tout2;
+        delete Tin2;
+      }
     }
-    delete Tin1;
-    delete Tout1;
-    
+    if(uniform) {
+      delete Tin1;
+      delete Tout1;
+    }
   }
   
   ~mpitranspose() {
@@ -449,22 +472,21 @@ public:
       Array::deleteAlign(work,N*m*L);
   }
   
+//    std::cout << "rank=" << rank << "n=" << n << " m=" << m << " a=" << a << " b=" << b << std::endl;
+  
   void inphase0() {
     if(n == 0) return;
+    if(size == 1) return;
+    
     if(uniform) {
       unsigned int blocksize=sizeof(T)*n*(a > 1 ? b : a)*m*L;
       Ialltoall(data,blocksize,work,split2,request,sched2);
     } else {
-    
-    std::cout << "rank=" << rank << "n=" << n << " m=" << m << " a=" << a << " b=" << b << std::endl;
-    
       int *sendcounts=new int[size];
       int *senddisplacements=new int[size];
       int *recvcounts=new int[size];
       int *recvdisplacements=new int[size];
     
-      int ni;
-      int mi;
       int M0=M;
       int N0=N;
       
@@ -474,8 +496,8 @@ public:
       size_t S=sizeof(T);
       
       for(int i=0; i < size; ++i) {
-        ni=ceilquotient(N0,size-i);
-        mi=ceilquotient(M0,size-i);
+        int ni=ceilquotient(N0,size-i);
+        int mi=ceilquotient(M0,size-i);
         N0 -= ni;
         M0 -= mi;
         int si=m*ni*S;
@@ -532,12 +554,60 @@ public:
   }
   
   void outphase0() {
+    if(n == 0) return;
     if(size == 1) return;
   
+    if(uniform) {
     // Inner transpose a N/a x M/a matrices over each team of b processes
-    Tout1->transpose(data,work); // n*a x b x m*L
-    unsigned int blocksize=sizeof(T)*n*a*m*L;
-    Ialltoall(work,blocksize,data,split,request,sched);
+      Tout1->transpose(data,work); // n*a x b x m*L
+      unsigned int blocksize=sizeof(T)*n*a*m*L;
+      Ialltoall(work,blocksize,data,split,request,sched);
+    } else {
+      unsigned int lastblock=mp*L;
+      unsigned int block=m0*L;
+      unsigned int cols=n*a;
+      unsigned int istride=cols*block;
+      unsigned int last=b-1;
+      unsigned int ostride=last*block+lastblock;
+
+      for(unsigned int j=0; j < cols; ++j) {
+        Complex *src=data+j*ostride;
+        copyfromblock(src,work+j*block,last,block,istride);
+        copy(src+last*block,work+j*lastblock+last*istride,lastblock);
+      }
+
+      int *sendcounts=new int[size];
+      int *senddisplacements=new int[size];
+      int *recvcounts=new int[size];
+      int *recvdisplacements=new int[size];
+    
+      int M0=M;
+      int N0=N;
+      
+      int Si=0;
+      int Ri=0;
+    
+      size_t S=sizeof(T);
+      
+      for(int i=0; i < size; ++i) {
+        int ni=ceilquotient(N0,size-i);
+        int mi=ceilquotient(M0,size-i);
+        N0 -= ni;
+        M0 -= mi;
+        int si=n*mi*S;
+        int ri=m*ni*S;
+        sendcounts[i]=si;
+        recvcounts[i]=ri;
+        senddisplacements[i]=Si;
+        recvdisplacements[i]=Ri;
+        Si += si;
+        Ri += ri;
+      }
+
+      Ialltoallv(work,sendcounts,senddisplacements,data,recvcounts,
+                 recvdisplacements,split,request,sched);
+    }
+    
   }
   
   void outphase1() {
