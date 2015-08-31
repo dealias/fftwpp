@@ -1,6 +1,8 @@
 #ifndef __mpitranspose_h__
 #define __mpitranspose_h__ 1
 
+using namespace std;
+
 /* 
 Globally transpose an N x M matrix of blocks of L complex elements
 distributed over the second dimension.
@@ -190,7 +192,9 @@ template<class T>
 class mpitranspose {
 private:
   unsigned int N,m,n,M;
-  unsigned int m0,mp;
+  unsigned int n0,m0;
+  unsigned int np,mp;
+  int mlast,nlast;
   unsigned int L;
   T *data;
   T *work;
@@ -278,7 +282,21 @@ public:
     MPI_Comm_rank(global,&globalrank);
     
     m0=localdimension(M,0,size);
-    mp=localdimension(M,size-1,size);
+    mlast=ceilquotient(M,m0)-1;
+    mp=localdimension(M,mlast,size);
+    
+    n0=localdimension(N,0,size);
+    nlast=ceilquotient(N,n0)-1;
+    np=localdimension(N,nlast,size);
+    
+    cout << "mlast=" << mlast << endl;
+    cout << "nlast=" << nlast << endl;
+    
+    cout << "m0=" << m0 << endl;
+    cout << "n0=" << n0 << endl;
+    
+    cout << "mp=" << mp << endl;
+    cout << "np=" << np << endl;
     
     uniform=divisible(size,M,N);
       
@@ -292,7 +310,9 @@ public:
       return;
     }
     
-    unsigned int AlltoAll=1;
+    unsigned int AlltoAll=1; // ***
+    unsigned int A=1; // ***
+    /*
     double latency=safetyfactor*Latency();
     unsigned int alimit=(N*M*L*sizeof(T) >= latency*size*size) ?
       2 : size;
@@ -320,6 +340,7 @@ public:
         }
       }
     }
+    */
     
     unsigned int parm[]={A,AlltoAll};
     MPI_Bcast(&parm,2,MPI_UNSIGNED,0,global);
@@ -466,7 +487,6 @@ public:
   }
   
   void inphase0() {
-    if(n == 0) return;
     if(size == 1) return;
     
     if(uniform) {
@@ -478,19 +498,14 @@ public:
       int *recvcounts=new int[size];
       int *recvdisplacements=new int[size];
     
-      int M0=M;
-      int N0=N;
-      
       int Si=0;
       int Ri=0;
     
       size_t S=sizeof(T);
       
       for(int i=0; i < size; ++i) {
-        int ni=ceilquotient(N0,size-i);
-        int mi=ceilquotient(M0,size-i);
-        N0 -= ni;
-        M0 -= mi;
+        int ni=i < nlast ? n0 : (i == nlast ? np : 0);
+        int mi=i < mlast ? m0 : (i == mlast ? mp : 0);
         int si=m*ni*S;
         int ri=n*mi*S;
         sendcounts[i]=si;
@@ -530,19 +545,14 @@ public:
         int *recvcounts=new int[size];
         int *recvdisplacements=new int[size];
     
-        int M0=M;
-        int N0=N;
-      
         int Si=0;
         int Ri=0;
     
         size_t S=sizeof(T);
       
         for(int i=0; i < size; ++i) {
-          int ni=ceilquotient(N0,size-i);
-          int mi=ceilquotient(M0,size-i);
-          N0 -= ni;
-          M0 -= mi;
+          int ni=i < nlast ? n0 : (i == nlast ? np : 0);
+          int mi=i < mlast ? m0 : (i == mlast ? mp : 0);
           int si=m*ni*S;
           int ri=n*mi*S;
           sendcounts[i]=si;
@@ -590,7 +600,6 @@ public:
   }
   
   void outphase0() {
-    if(n == 0) return;
     if(size == 1) return;
   
     if(uniform) {
@@ -617,19 +626,14 @@ public:
       int *recvcounts=new int[size];
       int *recvdisplacements=new int[size];
     
-      int M0=M;
-      int N0=N;
-      
       int Si=0;
       int Ri=0;
     
       size_t S=sizeof(T);
       
       for(int i=0; i < size; ++i) {
-        int ni=ceilquotient(N0,size-i);
-        int mi=ceilquotient(M0,size-i);
-        N0 -= ni;
-        M0 -= mi;
+        int ni=i < nlast ? n0 : (i == nlast ? np : 0);
+        int mi=i < mlast ? m0 : (i == mlast ? mp : 0);
         int si=n*mi*S;
         int ri=m*ni*S;
         sendcounts[i]=si;
@@ -643,7 +647,6 @@ public:
       Ialltoallv(work,sendcounts,senddisplacements,data,recvcounts,
                  recvdisplacements,split,request,sched);
     }
-    
   }
   
   void outphase1() {
@@ -672,19 +675,14 @@ public:
       int *recvcounts=new int[size];
       int *recvdisplacements=new int[size];
     
-      int M0=M;
-      int N0=N;
-      
       int Si=0;
       int Ri=0;
     
       size_t S=sizeof(T);
       
       for(int i=0; i < size; ++i) {
-        int ni=ceilquotient(N0,size-i);
-        int mi=ceilquotient(M0,size-i);
-        N0 -= ni;
-        M0 -= mi;
+        int ni=i < nlast ? n0 : (i == nlast ? np : 0);
+        int mi=i < mlast ? m0 : (i == mlast ? mp : 0);
         int si=n*mi*S;
         int ri=m*ni*S;
         sendcounts[i]=si;
