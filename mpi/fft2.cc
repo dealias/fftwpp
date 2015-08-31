@@ -1,15 +1,11 @@
+#include "Array.h"
 #include "mpifftw++.h"
 #include "utils.h"
 #include "mpiutils.h"
 
 using namespace std;
 using namespace fftwpp;
-
-// Number of iterations.
-unsigned int N0=10000000;
-unsigned int N=0;
-unsigned int mx=4;
-unsigned int my=4;
+using namespace Array;
 
 inline void init(Complex *f, splitx d) 
 {
@@ -26,10 +22,18 @@ unsigned int outlimit=100;
 
 int main(int argc, char* argv[])
 {
+  int retval = 0; // success!
+
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif
-  int retval=0;
+
+  // Number of iterations.
+  unsigned int N0=10000000;
+  bool Nset = 0;
+  unsigned int N=0;
+  unsigned int mx=4;
+  unsigned int my=4;
   
 #ifdef __GNUC__ 
   optind=0;
@@ -42,6 +46,7 @@ int main(int argc, char* argv[])
       case 0:
         break;
       case 'N':
+	Nset = true;
         N=atoi(optarg);
         break;
       case 'm':
@@ -70,7 +75,7 @@ int main(int argc, char* argv[])
 
   if(my == 0) my=mx;
 
-  if(N == 0) {
+  if(!Nset) {
     N=N0/mx/my;
     if(N < 10) N=10;
   }
@@ -123,35 +128,72 @@ int main(int argc, char* argv[])
     if(group.rank == 0)
       cout << "Initialized after " << seconds() << " seconds." << endl;    
 
-    if(mx*my < outlimit) {
+    if(N == 0) {
       init(f,d);
 
-      if(main) cout << "\ninput:" << endl;
-      show(f,d.x,my,group.active);
+      if(mx*my < outlimit) {
+	if(main) cout << "\ninput:" << endl;
+	show(f,d.x,my,group.active);
+      }
+
+      // create local transform for testing purposes
+      size_t align=sizeof(Complex);
+      array2<Complex> localfin(mx,my,align);
+      fft2d localForward2(-1,localfin);
+      accumulate_splitx(f, localfin(), d, false, group.active);
 
       fft.Forwards(f);
 
-      if(main) cout << "\noutput:" << endl;
-      show(f,mx,d.y,group.active);
+      if(mx*my < outlimit) {
+      	if(main) cout << "\noutput:" << endl;
+      	show(f,mx,d.y,group.active);
+      }
+
+      if(group.rank == 0) {
+	cout << "\nwlocal input:\n" << localfin << endl;
+	localForward2.fft(localfin);
+	cout << "\nlocal output:\n" << localfin << endl;
+      }
+
+      array2<Complex> localfout(mx,my,align);
+      accumulate_splitx(f, localfout(), d, true, group.active);
+      if(group.rank == 0) {
+	cout << "\nwaccumulated output:\n" << localfout << endl;
+	double maxerr = 0.0;
+	for(unsigned int i = 0; i < d.nx; ++i) {
+	  for(unsigned int j = 0; j < d.ny; ++j) {
+	    double diff = abs(localfout[i][j] - localfin[i][j]);
+	    if(diff > maxerr)
+	      maxerr = diff;
+	  }
+	}
+	cout << "max error: " << maxerr << endl;
+	if(maxerr > 1e-10) {
+	  cout << "CAUTION: max error is LARGE!" << endl;
+	  retval += 1;
+	}
+      }
 
       fft.Backwards(f);
       fft.Normalize(f);
 
-      if(main) cout << "\noutput:" << endl;
-      show(f,d.x,my,group.active);
+      if(mx*my < outlimit) {
+      	if(main) cout << "\noutput:" << endl;
+      	show(f,d.x,my,group.active);
+      }
+    } else {
+      double *T=new double[N];
+      for(unsigned int i=0; i < N; ++i) {
+	init(f,d);
+	seconds();
+	fft.Forwards(f);
+	fft.Backwards(f);
+	fft.Normalize(f);
+	T[i]=seconds();
+      }    
+      if(main) timings("FFT timing:",mx,T,N);
+      delete [] T;
     }
-
-    double *T=new double[N];
-    for(unsigned int i=0; i < N; ++i) {
-      init(f,d);
-      seconds();
-      fft.Forwards(f);
-      fft.Backwards(f);
-      fft.Normalize(f);
-      T[i]=seconds();
-    }    
-    if(main) timings("FFT timing:",mx,T,N);
-    delete [] T;
 
     deleteAlign(f);
   }
