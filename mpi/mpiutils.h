@@ -1,7 +1,7 @@
 #ifndef __mpiutils_h__
 #define __mpiutils_h__ 1
 
-#include "mpitranspose.h"
+#include "mpifftw++.h"
 
 namespace fftwpp {
 

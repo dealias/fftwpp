@@ -158,7 +158,7 @@ int main(int argc, char* argv[])
       array2<Complex> localfout(mx,my,align);
       accumulate_splitx(f, localfout(), d, true, group.active);
       if(group.rank == 0) {
-	cout << "\nwaccumulated output:\n" << localfout << endl;
+	cout << "\naccumulated output:\n" << localfout << endl;
 	double maxerr = 0.0;
 	for(unsigned int i = 0; i < d.nx; ++i) {
 	  for(unsigned int j = 0; j < d.ny; ++j) {
