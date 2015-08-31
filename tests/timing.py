@@ -82,6 +82,8 @@ def default_outdir(p):
         outdir="timingsmf1"
     if p == "fft2":
         outdir="timingsf2"
+    if p == "transpose":
+        outdir="transpose2"
 
     return outdir
 
@@ -102,6 +104,7 @@ def main(argv):
     -D<outdir>
     -o<outfile>
     -g<grep string>
+    -N<int> Number of tests to perform
     '''
 
     dryrun=False
@@ -120,10 +123,12 @@ def main(argv):
     RAM=0
     outdir=""
     outfile=""
-    rname="Implicit"
+    rname=""
+    N=100
+
 
     try:
-        opts, args = getopt.getopt(argv,"hdp:T:a:b:A:B:r:R:o:D:g:")
+        opts, args = getopt.getopt(argv,"hdp:T:a:b:A:B:r:R:o:D:g:N:")
     except getopt.GetoptError:
         print "error in parsing arguments."
         print usage
@@ -137,6 +142,8 @@ def main(argv):
             T=arg
         elif opt in ("-a"):
             a=int(arg)
+        elif opt in ("-N"):
+            N=int(arg)
         elif opt in ("-b"):
             b=int(arg)
         elif opt in ("-A"):
@@ -210,6 +217,8 @@ def main(argv):
         runtype="fft"
     if p == "fft2":
         runtype="fft"
+    if p == "transpose":
+        runtype="transpose"
 
     if outdir == "":
         outdir=default_outdir(p)
@@ -232,14 +241,14 @@ def main(argv):
             outfile="pruned"
         if runtype == "fft":
             outfile="fft"
+        if runtype == "transpose":
+            outfile="tranpose"
     else:
         outfile=out
 
     if dorun:
         if RAM != 0:
             print "max problem size is "+str(2**b)
-
-        print "Search string for timing: "+rname
 
         if rname == "":
             if runtype == "implicit":
@@ -250,6 +259,10 @@ def main(argv):
                 rname="rune"
             if runtype == "fft":
                 rname="fft"
+            if runtype == "transpose":
+                rname="transpose"
+
+        print "Search string for timing: "+rname
 
         print "output in "+outdir+"/"+outfile
 
@@ -263,7 +276,11 @@ def main(argv):
             cmd.append(B[i]);
             i += 1
 
-        cmd+=[str(p)]
+        cmd+=["./"+str(p)]
+
+        if(N > 0):
+            cmd.append("-N" + str(N))
+
         if(runtype == "explicit"):
             cmd.append("-e")
         if(runtype == "pruned"):

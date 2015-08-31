@@ -1,6 +1,8 @@
 #ifndef __mpiutils_h__
 #define __mpiutils_h__ 1
 
+#include "mpifftw++.h"
+
 namespace fftwpp {
 
 template<class ftype>
@@ -15,13 +17,69 @@ void show(ftype *f, unsigned int, unsigned int ny,
   }
 }
 
+// FIXME: documentation
+template<class ftype>
+void accumulate_splitx(ftype *part,  ftype *whole,
+		       splitx split, bool transposed, 
+		       const MPI_Comm& communicator)
+{
+  MPI_Status stat;
+  int size, rank;
+  MPI_Comm_size(communicator, &size);
+  MPI_Comm_rank(communicator, &rank);
+
+  unsigned int nx = split.nx;
+  unsigned int ny = split.ny;
+  unsigned int x0 = split.x0;
+  unsigned int y0 = split.y0;
+  unsigned int x = split.x;
+  unsigned int y = split.y;
+
+  if(rank == 0) {
+    // First copy rank 0's part into the whole
+    if(!transposed) // x . ny
+      copyfromblock(part, whole, x, ny, ny);
+    else // nx . y
+      copyfromblock(part, whole, nx, y, nx);
+
+    for(int p = 1; p < size; ++p) {
+      unsigned int dims[6];
+      MPI_Recv(&dims, 6, MPI_UNSIGNED, p, 0, communicator, &stat);
+
+      unsigned int nx = dims[0], ny = dims[1];
+      unsigned int x0 = dims[2], y0 = dims[3];
+      unsigned int x = dims[4], y = dims[5];
+      unsigned int n = nx * ny;
+      if(n > 0) {
+        ftype *C = new ftype[n];
+        MPI_Recv(C, sizeof(ftype) * n, MPI_BYTE, p, 0, communicator, &stat);
+	if(!transposed) 
+	  copyfromblock(C, whole + x0 * ny, x, ny, ny);
+	else
+	  copyfromblock(C, whole + y0, nx, y, nx);
+        delete [] C;
+      }
+    }
+  } else {
+    unsigned int dims[]={nx, ny, x0, y0, x, y};
+    MPI_Send(&dims, 6, MPI_UNSIGNED, 0, 0, communicator);
+    unsigned int n = nx * ny;
+    if(n > 0)
+      MPI_Send(part, n * sizeof(ftype), MPI_BYTE, 0, 0, communicator);
+  }
+}
+ 
+
+// TODO: instead of copying bit-by-bit, make one function that copies
+// everything to a big array on the rank0 process, and then just cout
+// it.
 // output the contents of a 2D array
 template<class ftype>
 void show(ftype *f, unsigned int nx, unsigned int ny,
           unsigned int x0, unsigned int y0,
           unsigned int x1, unsigned int y1, const MPI_Comm& communicator)
           
-{ 
+{
   MPI_Status stat;
   int size,rank;
   MPI_Comm_size(communicator,&size);
