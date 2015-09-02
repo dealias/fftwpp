@@ -155,8 +155,10 @@ void fftwTranspose(int rank, int size, int N)
   fftw_destroy_plan(outplan);
 }
   
-void transpose(int rank, int size, int N)
+int transpose(int rank, int size, int N)
 {
+  int retval = 0;
+  
   Complex *data;
   
   int xsize=localsize(X,size);
@@ -168,7 +170,7 @@ void transpose(int rank, int size, int N)
   int x=localdimension(X,rank,size);
   int y=localdimension(Y,rank,size);
   
-  //  int xstart=localstart(X,rank,size);
+  int xstart=localstart(X,rank,size);
   int ystart=localstart(Y,rank,size);
   
   MPI_Comm active; 
@@ -188,33 +190,85 @@ void transpose(int rank, int size, int N)
       cout << endl;
     }
   
-    data=ComplexAlign(X*y*Z);
+    data = ComplexAlign(X*y*Z);
 
     mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,fftw::maxthreads,active);
-  
+	
     if(N == 0) { // tests and output
-      bool showoutput=X*Y < showlimit;
+      bool showoutput = X*Y < showlimit;
+
       init(data,X,y,Z,ystart);
-      
       if(showoutput)
 	show(data,X,y*Z,active);
-            
-      init(data,X,y,Z,ystart);
-      T.transpose(data,false,true);
-      
-      //  show(data,x,Y*Z,active);
-      
-      init(data,X,y,Z,ystart);
-      
-      if(showoutput) {
-	if(outtranspose) {
-	  if(rank == 0) cout << "\nout:\n" << endl;
-	  show(data,y,X*Z,active);
-	} else {
-	  if(rank == 0) cout << "\noriginal:\n" << endl;
-	  show(data,X,y*Z,active);
-	}
+
+      Complex *wholedata, *wholeoutput;
+      Transpose *localtranspose;
+      if(rank == 0) {
+	wholedata = new Complex[X * Y * Z];
+	wholeoutput = new Complex[X * Y * Z];
+	localtranspose = new Transpose(X, Y, Z, wholedata);
       }
+      
+      accumulate_splitx(data, wholedata, X, Y, xstart, ystart, x, y,
+			true, active);
+      
+      if(showoutput && rank == 0) {
+	cout << "\naccumulated input data:" << endl;
+	show(wholedata,X,Y,0,0,X,Y);
+      }
+      
+      T.transpose(data, false, true); // false, true :  N x m -> n x M
+
+      if(outtranspose) 
+	T.NmTranspose();
+
+      if(showoutput) {
+	if(rank == 0)
+	  cout << "\noutput:\n" << endl;
+	if(outtranspose)
+	  show(data,y,X*Z,active);
+	else
+	  show(data,X,y*Z,active);
+      }
+          
+      accumulate_splitx(data, wholeoutput, X, Y, xstart, ystart, x, y,
+			false, active);
+      
+      if(rank == 0) {
+	if(outtranspose) 
+	  localtranspose->transpose(wholedata);
+
+	if(showoutput) {
+	  cout << "\naccumulated output data:" << endl;
+	  show(wholeoutput,X,Y,0,0,X,Y);
+	  if(outtranspose) {
+	    cout << "\nlocally transposed data:" << endl;
+	    show(wholedata,X,Y,0,0,X,Y);
+	  }
+	}
+	
+	bool success = true;
+	for(unsigned int i = 0; i < X; ++i) {
+	  for(unsigned int j = 0; j < Y; ++j) {
+	    unsigned int pos = i * Y + j; 
+	    if(wholedata[pos] != wholeoutput[pos])
+	      success = false;
+	  }
+	}
+	
+	if(success == true) {
+	  cout << "\nTest succeeded." << endl;
+	} else {
+	  cout << "\nERROR: TEST FAILED!" << endl;
+	  retval += 1;
+	}
+	
+	delete localtranspose;
+	delete[] wholeoutput;
+	delete[] wholedata;
+      }
+            
+      MPI_Barrier(active); 
 
     } else { // timing loop
       fftw::statistics Sininit,Sinwait0,Sinwait1,Sin;
@@ -273,6 +327,7 @@ void transpose(int rank, int size, int N)
     }
 
   }
+  return retval;
 }
 
 int main(int argc, char **argv)
@@ -342,9 +397,12 @@ int main(int argc, char **argv)
 
 #ifdef OLD
   fftwTranspose(rank,size,N);
+  MPI_Finalize();
 #else
-  transpose(rank,size,N);
+  int retval = transpose(rank,size,N);
+  MPI_Finalize();
+  return retval;
 #endif  
   
-  MPI_Finalize();
+
 }
