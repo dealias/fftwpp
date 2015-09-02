@@ -13,8 +13,8 @@ if not os.path.isfile("transpose"):
     retval += 1
 else:
     
-    Xlist = [4,5]
-    Ylist = [4]
+    Xlist = [1,2,3,4,5,random.randint(6,128)]
+    Ylist = [1,2,3,4,5,random.randint(6,128)]
     Plist = [1,2,3,4]
     for X in Xlist:
         for Y in Ylist:
