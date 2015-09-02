@@ -36,10 +36,13 @@ void accumulate_splitx(const ftype *part,  ftype *whole,
 
   if(rank == 0) {
     // First copy rank 0's part into the whole
-    if(!transposed) // x . ny
+    if(!transposed) {
+      // x . ny
       copyfromblock(part, whole, x, ny, ny);
-    else // nx . y
-      copyfromblock(part, whole, nx, y, nx);
+    } else {
+      // nx . y
+      copyfromblock(part, whole, nx, y, ny);
+    }
 
     for(int p = 1; p < size; ++p) {
       unsigned int dims[6];
@@ -52,10 +55,11 @@ void accumulate_splitx(const ftype *part,  ftype *whole,
       if(n > 0) {
         ftype *C = new ftype[n];
         MPI_Recv(C, sizeof(ftype) * n, MPI_BYTE, p, 0, communicator, &stat);
-	if(!transposed) 
+	if(!transposed) {
 	  copyfromblock(C, whole + x0 * ny, x, ny, ny);
-	else
-	  copyfromblock(C, whole + y0, nx, y, nx);
+	} else {
+	  copyfromblock(C, whole + y0, nx, y, ny);
+	}
         delete [] C;
       }
     }

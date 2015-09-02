@@ -46,3 +46,4 @@ mpi/fft2
 mpi/rcfft2
 mpi/fft3
 mpi/transpose
+mpi/accumulate
