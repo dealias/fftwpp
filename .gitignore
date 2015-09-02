@@ -16,6 +16,7 @@ tests/fft2r
 tests/fft3
 tests/fft3r
 tests/mfft1
+tests/mfft1r
 tests/tconv
 tests/tconv2
 tests/transpose
