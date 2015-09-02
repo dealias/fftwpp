@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"hN:m:x:y:n:T:");
+    int c = getopt(argc,argv,"hN:m:X:Y:n:T:");
     if (c == -1) break;
                 
     switch (c) {
@@ -52,10 +52,10 @@ int main(int argc, char* argv[])
       case 'm':
         mx=my=atoi(optarg);
         break;
-      case 'x':
+      case 'X':
         mx=atoi(optarg);
         break;
-      case 'y':
+      case 'Y':
         my=atoi(optarg);
         break;
       case 'n':
