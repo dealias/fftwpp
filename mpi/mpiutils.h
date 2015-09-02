@@ -16,24 +16,23 @@ void show(ftype *f, unsigned int, unsigned int ny,
     std::cout << std::endl;
   }
 }
-
+ 
 // FIXME: documentation
 template<class ftype>
-void accumulate_splitx(ftype *part,  ftype *whole,
-		       splitx split, bool transposed, 
+void accumulate_splitx(const ftype *part,  ftype *whole,
+		       const unsigned int nx,
+		       const unsigned int ny,
+		       const unsigned int x0,
+		       const unsigned int y0,
+		       const unsigned int x,
+		       const unsigned int y,
+		       const bool transposed, 
 		       const MPI_Comm& communicator)
 {
   MPI_Status stat;
   int size, rank;
   MPI_Comm_size(communicator, &size);
   MPI_Comm_rank(communicator, &rank);
-
-  unsigned int nx = split.nx;
-  unsigned int ny = split.ny;
-  unsigned int x0 = split.x0;
-  unsigned int y0 = split.y0;
-  unsigned int x = split.x;
-  unsigned int y = split.y;
 
   if(rank == 0) {
     // First copy rank 0's part into the whole
@@ -68,7 +67,22 @@ void accumulate_splitx(ftype *part,  ftype *whole,
       MPI_Send(part, n * sizeof(ftype), MPI_BYTE, 0, 0, communicator);
   }
 }
- 
+
+template<class ftype>
+void accumulate_splitx(const ftype *part,  ftype *whole,
+		       const splitx split,
+		       const bool transposed, 
+		       const MPI_Comm& communicator)
+{
+  unsigned int nx = split.nx;
+  unsigned int ny = split.ny;
+  unsigned int x0 = split.x0;
+  unsigned int y0 = split.y0;
+  unsigned int x = split.x;
+  unsigned int y = split.y;
+
+  accumulate_splitx(part, whole, nx, ny, x0, y0, x, y, transposed,communicator);
+}
 
 // TODO: instead of copying bit-by-bit, make one function that copies
 // everything to a big array on the rank0 process, and then just cout
@@ -79,7 +93,7 @@ void show(ftype *f, unsigned int nx, unsigned int ny,
           unsigned int x0, unsigned int y0,
           unsigned int x1, unsigned int y1, const MPI_Comm& communicator)
           
-{
+{  
   MPI_Status stat;
   int size,rank;
   MPI_Comm_size(communicator,&size);
@@ -97,11 +111,11 @@ void show(ftype *f, unsigned int nx, unsigned int ny,
       unsigned int x0=dims[2], y0=dims[3];
       unsigned int x1=dims[4], y1=dims[5];
       unsigned int n=nx*ny;
+      std::cout << "process " << p << ":" <<  std::endl;
       if(n > 0) {
         ftype *C=new ftype[n];
         MPI_Recv(C,sizeof(ftype)*n,MPI_BYTE,p,0,communicator,&stat);
       
-        std::cout << "process " << p << ":" <<  std::endl;
         show(C,nx,ny,x0,y0,x1,y1);
         delete [] C;
       }

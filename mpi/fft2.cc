@@ -99,7 +99,7 @@ int main(int argc, char* argv[])
          << group.size << " nodes X " << fftw::maxthreads 
          << " threads/node" << endl;
   }
-  
+
   if(group.rank < group.size) { // If the process is unused, then do nothing.
     bool main=group.rank == 0;
     if(main) {
@@ -110,21 +110,18 @@ int main(int argc, char* argv[])
     splitx d(mx,my,group.active,group.block);
   
     for(int i=0; i < group.size; ++i) {
-      MPI_Barrier(group.active);
       if(i == group.rank) {
 	cout << "process " << i << " splity:" << endl;
 	d.show();
 	cout << endl;
       }
     }
-    MPI_Barrier(group.active);
 
     Complex *f=ComplexAlign(d.n);
 
     // Create instance of FFT
     fft2dMPI fft(d,f);
 
-    MPI_Barrier(group.active);
     if(group.rank == 0)
       cout << "Initialized after " << seconds() << " seconds." << endl;    
 
@@ -144,12 +141,14 @@ int main(int argc, char* argv[])
 
       fft.Forwards(f);
 
+      MPI_Barrier(group.active);
       if(mx*my < outlimit) {
       	if(main) cout << "\noutput:" << endl;
       	show(f,mx,d.y,group.active);
       }
-
-      if(group.rank == 0) {
+      
+      MPI_Barrier(group.active);
+      if(main) {
 	cout << "\nwlocal input:\n" << localfin << endl;
 	localForward2.fft(localfin);
 	cout << "\nlocal output:\n" << localfin << endl;
@@ -157,7 +156,7 @@ int main(int argc, char* argv[])
 
       array2<Complex> localfout(mx,my,align);
       accumulate_splitx(f, localfout(), d, true, group.active);
-      if(group.rank == 0) {
+      if(main) {
 	cout << "\naccumulated output:\n" << localfout << endl;
 	double maxerr = 0.0;
 	for(unsigned int i = 0; i < d.nx; ++i) {

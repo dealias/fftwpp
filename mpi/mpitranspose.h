@@ -49,7 +49,8 @@ extern double safetyfactor; // For conservative latency estimate.
 extern bool overlap; // Allow overlapped communication.
 
 template<class T>
-inline void copy(T *from, T *to, unsigned int length, unsigned int threads=1)
+inline void copy(const T *from, T *to, unsigned int length,
+		 unsigned int threads=1)
 {
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
@@ -60,7 +61,7 @@ for(unsigned int i=0; i < length; ++i)
 
 // Copy count blocks spaced stride apart to contiguous blocks in dest.
 template<class T>
-inline void copytoblock(T *src, T *dest,
+inline void copytoblock(const T *src, T *dest,
                         unsigned int count, unsigned int length,
                         unsigned int stride, unsigned int threads=1)
 {
@@ -70,7 +71,7 @@ inline void copytoblock(T *src, T *dest,
 
 // Copy count blocks spaced stride apart from contiguous blocks in src.
 template<class T>
-inline void copyfromblock(T *src, T *dest,
+inline void copyfromblock(const T *src, T *dest,
                           unsigned int count, unsigned int length,
                           unsigned int stride, unsigned int threads=1)
 {
