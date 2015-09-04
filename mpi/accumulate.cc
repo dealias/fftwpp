@@ -89,10 +89,10 @@ int main(int argc, char* argv[])
 
     init(f, d.nx, d.ny, d.x0, d.y0, d.x, d.y, false);
     
-    // if(mx * my < outlimit) {
-    //   if(main) cout << "\ninput:" << endl;
-    //   show(f,d.x,my,group.active);
-    // }
+    if(mx * my < outlimit) {
+      if(main) cout << "\ninput:" << endl;
+      show(f,d.x,my,group.active);
+    }
 
     array2<Complex> localf(mx,my);
 
@@ -113,20 +113,21 @@ int main(int argc, char* argv[])
 	retval += 1;
       }
     }
-
     init(f, d.nx, d.ny, d.x0, d.y0, d.x, d.y, true);
-    // if(mx*my < outlimit) {
-    //   if(main) cout << "\noutput:" << endl;
-    //   show(f,mx,d.y,group.active);
-    // }
+    if(mx*my < outlimit) {
+      if(main) cout << "\noutput:" << endl;
+      show(f,mx,d.y,group.active);
+    }
 
     localf = 0.0;
     accumulate_splitx(f, localf(), d, true, group.active);
     if(main) {
-      //cout << "Local version:\n" << localf << endl;
+      if(mx*my < outlimit) 
+	cout << "\nLocal version:\n" << localf << endl;
       array2<Complex> localf0(mx,my);
       init(localf0(), d.nx, d.ny, 0, 0, d.nx, d.ny, false);
-      //cout << "Local init:\n" << localf0 << endl;
+      if(mx*my < outlimit) 
+	cout << "Local init:\n" << localf0 << endl;
       bool same = true;
       for(unsigned int i = 0; i < d.nx; ++i) {
 	for(unsigned int j = 0; j < d.ny; ++j) {
@@ -134,8 +135,10 @@ int main(int argc, char* argv[])
 	    same = false;
 	}
       }
-      if(!same) {
-	cout << "Error!" << endl;
+      if(same) {
+	cout << "Test passed." << endl;
+      } else {
+	cout << "Test FAILED!" << endl;
 	retval += 1;
       }
     }
