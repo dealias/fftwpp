@@ -427,7 +427,6 @@ int main(int argc, char **argv)
   
   fftw_mpi_init();
   
-  int retval=0;
 #ifdef OLD
   fftwTranspose(rank, size);
 #else
