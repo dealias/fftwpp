@@ -26,8 +26,8 @@ void init(Complex *data, unsigned int X, unsigned int y, unsigned int Z,
   for(unsigned int i=0; i < X; ++i) { 
     for(unsigned int j=0; j < y; ++j) {
       for(unsigned int k=0; k < Z; ++k) {
-        data[(y*i+j)*Z+k].re = i;
-        data[(y*i+j)*Z+k].im = ystart+j;
+        data[(y*i+j)*Z+k].re=i;
+        data[(y*i+j)*Z+k].im=ystart+j;
       }
     }
   }
@@ -157,7 +157,7 @@ void fftwTranspose(int rank, int size, int N)
   
 int transpose(int rank, int size, int N)
 {
-  int retval = 0;
+  int retval=0;
   
   Complex *data;
   
@@ -190,34 +190,33 @@ int transpose(int rank, int size, int N)
       cout << endl;
     }
   
-    data = ComplexAlign(X*y*Z);
+    data=ComplexAlign(X*y*Z);
 
     mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,fftw::maxthreads,active);
 	
     if(N == 0) { // tests and output
-      bool showoutput = X*Y < showlimit;
+      bool showoutput=X*Y < showlimit;
 
       init(data,X,y,Z,ystart);
       if(showoutput)
 	show(data,X,y*Z,active);
 
-      Complex *wholedata, *wholeoutput;
-      Transpose *localtranspose;
+      Complex *wholedata=NULL, *wholeoutput=NULL;
+      Transpose *localtranspose=NULL;
       if(rank == 0) {
-	wholedata = new Complex[X * Y * Z];
-	wholeoutput = new Complex[X * Y * Z];
-	localtranspose = new Transpose(X, Y, Z, wholedata);
+	wholedata=new Complex[X*Y*Z];
+	wholeoutput=new Complex[X*Y*Z];
+	localtranspose=new Transpose(X,Y,Z,wholedata);
       }
       
-      accumulate_splitx(data, wholedata, X, Y, xstart, ystart, x, y,
-			true, active);
+      accumulate_splitx(data,wholedata,X,Y,xstart,ystart,x,y,true,active);
       
       if(showoutput && rank == 0) {
 	cout << "\naccumulated input data:" << endl;
 	show(wholedata,X,Y,0,0,X,Y);
       }
       
-      T.transpose(data, false, true); // false, true :  N x m -> n x M
+      T.transpose(data,false,true); // false,true :  N x m -> n x M
 
       if(outtranspose) 
 	T.NmTranspose();
@@ -231,8 +230,7 @@ int transpose(int rank, int size, int N)
 	  show(data,X,y*Z,active);
       }
           
-      accumulate_splitx(data, wholeoutput, X, Y, xstart, ystart, x, y,
-			false, active);
+      accumulate_splitx(data,wholeoutput,X,Y,xstart,ystart,x,y,false,active);
       
       if(rank == 0) {
 	if(outtranspose) 
@@ -247,12 +245,12 @@ int transpose(int rank, int size, int N)
 	  }
 	}
 	
-	bool success = true;
-	for(unsigned int i = 0; i < X; ++i) {
-	  for(unsigned int j = 0; j < Y; ++j) {
-	    unsigned int pos = i * Y + j; 
+	bool success=true;
+	for(unsigned int i=0; i < X; ++i) {
+	  for(unsigned int j=0; j < Y; ++j) {
+	    unsigned int pos=i * Y + j; 
 	    if(wholedata[pos] != wholeoutput[pos])
-	      success = false;
+	      success=false;
 	  }
 	}
 	
@@ -275,7 +273,7 @@ int transpose(int rank, int size, int N)
       fftw::statistics Soutinit,Soutwait0,Soutwait1,Sout;
 
       for(int k=0; k < N; ++k) {
-	double begin, Tinit0, Tinit, Twait0, Twait1;
+	double begin,Tinit0,Tinit,Twait0,Twait1;
 	
 	begin=totalseconds();
 	T.inphase0();
@@ -332,20 +330,20 @@ int transpose(int rank, int size, int N)
 
 int main(int argc, char **argv)
 {
-  bool Nset = false;
+  bool Nset=false;
 
 #ifdef __GNUC__ 
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"hLN:m:n:T:X:Y:Z:");
+    int c=getopt(argc,argv,"hLN:m:n:T:X:Y:Z:");
     if (c == -1) break;
                 
     switch (c) {
     case 0:
       break;
     case 'N':
-      Nset = true;
+      Nset=true;
       N=atoi(optarg);
       break;
     case 'L':
@@ -379,9 +377,9 @@ int main(int argc, char **argv)
   //  MPI_Init(&argc,&argv);
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
 
-  int rank, size;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  int rank,size;
+  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+  MPI_Comm_size(MPI_COMM_WORLD,&size);
   
   if(rank == 0) {
     cout << "size=" << size << endl;
@@ -399,7 +397,7 @@ int main(int argc, char **argv)
   fftwTranspose(rank,size,N);
   MPI_Finalize();
 #else
-  int retval = transpose(rank,size,N);
+  int retval=transpose(rank,size,N);
   MPI_Finalize();
   return retval;
 #endif  
