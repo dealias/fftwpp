@@ -488,6 +488,7 @@ public:
   }
   
   void inphase0() {
+    //std::cout << "inphase0" << std::endl;
     if(size == 1) return;
     
     if(uniform) {
