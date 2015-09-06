@@ -427,6 +427,7 @@ int main(int argc, char **argv)
   
   fftw_mpi_init();
   
+  int retval=0;
 #ifdef OLD
   fftwTranspose(rank, size);
 #else
@@ -434,9 +435,9 @@ int main(int argc, char **argv)
     N=N0/(X*Y);
     if(N < 10) N=10;
   }
-  transpose(rank,size, N);
+  retval=transpose(rank,size, N);
 #endif  
   
   MPI_Finalize();
-  return 0;
+  return retval;
 }
