@@ -136,8 +136,9 @@ inline int Ialltoallv(void *sendbuf, int *sendcounts, int *senddisplacements,
                       MPI_Comm comm, MPI_Request *request, int *sched=NULL)
 {
   if(!sched)
-    return MPI_Ialltoallv(sendbuf,sendcounts,senddisplacements,MPI_BYTE,recvbuf,
-                          recvcounts,recvdisplacements,MPI_BYTE,comm,request);
+    return MPI_Ialltoallv(sendbuf,sendcounts,senddisplacements,MPI_BYTE,
+                          recvbuf,recvcounts,recvdisplacements,MPI_BYTE,comm,
+                          request);
   else {
     int size;
     int rank;
@@ -147,8 +148,7 @@ inline int Ialltoallv(void *sendbuf, int *sendcounts, int *senddisplacements,
       int P=sched[p];
       if(P != rank) {
         MPI_Irecv((char *) recvbuf+recvdisplacements[P],recvcounts[P],
-		  MPI_BYTE,P,0,comm,
-                  request+(P < rank ? P : P-1));
+		  MPI_BYTE,P,0,comm,request+(P < rank ? P : P-1));
         MPI_Request srequest;
         MPI_Isend((char *) sendbuf+senddisplacements[P],sendcounts[P],
 		  MPI_BYTE,P,0,comm,&srequest);

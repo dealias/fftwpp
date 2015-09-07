@@ -26,8 +26,8 @@ void init(Complex *data, unsigned int X, unsigned int y, unsigned int Z,
   for(unsigned int i=0; i < X; ++i) { 
     for(unsigned int j=0; j < y; ++j) {
       for(unsigned int k=0; k < Z; ++k) {
-        data[(y*i+j)*Z+k].re = i;
-        data[(y*i+j)*Z+k].im = ystart+j;
+        data[(y*i+j)*Z+k].re=i;
+        data[(y*i+j)*Z+k].im=ystart+j;
       }
     }
   }
@@ -72,7 +72,6 @@ void fftwTranspose(int rank, int size)
     cout << "Y=" << Y << endl;
     cout << "Z=" << Z << endl;
     cout << "N=" << N << endl;
-    cout << endl;
   }
   
   data=ComplexAlign(alloc);
@@ -169,8 +168,8 @@ int transpose(int rank, int size, int N)
   unsigned int ysize=localsize(Y,size);
   size=max(xsize,ysize);
   
-  unsigned int x = localdimension(X,rank,size);
-  unsigned int y = localdimension(Y,rank,size);
+  unsigned int x=localdimension(X,rank,size);
+  unsigned int y=localdimension(Y,rank,size);
   
   unsigned int xstart=localstart(X,rank,size);
   unsigned int ystart=localstart(Y,rank,size);
@@ -188,7 +187,6 @@ int transpose(int rank, int size, int N)
       cout << "Y=" << Y << endl;
       cout << "Z=" << Z << endl;
       cout << "N=" << N << endl;
-      cout << endl;
     }
   
     data=ComplexAlign(std::max(X*y*Z,x*Y*Z));
@@ -219,13 +217,13 @@ int transpose(int rank, int size, int N)
     } 
     if(N == 0) {
       if(rank == 0)
-	cout << "Diagnostics and unit test.\n" << endl;
+	cout << "\nDiagnostics and unit test.\n" << endl;
       bool showoutput=true; //X*Y < showlimit;
 
       init(data,X,y,Z,ystart);
       if(showoutput) {
 	if(rank == 0) 
-	  cout << "Input:\n" << endl;
+	  cout << "Input:" << endl;
 	show(data,X,y*Z,active);
       }
 
@@ -239,7 +237,7 @@ int transpose(int rank, int size, int N)
       accumulate_splitx(data,wholedata,X,Y,xstart,ystart,x,y,true,active);
 
       if(showoutput && rank == 0) {
-	cout << "\naccumulated input data:" << endl;
+	cout << "\nAccumulated input data:" << endl;
 	show(wholedata,X,Y,0,0,X,Y);
       }
 
@@ -262,7 +260,7 @@ int transpose(int rank, int size, int N)
 	}
 	  
 	if(showoutput) {
-	  cout << "\naccumulated output data:" << endl;
+	  cout << "\nAccumulated output data:" << endl;
 	  show(wholeoutput,X,Y,0,0,X,Y);
 	  if(outtranspose) {
 	    cout << "\nlocally transposed data:" << endl;
@@ -316,10 +314,8 @@ int transpose(int rank, int size, int N)
 	if(showoutput) {
 	  if(rank == 0) cout << "Transpose:" << endl;
 	  show(data,x,Y*Z,active);
+          if(rank == 0) cout << endl;
         }
-
-        if(rank == 0) 
-          cout << endl;
         
 	if(rank == 0) begin=totalseconds();
 	T.outphase0();
@@ -340,17 +336,18 @@ int transpose(int rank, int size, int N)
 	}
       }
   
-      // if(showoutput) {
-      // 	if(outtranspose) {
-      // 	  if(rank == 0) cout << "\nout:\n" << endl;
-      // 	  show(data,y,X*Z,active);
-      // 	} else {
-      // 	  if(rank == 0) cout << "\noriginal:\n" << endl;
-      // 	  show(data,X,y*Z,active);
-      // 	}
-      // }
+      if(showoutput) {
+      	if(outtranspose) {
+      	  if(rank == 0) cout << "\nout:\n" << endl;
+      	  show(data,y,X*Z,active);
+      	} else {
+      	  if(rank == 0) cout << "\nOriginal:" << endl;
+      	  show(data,X,y*Z,active);
+      	}
+      }
 
       if(rank == 0) {
+        cout << endl;
 	Sininit.output("Tininit",X);
 	Sinwait0.output("Tinwait0",X);
 	Sinwait1.output("Tinwait1",X);
@@ -371,13 +368,13 @@ int transpose(int rank, int size, int N)
 
 int main(int argc, char **argv)
 {
-  bool Nset = false;
+  bool Nset=false;
 
 #ifdef __GNUC__ 
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"hLN:m:n:T:X:Y:Z:");
+    int c=getopt(argc,argv,"hLN:m:n:T:X:Y:Z:");
     if (c == -1) break;
                 
     switch (c) {
@@ -385,7 +382,7 @@ int main(int argc, char **argv)
       break;
     case 'N':
       N=atoi(optarg);
-      Nset = true;
+      Nset=true;
       break;
     case 'L':
       outtranspose=true;
@@ -415,7 +412,6 @@ int main(int argc, char **argv)
   }
 
   int provided;
-  //  MPI_Init(&argc,&argv);
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
 
   int rank,size;
