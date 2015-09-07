@@ -4,25 +4,7 @@
 namespace fftwpp {
 
 double safetyfactor=2.0;
-bool overlap=false; // ***
-
-/*
-// Copy 'count' blocks of size 'length' 
-// from 'src' spaced 'srcstride' apart (in units of length)
-// to blocks in 'dest' spaced 'deststride' apart (in units of length).
-inline void copy(char *src, char *dest,
-                 unsigned int count, unsigned int length,
-                 unsigned int srcstride, unsigned int deststride)
-{
-  if(srcstride > 1 || deststride > 1) {
-    srcstride *= length;
-    deststride *= length;
-    for(unsigned int i=0; i < count; ++i)
-      memcpy(dest+i*deststride,src+i*srcstride,length);
-  } else 
-    memcpy(dest,src,count*length);
-}
-*/
+bool overlap=false; // *** TEMP
 
 /* Given a process which_pe and a number of processes npes, fills
    the array sched[npes] with a sequence of processes to communicate

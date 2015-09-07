@@ -1,7 +1,7 @@
 #ifndef __mpitranspose_h__
 #define __mpitranspose_h__ 1
 
-using namespace std;
+using namespace std; // ****
 
 /* 
 Globally transpose an N x M matrix of blocks of L complex elements
@@ -224,7 +224,7 @@ public:
   bool divisible(int size, unsigned int M, unsigned int N) {
     unsigned int usize=size;
     
-    return !(usize > N || usize > M || N % usize != 0 || M % usize != 0);
+    return usize <= N && usize <= M && N % usize == 0 && M % usize == 0;
   }
   
   void poll(T *sendbuf, T *recvbuf, unsigned int N) {
@@ -290,19 +290,10 @@ public:
     nlast=ceilquotient(N,n0)-1;
     np=localdimension(N,nlast,size);
     
-    cout << "mlast=" << mlast << endl;
-    cout << "nlast=" << nlast << endl;
-    
-    cout << "m0=" << m0 << endl;
-    cout << "n0=" << n0 << endl;
-    
-    cout << "mp=" << mp << endl;
-    cout << "np=" << np << endl;
-    
     uniform=divisible(size,M,N);
       
     if(work == NULL) {
-      Array::newAlign(this->work,N*m*L,sizeof(T));
+      Array::newAlign(this->work,std::max(N*m,n*M)*L,sizeof(T));
       allocated=true;
     }
     
@@ -311,8 +302,9 @@ public:
       return;
     }
     
-    unsigned int AlltoAll=1; // ***
-    unsigned int A=1; // ***
+    unsigned int AlltoAll=1;
+
+    unsigned int A=1;// ****
     /*
     double latency=safetyfactor*Latency();
     unsigned int alimit=(N*M*L*sizeof(T) >= latency*size*size) ?
@@ -488,13 +480,12 @@ public:
   }
   
   void inphase0() {
-    //std::cout << "inphase0" << std::endl;
+//    cout << "inphase0" << endl;
     if(size == 1) return;
-    
     if(uniform) {
       unsigned int blocksize=sizeof(T)*n*(a > 1 ? b : a)*m*L;
       Ialltoall(data,blocksize,work,split2,request,sched2);
-    } else {
+    } else {// CHECK a > 1 case
       int *sendcounts=new int[size];
       int *senddisplacements=new int[size];
       int *recvcounts=new int[size];
@@ -517,13 +508,14 @@ public:
         Si += si;
         Ri += ri;
       }
-
+      
       Ialltoallv(data,sendcounts,senddisplacements,work,recvcounts,
                  recvdisplacements,split2,request,sched2);
     }
   }
   
   void inphase1() {
+//    cout << "inphase1" << endl;
     if(a > 1) {
       if(uniform) {
         Tin2->transpose(work,data); // a x n*b x m*L
@@ -534,7 +526,7 @@ public:
         unsigned int block=m0*L;
         unsigned int cols=n*b;
         unsigned int istride=cols*block;
-        unsigned int last=a-1;
+        unsigned int last=std::min(a-1,(unsigned int) mlast);
         unsigned int ostride=last*block+lastblock;
 
         for(unsigned int j=0; j < cols; ++j) {
@@ -573,15 +565,20 @@ public:
 
   void insync0() {
     if(size == 1) return;
+//    cout << "insync0" << endl;
     Wait(split2size-1,request,sched2);
   }
   
   void insync1() {
+//    cout << "insync1" << endl;
+//    if(n == 0) return;
     if(a > 1)
       Wait(splitsize-1,request,sched);
   }
 
   void inpost() {
+//    cout << "inpost" << endl;
+//    if(m == 0) return;
     if(size == 1) return;
     if(uniform)
       Tin1->transpose(work,data); // b x n*a x m*L
@@ -590,7 +587,7 @@ public:
       unsigned int block=m0*L;
       unsigned int cols=n*a;
       unsigned int istride=cols*block;
-      unsigned int last=b-1;
+      unsigned int last=std::min(b-1,(unsigned int) mlast);
       unsigned int ostride=last*block+lastblock;
 
       for(unsigned int j=0; j < cols; ++j) {
@@ -602,8 +599,9 @@ public:
   }
   
   void outphase0() {
+//    cout << "outphase0" << endl;
+//    if(m == 0) return;
     if(size == 1) return;
-  
     if(uniform) {
       // Inner transpose a N/a x M/a matrices over each team of b processes
       Tout1->transpose(data,work); // n*a x b x m*L
@@ -614,7 +612,7 @@ public:
       unsigned int block=m0*L;
       unsigned int cols=n*a;
       unsigned int istride=cols*block;
-      unsigned int last=b-1;
+      unsigned int last=std::min(b-1,(unsigned int) mlast);
       unsigned int ostride=last*block+lastblock;
 
       for(unsigned int j=0; j < cols; ++j) {
@@ -652,6 +650,7 @@ public:
   }
   
   void outphase1() {
+//    cout << "outphase1" << endl;
     if(a > 1) {
       if(uniform) {
         // Outer transpose a x a matrix of N/a x M/a blocks over a processes
@@ -663,7 +662,7 @@ public:
       unsigned int block=m0*L;
       unsigned int cols=n*b;
       unsigned int istride=cols*block;
-      unsigned int last=a-1;
+      unsigned int last=std::min(a-1,(unsigned int) mlast);
       unsigned int ostride=last*block+lastblock;
 
       for(unsigned int j=0; j < cols; ++j) {
@@ -702,8 +701,9 @@ public:
   }
   
   void outsync0() {
-    if(a > 1)
-    Wait(splitsize-1,request,sched);
+//    if(n == 0) return;
+    if(a > 1) 
+      Wait(splitsize-1,request,sched);
   }
   
   void outsync1() {
@@ -713,12 +713,14 @@ public:
     
 
   void nMTranspose() {
+    if(n == 0) return;
     if(!Tin3) Tin3=new Transpose(n,M,L,data,work,threads);
     Tin3->transpose(data,work); // n X M x L
     copy(work,data,n*M*L,threads);
   }
   
   void NmTranspose() {
+    if(m == 0) return;
     if(!Tout3) Tout3=new Transpose(N,m,L,data,work,threads);
     Tout3->transpose(data,work); // N x m x L
     copy(work,data,N*m*L,threads);

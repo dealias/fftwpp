@@ -10,6 +10,10 @@
 using namespace std;
 using namespace fftwpp;
 
+#define BROKEN 0
+// Test case for accumulation bug: 
+// mpirun -n 5 valgrind transpose -X8 -Y7 -N0
+
 unsigned int X=8, Y=8, Z=1;
 const unsigned int showlimit=1024;
 unsigned int N0=10000000;
@@ -168,20 +172,18 @@ int transpose(int rank, int size, int N)
   int ysize=localsize(Y,size);
   size=max(xsize,ysize);
   
-  cout << "Size=" << size << endl;
-  
   int x = localdimension(X,rank,size);
   int y = localdimension(Y,rank,size);
   
+#if BROKEN  
   int xstart=localstart(X,rank,size);
+#endif  
   int ystart=localstart(Y,rank,size);
   
   MPI_Comm active; 
   MPI_Comm_split(MPI_COMM_WORLD,rank < size,0,&active);
 
   if(rank < size) {
-    cout << "rank=" << rank << " size=" << size << " x=" << x << " " <<
-      " y=" << y << endl;
   
     if(rank == 0) {
       cout << "x=" << x << endl;
@@ -193,11 +195,11 @@ int transpose(int rank, int size, int N)
       cout << endl;
     }
   
-    data=ComplexAlign(X*y*Z);
+    data=ComplexAlign(std::max(X*y*Z,x*Y*Z));
   
     init(data,X,y,Z,ystart);
 
-    //  show(data,X,y*Z,active);
+//    show(data,X,y*Z,active);
     
     // Initialize remaining plans.
 
@@ -205,8 +207,8 @@ int transpose(int rank, int size, int N)
     init(data,X,y,Z,ystart);
     T.transpose(data,false,true);
   
-    //  show(data,x,Y*Z,active);
-  
+//    show(data,x,Y*Z,active);
+    
     T.NmTranspose();
     init(data,X,y,Z,ystart);
   
@@ -229,6 +231,7 @@ int transpose(int rank, int size, int N)
 	show(data,X,y*Z,active);
       }
 
+#if BROKEN      
       Complex *wholedata=NULL, *wholeoutput=NULL;
       Transpose *localtranspose=NULL;
       if(rank == 0) {
@@ -241,8 +244,8 @@ int transpose(int rank, int size, int N)
       if(showoutput && rank == 0) {
 	cout << "\naccumulated input data:" << endl;
 	show(wholedata,X,Y,0,0,X,Y);
-      }
-
+        }
+#endif
 
       T.transpose(data,false,true); // false,true :  N x m -> n x M
 
@@ -255,6 +258,7 @@ int transpose(int rank, int size, int N)
 	  show(data,X,y*Z,active);
       }
 
+#if BROKEN      
       accumulate_splitx(data,wholeoutput,X,Y,xstart,ystart,x,y,false,active);
 
       if(rank == 0) {
@@ -283,10 +287,11 @@ int transpose(int rank, int size, int N)
 	  cout << "\nTest succeeded." << endl;
 	} else {
 	  cout << "\nERROR: TEST FAILED!" << endl;
-	  retval += 1;
+	  ++retval;
 	}
 
       }
+#endif      
       
     } else {
       if(rank == 0)
@@ -314,10 +319,10 @@ int transpose(int rank, int size, int N)
 	  Sinwait1.add(Twait1-Tinit);
 	}
 
-	// if(showoutput) {
-	//   if(rank == 0) cout << "\ntranspose:\n" << endl;
-	//   show(data,x,Y*Z,active);
-	// }
+	if(showoutput) {
+	  if(rank == 0) cout << "\ntranspose:\n" << endl;
+	  show(data,x,Y*Z,active);
+        }
 
 	if(rank == 0) begin=totalseconds();
 	T.outphase0();
@@ -416,9 +421,9 @@ int main(int argc, char **argv)
   //  MPI_Init(&argc,&argv);
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
 
-  int rank, size;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  int rank,size;
+  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+  MPI_Comm_size(MPI_COMM_WORLD,&size);
   
   if(rank == 0) {
     cout << "size=" << size << endl;
@@ -429,13 +434,13 @@ int main(int argc, char **argv)
   
   int retval=0;
 #ifdef OLD
-  fftwTranspose(rank, size);
+  fftwTranspose(rank,size);
 #else
   if(!Nset) {
     N=N0/(X*Y);
     if(N < 10) N=10;
   }
-  retval=transpose(rank,size, N);
+  retval=transpose(rank,size,N);
 #endif  
   
   MPI_Finalize();
