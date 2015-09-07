@@ -88,9 +88,6 @@ void accumulate_splitx(const ftype *part,  ftype *whole,
   accumulate_splitx(part, whole, X, Y, x0, y0, x, y, transposed,communicator);
 }
 
-// TODO: instead of copying bit-by-bit, make one function that copies
-// everything to a big array on the rank0 process, and then just cout
-// it.
 // output the contents of a 2D array
 template<class ftype>
 void show(ftype *f, unsigned int nx, unsigned int ny,
