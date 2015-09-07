@@ -146,10 +146,12 @@ inline int Ialltoallv(void *sendbuf, int *sendcounts, int *senddisplacements,
     for(int p=0; p < size; ++p) {
       int P=sched[p];
       if(P != rank) {
-        MPI_Irecv((char *) recvbuf+recvdisplacements[P],recvcounts[P],MPI_BYTE,P,0,comm,
+        MPI_Irecv((char *) recvbuf+recvdisplacements[P],recvcounts[P],
+		  MPI_BYTE,P,0,comm,
                   request+(P < rank ? P : P-1));
         MPI_Request srequest;
-        MPI_Isend((char *) sendbuf+senddisplacements[P],sendcounts[P],MPI_BYTE,P,0,comm,&srequest);
+        MPI_Isend((char *) sendbuf+senddisplacements[P],sendcounts[P],
+		  MPI_BYTE,P,0,comm,&srequest);
         MPI_Request_free(&srequest);
       }
     }

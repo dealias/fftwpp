@@ -3,6 +3,9 @@
 *~
 wisdom3.txt
 
+*.log
+*.pyc
+
 tests/cconv
 tests/cconv2
 tests/cconv3
