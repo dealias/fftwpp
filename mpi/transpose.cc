@@ -212,14 +212,17 @@ int transpose(int rank, int size, int N)
     T.NmTranspose();
     init(data,X,y,Z,ystart);
   
-    bool showoutput=X*Y < showlimit && N == 1;
-    if(showoutput)
-      show(data,X,y*Z,active);
-  
     fftw::statistics Sininit,Sinwait0,Sinwait1,Sin,Soutinit;
     fftw::statistics Soutwait0,Soutwait1,Sout;
 
+    bool showoutput=X*Y < showlimit && N == 1;
+    if(showoutput) {
+      if(rank == 0) 
+        cout << "\nInput:" << endl;
+      show(data,X,y*Z,active);
+    } 
     if(N == 0) {
+#if BROKEN      
       if(rank == 0)
 	cout << "Diagnostics and unit test.\n" << endl;
       bool showoutput=true; //X*Y < showlimit;
@@ -231,7 +234,6 @@ int transpose(int rank, int size, int N)
 	show(data,X,y*Z,active);
       }
 
-#if BROKEN      
       Complex *wholedata=NULL, *wholeoutput=NULL;
       Transpose *localtranspose=NULL;
       if(rank == 0) {
@@ -247,7 +249,7 @@ int transpose(int rank, int size, int N)
         }
 #endif
 
-      T.transpose(data,false,true); // false,true :  N x m -> n x M
+      T.transpose(data,false,true); // N x m -> n x M
 
       if(showoutput) {
 	if(rank == 0)
@@ -292,10 +294,9 @@ int transpose(int rank, int size, int N)
 
       }
 #endif      
-      
     } else {
       if(rank == 0)
-	cout << "Speed test.\n" << endl;
+	cout << "\nSpeed test.\n" << endl;
       for(int k=0; k < N; ++k) {
 	init(data,X,y,Z,ystart);
     
@@ -320,10 +321,13 @@ int transpose(int rank, int size, int N)
 	}
 
 	if(showoutput) {
-	  if(rank == 0) cout << "\ntranspose:\n" << endl;
+	  if(rank == 0) cout << "Transpose:" << endl;
 	  show(data,x,Y*Z,active);
         }
 
+        if(rank == 0) 
+          cout << endl;
+        
 	if(rank == 0) begin=totalseconds();
 	T.outphase0();
 	if(rank == 0) Tinit0=totalseconds();
