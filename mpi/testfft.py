@@ -23,7 +23,7 @@ for prog in proglist:
             for Y in Ylist:
                 for P in Plist:
                     cmd = []
-                    cmd.append("mpirun.mpich")
+                    cmd.append("mpirun")
                     cmd.append("-n")
                     cmd.append(str(P))
                     cmd.append("./" + prog)

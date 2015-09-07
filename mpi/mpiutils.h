@@ -20,8 +20,8 @@ void show(ftype *f, unsigned int, unsigned int ny,
 // FIXME: documentation
 template<class ftype>
 void accumulate_splitx(const ftype *part,  ftype *whole,
-		       const unsigned int nx,
-		       const unsigned int ny,
+		       const unsigned int X,
+		       const unsigned int Y,
 		       const unsigned int x0,
 		       const unsigned int y0,
 		       const unsigned int x,
@@ -37,36 +37,36 @@ void accumulate_splitx(const ftype *part,  ftype *whole,
   if(rank == 0) {
     // First copy rank 0's part into the whole
     if(!transposed) {
-      // x . ny
-      copyfromblock(part, whole, x, ny, ny);
+      // x . Y
+      copyfromblock(part, whole, x, Y, Y);
     } else {
-      // nx . y
-      copyfromblock(part, whole, nx, y, ny);
+      // X . y
+      copyfromblock(part, whole, X, y, Y);
     }
 
     for(int p = 1; p < size; ++p) {
       unsigned int dims[6];
       MPI_Recv(&dims, 6, MPI_UNSIGNED, p, 0, communicator, &stat);
 
-      unsigned int nx = dims[0], ny = dims[1];
+      unsigned int X = dims[0], Y = dims[1];
       unsigned int x0 = dims[2], y0 = dims[3];
       unsigned int x = dims[4], y = dims[5];
-      unsigned int n = nx * ny;
+      unsigned int n = !transposed ? x * Y :  X * y;
       if(n > 0) {
         ftype *C = new ftype[n];
         MPI_Recv(C, sizeof(ftype) * n, MPI_BYTE, p, 0, communicator, &stat);
 	if(!transposed) {
-	  copyfromblock(C, whole + x0 * ny, x, ny, ny);
+	  copyfromblock(C, whole + x0 * Y, x, Y, Y);
 	} else {
-	  copyfromblock(C, whole + y0, nx, y, ny);
+	  copyfromblock(C, whole + y0, X, y, Y);
 	}
         delete [] C;
       }
     }
   } else {
-    unsigned int dims[]={nx, ny, x0, y0, x, y};
+    unsigned int dims[]={X, Y, x0, y0, x, y};
     MPI_Send(&dims, 6, MPI_UNSIGNED, 0, 0, communicator);
-    unsigned int n = nx * ny;
+    unsigned int n = !transposed ? x * Y :  X * y;
     if(n > 0)
       MPI_Send(part, n * sizeof(ftype), MPI_BYTE, 0, 0, communicator);
   }
@@ -78,14 +78,14 @@ void accumulate_splitx(const ftype *part,  ftype *whole,
 		       const bool transposed, 
 		       const MPI_Comm& communicator)
 {
-  unsigned int nx = split.nx;
-  unsigned int ny = split.ny;
+  unsigned int X = split.nx;
+  unsigned int Y = split.ny;
   unsigned int x0 = split.x0;
   unsigned int y0 = split.y0;
   unsigned int x = split.x;
   unsigned int y = split.y;
 
-  accumulate_splitx(part, whole, nx, ny, x0, y0, x, y, transposed,communicator);
+  accumulate_splitx(part, whole, X, Y, x0, y0, x, y, transposed,communicator);
 }
 
 // TODO: instead of copying bit-by-bit, make one function that copies

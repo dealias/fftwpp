@@ -10,10 +10,6 @@
 using namespace std;
 using namespace fftwpp;
 
-#define BROKEN 0
-// Test case for accumulation bug: 
-// mpirun -n 5 valgrind transpose -X8 -Y7 -N0
-
 unsigned int X=8, Y=8, Z=1;
 const unsigned int showlimit=1024;
 unsigned int N0=10000000;
@@ -36,7 +32,7 @@ void init(Complex *data, unsigned int X, unsigned int y, unsigned int Z,
     }
   }
 }
-  
+
 inline void usage()
 {
   std::cerr << "Options: " << std::endl;
@@ -100,7 +96,8 @@ void fftwTranspose(int rank, int size)
   if(showoutput)
     show(data,X,y*Z,MPI_COMM_WORLD);
   
-  fftw::statistics Sininit,Sinwait0,Sinwait1,Sin,Soutinit,Soutwait0,Soutwait1,Sout;
+  fftw::statistics Sininit,Sinwait0,Sinwait1,Sin;
+  fftw::statistics Soutinit,Soutwait0,Soutwait1,Sout;
 
   for(int k=0; k < N; ++k) {
     double begin=0.0, Tinit0=0.0, Tinit=0.0, Twait0=0.0, Twait1=0.0;
@@ -168,17 +165,15 @@ int transpose(int rank, int size, int N)
 
   Complex *data;
   
-  int xsize=localsize(X,size);
-  int ysize=localsize(Y,size);
+  unsigned int xsize=localsize(X,size);
+  unsigned int ysize=localsize(Y,size);
   size=max(xsize,ysize);
   
-  int x = localdimension(X,rank,size);
-  int y = localdimension(Y,rank,size);
+  unsigned int x = localdimension(X,rank,size);
+  unsigned int y = localdimension(Y,rank,size);
   
-#if BROKEN  
-  int xstart=localstart(X,rank,size);
-#endif  
-  int ystart=localstart(Y,rank,size);
+  unsigned int xstart=localstart(X,rank,size);
+  unsigned int ystart=localstart(Y,rank,size);
   
   MPI_Comm active; 
   MPI_Comm_split(MPI_COMM_WORLD,rank < size,0,&active);
@@ -186,6 +181,7 @@ int transpose(int rank, int size, int N)
   if(rank < size) {
   
     if(rank == 0) {
+      cout << "rank=" << rank << endl;
       cout << "x=" << x << endl;
       cout << "y=" << y << endl;
       cout << "X=" << X << endl;
@@ -199,7 +195,7 @@ int transpose(int rank, int size, int N)
   
     init(data,X,y,Z,ystart);
 
-//    show(data,X,y*Z,active);
+    //    show(data,X,y*Z,active);
     
     // Initialize remaining plans.
 
@@ -207,13 +203,13 @@ int transpose(int rank, int size, int N)
     init(data,X,y,Z,ystart);
     T.transpose(data,false,true);
   
-//    show(data,x,Y*Z,active);
+    //    show(data,x,Y*Z,active);
     
     T.NmTranspose();
     init(data,X,y,Z,ystart);
-  
-    fftw::statistics Sininit,Sinwait0,Sinwait1,Sin,Soutinit;
-    fftw::statistics Soutwait0,Soutwait1,Sout;
+    
+    fftw::statistics Sininit,Sinwait0,Sinwait1,Sin;
+    fftw::statistics Soutinit,Soutwait0,Soutwait1,Sout;
 
     bool showoutput=X*Y < showlimit && N == 1;
     if(showoutput) {
@@ -222,7 +218,6 @@ int transpose(int rank, int size, int N)
       show(data,X,y*Z,active);
     } 
     if(N == 0) {
-#if BROKEN      
       if(rank == 0)
 	cout << "Diagnostics and unit test.\n" << endl;
       bool showoutput=true; //X*Y < showlimit;
@@ -246,8 +241,7 @@ int transpose(int rank, int size, int N)
       if(showoutput && rank == 0) {
 	cout << "\naccumulated input data:" << endl;
 	show(wholedata,X,Y,0,0,X,Y);
-        }
-#endif
+      }
 
       T.transpose(data,false,true); // N x m -> n x M
 
@@ -260,13 +254,13 @@ int transpose(int rank, int size, int N)
 	  show(data,X,y*Z,active);
       }
 
-#if BROKEN      
       accumulate_splitx(data,wholeoutput,X,Y,xstart,ystart,x,y,false,active);
 
       if(rank == 0) {
-	if(outtranspose) 
+	if(outtranspose) {
 	  localtranspose->transpose(wholedata);
-
+	}
+	  
 	if(showoutput) {
 	  cout << "\naccumulated output data:" << endl;
 	  show(wholeoutput,X,Y,0,0,X,Y);
@@ -293,7 +287,6 @@ int transpose(int rank, int size, int N)
 	}
 
       }
-#endif      
     } else {
       if(rank == 0)
 	cout << "\nSpeed test.\n" << endl;
