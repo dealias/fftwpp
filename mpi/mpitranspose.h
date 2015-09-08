@@ -1,8 +1,6 @@
 #ifndef __mpitranspose_h__
 #define __mpitranspose_h__ 1
 
-using namespace std; // ****
-
 /* 
 Globally transpose an N x M matrix of blocks of L complex elements
 distributed over the second dimension.
@@ -218,9 +216,11 @@ private:
   MPI_Comm split2;
   Transpose *Tin1,*Tin2,*Tin3;
   Transpose *Tout1,*Tout2,*Tout3;
-  unsigned int a,b;
+  int a,b;
   bool inflag,outflag;
   bool uniform;
+  int *sendcounts,*senddisplacements;
+  int *recvcounts,*recvdisplacements;
 public:
 
   bool divisible(int size, unsigned int M, unsigned int N) {
@@ -304,23 +304,20 @@ public:
       return;
     }
     
-    unsigned int AlltoAll=1;
-
-    unsigned int A=1;// ****
-    /*
+    int AlltoAll=1;
     double latency=safetyfactor*Latency();
-    unsigned int alimit=(N*M*L*sizeof(T) >= latency*size*size) ?
-      2 : size;
+    int alimit=(uniform && N*M*L*sizeof(T) < latency*size*size) ? size : 2;
     MPI_Bcast(&alimit,1,MPI_UNSIGNED,0,global);
 
     if(globalrank == 0)
       std::cout << std::endl << "Timing:" << std::endl;
     
-    unsigned int A=0;
+    int A=1;
     double T0=DBL_MAX;
-    for(unsigned int alltoall=0; alltoall <= 1; ++alltoall) {
+    for(int alltoall=0; alltoall <= 1; ++alltoall) {
       if(globalrank == 0) std::cout << "alltoall=" << alltoall << std::endl;
-      for(a=1; a < alimit; a *= 2) {
+      for(a=1; a < alimit; ++a) {
+        if(size % a) continue;
         b=size/a;
         init(data,alltoall);
         double t=time(data);
@@ -335,10 +332,9 @@ public:
         }
       }
     }
-    */
     
-    unsigned int parm[]={A,AlltoAll};
-    MPI_Bcast(&parm,2,MPI_UNSIGNED,0,global);
+    int parm[]={A,AlltoAll};
+    MPI_Bcast(&parm,2,MPI_INT,0,global);
     A=parm[0];
     AlltoAll=parm[1];
     a=A;
@@ -346,7 +342,6 @@ public:
     
     if(globalrank == 0) std::cout << std::endl << "Using alltoall=" << AlltoAll
                             << ", a=" << a << ":" << std::endl;
-    
     init(data,AlltoAll);
   }
   
@@ -413,6 +408,11 @@ public:
         Tin2=new Transpose(a,n*b,m*L,data,this->work,threads);
         Tout2=new Transpose(n*b,a,m*L,data,this->work,threads);
       }
+    } else {
+      sendcounts=new int[size];
+      senddisplacements=new int[size];
+      recvcounts=new int[size];
+      recvdisplacements=new int[size];
     }
     
     if(size == 1) return;
@@ -482,23 +482,16 @@ public:
   }
   
   void inphase0() {
-//    cout << "inphase0" << endl;
     if(size == 1) return;
+    size_t S=sizeof(T)*(a > 1 ? b : a)*L;
     if(uniform) {
-      unsigned int blocksize=sizeof(T)*n*(a > 1 ? b : a)*m*L;
+      unsigned int blocksize=n*m*S;
       Ialltoall(data,blocksize,work,split2,request,sched2);
-    } else {// CHECK a > 1 case
-      int *sendcounts=new int[size];
-      int *senddisplacements=new int[size];
-      int *recvcounts=new int[size];
-      int *recvdisplacements=new int[size];
-    
+    } else {
       int Si=0;
       int Ri=0;
     
-      size_t S=sizeof(T);
-      
-      for(int i=0; i < size; ++i) {
+      for(int i=0; i < split2size; ++i) {
         int ni=i < nlast ? n0 : (i == nlast ? np : 0);
         int mi=i < mlast ? m0 : (i == mlast ? mp : 0);
         int si=m*ni*S;
@@ -517,18 +510,18 @@ public:
   }
   
   void inphase1() {
-//    cout << "inphase1" << endl;
     if(a > 1) {
+      size_t S=sizeof(T)*a*L;
       if(uniform) {
         Tin2->transpose(work,data); // a x n*b x m*L
-        unsigned int blocksize=sizeof(T)*n*a*m*L;
+        unsigned int blocksize=n*m*S;
         Ialltoall(data,blocksize,work,split,request,sched);
       } else {
-        unsigned int lastblock=mp*L;
+        int last=std::min(a-1,mlast);
+        unsigned int lastblock=(last == mlast ? mp : m0)*L;
         unsigned int block=m0*L;
         unsigned int cols=n*b;
         unsigned int istride=cols*block;
-        unsigned int last=std::min(a-1,(unsigned int) mlast);
         unsigned int ostride=last*block+lastblock;
 
         for(unsigned int j=0; j < cols; ++j) {
@@ -536,17 +529,10 @@ public:
           copytoblock(work+j*block,dest,last,block,istride);
           copy(work+j*lastblock+last*istride,dest+last*block,lastblock);
         }
-        int *sendcounts=new int[size];
-        int *senddisplacements=new int[size];
-        int *recvcounts=new int[size];
-        int *recvdisplacements=new int[size];
-    
         int Si=0;
         int Ri=0;
     
-        size_t S=sizeof(T);
-      
-        for(int i=0; i < size; ++i) {
+        for(int i=0; i < splitsize; ++i) {
           int ni=i < nlast ? n0 : (i == nlast ? np : 0);
           int mi=i < mlast ? m0 : (i == mlast ? mp : 0);
           int si=m*ni*S;
@@ -567,29 +553,28 @@ public:
 
   void insync0() {
     if(size == 1) return;
-//    cout << "insync0" << endl;
     Wait(split2size-1,request,sched2);
+    return;
   }
   
   void insync1() {
-//    cout << "insync1" << endl;
 //    if(n == 0) return;
     if(a > 1)
       Wait(splitsize-1,request,sched);
   }
 
   void inpost() {
-//    cout << "inpost" << endl;
 //    if(m == 0) return;
     if(size == 1) return;
+    
     if(uniform)
       Tin1->transpose(work,data); // b x n*a x m*L
     else {
-      unsigned int lastblock=mp*L;
+      int last=std::min(b-1,mlast);
+      unsigned int lastblock=(last == mlast ? mp : m0)*L;
       unsigned int block=m0*L;
       unsigned int cols=n*a;
       unsigned int istride=cols*block;
-      unsigned int last=std::min(b-1,(unsigned int) mlast);
       unsigned int ostride=last*block+lastblock;
 
       for(unsigned int j=0; j < cols; ++j) {
@@ -601,20 +586,20 @@ public:
   }
   
   void outphase0() {
-//    cout << "outphase0" << endl;
 //    if(m == 0) return;
     if(size == 1) return;
+    size_t S=sizeof(T)*a*L;
     if(uniform) {
       // Inner transpose a N/a x M/a matrices over each team of b processes
       Tout1->transpose(data,work); // n*a x b x m*L
-      unsigned int blocksize=sizeof(T)*n*a*m*L;
+      unsigned int blocksize=n*m*S;
       Ialltoall(work,blocksize,data,split,request,sched);
     } else {
-      unsigned int lastblock=mp*L;
+      int last=std::min(b-1,mlast);
+      unsigned int lastblock=(last == mlast ? mp : m0)*L;
       unsigned int block=m0*L;
       unsigned int cols=n*a;
       unsigned int istride=cols*block;
-      unsigned int last=std::min(b-1,(unsigned int) mlast);
       unsigned int ostride=last*block+lastblock;
 
       for(unsigned int j=0; j < cols; ++j) {
@@ -623,17 +608,10 @@ public:
         copy(src+last*block,work+j*lastblock+last*istride,lastblock);
       }
 
-      int *sendcounts=new int[size];
-      int *senddisplacements=new int[size];
-      int *recvcounts=new int[size];
-      int *recvdisplacements=new int[size];
-    
       int Si=0;
       int Ri=0;
-    
-      size_t S=sizeof(T);
       
-      for(int i=0; i < size; ++i) {
+      for(int i=0; i < splitsize; ++i) {
         int ni=i < nlast ? n0 : (i == nlast ? np : 0);
         int mi=i < mlast ? m0 : (i == mlast ? mp : 0);
         int si=n*mi*S;
@@ -645,26 +623,25 @@ public:
         Si += si;
         Ri += ri;
       }
-
       Ialltoallv(work,sendcounts,senddisplacements,data,recvcounts,
                  recvdisplacements,split,request,sched);
     }
   }
   
   void outphase1() {
-//    cout << "outphase1" << endl;
     if(a > 1) {
+      size_t S=sizeof(T)*b*L;
       if(uniform) {
         // Outer transpose a x a matrix of N/a x M/a blocks over a processes
         Tout2->transpose(data,work); // n*b x a x m*L
-        unsigned int blocksize=sizeof(T)*n*b*m*L;
+        unsigned int blocksize=n*m*S;
         Ialltoall(work,blocksize,data,split2,request,sched2);
       } else {
-      unsigned int lastblock=mp*L;
+      int last=std::min(a-1,mlast);
+      unsigned int lastblock=(last == mlast ? mp : m0)*L;
       unsigned int block=m0*L;
       unsigned int cols=n*b;
       unsigned int istride=cols*block;
-      unsigned int last=std::min(a-1,(unsigned int) mlast);
       unsigned int ostride=last*block+lastblock;
 
       for(unsigned int j=0; j < cols; ++j) {
@@ -673,17 +650,10 @@ public:
         copy(src+last*block,work+j*lastblock+last*istride,lastblock);
       }
 
-      int *sendcounts=new int[size];
-      int *senddisplacements=new int[size];
-      int *recvcounts=new int[size];
-      int *recvdisplacements=new int[size];
-    
       int Si=0;
       int Ri=0;
     
-      size_t S=sizeof(T);
-      
-      for(int i=0; i < size; ++i) {
+      for(int i=0; i < split2size; ++i) {
         int ni=i < nlast ? n0 : (i == nlast ? np : 0);
         int mi=i < mlast ? m0 : (i == mlast ? mp : 0);
         int si=n*mi*S;
@@ -703,7 +673,6 @@ public:
   }
   
   void outsync0() {
-//    if(n == 0) return;
     if(a > 1) 
       Wait(splitsize-1,request,sched);
   }
