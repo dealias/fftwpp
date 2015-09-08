@@ -166,7 +166,7 @@ int transpose(int rank, int size, int N)
   
   unsigned int xsize=localsize(X,size);
   unsigned int ysize=localsize(Y,size);
-  size=max(xsize,ysize);
+  size=min(xsize,ysize);
   
   unsigned int x=localdimension(X,rank,size);
   unsigned int y=localdimension(Y,rank,size);

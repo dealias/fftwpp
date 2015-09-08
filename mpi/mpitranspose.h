@@ -77,8 +77,9 @@ inline void copyfromblock(const T *src, T *dest,
     copy(src+i*length,dest+i*stride,length,threads);
 }
 
-inline void transposeError(const char *text) {
-  std::cout << "Cannot construct " << text << " transpose plan." << std::endl;
+inline void transposeError(const char *text)
+{
+  std::cerr << "Cannot construct " << text << " transpose plan." << std::endl;
   exit(-1);
 }
 
@@ -225,7 +226,13 @@ public:
 
   bool divisible(int size, unsigned int M, unsigned int N) {
     unsigned int usize=size;
-    
+    if(usize > N || usize > M) {
+      if(rank == 0)
+        std::cerr <<
+          "\nMatrix dimensions cannot be less than the number of processors."
+                  << std::endl;
+      exit(-1);
+    }
     return usize <= N && usize <= M && N % usize == 0 && M % usize == 0;
   }
   
