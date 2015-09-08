@@ -343,9 +343,8 @@ public:
       int sign=1;
       int start=options.a;
       while(size % options.a != 0) {
-        inc *= sign;
-        options.a=start+inc;
-        if(options.a <= 0 || options.a > size) {
+        options.a=start+sign*inc;
+        if(options.a <= 0 || options.a >= size) {
           options.a=1;
           break;
         }

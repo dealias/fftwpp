@@ -26,7 +26,7 @@ else:
 
     Xlist = [1,2,3,4,5,6,7,8,9,10,random.randint(10,64)]
     Ylist = Xlist
-    Zlist = Xlist
+    Zlist = [1]
     Plist = [1,2,3,4,5,6,7,8,9]
 
     ntests = len(Xlist) * len(Ylist) * len(Zlist) * len(Plist)
