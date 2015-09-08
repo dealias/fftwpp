@@ -18,7 +18,7 @@ int a=0; // Test for best block divisor
 int alltoall=-1; // Test for best alltoall routine
 
 const unsigned int showlimit=1024;
-unsigned int N0=10000000;
+unsigned int N0=1000000;
 int N=0;
 bool outtranspose=false;
 
