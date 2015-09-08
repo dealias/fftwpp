@@ -39,12 +39,14 @@ inline void usage()
 {
   std::cerr << "Options: " << std::endl;
   std::cerr << "-h\t\t help" << std::endl;
-  std::cerr << "-T\t\t number of threads" << std::endl;
-  std::cerr << "-N\t\t number of iterations" << std::endl;
-  std::cerr << "-m\t\t size" << std::endl;
-  std::cerr << "-X\t\t X size" << std::endl;
-  std::cerr << "-Y\t\t Y size" << std::endl;
-  std::cerr << "-Z\t\t Z size" << std::endl;
+  std::cerr << "-T<int>\t\t number of threads" << std::endl;
+  std::cerr << "-t\t\t disable output for unit test" << std::endl;
+  std::cerr << "-N<int>\t\t number of timing tests (if 0, do unit tests)"
+	    << std::endl;
+  std::cerr << "-m<int>\t\t size" << std::endl;
+  std::cerr << "-X<int>\t\t X size" << std::endl;
+  std::cerr << "-Y<int>\t\t Y size" << std::endl;
+  std::cerr << "-Z<int>\t\t Z size" << std::endl;
   std::cerr << "-L\t\t locally transpose output" << std::endl;
   exit(1);
 }
@@ -219,7 +221,8 @@ int transpose(int rank, int size, int N)
       if(rank == 0) 
         cout << "\nInput:" << endl;
       show(data,X,y*Z,active);
-    } 
+    }
+    
     if(N == 0) {
       if(rank == 0)
 	cout << "\nDiagnostics and unit test.\n" << endl;
