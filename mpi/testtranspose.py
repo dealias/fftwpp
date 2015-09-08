@@ -21,11 +21,10 @@ else:
     log = open(logfile, 'w')
     log.close()
     
-    Xlist = [1,2,3,4,5,random.randint(6,64)]
-    Ylist = [1,2,3,4,5,random.randint(6,64)]
-    Plist = [1,2,3,4]
-    timeout = 1
-    
+    Xlist = [1,2,3,4,5,6,7,8,9,random.randint(6,64)]
+    Ylist = [1,2,3,4,5,6,7,8,9,random.randint(6,64)]
+    Plist = [1,2,3,4,5,6,7,8,9]
+    timeout = 0
     ntests = 0
     nfails = 0
     for X in Xlist:

@@ -2,6 +2,8 @@ import time
 from subprocess import * # so that we can run commands
 
 def waitandkill(proc, timeout):
+    if(timeout == 0):
+        return
     # Check every dt seconds to see if it's done.
     dt = timeout / 1000.0
     t = 0
@@ -34,7 +36,6 @@ def runtest(filename, X, Y, P, extraargs, logfilename, timeout):
     log.write(" ".join(cmd) + '\n')
     
     proc = Popen(cmd, stdout = PIPE, stderr = PIPE)
-    timeout = 5
     if(waitandkill(proc, timeout)):
         msg = "\tProcess killed after" + str(timeout) +" second(s)!"
         #print msg
