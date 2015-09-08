@@ -24,9 +24,11 @@ else:
     log = open(logfile, 'w')
     log.close()
 
-    Xlist = [1,2,3,4,5,6,7,8,9,10,random.randint(11,64)]
-    Ylist = Xlist
-    Zlist = [1,2,3,10,random.randint(11,64)]
+    start=30
+    stop=40
+    Xlist = [1,2,3,4,5,6,7,8,9,10,random.randint(start,stop)]
+    Ylist = [1,2,3,4,5,6,7,8,9,10,random.randint(start,stop)]
+    Zlist = [2,3,10,random.randint(start,stop)]
     Plist = [1,2,3,4,5,6,7,8,9]
 
     ntests = len(Xlist) * len(Ylist) * len(Zlist) * len(Plist)

@@ -143,17 +143,18 @@ inline int Ialltoallv(void *sendbuf, int *sendcounts, int *senddisplacements,
     int rank;
     MPI_Comm_size(comm,&size);
     MPI_Comm_rank(comm,&rank);
+    MPI_Request *srequest=request+size-1;
     for(int p=0; p < size; ++p) {
       int P=sched[p];
       if(P != rank) {
+        int index=P < rank ? P : P-1;
         MPI_Irecv((char *) recvbuf+recvdisplacements[P],recvcounts[P],
-		  MPI_BYTE,P,0,comm,request+(P < rank ? P : P-1));
-        MPI_Request srequest;
+		  MPI_BYTE,P,0,comm,request+index);
         MPI_Isend((char *) sendbuf+senddisplacements[P],sendcounts[P],
-		  MPI_BYTE,P,0,comm,&srequest);
-        MPI_Request_free(&srequest);
+		  MPI_BYTE,P,0,comm,srequest+index);
       }
     }
+
     
     memcpy((char *) recvbuf+recvdisplacements[rank],
            (char *) sendbuf+senddisplacements[rank],sendcounts[rank]);
@@ -173,14 +174,15 @@ inline int Ialltoall(void *sendbuf, int count,
     int rank;
     MPI_Comm_size(comm,&size);
     MPI_Comm_rank(comm,&rank);
+    MPI_Request *srequest=request+size-1;
     for(int p=0; p < size; ++p) {
       int P=sched[p];
       if(P != rank) {
+        int index=P < rank ? P : P-1;
         MPI_Irecv((char *) recvbuf+P*count,count,MPI_BYTE,P,0,comm,
-                  request+(P < rank ? P : P-1));
-        MPI_Request srequest;
-        MPI_Isend((char *) sendbuf+P*count,count,MPI_BYTE,P,0,comm,&srequest);
-        MPI_Request_free(&srequest);
+                  request+index);
+        MPI_Isend((char *) sendbuf+P*count,count,MPI_BYTE,P,0,comm,
+                  srequest+index);
       }
     }
   
@@ -490,7 +492,7 @@ public:
       request=new MPI_Request[1];
       sched=sched2=NULL;
     } else {
-      request=new MPI_Request[std::max(splitsize,split2size)-1];
+      request=new MPI_Request[2*(std::max(splitsize,split2size)-1)];
     
       sched=new int[splitsize];
       fill1_comm_sched(sched,splitrank,splitsize);
@@ -614,14 +616,14 @@ public:
 
   void insync0() {
     if(size == 1) return;
-    Wait(split2size-1,request,sched2);
+    Wait(2*(split2size-1),request,sched2);
     return;
   }
   
   void insync1() {
 //    if(n == 0) return;
     if(a > 1)
-      Wait(splitsize-1,request,sched);
+      Wait(2*(splitsize-1),request,sched);
   }
 
   void inpost() {
@@ -735,12 +737,12 @@ public:
   
   void outsync0() {
     if(a > 1) 
-      Wait(splitsize-1,request,sched);
+      Wait(2*(splitsize-1),request,sched);
   }
   
   void outsync1() {
     if(size > 1)
-      Wait(split2size-1,request,sched2);
+      Wait(2*(split2size-1),request,sched2);
   }
     
 
