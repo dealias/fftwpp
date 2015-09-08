@@ -137,7 +137,7 @@ int main(int argc, char* argv[])
       size_t align=sizeof(Complex);
       array2<Complex> localfin(mx,my,align);
       fft2d localForward2(-1,localfin);
-      accumulate_splitx(f, localfin(), d, false, group.active);
+      accumulate_splitx(f, localfin(), d, 1, false, group.active);
 
       fft.Forwards(f);
 
@@ -155,7 +155,7 @@ int main(int argc, char* argv[])
       }
 
       array2<Complex> localfout(mx,my,align);
-      accumulate_splitx(f, localfout(), d, true, group.active);
+      accumulate_splitx(f, localfout(), d, 1, true, group.active);
       if(main) {
 	cout << "\naccumulated output:\n" << localfout << endl;
 	double maxerr = 0.0;

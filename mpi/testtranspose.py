@@ -21,9 +21,12 @@ else:
     log = open(logfile, 'w')
     log.close()
     
-    Xlist = [1,2,3,4,5,6,7,8,9,random.randint(6,64)]
-    Ylist = [1,2,3,4,5,6,7,8,9,random.randint(6,64)]
-    Plist = [1,2,3,4,5,6,7,8,9]
+    Xlist = [1,2,3,4,5,random.randint(6,64)]
+    Ylist = [1,2,3,4,random.randint(5,64)]
+    Plist = [1,2,3,4,random.randint(5,10)]
+
+    print "Performing", len(Xlist) * len(Ylist) * len(Plist), "tests....\n" 
+    
     timeout = 0
     ntests = 0
     nfails = 0

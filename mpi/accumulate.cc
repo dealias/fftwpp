@@ -9,26 +9,32 @@ using namespace Array;
 
 inline void init(Complex *f, 
 		 unsigned int nx,
-		 unsigned int ny, 
+		 unsigned int ny,
 		 unsigned int x0,
 		 unsigned int y0, 
 		 unsigned int x,
 		 unsigned int y, 
+		 unsigned int nz, 
 		 bool transposed) 
 {
-  unsigned int c = 0;
   if(!transposed) {
     for(unsigned int i = 0; i < x; ++i) {
       unsigned int ii = x0 + i;
       for(unsigned int j = 0; j < ny; j++) {
-	f[c++] = Complex(ii, j);
+	for(unsigned int k = 0; k < nz; k++) {
+	  int pos = i*ny*nz+j*nz+k;
+	  f[pos] = Complex(ii, j + (1.0 * k) / nz);
+	}
       }
     }
   } else {
     for(unsigned int i = 0; i < nx; ++i) {
       for(unsigned int j = 0; j < y; j++) {
 	unsigned int jj = y0 + j;
-	f[c++] = Complex(i, jj);
+	for(unsigned int k = 0; k < nz; k++) {
+	  int pos = i*y*nz+j*nz+k;
+	  f[pos] = Complex(i, jj + (1.0 * k) / nz);
+	}
       }
     }
   }
@@ -46,12 +52,13 @@ int main(int argc, char* argv[])
 
   unsigned int mx=4;
   unsigned int my=4;
+  unsigned int mz=1;
   
 #ifdef __GNUC__ 
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"hm:X:Y:");
+    int c = getopt(argc,argv,"hm:X:Y:Z:");
     if (c == -1) break;
                 
     switch (c) {
@@ -65,6 +72,9 @@ int main(int argc, char* argv[])
         break;
       case 'Y':
         my=atoi(optarg);
+        break;
+      case 'Z':
+        mz=atoi(optarg);
         break;
       case 'h':
       default:
@@ -85,66 +95,107 @@ int main(int argc, char* argv[])
 
     splitx d(mx, my, group. active, group.block);
     
-    Complex *f = ComplexAlign(d.n);
+    Complex *f = ComplexAlign(d.n * mz);
 
-    init(f, d.nx, d.ny, d.x0, d.y0, d.x, d.y, false);
+    init(f, d.nx, d.ny, d.x0, d.y0, d.x, d.y, mz, false);
     
     if(mx * my < outlimit) {
-      if(main) cout << "\ninput:" << endl;
-      show(f,d.x,my,group.active);
+      if(main)
+	cout << "\ninput:" << endl;
+      // cout << "process " << group.rank << endl;
+      // for(unsigned int i = 0; i < d.n * mz; ++i) {
+      // 	cout << f[i] << endl;
+      // }
     }
-
-    array2<Complex> localf(mx,my);
-
-    accumulate_splitx(f, localf(), d, false, group.active);
-    if(main) {
-      //cout << "Local version:\n" << localf << endl;
-      array2<Complex> localf0(mx,my);
-      init(localf0(), d.nx, d.ny, 0, 0, d.nx, d.ny, false);
-      bool same = true;
-      for(unsigned int i = 0; i < d.nx; ++i) {
-	for(unsigned int j = 0; j < d.ny; ++j) {
-	  if(localf(i,j) != localf0(i,j))
-	    same = false;
-	}
-      }
-      if(!same) {
-	cout << "Error!" << endl;
-	retval += 1;
-      }
-    }
-    init(f, d.nx, d.ny, d.x0, d.y0, d.x, d.y, true);
-    if(mx*my < outlimit) {
-      if(main) cout << "\noutput:" << endl;
-      show(f,mx,d.y,group.active);
-    }
-
+      
+    array3<Complex> localf(mx,my,mz);
     localf = 0.0;
-    accumulate_splitx(f, localf(), d, true, group.active);
+    
+    accumulate_splitx(f, localf(), d, mz, false, group.active);
     if(main) {
-      if(mx*my < outlimit) 
-	cout << "\nLocal version:\n" << localf << endl;
-      array2<Complex> localf0(mx,my);
-      init(localf0(), d.nx, d.ny, 0, 0, d.nx, d.ny, false);
-      if(mx*my < outlimit) 
-	cout << "Local init:\n" << localf0 << endl;
+      cout << "Accumulted:" <<endl;
+      //cout << localf << endl;
+      array3<Complex> localf0(mx,my,mz);
+      init(localf0(), d.nx, d.ny, 0, 0, d.nx, d.ny, mz, false);
+      cout << "Local init:" << endl;
+      //cout << localf0 << endl;
       bool same = true;
       for(unsigned int i = 0; i < d.nx; ++i) {
 	for(unsigned int j = 0; j < d.ny; ++j) {
-	  if(localf(i,j) != localf0(i,j))
-	    same = false;
+	  for(unsigned int k = 0; k < mz; ++k) {
+	    //cout << localf(i,j,k) << " " << localf0(i,j,k) << endl;
+	    if(localf(i,j,k) != localf0(i,j,k))
+	      same = false;
+	  }
 	}
       }
       if(same) {
-	cout << "Test passed." << endl;
+	cout << "OK." << endl;
       } else {
-	cout << "Test FAILED!" << endl;
+	cout << "ERROR!" << endl;
 	retval += 1;
       }
     }
 
+    
+    cout << "\nTransposed init:" << endl;
+    init(f, d.nx, d.ny, d.x0, d.y0, d.x, d.y, mz, true);
+    if(mx*my < outlimit) {
+      if(main) cout << "\noutput:" << endl;
+      // show(f, d.nx, d.ny, mz,
+      // 	   d.x0, d.y0, 0,
+      // 	   d.x, d.y, mz,
+      // 	   group.active);
+
+      // cout << "process " << group.rank << endl;
+      // for(unsigned int i = 0; i < d.n * mz; ++i) {
+      // 	cout << f[i] << endl;
+      // }
+    }
+	
+    localf = 0.0;
+    accumulate_splitx(f, localf(), d, mz, true, group.active);
+    if(main) {
+      if(mx*my < outlimit) {
+    	cout << "\nAccumulated version:" << endl;
+	//cout << localf << endl;
+      }
+      array3<Complex> localf0(mx,my,mz);
+      init(localf0(), d.nx, d.ny, 0, 0, d.nx, d.ny, mz, false);
+      if(mx*my < outlimit) {
+    	cout << "Local init:" << endl;
+	//cout << localf0 << endl;
+      }
+	
+      //cout << "Comparison:\n"  << endl;
+      bool same = true;
+      for(unsigned int i = 0; i < d.nx; ++i) {
+    	for(unsigned int j = 0; j < d.ny; ++j) {
+    	  for(unsigned int k = 0; k < mz; ++k) {
+    	    //cout << localf(i,j,k) << " " << localf0(i,j,k) << endl;
+    	    if(localf(i,j,k) != localf0(i,j,k))
+    	      same = false;
+    	  }
+    	}
+      }
+      if(same) {
+    	cout << "OK." << endl;
+      } else {
+    	cout << "ERROR!" << endl;
+    	retval += 1;
+      }
+    }
       
     MPI_Barrier(group.active);
+  }
+
+  if(group.rank == 0) {
+    cout << endl;
+    if(retval == 0) {
+      cout << "Test passed." << endl;
+    } else {
+      cout << "Test FAILED!!!" << endl;
+    }
   }
   
   MPI_Finalize();

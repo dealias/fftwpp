@@ -26,6 +26,7 @@ void accumulate_splitx(const ftype *part,  ftype *whole,
 		       const unsigned int y0,
 		       const unsigned int x,
 		       const unsigned int y,
+		       const unsigned int Z,
 		       const bool transposed, 
 		       const MPI_Comm& communicator)
 {
@@ -38,10 +39,18 @@ void accumulate_splitx(const ftype *part,  ftype *whole,
     // First copy rank 0's part into the whole
     if(!transposed) {
       // x . Y
-      copyfromblock(part, whole, x, Y, Y);
+      copyfromblock(part,
+		    whole,
+		    x * Z, // count
+		    Y, // length
+		    Y); // stride
     } else {
       // X . y
-      copyfromblock(part, whole, X, y, Y);
+      copyfromblock(part,
+		    whole,
+		    X, // count
+		    y * Z, // length
+		    Y * Z); // stride
     }
 
     for(int p = 1; p < size; ++p) {
@@ -51,14 +60,22 @@ void accumulate_splitx(const ftype *part,  ftype *whole,
       unsigned int X = dims[0], Y = dims[1];
       unsigned int x0 = dims[2], y0 = dims[3];
       unsigned int x = dims[4], y = dims[5];
-      unsigned int n = !transposed ? x * Y :  X * y;
+      unsigned int n = Z * (!transposed ? x * Y :  X * y);
       if(n > 0) {
         ftype *C = new ftype[n];
         MPI_Recv(C, sizeof(ftype) * n, MPI_BYTE, p, 0, communicator, &stat);
 	if(!transposed) {
-	  copyfromblock(C, whole + x0 * Y, x, Y, Y);
+	  copyfromblock(C,
+			whole + Z * x0 * Y,
+			x * Z,
+			Y,
+			Y);
 	} else {
-	  copyfromblock(C, whole + y0, X, y, Y);
+	  copyfromblock(C,
+			whole + y0 * Z,
+			X,
+			y * Z,
+			Y * Z);
 	}
         delete [] C;
       }
@@ -66,7 +83,7 @@ void accumulate_splitx(const ftype *part,  ftype *whole,
   } else {
     unsigned int dims[]={X, Y, x0, y0, x, y};
     MPI_Send(&dims, 6, MPI_UNSIGNED, 0, 0, communicator);
-    unsigned int n = !transposed ? x * Y :  X * y;
+    unsigned int n = Z * (!transposed ? x * Y :  X * y);
     if(n > 0)
       MPI_Send(part, n * sizeof(ftype), MPI_BYTE, 0, 0, communicator);
   }
@@ -75,6 +92,7 @@ void accumulate_splitx(const ftype *part,  ftype *whole,
 template<class ftype>
 void accumulate_splitx(const ftype *part,  ftype *whole,
 		       const splitx split,
+		       const unsigned int Z,
 		       const bool transposed, 
 		       const MPI_Comm& communicator)
 {
@@ -85,7 +103,8 @@ void accumulate_splitx(const ftype *part,  ftype *whole,
   unsigned int x = split.x;
   unsigned int y = split.y;
 
-  accumulate_splitx(part, whole, X, Y, x0, y0, x, y, transposed,communicator);
+  accumulate_splitx(part, whole, X, Y, x0, y0, x, y, Z, transposed,
+		    communicator);
 }
 
 // output the contents of a 2D array

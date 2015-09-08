@@ -10,6 +10,8 @@
 using namespace std;
 using namespace fftwpp;
 
+bool testing=false;
+
 unsigned int X=8, Y=8, Z=1;
 const unsigned int showlimit=1024;
 unsigned int N0=10000000;
@@ -64,14 +66,16 @@ void fftwTranspose(int rank, int size)
     N=N0/(X*y);
     if(N < 10) N=10;
   }
-  
-  if(rank == 0) {
-    cout << "x=" << x << endl;
-    cout << "y=" << y << endl;
-    cout << "X=" << X << endl;
-    cout << "Y=" << Y << endl;
-    cout << "Z=" << Z << endl;
-    cout << "N=" << N << endl;
+
+  if(!testing) {
+    if(rank == 0) {
+      cout << "x=" << x << endl;
+      cout << "y=" << y << endl;
+      cout << "X=" << X << endl;
+      cout << "Y=" << Y << endl;
+      cout << "Z=" << Z << endl;
+      cout << "N=" << N << endl;
+    }
   }
   
   data=ComplexAlign(alloc);
@@ -177,8 +181,9 @@ int transpose(int rank, int size, int N)
   MPI_Comm active; 
   MPI_Comm_split(MPI_COMM_WORLD,rank < size,0,&active);
 
-  if(rank < size) {
   
+  if(rank < size) {
+
     if(rank == 0) {
       cout << "rank=" << rank << endl;
       cout << "x=" << x << endl;
@@ -188,7 +193,7 @@ int transpose(int rank, int size, int N)
       cout << "Z=" << Z << endl;
       cout << "N=" << N << endl;
     }
-  
+    
     data=ComplexAlign(std::max(X*y,x*Y)*Z);
   
     init(data,X,y,Z,ystart);
@@ -210,6 +215,9 @@ int transpose(int rank, int size, int N)
     fftw::statistics Soutinit,Soutwait0,Soutwait1,Sout;
 
     bool showoutput=X*Y < showlimit && N == 1;
+
+    if(testing) showoutput=false;
+
     if(showoutput) {
       if(rank == 0) 
         cout << "\nInput:" << endl;
@@ -232,7 +240,7 @@ int transpose(int rank, int size, int N)
 	wholedata=new Complex[X*Y*Z];
 	wholeoutput=new Complex[X*Y*Z];
       }
-      accumulate_splitx(data,wholedata,X,Y,xstart,ystart,x,y,true,active);
+      accumulate_splitx(data,wholedata,X,Y,xstart,ystart,x,y,Z,true,active);
 
       if(showoutput && rank == 0) {
 	cout << "\nAccumulated input data:" << endl;
@@ -247,7 +255,7 @@ int transpose(int rank, int size, int N)
 	  show(data,X,y*Z,active);
       }
 
-      accumulate_splitx(data,wholeoutput,X,Y,xstart,ystart,x,y,false,active);
+      accumulate_splitx(data,wholeoutput,X,Y,xstart,ystart,x,y,Z,false,active);
 
       if(rank == 0) {
 	if(showoutput) {
@@ -256,14 +264,12 @@ int transpose(int rank, int size, int N)
 	}
 
 	bool success=true;
-	for(unsigned int i=0; i < X; ++i) {
-	  for(unsigned int j=0; j < Y; ++j) {
-	    unsigned int pos=i * Y + j; 
-	    if(wholedata[pos] != wholeoutput[pos])
-	      success=false;
-	  }
+	const unsigned int stop=X*Y*Z;
+	for(unsigned int pos=0; pos < stop; ++pos) {
+	  if(wholedata[pos] != wholeoutput[pos])
+	    success=false;
 	}
-	
+		
 	if(success == true) {
 	  cout << "\nTest succeeded." << endl;
 	} else {
@@ -361,7 +367,7 @@ int main(int argc, char **argv)
   optind=0;
 #endif  
   for (;;) {
-    int c=getopt(argc,argv,"hLN:m:n:T:X:Y:Z:");
+    int c=getopt(argc,argv,"hLN:m:n:T:X:Y:Z:t");
     if (c == -1) break;
                 
     switch (c) {
@@ -388,6 +394,9 @@ int main(int argc, char **argv)
       break;
     case 'T':
       fftw::maxthreads=atoi(optarg);
+      break;
+    case 't':
+      testing=true;
       break;
     case 'n':
       N0=atoi(optarg);

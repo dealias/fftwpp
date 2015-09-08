@@ -23,20 +23,22 @@ else:
     log = open(logfile, 'w')
     log.close()
     
-    Xlist = [1,2,3,4,5,random.randint(6,64)]
-    Ylist = [1,2,3,4,5,random.randint(6,64)]
-    Plist = [1,2,3,4]
-    timeout = 5
+    Xlist = [1,2,3,4,5,random.randint(10,64)]
+    Ylist = [1,2,3,4,5,random.randint(10,64)]
+    Zlist = [1,2,random.randint(3,64)]
+    Plist = [1,2,3,4,5]
+    timeout = 0
     
     ntests = 0
     nfails = 0
     for X in Xlist:
         for Y in Ylist:
-            for P in Plist:
-                ntests += 1
-                rtest = runtest(progname, X, Y, P, [], logfile, timeout)
-                if not rtest == 0:
-                    nfails += 1
+            for Z in Zlist:
+                for P in Plist:
+                    ntests += 1
+                    rtest = runtest(progname, X, Y, P, ["-Z"+str(Z)], logfile, timeout)
+                    if not rtest == 0:
+                        nfails += 1
                 
     print "\n", nfails, "failures out of", ntests, "tests." 
 
