@@ -43,7 +43,7 @@ inline void usage()
   std::cerr << "-X\t\t X size" << std::endl;
   std::cerr << "-Y\t\t Y size" << std::endl;
   std::cerr << "-Z\t\t Z size" << std::endl;
-  std::cerr << "-L\t\t local transpose output" << std::endl;
+  std::cerr << "-L\t\t locally transpose output" << std::endl;
   exit(1);
 }
 
@@ -114,7 +114,7 @@ void fftwTranspose(int rank, int size)
     }
 
     if(showoutput) {
-      if(rank == 0) cout << "\ntranspose:\n" << endl;
+      if(rank == 0) cout << "\nTranspose:" << endl;
       show(data,x,Y*Z,MPI_COMM_WORLD);
     }
     
@@ -134,10 +134,10 @@ void fftwTranspose(int rank, int size)
   
   if(showoutput) {
     if(outtranspose) {
-      if(rank == 0) cout << "\nout:\n" << endl;
+      if(rank == 0) cout << "\nOutput:\n" << endl;
       show(data,y,X*Z,MPI_COMM_WORLD);
     } else {
-      if(rank == 0) cout << "\noriginal:\n" << endl;
+      if(rank == 0) cout << "\nOriginal:\n" << endl;
       show(data,X,y*Z,MPI_COMM_WORLD);
     }
   }
@@ -189,7 +189,7 @@ int transpose(int rank, int size, int N)
       cout << "N=" << N << endl;
     }
   
-    data=ComplexAlign(std::max(X*y*Z,x*Y*Z));
+    data=ComplexAlign(std::max(X*y,x*Y)*Z);
   
     init(data,X,y,Z,ystart);
 
@@ -228,11 +228,9 @@ int transpose(int rank, int size, int N)
       }
 
       Complex *wholedata=NULL, *wholeoutput=NULL;
-      Transpose *localtranspose=NULL;
       if(rank == 0) {
 	wholedata=new Complex[X*Y*Z];
 	wholeoutput=new Complex[X*Y*Z];
-	localtranspose=new Transpose(X,Y,Z,wholedata);
       }
       accumulate_splitx(data,wholedata,X,Y,xstart,ystart,x,y,true,active);
 
@@ -245,27 +243,16 @@ int transpose(int rank, int size, int N)
 
       if(showoutput) {
 	if(rank == 0)
-	  cout << "\noutput:\n" << endl;
-	if(outtranspose)
-	  show(data,y,X*Z,active);
-	else
+	  cout << "\nOutput:" << endl;
 	  show(data,X,y*Z,active);
       }
 
       accumulate_splitx(data,wholeoutput,X,Y,xstart,ystart,x,y,false,active);
 
       if(rank == 0) {
-	if(outtranspose) {
-	  localtranspose->transpose(wholedata);
-	}
-	  
 	if(showoutput) {
 	  cout << "\nAccumulated output data:" << endl;
 	  show(wholeoutput,X,Y,0,0,X,Y);
-	  if(outtranspose) {
-	    cout << "\nlocally transposed data:" << endl;
-	    show(wholedata,X,Y,0,0,X,Y);
-	  }
 	}
 
 	bool success=true;
@@ -338,7 +325,7 @@ int transpose(int rank, int size, int N)
   
       if(showoutput) {
       	if(outtranspose) {
-      	  if(rank == 0) cout << "\nout:\n" << endl;
+      	  if(rank == 0) cout << "\nOutput:" << endl;
       	  show(data,y,X*Z,active);
       	} else {
       	  if(rank == 0) cout << "\nOriginal:" << endl;
