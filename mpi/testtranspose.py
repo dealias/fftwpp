@@ -24,16 +24,10 @@ else:
     log = open(logfile, 'w')
     log.close()
 
-    
-    #Xlist = [1,2,3,4,5,random.randint(6,64)]
-    #Ylist = [1,2,3,4,random.randint(5,64)]
-    #Ylist = [1,2,random.randint(3,64)]
-    #Plist = [1,2,3,4,random.randint(5,10)]
-
-    Xlist = [1,2,3,random.randint(6,64)]
-    Ylist = [1,2,3,random.randint(5,64)]
-    Zlist = [1,random.randint(3,64)]
-    Plist = [1,2,3,random.randint(5,10)]
+    Xlist = [1,2,3,4,5,6,7,8,9,10,random.randint(10,64)]
+    Ylist = Xlist
+    Zlist = Xlist
+    Plist = [1,2,3,4,5,6,7,8,9]
 
     ntests = len(Xlist) * len(Ylist) * len(Zlist) * len(Plist)
     
@@ -47,14 +41,18 @@ else:
         for Y in Ylist:
             for Z in Zlist:
                 for P in Plist:
-                    ntest += 1
-                    print "Test", ntest, "of", ntests
-                    rtest = runtest("transpose", X, Y, P, ["-N0", "-Z"+str(Z), "-t"], logfile, timeout)
-                    if not rtest == 0:
-                        nfails += 1
+                    for a in range(1,P):
+                        if(P % a) :
+                            continue
+                        ntest += 1
+                        for A in range(0,2):
+#                            print "Test", ntest, "of", ntests
+                            rtest = runtest("transpose", X, Y, P, ["-tq", "-Z"+str(Z), "-a"+str(a), "-A"+str(A)], logfile, timeout)
+                            if not rtest == 0:
+                                nfails += 1
                 
-    end = time.time()
-    print "\nElapsed time (s):", end - start
-    print "\n", nfails, "failures out of", ntests, "tests." 
+                                end = time.time()
+                                print "\nElapsed time (s):", end - start
+                                print "\n", nfails, "failures out of", ntests, "tests." 
 
 sys.exit(retval)

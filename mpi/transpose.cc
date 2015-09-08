@@ -10,9 +10,13 @@
 using namespace std;
 using namespace fftwpp;
 
-bool testing=false;
+bool test=false;
+bool quiet=false;
 
 unsigned int X=8, Y=8, Z=1;
+int a=0; // Test for best block divisor
+int alltoall=-1; // Test for best alltoall routine
+
 const unsigned int showlimit=1024;
 unsigned int N0=10000000;
 int N=0;
@@ -40,13 +44,16 @@ inline void usage()
   std::cerr << "Options: " << std::endl;
   std::cerr << "-h\t\t help" << std::endl;
   std::cerr << "-T<int>\t\t number of threads" << std::endl;
-  std::cerr << "-t\t\t disable output for unit test" << std::endl;
-  std::cerr << "-N<int>\t\t number of timing tests (if 0, do unit tests)"
+  std::cerr << "-t\t\t test" << std::endl;
+  std::cerr << "-q\t\t quiet" << std::endl;
+  std::cerr << "-N<int>\t\t number of timing tests"
 	    << std::endl;
   std::cerr << "-m<int>\t\t size" << std::endl;
   std::cerr << "-X<int>\t\t X size" << std::endl;
   std::cerr << "-Y<int>\t\t Y size" << std::endl;
   std::cerr << "-Z<int>\t\t Z size" << std::endl;
+  std::cerr << "-a<int>\t\t block divisor: -1=sqrt(size), [0]=Tune" << std::endl;
+  std::cerr << "-A<int>\t\t alltoall: [-1]=Tune, 0=Optimized, 1=MPI" << std::endl;
   std::cerr << "-L\t\t locally transpose output" << std::endl;
   exit(1);
 }
@@ -64,11 +71,6 @@ void fftwTranspose(int rank, int size)
     fftw_mpi_local_size_many_transposed(2,NN,Z,block,0,
 					MPI_COMM_WORLD,&y,
 					&ystart,&x,&xstart);
-  if(N == 0) {
-    N=N0/(X*y);
-    if(N < 10) N=10;
-  }
-
   if(rank == 0) {
     cout << "x=" << x << endl;
     cout << "y=" << y << endl;
@@ -203,7 +205,9 @@ int transpose(int rank, int size, int N)
     
     // Initialize remaining plans.
 
-    mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,fftw::maxthreads,active);
+//    mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,fftw::maxthreads,active);
+    mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,
+                            mpioptions(fftw::maxthreads,a,alltoall),active);
     init(data,X,y,Z,ystart);
     T.transpose(data,false,true);
   
@@ -215,7 +219,7 @@ int transpose(int rank, int size, int N)
     fftw::statistics Sininit,Sinwait0,Sinwait1,Sin;
     fftw::statistics Soutinit,Soutwait0,Soutwait1,Sout;
 
-    bool showoutput=!testing && X*Y < showlimit;
+    bool showoutput=!quiet && (test || (!X*Y < showlimit && N == 1));
 
     if(showoutput) {
       if(rank == 0) 
@@ -223,7 +227,7 @@ int transpose(int rank, int size, int N)
       show(data,X,y*Z,active);
     }
     
-    if(N == 0) {
+    if(test) {
       if(rank == 0)
 	cout << "\nDiagnostics and unit test.\n" << endl;
 
@@ -360,13 +364,11 @@ int transpose(int rank, int size, int N)
 
 int main(int argc, char **argv)
 {
-  bool Nset=false;
-
 #ifdef __GNUC__ 
   optind=0;
 #endif  
   for (;;) {
-    int c=getopt(argc,argv,"hLN:m:n:T:X:Y:Z:t");
+    int c=getopt(argc,argv,"hLN:A:a:m:n:T:X:Y:Z:qt");
     if (c == -1) break;
                 
     switch (c) {
@@ -374,10 +376,15 @@ int main(int argc, char **argv)
       break;
     case 'N':
       N=atoi(optarg);
-      Nset=true;
       break;
     case 'L':
       outtranspose=true;
+      break;
+    case 'A':
+      alltoall=atoi(optarg);
+      break;
+    case 'a':
+      a=atoi(optarg);
       break;
     case 'm':
       X=Y=atoi(optarg);
@@ -395,7 +402,10 @@ int main(int argc, char **argv)
       fftw::maxthreads=atoi(optarg);
       break;
     case 't':
-      testing=true;
+      test=true;
+      break;
+    case 'q':
+      quiet=true;
       break;
     case 'n':
       N0=atoi(optarg);
@@ -420,14 +430,16 @@ int main(int argc, char **argv)
   
   fftw_mpi_init();
   
+  if(test) N=1;
+  else if(N == 0) {
+    N=N0/(X*Y*Z);
+    if(N < 10) N=10;
+  }
+
   int retval=0;
 #ifdef OLD
   fftwTranspose(rank,size);
 #else
-  if(!Nset) {
-    N=N0/(X*Y);
-    if(N < 10) N=10;
-  }
   retval=transpose(rank,size,N);
 #endif  
   

@@ -190,20 +190,33 @@ inline int Ialltoall(void *sendbuf, int count,
   }
 }
 
+struct mpioptions {
+  unsigned int threads;
+  int a; // Block divisor (-1=sqrt(size), 0=Tune)
+  int alltoall; // -1=Tune, 0=Optimized, 1=MPI
+  mpioptions(unsigned int threads=fftw::maxthreads, unsigned int a=0,
+             unsigned int alltoall=-1) :
+    threads(threads), a(a), alltoall(alltoall) {}
+}
+    
+static const defaultmpioptions;
+  
 template<class T>
 class mpitranspose {
 private:
   unsigned int N,m,n,M;
-  unsigned int n0,m0;
-  unsigned int np,mp;
-  int mlast,nlast;
   unsigned int L;
   T *data;
   T *work;
-  unsigned int threads;
+  mpioptions options;
   MPI_Comm communicator;
   MPI_Comm global;
-  bool allocated;
+  
+  unsigned int n0,m0;
+  unsigned int np,mp;
+  int mlast,nlast;
+  unsigned int threads;
+  unsigned int allocated;
   MPI_Request *request;
   int size;
   int rank;
@@ -224,6 +237,8 @@ private:
   int *recvcounts,*recvdisplacements;
 public:
 
+  mpioptions Options() {return options;}
+  
   bool divisible(int size, unsigned int M, unsigned int N) {
     unsigned int usize=size;
     if(usize > N || usize > M) {
@@ -247,7 +262,7 @@ public:
     if(size == 1) return 0.0;
     if(latency >= 0) return latency;
     
-    unsigned int b=(unsigned int) sqrt(size);
+    int b=sqrt(size)+0.5;
     MPI_Comm_split(communicator,rank/b,0,&split);
     MPI_Comm_size(split,&splitsize);
     MPI_Comm_rank(split,&splitrank);
@@ -282,7 +297,7 @@ public:
   }
 
   void setup(T *data) {
-    allocated=false;
+    threads=options.threads;
     Tin3=NULL;
     Tout3=NULL;
     
@@ -299,57 +314,74 @@ public:
     nlast=ceilquotient(N,n0)-1;
     np=localdimension(N,nlast,size);
     
-    uniform=divisible(size,M,N);
-      
     if(work == NULL) {
-      Array::newAlign(this->work,std::max(N*m,n*M)*L,sizeof(T));
-      allocated=true;
-    }
+      allocated=std::max(N*m,n*M)*L;
+      Array::newAlign(this->work,allocated,sizeof(T));
+    } else allocated=0;
     
     if(size == 1) {
       a=1;
       return;
     }
     
-    int AlltoAll=1;
-    double latency=safetyfactor*Latency();
-    int alimit=(uniform && N*M*L*sizeof(T) < latency*size*size) ? size : 2;
-    MPI_Bcast(&alimit,1,MPI_UNSIGNED,0,global);
+    uniform=divisible(size,M,N);
+      
+    if(!uniform) options.a=1;
 
-    if(globalrank == 0)
-      std::cout << std::endl << "Timing:" << std::endl;
-    
-    int A=1;
-    double T0=DBL_MAX;
-    for(int alltoall=0; alltoall <= 1; ++alltoall) {
-      if(globalrank == 0) std::cout << "alltoall=" << alltoall << std::endl;
-      for(a=1; a < alimit; ++a) {
-        if(size % a) continue;
-        b=size/a;
-        init(data,alltoall);
-        double t=time(data);
-        deallocate();
-        if(globalrank == 0) {
-          std::cout << "a=" << a << ":\ttime=" << t << std::endl;
-          if(t < T0) {
-            T0=t;
-            A=a;
-            AlltoAll=alltoall;
+    int start=0,stop=1;
+    if(options.alltoall >= 0)
+      start=stop=options.alltoall;
+    int Alltoall=1;
+    int astart=1;
+    if(options.a >= size || options.a < 0 || 
+       (options.a > 1 && size % options.a)) {
+      int n=sqrt(size)+0.5;
+      options.a=size/n;
+    }
+
+    if(options.a <= 0 || stop-start >= 1) {
+      if(globalrank == 0)
+        std::cout << std::endl << "Timing:" << std::endl;
+      
+      double latency=safetyfactor*Latency();
+      int alimit=(N*M*L*sizeof(T) < latency*size*size) ? size : 2;
+      MPI_Bcast(&alimit,1,MPI_UNSIGNED,0,global);
+      
+      if(options.a <= 0) options.a=1;
+      else {astart=options.a; alimit=astart+1;}
+      double T0=DBL_MAX;
+      for(int alltoall=start; alltoall <= stop; ++alltoall) {
+        if(globalrank == 0) std::cout << "alltoall=" << alltoall << std::endl;
+        for(a=astart; a < alimit; ++a) {
+          if(size % a) continue;
+          b=size/a;
+          options.alltoall=alltoall;
+          init(data);
+          double t=time(data);
+          deallocate();
+          if(globalrank == 0) {
+            std::cout << "a=" << a << ":\ttime=" << t << std::endl;
+            if(t < T0) {
+              T0=t;
+              options.a=a;
+              Alltoall=alltoall;
+            }
           }
         }
       }
+    
+      int parm[]={options.a,Alltoall};
+      MPI_Bcast(&parm,2,MPI_INT,0,global);
+      options.a=parm[0];
+      options.alltoall=parm[1];
     }
     
-    int parm[]={A,AlltoAll};
-    MPI_Bcast(&parm,2,MPI_INT,0,global);
-    A=parm[0];
-    AlltoAll=parm[1];
-    a=A;
+    a=options.a;
     b=size/a;
     
-    if(globalrank == 0) std::cout << std::endl << "Using alltoall=" << AlltoAll
-                            << ", a=" << a << ":" << std::endl;
-    init(data,AlltoAll);
+    if(globalrank == 0) std::cout << std::endl << "Using alltoall=" << 
+                          options.alltoall << ", a=" << a << ":" << std::endl;
+    init(data);
   }
   
   mpitranspose(){}
@@ -359,10 +391,10 @@ public:
   mpitranspose(unsigned int N, unsigned int m, unsigned int n,
                unsigned int M, unsigned int L,
                T *data, T *work=NULL,
-               unsigned int threads=fftw::maxthreads,
+               mpioptions options=defaultmpioptions,
                MPI_Comm communicator=MPI_COMM_WORLD,
                MPI_Comm global=0) :
-    N(N), m(m), n(n), M(M), L(L), work(work), threads(threads),
+    N(N), m(m), n(n), M(M), L(L), work(work), options(options),
     communicator(communicator), global(global ? global : communicator) {
     setup(data);
   }
@@ -370,16 +402,16 @@ public:
   mpitranspose(unsigned int N, unsigned int m, unsigned int n,
                unsigned int M, unsigned int L,
                T *data, MPI_Comm communicator, MPI_Comm global=0) :
-    N(N), m(m), n(n), M(M), L(L), work(NULL), threads(fftw::maxthreads),
+    N(N), m(m), n(n), M(M), L(L), work(NULL),
     communicator(communicator), global(global ? global : communicator) {
     setup(data);
   }
     
   mpitranspose(unsigned int N, unsigned int m, unsigned int n,
                unsigned int M, T *data, T *work=NULL,
-               unsigned int threads=fftw::maxthreads,
+               mpioptions options=defaultmpioptions,
                MPI_Comm communicator=MPI_COMM_WORLD, MPI_Comm global=0) :
-        N(N), m(m), n(n), M(M), L(1), work(work), threads(threads),
+    N(N), m(m), n(n), M(M), L(1), work(work), options(options),
         communicator(communicator), global(global ? global : communicator) {
     setup(data);
   }
@@ -406,7 +438,7 @@ public:
     return sum/N;
   }
 
-  void init(T *data, bool alltoall) {
+  void init(T *data) {
     if(uniform) {
       Tout1=new Transpose(n*a,b,m*L,data,this->work,threads);
       Tin1=new Transpose(b,n*a,m*L,data,this->work,threads);
@@ -438,7 +470,7 @@ public:
       MPI_Comm_rank(split2,&split2rank);
     }
     
-    if(alltoall) {
+    if(options.alltoall) {
       request=new MPI_Request[1];
       sched=sched2=NULL;
     } else {
@@ -477,6 +509,11 @@ public:
     if(uniform) {
       delete Tin1;
       delete Tout1;
+    } else {
+      delete sendcounts;
+      delete senddisplacements;
+      delete recvcounts;
+      delete recvdisplacements;
     }
   }
   
@@ -484,8 +521,9 @@ public:
     deallocate();
     if(Tout3) delete Tout3;
     if(Tin3) delete Tin3;
+    MPI_Barrier(global);
     if(allocated)
-      Array::deleteAlign(work,N*m*L);
+      Array::deleteAlign(work,allocated);
   }
   
   void inphase0() {
