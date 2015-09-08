@@ -332,7 +332,6 @@ public:
     if(options.alltoall >= 0)
       start=stop=options.alltoall;
     int Alltoall=1;
-    int astart=1;
     if(options.a >= size || options.a < 0) {
       int n=sqrt(size)+0.5;
       options.a=size/n;
@@ -353,16 +352,19 @@ public:
       }
     }
 
-    if(options.a <= 0 || stop-start >= 1) {
+    int alimit;
+    if(options.a <= 0) { // Restrict divisor range based on latency estimate
+      options.a=1;
+      double latency=safetyfactor*Latency();
+      alimit=(N*M*L*sizeof(T) < latency*size*size) ? size : 2;
+      MPI_Bcast(&alimit,1,MPI_UNSIGNED,0,global);
+    } else alimit=options.a+1;
+    int astart=options.a;
+      
+    if(alimit > astart+1 || stop-start >= 1) {
       if(globalrank == 0)
         std::cout << std::endl << "Timing:" << std::endl;
       
-      double latency=safetyfactor*Latency();
-      int alimit=(N*M*L*sizeof(T) < latency*size*size) ? size : 2;
-      MPI_Bcast(&alimit,1,MPI_UNSIGNED,0,global);
-      
-      if(options.a <= 0) options.a=1;
-      else {astart=options.a; alimit=astart+1;}
       double T0=DBL_MAX;
       for(int alltoall=start; alltoall <= stop; ++alltoall) {
         if(globalrank == 0) std::cout << "alltoall=" << alltoall << std::endl;
