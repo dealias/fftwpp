@@ -67,16 +67,15 @@ void fftwTranspose(int rank, int size)
     if(N < 10) N=10;
   }
 
-  if(!testing) {
-    if(rank == 0) {
-      cout << "x=" << x << endl;
-      cout << "y=" << y << endl;
-      cout << "X=" << X << endl;
-      cout << "Y=" << Y << endl;
-      cout << "Z=" << Z << endl;
-      cout << "N=" << N << endl;
-    }
+  if(rank == 0) {
+    cout << "x=" << x << endl;
+    cout << "y=" << y << endl;
+    cout << "X=" << X << endl;
+    cout << "Y=" << Y << endl;
+    cout << "Z=" << Z << endl;
+    cout << "N=" << N << endl;
   }
+
   
   data=ComplexAlign(alloc);
   
@@ -214,9 +213,7 @@ int transpose(int rank, int size, int N)
     fftw::statistics Sininit,Sinwait0,Sinwait1,Sin;
     fftw::statistics Soutinit,Soutwait0,Soutwait1,Sout;
 
-    bool showoutput=X*Y < showlimit && N == 1;
-
-    if(testing) showoutput=false;
+    bool showoutput=!testing && X*Y < showlimit;
 
     if(showoutput) {
       if(rank == 0) 
@@ -226,7 +223,6 @@ int transpose(int rank, int size, int N)
     if(N == 0) {
       if(rank == 0)
 	cout << "\nDiagnostics and unit test.\n" << endl;
-      bool showoutput=true; //X*Y < showlimit;
 
       init(data,X,y,Z,ystart);
       if(showoutput) {
