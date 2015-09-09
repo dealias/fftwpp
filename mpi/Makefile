@@ -37,7 +37,7 @@ ifneq ($(strip $(FFTW_LIB_PATH)),)
 LDFLAGS+=-L$(FFTW_LIB_PATH)
 endif
 #LDFLAGS= -lfftw3_mpi -lfftw3 -lfftw3_threads -lm
-LDFLAGS+= -lfftw3_mpi -lfftw3_omp -lfftw3 -lm
+LDFLAGS+= -lfftw3_omp -lfftw3 -lm
 
 MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
 
@@ -45,7 +45,7 @@ vpath %.cc ../
 
 FFTW=fftw++
 FILES=cconv2 conv2 cconv3 conv3 fft2 fft3 transpose accumulate
-UTILS=$(FFTW) mpiutils
+UTILS=$(FFTW) mpiutils wisdom-api
 MPITRANSPOSE=$(UTILS) mpitranspose
 MPIFFT=$(MPITRANSPOSE) mpifftw++
 MPICONVOLUTION=$(MPIFFT) convolution mpiconvolution

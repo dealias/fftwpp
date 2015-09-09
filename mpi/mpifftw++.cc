@@ -2,20 +2,23 @@
 
 namespace fftwpp {
 
+void mpi_broadcast_wisdom(const MPI_Comm&);
+void mpi_gather_wisdom(const MPI_Comm&);
+
 void MPILoadWisdom(const MPI_Comm& active)
 {
   int rank;
   MPI_Comm_rank(active,&rank);
   if(rank == 0)
     fftw::LoadWisdom();
-  fftw_mpi_broadcast_wisdom(active);
+  mpi_broadcast_wisdom(active);
 }
 
 void MPISaveWisdom(const MPI_Comm& active)
 {
   int rank;
   MPI_Comm_rank(active,&rank);
-  fftw_mpi_gather_wisdom(active);
+  mpi_gather_wisdom(active);
   if(rank == 0)
     fftw::SaveWisdom();
 }

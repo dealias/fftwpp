@@ -2,7 +2,6 @@
 #define __mpiconvolution_h__ 1
   
 #include <mpi.h>
-#include <fftw3-mpi.h>
 #include "../convolution.h"
 #include <vector>
 #include "mpifftw++.h"

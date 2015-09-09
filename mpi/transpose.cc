@@ -1,5 +1,4 @@
 #include <mpi.h>
-#include <fftw3-mpi.h>
 #include "../Complex.h"
 #include "../seconds.h"
 #include "mpitranspose.h"
@@ -58,6 +57,8 @@ inline void usage()
   exit(1);
 }
 
+#ifdef OLD
+#include <fftw3-mpi.h>
 void fftwTranspose(int rank, int size)
 {
   Complex *data;
@@ -166,6 +167,7 @@ void fftwTranspose(int rank, int size)
   fftw_destroy_plan(inplan);
   fftw_destroy_plan(outplan);
 }
+#endif  
   
 int transpose(int rank, int size, int N)
 {

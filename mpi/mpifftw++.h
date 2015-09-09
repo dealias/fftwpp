@@ -2,7 +2,6 @@
 #define __mpifftwpp_h__ 1
 
 #include "mpitranspose.h"
-#include <fftw3-mpi.h>
 #include "fftw++.h"
 
 namespace fftwpp {
