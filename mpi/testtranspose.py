@@ -31,13 +31,10 @@ else:
     Zlist = [2,3,10,random.randint(start,stop)]
     Plist = [1,2,3,4,5,6,7,8,9]
 
-    ntests = len(Xlist) * len(Ylist) * len(Zlist) * len(Plist)
-    
-    print "Performing", ntests, "tests....\n" 
-    start = time.time()
+    tstart = time.time()
     
     timeout = 0
-    ntest = 0
+    ntests = 0
     nfails = 0
     for X in Xlist:
         for Y in Ylist:
@@ -46,15 +43,15 @@ else:
                     for a in range(1,P):
                         if(P % a) :
                             continue
-                        ntest += 1
+                        ntests += 1
                         for A in range(0,2):
 #                            print "Test", ntest, "of", ntests
                             rtest = runtest("transpose", X, Y, P, ["-tq", "-Z"+str(Z), "-a"+str(a), "-A"+str(A)], logfile, timeout)
                             if not rtest == 0:
                                 nfails += 1
                 
-                                end = time.time()
-                                print "\nElapsed time (s):", end - start
-                                print "\n", nfails, "failures out of", ntests, "tests." 
+    tend = time.time()
+    print "\nElapsed time (s):", tend - tstart
+    print "\n", nfails, "failures out of", ntests, "tests." 
 
 sys.exit(retval)
