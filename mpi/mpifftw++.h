@@ -170,7 +170,7 @@ public:
   
 // In-place OpenMP/MPI 2D complex FFT.
 // Fourier transform an mx x my array, distributed first over x.
-// The array must be allocated as splitx::n Complex words.
+// The array must be allocated as split::n Complex words.
 //
 // Example:
 // MPIgroup group(MPI_COMM_WORLD,mx);
@@ -306,7 +306,7 @@ class fft3dMPI {
 class rcfft2dMPI {
  private:
   unsigned int mx, my;
-  splity dr,dc;
+  split dr,dc;
   mfft1d *xForwards;
   mfft1d *xBackwards;
   mrcfft1d *yForwards;
@@ -324,7 +324,7 @@ class rcfft2dMPI {
     T=new mpitranspose<Complex>(dc.X,dc.y,dc.x,dc.Y,1,out,dc.communicator);
   }
   
- rcfft2dMPI(const splity& dr, const splity& dc,
+ rcfft2dMPI(const split& dr, const split& dc,
 	   double *f, Complex *g) : dr(dr), dc(dc), inplace((double*) g == f){
     mx=dr.X;
     my=dc.Y;
