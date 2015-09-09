@@ -93,6 +93,15 @@ inline int MPI_Ialltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype,
   return MPI_Alltoall(sendbuf,sendcount,sendtype,recvbuf,recvcount,recvtype,
                       comm);
 }
+inline int MPI_Ialltoallv(void *sendbuf, int *sendcounts,
+                          int *senddisplacements, MPI_Datatype sendtype,
+                          void *recvbuf, int *recvcounts,
+                          int *recvdisplacements, MPI_Datatype recvtype,
+                          MPI_Comm comm, MPI_Request *)
+{
+  return MPI_Alltoallv(sendbuf,sendcounts,senddisplacements,sendtype,
+                       recvbuf,recvcounts,recvdisplacements,recvtype,comm);
+}
 inline void Wait(int count, MPI_Request *request, int *sched=NULL)
 { 
   if(sched)
