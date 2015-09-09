@@ -200,8 +200,8 @@ void ImplicitHConvolution3MPI::convolve(Complex **F, realmultiplier *pmult,
   backwards(F,U3,symmetrize,offset);
 
   if(d.y < d.ny) {
-    transpose(intranspose,A,F,offset);
-    transpose(uintranspose,A,U3);
+    transpose(T,A,F,false,true,offset);
+    transpose(U,A,U3,false,true);
   }
     
   unsigned int stride=d.ny*d.z;
@@ -209,8 +209,8 @@ void ImplicitHConvolution3MPI::convolve(Complex **F, realmultiplier *pmult,
   subconvolution(U3,pmult,0,du.x*stride,stride);
     
   if(d.y < d.ny) {
-    transpose(outtranspose,B,F,offset);
-    transpose(uouttranspose,B,U3);
+    transpose(T,B,F,true,false,offset);
+    transpose(U,B,U3,true,false);
   }
     
   forwards(F,U3,offset);

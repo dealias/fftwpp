@@ -14,7 +14,7 @@ void MPISaveWisdom(const MPI_Comm& active);
 class MPIgroup {
 public:  
   int rank,size;
-  unsigned int block,block2; // TODO: Remove? ***********
+  unsigned int block,block2;
   MPI_Comm active;                     // active communicator 
   MPI_Comm communicator,communicator2; // 3D transpose communicators
   
@@ -110,17 +110,15 @@ public:
   unsigned int x0,y0,z0;
   split xy,yz;
   MPI_Comm communicator;
-  unsigned int yblock,zblock; // requested block size
   MPI_Comm *XYplane;          // Used by HermitianSymmetrizeXYMPI
   int *reflect;               // Used by HermitianSymmetrizeXYMPI
   splityz() {}
   splityz(unsigned int nx, unsigned int ny, unsigned int nz,
-              const MPIgroup& group, unsigned int Ny=0) : nx(nx), ny(ny), nz(nz),
-                                       communicator(group.active),
-                                       yblock(group.block),
-                                       zblock(group.block2), XYplane(NULL) {
+          const MPIgroup& group, unsigned int Ny=0) : 
+    nx(nx), ny(ny), nz(nz), communicator(group.active),
+    XYplane(NULL) {
     if(Ny == 0) Ny=ny;
-    xy=split(nx,ny,group.communicator,zblock);
+    xy=split(nx,ny,group.communicator,group.block2);
     yz=split(Ny,nz,group.communicator2);
     x=xy.x;
     y=xy.y;
@@ -138,7 +136,6 @@ public:
     std::cout << "x0=" << x0 << "\ty0="<< y0 << "\tz0="<<z0 << std::endl;
     std::cout << "yz.x=" << yz.x << std::endl;
     std::cout << "n=" << n << std::endl;
-    std::cout << "yblock=" << yblock << "\tzblock=" << zblock << std::endl;
   }
 };
   
@@ -154,14 +151,11 @@ public:
   unsigned int x0,y0,z0;
   split yz,xy;
   MPI_Comm communicator;
-  unsigned int xblock,yblock; // requested block size
   splitxy() {}
   splitxy(unsigned int nx, unsigned int ny, unsigned int nz,
           const MPIgroup& group) : nx(nx), ny(ny), nz(nz),
-                                       communicator(group.active),
-                                       xblock(group.block),
-                                       yblock(group.block2) {
-    xy=split(nx,ny,group.communicator,yblock);
+                                   communicator(group.active) {
+    xy=split(nx,ny,group.communicator,group.block2);
     yz=split(ny,nz,group.communicator2);
     x=xy.x;
     y=yz.x;
@@ -179,7 +173,6 @@ public:
     std::cout << "x0=" << x0 << "\ty0="<< y0 << "\tz0="<<z0 << std::endl;
     std::cout << "xy.y=" << xy.y << std::endl;
     std::cout << "n=" << n << std::endl;
-    std::cout << "xblock=" << yblock << "\tyblock=" << yblock << std::endl;
   }
 };
   

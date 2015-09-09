@@ -46,14 +46,8 @@ public:
     inittranspose();
   }
   
-  virtual ~ImplicitConvolution2MPI() {}
-  
-  void transpose(fftw_plan plan, unsigned int A, Complex **F,
-                 unsigned int offset=0) {
-    for(unsigned int a=0; a < A; ++a) {
-      double *f=(double *) (F[a]+offset);
-      fftw_mpi_execute_r2r(plan,f,f);
-    }
+  virtual ~ImplicitConvolution2MPI() {
+    delete T;
   }
   
   // F is a pointer to A distinct data blocks each of size mx*d.y,
@@ -75,12 +69,11 @@ protected:
   MPI_Comm global;
 public:  
   
-  
   void inittranspose(Complex *f) {
     T=new mpitranspose<double>(d.nx,d.y,d.x,d.ny,2,(double *) f,NULL,
-                               mpioptions(1,1,1),d.communicator,global);
+                               d.communicator,global);
     U=new mpitranspose<double>(du.nx,du.y,du.x,du.ny,2,(double *)u2,NULL,
-                               mpioptions(1,1,1),du.communicator,global);
+                               du.communicator,global);
   }    
   
   void transpose(mpitranspose<double> *T, unsigned int A, Complex **F,
@@ -121,7 +114,10 @@ public:
     inittranspose(f);
   }
   
-  virtual ~ImplicitHConvolution2MPI() {}
+  virtual ~ImplicitHConvolution2MPI() {
+    delete U;
+    delete T;
+  }
 
   // F is a pointer to A distinct data blocks each of size 
   // (2mx-compact)*d.y, shifted by offset (contents not preserved).
@@ -143,7 +139,7 @@ protected:
   mpitranspose<Complex> *T;
 public:  
   void inittranspose() {
-    T=new mpitranspose<Complex>(mx,d.y,d.x,my,d.z,u3,d.xy.communicator,
+    T=new mpitranspose<Complex>(d.nx,d.y,d.x,d.ny,d.z,u3,d.xy.communicator,
                                 d.communicator);
   }
 
@@ -184,7 +180,9 @@ public:
     initMPI();
   }
   
-  virtual ~ImplicitConvolution3MPI() {}
+  virtual ~ImplicitConvolution3MPI() {
+    delete T;
+  }
   
   void transpose(fftw_plan plan, unsigned int A, Complex **F,
                  unsigned int offset=0) {
@@ -219,34 +217,15 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
 class ImplicitHConvolution3MPI : public ImplicitHConvolution3 {
 protected:
   splityz d,du;
-  fftw_plan intranspose,outtranspose;
-  fftw_plan uintranspose,uouttranspose;
+  mpitranspose<double> *T,*U;
+  MPI_Comm global;
 public:  
   void inittranspose(Complex *f) {
     if(d.y < d.ny) {
-      unsigned int mx1=mx+compact;
-      intranspose=
-        fftw_mpi_plan_many_transpose(d.ny,d.nx,2*d.z,d.yblock,0,
-                                     (double*) f,(double*) f,
-                                     d.xy.communicator,FFTW_MPI_TRANSPOSED_IN);
-      if(!intranspose) transposeError("inH3");
-      uintranspose=
-        fftw_mpi_plan_many_transpose(d.ny,mx1,2*du.z,du.yblock,0,
-                                     (double*) u3,(double*) u3,
-                                     du.xy.communicator,FFTW_MPI_TRANSPOSED_IN);
-      if(!uintranspose) transposeError("uinH3");
-      outtranspose=
-        fftw_mpi_plan_many_transpose(d.nx,d.ny,2*d.z,0,d.yblock,
-                                     (double*) f,(double*) f,
-                                     d.xy.communicator,FFTW_MPI_TRANSPOSED_OUT);
-      if(!outtranspose) transposeError("outH3");
-      uouttranspose=
-        fftw_mpi_plan_many_transpose(mx1,d.ny,2*du.z,0,du.yblock,
-                                     (double*) u3,(double*) u3,
-                                     du.xy.communicator,
-                                     FFTW_MPI_TRANSPOSED_OUT);
-      if(!uouttranspose) transposeError("uoutH3");
-      MPISaveWisdom(d.xy.communicator);
+      T=new mpitranspose<double>(d.nx,d.y,d.x,d.ny,2*d.z,(double *) f,NULL,
+                                 mpioptions(1,1,1),d.xy.communicator,global);
+      U=new mpitranspose<double>(du.nx,du.y,du.x,du.ny,2*d.z,(double *)u2,NULL,
+                                 mpioptions(1,1,1),du.xy.communicator,global);
     }
   }
 
@@ -273,10 +252,11 @@ public:
                            Complex *f, Complex *u1, Complex *u2, Complex *u3,
                            unsigned int A=2, unsigned int B=1,
                            bool compact=true,
-                           unsigned int threads=fftw::maxthreads) :
+                           unsigned int threads=fftw::maxthreads,
+                           MPI_Comm global=0) :
     ImplicitHConvolution3(mx,my,mz,u1,u2,u3,A,B,compact,threads,d.y,d.z,
-                          du.n2,du.n),
-    d(d), du(du) { 
+                          du.n2,du.n), 
+    d(d), du(du), global(global ? global : d.communicator) { 
     initMPI(f);
     inittranspose(f);
   }
@@ -285,27 +265,26 @@ public:
                            const splityz& d, const splityz& du,
                            Complex *f, unsigned int A=2, unsigned int B=1,
                            bool compact=true,
-                           unsigned int threads=fftw::maxthreads) :
+                           unsigned int threads=fftw::maxthreads,
+                           MPI_Comm global=0) :
     ImplicitHConvolution3(mx,my,mz,A,B,compact,threads,d.y,d.z,du.n2,du.n),
-    d(d), du(du) { 
+    d(d), du(du), global(global ? global : d.communicator) {
     initMPI(f);
     inittranspose(f);
   }
   
   virtual ~ImplicitHConvolution3MPI() {
     if(d.y < d.ny) {
-      fftw_destroy_plan(uouttranspose);
-      fftw_destroy_plan(outtranspose);
-      fftw_destroy_plan(uintranspose);
-      fftw_destroy_plan(intranspose);
+      delete U;
+      delete T;
     }
   }
   
-  void transpose(fftw_plan plan, unsigned int A, Complex **F,
-                 unsigned int offset=0) {
+  void transpose(mpitranspose<double> *T, unsigned int A, Complex **F,
+                 bool inflag, bool outflag, unsigned int offset=0) {
     for(unsigned int a=0; a < A; ++a) {
       double *f=(double *) (F[a]+offset);
-      fftw_mpi_execute_r2r(plan,f,f);
+      T->transpose(f,inflag,outflag);
     }
   }
   

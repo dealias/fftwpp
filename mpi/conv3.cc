@@ -151,8 +151,8 @@ int main(int argc, char* argv[])
       cout << "zblock=" << group.block2 << endl;
     }
 
-    splityz d(nx,ny,nz,group,ny);
-    splityz du(mx+compact,ny,nz,group,my+compact);
+    splityz d(nx,ny,nz,group);
+    splityz du(mx+compact,ny,nz,group);
     
     unsigned int Mn=M*d.n;
     Complex *f=ComplexAlign(Mn);
