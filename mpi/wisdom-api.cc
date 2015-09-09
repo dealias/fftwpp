@@ -23,17 +23,6 @@
 #include <cstdlib>
 #include <cstring>
 
-#if SIZEOF_SIZE_T == SIZEOF_UNSIGNED_INT
-#  define FFTW_MPI_SIZE_T MPI_UNSIGNED
-#elif SIZEOF_SIZE_T == SIZEOF_UNSIGNED_LONG
-#  define FFTW_MPI_SIZE_T MPI_UNSIGNED_LONG
-#elif SIZEOF_SIZE_T == SIZEOF_UNSIGNED_LONG_LONG
-#  define FFTW_MPI_SIZE_T MPI_UNSIGNED_LONG_LONG
-#else
-#  error MPI type for size_t is unknown
-#  define FFTW_MPI_SIZE_T MPI_UNSIGNED_LONG
-#endif
-
 namespace fftwpp {
 
 /* Import wisdom from all processes to process 0, as prelude to
@@ -65,17 +54,16 @@ void mpi_gather_wisdom(const MPI_Comm& comm_)
     if (my_pe == 1) {
       wis = fftw_export_wisdom_to_string();
       wislen = strlen(wis) + 1;
-      MPI_Send(&wislen, 1, FFTW_MPI_SIZE_T, 0, 111, comm);
+      MPI_Send(&wislen, 1, MPI_UNSIGNED_LONG_LONG, 0, 111, comm);
       MPI_Send(wis, wislen, MPI_CHAR, 0, 222, comm);
       fftw_free(wis);
     }
     else /* my_pe == 0 */ {
-      MPI_Recv(&wislen, 1, FFTW_MPI_SIZE_T, 1, 111, comm, &status);
-      wis = new char[wislen];
+      MPI_Recv(&wislen, 1, MPI_UNSIGNED_LONG_LONG, 1, 111, comm, &status);
+      char wis[wislen];
       MPI_Recv(wis, wislen, MPI_CHAR, 1, 222, comm, &status);
       if (!fftw_import_wisdom_from_string(wis))
         MPI_Abort(comm, 1);
-      delete wis;
     }
   }
   MPI_Comm_free(&comm);
@@ -97,17 +85,16 @@ void mpi_broadcast_wisdom(const MPI_Comm& comm_)
   MPI_Comm_rank(comm, &my_pe);
 
   if (my_pe != 0) {
-    MPI_Bcast(&wislen, 1, FFTW_MPI_SIZE_T, 0, comm);
-    wis = new char[wislen];
+    MPI_Bcast(&wislen, 1, MPI_UNSIGNED_LONG_LONG, 0, comm);
+    char wis[wislen];
     MPI_Bcast(wis, wislen, MPI_CHAR, 0, comm);
     if (!fftw_import_wisdom_from_string(wis))
       MPI_Abort(comm, 1);
-    delete wis;
   }
   else /* my_pe == 0 */ {
     wis = fftw_export_wisdom_to_string();
     wislen = strlen(wis) + 1;
-    MPI_Bcast(&wislen, 1, FFTW_MPI_SIZE_T, 0, comm);
+    MPI_Bcast(&wislen, 1, MPI_UNSIGNED_LONG_LONG, 0, comm);
     MPI_Bcast(wis, wislen, MPI_CHAR, 0, comm);
     fftw_free(wis);
   }
