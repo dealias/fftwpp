@@ -63,11 +63,11 @@ public:
   unsigned int x0,y0;   // local starting values
   unsigned int n;       // total required storage (Complex words)
   MPI_Comm communicator;
-  unsigned int M;       // number of Complex words per matrix element 
+  unsigned int Z;       // number of Complex words per matrix element 
   split() {}
   split(unsigned int X, unsigned int Y, MPI_Comm communicator,
-        unsigned int M=1) 
-    : X(X), Y(Y), communicator(communicator), M(M) {
+        unsigned int Z=1) 
+    : X(X), Y(Y), communicator(communicator), Z(Z) {
     int size;
     int rank;
       
@@ -79,7 +79,7 @@ public:
   
     x0=localstart(X,rank,size);
     y0=localstart(Y,rank,size);
-    n=std::max(X*y,x*Y);
+    n=std::max(X*y,x*Y)*Z;
   }
 
   void show() {
@@ -118,7 +118,7 @@ public:
     x0=xy.x0;
     y0=xy.y0;
     z0=yz.y0;
-    n=xy.n=std::max(xy.n,(ceilquotient(xy.n,y)+1)*(yz.n+1));
+    n=xy.n;
     n2=yz.n;
   }
   
@@ -155,7 +155,7 @@ public:
     x0=xy.x0;
     y0=yz.x0;
     z0=yz.y0;
-    n=xy.n=std::max(xy.n,xy.x*yz.n);
+    n=xy.n;
     n2=yz.n;
   }
   
