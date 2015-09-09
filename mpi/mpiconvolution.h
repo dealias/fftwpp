@@ -14,8 +14,6 @@ namespace fftwpp {
 class ImplicitConvolution2MPI : public ImplicitConvolution2 {
 protected:
   split d;
-  fftw_plan intranspose,outtranspose;
-  bool alltoall; // Use experimental nonblocking transpose
   mpitranspose<Complex> *T;
   MPI_Comm global;
 public:  
@@ -23,32 +21,14 @@ public:
   void inittranspose() {
     int size;
     MPI_Comm_size(d.communicator,&size);
-    alltoall=mx % size == 0 && my % size == 0;
 
-    if(alltoall) {
-      T=new mpitranspose<Complex>(mx,d.y,d.x,my,1,u2,d.communicator,global);
-      int rank;
-      MPI_Comm_rank(global,&rank);
-      if(rank == 0) {
-        std::cout << "Using fast alltoall block transpose";
+    T=new mpitranspose<Complex>(mx,d.y,d.x,my,1,u2,d.communicator,global);
+    int rank;
+    MPI_Comm_rank(global,&rank);
+    if(rank == 0) {
 #if MPI_VERSION >= 3
-        std::cout << " (NONBLOCKING MPI 3.0 version)";
+      std::cout << "(NONBLOCKING MPI 3.0 version)" << std::endl;
 #endif
-        std::cout << std::endl;
-      }
-    } else {
-      intranspose=
-        fftw_mpi_plan_many_transpose(my,mx,2,d.block,0,(double*) u2,
-                                     (double*) u2,d.communicator,
-                                     FFTW_MPI_TRANSPOSED_IN);
-      if(!intranspose) transposeError("in2");
-
-      outtranspose=
-        fftw_mpi_plan_many_transpose(mx,my,2,0,d.block,(double*) u2,
-                                     (double*) u2,d.communicator,
-                                     FFTW_MPI_TRANSPOSED_OUT);
-      if(!outtranspose) transposeError("out2");
-      MPISaveWisdom(d.communicator);
     }
   }
 
@@ -76,12 +56,7 @@ public:
     inittranspose();
   }
   
-  virtual ~ImplicitConvolution2MPI() {
-    if(!alltoall) {
-      fftw_destroy_plan(outtranspose);
-      fftw_destroy_plan(intranspose);
-    }
-  }
+  virtual ~ImplicitConvolution2MPI() {}
   
   void transpose(fftw_plan plan, unsigned int A, Complex **F,
                  unsigned int offset=0) {
@@ -195,39 +170,20 @@ class ImplicitConvolution3MPI : public ImplicitConvolution3 {
 protected:
   splityz d;
   fftw_plan intranspose,outtranspose;
-  bool alltoall; // Use experimental nonblocking transpose
   mpitranspose<Complex> *T;
 public:  
   void inittranspose() {
     int size;
     MPI_Comm_size(d.xy.communicator,&size);
-    alltoall=mx % size == 0 && my % size == 0;
-    alltoall=false;
 
-    if(alltoall) {
-      T=new mpitranspose<Complex>(mx,d.y,d.x,my,d.z,u3,d.xy.communicator,
-                                  d.communicator);
-      int rank;
-      MPI_Comm_rank(d.communicator,&rank);
-      if(rank == 0) {
-        std::cout << "Using fast alltoall 3D block transpose";
+    T=new mpitranspose<Complex>(mx,d.y,d.x,my,d.z,u3,d.xy.communicator,
+                                d.communicator);
+    int rank;
+    MPI_Comm_rank(d.communicator,&rank);
+    if(rank == 0) {
 #if MPI_VERSION >= 3
-        std::cout << " (NONBLOCKING MPI 3.0 version)";
+      std::cout << "(NONBLOCKING MPI 3.0 version)" << std::endl;
 #endif
-        std::cout << std::endl;        
-      }
-    } else {
-      intranspose=
-        fftw_mpi_plan_many_transpose(my,mx,2*d.z,d.yblock,0,
-                                     (double*) u3,(double*) u3,
-                                     d.xy.communicator,FFTW_MPI_TRANSPOSED_IN);
-      if(!intranspose) transposeError("in3");
-      outtranspose=
-        fftw_mpi_plan_many_transpose(mx,my,2*d.z,0,d.yblock,
-                                     (double*) u3,(double*) u3,
-                                     d.xy.communicator,FFTW_MPI_TRANSPOSED_OUT);
-      if(!outtranspose) transposeError("out3");
-      MPISaveWisdom(d.xy.communicator);
     }
   }
 
@@ -268,12 +224,7 @@ public:
     initMPI();
   }
   
-  virtual ~ImplicitConvolution3MPI() {
-    if(!alltoall) {
-      fftw_destroy_plan(intranspose);
-      fftw_destroy_plan(outtranspose);
-    }
-  }
+  virtual ~ImplicitConvolution3MPI() {}
   
   void transpose(fftw_plan plan, unsigned int A, Complex **F,
                  unsigned int offset=0) {
