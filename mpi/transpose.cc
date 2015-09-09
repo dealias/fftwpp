@@ -173,7 +173,7 @@ int transpose(int rank, int size, int N)
   
   unsigned int xsize=localsize(X,size);
   unsigned int ysize=localsize(Y,size);
-  size=min(xsize,ysize);
+  size=std::min(xsize,ysize);
   
   unsigned int x=localdimension(X,rank,size);
   unsigned int y=localdimension(Y,rank,size);

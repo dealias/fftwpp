@@ -7,9 +7,6 @@
 
 namespace fftwpp {
 
-// defined in fftw++.cc
-extern bool mpi;
-
 void MPILoadWisdom(const MPI_Comm& active);
 void MPISaveWisdom(const MPI_Comm& active);
 
@@ -17,7 +14,7 @@ void MPISaveWisdom(const MPI_Comm& active);
 class MPIgroup {
 public:  
   int rank,size;
-  unsigned int block,block2;
+  unsigned int block,block2; // TODO: Remove? ***********
   MPI_Comm active;                     // active communicator 
   MPI_Comm communicator,communicator2; // 3D transpose communicators
   
@@ -28,7 +25,6 @@ public:
   
   void activate(const MPI_Comm& comm) {
     MPI_Comm_split(comm,rank < size,0,&active);
-    fftw::mpi=true;
   }
   
   MPIgroup(const MPI_Comm& comm, unsigned int x) {
@@ -68,36 +64,30 @@ int hash(Complex *f, unsigned int nx, unsigned int ny, unsigned int nz,
 // distributing the y index among multiple MPI processes and transposing.
 //            local matrix is nx X   y
 // local transposed matrix is  x X  ny
-class splity {
+class split {
 public:
-  unsigned int nx,ny;    // matrix splity
-  unsigned int x,y;      // local splity
-  unsigned int x0,y0;    // local starting values
-  unsigned int n;     // total required storage (Complex words)
+  unsigned int nx,ny;   // matrix dimensions
+  unsigned int x,y;     // local dimensions
+  unsigned int x0,y0;   // local starting values
+  unsigned int n;       // total required storage (Complex words)
   MPI_Comm communicator;
-  unsigned int block; // requested block size
-  unsigned int M;     // number of Complex words per matrix element 
-  splity() {}
-  splity(unsigned int nx, unsigned int ny, MPI_Comm communicator,
-         unsigned int Block=0, unsigned int M=1) 
-    : nx(nx), ny(ny), communicator(communicator), block(Block), M(M) {
-    if(block == 0) {
-      int size;
-      MPI_Comm_size(communicator,&size);
-      block=ceilquotient(ny,size);
-    }
+  unsigned int M;       // number of Complex words per matrix element 
+  split() {}
+  split(unsigned int nx, unsigned int ny, MPI_Comm communicator,
+        unsigned int M=1) 
+    : nx(nx), ny(ny), communicator(communicator), M(M) {
+    int size;
+    int rank;
+      
+    MPI_Comm_rank(communicator,&rank);
+    MPI_Comm_size(communicator,&size);
     
-    ptrdiff_t N[2]={ny,nx};
-    ptrdiff_t local0,local1;
-    ptrdiff_t start0,start1;
-    n=fftw_mpi_local_size_many_transposed(2,N,2*M,block,0,
-                                          communicator,&local0,
-                                          &start0,&local1,&start1)*
-      sizeof(double)/sizeof(Complex);
-    x=local1;
-    y=local0;
-    x0=start1;
-    y0=start0;
+    x=localdimension(nx,rank,size);
+    y=localdimension(ny,rank,size);
+  
+    x0=localstart(nx,rank,size);
+    y0=localstart(ny,rank,size);
+    n=std::max(nx*y,x*ny);
   }
 
   void show() {
@@ -105,52 +95,6 @@ public:
     std::cout << "x=" << x << "\ty="<<y << std::endl;
     std::cout << "x0=" << x0 << "\ty0="<< y0 << std::endl;
     std::cout << "n=" << n << std::endl;
-    std::cout << "block=" << block << std::endl;
-  }
-};
-
-// Class to compute the local array splity and storage requirements for
-// distributing the x index among multiple MPI processes and transposing.
-//            local matrix is  x X ny
-// local transposed matrix is nx X  y
-class splitx {
-public:
-  unsigned int nx,ny;    // matrix splity
-  unsigned int x,y;      // local splity
-  unsigned int x0,y0;    // local starting values
-  unsigned int n;     // total required storage (Complex words)
-  MPI_Comm communicator;
-  unsigned int block; // requested block size
-  unsigned int M;     // number of Complex words per matrix element
-  splitx() {}
-  splitx(unsigned int nx, unsigned int ny, MPI_Comm communicator,
-         unsigned int Block=0, unsigned int M=1) 
-    : nx(nx), ny(ny), communicator(communicator), block(Block), M(M) {
-    if(block == 0) {
-      int size;
-      MPI_Comm_size(communicator,&size);
-      block=ceilquotient(nx,size);
-    }
-    
-    ptrdiff_t N[2]={nx,ny};
-    ptrdiff_t local0,local1;
-    ptrdiff_t start0,start1;
-    n=fftw_mpi_local_size_many_transposed(2,N,2*M,block,0,
-                                          communicator,&local0,
-                                          &start0,&local1,&start1)*
-      sizeof(double)/sizeof(Complex);
-    x=local0;
-    y=local1;
-    x0=start0;
-    y0=start1;
-  }
-
-  void show() {
-    std::cout << "nx=" << nx << "\tny="<<ny << std::endl;
-    std::cout << "x=" << x << "\ty="<<y << std::endl;
-    std::cout << "x0=" << x0 << "\ty0="<< y0 << std::endl;
-    std::cout << "n=" << n << std::endl;
-    std::cout << "block=" << block << std::endl;
   }
 };
 
@@ -164,7 +108,7 @@ public:
   unsigned int nx,ny,nz;
   unsigned int x,y,z;
   unsigned int x0,y0,z0;
-  splity xy,yz;
+  split xy,yz;
   MPI_Comm communicator;
   unsigned int yblock,zblock; // requested block size
   MPI_Comm *XYplane;          // Used by HermitianSymmetrizeXYMPI
@@ -176,8 +120,8 @@ public:
                                        yblock(group.block),
                                        zblock(group.block2), XYplane(NULL) {
     if(Ny == 0) Ny=ny;
-    xy=splity(nx,ny,group.communicator,yblock,zblock);
-    yz=splity(Ny,nz,group.communicator2,zblock);
+    xy=split(nx,ny,group.communicator,zblock);
+    yz=split(Ny,nz,group.communicator2);
     x=xy.x;
     y=xy.y;
     z=yz.y;
@@ -208,7 +152,7 @@ public:
   unsigned int nx,ny,nz;
   unsigned int x,y,z;
   unsigned int x0,y0,z0;
-  splitx yz,xy;
+  split yz,xy;
   MPI_Comm communicator;
   unsigned int xblock,yblock; // requested block size
   splitxy() {}
@@ -217,8 +161,8 @@ public:
                                        communicator(group.active),
                                        xblock(group.block),
                                        yblock(group.block2) {
-    xy=splitx(nx,ny,group.communicator,xblock,yblock);
-    yz=splitx(ny,nz,group.communicator2,yblock);
+    xy=split(nx,ny,group.communicator,yblock);
+    yz=split(ny,nz,group.communicator2);
     x=xy.x;
     y=yz.x;
     z=yz.y;
@@ -245,7 +189,7 @@ public:
 //
 // Example:
 // MPIgroup group(MPI_COMM_WORLD,mx);
-// splitx d(mx,my,group.active,group.block);
+// split d(mx,my,group.active);
 // Complex *f=ComplexAlign(d.n);
 // fft2dMPI fft(d,f);
 // fft.Forwards(f);
@@ -255,43 +199,20 @@ public:
 
 class fft2dMPI {
  private:
-  splitx d;
+  split d;
   mfft1d *xForwards,*xBackwards;
   mfft1d *yForwards,*yBackwards;
   Complex *f;
-  fftw_plan intranspose,outtranspose;
   bool tranfftwpp;
   mpitranspose<Complex> *T;
  public:
   void inittranspose(Complex* f) {
     int size;
     MPI_Comm_size(d.communicator,&size);
-    tranfftwpp=T->divisible(size,d.nx,d.ny);
-
-    if(tranfftwpp) {
-      T=new mpitranspose<Complex>(d.nx,d.y,d.x,d.ny,1,f,d.communicator);
-    } else {
-      MPILoadWisdom(d.communicator);
-      intranspose=
-	fftw_mpi_plan_many_transpose(d.ny,d.nx,2,
-				     0,d.block,
-				     (double*) f,(double*) f,
-				     d.communicator,
-				     FFTW_MPI_TRANSPOSED_IN);
-      if(!intranspose) transposeError("in");
-
-      outtranspose=
-	fftw_mpi_plan_many_transpose(d.ny,d.nx,2,
-				     0,d.block,
-				     (double*) f,(double*) f,
-				     d.communicator,
-				     FFTW_MPI_TRANSPOSED_OUT);
-      if(!outtranspose) transposeError("out");
-
-    }
+    T=new mpitranspose<Complex>(d.nx,d.y,d.x,d.ny,1,f,d.communicator);
   }
   
- fft2dMPI(const splitx& d, Complex *f) : d(d) {
+ fft2dMPI(const split& d, Complex *f) : d(d) {
     inittranspose(f);
 
     xForwards=new mfft1d(d.nx,-1,d.y,d.y,1,f,f); 
@@ -306,11 +227,6 @@ class fft2dMPI {
     delete yForwards;
     delete xBackwards;
     delete xForwards;
-    
-    if(!tranfftwpp) {
-      fftw_destroy_plan(intranspose);
-      fftw_destroy_plan(outtranspose);
-    }
   }
 
   void Forwards(Complex *f);
@@ -413,8 +329,6 @@ class rcfft2dMPI {
   Complex *f;
   bool inplace;
   unsigned int rdist;
-  bool tranfftwpp;
-  fftw_plan intranspose,outtranspose;
  protected:
   mpitranspose<Complex> *T;
  public:
@@ -422,29 +336,7 @@ class rcfft2dMPI {
     int size;
     MPI_Comm_size(dc.communicator,&size);
 
-    tranfftwpp=T->divisible(size,dc.nx,dc.ny);
-
-    if(tranfftwpp) {
-      T=new mpitranspose<Complex>(dc.nx,dc.y,dc.x,dc.ny,1,out,dc.communicator);
-    } else {
-      fftw_mpi_init();
-      MPILoadWisdom(dc.communicator);
-      intranspose=
-      	fftw_mpi_plan_many_transpose(dc.nx,dc.ny,2,
-      				     0,dc.block,
-      				     (double*) out,(double*) out,
-      				     dc.communicator,
-      				     FFTW_MPI_TRANSPOSED_OUT);
-      if(!intranspose) transposeError("in");
-
-      outtranspose=
-      	fftw_mpi_plan_many_transpose(dc.ny,dc.nx,2,
-      				     dc.block,0,
-      				     (double*) out,(double*) out,
-      				     dc.communicator,
-      				     FFTW_MPI_TRANSPOSED_IN);
-      if(!outtranspose) transposeError("out");
-    }
+    T=new mpitranspose<Complex>(dc.nx,dc.y,dc.x,dc.ny,1,out,dc.communicator);
   }
   
  rcfft2dMPI(const splity& dr, const splity& dc,
@@ -461,12 +353,7 @@ class rcfft2dMPI {
     yBackwards=new mcrfft1d(dr.ny,dc.x,1,dc.ny,g,f);
   }
   
-  virtual ~rcfft2dMPI() {
-    if(!tranfftwpp) {
-      fftw_destroy_plan(intranspose);
-      fftw_destroy_plan(outtranspose);
-    }
-  }
+  virtual ~rcfft2dMPI() {}
 
   void Forwards(double *f, Complex * g);
   void Forwards0(double *f, Complex * g);

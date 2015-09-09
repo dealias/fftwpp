@@ -13,51 +13,21 @@ namespace fftwpp {
 // In-place implicitly dealiased 2D complex convolution.
 class ImplicitConvolution2MPI : public ImplicitConvolution2 {
 protected:
-  splity d;
-  fftw_plan intranspose,outtranspose;
-  bool alltoall; // Use experimental nonblocking transpose
+  split d;
   mpitranspose<Complex> *T;
   MPI_Comm global;
 public:  
   
   void inittranspose() {
-    int size;
-    MPI_Comm_size(d.communicator,&size);
-    alltoall=mx % size == 0 && my % size == 0;
-
-    if(alltoall) {
-      T=new mpitranspose<Complex>(mx,d.y,d.x,my,1,u2,d.communicator,global);
-      int rank;
-      MPI_Comm_rank(global,&rank);
-      if(rank == 0) {
-        std::cout << "Using fast alltoall block transpose";
-#if MPI_VERSION >= 3
-        std::cout << " (NONBLOCKING MPI 3.0 version)";
-#endif
-        std::cout << std::endl;
-      }
-    } else {
-      intranspose=
-        fftw_mpi_plan_many_transpose(my,mx,2,d.block,0,(double*) u2,
-                                     (double*) u2,d.communicator,
-                                     FFTW_MPI_TRANSPOSED_IN);
-      if(!intranspose) transposeError("in2");
-
-      outtranspose=
-        fftw_mpi_plan_many_transpose(mx,my,2,0,d.block,(double*) u2,
-                                     (double*) u2,d.communicator,
-                                     FFTW_MPI_TRANSPOSED_OUT);
-      if(!outtranspose) transposeError("out2");
-      MPISaveWisdom(d.communicator);
-    }
+    T=new mpitranspose<Complex>(d.nx,d.y,d.x,d.ny,1,u2,d.communicator,global);
   }
 
   // u1 is a temporary array of size my*A*threads.
-  // u2 is a temporary array of size splity(mx,my).n*A.
+  // u2 is a temporary array of size split(mx,my).n*A.
   // A is the number of inputs.
   // B is the number of outputs.
   // threads is the number of threads to use in the outer subconvolution loop.
-  ImplicitConvolution2MPI(unsigned int mx, unsigned int my, const splity& d,
+  ImplicitConvolution2MPI(unsigned int mx, unsigned int my, const split& d,
                           Complex *u1, Complex *u2, 
                           unsigned int A=2, unsigned int B=1,
                           unsigned int threads=fftw::maxthreads,
@@ -67,7 +37,7 @@ public:
     inittranspose();
   }
   
-  ImplicitConvolution2MPI(unsigned int mx, unsigned int my, const splity& d,
+  ImplicitConvolution2MPI(unsigned int mx, unsigned int my, const split& d,
                           unsigned int A=2, unsigned int B=1,
                           unsigned int threads=fftw::maxthreads,
                           MPI_Comm global=0) :
@@ -76,12 +46,7 @@ public:
     inittranspose();
   }
   
-  virtual ~ImplicitConvolution2MPI() {
-    if(!alltoall) {
-      fftw_destroy_plan(outtranspose);
-      fftw_destroy_plan(intranspose);
-    }
-  }
+  virtual ~ImplicitConvolution2MPI() {}
   
   void transpose(fftw_plan plan, unsigned int A, Complex **F,
                  unsigned int offset=0) {
@@ -105,34 +70,25 @@ public:
 // In-place implicitly dealiased 2D Hermitian convolution.
 class ImplicitHConvolution2MPI : public ImplicitHConvolution2 {
 protected:
-  splity d,du;
-  fftw_plan intranspose,outtranspose;
-  fftw_plan uintranspose,uouttranspose;
+  split d,du;
+  mpitranspose<double> *T,*U;
+  MPI_Comm global;
 public:  
   
+  
   void inittranspose(Complex *f) {
-    unsigned int nx=2*mx-compact;
-    unsigned int mx1=mx+compact;
-    unsigned int ny=my+!compact;
-    intranspose=
-      fftw_mpi_plan_many_transpose(ny,nx,2,d.block,0,(double*) f,(double*) f,
-                                   d.communicator,FFTW_MPI_TRANSPOSED_IN);
-    if(!intranspose) transposeError("inH2");
-    uintranspose=
-      fftw_mpi_plan_many_transpose(ny,mx1,2,du.block,0,(double*) u2,
-                                   (double*) u2,du.communicator,
-                                   FFTW_MPI_TRANSPOSED_IN);
-    if(!uintranspose) transposeError("uinH2");
-    outtranspose=
-      fftw_mpi_plan_many_transpose(nx,ny,2,0,d.block,(double*) f,(double*) f,
-                                   d.communicator,FFTW_MPI_TRANSPOSED_OUT);
-    if(!outtranspose) transposeError("outH2");
-    uouttranspose=
-      fftw_mpi_plan_many_transpose(mx1,ny,2,0,du.block,(double*) u2,
-                                   (double*) u2,du.communicator,
-                                   FFTW_MPI_TRANSPOSED_OUT);
-    if(!uouttranspose) transposeError("uoutH2");
-    MPISaveWisdom(d.communicator);
+    T=new mpitranspose<double>(d.nx,d.y,d.x,d.ny,2,(double *) f,NULL,
+                               mpioptions(1,1,1),d.communicator,global);
+    U=new mpitranspose<double>(du.nx,du.y,du.x,du.ny,2,(double *)u2,NULL,
+                               mpioptions(1,1,1),du.communicator,global);
+  }    
+  
+  void transpose(mpitranspose<double> *T, unsigned int A, Complex **F,
+                 bool inflag, bool outflag, unsigned int offset=0) {
+    for(unsigned int a=0; a < A; ++a) {
+      double *f=(double *) (F[a]+offset);
+      T->transpose(f,inflag,outflag);
+    }
   }
   
   // u1 is a temporary array of size (my/2+1)*A*threads.
@@ -142,42 +98,31 @@ public:
   // threads is the number of threads to use in the outer subconvolution loop.
   // f is a temporary array of size d.n needed only during construction.
   ImplicitHConvolution2MPI(unsigned int mx, unsigned int my,
-                           const splity& d, const splity& du,
+                           const split& d, const split& du,
                            Complex *f, Complex *u1, Complex *u2,
                            unsigned int A=2, unsigned int B=1,
                            bool compact=true,
-                           unsigned int threads=fftw::maxthreads) :
+                           unsigned int threads=fftw::maxthreads,
+                          MPI_Comm global=0) :
     ImplicitHConvolution2(mx,my,u1,u2,A,B,compact,threads,d.x,d.y,du.n),
-    d(d), du(du) {
+    d(d), du(du), global(global ? global : d.communicator) {
     inittranspose(f);
   }
   
   ImplicitHConvolution2MPI(unsigned int mx, unsigned int my,
-                           const splity& d, const splity& du,
+                           const split& d, const split& du,
                            Complex *f,
                            unsigned int A=2, unsigned int B=1,
                            bool compact=true,
-                           unsigned int threads=fftw::maxthreads) :
+                           unsigned int threads=fftw::maxthreads,
+                           MPI_Comm global=0) :
     ImplicitHConvolution2(mx,my,A,B,compact,threads,d.x,d.y,du.n), d(d),
-    du(du) {
+    du(du), global(global ? global : d.communicator) {
     inittranspose(f);
   }
   
-  virtual ~ImplicitHConvolution2MPI() {
-    fftw_destroy_plan(uouttranspose);
-    fftw_destroy_plan(outtranspose);
-    fftw_destroy_plan(uintranspose);
-    fftw_destroy_plan(intranspose);
-  }
+  virtual ~ImplicitHConvolution2MPI() {}
 
-  void transpose(fftw_plan plan, unsigned int A, Complex **F,
-                 unsigned int offset=0) {
-    for(unsigned int a=0; a < A; ++a) {
-      double *f=(double *) (F[a]+offset);
-      fftw_mpi_execute_r2r(plan,f,f);
-    }
-  }
-  
   // F is a pointer to A distinct data blocks each of size 
   // (2mx-compact)*d.y, shifted by offset (contents not preserved).
   void convolve(Complex **F, realmultiplier *pmult,
@@ -195,40 +140,11 @@ class ImplicitConvolution3MPI : public ImplicitConvolution3 {
 protected:
   splityz d;
   fftw_plan intranspose,outtranspose;
-  bool alltoall; // Use experimental nonblocking transpose
   mpitranspose<Complex> *T;
 public:  
   void inittranspose() {
-    int size;
-    MPI_Comm_size(d.xy.communicator,&size);
-    alltoall=mx % size == 0 && my % size == 0;
-    alltoall=false;
-
-    if(alltoall) {
-      T=new mpitranspose<Complex>(mx,d.y,d.x,my,d.z,u3,d.xy.communicator,
-                                  d.communicator);
-      int rank;
-      MPI_Comm_rank(d.communicator,&rank);
-      if(rank == 0) {
-        std::cout << "Using fast alltoall 3D block transpose";
-#if MPI_VERSION >= 3
-        std::cout << " (NONBLOCKING MPI 3.0 version)";
-#endif
-        std::cout << std::endl;        
-      }
-    } else {
-      intranspose=
-        fftw_mpi_plan_many_transpose(my,mx,2*d.z,d.yblock,0,
-                                     (double*) u3,(double*) u3,
-                                     d.xy.communicator,FFTW_MPI_TRANSPOSED_IN);
-      if(!intranspose) transposeError("in3");
-      outtranspose=
-        fftw_mpi_plan_many_transpose(mx,my,2*d.z,0,d.yblock,
-                                     (double*) u3,(double*) u3,
-                                     d.xy.communicator,FFTW_MPI_TRANSPOSED_OUT);
-      if(!outtranspose) transposeError("out3");
-      MPISaveWisdom(d.xy.communicator);
-    }
+    T=new mpitranspose<Complex>(mx,d.y,d.x,my,d.z,u3,d.xy.communicator,
+                                d.communicator);
   }
 
   void initMPI() {
@@ -268,12 +184,7 @@ public:
     initMPI();
   }
   
-  virtual ~ImplicitConvolution3MPI() {
-    if(!alltoall) {
-      fftw_destroy_plan(intranspose);
-      fftw_destroy_plan(outtranspose);
-    }
-  }
+  virtual ~ImplicitConvolution3MPI() {}
   
   void transpose(fftw_plan plan, unsigned int A, Complex **F,
                  unsigned int offset=0) {

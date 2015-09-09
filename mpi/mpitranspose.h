@@ -528,10 +528,10 @@ public:
       delete Tin1;
       delete Tout1;
     } else {
-      delete sendcounts;
-      delete senddisplacements;
-      delete recvcounts;
-      delete recvdisplacements;
+      delete [] sendcounts;
+      delete [] senddisplacements;
+      delete [] recvcounts;
+      delete [] recvdisplacements;
     }
   }
   
@@ -588,7 +588,7 @@ public:
         unsigned int ostride=last*block+lastblock;
 
         for(unsigned int j=0; j < cols; ++j) {
-          Complex *dest=data+j*ostride;
+          T *dest=data+j*ostride;
           copytoblock(work+j*block,dest,last,block,istride);
           copy(work+j*lastblock+last*istride,dest+last*block,lastblock);
         }
@@ -641,7 +641,7 @@ public:
       unsigned int ostride=last*block+lastblock;
 
       for(unsigned int j=0; j < cols; ++j) {
-        Complex *dest=data+j*ostride;
+        T *dest=data+j*ostride;
         copytoblock(work+j*block,dest,last,block,istride);
         copy(work+j*lastblock+last*istride,dest+last*block,lastblock);
       }
@@ -666,7 +666,7 @@ public:
       unsigned int ostride=last*block+lastblock;
 
       for(unsigned int j=0; j < cols; ++j) {
-        Complex *src=data+j*ostride;
+        T *src=data+j*ostride;
         copyfromblock(src,work+j*block,last,block,istride);
         copy(src+last*block,work+j*lastblock+last*istride,lastblock);
       }
@@ -708,7 +708,7 @@ public:
       unsigned int ostride=last*block+lastblock;
 
       for(unsigned int j=0; j < cols; ++j) {
-        Complex *src=data+j*ostride;
+        T *src=data+j*ostride;
         copyfromblock(src,work+j*block,last,block,istride);
         copy(src+last*block,work+j*lastblock+last*istride,lastblock);
       }

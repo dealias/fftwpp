@@ -240,7 +240,6 @@ public:
   static unsigned int maxthreads;
   static double testseconds;
   static const char *WisdomName;
-  static bool mpi; // TODO: Remove when FFTW transpose routines are replaced
   
   virtual unsigned int Threads() {return threads;}
   
@@ -342,9 +341,6 @@ public:
        unsigned int n=0) :
     doubles(doubles), sign(sign), threads(threads), 
     norm(1.0/(n ? n : doubles/2)), plan(NULL) {
-#ifndef FFTWPP_SINGLE_THREAD
-    if(!mpi) fftw_init_threads();
-#endif      
   }
   
   virtual ~fftw() {

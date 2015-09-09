@@ -93,7 +93,7 @@ int main(int argc, char* argv[])
   if(group.rank < group.size) { 
     bool main=group.rank == 0;
 
-    splitx d(mx, my, group. active, group.block);
+    split d(mx, my, group. active);
     
     Complex *f = ComplexAlign(d.n * mz);
 
