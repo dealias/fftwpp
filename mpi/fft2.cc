@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
       cout << "mx=" << mx << ", my=" << my << endl;
     } 
 
-    split d(mx,my,group.active,group.block);
+    split d(mx,my,group.active);
   
     for(int i=0; i < group.size; ++i) {
       if(i == group.rank) {

@@ -4,7 +4,7 @@
 namespace fftwpp {
 
 double safetyfactor=2.0;
-bool overlap=false; // *** TEMP
+bool overlap=true;
 
 /* Given a process which_pe and a number of processes npes, fills
    the array sched[npes] with a sequence of processes to communicate

@@ -5,7 +5,7 @@ namespace fftwpp {
 void ImplicitConvolution2MPI::convolve(Complex **F, multiplier *pmult,
                                        unsigned int offset)
 {
-  unsigned int size=d.x*my;
+  unsigned int size=d.x*d.ny;
 
   for(unsigned int a=0; a < A; ++a) {
     Complex *f=F[a]+offset;
@@ -47,18 +47,16 @@ void ImplicitHConvolution2MPI::convolve(Complex **F, realmultiplier *pmult,
     
   backwards(F,U2,d.y,symmetrize,offset);
     
-  transpose(intranspose,A,F,offset);
-  transpose(uintranspose,A,U2);
+  transpose(T,A,F,false,true,offset);
+  transpose(U,A,U2,false,true);
     
-  unsigned int ny=my+!compact;
-  subconvolution(F,pmult,offset,d.x*ny+offset,ny);
-  subconvolution(U2,pmult,0,du.x*ny,ny);
+  subconvolution(F,pmult,offset,d.x*d.ny+offset,d.ny);
+  subconvolution(U2,pmult,0,du.x*du.ny,du.ny);
     
-  transpose(outtranspose,B,F,offset);
-  transpose(uouttranspose,B,U2);
-    
+  transpose(T,B,F,true,false,offset);
+  transpose(U,B,U2,true,false);
+   
   forwards(F,U2,offset);
-    
 }
 
 void ImplicitConvolution3MPI::convolve(Complex **F, multiplier *pmult,

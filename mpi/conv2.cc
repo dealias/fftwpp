@@ -143,8 +143,8 @@ int main(int argc, char* argv[])
       cout << "mx=" << mx << ", my=" << my << endl;
     }
     
-    split d(nx,ny,group.active,group.block);
-    split du(mx+compact,ny,group.active,group.block);
+    split d(nx,ny,group.active);
+    split du(mx+compact,ny,group.active);
   
     unsigned int Mn=M*d.n;
   

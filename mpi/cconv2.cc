@@ -134,7 +134,7 @@ int main(int argc, char* argv[])
       cout << "mx=" << mx << ", my=" << my << endl;
     } 
 
-    split d(mx,my,group.active,group.block);
+    split d(mx,my,group.active);
   
     unsigned int Mn=M*d.n;
   
