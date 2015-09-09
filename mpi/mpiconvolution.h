@@ -184,14 +184,6 @@ public:
     delete T;
   }
   
-  void transpose(fftw_plan plan, unsigned int A, Complex **F,
-                 unsigned int offset=0) {
-    for(unsigned int a=0; a < A; ++a) {
-      double *f=(double *) (F[a]+offset);
-      fftw_mpi_execute_r2r(plan,f,f);
-    }
-  }
-  
   // F is a pointer to A distinct data blocks each of size
   // 2mx*2d.y*d.z, shifted by offset (contents not preserved).
   void convolve(Complex **F, multiplier *pmult, unsigned int offset=0);

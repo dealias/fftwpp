@@ -117,7 +117,6 @@ void rcfft2dMPI::Backwards(Complex *g, double *f)
 {
   xBackwards->fft(g);
   T->transpose(g,true,false);
-  fftw_mpi_execute_r2r(outtranspose,(double *)g,(double *)g);
   yBackwards->fft(g,f);
 }
 

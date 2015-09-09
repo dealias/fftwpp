@@ -14,7 +14,7 @@ void MPISaveWisdom(const MPI_Comm& active);
 class MPIgroup {
 public:  
   int rank,size;
-  unsigned int block,block2;
+  unsigned int block;
   MPI_Comm active;                     // active communicator 
   MPI_Comm communicator,communicator2; // 3D transpose communicators
   
@@ -29,17 +29,17 @@ public:
   
   MPIgroup(const MPI_Comm& comm, unsigned int x) {
     init(comm);
-    block=ceilquotient(x,size);
-    size=ceilquotient(x,block);
+    unsigned int xblock=ceilquotient(x,size);
+    size=ceilquotient(x,xblock);
     activate(comm);
   }
   
   MPIgroup(const MPI_Comm& comm, unsigned int x, unsigned int y, 
 	   bool allowPencil=true) {
     init(comm);
-    block=ceilquotient(x,size);
-    block2=allowPencil ? ceilquotient(y,size*block/x) : y;
-    size=ceilquotient(x,block)*ceilquotient(y,block2);
+    unsigned int xblock=ceilquotient(x,size);
+    block=allowPencil ? ceilquotient(y,size*xblock/x) : y;
+    size=ceilquotient(x,xblock)*ceilquotient(y,block);
     activate(comm);
     if(rank < size) {
       int major=ceilquotient(size,x);
@@ -118,7 +118,7 @@ public:
     nx(nx), ny(ny), nz(nz), communicator(group.active),
     XYplane(NULL) {
     if(Ny == 0) Ny=ny;
-    xy=split(nx,ny,group.communicator,group.block2);
+    xy=split(nx,ny,group.communicator,group.block);
     yz=split(Ny,nz,group.communicator2);
     x=xy.x;
     y=xy.y;
@@ -155,7 +155,7 @@ public:
   splitxy(unsigned int nx, unsigned int ny, unsigned int nz,
           const MPIgroup& group) : nx(nx), ny(ny), nz(nz),
                                    communicator(group.active) {
-    xy=split(nx,ny,group.communicator,group.block2);
+    xy=split(nx,ny,group.communicator,group.block);
     yz=split(ny,nz,group.communicator2);
     x=xy.x;
     y=yz.x;

@@ -341,6 +341,9 @@ public:
        unsigned int n=0) :
     doubles(doubles), sign(sign), threads(threads), 
     norm(1.0/(n ? n : doubles/2)), plan(NULL) {
+#ifndef FFTWPP_SINGLE_THREAD
+    fftw_init_threads();
+#endif      
   }
   
   virtual ~fftw() {

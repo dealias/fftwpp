@@ -64,6 +64,8 @@ void fftwTranspose(int rank, int size)
   ptrdiff_t x,xstart;
   ptrdiff_t y,ystart;
   
+  fftw_mpi_init();
+  
   /* get local data size and allocate */
   ptrdiff_t NN[2]={Y,X};
   unsigned int block=ceilquotient(Y,size);
@@ -427,8 +429,6 @@ int main(int argc, char **argv)
     cout << "size=" << size << endl;
     cout << "threads=" << fftw::maxthreads << endl;
   }
-  
-  fftw_mpi_init();
   
   if(test) N=1;
   else if(N == 0) {

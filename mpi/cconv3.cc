@@ -124,12 +124,8 @@ int main(int argc, char* argv[])
   MPIgroup group(MPI_COMM_WORLD,my,mz);
   MPILoadWisdom(group.active);
   
-  if(group.size > 1 && provided < MPI_THREAD_FUNNELED) {
+  if(group.size > 1 && provided < MPI_THREAD_FUNNELED);
     fftw::maxthreads=1;
-  } else {
-    fftw_init_threads();
-    fftw_mpi_init();
-  }
   
   if(group.rank == 0) {
     cout << "provided: " << provided << endl;
@@ -146,8 +142,6 @@ int main(int argc, char* argv[])
       cout << "N=" << N << endl;
       cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
       cout << "size=" << group.size << endl;
-      cout << "yblock=" << group.block << endl;
-      cout << "zblock=" << group.block2 << endl;
     }
   
     splityz d(mx,my,mz,group);
