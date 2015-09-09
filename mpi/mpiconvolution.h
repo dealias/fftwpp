@@ -214,9 +214,9 @@ public:
   void inittranspose(Complex *f) {
     if(d.y < d.Y) {
       T=new mpitranspose<double>(d.X,d.y,d.x,d.Y,2*d.z,(double *) f,NULL,
-                                 mpioptions(1,1,1),d.xy.communicator,global);
-      U=new mpitranspose<double>(du.X,du.y,du.x,du.Y,2*d.z,(double *)u2,NULL,
-                                 mpioptions(1,1,1),du.xy.communicator,global);
+                                 d.xy.communicator,global);
+      U=new mpitranspose<double>(du.X,du.y,du.x,du.Y,2*d.z,(double *) u2,NULL,
+                                 du.xy.communicator,global);
     }
   }
 
