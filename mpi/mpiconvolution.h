@@ -13,7 +13,7 @@ namespace fftwpp {
 // In-place implicitly dealiased 2D complex convolution.
 class ImplicitConvolution2MPI : public ImplicitConvolution2 {
 protected:
-  splity d;
+  split d;
   fftw_plan intranspose,outtranspose;
   bool alltoall; // Use experimental nonblocking transpose
   mpitranspose<Complex> *T;
@@ -53,11 +53,11 @@ public:
   }
 
   // u1 is a temporary array of size my*A*threads.
-  // u2 is a temporary array of size splity(mx,my).n*A.
+  // u2 is a temporary array of size split(mx,my).n*A.
   // A is the number of inputs.
   // B is the number of outputs.
   // threads is the number of threads to use in the outer subconvolution loop.
-  ImplicitConvolution2MPI(unsigned int mx, unsigned int my, const splity& d,
+  ImplicitConvolution2MPI(unsigned int mx, unsigned int my, const split& d,
                           Complex *u1, Complex *u2, 
                           unsigned int A=2, unsigned int B=1,
                           unsigned int threads=fftw::maxthreads,
@@ -67,7 +67,7 @@ public:
     inittranspose();
   }
   
-  ImplicitConvolution2MPI(unsigned int mx, unsigned int my, const splity& d,
+  ImplicitConvolution2MPI(unsigned int mx, unsigned int my, const split& d,
                           unsigned int A=2, unsigned int B=1,
                           unsigned int threads=fftw::maxthreads,
                           MPI_Comm global=0) :
@@ -105,7 +105,7 @@ public:
 // In-place implicitly dealiased 2D Hermitian convolution.
 class ImplicitHConvolution2MPI : public ImplicitHConvolution2 {
 protected:
-  splity d,du;
+  split d,du;
   fftw_plan intranspose,outtranspose;
   fftw_plan uintranspose,uouttranspose;
 public:  
@@ -142,7 +142,7 @@ public:
   // threads is the number of threads to use in the outer subconvolution loop.
   // f is a temporary array of size d.n needed only during construction.
   ImplicitHConvolution2MPI(unsigned int mx, unsigned int my,
-                           const splity& d, const splity& du,
+                           const split& d, const split& du,
                            Complex *f, Complex *u1, Complex *u2,
                            unsigned int A=2, unsigned int B=1,
                            bool compact=true,
@@ -153,7 +153,7 @@ public:
   }
   
   ImplicitHConvolution2MPI(unsigned int mx, unsigned int my,
-                           const splity& d, const splity& du,
+                           const split& d, const split& du,
                            Complex *f,
                            unsigned int A=2, unsigned int B=1,
                            bool compact=true,

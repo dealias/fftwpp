@@ -7,7 +7,7 @@ using namespace std;
 using namespace fftwpp;
 using namespace Array;
 
-inline void init(Complex *f, splitx d) 
+inline void init(Complex *f, split d) 
 {
   unsigned int c=0;
   for(unsigned int i=0; i < d.x; ++i) {
@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
       cout << "mx=" << mx << ", my=" << my << endl;
     } 
 
-    splitx d(mx,my,group.active,group.block);
+    split d(mx,my,group.active,group.block);
   
     for(int i=0; i < group.size; ++i) {
       if(i == group.rank) {

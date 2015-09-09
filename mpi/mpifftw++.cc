@@ -23,20 +23,14 @@ void MPISaveWisdom(const MPI_Comm& active)
 void fft2dMPI::Forwards(Complex *f)
 {
   yForwards->fft(f);
-  if(tranfftwpp)
-    T->transpose(f,true,false);
-  else
-    fftw_mpi_execute_r2r(intranspose,(double *)f,(double *)f);
+  T->transpose(f,true,false);
   xForwards->fft(f);
 }
 
 void fft2dMPI::Backwards(Complex *f)
 {
   xBackwards->fft(f);
-  if(tranfftwpp)
-    T->transpose(f,false,true);
-  else
-    fftw_mpi_execute_r2r(outtranspose,(double *)f,(double *)f);
+  T->transpose(f,false,true);
   yBackwards->fft(f);
 }
 
@@ -109,11 +103,7 @@ void fft3dMPI::Normalize(Complex *f)
 void rcfft2dMPI::Forwards(double *f, Complex *g)
 {
   yForwards->fft(f,g);
-  if(tranfftwpp) {
-    T->transpose(g,false,true);
-  } else {
-    fftw_mpi_execute_r2r(intranspose,(double *)g,(double *)g);
-  }
+  T->transpose(g,false,true);
   xForwards->fft(g);
 }
 
@@ -126,11 +116,8 @@ void rcfft2dMPI::Forwards0(double *f, Complex *g)
 void rcfft2dMPI::Backwards(Complex *g, double *f)
 {
   xBackwards->fft(g);
-  if(tranfftwpp) {
-    T->transpose(g,true,false);
-  } else {
-    fftw_mpi_execute_r2r(outtranspose,(double *)g,(double *)g);
-  }
+  T->transpose(g,true,false);
+  fftw_mpi_execute_r2r(outtranspose,(double *)g,(double *)g);
   yBackwards->fft(g,f);
 }
 

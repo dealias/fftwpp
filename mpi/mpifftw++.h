@@ -68,81 +68,37 @@ int hash(Complex *f, unsigned int nx, unsigned int ny, unsigned int nz,
 // distributing the y index among multiple MPI processes and transposing.
 //            local matrix is nx X   y
 // local transposed matrix is  x X  ny
-class splity {
+class split {
 public:
-  unsigned int nx,ny;    // matrix splity
-  unsigned int x,y;      // local splity
+  unsigned int nx,ny;    // matrix split
+  unsigned int x,y;      // local split
   unsigned int x0,y0;    // local starting values
   unsigned int n;     // total required storage (Complex words)
   MPI_Comm communicator;
   unsigned int block; // requested block size
   unsigned int M;     // number of Complex words per matrix element 
-  splity() {}
-  splity(unsigned int nx, unsigned int ny, MPI_Comm communicator,
+  split() {}
+  split(unsigned int nx, unsigned int ny, MPI_Comm communicator,
          unsigned int Block=0, unsigned int M=1) 
     : nx(nx), ny(ny), communicator(communicator), block(Block), M(M) {
-    if(block == 0) {
-      int size;
-      MPI_Comm_size(communicator,&size);
-      block=ceilquotient(ny,size);
-    }
-    
-    ptrdiff_t N[2]={ny,nx};
-    ptrdiff_t local0,local1;
-    ptrdiff_t start0,start1;
-    n=fftw_mpi_local_size_many_transposed(2,N,2*M,block,0,
-                                          communicator,&local0,
-                                          &start0,&local1,&start1)*
-      sizeof(double)/sizeof(Complex);
-    x=local1;
-    y=local0;
-    x0=start1;
-    y0=start0;
-  }
-
-  void show() {
-    std::cout << "nx=" << nx << "\tny="<<ny << std::endl;
-    std::cout << "x=" << x << "\ty="<<y << std::endl;
-    std::cout << "x0=" << x0 << "\ty0="<< y0 << std::endl;
-    std::cout << "n=" << n << std::endl;
-    std::cout << "block=" << block << std::endl;
-  }
-};
-
-// Class to compute the local array splity and storage requirements for
-// distributing the x index among multiple MPI processes and transposing.
-//            local matrix is  x X ny
-// local transposed matrix is nx X  y
-class splitx {
-public:
-  unsigned int nx,ny;    // matrix splity
-  unsigned int x,y;      // local splity
-  unsigned int x0,y0;    // local starting values
-  unsigned int n;     // total required storage (Complex words)
-  MPI_Comm communicator;
-  unsigned int block; // requested block size
-  unsigned int M;     // number of Complex words per matrix element
-  splitx() {}
-  splitx(unsigned int nx, unsigned int ny, MPI_Comm communicator,
-         unsigned int Block=0, unsigned int M=1) 
-    : nx(nx), ny(ny), communicator(communicator), block(Block), M(M) {
-    if(block == 0) {
-      int size;
-      MPI_Comm_size(communicator,&size);
+    int size;
+    int rank;
+      
+    MPI_Comm_rank(communicator,&rank);
+    MPI_Comm_size(communicator,&size);
+    if(block == 0)
       block=ceilquotient(nx,size);
-    }
     
-    ptrdiff_t N[2]={nx,ny};
-    ptrdiff_t local0,local1;
-    ptrdiff_t start0,start1;
-    n=fftw_mpi_local_size_many_transposed(2,N,2*M,block,0,
-                                          communicator,&local0,
-                                          &start0,&local1,&start1)*
-      sizeof(double)/sizeof(Complex);
-    x=local0;
-    y=local1;
-    x0=start0;
-    y0=start1;
+    unsigned int xsize=localsize(nx,size);
+    unsigned int ysize=localsize(ny,size);
+    size=std::min(xsize,ysize);
+  
+    x=localdimension(nx,rank,size);
+    y=localdimension(ny,rank,size);
+  
+    x0=localstart(nx,rank,size);
+    y0=localstart(ny,rank,size);
+    n=std::max(nx*y,x*ny);
   }
 
   void show() {
@@ -164,7 +120,7 @@ public:
   unsigned int nx,ny,nz;
   unsigned int x,y,z;
   unsigned int x0,y0,z0;
-  splity xy,yz;
+  split xy,yz;
   MPI_Comm communicator;
   unsigned int yblock,zblock; // requested block size
   MPI_Comm *XYplane;          // Used by HermitianSymmetrizeXYMPI
@@ -176,8 +132,8 @@ public:
                                        yblock(group.block),
                                        zblock(group.block2), XYplane(NULL) {
     if(Ny == 0) Ny=ny;
-    xy=splity(nx,ny,group.communicator,yblock,zblock);
-    yz=splity(Ny,nz,group.communicator2,zblock);
+    xy=split(nx,ny,group.communicator,yblock,zblock);
+    yz=split(Ny,nz,group.communicator2,zblock);
     x=xy.x;
     y=xy.y;
     z=yz.y;
@@ -208,7 +164,7 @@ public:
   unsigned int nx,ny,nz;
   unsigned int x,y,z;
   unsigned int x0,y0,z0;
-  splitx yz,xy;
+  split yz,xy;
   MPI_Comm communicator;
   unsigned int xblock,yblock; // requested block size
   splitxy() {}
@@ -217,8 +173,8 @@ public:
                                        communicator(group.active),
                                        xblock(group.block),
                                        yblock(group.block2) {
-    xy=splitx(nx,ny,group.communicator,xblock,yblock);
-    yz=splitx(ny,nz,group.communicator2,yblock);
+    xy=split(nx,ny,group.communicator,xblock,yblock);
+    yz=split(ny,nz,group.communicator2,yblock);
     x=xy.x;
     y=yz.x;
     z=yz.y;
@@ -245,7 +201,7 @@ public:
 //
 // Example:
 // MPIgroup group(MPI_COMM_WORLD,mx);
-// splitx d(mx,my,group.active,group.block);
+// split d(mx,my,group.active,group.block);
 // Complex *f=ComplexAlign(d.n);
 // fft2dMPI fft(d,f);
 // fft.Forwards(f);
@@ -255,7 +211,7 @@ public:
 
 class fft2dMPI {
  private:
-  splitx d;
+  split d;
   mfft1d *xForwards,*xBackwards;
   mfft1d *yForwards,*yBackwards;
   Complex *f;
@@ -291,7 +247,7 @@ class fft2dMPI {
     }
   }
   
- fft2dMPI(const splitx& d, Complex *f) : d(d) {
+ fft2dMPI(const split& d, Complex *f) : d(d) {
     inittranspose(f);
 
     xForwards=new mfft1d(d.nx,-1,d.y,d.y,1,f,f); 

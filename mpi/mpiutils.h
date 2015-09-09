@@ -91,7 +91,7 @@ void accumulate_splitx(const ftype *part,  ftype *whole,
 
 template<class ftype>
 void accumulate_splitx(const ftype *part,  ftype *whole,
-		       const splitx split,
+		       const split split,
 		       const unsigned int Z,
 		       const bool transposed, 
 		       const MPI_Comm& communicator)

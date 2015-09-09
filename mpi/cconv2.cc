@@ -14,7 +14,7 @@ unsigned int M=1;   // Number of terms in dot product
 
 bool Implicit=true, Explicit=false, Pruned=false;
 
-inline void init(Complex *f, Complex *g, splity d, unsigned int M=1) 
+inline void init(Complex *f, Complex *g, split d, unsigned int M=1) 
 {
   double factor=1.0/sqrt((double) M);
   for(unsigned int s=0; s < M; ++s) {
@@ -134,7 +134,7 @@ int main(int argc, char* argv[])
       cout << "mx=" << mx << ", my=" << my << endl;
     } 
 
-    splity d(mx,my,group.active,group.block);
+    split d(mx,my,group.active,group.block);
   
     unsigned int Mn=M*d.n;
   
