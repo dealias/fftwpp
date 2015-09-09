@@ -53,45 +53,38 @@ public:
   }
 };
 
-void show(Complex *f, unsigned int nx, unsigned int ny, const MPIgroup& group);
-void show(Complex *f, unsigned int nx, unsigned int ny, unsigned int nz,
-          const MPIgroup& group);
-int hash(Complex *f, unsigned int nx, unsigned int ny, const MPIgroup& group);
-int hash(Complex *f, unsigned int nx, unsigned int ny, unsigned int nz,
-         const MPIgroup& group);
-
-// Class to compute the local array splity and storage requirements for
+// Class to compute the local array dimensions and storage requirements for
 // distributing the y index among multiple MPI processes and transposing.
-//            local matrix is nx X   y
-// local transposed matrix is  x X  ny
+//            local matrix is X * y
+// local transposed matrix is x * Y
 class split {
 public:
-  unsigned int nx,ny;   // matrix dimensions
-  unsigned int x,y;     // local dimensions
+  unsigned int X,Y;     // global matrix dimensions
+  unsigned int x,y;     // local matrix dimensions
   unsigned int x0,y0;   // local starting values
   unsigned int n;       // total required storage (Complex words)
   MPI_Comm communicator;
   unsigned int M;       // number of Complex words per matrix element 
   split() {}
-  split(unsigned int nx, unsigned int ny, MPI_Comm communicator,
+  split(unsigned int X, unsigned int Y, MPI_Comm communicator,
         unsigned int M=1) 
-    : nx(nx), ny(ny), communicator(communicator), M(M) {
+    : X(X), Y(Y), communicator(communicator), M(M) {
     int size;
     int rank;
       
     MPI_Comm_rank(communicator,&rank);
     MPI_Comm_size(communicator,&size);
     
-    x=localdimension(nx,rank,size);
-    y=localdimension(ny,rank,size);
+    x=localdimension(X,rank,size);
+    y=localdimension(Y,rank,size);
   
-    x0=localstart(nx,rank,size);
-    y0=localstart(ny,rank,size);
-    n=std::max(nx*y,x*ny);
+    x0=localstart(X,rank,size);
+    y0=localstart(Y,rank,size);
+    n=std::max(X*y,x*Y);
   }
 
   void show() {
-    std::cout << "nx=" << nx << "\tny="<<ny << std::endl;
+    std::cout << "X=" << X << "\tY="<<Y << std::endl;
     std::cout << "x=" << x << "\ty="<<y << std::endl;
     std::cout << "x0=" << x0 << "\ty0="<< y0 << std::endl;
     std::cout << "n=" << n << std::endl;
@@ -99,13 +92,13 @@ public:
 };
 
 // Distribute first over y, then over z.
-//         local matrix is nx X   y  X z
-// xy transposed matrix is  x X  ny  X z  allocated n  Complex words
-// yz transposed matrix is  x X yz.x X nz allocated n2 Complex words [omit for slab]
+//         local matrix is X * y * z
+// xy transposed matrix is x * Y * z  allocated n  Complex words
+// yz transposed matrix is x * yz.x * Z allocated n2 Complex words [omit for slab]
 class splityz {
 public:
   unsigned int n,n2;
-  unsigned int nx,ny,nz;
+  unsigned int X,Y,Z;
   unsigned int x,y,z;
   unsigned int x0,y0,z0;
   split xy,yz;
@@ -113,13 +106,13 @@ public:
   MPI_Comm *XYplane;          // Used by HermitianSymmetrizeXYMPI
   int *reflect;               // Used by HermitianSymmetrizeXYMPI
   splityz() {}
-  splityz(unsigned int nx, unsigned int ny, unsigned int nz,
-          const MPIgroup& group, unsigned int Ny=0) : 
-    nx(nx), ny(ny), nz(nz), communicator(group.active),
+  splityz(unsigned int X, unsigned int Y, unsigned int Z,
+          const MPIgroup& group, unsigned int Y2=0) : 
+    X(X), Y(Y), Z(Z), communicator(group.active),
     XYplane(NULL) {
-    if(Ny == 0) Ny=ny;
-    xy=split(nx,ny,group.communicator,group.block);
-    yz=split(Ny,nz,group.communicator2);
+    if(Y2 == 0) Y2=Y;
+    xy=split(X,Y,group.communicator,group.block);
+    yz=split(Y2,Z,group.communicator2);
     x=xy.x;
     y=xy.y;
     z=yz.y;
@@ -131,7 +124,7 @@ public:
   }
   
   void show() {
-    std::cout << "nx=" << nx << "\tny="<<ny << "\tnz="<<nz << std::endl;
+    std::cout << "X=" << X << "\tY="<<Y << "\tZ="<<Z << std::endl;
     std::cout << "x=" << x << "\ty="<<y << "\tz="<<z << std::endl;
     std::cout << "x0=" << x0 << "\ty0="<< y0 << "\tz0="<<z0 << std::endl;
     std::cout << "yz.x=" << yz.x << std::endl;
@@ -140,23 +133,23 @@ public:
 };
   
 // Distribute first over x, then over y.
-//         local matrix is  x X  y X nz
-// yz transposed matrix is  x X ny X z allocated n2 Complex words [omit for slab]
-// xy transposed matrix is nx X xy.y X z allocated n Complex words
+//         local matrix is x * y * Z
+// yz transposed matrix is x * Y * z allocated n2 Complex words [omit for slab]
+// xy transposed matrix is X * xy.y * z allocated n Complex words
 class splitxy {
 public:
   unsigned int n,n2;
-  unsigned int nx,ny,nz;
+  unsigned int X,Y,Z;
   unsigned int x,y,z;
   unsigned int x0,y0,z0;
   split yz,xy;
   MPI_Comm communicator;
   splitxy() {}
-  splitxy(unsigned int nx, unsigned int ny, unsigned int nz,
-          const MPIgroup& group) : nx(nx), ny(ny), nz(nz),
+  splitxy(unsigned int X, unsigned int Y, unsigned int Z,
+          const MPIgroup& group) : X(X), Y(Y), Z(Z),
                                    communicator(group.active) {
-    xy=split(nx,ny,group.communicator,group.block);
-    yz=split(ny,nz,group.communicator2);
+    xy=split(X,Y,group.communicator,group.block);
+    yz=split(Y,Z,group.communicator2);
     x=xy.x;
     y=yz.x;
     z=yz.y;
@@ -168,7 +161,7 @@ public:
   }
   
   void show() {
-    std::cout << "nx=" << nx << "\tny="<<ny << "\tnz="<<nz << std::endl;
+    std::cout << "X=" << X << "\tY="<<Y << "\tZ="<<Z << std::endl;
     std::cout << "x=" << x << "\ty="<<y << "\tz="<<z << std::endl;
     std::cout << "x0=" << x0 << "\ty0="<< y0 << "\tz0="<<z0 << std::endl;
     std::cout << "xy.y=" << xy.y << std::endl;
@@ -202,17 +195,17 @@ class fft2dMPI {
   void inittranspose(Complex* f) {
     int size;
     MPI_Comm_size(d.communicator,&size);
-    T=new mpitranspose<Complex>(d.nx,d.y,d.x,d.ny,1,f,d.communicator);
+    T=new mpitranspose<Complex>(d.X,d.y,d.x,d.Y,1,f,d.communicator);
   }
   
  fft2dMPI(const split& d, Complex *f) : d(d) {
     inittranspose(f);
 
-    xForwards=new mfft1d(d.nx,-1,d.y,d.y,1,f,f); 
-    xBackwards=new mfft1d(d.nx,1,d.y,d.y,1,f,f);
+    xForwards=new mfft1d(d.X,-1,d.y,d.y,1,f,f); 
+    xBackwards=new mfft1d(d.X,1,d.y,d.y,1,f,f);
  
-    yForwards=new mfft1d(d.ny,-1,d.x,1,d.ny,f,f);
-    yBackwards=new mfft1d(d.ny,1,d.x,1,d.ny,f,f);
+    yForwards=new mfft1d(d.Y,-1,d.x,1,d.Y,f,f);
+    yBackwards=new mfft1d(d.Y,1,d.x,1,d.Y,f,f);
   }
   
   virtual ~fft2dMPI() {
@@ -254,27 +247,27 @@ class fft3dMPI {
  public:
   
  fft3dMPI(const splitxy& d, Complex *f) : d(d) {
-    Txy=new mpitranspose<Complex>(d.nx,d.xy.y,d.x,d.ny,d.z,f,d.xy.communicator);
+    Txy=new mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,f,d.xy.communicator);
     
-    xForwards=new mfft1d(d.nx,-1,d.xy.y*d.z,d.xy.y*d.z,1);
-    xBackwards=new mfft1d(d.nx,1,d.xy.y*d.z,d.xy.y*d.z,1);
+    xForwards=new mfft1d(d.X,-1,d.xy.y*d.z,d.xy.y*d.z,1);
+    xBackwards=new mfft1d(d.X,1,d.xy.y*d.z,d.xy.y*d.z,1);
 
-    if(d.y < d.ny) {
-      Tyz=new mpitranspose<Complex>(d.ny,d.z,d.y,d.nz,1,f,d.yz.communicator);
+    if(d.y < d.Y) {
+      Tyz=new mpitranspose<Complex>(d.Y,d.z,d.y,d.Z,1,f,d.yz.communicator);
       
-      yForwards=new mfft1d(d.ny,-1,d.z,d.z,1);
-      yBackwards=new mfft1d(d.ny,1,d.z,d.z,1);
+      yForwards=new mfft1d(d.Y,-1,d.z,d.z,1);
+      yBackwards=new mfft1d(d.Y,1,d.z,d.z,1);
 
-      zForwards=new mfft1d(d.nz,-1,d.x*d.y,1,d.nz);
-      zBackwards=new mfft1d(d.nz,1,d.x*d.y,1,d.nz);
+      zForwards=new mfft1d(d.Z,-1,d.x*d.y,1,d.Z);
+      zBackwards=new mfft1d(d.Z,1,d.x*d.y,1,d.Z);
     } else {
-      yzForwards=new fft2d(d.ny,d.nz,-1,f);
-      yzBackwards=new fft2d(d.ny,d.nz,1,f);
+      yzForwards=new fft2d(d.Y,d.Z,-1,f);
+      yzBackwards=new fft2d(d.Y,d.Z,1,f);
     }
   }
   
   virtual ~fft3dMPI() {
-    if(d.y < d.ny) {
+    if(d.y < d.Y) {
       delete zBackwards;
       delete zForwards;
       delete yBackwards;
@@ -304,7 +297,7 @@ class fft3dMPI {
 // Forwards(double *f, Complex * g);
 // Backwards(Complex *g, double *f);
 // 
-// Shift Fourier origin from (0,0) to (nx/2,0):
+// Shift Fourier origin from (0,0) to (X/2,0):
 // Forwards0(double *f, Complex * g);
 // Backwards0(Complex *g, double *f);
 //
@@ -329,21 +322,21 @@ class rcfft2dMPI {
     int size;
     MPI_Comm_size(dc.communicator,&size);
 
-    T=new mpitranspose<Complex>(dc.nx,dc.y,dc.x,dc.ny,1,out,dc.communicator);
+    T=new mpitranspose<Complex>(dc.X,dc.y,dc.x,dc.Y,1,out,dc.communicator);
   }
   
  rcfft2dMPI(const splity& dr, const splity& dc,
 	   double *f, Complex *g) : dr(dr), dc(dc), inplace((double*) g == f){
-    mx=dr.nx;
-    my=dc.ny;
+    mx=dr.X;
+    my=dc.Y;
     inittranspose(g);
     
-    rdist=inplace ? dr.nx+2 : dr.nx;
+    rdist=inplace ? dr.X+2 : dr.X;
 
-    xForwards=new mfft1d(dc.nx,-1,dc.y,dc.y,1);
-    xBackwards=new mfft1d(dc.nx,1,dc.y,dc.y,1);
-    yForwards=new mrcfft1d(dr.ny,dr.x,1,rdist,f,g);
-    yBackwards=new mcrfft1d(dr.ny,dc.x,1,dc.ny,g,f);
+    xForwards=new mfft1d(dc.X,-1,dc.y,dc.y,1);
+    xBackwards=new mfft1d(dc.X,1,dc.y,dc.y,1);
+    yForwards=new mrcfft1d(dr.Y,dr.x,1,rdist,f,g);
+    yBackwards=new mcrfft1d(dr.Y,dc.x,1,dc.Y,g,f);
   }
   
   virtual ~rcfft2dMPI() {}

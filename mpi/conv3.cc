@@ -26,7 +26,7 @@ inline void init(Complex *f, Complex *g, const splityz& d, unsigned int M=1,
     double S=sqrt(1.0+s);
     double ffactor=S*factor;
     double gfactor=1.0/S*factor;
-    for(unsigned int i=!compact; i < d.nx; ++i) {
+    for(unsigned int i=!compact; i < d.X; ++i) {
       unsigned int I=s*d.n+d.y*d.z*i;
       unsigned int ii=i-!compact;
       for(unsigned int j=d.y0 == 0 ? !compact : 0; j < d.y; ++j) {

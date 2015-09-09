@@ -19,92 +19,67 @@ void show(ftype *f, unsigned int, unsigned int ny,
  
 // FIXME: documentation
 template<class ftype>
-void accumulate_splitx(const ftype *part,  ftype *whole,
-		       const unsigned int X,
-		       const unsigned int Y,
-		       const unsigned int x0,
-		       const unsigned int y0,
-		       const unsigned int x,
-		       const unsigned int y,
-		       const unsigned int Z,
-		       const bool transposed, 
+void accumulate_splitx(const ftype *part, ftype *whole,
+		       const unsigned int X, const unsigned int Y,
+		       const unsigned int x0, const unsigned int y0,
+		       const unsigned int x, const unsigned int y,
+		       const unsigned int Z, const bool transposed, 
 		       const MPI_Comm& communicator)
 {
   MPI_Status stat;
   int size, rank;
-  MPI_Comm_size(communicator, &size);
-  MPI_Comm_rank(communicator, &rank);
+  MPI_Comm_size(communicator,&size);
+  MPI_Comm_rank(communicator,&rank);
 
   if(rank == 0) {
     // First copy rank 0's part into the whole
-    if(!transposed) {
-      // x . Y
-      copyfromblock(part,
-		    whole,
-		    x * Z, // count
-		    Y, // length
-		    Y); // stride
-    } else {
-      // X . y
-      copyfromblock(part,
-		    whole,
-		    X, // count
-		    y * Z, // length
-		    Y * Z); // stride
-    }
+    if(!transposed)
+      copyfromblock(part,whole,x*Z,Y,Y);
+    else
+      copyfromblock(part,whole,X,y*Z,Y*Z);
 
-    for(int p = 1; p < size; ++p) {
+    for(int p=1; p < size; ++p) {
       unsigned int dims[6];
-      MPI_Recv(&dims, 6, MPI_UNSIGNED, p, 0, communicator, &stat);
+      MPI_Recv(&dims,6,MPI_UNSIGNED,p,0,communicator,&stat);
 
-      unsigned int X = dims[0], Y = dims[1];
-      unsigned int x0 = dims[2], y0 = dims[3];
-      unsigned int x = dims[4], y = dims[5];
-      unsigned int n = Z * (!transposed ? x * Y :  X * y);
+      unsigned int X=dims[0], Y=dims[1];
+      unsigned int x0=dims[2], y0=dims[3];
+      unsigned int x=dims[4], y=dims[5];
+      unsigned int n=Z*(!transposed ? x*Y : X*y);
       if(n > 0) {
-        ftype *C = new ftype[n];
-        MPI_Recv(C, sizeof(ftype) * n, MPI_BYTE, p, 0, communicator, &stat);
-	if(!transposed) {
-	  copyfromblock(C,
-			whole + Z * x0 * Y,
-			x * Z,
-			Y,
-			Y);
-	} else {
-	  copyfromblock(C,
-			whole + y0 * Z,
-			X,
-			y * Z,
-			Y * Z);
-	}
+        ftype *C=new ftype[n];
+        MPI_Recv(C,sizeof(ftype)*n,MPI_BYTE,p,0,communicator,&stat);
+	if(!transposed)
+	  copyfromblock(C,whole+Z*x0*Y,x*Z,Y,Y);
+	else
+	  copyfromblock(C,whole+y0*Z,X,y*Z,Y*Z);
         delete [] C;
       }
     }
   } else {
-    unsigned int dims[]={X, Y, x0, y0, x, y};
-    MPI_Send(&dims, 6, MPI_UNSIGNED, 0, 0, communicator);
-    unsigned int n = Z * (!transposed ? x * Y :  X * y);
+    unsigned int dims[]={X,Y,x0,y0,x,y};
+    MPI_Send(&dims,6,MPI_UNSIGNED,0,0,communicator);
+    unsigned int n=Z*(!transposed ? x*Y : X*y);
     if(n > 0)
-      MPI_Send(part, n * sizeof(ftype), MPI_BYTE, 0, 0, communicator);
+      MPI_Send(part,n*sizeof(ftype),MPI_BYTE,0,0,communicator);
   }
 }
 
 template<class ftype>
-void accumulate_splitx(const ftype *part,  ftype *whole,
+void accumulate_splitx(const ftype *part, ftype *whole,
 		       const split split,
 		       const unsigned int Z,
 		       const bool transposed, 
 		       const MPI_Comm& communicator)
 {
-  unsigned int X = split.nx;
-  unsigned int Y = split.ny;
-  unsigned int x0 = split.x0;
-  unsigned int y0 = split.y0;
-  unsigned int x = split.x;
-  unsigned int y = split.y;
+  unsigned int X=split.X;
+  unsigned int Y=split.Y;
+  unsigned int x0=split.x0;
+  unsigned int y0=split.y0;
+  unsigned int x=split.x;
+  unsigned int y=split.y;
 
-  accumulate_splitx(part, whole, X, Y, x0, y0, x, y, Z, transposed,
-		    communicator);
+  accumulate_splitx(part,whole,X,Y,x0,y0,x,y,Z,transposed,communicator);
 }
 
 // output the contents of a 2D array

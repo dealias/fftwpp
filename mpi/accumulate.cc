@@ -7,33 +7,27 @@ using namespace std;
 using namespace fftwpp;
 using namespace Array;
 
-inline void init(Complex *f, 
-		 unsigned int nx,
-		 unsigned int ny,
-		 unsigned int x0,
-		 unsigned int y0, 
-		 unsigned int x,
-		 unsigned int y, 
-		 unsigned int nz, 
-		 bool transposed) 
+inline void init(Complex *f, unsigned int nx, unsigned int ny, unsigned int x0,
+		 unsigned int y0, unsigned int x, unsigned int y, 
+		 unsigned int nz, bool transposed) 
 {
   if(!transposed) {
-    for(unsigned int i = 0; i < x; ++i) {
-      unsigned int ii = x0 + i;
-      for(unsigned int j = 0; j < ny; j++) {
-	for(unsigned int k = 0; k < nz; k++) {
-	  int pos = i*ny*nz+j*nz+k;
-	  f[pos] = Complex(ii, j + (1.0 * k) / nz);
+    for(unsigned int i=0; i < x; ++i) {
+      unsigned int ii=x0 + i;
+      for(unsigned int j=0; j < ny; j++) {
+	for(unsigned int k=0; k < nz; k++) {
+	  int pos=i*ny*nz+j*nz+k;
+	  f[pos]=Complex(ii,j+(1.0*k)/nz);
 	}
       }
     }
   } else {
-    for(unsigned int i = 0; i < nx; ++i) {
-      for(unsigned int j = 0; j < y; j++) {
-	unsigned int jj = y0 + j;
-	for(unsigned int k = 0; k < nz; k++) {
-	  int pos = i*y*nz+j*nz+k;
-	  f[pos] = Complex(i, jj + (1.0 * k) / nz);
+    for(unsigned int i=0; i < nx; ++i) {
+      for(unsigned int j=0; j < y; j++) {
+	unsigned int jj=y0 + j;
+	for(unsigned int k=0; k < nz; k++) {
+	  int pos=i*y*nz+j*nz+k;
+	  f[pos]=Complex(i,jj+(1.0*k)/nz);
 	}
       }
     }
@@ -44,7 +38,7 @@ unsigned int outlimit=100;
 
 int main(int argc, char* argv[])
 {
-  int retval = 0; // success!
+  int retval=0; // success!
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
@@ -58,7 +52,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"hm:X:Y:Z:");
+    int c=getopt(argc,argv,"hm:X:Y:Z:");
     if (c == -1) break;
                 
     switch (c) {
@@ -93,39 +87,39 @@ int main(int argc, char* argv[])
   if(group.rank < group.size) { 
     bool main=group.rank == 0;
 
-    split d(mx, my, group. active);
+    split d(mx,my,group. active);
     
-    Complex *f = ComplexAlign(d.n * mz);
+    Complex *f=ComplexAlign(d.n * mz);
 
-    init(f, d.nx, d.ny, d.x0, d.y0, d.x, d.y, mz, false);
+    init(f,d.X,d.Y,d.x0,d.y0,d.x,d.y,mz,false);
     
     if(mx * my < outlimit) {
       if(main)
 	cout << "\ninput:" << endl;
       // cout << "process " << group.rank << endl;
-      // for(unsigned int i = 0; i < d.n * mz; ++i) {
+      // for(unsigned int i=0; i < d.n * mz; ++i) {
       // 	cout << f[i] << endl;
       // }
     }
       
     array3<Complex> localf(mx,my,mz);
-    localf = 0.0;
+    localf=0.0;
     
-    accumulate_splitx(f, localf(), d, mz, false, group.active);
+    accumulate_splitx(f,localf(),d,mz,false,group.active);
     if(main) {
       cout << "Accumulted:" <<endl;
       //cout << localf << endl;
       array3<Complex> localf0(mx,my,mz);
-      init(localf0(), d.nx, d.ny, 0, 0, d.nx, d.ny, mz, false);
+      init(localf0(),d.X,d.Y,0,0,d.X,d.Y,mz,false);
       cout << "Local init:" << endl;
       //cout << localf0 << endl;
-      bool same = true;
-      for(unsigned int i = 0; i < d.nx; ++i) {
-	for(unsigned int j = 0; j < d.ny; ++j) {
-	  for(unsigned int k = 0; k < mz; ++k) {
+      bool same=true;
+      for(unsigned int i=0; i < d.X; ++i) {
+	for(unsigned int j=0; j < d.Y; ++j) {
+	  for(unsigned int k=0; k < mz; ++k) {
 	    //cout << localf(i,j,k) << " " << localf0(i,j,k) << endl;
 	    if(localf(i,j,k) != localf0(i,j,k))
-	      same = false;
+	      same=false;
 	  }
 	}
       }
@@ -139,42 +133,42 @@ int main(int argc, char* argv[])
 
     
     cout << "\nTransposed init:" << endl;
-    init(f, d.nx, d.ny, d.x0, d.y0, d.x, d.y, mz, true);
+    init(f,d.X,d.Y,d.x0,d.y0,d.x,d.y,mz,true);
     if(mx*my < outlimit) {
       if(main) cout << "\noutput:" << endl;
-      // show(f, d.nx, d.ny, mz,
-      // 	   d.x0, d.y0, 0,
-      // 	   d.x, d.y, mz,
+      // show(f,d.X,d.Y,mz,
+      // 	   d.x0,d.y0,0,
+      // 	   d.x,d.y,mz,
       // 	   group.active);
 
       // cout << "process " << group.rank << endl;
-      // for(unsigned int i = 0; i < d.n * mz; ++i) {
+      // for(unsigned int i=0; i < d.n * mz; ++i) {
       // 	cout << f[i] << endl;
       // }
     }
 	
-    localf = 0.0;
-    accumulate_splitx(f, localf(), d, mz, true, group.active);
+    localf=0.0;
+    accumulate_splitx(f,localf(),d,mz,true,group.active);
     if(main) {
       if(mx*my < outlimit) {
     	cout << "\nAccumulated version:" << endl;
 	//cout << localf << endl;
       }
       array3<Complex> localf0(mx,my,mz);
-      init(localf0(), d.nx, d.ny, 0, 0, d.nx, d.ny, mz, false);
+      init(localf0(),d.X,d.Y,0,0,d.X,d.Y,mz,false);
       if(mx*my < outlimit) {
     	cout << "Local init:" << endl;
 	//cout << localf0 << endl;
       }
 	
       //cout << "Comparison:\n"  << endl;
-      bool same = true;
-      for(unsigned int i = 0; i < d.nx; ++i) {
-    	for(unsigned int j = 0; j < d.ny; ++j) {
-    	  for(unsigned int k = 0; k < mz; ++k) {
+      bool same=true;
+      for(unsigned int i=0; i < d.X; ++i) {
+    	for(unsigned int j=0; j < d.Y; ++j) {
+    	  for(unsigned int k=0; k < mz; ++k) {
     	    //cout << localf(i,j,k) << " " << localf0(i,j,k) << endl;
     	    if(localf(i,j,k) != localf0(i,j,k))
-    	      same = false;
+    	      same=false;
     	  }
     	}
       }

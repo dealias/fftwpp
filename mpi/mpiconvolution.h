@@ -19,7 +19,7 @@ protected:
 public:  
   
   void inittranspose() {
-    T=new mpitranspose<Complex>(d.nx,d.y,d.x,d.ny,1,u2,d.communicator,global);
+    T=new mpitranspose<Complex>(d.X,d.y,d.x,d.Y,1,u2,d.communicator,global);
   }
 
   // u1 is a temporary array of size my*A*threads.
@@ -70,9 +70,9 @@ protected:
 public:  
   
   void inittranspose(Complex *f) {
-    T=new mpitranspose<double>(d.nx,d.y,d.x,d.ny,2,(double *) f,NULL,
+    T=new mpitranspose<double>(d.X,d.y,d.x,d.Y,2,(double *) f,NULL,
                                d.communicator,global);
-    U=new mpitranspose<double>(du.nx,du.y,du.x,du.ny,2,(double *)u2,NULL,
+    U=new mpitranspose<double>(du.X,du.y,du.x,du.Y,2,(double *)u2,NULL,
                                du.communicator,global);
   }    
   
@@ -139,12 +139,12 @@ protected:
   mpitranspose<Complex> *T;
 public:  
   void inittranspose() {
-    T=new mpitranspose<Complex>(d.nx,d.y,d.x,d.ny,d.z,u3,d.xy.communicator,
+    T=new mpitranspose<Complex>(d.X,d.y,d.x,d.Y,d.z,u3,d.xy.communicator,
                                 d.communicator);
   }
 
   void initMPI() {
-    if(d.z < d.nz) {
+    if(d.z < d.Z) {
       yzconvolve=new ImplicitConvolution2*[threads];
       for(unsigned int t=0; t < threads; ++t)
         yzconvolve[t]=new ImplicitConvolution2MPI(my,mz,d.yz,
@@ -213,16 +213,16 @@ protected:
   MPI_Comm global;
 public:  
   void inittranspose(Complex *f) {
-    if(d.y < d.ny) {
-      T=new mpitranspose<double>(d.nx,d.y,d.x,d.ny,2*d.z,(double *) f,NULL,
+    if(d.y < d.Y) {
+      T=new mpitranspose<double>(d.X,d.y,d.x,d.Y,2*d.z,(double *) f,NULL,
                                  mpioptions(1,1,1),d.xy.communicator,global);
-      U=new mpitranspose<double>(du.nx,du.y,du.x,du.ny,2*d.z,(double *)u2,NULL,
+      U=new mpitranspose<double>(du.X,du.y,du.x,du.Y,2*d.z,(double *)u2,NULL,
                                  mpioptions(1,1,1),du.xy.communicator,global);
     }
   }
 
   void initMPI(Complex *f) {
-    if(d.z < d.nz) {
+    if(d.z < d.Z) {
       yzconvolve=new ImplicitHConvolution2*[threads];
       for(unsigned int t=0; t < threads; ++t)
         yzconvolve[t]=
@@ -266,7 +266,7 @@ public:
   }
   
   virtual ~ImplicitHConvolution3MPI() {
-    if(d.y < d.ny) {
+    if(d.y < d.Y) {
       delete U;
       delete T;
     }

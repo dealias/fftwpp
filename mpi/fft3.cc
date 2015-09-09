@@ -20,7 +20,7 @@ inline void init(Complex *f, splitxy d)
     unsigned int ii=d.x0+i;
     for(unsigned int j=0; j < d.y; j++) {
       unsigned int jj=d.y0+j;
-      for(unsigned int k=0; k < d.nz; k++) {
+      for(unsigned int k=0; k < d.Z; k++) {
 	unsigned int kk=k;
 	f[c++]=Complex(10*kk+ii,jj);
       }
@@ -145,19 +145,19 @@ int main(int argc, char* argv[])
       init(f,d);
 
       if(main) cout << "\ninput:" << endl;
-      show(f,d.x,d.y,d.nz,group.active);
+      show(f,d.x,d.y,d.Z,group.active);
 
       fft.Forwards(f);
       
       std::cout << d.xy.y << std::endl;
       if(main) cout << "\noutput:" << endl;
-      show(f,d.nx,d.xy.y,d.z,group.active);
+      show(f,d.X,d.xy.y,d.z,group.active);
 
       fft.Backwards(f);
       fft.Normalize(f);
 
       if(main) cout << "\nback to input:" << endl;
-      show(f,d.x,d.y,d.nz,group.active);
+      show(f,d.x,d.y,d.Z,group.active);
     }
 
     deleteAlign(f);

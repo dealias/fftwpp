@@ -12,7 +12,7 @@ inline void init(Complex *f, split d)
   unsigned int c=0;
   for(unsigned int i=0; i < d.x; ++i) {
     unsigned int ii=d.x0+i;
-    for(unsigned int j=0; j < d.ny; j++) {
+    for(unsigned int j=0; j < d.Y; j++) {
       f[c++]=Complex(ii,j);
     }
   }
@@ -155,8 +155,8 @@ int main(int argc, char* argv[])
       if(main) {
 	cout << "\naccumulated output:\n" << localfout << endl;
 	double maxerr = 0.0;
-	for(unsigned int i = 0; i < d.nx; ++i) {
-	  for(unsigned int j = 0; j < d.ny; ++j) {
+	for(unsigned int i = 0; i < d.X; ++i) {
+	  for(unsigned int j = 0; j < d.Y; ++j) {
 	    double diff = abs(localfout[i][j] - localfin[i][j]);
 	    if(diff > maxerr)
 	      maxerr = diff;

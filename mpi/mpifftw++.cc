@@ -37,8 +37,8 @@ void fft2dMPI::Backwards(Complex *f)
 void fft2dMPI::Normalize(Complex *f)
 {
   // TODO: multithread
-  unsigned int N=d.nx*d.ny;
-  unsigned int n=d.x*d.ny;
+  unsigned int N=d.X*d.Y;
+  unsigned int n=d.x*d.Y;
   double denom=1.0/N;
   for(unsigned int i=0; i < n; ++i) 
     f[i] *= denom;
@@ -52,8 +52,8 @@ void fft2dMPI::BackwardsNormalized(Complex *f)
 
 void fft3dMPI::Forwards(Complex *f)
 {
-  unsigned int stride=d.z*d.ny;
-  if(d.y < d.ny) {
+  unsigned int stride=d.z*d.Y;
+  if(d.y < d.Y) {
     zForwards->fft(f);
 
     Tyz->transpose(f,true,false);
@@ -76,8 +76,8 @@ void fft3dMPI::Backwards(Complex *f)
 
   Txy->transpose(f,false,true);
 
-  unsigned int stride=d.z*d.ny;
-  if(d.y < d.ny) {
+  unsigned int stride=d.z*d.Y;
+  if(d.y < d.Y) {
   for(unsigned int i=0; i < d.x; ++i)
     yBackwards->fft(f+i*stride);
 
@@ -92,8 +92,8 @@ void fft3dMPI::Backwards(Complex *f)
 
 void fft3dMPI::Normalize(Complex *f)
 {
-  unsigned int N=d.nx*d.ny*d.nz;
-  unsigned int n=d.x*d.y*d.nz;
+  unsigned int N=d.X*d.Y*d.Z;
+  unsigned int n=d.x*d.y*d.Z;
   double denom=1.0/N;
   for(unsigned int i=0; i < n; ++i) 
     f[i] *= denom;
@@ -140,10 +140,10 @@ void rcfft2dMPI::Backwards0Normalized(Complex *g, double *f)
 
 void rcfft2dMPI::Normalize(double *f)
 {
-  double norm=1.0/(dr.nx*dr.ny);
+  double norm=1.0/(dr.X*dr.Y);
   for(unsigned int i=0; i < dr.x; ++i)  {
     double *fi=&f[i*rdist];
-    for(unsigned int j=0; j < dr.ny; ++j)
+    for(unsigned int j=0; j < dr.Y; ++j)
       fi[j] *= norm;
   }
 }
@@ -152,7 +152,7 @@ void rcfft2dMPI::Shift(double *f)
   // Shift Fourier origin:
   for(unsigned int i=0; i < dr.x; i += 2)  {
     double *fi=&f[i*rdist];
-    for(unsigned int j=0; j < dr.ny; ++j)
+    for(unsigned int j=0; j < dr.Y; ++j)
       fi[j] *= -1;
   }
 }

@@ -5,7 +5,7 @@ namespace fftwpp {
 void ImplicitConvolution2MPI::convolve(Complex **F, multiplier *pmult,
                                        unsigned int offset)
 {
-  unsigned int size=d.x*d.ny;
+  unsigned int size=d.x*d.Y;
 
   for(unsigned int a=0; a < A; ++a) {
     Complex *f=F[a]+offset;
@@ -50,8 +50,8 @@ void ImplicitHConvolution2MPI::convolve(Complex **F, realmultiplier *pmult,
   transpose(T,A,F,false,true,offset);
   transpose(U,A,U2,false,true);
     
-  subconvolution(F,pmult,offset,d.x*d.ny+offset,d.ny);
-  subconvolution(U2,pmult,0,du.x*du.ny,du.ny);
+  subconvolution(F,pmult,offset,d.x*d.Y+offset,d.Y);
+  subconvolution(U2,pmult,0,du.x*du.Y,du.Y);
     
   transpose(T,B,F,true,false,offset);
   transpose(U,B,U2,true,false);
@@ -99,13 +99,13 @@ void ImplicitConvolution3MPI::convolve(Complex **F, multiplier *pmult,
 }
 
 // Enforce 3D Hermiticity using specified (x,y > 0,z=0) and (x >= 0,y=0,z=0) data.
-// u is a work array of size d.nx.
+// u is a work array of size d.X.
 void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
                               splityz& d, bool compact, Complex *f,
                               unsigned int nu, Complex *u0)
 {
-  if(d.y == d.ny && d.z == d.nz) {
-    HermitianSymmetrizeXY(mx,my,d.nz,mx-compact,my-compact,f);
+  if(d.y == d.Y && d.z == d.Z) {
+    HermitianSymmetrizeXY(mx,my,d.Z,mx-compact,my-compact,f);
     return;
   }
 
@@ -113,7 +113,7 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
   int rank,size;
   unsigned int extra=!compact;
   unsigned int yorigin=my-compact;
-  unsigned int nx=d.nx-extra;
+  unsigned int nx=d.X-extra;
   unsigned int y0=d.y0;
   unsigned int dy=d.y;
   unsigned int j0=y0 == 0 ? extra : 0;
@@ -133,7 +133,7 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
                   sizeof(range)/sizeof(MPI_INT),MPI_INT,*d.XYplane);
   
     if(rank == 0) {
-      int *process=new int[d.ny];
+      int *process=new int[d.Y];
       for(int p=0; p < size; ++p) {
         unsigned int stop=indices[p].start+indices[p].n;
         for(unsigned int j=indices[p].start; j < stop; ++j)
@@ -162,7 +162,7 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
   unsigned int stride=dy*d.z;
   for(unsigned int j=start; j < dy; ++j) {
     for(unsigned int i=0; i < nx; ++i)
-      u[i]=conj(f[stride*(d.nx-1-i)+d.z*j]);
+      u[i]=conj(f[stride*(d.X-1-i)+d.z*j]);
     int J=d.reflect[j];
     if(J != rank)
       MPI_Send(u,2*nx,MPI_DOUBLE,J,0,*d.XYplane);
@@ -199,16 +199,16 @@ void ImplicitHConvolution3MPI::convolve(Complex **F, realmultiplier *pmult,
 {
   backwards(F,U3,symmetrize,offset);
 
-  if(d.y < d.ny) {
+  if(d.y < d.Y) {
     transpose(T,A,F,false,true,offset);
     transpose(U,A,U3,false,true);
   }
     
-  unsigned int stride=d.ny*d.z;
+  unsigned int stride=d.Y*d.z;
   subconvolution(F,pmult,offset,d.x*stride+offset,stride);
   subconvolution(U3,pmult,0,du.x*stride,stride);
     
-  if(d.y < d.ny) {
+  if(d.y < d.Y) {
     transpose(T,B,F,true,false,offset);
     transpose(U,B,U3,true,false);
   }
