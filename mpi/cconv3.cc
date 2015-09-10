@@ -134,6 +134,7 @@ int main(int argc, char* argv[])
     cout << "Configuration: " 
          << group.size << " nodes X " << fftw::maxthreads 
          << " threads/node" << endl;
+    cout << "Using MPI VERSION " << MPI_VERSION << endl;
   }
   
   if(group.rank < group.size) {
