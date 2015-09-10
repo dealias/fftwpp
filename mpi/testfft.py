@@ -34,7 +34,7 @@ else:
         for Y in Ylist:
             for P in Plist:
                 ntests += 1
-                rtest = runtest(progname, X, Y, P, ["-N0"], logfile, timeout)
+                rtest = runtest(progname, X, Y, P, ["-N0","-qt"], logfile, timeout)
                 if not rtest == 0:
                     nfails += 1
                 
