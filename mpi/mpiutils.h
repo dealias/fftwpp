@@ -61,7 +61,7 @@ void accumulate_splitx(const ftype *part, ftype *whole,
     MPI_Send(&dims,6,MPI_UNSIGNED,0,0,communicator);
     unsigned int n=Z*(!transposed ? x*Y : X*y);
     if(n > 0)
-      MPI_Send(part,n*sizeof(ftype),MPI_BYTE,0,0,communicator);
+      MPI_Send((ftype *) part,n*sizeof(ftype),MPI_BYTE,0,0,communicator);
   }
 }
 
