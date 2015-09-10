@@ -26,10 +26,10 @@ else:
 
     start=30
     stop=40
-    Xlist = [1,2,3,4,5,6,7,8,9,10,random.randint(start,stop)]
-    Ylist = [1,2,3,4,5,6,7,8,9,10,random.randint(start,stop)]
-    Zlist = [2,3,10,random.randint(start,stop)]
-    Plist = [1,2,3,4,5,6,7,8,9,10,11,12]
+    Xlist = [10,9,8,7,6,5,4,3,2,1,random.randint(start,stop)]
+    Ylist = [9,10,8,7,6,5,4,3,2,1,random.randint(start,stop)]
+    Zlist = [1,2,3,10,random.randint(start,stop)]
+    Plist = [2,3,4,5,6,7,8,9,10,11,12,1]
 
     tstart = time.time()
     
