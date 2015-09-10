@@ -626,17 +626,14 @@ public:
   void insync0() {
     if(size == 1) return;
     Wait(2*(split2size-1),request,sched2);
-    return;
   }
   
   void insync1() {
-//    if(n == 0) return;
     if(a > 1)
       Wait(2*(splitsize-1),request,sched);
   }
 
   void inpost() {
-//    if(m == 0) return;
     if(size == 1) return;
     
     if(uniform)
@@ -658,7 +655,6 @@ public:
   }
   
   void outphase0() {
-//    if(m == 0) return;
     if(size == 1) return;
     size_t S=sizeof(T)*a*L;
     if(uniform) {

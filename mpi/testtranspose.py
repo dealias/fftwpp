@@ -29,7 +29,7 @@ else:
     Xlist = [1,2,3,4,5,6,7,8,9,10,random.randint(start,stop)]
     Ylist = [1,2,3,4,5,6,7,8,9,10,random.randint(start,stop)]
     Zlist = [2,3,10,random.randint(start,stop)]
-    Plist = [1,2,3,4,5,6,7,8,9]
+    Plist = [1,2,3,4,5,6,7,8,9,10,11,12]
 
     tstart = time.time()
     
@@ -40,7 +40,7 @@ else:
         for Y in Ylist:
             for Z in Zlist:
                 for P in Plist:
-                    for a in range(1,P):
+                    for a in range(1,max(P,2)):
                         if(P % a) :
                             continue
                         ntests += 1
