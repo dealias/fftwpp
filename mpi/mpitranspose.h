@@ -496,6 +496,8 @@ public:
       senddisplacements=new int[Size];
       recvcounts=new int[Size];
       recvdisplacements=new int[Size];
+      int S=sizeof(T)*L;
+      fillindices(S,Size);
     }
     
     if(options.alltoall) {
@@ -574,7 +576,7 @@ public:
       unsigned int blocksize=n*m*S;
       Ialltoall(data,blocksize,work,split2,request,sched2);
     } else {
-      fillindices(S,split2size);
+//      fillindices(S,split2size);
       Ialltoallv(data,recvcounts,recvdisplacements,work,sendcounts,
                  senddisplacements,split2,request,sched2);
     }
@@ -587,7 +589,9 @@ public:
         Tin2->transpose(work,data); // a x n*b x m*L
         unsigned int blocksize=n*m*S;
         Ialltoall(data,blocksize,work,split,request,sched);
-      } else {
+      }
+#if 0 // Unused     
+      else {
         int last=std::min(a-1,mlast);
         unsigned int lastblock=(last == mlast ? mp : m0)*L;
         unsigned int block=m0*L;
@@ -601,10 +605,11 @@ public:
           copy(work+j*lastblock+last*istride,dest+last*block,lastblock);
         }
         
-        fillindices(S,splitsize);
+//        fillindices(S,splitsize);
         Ialltoallv(data,recvcounts,recvdisplacements,work,sendcounts,
                    senddisplacements,split,request,sched);
       }
+#endif      
     }
   }
 
@@ -661,7 +666,7 @@ public:
         copy(src+last*block,work+j*lastblock+last*istride,lastblock);
       }
 
-      fillindices(S,splitsize);
+//      fillindices(S,splitsize);
       Ialltoallv(work,sendcounts,senddisplacements,data,recvcounts,
                  recvdisplacements,split,request,sched);
     }
@@ -675,7 +680,9 @@ public:
         Tout2->transpose(data,work); // n*b x a x m*L
         unsigned int blocksize=n*m*S;
         Ialltoall(work,blocksize,data,split2,request,sched2);
-      } else {
+      }
+#if 0 // Unused     
+      else {
       int last=std::min(a-1,mlast);
       unsigned int lastblock=(last == mlast ? mp : m0)*L;
       unsigned int block=m0*L;
@@ -689,10 +696,11 @@ public:
         copy(src+last*block,work+j*lastblock+last*istride,lastblock);
       }
       
-      fillindices(S,split2size);
+//      fillindices(S,split2size);
       Ialltoallv(work,sendcounts,senddisplacements,data,recvcounts,
                  recvdisplacements,split2,request,sched2);
       }
+#endif      
     }
   }
   
