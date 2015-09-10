@@ -141,7 +141,7 @@ int main(int argc, char* argv[])
       seconds();
       cout << "N=" << N << endl;
       cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
-      cout << "nx=" << nx << ", ny=" << ny << ", mz=" << mz << endl;
+      cout << "nx=" << nx << ", ny=" << ny << ", nz=" << nz << endl;
       cout << "size=" << group.size << endl;
     }
 

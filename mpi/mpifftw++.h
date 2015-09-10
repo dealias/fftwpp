@@ -118,7 +118,7 @@ public:
     x0=xy.x0;
     y0=xy.y0;
     z0=yz.y0;
-    n=xy.n=std::max(xy.n,xy.x*yz.n);
+    n=xy.n;
     n2=yz.n;
   }
   
@@ -155,7 +155,7 @@ public:
     x0=xy.x0;
     y0=yz.x0;
     z0=yz.y0;
-    n=xy.n=std::max(xy.n,xy.x*yz.n);
+    n=xy.n;
     n2=yz.n;
   }
   

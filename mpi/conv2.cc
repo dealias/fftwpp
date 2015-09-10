@@ -137,6 +137,7 @@ int main(int argc, char* argv[])
     if(main) {
       cout << "N=" << N << endl;
       cout << "mx=" << mx << ", my=" << my << endl;
+      cout << "nx=" << nx << ", ny=" << ny << endl;
     }
     
     split d(nx,ny,group.active);

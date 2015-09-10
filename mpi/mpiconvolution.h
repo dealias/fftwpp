@@ -71,7 +71,7 @@ public:
   void inittranspose(Complex *f) {
     T=new mpitranspose<double>(d.X,d.y,d.x,d.Y,2,(double *) f,NULL,
                                d.communicator,global);
-    U=new mpitranspose<double>(du.X,du.y,du.x,du.Y,2,(double *)u2,NULL,
+    U=new mpitranspose<double>(du.X,du.y,du.x,du.Y,2,(double *) u2,NULL,
                                du.communicator,global);
   }    
   
@@ -215,7 +215,7 @@ public:
     if(d.y < d.Y) {
       T=new mpitranspose<double>(d.X,d.y,d.x,d.Y,2*d.z,(double *) f,NULL,
                                  d.xy.communicator,global);
-      U=new mpitranspose<double>(du.X,du.y,du.x,du.Y,2*d.z,(double *) u2,NULL,
+      U=new mpitranspose<double>(du.X,du.y,du.x,du.Y,2*d.z,(double *) u3,NULL,
                                  du.xy.communicator,global);
     }
   }
