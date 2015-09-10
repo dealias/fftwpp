@@ -490,19 +490,20 @@ public:
       MPI_Comm_rank(split2,&split2rank);
     }
     
-    if(!uniform) {
-      int Size=std::max(splitsize,split2size);
-      sendcounts=new int[Size];
-      senddisplacements=new int[Size];
-      recvcounts=new int[Size];
-      recvdisplacements=new int[Size];
-      int S=sizeof(T)*L;
-      fillindices(S,Size);
-    }
-    
+    sendcounts=NULL;
     if(options.alltoall) {
       request=new MPI_Request[1];
       sched=sched2=NULL;
+      
+      if(!uniform) {
+        int Size=std::max(splitsize,split2size);
+        sendcounts=new int[Size];
+        senddisplacements=new int[Size];
+        recvcounts=new int[Size];
+        recvdisplacements=new int[Size];
+        int S=sizeof(T)*L;
+        fillindices(S,Size);
+      }
     } else {
       request=new MPI_Request[2*(std::max(splitsize,split2size)-1)];
     
@@ -539,7 +540,9 @@ public:
     if(uniform) {
       delete Tin1;
       delete Tout1;
-    } else {
+    }
+
+    if(sendcounts) {
       delete [] sendcounts;
       delete [] senddisplacements;
       delete [] recvcounts;
@@ -569,16 +572,62 @@ public:
     }
   }
   
+  int ni(int P) {return P < nlast ? n0 : (P == nlast ? np : 0);}
+  int mi(int P) {return P < mlast ? m0 : (P == mlast ? mp : 0);}
+  
+  void Ialltoallout(void* sendbuf, void *recvbuf, int S, MPI_Comm comm,
+                    int rank, int size, int *sched) {
+    MPI_Request *srequest=request+size-1;
+    int nS=n*S;
+    int mS=m*S;
+    int nm0=nS*m0;
+    int mn0=mS*n0;
+    for(int p=0; p < size; ++p) {
+      int P=sched[p];
+      if(P != rank) {
+        int index=P < rank ? P : P-1;
+        MPI_Irecv((char *) recvbuf+mn0*P,mS*ni(P),MPI_BYTE,P,0,comm,
+                  request+index);
+        MPI_Isend((char *) sendbuf+nm0*P,nS*mi(P),MPI_BYTE,P,0,comm,
+                  srequest+index);
+      }
+    }
+
+    memcpy((char *) recvbuf+mn0*rank,(char *) sendbuf+nm0*rank,nS*mi(rank));
+  }
+
+  void Ialltoallin(void* sendbuf, void *recvbuf, int S, MPI_Comm comm,
+                   int rank, int size, int *sched) {
+    MPI_Request *srequest=request+size-1;
+    int nS=n*S;
+    int mS=m*S;
+    int nm0=nS*m0;
+    int mn0=mS*n0;
+    for(int p=0; p < size; ++p) {
+      int P=sched[p];
+      if(P != rank) {
+        int index=P < rank ? P : P-1;
+        MPI_Irecv((char *) recvbuf+nm0*P,nS*mi(P),MPI_BYTE,P,0,comm,
+                  request+index);
+        MPI_Isend((char *) sendbuf+mn0*P,mS*ni(P),MPI_BYTE,P,0,comm,
+                  srequest+index);
+      }
+    }
+
+    memcpy((char *) recvbuf+nm0*rank,(char *) sendbuf+mn0*rank,mS*ni(rank));
+  }
+
   void inphase0() {
     if(size == 1) return;
     size_t S=sizeof(T)*(a > 1 ? b : a)*L;
-    if(uniform) {
-      unsigned int blocksize=n*m*S;
-      Ialltoall(data,blocksize,work,split2,request,sched2);
-    } else {
-//      fillindices(S,split2size);
-      Ialltoallv(data,recvcounts,recvdisplacements,work,sendcounts,
-                 senddisplacements,split2,request,sched2);
+    if(uniform)
+      Ialltoall(data,n*m*S,work,split2,request,sched2);
+    else {
+      if(sched2)
+        Ialltoallin(data,work,S,split2,split2rank,split2size,sched);
+      else MPI_Ialltoallv(data,recvcounts,recvdisplacements,MPI_BYTE,
+                          work,sendcounts,senddisplacements,MPI_BYTE,
+                          split2,request);
     }
   }
   
@@ -587,8 +636,7 @@ public:
       size_t S=sizeof(T)*a*L;
       if(uniform) {
         Tin2->transpose(work,data); // a x n*b x m*L
-        unsigned int blocksize=n*m*S;
-        Ialltoall(data,blocksize,work,split,request,sched);
+        Ialltoall(data,n*m*S,work,split,request,sched);
       }
 #if 0 // Unused     
       else {
@@ -650,8 +698,7 @@ public:
     if(uniform) {
       // Inner transpose a N/a x M/a matrices over each team of b processes
       Tout1->transpose(data,work); // n*a x b x m*L
-      unsigned int blocksize=n*m*S;
-      Ialltoall(work,blocksize,data,split,request,sched);
+      Ialltoall(work,n*m*S,data,split,request,sched);
     } else {
       int last=std::min(b-1,mlast);
       unsigned int lastblock=(last == mlast ? mp : m0)*L;
@@ -666,9 +713,12 @@ public:
         copy(src+last*block,work+j*lastblock+last*istride,lastblock);
       }
 
-//      fillindices(S,splitsize);
-      Ialltoallv(work,sendcounts,senddisplacements,data,recvcounts,
-                 recvdisplacements,split,request,sched);
+      if(sched)
+        Ialltoallout(work,data,S,split,splitrank,splitsize,sched);
+      else
+          MPI_Ialltoallv(work,sendcounts,senddisplacements,MPI_BYTE,
+                         data,recvcounts,recvdisplacements,MPI_BYTE,
+                         split,request);
     }
   }
   
@@ -678,8 +728,7 @@ public:
       if(uniform) {
         // Outer transpose a x a matrix of N/a x M/a blocks over a processes
         Tout2->transpose(data,work); // n*b x a x m*L
-        unsigned int blocksize=n*m*S;
-        Ialltoall(work,blocksize,data,split2,request,sched2);
+        Ialltoall(work,n*m*S,data,split2,request,sched2);
       }
 #if 0 // Unused     
       else {
