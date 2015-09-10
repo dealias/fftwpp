@@ -336,7 +336,6 @@ public:
     }
     
     uniform=divisible(size,M,N);
-      
     if(!uniform) options.a=1;
 
     int start=0,stop=1;
@@ -474,13 +473,7 @@ public:
         Tin2=new Transpose(a,n*b,m*L,data,this->work,threads);
         Tout2=new Transpose(n*b,a,m*L,data,this->work,threads);
       }
-    } else {
-      sendcounts=new int[size];
-      senddisplacements=new int[size];
-      recvcounts=new int[size];
-      recvdisplacements=new int[size];
     }
-    
     if(size == 1) return;
     
     if(a == 1) {
@@ -495,6 +488,14 @@ public:
       MPI_Comm_split(communicator,rank % b,0,&split2);
       MPI_Comm_size(split2,&split2size);
       MPI_Comm_rank(split2,&split2rank);
+    }
+    
+    if(!uniform) {
+      int Size=std::max(splitsize,split2size);
+      sendcounts=new int[Size];
+      senddisplacements=new int[Size];
+      recvcounts=new int[Size];
+      recvdisplacements=new int[Size];
     }
     
     if(options.alltoall) {
@@ -553,6 +554,19 @@ public:
       Array::deleteAlign(work,allocated);
   }
   
+  void fillindices(int S, int size) {
+    int nS=n*S;
+    int mS=m*S;
+    int nm0=nS*m0;
+    int mn0=mS*n0;
+    for(int i=0; i < size; ++i) {
+      sendcounts[i]=i < mlast ? nm0 : (i == mlast ? nS*mp : 0);
+      recvcounts[i]=i < nlast ? mn0 : (i == nlast ? mS*np : 0);
+      senddisplacements[i]=nm0*i;
+      recvdisplacements[i]=mn0*i;
+    }
+  }
+  
   void inphase0() {
     if(size == 1) return;
     size_t S=sizeof(T)*(a > 1 ? b : a)*L;
@@ -560,24 +574,9 @@ public:
       unsigned int blocksize=n*m*S;
       Ialltoall(data,blocksize,work,split2,request,sched2);
     } else {
-      int Si=0;
-      int Ri=0;
-    
-      for(int i=0; i < split2size; ++i) {
-        int ni=i < nlast ? n0 : (i == nlast ? np : 0);
-        int mi=i < mlast ? m0 : (i == mlast ? mp : 0);
-        int si=m*ni*S;
-        int ri=n*mi*S;
-        sendcounts[i]=si;
-        recvcounts[i]=ri;
-        senddisplacements[i]=Si;
-        recvdisplacements[i]=Ri;
-        Si += si;
-        Ri += ri;
-      }
-      
-      Ialltoallv(data,sendcounts,senddisplacements,work,recvcounts,
-                 recvdisplacements,split2,request,sched2);
+      fillindices(S,split2size);
+      Ialltoallv(data,recvcounts,recvdisplacements,work,sendcounts,
+                 senddisplacements,split2,request,sched2);
     }
   }
   
@@ -601,24 +600,10 @@ public:
           copytoblock(work+j*block,dest,last,block,istride);
           copy(work+j*lastblock+last*istride,dest+last*block,lastblock);
         }
-        int Si=0;
-        int Ri=0;
-    
-        for(int i=0; i < splitsize; ++i) {
-          int ni=i < nlast ? n0 : (i == nlast ? np : 0);
-          int mi=i < mlast ? m0 : (i == mlast ? mp : 0);
-          int si=m*ni*S;
-          int ri=n*mi*S;
-          sendcounts[i]=si;
-          recvcounts[i]=ri;
-          senddisplacements[i]=Si;
-          recvdisplacements[i]=Ri;
-          Si += si;
-          Ri += ri;
-        }
-
-        Ialltoallv(data,sendcounts,senddisplacements,work,recvcounts,
-                   recvdisplacements,split,request,sched);
+        
+        fillindices(S,splitsize);
+        Ialltoallv(data,recvcounts,recvdisplacements,work,sendcounts,
+                   senddisplacements,split,request,sched);
       }
     }
   }
@@ -676,21 +661,7 @@ public:
         copy(src+last*block,work+j*lastblock+last*istride,lastblock);
       }
 
-      int Si=0;
-      int Ri=0;
-      
-      for(int i=0; i < splitsize; ++i) {
-        int ni=i < nlast ? n0 : (i == nlast ? np : 0);
-        int mi=i < mlast ? m0 : (i == mlast ? mp : 0);
-        int si=n*mi*S;
-        int ri=m*ni*S;
-        sendcounts[i]=si;
-        recvcounts[i]=ri;
-        senddisplacements[i]=Si;
-        recvdisplacements[i]=Ri;
-        Si += si;
-        Ri += ri;
-      }
+      fillindices(S,splitsize);
       Ialltoallv(work,sendcounts,senddisplacements,data,recvcounts,
                  recvdisplacements,split,request,sched);
     }
@@ -717,23 +688,8 @@ public:
         copyfromblock(src,work+j*block,last,block,istride);
         copy(src+last*block,work+j*lastblock+last*istride,lastblock);
       }
-
-      int Si=0;
-      int Ri=0;
-    
-      for(int i=0; i < split2size; ++i) {
-        int ni=i < nlast ? n0 : (i == nlast ? np : 0);
-        int mi=i < mlast ? m0 : (i == mlast ? mp : 0);
-        int si=n*mi*S;
-        int ri=m*ni*S;
-        sendcounts[i]=si;
-        recvcounts[i]=ri;
-        senddisplacements[i]=Si;
-        recvdisplacements[i]=Ri;
-        Si += si;
-        Ri += ri;
-      }
-
+      
+      fillindices(S,split2size);
       Ialltoallv(work,sendcounts,senddisplacements,data,recvcounts,
                  recvdisplacements,split2,request,sched2);
       }
