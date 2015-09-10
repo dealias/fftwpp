@@ -575,9 +575,9 @@ public:
   int ni(int P) {return P < nlast ? n0 : (P == nlast ? np : 0);}
   int mi(int P) {return P < mlast ? m0 : (P == mlast ? mp : 0);}
   
-  void Ialltoallout(void* sendbuf, void *recvbuf, int S, MPI_Comm comm,
-                    int rank, int size, int *sched) {
+  void Ialltoallout(void* sendbuf, void *recvbuf) {
     MPI_Request *srequest=request+size-1;
+    int S=sizeof(T)*L;
     int nS=n*S;
     int mS=m*S;
     int nm0=nS*m0;
@@ -586,9 +586,9 @@ public:
       int P=sched[p];
       if(P != rank) {
         int index=P < rank ? P : P-1;
-        MPI_Irecv((char *) recvbuf+mn0*P,mS*ni(P),MPI_BYTE,P,0,comm,
+        MPI_Irecv((char *) recvbuf+mn0*P,mS*ni(P),MPI_BYTE,P,0,communicator,
                   request+index);
-        MPI_Isend((char *) sendbuf+nm0*P,nS*mi(P),MPI_BYTE,P,0,comm,
+        MPI_Isend((char *) sendbuf+nm0*P,nS*mi(P),MPI_BYTE,P,0,communicator,
                   srequest+index);
       }
     }
@@ -596,9 +596,9 @@ public:
     memcpy((char *) recvbuf+mn0*rank,(char *) sendbuf+nm0*rank,nS*mi(rank));
   }
 
-  void Ialltoallin(void* sendbuf, void *recvbuf, int S, MPI_Comm comm,
-                   int rank, int size, int *sched) {
+  void Ialltoallin(void* sendbuf, void *recvbuf) {
     MPI_Request *srequest=request+size-1;
+    int S=sizeof(T)*L;
     int nS=n*S;
     int mS=m*S;
     int nm0=nS*m0;
@@ -607,9 +607,9 @@ public:
       int P=sched[p];
       if(P != rank) {
         int index=P < rank ? P : P-1;
-        MPI_Irecv((char *) recvbuf+nm0*P,nS*mi(P),MPI_BYTE,P,0,comm,
+        MPI_Irecv((char *) recvbuf+nm0*P,nS*mi(P),MPI_BYTE,P,0,communicator,
                   request+index);
-        MPI_Isend((char *) sendbuf+mn0*P,mS*ni(P),MPI_BYTE,P,0,comm,
+        MPI_Isend((char *) sendbuf+mn0*P,mS*ni(P),MPI_BYTE,P,0,communicator,
                   srequest+index);
       }
     }
@@ -623,8 +623,7 @@ public:
     if(uniform)
       Ialltoall(data,n*m*S,work,split2,request,sched2);
     else {
-      if(sched2)
-        Ialltoallin(data,work,S,split2,split2rank,split2size,sched);
+      if(sched2) Ialltoallin(data,work);
       else MPI_Ialltoallv(data,recvcounts,recvdisplacements,MPI_BYTE,
                           work,sendcounts,senddisplacements,MPI_BYTE,
                           split2,request);
@@ -713,8 +712,7 @@ public:
         copy(src+last*block,work+j*lastblock+last*istride,lastblock);
       }
 
-      if(sched)
-        Ialltoallout(work,data,S,split,splitrank,splitsize,sched);
+      if(sched) Ialltoallout(work,data);
       else
           MPI_Ialltoallv(work,sendcounts,senddisplacements,MPI_BYTE,
                          data,recvcounts,recvdisplacements,MPI_BYTE,
