@@ -16,8 +16,9 @@ void show(ftype *f, unsigned int, unsigned int ny,
     std::cout << std::endl;
   }
 }
+
  
-// FIXME: documentation
+// Copy an MPI-distributed array into an array on rank 0.
 template<class ftype>
 void accumulate_split(const ftype *part, ftype *whole,
 		       const unsigned int X, const unsigned int Y,
