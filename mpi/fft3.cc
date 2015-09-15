@@ -36,12 +36,15 @@ int main(int argc, char* argv[])
   fftw::effort |= FFTW_NO_SIMD;
 #endif
   int retval=0;
+
+  bool quiet=false;
+  bool test=false;
   
 #ifdef __GNUC__ 
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"hN:m:x:y:z:n:T:");
+    int c = getopt(argc,argv,"hN:m:x:y:z:n:T:qt");
     if (c == -1) break;
                 
     switch (c) {
@@ -68,9 +71,20 @@ int main(int argc, char* argv[])
       case 'T':
         fftw::maxthreads=atoi(optarg);
         break;
+      case 'q':
+        quiet=true;
+        break;
+      case 't':
+        test=true;
+        break;
       case 'h':
+	usage(3);
+	exit(0);
+	break;
       default:
-        usage(2);
+	cout << "Invalid option." << endl;
+        usage(3);
+	exit(1);
     }
   }
 
@@ -110,7 +124,7 @@ int main(int argc, char* argv[])
 
     splitxy d(mx,my,mz,group);
     
-    Complex *f=ComplexAlign(d.n*10);
+    Complex *f=ComplexAlign(d.n);
 
     // Create instance of FFT
     fft3dMPI fft(d,f);

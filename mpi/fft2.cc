@@ -67,9 +67,16 @@ int main(int argc, char* argv[])
       case 'q':
         quiet=true;
         break;
+      case 't':
+        test=true;
+        break;
       case 'h':
-      default:
         usage(2);
+	exit(0);
+      default:
+	cout << "Invalid option." << endl;
+        usage(2);
+	exit(1);
     }
   }
 
