@@ -48,9 +48,9 @@ inline void usage()
   std::cerr << "-N<int>\t\t number of timing tests"
 	    << std::endl;
   std::cerr << "-m<int>\t\t size" << std::endl;
-  std::cerr << "-X<int>\t\t x size" << std::endl;
-  std::cerr << "-Y<int>\t\t y size" << std::endl;
-  std::cerr << "-Z<int>\t\t z size" << std::endl;
+  std::cerr << "-x<int>\t\t x size" << std::endl;
+  std::cerr << "-y<int>\t\t y size" << std::endl;
+  std::cerr << "-z<int>\t\t z size" << std::endl;
   std::cerr << "-a<int>\t\t block divisor: -1=sqrt(size), [0]=Tune" << std::endl;
   std::cerr << "-A<int>\t\t alltoall: [-1]=Tune, 0=Optimized, 1=MPI" << std::endl;
   std::cerr << "-L\t\t locally transpose output" << std::endl;
