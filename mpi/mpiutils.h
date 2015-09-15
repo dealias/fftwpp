@@ -19,7 +19,7 @@ void show(ftype *f, unsigned int, unsigned int ny,
  
 // FIXME: documentation
 template<class ftype>
-void accumulate_splitx(const ftype *part, ftype *whole,
+void accumulate_split(const ftype *part, ftype *whole,
 		       const unsigned int X, const unsigned int Y,
 		       const unsigned int x0, const unsigned int y0,
 		       const unsigned int x, const unsigned int y,
@@ -66,7 +66,7 @@ void accumulate_splitx(const ftype *part, ftype *whole,
 }
 
 template<class ftype>
-void accumulate_splitx(const ftype *part, ftype *whole,
+void accumulate_split(const ftype *part, ftype *whole,
 		       const split split,
 		       const unsigned int Z,
 		       const bool transposed, 
@@ -79,7 +79,7 @@ void accumulate_splitx(const ftype *part, ftype *whole,
   unsigned int x=split.x;
   unsigned int y=split.y;
 
-  accumulate_splitx(part,whole,X,Y,x0,y0,x,y,Z,transposed,communicator);
+  accumulate_split(part,whole,X,Y,x0,y0,x,y,Z,transposed,communicator);
 }
 
 // output the contents of a 2D array

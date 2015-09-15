@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c=getopt(argc,argv,"hm:X:Y:Z:");
+    int c=getopt(argc,argv,"hm:x:y:z:");
     if (c == -1) break;
                 
     switch (c) {
@@ -61,13 +61,13 @@ int main(int argc, char* argv[])
       case 'm':
         mx=my=atoi(optarg);
         break;
-      case 'X':
+      case 'x':
         mx=atoi(optarg);
         break;
-      case 'Y':
+      case 'y':
         my=atoi(optarg);
         break;
-      case 'Z':
+      case 'z':
         mz=atoi(optarg);
         break;
       case 'h':
@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
     array3<Complex> localf(mx,my,mz);
     localf=0.0;
     
-    accumulate_splitx(f,localf(),d,mz,false,group.active);
+    accumulate_split(f,localf(),d,mz,false,group.active);
     if(main) {
       cout << "Accumulted:" <<endl;
       //cout << localf << endl;
@@ -148,7 +148,7 @@ int main(int argc, char* argv[])
     }
 	
     localf=0.0;
-    accumulate_splitx(f,localf(),d,mz,true,group.active);
+    accumulate_split(f,localf(),d,mz,true,group.active);
     if(main) {
       if(mx*my < outlimit) {
     	cout << "\nAccumulated version:" << endl;

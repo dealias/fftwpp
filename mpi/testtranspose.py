@@ -73,7 +73,7 @@ def main(argv):
                             ntests += 1
                             for A in range(0,2):
                                 #print "Test", ntest, "of", ntests
-                                rtest = runtest("transpose", X, Y, P, ["-tq", "-Z"+str(Z), "-a"+str(a), "-A"+str(A)], logfile, timeout)
+                                rtest = runtest("transpose", X, Y, P, ["-tq", "-z"+str(Z), "-a"+str(a), "-A"+str(A)], logfile, timeout)
                                 if not rtest == 0:
                                     nfails += 1
                 

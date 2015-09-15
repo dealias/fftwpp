@@ -48,9 +48,9 @@ inline void usage()
   std::cerr << "-N<int>\t\t number of timing tests"
 	    << std::endl;
   std::cerr << "-m<int>\t\t size" << std::endl;
-  std::cerr << "-X<int>\t\t X size" << std::endl;
-  std::cerr << "-Y<int>\t\t Y size" << std::endl;
-  std::cerr << "-Z<int>\t\t Z size" << std::endl;
+  std::cerr << "-X<int>\t\t x size" << std::endl;
+  std::cerr << "-Y<int>\t\t y size" << std::endl;
+  std::cerr << "-Z<int>\t\t z size" << std::endl;
   std::cerr << "-a<int>\t\t block divisor: -1=sqrt(size), [0]=Tune" << std::endl;
   std::cerr << "-A<int>\t\t alltoall: [-1]=Tune, 0=Optimized, 1=MPI" << std::endl;
   std::cerr << "-L\t\t locally transpose output" << std::endl;
@@ -247,7 +247,7 @@ int transpose(int rank, int size, int N)
 	wholedata=new Complex[X*Y*Z];
 	wholeoutput=new Complex[X*Y*Z];
       }
-      accumulate_splitx(data,wholedata,X,Y,xstart,ystart,x,y,Z,true,active);
+      accumulate_split(data,wholedata,X,Y,xstart,ystart,x,y,Z,true,active);
 
       if(showoutput && rank == 0) {
 	cout << "\nAccumulated input data:" << endl;
@@ -262,7 +262,7 @@ int transpose(int rank, int size, int N)
 	  show(data,X,y*Z,active);
       }
 
-      accumulate_splitx(data,wholeoutput,X,Y,xstart,ystart,x,y,Z,false,active);
+      accumulate_split(data,wholeoutput,X,Y,xstart,ystart,x,y,Z,false,active);
 
       if(rank == 0) {
 	if(showoutput) {
@@ -372,7 +372,7 @@ int main(int argc, char **argv)
   optind=0;
 #endif  
   for (;;) {
-    int c=getopt(argc,argv,"hLN:A:a:m:n:T:X:Y:Z:qt");
+    int c=getopt(argc,argv,"hLN:A:a:m:n:T:x:y:z:qt");
     if (c == -1) break;
                 
     switch (c) {
@@ -393,13 +393,13 @@ int main(int argc, char **argv)
     case 'm':
       X=Y=atoi(optarg);
       break;
-    case 'X':
+    case 'x':
       X=atoi(optarg);
       break;
-    case 'Y':
+    case 'y':
       Y=atoi(optarg);
       break;
-    case 'Z':
+    case 'z':
       Z=atoi(optarg);
       break;
     case 'T':

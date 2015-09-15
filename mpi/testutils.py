@@ -30,8 +30,8 @@ def runtest(filename, X, Y, P, extraargs, logfilename, timeout):
     cmd.append("./" + filename)
     for arg in  extraargs:
         cmd.append(arg)
-    cmd.append("-X" + str(X))
-    cmd.append("-Y" + str(Y))
+    cmd.append("-x" + str(X))
+    cmd.append("-y" + str(Y))
     print " ".join(cmd),
     log.write(" ".join(cmd) + '\n')
     

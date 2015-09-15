@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"hN:m:X:Y:n:T:qt");
+    int c = getopt(argc,argv,"hN:m:x:y:n:T:qt");
     if (c == -1) break;
                 
     switch (c) {
@@ -52,10 +52,10 @@ int main(int argc, char* argv[])
       case 'm':
         mx=my=atoi(optarg);
         break;
-      case 'X':
+      case 'x':
         mx=atoi(optarg);
         break;
-      case 'Y':
+      case 'y':
         my=atoi(optarg);
         break;
       case 'n':
@@ -108,7 +108,7 @@ int main(int argc, char* argv[])
 	 << " threads/node" << endl;
   }
 
-  if(group.rank < group.size) { // If the process is unused, then do nothing.
+  if(group.rank < group.size) { 
     bool main=group.rank == 0;
     if(!quiet && main) {
       cout << "N=" << N << endl;
@@ -147,7 +147,7 @@ int main(int argc, char* argv[])
       size_t align=sizeof(Complex);
       array2<Complex> localfin(mx,my,align);
       fft2d localForward2(-1,localfin);
-      accumulate_splitx(f, localfin(), d, 1, false, group.active);
+      accumulate_split(f, localfin(), d, 1, false, group.active);
 
       fft.Forwards(f);
 
@@ -167,7 +167,7 @@ int main(int argc, char* argv[])
       }
 
       array2<Complex> localfout(mx,my,align);
-      accumulate_splitx(f, localfout(), d, 1, true, group.active);
+      accumulate_split(f, localfout(), d, 1, true, group.active);
       if(main) {
 	if(!quiet)
 	  cout << "\naccumulated output:\n" << localfout << endl;

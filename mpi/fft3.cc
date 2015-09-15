@@ -103,20 +103,22 @@ int main(int argc, char* argv[])
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;
 
-  if(group.rank == 0) {
-    cout << "provided: " << provided << endl;
-    cout << "fftw::maxthreads: " << fftw::maxthreads << endl;
-  }
-  
-  if(group.rank == 0) {
-    cout << "Configuration: " 
-         << group.size << " nodes X " << fftw::maxthreads 
+  if(!quiet) {
+    if(group.rank == 0) {
+      cout << "provided: " << provided << endl;
+      cout << "fftw::maxthreads: " << fftw::maxthreads << endl;
+    }
+    
+    if(group.rank == 0) {
+      cout << "Configuration: " 
+	   << group.size << " nodes X " << fftw::maxthreads 
          << " threads/node" << endl;
+    }
   }
   
   if(group.rank < group.size) {
     bool main=group.rank == 0;
-    if(main) {
+    if(!quiet && main) {
       cout << "N=" << N << endl;
       cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
       cout << "size=" << group.size << endl;
@@ -128,52 +130,61 @@ int main(int argc, char* argv[])
 
     // Create instance of FFT
     fft3dMPI fft(d,f);
-    
-    /*
-    double *T=new double[N];
-    for(unsigned int i=0; i < N; ++i) {
-      init(f,d);
-      seconds();
-      fft.Forwards(f);
-      fft.Backwards(f);
-      fft.Normalize(f);
-      T[i]=seconds();
-    }
-    if(main) timings("FFT timing:",mx,T,N);
-    delete [] T;
-    */
 
-    if(mx*my*mz < outlimit) {
-      MPI_Barrier(group.active);
-      for(int i=0; i < group.size; ++i) {
-      	MPI_Barrier(group.active);
-      	if(i == group.rank) {
-      	  cout << "process " << i << " splity:" << endl;
-      	  d.show();
-      	  cout << endl;
-      	}
-	usleep(500); // hack to get around dealing with cout and MPI
-      }
-      MPI_Barrier(group.active);
+    if(test) {
 
-      init(f,d);
+      if(mx*my*mz < outlimit) {
+	MPI_Barrier(group.active);
+	for(int i=0; i < group.size; ++i) {
+	  MPI_Barrier(group.active);
+	  if(i == group.rank) {
+	    cout << "process " << i << " splity:" << endl;
+	    d.show();
+	    cout << endl;
+	  }
+	  usleep(500); // hack to get around dealing with cout and MPI
+	}
+	MPI_Barrier(group.active);
 
-      if(main) cout << "\ninput:" << endl;
-      show(f,d.x,d.y,d.Z,group.active);
+	init(f,d);
 
-      fft.Forwards(f);
+	if(!quiet) {
+	  if(main) cout << "\ninput:" << endl;
+	  show(f,d.x,d.y,d.Z,group.active);
+	}
+	
+	fft.Forwards(f);
+
+	if(!quiet) {
+	  if(main) cout << "\noutput:" << endl;
+	  show(f,d.X,d.xy.y,d.z,group.active);
+	}
       
-      std::cout << d.xy.y << std::endl;
-      if(main) cout << "\noutput:" << endl;
-      show(f,d.X,d.xy.y,d.z,group.active);
+	fft.Backwards(f);
+	fft.Normalize(f);
 
-      fft.Backwards(f);
-      fft.Normalize(f);
-
-      if(main) cout << "\nback to input:" << endl;
-      show(f,d.x,d.y,d.Z,group.active);
+	if(!quiet) {
+	  if(main) cout << "\nback to input:" << endl;
+	  show(f,d.x,d.y,d.Z,group.active);
+	}
+      }
+    } else {
+      if(N > 0) {
+    
+	double *T=new double[N];
+	for(unsigned int i=0; i < N; ++i) {
+	  init(f,d);
+	  seconds();
+	  fft.Forwards(f);
+	  fft.Backwards(f);
+	  fft.Normalize(f);
+	  T[i]=seconds();
+	}
+	if(main) timings("FFT timing:",mx,T,N);
+	delete [] T;
+      }
     }
-
+  
     deleteAlign(f);
   }
   

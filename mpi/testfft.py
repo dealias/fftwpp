@@ -15,7 +15,7 @@ print "MPI fft unit test"
 # list of pairs of program names and dimension of transform
 proglist = []
 proglist.append(["fft2", 2])
-proglist.append(["fft3", 3])
+#proglist.append(["fft3", 3])
 
 print proglist
 
