@@ -98,13 +98,15 @@ int main(int argc, char* argv[])
     splityz d(mx,my,mz,group);
 
     if(!quiet) {
-      // cout << "process " << group.rank << endl;
-      // d.show();
+      // if(group.rank == 1) {
+      // 	 cout << "process " << group.rank << endl;
+      // 	  d.show();
+      // }
     }
 
     unsigned int localsize=d.X*d.y*d.z;
     Complex *pF=ComplexAlign(localsize);
-    array3<Complex> F0(d.X,d.y,d.z,pF);
+    Array3<Complex> F0(d.X,d.y,d.z,pF);
      
     init(F0(),d.X,d.Y,d.X,d.x0,d.y0,d.z0,d.x,d.y,d.z);
     //F0.Load(group.rank);
@@ -116,8 +118,8 @@ int main(int argc, char* argv[])
     
     if(!quiet && main) cout << "Accumulating... " << endl;
     // Local array for transpose=0
-    Complex *pf0=ComplexAlign(mx * my * mz);
-    array3<Complex> f0(mx,my,mz,pf0);
+    //Complex *pf0=ComplexAlign(d.X*d.Y*d.Z);
+    Array3<Complex> f0(d.X,d.Y,d.Z);
     f0.Load(0.0);
     accumulate_splityz(F0(),f0(),
     		       d.X, d.Y, d.Z,

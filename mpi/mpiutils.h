@@ -108,35 +108,59 @@ void accumulate_splityz(const ftype *part,
     //  X * y * z
     if(rank == 0) {
       // First copy rank 0's part into the whole
-      const int count=X*y;
+      const int count=y;
       const int stride=Z;
       const int length=z;
-      // std::cout << "count: "  << count << std::endl;
-      // std::cout << "stride: "  << stride << std::endl;
-      // std::cout << "length: "  << length << std::endl;
-      copyfromblock(part,whole,count,length,stride);
+      // std::cout << "(x0,y0,z0): ("  << x0 << "," << y0 << "," << z0 << ")"
+      // 		<< std::endl;
+      // std::cout << "(x,y,z): ("  << x << "," << y << "," << z << ")"
+      // 		<< std::endl;
+      std::cout << "count: "  << count << std::endl;
+      std::cout << "stride: "  << stride << std::endl;
+      std::cout << "length: "  << length << std::endl;
+      for(unsigned int i=0; i < X; ++i) {
+	const int outoffset=i*Y*Z+y0*Z+z0;
+	const int inoffset=i*y*z;
+	// std::cout << "outoffset: "  << outoffset << std::endl;
+	// std::cout << "inoffset: "  << inoffset << std::endl;
+	copyfromblock(part+inoffset,whole+outoffset,
+		      count,length,stride);
+      }
+	  //copyfromblock(part,whole,count,length,stride);
       for(int p=1; p < size; ++p) {
 	unsigned int dims[9];
 	MPI_Recv(&dims,9,MPI_UNSIGNED,p,0,communicator,&stat);
 	unsigned int X=dims[0];
 	unsigned int Y=dims[1];
 	unsigned int Z=dims[2];
-	unsigned int x0=dims[3];
+	//unsigned int x0=dims[3];
 	unsigned int y0=dims[4];
 	unsigned int z0=dims[5];
-	unsigned int x=dims[6];
+	//unsigned int x=dims[6];
 	unsigned int y=dims[7];
 	unsigned int z=dims[8];
+
+	// std::cout << "(x0,y0,z0): ("  << x0 << "," << y0 << "," << z0 << ")"
+	// 	  << std::endl;
+	// std::cout << "(x,y,z): ("  << x << "," << y << "," << z << ")"
+	// 	  << std::endl;
 
 	unsigned int n=X*y*z;
 	if(n > 0) {
 	  ftype *C=new ftype[n];
 	  MPI_Recv(C,sizeof(ftype)*n,MPI_BYTE,p,0,communicator,&stat);
-	  const int offset=y0*Z+z0;
-	  const int count=X;
-	  const int stride=Y*Z;
+	  const int count=y;
+	  const int stride=Z;
 	  const int length=z;
-	  copyfromblock(C,whole+offset,count,length,stride);
+	  // std::cout << "count: "  << count << std::endl;
+	  // std::cout << "stride: "  << stride << std::endl;
+	  // std::cout << "length: "  << length << std::endl;
+	  for(unsigned int i=0; i < X; ++i) {
+	    const int outoffset=i*Y*Z+y0*Z+z0;
+	    const int inoffset=i*y*z;
+	    // std::cout << "outoffset: "  << outoffset << std::endl;
+	    copyfromblock(C+inoffset,whole+outoffset,count,length,stride);
+	  }
 	  delete [] C;
 	}
       }
