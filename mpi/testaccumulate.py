@@ -36,7 +36,8 @@ else:
             for Z in Zlist:
                 for P in Plist:
                     ntests += 1
-                    rtest = runtest(progname, X, Y, P, ["-z"+str(Z)], logfile, timeout)
+                    args = ["-z"+str(Z), "-q"]
+                    rtest = runtest(progname, X, Y, P, args, logfile, timeout)
                     if not rtest == 0:
                         nfails += 1
                 
