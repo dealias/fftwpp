@@ -102,7 +102,8 @@ int main(int argc, char* argv[])
       // d.show();
     }
 
-    Complex *pF=ComplexAlign(d.n2);
+    unsigned int localsize=d.X*d.y*d.z;
+    Complex *pF=ComplexAlign(localsize);
     array3<Complex> F0(d.X,d.y,d.z,pF);
      
     init(F0(),d.X,d.Y,d.X,d.x0,d.y0,d.z0,d.x,d.y,d.z);
@@ -123,31 +124,31 @@ int main(int argc, char* argv[])
     		       d.x0, d.y0, d.z0,
     		       d.x, d.y, d.z,
     		       0, group.active);
-    array3<Complex> g0(d.X,d.Y,d.Z);
-    g0.Load(0.0);
-    if(!quiet && main) {
-      cout << "Local transpose=0:" << endl;
-      cout << f0 << endl;
-      cout << "local init:" << endl;
-      array3<Complex> G0(d.X,d.Y,d.Z);
+    if(main) {
+      array3<Complex> g0(d.X,d.Y,d.Z);
       init(g0,d.X,d.Y,d.Z,0,0,0,d.X,d.Y,d.Z);
-      cout << g0 << endl;
-    }
-    bool same=true;
-    for(unsigned int i = 0; i < d.X; ++i) {
-      for(unsigned int j = 0; j < d.Y; ++j) {
-	for(unsigned int k = 0; k < d.Z; ++k) {
-      if(g0(i,j,k) != f0(i,j,k))
-	same=false;
+      if(!quiet) {
+	cout << "Local transpose=0:" << endl;
+	cout << f0 << endl;
+	cout << "local init:" << endl;
+	cout << g0 << endl << endl;;
+      }
+
+      bool same=true;
+      for(unsigned int i = 0; i < d.X; ++i) {
+	for(unsigned int j = 0; j < d.Y; ++j) {
+	  for(unsigned int k = 0; k < d.Z; ++k) {
+	    if(g0(i,j,k) != f0(i,j,k))
+	      same=false;
+	  }
 	}
       }
+      if(!same)
+	retval++;
     }
-    if(!same)
-      retval++;
   }
 
   if(group.rank == 0) {
-    cout << endl;
     if(retval == 0) {
       cout << "Test passed." << endl;
     } else {

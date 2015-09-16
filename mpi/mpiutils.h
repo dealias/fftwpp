@@ -108,8 +108,8 @@ void accumulate_splityz(const ftype *part,
     //  X * y * z
     if(rank == 0) {
       // First copy rank 0's part into the whole
-      const int count=X;
-      const int stride=Y*Z;
+      const int count=X*y;
+      const int stride=Z;
       const int length=z;
       // std::cout << "count: "  << count << std::endl;
       // std::cout << "stride: "  << stride << std::endl;
