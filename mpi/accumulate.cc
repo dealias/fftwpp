@@ -51,28 +51,28 @@ int main(int argc, char* argv[])
   for (;;) {
     int c=getopt(argc,argv,"hm:x:y:z:q");
     if (c == -1) break;
-                
+    
     switch (c) {
-      case 0:
-        break;
-      case 'm':
-        mx=my=atoi(optarg);
-        break;
-      case 'x':
-        mx=atoi(optarg);
-        break;
-      case 'y':
-        my=atoi(optarg);
-        break;
-      case 'z':
-        mz=atoi(optarg);
-        break;
-      case 'q':
-        quiet=true;
-        break;
-      case 'h':
-      default:
-        cout << "FIXME: usage" << endl;
+    case 0:
+      break;
+    case 'm':
+      mx=my=atoi(optarg);
+      break;
+    case 'x':
+      mx=atoi(optarg);
+      break;
+    case 'y':
+      my=atoi(optarg);
+      break;
+    case 'z':
+      mz=atoi(optarg);
+      break;
+    case 'q':
+      quiet=true;
+      break;
+    case 'h':
+    default:
+      cout << "FIXME: usage" << endl;
     }
   }
 
@@ -147,13 +147,13 @@ int main(int argc, char* argv[])
       if(mx*my < outlimit) {
 	if(main) cout << "\noutput:" << endl;
 	show(f,d.X,d.Y,mz,
-		   d.x0,d.y0,0,
-		   d.x,d.y,mz,
-		   group.active);
+	     d.x0,d.y0,0,
+	     d.x,d.y,mz,
+	     group.active);
 
 	cout << "process " << group.rank << endl;
 	for(unsigned int i=0; i < d.n * mz; ++i) {
-		cout << f[i] << endl;
+	  cout << f[i] << endl;
 	}
       }
     }

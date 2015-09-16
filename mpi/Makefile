@@ -10,8 +10,8 @@ ifeq ($(shell $(MPICXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
 CXXFLAGS=-O3 -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
 	-fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native
 #For valgrind:
-#CXXFLAGS=-fopenmp -g -Wall -ansi -fomit-frame-pointer -fstrict-aliasing \
-#	 -ffast-math -msse2 -mfpmath=sse
+# CXXFLAGS=-fopenmp -g -Wall -ansi -fomit-frame-pointer -fstrict-aliasing \
+# 	 -ffast-math -msse2 -mfpmath=sse
 endif
 
 #Intel compiler
@@ -44,7 +44,7 @@ MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
 vpath %.cc ../
 
 FFTW=fftw++
-FILES=cconv2 conv2 cconv3 conv3 fft2 fft3 transpose accumulate accumulatexy
+FILES=cconv2 conv2 cconv3 conv3 fft2 fft3 transpose accumulate accumulateyz
 UTILS=$(FFTW) mpiutils wisdom-api
 MPITRANSPOSE=$(UTILS) mpitranspose
 MPIFFT=$(MPITRANSPOSE) mpifftw++
@@ -84,7 +84,7 @@ transpose: transpose.o $(MPIFFT:=.o)
 accumulate: accumulate.o $(MPIFFT:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
-accumulatexy: accumulatexy.o $(MPIFFT:=.o)
+accumulateyz: accumulateyz.o $(MPIFFT:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
 clean:  FORCE

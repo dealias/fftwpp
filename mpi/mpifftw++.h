@@ -127,7 +127,7 @@ public:
     std::cout << "x=" << x << "\ty="<<y << "\tz="<<z << std::endl;
     std::cout << "x0=" << x0 << "\ty0="<< y0 << "\tz0="<<z0 << std::endl;
     std::cout << "yz.x=" << yz.x << std::endl;
-    std::cout << "n=" << n << std::endl;
+    std::cout << "n=" << n << "\tn2=" << n2 << std::endl;
   }
 };
   
