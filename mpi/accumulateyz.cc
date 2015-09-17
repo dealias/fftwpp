@@ -28,9 +28,13 @@ inline void init(Complex *f,
     }
     break;
   case 1:
+    cerr << "Unimplemented: TODO" << endl;
+    exit(1);
     // FIXME
     break;
   case 2:
+    cerr << "Unimplemented: TODO" << endl;
+    exit(1);
     // FIXME
     break;
   default:

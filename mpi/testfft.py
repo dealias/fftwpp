@@ -1,80 +1,71 @@
 #!/usr/bin/python -u
 
 import sys # so that we can return a value at the end.
-import random # for randum number generators
 import time
+from subprocess import * # so that we can run commands
 
 import os.path
 
-from testutils import *
-
 retval = 0
 
-print "MPI fft unit test"
+msg = "MPI fft unit test"
+print msg
 
-# list of pairs of program names and dimension of transform
-proglist = []
-proglist.append(["fft2", 2])
-#proglist.append(["fft3", 3])
+ffttestlist = []
+ffttestlist.append("testfft2.py")
 
-print proglist
-
-logfile = 'testfft.log' 
+logfile = 'testfft.log'
 print "Log in " + logfile + "\n"
 log = open(logfile, 'w')
+log.write(msg)
+log.write("\n")
 log.close()
-        
-for progp in proglist:
-    pname = progp[0]
-    dim = progp[1]
-    if not os.path.isfile(pname):
-        print "Error: executable", pname, "not present!"
+
+ntests = 0
+nfails = 0
+tstart = time.time()
+for test in ffttestlist:
+    ntests += 1
+    if not os.path.isfile(test):
+        msg = "Error: "+ pname + "not present!"
+        print msg
+        log = open(logfile, 'a')
+        log.write(msg + "\n")
+        log.close()
         retval += 1
     else:
-        print "\nTesting", pname
+        msg = "Running " + test + ": "
+        print(msg),
+        log = open(logfile, 'a')
+        log.write(msg)
+        log.close()
+        cmd = []
+        cmd.append("./" + test)
+        #print cmd
+        proc = Popen(cmd, stdout = PIPE, stderr = PIPE)
+        proc.wait() # sets the return code
         
-        Xlist = [1,2,3,4,5,random.randint(6,64)]
-        Ylist = [1,2,3,4,5,random.randint(6,64)]
-        Zlist = [1,2,3,4,5,random.randint(6,64)]
-        Plist = [1,2,3,4]
+        prc = proc.returncode
+        out, err = proc.communicate() # capture output
+        if (prc == 0): # did the process succeed?
+            msg = "\tpass"
+            print msg
+            log = open(logfile, 'a')
+            log.write(msg + "\n")
+            log.close()
+        else:
+            msg = "\tFAILED!"
+            print msg
+            log = open(logfile, 'a')
+            log.write(msg + "\n")
+            log.write("stdout:\n" + out + "\n")
+            log.write("stderr:\n" + err + "\n")
+            log.close()
+            retval += 1
 
-        #Xlist = [1,2,random.randint(6,64)]
-        #Ylist = [1,2,random.randint(6,64)]
-        #Zlist = [1,2,random.randint(6,64)]
-        #Plist = [1,2]
+print "\n", nfails, "failures out of", ntests, "tests." 
 
-        timeout = 5
-
-        ntests = 0
-        if(dim == 2):
-            ntests = len(Xlist) * len(Ylist) * len(Plist)
-        if(dim == 3):
-            ntests = len(Xlist) * len(Ylist) * len(Zlist) * len(Plist)
-        print "Running", ntests, "tests."
-        tstart = time.time()
-    
-        ntest = 0
-        nfails = 0
-        for P in Plist:
-            for X in Xlist:
-                for Y in Ylist:
-                    if(dim == 2):
-                        ntest += 1
-                        args = ["-N0","-qt"]
-                        rtest = runtest(pname, X, Y, P, args, logfile, timeout)
-                        if not rtest == 0:
-                            nfails += 1
-                    if(dim == 3):
-                        for Z in Zlist:
-                            args = ["-N0","-qt", "-Z" + str(Z)]
-                            rtest = runtest(pname, X, Y, P, args, \
-                                            logfile, timeout)
-                            if not rtest == 0:
-                                nfails += 1
-                            
-        print "\n", nfails, "failures out of", ntests, "tests." 
-
-        tend = time.time()
-        print "\nElapsed time (s):", tend - tstart
+tend = time.time()
+print "\nElapsed time (s):", tend - tstart
         
 sys.exit(retval)
