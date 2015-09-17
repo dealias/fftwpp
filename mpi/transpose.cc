@@ -27,7 +27,7 @@ void MPISaveWisdom(const MPI_Comm& active);
 }
 
 void init(Complex *data, unsigned int X, unsigned int y, unsigned int Z,
-	  ptrdiff_t ystart) {
+	  int xstart, int ystart) {
   for(unsigned int i=0; i < X; ++i) { 
     for(unsigned int j=0; j < y; ++j) {
       for(unsigned int k=0; k < Z; ++k) {
@@ -99,7 +99,7 @@ void fftwTranspose(int rank, int size)
                                                  outtranspose ? 0 : FFTW_MPI_TRANSPOSED_OUT);
   fftwpp::MPISaveWisdom(MPI_COMM_WORLD);
   
-  init(data,X,y,Z,ystart);
+  init(data,X,y,Z,xstart,ystart);
 
   bool showoutput=X*Y < showlimit && N == 1;
   if(showoutput)
@@ -171,20 +171,20 @@ void fftwTranspose(int rank, int size)
   
 int transpose(int rank, int size, int N)
 {
-  int retval=0; // success!
+  int retval=0;
 
   Complex *data;
   
   unsigned int xsize=localsize(X,size);
   unsigned int ysize=localsize(Y,size);
-  size=std::min(xsize,ysize);
+  size=std::max(xsize,ysize);
   
   unsigned int x=localdimension(X,rank,size);
   unsigned int y=localdimension(Y,rank,size);
   
   unsigned int xstart=localstart(X,rank,size);
   unsigned int ystart=localstart(Y,rank,size);
-  
+
   MPI_Comm active; 
   MPI_Comm_split(MPI_COMM_WORLD,rank < size,0,&active);
 
@@ -193,6 +193,7 @@ int transpose(int rank, int size, int N)
 
     if(rank == 0) {
       cout << "rank=" << rank << endl;
+      cout << "size=" << size << endl;
       cout << "x=" << x << endl;
       cout << "y=" << y << endl;
       cout << "X=" << X << endl;
@@ -201,9 +202,9 @@ int transpose(int rank, int size, int N)
       cout << "N=" << N << endl;
     }
     
-    data=ComplexAlign(std::max(X*y,x*Y)*Z);
+    data=ComplexAlign(100*std::max(X*y,x*Y)*Z);
   
-    init(data,X,y,Z,ystart);
+    init(data,X,y,Z,xstart,ystart);
 
     //    show(data,X,y*Z,active);
     
@@ -212,13 +213,35 @@ int transpose(int rank, int size, int N)
 //    mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,fftw::maxthreads,active);
     mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,
                             mpioptions(fftw::maxthreads,a,alltoall),active);
-    init(data,X,y,Z,ystart);
+    init(data,X,y,Z,xstart,ystart);
+    show(data,X,y*Z,active);
+    T.data=data;
+    
+    cout << endl;
+    
+    T.inphase0();
+    T.insync0();
+    
+    T.inphase1();
+    T.insync1();
+//    show(T.work,x,Y*Z,active);
+    cout << endl;
+    
+    T.inpost();
+    MPI_Barrier(active);
+    sleep(1);
+    show(data,x,Y*Z,active);
+    
+    MPI_Finalize();
+    exit(0);
+
+    
     T.transpose(data,false,true);
   
     //    show(data,x,Y*Z,active);
     
     T.NmTranspose();
-    init(data,X,y,Z,ystart);
+    init(data,X,y,Z,xstart,ystart);
     
     fftw::statistics Sininit,Sinwait0,Sinwait1,Sin;
     fftw::statistics Soutinit,Soutwait0,Soutwait1,Sout;
@@ -235,7 +258,7 @@ int transpose(int rank, int size, int N)
       if(rank == 0)
 	cout << "\nDiagnostics and unit test.\n" << endl;
 
-      init(data,X,y,Z,ystart);
+      init(data,X,y,Z,xstart,ystart);
       if(showoutput) {
 	if(rank == 0) 
 	  cout << "Input:" << endl;
@@ -289,7 +312,7 @@ int transpose(int rank, int size, int N)
       if(rank == 0)
 	cout << "\nSpeed test.\n" << endl;
       for(int k=0; k < N; ++k) {
-	init(data,X,y,Z,ystart);
+	init(data,X,y,Z,xstart,ystart);
     
 	double begin=0.0, Tinit0=0.0, Tinit=0.0, Twait0=0.0, Twait1=0.0;
 	if(rank == 0) begin=totalseconds();
