@@ -10,11 +10,11 @@ from testutils import *
 
 retval = 0
 
-print "MPI fft2 unit test"
+print "MPI cconv3 unit test"
 
-pname = "fft2"
+pname = "cconv3"
 
-logfile = 'testfft2.log' 
+logfile = 'testcconv3.log' 
 print "Log in " + logfile + "\n"
 log = open(logfile, 'w')
 log.close()
@@ -25,11 +25,14 @@ if not os.path.isfile(pname):
 else:
     Xlist = [1,2,3,4,5,random.randint(6,64)]
     Ylist = [1,2,3,4,5,random.randint(6,64)]
+    Xlist = [1,2,3,4,5,random.randint(6,64)]
+    Zlist = [1,2,3,4,5,random.randint(6,64)]
     Plist = [1,2,3,4]
-    timeout = 5
+    
+    timeout = 10
 
     ntests = 0
-    ntests = len(Xlist) * len(Ylist) * len(Plist)
+    ntests = len(Xlist) * len(Ylist) * len(Zlist) * len(Plist)
     print "Running", ntests, "tests."
     tstart = time.time()
     
@@ -38,11 +41,12 @@ else:
     for P in Plist:
         for X in Xlist:
             for Y in Ylist:
-                ntest += 1
-                args = ["-N0","-qt"]
-                rtest = runtest(pname, X, Y, P, args, logfile, timeout)
-                if not rtest == 0:
-                    nfails += 1
+                for Z in Zlist:
+                    ntest += 1
+                    args = ["-q", "-t","-z" + str(Z)]
+                    rtest = runtest(pname, X, Y, P, args, logfile, timeout)
+                    if not rtest == 0:
+                        nfails += 1
                             
     print "\n", nfails, "failures out of", ntests, "tests." 
 

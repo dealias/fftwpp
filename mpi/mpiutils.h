@@ -115,9 +115,9 @@ void accumulate_splityz(const ftype *part,
       // 		<< std::endl;
       // std::cout << "(x,y,z): ("  << x << "," << y << "," << z << ")"
       // 		<< std::endl;
-      std::cout << "count: "  << count << std::endl;
-      std::cout << "stride: "  << stride << std::endl;
-      std::cout << "length: "  << length << std::endl;
+      // std::cout << "count: "  << count << std::endl;
+      // std::cout << "stride: "  << stride << std::endl;
+      // std::cout << "length: "  << length << std::endl;
       for(unsigned int i=0; i < X; ++i) {
 	const int outoffset=i*Y*Z+y0*Z+z0;
 	const int inoffset=i*y*z;

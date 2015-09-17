@@ -9,23 +9,28 @@ using namespace fftwpp;
 // Number of iterations.
 unsigned int N0=10000000;
 unsigned int N=0;
-unsigned int mx=4;
-unsigned int my=4;
-unsigned int mz=4;
 
-inline void init(Complex *f, splitxy d) 
+void init(Complex *f,
+	  unsigned int X, unsigned int Y, unsigned int Z,
+	  unsigned int x0, unsigned int y0, unsigned int z0,
+	  unsigned int x, unsigned int y, unsigned int z)
 {
   unsigned int c=0;
-  for(unsigned int i=0; i < d.x; ++i) {
-    unsigned int ii=d.x0+i;
-    for(unsigned int j=0; j < d.y; j++) {
-      unsigned int jj=d.y0+j;
-      for(unsigned int k=0; k < d.Z; k++) {
+  for(unsigned int i=0; i < x; ++i) {
+    unsigned int ii=x0+i;
+    for(unsigned int j=0; j < y; j++) {
+      unsigned int jj=y0+j;
+      for(unsigned int k=0; k < Z; k++) {
 	unsigned int kk=k;
 	f[c++]=Complex(10*kk+ii,jj);
       }
     }
   }
+}
+
+void init(Complex *f, splitxy d)
+{
+  init(f,d.X,d.Y,d.Z,d.x0,d.y0,d.z0,d.x,d.y,d.z);
 }
 
 unsigned int outlimit=3000;
@@ -36,6 +41,10 @@ int main(int argc, char* argv[])
   fftw::effort |= FFTW_NO_SIMD;
 #endif
   int retval=0;
+
+  unsigned int mx=4;
+  unsigned int my=0;
+  unsigned int mz=0;
 
   bool quiet=false;
   bool test=false;
@@ -92,6 +101,7 @@ int main(int argc, char* argv[])
   MPI_Init_thread(&argc,&argv,MPI_THREAD_MULTIPLE,&provided);
 
   if(my == 0) my=mx;
+  if(mz == 0) mz=mx;
 
   if(N == 0) {
     N=N0/mx/my;

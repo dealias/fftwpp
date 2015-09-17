@@ -20,6 +20,7 @@ public:
   void init(const MPI_Comm& comm) {
     MPI_Comm_rank(comm,&rank);
     MPI_Comm_size(comm,&size);
+    //std::cout << "size: " << size << std::endl;
   }
   
   void activate(const MPI_Comm& comm) {
@@ -50,6 +51,7 @@ public:
       MPI_Comm_split(active,q,p,&communicator2);
     }
   }
+
 };
 
 // Class to compute the local array dimensions and storage requirements for
@@ -146,7 +148,7 @@ public:
   splitxy() {}
   splitxy(unsigned int X, unsigned int Y, unsigned int Z,
           const MPIgroup& group) : X(X), Y(Y), Z(Z),
-                                   communicator(group.active) {
+				   communicator(group.active) {
     xy=split(X,Y,group.communicator,group.block);
     yz=split(Y,Z,group.communicator2);
     x=xy.x;
@@ -183,21 +185,21 @@ public:
 // deleteAlign(f);
 
 class fft2dMPI {
- private:
+private:
   split d;
   mfft1d *xForwards,*xBackwards;
   mfft1d *yForwards,*yBackwards;
   Complex *f;
   bool tranfftwpp;
   mpitranspose<Complex> *T;
- public:
+public:
   void inittranspose(Complex* f) {
     int size;
     MPI_Comm_size(d.communicator,&size);
     T=new mpitranspose<Complex>(d.X,d.y,d.x,d.Y,1,f,d.communicator);
   }
   
- fft2dMPI(const split& d, Complex *f) : d(d) {
+  fft2dMPI(const split& d, Complex *f) : d(d) {
     inittranspose(f);
 
     xForwards=new mfft1d(d.X,-1,d.y,d.y,1,f,f); 
@@ -235,7 +237,7 @@ class fft2dMPI {
 // deleteAlign(f);
 //
 class fft3dMPI {
- private:
+private:
   splitxy d;
   mfft1d *xForwards,*xBackwards;
   mfft1d *yForwards,*yBackwards;
@@ -243,9 +245,9 @@ class fft3dMPI {
   fft2d *yzForwards,*yzBackwards;
   Complex *f;
   mpitranspose<Complex> *Txy,*Tyz;
- public:
+public:
   
- fft3dMPI(const splitxy& d, Complex *f) : d(d) {
+  fft3dMPI(const splitxy& d, Complex *f) : d(d) {
     Txy=new mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,f,d.xy.communicator);
     
     xForwards=new mfft1d(d.X,-1,d.xy.y*d.z,d.xy.y*d.z,1);
@@ -304,7 +306,7 @@ class fft3dMPI {
 // BackwardsNormalized(Complex *g, double *f);
 // Backwards0Normalized(Complex *g, double *f);
 class rcfft2dMPI {
- private:
+private:
   unsigned int mx, my;
   split dr,dc;
   mfft1d *xForwards;
@@ -314,9 +316,9 @@ class rcfft2dMPI {
   Complex *f;
   bool inplace;
   unsigned int rdist;
- protected:
+protected:
   mpitranspose<Complex> *T;
- public:
+public:
   void inittranspose(Complex* out) {
     int size;
     MPI_Comm_size(dc.communicator,&size);
@@ -324,8 +326,8 @@ class rcfft2dMPI {
     T=new mpitranspose<Complex>(dc.X,dc.y,dc.x,dc.Y,1,out,dc.communicator);
   }
   
- rcfft2dMPI(const split& dr, const split& dc,
-	   double *f, Complex *g) : dr(dr), dc(dc), inplace((double*) g == f){
+  rcfft2dMPI(const split& dr, const split& dc,
+	     double *f, Complex *g) : dr(dr), dc(dc), inplace((double*) g == f){
     mx=dr.X;
     my=dc.Y;
     inittranspose(g);
