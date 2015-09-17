@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
 #endif  
   int retval=0; // success!
   bool test=false;
-  bool quiet=false;
+//  bool quiet=false;
   
 #ifdef __GNUC__ 
   optind=0;
@@ -123,7 +123,7 @@ int main(int argc, char* argv[])
       test=true;
       break;
     case 'q':
-      quiet=true;
+//      quiet=true;
       break;
     case 'T':
       fftw::maxthreads=atoi(optarg);
