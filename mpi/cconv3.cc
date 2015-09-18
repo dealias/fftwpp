@@ -51,7 +51,7 @@ void init(Complex **F,splityz &d, unsigned int A=2)
        d.x,d.y,d.z,A);
 }
 
-void lshow(Complex *F, unsigned int X, unsigned int Y, unsigned int Z)
+void show(Complex *F, unsigned int X, unsigned int Y, unsigned int Z)
 {
   for(unsigned int i=0; i < X; ++i) {
     for(unsigned int j=0; j < Y; ++j) {
@@ -160,7 +160,7 @@ int main(int argc, char* argv[])
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED);
   fftw::maxthreads=1;
   
-  if(group.rank == 0) {
+  if(!quiet && group.rank == 0) {
     cout << "provided: " << provided << endl;
     cout << "fftw::maxthreads: " << fftw::maxthreads << endl;
     
@@ -183,7 +183,7 @@ int main(int argc, char* argv[])
     default: cout << "A=" << A << " is not yet implemented" << endl; exit(1);
     }
     
-    if(main) {
+    if(!quiet && main) {
       if(!test)
 	cout << "N=" << N << endl;
       cout << "A=" << A << endl;
@@ -192,11 +192,10 @@ int main(int argc, char* argv[])
     }
     splityz d(mx,my,mz,group);
 
-    cout << "Local data size: " << d.n << endl;
+    //cout << "Local data size: " << d.n << endl;
     
     Complex **F=new Complex*[A];
     for(unsigned int a=0; a < A; a++) {
-      cout << "\ta: " << a << endl;
       F[a]=ComplexAlign(d.n);
     }
 
@@ -204,18 +203,18 @@ int main(int argc, char* argv[])
 
     if(test) {
       init(F,d,A);
-      if(main) cout << "Distributed input:" << endl;
-      for(unsigned int a=0; a < A; a++) {
-	if(main) cout << "a: " << a << endl;
-	show(F[a],mx,d.y,d.z,group.active);
+      if(!quiet) {
+	if(main) cout << "Distributed input:" << endl;
+	for(unsigned int a=0; a < A; a++) {
+	  if(main) cout << "a: " << a << endl;
+	  show(F[a],mx,d.y,d.z,group.active);
+	}
       }
 
-      if(main)
-	cout << "Accumulated input:" << endl;
+      if(!quiet && main) cout << "Accumulated input:" << endl;
       Complex **F0=new Complex*[A];
       for(unsigned int a=0; a < A; a++) {
 	if(main) {
-	  cout << "a: " << a << endl;
 	  F0[a]=ComplexAlign(mx*my*mz);
 	}
 	accumulate_splityz(F[a],F0[a],
@@ -223,14 +222,18 @@ int main(int argc, char* argv[])
 			   d.x0, d.y0, d.z0,
 			   d.x, d.y, d.z,
 			   0, group.active);
-	if(main) lshow(F0[a],mx,my,mz);
+	if(!quiet && main) {
+	  cout << "a: " << a << endl;
+	  show(F0[a],mx,my,mz);
+	}
       }
 
       C.convolve(F,mult);
-      
-      if(main) cout << "Distributed output:" << endl;
-      show(F[0],mx,d.y,d.z,group.active);
 
+      if(!quiet) {
+	if(main) cout << "Distributed output:" << endl;
+	show(F[0],mx,d.y,d.z,group.active);
+      }
       
       Complex *FC0=ComplexAlign(mx*my*mz);
       accumulate_splityz(F[0],FC0,
@@ -239,21 +242,22 @@ int main(int argc, char* argv[])
 			 d.x, d.y, d.z,
 			 0, group.active);
             
-      if(main) {
+      if(!quiet && main) {
 	cout << "Accumulated output:" << endl;
-	lshow(FC0,mx,my,mz);
+	show(FC0,mx,my,mz);
       }
 
       if(main) {
-	cout << "Local output:" << endl;
 	unsigned int B=1; // TODO: generalize
 	ImplicitConvolution3 C(mx,my,mz,A,B); 
 	C.convolve(F0,mult);
-	lshow(F0[0],mx,my,mz);
+	if(!quiet) {
+	  cout << "Local output:" << endl;
+	  show(F0[0],mx,my,mz);
+      }
       }
 
       if(main) {
-	cout << "Maximum difference between input and output: ";
 	double maxerr=0.0;
 	unsigned int stop=d.X*d.Y*d.Z;
 	Complex *F00=F0[0];
@@ -262,7 +266,8 @@ int main(int argc, char* argv[])
 	  if(err > maxerr)
 	    maxerr=err;
 	}
-	cout << maxerr << endl;
+	cout << "Maximum difference between input and output: "
+	     << maxerr << endl;
 
 	if(maxerr > 1e-16) {
 	  cout << "error is " << maxerr << "!" << endl;
@@ -295,6 +300,8 @@ int main(int argc, char* argv[])
 	timings("Implicit",mx,T,N);
     
       delete[] T;
+      if(!quiet && mx*my*mz < outlimit) 
+        show(F[0],mx,d.y,d.z,group.active);
     }
   
     for(unsigned int a=0; a < A; a++)
