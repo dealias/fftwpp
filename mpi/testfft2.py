@@ -76,7 +76,8 @@ def main(argv):
                     rtest, cmd = runtest(pname, P, args, logfile, timeout)
                     if not rtest == 0:
                         nfails += 1
-                        failcases += " ".join(cmd) + "\n"
+                        failcases += " ".join(cmd) + "\tcode " + str(rtest)
+                        failcases += "\n"
 
         if nfails > 0:
             print "Failure cases:"
