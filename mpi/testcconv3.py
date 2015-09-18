@@ -49,14 +49,13 @@ def main(argv):
         Plist = [1,2,3,4,random.randint(6,10)]
 
         if(shortrun):
-            Xlist = [1,2,random.randint(6,64)]
-            Ylist = [1,2,random.randint(6,64)]
-            Xlist = [1,2,random.randint(6,64)]
-            Zlist = [1,2,random.randint(6,64)]
-            Plist = [1,2]
+            Xlist = [2,random.randint(6,32)]
+            Ylist = [2,random.randint(6,32)]
+            Xlist = [2,random.randint(6,32)]
+            Zlist = [2,random.randint(6,32)]
+            Plist = [2,random.randint(4,8)]
             
-
-        timeout = 10
+        timeout = 5
 
         ntests = 0
         ntests = len(Xlist) * len(Ylist) * len(Zlist) * len(Plist)
@@ -75,13 +74,13 @@ def main(argv):
                         args.append("-x" + str(X))
                         args.append("-y" + str(Y))
                         args.append("-z" + str(Z))
-                        args.append("-N0")
-                        args.append("-q")
                         args.append("-t")
+                        args.append("-q")
                         rtest, cmd = runtest(pname, P, args, logfile, timeout)
                         if not rtest == 0:
                             nfails += 1
-                            failcases += " ".join(cmd) + "\n"
+                            failcases += " ".join(cmd) + "\tcode" + str(rtest)
+                            failcases += "\n"
 
         if nfails > 0:
             print "\nFailure cases:"

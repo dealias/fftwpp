@@ -148,30 +148,35 @@ int main(int argc, char* argv[])
     if(N < 10) N=10;
   }
 
-  MPI_Comm active;
-  int maxsize=std::min(std::min(mx*my,mx*mz),my*mz);
+  // Reduce the size of the MPI communicator to the minimal dimension
+  // of the problem.
+  MPI_Comm subcom;
+  int maxsize=std::min(std::min(mx,my),mz);
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
-  MPI_Comm_split(MPI_COMM_WORLD,rank < maxsize,0,&active);
-  
-  MPIgroup group(active,my,mz);
-  MPILoadWisdom(group.active);
-  
-  if(group.size > 1 && provided < MPI_THREAD_FUNNELED);
-  fftw::maxthreads=1;
-  
-  if(!quiet && group.rank == 0) {
-    cout << "provided: " << provided << endl;
-    cout << "fftw::maxthreads: " << fftw::maxthreads << endl;
-    
-    cout << "Configuration: " 
-         << group.size << " nodes X " << fftw::maxthreads 
-         << " threads/node" << endl;
-    cout << "Using MPI VERSION " << MPI_VERSION << endl;
+  if(rank == 0) {
+    cout << "Using " << maxsize << " processes." << endl;
   }
-
-  if(rank < group.size) {
+  MPI_Comm_split(MPI_COMM_WORLD,rank < maxsize,0,&subcom);
+  
+  if(rank < maxsize) {
+    MPIgroup group(subcom,my,mz);
+    MPILoadWisdom(group.active);
+    if(group.size > 1 && provided < MPI_THREAD_FUNNELED);
+    fftw::maxthreads=1;
+  
     bool main=group.rank == 0;
+    
+    if(!quiet && main) {
+      cout << "provided: " << provided << endl;
+      cout << "fftw::maxthreads: " << fftw::maxthreads << endl;
+    
+      cout << "Configuration: " 
+	   << group.size << " nodes X " << fftw::maxthreads 
+	   << " threads/node" << endl;
+      cout << "Using MPI VERSION " << MPI_VERSION << endl;
+    }
+
     
     multiplier *mult;
     switch(A) {
@@ -262,7 +267,7 @@ int main(int argc, char* argv[])
 	unsigned int stop=d.X*d.Y*d.Z;
 	Complex *F00=F0[0];
 	for(unsigned int i=0; i < stop; i++) {
-	  double err=abs(F00[i]-FC0[i]);
+	  double err=abs(F00[i]-FC0[i])/(max(abs(F00[i]),abs(FC0[i])) + 1e-10);
 	  if(err > maxerr)
 	    maxerr=err;
 	}
