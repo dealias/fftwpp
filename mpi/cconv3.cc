@@ -271,7 +271,7 @@ int main(int argc, char* argv[])
 	  Complex *F00=F0[0];
 	  for(unsigned int i=0; i < stop; i++) {
 	    maxerr=std::max(maxerr,abs(F00[i]-FC0[i]));
-            norm=std::max(norm,abs(F00[i]));
+            norm=std::max(norm,abs(FC0[i]));
           }
 	  cout << "Maximum difference between input and output: "
 	       << maxerr << endl;
