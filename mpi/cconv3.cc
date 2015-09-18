@@ -266,17 +266,17 @@ int main(int argc, char* argv[])
 
 	if(main) {
 	  double maxerr=0.0;
+	  double norm=0.0;
 	  unsigned int stop=d.X*d.Y*d.Z;
 	  Complex *F00=F0[0];
 	  for(unsigned int i=0; i < stop; i++) {
-	    double err=abs(F00[i]-FC0[i])/(max(abs(F00[i]),abs(FC0[i]))+ 1e-10);
-	    if(err > maxerr)
-	      maxerr=err;
-	  }
+	    maxerr=std::max(maxerr,abs(F00[i]-FC0[i]));
+            norm=std::max(norm,abs(F00[i]));
+          }
 	  cout << "Maximum difference between input and output: "
 	       << maxerr << endl;
 
-	  if(maxerr > 1e-16) {
+	  if(maxerr > 1e-12*norm) {
 	    cout << "error is " << maxerr << "!" << endl;
 	    retval += 1;
 	  }
