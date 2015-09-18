@@ -60,7 +60,9 @@ def main(argv):
 
         tstart = time.time()
     
-        timeout = 0
+        failcases = ""
+        
+        timeout = 0 # timeout cutoff in seconds
         ntests = 0
         nfails = 0
         for X in Xlist:
@@ -70,12 +72,22 @@ def main(argv):
                         for a in range(1,max(P,2)):
                             if(P % a) :
                                 continue
-                            ntests += 1
                             for A in range(0,2):
+                                ntests += 1
+                                for A in range(0,2):
+                                    args = []
+                                    args.append("-x" + str(X))
+                                    args.append("-y" + str(Y))
+                                    args.append("-z" + str(Z))
+                                    args.append("-A" + str(A))
+                                    args.append("-a" + str(a))
+                                    args.append("-q")
+                                    args.append("-t")
                                 #print "Test", ntest, "of", ntests
-                                rtest = runtest("transpose", X, Y, P, ["-tq", "-z"+str(Z), "-a"+str(a), "-A"+str(A)], logfile, timeout)
-                                if not rtest == 0:
-                                    nfails += 1
+                                    rtest = runtest("transpose", P, args,\
+                                                    logfile, timeout)
+                                    if not rtest == 0:
+                                        nfails += 1
                 
         tend = time.time()
         print "\nElapsed time (s):", tend - tstart

@@ -19,7 +19,7 @@ def waitandkill(proc, timeout):
         return 1
     return 0
 
-def runtest(filename, X, Y, P, extraargs, logfilename, timeout):
+def runtest(filename, P, extraargs, logfilename, timeout):
     retval = 0
     log = open(logfilename, 'a')
 
@@ -30,8 +30,6 @@ def runtest(filename, X, Y, P, extraargs, logfilename, timeout):
     cmd.append("./" + filename)
     for arg in  extraargs:
         cmd.append(arg)
-    cmd.append("-x" + str(X))
-    cmd.append("-y" + str(Y))
     print " ".join(cmd),
     log.write(" ".join(cmd) + '\n')
     
@@ -59,5 +57,4 @@ def runtest(filename, X, Y, P, extraargs, logfilename, timeout):
         retval += 1
 
     log.close()
-    return retval
-
+    return retval, cmd
