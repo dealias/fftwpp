@@ -2,13 +2,11 @@
 
 import sys # so that we can return a value at the end.
 import random # for randum number generators
-
 import os.path
+import time
+import getopt
 
 from testutils import *
-import time
-
-import getopt
 
 def main(argv):
     retval = 0
