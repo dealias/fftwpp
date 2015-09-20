@@ -337,21 +337,6 @@ public:
       int n=sqrt(size)+0.5;
       options.a=size/n;
     }
-    if(options.a > 1 && size % options.a) {
-      // Try to find a divisor near sqrt(size).
-      int inc=1;
-      int sign=1;
-      int start=options.a;
-      while(size % options.a != 0) {
-        options.a=start+sign*inc;
-        if(options.a <= 0 || options.a >= size) {
-          options.a=1;
-          break;
-        }
-        sign *= -1;
-        if(sign == 1) ++inc;
-      }
-    }
 
     int alimit;
     if(options.a <= 0) { // Restrict divisor range based on latency estimate
@@ -370,8 +355,7 @@ public:
       for(int alltoall=start; alltoall <= stop; ++alltoall) {
         if(globalrank == 0) std::cout << "alltoall=" << alltoall << std::endl;
         for(a=astart; a < alimit; ++a) {
-          if(size % a) continue;
-          b=size/a;
+          b=min(nlast+(n0 == np),mlast+(m0 == mp))/a;
           options.alltoall=alltoall;
           init(data);
           double t=time(data);
