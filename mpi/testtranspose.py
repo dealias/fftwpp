@@ -37,7 +37,7 @@ def main(argv):
         print "Error: transpose executable not present!"
         retval += 1
     else:
-    
+        
         logfile = 'testtranspose.log' 
         print "Log in " + logfile + "\n"
         log = open(logfile, 'w')
@@ -58,7 +58,7 @@ def main(argv):
             Plist = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,1]
 
         tstart = time.time()
-    
+        
         failcases = ""
         
         timeout = 0 # timeout cutoff in seconds
@@ -71,21 +71,20 @@ def main(argv):
                         for a in range(1,int(sqrt(P)+1.5)):
                             for A in range(0,1):
                                 ntests += 1
-                                for A in range(0,2):
-                                    args = []
-                                    args.append("-x" + str(X))
-                                    args.append("-y" + str(Y))
-                                    args.append("-z" + str(Z))
-                                    args.append("-A" + str(A))
-                                    args.append("-a" + str(a))
-                                    args.append("-q")
-                                    args.append("-t")
+                                args = []
+                                args.append("-x" + str(X))
+                                args.append("-y" + str(Y))
+                                args.append("-z" + str(Z))
+                                args.append("-A" + str(A))
+                                args.append("-a" + str(a))
+                                args.append("-q")
+                                args.append("-t")
                                 #print "Test", ntest, "of", ntests
-                                    rtest = runtest("transpose", P, args,\
-                                                    logfile, timeout)
-                                    if not rtest == 0:
-                                        nfails += 1
-                
+                                rtest = runtest("transpose", P, args,\
+                                                logfile, timeout)
+                                if not rtest == 0:
+                                    nfails += 1
+                                    
         tend = time.time()
         print "\nElapsed time (s):", tend - tstart
         print "\n", nfails, "failures out of", ntests, "tests." 
