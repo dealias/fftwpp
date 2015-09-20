@@ -217,7 +217,7 @@ int transpose(int rank, int size, int N)
     show(data,X,y*Z,active);
     T.data=data;
     
-    cout << endl;
+    if(rank == 0) cout << endl;
     
     T.inphase0();
     T.insync0();
@@ -225,12 +225,24 @@ int transpose(int rank, int size, int N)
     T.inphase1();
     T.insync1();
 //    show(T.work,x,Y*Z,active);
-    cout << endl;
+    if(rank == 0) cout << endl;
     
     T.inpost();
+    
     MPI_Barrier(active);
     sleep(1);
     show(data,x,Y*Z,active);
+    
+    T.outphase0();
+    T.outsync0();
+    
+    T.outphase1();
+    T.outsync1();
+    
+    if(rank == 0) cout << endl;
+    MPI_Barrier(active);
+    sleep(1);
+    show(data,X,y*Z,active);
     
     MPI_Finalize();
     exit(0);

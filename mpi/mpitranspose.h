@@ -5,10 +5,10 @@ using namespace std;
 #include<unistd.h>
 
 /* 
-Globally transpose an N x M matrix of blocks of L complex elements
-distributed over the second dimension.
-Here "in" is a local N x m matrix and "out" is a local n x M matrix.
-Currently, both N and M must be divisible by the number of processors.
+   Globally transpose an N x M matrix of blocks of L complex elements
+   distributed over the second dimension.
+   Here "in" is a local N x m matrix and "out" is a local n x M matrix.
+   Currently, both N and M must be divisible by the number of processors.
 
    Beginner Interface:
    
@@ -56,8 +56,8 @@ inline void copy(const T *from, T *to, unsigned int length,
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif  
-for(unsigned int i=0; i < length; ++i)
-  to[i]=from[i];
+  for(unsigned int i=0; i < length; ++i)
+    to[i]=from[i];
 }
 
 // Copy count blocks spaced stride apart to contiguous blocks in dest.
@@ -207,7 +207,7 @@ struct mpioptions {
     threads(threads), a(a), alltoall(alltoall) {}
 }
     
-static const defaultmpioptions;
+  static const defaultmpioptions;
   
 template<class T>
 class mpitranspose {
@@ -220,7 +220,7 @@ public: // ***
   mpioptions options;
   MPI_Comm communicator;
   MPI_Comm global;
-      MPI_Comm block;
+  MPI_Comm block;
   
   unsigned int n0,m0;
   unsigned int np,mp;
@@ -433,7 +433,7 @@ public:
                mpioptions options=defaultmpioptions,
                MPI_Comm communicator=MPI_COMM_WORLD, MPI_Comm global=0) :
     N(N), m(m), n(n), M(M), L(1), work(work), options(options),
-        communicator(communicator), global(global ? global : communicator) {
+    communicator(communicator), global(global ? global : communicator) {
     setup(data);
   }
     
@@ -479,13 +479,13 @@ public:
       MPI_Comm_split(communicator,rank < a*b,0,&block);
       
       if(rank < a*b) {
-      MPI_Comm_split(block,rank/b,0,&split);
-      MPI_Comm_size(split,&splitsize);
-      MPI_Comm_rank(split,&splitrank);
+        MPI_Comm_split(block,rank/b,0,&split);
+        MPI_Comm_size(split,&splitsize);
+        MPI_Comm_rank(split,&splitrank);
       
-      MPI_Comm_split(block,rank % b,0,&split2);
-      MPI_Comm_size(split2,&split2size);
-      MPI_Comm_rank(split2,&split2rank);
+        MPI_Comm_split(block,rank % b,0,&split2);
+        MPI_Comm_size(split2,&split2size);
+        MPI_Comm_rank(split2,&split2rank);
       } else {
         split=split2=block;
         splitsize=split2size=size;
@@ -585,8 +585,8 @@ public:
   int ni(int P) {return P < nlast ? n0 : (P == nlast ? np : 0);}
   int mi(int P) {return P < mlast ? m0 : (P == mlast ? mp : 0);}
   
-  void Ialltoallout(void* sendbuf, void *recvbuf) {
-    MPI_Request *srequest=request+size-1;
+  void Ialltoallout(void* sendbuf, void *recvbuf, int start) {
+    MPI_Request *srequest=rank >= start ? request+size-1 : request+size-start;
     int S=sizeof(T)*L;
     int nS=n*S;
     int mS=m*S;
@@ -594,8 +594,8 @@ public:
     int mn0=mS*n0;
     for(int p=0; p < size; ++p) {
       int P=sched[p];
-      if(P != rank) {
-        int index=P < rank ? P : P-1;
+      if(P != rank && (rank >= start || P >= start)) {
+        int index=rank >= start ? (P < rank ? P : P-1) : P-start;
         MPI_Irecv((char *) recvbuf+mn0*P,mS*ni(P),MPI_BYTE,P,0,communicator,
                   request+index);
         MPI_Isend((char *) sendbuf+nm0*P,nS*mi(P),MPI_BYTE,P,0,communicator,
@@ -603,7 +603,8 @@ public:
       }
     }
 
-    memcpy((char *) recvbuf+mn0*rank,(char *) sendbuf+nm0*rank,nS*mi(rank));
+    if(rank >= start)
+      memcpy((char *) recvbuf+mn0*rank,(char *) sendbuf+nm0*rank,nS*mi(rank));
   }
 
   void Ialltoallin(void* sendbuf, void *recvbuf, int start) {
@@ -630,9 +631,8 @@ public:
 
   void inphase0() {
     if(size == 1) return;
-    
     if(uniform || (a > 1 && rank < a*b)) {
-     size_t S=sizeof(T)*(a > 1 ? b : a)*L;
+      size_t S=sizeof(T)*(a > 1 ? b : a)*L;
       Ialltoall(data,n*m*S,work,split2,Request,sched2);
     }
     if(!uniform) {
@@ -655,7 +655,7 @@ public:
     if(size == 1) return;
     if(uniform || (a > 1 && rank < a*b)) {
       Wait(2*(split2size-1),Request,sched2);
-      if(!uniform) 
+      if(!uniform)
         Wait(2*(size-(a > 1 ? a*b : 0)),request,sched2);
     } else
       Wait(2*(size-1),request,sched2);
@@ -668,7 +668,6 @@ public:
 
   void inpost() {
     if(size == 1) return;
-    
     if(uniform)
       Tin1->transpose(work,data); // b x n*a x m*L
     else {
@@ -713,73 +712,78 @@ public:
   void outphase0() {
     if(size == 1) return;
     size_t S=sizeof(T)*a*L;
-    if(uniform) {
+    if(uniform || (a > 1 && rank < a*b)) {
       // Inner transpose a N/a x M/a matrices over each team of b processes
       Tout1->transpose(data,work); // n*a x b x m*L
-      Ialltoall(work,n*m*S,data,split,request,sched);
-    } else {
-      int last=std::min(b-1,mlast);
-      unsigned int lastblock=(last == mlast ? mp : m0)*L;
-      unsigned int block=m0*L;
-      unsigned int cols=n*a;
-      unsigned int istride=cols*block;
-      unsigned int ostride=last*block+lastblock;
+      Ialltoall(work,n*m*S,data,split,Request,sched1);
+    }
+    if(!uniform) {
+      if(a > 1 && rank < a*b) {
+        unsigned int block=m0*L;
+        unsigned int cols=n*a;
+        unsigned int istride=cols*block;
+        unsigned int ostride=b*block;
+        unsigned int extra=(M-m0*a*b)*L;
 
-      for(unsigned int j=0; j < cols; ++j) {
-        T *src=data+j*ostride;
-        copyfromblock(src,work+j*block,last,block,istride);
-        copy(src+last*block,work+j*lastblock+last*istride,lastblock);
+        for(unsigned int i=0; i < n; ++i) {
+          for(int j=0; j < a; ++j)
+            copyfromblock(data+(a*i+j)*ostride+i*extra,work+(a*i+j)*block,b,
+                          block,istride);
+        }
+        unsigned int lastblock=mp*L;
+        istride=n*block;
+        ostride=mlast*block+lastblock;
+
+        for(unsigned int j=0; j < n; ++j) {
+          T *src=data+j*ostride;
+          if(mlast > a*b)
+            copyfromblock(src+block*a*b,work+j*block+istride*a*b,mlast-a*b,
+                          block,istride);
+          copy(src+mlast*block,work+j*lastblock+mlast*istride,lastblock);
+        }
+      } else {
+        unsigned int lastblock=mp*L;
+        unsigned int block=m0*L;
+        unsigned int istride=n*block;
+        unsigned int ostride=mlast*block+lastblock;
+
+        for(unsigned int j=0; j < n; ++j) {
+          T *src=data+j*ostride;
+          copyfromblock(src,work+j*block,mlast,block,istride);
+          copy(src+mlast*block,work+j*lastblock+mlast*istride,lastblock);
+        }
       }
-
-      if(sched) Ialltoallout(work,data);
-      else
-          MPI_Ialltoallv(work,sendcounts,senddisplacements,MPI_BYTE,
-                         data,recvcounts,recvdisplacements,MPI_BYTE,
-                         split,request);
+      
+      if(sched) Ialltoallout(work,data,a > 1 ? a*b : 0);
+      else MPI_Ialltoallv(work,sendcounts,senddisplacements,MPI_BYTE,
+                          data,recvcounts,recvdisplacements,MPI_BYTE,
+                          communicator,request);
     }
   }
   
   void outphase1() {
-    if(a > 1) {
+    if(a > 1 && rank < a*b) {
       size_t S=sizeof(T)*b*L;
-      if(uniform) {
-        // Outer transpose a x a matrix of N/a x M/a blocks over a processes
-        Tout2->transpose(data,work); // n*b x a x m*L
-        Ialltoall(work,n*m*S,data,split2,request,sched2);
-      }
-#if 0 // Unused     
-      else {
-      int last=std::min(a-1,mlast);
-      unsigned int lastblock=(last == mlast ? mp : m0)*L;
-      unsigned int block=m0*L;
-      unsigned int cols=n*b;
-      unsigned int istride=cols*block;
-      unsigned int ostride=last*block+lastblock;
-
-      for(unsigned int j=0; j < cols; ++j) {
-        T *src=data+j*ostride;
-        copyfromblock(src,work+j*block,last,block,istride);
-        copy(src+last*block,work+j*lastblock+last*istride,lastblock);
-      }
-      
-//      fillindices(S,split2size);
-      Ialltoallv(work,sendcounts,senddisplacements,data,recvcounts,
-                 recvdisplacements,split2,request,sched2);
-      }
-#endif      
+      // Outer transpose a x a matrix of N/a x M/a blocks over a processes
+      Tout2->transpose(data,work); // n*b x a x m*L
+      Ialltoall(work,n*m*S,data,split2,Request,sched2);
     }
   }
   
   void outsync0() {
-    if(a > 1) 
-      Wait(2*(splitsize-1),request,sched);
+    if(a > 1 && rank < a*b)
+      Wait(2*(splitsize-1),Request,sched);
   }
   
   void outsync1() {
-    if(size > 1)
-      Wait(2*(split2size-1),request,sched2);
+    if(size == 1) return;
+    if(uniform || (a > 1 && rank < a*b)) {
+      Wait(2*(split2size-1),Request,sched2);
+      if(!uniform) 
+        Wait(2*(size-(a > 1 ? a*b : 0)),request,sched2);
+    } else
+      Wait(2*(size-1),request,sched2);
   }
-    
 
   void nMTranspose() {
     if(n == 0) return;
@@ -803,7 +807,7 @@ public:
       insync0();
       inphase1();
     }
-   }
+  }
   
   void Wait1() {
     if(inflag) {
@@ -814,7 +818,7 @@ public:
       inpost();
       if(!outflag) nMTranspose();
     }
-   }
+  }
   
   void wait0() {
     if(overlap) Wait0();
