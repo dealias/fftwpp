@@ -652,6 +652,7 @@ public:
                 << size;
       exit(1);
     }
+    if(rows == 0 || cols == 0) return;
     size /= sizeof(double);
     length *= size;
 

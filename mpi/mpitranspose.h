@@ -1,6 +1,9 @@
 #ifndef __mpitranspose_h__
 #define __mpitranspose_h__ 1
 
+using namespace std;
+#include<unistd.h>
+
 /* 
 Globally transpose an N x M matrix of blocks of L complex elements
 distributed over the second dimension.
@@ -75,12 +78,6 @@ inline void copyfromblock(const T *src, T *dest,
 {
   for(unsigned int i=0; i < count; ++i)
     copy(src+i*length,dest+i*stride,length,threads);
-}
-
-inline void transposeError(const char *text)
-{
-  std::cerr << "Cannot construct " << text << " transpose plan." << std::endl;
-  exit(-1);
 }
 
 void fill1_comm_sched(int *sched, int which_pe, int npes);
@@ -214,7 +211,8 @@ static const defaultmpioptions;
   
 template<class T>
 class mpitranspose {
-private:
+//private:
+public: // ***
   unsigned int N,m,n,M;
   unsigned int L;
   T *data;
@@ -222,6 +220,7 @@ private:
   mpioptions options;
   MPI_Comm communicator;
   MPI_Comm global;
+      MPI_Comm block;
   
   unsigned int n0,m0;
   unsigned int np,mp;
@@ -229,6 +228,7 @@ private:
   unsigned int threads;
   unsigned int allocated;
   MPI_Request *request;
+  MPI_Request *Request;
   int size;
   int rank;
   int globalrank;
@@ -236,7 +236,7 @@ private:
   int splitrank;
   int split2size;
   int split2rank;
-  int *sched, *sched2;
+  int *sched, *sched1, *sched2;
   MPI_Comm split;
   MPI_Comm split2;
   Transpose *Tin1,*Tin2,*Tin3;
@@ -252,13 +252,6 @@ public:
   
   bool divisible(int size, unsigned int M, unsigned int N) {
     unsigned int usize=size;
-    if(usize > N || usize > M) {
-      if(rank == 0)
-        std::cerr <<
-          "\nMatrix dimensions cannot be less than the number of processors."
-                  << std::endl;
-      exit(-1);
-    }
     return usize <= N && usize <= M && N % usize == 0 && M % usize == 0;
   }
   
@@ -326,7 +319,7 @@ public:
     np=localdimension(N,nlast,size);
     
     if(work == NULL) {
-      allocated=std::max(N*m,n*M)*L;
+      allocated=100*std::max(N*m,n*M)*L;
       Array::newAlign(this->work,allocated,sizeof(T));
     } else allocated=0;
     
@@ -336,7 +329,6 @@ public:
     }
     
     uniform=divisible(size,M,N);
-    if(!uniform) options.a=1;
 
     int start=0,stop=1;
     if(options.alltoall >= 0)
@@ -403,10 +395,13 @@ public:
     }
     
     a=options.a;
-    b=size/a;
+    b=min(nlast+(n0 == np),mlast+(m0 == mp))/a;
+    if(a == 1) b=size;
+    if(!uniform && a > 1) options.alltoall=0;
     
     if(globalrank == 0) std::cout << std::endl << "Using alltoall=" << 
-                          options.alltoall << ", a=" << a << ":" << std::endl;
+                          options.alltoall << ", a=" << a << ", b=" << b <<
+                          ":" << std::endl;
     init(data);
   }
   
@@ -465,7 +460,7 @@ public:
   }
 
   void init(T *data) {
-    if(uniform) {
+    if(uniform || true) {
       Tout1=new Transpose(n*a,b,m*L,data,this->work,threads);
       Tin1=new Transpose(b,n*a,m*L,data,this->work,threads);
 
@@ -481,22 +476,31 @@ public:
       splitsize=split2size=size;
       splitrank=split2rank=rank;
     } else {
-      MPI_Comm_split(communicator,rank/b,0,&split);
+      MPI_Comm_split(communicator,rank < a*b,0,&block);
+      
+      if(rank < a*b) {
+      MPI_Comm_split(block,rank/b,0,&split);
       MPI_Comm_size(split,&splitsize);
       MPI_Comm_rank(split,&splitrank);
       
-      MPI_Comm_split(communicator,rank % b,0,&split2);
+      MPI_Comm_split(block,rank % b,0,&split2);
       MPI_Comm_size(split2,&split2size);
       MPI_Comm_rank(split2,&split2rank);
+      } else {
+        split=split2=block;
+        splitsize=split2size=size;
+        splitrank=split2rank=rank;
+      }
     }
     
     sendcounts=NULL;
     if(options.alltoall) {
       request=new MPI_Request[1];
-      sched=sched2=NULL;
+      Request=new MPI_Request[1];
+      sched=sched1=sched2=NULL;
       
       if(!uniform) {
-        int Size=std::max(splitsize,split2size);
+        int Size=size;
         sendcounts=new int[Size];
         senddisplacements=new int[Size];
         recvcounts=new int[Size];
@@ -505,14 +509,17 @@ public:
         fillindices(S,Size);
       }
     } else {
-      request=new MPI_Request[2*(std::max(splitsize,split2size)-1)];
+      request=new MPI_Request[2*(size-1)];
+      Request=new MPI_Request[2*(std::max(splitsize,split2size)-1)];
     
-      sched=new int[splitsize];
-      fill1_comm_sched(sched,splitrank,splitsize);
+      sched=new int[size];
+      fill1_comm_sched(sched,rank,size);
     
       if(a > 1) {
         sched2=new int[split2size];
         fill1_comm_sched(sched2,split2rank,split2size);
+        sched1=new int[splitsize];
+        fill1_comm_sched(sched1,splitrank,splitsize);
       } else
         sched2=sched;
     }
@@ -521,7 +528,10 @@ public:
   void deallocate() {
     if(size == 1) return;
     if(sched) {
-      if(a > 1) delete[] sched2;
+      if(a > 1) {
+        delete[] sched1;
+        delete[] sched2;
+      }
       delete[] sched;
     }
     delete[] request;
@@ -596,8 +606,8 @@ public:
     memcpy((char *) recvbuf+mn0*rank,(char *) sendbuf+nm0*rank,nS*mi(rank));
   }
 
-  void Ialltoallin(void* sendbuf, void *recvbuf) {
-    MPI_Request *srequest=request+size-1;
+  void Ialltoallin(void* sendbuf, void *recvbuf, int start) {
+    MPI_Request *srequest=rank >= start ? request+size-1 : request+size-start;
     int S=sizeof(T)*L;
     int nS=n*S;
     int mS=m*S;
@@ -605,8 +615,8 @@ public:
     int mn0=mS*n0;
     for(int p=0; p < size; ++p) {
       int P=sched[p];
-      if(P != rank) {
-        int index=P < rank ? P : P-1;
+      if(P != rank && (rank >= start || P >= start)) {
+        int index=rank >= start ? (P < rank ? P : P-1) : P-start;
         MPI_Irecv((char *) recvbuf+nm0*P,nS*mi(P),MPI_BYTE,P,0,communicator,
                   request+index);
         MPI_Isend((char *) sendbuf+mn0*P,mS*ni(P),MPI_BYTE,P,0,communicator,
@@ -614,60 +624,46 @@ public:
       }
     }
 
-    memcpy((char *) recvbuf+nm0*rank,(char *) sendbuf+mn0*rank,mS*ni(rank));
+    if(rank >= start)
+      memcpy((char *) recvbuf+nm0*rank,(char *) sendbuf+mn0*rank,mS*ni(rank));
   }
 
   void inphase0() {
     if(size == 1) return;
-    size_t S=sizeof(T)*(a > 1 ? b : a)*L;
-    if(uniform)
-      Ialltoall(data,n*m*S,work,split2,request,sched2);
-    else {
-      if(sched2) Ialltoallin(data,work);
+    
+    if(uniform || (a > 1 && rank < a*b)) {
+     size_t S=sizeof(T)*(a > 1 ? b : a)*L;
+      Ialltoall(data,n*m*S,work,split2,Request,sched2);
+    }
+    if(!uniform) {
+      if(sched2) Ialltoallin(data,work,a > 1 ? a*b : 0);
       else MPI_Ialltoallv(data,recvcounts,recvdisplacements,MPI_BYTE,
                           work,sendcounts,senddisplacements,MPI_BYTE,
-                          split2,request);
+                          communicator,request);
     }
   }
   
   void inphase1() {
-    if(a > 1) {
+    if(a > 1 && rank < a*b) {
       size_t S=sizeof(T)*a*L;
-      if(uniform) {
-        Tin2->transpose(work,data); // a x n*b x m*L
-        Ialltoall(data,n*m*S,work,split,request,sched);
-      }
-#if 0 // Unused     
-      else {
-        int last=std::min(a-1,mlast);
-        unsigned int lastblock=(last == mlast ? mp : m0)*L;
-        unsigned int block=m0*L;
-        unsigned int cols=n*b;
-        unsigned int istride=cols*block;
-        unsigned int ostride=last*block+lastblock;
-
-        for(unsigned int j=0; j < cols; ++j) {
-          T *dest=data+j*ostride;
-          copytoblock(work+j*block,dest,last,block,istride);
-          copy(work+j*lastblock+last*istride,dest+last*block,lastblock);
-        }
-        
-//        fillindices(S,splitsize);
-        Ialltoallv(data,recvcounts,recvdisplacements,work,sendcounts,
-                   senddisplacements,split,request,sched);
-      }
-#endif      
+      Tin2->transpose(work,data); // a x n*b x m*L
+      Ialltoall(data,n*m*S,work,split,Request,sched1);
     }
   }
 
   void insync0() {
     if(size == 1) return;
-    Wait(2*(split2size-1),request,sched2);
+    if(uniform || (a > 1 && rank < a*b)) {
+      Wait(2*(split2size-1),Request,sched2);
+      if(!uniform) 
+        Wait(2*(size-(a > 1 ? a*b : 0)),request,sched2);
+    } else
+      Wait(2*(size-1),request,sched2);
   }
   
   void insync1() {
-    if(a > 1)
-      Wait(2*(splitsize-1),request,sched);
+    if(a > 1 && rank < a*b)
+      Wait(2*(splitsize-1),Request,sched1);
   }
 
   void inpost() {
@@ -676,17 +672,40 @@ public:
     if(uniform)
       Tin1->transpose(work,data); // b x n*a x m*L
     else {
-      int last=std::min(b-1,mlast);
-      unsigned int lastblock=(last == mlast ? mp : m0)*L;
-      unsigned int block=m0*L;
-      unsigned int cols=n*a;
-      unsigned int istride=cols*block;
-      unsigned int ostride=last*block+lastblock;
+      if(a > 1 && rank < a*b) {
+        unsigned int block=m0*L;
+        unsigned int cols=n*a;
+        unsigned int istride=cols*block;
+        unsigned int ostride=b*block;
+        unsigned int extra=(M-m0*a*b)*L;
 
-      for(unsigned int j=0; j < cols; ++j) {
-        T *dest=data+j*ostride;
-        copytoblock(work+j*block,dest,last,block,istride);
-        copy(work+j*lastblock+last*istride,dest+last*block,lastblock);
+        for(unsigned int i=0; i < n; ++i) {
+          for(int j=0; j < a; ++j)
+            copytoblock(work+(a*i+j)*block,data+(a*i+j)*ostride+i*extra,b,
+                        block,istride);
+        }
+        unsigned int lastblock=mp*L;
+        istride=n*block;
+        ostride=mlast*block+lastblock;
+
+        for(unsigned int j=0; j < n; ++j) {
+          T *dest=data+j*ostride;
+          if(mlast > a*b)
+            copytoblock(work+j*block+istride*a*b,dest+block*a*b,mlast-a*b,
+                        block,istride);
+          copy(work+j*lastblock+mlast*istride,dest+mlast*block,lastblock);
+        }
+      } else {
+        unsigned int lastblock=mp*L;
+        unsigned int block=m0*L;
+        unsigned int istride=n*block;
+        unsigned int ostride=mlast*block+lastblock;
+
+        for(unsigned int j=0; j < n; ++j) {
+          T *dest=data+j*ostride;
+          copytoblock(work+j*block,dest,mlast,block,istride);
+          copy(work+j*lastblock+mlast*istride,dest+mlast*block,lastblock);
+        }
       }
     }
   }
