@@ -380,6 +380,7 @@ public:
     a=options.a;
     b=min(nlast+(n0 == np),mlast+(m0 == mp))/a;
     if(a == 1) b=size;
+    if(a*b < size) uniform=0;
     if(!uniform && a > 1) options.alltoall=0;
     
     if(globalrank == 0) std::cout << std::endl << "Using alltoall=" << 
@@ -482,7 +483,7 @@ public:
       Request=new MPI_Request[1];
       sched=sched1=sched2=NULL;
       
-      if(!uniform) {
+      if(!uniform && a == 1) {
         int Size=size;
         sendcounts=new int[Size];
         senddisplacements=new int[Size];
@@ -504,7 +505,7 @@ public:
         sched1=new int[splitsize];
         fill1_comm_sched(sched1,splitrank,splitsize);
       } else
-        sched2=sched;
+        sched1=sched2=sched;
     }
   }
   
@@ -618,7 +619,7 @@ public:
       Ialltoall(data,n*m*S,work,split2,Request,sched2);
     }
     if(!uniform) {
-      if(sched2) Ialltoallin(data,work,a > 1 ? a*b : 0);
+      if(sched) Ialltoallin(data,work,a > 1 ? a*b : 0);
       else MPI_Ialltoallv(data,recvcounts,recvdisplacements,MPI_BYTE,
                           work,sendcounts,senddisplacements,MPI_BYTE,
                           communicator,request);
