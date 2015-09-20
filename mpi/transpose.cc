@@ -260,7 +260,7 @@ int transpose(int rank, int size, int N)
       if(showoutput) {
 	if(rank == 0)
 	  cout << "\nOutput:" << endl;
-	  show(data,X,y*Z,active);
+        show(data,X,y*Z,active);
       }
 
       accumulate_split(data,wholeoutput,X,Y,xstart,ystart,x,y,Z,false,active);
@@ -377,47 +377,47 @@ int main(int argc, char **argv)
     if (c == -1) break;
                 
     switch (c) {
-    case 0:
-      break;
-    case 'N':
-      N=atoi(optarg);
-      break;
-    case 'L':
-      outtranspose=true;
-      break;
-    case 'A':
-      alltoall=atoi(optarg);
-      break;
-    case 'a':
-      a=atoi(optarg);
-      break;
-    case 'm':
-      X=Y=atoi(optarg);
-      break;
-    case 'x':
-      X=atoi(optarg);
-      break;
-    case 'y':
-      Y=atoi(optarg);
-      break;
-    case 'z':
-      Z=atoi(optarg);
-      break;
-    case 'T':
-      fftw::maxthreads=atoi(optarg);
-      break;
-    case 't':
-      test=true;
-      break;
-    case 'q':
-      quiet=true;
-      break;
-    case 'n':
-      N0=atoi(optarg);
-      break;
-    case 'h':
-    default:
-      usage();
+      case 0:
+        break;
+      case 'N':
+        N=atoi(optarg);
+        break;
+      case 'L':
+        outtranspose=true;
+        break;
+      case 'A':
+        alltoall=atoi(optarg);
+        break;
+      case 'a':
+        a=atoi(optarg);
+        break;
+      case 'm':
+        X=Y=atoi(optarg);
+        break;
+      case 'x':
+        X=atoi(optarg);
+        break;
+      case 'y':
+        Y=atoi(optarg);
+        break;
+      case 'z':
+        Z=atoi(optarg);
+        break;
+      case 'T':
+        fftw::maxthreads=atoi(optarg);
+        break;
+      case 't':
+        test=true;
+        break;
+      case 'q':
+        quiet=true;
+        break;
+      case 'n':
+        N0=atoi(optarg);
+        break;
+      case 'h':
+      default:
+        usage();
     }
   }
 
