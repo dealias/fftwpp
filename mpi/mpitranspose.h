@@ -1,9 +1,6 @@
 #ifndef __mpitranspose_h__
 #define __mpitranspose_h__ 1
 
-using namespace std;
-#include<unistd.h>
-
 /* 
    Globally transpose an N x M matrix of blocks of L complex elements
    distributed over the second dimension.
@@ -355,7 +352,7 @@ public:
       for(int alltoall=start; alltoall <= stop; ++alltoall) {
         if(globalrank == 0) std::cout << "alltoall=" << alltoall << std::endl;
         for(a=astart; a < alimit; ++a) {
-          b=min(nlast+(n0 == np),mlast+(m0 == mp))/a;
+          b=std::min(nlast+(n0 == np),mlast+(m0 == mp))/a;
           options.alltoall=alltoall;
           init(data);
           double t=time(data);
@@ -378,7 +375,7 @@ public:
     }
     
     a=options.a;
-    b=min(nlast+(n0 == np),mlast+(m0 == mp))/a;
+    b=std::min(nlast+(n0 == np),mlast+(m0 == mp))/a;
     if(b == 1) a=1;
     if(a == 1) b=size;
     if(a*b < size) uniform=0;
@@ -667,16 +664,18 @@ public:
             copytoblock(work+(a*i+j)*block,data+(a*i+j)*ostride+i*extra,b,
                         block,istride);
         }
-        unsigned int lastblock=mp*L;
-        istride=n*block;
-        ostride=mlast*block+lastblock;
+        if(extra > 0) {
+          unsigned int lastblock=mp*L;
+          istride=n*block;
+          ostride=mlast*block+lastblock;
 
-        for(unsigned int j=0; j < n; ++j) {
-          T *dest=data+j*ostride;
-          if(mlast > a*b)
-            copytoblock(work+j*block+istride*a*b,dest+block*a*b,mlast-a*b,
-                        block,istride);
-          copy(work+j*lastblock+mlast*istride,dest+mlast*block,lastblock);
+          for(unsigned int j=0; j < n; ++j) {
+            T *dest=data+j*ostride;
+            if(mlast > a*b)
+              copytoblock(work+j*block+istride*a*b,dest+block*a*b,mlast-a*b,
+                          block,istride);
+            copy(work+j*lastblock+mlast*istride,dest+mlast*block,lastblock);
+          }
         }
       } else {
         unsigned int lastblock=mp*L;
@@ -714,16 +713,18 @@ public:
             copyfromblock(data+(a*i+j)*ostride+i*extra,work+(a*i+j)*block,b,
                           block,istride);
         }
-        unsigned int lastblock=mp*L;
-        istride=n*block;
-        ostride=mlast*block+lastblock;
+        if(extra > 0) {
+          unsigned int lastblock=mp*L;
+          istride=n*block;
+          ostride=mlast*block+lastblock;
 
-        for(unsigned int j=0; j < n; ++j) {
-          T *src=data+j*ostride;
-          if(mlast > a*b)
-            copyfromblock(src+block*a*b,work+j*block+istride*a*b,mlast-a*b,
-                          block,istride);
-          copy(src+mlast*block,work+j*lastblock+mlast*istride,lastblock);
+          for(unsigned int j=0; j < n; ++j) {
+            T *src=data+j*ostride;
+            if(mlast > a*b)
+              copyfromblock(src+block*a*b,work+j*block+istride*a*b,mlast-a*b,
+                            block,istride);
+            copy(src+mlast*block,work+j*lastblock+mlast*istride,lastblock);
+          }
         }
       } else {
         unsigned int lastblock=mp*L;

@@ -31,7 +31,7 @@ void init(Complex *data, unsigned int X, unsigned int y, unsigned int Z,
   for(unsigned int i=0; i < X; ++i) { 
     for(unsigned int j=0; j < y; ++j) {
       for(unsigned int k=0; k < Z; ++k) {
-        data[(y*i+j)*Z+k].re=i;
+        data[(y*i+j)*Z+k].re=xstart+i;
         data[(y*i+j)*Z+k].im=ystart+j;
       }
     }
@@ -99,7 +99,7 @@ void fftwTranspose(int rank, int size)
                                                  outtranspose ? 0 : FFTW_MPI_TRANSPOSED_OUT);
   fftwpp::MPISaveWisdom(MPI_COMM_WORLD);
   
-  init(data,X,y,Z,xstart,ystart);
+  init(data,X,y,Z,0,ystart);
 
   bool showoutput=X*Y < showlimit && N == 1;
   if(showoutput)
@@ -204,7 +204,7 @@ int transpose(int rank, int size, int N)
     
     data=ComplexAlign(std::max(X*y,x*Y)*Z);
   
-    init(data,X,y,Z,xstart,ystart);
+    init(data,X,y,Z,0,ystart);
 
     //    show(data,X,y*Z,active);
     
@@ -213,13 +213,13 @@ int transpose(int rank, int size, int N)
 //    mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,fftw::maxthreads,active);
     mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,
                             mpioptions(fftw::maxthreads,a,alltoall),active);
-    init(data,X,y,Z,xstart,ystart);
+    init(data,X,y,Z,0,ystart);
     T.transpose(data,false,true);
   
     //    show(data,x,Y*Z,active);
     
     T.NmTranspose();
-    init(data,X,y,Z,xstart,ystart);
+    init(data,X,y,Z,0,ystart);
     
     fftw::statistics Sininit,Sinwait0,Sinwait1,Sin;
     fftw::statistics Soutinit,Soutwait0,Soutwait1,Sout;
@@ -236,7 +236,7 @@ int transpose(int rank, int size, int N)
       if(rank == 0)
 	cout << "\nDiagnostics and unit test.\n" << endl;
 
-      init(data,X,y,Z,xstart,ystart);
+      init(data,X,y,Z,0,ystart);
       if(showoutput) {
 	if(rank == 0) 
 	  cout << "Input:" << endl;
@@ -290,7 +290,7 @@ int transpose(int rank, int size, int N)
       if(rank == 0)
 	cout << "\nSpeed test.\n" << endl;
       for(int k=0; k < N; ++k) {
-	init(data,X,y,Z,xstart,ystart);
+	init(data,X,y,Z,0,ystart);
     
 	double begin=0.0, Tinit0=0.0, Tinit=0.0, Twait0=0.0, Twait1=0.0;
 	if(rank == 0) begin=totalseconds();
