@@ -31,7 +31,7 @@ void init(Complex *data, unsigned int X, unsigned int y, unsigned int Z,
   for(unsigned int i=0; i < X; ++i) { 
     for(unsigned int j=0; j < y; ++j) {
       for(unsigned int k=0; k < Z; ++k) {
-        data[(y*i+j)*Z+k].re=xstart+i;
+        data[(y*i+j)*Z+k].re=i;
         data[(y*i+j)*Z+k].im=ystart+j;
       }
     }
