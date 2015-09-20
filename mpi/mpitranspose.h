@@ -379,6 +379,7 @@ public:
     
     a=options.a;
     b=min(nlast+(n0 == np),mlast+(m0 == mp))/a;
+    if(b == 1) a=1;
     if(a == 1) b=size;
     if(a*b < size) uniform=0;
     if(!uniform && a > 1) options.alltoall=0;
