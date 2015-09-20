@@ -3,16 +3,16 @@
 import sys # so that we can return a value at the end.
 import time
 from subprocess import * # so that we can run commands
-import os.path
 import getopt
+import os.path
 
 def main(argv):
     retval = 0
-
-    msg = "MPI fft unit test"
+    msg = "MPI convolution unit tests"
+    logfile = 'testconvolutions.log'
     print msg
 
-    print "MPI FFT unit test"
+    print "MPI convolution unit test"
     usage = "Usage:\n"\
             "./testtranspose.py\n"\
             "\t-s\t\tSpecify a short run\n"\
@@ -32,10 +32,9 @@ def main(argv):
             print usage
             sys.exit(0)
 
-    ffttestlist = []
-    ffttestlist.append("testfft2.py")
+    testlist = []
+    testlist.append("testcconv3.py")
 
-    logfile = 'testfft.log'
     print "Log in " + logfile + "\n"
     log = open(logfile, 'w')
     log.write(msg)
@@ -45,7 +44,7 @@ def main(argv):
     ntests = 0
     nfails = 0
     tstart = time.time()
-    for test in ffttestlist:
+    for test in testlist:
         ntests += 1
         if not os.path.isfile(test):
             msg = "Error: "+ pname + "not present!"
@@ -64,6 +63,7 @@ def main(argv):
             cmd.append("./" + test)
             if(shortrun):
                 cmd.append("-s")
+
             #print cmd
             proc = Popen(cmd, stdout = PIPE, stderr = PIPE)
             proc.wait() # sets the return code

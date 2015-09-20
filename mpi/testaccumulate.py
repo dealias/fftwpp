@@ -29,12 +29,13 @@ for progname in proglist:
         log.close()
         retval += 1
     else:
-        
         msg = "Running " + str(progname)
         print msg
         log = open(logfile, 'a')
         log.write(msg)
         log.close()
+
+        failcases = ""
         
         Xlist = [1,2,3,4,5,random.randint(10,64)]
         Ylist = [1,2,3,4,5,random.randint(10,64)]
@@ -49,12 +50,20 @@ for progname in proglist:
                 for Z in Zlist:
                     for P in Plist:
                         ntests += 1
-                        args = ["-z"+str(Z), "-q"]
-                        rtest = runtest(progname, X, Y, P, args, logfile, \
-                                        timeout)
+                        args = []
+                        args.append("-x" + str(X))
+                        args.append("-y" + str(Y))
+                        args.append("-z" + str(Z))
+                        args.append("-q")
+                        rtest, cmd = runtest(progname, P, args, logfile, \
+                                             timeout)
                         if not rtest == 0:
                             nfails += 1
-                
+                            failcases += " ".join(cmd) + "\n"
+
+        if nfails > 0:
+            print "Failure cases:"
+            print failcases
         print "\n", nfails, "failures out of", ntests, "tests." 
 
 sys.exit(retval)

@@ -10,9 +10,9 @@ def main(argv):
     retval = 0
 
     msg = "MPI fft unit test"
+    logfile = 'unittests.log'
     print msg
 
-    print "MPI FFT unit test"
     usage = "Usage:\n"\
             "./testtranspose.py\n"\
             "\t-s\t\tSpecify a short run\n"\
@@ -32,10 +32,17 @@ def main(argv):
             print usage
             sys.exit(0)
 
-    ffttestlist = []
-    ffttestlist.append("testfft2.py")
+    if(shortrun):
+        print "Running short tests"
+    else:
+        print "Running long tests"
 
-    logfile = 'testfft.log'
+    ffttestlist = []
+    ffttestlist.append("testaccumulate.py")
+    ffttestlist.append("testtranspose.py")
+    ffttestlist.append("testfft.py")
+    ffttestlist.append("testconvolution.py")
+
     print "Log in " + logfile + "\n"
     log = open(logfile, 'w')
     log.write(msg)
