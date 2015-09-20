@@ -324,7 +324,7 @@ public:
       return;
     }
     
-    uniform=divisible(size,M,N);
+    bool Uniform=divisible(size,M,N);
 
     int start=0,stop=1;
     if(options.alltoall >= 0)
@@ -351,8 +351,11 @@ public:
       double T0=DBL_MAX;
       for(int alltoall=start; alltoall <= stop; ++alltoall) {
         if(globalrank == 0) std::cout << "alltoall=" << alltoall << std::endl;
-        for(a=astart; a < alimit; ++a) {
+        int limit=Uniform || !alltoall ? alimit : 1;
+        for(a=astart; a < limit; ++a) {
           b=std::min(nlast+(n0 == np),mlast+(m0 == mp))/a;
+          uniform=Uniform && a*b == size;
+          if(!uniform && alltoall) continue;
           options.alltoall=alltoall;
           init(data);
           double t=time(data);
@@ -378,7 +381,7 @@ public:
     b=std::min(nlast+(n0 == np),mlast+(m0 == mp))/a;
     if(b == 1) a=1;
     if(a == 1) b=size;
-    if(a*b < size) uniform=0;
+    uniform=Uniform && a*b == size;
     if(!uniform && a > 1) options.alltoall=0;
     
     if(globalrank == 0) std::cout << std::endl << "Using alltoall=" << 
