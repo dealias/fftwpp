@@ -16,7 +16,7 @@ void init(Complex **F,
 	  unsigned int x, unsigned int y, unsigned int z,
 	  unsigned int A=2)
 {
-  if(A%2 != 0) {
+  if(A % 2 != 0) {
     cout << "A=" << A << " is not yet implemented" << endl;
     exit(1);
   }
@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
-  int retval=0; // success!
+  int retval=0;
   bool test=false;
   bool quiet=false;
   
