@@ -211,8 +211,7 @@ struct mpioptions {
   
 template<class T>
 class mpitranspose {
-//private:
-public: // ***
+private:
   unsigned int N,m,n,M;
   unsigned int L;
   T *data;
@@ -319,7 +318,7 @@ public:
     np=localdimension(N,nlast,size);
     
     if(work == NULL) {
-      allocated=100*std::max(N*m,n*M)*L;
+      allocated=std::max(N*m,n*M)*L;
       Array::newAlign(this->work,allocated,sizeof(T));
     } else allocated=0;
     
@@ -460,15 +459,15 @@ public:
   }
 
   void init(T *data) {
-    if(uniform || true) {
-      Tout1=new Transpose(n*a,b,m*L,data,this->work,threads);
-      Tin1=new Transpose(b,n*a,m*L,data,this->work,threads);
-
-      if(a > 1) {
-        Tin2=new Transpose(a,n*b,m*L,data,this->work,threads);
-        Tout2=new Transpose(n*b,a,m*L,data,this->work,threads);
-      }
-    }
+    Tout1=uniform || (a > 1 && rank < a*b) ? 
+      new Transpose(n*a,b,m*L,data,this->work,threads) : NULL;
+    Tin1=uniform ? new Transpose(b,n*a,m*L,data,this->work,threads) : NULL;
+    
+    if(a > 1 && rank < a*b) {
+      Tin2=new Transpose(a,n*b,m*L,data,this->work,threads);
+      Tout2=new Transpose(n*b,a,m*L,data,this->work,threads);
+    } else {Tin2=Tout2=NULL;}
+    
     if(size == 1) return;
     
     if(a == 1) {
@@ -539,18 +538,17 @@ public:
       int final;
       MPI_Finalized(&final);
       if(!final) {
-        MPI_Comm_free(&split2); 
-        MPI_Comm_free(&split); 
-      }
-      if(uniform) {
-        delete Tout2;
-        delete Tin2;
+        if(rank < a*b) {
+          MPI_Comm_free(&split2); 
+          MPI_Comm_free(&split); 
+        }
+        MPI_Comm_free(&block); 
       }
     }
-    if(uniform) {
-      delete Tin1;
-      delete Tout1;
-    }
+    if(Tout2) delete Tout2;
+    if(Tin2) delete Tin2;
+    if(Tin1) delete Tin1;
+    if(Tout1) delete Tout1;
 
     if(sendcounts) {
       delete [] sendcounts;
@@ -772,7 +770,7 @@ public:
   
   void outsync0() {
     if(a > 1 && rank < a*b)
-      Wait(2*(splitsize-1),Request,sched);
+      Wait(2*(splitsize-1),Request,sched1);
   }
   
   void outsync1() {

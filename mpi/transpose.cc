@@ -31,7 +31,7 @@ void init(Complex *data, unsigned int X, unsigned int y, unsigned int Z,
   for(unsigned int i=0; i < X; ++i) { 
     for(unsigned int j=0; j < y; ++j) {
       for(unsigned int k=0; k < Z; ++k) {
-        data[(y*i+j)*Z+k].re=i;
+        data[(y*i+j)*Z+k].re=xstart+i;
         data[(y*i+j)*Z+k].im=ystart+j;
       }
     }
@@ -202,7 +202,7 @@ int transpose(int rank, int size, int N)
       cout << "N=" << N << endl;
     }
     
-    data=ComplexAlign(100*std::max(X*y,x*Y)*Z);
+    data=ComplexAlign(std::max(X*y,x*Y)*Z);
   
     init(data,X,y,Z,xstart,ystart);
 
@@ -214,40 +214,6 @@ int transpose(int rank, int size, int N)
     mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,
                             mpioptions(fftw::maxthreads,a,alltoall),active);
     init(data,X,y,Z,xstart,ystart);
-    show(data,X,y*Z,active);
-    T.data=data;
-    
-    if(rank == 0) cout << endl;
-    
-    T.inphase0();
-    T.insync0();
-    
-    T.inphase1();
-    T.insync1();
-//    show(T.work,x,Y*Z,active);
-    if(rank == 0) cout << endl;
-    
-    T.inpost();
-    
-    MPI_Barrier(active);
-    sleep(1);
-    show(data,x,Y*Z,active);
-    
-    T.outphase0();
-    T.outsync0();
-    
-    T.outphase1();
-    T.outsync1();
-    
-    if(rank == 0) cout << endl;
-    MPI_Barrier(active);
-    sleep(1);
-    show(data,X,y*Z,active);
-    
-    MPI_Finalize();
-    exit(0);
-
-    
     T.transpose(data,false,true);
   
     //    show(data,x,Y*Z,active);
