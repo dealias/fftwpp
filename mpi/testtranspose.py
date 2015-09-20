@@ -7,6 +7,7 @@ import time
 import getopt
 
 from testutils import *
+from math import sqrt
 
 def main(argv):
     retval = 0
@@ -54,7 +55,7 @@ def main(argv):
             Xlist = [10,9,8,7,6,5,4,3,2,1,random.randint(start,stop)]
             Ylist = [9,10,8,7,6,5,4,3,2,1,random.randint(start,stop)]
             Zlist = [1,2,3,10,random.randint(start,stop)]
-            Plist = [2,3,4,5,6,7,8,9,10,11,12,1]
+            Plist = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,1]
 
         tstart = time.time()
     
@@ -67,8 +68,8 @@ def main(argv):
             for Y in Ylist:
                 for Z in Zlist:
                     for P in Plist:
-                        for a in range(1,max(P,2)):
-                            for A in range(0,2):
+                        for a in range(1,int(sqrt(P)+1.5)):
+                            for A in range(0,1):
                                 ntests += 1
                                 for A in range(0,2):
                                     args = []
