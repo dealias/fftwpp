@@ -339,7 +339,7 @@ public:
       options.a=1;
       double latency=safetyfactor*Latency();
       alimit=(N*M*L*sizeof(T) < latency*size*size) ?
-        (int) (sqrt(size)+0.5) : 2;
+        (int) (sqrt(size)+1.5) : 2;
       MPI_Bcast(&alimit,1,MPI_UNSIGNED,0,global);
     } else alimit=options.a+1;
     int astart=options.a;
