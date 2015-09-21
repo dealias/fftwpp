@@ -64,6 +64,7 @@ for progname in proglist:
         if nfails > 0:
             print "Failure cases:"
             print failcases
+            retval += 1
         print "\n", nfails, "failures out of", ntests, "tests." 
 
 sys.exit(retval)

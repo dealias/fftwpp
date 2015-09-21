@@ -85,6 +85,7 @@ def main(argv):
         if nfails > 0:
             print "\nFailure cases:"
             print failcases
+            retval += 1
         print "\n", nfails, "failures out of", ntests, "tests." 
 
         tend = time.time()
