@@ -80,13 +80,21 @@ def main(argv):
                                 args.append("-q")
                                 args.append("-t")
                                 #print "Test", ntest, "of", ntests
-                                rtest = runtest("transpose", P, args,\
+                                rtest, cmd = runtest("transpose", P, args,\
                                                 logfile, timeout)
                                 if not rtest == 0:
                                     nfails += 1
+                                    nfails += 1
+                                    failcases += " ".join(cmd) + "\tcode "\
+                                                 + str(rtest)
+                                    failcases += "\n"
                                     
         tend = time.time()
         print "\nElapsed time (s):", tend - tstart
+        
+        if nfails > 0:
+            print "Failure cases:"
+            print failcases
         print "\n", nfails, "failures out of", ntests, "tests." 
 
     sys.exit(retval)
