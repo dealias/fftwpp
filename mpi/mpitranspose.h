@@ -351,11 +351,9 @@ public:
       double T0=DBL_MAX;
       for(int alltoall=start; alltoall <= stop; ++alltoall) {
         if(globalrank == 0) std::cout << "alltoall=" << alltoall << std::endl;
-        int limit=Uniform || !alltoall ? alimit : 1;
-        for(a=astart; a < limit; ++a) {
+        for(a=astart; a < alimit; a *= 2) {
           b=std::min(nlast+(n0 == np),mlast+(m0 == mp))/a;
           uniform=Uniform && a*b == size;
-          if(!uniform && alltoall) continue;
           options.alltoall=alltoall;
           init(data);
           double t=time(data);
@@ -380,9 +378,8 @@ public:
     a=options.a;
     b=std::min(nlast+(n0 == np),mlast+(m0 == mp))/a;
     if(b == 1) a=1;
-    if(a == 1) b=size;
+//    if(a == 1) b=size;
     uniform=Uniform && a*b == size;
-    if(!uniform && a > 1) options.alltoall=0;
     
     if(globalrank == 0) std::cout << std::endl << "Using alltoall=" << 
                           options.alltoall << ", a=" << a << ", b=" << b <<
@@ -480,10 +477,6 @@ public:
     
     sendcounts=NULL;
     if(options.alltoall) {
-      request=new MPI_Request[1];
-      Request=new MPI_Request[1];
-      sched=sched1=sched2=NULL;
-      
       if(!uniform && a == 1) {
         int Size=size;
         sendcounts=new int[Size];
@@ -493,7 +486,8 @@ public:
         int S=sizeof(T)*L;
         fillindices(S,Size);
       }
-    } else {
+    }
+    if(!options.alltoall || (!uniform && a > 1)) {
       request=new MPI_Request[2*(size-1)];
       Request=new MPI_Request[2*(std::max(splitsize,split2size)-1)];
     
@@ -507,6 +501,10 @@ public:
         fill1_comm_sched(sched1,splitrank,splitsize);
       } else
         sched1=sched2=sched;
+    } else {
+      request=new MPI_Request[1];
+      Request=new MPI_Request[1];
+      sched=sched1=sched2=NULL;
     }
   }
   
