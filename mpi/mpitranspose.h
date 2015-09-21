@@ -158,9 +158,8 @@ inline int Ialltoallv(void *sendbuf, int *sendcounts, int *senddisplacements,
       }
     }
 
-    
-    memcpy((char *) recvbuf+recvdisplacements[rank],
-           (char *) sendbuf+senddisplacements[rank],sendcounts[rank]);
+    copy((char *) sendbuf+senddisplacements[rank],
+         (char *) recvbuf+recvdisplacements[rank],sendcounts[rank]);
     return 0;
   }
 }
@@ -190,7 +189,7 @@ inline int Ialltoall(void *sendbuf, int count,
     }
   
     int offset=rank*count;
-    memcpy((char *) recvbuf+offset,(char *) sendbuf+offset,count);
+    copy((char *) sendbuf+offset,(char *) recvbuf+offset,count);
     return 0;
   }
 }
@@ -339,7 +338,8 @@ public:
     if(options.a <= 0) { // Restrict divisor range based on latency estimate
       options.a=1;
       double latency=safetyfactor*Latency();
-      alimit=(N*M*L*sizeof(T) < latency*size*size) ? size : 2;
+      alimit=(N*M*L*sizeof(T) < latency*size*size) ?
+        (int) (sqrt(size)+0.5) : 2;
       MPI_Bcast(&alimit,1,MPI_UNSIGNED,0,global);
     } else alimit=options.a+1;
     int astart=options.a;
@@ -351,7 +351,7 @@ public:
       double T0=DBL_MAX;
       for(int alltoall=start; alltoall <= stop; ++alltoall) {
         if(globalrank == 0) std::cout << "alltoall=" << alltoall << std::endl;
-        for(a=astart; a < alimit; a *= 2) {
+        for(a=astart; a < alimit; a++) {
           b=std::min(nlast+(n0 == np),mlast+(m0 == mp))/a;
           uniform=Uniform && a*b == size;
           options.alltoall=alltoall;
@@ -586,7 +586,7 @@ public:
     }
 
     if(rank >= start)
-      memcpy((char *) recvbuf+mn0*rank,(char *) sendbuf+nm0*rank,nS*mi(rank));
+      copy((char *) sendbuf+mn0*rank,(char *) recvbuf+nm0*rank,nS*mi(rank));
   }
 
   void Ialltoallin(void* sendbuf, void *recvbuf, int start) {
@@ -608,7 +608,7 @@ public:
     }
 
     if(rank >= start)
-      memcpy((char *) recvbuf+nm0*rank,(char *) sendbuf+mn0*rank,mS*ni(rank));
+      copy((char *) sendbuf+mn0*rank,(char *) recvbuf+nm0*rank,mS*ni(rank));
   }
 
   void inphase0() {
