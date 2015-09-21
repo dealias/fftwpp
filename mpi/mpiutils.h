@@ -98,6 +98,7 @@ void accumulate_split(const ftype *part,
 
   accumulate_split(part,whole,X,Y,x0,y0,x,y,Z,transposed,communicator);
 }
+ 
 // Copy an MPI-distributed array into an array on rank 0.
 template<class ftype>
 void accumulate_splityz(const ftype *part,
@@ -171,7 +172,7 @@ void accumulate_splityz(const ftype *part,
     break;
 
   case 1:
-    std::cerr << "Not implemented" << std::cout;
+    std::cerr << "Not implemented" << std::endl;
     exit(1);
     // is x * Y * z
     // FIXME
@@ -179,7 +180,7 @@ void accumulate_splityz(const ftype *part,
 
   case 2:
     exit(1);
-    std::cerr << "Not implemented" << std::cout;
+    std::cerr << "Not implemented" << std::endl;
     //  is x * yz.x * Z
     // FIXME
     //accumulate_split(part, whole, X, Y, x0, y0, x, y, Z, 0, communicator);
@@ -187,59 +188,106 @@ void accumulate_splityz(const ftype *part,
 
   default:
     std::cerr << "Invalid transposed choie in accumulate_splityz"
-	      << std::cout;
+	      << std::endl;
     exit(1);
   }
-  // if(rank == 0) {
-  //   // First copy rank 0's part into the whole
-  //   if(!transposed)
-  //     copyfromblock(part,whole,x*Z,Y,Y);
-  //   else
-  //     copyfromblock(part,whole,X,y*Z,Y*Z);
-
-  //   for(int p=1; p < size; ++p) {
-  //     unsigned int dims[6];
-  //     MPI_Recv(&dims,6,MPI_UNSIGNED,p,0,communicator,&stat);
-
-  //     unsigned int X=dims[0], Y=dims[1];
-  //     unsigned int x0=dims[2], y0=dims[3];
-  //     unsigned int x=dims[4], y=dims[5];
-  //     unsigned int n=Z*(!transposed ? x*Y : X*y);
-  //     if(n > 0) {
-  //       ftype *C=new ftype[n];
-  //       MPI_Recv(C,sizeof(ftype)*n,MPI_BYTE,p,0,communicator,&stat);
-  // 	if(!transposed)
-  // 	  copyfromblock(C,whole+Z*x0*Y,x*Z,Y,Y);
-  // 	else
-  // 	  copyfromblock(C,whole+y0*Z,X,y*Z,Y*Z);
-  //       delete [] C;
-  //     }
-  //   }
-  // } else {
-  //   unsigned int dims[]={X,Y,x0,y0,x,y};
-  //   MPI_Send(&dims,6,MPI_UNSIGNED,0,0,communicator);
-  //   unsigned int n=Z*(!transposed ? x*Y : X*y);
-  //   if(n > 0)
-  //     MPI_Send((ftype *) part,n*sizeof(ftype),MPI_BYTE,0,0,communicator);
-  // }
 }
+ 
+// Copy an MPI-distributed array into an array on rank 0.
+template<class ftype>
+void accumulate_splitxy(const ftype *part,
+			ftype *whole,
+			const unsigned int X,
+			const unsigned int Y,
+			const unsigned int Z,
+			const unsigned int x0,
+			const unsigned int y0,
+			const unsigned int z0,
+			const unsigned int x,
+			const unsigned int y,
+			const unsigned int z,
+			const int transposed, 
+			const MPI_Comm& communicator)
+{
+  MPI_Status stat;
+  int size, rank;
+  MPI_Comm_size(communicator,&size);
+  MPI_Comm_rank(communicator,&rank);
 
-// template<class ftype>
-// void accumulate_splitxy(const ftype *part, ftype *whole,
-// 			const splitxy split,
-// 			const unsigned int Z,
-// 			const bool transposed, 
-// 			const MPI_Comm& communicator)
-// {
-//   // const unsigned int X=split.X;
-//   // unsigned int Y=split.Y;
-//   // unsigned int x0=split.x0;
-//   // unsigned int y0=split.y0;
-//   // unsigned int x=split.x;
-//   // unsigned int y=split.y;
+  switch(transposed) {
+  case 0:
+    // x * y * Z
+    if(rank == 0) {
+      // First copy rank 0's part into the whole
+      const int count=y;
+      const int stride=Z;
+      const int length=Z;
+      for(unsigned int i=0; i < x; ++i) {
+	const int poffset=i*y*Z;
+	const int woffset=i*Y*Z;
+	copyfromblock(part+poffset,whole+woffset,
+		      count,length,stride);
+      }
+      for(int p=1; p < size; ++p) {
+	unsigned int dims[9];
+	MPI_Recv(&dims,9,MPI_UNSIGNED,p,0,communicator,&stat);
+	//unsigned int X=dims[0];
+	unsigned int Y=dims[1];
+	unsigned int Z=dims[2];
+	unsigned int x0=dims[3];
+	unsigned int y0=dims[4];
+	//unsigned int z0=dims[5];
+	unsigned int x=dims[6];
+	unsigned int y=dims[7];
+	//unsigned int z=dims[8];
 
-//   // accumulate_splitxy(part,whole,X,Y,x0,y0,x,y,Z,transposed,communicator);
-// }
+	unsigned int n=x*y*Z;
+	if(n > 0) {
+	  ftype *C=new ftype[n];
+	  MPI_Recv(C,sizeof(ftype)*n,MPI_BYTE,p,0,communicator,&stat);
+	  const int count=y;
+	  const int stride=Z;
+	  const int length=Z;
+	  for(unsigned int i=0; i < x; ++i) {
+	    const int poffset=i*y*Z;
+	    const int woffset=(x0+i)*Y*Z+y0*Z;
+	    copyfromblock(C+poffset,whole+woffset,
+	     		  count,length,stride);
+
+	  }
+	  delete [] C;
+	}
+      }
+    } else {
+      unsigned int dims[9] = {X,Y,Z,x0,y0,z0,x,y,z};
+      MPI_Send(&dims,9,MPI_UNSIGNED,0,0,communicator);
+      unsigned int n=x*y*Z;
+      if(n > 0)
+	MPI_Send((ftype *) part,n*sizeof(ftype),MPI_BYTE,0,0,communicator);
+    }
+    break;
+
+  case 1:
+    std::cerr << "Not implemented" << std::endl;
+    exit(1);
+    // is x * Y * z
+    // FIXME
+    break;
+
+  case 2:
+    exit(1);
+    std::cerr << "Not implemented" << std::endl;
+    //  is x * yz.x * Z
+    // FIXME
+    //accumulate_split(part, whole, X, Y, x0, y0, x, y, Z, 0, communicator);
+    break;
+
+  default:
+    std::cerr << "Invalid transposed choie in accumulate_splityz"
+	      << std::endl;
+    exit(1);
+  }
+}
 
 // output the contents of a 2D array
 template<class ftype>
