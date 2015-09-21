@@ -31,11 +31,11 @@ def runtest(filename, P, extraargs, logfilename, timeout):
     for arg in  extraargs:
         cmd.append(arg)
     print " ".join(cmd),
-    log.write(" ".join(cmd) + '\n')
+    log.write(" ".join(cmd)),
     
     proc = Popen(cmd, stdout = PIPE, stderr = PIPE)
     if(waitandkill(proc, timeout)):
-        msg = "\tProcess killed after" + str(timeout) +" second(s)!"
+        msg = "\tFAIL: Process killed after" + str(timeout) +" second(s)!"
         #print msg
         log.write(msg + "\n")
     proc.wait() # sets the return code
@@ -47,7 +47,7 @@ def runtest(filename, P, extraargs, logfilename, timeout):
         print msg
         log.write(msg + "\n")
     else:
-        msg = "\tFAILED with code " + str(prc) + "!"
+        msg = "\tFAIL with code " + str(prc) + "!"
         print msg
         log.write(msg + "\n")
         log.write("stdout:\n" + out + "\n")

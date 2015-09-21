@@ -60,8 +60,9 @@ def main(argv):
         tstart = time.time()
         
         failcases = ""
-        
-        timeout = 0 # timeout cutoff in seconds
+
+        # timeout cutoff in seconds (0 disables timeout)
+        timeout = 0 
         ntests = 0
         nfails = 0
         for X in Xlist:
@@ -84,9 +85,8 @@ def main(argv):
                                                 logfile, timeout)
                                 if not rtest == 0:
                                     nfails += 1
-                                    nfails += 1
-                                    failcases += " ".join(cmd) + "\tcode "\
-                                                 + str(rtest)
+                                    failcases += " ".join(cmd)
+                                    failcases += "\t(code " + str(rtest) + ")"
                                     failcases += "\n"
                                     
         tend = time.time()
