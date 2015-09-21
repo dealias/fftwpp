@@ -33,11 +33,18 @@ void accumulate_split(const ftype *part, ftype *whole,
 
   if(rank == 0) {
     // First copy rank 0's part into the whole
-    if(!transposed)
-      copyfromblock(part,whole,x*Z,Y,Y);
-    else
-      copyfromblock(part,whole,X,y*Z,Y*Z);
-
+    if(!transposed) {
+      int count=x*Z;
+      int length=Y;
+      int stride=Y;
+      copyfromblock(part,whole,count,length,stride);
+    } else {
+      int count=X;
+      int length=y*Z;
+      int stride=Y*Z;
+      copyfromblock(part,whole,count,length,stride);
+    }
+      
     for(int p=1; p < size; ++p) {
       unsigned int dims[6];
       MPI_Recv(&dims,6,MPI_UNSIGNED,p,0,communicator,&stat);
@@ -49,11 +56,20 @@ void accumulate_split(const ftype *part, ftype *whole,
       if(n > 0) {
         ftype *C=new ftype[n];
         MPI_Recv(C,sizeof(ftype)*n,MPI_BYTE,p,0,communicator,&stat);
-	if(!transposed)
-	  copyfromblock(C,whole+Z*x0*Y,x*Z,Y,Y);
-	else
-	  copyfromblock(C,whole+y0*Z,X,y*Z,Y*Z);
-        delete [] C;
+	if(!transposed) {
+	  int offset=Z*x0*Y;
+	  int count=x*Z;
+	  int length=Y;
+	  int stride=Y;
+	  copyfromblock(C,whole+offset,count,length,stride);
+	} else {
+	  int offset=y0*Z;
+	  int count=X;
+	  int length=y*Z;
+	  int stride=Y*Z;
+	  copyfromblock(C,whole+offset,count,length,stride);
+	}
+	delete [] C;
       }
     }
   } else {
@@ -111,22 +127,12 @@ void accumulate_splityz(const ftype *part,
       const int count=y;
       const int stride=Z;
       const int length=z;
-      // std::cout << "(x0,y0,z0): ("  << x0 << "," << y0 << "," << z0 << ")"
-      // 		<< std::endl;
-      // std::cout << "(x,y,z): ("  << x << "," << y << "," << z << ")"
-      // 		<< std::endl;
-      // std::cout << "count: "  << count << std::endl;
-      // std::cout << "stride: "  << stride << std::endl;
-      // std::cout << "length: "  << length << std::endl;
       for(unsigned int i=0; i < X; ++i) {
 	const int outoffset=i*Y*Z+y0*Z+z0;
 	const int inoffset=i*y*z;
-	// std::cout << "outoffset: "  << outoffset << std::endl;
-	// std::cout << "inoffset: "  << inoffset << std::endl;
 	copyfromblock(part+inoffset,whole+outoffset,
 		      count,length,stride);
       }
-	  //copyfromblock(part,whole,count,length,stride);
       for(int p=1; p < size; ++p) {
 	unsigned int dims[9];
 	MPI_Recv(&dims,9,MPI_UNSIGNED,p,0,communicator,&stat);
@@ -140,11 +146,6 @@ void accumulate_splityz(const ftype *part,
 	unsigned int y=dims[7];
 	unsigned int z=dims[8];
 
-	// std::cout << "(x0,y0,z0): ("  << x0 << "," << y0 << "," << z0 << ")"
-	// 	  << std::endl;
-	// std::cout << "(x,y,z): ("  << x << "," << y << "," << z << ")"
-	// 	  << std::endl;
-
 	unsigned int n=X*y*z;
 	if(n > 0) {
 	  ftype *C=new ftype[n];
@@ -152,13 +153,9 @@ void accumulate_splityz(const ftype *part,
 	  const int count=y;
 	  const int stride=Z;
 	  const int length=z;
-	  // std::cout << "count: "  << count << std::endl;
-	  // std::cout << "stride: "  << stride << std::endl;
-	  // std::cout << "length: "  << length << std::endl;
 	  for(unsigned int i=0; i < X; ++i) {
 	    const int outoffset=i*Y*Z+y0*Z+z0;
 	    const int inoffset=i*y*z;
-	    // std::cout << "outoffset: "  << outoffset << std::endl;
 	    copyfromblock(C+inoffset,whole+outoffset,count,length,stride);
 	  }
 	  delete [] C;
@@ -174,11 +171,15 @@ void accumulate_splityz(const ftype *part,
     break;
 
   case 1:
+    std::cerr << "Not implemented" << std::cout;
+    exit(1);
     // is x * Y * z
     // FIXME
     break;
 
   case 2:
+    exit(1);
+    std::cerr << "Not implemented" << std::cout;
     //  is x * yz.x * Z
     // FIXME
     //accumulate_split(part, whole, X, Y, x0, y0, x, y, Z, 0, communicator);

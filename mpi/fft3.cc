@@ -148,7 +148,7 @@ int main(int argc, char* argv[])
 	for(int i=0; i < group.size; ++i) {
 	  MPI_Barrier(group.active);
 	  if(i == group.rank) {
-	    cout << "process " << i << " splity:" << endl;
+	    cout << "process " << i << " splitxy:" << endl;
 	    d.show();
 	    cout << endl;
 	  }
