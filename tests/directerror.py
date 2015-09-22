@@ -9,138 +9,364 @@ import re # regexp package
 import random # for randum number generators
 import os.path #for file-existence checking
 import math # for isnan
+import copy
 
-failures = 0
+def runcommand(command, tolerance):
+    p = Popen(command, stdout = PIPE, stderr = PIPE)
+    p.wait() # sets the return code
+    prc = p.returncode
+    
+    # capture output:
+    out, err = p.communicate() 
 
-print "Comparison of routine versus direct routine:"
-print
-print "program\ttype\t\tsize\tA\terror:"
-print
+    # did the process succeed?
+    if (prc == 0): 
+        # find the text after "error="
+        m = re.search("(?<=error=)(.*)", out) 
+        if not m == None:
+            print "\t" + m.group(0),
+            if float(m.group(0)) > tolerance :
+                print "\tERROR TOO LARGE!!!",
+                return 1
+            else:
+                if math.isnan(float(m.group(0))) :
+                    print "\tERROR IS NaN!!!",
+                    return 1
+            print
+        else:
+            print "\tFAILURE: output not found"
+            print " ".join(command)
+            return 1
+    else:
+        print "\tFAILURE:"
+        print " ".join(command)
+        print command
+        print "with, return code:"
+        print prc
+        print "stdout:"
+        print out
+        print "stderr:"
+        print err
+        return 1
+    return 0
 
+def progdim(prog):
+    dimension = 1
+    if "2" in prog:
+        dimension = 2
+    if "3" in prog:
+        dimension = 3
+    return dimension
 
-mlist=[8, 9, 0] # problem sizes (0 gives a random value)
 # 2D and 3D direct convolutions can take forever, so we add limits:
 maxm1d = 64;
 maxm2d = 16;
 maxm3d = 10;
 
-autolist = ["cconv"]
-convlist = ["conv", "conv2", "conv3", "cconv", "cconv2", "cconv3"]
-compactlist = ["conv2", "conv3"]
-tconvlist = ["tconv", "tconv2"]
-elist = ["cconv", "cconv2", "cconv3", "conv"] 
+def run1d(preprint, cmdbase, xlist):
+    nfails = 0
+    ntests = 0
+    for mval in xlist:
+        ntests += 1
+        command = copy.deepcopy(cmdbase)
+        if(mval == 0):
+            m = random.randint(1, maxm1d)
+        else:
+            m = mval
+        print(preprint + "\t" + str(m)),
+        command.append("-m" + str(m))
+        prc = runcommand(command, 1e-10)
+        if not prc == 0:
+            nfails += 1
+    return ntests, nfails
 
-Alist = [2]
+def run2d(preprint, cmdbase, xlist, ylist):
+    nfails = 0
+    ntests = 0
+    for xval in xlist:
+        x = xval
+        if(x == 0):
+            x = random.randint(1, maxm2d)
+        for yval in ylist:
+            ntests += 1
+            command = copy.deepcopy(cmdbase)
+            y = yval
+            if(y == 0):
+                y = random.randint(1, maxm2d)
+            print(preprint + "\t" + str(x) + "x" + str(y)),
+            command.append("-x" + str(x))
+            command.append("-y" + str(y))
+            prc = runcommand(command, 1e-10)
+            if not prc == 0:
+                nfails += 1
+    return ntests, nfails
 
-lists = [convlist, compactlist, tconvlist, elist, autolist]
+def run3d(preprint, cmdbase, xlist, ylist, zlist):
+    nfails = 0
+    ntests = 0
+    for xval in xlist:
+        x = xval
+        if(x == 0):
+            x = random.randint(1, maxm3d)
+        for yval in ylist:
+            ntests += 1
+            command = copy.deepcopy(cmdbase)
+            y = yval
+            if(y == 0):
+                y = random.randint(1, maxm3d)
+            for zval in zlist:
+                ntests += 1
+                command = copy.deepcopy(cmdbase)
+                z = zval
+                if(z == 0):
+                    z = random.randint(1, maxm3d)
+                print(preprint + "\t" + str(x) + "x" + str(y) + "x" + str(z)),
+                command.append("-x" + str(x))
+                command.append("-y" + str(y))
+                command.append("-z" + str(z))
+                prc = runcommand(command, 1e-10)
+                if not prc == 0:
+                    nfails += 1
+    return ntests, nfails
+
+def check_auto(proglist):
+    ntests = 0
+    nfails = 0
+    xlist = [0,8,9,10]
+    Alist = [1]
+    typearg = "-i"
+    for prog in proglist:
+        preprint = prog + "\tauto\t\tA=1"
+        command = []
+        command.append("./" + prog)
+        command.append("-N1")
+        command.append(typearg)
+        command.append("-d")
+        command.append("-A1")
+        if os.path.isfile(prog):
+            dimension = progdim(prog)
+            if dimension == 1:
+                ntests1, nfails1 = run1d(preprint, command, xlist)
+                ntests += ntests1
+                nfails += nfails1
+        else:
+            print(prog + " does not exist; please compile.")
+            fails += 1
+    return ntests, nfails
+
+def check_ternary(proglist):
+    ntests = 0
+    nfails = 0
+    xlist = [0,8,9,10]
+    ylist = [0,8,9,10]
+    Alist = [2,4]
+    typearg = "-i"
+    for prog in proglist:
+        for A in Alist:
+            preprint = prog + "\tternary\t\tA=" + str(A)
+            command = []
+            command.append("./" + prog)
+            command.append("-N1")
+            command.append(typearg)
+            command.append("-d")
+            command.append("-A" + str(A))
+            command.append("-T1")
+            if os.path.isfile(prog):
+                dimension = progdim(prog)
+                if dimension == 1:
+                    ntests1, nfails1 = run1d(preprint, command, xlist)
+                    ntests += ntests1
+                    nfails += nfails1
+                if dimension == 2:
+                    ntests2, nfails2 = run2d(preprint, command, xlist, ylist)
+                    ntests += ntests2
+                    nfails += nfails2
+            else:
+                print(prog + " does not exist; please compile.")
+                fails += 1
+    return ntests, nfails
+
+
+def check_conv(proglist):
+    ntests = 0
+    nfails = 0
+    xlist = [0,8,9,10]
+    ylist = [0,8,9,10]
+    zlist = [0,8,9,10]
+    Alist = [2,4]
+    typearg = "-i"
+    for prog in proglist:
+        for A in Alist:
+            preprint = prog + "\timplicit\tA=" + str(A)
+            command = []
+            command.append("./" + prog)
+            command.append("-N1")
+            command.append(typearg)
+            command.append("-d")
+            command.append("-A" + str(A))
+            command.append("-T1")
+            if os.path.isfile(prog):
+                dimension = progdim(prog)
+                if dimension == 1:
+                    ntests1, nfails1 = run1d(preprint, command, xlist)
+                    ntests += ntests1
+                    nfails += nfails1
+                if dimension == 2:
+                    ntests2, nfails2 = run2d(preprint, command, xlist, ylist)
+                    ntests += ntests2
+                    nfails += nfails2
+                if dimension == 3:
+                    ntests3, nfails3 = run3d(preprint, command, \
+                                             xlist, ylist, zlist)
+                    ntests += ntests3
+                    nfails += nfails3
+            else:
+                print(prog + " does not exist; please compile.")
+                fails += 1
+    return ntests, nfails
+
+
+def check_compact(proglist):
+    ntests = 0
+    nfails = 0
+    xlist = [0,8,9,10]
+    ylist = [0,8,9,10]
+    zlist = [0,8,9,10]
+    Alist = [2,4]
+    typearg = "-i"
+    for prog in proglist:
+        for A in Alist:
+            command = []
+            if os.path.isfile(prog):
+                dimension = progdim(prog)
+                if dimension == 2:
+                    for X in [0, 1]:
+                        for Y in [0, 1]:
+                            command.append("./" + prog)
+                            command.append("-N1")
+                            command.append(typearg)
+                            command.append("-d")
+                            command.append("-A" + str(A))
+                            command.append("-T1")
+                            command.append("-X" + str(X))
+                            command.append("-Y" + str(Y))
+                            preprint = prog + "\tcomplact"\
+                                           + str(X) + str(Y) \
+                                           + "\tA=" + str(A)
+                            preprint = prog + "\timplicit\tA=" + str(A)
+                            ntests2, nfails2 = run2d(preprint, command, \
+                                                     xlist, ylist)
+                            ntests += ntests2
+                            nfails += nfails2
+                if dimension == 3:
+                    for X in [0, 1]:
+                        for Y in [0, 1]:
+                            for Z in [0, 1]:
+                                command.append("./" + prog)
+                                command.append("-N1")
+                                command.append(typearg)
+                                command.append("-d")
+                                command.append("-A" + str(A))
+                                command.append("-T1")
+                                command.append("-X" + str(X))
+                                command.append("-Y" + str(Y))
+                                command.append("-Z" + str(Z))
+                                preprint = prog + "\tcomplact"\
+                                           + str(X) + str(Y) + str(Z) \
+                                           + "\tA=" + str(A)
+                                ntests3, nfails3 = run3d(preprint, command, \
+                                                         xlist, ylist, zlist)
+                    ntests += ntests3
+                    nfails += nfails3
+            else:
+                print(prog + " does not exist; please compile.")
+                fails += 1
+    return ntests, nfails
+
+
+def check_explicit(proglist):
+    ntests = 0
+    nfails = 0
+    xlist = [0,8,9,10]
+    ylist = [0,8,9,10]
+    zlist = [0,8,9,10]
+    Alist = [2,4]
+    typearg = "-e"
+    for prog in proglist:
+        for A in Alist:
+            preprint = prog + "\texplicit\tA=" + str(A)
+            command = []
+            command.append("./" + prog)
+            command.append("-N1")
+            command.append(typearg)
+            command.append("-d")
+            command.append("-A" + str(A))
+            command.append("-T1")
+            if os.path.isfile(prog):
+                dimension = progdim(prog)
+                if dimension == 1:
+                    ntests1, nfails1 = run1d(preprint, command, xlist)
+                    ntests += ntests1
+                    nfails += nfails1
+                if dimension == 2:
+                    ntests2, nfails2 = run2d(preprint, command, xlist, ylist)
+                    ntests += ntests2
+                    nfails += nfails2
+                if dimension == 3:
+                    ntests3, nfails3 = run3d(preprint, command, \
+                                             xlist, ylist, zlist)
+                    ntests += ntests3
+                    nfails += nfails3
+            else:
+                print(prog + " does not exist; please compile.")
+                fails += 1
+    return ntests, nfails
+
+
+print "Comparison of routine versus direct routine:"
+print
+print "program\ttype\t\tA\tsize\terror:"
+print
+
 
 ntests=0
+nfails=0
 
-for list in lists:
-    typearg = "-i"
-    name = "implicit"
-    if list == compactlist:
-        name = "non-compact"
-    if list == elist:
-        typearg = "-e"
-        name = "explicit"
-        Alist = [2] # values of A to be tested
-    else:
-        Alist = [2, 4] # values of A to be tested
-    if list == autolist:
-        Alist = [1]
-    for prog in list:
-        if (os.path.isfile(prog)): # check that file exists
-            for mval in mlist:
-                mstr = str(mval)
-                mcom =  ["-m" + mstr]
+autolist = ["cconv"]
+atests, afails = check_auto(autolist)
+ntests += atests
+nfails += afails
 
-                dimension = 1
-                if "2" in prog:
-                    dimension = 2
-                    if mval > maxm2d:
-                        # TODO: do non-square case
-                        mval = random.randint(1, maxm2d)
-                if "3" in prog:
-                    dimension = 3
-                    if mval > maxm3d:
-                        # TODO: do non-cube case
-                        mval = random.randint(1, maxm3d)
+tconvlist = ["tconv", "tconv2"]
+ttests, tfails = check_ternary(tconvlist)
+ntests += ttests
+nfails += tfails
 
-                if(dimension == 2):
-                    mstr = str(mval) + "x" + str(mval)
-                if(dimension == 3):
-                    mstr = str(mval) + "x" + str(mval) + "x" + str(mval)
-                    
-                if(mval == 0): # the random case
-                    if(dimension == 1):
-                        mstr = str(random.randint(1, maxm1d))
-                        mcom = ["-m" + mstr]
-                    if(dimension == 2):
-                        x = str(random.randint(1, maxm2d))
-                        y = str(random.randint(1, maxm2d))
-                        mcom = ["-x" + str(x), "-y" + str(y)]
-                        mstr = str(x) + "x" + str(y)
-                    if(dimension == 3):
-                        x = str(random.randint(1, maxm3d))
-                        y = str(random.randint(1, maxm3d))
-                        z = str(random.randint(1, maxm3d))
-                        mcom = ["-x" + str(x), "-y" + str(y), "-z" + str(z)]
-                        mstr = str(x) + "x" + str(y) + "x" + str(z)
+convlist = ["conv", "conv2", "conv3", "cconv", "cconv2", "cconv3"]
+ctests, cfails = check_conv(convlist)
+ntests += ctests
+nfails += cfails
 
-                for A in Alist:
-                    command = ["./" + prog, "-N1", typearg, "-d",\
-                               "-A" + str(A), "-T1"];
-                    command += mcom
+compactlist = ["conv2", "conv3"]
+cotests, cofails = check_compact(compactlist)
+ntests += cotests
+nfails += cofails
 
-                    ntests += 1
-                    if(list == compactlist):
-                        clist = ["-c0"]
-                        command += clist
-                    #print command
-                    print prog + "\t" + name + "\t" + mstr \
-                                                      + "\tA="+str(A),
-                    p = Popen(command, stdout = PIPE, stderr = PIPE)
-                    p.wait() # sets the return code
-                    prc = p.returncode
-                    out, err = p.communicate() # capture output
-                    if (prc == 0): # did the process succeed?
-                        # find the text after "error="
-                        m = re.search("(?<=error=)(.*)", out) 
-                        print "\t" + m.group(0),
-                        if float(m.group(0)) > 1e-10 :
-                            print "\tERROR TOO LARGE!!!",
-                            failures += 1
-                        else:
-                            if math.isnan(float(m.group(0))) :
-                                print "\tERROR IS NaN!!!",
-                                failures += 1
-                        print
-
-                    else:
-                        print "\tFAILURE:"
-                        print command
-                        print "with, return code:"
-                        print prc
-                        print "stdout:"
-                        print out
-                        print "stderr:"
-                        print err
-                        failures += 1
-        else:
-            print(prog+" does not exist; please compile.")
-            failures+=1
+elist = ["cconv", "cconv2", "cconv3", "conv"] 
+etests, efails = check_compact(elist)
+ntests += etests
+nfails += efails
 
 print
 
-print str(ntests)+" tests were performed with " + str(failures) + " failure(s)."
+print str(ntests)+" tests were performed with " + str(nfails) + " failure(s)."
 
-print 
+print
 
-if(failures == 0):
+if(nfails == 0):
     print "OK:\tall tests passed"
 else:
     print "*" * 80
-    print "ERROR:\t" + str(failures) + " TEST(S) FAILED"
+    print "ERROR:\t" + str(nfails) + " TEST(S) FAILED"
 
-sys.exit(failures)
+sys.exit(nfails)
