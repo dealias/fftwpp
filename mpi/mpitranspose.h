@@ -382,8 +382,7 @@ public:
     
     a=options.a;
     b=std::min(nlast+(n0 == np),mlast+(m0 == mp))/a;
-    if(b == 1) a=1;
-//    if(a == 1) b=size;
+    if(b == 1) {b=a; a=1;}
     uniform=Uniform && a*b == size;
     
     if(globalrank == 0)

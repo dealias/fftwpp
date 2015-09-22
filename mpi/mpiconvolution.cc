@@ -5,8 +5,6 @@ namespace fftwpp {
 void ImplicitConvolution2MPI::convolve(Complex **F, multiplier *pmult,
                                        unsigned int offset)
 {
-  unsigned int size=d.x*d.Y;
-
   for(unsigned int a=0; a < A; ++a) {
     Complex *f=F[a]+offset;
     Complex *u=U2[a];
@@ -20,6 +18,7 @@ void ImplicitConvolution2MPI::convolve(Complex **F, multiplier *pmult,
     T->transpose2(u,false,true);
   }
       
+  unsigned int size=d.x*d.Y;
   subconvolution(F,pmult,offset,size+offset);
   T->wait0();
   T->wait2();
@@ -62,40 +61,40 @@ void ImplicitHConvolution2MPI::convolve(Complex **F, realmultiplier *pmult,
 void ImplicitConvolution3MPI::convolve(Complex **F, multiplier *pmult,
                                        unsigned int offset) 
 {
-  unsigned int stride=my*d.z;
+  for(unsigned int a=0; a < A; ++a) {
+    Complex *f=F[a]+offset;
+    Complex *u=U3[a];
+    xfftpad->expand(f,u);
+    if(a > 0) T->wait0();
+    xfftpad->Backwards->fft(f);
+    if(a > 0) T->wait2();
+    T->transpose1(f,false,true);
+    xfftpad->Backwards->fft(u);
+    T->wait1();
+    T->transpose2(u,false,true);
+  }
+      
+  unsigned int stride=d.Y*d.z;
   unsigned int size=d.x*stride;
     
-    for(unsigned int a=0; a < A; ++a) {
-      Complex *f=F[a]+offset;
-      Complex *u=U3[a];
-      xfftpad->expand(f,u);
-      if(a > 0) T->wait0();
-      xfftpad->Backwards->fft(f);
-      if(a > 0) T->wait2();
-      T->transpose1(f,false,true);
-      xfftpad->Backwards->fft(u);
-      T->wait1();
-      T->transpose2(u,false,true);
-    }
-      
-    subconvolution(F,pmult,offset,size+offset,stride);
-    T->wait0();
-    T->wait2();
-    T->transpose1(F[0]+offset,true,false);
-    subconvolution(U3,pmult,0,size,stride);
-    T->wait1();
-    for(unsigned int b=1; b < B; ++b)
-      T->transpose(F[b]+offset,true,false);
+  subconvolution(F,pmult,offset,size+offset,stride);
+  T->wait0();
+  T->wait2();
+  T->transpose1(F[0]+offset,true,false);
+  subconvolution(U3,pmult,0,size,stride);
+  T->wait1();
+  for(unsigned int b=1; b < B; ++b)
+    T->transpose(F[b]+offset,true,false);
     
-    for(unsigned int b=0; b < B; ++b) {
-      Complex *f=F[b]+offset;
-      Complex *u=U3[b];
-      T->transpose1(u,true,false);
-      xfftpad->Forwards->fft(f);
-      T->wait1();
-      xfftpad->Forwards->fft(u);
-      xfftpad->reduce(f,u);
-    }
+  for(unsigned int b=0; b < B; ++b) {
+    Complex *f=F[b]+offset;
+    Complex *u=U3[b];
+    T->transpose1(u,true,false);
+    xfftpad->Forwards->fft(f);
+    T->wait1();
+    xfftpad->Forwards->fft(u);
+    xfftpad->reduce(f,u);
+  }
 }
 
 // Enforce 3D Hermiticity using given (x,y > 0,z=0) and (x >= 0,y=0,z=0) data.
@@ -205,8 +204,9 @@ void ImplicitHConvolution3MPI::convolve(Complex **F, realmultiplier *pmult,
   }
     
   unsigned int stride=d.Y*d.z;
+  unsigned int ustride=du.Y*du.z;
   subconvolution(F,pmult,offset,d.x*stride+offset,stride);
-  subconvolution(U3,pmult,0,du.x*stride,stride);
+  subconvolution(U3,pmult,0,du.x*ustride,ustride);
     
   if(d.y < d.Y) {
     transpose(T,B,F,true,false,offset);
