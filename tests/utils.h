@@ -18,15 +18,12 @@ inline double cbrt(double x)
 #include <getopt.h>
 #endif
 
-inline void usage(int n, bool test=false, bool Explicit=true, 
+inline void usage(int n, bool test=false, bool Explicit=true,
 		  bool compact=false)
 {
   std::cerr << "Options: " << std::endl;
   std::cerr << "-h\t\t help" << std::endl;
   std::cerr << "-i\t\t implicitly padded convolution" << std::endl;
-  if(compact) 
-    std::cerr << "-c\t\t compact data format [1] (0=false, 1=true)" 
-	      << std::endl;
   if(Explicit) {
     std::cerr << "-e\t\t explicitly padded convolution" << std::endl;
     if(n > 1)
@@ -48,6 +45,15 @@ inline void usage(int n, bool test=false, bool Explicit=true,
   }
   if(n > 2)
     std::cerr << "-z\t\t z size" << std::endl;
+  
+   if(compact) {
+    if(n > 1) {
+      std::cerr << "-X\t\t x Hermitian padding (0 or 1)" << std::endl;
+      std::cerr << "-Y\t\t y Hermitian padding (0 or 1)" << std::endl;
+    }
+    if(n > 2)
+      std::cerr << "-Z\t\t z Hermitian padding (0 or 1)" << std::endl;
+  }
 }
 
 inline void usageA()

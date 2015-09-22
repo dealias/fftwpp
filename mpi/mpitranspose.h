@@ -201,9 +201,9 @@ struct mpioptions {
   mpioptions(unsigned int threads=fftw::maxthreads, unsigned int a=0,
              unsigned int alltoall=-1) :
     threads(threads), a(a), alltoall(alltoall) {}
-}
+};
     
-  static const defaultmpioptions;
+static const mpioptions defaultmpioptions;
   
 template<class T>
 class mpitranspose {
@@ -290,7 +290,7 @@ public:
     }
     latency=std::max(T1*(N2-N1)/(T2-T1)-N1,0.0)*sizeof(double);
     if(globalrank == 0)
-      std::cout << "latency=" << latency << std::endl;
+      std::cout << std::endl << "latency=" << latency << std::endl;
     MPI_Comm_free(&split); 
     return latency;
   }
@@ -334,6 +334,11 @@ public:
       options.a=size/n;
     }
 
+    if(globalrank == 0)
+      std::cout << std::endl << "Initializing " << N << "x" << M
+                << " transpose of blocks of " << L << " elements over " << size
+                << " processes." << std::endl;
+      
     int alimit;
     if(options.a <= 0) { // Restrict divisor range based on latency estimate
       options.a=1;
@@ -381,9 +386,10 @@ public:
 //    if(a == 1) b=size;
     uniform=Uniform && a*b == size;
     
-    if(globalrank == 0) std::cout << std::endl << "Using alltoall=" << 
-                          options.alltoall << ", a=" << a << ", b=" << b <<
-                          ":" << std::endl;
+    if(globalrank == 0)
+      std::cout << std::endl << "Using alltoall=" << 
+        options.alltoall << ", a=" << a << ", b=" << b <<
+        ":" << std::endl;
     init(data);
   }
   

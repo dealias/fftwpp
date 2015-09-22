@@ -196,6 +196,7 @@ int main(int argc, char* argv[])
       T[i]=seconds();
     }
     
+    cout << endl;
     timings("Implicit",mx,T,N,stats);
     
     if(Direct)
@@ -204,12 +205,11 @@ int main(int argc, char* argv[])
 	  for(unsigned int k=0; k < mz; k++)
 	    h0[i][j][k]=f[i][j][k];
 
+    cout << endl;
     if(mx*my*mz < outlimit) 
-      cout << f << endl;
+      cout << f;
     else 
       cout << f[0][0][0] << endl;
-
-    cout << endl;
   }
   
   if(Explicit) {
@@ -226,6 +226,8 @@ int main(int argc, char* argv[])
       C.convolve(F[0],F[1]);
       T[i]=seconds();
     }
+    
+    cout << endl;
     timings(Pruned ? "Pruned" : "Explicit",mx,T,N,stats);
 
     if(Direct) {

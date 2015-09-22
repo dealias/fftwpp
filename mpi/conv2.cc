@@ -12,23 +12,24 @@ unsigned int nx=0;
 unsigned int mx=4;
 unsigned int my=4;
 unsigned int M=1;
-bool compact=true;
+bool xcompact=true;
+bool ycompact=true;
 
 bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
 unsigned int outlimit=200;
 
 inline void init(Complex *f, Complex *g, split d, unsigned int M=1,
-                 bool compact=true)
+                 bool xcompact=true)
 {
   double factor=1.0/sqrt((double) M);
   for(unsigned int s=0; s < M; ++s) {
     double S=sqrt(1.0+s);
     double ffactor=S*factor;
     double gfactor=1.0/S*factor;
-    for(unsigned int i=!compact; i < d.X; ++i) {
+    for(unsigned int i=!xcompact; i < d.X; ++i) {
       unsigned int I=s*d.n+d.y*i;
-      unsigned int ii=i-!compact;
+      unsigned int ii=i-!xcompact;
       for(unsigned int j=0; j < d.y; j++) {
         unsigned int jj=j+d.y0;
         f[I+j]=ffactor*Complex(ii,jj);
@@ -50,14 +51,11 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"heipHc:M:N:m:x:y:n:T:");
+    int c = getopt(argc,argv,"heipH:M:N:m:x:y:n:T:X:Y:");
     if (c == -1) break;
                 
     switch (c) {
       case 0:
-        break;
-      case 'c':
-        compact=atoi(optarg) != 0;
         break;
       case 'e':
         Explicit=true;
@@ -97,9 +95,15 @@ int main(int argc, char* argv[])
       case 'T':
         fftw::maxthreads=atoi(optarg);
         break;
+      case 'X':
+        xcompact=atoi(optarg) == 0;
+        break;
+      case 'Y':
+        ycompact=atoi(optarg) == 0;
+        break;
       case 'h':
       default:
-        usage(2);
+        usage(2,false,true,true);
     }
   }
 
@@ -114,8 +118,8 @@ int main(int argc, char* argv[])
     if(N < 10) N=10;
   }
   
-  unsigned int nx=2*mx-compact;
-  unsigned int ny=my+!compact;
+  unsigned int nx=2*mx-xcompact;
+  unsigned int ny=my+!ycompact;
   
   MPIgroup group(MPI_COMM_WORLD,ny);
   MPILoadWisdom(group.active);
@@ -141,7 +145,7 @@ int main(int argc, char* argv[])
     }
     
     split d(nx,ny,group.active);
-    split du(mx+compact,ny,group.active);
+    split du(mx+xcompact,ny,group.active);
   
     unsigned int Mn=M*d.n;
   
@@ -160,7 +164,11 @@ int main(int argc, char* argv[])
           exit(1);
       }
 
-      ImplicitHConvolution2MPI C(mx,my,d,du,f,A,B,compact);
+      convolveOptions options;
+      options.xcompact=xcompact;
+      options.ycompact=ycompact;
+      ImplicitHConvolution2MPI C(mx,my,d,du,f,A,B,options);
+      
       Complex **F=new Complex *[A];
       unsigned int stride=d.n;
       for(unsigned int s=0; s < M; ++s) {
@@ -168,40 +176,41 @@ int main(int argc, char* argv[])
         F[2*s]=f+sstride;
         F[2*s+1]=g+sstride;
       }
+      
       MPI_Barrier(group.active);
       if(group.rank == 0)
         cout << "Initialized after " << seconds() << " seconds." << endl;
       for(unsigned int i=0; i < N; ++i) {
-        init(f,g,d,M,compact);
+        init(f,g,d,M,xcompact);
         if(main) seconds();
         C.convolve(F,mult);
         //C.convolve(f,g);
         if(main) T[i]=seconds();
       }
+      
       if(main)
         timings("Implicit",mx,T,N);
 
+      if(nx*my < outlimit) 
+        show(f,nx,d.y,
+             !xcompact,0,
+             nx,ycompact || d.y0+d.y < ny ? d.y : d.y-1,group.active);
+
+      // check if the hash of the rounded output matches a known value
+      if(dohash && xcompact && ycompact) {
+        int hashval=hash(f,mx,d.y,group.active);
+        if(group.rank == 0) cout << hashval << endl;
+        if(mx == 4 && my == 4) {
+          if(hashval != -268659210) {
+            retval=1;
+            if(group.rank == 0) cout << "error: hash does not match" << endl;
+          } else {
+            if(group.rank == 0) cout << "hash value OK." << endl;
+          }
+        }
+      }
       delete [] F;
     }
-    if(nx*my < outlimit) 
-      show(f,nx,d.y,
-           !compact,0,
-           nx,compact || d.y0+d.y < ny ? d.y : d.y-1,group.active);
-
-    // check if the hash of the rounded output matches a known value
-    if(dohash && compact) {
-      int hashval=hash(f,mx,d.y,group.active);
-      if(group.rank == 0) cout << hashval << endl;
-      if(mx == 4 && my == 4) {
-	if(hashval != -268659210) {
-	  retval=1;
-	  if(group.rank == 0) cout << "error: hash does not match" << endl;
-	} else {
-	  if(group.rank == 0) cout << "hash value OK." << endl;
-	}
-      }
-    }
-    
     deleteAlign(g);
     deleteAlign(f);
   

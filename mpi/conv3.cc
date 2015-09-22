@@ -12,26 +12,28 @@ unsigned int mx=4;
 unsigned int my=4;
 unsigned int mz=4;
 unsigned int M=1;
-bool compact=true;
+bool xcompact=true;
+bool ycompact=true;
+bool zcompact=true;
 
 bool Direct=false, Implicit=true;
 
 unsigned int outlimit=3000;
 
 inline void init(Complex *f, Complex *g, const splityz& d, unsigned int M=1,
-                 bool compact=true)
+                 bool xcompact=true, bool ycompact=true)
 {
   double factor=1.0/sqrt((double) M);
   for(unsigned int s=0; s < M; ++s) {
     double S=sqrt(1.0+s);
     double ffactor=S*factor;
     double gfactor=1.0/S*factor;
-    for(unsigned int i=!compact; i < d.X; ++i) {
+    for(unsigned int i=!xcompact; i < d.X; ++i) {
       unsigned int I=s*d.n+d.y*d.z*i;
-      unsigned int ii=i-!compact;
-      for(unsigned int j=d.y0 == 0 ? !compact : 0; j < d.y; ++j) {
+      unsigned int ii=i-!xcompact;
+      for(unsigned int j=d.y0 == 0 ? !ycompact : 0; j < d.y; ++j) {
         unsigned int IJ=I+d.z*j;
-        unsigned int jj=d.y0-!compact+j;
+        unsigned int jj=d.y0-!ycompact+j;
           for(unsigned int k=0; k < d.z; ++k) {
             unsigned int kk=d.z0+k;
             f[IJ+k]=ffactor*Complex(ii+kk,jj+kk);
@@ -54,14 +56,11 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"heipHc:M:N:m:x:y:z:n:T:");
+    int c = getopt(argc,argv,"heipHM:N:m:x:y:z:n:T:X:Y:Z:");
     if (c == -1) break;
                 
     switch (c) {
       case 0:
-        break;
-      case 'c':
-        compact=atoi(optarg) != 0;
         break;
       case 'e':
         Implicit=false;
@@ -99,9 +98,18 @@ int main(int argc, char* argv[])
       case 'T':
         fftw::maxthreads=atoi(optarg);
         break;
+      case 'X':
+        xcompact=atoi(optarg) == 0;
+        break;
+      case 'Y':
+        ycompact=atoi(optarg) == 0;
+        break;
+      case 'Z':
+        zcompact=atoi(optarg) == 0;
+        break;
       case 'h':
       default:
-        usage(3,false,false);
+        usage(3,false,false,true);
     }
   }
 
@@ -116,9 +124,9 @@ int main(int argc, char* argv[])
     if(N < 10) N=10;
   }
     
-  unsigned int nx=2*mx-compact;
-  unsigned int ny=2*my-compact;
-  unsigned int nz=mz+!compact;
+  unsigned int nx=2*mx-xcompact;
+  unsigned int ny=2*my-ycompact;
+  unsigned int nz=mz+!zcompact;
     
   MPIgroup group(MPI_COMM_WORLD,ny,nz);
   MPILoadWisdom(group.active);
@@ -146,7 +154,7 @@ int main(int argc, char* argv[])
     }
 
     splityz d(nx,ny,nz,group);
-    splityz du(mx+compact,ny,nz,group);
+    splityz du(mx+xcompact,ny,nz,group);
     
     unsigned int Mn=M*d.n;
     Complex *f=ComplexAlign(Mn);
@@ -163,7 +171,11 @@ int main(int argc, char* argv[])
     }
 
     if(Implicit) {
-      ImplicitHConvolution3MPI C(mx,my,mz,d,du,f,A,B,compact);
+      convolveOptions options;
+      options.xcompact=xcompact;
+      options.ycompact=ycompact;
+      options.zcompact=zcompact;
+      ImplicitHConvolution3MPI C(mx,my,mz,d,du,f,A,B,options);
       Complex **F=new Complex *[A];
       unsigned int stride=d.n;
       for(unsigned int s=0; s < M; ++s) {
@@ -175,7 +187,7 @@ int main(int argc, char* argv[])
       if(main)
         cout << "Initialized after " << seconds() << " seconds." << endl;
       for(unsigned int i=0; i < N; ++i) {
-        init(f,g,d,M,compact);
+        init(f,g,d,M,xcompact,ycompact);
         if(main) seconds();
         C.convolve(F,mult);
 //      C.convolve(f,g);
@@ -189,11 +201,11 @@ int main(int argc, char* argv[])
       
       if(nx*ny*mz < outlimit)
         show(f,nx,d.y,d.z,
-             !compact,!compact && d.y0 == 0,0,
-             nx,d.y,compact || d.z0+d.z < nz ? d.z : d.z-1,group.active);
+             !xcompact,!ycompact && d.y0 == 0,0,
+             nx,d.y,zcompact || d.z0+d.z < nz ? d.z : d.z-1,group.active);
   
       // check if the hash of the rounded output matches a known value
-      if(dohash && compact) {
+      if(dohash && xcompact && ycompact) {
 	int hashval=hash(f,nx,d.y,d.z,group.active);
 	if(group.rank == 0) cout << hashval << endl;
 	if(mx == 4 && my == 4 && mz == 4) {

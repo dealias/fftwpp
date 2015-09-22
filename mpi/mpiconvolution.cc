@@ -98,21 +98,21 @@ void ImplicitConvolution3MPI::convolve(Complex **F, multiplier *pmult,
     }
 }
 
-// Enforce 3D Hermiticity using specified (x,y > 0,z=0) and (x >= 0,y=0,z=0) data.
-// u is a work array of size d.X.
+// Enforce 3D Hermiticity using given (x,y > 0,z=0) and (x >= 0,y=0,z=0) data.
+// u0 is an optional work array of size nu=d.X-!xcompact.
 void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
-                              splityz& d, bool compact, Complex *f,
-                              unsigned int nu, Complex *u0)
+                              splityz& d, bool xcompact, bool ycompact,
+                              Complex *f, unsigned int nu, Complex *u0)
 {
   if(d.y == d.Y && d.z == d.Z) {
-    HermitianSymmetrizeXY(mx,my,d.Z,mx-compact,my-compact,f);
+    HermitianSymmetrizeXY(mx,my,d.Z,mx-xcompact,my-ycompact,f);
     return;
   }
 
   MPI_Status stat;
   int rank,size;
-  unsigned int extra=!compact;
-  unsigned int yorigin=my-compact;
+  unsigned int extra=!xcompact;
+  unsigned int yorigin=my-ycompact;
   unsigned int nx=d.X-extra;
   unsigned int y0=d.y0;
   unsigned int dy=d.y;
@@ -169,11 +169,11 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
     else {
       int offset=2*yorigin-y0;
       if(y0+j != yorigin) {
-        unsigned int even=1+compact-(J % 2);
+        unsigned int even=1+xcompact-(J % 2);
         for(unsigned int i=0; i < nx; ++i)
           f[stride*(i-even)+d.z*(offset-j)]=u[i];
       } else {
-        unsigned int origin=stride*(mx-compact)+d.z*j;
+        unsigned int origin=stride*(mx-xcompact)+d.z*j;
         f[origin].im=0.0;
         unsigned int mxstride=mx*stride;
         for(unsigned int i=stride; i < mxstride; i += stride)

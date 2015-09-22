@@ -62,6 +62,35 @@ unsigned int BuildZeta(unsigned int n, unsigned int m,
                        Complex *&ZetaH, Complex *&ZetaL,
                        unsigned int threads=1);
 
+struct convolveOptions {
+  unsigned int threads;            // For outer subconvolution loop.
+  bool xcompact,ycompact,zcompact; // Data format
+  unsigned int nx,ny,nz;           // Used internally by the MPI interface.
+  unsigned int stride2,stride3;    // Used internally by the MPI interface.
+  
+  convolveOptions(unsigned int threads=fftw::maxthreads, 
+                  bool xcompact=true, bool ycompact=true, bool zcompact=true,
+                  unsigned int nx=0, unsigned int ny=0, unsigned int nz=0,
+                  unsigned int stride2=0, unsigned int stride3=0) :
+    threads(threads),
+    xcompact(xcompact), ycompact(ycompact), zcompact(zcompact),
+    nx(nx), ny(ny), nz(nz), stride2(stride2), stride3(stride3) {}
+
+  convolveOptions(const convolveOptions &options, 
+                  unsigned int nx, unsigned int ny, unsigned int stride2) :
+    threads(options.threads), xcompact(options.xcompact),
+    ycompact(options.ycompact), nx(nx), ny(ny), stride2(stride2) {}
+    
+  convolveOptions(const convolveOptions &options, 
+                  unsigned int ny, unsigned int nz,
+                  unsigned int stride2, unsigned int stride3) :
+    threads(options.threads), xcompact(options.xcompact),
+    ycompact(options.ycompact), zcompact(options.zcompact),
+    ny(ny), nz(nz), stride2(stride2), stride3(stride3) {}
+};
+    
+static const convolveOptions defaultconvolveOptions;
+
 class ThreadBase
 {
 protected:
@@ -533,19 +562,19 @@ public:
     delete [] U2;
   }
   
-  void init(unsigned int nx, unsigned int ny, unsigned int stride) {
-    xfftpad=new fftpad(mx,ny,ny,u2);
+  void init(const convolveOptions& options) {
+    xfftpad=new fftpad(mx,options.ny,options.ny,u2);
     yconvolve=new ImplicitConvolution*[threads];
     for(unsigned int t=0; t < threads; ++t)
       yconvolve[t]=new ImplicitConvolution(my,u1+t*my*A,A,B,innerthreads);
-    initpointers2(U2,u2,stride);
+    initpointers2(U2,u2,options.stride2);
   }
   
-  void set(unsigned int& nx, unsigned int& ny, unsigned int& stride) {
-    if(nx == 0) nx=mx;
-    if(ny == 0) {
-      ny=my;
-      stride=mx*my;
+  void set(convolveOptions& options) {
+    if(options.nx == 0) options.nx=mx;
+    if(options.ny == 0) {
+      options.ny=my;
+      options.stride2=mx*my;
     }
   }
   
@@ -553,33 +582,27 @@ public:
   // u2 is a temporary array of size mx*my*A.
   // A is the number of inputs.
   // B is the number of outputs.
-  // threads is the number of threads to use in the outer subconvolution loop.
-  // nx, ny, and stride are for the MPI interface; should not be set directly.
   ImplicitConvolution2(unsigned int mx, unsigned int my,
                        Complex *u1, Complex *u2,
                        unsigned int A=2, unsigned int B=1,
-                       unsigned int threads=fftw::maxthreads,
-                       unsigned int nx=0, unsigned int ny=0,
-                       unsigned int stride=0) :
-    ThreadBase(threads), mx(mx), my(my), u1(u1), u2(u2), A(A), B(B),
+                       convolveOptions options=defaultconvolveOptions) :
+    ThreadBase(options.threads), mx(mx), my(my), u1(u1), u2(u2), A(A), B(B),
     allocated(false) {
-    set(nx,ny,stride);
-    multithread(nx);
-    init(nx,ny,stride);
+    set(options);
+    multithread(options.nx);
+    init(options);
   }
   
   ImplicitConvolution2(unsigned int mx, unsigned int my,
                        unsigned int A=2, unsigned int B=1,
-                       unsigned int threads=fftw::maxthreads,
-                       unsigned int nx=0, unsigned int ny=0,
-                       unsigned int stride=0) : 
-    ThreadBase(threads), mx(mx), my(my), A(A), B(B) {
-    set(nx,ny,stride);
-    multithread(nx);
+                       convolveOptions options=defaultconvolveOptions) :
+    ThreadBase(options.threads), mx(mx), my(my), A(A), B(B) {
+    set(options);
+    multithread(options.nx);
     u1=ComplexAlign(my*A*threads);
-    u2=ComplexAlign(stride*A);
+    u2=ComplexAlign(options.stride2*A);
     allocated=true;
-    init(nx,ny,stride);
+    init(options);
   }
   
   virtual ~ImplicitConvolution2() {
@@ -698,7 +721,7 @@ protected:
   unsigned int A,B;
   fft0pad *xfftpad;
   Complex **U2,**V2;
-  bool compact;
+  bool xcompact,ycompact;
   bool allocated;
 public:
 
@@ -713,47 +736,43 @@ public:
     delete [] U2;
   }
   
-  void init(unsigned int nx, unsigned int ny, unsigned int stride) {
-    xfftpad=compact ? new fft0pad(mx,ny,ny,u2,threads) :
-      new fft0padwide(mx,ny,ny,u2,threads);
-    initpointers2(U2,u2,stride);
+  void init(const convolveOptions& options) {
+    xfftpad=xcompact ? new fft0pad(mx,options.ny,options.ny,u2,threads) :
+      new fft0padwide(mx,options.ny,options.ny,u2,threads);
+    initpointers2(U2,u2,options.stride2);
   }
 
-  void set(unsigned int &nx, unsigned int& ny, unsigned int& stride) {
-    if(nx == 0) nx=mx;
-    if(ny == 0) {
-      ny=my+!compact;
-      stride=(mx+compact)*ny;
+  void set(convolveOptions& options) {
+    xcompact=options.xcompact;
+    ycompact=options.ycompact;
+    if(options.nx == 0) options.nx=mx;
+    if(options.ny == 0) {
+      options.ny=my+!ycompact;
+      options.stride2=(mx+xcompact)*options.ny;
     }
   }
   
   ImplicitHConvolution2Base(unsigned int mx, unsigned int my,
                             Complex *u1, Complex *u2,
                             unsigned int A=2, unsigned int B=1,
-                            bool compact=true,
-                            unsigned int threads=fftw::maxthreads,
-                            unsigned int nx=0, unsigned int ny=0,
-                            unsigned int stride=0) :
-    ThreadBase(threads), mx(mx), my(my), u1(u1), u2(u2), A(A), B(B),
-    compact(compact), allocated(false) {
-    set(nx,ny,stride);
-    multithread(nx);
-    init(nx,ny,stride);
+                            convolveOptions options=defaultconvolveOptions) :
+    ThreadBase(options.threads), mx(mx), my(my), u1(u1), u2(u2), A(A), B(B),
+    allocated(false) {
+    set(options);
+    multithread(options.nx);
+    init(options);
   }
   
   ImplicitHConvolution2Base(unsigned int mx, unsigned int my,
                             unsigned int A=2, unsigned int B=1,
-                            bool compact=true,
-                            unsigned int threads=fftw::maxthreads,
-                            unsigned int nx=0, unsigned int ny=0,
-                            unsigned int stride=0) :
-    ThreadBase(threads), mx(mx), my(my), A(A), B(B), compact(compact) {
-    set(nx,ny,stride);
-    multithread(nx);
+                            convolveOptions options=defaultconvolveOptions) :
+    ThreadBase(options.threads), mx(mx), my(my), A(A), B(B) {
+    set(options);
+    multithread(options.nx);
     u1=ComplexAlign((my/2+1)*A*threads);
-    u2=ComplexAlign(stride*A);
+    u2=ComplexAlign(options.stride2*A);
     allocated=true;
-    init(nx,ny,stride);
+    init(options);
   }
   
   ~ImplicitHConvolution2Base() {
@@ -781,29 +800,21 @@ public:
   }
     
   // u1 is a temporary array of size (my/2+1)*A*threads.
-  // u2 is a temporary array of size (mx+compact)*(my+!compact)*A;
+  // u2 is a temporary array of size (mx+xcompact)*(my+!ycompact)*A;
   // A is the number of inputs.
   // B is the number of outputs.
-  // threads is the number of threads to use in the outer subconvolution loop.
-  // nx, ny, and stride are for the MPI interface; should not be set directly.
   ImplicitHConvolution2(unsigned int mx, unsigned int my,
                         Complex *u1, Complex *u2,
                         unsigned int A=2, unsigned int B=1,
-                        bool compact=true,
-                        unsigned int threads=fftw::maxthreads,
-                        unsigned int nx=0, unsigned int ny=0,
-                        unsigned int stride=0) :
-    ImplicitHConvolution2Base(mx,my,u1,u2,A,B,compact,threads,nx,ny,stride) {
+                        convolveOptions options=defaultconvolveOptions) :
+    ImplicitHConvolution2Base(mx,my,u1,u2,A,B,options) {
     initconvolve();
   }
   
   ImplicitHConvolution2(unsigned int mx, unsigned int my,
                         unsigned int A=2, unsigned int B=1,
-                        bool compact=true,
-                        unsigned int threads=fftw::maxthreads,
-                        unsigned int nx=0, unsigned int ny=0,
-                        unsigned int stride=0) :
-    ImplicitHConvolution2Base(mx,my,A,B,compact,threads,nx,ny,stride) {
+                        convolveOptions options=defaultconvolveOptions) :
+    ImplicitHConvolution2Base(mx,my,A,B,options) {
     initconvolve();
   }
   
@@ -818,13 +829,14 @@ public:
     for(unsigned int a=0; a < A; ++a) {
       Complex *f=F[a]+offset;
       if(symmetrize)
-        HermitianSymmetrizeX(mx,ny,mx-compact,f);
+        HermitianSymmetrizeX(mx,ny,mx-xcompact,f);
       xfftpad->backwards(f,U2[a]);
     }
   }
 
   void subconvolution(Complex **F, realmultiplier *pmult,
-                      unsigned int start, unsigned int stop, unsigned int stride) {
+                      unsigned int start, unsigned int stop,
+                      unsigned int stride) {
     if(threads > 1) {
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
@@ -844,13 +856,13 @@ public:
   }
   
   // F is a pointer to A distinct data blocks each of size 
-  // (2mx-compact)*(my+!compact), shifted by offset (contents not preserved).
+  // (2mx-compact)*(my+!ycompact), shifted by offset (contents not preserved).
   virtual void convolve(Complex **F, realmultiplier *pmult,
                         bool symmetrize=true, unsigned int offset=0) {
-    unsigned ny=my+!compact;
+    unsigned ny=my+!ycompact;
     backwards(F,U2,ny,symmetrize,offset);
-    subconvolution(F,pmult,offset,(2*mx-compact)*ny+offset,ny);
-    subconvolution(U2,pmult,0,(mx+compact)*ny,ny);
+    subconvolution(F,pmult,offset,(2*mx-xcompact)*ny+offset,ny);
+    subconvolution(U2,pmult,0,(mx+xcompact)*ny,ny);
     forwards(F,U2,offset);
   }
   
@@ -872,6 +884,7 @@ protected:
   fftpad *xfftpad;
   ImplicitConvolution2 **yzconvolve;
   Complex **U3;
+  
   bool allocated;
 public:  
   unsigned int getmx() {return mx;}
@@ -890,27 +903,27 @@ public:
     delete [] U3;
   }
   
-  void init(unsigned int ny, unsigned int nz, unsigned int stride2,
-            unsigned int stride3) {
-    unsigned int nyz=ny*nz;
+  void init(const convolveOptions& options) {
+    unsigned int nyz=options.ny*options.nz;
     xfftpad=new fftpad(mx,nyz,nyz,u3);
     
-    if(nz == mz) {
+    if(options.nz == mz) {
       yzconvolve=new ImplicitConvolution2*[threads];
       for(unsigned int t=0; t < threads; ++t)
         yzconvolve[t]=new ImplicitConvolution2(my,mz,u1+t*mz*A*innerthreads,
-                                               u2+t*stride2*A,A,B,innerthreads);
-      initpointers3(U3,u3,stride3);
+                                               u2+t*options.stride2*A,A,B,
+                                               innerthreads);
+      initpointers3(U3,u3,options.stride3);
     } else yzconvolve=NULL;
   }
   
-  void set(unsigned int& ny,unsigned int& nz,
-           unsigned int& stride2, unsigned int& stride3) {
-    if(ny == 0) {
-      ny=my;
-      nz=mz;
-      stride2=my*mz;
-      stride3=mx*my*mz;
+  void set(convolveOptions &options)
+  {
+    if(options.ny == 0) {
+      options.ny=my;
+      options.nz=mz;
+      options.stride2=my*mz;
+      options.stride3=mx*my*mz;
     }
   }
   
@@ -919,36 +932,28 @@ public:
   // u3 is a temporary array of size mx*my*mz*A.
   // A is the number of inputs.
   // B is the number of outputs.
-  // threads is the number of threads to use in the outer subconvolution loop.
-  // ny, nz, stride2, and stride3 are used by the MPI interface
-  // and should not be set directly.
   ImplicitConvolution3(unsigned int mx, unsigned int my, unsigned int mz,
                        Complex *u1, Complex *u2, Complex *u3,
                        unsigned int A=2, unsigned int B=1, 
-                       unsigned int threads=fftw::maxthreads,
-                       unsigned int ny=0, unsigned int nz=0,
-                       unsigned int stride2=0, unsigned int stride3=0) :
-    ThreadBase(threads), mx(mx), my(my), mz(mz), u1(u1), u2(u2), u3(u3),
-    A(A), B(B), allocated(false) {
-    set(ny,nz,stride2,stride3);
+                       convolveOptions options=defaultconvolveOptions) :
+    ThreadBase(options.threads), mx(mx), my(my), mz(mz),
+    u1(u1), u2(u2), u3(u3), A(A), B(B), allocated(false) {
+    set(options);
     multithread(mx);
-    init(ny,nz,stride2,stride3);
+    init(options);
   }
 
-  // ny, nz, stride2, and stride3 are used by the MPI
-  // interface and should not be set directly.
   ImplicitConvolution3(unsigned int mx, unsigned int my, unsigned int mz,
                        unsigned int A=2, unsigned int B=1, 
-                       unsigned int threads=fftw::maxthreads,
-                       unsigned int ny=0, unsigned int nz=0,
-                       unsigned int stride2=0, unsigned int stride3=0) :
-    ThreadBase(threads), mx(mx), my(my), mz(mz), A(A), B(B), allocated(true) {
+                       convolveOptions options=defaultconvolveOptions) :
+    ThreadBase(options.threads), mx(mx), my(my), mz(mz), A(A), B(B),
+    allocated(true) {
+    set(options);
     multithread(mx);
     u1=ComplexAlign(mz*A*threads*innerthreads);
-    set(ny,nz,stride2,stride3);
-    u2=ComplexAlign(stride2*A*threads);
-    u3=ComplexAlign(stride3*A);
-    init(ny,nz,stride2,stride3);
+    u2=ComplexAlign(options.stride2*A*threads);
+    u3=ComplexAlign(options.stride3*A);
+    init(options);
   }
   
   virtual ~ImplicitConvolution3() {
@@ -1040,7 +1045,7 @@ protected:
   fft0pad *xfftpad;
   ImplicitHConvolution2 **yzconvolve;
   Complex **U3;
-  bool compact;
+  bool xcompact,ycompact,zcompact;
   bool allocated;
 public:     
   unsigned int getmx() {return mx;}
@@ -1059,69 +1064,64 @@ public:
     delete [] U3;
   }
     
-  void init(unsigned int ny, unsigned int nz, unsigned int stride2,
-            unsigned int stride3) {
-    unsigned int nyz=ny*nz;
-    xfftpad=compact ? new fft0pad(mx,nyz,nyz,u3,threads) :
+  void init(const convolveOptions& options) {
+    unsigned int nyz=options.ny*options.nz;
+    xfftpad=xcompact ? new fft0pad(mx,nyz,nyz,u3,threads) :
       new fft0padwide(mx,nyz,nyz,u3,threads);
 
-    if(nz == mz+!compact) {
+    if(options.nz == mz+!zcompact) {
       yzconvolve=new ImplicitHConvolution2*[threads];
       for(unsigned int t=0; t < threads; ++t)
         yzconvolve[t]=new ImplicitHConvolution2(my,mz,
                                                 u1+t*(mz/2+1)*A*innerthreads,
-                                                u2+t*stride2*A,A,B,compact,
-                                                innerthreads);
-      initpointers3(U3,u3,stride3);
+                                                u2+t*options.stride2*A,A,B,
+                                                convolveOptions(innerthreads,
+                                                                ycompact,
+                                                                zcompact));
+      initpointers3(U3,u3,options.stride3);
     } else yzconvolve=NULL;
   }
   
-  void set(unsigned int& ny,unsigned int& nz,
-           unsigned int& stride2, unsigned int& stride3) {
-    if(ny == 0) {
-      ny=2*my-compact;
-      nz=mz+!compact;
-      stride2=(my+compact)*nz;
-      stride3=(mx+compact)*ny*nz;
+  void set(convolveOptions& options) {
+    xcompact=options.xcompact;
+    ycompact=options.ycompact;
+    zcompact=options.zcompact;
+    if(options.ny == 0) {
+      options.ny=2*my-ycompact;
+      options.nz=mz+!zcompact;
+      options.stride2=(my+ycompact)*options.nz;
+      options.stride3=(mx+xcompact)*options.ny*options.nz;
     }
   }
   
   // u1 is a temporary array of size (mz/2+1)*A*threads.
-  // u2 is a temporary array of size (my+compact)*(mz+!compact)*A*threads.
-  // u3 is a temporary array of size (mx+compact)*(2my-compact)*(mz+!compact)*A.
+  // u2 is a temporary array of size (my+ycompact)*(mz+!zcompact)*A*threads.
+  // u3 is a temporary array of size 
+  //                             (mx+xcompact)*(2my-ycompact)*(mz+!zcompact)*A.
   // A is the number of inputs.
   // B is the number of outputs.
-  // threads is the number of threads to use in the outer subconvolution loop.
-  // ny, nz, stride2, and stride3 are used by the MPI
-  // interface and should not be set directly.
   ImplicitHConvolution3(unsigned int mx, unsigned int my, unsigned int mz,
                         Complex *u1, Complex *u2, Complex *u3,
-                        unsigned int A=2, unsigned int B=1, bool compact=true,
-                        unsigned int threads=fftw::maxthreads,
-                        unsigned int ny=0, unsigned int nz=0,
-                        unsigned int stride2=0, unsigned int stride3=0) :
-    ThreadBase(threads), mx(mx), my(my), mz(mz), u1(u1), u2(u2), u3(u3),
-    A(A), B(B), compact(compact), allocated(false) {
-    set(ny,nz,stride2,stride3);
+                        unsigned int A=2, unsigned int B=1,
+                        convolveOptions options=defaultconvolveOptions) :
+    ThreadBase(options.threads), mx(mx), my(my), mz(mz), u1(u1), u2(u2), u3(u3),
+    A(A), B(B), allocated(false) {
+    set(options);
     multithread(mx);
-    init(ny,nz,stride2,stride3);
+    init(options);
   }
   
-  // ny, nz, stride2, and stride3 are used by the MPI
-  // interface and should not be set directly.
   ImplicitHConvolution3(unsigned int mx, unsigned int my, unsigned int mz,
-                        unsigned int A=2, unsigned int B=1, bool compact=true,
-                        unsigned int threads=fftw::maxthreads,
-                        unsigned int ny=0, unsigned int nz=0,
-                        unsigned int stride2=0, unsigned int stride3=0) :
-    ThreadBase(threads), mx(mx), my(my), mz(mz), A(A), B(B), compact(compact),
+                        unsigned int A=2, unsigned int B=1,
+                        convolveOptions options=defaultconvolveOptions) :
+    ThreadBase(options.threads), mx(mx), my(my), mz(mz), A(A), B(B),
     allocated(true) {
+    set(options);
     multithread(mx);
     u1=ComplexAlign((mz/2+1)*A*threads*innerthreads);
-    set(ny,nz,stride2,stride3);
-    u2=ComplexAlign(stride2*A*threads);
-    u3=ComplexAlign(stride3*A);
-    init(ny,nz,stride2,stride3);
+    u2=ComplexAlign(options.stride2*A*threads);
+    u3=ComplexAlign(options.stride3*A);
+    init(options);
   }
   
   virtual ~ImplicitHConvolution3() {
@@ -1143,7 +1143,7 @@ public:
   }
   
   virtual void HermitianSymmetrize(Complex *f, Complex *u) {
-    HermitianSymmetrizeXY(mx,my,mz+!compact,mx-compact,my-compact,f);
+    HermitianSymmetrizeXY(mx,my,mz+!zcompact,mx-xcompact,my-ycompact,f);
   }
   
   void backwards(Complex **F, Complex **U3, bool symmetrize,
@@ -1179,14 +1179,14 @@ public:
   }
   
   // F is a pointer to A distinct data blocks each of size
-  // (2mx-compact)*(2my-compact)*(mz+!compact), shifted by offset 
+  // (2mx-compact)*(2my-ycompact)*(mz+!zcompact), shifted by offset 
   // (contents not preserved).
   virtual void convolve(Complex **F, realmultiplier *pmult,
                         bool symmetrize=true, unsigned int offset=0) {
-    unsigned int nynz=(2*my-compact)*(mz+!compact);
+    unsigned int nynz=(2*my-ycompact)*(mz+!zcompact);
     backwards(F,U3,symmetrize,offset);
-    subconvolution(F,pmult,offset,(2*mx-compact)*nynz+offset,nynz);
-    subconvolution(U3,pmult,0,(mx+compact)*nynz,nynz);
+    subconvolution(F,pmult,offset,(2*mx-xcompact)*nynz+offset,nynz);
+    subconvolution(U3,pmult,0,(mx+xcompact)*nynz,nynz);
     forwards(F,U3,offset);
   }
     

@@ -5,7 +5,6 @@
 #include "Array.h"
 #include <unistd.h>
 
-
 using namespace std;
 using namespace Array;
 using namespace fftwpp;
@@ -22,7 +21,9 @@ unsigned int mz=4;
 unsigned int nxp;
 unsigned int nyp;
 unsigned int nzp;
-bool compact=true;
+bool xcompact=false;
+bool ycompact=false;
+bool zcompact=true;
 
 bool Direct=false, Implicit=true;
 
@@ -31,15 +32,13 @@ unsigned int outlimit=300;
 inline void init(Complex **F,
 		 unsigned int mx, unsigned int my, unsigned int mz,
 		 unsigned int nxp, unsigned int nyp, unsigned int nzp,
-		 unsigned int A,
-                 bool compact)
+		 unsigned int A, bool xcompact, bool ycompact)
 {
   if(A % 2 == 0) {
     unsigned int M=A/2;
     unsigned int xstop=2*mx-1;
     unsigned int ystop=2*my-1;
     
-    unsigned int coffset=compact ? 0 : 1;
     double factor=1.0/sqrt((double) M);
     for(unsigned int s=0; s < M; ++s) {
       double S=sqrt(1.0+s);
@@ -50,9 +49,9 @@ inline void init(Complex **F,
       array3<Complex> g(nxp,nyp,nzp,F[M+s]);
 
       for(unsigned int i=0; i < xstop; ++i) {
-	unsigned int I=i+coffset;
+	unsigned int I=i+!xcompact;
 	for(unsigned int j=0; j < ystop; ++j) {
-	  unsigned int J=j+coffset;
+	  unsigned int J=j+!ycompact;
 	  for(unsigned int k=0; k < mz; ++k) {
 	    f[I][J][k]=ffactor*Complex(i+k,j+k);
 	    g[I][J][k]=gfactor*Complex(2*i+k,j+1+k);
@@ -68,20 +67,20 @@ inline void init(Complex **F,
 
 
 inline void init(array3<Complex>& f, array3<Complex>& g, unsigned int M=1,
-                 bool compact=true)
+                 bool xcompact=true, bool ycompact=true)
 {
   unsigned int xstop=2*mx-1;
   unsigned int ystop=2*my-1;
-  unsigned int xstopoffset=xstop+!compact;
+  unsigned int xstopoffset=xstop+!xcompact;
   double factor=1.0/sqrt((double) M);
   for(unsigned int s=0; s < M; ++s) {
     double S=sqrt(1.0+s);
     double ffactor=S*factor;
     double gfactor=1.0/S*factor;
     for(unsigned int i=0; i < xstop; ++i) {
-      unsigned int I=s*xstopoffset+i+!compact;
+      unsigned int I=s*xstopoffset+i+!xcompact;
       for(unsigned int j=0; j < ystop; ++j) {
-        unsigned int J=j+!compact;
+        unsigned int J=j+!ycompact;
         for(unsigned int k=0; k < mz; ++k) {
           f[I][J][k]=ffactor*Complex(i+k,j+k);
           g[I][J][k]=gfactor*Complex(2*i+k,j+1+k);
@@ -109,14 +108,11 @@ int main(int argc, char* argv[])
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptc:A:B:M:N:m:x:y:z:n:T:S:");
+    int c = getopt(argc,argv,"hdeiptA:B:M:N:m:x:y:z:n:T:S:X:Y:Z:");
     if (c == -1) break;
 		
     switch (c) {
       case 0:
-        break;
-      case 'c':
-        compact=atoi(optarg) != 0;
         break;
       case 'd':
         Direct=true;
@@ -157,11 +153,20 @@ int main(int argc, char* argv[])
       case 'n':
         N0=atoi(optarg);
         break;     
-    case 'T':
-      fftw::maxthreads=max(atoi(optarg),1);
+      case 'T':
+        fftw::maxthreads=max(atoi(optarg),1);
         break;
       case 'S':
         stats=atoi(optarg);
+        break;
+      case 'X':
+        xcompact=atoi(optarg) == 0;
+        break;
+      case 'Y':
+        ycompact=atoi(optarg) == 0;
+        break;
+      case 'Z':
+        zcompact=atoi(optarg) == 0;
         break;
       case 'h':
       default:
@@ -185,11 +190,10 @@ int main(int argc, char* argv[])
   }
   cout << "N=" << N << endl;
     
-  unsigned int coffset=compact ? 0 : 1;
   size_t align=sizeof(Complex);
-  nxp=2*mx-1+coffset;
-  nyp=2*my-1+coffset;
-  nzp=mz+coffset;
+  nxp=2*mx-xcompact;
+  nyp=2*my-ycompact;
+  nzp=mz+!zcompact;
   
   Complex **F=new Complex *[A];
   for(unsigned int a=0; a < A; ++a)
@@ -204,7 +208,11 @@ int main(int argc, char* argv[])
   double *T=new double[N];
 
   if(Implicit) {
-    ImplicitHConvolution3 C(mx,my,mz,A,B,compact);
+    convolveOptions options;
+    options.xcompact=xcompact;
+    options.ycompact=ycompact;
+    options.zcompact=zcompact;
+    ImplicitHConvolution3 C(mx,my,mz,A,B,options);
     cout << "threads=" << C.Threads() << endl << endl;
     
     realmultiplier *mult;
@@ -215,7 +223,7 @@ int main(int argc, char* argv[])
     }
 
     for(unsigned int i=0; i < N; ++i) {
-      init(F,mx,my,mz,nxp,nyp,nzp,A,compact);
+      init(F,mx,my,mz,nxp,nyp,nzp,A,xcompact,ycompact);
       seconds();
       C.convolve(F,mult);
 //      C.convolve(f,g);
@@ -228,19 +236,19 @@ int main(int argc, char* argv[])
       for(unsigned int i=0; i < mx; i++) 
         for(unsigned int j=0; j < my; j++)
 	  for(unsigned int k=0; k < mz; k++)
-	    h0[i][j][k]=f[i+coffset][j+coffset][k];
+	    h0[i][j][k]=f[i+!xcompact][j+!ycompact][k];
     }
 
     if(nxp*nyp*mz < outlimit) {
-      for(unsigned int i=coffset; i < nxp; ++i) {
-        for(unsigned int j=coffset; j < nyp; ++j) {
+      for(unsigned int i=!xcompact; i < nxp; ++i) {
+        for(unsigned int j=!ycompact; j < nyp; ++j) {
           for(unsigned int k=0; k < mz; ++k)
             cout << f[i][j][k] << "\t";
           cout << endl;
         }
         cout << endl;
       }
-    } else cout << f[coffset][coffset][0] << endl;
+    } else cout << f[!xcompact][!ycompact][0] << endl;
     
   }
   

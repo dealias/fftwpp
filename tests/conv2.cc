@@ -19,7 +19,8 @@ unsigned int mx=4;
 unsigned int my=4;
 unsigned int nxp;
 unsigned int nyp;
-bool compact=true;
+bool xcompact=true;
+bool ycompact=true;
 
 bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
@@ -29,12 +30,12 @@ inline void init(Complex **F,
 		 unsigned int mx, unsigned int my,
 		 unsigned int nxp, unsigned int nyp,
 		 unsigned int A,
-                 bool compact)
+                 bool xcompact)
 {
   if(A % 2 == 0) {
     unsigned int M=A/2;
 
-    unsigned int coffset=compact ? 0 : 1;
+    unsigned int coffset=xcompact ? 0 : 1;
     unsigned int offset=Explicit ? nxp/2-mx+1 : coffset;
     unsigned int stop=2*mx-1;
     double factor=1.0/sqrt((double) M);
@@ -76,14 +77,11 @@ int main(int argc, char* argv[])
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptc:A:B:M:N:m:x:y:n:T:S:");
+    int c = getopt(argc,argv,"hdeipt:A:B:M:N:m:x:y:n:T:S:X:Y:");
     if (c == -1) break;
 		
     switch (c) {
       case 0:
-        break;
-      case 'c':
-        compact=atoi(optarg) != 0;
         break;
       case 'd':
         Direct=true;
@@ -132,6 +130,12 @@ int main(int argc, char* argv[])
       case 'S':
         stats=atoi(optarg);
         break;
+      case 'X':
+        xcompact=atoi(optarg) == 0;
+        break;
+      case 'Y':
+        ycompact=atoi(optarg) == 0;
+        break;
       case 'h':
       default:
         usage(2,false,true,true);
@@ -141,7 +145,6 @@ int main(int argc, char* argv[])
     }
   }
 
-  
   nx=hpadding(mx);
   ny=hpadding(my);
   
@@ -159,10 +162,8 @@ int main(int argc, char* argv[])
   array2<Complex> h0;
   if(Direct && Implicit) h0.Allocate(mx,my,align);
 
-  unsigned int offset=compact ? 0 : 1;
-
-  nxp=Explicit ? nx : 2*mx-1+offset;
-  nyp=Explicit ? ny/2+1 : my+offset;
+  nxp=Explicit ? nx : 2*mx-xcompact;
+  nyp=Explicit ? ny/2+1 : my+!ycompact;
 
   Complex **F=new Complex *[A];
   for(unsigned int a=0; a < A; ++a)
@@ -174,7 +175,10 @@ int main(int argc, char* argv[])
   double *T=new double[N];
 
   if(Implicit) {
-    ImplicitHConvolution2 C(mx,my,A,B,compact);
+    convolveOptions options;
+    options.xcompact=xcompact;
+    options.ycompact=ycompact;
+    ImplicitHConvolution2 C(mx,my,A,B,options);
     cout << "threads=" << C.Threads() << endl << endl;
 
     realmultiplier *mult;
@@ -186,7 +190,7 @@ int main(int argc, char* argv[])
     
     
     for(unsigned int i=0; i < N; ++i) {
-      init(F,mx,my,nxp,nyp,A,compact);
+      init(F,mx,my,nxp,nyp,A,xcompact);
       seconds();
       C.convolve(F,mult);
 //      C.convolve(f,g);
@@ -198,16 +202,15 @@ int main(int argc, char* argv[])
     if(Direct) {
       for(unsigned int i=0; i < mx; i++) 
         for(unsigned int j=0; j < my; j++)
-	  h0[i][j]=f[i+offset][j];
+	  h0[i][j]=f[i+!xcompact][j];
     }
     
     if(nxp*my < outlimit)
-      for(unsigned int i=offset; i < nxp; i++) {
+      for(unsigned int i=!xcompact; i < nxp; i++) {
         for(unsigned int j=0; j < my; j++)
           cout << f[i][j] << "\t";
         cout << endl;
-      } else cout << f[offset][0] << endl;
-    cout << endl;
+      } else cout << f[!xcompact][0] << endl;
     
   }
   
@@ -222,6 +225,7 @@ int main(int argc, char* argv[])
       T[i]=seconds();
     }
 
+    cout << endl;
     timings(Pruned ? "Pruned" : "Explicit",mx,T,N,stats);
 
     unsigned int offset=nx/2-mx+1;
@@ -247,6 +251,7 @@ int main(int argc, char* argv[])
     C.convolve(h,F[0],F[1]);
     T[0]=seconds();
   
+    cout << endl;
     timings("Direct",mx,T,1);
 
     if(nxp*my < outlimit)

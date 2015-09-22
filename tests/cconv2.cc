@@ -203,7 +203,6 @@ int main(int argc, char* argv[])
     } else {
       cout << f[0][0] << endl;
     }
-    cout << endl;
   }
   
   if(Explicit) {
@@ -220,6 +219,7 @@ int main(int argc, char* argv[])
       T[i]=seconds();
     }
 
+    cout << endl;
     timings(Pruned ? "Pruned" : "Explicit",mx,T,N,stats);
 
     if(Direct) {
@@ -248,6 +248,7 @@ int main(int argc, char* argv[])
     C.convolve(h,F[0],F[1]);
     T[0]=seconds();
   
+    cout << endl;
     timings("Direct",mx,T,1);
     
     if(mx*my < outlimit)

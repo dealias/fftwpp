@@ -217,6 +217,7 @@ int main(int argc, char* argv[])
       T[i]=seconds();
     }
 
+    cout << endl;
     timings("Explicit",m,T,N,stats);
 
     if(m < 100) 
@@ -239,6 +240,7 @@ int main(int argc, char* argv[])
       C.autoconvolve(h,F[0]);
     T[0]=seconds();
     
+    cout << endl;
     timings("Direct",m,T,1);
 
     if(m < 100)

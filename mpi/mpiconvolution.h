@@ -21,27 +21,26 @@ public:
     T=new mpitranspose<Complex>(d.X,d.y,d.x,d.Y,1,u2,d.communicator,global);
   }
 
-  // u1 is a temporary array of size my*A*threads.
+  // u1 is a temporary array of size my*A*options.threads.
   // u2 is a temporary array of size split(mx,my).n*A.
   // A is the number of inputs.
   // B is the number of outputs.
-  // threads is the number of threads to use in the outer subconvolution loop.
   ImplicitConvolution2MPI(unsigned int mx, unsigned int my, const split& d,
                           Complex *u1, Complex *u2, 
                           unsigned int A=2, unsigned int B=1,
-                          unsigned int threads=fftw::maxthreads,
+                          convolveOptions options=defaultconvolveOptions,
                           MPI_Comm global=0) :
-    ImplicitConvolution2(mx,my,u1,u2,A,B,threads,d.x,d.y,d.n), d(d),
-    global(global ? global : d.communicator) {
+    ImplicitConvolution2(mx,my,u1,u2,A,B,convolveOptions(options,d.x,d.y,d.n)),
+    d(d), global(global ? global : d.communicator) {
     inittranspose();
   }
   
   ImplicitConvolution2MPI(unsigned int mx, unsigned int my, const split& d,
                           unsigned int A=2, unsigned int B=1,
-                          unsigned int threads=fftw::maxthreads,
+                          convolveOptions options=defaultconvolveOptions,
                           MPI_Comm global=0) :
-    ImplicitConvolution2(mx,my,A,B,threads,d.x,d.y,d.n), d(d),
-    global(global ? global : d.communicator) {
+    ImplicitConvolution2(mx,my,A,B,convolveOptions(options,d.x,d.y,d.n)),
+    d(d), global(global ? global : d.communicator) {
     inittranspose();
   }
   
@@ -83,20 +82,19 @@ public:
     }
   }
   
-  // u1 is a temporary array of size (my/2+1)*A*threads.
+  // u1 is a temporary array of size (my/2+1)*A*options.threads.
   // u2 is a temporary array of size du.n*A.
   // A is the number of inputs.
   // B is the number of outputs.
-  // threads is the number of threads to use in the outer subconvolution loop.
   // f is a temporary array of size d.n needed only during construction.
   ImplicitHConvolution2MPI(unsigned int mx, unsigned int my,
                            const split& d, const split& du,
                            Complex *f, Complex *u1, Complex *u2,
                            unsigned int A=2, unsigned int B=1,
-                           bool compact=true,
-                           unsigned int threads=fftw::maxthreads,
-                          MPI_Comm global=0) :
-    ImplicitHConvolution2(mx,my,u1,u2,A,B,compact,threads,d.x,d.y,du.n),
+                           convolveOptions options=defaultconvolveOptions,
+                           MPI_Comm global=0) :
+    ImplicitHConvolution2(mx,my,u1,u2,A,B,
+                          convolveOptions(options,d.x,d.y,du.n)),
     d(d), du(du), global(global ? global : d.communicator) {
     inittranspose(f);
   }
@@ -105,11 +103,10 @@ public:
                            const split& d, const split& du,
                            Complex *f,
                            unsigned int A=2, unsigned int B=1,
-                           bool compact=true,
-                           unsigned int threads=fftw::maxthreads,
+                           convolveOptions options=defaultconvolveOptions,
                            MPI_Comm global=0) :
-    ImplicitHConvolution2(mx,my,A,B,compact,threads,d.x,d.y,du.n), d(d),
-    du(du), global(global ? global : d.communicator) {
+    ImplicitHConvolution2(mx,my,A,B,convolveOptions(options,d.x,d.y,du.n)),
+    d(d), du(du), global(global ? global : d.communicator) {
     inittranspose(f);
   }
   
@@ -119,7 +116,7 @@ public:
   }
 
   // F is a pointer to A distinct data blocks each of size 
-  // (2mx-compact)*d.y, shifted by offset (contents not preserved).
+  // (2mx-xcompact)*d.y, shifted by offset (contents not preserved).
   void convolve(Complex **F, realmultiplier *pmult,
                 bool symmetrize=true, unsigned int offset=0);
 
@@ -154,18 +151,18 @@ public:
     }
   }
   
-  // u1 is a temporary array of size mz*A*threads.
+  // u1 is a temporary array of size mz*A*options.threads.
   // u2 is a temporary array of size d.y*mz*A*(d.z < mz ? 1 : threads).
   // u3 is a temporary array of size d.n*A.
   // A is the number of inputs.
   // B is the number of outputs.
-  // threads is the number of threads to use in the outer subconvolution loop.
   ImplicitConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
                           const splityz& d,
                           Complex *u1, Complex *u2, Complex *u3, 
                           unsigned int A=2, unsigned int B=1,
-                          unsigned int threads=fftw::maxthreads) :
-    ImplicitConvolution3(mx,my,mz,u1,u2,u3,A,B,threads,d.y,d.z,d.n2,d.n), d(d) {
+                          convolveOptions options=defaultconvolveOptions) :
+    ImplicitConvolution3(mx,my,mz,u1,u2,u3,A,B,
+                         convolveOptions(options,d.y,d.z,d.n2,d.n)), d(d) {
     inittranspose();
     initMPI();
   }
@@ -173,8 +170,9 @@ public:
   ImplicitConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
                           const splityz& d,
                           unsigned int A=2, unsigned int B=1,
-                          unsigned int threads=fftw::maxthreads) :
-    ImplicitConvolution3(mx,my,mz,A,B,threads,d.y,d.z,d.n2,d.n), d(d) {
+                          convolveOptions options=defaultconvolveOptions) :
+    ImplicitConvolution3(mx,my,mz,A,B,
+                         convolveOptions(options,d.y,d.z,d.n2,d.n)), d(d) {
     inittranspose();
     initMPI();
   }
@@ -201,8 +199,8 @@ public:
 };
 
 void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
-			      splityz& d, bool compact, Complex *f,
-                              unsigned int nu, Complex *u);
+			      splityz& d, bool xcompact, bool ycompact,
+                              Complex *f, unsigned int nu=0, Complex *u=NULL);
  
 // In-place implicitly dealiased 3D complex convolution.
 class ImplicitHConvolution3MPI : public ImplicitHConvolution3 {
@@ -227,26 +225,26 @@ public:
         yzconvolve[t]=
           new ImplicitHConvolution2MPI(my,mz,d.yz,du.yz,f,
                                        u1+t*(mz/2+1)*A*innerthreads,
-                                       u2+t*du.n2*A,A,B,compact,innerthreads);
+                                       u2+t*du.n2*A,A,B,
+                                       convolveOptions(innerthreads,
+                                                       ycompact,zcompact));
       initpointers3(U3,u3,du.n);
     }
   }
   
-  // u1 is a temporary array of size (mz/2+1)*A*threads,
+  // u1 is a temporary array of size (mz/2+1)*A*options.threads,
   // u2 is a temporary array of size du.n2*A*(d.z < mz ? 1 : threads).
   // u3 is a temporary array of size du.n2*A.
   // A is the number of inputs.
   // B is the number of outputs.
-  // threads is the number of threads to use in the outer subconvolution loop.
   ImplicitHConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
                            const splityz& d, const splityz& du,
                            Complex *f, Complex *u1, Complex *u2, Complex *u3,
                            unsigned int A=2, unsigned int B=1,
-                           bool compact=true,
-                           unsigned int threads=fftw::maxthreads,
+                           convolveOptions options=defaultconvolveOptions,
                            MPI_Comm global=0) :
-    ImplicitHConvolution3(mx,my,mz,u1,u2,u3,A,B,compact,threads,d.y,d.z,
-                          du.n2,du.n), 
+    ImplicitHConvolution3(mx,my,mz,u1,u2,u3,A,B,
+                          convolveOptions(options,d.y,d.z,du.n2,du.n)), 
     d(d), du(du), global(global ? global : d.communicator) { 
     initMPI(f);
     inittranspose(f);
@@ -255,10 +253,10 @@ public:
   ImplicitHConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
                            const splityz& d, const splityz& du,
                            Complex *f, unsigned int A=2, unsigned int B=1,
-                           bool compact=true,
-                           unsigned int threads=fftw::maxthreads,
+                           convolveOptions options=defaultconvolveOptions,
                            MPI_Comm global=0) :
-    ImplicitHConvolution3(mx,my,mz,A,B,compact,threads,d.y,d.z,du.n2,du.n),
+    ImplicitHConvolution3(mx,my,mz,A,B,
+                          convolveOptions(options,d.y,d.z,du.n2,du.n)),
     d(d), du(du), global(global ? global : d.communicator) {
     initMPI(f);
     inittranspose(f);
@@ -280,11 +278,11 @@ public:
   }
   
   void HermitianSymmetrize(Complex *f, Complex *u) {
-    HermitianSymmetrizeXYMPI(mx,my,d,compact,f,du.n,u);
+    HermitianSymmetrizeXYMPI(mx,my,d,xcompact,ycompact,f,du.n,u);
   }
   
   // F is a pointer to A distinct data blocks each of size
-  // (2mx-compact)*d.y*d.z, shifted by offset (contents not preserved).
+  // (2mx-xcompact)*d.y*d.z, shifted by offset (contents not preserved).
   void convolve(Complex **F, realmultiplier *pmult, bool symmetrize=true,
                 unsigned int offset=0);
   
