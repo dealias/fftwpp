@@ -93,47 +93,47 @@ int main(int argc, char* argv[])
     if (c == -1) break;
                 
     switch (c) {
-    case 0:
-      break;
-    case 'A':
-      A=atoi(optarg);
-      break;
-    case 'N':
-      N=atoi(optarg);
-      break;
-    case 'M':
-      A=2*atoi(optarg);
-      break;
-    case 'm':
-      mx=my=mz=atoi(optarg);
-      break;
-    case 'x':
-      mx=atoi(optarg);
-      break;
-    case 'y':
-      my=atoi(optarg);
-      break;
-    case 'z':
-      mz=atoi(optarg);
-      break;
-    case 'n':
-      N0=atoi(optarg);
-      break;
-    case 't':
-      test=true;
-      break;
-    case 'q':
-      quiet=true;
-      break;
-    case 'T':
-      fftw::maxthreads=atoi(optarg);
-      break;
-    case 'h':
-      usage(3);
-      break;
-    default:
-      usage(3);
-      exit(1);
+      case 0:
+        break;
+      case 'A':
+        A=atoi(optarg);
+        break;
+      case 'N':
+        N=atoi(optarg);
+        break;
+      case 'M':
+        A=2*atoi(optarg);
+        break;
+      case 'm':
+        mx=my=mz=atoi(optarg);
+        break;
+      case 'x':
+        mx=atoi(optarg);
+        break;
+      case 'y':
+        my=atoi(optarg);
+        break;
+      case 'z':
+        mz=atoi(optarg);
+        break;
+      case 'n':
+        N0=atoi(optarg);
+        break;
+      case 't':
+        test=true;
+        break;
+      case 'q':
+        quiet=true;
+        break;
+      case 'T':
+        fftw::maxthreads=atoi(optarg);
+        break;
+      case 'h':
+        usage(3);
+        break;
+      default:
+        usage(3);
+        exit(1);
     }
   }
   
@@ -148,175 +148,161 @@ int main(int argc, char* argv[])
     if(N < 10) N=10;
   }
 
-  // Reduce the size of the MPI communicator to the minimal dimension
-  // of the problem.
-  MPI_Comm subcom;
-  int maxsize=std::min(std::min(mx,my),mz);
-  int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
-  if(rank == 0) {
-    cout << "Using " << maxsize << " processes." << endl;
-  }
-  MPI_Comm_split(MPI_COMM_WORLD,rank < maxsize,0,&subcom);
-  
-  if(rank < maxsize) {
-    MPIgroup group(subcom,my,mz);
-    MPILoadWisdom(group.active);
-    if(group.size > 1 && provided < MPI_THREAD_FUNNELED);
-    fftw::maxthreads=1;
+  MPIgroup group(MPI_COMM_WORLD,my,mz);
+  MPILoadWisdom(group.active);
+  if(group.size > 1 && provided < MPI_THREAD_FUNNELED);
+  fftw::maxthreads=1;
 
-    if(rank < group.size) {
+  if(group.rank < group.size) {
     
-      bool main=group.rank == 0;
+    bool main=group.rank == 0;
     
-      if(!quiet && main) {
-	cout << "provided: " << provided << endl;
-	cout << "fftw::maxthreads: " << fftw::maxthreads << endl;
+    if(!quiet && main) {
+      cout << "provided: " << provided << endl;
+      cout << "fftw::maxthreads: " << fftw::maxthreads << endl;
     
-	cout << "Configuration: " 
-	     << group.size << " nodes X " << fftw::maxthreads 
-	     << " threads/node" << endl;
-	cout << "Using MPI VERSION " << MPI_VERSION << endl;
-      }
-
+      cout << "Configuration: " 
+           << group.size << " nodes X " << fftw::maxthreads 
+           << " threads/node" << endl;
+      cout << "Using MPI VERSION " << MPI_VERSION << endl;
+    }
     
-      multiplier *mult;
-      switch(A) {
+    multiplier *mult;
+    switch(A) {
       case 2: mult=multbinary; break;
       case 4: mult=multbinary2; break;
       case 6: mult=multbinary3; break;
       case 8: mult=multbinary4; break;
       case 16: mult=multbinary8; break;
       default: cout << "A=" << A << " is not yet implemented" << endl; exit(1);
-      }
-    
-      if(!quiet && main) {
-	if(!test)
-	  cout << "N=" << N << endl;
-	cout << "A=" << A << endl;
-	cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
-	cout << "group size=" << group.size << endl;
-      }
-      splityz d(mx,my,mz,group);
-
-      //cout << "Local data size: " << d.n << endl;
-    
-      Complex **F=new Complex*[A];
-      for(unsigned int a=0; a < A; a++) {
-	F[a]=ComplexAlign(d.n);
-      }
-
-      ImplicitConvolution3MPI C(mx,my,mz,d,A);
-
-      if(test) {
-	init(F,d,A);
-	if(!quiet) {
-	  if(main) cout << "Distributed input:" << endl;
-	  for(unsigned int a=0; a < A; a++) {
-	    if(main) cout << "a: " << a << endl;
-	    show(F[a],mx,d.y,d.z,group.active);
-	  }
-	}
-
-	if(!quiet && main) cout << "Accumulated input:" << endl;
-	Complex **F0=new Complex*[A];
-	for(unsigned int a=0; a < A; a++) {
-	  if(main) {
-	    F0[a]=ComplexAlign(mx*my*mz);
-	  }
-	  accumulate_splityz(F[a],F0[a],
-			     d.X, d.Y, d.Z,
-			     d.x0, d.y0, d.z0,
-			     d.x, d.y, d.z,
-			     0, group.active);
-	  if(!quiet && main) {
-	    cout << "a: " << a << endl;
-	    show(F0[a],mx,my,mz);
-	  }
-	}
-
-	C.convolve(F,mult);
-
-	if(!quiet) {
-	  if(main) cout << "Distributed output:" << endl;
-	  show(F[0],mx,d.y,d.z,group.active);
-	}
-      
-	Complex *FC0=ComplexAlign(mx*my*mz);
-	accumulate_splityz(F[0],FC0,
-			   d.X, d.Y, d.Z,
-			   d.x0, d.y0, d.z0,
-			   d.x, d.y, d.z,
-			   0, group.active);
-            
-	if(!quiet && main) {
-	  cout << "Accumulated output:" << endl;
-	  show(FC0,mx,my,mz);
-	}
-
-	if(main) {
-	  unsigned int B=1; // TODO: generalize
-	  ImplicitConvolution3 C(mx,my,mz,A,B); 
-	  C.convolve(F0,mult);
-	  if(!quiet) {
-	    cout << "Local output:" << endl;
-	    show(F0[0],mx,my,mz);
-	  }
-	}
-
-	if(main) {
-	  double maxerr=0.0;
-	  double norm=0.0;
-	  unsigned int stop=d.X*d.Y*d.Z;
-	  Complex *F00=F0[0];
-	  for(unsigned int i=0; i < stop; i++) {
-	    maxerr=std::max(maxerr,abs(F00[i]-FC0[i]));
-            norm=std::max(norm,abs(FC0[i]));
-          }
-	  cout << "Maximum difference between input and output: "
-	       << maxerr << endl;
-
-	  if(maxerr > 1e-12*norm) {
-	    cout << "error is " << maxerr << "!" << endl;
-	    retval += 1;
-	  }
-	}
-
-	if(main) {
-	  deleteAlign(FC0);
-	  for(unsigned int a=0; a < A; a++)
-	    deleteAlign(F0[a]);
-	  delete[] F0;
-	}
-      }
-    
-      if(!test && N > 0) {
-	MPI_Barrier(group.active);
-     
-	double *T=new double[N];
-	for(unsigned int i=0; i < N; i++) {
-	  init(F,d,A);
-	  MPI_Barrier(group.active);
-	  seconds();
-	  C.convolve(F,mult);
-	  // C.convolve(f,g);
-	  T[i]=seconds();
-	  MPI_Barrier(group.active);
-	}
-	if(main) 
-	  timings("Implicit",mx,T,N);
-    
-	delete[] T;
-	if(!quiet && mx*my*mz < outlimit) 
-	  show(F[0],mx,d.y,d.z,group.active);
-      }
-  
-      for(unsigned int a=0; a < A; a++)
-	deleteAlign(F[a]);
-      delete[] F;
-
-      MPISaveWisdom(group.active);
     }
+    
+    if(!quiet && main) {
+      if(!test)
+        cout << "N=" << N << endl;
+      cout << "A=" << A << endl;
+      cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
+      cout << "group size=" << group.size << endl;
+    }
+    splityz d(mx,my,mz,group);
+
+    //cout << "Local data size: " << d.n << endl;
+    
+    Complex **F=new Complex*[A];
+    for(unsigned int a=0; a < A; a++) {
+      F[a]=ComplexAlign(d.n);
+    }
+
+    ImplicitConvolution3MPI C(mx,my,mz,d,A);
+
+    if(test) {
+      init(F,d,A);
+      if(!quiet) {
+        if(main) cout << "Distributed input:" << endl;
+        for(unsigned int a=0; a < A; a++) {
+          if(main) cout << "a: " << a << endl;
+          show(F[a],mx,d.y,d.z,group.active);
+        }
+      }
+
+      if(!quiet && main) cout << "Accumulated input:" << endl;
+      Complex **F0=new Complex*[A];
+      for(unsigned int a=0; a < A; a++) {
+        if(main) {
+          F0[a]=ComplexAlign(mx*my*mz);
+        }
+        accumulate_splityz(F[a],F0[a],
+                           d.X, d.Y, d.Z,
+                           d.x0, d.y0, d.z0,
+                           d.x, d.y, d.z,
+                           0, group.active);
+        if(!quiet && main) {
+          cout << "a: " << a << endl;
+          show(F0[a],mx,my,mz);
+        }
+      }
+
+      C.convolve(F,mult);
+
+      if(!quiet) {
+        if(main) cout << "Distributed output:" << endl;
+        show(F[0],mx,d.y,d.z,group.active);
+      }
+      
+      Complex *FC0=ComplexAlign(mx*my*mz);
+      accumulate_splityz(F[0],FC0,
+                         d.X, d.Y, d.Z,
+                         d.x0, d.y0, d.z0,
+                         d.x, d.y, d.z,
+                         0, group.active);
+            
+      if(!quiet && main) {
+        cout << "Accumulated output:" << endl;
+        show(FC0,mx,my,mz);
+      }
+
+      if(main) {
+        unsigned int B=1; // TODO: generalize
+        ImplicitConvolution3 C(mx,my,mz,A,B); 
+        C.convolve(F0,mult);
+        if(!quiet) {
+          cout << "Local output:" << endl;
+          show(F0[0],mx,my,mz);
+        }
+      }
+
+      if(main) {
+        double maxerr=0.0;
+        double norm=0.0;
+        unsigned int stop=d.X*d.Y*d.Z;
+        Complex *F00=F0[0];
+        for(unsigned int i=0; i < stop; i++) {
+          maxerr=std::max(maxerr,abs(F00[i]-FC0[i]));
+          norm=std::max(norm,abs(FC0[i]));
+        }
+        cout << "Maximum difference between input and output: "
+             << maxerr << endl;
+
+        if(maxerr > 1e-12*norm) {
+          cout << "error is " << maxerr << "!" << endl;
+          retval += 1;
+        }
+      }
+
+      if(main) {
+        deleteAlign(FC0);
+        for(unsigned int a=0; a < A; a++)
+          deleteAlign(F0[a]);
+        delete[] F0;
+      }
+    }
+    
+    if(!test && N > 0) {
+      MPI_Barrier(group.active);
+     
+      double *T=new double[N];
+      for(unsigned int i=0; i < N; i++) {
+        init(F,d,A);
+        MPI_Barrier(group.active);
+        seconds();
+        C.convolve(F,mult);
+        // C.convolve(f,g);
+        T[i]=seconds();
+        MPI_Barrier(group.active);
+      }
+      if(main) 
+        timings("Implicit",mx,T,N);
+    
+      delete[] T;
+      if(!quiet && mx*my*mz < outlimit) 
+        show(F[0],mx,d.y,d.z,group.active);
+    }
+  
+    for(unsigned int a=0; a < A; a++)
+      deleteAlign(F[a]);
+    delete[] F;
+
+    MPISaveWisdom(group.active);
   }
 
   MPI_Finalize();
