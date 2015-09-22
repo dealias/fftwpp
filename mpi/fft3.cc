@@ -138,8 +138,7 @@ int main(int argc, char* argv[])
 
     splitxy d(mx,my,mz,group);
     
-    Complex *f=ComplexAlign(d.n * mz);
-    //Complex *f=ComplexAlign(d.n * mz); // FIXME: temp
+    Complex *f=ComplexAlign(d.n);
     
     fft3dMPI fft(d,f);
 

@@ -120,7 +120,7 @@ public:
     y0=xy.y0;
     z0=yz.y0;
     n2=yz.n;
-    n=std::max(xy.n,n2);
+    n=std::max(xy.n,x*n2);
   }
   
   void show() {
@@ -157,7 +157,7 @@ public:
     y0=yz.x0;
     z0=yz.y0;
     n2=yz.n;
-    n=std::max(xy.n,n2);
+    n=std::max(xy.n,x*n2);
   }
   
   void show() {
