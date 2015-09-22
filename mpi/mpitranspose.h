@@ -336,8 +336,8 @@ public:
 
     if(globalrank == 0)
       std::cout << std::endl << "Initializing " << N << "x" << M
-                << " transpose of blocks of " << L << " elements over " << size
-                << " processes." << std::endl;
+                << " transpose of " << L*sizeof(T) << "-byte elements over " 
+                << size << " processes." << std::endl;
       
     int alimit;
     if(options.a <= 0) { // Restrict divisor range based on latency estimate
