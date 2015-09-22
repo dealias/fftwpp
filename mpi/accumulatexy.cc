@@ -16,22 +16,23 @@ inline void init(Complex *f,
   unsigned int c=0;
   switch(transpose) {
   case 0: 
-    for(unsigned int i=0; i < X; ++i) {
-      unsigned int ii=i;
+    for(unsigned int i=0; i < x; ++i) {
+      unsigned int ii=x0+i;
       for(unsigned int j=0; j < y; j++) {
 	unsigned int jj=y0+j;
-	for(unsigned int k=0; k < z; k++) {
-	  unsigned int kk=z0+k;
-	  f[c++]=Complex(10*kk+ii,jj);
+	for(unsigned int k=0; k < Z; k++) {
+	  unsigned int kk=k;
+	  Complex val=Complex(10*kk+ii,jj);
+	  f[c++]=val;
 	}
       }
     }
     break;
-  case 1:
-    cerr << "Unimplemented: TODO" << endl;
-    exit(1);
-    // FIXME
-    break;
+    case 1:
+      cerr << "Unimplemented: TODO" << endl;
+      exit(1);
+      // FIXME
+      break;
   case 2:
     cerr << "Unimplemented: TODO" << endl;
     exit(1);
@@ -99,33 +100,37 @@ int main(int argc, char* argv[])
     
     bool main=group.rank == 0;
 
-    splityz d(mx,my,mz,group);
+    splitxy d(mx,my,mz,group);
 
-    if(!quiet) {
-      // if(group.rank == 1) {
-      // 	 cout << "process " << group.rank << endl;
-      // 	  d.show();
-      // }
-    }
-
-    unsigned int localsize=d.X*d.y*d.z;
+    unsigned int localsize=d.x*d.y*d.Z;
     Complex *pF=ComplexAlign(localsize);
-    Array3<Complex> F0(d.X,d.y,d.z,pF);
+    Array3<Complex> F0(d.x,d.y,d.Z,pF);
      
     init(F0(),d.X,d.Y,d.Z,d.x0,d.y0,d.z0,d.x,d.y,d.z);
     //F0.Load(group.rank);
     
     if(!quiet){
       if(main) cout << "\ninput:" << endl;
-      show(F0(),mx,d.y,d.z,group.active);
+      //show(F0(),d.x,d.y,d.Z,group.active);
     }
     
-    if(!quiet && main) cout << "Accumulating... " << endl;
+    if(!quiet) {
+      // if(group.rank == 1) {
+      // 	 cout << "process " << group.rank << endl;
+      // 	  d.show();
+      // }
+      cout << "process " << group.rank << endl;
+      cout << F0 << endl;
+      d.show();
+    }
+    
+    if(!quiet && main)
+      cout << "Accumulating... " << endl;
     // Local array for transpose=0
     //Complex *pf0=ComplexAlign(d.X*d.Y*d.Z);
     Array3<Complex> f0(d.X,d.Y,d.Z);
     f0.Load(0.0);
-    accumulate_splityz(F0(),f0(),
+    accumulate_splitxy(F0(),f0(),
     		       d.X, d.Y, d.Z,
     		       d.x0, d.y0, d.z0,
     		       d.x, d.y, d.z,

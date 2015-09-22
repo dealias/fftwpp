@@ -52,3 +52,4 @@ mpi/fft3
 mpi/transpose
 mpi/accumulate
 mpi/accumulateyz
+mpi/accumulatexy

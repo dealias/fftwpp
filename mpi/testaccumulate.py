@@ -14,6 +14,7 @@ print "MPI transpose unit test"
 proglist = []
 proglist.append("accumulate")
 proglist.append("accumulateyz")
+proglist.append("accumulatexy")
 
 logfile = 'testaccumulate.log' 
 print "Log in " + logfile + "\n"
@@ -38,7 +39,6 @@ for progname in proglist:
         log = open(logfile, 'a')
         log.write(msg)
         log.close()
-
         
         Xlist = [1,2,3,4,5,random.randint(10,64)]
         Ylist = [1,2,3,4,5,random.randint(10,64)]
