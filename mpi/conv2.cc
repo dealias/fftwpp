@@ -12,6 +12,9 @@ unsigned int nx=0;
 unsigned int mx=4;
 unsigned int my=4;
 unsigned int M=1;
+int a=0; // Test for best block divisor
+int alltoall=-1; // Test for best alltoall routine
+
 bool xcompact=true;
 bool ycompact=true;
 
@@ -51,11 +54,17 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"heipH:M:N:m:x:y:n:T:X:Y:");
+    int c = getopt(argc,argv,"heipa:A:H:M:N:m:x:y:n:T:X:Y:");
     if (c == -1) break;
                 
     switch (c) {
       case 0:
+        break;
+      case 'A':
+        alltoall=atoi(optarg);
+        break;
+      case 'a':
+        a=atoi(optarg);
         break;
       case 'e':
         Explicit=true;

@@ -20,7 +20,6 @@ public:
   void init(const MPI_Comm& comm) {
     MPI_Comm_rank(comm,&rank);
     MPI_Comm_size(comm,&size);
-    //std::cout << "size: " << size << std::endl;
   }
   
   void activate(const MPI_Comm& comm) {
@@ -120,8 +119,8 @@ public:
     x0=xy.x0;
     y0=xy.y0;
     z0=yz.y0;
-    n=xy.n;
     n2=yz.n;
+    n=std::max(xy.n,n2);
   }
   
   void show() {
@@ -157,8 +156,8 @@ public:
     x0=xy.x0;
     y0=yz.x0;
     z0=yz.y0;
-    n=xy.n;
     n2=yz.n;
+    n=std::max(xy.n,n2);
   }
   
   void show() {

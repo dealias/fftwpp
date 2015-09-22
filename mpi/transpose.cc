@@ -175,9 +175,9 @@ int transpose(int rank, int size, int N)
 
   Complex *data;
   
-  unsigned int xsize=localsize(X,size);
-  unsigned int ysize=localsize(Y,size);
-  size=std::max(xsize,ysize);
+//  unsigned int xsize=localsize(X,size);
+//  unsigned int ysize=localsize(Y,size);
+//  size=std::max(xsize,ysize);
   
   unsigned int x=localdimension(X,rank,size);
   unsigned int y=localdimension(Y,rank,size);
