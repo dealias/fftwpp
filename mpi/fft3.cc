@@ -35,28 +35,6 @@ void init(Complex *f, splitxy d)
   init(f,d.X,d.Y,d.Z,d.x0,d.y0,d.z0,d.x,d.y,d.z);
 }
 
-double relmaxerror(const array3<Complex> f, const array3<Complex> g,
-		   const unsigned int X,
-		   const unsigned int Y,
-		   const unsigned int Z)
-{
-  double maxdiff=0.0;
-  double maxnorm=0.0;
-  for(unsigned int i=0; i < X; i++) {
-    for(unsigned int j=0; j < Y; j++) {
-      for(unsigned int k=0; k < Z; k++) {
-	double diff=abs(f(i,j,k)-g(i,j,k));
-	if(diff > maxdiff)
-	  maxdiff=diff;
-	double size=max(abs(f(i,j,k)),abs(f(i,j,k)));
-	if(size > maxnorm)
-	  maxnorm=size;
-      }
-    }
-  }
-  return maxdiff / (maxnorm + 1e-12);
-}
-
 unsigned int outlimit=3000;
 
 int main(int argc, char* argv[])
@@ -187,7 +165,7 @@ int main(int argc, char* argv[])
 	  cout << "local input:\n" <<  flocal << endl;
 	}
 
-	double inputerror = relmaxerror(faccumulated,flocal,d.X,d.Y,d.Z);
+	double inputerror = relmaxerror(faccumulated(),flocal(),d.X,d.Y,d.Z);
 	if(inputerror > 1e-10) {
 	  cout << "Caution!  Inputs differ: " << inputerror << endl;
 	  retval += 1;
@@ -213,7 +191,7 @@ int main(int argc, char* argv[])
       }
       
       if(main) {
-	double outputerror = relmaxerror(faccumulated,flocal,d.X,d.Y,d.Z);
+	double outputerror = relmaxerror(faccumulated(),flocal(),d.X,d.Y,d.Z);
 	if(outputerror > 1e-10) {
 	  cout << "Caution!  Outputs differ: " << outputerror << endl;
 	  retval += 1;
@@ -239,7 +217,7 @@ int main(int argc, char* argv[])
       }
       
       if(main) {
-	double outputerror = relmaxerror(faccumulated,flocal,d.X,d.Y,d.Z);
+	double outputerror = relmaxerror(faccumulated(),flocal(),d.X,d.Y,d.Z);
 	if(outputerror > 1e-10) {
 	  cout << "Caution!  Outputs differ: " << outputerror << endl;
 	  retval += 1;
@@ -271,7 +249,18 @@ int main(int argc, char* argv[])
       }
     }
   
-    //deleteAlign(f);
+    deleteAlign(f);
+    
+  }
+
+
+  if(!quiet && group.rank == 0) {
+    cout << endl;
+    if(retval == 0)
+      cout << "pass" << endl;
+    else
+      cout << "FAIL" << endl;
+
   }
   
   MPI_Finalize();

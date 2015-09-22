@@ -44,39 +44,39 @@ int main(int argc, char* argv[])
     if (c == -1) break;
                 
     switch (c) {
-      case 0:
-        break;
-      case 'N':
-        N=atoi(optarg);
-        break;
-      case 'm':
-        mx=my=atoi(optarg);
-        break;
-      case 'x':
-        mx=atoi(optarg);
-        break;
-      case 'y':
-        my=atoi(optarg);
-        break;
-      case 'n':
-        N0=atoi(optarg);
-        break;
-      case 'T':
-        fftw::maxthreads=atoi(optarg);
-        break;
-      case 'q':
-        quiet=true;
-        break;
-      case 't':
-        test=true;
-        break;
-      case 'h':
-        usage(2);
-	exit(0);
-      default:
-	cout << "Invalid option." << endl;
-        usage(2);
-	exit(1);
+    case 0:
+      break;
+    case 'N':
+      N=atoi(optarg);
+      break;
+    case 'm':
+      mx=my=atoi(optarg);
+      break;
+    case 'x':
+      mx=atoi(optarg);
+      break;
+    case 'y':
+      my=atoi(optarg);
+      break;
+    case 'n':
+      N0=atoi(optarg);
+      break;
+    case 'T':
+      fftw::maxthreads=atoi(optarg);
+      break;
+    case 'q':
+      quiet=true;
+      break;
+    case 't':
+      test=true;
+      break;
+    case 'h':
+      usage(2);
+      exit(0);
+    default:
+      cout << "Invalid option." << endl;
+      usage(2);
+      exit(1);
     }
   }
 
@@ -117,16 +117,6 @@ int main(int argc, char* argv[])
 
     split d(mx,my,group.active);
   
-    if(!quiet) {
-      for(int i=0; i < group.size; ++i) {
-	if(i == group.rank) {
-	  cout << "process " << i << "\nsplity:" << endl;
-	  d.show();
-	  cout << endl;
-	}
-      }
-    }
-
     Complex *f=ComplexAlign(d.n);
 
     // Create instance of FFT
@@ -139,47 +129,39 @@ int main(int argc, char* argv[])
       init(f,d);
 
       if(!quiet && mx*my < outlimit) {
-	if(main) cout << "\ninput:" << endl;
+	if(main) cout << "\nDistributed input:" << endl;
 	show(f,d.x,my,group.active);
       }
 
-      // create local transform for testing purposes
       size_t align=sizeof(Complex);
-      array2<Complex> localfin(mx,my,align);
-      fft2d localForward(-1,localfin);
-      accumulate_split(f, localfin(), d, 1, false, group.active);
+      array2<Complex> flocal(mx,my,align);
+      fft2d localForward(-1,flocal);
+      fft2d localBackward(-1,flocal);
+      accumulate_split(f, flocal(), d, 1, false, group.active);
+
+      if(!quiet && main) {
+	cout << "\nAccumulated input:\n" << flocal << endl;
+      }
 
       fft.Forwards(f);
 
-      MPI_Barrier(group.active);
       if(!quiet && mx*my < outlimit) {
-      	if(main) cout << "\noutput:" << endl;
+      	if(main) cout << "\nDistributed output:" << endl;
       	show(f,mx,d.y,group.active);
       }
       
+      array2<Complex> faccumulated(mx,my,align);
+      accumulate_split(f, faccumulated(), d, 1, true, group.active);
+
       MPI_Barrier(group.active);
       if(main) {
-	if(!quiet)
-	  cout << "\nwlocal input:\n" << localfin << endl;
-	localForward.fft(localfin);
-	if(!quiet)
-	  cout << "\nlocal output:\n" << localfin << endl;
-      }
-
-      array2<Complex> localfout(mx,my,align);
-      accumulate_split(f, localfout(), d, 1, true, group.active);
-      if(main) {
-	if(!quiet)
-	  cout << "\naccumulated output:\n" << localfout << endl;
-	double maxerr = 0.0;
-	for(unsigned int i = 0; i < d.X; ++i) {
-	  for(unsigned int j = 0; j < d.Y; ++j) {
-	    double diff = abs(localfout[i][j] - localfin[i][j]);
-	    if(diff > maxerr)
-	      maxerr = diff;
-	  }
+	localForward.fft(flocal);
+	if(!quiet) {
+	  cout << "\nLocal output:\n" << flocal << endl;
+	  cout << "\nAccumulated output:\n" << faccumulated << endl;
 	}
-
+	double maxerr = relmaxerror(flocal(),faccumulated(),d.X,d.Y);
+	
 	cout << "max error: " << maxerr << endl;
 	if(maxerr > 1e-10) {
 	  cerr << "CAUTION: max error is LARGE!" << endl;
@@ -191,9 +173,27 @@ int main(int argc, char* argv[])
       fft.Normalize(f);
 
       if(!quiet && mx*my < outlimit) {
-      	if(main) cout << "\noutput:" << endl;
+      	if(main) cout << "\nDistributed output:" << endl;
       	show(f,d.x,my,group.active);
       }
+
+      accumulate_split(f, faccumulated(), d, 1, true, group.active);
+      MPI_Barrier(group.active);
+      if(main) {
+	localBackward.fftNormalized(flocal);
+	if(!quiet) {
+	  cout << "\nLocal output:\n" << flocal << endl;
+	  cout << "\nAccumulated output:\n" << faccumulated << endl;
+	}
+	double maxerr = relmaxerror(flocal(),faccumulated(),d.X,d.Y);
+	
+	cout << "max error: " << maxerr << endl;
+	if(maxerr > 1e-10) {
+	  cerr << "CAUTION: max error is LARGE!" << endl;
+	  retval += 1;
+	}
+      }
+
     } else {
       if(N > 0) {
 	double *T=new double[N];
@@ -213,9 +213,13 @@ int main(int argc, char* argv[])
     deleteAlign(f);
   }
   
-  if(!quiet && group.rank == 0 && retval == 0) {
-    cout << "success" << endl;
-  }
+  if(!quiet && group.rank == 0) {
+    cout << endl;
+    if(retval == 0)
+      cout << "pass" << endl;
+    else
+      cout << "FAIL" << endl;
+  }  
   MPI_Finalize();
 
   return retval;

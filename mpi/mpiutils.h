@@ -304,6 +304,53 @@ void accumulate_splitxy(const ftype *part,
 }
 
 
+template<class ftype>
+double relmaxerror(const ftype *f, const ftype *g,
+		   const unsigned int X,
+		   const unsigned int Y)
+{
+  double maxdiff=0.0;
+  double maxnorm=0.0;
+  unsigned int pos=0;
+  for(unsigned int i=0; i < X; i++) {
+    for(unsigned int j=0; j < Y; j++) {
+      double diff=abs(f[pos]-g[pos]);
+      if(diff > maxdiff)
+	maxdiff=diff;
+      double size=std::max(abs(f[pos]),abs(f[pos]));
+      if(size > maxnorm)
+	maxnorm=size;
+      pos++;
+    }
+  }
+  return maxdiff / (maxnorm + 1e-12);
+}
+
+template<class ftype>
+double relmaxerror(const ftype *f, const ftype *g,
+		   const unsigned int X,
+		   const unsigned int Y,
+		   const unsigned int Z)
+{
+  double maxdiff=0.0;
+  double maxnorm=0.0;
+  unsigned int pos=0;
+  for(unsigned int i=0; i < X; i++) {
+    for(unsigned int j=0; j < Y; j++) {
+      for(unsigned int k=0; k < Z; k++) {
+	double diff=abs(f[pos]-g[pos]);
+	if(diff > maxdiff)
+	  maxdiff=diff;
+	double size=std::max(abs(f[pos]),abs(f[pos]));
+	if(size > maxnorm)
+	  maxnorm=size;
+	pos++;
+      }
+    }
+  }
+  return maxdiff / (maxnorm + 1e-12);
+}
+
 // output the contents of a 2D array
 template<class ftype>
 void show(ftype *f, unsigned int nx, unsigned int ny,

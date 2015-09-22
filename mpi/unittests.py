@@ -84,6 +84,7 @@ def main(argv):
                 log.write(msg + "\n")
                 log.close()
             else:
+                nfails += 1
                 msg = "\tFAILED!"
                 print msg
                 log = open(logfile, 'a')
