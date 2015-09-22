@@ -1,7 +1,9 @@
+#include "Array.h"
 #include "mpifftw++.h"
 #include "utils.h"
 #include "mpiutils.h"
 #include <unistd.h>
+using namespace Array;
 
 using namespace std;
 using namespace fftwpp;
@@ -31,6 +33,28 @@ void init(Complex *f,
 void init(Complex *f, splitxy d)
 {
   init(f,d.X,d.Y,d.Z,d.x0,d.y0,d.z0,d.x,d.y,d.z);
+}
+
+double relmaxerror(const array3<Complex> f, const array3<Complex> g,
+		   const unsigned int X,
+		   const unsigned int Y,
+		   const unsigned int Z)
+{
+  double maxdiff=0.0;
+  double maxnorm=0.0;
+  for(unsigned int i=0; i < X; i++) {
+    for(unsigned int j=0; j < Y; j++) {
+      for(unsigned int k=0; k < Z; k++) {
+	double diff=abs(f(i,j,k)-g(i,j,k));
+	if(diff > maxdiff)
+	  maxdiff=diff;
+	double size=max(abs(f(i,j,k)),abs(f(i,j,k)));
+	if(size > maxnorm)
+	  maxnorm=size;
+      }
+    }
+  }
+  return maxdiff / (maxnorm + 1e-12);
 }
 
 unsigned int outlimit=3000;
@@ -136,48 +160,100 @@ int main(int argc, char* argv[])
 
     splitxy d(mx,my,mz,group);
     
-    Complex *f=ComplexAlign(d.n);
-
-    // Create instance of FFT
+    Complex *f=ComplexAlign(d.n * mz);
+    //Complex *f=ComplexAlign(d.n * mz); // FIXME: temp
+    
     fft3dMPI fft(d,f);
 
     if(test) {
+      init(f,d);
 
-      if(mx*my*mz < outlimit) {
-	MPI_Barrier(group.active);
-	for(int i=0; i < group.size; ++i) {
-	  MPI_Barrier(group.active);
-	  if(i == group.rank) {
-	    cout << "process " << i << " splitxy:" << endl;
-	    d.show();
-	    cout << endl;
-	  }
-	  usleep(500); // hack to get around dealing with cout and MPI
-	}
-	MPI_Barrier(group.active);
+      if(!quiet && mx*my < outlimit) {
+	if(main) cout << "\ninput:" << endl;
+	show(f,d.x,d.y,d.Z,group.active);
+      }
 
-	init(f,d);
+      size_t align=sizeof(Complex);
+      array3<Complex> faccumulated(mx,my,mz,align);
+      fft3d localForward(-1,faccumulated);
+      fft3d localBackward(1,faccumulated);
+      accumulate_splitxy(f, faccumulated(), d, 0, group.active);
 
+      array3<Complex> flocal(mx,my,mz,align);
+      init(flocal(),d.X,d.Y,d.Z,0,0,0,d.X,d.Y,d.Z);
+      if(main) {
 	if(!quiet) {
-	  if(main) cout << "\ninput:" << endl;
-	  show(f,d.x,d.y,d.Z,group.active);
+	  cout << "accumulated input:\n" <<  faccumulated << endl;
+	  cout << "local input:\n" <<  flocal << endl;
 	}
-	
-	fft.Forwards(f);
 
-	if(!quiet) {
-	  if(main) cout << "\noutput:" << endl;
-	  show(f,d.X,d.xy.y,d.z,group.active);
-	}
-      
-	fft.Backwards(f);
-	fft.Normalize(f);
-
-	if(!quiet) {
-	  if(main) cout << "\nback to input:" << endl;
-	  show(f,d.x,d.y,d.Z,group.active);
+	double inputerror = relmaxerror(faccumulated,flocal,d.X,d.Y,d.Z);
+	if(inputerror > 1e-10) {
+	  cout << "Caution!  Inputs differ: " << inputerror << endl;
+	  retval += 1;
+	} else {
+	  cout << "Inputs agree." << endl;
 	}
       }
+      
+      fft.Forwards(f);
+
+      if(main)
+	localForward.fft(flocal);
+      
+      if(!quiet) {
+	if(main) cout << "Distributed output:" << endl;
+	show(f,d.x,d.xy.y,d.Z,group.active);
+      }
+      accumulate_splitxy(f, faccumulated(), d, 0, group.active); 
+
+      if(!quiet && main) {
+	cout << "Accumulated output:\n" <<  faccumulated << endl;
+	cout << "Local output:\n" <<  flocal << endl;
+      }
+      
+      if(main) {
+	double outputerror = relmaxerror(faccumulated,flocal,d.X,d.Y,d.Z);
+	if(outputerror > 1e-10) {
+	  cout << "Caution!  Outputs differ: " << outputerror << endl;
+	  retval += 1;
+	} else {
+	  cout << "Outputs agree." << endl;
+	}
+      }
+      
+      fft.Backwards(f);
+      fft.Normalize(f);
+      if(main)
+	localBackward.fftNormalized(flocal);
+      if(!quiet) {
+	if(main) cout << "Distributed output:" << endl;
+	show(f,d.x,d.xy.y,d.Z,group.active);
+      }
+
+      accumulate_splitxy(f, faccumulated(), d, 0, group.active);
+      
+      if(!quiet && main) {
+	cout << "Accumulated output:\n" <<  faccumulated << endl;
+	cout << "Local output:\n" <<  flocal << endl;
+      }
+      
+      if(main) {
+	double outputerror = relmaxerror(faccumulated,flocal,d.X,d.Y,d.Z);
+	if(outputerror > 1e-10) {
+	  cout << "Caution!  Outputs differ: " << outputerror << endl;
+	  retval += 1;
+	} else {
+	  cout << "Outputs agree." << endl;
+	}
+      }
+      
+      if(!quiet) {
+	if(main) cout << "\nback to input:" << endl;
+	show(f,d.x,d.y,d.Z,group.active);
+      }
+      
+      
     } else {
       if(N > 0) {
     
@@ -191,11 +267,11 @@ int main(int argc, char* argv[])
 	  T[i]=seconds();
 	}
 	if(main) timings("FFT timing:",mx,T,N);
-	delete [] T;
+	delete[] T;
       }
     }
   
-    deleteAlign(f);
+    //deleteAlign(f);
   }
   
   MPI_Finalize();

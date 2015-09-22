@@ -146,7 +146,7 @@ int main(int argc, char* argv[])
       // create local transform for testing purposes
       size_t align=sizeof(Complex);
       array2<Complex> localfin(mx,my,align);
-      fft2d localForward2(-1,localfin);
+      fft2d localForward(-1,localfin);
       accumulate_split(f, localfin(), d, 1, false, group.active);
 
       fft.Forwards(f);
@@ -161,7 +161,7 @@ int main(int argc, char* argv[])
       if(main) {
 	if(!quiet)
 	  cout << "\nwlocal input:\n" << localfin << endl;
-	localForward2.fft(localfin);
+	localForward.fft(localfin);
 	if(!quiet)
 	  cout << "\nlocal output:\n" << localfin << endl;
       }
@@ -213,7 +213,10 @@ int main(int argc, char* argv[])
     deleteAlign(f);
   }
   
+  if(!quiet && group.rank == 0 && retval == 0) {
+    cout << "success" << endl;
+  }
   MPI_Finalize();
-  
+
   return retval;
 }
