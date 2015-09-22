@@ -268,7 +268,7 @@ void accumulate_splitxy(const ftype *part,
     break;
 
   case 1:
-    std::cerr << "Not implemented" << std::endl;
+    std::cerr << "Not implemented in accumulate_splitxy" << std::endl;
     exit(1);
     // is x * Y * z
     // FIXME
@@ -276,18 +276,33 @@ void accumulate_splitxy(const ftype *part,
 
   case 2:
     exit(1);
-    std::cerr << "Not implemented" << std::endl;
+    std::cerr << "Not implemented in accumulate_splitxy" << std::endl;
     //  is x * yz.x * Z
     // FIXME
     //accumulate_split(part, whole, X, Y, x0, y0, x, y, Z, 0, communicator);
     break;
 
   default:
-    std::cerr << "Invalid transposed choie in accumulate_splityz"
+    std::cerr << "Invalid transposed choie in accumulate_splitxy"
 	      << std::endl;
     exit(1);
   }
 }
+
+template<class ftype>
+void accumulate_splitxy(const ftype *part,
+			ftype *whole,
+			const splitxy d,
+			const int transposed, 
+			const MPI_Comm& communicator)
+{
+  accumulate_splitxy(part, whole,
+		     d.X,d.Y,d.Z,
+		     d.x0,d.y0,d.z0,
+		     d.x,d.y,d.z,
+		     transposed, communicator);
+}
+
 
 // output the contents of a 2D array
 template<class ftype>

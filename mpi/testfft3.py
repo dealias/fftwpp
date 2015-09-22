@@ -9,11 +9,11 @@ from testutils import *
 
 
 
-pname = "fft2"
+pname = "fft3"
 timeout = 10 # cutoff time in seconds
 
 def main(argv):
-    print "MPI fft2 unit test"
+    print "MPI fft3 unit test"
     retval = 0
     usage = "Usage:\n"\
             "./testfft2.py\n"\
@@ -46,6 +46,7 @@ def main(argv):
     else:
 
         Xlist = [1,2,3,4,5,random.randint(6,64)]
+        Zlist = [1,2,3,4,5,random.randint(6,64)]
         Ylist = [1,2,3,4,5,random.randint(6,64)]
         Plist = [1,2,3,4,random.randint(6,10)]
 
@@ -53,6 +54,7 @@ def main(argv):
             print "Short run."
             Xlist = [2,3,random.randint(6,64)]
             Ylist = [2,3,random.randint(6,64)]
+            Zlist = [2,3,random.randint(6,64)]
             Plist = [1,2]
             
         ntests = 0
@@ -66,19 +68,21 @@ def main(argv):
         for P in Plist:
             for X in Xlist:
                 for Y in Ylist:
-                    ntest += 1
-                    args = []
-                    args.append("-x" + str(X))
-                    args.append("-y" + str(Y))
-                    args.append("-N0")
-                    args.append("-q")
-                    args.append("-t")
-                    rtest, cmd = runtest(pname, P, args, logfile, timeout)
-                    if not rtest == 0:
-                        nfails += 1
-                        failcases += " ".join(cmd)
-                        failcases += "\t(code " + str(rtest) + ")"
-                        failcases += "\n"
+                    for Z in Zlist:
+                        ntest += 1
+                        args = []
+                        args.append("-x" + str(X))
+                        args.append("-y" + str(Y))
+                        args.append("-z" + str(Z))
+                        args.append("-N0")
+                        args.append("-t")
+                        args.append("-q")
+                        rtest, cmd = runtest(pname, P, args, logfile, timeout)
+                        if not rtest == 0:
+                            nfails += 1
+                            failcases += " ".join(cmd)
+                            failcases += "\t(code " + str(rtest) + ")"
+                            failcases += "\n"
 
         if nfails > 0:
             print "Failure cases:"
