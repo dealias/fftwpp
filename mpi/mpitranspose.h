@@ -231,6 +231,7 @@ private:
   int a,b;
   bool inflag,outflag;
   bool uniform;
+  bool subblock;
   int *sendcounts,*senddisplacements;
   int *recvcounts,*recvdisplacements;
 public:
@@ -312,11 +313,10 @@ public:
     
     if(size == 1) {
       a=1;
+      subblock=false;
       return;
     }
     
-    bool Uniform=divisible(size,M,N);
-
     int start=0,stop=1;
     if(options.alltoall >= 0)
       start=stop=options.alltoall;
@@ -350,7 +350,6 @@ public:
         if(globalrank == 0) std::cout << "alltoall=" << alltoall << std::endl;
         for(a=astart; a < alimit; a++) {
           b=std::min(nlast+(n0 == np),mlast+(m0 == mp))/a;
-          uniform=Uniform && a*b == size;
           options.alltoall=alltoall;
           init(data);
           double t=time(data);
@@ -375,7 +374,6 @@ public:
     a=options.a;
     b=std::min(nlast+(n0 == np),mlast+(m0 == mp))/a;
     if(b == 1) {b=a; a=1;}
-    uniform=Uniform && a*b == size;
     
     if(globalrank == 0)
       std::cout << std::endl << "Using alltoall=" << 
@@ -442,11 +440,14 @@ public:
   }
 
   void init(T *data) {
-    Tout1=uniform || (a > 1 && rank < a*b) ? 
+    uniform=divisible(size,M,N) && a*b == size;
+    subblock=a > 1 && rank < a*b;
+    
+    Tout1=uniform || subblock ? 
       new Transpose(n*a,b,m*L,data,this->work,threads) : NULL;
     Tin1=uniform ? new Transpose(b,n*a,m*L,data,this->work,threads) : NULL;
     
-    if(a > 1 && rank < a*b) {
+    if(subblock) {
       Tin2=new Transpose(a,n*b,m*L,data,this->work,threads);
       Tout2=new Transpose(n*b,a,m*L,data,this->work,threads);
     } else {Tin2=Tout2=NULL;}
@@ -494,7 +495,7 @@ public:
       sched=new int[size];
       fill1_comm_sched(sched,rank,size);
     
-      if(uniform || (a > 1 && rank < a*b)) {
+      if(uniform || subblock) {
         sched2=new int[split2size];
         fill1_comm_sched(sched2,split2rank,split2size);
         sched1=new int[splitsize];
@@ -511,7 +512,7 @@ public:
   void deallocate() {
     if(size == 1) return;
     if(sched) {
-      if(uniform || (a > 1 && rank < a*b)) {
+      if(uniform || subblock) {
         delete[] sched1;
         delete[] sched2;
       }
@@ -614,10 +615,8 @@ public:
 
   void inphase0() {
     if(size == 1) return;
-    if(uniform || (a > 1 && rank < a*b)) {
-      size_t S=sizeof(T)*(a > 1 ? b : a)*L;
-      Ialltoall(data,n*m*S,work,split2,Request,sched2);
-    }
+    if(uniform || subblock)
+      Ialltoall(data,n*m*sizeof(T)*(a > 1 ? b : a)*L,work,split2,Request,sched2);
     if(!uniform) {
       if(sched) Ialltoallin(data,work,a > 1 ? a*b : 0);
       else MPI_Ialltoallv(data,recvcounts,recvdisplacements,MPI_BYTE,
@@ -626,26 +625,23 @@ public:
     }
   }
   
+  void insync0() {
+    if(size == 1) return;
+    if(uniform || subblock)
+      Wait(2*(split2size-1),Request,sched2);
+    if(!uniform)
+       Wait(2*(size-(subblock ? a*b : 1)),request,sched);
+  }
+  
   void inphase1() {
-    if(a > 1 && rank < a*b) {
-      size_t S=sizeof(T)*a*L;
+    if(subblock) {
       Tin2->transpose(work,data); // a x n*b x m*L
-      Ialltoall(data,n*m*S,work,split,Request,sched1);
+      Ialltoall(data,n*m*sizeof(T)*a*L,work,split,Request,sched1);
     }
   }
 
-  void insync0() {
-    if(size == 1) return;
-    if(uniform || (a > 1 && rank < a*b)) {
-      Wait(2*(split2size-1),Request,sched2);
-      if(!uniform)
-        Wait(2*(size-(a > 1 ? a*b : 0)),request,sched);
-    } else
-      Wait(2*(size-1),request,sched);
-  }
-  
   void insync1() {
-    if(a > 1 && rank < a*b)
+    if(subblock)
       Wait(2*(splitsize-1),Request,sched1);
   }
 
@@ -654,7 +650,7 @@ public:
     if(uniform)
       Tin1->transpose(work,data); // b x n*a x m*L
     else {
-      if(a > 1 && rank < a*b) {
+      if(subblock) {
         unsigned int block=m0*L;
         unsigned int cols=n*a;
         unsigned int istride=cols*block;
@@ -696,14 +692,11 @@ public:
   
   void outphase0() {
     if(size == 1) return;
-    size_t S=sizeof(T)*a*L;
-    if(uniform || (a > 1 && rank < a*b)) {
-      // Inner transpose a N/a x M/a matrices over each team of b processes
+    // Inner transpose a N/a x M/a matrices over each team of b processes
+    if(uniform)
       Tout1->transpose(data,work); // n*a x b x m*L
-      Ialltoall(work,n*m*S,data,split,Request,sched1);
-    }
-    if(!uniform) {
-      if(a > 1 && rank < a*b) {
+    else {
+      if(subblock) {
         unsigned int block=m0*L;
         unsigned int cols=n*a;
         unsigned int istride=cols*block;
@@ -740,38 +733,39 @@ public:
           copy(src+mlast*block,work+j*lastblock+mlast*istride,lastblock);
         }
       }
-      
+    }
+    if(subblock)
+      Ialltoall(work,n*m*sizeof(T)*a*L,data,split,Request,sched1);
+  }             
+  
+  void outsync0() {
+    if(subblock)
+      Wait(2*(splitsize-1),Request,sched1);
+  }
+  
+  void outphase1() {
+    if(size == 1) return;
+    // Outer transpose a x a matrix of N/a x M/a blocks over a processes
+    if(subblock)
+      Tout2->transpose(data,work); // n*b x a x m*L
+    if(!uniform) {
       if(sched) Ialltoallout(work,data,a > 1 ? a*b : 0);
       else MPI_Ialltoallv(work,sendcounts,senddisplacements,MPI_BYTE,
                           data,recvcounts,recvdisplacements,MPI_BYTE,
                           communicator,request);
     }
+    if(uniform || subblock)
+      Ialltoall(work,n*m*sizeof(T)*(a > 1 ? b : a)*L,data,split2,Request,sched2);
   }
   
-  void outphase1() {
-    if(a > 1 && rank < a*b) {
-      size_t S=sizeof(T)*b*L;
-      // Outer transpose a x a matrix of N/a x M/a blocks over a processes
-      Tout2->transpose(data,work); // n*b x a x m*L
-      Ialltoall(work,n*m*S,data,split2,Request,sched2);
-    }
-  }
-  
-  void outsync0() {
-    if(size == 1) return;
-    if(uniform || (a > 1 && rank < a*b)) {
-      Wait(2*(splitsize-1),Request,sched1);
-      if(!uniform) 
-        Wait(2*(size-(a > 1 ? a*b : 0)),request,sched);
-    } else
-      Wait(2*(size-1),request,sched);
-  }
-
   void outsync1() {
-    if(a > 1 && rank < a*b)
+    if(size == 1) return;
+    if(!uniform)
+      Wait(2*(size-(subblock ? a*b : 1)),request,sched);
+    if(uniform || subblock)
       Wait(2*(split2size-1),Request,sched2);
   }
-  
+
   void nMTranspose() {
     if(n == 0) return;
     if(!Tin3) Tin3=new Transpose(n,M,L,data,work,threads);
