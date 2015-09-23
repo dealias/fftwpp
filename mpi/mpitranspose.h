@@ -494,7 +494,7 @@ public:
       sched=new int[size];
       fill1_comm_sched(sched,rank,size);
     
-      if(a > 1) {
+      if(uniform || (a > 1 && rank < a*b)) {
         sched2=new int[split2size];
         fill1_comm_sched(sched2,split2rank,split2size);
         sched1=new int[splitsize];
@@ -511,7 +511,7 @@ public:
   void deallocate() {
     if(size == 1) return;
     if(sched) {
-      if(a > 1) {
+      if(uniform || (a > 1 && rank < a*b)) {
         delete[] sched1;
         delete[] sched2;
       }
@@ -586,9 +586,10 @@ public:
     }
 
     if(rank >= start)
-      copy((char *) sendbuf+mn0*rank,(char *) recvbuf+nm0*rank,nS*mi(rank));
+      copy((char *) sendbuf+nm0*rank,(char *) recvbuf+mn0*rank,nS*mi(rank));
   }
 
+  
   void Ialltoallin(void* sendbuf, void *recvbuf, int start) {
     MPI_Request *srequest=rank >= start ? request+size-1 : request+size-start;
     int S=sizeof(T)*L;
@@ -638,9 +639,9 @@ public:
     if(uniform || (a > 1 && rank < a*b)) {
       Wait(2*(split2size-1),Request,sched2);
       if(!uniform)
-        Wait(2*(size-(a > 1 ? a*b : 0)),request,sched2);
+        Wait(2*(size-(a > 1 ? a*b : 0)),request,sched);
     } else
-      Wait(2*(size-1),request,sched2);
+      Wait(2*(size-1),request,sched);
   }
   
   void insync1() {
@@ -757,20 +758,20 @@ public:
   }
   
   void outsync0() {
-    if(a > 1 && rank < a*b)
-      Wait(2*(splitsize-1),Request,sched1);
-  }
-  
-  void outsync1() {
     if(size == 1) return;
     if(uniform || (a > 1 && rank < a*b)) {
-      Wait(2*(split2size-1),Request,sched2);
+      Wait(2*(splitsize-1),Request,sched1);
       if(!uniform) 
-        Wait(2*(size-(a > 1 ? a*b : 0)),request,sched2);
+        Wait(2*(size-(a > 1 ? a*b : 0)),request,sched);
     } else
-      Wait(2*(size-1),request,sched2);
+      Wait(2*(size-1),request,sched);
   }
 
+  void outsync1() {
+    if(a > 1 && rank < a*b)
+      Wait(2*(split2size-1),Request,sched2);
+  }
+  
   void nMTranspose() {
     if(n == 0) return;
     if(!Tin3) Tin3=new Transpose(n,M,L,data,work,threads);
