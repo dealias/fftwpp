@@ -176,6 +176,8 @@ int main(int argc, char* argv[])
       convolveOptions options;
       options.xcompact=xcompact;
       options.ycompact=ycompact;
+      options.mpi.a=a;
+      options.mpi.alltoall=alltoall;
       ImplicitHConvolution2MPI C(mx,my,d,du,f,A,B,options);
       
       Complex **F=new Complex *[A];

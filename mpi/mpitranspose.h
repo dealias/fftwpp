@@ -42,6 +42,7 @@
 #include "../fftw++.h"
 
 namespace fftwpp {
+#include "mpioptions.h"
 
 extern double safetyfactor; // For conservative latency estimate.
 extern bool overlap; // Allow overlapped communication.
@@ -194,16 +195,7 @@ inline int Ialltoall(void *sendbuf, int count,
   }
 }
 
-struct mpioptions {
-  unsigned int threads;
-  int a; // Block divisor (-1=sqrt(size), 0=Tune)
-  int alltoall; // -1=Tune, 0=Optimized, 1=MPI
-  mpioptions(unsigned int threads=fftw::maxthreads, unsigned int a=0,
-             unsigned int alltoall=-1) :
-    threads(threads), a(a), alltoall(alltoall) {}
-};
-    
-static const mpioptions defaultmpioptions;
+static const mpiOptions defaultmpiOptions;
   
 template<class T>
 class mpitranspose {
@@ -212,8 +204,8 @@ private:
   unsigned int L;
   T *data;
   T *work;
-  mpioptions options;
   MPI_Comm communicator;
+  mpiOptions options;
   MPI_Comm global;
   MPI_Comm block;
   
@@ -243,7 +235,7 @@ private:
   int *recvcounts,*recvdisplacements;
 public:
 
-  mpioptions Options() {return options;}
+  mpiOptions Options() {return options;}
   
   bool divisible(int size, unsigned int M, unsigned int N) {
     unsigned int usize=size;
@@ -399,28 +391,31 @@ public:
   mpitranspose(unsigned int N, unsigned int m, unsigned int n,
                unsigned int M, unsigned int L,
                T *data, T *work=NULL,
-               mpioptions options=defaultmpioptions,
                MPI_Comm communicator=MPI_COMM_WORLD,
+               const mpiOptions& options=defaultmpiOptions,
                MPI_Comm global=0) :
-    N(N), m(m), n(n), M(M), L(L), work(work), options(options),
-    communicator(communicator), global(global ? global : communicator) {
+    N(N), m(m), n(n), M(M), L(L), work(work), communicator(communicator),
+    options(options), global(global ? global : communicator) {
     setup(data);
   }
   
   mpitranspose(unsigned int N, unsigned int m, unsigned int n,
                unsigned int M, unsigned int L,
-               T *data, MPI_Comm communicator, MPI_Comm global=0) :
-    N(N), m(m), n(n), M(M), L(L), work(NULL),
-    communicator(communicator), global(global ? global : communicator) {
+               T *data, MPI_Comm communicator=MPI_COMM_WORLD,
+               const mpiOptions& options=defaultmpiOptions,
+               MPI_Comm global=0) :
+    N(N), m(m), n(n), M(M), L(L), work(NULL), communicator(communicator),
+    options(options), global(global ? global : communicator) {
     setup(data);
   }
     
   mpitranspose(unsigned int N, unsigned int m, unsigned int n,
                unsigned int M, T *data, T *work=NULL,
-               mpioptions options=defaultmpioptions,
-               MPI_Comm communicator=MPI_COMM_WORLD, MPI_Comm global=0) :
-    N(N), m(m), n(n), M(M), L(1), work(work), options(options),
-    communicator(communicator), global(global ? global : communicator) {
+               MPI_Comm communicator=MPI_COMM_WORLD,
+               const mpiOptions& options=defaultmpiOptions,
+               MPI_Comm global=0) :
+    N(N), m(m), n(n), M(M), L(1), work(work), communicator(communicator),
+    options(options), global(global ? global : communicator) {
     setup(data);
   }
     

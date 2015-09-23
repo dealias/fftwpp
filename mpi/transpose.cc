@@ -211,8 +211,8 @@ int transpose(int rank, int size, int N)
     // Initialize remaining plans.
 
 //    mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,fftw::maxthreads,active);
-    mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,
-                            mpioptions(fftw::maxthreads,a,alltoall),active);
+    mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,active,
+                            mpiOptions(fftw::maxthreads,a,alltoall));
     init(data,X,y,Z,0,ystart);
     T.transpose(data,false,true);
   
@@ -255,6 +255,8 @@ int transpose(int rank, int size, int N)
 	show(wholedata,X,Y,0,0,X,Y);
       }
 
+      T.transpose(data,false,true); // N x m -> n x M
+      T.transpose(data,true,false); // n x M -> N x m
       T.transpose(data,false,true); // N x m -> n x M
 
       if(showoutput) {

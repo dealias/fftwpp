@@ -70,7 +70,7 @@ def main(argv):
                 for Z in Zlist:
                     for P in Plist:
                         for a in range(1,int(sqrt(P)+1.5)):
-                            for A in range(0,1):
+                            for A in range(0,2):
                                 ntests += 1
                                 args = []
                                 args.append("-x" + str(X))

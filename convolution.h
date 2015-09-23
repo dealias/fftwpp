@@ -62,11 +62,24 @@ unsigned int BuildZeta(unsigned int n, unsigned int m,
                        Complex *&ZetaH, Complex *&ZetaL,
                        unsigned int threads=1);
 
+#ifndef __mpioptions_h__
+#define __mpioptions_h__ 1
+struct mpiOptions {
+  unsigned int threads;
+  int a; // Block divisor (-1=sqrt(size), 0=Tune)
+  int alltoall; // -1=Tune, 0=Optimized, 1=MPI
+  mpiOptions(unsigned int threads=fftw::maxthreads, unsigned int a=0,
+             unsigned int alltoall=-1) :
+    threads(threads), a(a), alltoall(alltoall) {}
+};
+#endif
+    
 struct convolveOptions {
   unsigned int threads;            // For outer subconvolution loop.
   bool xcompact,ycompact,zcompact; // Data format
   unsigned int nx,ny,nz;           // Used internally by the MPI interface.
   unsigned int stride2,stride3;    // Used internally by the MPI interface.
+  mpiOptions mpi;
   
   convolveOptions(unsigned int threads=fftw::maxthreads, 
                   bool xcompact=true, bool ycompact=true, bool zcompact=true,
