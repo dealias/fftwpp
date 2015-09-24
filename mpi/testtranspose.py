@@ -9,6 +9,9 @@ import getopt
 from testutils import *
 from math import sqrt
 
+sys.stdin.close()
+os.close(0);
+
 def main(argv):
     retval = 0
     

@@ -1,6 +1,12 @@
 import time
 from subprocess import * # so that we can run commands
 
+import sys
+import os
+
+sys.stdin.close()
+os.close(0);
+
 def waitandkill(proc, timeout):
     if(timeout == 0):
         return
@@ -30,7 +36,10 @@ def runtest(filename, P, extraargs, logfilename, timeout):
     cmd.append("./" + filename)
     for arg in  extraargs:
         cmd.append(arg)
-    print " ".join(cmd),
+    try:
+        print " ".join(cmd),
+    except:
+        pass
     log.write(" ".join(cmd)),
     
     proc = Popen(cmd, stdout = PIPE, stderr = PIPE)
@@ -44,11 +53,17 @@ def runtest(filename, P, extraargs, logfilename, timeout):
     out, err = proc.communicate() # capture output
     if (prc == 0): # did the process succeed?
         msg = "\tpass"
-        print msg
+        try:
+            print msg
+        except:
+            pass
         log.write(msg + "\n")
     else:
         msg = "\tFAIL with code " + str(prc) + "!"
-        print msg
+        try:
+            print msg
+        except:
+            pass
         log.write(msg + "\n")
         log.write("stdout:\n" + out + "\n")
         log.write("stderr:\n" + err + "\n")

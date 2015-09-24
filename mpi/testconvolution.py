@@ -6,6 +6,9 @@ from subprocess import * # so that we can run commands
 import getopt
 import os.path
 
+sys.stdin.close()
+os.close(0);
+
 def main(argv):
     retval = 0
     msg = "MPI convolution unit tests"

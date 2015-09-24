@@ -8,6 +8,9 @@ import numpy as np
 from math import *
 import os
 
+sys.stdin.close()
+os.close(0);
+
 def main(argv):
     usage='Usage: timings.py -a<start> -b<stop> -p<cconv2,conv2,cconv3,conv3> -T<number of threads per node> -P<number of nodes> -A<quoted arg list for timed program> -M <quoted arg list for mpi run command> -r<implicit/explicit> -l<name of mpi run command> -R<ram in gigabytes> -d' 
     helpnotes=\
