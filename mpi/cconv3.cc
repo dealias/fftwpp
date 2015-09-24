@@ -68,11 +68,6 @@ void show(Complex *F, unsigned int X, unsigned int Y, unsigned int Z)
 
 unsigned int outlimit=3000;
 
-inline unsigned int min(unsigned int a, unsigned int b)
-{
-  return (a < b) ? a : b;
-}
-
 int main(int argc, char* argv[])
 {
   unsigned int mx=4;

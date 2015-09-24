@@ -1,36 +1,46 @@
 #include "mpiconvolution.h"
 #include "utils.h"
 #include "mpiutils.h"
+#include "Array.h"
 
 using namespace std;
 using namespace fftwpp;
+using namespace Array;
 
 // Number of iterations.
 unsigned int N0=1000000;
 unsigned int N=0;
 unsigned int mx=4;
 unsigned int my=4;
-unsigned int M=1;   // Number of terms in dot product
 
 bool Implicit=true, Explicit=false, Pruned=false;
 
-inline void init(Complex *f, Complex *g, split d, unsigned int M=1) 
+inline void init(Complex **F, split d, unsigned int A) 
 {
-  double factor=1.0/sqrt((double) M);
-  for(unsigned int s=0; s < M; ++s) {
-    double S=sqrt(1.0+s);
-    double ffactor=S*factor;
-    double gfactor=1.0/S*factor;
-    for(unsigned int i=0; i < d.X; ++i) {
-      unsigned int I=s*d.n+d.y*i;
-      for(unsigned int j=0; j < d.y; j++) {
-        unsigned int jj=d.y0+j;
-        f[I+j]=ffactor*Complex(i,jj);
-        g[I+j]=gfactor*Complex(2*i,jj+1);
+  if(A%2 == 0) {
+    unsigned int M=A/2;
+    double factor=1.0/sqrt((double) M);
+    for(unsigned int s=0; s < M; ++s) {
+      array2<Complex> f(d.X,d.y,F[s]);
+      array2<Complex> g(d.X,d.y,F[M+s]);
+      double S=sqrt(1.0+s);
+      double ffactor=S*factor;
+      double gfactor=1.0/S*factor;
+      for(unsigned int i=0; i < d.X; ++i) {
+	//unsigned int I=s*d.n+d.y*i;
+	for(unsigned int j=0; j < d.y; j++) {
+	  unsigned int jj=d.y0+j;
+	  f[i][j]=ffactor*Complex(i,jj);
+	  g[i][j]=gfactor*Complex(2*i,jj+1);
+	}
       }
     }
+  } else {
+    cerr << "Init not implemented for A=" << A << endl;
+    exit(1);
   }
 }
+
 
 unsigned int outlimit=100;
 
@@ -39,65 +49,67 @@ int main(int argc, char* argv[])
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif
-  bool dohash=false;
   int retval=0;
+  bool test=false;
+  unsigned int A=2;
   
 #ifdef __GNUC__ 
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"heipHM:N:m:x:y:n:T:");
+    int c = getopt(argc,argv,"heipHtM:N:m:x:y:n:T:");
     if (c == -1) break;
                 
     switch (c) {
-      case 0:
-        break;
-      case 'e':
-        Explicit=true;
-        Implicit=false;
-        Pruned=false;
-        break;
-      case 'i':
-        Implicit=true;
-        Explicit=false;
-        break;
-      case 'p':
-        Explicit=true;
-        Implicit=false;
-        Pruned=true;
-        break;
-      case 'H':
-        dohash=true;
-	break;
-      case 'M':
-        M=atoi(optarg);
-        break;
-      case 'N':
-        N=atoi(optarg);
-        break;
-      case 'm':
-        mx=my=atoi(optarg);
-        break;
-      case 'x':
-        mx=atoi(optarg);
-        break;
-      case 'y':
-        my=atoi(optarg);
-        break;
-      case 'n':
-        N0=atoi(optarg);
-        break;
-      case 'T':
-        fftw::maxthreads=atoi(optarg);
-        break;
-      case 'h':
-      default:
-        usage(2);
+    case 0:
+      break;
+    case 'e':
+      Explicit=true;
+      Implicit=false;
+      Pruned=false;
+      break;
+    case 'i':
+      Implicit=true;
+      Explicit=false;
+      break;
+    case 'p':
+      Explicit=true;
+      Implicit=false;
+      Pruned=true;
+      break;
+    case 'A':
+      A=atoi(optarg);
+      break;
+    case 'M':
+      A=2*atoi(optarg);
+      break;
+    case 'N':
+      N=atoi(optarg);
+      break;
+    case 'm':
+      mx=my=atoi(optarg);
+      break;
+    case 'x':
+      mx=atoi(optarg);
+      break;
+    case 'y':
+      my=atoi(optarg);
+      break;
+    case 'n':
+      N0=atoi(optarg);
+      break;
+    case 'T':
+      fftw::maxthreads=atoi(optarg);
+      break;
+    case 't':
+      test=true;
+      break;
+    case 'h':
+    default:
+      usage(2);
     }
   }
 
-  unsigned int A=2*M; // Number of independent inputs
-  
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
 
@@ -132,76 +144,83 @@ int main(int argc, char* argv[])
 
     split d(mx,my,group.active);
   
-    unsigned int Mn=M*d.n;
-  
-    Complex *f=ComplexAlign(Mn);
-    Complex *g=ComplexAlign(Mn);
-  
+    Complex **F=new Complex *[A];
+    for(unsigned int a=0; a < A; ++a)
+      F[a]=ComplexAlign(d.n);
+    init(F,d,A);
+
+    // FIXME: free
+    Complex **Flocal=new Complex *[A];
+    for(unsigned int a=0; a < A; ++a) {
+      Flocal[a]=ComplexAlign(mx*my);
+      accumulate_split(F[a], Flocal[a], d, 1, true, group.active);
+    }
+
     double *T=new double[N];
 
-    if(Implicit) {
-      multiplier *mult;
+    multiplier *mult;
   
-      switch(M) {
-        case 1: mult=multbinary; break;
-        case 2: mult=multbinary2; break;
-        case 3: mult=multbinary3; break;
-        case 4: mult=multbinary4; break;
-        case 8: mult=multbinary8; break;
-        default: cout << "M=" << M << " is not yet implemented" << endl;
-          exit(1);
+    switch(A) {
+    case 2: mult=multbinary; break;
+    case 4: mult=multbinary2; break;
+    case 6: mult=multbinary3; break;
+    case 8: mult=multbinary4; break;
+    case 16: mult=multbinary8; break;
+    default: cout << "A=" << A << " is not yet implemented" << endl;
+      exit(1);
+    }
+
+    ImplicitConvolution2MPI C(mx,my,d,A);
+
+    if(test) {
+      C.convolve(F,mult);
+
+      // FIXME: free
+      Complex *Foutaccumulated=ComplexAlign(mx*my);
+      accumulate_split(F[0], Foutaccumulated, d, 1, true, group.active);
+
+      if(main) {
+	ImplicitConvolution2 Clocal(mx,my,A,1);
+	Clocal.convolve(Flocal,mult);
+	double maxerr = relmaxerror(Flocal[0],Foutaccumulated,d.X,d.Y);
+	cout << "maxerr: " << maxerr << endl;
+	if(maxerr > 1e-10) {
+	  retval += 1;
+	  cout << "CAUTION! Large error!" << endl;
+	} else {
+	  cout << "Error ok." << endl;
+	}
       }
 
-      ImplicitConvolution2MPI C(mx,my,d,A);
-      
-      Complex **F=new Complex *[A];
-      unsigned int stride=d.n;
-      for(unsigned int s=0; s < M; ++s) {
-        unsigned int sstride=s*stride;
-        F[2*s]=f+sstride;
-        F[2*s+1]=g+sstride;
-      }
+    MPI_Barrier(group.active);
 
-      MPI_Barrier(group.active);
+
+      } else {
       if(group.rank == 0)
-        cout << "Initialized after " << seconds() << " seconds." << endl;
+	cout << "Initialized after " << seconds() << " seconds." << endl;
       for(unsigned int i=0; i < N; ++i) {
-        init(f,g,d,M);
-        if(main) seconds();
-        C.convolve(F,mult);
-//      C.convolve(f,g);
-        if(main) T[i]=seconds();
+	init(F,d,A);
+	if(main) seconds();
+	C.convolve(F,mult);
+	//      C.convolve(f,g);
+	if(main) T[i]=seconds();
       }
     
       if(main) 
-        timings("Implicit",mx,T,N);
-   
-      if(mx*my < outlimit)
-	show(f,mx,d.y,group.active);
+	timings("Implicit",mx,T,N);
+    }   
 
-      // check if the hash of the rounded output matches a known value
-      if(dohash) {
-	int hashval=hash(f,mx,d.y,group.active);
-	if(group.rank == 0) cout << hashval << endl;
-	if(mx == 4 && my == 4) {
-	  if(hashval != -268695821) {
-	    retval=1;
-	    if(group.rank == 0) cout << "error: hash does not match" << endl;
-	  }  else {
-	    if(group.rank == 0) cout << "hash value OK." << endl;
-	  }
-	}
-      }
-      
-      delete [] F;
-    }
-  
-    deleteAlign(f);
-    deleteAlign(g);
+    if(mx*my < outlimit)
+      show(F[0],mx,d.y,group.active);
+
+    for(unsigned int a=0; a < A; ++a)
+      deleteAlign(F[a]);
+    delete [] F;
   
     delete [] T;
-  }
   
+  }
+
   MPISaveWisdom(group.active);
   MPI_Finalize();
   

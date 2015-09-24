@@ -316,7 +316,7 @@ private:
   mcrfft1d *yBackwards;
   Complex *f;
   //bool inplace; // we stick with out-of-place transforms for now
-  unsigned int rdist;
+  //unsigned int rdist;
 protected:
   mpitranspose<Complex> *T;
 public:
@@ -331,7 +331,11 @@ public:
     xForwards=new mfft1d(dc.X,-1,dc.y,dc.y,1);
     xBackwards=new mfft1d(dc.X,1,dc.y,dc.y,1);
     
-    yForwards=new mrcfft1d(dr.Y,dr.x,1,rdist,f,g);
+    yForwards=new mrcfft1d(dr.Y, // n
+			   dr.x, // M
+			   1,    // stride
+			   dr.Y,// dist
+			   f,g);
     yBackwards=new mcrfft1d(dr.Y,dc.x,1,dc.Y,g,f);
   }
 

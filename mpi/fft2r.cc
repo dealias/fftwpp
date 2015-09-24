@@ -13,7 +13,7 @@ inline void init(double *f, split d)
   for(unsigned int i=0; i < d.x; ++i) {
     unsigned int ii=d.x0+i;
     for(unsigned int j=0; j < d.Y; j++) {
-      f[c++]=ii+j;
+      f[c++]=j*j+0.1*ii;
     }
   }
 }
@@ -120,9 +120,10 @@ int main(int argc, char* argv[])
     split dg(mx,myp,group.active);
   
     double *f=doubleAlign(df.n);
+    Complex *g=ComplexAlign(dg.n);
 
     // Create instance of FFT
-    //fft2dMPI fft(d,f);
+    rcfft2dMPI rcfft(df,dg,f,g);
 
     if(!quiet && group.rank == 0)
       cout << "Initialized after " << seconds() << " seconds." << endl;    
@@ -137,41 +138,35 @@ int main(int argc, char* argv[])
 
       size_t align=sizeof(Complex);
       array2<double> flocal(mx,my,align);
-      /*
-      fft2d localForward(-1,flocal);
-      fft2d localBackward(-1,flocal);
-      accumulate_split(f, flocal(), d, 1, false, group.active);
-      */
+      array2<Complex> glocal(mx,myp,align);
+      rcfft2d localForward(mx, my, flocal(), glocal());
+      crfft2d localBackward(mx, my, glocal(), flocal());
+
+      accumulate_split(f, flocal(), df, 1, false, group.active);
 
       if(!quiet && main) {
 	cout << "\nAccumulated input:\n" << flocal << endl;
       }
 
-      /*
-      fft.Forwards(f);
-      */
+      rcfft.Forwards(f,g);
 
-      /*
       if(!quiet && mx*my < outlimit) {
       	if(main) cout << "\nDistributed output:" << endl;
-      	show(f,mx,d.y,group.active);
+      	show(g,mx,dg.y,group.active);
       }
-      */
 
-      /*
-      array2<Complex> faccumulated(mx,my,align);
-      accumulate_split(f, faccumulated(), d, 1, true, group.active);
-      */
+      array2<Complex> gaccumulated(mx,myp,align);
+      accumulate_split(g, gaccumulated(), dg, 1, true, group.active);
 
-      /*
+
       MPI_Barrier(group.active);
       if(main) {
-	localForward.fft(flocal);
+	localForward.fft(flocal,glocal);
 	if(!quiet) {
-	  cout << "\nLocal output:\n" << flocal << endl;
-	  cout << "\nAccumulated output:\n" << faccumulated << endl;
+	  cout << "\nLocal output:\n" << glocal << endl;
+	  cout << "\nAccumulated output:\n" << gaccumulated << endl;
 	}
-	double maxerr = relmaxerror(flocal(),faccumulated(),d.X,d.Y);
+	double maxerr = relmaxerror(glocal(),gaccumulated(),dg.X,dg.Y);
 	
 	cout << "max error: " << maxerr << endl;
 	if(maxerr > 1e-10) {
@@ -179,7 +174,7 @@ int main(int argc, char* argv[])
 	  retval += 1;
 	}
       }
-      */
+
 
       /*
       fft.Backwards(f);
