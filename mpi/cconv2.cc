@@ -6,7 +6,7 @@ using namespace std;
 using namespace fftwpp;
 
 // Number of iterations.
-unsigned int N0=10000000;
+unsigned int N0=1000000;
 unsigned int N=0;
 unsigned int mx=4;
 unsigned int my=4;

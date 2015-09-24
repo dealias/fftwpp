@@ -6,9 +6,10 @@ using namespace std;
 using namespace fftwpp;
 
 // Number of iterations.
-unsigned int N0=10000000;
+unsigned int N0=1000000;
 unsigned int N=0;
-
+int divisor=0; // Test for best block divisor
+int alltoall=-1; // Test for best alltoall routine
 
 void init(Complex **F,
 	  unsigned int X, unsigned int Y, unsigned int Z,
@@ -89,14 +90,17 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"htqA:M:N:m:x:y:z:n:T:");
+    int c = getopt(argc,argv,"htqa:A:M:N:m:x:y:z:n:T:");
     if (c == -1) break;
                 
     switch (c) {
       case 0:
         break;
       case 'A':
-        A=atoi(optarg);
+        alltoall=atoi(optarg);
+        break;
+      case 'a':
+        divisor=atoi(optarg);
         break;
       case 'N':
         N=atoi(optarg);
@@ -193,7 +197,10 @@ int main(int argc, char* argv[])
       F[a]=ComplexAlign(d.n);
     }
 
-    ImplicitConvolution3MPI C(mx,my,mz,d,A);
+    convolveOptions options;
+    options.mpi.a=divisor;
+    options.mpi.alltoall=alltoall;
+    ImplicitConvolution3MPI C(mx,my,mz,d,A,1,options);
 
     if(test) {
       init(F,d,A);
