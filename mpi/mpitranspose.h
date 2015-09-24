@@ -426,13 +426,13 @@ public:
       int end;
       double start=rank == 0 ? totalseconds() : 0.0;
       transpose(data,true,false);
-      if(globalrank == 0) {
+      if(rank == 0) {
         double t=totalseconds();
         double seconds=t-start;
         sum += seconds;
         end=t > stop;
       }
-      MPI_Bcast(&end,1,MPI_INT,0,global);
+      MPI_Bcast(&end,1,MPI_INT,0,communicator);
       if(end)
         break;
     }

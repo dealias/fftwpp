@@ -55,7 +55,7 @@ def main(argv):
             Zlist = [2,random.randint(6,32)]
             Plist = [2,random.randint(4,8)]
             
-        timeout = 5
+        timeout = 60
 
         ntests = 0
         ntests = len(Xlist) * len(Ylist) * len(Zlist) * len(Plist)
