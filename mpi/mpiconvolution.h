@@ -136,8 +136,10 @@ protected:
   mpitranspose<Complex> *T;
 public:  
   void inittranspose(const mpiOptions& mpioptions) {
-    T=new mpitranspose<Complex>(d.X,d.y,d.x,d.Y,d.z,u3,NULL,
-                                d.xy.communicator,mpioptions,d.communicator);
+    if(d.y < d.Y) {
+      T=new mpitranspose<Complex>(d.X,d.y,d.x,d.Y,d.z,u3,NULL,
+                                  d.xy.communicator,mpioptions,d.communicator);
+    }
   }
 
   void initMPI(const convolveOptions& options) {
@@ -181,7 +183,8 @@ public:
   }
   
   virtual ~ImplicitConvolution3MPI() {
-    delete T;
+    if(d.y < d.Y)
+      delete T;
   }
   
   // F is a pointer to A distinct data blocks each of size

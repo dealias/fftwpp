@@ -65,33 +65,43 @@ void ImplicitConvolution3MPI::convolve(Complex **F, multiplier *pmult,
     Complex *f=F[a]+offset;
     Complex *u=U3[a];
     xfftpad->expand(f,u);
-    if(a > 0) T->wait0();
+    if(a > 0 && d.y < d.Y) T->wait0();
     xfftpad->Backwards->fft(f);
-    if(a > 0) T->wait2();
-    T->transpose1(f,false,true);
+    if(d.y < d.Y) {
+      if(a > 0) T->wait2();
+      T->transpose1(f,false,true);
+    }
     xfftpad->Backwards->fft(u);
-    T->wait1();
-    T->transpose2(u,false,true);
+    if(d.y < d.Y) {
+      T->wait1();
+      T->transpose2(u,false,true);
+    }
   }
       
   unsigned int stride=d.Y*d.z;
   unsigned int size=d.x*stride;
     
   subconvolution(F,pmult,offset,size+offset,stride);
-  T->wait0();
-  T->wait2();
-  T->transpose1(F[0]+offset,true,false);
+  if(d.y < d.Y) {
+    T->wait0();
+    T->wait2();
+    T->transpose1(F[0]+offset,true,false);
+  }
   subconvolution(U3,pmult,0,size,stride);
-  T->wait1();
-  for(unsigned int b=1; b < B; ++b)
-    T->transpose(F[b]+offset,true,false);
+  if(d.y < d.Y) {
+    T->wait1();
+    for(unsigned int b=1; b < B; ++b)
+      T->transpose(F[b]+offset,true,false);
+  }
     
   for(unsigned int b=0; b < B; ++b) {
     Complex *f=F[b]+offset;
     Complex *u=U3[b];
-    T->transpose1(u,true,false);
+    if(d.y < d.Y)
+      T->transpose1(u,true,false);
     xfftpad->Forwards->fft(f);
-    T->wait1();
+    if(d.y < d.Y)
+      T->wait1();
     xfftpad->Forwards->fft(u);
     xfftpad->reduce(f,u);
   }
@@ -110,12 +120,13 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
 
   MPI_Status stat;
   int rank,size;
-  unsigned int extra=!xcompact;
+  unsigned int xextra=!xcompact;
+  unsigned int yextra=!ycompact;
   unsigned int yorigin=my-ycompact;
-  unsigned int nx=d.X-extra;
+  unsigned int nx=d.X-xextra;
   unsigned int y0=d.y0;
   unsigned int dy=d.y;
-  unsigned int j0=y0 == 0 ? extra : 0;
+  unsigned int j0=y0 == 0 ? yextra : 0;
   unsigned int start=(yorigin > y0) ? yorigin-y0 : 0;
   
   if(d.XYplane == NULL) {
@@ -142,7 +153,7 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
       for(unsigned int j=j0; j < dy; ++j)
         d.reflect[j]=process[2*yorigin-y0-j];
       for(int p=1; p < size; ++p) {
-        for(unsigned int j=indices[p].start == 0 ? extra : 0; j < indices[p].n;
+        for(unsigned int j=indices[p].start == 0 ? yextra : 0; j < indices[p].n;
             ++j)
           MPI_Send(process+2*yorigin-indices[p].start-j,1,MPI_INT,p,j,
                    *d.XYplane);
@@ -168,7 +179,7 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
     else {
       int offset=2*yorigin-y0;
       if(y0+j != yorigin) {
-        unsigned int even=1+xcompact-(J % 2);
+        unsigned int even=1+ycompact-(J % 2);
         for(unsigned int i=0; i < nx; ++i)
           f[stride*(i-even)+d.z*(offset-j)]=u[i];
       } else {
@@ -186,7 +197,7 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
     if(J != rank) {
       MPI_Recv(u,2*nx,MPI_DOUBLE,J,0,*d.XYplane,&stat);
       for(unsigned int i=0; i < nx; ++i)
-        f[stride*(i+extra)+d.z*j]=u[i];
+        f[stride*(i+xextra)+d.z*j]=u[i];
     }
   }
   
