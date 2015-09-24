@@ -43,8 +43,8 @@ def main(argv):
         retval += 1
     else:
         Xlist = [1,2,3,4,5,random.randint(6,64)]
-        Ylist = [1,2,3,4,5,random.randint(6,64)]
-        Xlist = [1,2,3,4,5,random.randint(6,64)]
+#        Ylist = [1,2,3,4,5,random.randint(6,64)]
+        Ylist = [2,3,4,5,random.randint(6,64)] # Temporary: restrict Y > 1.
         Zlist = [1,2,3,4,5,random.randint(6,64)]
         Plist = [1,2,3,4,random.randint(6,10)]
 
@@ -55,7 +55,7 @@ def main(argv):
             Zlist = [2,random.randint(6,32)]
             Plist = [2,random.randint(4,8)]
             
-        timeout = 5
+        timeout = 60
 
         ntests = 0
         ntests = len(Xlist) * len(Ylist) * len(Zlist) * len(Plist)

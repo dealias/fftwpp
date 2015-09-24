@@ -136,18 +136,22 @@ protected:
   mpitranspose<Complex> *T;
 public:  
   void inittranspose(const mpiOptions& mpioptions) {
-    T=new mpitranspose<Complex>(d.X,d.y,d.x,d.Y,d.z,u3,NULL,
-                                d.xy.communicator,mpioptions,d.communicator);
+    if(d.y < d.Y) {
+      T=new mpitranspose<Complex>(d.X,d.y,d.x,d.Y,d.z,u3,NULL,
+                                  d.xy.communicator,mpioptions,d.communicator);
+    }
   }
 
-  void initMPI() {
+  void initMPI(const convolveOptions& options) {
     if(d.z < d.Z) {
       yzconvolve=new ImplicitConvolution2*[threads];
       for(unsigned int t=0; t < threads; ++t)
         yzconvolve[t]=new ImplicitConvolution2MPI(my,mz,d.yz,
                                                   u1+t*mz*A*innerthreads,
                                                   u2+t*d.n2*A,A,B,
-                                                  innerthreads,d.communicator);
+                                                  convolveOptions(options,
+                                                                  innerthreads),
+                                                  d.communicator);
       initpointers3(U3,u3,d.n);
     }
   }
@@ -165,7 +169,7 @@ public:
     ImplicitConvolution3(mx,my,mz,u1,u2,u3,A,B,
                          convolveOptions(options,d.y,d.z,d.n2,d.n)), d(d) {
     inittranspose(options.mpi);
-    initMPI();
+    initMPI(options);
   }
 
   ImplicitConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
@@ -175,11 +179,12 @@ public:
     ImplicitConvolution3(mx,my,mz,A,B,
                          convolveOptions(options,d.y,d.z,d.n2,d.n)), d(d) {
     inittranspose(options.mpi);
-    initMPI();
+    initMPI(options);
   }
   
   virtual ~ImplicitConvolution3MPI() {
-    delete T;
+    if(d.y < d.Y)
+      delete T;
   }
   
   // F is a pointer to A distinct data blocks each of size
@@ -219,7 +224,7 @@ public:
     }
   }
 
-  void initMPI(Complex *f) {
+  void initMPI(Complex *f, const convolveOptions& options) {
     if(d.z < d.Z) {
       yzconvolve=new ImplicitHConvolution2*[threads];
       for(unsigned int t=0; t < threads; ++t)
@@ -227,8 +232,7 @@ public:
           new ImplicitHConvolution2MPI(my,mz,d.yz,du.yz,f,
                                        u1+t*(mz/2+1)*A*innerthreads,
                                        u2+t*du.n2*A,A,B,
-                                       convolveOptions(innerthreads,
-                                                       ycompact,zcompact));
+                                       convolveOptions(options,innerthreads));
       initpointers3(U3,u3,du.n);
     }
   }
@@ -247,7 +251,7 @@ public:
     ImplicitHConvolution3(mx,my,mz,u1,u2,u3,A,B,
                           convolveOptions(options,d.y,d.z,du.n2,du.n)), 
     d(d), du(du), global(global ? global : d.communicator) { 
-    initMPI(f);
+    initMPI(f,options);
     inittranspose(f,options.mpi);
   }
 
@@ -259,7 +263,7 @@ public:
     ImplicitHConvolution3(mx,my,mz,A,B,
                           convolveOptions(options,d.y,d.z,du.n2,du.n)),
     d(d), du(du), global(global ? global : d.communicator) {
-    initMPI(f);
+    initMPI(f,options);
     inittranspose(f,options.mpi);
   }
   

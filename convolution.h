@@ -81,7 +81,7 @@ struct convolveOptions {
   unsigned int stride2,stride3;    // Used internally by the MPI interface.
   mpiOptions mpi;
   
-  convolveOptions(unsigned int threads=fftw::maxthreads, 
+  convolveOptions(unsigned int threads=fftw::maxthreads,
                   bool xcompact=true, bool ycompact=true, bool zcompact=true,
                   unsigned int nx=0, unsigned int ny=0, unsigned int nz=0,
                   unsigned int stride2=0, unsigned int stride3=0) :
@@ -89,17 +89,22 @@ struct convolveOptions {
     xcompact(xcompact), ycompact(ycompact), zcompact(zcompact),
     nx(nx), ny(ny), nz(nz), stride2(stride2), stride3(stride3) {}
 
-  convolveOptions(const convolveOptions &options, 
+  convolveOptions(const convolveOptions& options, unsigned int threads) :
+    threads(threads), xcompact(options.xcompact), ycompact(options.ycompact),
+    zcompact(options.zcompact), mpi(options.mpi) {}
+    
+  convolveOptions(const convolveOptions& options,
                   unsigned int nx, unsigned int ny, unsigned int stride2) :
     threads(options.threads), xcompact(options.xcompact),
-    ycompact(options.ycompact), nx(nx), ny(ny), stride2(stride2) {}
+    ycompact(options.ycompact), nx(nx), ny(ny), stride2(stride2),
+    mpi(options.mpi) {}
     
-  convolveOptions(const convolveOptions &options, 
+  convolveOptions(const convolveOptions& options,
                   unsigned int ny, unsigned int nz,
                   unsigned int stride2, unsigned int stride3) :
     threads(options.threads), xcompact(options.xcompact),
     ycompact(options.ycompact), zcompact(options.zcompact),
-    ny(ny), nz(nz), stride2(stride2), stride3(stride3) {}
+    ny(ny), nz(nz), stride2(stride2), stride3(stride3), mpi(options.mpi) {}
 };
     
 static const convolveOptions defaultconvolveOptions;
