@@ -44,7 +44,7 @@ MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
 vpath %.cc ../
 
 FFTW=fftw++
-FILES=cconv2 conv2 cconv3 conv3 fft2 fft3 transpose \
+FILES=cconv2 conv2 cconv3 conv3 fft2 fft3 fft2r transpose \
 	accumulate accumulateyz accumulatexy
 UTILS=$(FFTW) mpiutils wisdom-api
 MPITRANSPOSE=$(UTILS) mpitranspose
@@ -73,7 +73,7 @@ conv3: conv3.o $(MPICONVOLUTION:=.o)
 fft2: fft2.o $(MPIFFT:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
-rcfft2: rcfft2.o $(MPIFFT:=.o)
+fft2r: fft2r.o $(MPIFFT:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
 fft3: fft3.o $(MPIFFT:=.o)

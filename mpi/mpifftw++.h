@@ -288,15 +288,17 @@ public:
   void Normalize(Complex *f);
 };
 
-#if 0
 // rcfft2dMPI:
 // Real-to-complex and complex-to-real in-place and out-of-place
 // distributed FFTs.
 //
+// The input has size mx x my, distributed in the x-direction.
+// The output has size mx x (my / 2 + 1), distributed in the y-direction. 
 // Basic interface:
 // Forwards(double *f, Complex * g);
 // Backwards(Complex *g, double *f);
-// 
+//
+// TODO:
 // Shift Fourier origin from (0,0) to (X/2,0):
 // Forwards0(double *f, Complex * g);
 // Backwards0(Complex *g, double *f);
@@ -313,32 +315,33 @@ private:
   mrcfft1d *yForwards;
   mcrfft1d *yBackwards;
   Complex *f;
-  bool inplace;
+  //bool inplace; // we stick with out-of-place transforms for now
   unsigned int rdist;
 protected:
   mpitranspose<Complex> *T;
 public:
-  void inittranspose(Complex* out) {
+   rcfft2dMPI(const split& dr, const split& dc,
+	      double *f, Complex *g) : dr(dr), dc(dc) {
+    mx=dr.X;
+    my=dc.Y;
+    inittranspose(g);
+    
+    //rdist=inplace ? dr.X+2 : dr.X;
+
+    xForwards=new mfft1d(dc.X,-1,dc.y,dc.y,1);
+    xBackwards=new mfft1d(dc.X,1,dc.y,dc.y,1);
+    
+    yForwards=new mrcfft1d(dr.Y,dr.x,1,rdist,f,g);
+    yBackwards=new mcrfft1d(dr.Y,dc.x,1,dc.Y,g,f);
+  }
+
+ void inittranspose(Complex* out) {
     int size;
     MPI_Comm_size(dc.communicator,&size);
 
     T=new mpitranspose<Complex>(dc.X,dc.y,dc.x,dc.Y,1,out,dc.communicator);
   }
-  
-  rcfft2dMPI(const split& dr, const split& dc,
-	     double *f, Complex *g) : dr(dr), dc(dc), inplace((double*) g == f){
-    mx=dr.X;
-    my=dc.Y;
-    inittranspose(g);
-    
-    rdist=inplace ? dr.X+2 : dr.X;
-
-    xForwards=new mfft1d(dc.X,-1,dc.y,dc.y,1);
-    xBackwards=new mfft1d(dc.X,1,dc.y,dc.y,1);
-    yForwards=new mrcfft1d(dr.Y,dr.x,1,rdist,f,g);
-    yBackwards=new mcrfft1d(dr.Y,dc.x,1,dc.Y,g,f);
-  }
-  
+   
   virtual ~rcfft2dMPI() {}
 
   void Forwards(double *f, Complex * g);
@@ -351,7 +354,6 @@ public:
   void Normalize(double *f);
   //  void BackwardsNormalized(Complex *f);
 };
-#endif
 
   
 } // end namespace fftwpp

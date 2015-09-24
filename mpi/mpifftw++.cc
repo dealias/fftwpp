@@ -102,7 +102,6 @@ void fft3dMPI::Normalize(Complex *f)
     f[i] *= denom;
 }
 
-#if 0
 void rcfft2dMPI::Forwards(double *f, Complex *g)
 {
   yForwards->fft(f,g);
@@ -110,55 +109,55 @@ void rcfft2dMPI::Forwards(double *f, Complex *g)
   xForwards->fft(g);
 }
 
-void rcfft2dMPI::Forwards0(double *f, Complex *g)
-{
-  Shift(f);
-  Forwards(f,g);
-}
+// void rcfft2dMPI::Forwards0(double *f, Complex *g)
+// {
+//   Shift(f);
+//   Forwards(f,g);
+// }
 
-void rcfft2dMPI::Backwards(Complex *g, double *f)
-{
-  xBackwards->fft(g);
-  T->transpose(g,true,false);
-  yBackwards->fft(g,f);
-}
+// void rcfft2dMPI::Backwards(Complex *g, double *f)
+// {
+//   xBackwards->fft(g);
+//   T->transpose(g,true,false);
+//   yBackwards->fft(g,f);
+// }
 
-void rcfft2dMPI::Backwards0(Complex *g, double *f)
-{
-  Backwards(g,f);
-  Shift(f);
-}
+// void rcfft2dMPI::Backwards0(Complex *g, double *f)
+// {
+//   Backwards(g,f);
+//   Shift(f);
+// }
 
-void rcfft2dMPI::BackwardsNormalized(Complex *g, double *f)
-{
-  Backwards(g,f);
-  Normalize(f);
-}
+// void rcfft2dMPI::BackwardsNormalized(Complex *g, double *f)
+// {
+//   Backwards(g,f);
+//   Normalize(f);
+// }
 
-void rcfft2dMPI::Backwards0Normalized(Complex *g, double *f) 
-{
-  Backwards0(g,f);
-  Normalize(f);
-}
+// void rcfft2dMPI::Backwards0Normalized(Complex *g, double *f) 
+// {
+//   Backwards0(g,f);
+//   Normalize(f);
+// }
 
-void rcfft2dMPI::Normalize(double *f)
-{
-  double norm=1.0/(dr.X*dr.Y);
-  for(unsigned int i=0; i < dr.x; ++i)  {
-    double *fi=&f[i*rdist];
-    for(unsigned int j=0; j < dr.Y; ++j)
-      fi[j] *= norm;
-  }
-}
-void rcfft2dMPI::Shift(double *f)
-{
-  // Shift Fourier origin:
-  for(unsigned int i=0; i < dr.x; i += 2)  {
-    double *fi=&f[i*rdist];
-    for(unsigned int j=0; j < dr.Y; ++j)
-      fi[j] *= -1;
-  }
-}
-#endif
+// void rcfft2dMPI::Normalize(double *f)
+// {
+//   double norm=1.0/(dr.X*dr.Y);
+//   for(unsigned int i=0; i < dr.x; ++i)  {
+//     double *fi=&f[i*rdist];
+//     for(unsigned int j=0; j < dr.Y; ++j)
+//       fi[j] *= norm;
+//   }
+// }
+
+// void rcfft2dMPI::Shift(double *f)
+// {
+//   // Shift Fourier origin:
+//   for(unsigned int i=0; i < dr.x; i += 2)  {
+//     double *fi=&f[i*rdist];
+//     for(unsigned int j=0; j < dr.Y; ++j)
+//       fi[j] *= -1;
+//   }
+// }
 
 } // End of namespace fftwpp
