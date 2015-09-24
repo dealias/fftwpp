@@ -7,7 +7,7 @@ import os.path
 import getopt
 
 sys.stdin.close()
-os.close(0);
+os.close(0)
 
 def main(argv):
     retval = 0

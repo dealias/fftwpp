@@ -5,7 +5,7 @@ import sys
 import os
 
 sys.stdin.close()
-os.close(0);
+os.close(0)
 
 def waitandkill(proc, timeout):
     if(timeout == 0):

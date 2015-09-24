@@ -7,9 +7,6 @@ import getopt
 import os.path
 from testutils import *
 
-sys.stdin.close()
-os.close(0);
-
 pname = "fft3"
 timeout = 60 # cutoff time in seconds
 

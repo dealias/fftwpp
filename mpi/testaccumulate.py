@@ -7,9 +7,6 @@ import os.path
 
 from testutils import *
 
-sys.stdin.close()
-os.close(0);
-
 def main(argv):
 
     usage = "Usage:\n"\

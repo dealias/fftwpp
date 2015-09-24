@@ -7,7 +7,7 @@ import getopt
 import os.path
 
 sys.stdin.close()
-os.close(0);
+os.close(0)
 
 def main(argv):
     retval = 0
@@ -75,13 +75,19 @@ def main(argv):
             out, err = proc.communicate() # capture output
             if (prc == 0): # did the process succeed?
                 msg = "\tpass"
-                print msg
+                try:
+                    print msg
+                except:
+                    pass
                 log = open(logfile, 'a')
                 log.write(msg + "\n")
                 log.close()
             else:
                 msg = "\tFAILED!"
-                print msg
+                try:
+                    print msg
+                except:
+                    pass
                 log = open(logfile, 'a')
                 log.write(msg + "\n")
                 log.write("stdout:\n" + out + "\n")

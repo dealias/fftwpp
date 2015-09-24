@@ -2,15 +2,11 @@
 
 import sys # so that we can return a value at the end.
 import random # for randum number generators
-import os.path
 import time
 import getopt
-
+import os.path
 from testutils import *
 from math import sqrt
-
-sys.stdin.close()
-os.close(0);
 
 def main(argv):
     retval = 0
