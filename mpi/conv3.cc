@@ -128,7 +128,8 @@ int main(int argc, char* argv[])
   unsigned int ny=2*my-ycompact;
   unsigned int nz=mz+!zcompact;
     
-  MPIgroup group(MPI_COMM_WORLD,ny,nz);
+  // Pencil mode requires ny >= nz.
+  MPIgroup group(MPI_COMM_WORLD,ny,nz,ny >= nz);
   MPILoadWisdom(group.active);
   
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)

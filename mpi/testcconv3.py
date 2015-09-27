@@ -42,15 +42,14 @@ def main(argv):
         retval += 1
     else:
         Xlist = [1,2,3,4,5,random.randint(6,64)]
-#        Ylist = [1,2,3,4,5,random.randint(6,64)]
-        Ylist = [2,3,4,5,random.randint(6,64)] # Temporary: restrict Y > 1.
+        Ylist = [1,2,3,4,5,random.randint(6,64)]
+#        Ylist = [2,3,4,5,random.randint(6,64)] # Temporary: restrict Y > 1.
         Zlist = [1,2,3,4,5,random.randint(6,64)]
         Plist = [1,2,3,4,random.randint(6,10)]
 
         if(shortrun):
             Xlist = [2,random.randint(6,32)]
             Ylist = [2,random.randint(6,32)]
-            Xlist = [2,random.randint(6,32)]
             Zlist = [2,random.randint(6,32)]
             Plist = [2,random.randint(4,8)]
             
