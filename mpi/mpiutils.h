@@ -42,9 +42,12 @@ void accumulatex(const ftype *part, ftype *whole,
       unsigned int dims[6];
       MPI_Recv(&dims,6,MPI_UNSIGNED,p,0,communicator,&stat);
 
-      unsigned int X=dims[0], Y=dims[1];
-      unsigned int x0=dims[2], y0=dims[3];
-      unsigned int x=dims[4], y=dims[5];
+//      unsigned int X=dims[0];
+      unsigned int Y=dims[1];
+//      unsigned int x0=dims[2];
+//      unsigned int y0=dims[3];
+//      unsigned int x=dims[4];
+//      unsigned int y=dims[5];
       unsigned int n=Z*x*Y;
       if(n > 0) {
         ftype *C=new ftype[n];
@@ -108,9 +111,12 @@ void accumulatey(const ftype *part, ftype *whole,
       unsigned int dims[6];
       MPI_Recv(&dims,6,MPI_UNSIGNED,p,0,communicator,&stat);
 
-      unsigned int X=dims[0], Y=dims[1];
-      unsigned int x0=dims[2], y0=dims[3];
-      unsigned int x=dims[4], y=dims[5];
+//      unsigned int X=dims[0];
+      unsigned int Y=dims[1];
+//      unsigned int x0=dims[2];
+      unsigned int y0=dims[3];
+//      unsigned int x=dims[4];
+      unsigned int y=dims[5];
       unsigned int n=Z*X*y;
       if(n > 0) {
         ftype *C=new ftype[n];
