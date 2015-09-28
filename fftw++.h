@@ -241,6 +241,7 @@ public:
   static unsigned int maxthreads;
   static double testseconds;
   static const char *WisdomName;
+  static size_t WisdomLength;
   static void (*beforePlanner)();
   static void (*afterPlanner)();
   
