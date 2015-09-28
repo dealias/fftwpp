@@ -19,6 +19,139 @@ void show(ftype *f, unsigned int, unsigned int ny,
 
 // Copy an MPI-distributed array into an array on rank 0.
 template<class ftype>
+void accumulatex(const ftype *part, ftype *whole,
+		 const unsigned int X, const unsigned int Y,
+		 const unsigned int x0, const unsigned int y0,
+		 const unsigned int x, const unsigned int y,
+		 const unsigned int Z,
+		 const MPI_Comm& communicator)
+{
+  MPI_Status stat;
+  int size, rank;
+  MPI_Comm_size(communicator,&size);
+  MPI_Comm_rank(communicator,&rank);
+
+  if(rank == 0) {
+    // First copy rank 0's part into the whole
+    int count=x*Z;
+    int length=Y;
+    int stride=Y;
+    copyfromblock(part,whole,count,length,stride);
+      
+    for(int p=1; p < size; ++p) {
+      unsigned int dims[6];
+      MPI_Recv(&dims,6,MPI_UNSIGNED,p,0,communicator,&stat);
+
+      unsigned int X=dims[0], Y=dims[1];
+      unsigned int x0=dims[2], y0=dims[3];
+      unsigned int x=dims[4], y=dims[5];
+      unsigned int n=Z*x*Y;
+      if(n > 0) {
+        ftype *C=new ftype[n];
+        MPI_Recv(C,sizeof(ftype)*n,MPI_BYTE,p,0,communicator,&stat);
+	int offset=Z*x0*Y;
+	int count=x*Z;
+	int length=Y;
+	int stride=Y;
+	copyfromblock(C,whole+offset,count,length,stride);
+	delete [] C;
+      }
+    }
+  } else {
+    unsigned int dims[]={X,Y,x0,y0,x,y};
+    MPI_Send(&dims,6,MPI_UNSIGNED,0,0,communicator);
+    unsigned int n=Z*x*Y;
+    if(n > 0)
+      MPI_Send((ftype *) part,n*sizeof(ftype),MPI_BYTE,0,0,communicator);
+  }
+}
+
+template<class ftype>
+void accumulatex(const ftype *part,
+		 ftype *whole,
+		 const split splitx,
+		 const unsigned int Z,
+		 const MPI_Comm& communicator)
+{
+  unsigned int X=splitx.X;
+  unsigned int Y=splitx.Y;
+  unsigned int x0=splitx.x0;
+  unsigned int y0=splitx.y0;
+  unsigned int x=splitx.x;
+  unsigned int y=splitx.y;
+
+  accumulatex(part,whole,X,Y,x0,y0,x,y,Z,communicator);
+}
+
+// Copy an MPI-distributed array into an array on rank 0.
+template<class ftype>
+void accumulatey(const ftype *part, ftype *whole,
+		 const unsigned int X, const unsigned int Y,
+		 const unsigned int x0, const unsigned int y0,
+		 const unsigned int x, const unsigned int y,
+		 const unsigned int Z,
+		 const MPI_Comm& communicator)
+{
+  MPI_Status stat;
+  int size, rank;
+  MPI_Comm_size(communicator,&size);
+  MPI_Comm_rank(communicator,&rank);
+
+  if(rank == 0) {
+    // First copy rank 0's part into the whole
+    int count=X;
+    int length=y*Z;
+    int stride=Y*Z;
+    copyfromblock(part,whole,count,length,stride);
+      
+    for(int p=1; p < size; ++p) {
+      unsigned int dims[6];
+      MPI_Recv(&dims,6,MPI_UNSIGNED,p,0,communicator,&stat);
+
+      unsigned int X=dims[0], Y=dims[1];
+      unsigned int x0=dims[2], y0=dims[3];
+      unsigned int x=dims[4], y=dims[5];
+      unsigned int n=Z*X*y;
+      if(n > 0) {
+        ftype *C=new ftype[n];
+        MPI_Recv(C,sizeof(ftype)*n,MPI_BYTE,p,0,communicator,&stat);
+	int offset=y0*Z;
+	int count=X;
+	int length=y*Z;
+	int stride=Y*Z;
+	copyfromblock(C,whole+offset,count,length,stride);
+	delete [] C;
+      }
+    }
+  } else {
+    unsigned int dims[]={X,Y,x0,y0,x,y};
+    MPI_Send(&dims,6,MPI_UNSIGNED,0,0,communicator);
+    unsigned int n=Z*X*y;
+    if(n > 0)
+      MPI_Send((ftype *) part,n*sizeof(ftype),MPI_BYTE,0,0,communicator);
+  }
+}
+
+template<class ftype>
+void accumulatey(const ftype *part,
+		 ftype *whole,
+		 const split splitx,
+		 const unsigned int Z,
+		 const MPI_Comm& communicator)
+{
+  unsigned int X=splitx.X;
+  unsigned int Y=splitx.Y;
+  unsigned int x0=splitx.x0;
+  unsigned int y0=splitx.y0;
+  unsigned int x=splitx.x;
+  unsigned int y=splitx.y;
+
+  accumulatey(part,whole,X,Y,x0,y0,x,y,Z,communicator);
+}
+
+
+// Copy an MPI-distributed array into an array on rank 0.
+template<class ftype>
 void accumulate_split(const ftype *part, ftype *whole,
 		      const unsigned int X, const unsigned int Y,
 		      const unsigned int x0, const unsigned int y0,

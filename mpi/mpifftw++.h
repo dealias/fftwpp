@@ -203,11 +203,19 @@ public:
   fft2dMPI(const split& d, Complex *f) : d(d) {
     inittranspose(f);
 
-    xForwards=new mfft1d(d.X,-1,d.y,d.y,1,f,f); 
-    xBackwards=new mfft1d(d.X,1,d.y,d.y,1,f,f);
- 
-    yForwards=new mfft1d(d.Y,-1,d.x,1,d.Y,f,f);
-    yBackwards=new mfft1d(d.Y,1,d.x,1,d.Y,f,f);
+    unsigned int n=d.X;
+    unsigned int M=d.y;
+    unsigned int stride=d.y;
+    unsigned int dist=1;
+    xForwards=new mfft1d(n,-1,M,stride,dist,f,f);
+    xBackwards=new mfft1d(n,1,M,stride,dist,f,f);
+
+    n=d.Y;
+    M=d.x;
+    stride=1;
+    dist=d.Y;
+    yForwards=new mfft1d(n,-1,M,stride,dist,f,f);
+    yBackwards=new mfft1d(n,1,M,stride,dist,f,f);
   }
   
   virtual ~fft2dMPI() {

@@ -71,7 +71,8 @@ void fft2dMPI::Forwards(Complex *f)
 void fft2dMPI::Backwards(Complex *f)
 {
   xBackwards->fft(f);
-  T->transpose(f,false,true);
+  T->transpose(f,true,false);
+  //T->transpose(f,false,true);
   yBackwards->fft(f);
 }
 

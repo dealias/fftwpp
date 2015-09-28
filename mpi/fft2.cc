@@ -136,8 +136,8 @@ int main(int argc, char* argv[])
       size_t align=sizeof(Complex);
       array2<Complex> flocal(mx,my,align);
       fft2d localForward(-1,flocal);
-      fft2d localBackward(-1,flocal);
-      accumulate_split(f, flocal(), d, 1, false, group.active);
+      fft2d localBackward(1,flocal);
+      accumulatex(f, flocal(), d, 1, group.active);
 
       if(!quiet && main) {
 	cout << "\nAccumulated input:\n" << flocal << endl;
@@ -151,14 +151,14 @@ int main(int argc, char* argv[])
       }
       
       array2<Complex> faccumulated(mx,my,align);
-      accumulate_split(f, faccumulated(), d, 1, true, group.active);
+      accumulatey(f, faccumulated(), d, 1, group.active);
 
       MPI_Barrier(group.active);
       if(main) {
 	localForward.fft(flocal);
 	if(!quiet) {
-	  cout << "\nLocal output:\n" << flocal << endl;
 	  cout << "\nAccumulated output:\n" << faccumulated << endl;
+	  cout << "\nLocal output:\n" << flocal << endl;
 	}
 	double maxerr = relmaxerror(flocal(),faccumulated(),d.X,d.Y);
 	
@@ -173,17 +173,17 @@ int main(int argc, char* argv[])
       fft.Normalize(f);
 
       if(!quiet && mx*my < outlimit) {
-      	if(main) cout << "\nDistributed output:" << endl;
+      	if(main) cout << "\nDistributed inverse:" << endl;
       	show(f,d.x,my,group.active);
       }
 
-      accumulate_split(f, faccumulated(), d, 1, true, group.active);
+      accumulatex(f, faccumulated(), d, 1, group.active);
       MPI_Barrier(group.active);
       if(main) {
 	localBackward.fftNormalized(flocal);
 	if(!quiet) {
-	  cout << "\nLocal output:\n" << flocal << endl;
-	  cout << "\nAccumulated output:\n" << faccumulated << endl;
+	  cout << "\nAccumulated inverse:\n" << faccumulated << endl;
+	  cout << "\nLocal inverse:\n" << flocal << endl;
 	}
 	double maxerr = relmaxerror(flocal(),faccumulated(),d.X,d.Y);
 	
