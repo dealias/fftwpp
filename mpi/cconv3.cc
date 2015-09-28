@@ -147,8 +147,7 @@ int main(int argc, char* argv[])
     if(N < 10) N=10;
   }
 
-  // Pencil mode requires my >= mz.  
-  MPIgroup group(MPI_COMM_WORLD,my,mz,my >= mz);
+  MPIgroup group(MPI_COMM_WORLD,mx,my,mz);
   MPILoadWisdom(group.active);
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED);
   fftw::maxthreads=1;

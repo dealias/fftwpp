@@ -1,5 +1,5 @@
 Release todo:
-finish mpi transpose when P does not divide N
+Transpose work memory
 MPI speed test
 wrappers
 update documentation

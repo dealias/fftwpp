@@ -9,11 +9,11 @@ namespace fftwpp {
 void MPILoadWisdom(const MPI_Comm& active);
 void MPISaveWisdom(const MPI_Comm& active);
 
-// Distribute first over x, then (if allowpencil=true), over y.
+// Distribute first y, then (if allowpencil=true) z.
 class MPIgroup {
 public:  
   int rank,size;
-  unsigned int block;
+  unsigned int z;
   MPI_Comm active;                     // active communicator 
   MPI_Comm communicator,communicator2; // 3D transpose communicators
   
@@ -26,22 +26,24 @@ public:
     MPI_Comm_split(comm,rank < size,0,&active);
   }
   
-  MPIgroup(const MPI_Comm& comm, unsigned int x) {
+  MPIgroup(const MPI_Comm& comm, unsigned int Y) {
     init(comm);
-    unsigned int xblock=ceilquotient(x,size);
-    size=ceilquotient(x,xblock);
+    unsigned int yblock=ceilquotient(Y,size);
+    size=ceilquotient(Y,yblock);
     activate(comm);
   }
   
-  MPIgroup(const MPI_Comm& comm, unsigned int x, unsigned int y, 
-	   bool allowPencil=true) {
+  MPIgroup(const MPI_Comm& comm, unsigned int X, unsigned int Y, unsigned int Z,
+           bool allowPencil=true) {
     init(comm);
-    unsigned int xblock=ceilquotient(x,size);
-    block=allowPencil ? ceilquotient(y,size*xblock/x) : y;
-    size=ceilquotient(x,xblock)*ceilquotient(y,block);
+    unsigned int x=ceilquotient(X,size);
+    unsigned int y=ceilquotient(Y,size);
+    z=allowPencil && X*y == x*Y ? ceilquotient(Z,size*y/Y) : Z;
+    size=ceilquotient(Y,y)*ceilquotient(Z,z);
+    
     activate(comm);
     if(rank < size) {
-      int major=ceilquotient(size,x);
+      int major=ceilquotient(size,Y);
       int p=rank % major;
       int q=rank / major;
   
@@ -77,7 +79,7 @@ public:
     
     x=localdimension(X,rank,size);
     y=localdimension(Y,rank,size);
-  
+    
     x0=localstart(X,rank,size);
     y0=localstart(Y,rank,size);
     n=std::max(X*y,x*Y)*Z;
@@ -111,7 +113,7 @@ public:
     X(X), Y(Y), Z(Z), communicator(group.active),
     XYplane(NULL) {
     if(Y2 == 0) Y2=Y;
-    xy=split(X,Y,group.communicator,group.block);
+    xy=split(X,Y,group.communicator,group.z);
     yz=split(Y2,Z,group.communicator2);
     x=xy.x;
     y=xy.y;
@@ -148,7 +150,7 @@ public:
   splitxy(unsigned int X, unsigned int Y, unsigned int Z,
           const MPIgroup& group) : X(X), Y(Y), Z(Z),
 				   communicator(group.active) {
-    xy=split(X,Y,group.communicator,group.block);
+    xy=split(X,Y,group.communicator,group.z);
     yz=split(Y,Z,group.communicator2);
     x=xy.x;
     y=yz.x;

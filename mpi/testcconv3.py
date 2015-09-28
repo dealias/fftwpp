@@ -37,15 +37,17 @@ def main(argv):
     log = open(logfile, 'w')
     log.close()
 
+    start=11
+    stop=64
+
     if not os.path.isfile(pname):
         print "Error: executable", pname, "not present!"
         retval += 1
     else:
-        Xlist = [1,2,3,4,5,random.randint(6,64)]
-        Ylist = [1,2,3,4,5,random.randint(6,64)]
-#        Ylist = [2,3,4,5,random.randint(6,64)] # Temporary: restrict Y > 1.
-        Zlist = [1,2,3,4,5,random.randint(6,64)]
-        Plist = [1,2,3,4,random.randint(6,10)]
+        Xlist = [1,2,3,4,5,6,7,8,9,10,random.randint(start,stop)]
+        Ylist = [1,2,3,4,5,6,7,8,9,10,random.randint(start,stop)]
+        Zlist = [1,2,3,10,random.randint(start,stop)]
+        Plist = [8,4,3,2,random.randint(9,12),1]
 
         if(shortrun):
             Xlist = [2,random.randint(6,32)]
@@ -73,6 +75,8 @@ def main(argv):
                         args.append("-y" + str(Y))
                         args.append("-z" + str(Z))
                         args.append("-t")
+                        args.append("-A1")
+                        args.append("-a1")
                         args.append("-q")
                         rtest, cmd = runtest(pname, P, args, logfile, timeout)
                         if not rtest == 0:
