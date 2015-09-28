@@ -6,8 +6,7 @@
 
 namespace fftwpp {
 
-void MPILoadWisdom(const MPI_Comm& active);
-void MPISaveWisdom(const MPI_Comm& active, bool gather=false);
+void MPIInitWisdom(const MPI_Comm& active);
 
 // Distribute first y, then (if allowpencil=true) z.
 class MPIgroup {
@@ -24,6 +23,7 @@ public:
   
   void activate(const MPI_Comm& comm) {
     MPI_Comm_split(comm,rank < size,0,&active);
+    MPIInitWisdom(active);
   }
   
   MPIgroup(const MPI_Comm& comm, unsigned int Y) {

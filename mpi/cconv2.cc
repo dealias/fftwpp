@@ -121,7 +121,6 @@ int main(int argc, char* argv[])
   }
   
   MPIgroup group(MPI_COMM_WORLD,my);
-  MPILoadWisdom(group.active);
 
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;
@@ -221,7 +220,6 @@ int main(int argc, char* argv[])
   
   }
 
-  MPISaveWisdom(group.active);
   MPI_Finalize();
   
   return retval;

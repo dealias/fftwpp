@@ -179,6 +179,8 @@ inline void deleteAlign(T *p)
 #define FFTWdouble doubleAlign
 #define FFTWdelete deleteAlign
 
+void BeforePlanner(), AfterPlanner();
+
 inline void fftwpp_export_wisdom(void (*emitter)(char c, std::ofstream& s),
                                  std::ofstream& s)
 {
@@ -232,7 +234,6 @@ protected:
     return realsize(n,(Complex *) in,out);
   }
   
-  static unsigned int Wise;
   static const double twopi;
   
 public:
@@ -349,10 +350,6 @@ public:
   }
   
   virtual ~fftw() {
-    if(Wise > 0)
-      --Wise;
-    if(Wise == 0)
-      SaveWisdom();
     if(plan) fftw_destroy_plan(plan);
   }
   
@@ -475,8 +472,6 @@ public:
   virtual void store(bool inplace, const threaddata& data) {}
   
   threaddata Setup(Complex *in, Complex *out=NULL) {
-    if(!Wise) {LoadWisdom(); ++Wise;}
-    
     bool alloc=!in;
     if(alloc) in=ComplexAlign((doubles+1)/2);
 #ifndef NO_CHECK_ALIGN    

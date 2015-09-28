@@ -148,7 +148,6 @@ int main(int argc, char* argv[])
   }
 
   MPIgroup group(MPI_COMM_WORLD,mx,my,mz);
-  MPILoadWisdom(group.active);
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED);
   fftw::maxthreads=1;
 
@@ -303,8 +302,6 @@ int main(int argc, char* argv[])
     for(unsigned int a=0; a < A; a++)
       deleteAlign(F[a]);
     delete[] F;
-
-    MPISaveWisdom(group.active);
   }
 
   MPI_Finalize();

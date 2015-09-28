@@ -17,9 +17,8 @@ unsigned int fftw::effort=FFTW_MEASURE;
 const char *fftw::WisdomName="wisdom3.txt";
 unsigned int fftw::maxthreads=1;
 double fftw::testseconds=1.0; // Time limit for threading efficiency tests
-unsigned int fftw::Wise=0;
-void (*fftw::beforePlanner)()=0;
-void (*fftw::afterPlanner)()=0;
+void (*fftw::beforePlanner)()=BeforePlanner;
+void (*fftw::afterPlanner)()=AfterPlanner;
 
 const char *fftw::oddshift="Shift is not implemented for odd nx";
 const char *inout="constructor and call must be both in place or both out of place";
@@ -38,4 +37,18 @@ void fftw::SaveWisdom() {
   ofWisdom.close();
 }
   
+void BeforePlanner()
+{
+  static bool Wise=false;
+  if(!Wise) {
+    fftw::LoadWisdom();
+    Wise=true;
+  }
+}
+
+void AfterPlanner()
+{
+  fftw::SaveWisdom();
+}
+
 }
