@@ -74,19 +74,19 @@ void mpi_gather_wisdom(const MPI_Comm& comm_)
    about parallel I/O or process-specific wisdom, although of
    course it assumes that all the processes have identical
    performance characteristics (i.e. identical hardware). */
-void mpi_broadcast_wisdom(const MPI_Comm& comm_)
+void mpi_broadcast_wisdom(const MPI_Comm& comm)
 {
-  MPI_Comm comm;
+//  MPI_Comm comm;
   int my_pe;
   char *wis;
   size_t wislen;
 
-  MPI_Comm_dup(comm_, &comm);
+//  MPI_Comm_dup(comm_, &comm);
   MPI_Comm_rank(comm, &my_pe);
 
   if (my_pe != 0) {
     MPI_Bcast(&wislen, 1, MPI_UNSIGNED_LONG_LONG, 0, comm);
-    char wis[wislen];
+     char wis[wislen];
     MPI_Bcast(wis, wislen, MPI_CHAR, 0, comm);
     if (!fftw_import_wisdom_from_string(wis))
       MPI_Abort(comm, 1);
@@ -98,7 +98,7 @@ void mpi_broadcast_wisdom(const MPI_Comm& comm_)
     MPI_Bcast(wis, wislen, MPI_CHAR, 0, comm);
     fftw_free(wis);
   }
-  MPI_Comm_free(&comm);
+//  MPI_Comm_free(&comm);
 }
 
 }

@@ -1,24 +1,62 @@
 #include "mpifftw++.h"
+#include "unistd.h"
 
 namespace fftwpp {
 
 void mpi_broadcast_wisdom(const MPI_Comm&);
 void mpi_gather_wisdom(const MPI_Comm&);
 
+MPI_Comm Active;
+void beforePlanner()
+{
+  int rank;
+  MPI_Comm_rank(Active,&rank);
+  if(rank != 0) {
+    int flag=false;
+    MPI_Status status;
+    while(true) {
+      MPI_Iprobe(0,0,Active,&flag,&status);
+      if(flag) break;
+      usleep(50000);
+    }
+    int signal;
+    MPI_Recv(&signal,1,MPI_INT,0,0,Active,MPI_STATUS_IGNORE);
+    mpi_broadcast_wisdom(Active);
+  }
+}
+
+void afterPlanner()
+{
+  int rank,size;
+  MPI_Comm_rank(Active,&rank);
+  MPI_Comm_size(Active,&size);
+  if(rank == 0) {
+    int signal=0;
+    for(int i=1; i < size; ++i)
+      MPI_Send(&signal,1,MPI_INT,i,0,Active);
+    fftw::SaveWisdom();
+    mpi_broadcast_wisdom(Active);
+  }
+}
+
 void MPILoadWisdom(const MPI_Comm& active)
 {
   int rank;
+  Active=active;
   MPI_Comm_rank(active,&rank);
+  fftw::beforePlanner=beforePlanner;
+  fftw::afterPlanner=afterPlanner;
   if(rank == 0)
     fftw::LoadWisdom();
   mpi_broadcast_wisdom(active);
 }
 
-void MPISaveWisdom(const MPI_Comm& active)
+void MPISaveWisdom(const MPI_Comm& active, bool gather)
 {
   int rank;
   MPI_Comm_rank(active,&rank);
-  mpi_gather_wisdom(active);
+  if(gather)
+    mpi_gather_wisdom(active);
   if(rank == 0)
     fftw::SaveWisdom();
 }

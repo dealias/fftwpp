@@ -7,7 +7,7 @@
 namespace fftwpp {
 
 void MPILoadWisdom(const MPI_Comm& active);
-void MPISaveWisdom(const MPI_Comm& active);
+void MPISaveWisdom(const MPI_Comm& active, bool gather=false);
 
 // Distribute first y, then (if allowpencil=true) z.
 class MPIgroup {

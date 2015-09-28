@@ -240,6 +240,8 @@ public:
   static unsigned int maxthreads;
   static double testseconds;
   static const char *WisdomName;
+  static void (*beforePlanner)();
+  static void (*afterPlanner)();
   
   virtual unsigned int Threads() {return threads;}
   
@@ -355,6 +357,13 @@ public:
   }
   
   virtual fftw_plan Plan(Complex *in, Complex *out)=0;
+  
+  fftw_plan Planner(Complex *in, Complex *out) {
+    if(beforePlanner) beforePlanner();
+    fftw_plan plan=Plan(in,out);
+    if(afterPlanner) afterPlanner();
+    return plan;
+  }
   
   inline void CheckAlign(Complex *p, const char *s) {
     if((size_t) p % sizeof(Complex) == 0) return;
@@ -484,13 +493,13 @@ public:
     if(threads > 1) data=lookup(inplace,threads);
     threads=data.threads > 0 ? data.threads : 1;
     planThreads(threads);
-    plan=Plan(in,out);
+    plan=Planner(in,out);
     if(!plan) noplan();
     
     if(Threads > 1 && data.threads == 0) {
       threads=Threads;
       planThreads(threads);
-      fftw_plan planT=Plan(in,out);
+      fftw_plan planT=Planner(in,out);
       if(planT)
         data=time(plan,planT,in,out,threads);
       else noplan();
