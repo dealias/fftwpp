@@ -47,6 +47,7 @@ mpi/conv2
 mpi/cconv3
 mpi/conv3
 mpi/fft2
+mpi/fft2r
 mpi/rcfft2
 mpi/fft3
 mpi/transpose
