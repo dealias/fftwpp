@@ -319,7 +319,7 @@ public:
 class rcfft2dMPI {
 private:
   unsigned int mx, my;
-  split dr,dc;
+  split dr,dc; // real and complex MPI dimensions.
   mfft1d *xForwards;
   mfft1d *xBackwards;
   mrcfft1d *yForwards;
@@ -338,15 +338,19 @@ public:
     
     //rdist=inplace ? dr.X+2 : dr.X;
 
-    xForwards=new mfft1d(dc.X,-1,dc.y,dc.y,1);
-    xBackwards=new mfft1d(dc.X,1,dc.y,dc.y,1);
-    
-    yForwards=new mrcfft1d(dr.Y, // n
-			   dr.x, // M
-			   1,    // stride
-			   dr.Y,// dist
-			   f,g);
-    yBackwards=new mcrfft1d(dr.Y,dc.x,1,dc.Y,g,f);
+    unsigned int n=dr.Y;
+    unsigned int M=dr.x;
+    unsigned int stride=1;
+    unsigned int dist=dr.Y;
+    yForwards=new mrcfft1d(n,M,stride,dist,f,g);
+    yBackwards=new mcrfft1d(n,M,stride,dist,g,f);
+
+    n=dc.X;
+    M=dc.y;
+    stride=dc.y;
+    dist=1;
+    xForwards=new mfft1d(n,-1,M,stride,dist);
+    xBackwards=new mfft1d(n,1,M,stride,dist);
   }
 
  void inittranspose(Complex* out) {

@@ -13,7 +13,7 @@ inline void init(double *f, split d)
   for(unsigned int i=0; i < d.x; ++i) {
     unsigned int ii=d.x0+i;
     for(unsigned int j=0; j < d.Y; j++) {
-      f[c++]=j*j+0.1*ii;
+      f[c++]=j+ii;
     }
   }
 }
@@ -152,7 +152,8 @@ int main(int argc, char* argv[])
 
       if(!quiet && mx*my < outlimit) {
       	if(main) cout << "\nDistributed output:" << endl;
-      	show(g,mx,dg.y,group.active);
+      	show(g,dg.X,dg.y,group.active);
+	//show(g,dg.x,dg.Y,group.active); // FIXME: temp
       }
 
       array2<Complex> gaccumulated(mx,myp,align);
