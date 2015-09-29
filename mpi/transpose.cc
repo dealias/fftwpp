@@ -40,20 +40,20 @@ void init(Complex *data, unsigned int X, unsigned int y, unsigned int Z,
 
 inline void usage()
 {
-  std::cerr << "Options: " << std::endl;
-  std::cerr << "-h\t\t help" << std::endl;
-  std::cerr << "-T<int>\t\t number of threads" << std::endl;
-  std::cerr << "-t\t\t test" << std::endl;
-  std::cerr << "-q\t\t quiet" << std::endl;
-  std::cerr << "-N<int>\t\t number of timing tests"
-	    << std::endl;
-  std::cerr << "-m<int>\t\t size" << std::endl;
-  std::cerr << "-x<int>\t\t x size" << std::endl;
-  std::cerr << "-y<int>\t\t y size" << std::endl;
-  std::cerr << "-z<int>\t\t z size" << std::endl;
-  std::cerr << "-a<int>\t\t block divisor: -1=sqrt(size), [0]=Tune" << std::endl;
-  std::cerr << "-A<int>\t\t alltoall: [-1]=Tune, 0=Optimized, 1=MPI" << std::endl;
-  std::cerr << "-L\t\t locally transpose output" << std::endl;
+  cerr << "Options: " << endl;
+  cerr << "-h\t\t help" << endl;
+  cerr << "-T<int>\t\t number of threads" << endl;
+  cerr << "-t\t\t test" << endl;
+  cerr << "-q\t\t quiet" << endl;
+  cerr << "-N<int>\t\t number of timing tests"
+	    << endl;
+  cerr << "-m<int>\t\t size" << endl;
+  cerr << "-x<int>\t\t x size" << endl;
+  cerr << "-y<int>\t\t y size" << endl;
+  cerr << "-z<int>\t\t z size" << endl;
+  cerr << "-a<int>\t\t block divisor: -1=sqrt(size), [0]=Tune" << endl;
+  cerr << "-A<int>\t\t alltoall: [-1]=Tune, 0=Optimized, 1=MPI" << endl;
+  cerr << "-L\t\t locally transpose output" << endl;
   exit(1);
 }
 
@@ -177,7 +177,7 @@ int transpose(int rank, int size, int N)
   
 //  unsigned int xsize=localsize(X,size);
 //  unsigned int ysize=localsize(Y,size);
-//  size=std::max(xsize,ysize);
+//  size=max(xsize,ysize);
   
   unsigned int x=localdimension(X,rank,size);
   unsigned int y=localdimension(Y,rank,size);
@@ -202,7 +202,7 @@ int transpose(int rank, int size, int N)
       cout << "N=" << N << endl;
     }
     
-    data=ComplexAlign(std::max(X*y,x*Y)*Z);
+    data=ComplexAlign(max(X*y,x*Y)*Z);
   
     init(data,X,y,Z,0,ystart);
 
