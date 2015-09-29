@@ -152,7 +152,7 @@ int main(int argc, char* argv[])
     Complex **Flocal=new Complex *[A];
     for(unsigned int a=0; a < A; ++a) {
       Flocal[a]=ComplexAlign(mx*my);
-      accumulate_split(F[a], Flocal[a], d, 1, true, group.active);
+      accumulatex(F[a], Flocal[a], d, 1, group.active);
     }
 
     double *T=new double[N];
@@ -176,7 +176,7 @@ int main(int argc, char* argv[])
 
       // FIXME: free
       Complex *Foutaccumulated=ComplexAlign(mx*my);
-      accumulate_split(F[0], Foutaccumulated, d, 1, true, group.active);
+      accumulatex(F[0], Foutaccumulated, d, 1, group.active);
 
       if(main) {
 	ImplicitConvolution2 Clocal(mx,my,A,1);

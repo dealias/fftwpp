@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
     array3<Complex> localf(mx,my,mz);
     localf=0.0;
     
-    accumulate_split(f,localf(),d,mz,false,group.active);
+    accumulatex(f,localf(),d,mz,group.active);
     if(main) {
       if(!quiet) {
 	cout << "Accumulted:" <<endl;
@@ -159,7 +159,7 @@ int main(int argc, char* argv[])
     }
 	
     localf=0.0;
-    accumulate_split(f,localf(),d,mz,true,group.active);
+    accumulatey(f,localf(),d,mz,group.active);
     if(main) {
       if(!quiet) {
 	if(mx*my < outlimit) {

@@ -248,7 +248,7 @@ int transpose(int rank, int size, int N)
 	wholedata=new Complex[X*Y*Z];
 	wholeoutput=new Complex[X*Y*Z];
       }
-      accumulate_split(data,wholedata,X,Y,xstart,ystart,x,y,Z,true,active);
+      accumulatey(data,wholedata,X,Y,xstart,ystart,x,y,Z,active);
 
       if(showoutput && rank == 0) {
 	cout << "\nAccumulated input data:" << endl;
@@ -265,7 +265,7 @@ int transpose(int rank, int size, int N)
         show(data,X,y*Z,active);
       }
 
-      accumulate_split(data,wholeoutput,X,Y,xstart,ystart,x,y,Z,false,active);
+      accumulatex(data,wholeoutput,X,Y,xstart,ystart,x,y,Z,active);
 
       if(rank == 0) {
 	if(showoutput) {

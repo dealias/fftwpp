@@ -142,7 +142,7 @@ int main(int argc, char* argv[])
       rcfft2d localForward(mx, my, flocal(), glocal());
       crfft2d localBackward(mx, my, glocal(), flocal());
 
-      accumulate_split(f, flocal(), df, 1, false, group.active);
+      accumulatex(f, flocal(), df, 1, group.active);
 
       if(!quiet && main) {
 	cout << "\nAccumulated input:\n" << flocal << endl;
@@ -156,7 +156,7 @@ int main(int argc, char* argv[])
       }
 
       array2<Complex> gaccumulated(mx,myp,align);
-      accumulate_split(g, gaccumulated(), dg, 1, true, group.active);
+      accumulatey(g, gaccumulated(), dg, 1, group.active);
 
 
       MPI_Barrier(group.active);
@@ -189,7 +189,7 @@ int main(int argc, char* argv[])
       */
 
       /*
-      accumulate_split(f, faccumulated(), d, 1, true, group.active);
+      accumulatex(f, faccumulated(), d, 1, group.active);
       MPI_Barrier(group.active);
       if(main) {
 	localBackward.fftNormalized(flocal);
