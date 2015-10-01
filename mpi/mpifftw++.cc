@@ -74,8 +74,7 @@ fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out)
       char inspiration[length+1];
       MPI_Bcast(inspiration,length,MPI_CHAR,0,Active);
       inspiration[length]=0;
-      if(!fftw_import_wisdom_from_string(inspiration))
-        MPI_Abort(Active,1);
+      fftw_import_wisdom_from_string(inspiration);
     }
     fftw::effort |= FFTW_WISDOM_ONLY;
     plan=F->Plan(in,out);
