@@ -11,8 +11,6 @@ const char *fftw::WisdomName="wisdom3.txt";
 unsigned int fftw::maxthreads=1;
 double fftw::testseconds=1.0; // Time limit for threading efficiency tests
 fftw_plan (*fftw::planner)(fftw *f, Complex *in, Complex *out)=Planner;
-char *fftw::Wisdom;
-bool fftw::defaultplanner=true;
 
 const char *fftw::oddshift="Shift is not implemented for odd nx";
 const char *inout=
@@ -28,37 +26,37 @@ fft2d::Table fft2d::threadtable;
 
 void fftw::LoadWisdom()
 {
-  std::ifstream ifWisdom;
-  ifWisdom.open(WisdomName);
-  std::ostringstream wisdom;
-  wisdom << ifWisdom.rdbuf();
-  ifWisdom.close();
-  fftw_import_wisdom_from_string(wisdom.str().c_str());
+  static bool Wise=false;
+  if(!Wise) {
+    std::ifstream ifWisdom;
+    ifWisdom.open(WisdomName);
+    std::ostringstream wisdom;
+    wisdom << ifWisdom.rdbuf();
+    ifWisdom.close();
+    fftw_import_wisdom_from_string(wisdom.str().c_str());
+    Wise=true;
+  }
 }
 
 void fftw::SaveWisdom()
 {
-  static size_t WisdomLength=0;
-  Wisdom=fftw_export_wisdom_to_string();
-  size_t len=strlen(Wisdom);
-  if(len != WisdomLength) {
-    std::ofstream ofWisdom;
-    ofWisdom.open(WisdomName);
-    ofWisdom << Wisdom;
-    ofWisdom.close();
-    WisdomLength=len;
-  }
+  std::ofstream ofWisdom;
+  ofWisdom.open(WisdomName);
+  char *wisdom=fftw_export_wisdom_to_string();
+  ofWisdom << wisdom;
+  fftw_free(wisdom);
+  ofWisdom.close();
 }
 
-fftw_plan Planner(fftw *F, Complex *in, Complex *out) {
-  static bool Wise=false;
-  if(!Wise) {
-    fftw::LoadWisdom();
-    Wise=true;
-  }
+fftw_plan Planner(fftw *F, Complex *in, Complex *out)
+{
+  fftw::effort |= FFTW_WISDOM_ONLY;
   fftw_plan plan=F->Plan(in,out);
-  fftw::SaveWisdom();
-  fftw_free(fftw::Wisdom);
+  fftw::effort &= !FFTW_WISDOM_ONLY;
+  if(!plan) {
+    plan=F->Plan(in,out);
+    fftw::SaveWisdom();
+  }
   return plan;
 }
   

@@ -51,62 +51,66 @@ int main(int argc, char* argv[])
 #endif
   int retval=0;
   bool test=false;
+//  bool quiet=false;
   unsigned int A=2;
   
 #ifdef __GNUC__ 
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"heipHtM:N:m:x:y:n:T:");
+    int c = getopt(argc,argv,"heipqHtM:N:m:x:y:n:T:");
     if (c == -1) break;
                 
     switch (c) {
-    case 0:
-      break;
-    case 'e':
-      Explicit=true;
-      Implicit=false;
-      Pruned=false;
-      break;
-    case 'i':
-      Implicit=true;
-      Explicit=false;
-      break;
-    case 'p':
-      Explicit=true;
-      Implicit=false;
-      Pruned=true;
-      break;
-    case 'A':
-      A=atoi(optarg);
-      break;
-    case 'M':
-      A=2*atoi(optarg);
-      break;
-    case 'N':
-      N=atoi(optarg);
-      break;
-    case 'm':
-      mx=my=atoi(optarg);
-      break;
-    case 'x':
-      mx=atoi(optarg);
-      break;
-    case 'y':
-      my=atoi(optarg);
-      break;
-    case 'n':
-      N0=atoi(optarg);
-      break;
-    case 'T':
-      fftw::maxthreads=atoi(optarg);
-      break;
-    case 't':
-      test=true;
-      break;
-    case 'h':
-    default:
-      usage(2);
+      case 0:
+        break;
+      case 'e':
+        Explicit=true;
+        Implicit=false;
+        Pruned=false;
+        break;
+      case 'i':
+        Implicit=true;
+        Explicit=false;
+        break;
+      case 'p':
+        Explicit=true;
+        Implicit=false;
+        Pruned=true;
+        break;
+      case 'A':
+        A=atoi(optarg);
+        break;
+      case 'M':
+        A=2*atoi(optarg);
+        break;
+      case 'N':
+        N=atoi(optarg);
+        break;
+      case 'm':
+        mx=my=atoi(optarg);
+        break;
+      case 'x':
+        mx=atoi(optarg);
+        break;
+      case 'y':
+        my=atoi(optarg);
+        break;
+      case 'n':
+        N0=atoi(optarg);
+        break;
+      case 'T':
+        fftw::maxthreads=atoi(optarg);
+        break;
+      case 't':
+        test=true;
+        break;
+      case 'q':
+//        quiet=true; // TODO: Implement
+        break;
+      case 'h':
+      default:
+        usage(2);
     }
   }
 
@@ -160,13 +164,13 @@ int main(int argc, char* argv[])
     multiplier *mult;
   
     switch(A) {
-    case 2: mult=multbinary; break;
-    case 4: mult=multbinary2; break;
-    case 6: mult=multbinary3; break;
-    case 8: mult=multbinary4; break;
-    case 16: mult=multbinary8; break;
-    default: cout << "A=" << A << " is not yet implemented" << endl;
-      exit(1);
+      case 2: mult=multbinary; break;
+      case 4: mult=multbinary2; break;
+      case 6: mult=multbinary3; break;
+      case 8: mult=multbinary4; break;
+      case 16: mult=multbinary8; break;
+      default: cout << "A=" << A << " is not yet implemented" << endl;
+        exit(1);
     }
 
     ImplicitConvolution2MPI C(mx,my,d,A);
@@ -191,10 +195,10 @@ int main(int argc, char* argv[])
 	}
       }
 
-    MPI_Barrier(group.active);
+      MPI_Barrier(group.active);
 
 
-      } else {
+    } else {
       if(group.rank == 0)
 	cout << "Initialized after " << seconds() << " seconds." << endl;
       for(unsigned int i=0; i < N; ++i) {

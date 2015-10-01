@@ -79,7 +79,6 @@ struct convolveOptions {
   bool xcompact,ycompact,zcompact; // Data format
   unsigned int nx,ny,nz;           // |
   unsigned int stride2,stride3;    // | Used internally by the MPI interface.
-  bool mpiplanner;                 // |
   mpiOptions mpi;                  // |
   
   convolveOptions(unsigned int threads=fftw::maxthreads,
@@ -88,27 +87,24 @@ struct convolveOptions {
                   unsigned int stride2=0, unsigned int stride3=0) :
     threads(threads),
     xcompact(xcompact), ycompact(ycompact), zcompact(zcompact),
-    nx(nx), ny(ny), nz(nz), stride2(stride2), stride3(stride3),
-    mpiplanner(false) {}
+    nx(nx), ny(ny), nz(nz), stride2(stride2), stride3(stride3) {}
 
   convolveOptions(const convolveOptions& options, unsigned int threads) :
     threads(threads), xcompact(options.xcompact), ycompact(options.ycompact),
-    zcompact(options.zcompact), mpiplanner(false),
-    mpi(options.mpi) {}
+    zcompact(options.zcompact), mpi(options.mpi) {}
     
   convolveOptions(const convolveOptions& options,
                   unsigned int nx, unsigned int ny, unsigned int stride2) :
     threads(options.threads), xcompact(options.xcompact),
     ycompact(options.ycompact), nx(nx), ny(ny), stride2(stride2),
-    mpiplanner(true), mpi(options.mpi) {}
+    mpi(options.mpi) {}
     
   convolveOptions(const convolveOptions& options,
                   unsigned int ny, unsigned int nz,
                   unsigned int stride2, unsigned int stride3) :
     threads(options.threads), xcompact(options.xcompact),
     ycompact(options.ycompact), zcompact(options.zcompact),
-    ny(ny), nz(nz), stride2(stride2), stride3(stride3), mpiplanner(true),
-    mpi(options.mpi) {}
+    ny(ny), nz(nz), stride2(stride2), stride3(stride3), mpi(options.mpi) {}
 };
     
 static const convolveOptions defaultconvolveOptions;
@@ -585,7 +581,6 @@ public:
   }
   
   void init(const convolveOptions& options) {
-    if(options.mpiplanner) fftw::defaultplanner=false;
     xfftpad=new fftpad(mx,options.ny,options.ny,u2);
     yconvolve=new ImplicitConvolution*[threads];
     for(unsigned int t=0; t < threads; ++t)
@@ -760,7 +755,6 @@ public:
   }
   
   void init(const convolveOptions& options) {
-    if(options.mpiplanner) fftw::defaultplanner=false;
     xfftpad=xcompact ? new fft0pad(mx,options.ny,options.ny,u2,threads) :
       new fft0padwide(mx,options.ny,options.ny,u2,threads);
     initpointers2(U2,u2,options.stride2);
@@ -928,7 +922,6 @@ public:
   }
   
   void init(const convolveOptions& options) {
-    if(options.mpiplanner) fftw::defaultplanner=false;
     unsigned int nyz=options.ny*options.nz;
     xfftpad=new fftpad(mx,nyz,nyz,u3);
     
@@ -1090,7 +1083,6 @@ public:
   }
     
   void init(const convolveOptions& options) {
-    if(options.mpiplanner) fftw::defaultplanner=false;
     unsigned int nyz=options.ny*options.nz;
     xfftpad=xcompact ? new fft0pad(mx,nyz,nyz,u3,threads) :
       new fft0padwide(mx,nyz,nyz,u3,threads);

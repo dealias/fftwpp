@@ -181,23 +181,7 @@ inline void deleteAlign(T *p)
 
 class fftw;
 
-fftw_plan Planner(fftw *F, Complex *in, Complex *out);
-
-#if 0
-inline void fftwpp_export_wisdom(void (*emitter)(char c, std::ofstream& s),
-                                 std::ofstream& s)
-{
-  fftw_export_wisdom((void (*) (char, void *)) emitter,(void *) &s);
-}
-
-inline int fftwpp_import_wisdom(int (*g)(std::ifstream& s), std::ifstream &s)
-{
-  return fftw_import_wisdom((int (*) (void *)) g,(void *) &s);
-}
-
-inline void PutWisdom(char c, std::ofstream& s) {s.put(c);}
-inline int GetWisdom(std::ifstream& s) {return s.get();}
-#endif
+extern "C" fftw_plan Planner(fftw *F, Complex *in, Complex *out);
 
 extern const char *inout;
 
@@ -245,8 +229,6 @@ public:
   static unsigned int maxthreads;
   static double testseconds;
   static const char *WisdomName;
-  static char *Wisdom;
-  static bool defaultplanner;
   static fftw_plan (*planner)(fftw *f, Complex *in, Complex *out);
   
   virtual unsigned int Threads() {return threads;}

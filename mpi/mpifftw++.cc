@@ -3,12 +3,12 @@
 
 namespace fftwpp {
 
-MPI_Comm Active;
+MPI_Comm Active=MPI_COMM_NULL;
 
 fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out) 
 {
-  if(fftw::defaultplanner)
-    return F->Plan(in,out);
+  if(Active == MPI_COMM_NULL)
+    return Planner(F,in,out);
   fftw_plan plan;
   int rank;
   MPI_Comm_rank(Active,&rank);
@@ -99,14 +99,6 @@ fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out)
     }
   }
   return plan;
-}
-
-void MPIInitWisdom(const MPI_Comm& active)
-{
-  int rank;
-  Active=active;
-  MPI_Comm_rank(active,&rank);
-  fftw::planner=MPIplanner;
 }
 
 void fft2dMPI::Forwards(Complex *f)

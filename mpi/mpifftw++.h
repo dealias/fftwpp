@@ -6,7 +6,9 @@
 
 namespace fftwpp {
 
-void MPIInitWisdom(const MPI_Comm& active);
+fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out);
+
+extern MPI_Comm Active;
 
 // Distribute first y, then (if allowpencil=true) z.
 class MPIgroup {
@@ -23,7 +25,6 @@ public:
   
   void activate(const MPI_Comm& comm) {
     MPI_Comm_split(comm,rank < size,0,&active);
-    MPIInitWisdom(active);
   }
   
   MPIgroup(const MPI_Comm& comm, unsigned int Y) {
@@ -85,6 +86,16 @@ public:
     n=std::max(X*y,x*Y)*Z;
   }
 
+  int Activate() const {
+    Active=communicator;
+    fftw::planner=MPIplanner;
+    return n;
+  }
+
+  void Deactivate() const {
+    Active=MPI_COMM_NULL;
+  }
+  
   void show() {
     std::cout << "X=" << X << "\tY="<<Y << std::endl;
     std::cout << "x=" << x << "\ty="<<y << std::endl;
@@ -125,6 +136,15 @@ public:
     n=std::max(xy.n,x*n2);
   }
   
+  int Activate() const {
+    xy.Activate();
+    return n;
+  }
+
+  void Deactivate() const {
+    xy.Deactivate();
+  }
+
   void show() {
     std::cout << "X=" << X << "\tY="<<Y << "\tZ="<<Z << std::endl;
     std::cout << "x=" << x << "\ty="<<y << "\tz="<<z << std::endl;
@@ -162,6 +182,15 @@ public:
     n=std::max(xy.n,x*n2);
   }
   
+  int Activate() const {
+    xy.Activate();
+    return n;
+  }
+
+  void Deactivate() const {
+    xy.Deactivate();
+  }
+
   void show() {
     std::cout << "X=" << X << "\tY="<<Y << "\tZ="<<Z << std::endl;
     std::cout << "x=" << x << "\ty="<<y << "\tz="<<z << std::endl;
@@ -201,6 +230,7 @@ public:
   }
   
   fft2dMPI(const split& d, Complex *f) : d(d) {
+    d.Activate();
     inittranspose(f);
 
     unsigned int n=d.X;
@@ -216,6 +246,7 @@ public:
     dist=d.Y;
     yForwards=new mfft1d(n,-1,M,stride,dist,f,f);
     yBackwards=new mfft1d(n,1,M,stride,dist,f,f);
+    d.Deactivate();
   }
   
   virtual ~fft2dMPI() {
@@ -257,6 +288,7 @@ private:
 public:
   
   fft3dMPI(const splitxy& d, Complex *f) : d(d) {
+    d.Activate();
     Txy=new mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,f,d.xy.communicator);
     
     xForwards=new mfft1d(d.X,-1,d.xy.y*d.z,d.xy.y*d.z,1);
@@ -274,6 +306,7 @@ public:
       yzForwards=new fft2d(d.Y,d.Z,-1,f);
       yzBackwards=new fft2d(d.Y,d.Z,1,f);
     }
+    d.Deactivate();
   }
   
   virtual ~fft3dMPI() {
@@ -330,8 +363,9 @@ private:
 protected:
   mpitranspose<Complex> *T;
 public:
-   rcfft2dMPI(const split& dr, const split& dc,
-	      double *f, Complex *g) : dr(dr), dc(dc) {
+  rcfft2dMPI(const split& dr, const split& dc,
+             double *f, Complex *g) : dr(dr), dc(dc) {
+    dr.Activate();
     mx=dr.X;
     my=dc.Y;
     inittranspose(g);
@@ -351,6 +385,7 @@ public:
     dist=1;
     xForwards=new mfft1d(n,-1,M,stride,dist);
     xBackwards=new mfft1d(n,1,M,stride,dist);
+    dr.Deactivate();
   }
 
  void inittranspose(Complex* out) {
