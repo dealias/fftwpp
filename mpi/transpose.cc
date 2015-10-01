@@ -21,11 +21,6 @@ unsigned int N0=1000000;
 int N=0;
 bool outtranspose=false;
 
-namespace fftwpp {
-void MPILoadWisdom(const MPI_Comm& active);
-void MPISaveWisdom(const MPI_Comm& active);
-}
-
 void init(Complex *data, unsigned int X, unsigned int y, unsigned int Z,
 	  int xstart, int ystart) {
   for(unsigned int i=0; i < X; ++i) { 
@@ -88,7 +83,6 @@ void fftwTranspose(int rank, int size)
   
   if(rank == 0) cout << "\nOLD\n" << endl;
   
-  fftwpp::MPILoadWisdom(MPI_COMM_WORLD);
   fftw_plan inplan=fftw_mpi_plan_many_transpose(Y,X,2*Z,block,0,
                                                 (double*) data,(double*) data,
                                                 MPI_COMM_WORLD,
@@ -97,7 +91,6 @@ void fftwTranspose(int rank, int size)
                                                  (double*) data,(double*) data,
                                                  MPI_COMM_WORLD,
                                                  outtranspose ? 0 : FFTW_MPI_TRANSPOSED_OUT);
-  fftwpp::MPISaveWisdom(MPI_COMM_WORLD);
   
   init(data,X,y,Z,0,ystart);
 

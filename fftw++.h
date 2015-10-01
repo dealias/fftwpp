@@ -179,8 +179,11 @@ inline void deleteAlign(T *p)
 #define FFTWdouble doubleAlign
 #define FFTWdelete deleteAlign
 
-void BeforePlanner(), AfterPlanner();
+class fftw;
 
+fftw_plan Planner(fftw *F, Complex *in, Complex *out);
+
+#if 0
 inline void fftwpp_export_wisdom(void (*emitter)(char c, std::ofstream& s),
                                  std::ofstream& s)
 {
@@ -194,6 +197,7 @@ inline int fftwpp_import_wisdom(int (*g)(std::ifstream& s), std::ifstream &s)
 
 inline void PutWisdom(char c, std::ofstream& s) {s.put(c);}
 inline int GetWisdom(std::ifstream& s) {return s.get();}
+#endif
 
 extern const char *inout;
 
@@ -241,9 +245,8 @@ public:
   static unsigned int maxthreads;
   static double testseconds;
   static const char *WisdomName;
-  static size_t WisdomLength;
-  static void (*beforePlanner)();
-  static void (*afterPlanner)();
+  static char *Wisdom;
+  static fftw_plan (*planner)(fftw *f, Complex *in, Complex *out);
   
   virtual unsigned int Threads() {return threads;}
   
@@ -355,13 +358,6 @@ public:
   }
   
   virtual fftw_plan Plan(Complex *in, Complex *out)=0;
-  
-  fftw_plan Planner(Complex *in, Complex *out) {
-    if(beforePlanner) beforePlanner();
-    fftw_plan plan=Plan(in,out);
-    if(afterPlanner) afterPlanner();
-    return plan;
-  }
   
   inline void CheckAlign(Complex *p, const char *s) {
     if((size_t) p % sizeof(Complex) == 0) return;
@@ -489,13 +485,13 @@ public:
     if(threads > 1) data=lookup(inplace,threads);
     threads=data.threads > 0 ? data.threads : 1;
     planThreads(threads);
-    plan=Planner(in,out);
+    plan=(*planner)(this,in,out);
     if(!plan) noplan();
     
     if(Threads > 1 && data.threads == 0) {
       threads=Threads;
       planThreads(threads);
-      fftw_plan planT=Planner(in,out);
+      fftw_plan planT=(*planner)(this,in,out);
       if(planT)
         data=time(plan,planT,in,out,threads);
       else noplan();
@@ -696,7 +692,6 @@ public:
     // A plan with rank=0 is a transpose.
     plan=fftw_plan_guru_r2r(0,NULL,3,dims,(double *) in,(double *) out,
 			    NULL,fftw::effort);
-    
     plan2=NULL;
     ilast=a;
     jlast=b;
