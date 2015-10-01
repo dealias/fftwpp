@@ -182,6 +182,8 @@ inline void deleteAlign(T *p)
 class fftw;
 
 extern "C" fftw_plan Planner(fftw *F, Complex *in, Complex *out);
+void LoadWisdom();
+void SaveWisdom();
 
 extern const char *inout;
 
@@ -490,9 +492,6 @@ public:
   void Setup(double *in, Complex *out=NULL) {
     Setup((Complex *) in,out);
   }
-  
-  static void LoadWisdom();
-  static void SaveWisdom();
   
   virtual void Execute(Complex *in, Complex *out, bool=false) {
     fftw_execute_dft(plan,(fftw_complex *) in,(fftw_complex *) out);

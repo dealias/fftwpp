@@ -176,7 +176,6 @@ int main(int argc, char* argv[])
   
   if(Implicit) {
     ImplicitConvolution C(m,A,B);
-    fftw::SaveWisdom();
     cout << "threads=" << C.Threads() << endl << endl;
 
     multiplier *mult;

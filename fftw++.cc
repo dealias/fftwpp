@@ -24,12 +24,12 @@ mrcfft1d::Table mrcfft1d::threadtable;
 mcrfft1d::Table mcrfft1d::threadtable;
 fft2d::Table fft2d::threadtable;
 
-void fftw::LoadWisdom()
+void LoadWisdom()
 {
   static bool Wise=false;
   if(!Wise) {
     std::ifstream ifWisdom;
-    ifWisdom.open(WisdomName);
+    ifWisdom.open(fftw::WisdomName);
     std::ostringstream wisdom;
     wisdom << ifWisdom.rdbuf();
     ifWisdom.close();
@@ -38,10 +38,10 @@ void fftw::LoadWisdom()
   }
 }
 
-void fftw::SaveWisdom()
+void SaveWisdom()
 {
   std::ofstream ofWisdom;
-  ofWisdom.open(WisdomName);
+  ofWisdom.open(fftw::WisdomName);
   char *wisdom=fftw_export_wisdom_to_string();
   ofWisdom << wisdom;
   fftw_free(wisdom);
@@ -50,12 +50,13 @@ void fftw::SaveWisdom()
 
 fftw_plan Planner(fftw *F, Complex *in, Complex *out)
 {
+  LoadWisdom();
   fftw::effort |= FFTW_WISDOM_ONLY;
   fftw_plan plan=F->Plan(in,out);
   fftw::effort &= !FFTW_WISDOM_ONLY;
   if(!plan) {
     plan=F->Plan(in,out);
-    fftw::SaveWisdom();
+    SaveWisdom();
   }
   return plan;
 }

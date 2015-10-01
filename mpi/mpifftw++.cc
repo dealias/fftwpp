@@ -20,7 +20,7 @@ fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out)
     static bool Wise=false;
     bool learned=false;
     if(!Wise)
-      fftw::LoadWisdom();
+      LoadWisdom();
     fftw::effort |= FFTW_WISDOM_ONLY;
     plan=F->Plan(in,out);
     fftw::effort &= !FFTW_WISDOM_ONLY;
@@ -32,7 +32,10 @@ fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out)
         experience=fftw_export_wisdom_to_string();
         fftw_forget_wisdom();
       }
-      plan=F->Plan(in,out);
+      if(!plan) {
+        plan=F->Plan(in,out);
+        learned=true;
+      }
       inspiration=fftw_export_wisdom_to_string();
       length=strlen(inspiration);
     }
@@ -44,7 +47,6 @@ fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out)
         fftw_import_wisdom_from_string(experience);
         fftw_free(experience);
       } else Wise=true;
-      learned=true;
       fftw_free(inspiration);
     }
     int rlength[size];
@@ -59,7 +61,7 @@ fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out)
         fftw_import_wisdom_from_string(inspiration);
       }
     }
-    if(learned) fftw::SaveWisdom();
+    if(learned) SaveWisdom();
   } else {
     int flag=false;
     MPI_Status status;
