@@ -7,7 +7,8 @@ MPI_Comm Active;
 
 fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out) 
 {
-//  return F->Plan(in,out);
+  if(fftw::defaultplanner)
+    return F->Plan(in,out);
   fftw_plan plan;
   int rank;
   MPI_Comm_rank(Active,&rank);
@@ -17,6 +18,7 @@ fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out)
     MPI_Comm_size(Active,&size);
     
     static bool Wise=false;
+    bool learned=false;
     if(!Wise)
       fftw::LoadWisdom();
     fftw::effort |= FFTW_WISDOM_ONLY;
@@ -42,23 +44,22 @@ fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out)
         fftw_import_wisdom_from_string(experience);
         fftw_free(experience);
       } else Wise=true;
-      fftw::SaveWisdom();
+      learned=true;
       fftw_free(inspiration);
     }
-    bool advice=false;
-    int i=1;
     int rlength[size];
     MPI_Gather(&length,1,MPI_INT,rlength,1,MPI_INT,0,Active);
-#if 0    
+    for(int i=1; i < size; ++i) {
+      int length=rlength[i];
       if(length > 0) {
-        advice=true;
+        learned=true;
         char inspiration[length+1];
         MPI_Recv(&inspiration,length,MPI_CHAR,i,0,Active,MPI_STATUS_IGNORE);
         inspiration[length]=0;
         fftw_import_wisdom_from_string(inspiration);
       }
-#endif    
-    if(advice) fftw::SaveWisdom();
+    }
+    if(learned) fftw::SaveWisdom();
   } else {
     int flag=false;
     MPI_Status status;
@@ -84,25 +85,19 @@ fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out)
     if(plan)
       length=0;
     else {
-#if 0      
       experience=fftw_export_wisdom_to_string();
       fftw_forget_wisdom();
       plan=F->Plan(in,out);
       inspiration=fftw_export_wisdom_to_string();
       length=strlen(inspiration);
-#endif      
-      length=1;
     }
-    std::cout << "send from " << rank << std::endl;
     MPI_Gather(&length,1,MPI_INT,NULL,1,MPI_INT,0,Active);
-#if 0
     if(length > 0) {
       MPI_Send(inspiration,length,MPI_CHAR,0,0,Active);
       fftw_import_wisdom_from_string(experience);
       fftw_free(experience);
       fftw_free(inspiration);
     }
-#endif    
   }
   return plan;
 }

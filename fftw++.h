@@ -246,6 +246,7 @@ public:
   static double testseconds;
   static const char *WisdomName;
   static char *Wisdom;
+  static bool defaultplanner;
   static fftw_plan (*planner)(fftw *f, Complex *in, Complex *out);
   
   virtual unsigned int Threads() {return threads;}

@@ -74,6 +74,7 @@ def main(argv):
                         args.append("-x" + str(X))
                         args.append("-y" + str(Y))
                         args.append("-z" + str(Z))
+                        args.append("-N1")
                         args.append("-tq")
                         args.append("-A1")
                         args.append("-a1")

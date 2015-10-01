@@ -12,6 +12,7 @@ unsigned int fftw::maxthreads=1;
 double fftw::testseconds=1.0; // Time limit for threading efficiency tests
 fftw_plan (*fftw::planner)(fftw *f, Complex *in, Complex *out)=Planner;
 char *fftw::Wisdom;
+bool fftw::defaultplanner=true;
 
 const char *fftw::oddshift="Shift is not implemented for odd nx";
 const char *inout=

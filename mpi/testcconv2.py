@@ -70,9 +70,8 @@ def main(argv):
                     args = []
                     args.append("-x" + str(X))
                     args.append("-y" + str(Y))
-                    args.append("-N0")
-                    args.append("-t")
-                    args.append("-q")
+                    args.append("-N1")
+                    args.append("-tq")
                     rtest, cmd = runtest(pname, P, args, logfile, timeout)
                     if not rtest == 0:
                         nfails += 1

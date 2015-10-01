@@ -34,6 +34,7 @@ public:
     ImplicitConvolution2(mx,my,u1,u2,A,B,convolveOptions(options,d.x,d.y,d.n)),
     d(d), global(global ? global : d.communicator) {
     inittranspose(options.mpi);
+    fftw::defaultplanner=true;
   }
   
   ImplicitConvolution2MPI(unsigned int mx, unsigned int my, const split& d,
@@ -43,6 +44,7 @@ public:
     ImplicitConvolution2(mx,my,A,B,convolveOptions(options,d.x,d.y,d.n)),
     d(d), global(global ? global : d.communicator) {
     inittranspose(options.mpi);
+    fftw::defaultplanner=true;
   }
   
   virtual ~ImplicitConvolution2MPI() {
@@ -98,6 +100,7 @@ public:
                           convolveOptions(options,d.x,d.y,du.n)),
     d(d), du(du), global(global ? global : d.communicator) {
     inittranspose(f,options.mpi);
+    fftw::defaultplanner=true;
   }
   
   ImplicitHConvolution2MPI(unsigned int mx, unsigned int my,
@@ -109,6 +112,7 @@ public:
     ImplicitHConvolution2(mx,my,A,B,convolveOptions(options,d.x,d.y,du.n)),
     d(d), du(du), global(global ? global : d.communicator) {
     inittranspose(f,options.mpi);
+    fftw::defaultplanner=true;
   }
   
   virtual ~ImplicitHConvolution2MPI() {
@@ -168,8 +172,9 @@ public:
                           convolveOptions options=defaultconvolveOptions) :
     ImplicitConvolution3(mx,my,mz,u1,u2,u3,A,B,
                          convolveOptions(options,d.y,d.z,d.n2,d.n)), d(d) {
-    inittranspose(options.mpi);
     initMPI(options);
+    inittranspose(options.mpi);
+    fftw::defaultplanner=true;
   }
 
   ImplicitConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
@@ -178,8 +183,9 @@ public:
                           convolveOptions options=defaultconvolveOptions) :
     ImplicitConvolution3(mx,my,mz,A,B,
                          convolveOptions(options,d.y,d.z,d.n2,d.n)), d(d) {
-    inittranspose(options.mpi);
     initMPI(options);
+    inittranspose(options.mpi);
+    fftw::defaultplanner=true;
   }
   
   virtual ~ImplicitConvolution3MPI() {
@@ -253,6 +259,7 @@ public:
     d(d), du(du), global(global ? global : d.communicator) { 
     initMPI(f,options);
     inittranspose(f,options.mpi);
+    fftw::defaultplanner=true;
   }
 
   ImplicitHConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
@@ -265,6 +272,7 @@ public:
     d(d), du(du), global(global ? global : d.communicator) {
     initMPI(f,options);
     inittranspose(f,options.mpi);
+    fftw::defaultplanner=true;
   }
   
   virtual ~ImplicitHConvolution3MPI() {
