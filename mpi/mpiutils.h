@@ -379,7 +379,8 @@ double relmaxerror(const ftype *f, const ftype *g,
       pos++;
     }
   }
-  return maxdiff / (maxnorm + 1e-12);
+  // TODO: Must return two values.
+  return maxnorm == 0.0 ? 0.0 : maxdiff/maxnorm;
 }
 
 template<class ftype>
