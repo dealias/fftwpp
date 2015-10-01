@@ -68,6 +68,14 @@ inline void usageB(bool littleb=true)
     std::cerr << "-b\t\t which output block to check" << std::endl;
 }
 
+inline void usageTranspose()
+{
+  std::cerr << "-a<int>\t\t block divisor: -1=sqrt(size), [0]=Tune"
+            << std::endl;
+  std::cerr << "-s<int>\t\t alltoall: [-1]=Tune, 0=Optimized, 1=MPI"
+            << std::endl;
+}
+
 void fft_usage(int dim)
 {
   std::cout << "Usage:\n"

@@ -85,14 +85,14 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"htqa:A:M:N:m:x:y:z:n:T:");
+    int c = getopt(argc,argv,"htqa:A:M:N:T:m:n:s:x:y:z:");
     if (c == -1) break;
                 
     switch (c) {
       case 0:
         break;
       case 'A':
-        alltoall=atoi(optarg);
+        A=atoi(optarg);
         break;
       case 'a':
         divisor=atoi(optarg);
@@ -105,6 +105,9 @@ int main(int argc, char* argv[])
         break;
       case 'm':
         mx=my=mz=atoi(optarg);
+        break;
+      case 's':
+        alltoall=atoi(optarg);
         break;
       case 'x':
         mx=atoi(optarg);
@@ -128,10 +131,9 @@ int main(int argc, char* argv[])
         fftw::maxthreads=atoi(optarg);
         break;
       case 'h':
-        usage(3);
-        break;
       default:
         usage(3);
+        usageTranspose();
         exit(1);
     }
   }

@@ -46,8 +46,7 @@ inline void usage()
   cerr << "-x<int>\t\t x size" << endl;
   cerr << "-y<int>\t\t y size" << endl;
   cerr << "-z<int>\t\t z size" << endl;
-  cerr << "-a<int>\t\t block divisor: -1=sqrt(size), [0]=Tune" << endl;
-  cerr << "-A<int>\t\t alltoall: [-1]=Tune, 0=Optimized, 1=MPI" << endl;
+  usageTranspose();
   cerr << "-L\t\t locally transpose output" << endl;
   exit(1);
 }
@@ -368,7 +367,7 @@ int main(int argc, char **argv)
   optind=0;
 #endif  
   for (;;) {
-    int c=getopt(argc,argv,"hLN:A:a:m:n:T:x:y:z:qt");
+    int c=getopt(argc,argv,"hLN:A:a:m:n:s:T:x:y:z:qt");
     if (c == -1) break;
                 
     switch (c) {
@@ -380,7 +379,7 @@ int main(int argc, char **argv)
       case 'L':
         outtranspose=true;
         break;
-      case 'A':
+      case 's':
         alltoall=atoi(optarg);
         break;
       case 'a':

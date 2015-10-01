@@ -69,13 +69,13 @@ def main(argv):
                 for Z in Zlist:
                     for P in Plist:
                         for a in range(1,int(sqrt(P)+1.5)):
-                            for A in range(0,2):
+                            for s in range(0,2):
                                 ntests += 1
                                 args = []
                                 args.append("-x" + str(X))
                                 args.append("-y" + str(Y))
                                 args.append("-z" + str(Z))
-                                args.append("-A" + str(A))
+                                args.append("-s" + str(s))
                                 args.append("-a" + str(a))
                                 args.append("-q")
                                 args.append("-t")
