@@ -22,6 +22,7 @@
 #include <fftw3.h>
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
 
 namespace fftwpp {
 
@@ -79,7 +80,7 @@ void mpi_broadcast_wisdom(const MPI_Comm& comm)
 //  MPI_Comm comm;
   int my_pe;
   char *wis;
-  size_t wislen;
+  int wislen;
 
 //  MPI_Comm_dup(comm_, &comm);
   MPI_Comm_rank(comm, &my_pe);
@@ -87,13 +88,16 @@ void mpi_broadcast_wisdom(const MPI_Comm& comm)
   if (my_pe != 0) {
     MPI_Bcast(&wislen, 1, MPI_UNSIGNED_LONG_LONG, 0, comm);
      char wis[wislen];
+     std::cout << wislen << "<-" << std::endl;
     MPI_Bcast(wis, wislen, MPI_CHAR, 0, comm);
+    fftw_forget_wisdom();
     if (!fftw_import_wisdom_from_string(wis))
       MPI_Abort(comm, 1);
   }
   else /* my_pe == 0 */ {
     wis = fftw_export_wisdom_to_string();
     wislen = strlen(wis) + 1;
+    std::cout << wislen << "->" << std::endl;
     MPI_Bcast(&wislen, 1, MPI_UNSIGNED_LONG_LONG, 0, comm);
     MPI_Bcast(wis, wislen, MPI_CHAR, 0, comm);
     fftw_free(wis);

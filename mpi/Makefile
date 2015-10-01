@@ -46,7 +46,7 @@ vpath %.cc ../
 FFTW=fftw++
 FILES=cconv2 conv2 cconv3 conv3 fft2 fft3 fft2r transpose \
 	accumulate accumulateyz accumulatexy
-UTILS=$(FFTW) mpiutils wisdom-api
+UTILS=$(FFTW) mpiutils
 MPITRANSPOSE=$(UTILS) mpitranspose
 MPIFFT=$(MPITRANSPOSE) mpifftw++
 MPICONVOLUTION=$(MPIFFT) convolution mpiconvolution

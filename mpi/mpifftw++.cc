@@ -3,17 +3,62 @@
 
 namespace fftwpp {
 
-void mpi_broadcast_wisdom(const MPI_Comm&);
-void mpi_gather_wisdom(const MPI_Comm&);
-
 MPI_Comm Active;
 
-void MPIbeforePlanner()
+fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out) 
 {
+//  return F->Plan(in,out);
+  fftw_plan plan;
   int rank;
   MPI_Comm_rank(Active,&rank);
+  
   if(rank == 0) {
-      BeforePlanner();
+    int size;
+    MPI_Comm_size(Active,&size);
+    
+    static bool Wise=false;
+    if(!Wise)
+      fftw::LoadWisdom();
+    fftw::effort |= FFTW_WISDOM_ONLY;
+    plan=F->Plan(in,out);
+    fftw::effort &= !FFTW_WISDOM_ONLY;
+    int length=0;
+    char *experience=NULL;
+    char *inspiration=NULL;
+    if(!plan || !Wise) {
+      if(Wise) {
+        experience=fftw_export_wisdom_to_string();
+        fftw_forget_wisdom();
+      }
+      plan=F->Plan(in,out);
+      inspiration=fftw_export_wisdom_to_string();
+      length=strlen(inspiration);
+    }
+    for(int i=1; i < size; ++i)
+      MPI_Send(&length,1,MPI_INT,i,0,Active);
+    if(length > 0) {
+      MPI_Bcast(inspiration,length,MPI_CHAR,0,Active);
+      if(Wise) {
+        fftw_import_wisdom_from_string(experience);
+        fftw_free(experience);
+      } else Wise=true;
+      fftw::SaveWisdom();
+      fftw_free(inspiration);
+    }
+    bool advice=false;
+    int i=1;
+    int rlength[size];
+    MPI_Gather(&length,1,MPI_INT,rlength,1,MPI_INT,0,Active);
+#if 0    
+      if(length > 0) {
+        advice=true;
+        char inspiration[length+1];
+        MPI_Recv(&inspiration,length,MPI_CHAR,i,0,Active,MPI_STATUS_IGNORE);
+        inspiration[length]=0;
+        fftw_import_wisdom_from_string(inspiration);
+      }
+#endif    
+    if(advice) fftw::SaveWisdom();
   } else {
     int flag=false;
     MPI_Status status;
@@ -22,24 +67,44 @@ void MPIbeforePlanner()
       if(flag) break;
       usleep(10000);
     }
-    int signal;
-    MPI_Recv(&signal,1,MPI_INT,0,0,Active,MPI_STATUS_IGNORE);
-    mpi_broadcast_wisdom(Active);
+    int length;
+    MPI_Recv(&length,1,MPI_INT,0,0,Active,MPI_STATUS_IGNORE);
+    if(length > 0) {
+      char inspiration[length+1];
+      MPI_Bcast(inspiration,length,MPI_CHAR,0,Active);
+      inspiration[length]=0;
+      if(!fftw_import_wisdom_from_string(inspiration))
+        MPI_Abort(Active,1);
+    }
+    fftw::effort |= FFTW_WISDOM_ONLY;
+    plan=F->Plan(in,out);
+    fftw::effort &= !FFTW_WISDOM_ONLY;
+    char *experience=NULL;
+    char *inspiration=NULL;
+    if(plan)
+      length=0;
+    else {
+#if 0      
+      experience=fftw_export_wisdom_to_string();
+      fftw_forget_wisdom();
+      plan=F->Plan(in,out);
+      inspiration=fftw_export_wisdom_to_string();
+      length=strlen(inspiration);
+#endif      
+      length=1;
+    }
+    std::cout << "send from " << rank << std::endl;
+    MPI_Gather(&length,1,MPI_INT,NULL,1,MPI_INT,0,Active);
+#if 0
+    if(length > 0) {
+      MPI_Send(inspiration,length,MPI_CHAR,0,0,Active);
+      fftw_import_wisdom_from_string(experience);
+      fftw_free(experience);
+      fftw_free(inspiration);
+    }
+#endif    
   }
-}
-
-void MPIafterPlanner()
-{
-  int rank,size;
-  MPI_Comm_rank(Active,&rank);
-  MPI_Comm_size(Active,&size);
-  if(rank == 0) {
-    fftw::SaveWisdom();
-    int signal=0;
-    for(int i=1; i < size; ++i)
-      MPI_Send(&signal,1,MPI_INT,i,0,Active);
-    mpi_broadcast_wisdom(Active);
-  }
+  return plan;
 }
 
 void MPIInitWisdom(const MPI_Comm& active)
@@ -47,8 +112,7 @@ void MPIInitWisdom(const MPI_Comm& active)
   int rank;
   Active=active;
   MPI_Comm_rank(active,&rank);
-  fftw::beforePlanner=MPIbeforePlanner;
-  fftw::afterPlanner=MPIafterPlanner;
+  fftw::planner=MPIplanner;
 }
 
 void fft2dMPI::Forwards(Complex *f)
