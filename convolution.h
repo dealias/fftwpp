@@ -83,9 +83,12 @@ struct convolveOptions {
   mpiOptions mpi;                  // |
   
   convolveOptions(unsigned int threads=fftw::maxthreads,
-                  bool xcompact=true, bool ycompact=true, bool zcompact=true) :
+                  bool xcompact=true, bool ycompact=true, bool zcompact=true,
+                  unsigned int nx=0, unsigned int ny=0, unsigned int nz=0,
+                  unsigned int stride2=0, unsigned int stride3=0) :
     threads(threads),
     xcompact(xcompact), ycompact(ycompact), zcompact(zcompact),
+    nx(nx), ny(ny), nz(nz), stride2(stride2), stride3(stride3),
     mpiplanner(false) {}
 
   convolveOptions(const convolveOptions& options, unsigned int threads) :
@@ -934,7 +937,7 @@ public:
       for(unsigned int t=0; t < threads; ++t)
         yzconvolve[t]=new ImplicitConvolution2(my,mz,u1+t*mz*A*innerthreads,
                                                u2+t*options.stride2*A,A,B,
-                                               convolveOptions(innerthreads));
+                                               innerthreads);
       initpointers3(U3,u3,options.stride3);
     } else yzconvolve=NULL;
   }
