@@ -10,7 +10,6 @@ sys.stdin.close()
 os.close(0)
 
 def main(argv):
-    retval = 0
     msg = "MPI convolution unit tests"
     logfile = 'testconvolutions.log'
     print msg
@@ -36,6 +35,7 @@ def main(argv):
             sys.exit(0)
 
     testlist = []
+    testlist.append("testcconv2.py")
     testlist.append("testcconv3.py")
 
     print "Log in " + logfile + "\n"
@@ -55,17 +55,18 @@ def main(argv):
             log = open(logfile, 'a')
             log.write(msg + "\n")
             log.close()
-            retval += 1
+            nfail += 1
         else:
-            msg = "Running " + test + ": "
-            print(msg),
-            log = open(logfile, 'a')
-            log.write(msg)
-            log.close()
             cmd = []
             cmd.append("./" + test)
             if(shortrun):
                 cmd.append("-s")
+
+            msg = "Running " + " ".join(cmd) + ": "
+            print(msg),
+            log = open(logfile, 'a')
+            log.write(msg)
+            log.close()
 
             #print cmd
             proc = Popen(cmd, stdout = PIPE, stderr = PIPE)
@@ -93,14 +94,14 @@ def main(argv):
                 log.write("stdout:\n" + out + "\n")
                 log.write("stderr:\n" + err + "\n")
                 log.close()
-                retval += 1
+                nfail += 1
 
     print "\n", nfails, "failures out of", ntests, "tests." 
 
     tend = time.time()
     print "\nElapsed time (s):", tend - tstart
 
-    sys.exit(retval)
+    sys.exit(nfails)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
