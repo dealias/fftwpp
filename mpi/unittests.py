@@ -10,7 +10,6 @@ sys.stdin.close()
 os.close(0)
 
 def main(argv):
-    retval = 0
 
     msg = "MPI fft unit test"
     logfile = 'unittests.log'
@@ -63,46 +62,46 @@ def main(argv):
             log = open(logfile, 'a')
             log.write(msg + "\n")
             log.close()
-            retval += 1
+            nfails += 1
         else:
-            msg = "Running " + test + ": "
-            print(msg),
-            log = open(logfile, 'a')
-            log.write(msg)
-            log.close()
             cmd = []
             cmd.append("./" + test)
             if(shortrun):
                 cmd.append("-s")
-            #print cmd
+
+            msg = "Running " + " ".join(cmd) + ": "
+            print(msg),
+            log = open(logfile, 'a')
+            log.write(msg)
+            log.close()
+            
             proc = Popen(cmd, stdout = PIPE, stderr = PIPE)
             proc.wait() # sets the return code
 
             prc = proc.returncode
             out, err = proc.communicate() # capture output
             if (prc == 0): # did the process succeed?
-                msg = "\tpass"
+                msg = "\t\tpass"
                 print msg
                 log = open(logfile, 'a')
                 log.write(msg + "\n")
                 log.close()
             else:
-                nfails += 1
-                msg = "\tFAILED!"
+                msg = "\t\tFAILED!"
                 print msg
                 log = open(logfile, 'a')
                 log.write(msg + "\n")
                 log.write("stdout:\n" + out + "\n")
                 log.write("stderr:\n" + err + "\n")
                 log.close()
-                retval += 1
+                nfails += 1
 
     print "\n", nfails, "failures out of", ntests, "tests." 
 
     tend = time.time()
     print "\nElapsed time (s):", tend - tstart
 
-    sys.exit(retval)
+    sys.exit(nfails)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

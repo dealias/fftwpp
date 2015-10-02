@@ -37,6 +37,7 @@ def main(argv):
     testlist = []
     testlist.append("testcconv2.py")
     testlist.append("testcconv3.py")
+    testlist.append("testconv2.py")
 
     print "Log in " + logfile + "\n"
     log = open(logfile, 'w')

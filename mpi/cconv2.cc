@@ -166,8 +166,9 @@ int main(int argc, char* argv[])
 
     ImplicitConvolution2MPI C(mx,my,d,A);
 
+    MPI_Barrier(group.active);
+    
     if(test) {
-
       
       init(F,d,A);
 
@@ -179,7 +180,6 @@ int main(int argc, char* argv[])
 	}
       }
 
-     
       Complex **Flocal=new Complex *[A];
       for(unsigned int a=0; a < A; ++a) {
 	Flocal[a]=ComplexAlign(mx*my);
@@ -188,6 +188,7 @@ int main(int argc, char* argv[])
 	  cout << "\nGathered input " << a << ":" << endl;
 	  Array2<Complex> AFlocala(mx,my,Flocal[a]);
 	  cout << AFlocala << endl;
+	  // FIXME: add error check
 	}
       }
       
