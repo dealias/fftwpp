@@ -33,11 +33,11 @@ def main(argv):
     print "MPI transpose unit test"
 
     proglist = []
-    proglist.append("accumulate")
-    proglist.append("accumulateyz")
-    proglist.append("accumulatexy")
+    proglist.append("gather")
+    proglist.append("gatheryz")
+    proglist.append("gatherxy")
 
-    logfile = 'testaccumulate.log' 
+    logfile = 'testgather.log' 
     print "Log in " + logfile + "\n"
     log = open(logfile, 'w')
     log.close()

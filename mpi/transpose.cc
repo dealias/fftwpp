@@ -240,10 +240,10 @@ int transpose(int rank, int size, int N)
 	wholedata=new Complex[X*Y*Z];
 	wholeoutput=new Complex[X*Y*Z];
       }
-      accumulatey(data,wholedata,X,Y,xstart,ystart,x,y,Z,active);
+      gathery(data,wholedata,X,Y,xstart,ystart,x,y,Z,active);
 
       if(showoutput && rank == 0) {
-	cout << "\nAccumulated input data:" << endl;
+	cout << "\nGathered input data:" << endl;
 	show(wholedata,X,Y,0,0,X,Y);
       }
 
@@ -257,11 +257,11 @@ int transpose(int rank, int size, int N)
         show(data,X,y*Z,active);
       }
 
-      accumulatex(data,wholeoutput,X,Y,xstart,ystart,x,y,Z,active);
+      gatherx(data,wholeoutput,X,Y,xstart,ystart,x,y,Z,active);
 
       if(rank == 0) {
 	if(showoutput) {
-	  cout << "\nAccumulated output data:" << endl;
+	  cout << "\nGathered output data:" << endl;
 	  show(wholeoutput,X,Y,0,0,X,Y);
 	}
 

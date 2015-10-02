@@ -208,17 +208,17 @@ int main(int argc, char* argv[])
         }
       }
 
-      if(!quiet && main) cout << "Accumulated input:" << endl;
+      if(!quiet && main) cout << "Gathered input:" << endl;
       Complex **F0=new Complex*[A];
       for(unsigned int a=0; a < A; a++) {
         if(main) {
           F0[a]=ComplexAlign(mx*my*mz);
         }
-        accumulate_splityz(F[a],F0[a],
-                           d.X, d.Y, d.Z,
-                           d.x0, d.y0, d.z0,
-                           d.x, d.y, d.z,
-                           0, group.active);
+        gatheryz(F[a],F0[a],
+		     d.X, d.Y, d.Z,
+		     d.x0, d.y0, d.z0,
+		     d.x, d.y, d.z,
+		     group.active);
         if(!quiet && main) {
           cout << "a: " << a << endl;
           show(F0[a],mx,my,mz);
@@ -233,14 +233,14 @@ int main(int argc, char* argv[])
       }
       
       Complex *FC0=ComplexAlign(mx*my*mz);
-      accumulate_splityz(F[0],FC0,
-                         d.X, d.Y, d.Z,
-                         d.x0, d.y0, d.z0,
-                         d.x, d.y, d.z,
-                         0, group.active);
+      gatheryz(F[0],FC0,
+		   d.X, d.Y, d.Z,
+		   d.x0, d.y0, d.z0,
+		   d.x, d.y, d.z,
+		   group.active);
             
       if(!quiet && main) {
-        cout << "Accumulated output:" << endl;
+        cout << "Gathered output:" << endl;
         show(FC0,mx,my,mz);
       }
 

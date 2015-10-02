@@ -45,7 +45,7 @@ vpath %.cc ../
 
 FFTW=fftw++
 FILES=cconv2 conv2 cconv3 conv3 fft2 fft3 fft2r transpose \
-	accumulate accumulateyz accumulatexy
+	gather gatheryz gatherxy
 UTILS=$(FFTW) mpiutils
 MPITRANSPOSE=$(UTILS) mpitranspose
 MPIFFT=$(MPITRANSPOSE) mpifftw++
@@ -82,13 +82,13 @@ fft3: fft3.o $(MPIFFT:=.o)
 transpose: transpose.o $(MPIFFT:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
-accumulate: accumulate.o $(MPIFFT:=.o)
+gather: gather.o $(MPIFFT:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
-accumulateyz: accumulateyz.o $(MPIFFT:=.o)
+gatheryz: gatheryz.o $(MPIFFT:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
-accumulatexy: accumulatexy.o $(MPIFFT:=.o)
+gatherxy: gatherxy.o $(MPIFFT:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
 clean:  FORCE

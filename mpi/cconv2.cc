@@ -156,7 +156,7 @@ int main(int argc, char* argv[])
     Complex **Flocal=new Complex *[A];
     for(unsigned int a=0; a < A; ++a) {
       Flocal[a]=ComplexAlign(mx*my);
-      accumulatex(F[a], Flocal[a], d, 1, group.active);
+      gatherx(F[a], Flocal[a], d, 1, group.active);
     }
 
     double *T=new double[N];
@@ -179,13 +179,13 @@ int main(int argc, char* argv[])
       C.convolve(F,mult);
 
       // FIXME: free
-      Complex *Foutaccumulated=ComplexAlign(mx*my);
-      accumulatex(F[0], Foutaccumulated, d, 1, group.active);
+      Complex *Foutgather=ComplexAlign(mx*my);
+      gatherx(F[0], Foutgather, d, 1, group.active);
 
       if(main) {
 	ImplicitConvolution2 Clocal(mx,my,A,1);
 	Clocal.convolve(Flocal,mult);
-	double maxerr = relmaxerror(Flocal[0],Foutaccumulated,d.X,d.Y);
+	double maxerr = relmaxerror(Flocal[0],Foutgather,d.X,d.Y);
 	cout << "maxerr: " << maxerr << endl;
 	if(maxerr > 1e-10) {
 	  retval += 1;

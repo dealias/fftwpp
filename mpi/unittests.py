@@ -41,7 +41,7 @@ def main(argv):
         print "Running long tests"
 
     ffttestlist = []
-    ffttestlist.append("testaccumulate.py")
+    ffttestlist.append("testgather.py")
     ffttestlist.append("testtranspose.py")
     ffttestlist.append("testfft.py")
     ffttestlist.append("testconvolution.py")

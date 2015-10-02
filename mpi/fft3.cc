@@ -151,20 +151,20 @@ int main(int argc, char* argv[])
       }
 
       size_t align=sizeof(Complex);
-      array3<Complex> faccumulated(mx,my,mz,align);
-      fft3d localForward(-1,faccumulated);
-      fft3d localBackward(1,faccumulated);
-      accumulate_splitxy(f, faccumulated(), d, 0, group.active);
+      array3<Complex> fgatherd(mx,my,mz,align);
+      fft3d localForward(-1,fgatherd);
+      fft3d localBackward(1,fgatherd);
+      gatherxy(f, fgatherd(), d, group.active);
 
       array3<Complex> flocal(mx,my,mz,align);
       init(flocal(),d.X,d.Y,d.Z,0,0,0,d.X,d.Y,d.Z);
       if(main) {
 	if(!quiet) {
-	  cout << "accumulated input:\n" <<  faccumulated << endl;
-	  cout << "local input:\n" <<  flocal << endl;
+	  cout << "Gathered input:\n" <<  fgatherd << endl;
+	  cout << "Local input:\n" <<  flocal << endl;
 	}
 
-	double inputerror = relmaxerror(faccumulated(),flocal(),d.X,d.Y,d.Z);
+	double inputerror = relmaxerror(fgatherd(),flocal(),d.X,d.Y,d.Z);
 	if(inputerror > 1e-10) {
 	  cout << "Caution!  Inputs differ: " << inputerror << endl;
 	  retval += 1;
@@ -182,15 +182,15 @@ int main(int argc, char* argv[])
 	if(main) cout << "Distributed output:" << endl;
 	show(f,d.x,d.xy.y,d.Z,group.active);
       }
-      accumulate_splitxy(f, faccumulated(), d, 0, group.active); 
+      gatherxy(f, fgatherd(), d, group.active); 
 
       if(!quiet && main) {
-	cout << "Accumulated output:\n" <<  faccumulated << endl;
+	cout << "Gathered output:\n" <<  fgatherd << endl;
 	cout << "Local output:\n" <<  flocal << endl;
       }
       
       if(main) {
-	double outputerror = relmaxerror(faccumulated(),flocal(),d.X,d.Y,d.Z);
+	double outputerror = relmaxerror(fgatherd(),flocal(),d.X,d.Y,d.Z);
 	if(outputerror > 1e-10) {
 	  cout << "Caution!  Outputs differ: " << outputerror << endl;
 	  retval += 1;
@@ -208,15 +208,15 @@ int main(int argc, char* argv[])
 	show(f,d.x,d.xy.y,d.Z,group.active);
       }
 
-      accumulate_splitxy(f, faccumulated(), d, 0, group.active);
+      gatherxy(f, fgatherd(), d, group.active);
       
       if(!quiet && main) {
-	cout << "Accumulated output:\n" <<  faccumulated << endl;
+	cout << "Gathered output:\n" <<  fgatherd << endl;
 	cout << "Local output:\n" <<  flocal << endl;
       }
       
       if(main) {
-	double outputerror = relmaxerror(faccumulated(),flocal(),d.X,d.Y,d.Z);
+	double outputerror = relmaxerror(fgatherd(),flocal(),d.X,d.Y,d.Z);
 	if(outputerror > 1e-10) {
 	  cout << "Caution!  Outputs differ: " << outputerror << endl;
 	  retval += 1;

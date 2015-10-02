@@ -107,10 +107,10 @@ int main(int argc, char* argv[])
     array3<Complex> localf(mx,my,mz);
     localf=0.0;
     
-    accumulatex(f,localf(),d,mz,group.active);
+    gatherx(f,localf(),d,mz,group.active);
     if(main) {
       if(!quiet) {
-	cout << "Accumulted:" <<endl;
+	cout << "Gathered:" <<endl;
 	cout << localf << endl;
       }
       array3<Complex> localf0(mx,my,mz);
@@ -159,11 +159,11 @@ int main(int argc, char* argv[])
     }
 	
     localf=0.0;
-    accumulatey(f,localf(),d,mz,group.active);
+    gathery(f,localf(),d,mz,group.active);
     if(main) {
       if(!quiet) {
 	if(mx*my < outlimit) {
-	  cout << "\nAccumulated version:" << endl;
+	  cout << "\nGathered version:" << endl;
 	  cout << localf << endl;
 	}
       }

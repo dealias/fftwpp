@@ -142,10 +142,10 @@ int main(int argc, char* argv[])
       rcfft2d localForward(mx, my, flocal(), glocal());
       crfft2d localBackward(mx, my, glocal(), flocal());
 
-      accumulatex(f, flocal(), df, 1, group.active);
+      gatherx(f, flocal(), df, 1, group.active);
 
       if(!quiet && main) {
-	cout << "\nAccumulated input:\n" << flocal << endl;
+	cout << endl << "Gathered input:\n" << flocal << endl;
       }
 
       rcfft.Forwards(f,g);
@@ -156,8 +156,8 @@ int main(int argc, char* argv[])
 	//show(g,dg.x,dg.Y,group.active); // FIXME: temp
       }
 
-      array2<Complex> gaccumulated(mx,myp,align);
-      accumulatey(g, gaccumulated(), dg, 1, group.active);
+      array2<Complex> ggather(mx,myp,align);
+      gathery(g, ggather(), dg, 1, group.active);
 
 
       MPI_Barrier(group.active);
@@ -165,9 +165,9 @@ int main(int argc, char* argv[])
 	localForward.fft(flocal,glocal);
 	if(!quiet) {
 	  cout << "\nLocal output:\n" << glocal << endl;
-	  cout << "\nAccumulated output:\n" << gaccumulated << endl;
+	  cout << "\nGathered output:\n" << ggather << endl;
 	}
-	double maxerr = relmaxerror(glocal(),gaccumulated(),dg.X,dg.Y);
+	double maxerr = relmaxerror(glocal(),ggather(),dg.X,dg.Y);
 	
 	cout << "max error: " << maxerr << endl;
 	if(maxerr > 1e-10) {
@@ -190,15 +190,15 @@ int main(int argc, char* argv[])
       */
 
       /*
-      accumulatex(f, faccumulated(), d, 1, group.active);
+      gatherx(f, fgatherd(), d, 1, group.active);
       MPI_Barrier(group.active);
       if(main) {
 	localBackward.fftNormalized(flocal);
 	if(!quiet) {
 	  cout << "\nLocal output:\n" << flocal << endl;
-	  cout << "\nAccumulated output:\n" << faccumulated << endl;
+	  cout << "\nGatherd output:\n" << fgatherd << endl;
 	}
-	double maxerr = relmaxerror(flocal(),faccumulated(),d.X,d.Y);
+	double maxerr = relmaxerror(flocal(),fgatherd(),d.X,d.Y);
 	
 	cout << "max error: " << maxerr << endl;
 	if(maxerr > 1e-10) {
