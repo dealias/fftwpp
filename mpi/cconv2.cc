@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
 #endif
   int retval=0;
   bool test=false;
-//  bool quiet=false;
+  bool quiet=false;
   unsigned int A=2;
   
 #ifdef __GNUC__ 
@@ -106,7 +106,7 @@ int main(int argc, char* argv[])
         test=true;
         break;
       case 'q':
-//        quiet=true; // TODO: Implement
+        quiet=true;
         break;
       case 'h':
       default:
@@ -148,18 +148,9 @@ int main(int argc, char* argv[])
     split d(mx,my,group.active);
   
     Complex **F=new Complex *[A];
-    for(unsigned int a=0; a < A; ++a)
-      F[a]=ComplexAlign(d.n);
-    init(F,d,A);
-
-    // FIXME: free
-    Complex **Flocal=new Complex *[A];
     for(unsigned int a=0; a < A; ++a) {
-      Flocal[a]=ComplexAlign(mx*my);
-      gatherx(F[a], Flocal[a], d, 1, group.active);
+      F[a]=ComplexAlign(d.n);
     }
-
-    double *T=new double[N];
 
     multiplier *mult;
   
@@ -176,15 +167,49 @@ int main(int argc, char* argv[])
     ImplicitConvolution2MPI C(mx,my,d,A);
 
     if(test) {
+
+      
+      init(F,d,A);
+
+      if(!quiet) {
+	for(unsigned int a=0; a < A; ++a) {
+	  if(main) 
+	    cout << "\nDistributed input " << a  << ":"<< endl;
+	  show(F[a],mx,d.y,group.active);
+	}
+      }
+
+     
+      Complex **Flocal=new Complex *[A];
+      for(unsigned int a=0; a < A; ++a) {
+	Flocal[a]=ComplexAlign(mx*my);
+	gathery(F[a], Flocal[a], d, 1, group.active);
+	if(!quiet && main)  {
+	  cout << "\nGathered input " << a << ":" << endl;
+	  Array2<Complex> AFlocala(mx,my,Flocal[a]);
+	  cout << AFlocala << endl;
+	}
+      }
+      
       C.convolve(F,mult);
 
-      // FIXME: free
       Complex *Foutgather=ComplexAlign(mx*my);
-      gatherx(F[0], Foutgather, d, 1, group.active);
+      gathery(F[0], Foutgather, d, 1, group.active);
 
+      if(!quiet) {
+	if(main)
+	  cout << "Distributed output:" << endl;
+	show(F[0],mx,d.y,group.active);
+      }
+      
       if(main) {
 	ImplicitConvolution2 Clocal(mx,my,A,1);
 	Clocal.convolve(Flocal,mult);
+	if(!quiet) {
+	  cout << "Local output:" << endl;
+	  Array2<Complex> AFlocal0(mx,my,Flocal[0]);
+	  cout << AFlocal0 << endl;
+	}
 	double maxerr = relmaxerror(Flocal[0],Foutgather,d.X,d.Y);
 	cout << "maxerr: " << maxerr << endl;
 	if(maxerr > 1e-10) {
@@ -195,12 +220,19 @@ int main(int argc, char* argv[])
 	}
       }
 
+      deleteAlign(Foutgather);
+      for(unsigned int a=0; a < A; ++a)
+	deleteAlign(Flocal[a]);
+      delete [] Flocal;
+      
       MPI_Barrier(group.active);
-
 
     } else {
       if(group.rank == 0)
 	cout << "Initialized after " << seconds() << " seconds." << endl;
+
+      double *T=new double[N];
+
       for(unsigned int i=0; i < N; ++i) {
 	init(F,d,A);
 	if(main) seconds();
@@ -211,16 +243,17 @@ int main(int argc, char* argv[])
     
       if(main) 
 	timings("Implicit",mx,T,N);
+      delete [] T;
     }   
 
-    if(mx*my < outlimit)
+    if(!quiet && mx*my < outlimit)
       show(F[0],mx,d.y,group.active);
 
     for(unsigned int a=0; a < A; ++a)
       deleteAlign(F[a]);
     delete [] F;
   
-    delete [] T;
+
   
   }
 
