@@ -236,7 +236,7 @@ void gatheryz(const ftype *part,
 	      const splityz d,
 	      const MPI_Comm& communicator)
 {
-  gatherxy(part, whole,
+  gatheryz(part, whole,
 	   d.X,d.Y,d.Z,
 	   d.x0,d.y0,d.z0,
 	   d.x,d.y,d.z,
