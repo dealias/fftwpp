@@ -195,7 +195,7 @@ int main(int argc, char* argv[])
       C.convolve(F,mult);
 
       Complex *Foutgather=ComplexAlign(mx*my);
-      gathery(F[0], Foutgather, d, 1, group.active);
+      gathery(F[0],Foutgather,d,1,group.active);
 
       if(!quiet) {
 	if(main)
@@ -211,14 +211,7 @@ int main(int argc, char* argv[])
 	  Array2<Complex> AFlocal0(mx,my,Flocal[0]);
 	  cout << AFlocal0 << endl;
 	}
-	double maxerr = relmaxerror(Flocal[0],Foutgather,d.X,d.Y);
-	cout << "maxerr: " << maxerr << endl;
-	if(maxerr > 1e-10) {
-	  retval += 1;
-	  cout << "CAUTION! Large error!" << endl;
-	} else {
-	  cout << "Error ok." << endl;
-	}
+        retval += checkerror(Flocal[0],Foutgather,d.X*d.Y);
       }
 
       deleteAlign(Foutgather);

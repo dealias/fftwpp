@@ -167,13 +167,7 @@ int main(int argc, char* argv[])
 	  cout << "\nLocal output:\n" << glocal << endl;
 	  cout << "\nGathered output:\n" << ggather << endl;
 	}
-	double maxerr = relmaxerror(glocal(),ggather(),dg.X,dg.Y);
-	
-	cout << "max error: " << maxerr << endl;
-	if(maxerr > 1e-10) {
-	  cerr << "CAUTION: max error is LARGE!" << endl;
-	  retval += 1;
-	}
+        retval += checkerror(glocal(),ggather(),dg.X*dg.Y);
       }
 
 
@@ -198,13 +192,7 @@ int main(int argc, char* argv[])
 	  cout << "\nLocal output:\n" << flocal << endl;
 	  cout << "\nGatherd output:\n" << fgatherd << endl;
 	}
-	double maxerr = relmaxerror(flocal(),fgatherd(),d.X,d.Y);
-	
-	cout << "max error: " << maxerr << endl;
-	if(maxerr > 1e-10) {
-	  cerr << "CAUTION: max error is LARGE!" << endl;
-	  retval += 1;
-	}
+        retval += checkerror(flocal(),fgather(),df.X*df.Y);
       }
       */
 

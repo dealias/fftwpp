@@ -160,10 +160,14 @@ int main(int argc, char* argv[])
 	  cout << "\nGathered output:\n" << fgather << endl;
 	  cout << "\nLocal output:\n" << flocal << endl;
 	}
-	double maxerr = relmaxerror(flocal(),fgather(),d.X,d.Y);
-	
+        double maxerr=0.0, norm=0.0;
+        unsigned int stop=d.X*d.Y;
+        for(unsigned int i=0; i < stop; i++) {
+          maxerr=std::max(maxerr,abs(fgather(i)-flocal(i)));
+          norm=std::max(norm,abs(flocal(i)));
+        }
 	cout << "max error: " << maxerr << endl;
-	if(maxerr > 1e-10) {
+        if(maxerr > 1e-12*norm) {
 	  cerr << "CAUTION: max error is LARGE!" << endl;
 	  retval += 1;
 	}
@@ -185,13 +189,7 @@ int main(int argc, char* argv[])
 	  cout << "\nGathered inverse:\n" << fgather << endl;
 	  cout << "\nLocal inverse:\n" << flocal << endl;
 	}
-	double maxerr = relmaxerror(flocal(),fgather(),d.X,d.Y);
-	
-	cout << "max error: " << maxerr << endl;
-	if(maxerr > 1e-10) {
-	  cerr << "CAUTION: max error is LARGE!" << endl;
-	  retval += 1;
-	}
+        retval += checkerror(flocal(),fgather(),d.X*d.Y);
       }
 
     } else {

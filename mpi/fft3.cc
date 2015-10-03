@@ -163,14 +163,7 @@ int main(int argc, char* argv[])
 	  cout << "Gathered input:\n" <<  fgatherd << endl;
 	  cout << "Local input:\n" <<  flocal << endl;
 	}
-
-	double inputerror = relmaxerror(fgatherd(),flocal(),d.X,d.Y,d.Z);
-	if(inputerror > 1e-10) {
-	  cout << "Caution!  Inputs differ: " << inputerror << endl;
-	  retval += 1;
-	} else {
-	  cout << "Inputs agree." << endl;
-	}
+        retval += checkerror(flocal(),fgatherd(),d.X*d.Y*d.Z);
       }
       
       fft.Forwards(f);
@@ -189,15 +182,8 @@ int main(int argc, char* argv[])
 	cout << "Local output:\n" <<  flocal << endl;
       }
       
-      if(main) {
-	double outputerror = relmaxerror(fgatherd(),flocal(),d.X,d.Y,d.Z);
-	if(outputerror > 1e-10) {
-	  cout << "Caution!  Outputs differ: " << outputerror << endl;
-	  retval += 1;
-	} else {
-	  cout << "Outputs agree." << endl;
-	}
-      }
+      if(main)
+        retval += checkerror(flocal(),fgatherd(),d.X*d.Y*d.Z);
       
       fft.Backwards(f);
       fft.Normalize(f);
@@ -215,15 +201,8 @@ int main(int argc, char* argv[])
 	cout << "Local output:\n" <<  flocal << endl;
       }
       
-      if(main) {
-	double outputerror = relmaxerror(fgatherd(),flocal(),d.X,d.Y,d.Z);
-	if(outputerror > 1e-10) {
-	  cout << "Caution!  Outputs differ: " << outputerror << endl;
-	  retval += 1;
-	} else {
-	  cout << "Outputs agree." << endl;
-	}
-      }
+      if(main)
+        retval += checkerror(flocal(),fgatherd(),d.X*d.Y*d.Z);
       
       if(!quiet) {
 	if(main) cout << "\nback to input:" << endl;

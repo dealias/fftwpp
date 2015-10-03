@@ -73,9 +73,9 @@ protected:
 public:  
   
   void inittranspose(Complex *f, const mpiOptions& mpioptions) {
-    T=new mpitranspose<double>(d.X,d.y,d.x,d.Y,2,(double *) f,NULL,
+    T=new mpitranspose<double>(d.X,d.y,d.x,d.Y,2,(double *) f,
                                d.communicator,mpioptions,global);
-    U=new mpitranspose<double>(du.X,du.y,du.x,du.Y,2,(double *) u2,NULL,
+    U=new mpitranspose<double>(du.X,du.y,du.x,du.Y,2,(double *) u2,
                                du.communicator,mpioptions,global);
   }    
   
@@ -144,7 +144,7 @@ protected:
 public:  
   void inittranspose(const mpiOptions& mpioptions) {
     if(d.y < d.Y) {
-      T=new mpitranspose<Complex>(d.X,d.y,d.x,d.Y,d.z,u3,NULL,
+      T=new mpitranspose<Complex>(d.X,d.y,d.x,d.Y,d.z,u3,
                                   d.xy.communicator,mpioptions,d.communicator);
     }
   }
@@ -228,9 +228,9 @@ protected:
 public:  
   void inittranspose(Complex *f, const mpiOptions& mpioptions) {
     if(d.y < d.Y) {
-      T=new mpitranspose<double>(d.X,d.y,d.x,d.Y,2*d.z,(double *) f,NULL,
+      T=new mpitranspose<double>(d.X,d.y,d.x,d.Y,2*d.z,(double *) f,
                                  d.xy.communicator,mpioptions,global);
-      U=new mpitranspose<double>(du.X,du.y,du.x,du.Y,2*d.z,(double *) u3,NULL,
+      U=new mpitranspose<double>(du.X,du.y,du.x,du.Y,2*d.z,(double *) u3,
                                  du.xy.communicator,mpioptions,global);
     }
   }

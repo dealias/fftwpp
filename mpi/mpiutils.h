@@ -329,52 +329,21 @@ void gatherxy(const ftype *part,
 	   communicator);
 }
 
-template<class ftype>
-double relmaxerror(const ftype *f, const ftype *g,
-		   const unsigned int X,
-		   const unsigned int Y)
+template<class T>
+int checkerror(const T *f, const T *control, unsigned int stop)
 {
-  double maxdiff=0.0;
-  double maxnorm=0.0;
-  unsigned int pos=0;
-  for(unsigned int i=0; i < X; i++) {
-    for(unsigned int j=0; j < Y; j++) {
-      double diff=abs(f[pos]-g[pos]);
-      if(diff > maxdiff)
-	maxdiff=diff;
-      double size=std::max(abs(f[pos]),abs(f[pos]));
-      if(size > maxnorm)
-	maxnorm=size;
-      pos++;
-    }
+  double maxerr=0.0, norm=0.0;
+  for(unsigned int i=0; i < stop; i++) {
+    maxerr=std::max(maxerr,abs(f[i]-control[i]));
+    norm=std::max(norm,abs(control[i]));
   }
-  // TODO: Must return two values.
-  return maxnorm == 0.0 ? 0.0 : maxdiff/maxnorm;
-}
-
-template<class ftype>
-double relmaxerror(const ftype *f, const ftype *g,
-		   const unsigned int X,
-		   const unsigned int Y,
-		   const unsigned int Z)
-{
-  double maxdiff=0.0;
-  double maxnorm=0.0;
-  unsigned int pos=0;
-  for(unsigned int i=0; i < X; i++) {
-    for(unsigned int j=0; j < Y; j++) {
-      for(unsigned int k=0; k < Z; k++) {
-	double diff=abs(f[pos]-g[pos]);
-	if(diff > maxdiff)
-	  maxdiff=diff;
-	double size=std::max(abs(f[pos]),abs(f[pos]));
-	if(size > maxnorm)
-	  maxnorm=size;
-	pos++;
-      }
-    }
+  std::cout << "Maximum error: " << maxerr << std::endl;
+  if(maxerr > 1e-12*norm) {
+    std::cout << "CAUTION! Large error!" << std::endl;
+    return 1;
   }
-  return maxdiff / (maxnorm + 1e-12);
+  std::cout << "Error ok." << std::endl;
+  return 0;
 }
 
 // output the contents of a 2D array
