@@ -7,7 +7,7 @@ import os.path
 import getopt
 
 sys.stdin.close()
-os.close(0)
+#os.close(0)
 
 def main(argv):
 
@@ -68,7 +68,7 @@ def main(argv):
             log.write(msg)
             log.close()
 
-            proc = Popen(cmd, stdout = PIPE, stderr = PIPE)
+            proc = Popen(cmd, stdout = PIPE, stderr = PIPE, stdin = None)
             proc.wait() # sets the return code
 
             prc = proc.returncode

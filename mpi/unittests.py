@@ -39,12 +39,12 @@ def main(argv):
     else:
         print "Running long tests"
 
-    ffttestlist = []
-    ffttestlist.append("testgather.py")
-    ffttestlist.append("testtranspose.py")
-    ffttestlist.append("testfft.py")
-    ffttestlist.append("testconvolution.py")
-
+    testlist = []
+    testlist.append("testgather.py")
+    testlist.append("testtranspose.py")
+    testlist.append("testfft.py")
+    testlist.append("testconvolution.py")
+    
     print "Log in " + logfile + "\n"
     log = open(logfile, 'w')
     log.write(msg)
@@ -54,7 +54,7 @@ def main(argv):
     ntests = 0
     nfails = 0
     tstart = time.time()
-    for test in ffttestlist:
+    for test in testlist:
         ntests += 1
         if not os.path.isfile(test):
             msg = "Error: "+ pname + "not present!"
@@ -69,13 +69,13 @@ def main(argv):
             if(shortrun):
                 cmd.append("-s")
 
-            msg = "Running " + " ".join(cmd) + ": "
+            msg = "Running " + " ".join(cmd)
             print(msg),
             log = open(logfile, 'a')
             log.write(msg)
             log.close()
             
-            proc = Popen(cmd, stdout = PIPE, stderr = PIPE)
+            proc = Popen(cmd, stdout = PIPE, stderr = PIPE, stdin = None)
             proc.wait() # sets the return code
 
             prc = proc.returncode
@@ -87,7 +87,7 @@ def main(argv):
                 log.write(msg + "\n")
                 log.close()
             else:
-                msg = "\t\tFAILED!"
+                msg = "\t\tFAILED!" 
                 print msg
                 log = open(logfile, 'a')
                 log.write(msg + "\n")

@@ -7,7 +7,7 @@ import getopt
 import os.path
 
 sys.stdin.close()
-os.close(0)
+#os.close(0)
 
 def main(argv):
     msg = "MPI convolution unit tests"
