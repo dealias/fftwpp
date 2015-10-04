@@ -14,7 +14,6 @@ extern MPI_Comm Active;
 class MPIgroup {
 public:  
   int rank,size;
-  unsigned int z;
   MPI_Comm active;                     // active communicator 
   MPI_Comm communicator,communicator2; // 3D transpose communicators
   
@@ -39,7 +38,7 @@ public:
     init(comm);
     unsigned int x=ceilquotient(X,size);
     unsigned int y=ceilquotient(Y,size);
-    z=allowPencil && X*y == x*Y ? ceilquotient(Z,size*y/Y) : Z;
+    unsigned int z=allowPencil && X*y == x*Y ? ceilquotient(Z,size*y/Y) : Z;
     size=ceilquotient(Y,y)*ceilquotient(Z,z);
     
     activate(comm);
@@ -67,11 +66,9 @@ public:
   unsigned int x0,y0;   // local starting values
   unsigned int n;       // total required storage (Complex words)
   MPI_Comm communicator;
-  unsigned int Z;       // number of Complex words per matrix element 
   split() {}
-  split(unsigned int X, unsigned int Y, MPI_Comm communicator,
-        unsigned int Z=1) 
-    : X(X), Y(Y), communicator(communicator), Z(Z) {
+  split(unsigned int X, unsigned int Y, MPI_Comm communicator)
+    : X(X), Y(Y), communicator(communicator) {
     int size;
     int rank;
       
@@ -83,7 +80,7 @@ public:
     
     x0=localstart(X,rank,size);
     y0=localstart(Y,rank,size);
-    n=std::max(X*y,x*Y)*Z;
+    n=std::max(X*y,x*Y);
   }
 
   int Activate() const {
@@ -120,12 +117,11 @@ public:
   int *reflect;               // Used by HermitianSymmetrizeXYMPI
   splityz() {}
   splityz(unsigned int X, unsigned int Y, unsigned int Z,
-          const MPIgroup& group, unsigned int Y2=0) : 
+          const MPIgroup& group) :
     X(X), Y(Y), Z(Z), communicator(group.active),
     XYplane(NULL) {
-    if(Y2 == 0) Y2=Y;
-    xy=split(X,Y,group.communicator,group.z);
-    yz=split(Y2,Z,group.communicator2);
+    xy=split(X,Y,group.communicator);
+    yz=split(Y,Z,group.communicator2);
     x=xy.x;
     y=xy.y;
     z=yz.y;
@@ -133,7 +129,7 @@ public:
     y0=xy.y0;
     z0=yz.y0;
     n2=yz.n;
-    n=std::max(xy.n,x*n2);
+    n=std::max(xy.n*z,x*n2);
   }
   
   int Activate() const {
@@ -170,7 +166,7 @@ public:
   splitxy(unsigned int X, unsigned int Y, unsigned int Z,
           const MPIgroup& group) : X(X), Y(Y), Z(Z),
 				   communicator(group.active) {
-    xy=split(X,Y,group.communicator,Z);
+    xy=split(X,Y,group.communicator);
     yz=split(Y,Z,group.communicator2);
     x=xy.x;
     y=yz.x;
@@ -179,7 +175,7 @@ public:
     y0=yz.x0;
     z0=yz.y0;
     n2=yz.n;
-    n=std::max(xy.n,x*n2);
+    n=std::max(xy.n*z,x*n2);
   }
   
   int Activate() const {
