@@ -61,7 +61,7 @@ def main(argv):
         failcases = ""
 
         # timeout cutoff in seconds (0 disables timeout)
-        timeout = 0 
+        timeout = 60 
         ntests = 0
         nfails = 0
         for X in Xlist:
