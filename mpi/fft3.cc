@@ -129,7 +129,7 @@ int main(int argc, char* argv[])
     if(group.rank == 0) {
       cout << "Configuration: " 
 	   << group.size << " nodes X " << fftw::maxthreads 
-         << " threads/node" << endl;
+           << " threads/node" << endl;
     }
   }
   
@@ -249,4 +249,3 @@ int main(int argc, char* argv[])
   
   return retval;
 }
-  

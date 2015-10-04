@@ -122,8 +122,8 @@ public:
   int *reflect;               // Used by HermitianSymmetrizeXYMPI
   split3() {}
   split3(unsigned int X, unsigned int Y, unsigned int Z,
-          const MPIgroup& group, bool spectral=false) : X(X), Y(Y), Z(Z),
-				   communicator(group.active) {
+         const MPIgroup& group, bool spectral=false) : X(X), Y(Y), Z(Z),
+                                                       communicator(group.active) {
     xy=split(X,Y,group.communicator);
     yz=split(Y,Z,group.communicator2);
     x=xy.x;
@@ -296,7 +296,7 @@ public:
     delete xForwards;
 
     if(d.z > 0)
-    delete Txy;
+      delete Txy;
   }
 
   void Forwards(Complex *f);
@@ -361,7 +361,7 @@ public:
     dr.Deactivate();
   }
 
- void inittranspose(Complex* out) {
+  void inittranspose(Complex* out) {
     int size;
     MPI_Comm_size(dc.communicator,&size);
 

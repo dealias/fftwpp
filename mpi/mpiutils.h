@@ -9,11 +9,8 @@ namespace fftwpp {
 // The distributed array has dimensions x*Y*Z.
 // The gathered array has dimensions    X*Y*Z.
 template<class ftype>
-void gatherx(const ftype *part,
-	     ftype *whole,
-	     const split d,
-	     const unsigned int Z,
-	     const MPI_Comm& communicator)
+void gatherx(const ftype *part, ftype *whole, const split d,
+             const unsigned int Z, const MPI_Comm& communicator)
 {
   int size, rank;
   MPI_Comm_size(communicator,&size);
@@ -63,11 +60,8 @@ void gatherx(const ftype *part,
 // The distributed array has dimensions X*y*Z.
 // The gathered array has dimensions    X*Y*Z.
 template<class ftype>
-void gathery(const ftype *part,
-	     ftype *whole,
-	     const split d,
-	     const unsigned int Z,
-	     const MPI_Comm& communicator)
+void gathery(const ftype *part, ftype *whole, const split d,
+             const unsigned int Z, const MPI_Comm& communicator)
 {
   int size, rank;
   MPI_Comm_size(communicator,&size);

@@ -166,10 +166,10 @@ int main(int argc, char* argv[])
     realmultiplier *mult;
   
     switch(A) {
-    case 2: mult=multbinary; break;
-    case 4: mult=multbinary2; break;
-    default: cout << "A=" << A << " is not yet implemented" << endl;
-      exit(1);
+      case 2: mult=multbinary; break;
+      case 4: mult=multbinary2; break;
+      default: cout << "A=" << A << " is not yet implemented" << endl;
+        exit(1);
     }
 
     convolveOptions options;

@@ -522,11 +522,11 @@ public:
   }
     
   void fft(double *in, Complex *out=NULL) {
-      fft((Complex *) in,out);
+    fft((Complex *) in,out);
   }
   
   void fft(Complex *in, double *out) {
-      fft(in,(Complex *) out);
+    fft(in,(Complex *) out);
   }
   
   void fft0(Complex *in, Complex *out=NULL) {
@@ -634,7 +634,7 @@ public:
   template<class T>
   Transpose(unsigned int rows, unsigned int cols, unsigned int length,
             T *in, T *out=NULL, unsigned int threads=fftw::maxthreads) :
-  rows(rows), cols(cols), threads(threads) {
+    rows(rows), cols(cols), threads(threads) {
     size=sizeof(T);
     if(size % sizeof(double) != 0) {
       std::cerr << "ERROR: Transpose is not implemented for type of size " 

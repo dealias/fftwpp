@@ -41,7 +41,7 @@ inline void usage()
   cerr << "-t\t\t test" << endl;
   cerr << "-q\t\t quiet" << endl;
   cerr << "-N<int>\t\t number of timing tests"
-	    << endl;
+       << endl;
   cerr << "-m<int>\t\t size" << endl;
   cerr << "-x<int>\t\t x size" << endl;
   cerr << "-y<int>\t\t y size" << endl;

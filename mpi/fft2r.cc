@@ -44,36 +44,36 @@ int main(int argc, char* argv[])
     if (c == -1) break;
                 
     switch (c) {
-    case 0:
-      break;
-    case 'N':
-      N=atoi(optarg);
-      break;
-    case 'm':
-      mx=my=atoi(optarg);
-      break;
-    case 'x':
-      mx=atoi(optarg);
-      break;
-    case 'y':
-      my=atoi(optarg);
-      break;
-    case 'n':
-      N0=atoi(optarg);
-      break;
-    case 'T':
-      fftw::maxthreads=atoi(optarg);
-      break;
-    case 'q':
-      quiet=true;
-      break;
-    case 't':
-      test=true;
-      break;
-    case 'h':
-      usage(2);
-      usageTranspose();
-      exit(1);
+      case 0:
+        break;
+      case 'N':
+        N=atoi(optarg);
+        break;
+      case 'm':
+        mx=my=atoi(optarg);
+        break;
+      case 'x':
+        mx=atoi(optarg);
+        break;
+      case 'y':
+        my=atoi(optarg);
+        break;
+      case 'n':
+        N0=atoi(optarg);
+        break;
+      case 'T':
+        fftw::maxthreads=atoi(optarg);
+        break;
+      case 'q':
+        quiet=true;
+        break;
+      case 't':
+        test=true;
+        break;
+      case 'h':
+        usage(2);
+        usageTranspose();
+        exit(1);
     }
   }
 
@@ -169,28 +169,28 @@ int main(int argc, char* argv[])
 
 
       /*
-      fft.Backwards(f);
-      fft.Normalize(f);
+        fft.Backwards(f);
+        fft.Normalize(f);
       */
 
       /*
-      if(!quiet && mx*my < outlimit) {
+        if(!quiet && mx*my < outlimit) {
       	if(main) cout << "\nDistributed output:" << endl;
       	show(f,d.x,my,group.active);
-      }
+        }
       */
 
       /*
-      gatherx(f, fgatherd(), d, 1, group.active);
-      MPI_Barrier(group.active);
-      if(main) {
+        gatherx(f, fgatherd(), d, 1, group.active);
+        MPI_Barrier(group.active);
+        if(main) {
 	localBackward.fftNormalized(flocal);
 	if(!quiet) {
-	  cout << "\nLocal output:\n" << flocal << endl;
-	  cout << "\nGatherd output:\n" << fgatherd << endl;
+        cout << "\nLocal output:\n" << flocal << endl;
+        cout << "\nGatherd output:\n" << fgatherd << endl;
 	}
         retval += checkerror(flocal(),fgather(),df.X*df.Y);
-      }
+        }
       */
 
     } else {

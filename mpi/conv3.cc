@@ -36,10 +36,10 @@ inline void init(Complex *f, Complex *g, const split3& d, unsigned int M=1,
       for(unsigned int j=d.y0 == 0 ? !ycompact : 0; j < d.y; ++j) {
         unsigned int IJ=I+d.z*j;
         unsigned int jj=d.y0-!ycompact+j;
-          for(unsigned int k=0; k < d.z; ++k) {
-            unsigned int kk=d.z0+k;
-            f[IJ+k]=ffactor*Complex(ii+kk,jj+kk);
-            g[IJ+k]=gfactor*Complex(2*ii+kk,jj+1+kk);
+        for(unsigned int k=0; k < d.z; ++k) {
+          unsigned int kk=d.z0+k;
+          f[IJ+k]=ffactor*Complex(ii+kk,jj+kk);
+          g[IJ+k]=gfactor*Complex(2*ii+kk,jj+1+kk);
         }
       }
     }

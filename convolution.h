@@ -31,7 +31,7 @@
 #define PARALLEL(code)                          \
   {                                             \
     code                                        \
-      }
+  }
 #endif
 
 namespace fftwpp {
@@ -510,11 +510,11 @@ public:
   
   // Unscramble indices, returning spatial j value stored at index i
   virtual inline unsigned findex(unsigned i) {
-      return i < m-1 ? 3*i : 3*i+4-3*m; // for i >= m-1: j=3*(i-(m-1))+1
+    return i < m-1 ? 3*i : 3*i+4-3*m; // for i >= m-1: j=3*(i-(m-1))+1
   }
 
   virtual inline unsigned uindex(unsigned i) {
-      return i > 0 ? (i < m ? 3*i-1 : 3*m-3) : 3*m-1;
+    return i > 0 ? (i < m ? 3*i-1 : 3*m-3) : 3*m-1;
   }
 
   virtual void backwards(Complex *f, Complex *u);
@@ -542,14 +542,14 @@ public:
     fft0pad(m,M,stride,u,threads) {}
 
   virtual inline unsigned findex(unsigned i) {
-      return i < m ? 3*(i-1) : 3*(i-m)+1;
+    return i < m ? 3*(i-1) : 3*(i-m)+1;
   }
   
   virtual inline unsigned uindex(unsigned i) {
-      return i > 1 ? 3*i-4 : 3*m-1;
+    return i > 1 ? 3*i-4 : 3*m-1;
   }
   
-void backwards(Complex *f, Complex *u);
+  void backwards(Complex *f, Complex *u);
   void forwards(Complex *f, Complex *u);
 };
   

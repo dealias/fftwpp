@@ -175,7 +175,7 @@ public:
                           convolveOptions options=defaultconvolveOptions) :
     ImplicitConvolution3(mx,my,mz,u1,u2,u3,A,B,
                          convolveOptions(options,d.y,d.z,d.n2,d.Activate())),
-                                         d(d) {
+    d(d) {
     initMPI(options);
     inittranspose(options.mpi);
     d.Deactivate();

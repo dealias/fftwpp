@@ -444,7 +444,7 @@ public:
     subblock=a > 1 && rank < a*b;
     
     Tout1=uniform || subblock ? 
-      new Transpose(n*a,b,m*L,data,this->work,threads) : NULL;
+                             new Transpose(n*a,b,m*L,data,this->work,threads) : NULL;
     Tin1=uniform ? new Transpose(b,n*a,m*L,data,this->work,threads) : NULL;
     
     if(subblock) {
@@ -630,7 +630,7 @@ public:
     if(uniform || subblock)
       Wait(2*(split2size-1),Request,sched2);
     if(!uniform)
-       Wait(2*(size-(subblock ? a*b : 1)),request,sched);
+      Wait(2*(size-(subblock ? a*b : 1)),request,sched);
   }
   
   void inphase1() {
