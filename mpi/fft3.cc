@@ -11,6 +11,8 @@ using namespace fftwpp;
 // Number of iterations.
 unsigned int N0=10000000;
 unsigned int N=0;
+int divisor=0; // Test for best block divisor
+int alltoall=-1; // Test for best alltoall routine
 
 void init(Complex *f,
 	  unsigned int X, unsigned int Y, unsigned int Z,
@@ -55,17 +57,23 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"hN:m:x:y:z:n:T:qt");
+    int c = getopt(argc,argv,"htN:T:a:m:n:s:x:y:z:q");
     if (c == -1) break;
                 
     switch (c) {
       case 0:
+        break;
+      case 'a':
+        divisor=atoi(optarg);
         break;
       case 'N':
         N=atoi(optarg);
         break;
       case 'm':
         mx=my=mz=atoi(optarg);
+        break;
+      case 's':
+        alltoall=atoi(optarg);
         break;
       case 'x':
         mx=atoi(optarg);
@@ -89,13 +97,10 @@ int main(int argc, char* argv[])
         test=true;
         break;
       case 'h':
-	usage(3);
-	exit(0);
-	break;
       default:
-	cout << "Invalid option." << endl;
         usage(3);
-	exit(1);
+        usageTranspose();
+        exit(1);
     }
   }
 
@@ -140,7 +145,7 @@ int main(int argc, char* argv[])
     
     Complex *f=ComplexAlign(d.n);
     
-    fft3dMPI fft(d,f);
+    fft3dMPI fft(d,f,mpiOptions(fftw::maxthreads,divisor,alltoall));
 
     if(test) {
       init(f,d);

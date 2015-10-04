@@ -123,10 +123,12 @@ void fft2dMPI::Backwards(Complex *f)
 
 void fft2dMPI::Normalize(Complex *f)
 {
-  // TODO: multithread
   unsigned int N=d.X*d.Y;
   unsigned int n=d.x*d.Y;
   double denom=1.0/N;
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif
   for(unsigned int i=0; i < n; ++i) 
     f[i] *= denom;
 }
@@ -184,8 +186,17 @@ void fft3dMPI::Normalize(Complex *f)
   unsigned int N=d.X*d.Y*d.Z;
   unsigned int n=d.x*d.y*d.Z;
   double denom=1.0/N;
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(yzthreads)
+#endif
   for(unsigned int i=0; i < n; ++i) 
     f[i] *= denom;
+}
+
+void fft3dMPI::BackwardsNormalized(Complex *f)
+{
+  Backwards(f);
+  Normalize(f);
 }
 
 void rcfft2dMPI::Forwards(double *f, Complex *g)

@@ -15,6 +15,8 @@ unsigned int M=1;
 bool xcompact=true;
 bool ycompact=true;
 bool zcompact=true;
+int divisor=0; // Test for best block divisor
+int alltoall=-1; // Test for best alltoall routine
 
 bool Direct=false, Implicit=true;
 
@@ -56,11 +58,14 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"heipHM:N:m:x:y:z:n:T:X:Y:Z:");
+    int c = getopt(argc,argv,"heipHM:N:a:m:s:x:y:z:n:T:X:Y:Z:");
     if (c == -1) break;
                 
     switch (c) {
       case 0:
+        break;
+      case 'a':
+        divisor=atoi(optarg);
         break;
       case 'e':
         Implicit=false;
@@ -82,6 +87,9 @@ int main(int argc, char* argv[])
         break;
       case 'm':
         mx=my=mz=atoi(optarg);
+        break;
+      case 's':
+        alltoall=atoi(optarg);
         break;
       case 'x':
         mx=atoi(optarg);
@@ -110,6 +118,7 @@ int main(int argc, char* argv[])
       case 'h':
       default:
         usage(3,false,false,true);
+        exit(1);
     }
   }
 
@@ -174,6 +183,8 @@ int main(int argc, char* argv[])
       options.xcompact=xcompact;
       options.ycompact=ycompact;
       options.zcompact=zcompact;
+      options.mpi.a=divisor;
+      options.mpi.alltoall=alltoall;
       ImplicitHConvolution3MPI C(mx,my,mz,d,du,f,A,B,options);
       Complex **F=new Complex *[A];
       unsigned int stride=d.n;

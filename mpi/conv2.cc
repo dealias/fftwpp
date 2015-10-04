@@ -10,6 +10,10 @@ using namespace Array;
 // Number of iterations.
 unsigned int N0=1000000;
 unsigned int N=0;
+bool xcompact=true;
+bool ycompact=true;
+int divisor=0; // Test for best block divisor
+int alltoall=-1; // Test for best alltoall routine
 
 unsigned int outlimit=200;
 
@@ -56,11 +60,6 @@ int main(int argc, char* argv[])
   
   unsigned int mx=4;
   unsigned int my=4;
-  int a=0; // Test for best block divisor
-  int alltoall=-1; // Test for best alltoall routine
-
-  bool xcompact=true;
-  bool ycompact=true;
 
   bool quiet=false;
   bool test=false;
@@ -69,17 +68,17 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"haqtA:H:M:N:m:x:y:n:T:X:Y:");
+    int c = getopt(argc,argv,"hqtA:H:M:N:a:m:n:s:x:y:T:X:Y:");
     if (c == -1) break;
                 
     switch (c) {
       case 0:
         break;
       case 'A':
-        alltoall=atoi(optarg);
+        A=atoi(optarg);
         break;
       case 'a':
-        a=atoi(optarg);
+        divisor=atoi(optarg);
         break;
       case 'M':
         A=2*atoi(optarg);
@@ -92,6 +91,9 @@ int main(int argc, char* argv[])
         break;
       case 'q':
         quiet=true;
+        break;
+      case 's':
+        alltoall=atoi(optarg);
         break;
       case 't':
         test=true;
@@ -117,6 +119,7 @@ int main(int argc, char* argv[])
       case 'h':
       default:
         usage(2,false,true,true);
+        exit(1);
     }
   }
   
@@ -172,7 +175,7 @@ int main(int argc, char* argv[])
     convolveOptions options;
     options.xcompact=xcompact;
     options.ycompact=ycompact;
-    options.mpi.a=a;
+    options.mpi.a=divisor;
     options.mpi.alltoall=alltoall;
     ImplicitHConvolution2MPI C(mx,my,d,du,F[0],A,B,options);
     

@@ -9,5 +9,5 @@ struct mpiOptions {
              unsigned int alltoall=-1) :
     threads(threads), a(a), alltoall(alltoall) {}
 };
-    
+
 #endif

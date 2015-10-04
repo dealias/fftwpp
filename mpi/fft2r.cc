@@ -72,10 +72,7 @@ int main(int argc, char* argv[])
       break;
     case 'h':
       usage(2);
-      exit(0);
-    default:
-      cout << "Invalid option." << endl;
-      usage(2);
+      usageTranspose();
       exit(1);
     }
   }

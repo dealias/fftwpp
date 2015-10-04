@@ -33,6 +33,9 @@ int main(int argc, char* argv[])
   unsigned int N=0;
   unsigned int mx=4;
   unsigned int my=4;
+  int divisor=0; // Test for best block divisor
+  int alltoall=-1; // Test for best alltoall routine
+  
   bool quiet=false;
   bool test=false;
   
@@ -40,18 +43,24 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"hN:m:x:y:n:T:qt");
+    int c = getopt(argc,argv,"hN:a:m:s:x:y:n:T:qt");
     if (c == -1) break;
                 
     switch (c) {
     case 0:
       break;
+      case 'a':
+        divisor=atoi(optarg);
+        break;
     case 'N':
       N=atoi(optarg);
       break;
     case 'm':
       mx=my=atoi(optarg);
       break;
+      case 's':
+        alltoall=atoi(optarg);
+        break;
     case 'x':
       mx=atoi(optarg);
       break;
@@ -71,11 +80,9 @@ int main(int argc, char* argv[])
       test=true;
       break;
     case 'h':
-      usage(2);
-      exit(0);
     default:
-      cout << "Invalid option." << endl;
       usage(2);
+      usageTranspose();
       exit(1);
     }
   }
@@ -120,7 +127,7 @@ int main(int argc, char* argv[])
     Complex *f=ComplexAlign(d.n);
 
     // Create instance of FFT
-    fft2dMPI fft(d,f);
+    fft2dMPI fft(d,f,mpiOptions(fftw::maxthreads,divisor,alltoall));
 
     if(!quiet && group.rank == 0)
       cout << "Initialized after " << seconds() << " seconds." << endl;    
@@ -192,6 +199,14 @@ int main(int argc, char* argv[])
         retval += checkerror(flocal(),fgather(),d.X*d.Y);
       }
 
+      if(!quiet && group.rank == 0) {
+        cout << endl;
+        if(retval == 0)
+          cout << "pass" << endl;
+        else
+          cout << "FAIL" << endl;
+      }  
+  
     } else {
       if(N > 0) {
 	double *T=new double[N];
@@ -211,13 +226,6 @@ int main(int argc, char* argv[])
     deleteAlign(f);
   }
   
-  if(!quiet && group.rank == 0) {
-    cout << endl;
-    if(retval == 0)
-      cout << "pass" << endl;
-    else
-      cout << "FAIL" << endl;
-  }  
   MPI_Finalize();
 
   return retval;

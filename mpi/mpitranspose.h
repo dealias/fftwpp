@@ -195,7 +195,7 @@ inline int Ialltoall(void *sendbuf, int count,
   }
 }
 
-static const mpiOptions defaultmpiOptions;
+extern mpiOptions defaultmpiOptions;
   
 template<class T>
 class mpitranspose {

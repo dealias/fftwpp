@@ -12,6 +12,8 @@ unsigned int N0=1000000;
 unsigned int N=0;
 unsigned int mx=4;
 unsigned int my=4;
+int divisor=0; // Test for best block divisor
+int alltoall=-1; // Test for best alltoall routine
 
 bool Implicit=true, Explicit=false, Pruned=false;
 
@@ -58,11 +60,14 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"heipqHtM:N:m:x:y:n:T:");
+    int c = getopt(argc,argv,"heipqHta:M:N:m:s:x:y:n:T:");
     if (c == -1) break;
                 
     switch (c) {
       case 0:
+        break;
+      case 'a':
+        divisor=atoi(optarg);
         break;
       case 'e':
         Explicit=true;
@@ -90,6 +95,9 @@ int main(int argc, char* argv[])
       case 'm':
         mx=my=atoi(optarg);
         break;
+      case 's':
+        alltoall=atoi(optarg);
+        break;
       case 'x':
         mx=atoi(optarg);
         break;
@@ -111,6 +119,8 @@ int main(int argc, char* argv[])
       case 'h':
       default:
         usage(2);
+        usageTranspose();
+        exit(1);
     }
   }
 
@@ -164,7 +174,10 @@ int main(int argc, char* argv[])
         exit(1);
     }
 
-    ImplicitConvolution2MPI C(mx,my,d,A);
+    convolveOptions options;
+    options.mpi.a=divisor;
+    options.mpi.alltoall=alltoall;
+    ImplicitConvolution2MPI C(mx,my,d,A,1,options);
 
     MPI_Barrier(group.active);
     
