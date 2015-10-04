@@ -22,12 +22,12 @@ int N=0;
 bool outtranspose=false;
 
 void init(Complex *data, unsigned int X, unsigned int y, unsigned int Z,
-	  int xstart, int ystart) {
+	  int x0, int y0) {
   for(unsigned int i=0; i < X; ++i) { 
     for(unsigned int j=0; j < y; ++j) {
       for(unsigned int k=0; k < Z; ++k) {
-        data[(y*i+j)*Z+k].re=xstart+i;
-        data[(y*i+j)*Z+k].im=ystart+j;
+        data[(y*i+j)*Z+k].re=x0+i;
+        data[(y*i+j)*Z+k].im=y0+j;
       }
     }
   }
@@ -56,8 +56,8 @@ inline void usage()
 void fftwTranspose(int rank, int size)
 {
   Complex *data;
-  ptrdiff_t x,xstart;
-  ptrdiff_t y,ystart;
+  ptrdiff_t x,x0;
+  ptrdiff_t y,y0;
   
   fftw_mpi_init();
   
@@ -67,7 +67,7 @@ void fftwTranspose(int rank, int size)
   ptrdiff_t alloc=
     fftw_mpi_local_size_many_transposed(2,NN,Z,block,0,
 					MPI_COMM_WORLD,&y,
-					&ystart,&x,&xstart);
+					&y0,&x,&x0);
   if(rank == 0) {
     cout << "x=" << x << endl;
     cout << "y=" << y << endl;
@@ -91,7 +91,7 @@ void fftwTranspose(int rank, int size)
                                                  MPI_COMM_WORLD,
                                                  outtranspose ? 0 : FFTW_MPI_TRANSPOSED_OUT);
   
-  init(data,X,y,Z,0,ystart);
+  init(data,X,y,Z,0,y0);
 
   bool showoutput=X*Y < showlimit && N == 1;
   if(showoutput)
@@ -167,19 +167,16 @@ int transpose(int rank, int size, int N)
 
   Complex *data;
   
-//  unsigned int xsize=localsize(X,size);
-//  unsigned int ysize=localsize(Y,size);
-//  size=max(xsize,ysize);
+  split d(X,Y,MPI_COMM_WORLD);
   
-  unsigned int x=localdimension(X,rank,size);
-  unsigned int y=localdimension(Y,rank,size);
+  unsigned int x=d.x;
+  unsigned int y=d.y;
   
-  unsigned int xstart=localstart(X,rank,size);
-  unsigned int ystart=localstart(Y,rank,size);
+//  unsigned int x0=d.x0;
+  unsigned int y0=d.y0;
 
   MPI_Comm active; 
   MPI_Comm_split(MPI_COMM_WORLD,rank < size,0,&active);
-
   
   if(rank < size) {
 
@@ -196,7 +193,7 @@ int transpose(int rank, int size, int N)
     
     data=ComplexAlign(max(X*y,x*Y)*Z);
   
-    init(data,X,y,Z,0,ystart);
+    init(data,X,y,Z,0,d.y0);
 
     //    show(data,X,y*Z,active);
     
@@ -205,13 +202,13 @@ int transpose(int rank, int size, int N)
 //    mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,fftw::maxthreads,active);
     mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,active,
                             mpiOptions(fftw::maxthreads,a,alltoall));
-    init(data,X,y,Z,0,ystart);
+    init(data,X,y,Z,0,y0);
     T.transpose(data,false,true);
   
     //    show(data,x,Y*Z,active);
     
     T.NmTranspose();
-    init(data,X,y,Z,0,ystart);
+    init(data,X,y,Z,0,y0);
     
     fftw::statistics Sininit,Sinwait0,Sinwait1,Sin;
     fftw::statistics Soutinit,Soutwait0,Soutwait1,Sout;
@@ -228,7 +225,7 @@ int transpose(int rank, int size, int N)
       if(rank == 0)
 	cout << "\nDiagnostics and unit test.\n" << endl;
 
-      init(data,X,y,Z,0,ystart);
+      init(data,X,y,Z,0,y0);
       if(showoutput) {
 	if(rank == 0) 
 	  cout << "Input:" << endl;
@@ -240,7 +237,8 @@ int transpose(int rank, int size, int N)
 	wholedata=new Complex[X*Y*Z];
 	wholeoutput=new Complex[X*Y*Z];
       }
-      gathery(data,wholedata,X,Y,xstart,ystart,x,y,Z,active);
+
+      gathery(data,wholedata,d,Z,active);
 
       if(showoutput && rank == 0) {
 	cout << "\nGathered input data:" << endl;
@@ -257,7 +255,7 @@ int transpose(int rank, int size, int N)
         show(data,X,y*Z,active);
       }
 
-      gatherx(data,wholeoutput,X,Y,xstart,ystart,x,y,Z,active);
+      gatherx(data,wholeoutput,d,Z,active);
 
       if(rank == 0) {
 	if(showoutput) {
@@ -284,7 +282,7 @@ int transpose(int rank, int size, int N)
       if(rank == 0)
 	cout << "\nSpeed test.\n" << endl;
       for(int k=0; k < N; ++k) {
-	init(data,X,y,Z,0,ystart);
+	init(data,X,y,Z,0,y0);
     
 	double begin=0.0, Tinit0=0.0, Tinit=0.0, Twait0=0.0, Twait1=0.0;
 	if(rank == 0) begin=totalseconds();

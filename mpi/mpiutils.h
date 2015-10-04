@@ -5,34 +5,24 @@
 
 namespace fftwpp {
 
+// Gather an MPI-distributed array onto the rank 0 process.
+// The distributed array has dimensions x*Y*Z.
+// The gathered array has dimensions    X*Y*Z.
 template<class ftype>
-void show(ftype *f, unsigned int, unsigned int ny,
-          unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1)
-{
-  for(unsigned int i=x0; i < x1; ++i) {
-    for(unsigned int j=y0; j < y1; ++j) {
-      std::cout << f[ny*i+j]  << "\t";
-    }
-    std::cout << std::endl;
-  }
-}
-
-// Gather an MPI-distributed array onto the rank 0 process.  The
-// distributed array has dimensions x * Y * Z, the gathered array has
-// dimensions X * Y * Z.
-template<class ftype>
-void gatherx(const ftype *part, ftype *whole,
-	     const unsigned int X, const unsigned int Y,
-	     const unsigned int x0, const unsigned int y0,
-	     const unsigned int x, const unsigned int y,
+void gatherx(const ftype *part,
+	     ftype *whole,
+	     const split d,
 	     const unsigned int Z,
 	     const MPI_Comm& communicator)
 {
-  MPI_Status stat;
   int size, rank;
   MPI_Comm_size(communicator,&size);
   MPI_Comm_rank(communicator,&rank);
 
+  const unsigned int Y=d.Y;
+  const unsigned int x=d.x;
+  const unsigned int x0=d.x0;
+  
   if(rank == 0) {
     // First copy rank 0's part into the whole
     int offset=x0*Y*Z;
@@ -42,19 +32,16 @@ void gatherx(const ftype *part, ftype *whole,
     copyfromblock(part,whole+offset,count,length,stride);
       
     for(int p=1; p < size; ++p) {
-      unsigned int dims[6];
-      MPI_Recv(&dims,6,MPI_UNSIGNED,p,0,communicator,&stat);
+      unsigned int dims[2];
+      MPI_Recv(&dims,2,MPI_UNSIGNED,p,0,communicator,MPI_STATUS_IGNORE);
 
-      //unsigned int X=dims[0];
-      unsigned int Y=dims[1];
-      unsigned int x0=dims[2];
-      //unsigned int y0=dims[3];
-      unsigned int x=dims[4];
-      //unsigned int y=dims[5];
+      unsigned int x=dims[0];
+      unsigned int x0=dims[1];
       unsigned int n=Z*x*Y;
       if(n > 0) {
         ftype *C=new ftype[n];
-        MPI_Recv(C,sizeof(ftype)*n,MPI_BYTE,p,0,communicator,&stat);
+        MPI_Recv(C,sizeof(ftype)*n,MPI_BYTE,p,0,communicator,
+                 MPI_STATUS_IGNORE);
 	int offset=x0*Y*Z;
 	int count=x;
 	int length=Y*Z;
@@ -64,40 +51,33 @@ void gatherx(const ftype *part, ftype *whole,
       }
     }
   } else {
-    unsigned int dims[]={X,Y,x0,y0,x,y};
-    MPI_Send(&dims,6,MPI_UNSIGNED,0,0,communicator);
+    unsigned int dims[]={x,x0};
+    MPI_Send(&dims,2,MPI_UNSIGNED,0,0,communicator);
     unsigned int n=Z*x*Y;
     if(n > 0)
       MPI_Send((ftype *) part,n*sizeof(ftype),MPI_BYTE,0,0,communicator);
   }
 }
 
+// Gather an MPI-distributed array onto the rank 0 process.
+// The distributed array has dimensions X*y*Z.
+// The gathered array has dimensions    X*Y*Z.
 template<class ftype>
-void gatherx(const ftype *part,
+void gathery(const ftype *part,
 	     ftype *whole,
 	     const split d,
 	     const unsigned int Z,
 	     const MPI_Comm& communicator)
 {
-  gatherx(part,whole,d.X,d.Y,d.x0,d.y0,d.x,d.y,Z,communicator);
-}
-
-// Gather an MPI-distributed array onto the rank 0 process.  The
-// distributed array has dimensions X * y * Z, the gathered array has
-// dimensions X * Y * Z.
-template<class ftype>
-void gathery(const ftype *part, ftype *whole,
-	     const unsigned int X, const unsigned int Y,
-	     const unsigned int x0, const unsigned int y0,
-	     const unsigned int x, const unsigned int y,
-	     const unsigned int Z,
-	     const MPI_Comm& communicator)
-{
-  MPI_Status stat;
   int size, rank;
   MPI_Comm_size(communicator,&size);
   MPI_Comm_rank(communicator,&rank);
 
+  const unsigned int X=d.X;
+  const unsigned int Y=d.Y;
+  const unsigned int y=d.y;
+  const unsigned int y0=d.y0;
+  
   if(rank == 0) {
     // First copy rank 0's part into the whole
     int offset=y0*Z;
@@ -107,19 +87,15 @@ void gathery(const ftype *part, ftype *whole,
     copyfromblock(part,whole+offset,count,length,stride);
       
     for(int p=1; p < size; ++p) {
-      unsigned int dims[6];
-      MPI_Recv(&dims,6,MPI_UNSIGNED,p,0,communicator,&stat);
-
-      unsigned int X=dims[0];
-      unsigned int Y=dims[1];
-      //unsigned int x0=dims[2];
-      unsigned int y0=dims[3];
-      //unsigned int x=dims[4];
-      unsigned int y=dims[5];
+      unsigned int dims[2];
+      MPI_Recv(&dims,2,MPI_UNSIGNED,p,0,communicator,MPI_STATUS_IGNORE);
+      unsigned int y=dims[0];
+      unsigned int y0=dims[1];
       unsigned int n=Z*X*y;
       if(n > 0) {
         ftype *C=new ftype[n];
-        MPI_Recv(C,sizeof(ftype)*n,MPI_BYTE,p,0,communicator,&stat);
+        MPI_Recv(C,sizeof(ftype)*n,MPI_BYTE,p,0,communicator,
+                 MPI_STATUS_IGNORE);
 	int offset=y0*Z;
 	int count=X;
 	int length=y*Z;
@@ -129,47 +105,33 @@ void gathery(const ftype *part, ftype *whole,
       }
     }
   } else {
-    unsigned int dims[]={X,Y,x0,y0,x,y};
-    MPI_Send(&dims,6,MPI_UNSIGNED,0,0,communicator);
+    unsigned int dims[]={y,y0};
+    MPI_Send(&dims,2,MPI_UNSIGNED,0,0,communicator);
     unsigned int n=Z*X*y;
     if(n > 0)
       MPI_Send((ftype *) part,n*sizeof(ftype),MPI_BYTE,0,0,communicator);
   }
 }
 
+// Gather an MPI-distributed array onto the rank 0 process.
+// The distributed array has dimensions X*y*z.
+// The gathered array has dimensions    X*Y*Z.
 template<class ftype>
-void gathery(const ftype *part,
-	     ftype *whole,
-	     const split d,
-	     const unsigned int Z,
-	     const MPI_Comm& communicator)
+void gatheryz(const ftype *part, ftype *whole, const split3& d,
+              const MPI_Comm& communicator)
 {
-  gathery(part,whole,d.X,d.Y,d.x0,d.y0,d.x,d.y,Z,communicator);
-}
-
-// Gather an MPI-distributed array onto the rank 0 process.  The
-// distributed array has dimensions X * y * z, the gathered array has
-// dimensions X * Y * Z.
-template<class ftype>
-void gatheryz(const ftype *part,
-	      ftype *whole,
-	      const unsigned int X,
-	      const unsigned int Y,
-	      const unsigned int Z,
-	      const unsigned int x0,
-	      const unsigned int y0,
-	      const unsigned int z0,
-	      const unsigned int x,
-	      const unsigned int y,
-	      const unsigned int z,
-	      const MPI_Comm& communicator)
-{
-  MPI_Status stat;
   int size, rank;
   MPI_Comm_size(communicator,&size);
   MPI_Comm_rank(communicator,&rank);
 
-  //  X * y * z
+  const unsigned int X=d.X;
+  const unsigned int Y=d.Y;
+  const unsigned int Z=d.Z;
+  const unsigned int y=d.xy.y;
+  const unsigned int z=d.z;
+  const unsigned int y0=d.xy.y0;
+  const unsigned int z0=d.z0;
+  
   if(rank == 0) {
     // First copy rank 0's part into the whole
     const int count=y;
@@ -182,22 +144,18 @@ void gatheryz(const ftype *part,
 		    count,length,stride);
     }
     for(int p=1; p < size; ++p) {
-      unsigned int dims[9];
-      MPI_Recv(&dims,9,MPI_UNSIGNED,p,0,communicator,&stat);
-      unsigned int X=dims[0];
-      unsigned int Y=dims[1];
-      unsigned int Z=dims[2];
-      //unsigned int x0=dims[3];
-      unsigned int y0=dims[4];
-      unsigned int z0=dims[5];
-      //unsigned int x=dims[6];
-      unsigned int y=dims[7];
-      unsigned int z=dims[8];
+      unsigned int dims[4];
+      MPI_Recv(&dims,4,MPI_UNSIGNED,p,0,communicator,MPI_STATUS_IGNORE);
+      unsigned int y=dims[0];
+      unsigned int z=dims[1];
+      unsigned int y0=dims[2];
+      unsigned int z0=dims[3];
 
       unsigned int n=X*y*z;
       if(n > 0) {
 	ftype *C=new ftype[n];
-	MPI_Recv(C,sizeof(ftype)*n,MPI_BYTE,p,0,communicator,&stat);
+	MPI_Recv(C,sizeof(ftype)*n,MPI_BYTE,p,0,communicator,
+                 MPI_STATUS_IGNORE);
 	const int count=y;
 	const int stride=Z;
 	const int length=z;
@@ -210,52 +168,34 @@ void gatheryz(const ftype *part,
       }
     }
   } else {
-    unsigned int dims[9] = {X,Y,Z,x0,y0,z0,x,y,z};
-    MPI_Send(&dims,9,MPI_UNSIGNED,0,0,communicator);
+    unsigned int dims[]={y,z,y0,z0};
+    MPI_Send(&dims,4,MPI_UNSIGNED,0,0,communicator);
     unsigned int n=X*y*z;
     if(n > 0)
       MPI_Send((ftype *) part,n*sizeof(ftype),MPI_BYTE,0,0,communicator);
   }
 }
- 
-template<class ftype>
-void gatheryz(const ftype *part,
-	      ftype *whole,
-	      const split3 d,
-	      const MPI_Comm& communicator)
-{
-  gatheryz(part, whole,
-	   d.X,d.Y,d.Z,
-	   d.x0,d.xy.y0,d.z0,
-	   d.x,d.xy.y,d.z,
-	   communicator);
-}
 
-// Gather an MPI-distributed array onto the rank 0 process.  The
-// distributed array has dimensions x * y * Z, the gathered array has
-// dimensions X * Y * Z.
+// Gather an MPI-distributed array onto the rank 0 process.
+// The distributed array has dimensions x*y*Z.
+// The gathered array has dimensions    X*Y*Z.
 template<class ftype>
 void gatherxy(const ftype *part,
 	      ftype *whole,
 	      const split3 d,
 	      const MPI_Comm& communicator)
 {
-  MPI_Status stat;
   int size, rank;
   MPI_Comm_size(communicator,&size);
   MPI_Comm_rank(communicator,&rank);
 
-  const unsigned int X=d.x;
   const unsigned int Y=d.Y;
   const unsigned int Z=d.Z;
-  const unsigned int x0=d.x0;
-  const unsigned int y0=d.y0;
-  const unsigned int z0=d.z0;
   const unsigned int x=d.x;
-  const unsigned int y=d.y;
-  const unsigned int z=d.z;
+  const unsigned int y=d.yz.x;
+  const unsigned int x0=d.x0;
+  const unsigned int y0=d.yz.x0;
                 
-  // x * y * Z
   if(rank == 0) {
     // First copy rank 0's part into the whole
     const int count=y;
@@ -268,22 +208,18 @@ void gatherxy(const ftype *part,
 		    count,length,stride);
     }
     for(int p=1; p < size; ++p) {
-      unsigned int dims[9];
-      MPI_Recv(&dims,9,MPI_UNSIGNED,p,0,communicator,&stat);
-      //unsigned int X=dims[0];
-      unsigned int Y=dims[1];
-      unsigned int Z=dims[2];
-      unsigned int x0=dims[3];
-      unsigned int y0=dims[4];
-      //unsigned int z0=dims[5];
-      unsigned int x=dims[6];
-      unsigned int y=dims[7];
-      //unsigned int z=dims[8];
+      unsigned int dims[4];
+      MPI_Recv(&dims,4,MPI_UNSIGNED,p,0,communicator,MPI_STATUS_IGNORE);
+      unsigned int x=dims[0];
+      unsigned int y=dims[1];
+      unsigned int x0=dims[2];
+      unsigned int y0=dims[3];
 
       unsigned int n=x*y*Z;
       if(n > 0) {
 	ftype *C=new ftype[n];
-	MPI_Recv(C,sizeof(ftype)*n,MPI_BYTE,p,0,communicator,&stat);
+	MPI_Recv(C,sizeof(ftype)*n,MPI_BYTE,p,0,communicator,
+                 MPI_STATUS_IGNORE);
 	const int count=y;
 	const int stride=Z;
 	const int length=Z;
@@ -298,8 +234,8 @@ void gatherxy(const ftype *part,
       }
     }
   } else {
-    unsigned int dims[9] = {X,Y,Z,x0,y0,z0,x,y,z};
-    MPI_Send(&dims,9,MPI_UNSIGNED,0,0,communicator);
+    unsigned int dims[] = {x,y,x0,y0};
+    MPI_Send(&dims,4,MPI_UNSIGNED,0,0,communicator);
     unsigned int n=x*y*Z;
     if(n > 0)
       MPI_Send((ftype *) part,n*sizeof(ftype),MPI_BYTE,0,0,communicator);
@@ -320,7 +256,19 @@ int checkerror(const T *f, const T *control, unsigned int stop)
     return 0;
   }
   std::cout << "CAUTION! Large error!" << std::endl;
-    return 1;
+  return 1;
+}
+
+template<class ftype>
+void show(ftype *f, unsigned int, unsigned int ny,
+          unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1)
+{
+  for(unsigned int i=x0; i < x1; ++i) {
+    for(unsigned int j=y0; j < y1; ++j) {
+      std::cout << f[ny*i+j]  << "\t";
+    }
+    std::cout << std::endl;
+  }
 }
 
 // output the contents of a 2D array
@@ -330,7 +278,6 @@ void show(ftype *f, unsigned int nx, unsigned int ny,
           unsigned int x1, unsigned int y1, const MPI_Comm& communicator)
           
 {  
-  MPI_Status stat;
   int size,rank;
   MPI_Comm_size(communicator,&size);
   MPI_Comm_rank(communicator,&rank);
@@ -341,7 +288,7 @@ void show(ftype *f, unsigned int nx, unsigned int ny,
     
     for(int p=1; p < size; p++) {
       unsigned int dims[6];
-      MPI_Recv(&dims,6,MPI_UNSIGNED,p,0,communicator,&stat);
+      MPI_Recv(&dims,6,MPI_UNSIGNED,p,0,communicator,MPI_STATUS_IGNORE);
 
       unsigned int nx=dims[0], ny=dims[1];
       unsigned int x0=dims[2], y0=dims[3];
@@ -350,7 +297,8 @@ void show(ftype *f, unsigned int nx, unsigned int ny,
       std::cout << "process " << p << ":" <<  std::endl;
       if(n > 0) {
         ftype *C=new ftype[n];
-        MPI_Recv(C,sizeof(ftype)*n,MPI_BYTE,p,0,communicator,&stat);
+        MPI_Recv(C,sizeof(ftype)*n,MPI_BYTE,p,0,communicator,
+                 MPI_STATUS_IGNORE);
       
         show(C,nx,ny,x0,y0,x1,y1);
         delete [] C;
@@ -395,7 +343,6 @@ void show(ftype *f, unsigned int nx, unsigned int ny, unsigned int nz,
           unsigned int x1, unsigned int y1, unsigned int z1,
           const MPI_Comm& communicator)
 {
-  MPI_Status stat;
   int size,rank;
   MPI_Comm_size(communicator,&size);
   MPI_Comm_rank(communicator,&rank);
@@ -406,7 +353,7 @@ void show(ftype *f, unsigned int nx, unsigned int ny, unsigned int nz,
     
     for(int p=1; p < size; p++) {
       unsigned int dims[9];
-      MPI_Recv(&dims,9,MPI_UNSIGNED,p,0,communicator,&stat);
+      MPI_Recv(&dims,9,MPI_UNSIGNED,p,0,communicator,MPI_STATUS_IGNORE);
 
       unsigned int nx=dims[0], ny=dims[1], nz=dims[2];
       unsigned int x0=dims[3], y0=dims[4], z0=dims[5];
@@ -414,7 +361,8 @@ void show(ftype *f, unsigned int nx, unsigned int ny, unsigned int nz,
       unsigned int n=nx*ny*nz;
       if(n > 0) {
         ftype *C=new ftype[n];
-        MPI_Recv(C,n*sizeof(ftype),MPI_BYTE,p,0,communicator,&stat);
+        MPI_Recv(C,n*sizeof(ftype),MPI_BYTE,p,0,communicator,
+                 MPI_STATUS_IGNORE);
       
         std::cout << "process " << p << ":" <<  std::endl;
         show(C,nx,ny,nz,x0,y0,z0,x1,y1,z1);
@@ -448,4 +396,3 @@ int hash(Complex *f, unsigned int nx, unsigned int ny, unsigned int nz,
 } // namespace fftwpp
 
 #endif
-  

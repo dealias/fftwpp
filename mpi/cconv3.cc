@@ -214,11 +214,7 @@ int main(int argc, char* argv[])
         if(main) {
           F0[a]=ComplexAlign(mx*my*mz);
         }
-        gatheryz(F[a],F0[a],
-		     d.X, d.Y, d.Z,
-		     d.x0, d.y0, d.z0,
-		     d.x, d.y, d.z,
-		     group.active);
+        gatheryz(F[a],F0[a],d,group.active);
         if(!quiet && main) {
           cout << "a: " << a << endl;
           show(F0[a],mx,my,mz);
@@ -233,12 +229,7 @@ int main(int argc, char* argv[])
       }
       
       Complex *FC0=ComplexAlign(mx*my*mz);
-      gatheryz(F[0],FC0,
-		   d.X, d.Y, d.Z,
-		   d.x0, d.y0, d.z0,
-		   d.x, d.y, d.z,
-		   group.active);
-            
+      gatheryz(F[0],FC0,d,group.active);
       if(!quiet && main) {
         cout << "Gathered output:" << endl;
         show(FC0,mx,my,mz);
