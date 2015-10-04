@@ -6,9 +6,6 @@ from subprocess import * # so that we can run commands
 import os.path
 import getopt
 
-sys.stdin.close()
-os.close(0)
-
 def main(argv):
 
     msg = "MPI fft unit test"

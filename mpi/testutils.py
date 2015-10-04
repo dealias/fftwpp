@@ -1,12 +1,6 @@
 import time
 from subprocess import * # so that we can run commands
 
-import sys
-import os
-
-sys.stdin.close()
-os.close(0)
-
 def waitandkill(proc, timeout):
     if(timeout == 0):
         return

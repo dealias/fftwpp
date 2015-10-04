@@ -6,9 +6,6 @@ from subprocess import * # so that we can run commands
 import getopt
 import os.path
 
-sys.stdin.close()
-#os.close(0)
-
 def main(argv):
     msg = "MPI convolution unit tests"
     logfile = 'testconvolutions.log'
@@ -70,7 +67,7 @@ def main(argv):
             log.close()
 
             #print cmd
-            proc = Popen(cmd, stdout = PIPE, stderr = PIPE)
+            proc = Popen(cmd, stdout = PIPE, stderr = PIPE, stdin = None)
             proc.wait() # sets the return code
 
             prc = proc.returncode

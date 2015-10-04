@@ -232,7 +232,8 @@ def main(argv):
         # run the program, collect the output in out.
         if not dryrun:
             # run the run "run", record the output to out (and the err to err)
-            proc = subprocess.Popen([run], stdout=subprocess.PIPE, shell=True)
+            proc = subprocess.Popen([run], stdout=subprocess.PIPE, \
+                                    stdin = None, shell=True)
             (out, err) = proc.communicate()
         
             #print "program output:", out
