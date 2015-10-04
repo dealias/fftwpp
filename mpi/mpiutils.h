@@ -17,7 +17,7 @@ void show(ftype *f, unsigned int, unsigned int ny,
   }
 }
 
-// Gather an MPI-distributed array onto the rank-0 process.  The
+// Gather an MPI-distributed array onto the rank 0 process.  The
 // distributed array has dimensions x * Y * Z, the gathered array has
 // dimensions X * Y * Z.
 template<class ftype>
@@ -35,10 +35,11 @@ void gatherx(const ftype *part, ftype *whole,
 
   if(rank == 0) {
     // First copy rank 0's part into the whole
+    int offset=x0*Y*Z;
     int count=x;
     int length=Y*Z;
     int stride=Y*Z;
-    copyfromblock(part,whole,count,length,stride);
+    copyfromblock(part,whole+offset,count,length,stride);
       
     for(int p=1; p < size; ++p) {
       unsigned int dims[6];
@@ -74,21 +75,14 @@ void gatherx(const ftype *part, ftype *whole,
 template<class ftype>
 void gatherx(const ftype *part,
 	     ftype *whole,
-	     const split splitx,
+	     const split d,
 	     const unsigned int Z,
 	     const MPI_Comm& communicator)
 {
-  unsigned int X=splitx.X;
-  unsigned int Y=splitx.Y;
-  unsigned int x0=splitx.x0;
-  unsigned int y0=splitx.y0;
-  unsigned int x=splitx.x;
-  unsigned int y=splitx.y;
-
-  gatherx(part,whole,X,Y,x0,y0,x,y,Z,communicator);
+  gatherx(part,whole,d.X,d.Y,d.x0,d.y0,d.x,d.y,Z,communicator);
 }
 
-// Gather an MPI-distributed array onto the rank-0 process.  The
+// Gather an MPI-distributed array onto the rank 0 process.  The
 // distributed array has dimensions X * y * Z, the gathered array has
 // dimensions X * Y * Z.
 template<class ftype>
@@ -106,10 +100,11 @@ void gathery(const ftype *part, ftype *whole,
 
   if(rank == 0) {
     // First copy rank 0's part into the whole
+    int offset=y0*Z;
     int count=X;
     int length=y*Z;
     int stride=Y*Z;
-    copyfromblock(part,whole,count,length,stride);
+    copyfromblock(part,whole+offset,count,length,stride);
       
     for(int p=1; p < size; ++p) {
       unsigned int dims[6];
@@ -145,21 +140,14 @@ void gathery(const ftype *part, ftype *whole,
 template<class ftype>
 void gathery(const ftype *part,
 	     ftype *whole,
-	     const split splitx,
+	     const split d,
 	     const unsigned int Z,
 	     const MPI_Comm& communicator)
 {
-  unsigned int X=splitx.X;
-  unsigned int Y=splitx.Y;
-  unsigned int x0=splitx.x0;
-  unsigned int y0=splitx.y0;
-  unsigned int x=splitx.x;
-  unsigned int y=splitx.y;
-
-  gathery(part,whole,X,Y,x0,y0,x,y,Z,communicator);
+  gathery(part,whole,d.X,d.Y,d.x0,d.y0,d.x,d.y,Z,communicator);
 }
 
-// Gather an MPI-distributed array onto the rank-0 process.  The
+// Gather an MPI-distributed array onto the rank 0 process.  The
 // distributed array has dimensions X * y * z, the gathered array has
 // dimensions X * Y * Z.
 template<class ftype>
@@ -233,20 +221,7 @@ void gatheryz(const ftype *part,
 template<class ftype>
 void gatheryz(const ftype *part,
 	      ftype *whole,
-	      const splityz d,
-	      const MPI_Comm& communicator)
-{
-  gatheryz(part, whole,
-	   d.X,d.Y,d.Z,
-	   d.x0,d.y0,d.z0,
-	   d.x,d.y,d.z,
-	   communicator);
-}
-
-template<class ftype>
-void gatheryz(const ftype *part,
-	      ftype *whole,
-	      const splitxy d,
+	      const split3 d,
 	      const MPI_Comm& communicator)
 {
   gatheryz(part, whole,
@@ -256,13 +231,13 @@ void gatheryz(const ftype *part,
 	   communicator);
 }
 
-// Gather an MPI-distributed array onto the rank-0 process.  The
+// Gather an MPI-distributed array onto the rank 0 process.  The
 // distributed array has dimensions x * y * Z, the gathered array has
 // dimensions X * Y * Z.
 template<class ftype>
 void gatherxy(const ftype *part,
 	      ftype *whole,
-	      const splitxy d,
+	      const split3 d,
 	      const MPI_Comm& communicator)
 {
   MPI_Status stat;
@@ -288,7 +263,7 @@ void gatherxy(const ftype *part,
     const int length=Z;
     for(unsigned int i=0; i < x; ++i) {
       const int poffset=i*y*Z;
-      const int woffset=i*Y*Z;
+      const int woffset=(x0+i)*Y*Z+y0*Z;
       copyfromblock(part+poffset,whole+woffset,
 		    count,length,stride);
     }

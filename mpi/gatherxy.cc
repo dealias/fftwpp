@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
     
     bool main=group.rank == 0;
 
-    splitxy d(mx,my,mz,group);
+    split3 d(mx,my,mz,group);
 
     unsigned int localsize=d.x*d.y*d.Z;
     Complex *pF=ComplexAlign(localsize);

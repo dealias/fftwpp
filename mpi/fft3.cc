@@ -32,7 +32,7 @@ void init(Complex *f,
   }
 }
 
-void init(Complex *f, splitxy d)
+void init(Complex *f, split3 d)
 {
   init(f,d.X,d.Y,d.Z,d.x0,d.y0,d.z0,d.x,d.y,d.z);
 }
@@ -141,7 +141,7 @@ int main(int argc, char* argv[])
       cout << "size=" << group.size << endl;
     }
 
-    splitxy d(mx,my,mz,group);
+    split3 d(mx,my,mz,group);
     
     Complex *f=ComplexAlign(d.n);
     

@@ -10,7 +10,7 @@ fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out);
 
 extern MPI_Comm Active;
 
-// Distribute first y, then (if allowpencil=true) z.
+// Distribute first Y, then (if allowpencil=true) Z.
 class MPIgroup {
 public:  
   int rank,size;
@@ -56,7 +56,8 @@ public:
 };
 
 // Class to compute the local array dimensions and storage requirements for
-// distributing the y index among multiple MPI processes and transposing.
+// distributing the Y dimension among multiple MPI processes and transposing.
+// Big letters denote global dimensions; small letters denote local dimensions.
 //            local matrix is X * y
 // local transposed matrix is x * Y
 class split {
@@ -64,7 +65,7 @@ public:
   unsigned int X,Y;     // global matrix dimensions
   unsigned int x,y;     // local matrix dimensions
   unsigned int x0,y0;   // local starting values
-  unsigned int n;       // total required storage (Complex words)
+  unsigned int n;       // total required storage (words)
   MPI_Comm communicator;
   split() {}
   split(unsigned int X, unsigned int Y, MPI_Comm communicator)
@@ -101,78 +102,40 @@ public:
   }
 };
 
-// Distribute first over y, then over z.
-//         local matrix is X * y * z
-// xy transposed matrix is x * Y * z  allocated n  Complex words
-// yz transposed matrix is x * yz.x * Z allocated n2 Complex words [omit for slab]
-class splityz {
+// Class to compute the local array dimensions and storage requirements for
+// distributing X and Y among multiple MPI processes and transposing.
+//         local matrix is x * y * Z
+// yz transposed matrix is x * Y * z allocated n2 words [omit for slab]
+// xy transposed matrix is X * xy.y * z allocated n words
+//
+// If spectral=true, for convenience rename xy.y to y and xy.y0 to y0.
+class split3 {
 public:
-  unsigned int n,n2;
-  unsigned int X,Y,Z;
-  unsigned int x,y,z;
-  unsigned int x0,y0,z0;
-  split xy,yz;
+  unsigned int n;             // Total storage (words) for xy transpose
+  unsigned int n2;            // Total storage (words) for yz transpose
+  unsigned int X,Y,Z;         // Global dimensions
+  unsigned int x,y,z;         // Local dimensions
+  unsigned int x0,y0,z0;      // Local offsets
+  split yz,xy;
   MPI_Comm communicator;
   MPI_Comm *XYplane;          // Used by HermitianSymmetrizeXYMPI
   int *reflect;               // Used by HermitianSymmetrizeXYMPI
-  splityz() {}
-  splityz(unsigned int X, unsigned int Y, unsigned int Z,
-          const MPIgroup& group) :
-    X(X), Y(Y), Z(Z), communicator(group.active),
-    XYplane(NULL) {
-    xy=split(X,Y,group.communicator);
-    yz=split(Y,Z,group.communicator2);
-    x=xy.x;
-    y=xy.y;
-    z=yz.y;
-    x0=xy.x0;
-    y0=xy.y0;
-    z0=yz.y0;
-    n2=yz.n;
-    n=std::max(xy.n*z,x*n2);
-  }
-  
-  int Activate() const {
-    xy.Activate();
-    return n;
-  }
-
-  void Deactivate() const {
-    xy.Deactivate();
-  }
-
-  void show() {
-    std::cout << "X=" << X << "\tY=" << Y << "\tZ=" << Z << std::endl;
-    std::cout << "x=" << x << "\ty=" << y << "\tz=" << z << std::endl;
-    std::cout << "x0=" << x0 << "\ty0=" << y0 << "\tz0=" << z0 << std::endl;
-    std::cout << "yz.x=" << yz.x << std::endl;
-    std::cout << "n=" << n << "\tn2=" << n2 << std::endl;
-  }
-};
-  
-// Distribute first over x, then over y.
-//         local matrix is x * y * Z
-// yz transposed matrix is x * Y * z allocated n2 Complex words [omit for slab]
-// xy transposed matrix is X * xy.y * z allocated n Complex words
-class splitxy {
-public:
-  unsigned int n,n2;
-  unsigned int X,Y,Z;
-  unsigned int x,y,z;
-  unsigned int x0,y0,z0;
-  split yz,xy;
-  MPI_Comm communicator;
-  splitxy() {}
-  splitxy(unsigned int X, unsigned int Y, unsigned int Z,
-          const MPIgroup& group) : X(X), Y(Y), Z(Z),
+  split3() {}
+  split3(unsigned int X, unsigned int Y, unsigned int Z,
+          const MPIgroup& group, bool spectral=false) : X(X), Y(Y), Z(Z),
 				   communicator(group.active) {
     xy=split(X,Y,group.communicator);
     yz=split(Y,Z,group.communicator2);
     x=xy.x;
-    y=yz.x;
-    z=yz.y;
     x0=xy.x0;
-    y0=yz.x0;
+    if(spectral) {
+      y=xy.y;
+      y0=xy.y0;
+    } else {
+      y=yz.x;
+      y0=yz.x0;
+    }
+    z=yz.y;
     z0=yz.y0;
     n2=yz.n;
     n=std::max(xy.n*z,x*n2);
@@ -191,7 +154,8 @@ public:
     std::cout << "X=" << X << "\tY=" << Y << "\tZ=" << Z << std::endl;
     std::cout << "x=" << x << "\ty=" << y << "\tz=" << z << std::endl;
     std::cout << "x0=" << x0 << "\ty0=" << y0 << "\tz0=" << z0 << std::endl;
-    std::cout << "xy.y=" << xy.y << std::endl;
+    std::cout << "xy.y=" << xy.y << "\txy.y0=" << xy.y0 << std::endl;
+    std::cout << "yz.x=" << yz.x << "\tyz.x0=" << yz.x0 << std::endl;
     std::cout << "n=" << n << std::endl;
   }
 };
@@ -256,11 +220,11 @@ public:
 
 // In-place OpenMP/MPI 3D complex FFT.
 // Fourier transform an mx x my x mz array, distributed first over x and
-// then over y. The array must be allocated as splitxy::n Complex words.
+// then over y. The array must be allocated as split3::n Complex words.
 //
 // Example:
 // MPIgroup group(MPI_COMM_WORLD,mx,my);
-// splitxy d(mx,my,mz,group);
+// split3 d(mx,my,mz,group);
 // Complex *f=ComplexAlign(d.n);
 // fft3dMPI fft(d,f);
 // fft.Forwards(f);
@@ -270,7 +234,7 @@ public:
 //
 class fft3dMPI {
 private:
-  splitxy d;
+  split3 d;
   unsigned int xythreads,yzthreads;
   mfft1d *xForwards,*xBackwards;
   mfft1d *yForwards,*yBackwards;
@@ -307,12 +271,12 @@ public:
     d.Deactivate();
   }
   
-  fft3dMPI(const splitxy& d, Complex *f, const mpiOptions& xy,
+  fft3dMPI(const split3& d, Complex *f, const mpiOptions& xy,
            const mpiOptions& yz) : d(d) {
     init(f,xy,yz);
   }
   
-  fft3dMPI(const splitxy& d, Complex *f, const mpiOptions& xy) : d(d) {
+  fft3dMPI(const split3& d, Complex *f, const mpiOptions& xy) : d(d) {
     init(f,xy,xy);
   }
     

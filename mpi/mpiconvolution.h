@@ -138,7 +138,7 @@ public:
 // In-place implicitly dealiased 3D complex convolution.
 class ImplicitConvolution3MPI : public ImplicitConvolution3 {
 protected:
-  splityz d;
+  split3 d;
   fftw_plan intranspose,outtranspose;
   mpitranspose<Complex> *T;
 public:  
@@ -169,7 +169,7 @@ public:
   // A is the number of inputs.
   // B is the number of outputs.
   ImplicitConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
-                          const splityz& d,
+                          const split3& d,
                           Complex *u1, Complex *u2, Complex *u3, 
                           unsigned int A=2, unsigned int B=1,
                           convolveOptions options=defaultconvolveOptions) :
@@ -182,7 +182,7 @@ public:
   }
 
   ImplicitConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
-                          const splityz& d,
+                          const split3& d,
                           unsigned int A=2, unsigned int B=1,
                           convolveOptions options=defaultconvolveOptions) :
     ImplicitConvolution3(mx,my,mz,A,B,
@@ -216,13 +216,13 @@ public:
 };
 
 void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
-			      splityz& d, bool xcompact, bool ycompact,
+			      split3& d, bool xcompact, bool ycompact,
                               Complex *f, unsigned int nu=0, Complex *u=NULL);
  
 // In-place implicitly dealiased 3D complex convolution.
 class ImplicitHConvolution3MPI : public ImplicitHConvolution3 {
 protected:
-  splityz d,du;
+  split3 d,du;
   mpitranspose<double> *T,*U;
   MPI_Comm global;
 public:  
@@ -254,7 +254,7 @@ public:
   // A is the number of inputs.
   // B is the number of outputs.
   ImplicitHConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
-                           const splityz& d, const splityz& du,
+                           const split3& d, const split3& du,
                            Complex *f, Complex *u1, Complex *u2, Complex *u3,
                            unsigned int A=2, unsigned int B=1,
                            convolveOptions options=defaultconvolveOptions,
@@ -269,7 +269,7 @@ public:
   }
 
   ImplicitHConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
-                           const splityz& d, const splityz& du,
+                           const split3& d, const split3& du,
                            Complex *f, unsigned int A=2, unsigned int B=1,
                            convolveOptions options=defaultconvolveOptions,
                            MPI_Comm global=0) :

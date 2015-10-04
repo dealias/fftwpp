@@ -22,7 +22,7 @@ bool Direct=false, Implicit=true;
 
 unsigned int outlimit=3000;
 
-inline void init(Complex *f, Complex *g, const splityz& d, unsigned int M=1,
+inline void init(Complex *f, Complex *g, const split3& d, unsigned int M=1,
                  bool xcompact=true, bool ycompact=true)
 {
   double factor=1.0/sqrt((double) M);
@@ -161,8 +161,8 @@ int main(int argc, char* argv[])
       cout << "size=" << group.size << endl;
     }
 
-    splityz d(nx,ny,nz,group);
-    splityz du(mx+xcompact,ny,nz,group);
+    split3 d(nx,ny,nz,group,true);
+    split3 du(mx+xcompact,ny,nz,group,true);
     
     unsigned int Mn=M*d.n;
     Complex *f=ComplexAlign(Mn);

@@ -44,7 +44,7 @@ void init(Complex **F,
   }
 }
 
-void init(Complex **F,splityz &d, unsigned int A=2)
+void init(Complex **F,split3 &d, unsigned int A=2)
 {
   init(F,
        d.X,d.Y,d.Z,
@@ -184,7 +184,7 @@ int main(int argc, char* argv[])
       cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
       cout << "group size=" << group.size << endl;
     }
-    splityz d(mx,my,mz,group);
+    split3 d(mx,my,mz,group,true);
 
     //cout << "Local data size: " << d.n << endl;
     
