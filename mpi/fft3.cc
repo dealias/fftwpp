@@ -180,7 +180,7 @@ int main(int argc, char* argv[])
 	if(main) cout << "Distributed output:" << endl;
 	show(f,d.X,d.xy.y,d.z,group.active);
       }
-      gatherXyz(f,fgatherd(),d,group.active); 
+      gatheryz(f,fgatherd(),d,group.active); 
 
       if(!quiet && main) {
 	cout << "Gathered output:\n" <<  fgatherd << endl;
