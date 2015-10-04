@@ -34,8 +34,8 @@ public:
     activate(comm);
   }
   
-  MPIgroup(const MPI_Comm& comm, unsigned int X, unsigned int Y, unsigned int Z,
-           bool allowPencil=true) {
+  MPIgroup(const MPI_Comm& comm, unsigned int X, unsigned int Y,
+           unsigned int Z, bool allowPencil=true) {
     init(comm);
     unsigned int x=ceilquotient(X,size);
     unsigned int y=ceilquotient(Y,size);
@@ -97,9 +97,9 @@ public:
   }
   
   void show() {
-    std::cout << "X=" << X << "\tY="<<Y << std::endl;
-    std::cout << "x=" << x << "\ty="<<y << std::endl;
-    std::cout << "x0=" << x0 << "\ty0="<< y0 << std::endl;
+    std::cout << "X=" << X << "\tY=" <<Y << std::endl;
+    std::cout << "x=" << x << "\ty=" <<y << std::endl;
+    std::cout << "x0=" << x0 << "\ty0=" << y0 << std::endl;
     std::cout << "n=" << n << std::endl;
   }
 };
@@ -146,9 +146,9 @@ public:
   }
 
   void show() {
-    std::cout << "X=" << X << "\tY="<<Y << "\tZ="<<Z << std::endl;
-    std::cout << "x=" << x << "\ty="<<y << "\tz="<<z << std::endl;
-    std::cout << "x0=" << x0 << "\ty0="<< y0 << "\tz0="<<z0 << std::endl;
+    std::cout << "X=" << X << "\tY=" << Y << "\tZ=" << Z << std::endl;
+    std::cout << "x=" << x << "\ty=" << y << "\tz=" << z << std::endl;
+    std::cout << "x0=" << x0 << "\ty0=" << y0 << "\tz0=" << z0 << std::endl;
     std::cout << "yz.x=" << yz.x << std::endl;
     std::cout << "n=" << n << "\tn2=" << n2 << std::endl;
   }
@@ -170,7 +170,7 @@ public:
   splitxy(unsigned int X, unsigned int Y, unsigned int Z,
           const MPIgroup& group) : X(X), Y(Y), Z(Z),
 				   communicator(group.active) {
-    xy=split(X,Y,group.communicator,group.z);
+    xy=split(X,Y,group.communicator,Z);
     yz=split(Y,Z,group.communicator2);
     x=xy.x;
     y=yz.x;
@@ -192,9 +192,9 @@ public:
   }
 
   void show() {
-    std::cout << "X=" << X << "\tY="<<Y << "\tZ="<<Z << std::endl;
-    std::cout << "x=" << x << "\ty="<<y << "\tz="<<z << std::endl;
-    std::cout << "x0=" << x0 << "\ty0="<< y0 << "\tz0="<<z0 << std::endl;
+    std::cout << "X=" << X << "\tY=" << Y << "\tZ=" << Z << std::endl;
+    std::cout << "x=" << x << "\ty=" << y << "\tz=" << z << std::endl;
+    std::cout << "x0=" << x0 << "\ty0=" << y0 << "\tz0=" << z0 << std::endl;
     std::cout << "xy.y=" << xy.y << std::endl;
     std::cout << "n=" << n << std::endl;
   }
@@ -289,19 +289,26 @@ public:
   
   fft3dMPI(const splitxy& d, Complex *f) : d(d) {
     d.Activate();
-    Txy=new mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,f,d.xy.communicator);
-    
-    xForwards=new mfft1d(d.X,-1,d.xy.y*d.z,d.xy.y*d.z,1);
-    xBackwards=new mfft1d(d.X,1,d.xy.y*d.z,d.xy.y*d.z,1);
+    mpiOptions mpi;
+    mpi.a=1;
+    mpi.alltoall=1;
+    if(d.z > 0)
+      Txy=new mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,f,d.xy.communicator,
+                                    mpi);
+    unsigned int M=d.xy.y*d.z;
 
+    xForwards=new mfft1d(d.X,-1,M,M,1);
+    xBackwards=new mfft1d(d.X,1,M,M,1);
+    
     if(d.y < d.Y) {
-      Tyz=new mpitranspose<Complex>(d.Y,d.z,d.y,d.Z,1,f,d.yz.communicator);
+      Tyz=new mpitranspose<Complex>(d.Y,d.z,d.y,d.Z,1,f,d.yz.communicator,mpi);
       
       yForwards=new mfft1d(d.Y,-1,d.z,d.z,1);
       yBackwards=new mfft1d(d.Y,1,d.z,d.z,1);
 
-      zForwards=new mfft1d(d.Z,-1,d.x*d.y,1,d.Z);
-      zBackwards=new mfft1d(d.Z,1,d.x*d.y,1,d.Z);
+      unsigned int M=d.x*d.y;
+      zForwards=new mfft1d(d.Z,-1,M,1,d.Z);
+      zBackwards=new mfft1d(d.Z,1,M,1,d.Z);
     } else {
       yzForwards=new fft2d(d.Y,d.Z,-1,f);
       yzBackwards=new fft2d(d.Y,d.Z,1,f);
@@ -323,6 +330,8 @@ public:
     
     delete xBackwards;
     delete xForwards;
+
+    if(d.z > 0)
     delete Txy;
   }
 

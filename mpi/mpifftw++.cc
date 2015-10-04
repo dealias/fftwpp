@@ -7,7 +7,7 @@ MPI_Comm Active=MPI_COMM_NULL;
 
 fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out) 
 {
-  if(Active == MPI_COMM_NULL)
+ if(Active == MPI_COMM_NULL)
     return Planner(F,in,out);
   fftw_plan plan;
   int rank;
@@ -34,10 +34,12 @@ fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out)
       }
       if(!plan) {
         plan=F->Plan(in,out);
-        learned=true;
+        if(plan) learned=true;
       }
+      if(plan)  {
       inspiration=fftw_export_wisdom_to_string();
       length=strlen(inspiration);
+      }
     }
     for(int i=1; i < size; ++i)
       MPI_Send(&length,1,MPI_INT,i,0,Active);
@@ -89,8 +91,10 @@ fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out)
       experience=fftw_export_wisdom_to_string();
       fftw_forget_wisdom();
       plan=F->Plan(in,out);
+      if(plan) {
       inspiration=fftw_export_wisdom_to_string();
       length=strlen(inspiration);
+      } else length=0;
     }
     MPI_Gather(&length,1,MPI_INT,NULL,1,MPI_INT,0,Active);
     if(length > 0) {
@@ -147,9 +151,10 @@ void fft3dMPI::Forwards(Complex *f)
     for(unsigned int i=0; i < d.x; ++i) 
       yzForwards->fft(f+i*stride);
   }
-
-  Txy->transpose(f,true,false);
-
+  
+  if(d.z > 0) 
+    Txy->transpose(f,true,false);
+  
   xForwards->fft(f);
 }
 
@@ -157,7 +162,8 @@ void fft3dMPI::Backwards(Complex *f)
 {
   xBackwards->fft(f);
 
-  Txy->transpose(f,false,true);
+  if(d.z > 0) 
+    Txy->transpose(f,false,true);
 
   unsigned int stride=d.z*d.Y;
   if(d.y < d.Y) {

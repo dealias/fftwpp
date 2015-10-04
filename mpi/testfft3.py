@@ -44,9 +44,9 @@ def main(argv):
     else:
 
         Xlist = [1,2,3,4,5,random.randint(6,64)]
-        Zlist = [1,2,3,4,5,random.randint(6,64)]
         Ylist = [1,2,3,4,5,random.randint(6,64)]
-        Plist = [1,2,3,4,random.randint(6,10)]
+        Zlist = [1,2,3,4,5,random.randint(6,64)]
+        Plist = [4,8,3,2,random.randint(9,12),1]
 
         if(shortrun):
             print "Short run."
@@ -56,7 +56,7 @@ def main(argv):
             Plist = [1,2]
             
         ntests = 0
-        ntests = len(Xlist) * len(Ylist) * len(Plist)
+        ntests = len(Xlist) * len(Ylist) * len(Zlist) * len(Plist)
         print "Running", ntests, "tests."
         tstart = time.time()
 
@@ -72,9 +72,8 @@ def main(argv):
                         args.append("-x" + str(X))
                         args.append("-y" + str(Y))
                         args.append("-z" + str(Z))
-                        args.append("-N0")
-                        args.append("-t")
-                        args.append("-q")
+                        args.append("-N1")
+                        args.append("-tq")
                         rtest, cmd = runtest(pname, P, args, logfile, timeout)
                         if not rtest == 0:
                             nfails += 1

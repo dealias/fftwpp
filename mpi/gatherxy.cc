@@ -112,11 +112,7 @@ int main(int argc, char* argv[])
     //Complex *pf0=ComplexAlign(d.X*d.Y*d.Z);
     Array3<Complex> f0(d.X,d.Y,d.Z);
     f0.Load(0.0);
-    gatherxy(F0(),f0(),
-	     d.X, d.Y, d.Z,
-	     d.x0, d.y0, d.z0,
-	     d.x, d.y, d.z,
-	     group.active);
+    gatherxy(F0(),f0(),d,group.active);
     if(main) {
       array3<Complex> g0(d.X,d.Y,d.Z);
       init(g0,d.X,d.Y,d.Z,0,0,0,d.X,d.Y,d.Z);

@@ -249,15 +249,7 @@ void gatheryz(const ftype *part,
 template<class ftype>
 void gatherxy(const ftype *part,
 	      ftype *whole,
-	      const unsigned int X,
-	      const unsigned int Y,
-	      const unsigned int Z,
-	      const unsigned int x0,
-	      const unsigned int y0,
-	      const unsigned int z0,
-	      const unsigned int x,
-	      const unsigned int y,
-	      const unsigned int z,
+	      const splitxy d,
 	      const MPI_Comm& communicator)
 {
   MPI_Status stat;
@@ -265,6 +257,16 @@ void gatherxy(const ftype *part,
   MPI_Comm_size(communicator,&size);
   MPI_Comm_rank(communicator,&rank);
 
+  const unsigned int X=d.x;
+  const unsigned int Y=d.Y;
+  const unsigned int Z=d.Z;
+  const unsigned int x0=d.x0;
+  const unsigned int y0=d.y0;
+  const unsigned int z0=d.z0;
+  const unsigned int x=d.x;
+  const unsigned int y=d.y;
+  const unsigned int z=d.z;
+                
   // x * y * Z
   if(rank == 0) {
     // First copy rank 0's part into the whole
@@ -316,17 +318,61 @@ void gatherxy(const ftype *part,
   }
 }
 
+// Gather an MPI-distributed array onto the rank-0 process.  The
+// distributed array has dimensions X * y * z, the gathered array has
+// dimensions X * Y * Z.
 template<class ftype>
-void gatherxy(const ftype *part,
-	      ftype *whole,
-	      const splitxy d,
-	      const MPI_Comm& communicator)
+void gatherXyz(const ftype *part, ftype *whole, const splitxy d,
+               const MPI_Comm& communicator)
 {
-  gatherxy(part, whole,
-	   d.X,d.Y,d.Z,
-	   d.x0,d.y0,d.z0,
-	   d.x,d.y,d.z,
-	   communicator);
+  int size, rank;
+  MPI_Comm_size(communicator,&size);
+  MPI_Comm_rank(communicator,&rank);
+
+  const unsigned int X=d.X;
+  const unsigned int Y=d.Y;
+  const unsigned int Z=d.Z;
+  const unsigned int y=d.xy.y;
+  const unsigned int z=d.z;
+  const unsigned int y0=d.xy.y0;
+  const unsigned int z0=d.z0;
+                
+  if(rank == 0) {
+    // First copy rank 0's part into the whole
+    const int count=y;
+    const int stride=Z;
+    const int length=z;
+    for(unsigned int i=0; i < X; ++i)
+      copyfromblock(part+i*y*z,whole+(i*Y+y0)*Z+z0,count,length,stride);
+
+    for(int p=1; p < size; ++p) {
+      unsigned int dims[4];
+      MPI_Recv(&dims,4,MPI_UNSIGNED,p,0,communicator,MPI_STATUS_IGNORE);
+      unsigned int y=dims[0];
+      unsigned int z=dims[1];
+      unsigned int y0=dims[2];
+      unsigned int z0=dims[3];
+
+      unsigned int n=X*y*z;
+      if(n > 0) {
+	ftype *C=new ftype[n];
+	MPI_Recv(C,sizeof(ftype)*n,MPI_BYTE,p,0,communicator,
+                 MPI_STATUS_IGNORE);
+	const int count=y;
+	const int stride=Z;
+	const int length=z;
+	for(unsigned int i=0; i < X; ++i)
+	  copyfromblock(C+i*y*z,whole+(i*Y+y0)*Z+z0,count,length,stride);
+	delete [] C;
+      }
+    }
+  } else {
+    unsigned int dims[]={y,z,y0,z0};
+    MPI_Send(&dims,4,MPI_UNSIGNED,0,0,communicator);
+    unsigned int n=X*y*z;
+    if(n > 0)
+      MPI_Send((ftype *) part,n*sizeof(ftype),MPI_BYTE,0,0,communicator);
+  }
 }
 
 template<class T>
@@ -338,12 +384,12 @@ int checkerror(const T *f, const T *control, unsigned int stop)
     norm=std::max(norm,abs(control[i]));
   }
   std::cout << "Maximum error: " << maxerr << std::endl;
-  if(maxerr > 1e-12*norm) {
-    std::cout << "CAUTION! Large error!" << std::endl;
-    return 1;
+  if(maxerr <= 1e-12*norm) {
+    std::cout << "Error ok." << std::endl;
+    return 0;
   }
-  std::cout << "Error ok." << std::endl;
-  return 0;
+  std::cout << "CAUTION! Large error!" << std::endl;
+    return 1;
 }
 
 // output the contents of a 2D array

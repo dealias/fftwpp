@@ -173,9 +173,9 @@ int main(int argc, char* argv[])
       
       if(!quiet) {
 	if(main) cout << "Distributed output:" << endl;
-	show(f,d.x,d.xy.y,d.Z,group.active);
+	show(f,d.X,d.xy.y,d.z,group.active);
       }
-      gatherxy(f, fgatherd(), d, group.active); 
+      gatherXyz(f,fgatherd(),d,group.active); 
 
       if(!quiet && main) {
 	cout << "Gathered output:\n" <<  fgatherd << endl;
@@ -191,7 +191,7 @@ int main(int argc, char* argv[])
 	localBackward.fftNormalized(flocal);
       if(!quiet) {
 	if(main) cout << "Distributed output:" << endl;
-	show(f,d.x,d.xy.y,d.Z,group.active);
+	show(f,d.x,d.y,d.Z,group.active);
       }
 
       gatherxy(f, fgatherd(), d, group.active);
@@ -209,7 +209,14 @@ int main(int argc, char* argv[])
 	show(f,d.x,d.y,d.Z,group.active);
       }
       
-      
+      if(!quiet && group.rank == 0) {
+        cout << endl;
+        if(retval == 0)
+          cout << "pass" << endl;
+        else
+          cout << "FAIL" << endl;
+
+      }
     } else {
       if(N > 0) {
     
@@ -222,23 +229,15 @@ int main(int argc, char* argv[])
 	  fft.Normalize(f);
 	  T[i]=seconds();
 	}
+	if(!quiet) show(f,d.x,d.y,d.Z,group.active);
+//	if(!quiet) show(f,d.X,d.xy.y,d.z,group.active);
+        
 	if(main) timings("FFT timing:",mx,T,N);
 	delete[] T;
       }
     }
   
     deleteAlign(f);
-    
-  }
-
-
-  if(!quiet && group.rank == 0) {
-    cout << endl;
-    if(retval == 0)
-      cout << "pass" << endl;
-    else
-      cout << "FAIL" << endl;
-
   }
   
   MPI_Finalize();

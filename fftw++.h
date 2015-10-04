@@ -329,6 +329,8 @@ public:
     }
   }
   
+  fftw() {doubles=0; plan=NULL;}
+  
   fftw(unsigned int doubles, int sign, unsigned int threads,
        unsigned int n=0) :
     doubles(doubles), sign(sign), threads(threads), 
@@ -342,7 +344,7 @@ public:
     if(plan) fftw_destroy_plan(plan);
   }
   
-  virtual fftw_plan Plan(Complex *in, Complex *out)=0;
+  virtual fftw_plan Plan(Complex *in, Complex *out) {return NULL;}
   
   inline void CheckAlign(Complex *p, const char *s) {
     if((size_t) p % sizeof(Complex) == 0) return;
@@ -513,21 +515,25 @@ public:
   }
   
   void fft(Complex *in, Complex *out=NULL) {
-    out=Setout(in,out);
-    Execute(in,out);
+    if(doubles > 0) {
+      out=Setout(in,out);
+      Execute(in,out);
+    }
   }
     
   void fft(double *in, Complex *out=NULL) {
-    fft((Complex *) in,out);
+      fft((Complex *) in,out);
   }
   
   void fft(Complex *in, double *out) {
-    fft(in,(Complex *) out);
+      fft(in,(Complex *) out);
   }
   
   void fft0(Complex *in, Complex *out=NULL) {
-    out=Setout(in,out);
-    Execute(in,out,true);
+    if(doubles > 0) {
+      out=Setout(in,out);
+      Execute(in,out,true);
+    }
   }
     
   void fft0(double *in, Complex *out=NULL) {
@@ -893,6 +899,12 @@ public:
       nx(nx), M(M), stride(stride), dist(Dist(nx,stride,dist)),
       plan1(NULL), plan2(NULL)
   {
+    if(M == 0) {
+      fftw null;
+      (*planner)(&null,in,out);
+      return;
+    }
+      
     T=1;
     Q=M;
     R=0;
