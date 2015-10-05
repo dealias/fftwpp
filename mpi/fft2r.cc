@@ -141,7 +141,8 @@ int main(int argc, char* argv[])
 	if(main) cout << "\nDistributed input:" << endl;
 	show(f,df.x,my,group.active);
       }
-
+      
+#if 0      
       size_t align=sizeof(Complex);
       array2<double> flocal(mx,my,align);
       array2<Complex> glocal(mx,myp,align);
@@ -153,9 +154,11 @@ int main(int argc, char* argv[])
       if(!quiet && main) {
 	cout << endl << "Gathered input:\n" << flocal << endl;
       }
+#endif      
 
       rcfft.Forwards(f,g);
 
+#if 0      
       if(!quiet && mx*my < outlimit) {
       	if(main) cout << "\nDistributed output:" << endl;
       	show(g,dg.X,dg.y,group.active);
@@ -164,7 +167,6 @@ int main(int argc, char* argv[])
 
       array2<Complex> ggather(mx,myp,align);
       gathery(g, ggather(), dg, 1, group.active);
-
 
       MPI_Barrier(group.active);
       if(main) {
@@ -175,7 +177,7 @@ int main(int argc, char* argv[])
 	}
         retval += checkerror(glocal(),ggather(),dg.X*dg.Y);
       }
-
+#endif      
 
       /*
         fft.Backwards(f);
@@ -203,19 +205,24 @@ int main(int argc, char* argv[])
       */
 
     } else {
-      // if(N > 0) {
-      // 	double *T=new double[N];
-      // 	for(unsigned int i=0; i < N; ++i) {
-      // 	  init(f,d);
-      // 	  seconds();
-      // 	  fft.Forwards(f);
-      // 	  fft.Backwards(f);
-      // 	  fft.Normalize(f);
-      // 	  T[i]=seconds();
-      // 	}    
-      // 	if(main) timings("FFT timing:",mx,T,N);
-      // 	delete [] T;
-      // }
+#if 0
+       if(N > 0) {
+       	double *T=new double[N];
+       	for(unsigned int i=0; i < N; ++i) {
+       	  init(f,d);
+       	  seconds();
+       	  fft.Forwards(f);
+       	  fft.Backwards(f);
+       	  fft.Normalize(f);
+       	  T[i]=seconds();
+       	}    
+       	if(main) timings("FFT timing:",mx,T,N);
+      	delete [] T;
+        
+        if(!quiet && mx*my < outlimit)
+          show(f,d.x,my,group.active);
+       }
+#endif       
     }
 
     deleteAlign(f);

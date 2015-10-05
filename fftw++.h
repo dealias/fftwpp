@@ -891,11 +891,10 @@ public:
 class mfft1d : public fftw, public Threadtable<keytype3,keyless3> {
   unsigned int nx;
   unsigned int M;
-  unsigned int T,Q,R;
   size_t stride;
   size_t dist;
-  fftw_plan plan1;
-  fftw_plan plan2;
+  fftw_plan plan1,plan2;
+  unsigned int T,Q,R;
   static Table threadtable;
 public:  
   mfft1d(unsigned int nx, int sign, unsigned int M=1, size_t stride=1,
@@ -1141,13 +1140,12 @@ public:
 //   in contains the n real values stored as a Complex array;
 //   out contains the first n/2+1 Complex Fourier values.
 //
-class mrcfft1d : public fftw, public Threadtable<keytype2,keyless2> {
+class mrcfft1d : public fftw, public Threadtable<keytype3,keyless3> {
   unsigned int nx;
   unsigned int M;
   size_t stride;
   size_t dist;
-  fftw_plan plan1;
-  fftw_plan plan2;
+  fftw_plan plan1,plan2;
   unsigned int T,Q,R;
   static Table threadtable;
 
@@ -1164,7 +1162,8 @@ public:
            size_t dist=0, double *in=NULL, Complex *out=NULL,
            unsigned int Threads=maxthreads) 
     : fftw(2*(nx/2*stride+(M-1)*Dist(nx,stride,dist)+1),-1,Threads,nx), nx(nx),
-      M(M), stride(stride), dist(Dist(nx,stride,dist)) {
+      M(M), stride(stride), dist(Dist(nx,stride,dist)),
+      plan1(NULL), plan2(NULL) {
 
     if(M == 0) {
       fftw null;
@@ -1208,29 +1207,50 @@ public:
     }
   } 
   
+  unsigned int Threads() {return std::max(T,threads);}
+  
   threaddata lookup(bool inplace, unsigned int threads) {
-    return Lookup(threadtable,keytype2(nx,M,threads,inplace));
+    return Lookup(threadtable,keytype3(nx,Q,R,threads,inplace));
   }
-
   void store(bool inplace, const threaddata& data) {
-    Store(threadtable,keytype2(nx,M,data.threads,inplace),data);
+    Store(threadtable,keytype3(nx,Q,R,data.threads,inplace),data);
   }
   
   fftw_plan Plan(Complex *in, Complex *out) {
     int n=(int) nx;
-    if(in != out) 
-      return fftw_plan_many_dft_r2c(1,&n,M,
-				    (double *) in,NULL,stride,dist,
-				    (fftw_complex *) out,NULL,stride,dist/2+1,
-				    effort);
-    return fftw_plan_many_dft_r2c(1,&n,M,
-                                  (double *) in,NULL,stride,2*dist,
-                                  (fftw_complex *) out,NULL,stride,dist,
+    if(R > 0) {
+      plan2=fftw_plan_many_dft_r2c(1,&n,Q+1,
+                                   (double *) in,NULL,stride,dist,
+                                   (fftw_complex *) out,NULL,stride,
+                                   in == out ? dist : dist/2+1,
+                                   effort);
+      if(!plan2) return NULL;
+      if(threads == 1) plan1=plan2;
+    }
+    return fftw_plan_many_dft_r2c(1,&n,Q,
+                                  (double *) in,NULL,stride,dist,
+                                  (fftw_complex *) out,NULL,stride,
+                                  in == out ? dist : dist/2+1,
                                   effort);
   }
   
   void Execute(Complex *in, Complex *out, bool=false) {
-    fftw_execute_dft_r2c(plan,(double *) in,(fftw_complex *) out);
+    if(T == 1) {
+      fftw_execute_dft_r2c(plan,(double *) in,(fftw_complex *) out);
+    } else {
+      unsigned int Tdist=T*dist;
+      unsigned int extra=(T-R)*dist;
+
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(T)
+#endif
+      for(unsigned int i=0; i < Tdist; i += dist) {
+        bool normal=i < extra;
+        unsigned int offset=normal ? Q*i : Q*i+i-extra;
+        fftw_execute_dft_r2c(normal ? plan : plan2,(double *) (in+offset),
+                         (fftw_complex *) out+offset);
+      }
+    }
   }
   
   void fftNormalized(Complex *in, Complex *out=NULL) {
