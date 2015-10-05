@@ -957,7 +957,7 @@ public:
                                (fftw_complex *) in,NULL,stride,dist,
                                (fftw_complex *) out,NULL,stride,dist,
                                sign,effort);
-      if(!plan2) noplan();
+      if(!plan2 && !(fftw::effort & FFTW_WISDOM_ONLY)) noplan();
       if(threads == 1) plan1=plan2;
     }
     return fftw_plan_many_dft(1,&n,Q,
