@@ -325,10 +325,9 @@ public:
 // Backwards0Normalized(Complex *g, double *f);
 class rcfft2dMPI {
 private:
-  unsigned int mx, my;
   split dr,dc; // real and complex MPI dimensions.
-  mfft1d *xForwards;
-  mfft1d *xBackwards;
+  unsigned int threads;
+  mfft1d *xForwards,*xBackwards;
   mrcfft1d *yForwards;
   mcrfft1d *yBackwards;
   //bool inplace; // we stick with out-of-place transforms for now
@@ -337,11 +336,13 @@ protected:
   mpitranspose<Complex> *T;
 public:
   rcfft2dMPI(const split& dr, const split& dc,
-             double *f, Complex *g) : dr(dr), dc(dc) {
+             double *f, Complex *g, const mpiOptions& options) : dr(dr), dc(dc)
+  {
+    threads=options.threads;
     dr.Activate();
-    mx=dr.X;
-    my=dc.Y;
-    inittranspose(g);
+    
+    T=new mpitranspose<Complex>(dc.X,dc.y,dc.x,dc.Y,1,g,dc.communicator,
+                                options);
     
     //rdist=inplace ? dr.X+2 : dr.X;
 
@@ -359,13 +360,6 @@ public:
     xForwards=new mfft1d(n,-1,M,stride,dist);
     xBackwards=new mfft1d(n,1,M,stride,dist);
     dr.Deactivate();
-  }
-
-  void inittranspose(Complex* out) {
-    int size;
-    MPI_Comm_size(dc.communicator,&size);
-
-    T=new mpitranspose<Complex>(dc.X,dc.y,dc.x,dc.Y,1,out,dc.communicator);
   }
    
   virtual ~rcfft2dMPI() {}

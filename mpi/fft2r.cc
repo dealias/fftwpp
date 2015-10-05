@@ -33,6 +33,9 @@ int main(int argc, char* argv[])
   unsigned int N=0;
   unsigned int mx=4;
   unsigned int my=4;
+  int divisor=0; // Test for best block divisor
+  int alltoall=-1; // Test for best alltoall routine
+  
   bool quiet=false;
   bool test=false;
   
@@ -40,7 +43,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"hN:m:x:y:n:T:qt");
+    int c = getopt(argc,argv,"hN:a:m:s:x:y:n:T:qt");
     if (c == -1) break;
                 
     switch (c) {
@@ -49,8 +52,14 @@ int main(int argc, char* argv[])
       case 'N':
         N=atoi(optarg);
         break;
+      case 'a':
+        divisor=atoi(optarg);
+        break;
       case 'm':
         mx=my=atoi(optarg);
+        break;
+      case 's':
+        alltoall=atoi(optarg);
         break;
       case 'x':
         mx=atoi(optarg);
@@ -120,7 +129,7 @@ int main(int argc, char* argv[])
     Complex *g=ComplexAlign(dg.n);
 
     // Create instance of FFT
-    rcfft2dMPI rcfft(df,dg,f,g);
+    rcfft2dMPI rcfft(df,dg,f,g,mpiOptions(fftw::maxthreads,divisor,alltoall));
 
     if(!quiet && group.rank == 0)
       cout << "Initialized after " << seconds() << " seconds." << endl;    
