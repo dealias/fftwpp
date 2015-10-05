@@ -480,13 +480,13 @@ public:
       threads=Threads;
       planThreads(threads);
       planT=(*planner)(this,in,out);
-    }
     
-    if(Threads > 1 && data.threads == 0) {
-      if(planT)
-        data=time(plan,planT,in,out,threads);
-      else noplan();
-      store(inplace,threaddata(threads,data.mean,data.stdev));
+      if(data.threads == 0) {
+        if(planT)
+          data=time(plan,planT,in,out,threads);
+        else noplan();
+        store(inplace,threaddata(threads,data.mean,data.stdev));
+      }
     }
     
     if(alloc) Array::deleteAlign(in,(doubles+1)/2);
