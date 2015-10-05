@@ -1,10 +1,17 @@
 *.d
+*.d.*
 *.o
-*~
+.asy_*
+*.orig
+*.rej
+
+
 wisdom3.txt
 
 *.log
 *.pyc
+*.eps
+*.pdf
 
 tests/cconv
 tests/cconv2
@@ -23,6 +30,9 @@ tests/mfft1r
 tests/tconv
 tests/tconv2
 tests/transpose
+tests/timings*
+wrappers/*.so
+wrappers/*.mod
 
 examples/example0
 examples/example0m
@@ -54,3 +64,11 @@ mpi/transpose
 mpi/gather
 mpi/gatheryz
 mpi/gatherxy
+
+### Debugging files
+core.*
+
+### Backups
+*~
+\#*
+.\#*

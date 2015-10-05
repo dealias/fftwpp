@@ -12,8 +12,6 @@ unsigned int fftw::maxthreads=1;
 double fftw::testseconds=1.0; // Time limit for threading efficiency tests
 
 fftw_plan (*fftw::planner)(fftw *f, Complex *in, Complex *out)=Planner;
-fftw_plan (*fftw::rcplanner)(fftw *f, double *in, Complex *out)=rcPlanner;
-fftw_plan (*fftw::crplanner)(fftw *f, Complex *in, double *out)=crPlanner;
 
 const char *fftw::oddshift="Shift is not implemented for odd nx";
 const char *inout=
@@ -59,32 +57,6 @@ fftw_plan Planner(fftw *F, Complex *in, Complex *out)
   fftw::effort &= !FFTW_WISDOM_ONLY;
   if(!plan) {
     plan=F->Plan(in,out);
-    SaveWisdom();
-  }
-  return plan;
-}
-
-fftw_plan rcPlanner(fftw *F, double *in, Complex *out)
-{
-  LoadWisdom();
-  fftw::effort |= FFTW_WISDOM_ONLY;
-  fftw_plan plan=F->rcPlan(in,out);
-  fftw::effort &= !FFTW_WISDOM_ONLY;
-  if(!plan) {
-    plan=F->rcPlan(in,out);
-    SaveWisdom();
-  }
-  return plan;
-}
-
-fftw_plan crPlanner(fftw *F, Complex *in, double *out)
-{
-  LoadWisdom();
-  fftw::effort |= FFTW_WISDOM_ONLY;
-  fftw_plan plan=F->crPlan(in,out);
-  fftw::effort &= !FFTW_WISDOM_ONLY;
-  if(!plan) {
-    plan=F->crPlan(in,out);
     SaveWisdom();
   }
   return plan;

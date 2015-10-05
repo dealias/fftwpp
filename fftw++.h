@@ -182,8 +182,6 @@ inline void deleteAlign(T *p)
 class fftw;
 
 extern "C" fftw_plan Planner(fftw *F, Complex *in, Complex *out);
-extern "C" fftw_plan rcPlanner(fftw *F, double *in, Complex *out);
-extern "C" fftw_plan crPlanner(fftw *F, Complex *in, double *out);
 void LoadWisdom();
 void SaveWisdom();
 
@@ -234,8 +232,6 @@ public:
   static double testseconds;
   static const char *WisdomName;
   static fftw_plan (*planner)(fftw *f, Complex *in, Complex *out);
-  static fftw_plan (*rcplanner)(fftw *f, double *in, Complex *out);
-  static fftw_plan (*crplanner)(fftw *f, Complex *in, double *out);
   
   virtual unsigned int Threads() {return threads;}
   
@@ -349,8 +345,6 @@ public:
   }
   
   virtual fftw_plan Plan(Complex *in, Complex *out) {return NULL;}
-  virtual fftw_plan rcPlan(double *in, Complex *out) {return NULL;}
-  virtual fftw_plan crPlan(Complex *in, double *out) {return NULL;}
   
   inline void CheckAlign(Complex *p, const char *s) {
     if((size_t) p % sizeof(Complex) == 0) return;
@@ -1174,7 +1168,7 @@ public:
 
     if(M == 0) {
       fftw null;
-      (*rcplanner)(&null,in,out);
+      (*planner)(&null,(Complex *) in,out);
       return;
     }
       

@@ -22,24 +22,24 @@ int main()
   unsigned int dist=ny;
   
   mrcfft1d Forward(ny, // size
-		   nx, // how many
-		   1, // stride
-		   dist, // distance between the start of each input vector
-		   f, // input
-		   g); // output
+                   nx, // how many
+                   1, // stride
+                   dist, // distance between the start of each input vector
+                   f, // input
+                   g); // output
 
   mcrfft1d Backward(ny, // size (length of real output)
-		    nx, // how many
-		    1, // stride
-		    nyp, // distance between the start of each input vector
-		    g, // input
-		    f); // output
+                    nx, // how many
+                    1, // stride
+                    nyp, // distance between the start of each input vector
+                    g, // input
+                    f); // output
 
   // Initialize data:
   for(unsigned int i=0; i < nx; i++) 
     for(unsigned int j=0; j < ny; j++) 
       f(i,j)=i+j;
-	
+        
   cout << endl << "input:" << endl << f;
 
   Forward.fft(f,g);
