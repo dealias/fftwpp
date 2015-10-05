@@ -15,16 +15,12 @@ int main()
   unsigned int nyp=ny/2+1;
   size_t align=sizeof(Complex);
   
-  array2<Complex> g(nx,nyp,align);
-
-  // For out-of-place transforms:
+  cout << "Out-of-place transforms:" << endl;
+    
   array2<double> f(nx,ny,align);
+  array2<Complex> g(nx,nyp,align);
   unsigned int dist=ny;
   
-  // For in-place transforms:
-  //array2<double> f(nx,2*nyp,(double *) g()); 
-  //unsigned int dist=ny+2;
-
   mrcfft1d Forward(ny, // size
 		   nx, // how many
 		   1, // stride
@@ -53,4 +49,5 @@ int main()
   Backward.fftNormalized(g,f);
   
   cout << endl << "back to input:" << endl << f;
+
 }

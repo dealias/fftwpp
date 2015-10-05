@@ -182,6 +182,8 @@ inline void deleteAlign(T *p)
 class fftw;
 
 extern "C" fftw_plan Planner(fftw *F, Complex *in, Complex *out);
+extern "C" fftw_plan rcPlanner(fftw *F, double *in, Complex *out);
+extern "C" fftw_plan crPlanner(fftw *F, Complex *in, double *out);
 void LoadWisdom();
 void SaveWisdom();
 
@@ -232,6 +234,8 @@ public:
   static double testseconds;
   static const char *WisdomName;
   static fftw_plan (*planner)(fftw *f, Complex *in, Complex *out);
+  static fftw_plan (*rcplanner)(fftw *f, double *in, Complex *out);
+  static fftw_plan (*crplanner)(fftw *f, Complex *in, double *out);
   
   virtual unsigned int Threads() {return threads;}
   
@@ -345,6 +349,8 @@ public:
   }
   
   virtual fftw_plan Plan(Complex *in, Complex *out) {return NULL;}
+  virtual fftw_plan rcPlan(double *in, Complex *out) {return NULL;}
+  virtual fftw_plan crPlan(Complex *in, double *out) {return NULL;}
   
   inline void CheckAlign(Complex *p, const char *s) {
     if((size_t) p % sizeof(Complex) == 0) return;
@@ -493,10 +499,12 @@ public:
     return data;
   }
   
-  void Setup(Complex *in, double *out) {
-    Setup(in,(Complex *) out);}
-  void Setup(double *in, Complex *out=NULL) {
-    Setup((Complex *) in,out);
+  threaddata Setup(Complex *in, double *out) {
+    return Setup(in,(Complex *) out);
+  }
+
+  threaddata Setup(double *in, Complex *out=NULL) {
+    return Setup((Complex *) in,out);
   }
   
   virtual void Execute(Complex *in, Complex *out, bool=false) {
@@ -1144,23 +1152,72 @@ class mrcfft1d : public fftw, public Threadtable<keytype2,keyless2> {
   unsigned int M;
   size_t stride;
   size_t dist;
+  fftw_plan plan1;
+  fftw_plan plan2;
+  unsigned int T,Q,R;
   static Table threadtable;
-public:  
+
+public:
   mrcfft1d(unsigned int nx, unsigned int M=1, size_t stride=1,
            size_t dist=0, Complex *out=NULL, 
-           unsigned int threads=maxthreads) 
-    : fftw(2*(nx/2*stride+(M-1)*Dist(nx,stride,dist)+1),-1,threads,nx), nx(nx),
-      M(M), stride(stride), dist(Dist(nx,stride,dist)) {Setup(out);} 
-  
+           unsigned int Threads=maxthreads) 
+    : fftw(2*(nx/2*stride+(M-1)*Dist(nx,stride,dist)+1),-1,Threads,nx), nx(nx),
+      M(M), stride(stride), dist(Dist(nx,stride,dist)) {
+    mrcfft1d(nx,M,stride,dist,(double *)out,out,Threads); 
+  } 
+
   mrcfft1d(unsigned int nx, unsigned int M=1, size_t stride=1,
            size_t dist=0, double *in=NULL, Complex *out=NULL,
-           unsigned int threads=maxthreads) 
-    : fftw(2*(nx/2*stride+(M-1)*Dist(nx,stride,dist)+1),-1,threads,nx), nx(nx),
-      M(M), stride(stride), dist(Dist(nx,stride,dist)) {Setup(in,out);} 
+           unsigned int Threads=maxthreads) 
+    : fftw(2*(nx/2*stride+(M-1)*Dist(nx,stride,dist)+1),-1,Threads,nx), nx(nx),
+      M(M), stride(stride), dist(Dist(nx,stride,dist)) {
+
+    if(M == 0) {
+      fftw null;
+      (*rcplanner)(&null,in,out);
+      return;
+    }
+      
+    T=1;
+    Q=M;
+    R=0;
+    threaddata S1=Setup(in,out);
+    fftw_plan planT1=plan;
+    
+    T=std::min(M,Threads);
+    if(T > 1) {
+      Q=M/T;
+      R=M-Q*T;
+      threads=Threads;
+      threaddata ST=Setup(in,out);
+    
+      if(R > 0 && threads == 1 && plan1 != plan2) {
+        fftw_destroy_plan(plan2);
+        plan2=plan1;
+      }
+
+      if(ST.mean > S1.mean-S1.stdev) {
+        fftw_destroy_plan(plan);
+        if(R > 0) {
+          fftw_destroy_plan(plan2);
+          plan2=NULL;
+        }
+        T=1;
+        Q=M;
+        R=0;
+        plan=planT1;
+        threads=S1.threads;
+      } else {
+        fftw_destroy_plan(planT1);
+        threads=ST.threads;
+      }
+    }
+  } 
   
   threaddata lookup(bool inplace, unsigned int threads) {
     return Lookup(threadtable,keytype2(nx,M,threads,inplace));
   }
+
   void store(bool inplace, const threaddata& data) {
     Store(threadtable,keytype2(nx,M,data.threads,inplace),data);
   }
