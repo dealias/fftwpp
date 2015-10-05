@@ -36,7 +36,7 @@ def runtest(filename, P, extraargs, logfilename, timeout):
         pass
     log.write(" ".join(cmd)),
     
-    proc = Popen(cmd, stdout = PIPE, stderr = PIPE)
+    proc = Popen(cmd, stdout = PIPE, stderr = PIPE, stdin = None)
     if(waitandkill(proc, timeout)):
         msg = "\tFAIL: Process killed after" + str(timeout) +" second(s)!"
         #print msg
