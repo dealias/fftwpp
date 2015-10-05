@@ -122,8 +122,8 @@ public:
   int *reflect;               // Used by HermitianSymmetrizeXYMPI
   split3() {}
   split3(unsigned int X, unsigned int Y, unsigned int Z,
-         const MPIgroup& group, bool spectral=false) : X(X), Y(Y), Z(Z),
-                                                       communicator(group.active) {
+         const MPIgroup& group, bool spectral=false) : 
+    X(X), Y(Y), Z(Z), communicator(group.active), XYplane(NULL) {
     xy=split(X,Y,group.communicator);
     yz=split(Y,Z,group.communicator2);
     x=xy.x;
