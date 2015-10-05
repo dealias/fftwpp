@@ -218,7 +218,10 @@ int main(int argc, char* argv[])
       gathery(F[0],Foutgather,d,1,group.active);
 
       if(main) {
-	ImplicitHConvolution2 Clocal(mx,my,A,1);
+        convolveOptions options;
+        options.xcompact=xcompact;
+        options.ycompact=ycompact;
+	ImplicitHConvolution2 Clocal(mx,my,A,B,options);
 	Clocal.convolve(Flocal,mult);
 	if(!quiet) {
 	  cout << "Local output:" << endl;

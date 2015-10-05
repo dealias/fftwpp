@@ -56,8 +56,17 @@ def main(argv):
             Zlist = [1,2,3,10,random.randint(start,stop)]
             Plist = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,1]
 
+        ntests = 0
+        for X in Xlist:
+            for Y in Ylist:
+                for Z in Zlist:
+                    for P in Plist:
+                        for a in range(1,int(sqrt(P)+1.5)):
+                            for s in range(0,2):
+                                ntests += 1
+        print "Running", ntests, "tests."
         tstart = time.time()
-        
+
         failcases = ""
 
         # timeout cutoff in seconds (0 disables timeout)
@@ -88,15 +97,15 @@ def main(argv):
                                     failcases += "\t(code " + str(rtest) + ")"
                                     failcases += "\n"
                                     
-        tend = time.time()
-        print "\nElapsed time (s):", tend - tstart
-        
         if nfails > 0:
             print "Failure cases:"
             print failcases
             retval += 1
         print "\n", nfails, "failures out of", ntests, "tests." 
 
+        tend = time.time()
+        print "\nElapsed time (s):", tend - tstart
+        
     sys.exit(retval)
 
 if __name__ == "__main__":
