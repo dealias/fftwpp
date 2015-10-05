@@ -51,6 +51,6 @@ mpi/fft2r
 mpi/rcfft2
 mpi/fft3
 mpi/transpose
-mpi/accumulate
-mpi/accumulateyz
-mpi/accumulatexy
+mpi/gather
+mpi/gatheryz
+mpi/gatherxy
