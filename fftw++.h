@@ -475,10 +475,14 @@ public:
     plan=(*planner)(this,in,out);
     if(!plan) noplan();
     
-    if(Threads > 1 && data.threads == 0) {
+    fftw_plan planT;
+    if(Threads > 1) {
       threads=Threads;
       planThreads(threads);
-      fftw_plan planT=(*planner)(this,in,out);
+      planT=(*planner)(this,in,out);
+    }
+    
+    if(Threads > 1 && data.threads == 0) {
       if(planT)
         data=time(plan,planT,in,out,threads);
       else noplan();
