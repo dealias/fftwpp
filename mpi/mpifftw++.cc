@@ -33,20 +33,16 @@ fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out)
         fftw_forget_wisdom();
       }
       if(!plan) {
-        std::cout << "Generating wisdom..." << std::endl;
         plan=F->Plan(in,out);
         if(plan) learned=true;
       }
-      if(learned)  {
-        inspiration=fftw_export_wisdom_to_string();
-//        std::cout << inspiration << std::endl;
-        length=strlen(inspiration);
+      if(plan)  {
+      inspiration=fftw_export_wisdom_to_string();
+      length=strlen(inspiration);
       }
     }
-    for(int i=1; i < size; ++i) {
-      MPI_Send(&length,1,MPI_INT,i,10,Active);
-      std::cout << 0 << "->" << i << std::endl;
-    }
+    for(int i=1; i < size; ++i)
+      MPI_Send(&length,1,MPI_INT,i,0,Active);
     if(length > 0) {
       MPI_Bcast(inspiration,length,MPI_CHAR,0,Active);
       if(Wise) {
@@ -68,9 +64,7 @@ fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out)
       }
     }
     if(learned) SaveWisdom();
-    std::cout << std::endl;
   } else {
-#if 0    
     int flag=false;
     MPI_Status status;
     while(true) {
@@ -78,11 +72,8 @@ fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out)
       if(flag) break;
       usleep(10000);
     }
-#endif    
     int length;
-    std::cout << "Wait" << rank << ":" << Active << std::endl;
-    MPI_Recv(&length,1,MPI_INT,0,10,Active,MPI_STATUS_IGNORE);
-    std::cout << "Done" << rank << std::endl;
+    MPI_Recv(&length,1,MPI_INT,0,0,Active,MPI_STATUS_IGNORE);
     if(length > 0) {
       char inspiration[length+1];
       MPI_Bcast(inspiration,length,MPI_CHAR,0,Active);
