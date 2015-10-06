@@ -1151,10 +1151,10 @@ class mrcfft1d : public fftw, public Threadtable<keytype3,keyless3> {
 
 public:
   mrcfft1d(unsigned int nx, unsigned int M=1, size_t stride=1,
-           size_t dist=0, Complex *out=NULL, 
-           unsigned int Threads=maxthreads) 
+           size_t dist=0, Complex *out=NULL, unsigned int Threads=maxthreads) 
     : fftw(2*(nx/2*stride+(M-1)*Dist(nx,stride,dist)+1),-1,Threads,nx), nx(nx),
-      M(M), stride(stride), dist(Dist(nx,stride,dist)) {
+      M(M), stride(stride), dist(Dist(nx,stride,dist)), plan1(NULL),
+      plan2(NULL) {
     mrcfft1d(nx,M,stride,dist,(double *)out,out,Threads); 
   } 
 
@@ -1162,8 +1162,8 @@ public:
            size_t dist=0, double *in=NULL, Complex *out=NULL,
            unsigned int Threads=maxthreads) 
     : fftw(2*(nx/2*stride+(M-1)*Dist(nx,stride,dist)+1),-1,Threads,nx), nx(nx),
-      M(M), stride(stride), dist(Dist(nx,stride,dist)),
-      plan1(NULL), plan2(NULL) {
+      M(M), stride(stride), dist(Dist(nx,stride,dist)), plan1(NULL),
+      plan2(NULL) {
 
     if(M == 0) {
       fftw null;
@@ -1220,7 +1220,8 @@ public:
     int n=(int) nx;
     if(R > 0) {
       plan2=fftw_plan_many_dft_r2c(1,&n,Q+1,
-                                   (double *) in,NULL,stride,dist,
+                                   (double *) in,NULL,stride,
+                                   in == out ? 2*dist : dist,
                                    (fftw_complex *) out,NULL,stride,
                                    in == out ? dist : dist/2+1,
                                    effort);
@@ -1228,10 +1229,15 @@ public:
       if(threads == 1) plan1=plan2;
     }
     return fftw_plan_many_dft_r2c(1,&n,Q,
-                                  (double *) in,NULL,stride,dist,
+                                  (double *) in,NULL,stride,
+                                  in == out ? 2*dist : dist,
                                   (fftw_complex *) out,NULL,stride,
                                   in == out ? dist : dist/2+1,
                                   effort);
+  }
+  
+  ~mrcfft1d() {
+    if(plan2) fftw_destroy_plan(plan2);
   }
   
   void Execute(Complex *in, Complex *out, bool=false) {
@@ -1248,7 +1254,7 @@ public:
         bool normal=i < extra;
         unsigned int offset=normal ? Q*i : Q*i+i-extra;
         fftw_execute_dft_r2c(normal ? plan : plan2,(double *) (in+offset),
-                         (fftw_complex *) out+offset);
+                             (fftw_complex *) out+offset);
       }
     }
   }
