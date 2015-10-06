@@ -339,7 +339,7 @@ public:
              double *f, Complex *g, const mpiOptions& options) : dr(dr), dc(dc)
   {
     threads=options.threads;
-    dr.Activate();
+    dc.Activate();
     
     T=new mpitranspose<Complex>(dc.X,dc.y,dc.x,dc.Y,1,g,dc.communicator,
                                 options);
@@ -350,16 +350,16 @@ public:
     unsigned int M=dr.x;
     unsigned int stride=1;
     unsigned int dist=dr.Y;
-    yForwards=new mrcfft1d(n,M,stride,dist,f,g);
-    yBackwards=new mcrfft1d(n,M,stride,dist,g,f);
+    yForwards=new mrcfft1d(n,M,stride,dist,f,g,threads);
+    yBackwards=new mcrfft1d(n,M,stride,dist,g,f,threads);
 
     n=dc.X;
     M=dc.y;
     stride=dc.y;
     dist=1;
-    xForwards=new mfft1d(n,-1,M,stride,dist);
-    xBackwards=new mfft1d(n,1,M,stride,dist);
-    dr.Deactivate();
+    xForwards=new mfft1d(n,-1,M,stride,dist,g,g,threads);
+    xBackwards=new mfft1d(n,1,M,stride,dist,g,g,threads);
+    dc.Deactivate();
   }
    
   virtual ~rcfft2dMPI() {}

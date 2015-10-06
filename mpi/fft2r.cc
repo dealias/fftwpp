@@ -142,7 +142,7 @@ int main(int argc, char* argv[])
 	show(f,df.x,my,group.active);
       }
       
-#if 0      
+#if 0
       size_t align=sizeof(Complex);
       array2<double> flocal(mx,my,align);
       array2<Complex> glocal(mx,myp,align);
@@ -158,13 +158,13 @@ int main(int argc, char* argv[])
 
       rcfft.Forwards(f,g);
 
-#if 0      
       if(!quiet && mx*my < outlimit) {
       	if(main) cout << "\nDistributed output:" << endl;
       	show(g,dg.X,dg.y,group.active);
 	//show(g,dg.x,dg.Y,group.active); // FIXME: temp
       }
 
+#if 0      
       array2<Complex> ggather(mx,myp,align);
       gathery(g, ggather(), dg, 1, group.active);
 
@@ -204,6 +204,16 @@ int main(int argc, char* argv[])
         }
       */
 
+#if 0      
+      if(!quiet && group.rank == 0) {
+        cout << endl;
+        if(retval == 0)
+          cout << "pass" << endl;
+        else
+          cout << "FAIL" << endl;
+      }  
+#endif      
+  
     } else {
 #if 0
        if(N > 0) {
@@ -228,13 +238,6 @@ int main(int argc, char* argv[])
     deleteAlign(f);
   }
   
-  if(!quiet && group.rank == 0) {
-    cout << endl;
-    if(retval == 0)
-      cout << "pass" << endl;
-    else
-      cout << "FAIL" << endl;
-  }  
   MPI_Finalize();
 
   return retval;

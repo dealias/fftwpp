@@ -1,6 +1,7 @@
 /* Fast Fourier transform C++ header class for the FFTW3 Library
-   Copyright (C) 2004-13 John C. Bowman, University of Alberta
-
+   Copyright (C) 2004-15 John C. Bowman, University of Alberta
+                         Malcolm Roberts, University of Strasbourg
+                         
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
    the Free Software Foundation; either version 3 of the License, or
@@ -329,8 +330,6 @@ public:
     }
   }
   
-  fftw() {doubles=0; plan=NULL;}
-  
   fftw(unsigned int doubles, int sign, unsigned int threads,
        unsigned int n=0) :
     doubles(doubles), sign(sign), threads(threads), 
@@ -344,7 +343,7 @@ public:
     if(plan) fftw_destroy_plan(plan);
   }
   
-  virtual fftw_plan Plan(Complex *in, Complex *out) {return NULL;}
+  virtual fftw_plan Plan(Complex *in, Complex *out)=0;
   
   inline void CheckAlign(Complex *p, const char *s) {
     if((size_t) p % sizeof(Complex) == 0) return;
@@ -521,10 +520,8 @@ public:
   }
   
   void fft(Complex *in, Complex *out=NULL) {
-    if(doubles > 0) {
-      out=Setout(in,out);
-      Execute(in,out);
-    }
+    out=Setout(in,out);
+    Execute(in,out);
   }
     
   void fft(double *in, Complex *out=NULL) {
@@ -536,10 +533,8 @@ public:
   }
   
   void fft0(Complex *in, Complex *out=NULL) {
-    if(doubles > 0) {
-      out=Setout(in,out);
-      Execute(in,out,true);
-    }
+    out=Setout(in,out);
+    Execute(in,out,true);
   }
     
   void fft0(double *in, Complex *out=NULL) {
@@ -904,20 +899,16 @@ public:
       nx(nx), M(M), stride(stride), dist(Dist(nx,stride,dist)),
       plan1(NULL), plan2(NULL)
   {
-    if(M == 0) {
-      fftw null;
-      (*planner)(&null,in,out);
-      return;
-    }
-      
     T=1;
     Q=M;
     R=0;
+    
     threaddata S1=Setup(in,out);
     fftw_plan planT1=plan;
     
-    T=std::min(M,Threads);
-    if(T > 1) {
+    if(Threads > 1) {
+      T=std::min(M,Threads);
+      if(T == 0) T=1;
       Q=M/T;
       R=M-Q*T;
       threads=Threads;
@@ -1162,26 +1153,21 @@ public:
            unsigned int Threads=maxthreads) 
     : fftw(2*(nx/2*stride+(M-1)*Dist(nx,stride,dist)+1),-1,Threads,nx), nx(nx),
       M(M), stride(stride), plan1(NULL), plan2(NULL) {
-
-    if(M == 0) {
-      fftw null;
-      (*planner)(&null,(Complex *) in,out);
-      return;
-    }
-      
+    T=1;
+    Q=M;
+    R=0;
+    
     bool inplace=(Complex *) in == out;
     size_t d=Dist(nx,stride,dist);
     idist=inplace ? 2*d : d;
     odist=inplace ? d : d/2+1;
     
-    T=1;
-    Q=M;
-    R=0;
     threaddata S1=Setup(in,out);
     fftw_plan planT1=plan;
     
-    T=std::min(M,Threads);
-    if(T > 1) {
+    if(Threads > 1) {
+      T=std::min(M,Threads);
+      if(T == 0) T=1;
       Q=M/T;
       R=M-Q*T;
       threads=Threads;
