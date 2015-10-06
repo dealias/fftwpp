@@ -908,8 +908,7 @@ public:
     
     if(Threads > 1) {
       T=std::min(M,Threads);
-      if(T == 0) T=1;
-      Q=M/T;
+      Q=T > 0 ? M/T : 0;
       R=M-Q*T;
       threads=Threads;
       threaddata ST=Setup(in,out);
@@ -1167,8 +1166,7 @@ public:
     
     if(Threads > 1) {
       T=std::min(M,Threads);
-      if(T == 0) T=1;
-      Q=M/T;
+      Q=T > 0 ? M/T : 0;
       R=M-Q*T;
       threads=Threads;
       threaddata ST=Setup(in,out);
