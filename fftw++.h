@@ -1278,6 +1278,7 @@ class mcrfft1d : public fftw, public Threadtable<keytype2,keyless2> {
   size_t stride;
   size_t dist;
   static Table threadtable;
+
 public:
   mcrfft1d(unsigned int nx, unsigned int M=1, size_t stride=1,
            size_t dist=0, Complex *in=NULL, double *out=NULL,
@@ -1289,20 +1290,19 @@ public:
   threaddata lookup(bool inplace, unsigned int threads) {
     return Lookup(threadtable,keytype2(nx,M,threads,inplace));
   }
+
   void store(bool inplace, const threaddata& data) {
     Store(threadtable,keytype2(nx,M,data.threads,inplace),data);
   }
   
   fftw_plan Plan(Complex *in, Complex *out) {
     int n=(int) nx;
-    if(in != out)
-      return fftw_plan_many_dft_c2r(1,&n,M,
-				    (fftw_complex *) in,NULL,stride,dist,
-				    (double *) out,NULL,stride,2*(dist-1),
-				    effort);
+    bool inplace=in == out;
+    //unsigned int odist=inplace ? 2*dist : 2*(dist-1);
+    std::cout << odist << std::endl;
     return fftw_plan_many_dft_c2r(1,&n,M,
                                   (fftw_complex *) in,NULL,stride,dist,
-                                  (double *) out,NULL,stride,2*dist,
+                                  (double *) out,NULL,stride,odist,
                                   effort);
   }
   
