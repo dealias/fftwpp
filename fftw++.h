@@ -1297,9 +1297,7 @@ public:
   
   fftw_plan Plan(Complex *in, Complex *out) {
     int n=(int) nx;
-    bool inplace=in == out;
-    //unsigned int odist=inplace ? 2*dist : 2*(dist-1);
-    std::cout << odist << std::endl;
+    unsigned int odist=in == out ? 2*dist : 2*(dist-1);
     return fftw_plan_many_dft_c2r(1,&n,M,
                                   (fftw_complex *) in,NULL,stride,dist,
                                   (double *) out,NULL,stride,odist,
