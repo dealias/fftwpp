@@ -1161,11 +1161,8 @@ public:
            double *in, Complex *out=NULL,
            unsigned int Threads=maxthreads) 
     : fftw(nx*M,-1,Threads,nx),  // TODO: Fix doubles
-      nx(nx), M(M),
-      rstride(rstride), cstride(cstride),
-      rdist(rdist), cdist(cdist),
-      plan1(NULL), plan2(NULL) {
-
+      nx(nx), M(M), rstride(rstride), cstride(cstride),
+      rdist(rdist), cdist(cdist), plan1(NULL), plan2(NULL) {
     T=1;
     Q=M;
     R=0;
@@ -1290,24 +1287,21 @@ public:
 //
 class mcrfft1d : public fftw, public Threadtable<keytype2,keyless2> {
   unsigned int nx;
+  unsigned int M;
   size_t rstride,cstride;
   size_t rdist,cdist;
-  unsigned int M;
   fftw_plan plan1,plan2;
   static Table threadtable;
 
 public:
   mcrfft1d(unsigned int nx,
+           unsigned int M,
            size_t rstride, size_t cstride,
            size_t rdist, size_t cdist,
-           unsigned int M,
            Complex *in, double *out=NULL,
            unsigned int threads=maxthreads) 
-    : fftw(nx*M,1,threads,nx),
-      nx(nx),
-      rstride(rstride), cstride(cstride),
-      rdist(rdist), cdist(cdist),
-      M(M), plan1(NULL), plan2(NULL)  {
+    : fftw(nx*M,1,threads,nx), nx(nx), M(M), rstride(rstride), cstride(cstride),
+      rdist(rdist), cdist(cdist), plan1(NULL), plan2(NULL)  {
     // FIXME: this should be way more complicated.
     Setup(in,out);
   }

@@ -354,10 +354,10 @@ public:
     {
       unsigned int n=dr.Y;
       unsigned int M=dr.x;
-      ptrdiff_t rstride=1;
-      ptrdiff_t cstride=1;
-      ptrdiff_t rdist=inplace ? dr.Y+2 : dr.Y;
-      ptrdiff_t cdist=dr.Y/2+1;
+      size_t rstride=1;
+      size_t cstride=1;
+      size_t rdist=inplace ? dr.Y+2 : dr.Y;
+      size_t cdist=dr.Y/2+1;
       yForwards=new mrcfft1d(n,M,rstride,cstride,rdist,cdist,f,g);
       yBackwards=new mcrfft1d(n,M,rstride,cstride,rdist,cdist,g,f);
     }
