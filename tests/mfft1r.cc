@@ -77,10 +77,9 @@ int main(int argc, char* argv[])
   if(my == 0) my=mx;
 
   cout << "mx=" << mx << ", my=" << my << endl;
-  unsigned int n=my;
-  unsigned int np=my/2+1;
+  unsigned int np=mx/2+1;
   cout << "np=" << np << endl;
-  unsigned int M=mx;
+  unsigned int M=my;
 
   if(!Nset) {
     N=N0/mx/my;
@@ -91,14 +90,14 @@ int main(int argc, char* argv[])
   size_t align=sizeof(Complex);
 
   array2<double> f(mx,my,align);
-  array2<Complex> g(n,np,align);
+  array2<Complex> g(np,my,align);
 
   size_t rstride=1;
   size_t cstride=1;
   size_t rdist=mx;
-  size_t cdist=mx/2+1;
+  size_t cdist=np;
   
-  mrcfft1d Forward(n, // length of transform
+  mrcfft1d Forward(mx, // length of transform
 		   rstride,
 		   cstride,
 		   rdist,
@@ -106,7 +105,7 @@ int main(int argc, char* argv[])
 		   M,  // number of transforms
 		   f,  // input array
 		   g); // output array
-  mcrfft1d Backward(n, // length of transform
+  mcrfft1d Backward(mx, // length of transform
 		    rstride,
 		    cstride,
 		    rdist,
