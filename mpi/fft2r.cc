@@ -130,7 +130,6 @@ int main(int argc, char* argv[])
 
     // Create instance of FFT
     rcfft2dMPI rcfft(df,dg,f,g,mpiOptions(fftw::maxthreads,divisor,alltoall));
-    //crfft2dMPI crfft(df,dg,f,g,mpiOptions(fftw::maxthreads,divisor,alltoall));
 
     if(!quiet && group.rank == 0)
       cout << "Initialized after " << seconds() << " seconds." << endl;    
@@ -155,7 +154,7 @@ int main(int argc, char* argv[])
 	cout << endl << "Gathered input:\n" << flocal << endl;
       }
 
-      rcfft.FFT(f,g);
+      rcfft.Forwards(f,g);
 
       if(!quiet && mx*my < outlimit) {
       	if(main) cout << "\nDistributed output:" << endl;
@@ -175,28 +174,27 @@ int main(int argc, char* argv[])
         retval += checkerror(glocal(),ggather(),dg.X*dg.Y);
       }
 
+      rcfft.Backwards(g,f);
       //crfft.Backwards(f);
       //fft.Normalize(f);
 
       if(!quiet && mx*my < outlimit) {
-      	if(main) cout << "\nDistributed output:" << endl;
+      	if(main) cout << "\nDistributed back to input:" << endl;
       	show(f,df.x,my,group.active);
       }
 
-      /*
-        gatherx(f, fgatherd(), d, 1, group.active);
-        MPI_Barrier(group.active);
-        if(main) {
-	localBackward.fftNormalized(flocal);
-	if(!quiet) {
-        cout << "\nLocal output:\n" << flocal << endl;
-        cout << "\nGatherd output:\n" << fgatherd << endl;
-	}
-        retval += checkerror(flocal(),fgather(),df.X*df.Y);
-        }
-      */
+      array2<double> flocal0(mx,my,align);
+      gatherx(f, flocal0(), df, 1, group.active);
+      MPI_Barrier(group.active);
+      if(main) {
+	localBackward.fftNormalized(glocal,flocal);
+      	if(!quiet) {
+      	  cout << "\nLocal output:\n" << flocal << endl;
+      	  cout << "\nGathered output:\n" << flocal0 << endl;
+      	}
+	retval += checkerror(flocal0(),flocal(),df.X*df.Y);
+      }
 
-#if 0      
       if(!quiet && group.rank == 0) {
         cout << endl;
         if(retval == 0)
@@ -204,7 +202,6 @@ int main(int argc, char* argv[])
         else
           cout << "FAIL" << endl;
       }  
-#endif      
   
     } else {
 #if 0

@@ -364,17 +364,23 @@ public:
       unsigned int dist=1;
       xForwards=new mfft1d(n,-1,M,stride,dist,g,g,threads);
       xBackwards=new mfft1d(n,1,M,stride,dist,g,g,threads);
-    } 
+    }
     dc.Deactivate();
   }
    
-  virtual ~rcfft2dMPI() {}
+  virtual ~rcfft2dMPI() {
+    // FIXME
+  }
 
-  void FFT(double *f, Complex * g);
+  void Forwards(double *f, Complex * g);
+  void Backwards(Complex * g, double *f);
 
+  // FIXME: BackwardsNormalized
+  
   // FIXME: implement shift!
-  void Shift(double *f);
+  //void Shift(double *f);
 };
+
 
   
 } // end namespace fftwpp

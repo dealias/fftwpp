@@ -241,8 +241,10 @@ int checkerror(const T *f, const T *control, unsigned int stop)
 {
   double maxerr=0.0, norm=0.0;
   for(unsigned int i=0; i < stop; i++) {
-    maxerr=std::max(maxerr,abs(f[i]-control[i]));
-    norm=std::max(norm,abs(control[i]));
+    double diff=abs(f[i]-control[i]);
+    maxerr=std::max(maxerr,diff);
+    double absc=abs(control[i]);
+    norm=std::max(norm,absc);
   }
   std::cout << "Maximum error: " << maxerr << std::endl;
   if(maxerr <= 1e-12*norm) {
