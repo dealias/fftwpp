@@ -472,7 +472,7 @@ void ImplicitHConvolution::convolve(Complex **F,
   // Set problem-size variables and pointers:
 
   unsigned int C=max(A,B);
-  Complex c1c[C];
+  Complex *c1c=ComplexAlign(C);
 
   Complex *C0[A], *C1[A], *c2[A]; // inputs to complex2real FFTs
   double  *D0[A], *D1[A]; // outputs of complex2real FFTs
@@ -512,7 +512,7 @@ void ImplicitHConvolution::convolve(Complex **F,
 
 
   // Complex-to-real FFTs and pmults:
-  Complex S[B];
+  Complex *S=new Complex[B];
   {
     // r=2:
     for(unsigned int i=0; i < A; ++i)
@@ -597,6 +597,8 @@ void ImplicitHConvolution::convolve(Complex **F,
     }
     postmultadd0(c2,c0,c1c);
   }
+  delete[] S;
+  deleteAlign(c1c);
 }
 
 
