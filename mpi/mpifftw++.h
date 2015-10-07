@@ -330,7 +330,7 @@ private:
   mfft1d *xForwards,*xBackwards;
   mrcfft1d *yForwards;
   mcrfft1d *yBackwards;
-  //bool inplace; // we stick with out-of-place transforms for now
+  bool inplace;
   //unsigned int rdist;
 protected:
   mpitranspose<Complex> *T;
@@ -344,23 +344,27 @@ public:
     T=new mpitranspose<Complex>(dc.X,dc.y,dc.x,dc.Y,1,g,dc.communicator,
                                 options);
     
-    //rdist=inplace ? dr.X+2 : dr.X;
+    bool inplace=f == (double*) g;
 
-    unsigned int n=dr.Y;
-    unsigned int M=dr.x;
-    unsigned int stride=1;
-    unsigned int dist=dr.Y;
-
-    // FIXME
-    //yForwards=new mrcfft1d(n,M,stride,dist,f,g,threads);
-    //yBackwards=new mcrfft1d(n,M,stride,dist,g,f,threads);
-
-    n=dc.X;
-    M=dc.y;
-    stride=dc.y;
-    dist=1;
-    xForwards=new mfft1d(n,-1,M,stride,dist,g,g,threads);
-    xBackwards=new mfft1d(n,1,M,stride,dist,g,g,threads);
+    {
+      unsigned int n=dr.Y;
+      unsigned int M=dr.x;
+      ptrdiff_t cstride=1;
+      ptrdiff_t rstride=1;
+      ptrdiff_t cdist=n/2+1;
+      ptrdiff_t rdist=inplace ? 2*cdist : n; // in-place transform
+      yForwards=new mrcfft1d(n,rstride,cstride,rdist,cdist,M,f,g);
+      yBackwards=new mcrfft1d(n,rstride,cstride,rdist,cdist,M,g,f);
+    }
+	
+    {    
+      unsigned int n=dc.X;
+      unsigned int M=dc.y;
+      unsigned int stride=dc.y;
+      unsigned int dist=1;
+      xForwards=new mfft1d(n,-1,M,stride,dist,g,g,threads);
+      xBackwards=new mfft1d(n,1,M,stride,dist,g,g,threads);
+    } 
     dc.Deactivate();
   }
    

@@ -152,10 +152,10 @@ public:
       xForwards=new mfft1d(nx,-1,My,nyp,1,f);
 
       {
-	size_t cstride=1;
-	size_t rstride=1;
-	size_t cdist=nx/2+1;
-	size_t rdist=2*cdist; // in-place transform
+	ptrdiff_t cstride=1;
+	ptrdiff_t rstride=1;
+	ptrdiff_t cdist=nx/2+1;
+	ptrdiff_t rdist=2*cdist; // in-place transform
 	unsigned int M=nx;
 	unsigned int n=ny;
 	yForwards=new mrcfft1d(n,rstride,cstride,rdist,cdist,M,(double*) f);
@@ -314,10 +314,10 @@ public:
       xForwards=new mfft1d(nx,-1,My,nyp,1,f);
       {
 	unsigned int n=ny;
-	size_t cstride=1;
-	size_t rstride=1;
-	size_t cdist=nx/2+1;
-	size_t rdist=2*cdist; // in-place transform
+	ptrdiff_t cstride=1;
+	ptrdiff_t rstride=1;
+	ptrdiff_t cdist=nx/2+1;
+	ptrdiff_t rdist=2*cdist; // in-place transform
 	unsigned int M=nx;
 	yForwards=new mrcfft1d(n,rstride,cstride,rdist,cdist,M,(double*) f);
 	yBackwards=new mcrfft1d(n,rstride,cstride,rdist,cdist,M,f);
