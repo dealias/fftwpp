@@ -975,10 +975,15 @@ public:
 #pragma omp parallel for num_threads(T)
 #endif
       for(unsigned int i=0; i < Tdist; i += dist) {
-        bool normal=i < extra;
-        unsigned int offset=normal ? Q*i : Q*i+i-extra;
-        fftw_execute_dft(normal ? plan : plan2,(fftw_complex *) in+offset,
-                         (fftw_complex *) out+offset);
+        unsigned int iQ=i*Q;
+        if(i < extra)
+          fftw_execute_dft(plan,(fftw_complex *) in+iQ,
+                           (fftw_complex *) out+iQ);
+        else {
+          size_t offset=iQ+i-extra;
+          fftw_execute_dft(plan2,(fftw_complex *) in+offset,
+                           (fftw_complex *) out+offset);
+        }
       }
     }
   }
@@ -1235,23 +1240,19 @@ public:
     if(T == 1) {
       fftw_execute_dft_r2c(plan,(double *) in,(fftw_complex *) out);
     } else {
+      unsigned int extra=T-R;
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(T)
 #endif
       for(unsigned int i=0; i < T; ++i) {
-        unsigned int extra =T-R;
-        if(i < extra){
-          ptrdiff_t roffset=i*Q*rdist;
-          ptrdiff_t coffset=i*Q*cdist;
-          fftw_execute_dft_r2c(plan,
-                               (double *) in+roffset,
-                               (fftw_complex *) out+coffset);
-        } else {
-          ptrdiff_t roffset=(i*(Q+1)-extra)*rdist;
-          ptrdiff_t coffset=(i*(Q+1)-extra)*cdist;
-          fftw_execute_dft_r2c(plan2,
-                               (double *) in+roffset,
-                               (fftw_complex *) out+coffset);
+        unsigned int iQ=iQ;
+        if(i < extra)
+          fftw_execute_dft_r2c(plan,(double *) in+iQ*rdist,
+                               (fftw_complex *) out+iQ*cdist);
+        else {
+          unsigned int offset=iQ+i-extra;
+          fftw_execute_dft_r2c(plan2,(double *) in+offset*rdist,
+                               (fftw_complex *) out+offset*cdist);
         }
       }
     }
