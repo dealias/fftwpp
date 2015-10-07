@@ -77,10 +77,10 @@ int main(int argc, char* argv[])
   if(my == 0) my=mx;
 
   cout << "mx=" << mx << ", my=" << my << endl;
-  unsigned int n = my;
-  unsigned int np = mx / 2 + 1;
+  unsigned int n=my;
+  unsigned int np=my/2+1;
   cout << "np=" << np << endl;
-  unsigned int M = mx;
+  unsigned int M=mx;
 
   if(!Nset) {
     N=N0/mx/my;

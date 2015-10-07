@@ -1245,7 +1245,7 @@ public:
 #pragma omp parallel for num_threads(T)
 #endif
       for(unsigned int i=0; i < T; ++i) {
-        unsigned int iQ=iQ;
+        unsigned int iQ=i*Q;
         if(i < extra)
           fftw_execute_dft_r2c(plan,(double *) in+iQ*rdist,
                                (fftw_complex *) out+iQ*cdist);
