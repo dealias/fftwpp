@@ -199,7 +199,7 @@ void fft3dMPI::BackwardsNormalized(Complex *f)
   Normalize(f);
 }
 
-void rcfft2dMPI::Forwards(double *f, Complex *g)
+void rcfft2dMPI::FFT(double *f, Complex *g)
 {
   yForwards->fft(f,g);
   T->transpose(g,true,false);

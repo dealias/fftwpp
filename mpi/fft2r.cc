@@ -130,6 +130,7 @@ int main(int argc, char* argv[])
 
     // Create instance of FFT
     rcfft2dMPI rcfft(df,dg,f,g,mpiOptions(fftw::maxthreads,divisor,alltoall));
+    //crfft2dMPI crfft(df,dg,f,g,mpiOptions(fftw::maxthreads,divisor,alltoall));
 
     if(!quiet && group.rank == 0)
       cout << "Initialized after " << seconds() << " seconds." << endl;    
@@ -142,7 +143,6 @@ int main(int argc, char* argv[])
 	show(f,df.x,my,group.active);
       }
       
-#if 0
       size_t align=sizeof(Complex);
       array2<double> flocal(mx,my,align);
       array2<Complex> glocal(mx,myp,align);
@@ -154,17 +154,14 @@ int main(int argc, char* argv[])
       if(!quiet && main) {
 	cout << endl << "Gathered input:\n" << flocal << endl;
       }
-#endif      
 
-      rcfft.Forwards(f,g);
+      rcfft.FFT(f,g);
 
       if(!quiet && mx*my < outlimit) {
       	if(main) cout << "\nDistributed output:" << endl;
       	show(g,dg.X,dg.y,group.active);
-	//show(g,dg.x,dg.Y,group.active); // FIXME: temp
       }
 
-#if 0      
       array2<Complex> ggather(mx,myp,align);
       gathery(g, ggather(), dg, 1, group.active);
 
@@ -177,19 +174,14 @@ int main(int argc, char* argv[])
 	}
         retval += checkerror(glocal(),ggather(),dg.X*dg.Y);
       }
-#endif      
 
-      /*
-        fft.Backwards(f);
-        fft.Normalize(f);
-      */
+      //crfft.Backwards(f);
+      //fft.Normalize(f);
 
-      /*
-        if(!quiet && mx*my < outlimit) {
+      if(!quiet && mx*my < outlimit) {
       	if(main) cout << "\nDistributed output:" << endl;
-      	show(f,d.x,my,group.active);
-        }
-      */
+      	show(f,df.x,my,group.active);
+      }
 
       /*
         gatherx(f, fgatherd(), d, 1, group.active);
