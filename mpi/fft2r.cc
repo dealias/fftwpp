@@ -202,24 +202,21 @@ int main(int argc, char* argv[])
       }  
   
     } else {
-#if 0
        if(N > 0) {
        	double *T=new double[N];
        	for(unsigned int i=0; i < N; ++i) {
-       	  init(f,d);
+       	  init(f,df);
        	  seconds();
-       	  fft.Forwards(f);
-       	  fft.Backwards(f);
-       	  fft.Normalize(f);
+       	  rcfft.Forwards(f,g);
+       	  rcfft.BackwardsNormalized(g,f);
        	  T[i]=seconds();
        	}    
        	if(main) timings("FFT timing:",mx,T,N);
       	delete [] T;
         
         if(!quiet && mx*my < outlimit)
-          show(f,d.x,my,group.active);
+          show(f,df.x,my,group.active);
        }
-#endif       
     }
 
     deleteAlign(f);

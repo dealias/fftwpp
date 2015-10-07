@@ -343,17 +343,27 @@ public:
     
     T=new mpitranspose<Complex>(dc.X,dc.y,dc.x,dc.Y,1,g,dc.communicator,
                                 options);
-    
-    if(f == (double*) g) {
+
+    bool inplace=f == (double*) g;
+    if(inplace) {
+      std::cerr << "In-place transform not yet implemented: TODO!" << std::endl;
+      exit(1);
+    }
+
+    // Set up y-direction transforms
+    {
       unsigned int n=dr.Y;
       unsigned int M=dr.x;
       ptrdiff_t rstride=1;
       ptrdiff_t cstride=1;
-      ptrdiff_t rdist=dr.Y+2;
+      ptrdiff_t rdist=inplace ? dr.Y+2 : dr.Y;
       ptrdiff_t cdist=dr.Y/2+1;
-      yForwards=new mrcfft1d(n,M,rstride,cstride,rdist,cdist,f,g,threads);
-      yBackwards=new mcrfft1d(n,M,rstride,cstride,rdist,cdist,g,f,threads);
-    } else {    
+      yForwards=new mrcfft1d(n,M,rstride,cstride,rdist,cdist,f,g);
+      yBackwards=new mcrfft1d(n,M,rstride,cstride,rdist,cdist,g,f);
+    }
+
+    // Set up x-direction transforms
+    {    
       unsigned int n=dc.X;
       unsigned int M=dc.y;
       unsigned int stride=dc.y;
