@@ -1196,7 +1196,7 @@ public:
         plan=planT1;
         threads=S1.threads;
       } else {
-	// Do the multi-threading outselves
+	// Do the multi-threading ourselves
         fftw_destroy_plan(planT1);
         threads=ST.threads;
       }
@@ -1236,16 +1236,19 @@ public:
     if(T == 1) {
       fftw_execute_dft_r2c(plan,(double *) in,(fftw_complex *) out);
     } else {
-      const unsigned int Tlast=T-1;
+      unsigned int Tdist=T*cdist;
+      unsigned int iextra=(T-R)*rdist;
+      unsigned int oextra=(T-R)*cdist;
+
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(T)
 #endif
-      for(unsigned int i=0; i <= Tlast; ++i) {
-        bool normal=R == 0 || i < Tlast;
-	ptrdiff_t roffset=i*Q*rdist;
-	ptrdiff_t coffset=i*Q*cdist;
-	fftw_execute_dft_r2c(normal ? plan : plan2,(double *) in+roffset,
-			     (fftw_complex *) out+coffset);
+      for(unsigned int i=0; i < Tdist; i += cdist) {
+        bool normal=i < oextra;
+        unsigned int ioffset=normal ? Q*i : Q*i+i-iextra;
+        unsigned int ooffset=normal ? Q*i : Q*i+i-oextra;
+        fftw_execute_dft_r2c(normal ? plan : plan2,(double *) in+ioffset,
+                             (fftw_complex *) out+ooffset);
       }
     }
   }
