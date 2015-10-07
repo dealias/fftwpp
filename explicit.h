@@ -311,11 +311,18 @@ public:
     
     if(prune) {
       xBackwards=new mfft1d(nx,1,My,nyp,1,f);
-      // FIXME
-      //yBackwards=new mcrfft1d(ny,nx,1,nyp,f);
-      // FIXME
-      //yForwards=new mrcfft1d(ny,nx,1,nyp,f);
       xForwards=new mfft1d(nx,-1,My,nyp,1,f);
+      {
+	unsigned int n=ny;
+	size_t cstride=1;
+	size_t rstride=1;
+	size_t cdist=nx/2+1;
+	size_t rdist=2*cdist; // in-place transform
+	unsigned int M=nx;
+	yForwards=new mrcfft1d(n,rstride,cstride,rdist,cdist,M,(double*) f);
+	yBackwards=new mcrfft1d(n,rstride,cstride,rdist,cdist,M,f);
+      }
+
       threads=xForwards->Threads();
     } else {
       Backwards=new crfft2d(nx,ny,f);
