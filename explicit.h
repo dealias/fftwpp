@@ -149,8 +149,9 @@ public:
 
     if(prune) {
       xBackwards=new mfft1d(nx,1,My,nyp,1,f);
-      yBackwards=new mcrfft1d(ny,nx,1,nyp,f);
-      yForwards=new mrcfft1d(ny,nx,1,nyp,f);
+      // FIXME
+      //yBackwards=new mcrfft1d(ny,nx,1,nyp,f);
+      //yForwards=new mrcfft1d(ny,nx,1,nyp,f);
       xForwards=new mfft1d(nx,-1,My,nyp,1,f);
     } else {
       Backwards=new crfft2d(nx,ny,f);
@@ -301,8 +302,10 @@ public:
     
     if(prune) {
       xBackwards=new mfft1d(nx,1,My,nyp,1,f);
-      yBackwards=new mcrfft1d(ny,nx,1,nyp,f);
-      yForwards=new mrcfft1d(ny,nx,1,nyp,f);
+      // FIXME
+      //yBackwards=new mcrfft1d(ny,nx,1,nyp,f);
+      // FIXME
+      //yForwards=new mrcfft1d(ny,nx,1,nyp,f);
       xForwards=new mfft1d(nx,-1,My,nyp,1,f);
       threads=xForwards->Threads();
     } else {

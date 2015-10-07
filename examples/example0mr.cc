@@ -19,21 +19,28 @@ int main()
     
   array2<double> f(nx,ny,align);
   array2<Complex> g(nx,nyp,align);
-  unsigned int dist=ny;
+  size_t rstride=1;
+  size_t cstride=1;
+  size_t rdist=ny;
+  size_t cdist=nyp;
+  unsigned int M=nx;
   
-  mrcfft1d Forward(ny, // size
-                   nx, // how many
-                   1, // stride
-                   dist, // distance between the start of each input vector
-                   f, // input
-                   g); // output
-
-  mcrfft1d Backward(ny, // size (length of real output)
-                    nx, // how many
-                    1, // stride
-                    nyp, // distance between the start of each input vector
-                    g, // input
-                    f); // output
+  mrcfft1d Forward(ny, // length of transform
+		   rstride,
+		   cstride,
+		   rdist,
+		   cdist,
+		   M,  // number of transforms
+		   f,  // input array
+		   g); // output array
+  mcrfft1d Backward(ny, // length of transform
+		    rstride,
+		    cstride,
+		    rdist,
+		    cdist,
+		    M,  // number of transforms
+		    g,  // input array
+		    f); // output array
 
   // Initialize data:
   for(unsigned int i=0; i < nx; i++) 

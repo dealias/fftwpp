@@ -350,8 +350,10 @@ public:
     unsigned int M=dr.x;
     unsigned int stride=1;
     unsigned int dist=dr.Y;
-    yForwards=new mrcfft1d(n,M,stride,dist,f,g,threads);
-    yBackwards=new mcrfft1d(n,M,stride,dist,g,f,threads);
+
+    // FIXME
+    //yForwards=new mrcfft1d(n,M,stride,dist,f,g,threads);
+    //yBackwards=new mcrfft1d(n,M,stride,dist,g,f,threads);
 
     n=dc.X;
     M=dc.y;

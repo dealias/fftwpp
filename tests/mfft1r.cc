@@ -7,10 +7,6 @@ using namespace std;
 using namespace Array;
 using namespace fftwpp;
 
-// Number of iterations.
-unsigned int N0=10000000;
-
-bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
 inline void init(array2<double>& f, unsigned int mx, unsigned int my) 
 {
@@ -24,6 +20,9 @@ unsigned int outlimit=100;
 int main(int argc, char* argv[])
 {
   fftw::maxthreads=get_max_threads();
+
+  // Number of iterations.
+  unsigned int N0=10000000;
 
   unsigned int N=0;
   unsigned int mx=4;
@@ -91,20 +90,28 @@ int main(int argc, char* argv[])
   
   size_t align=sizeof(Complex);
 
-
   array2<double> f(mx,my,align);
   array2<Complex> g(n,np,align);
+
+  size_t rstride=1;
+  size_t cstride=1;
+  size_t rdist=mx;
+  size_t cdist=mx/2+1;
   
   mrcfft1d Forward(n, // length of transform
+		   rstride,
+		   cstride,
+		   rdist,
+		   cdist,
 		   M,  // number of transforms
-		   1,  // stride
-		   my, // dist
 		   f,  // input array
 		   g); // output array
   mcrfft1d Backward(n, // length of transform
+		    rstride,
+		    cstride,
+		    rdist,
+		    cdist,
 		    M,  // number of transforms
-		    1,  // stride
-		    np,// dist
 		    g,  // input array
 		    f); // output array
 
