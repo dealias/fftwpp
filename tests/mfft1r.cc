@@ -140,7 +140,7 @@ int main(int argc, char* argv[])
       Backward.fft(g,f);
       T[i]=seconds();
     }
-    timings("fft2d, in-place",mx,T,N,stats);
+    timings("mfft1r, in-place",mx,T,N,stats);
     delete [] T;
   }  
 

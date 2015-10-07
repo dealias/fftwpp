@@ -282,15 +282,16 @@ int main(int argc, char* argv[])
     timings("strided mfft out-of-place",mx,T,N,stats);
   }
   
-  /*
-    if(mx*my < outlimit) {
-    for(unsigned int i=0; i < mx; i++) {
-    for(unsigned int j=0; j < my; j++)
-    cout << f[i][j] << "\t";
-    cout << endl;
-    } else cout << f[0][0] << endl;
-    }
-  */
+   cout << endl;
+   if(mx*my < outlimit) {
+     for(unsigned int i=0; i < mx; i++) {
+       for(unsigned int j=0; j < my; j++)
+         cout << f[i][j] << "\t";
+       cout << endl;
+     }
+   }
+   else cout << f[0][0] << endl;
+    
   delete [] T;
   
   return 0;

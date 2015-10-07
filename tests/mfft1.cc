@@ -124,7 +124,7 @@ int main(int argc, char* argv[])
     Backward.fftNormalized(f);
     T[i]=seconds();
   }
-  timings("fft2d, in-place",mx,T,N,stats);
+  timings("mfft1, in-place",mx,T,N,stats);
   delete [] T;
   
   return 0;
