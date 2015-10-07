@@ -174,9 +174,7 @@ int main(int argc, char* argv[])
         retval += checkerror(glocal(),ggather(),dg.X*dg.Y);
       }
 
-      rcfft.Backwards(g,f);
-      //crfft.Backwards(f);
-      //fft.Normalize(f);
+      rcfft.BackwardsNormalized(g,f);
 
       if(!quiet && mx*my < outlimit) {
       	if(main) cout << "\nDistributed back to input:" << endl;

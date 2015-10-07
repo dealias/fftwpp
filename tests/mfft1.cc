@@ -35,13 +35,13 @@ int main(int argc, char* argv[])
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
   
-#ifdef __GNUC__	
+#ifdef __GNUC__ 
   optind=0;
-#endif	
+#endif  
   for (;;) {
     int c = getopt(argc,argv,"hN:m:x:y:n:T:S:");
     if (c == -1) break;
-		
+                
     switch (c) {
     case 0:
       break;
@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
   if(mx*my < outlimit) {
     for(unsigned int i=0; i < mx; i++) {
       for(unsigned int j=0; j < my; j++)
-	cout << f[i][j] << "\t";
+        cout << f[i][j] << "\t";
       cout << endl;
     }
   } else {
@@ -108,13 +108,26 @@ int main(int argc, char* argv[])
   if(mx*my < outlimit) {
     for(unsigned int i=0; i < mx; i++) {
       for(unsigned int j=0; j < my; j++)
-	cout << f[i][j] << "\t";
+        cout << f[i][j] << "\t";
       cout << endl;
     }
   } else { 
     cout << f[0][0] << endl;
   }
 
+  cout << "\nBack to input:" << endl;
+  Backward.fftNormalized(f);
+  if(mx*my < outlimit) {
+    for(unsigned int i=0; i < mx; i++) {
+      for(unsigned int j=0; j < my; j++)
+        cout << f[i][j] << "\t";
+      cout << endl;
+    }
+  } else { 
+    cout << f[0][0] << endl;
+  }
+
+  
   cout << endl;
   double *T=new double[N];
   for(unsigned int i=0; i < N; ++i) {

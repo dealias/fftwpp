@@ -209,8 +209,28 @@ void rcfft2dMPI::Forwards(double *f, Complex *g)
 void rcfft2dMPI::Backwards(Complex *g, double *f)
 {
   xBackwards->fft(g);
-  T->transpose(g,true,false); // FIXME: correct?
-  yBackwards->fft(f,g);
+  T->transpose(g,false,true);
+  yBackwards->fft(g,f);
 }
+
+void rcfft2dMPI::Normalize(double *f)
+{
+  // FIXME: deal with in-place.
+  unsigned int N=dr.X*dr.Y;
+  unsigned int n=dr.x*dr.Y;
+  double denom=1.0/N;
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+ #endif
+  for(unsigned int i=0; i < n; ++i) 
+    f[i] *= denom;
+}
+
+void rcfft2dMPI::BackwardsNormalized(Complex *g, double *f)
+{
+  Backwards(g,f);
+  Normalize(f);
+}
+
 
 } // End of namespace fftwpp

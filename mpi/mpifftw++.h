@@ -345,18 +345,20 @@ public:
                                 options);
     
     bool inplace=f == (double*) g;
-
+    if(inplace)
+      exit(1);
+    
     {
       unsigned int n=dr.Y;
       unsigned int M=dr.x;
-      ptrdiff_t cstride=1;
       ptrdiff_t rstride=1;
-      ptrdiff_t cdist=n/2+1;
-      ptrdiff_t rdist=inplace ? 2*cdist : n; // in-place transform
+      ptrdiff_t cstride=1;
+      ptrdiff_t rdist=inplace ? dr.Y+2 : dr.Y;
+      ptrdiff_t cdist=dr.Y/2+1;
       yForwards=new mrcfft1d(n,rstride,cstride,rdist,cdist,M,f,g);
       yBackwards=new mcrfft1d(n,rstride,cstride,rdist,cdist,M,g,f);
     }
-	
+    
     {    
       unsigned int n=dc.X;
       unsigned int M=dc.y;
@@ -373,10 +375,10 @@ public:
   }
 
   void Forwards(double *f, Complex * g);
-  void Backwards(Complex * g, double *f);
+  void Backwards(Complex *g, double *f);
+  void Normalize(double *f);
+  void BackwardsNormalized(Complex *g, double *f);
 
-  // FIXME: BackwardsNormalized
-  
   // FIXME: implement shift!
   //void Shift(double *f);
 };

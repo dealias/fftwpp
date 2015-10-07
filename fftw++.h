@@ -442,7 +442,7 @@ public:
         if(diff < -error) {
           threads=Threads;
           fftw_destroy_plan(plan1);
-	  break;
+          break;
         }
       }
     }
@@ -680,7 +680,7 @@ public:
 
     // A plan with rank=0 is a transpose.
     plan=fftw_plan_guru_r2r(0,NULL,3,dims,(double *) in,(double *) out,
-			    NULL,fftw::effort);
+                            NULL,fftw::effort);
     plan2=NULL;
     ilast=a;
     jlast=b;
@@ -971,7 +971,6 @@ public:
     } else {
       unsigned int Tdist=T*dist;
       unsigned int extra=(T-R)*dist;
-
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(T)
 #endif
@@ -1150,15 +1149,13 @@ public:
     }
   */
 
-  // We require that the user allocate the input array (0 doubles
-  // passed to fftw()).
   mrcfft1d(unsigned int nx,
-	   size_t rstride, size_t cstride,
-	   size_t rdist, size_t cdist,
-	   unsigned int M,
+           size_t rstride, size_t cstride,
+           size_t rdist, size_t cdist,
+           unsigned int M,
            double *in, Complex *out=NULL,
            unsigned int Threads=maxthreads) 
-    : fftw(0,-1,Threads,nx), 
+    : fftw(nx*M,-1,Threads,nx), 
       nx(nx),
       rstride(rstride), cstride(cstride),
       rdist(rdist), cdist(cdist),
@@ -1175,6 +1172,7 @@ public:
       T=std::min(M,Threads);
       Q=T > 0 ? M/T : 0;
       R=M-Q*T;
+      
       threads=Threads;
       threaddata ST=Setup(in,out);
     
@@ -1184,7 +1182,7 @@ public:
       }
 
       if(ST.mean > S1.mean-S1.stdev) {
-	// Use FFTW's multi-threading
+        // Use FFTW's multi-threading
         fftw_destroy_plan(plan);
         if(R > 0) {
           fftw_destroy_plan(plan2);
@@ -1196,7 +1194,7 @@ public:
         plan=planT1;
         threads=S1.threads;
       } else {
-	// Do the multi-threading ourselves
+        // Do the multi-threading ourselves
         fftw_destroy_plan(planT1);
         threads=ST.threads;
       }
@@ -1226,6 +1224,7 @@ public:
                                   (double *) in,NULL,rstride,rdist,
                                   (fftw_complex *) out,NULL,cstride,cdist,
                                   effort);
+    
   }
   
   ~mrcfft1d() {
@@ -1236,19 +1235,24 @@ public:
     if(T == 1) {
       fftw_execute_dft_r2c(plan,(double *) in,(fftw_complex *) out);
     } else {
-      unsigned int Tdist=T*cdist;
-      unsigned int iextra=(T-R)*rdist;
-      unsigned int oextra=(T-R)*cdist;
-
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(T)
 #endif
-      for(unsigned int i=0; i < Tdist; i += cdist) {
-        bool normal=i < oextra;
-        unsigned int ioffset=normal ? Q*i : Q*i+i-iextra;
-        unsigned int ooffset=normal ? Q*i : Q*i+i-oextra;
-        fftw_execute_dft_r2c(normal ? plan : plan2,(double *) in+ioffset,
-                             (fftw_complex *) out+ooffset);
+      for(unsigned int i=0; i < T; ++i) {
+        unsigned int extra =T-R;
+        if(i < extra){
+          ptrdiff_t roffset=i*Q*rdist;
+          ptrdiff_t coffset=i*Q*cdist;
+          fftw_execute_dft_r2c(plan,
+                               (double *) in+roffset,
+                               (fftw_complex *) out+coffset);
+        } else {
+          ptrdiff_t roffset=(i*(Q+1)-extra)*rdist;
+          ptrdiff_t coffset=(i*(Q+1)-extra)*cdist;
+          fftw_execute_dft_r2c(plan2,
+                               (double *) in+roffset,
+                               (fftw_complex *) out+coffset);
+        }
       }
     }
   }
@@ -1293,12 +1297,12 @@ class mcrfft1d : public fftw, public Threadtable<keytype2,keyless2> {
 
 public:
   mcrfft1d(unsigned int nx,
-	   size_t rstride, size_t cstride,
-	   size_t rdist, size_t cdist,
-	   unsigned int M,
-	   Complex *in, double *out=NULL,
+           size_t rstride, size_t cstride,
+           size_t rdist, size_t cdist,
+           unsigned int M,
+           Complex *in, double *out=NULL,
            unsigned int threads=maxthreads) 
-    : fftw(0,1,threads,nx), // User must specify input (doubles=0)
+    : fftw(nx*M,1,threads,nx),
       nx(nx),
       rstride(rstride), cstride(cstride),
       rdist(rdist), cdist(cdist),
@@ -1339,7 +1343,7 @@ public:
     for(unsigned int i=0; i < stop; i += rstride) {
       double *pstop=outrdist+i;
       for(double *p=out+i; p < pstop; p += rdist) {
-	*p *= norm;
+        *p *= norm;
       }
     }
   }
