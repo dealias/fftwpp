@@ -197,8 +197,6 @@ int transpose(int rank, int size, int N)
 
     //    show(data,X,y*Z,active);
     
-    // Initialize remaining plans.
-
 //    mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,fftw::maxthreads,active);
     mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,active,
                             mpiOptions(fftw::maxthreads,a,alltoall));

@@ -321,26 +321,38 @@ public:
     if(options.alltoall >= 0)
       start=stop=options.alltoall;
     int Alltoall=1;
-    if(options.a >= size || options.a < 0) {
-      int n=sqrt(size)+0.5;
-      options.a=size/n;
-    }
-
+    if(options.a >= size)
+      options.a=-1;
+      
     if(globalrank == 0)
       std::cout << std::endl << "Initializing " << N << "x" << M
                 << " transpose of " << L*sizeof(T) << "-byte elements over " 
                 << size << " processes." << std::endl;
       
     int alimit;
-    if(options.a <= 0) { // Restrict divisor range based on latency estimate
-      options.a=1;
+    if(options.a <= 0) {
       double latency=safetyfactor*Latency();
-      alimit=(N*M*L*sizeof(T) < latency*size*size) ?
-        (int) (sqrt(size)+1.5) : 2;
+      if(globalrank == 0) {
+        if(N*M*L*sizeof(T) < latency*size*size) {
+          if(options.a < 0) {
+            int n=sqrt(size)+0.5;
+            options.a=size/n;
+            alimit=options.a+1;
+          } else {
+            options.a=1;
+            alimit=(int) (sqrt(size)+1.5);
+          }
+        } else { // Enforce a=1 if message length > latency.
+          alimit=2;
+          options.a=1;
+        }
+      }
       MPI_Bcast(&alimit,1,MPI_UNSIGNED,0,global);
+      MPI_Bcast(&options.a,1,MPI_INT,0,global);
     } else alimit=options.a+1;
     int astart=options.a;
       
+    uniform=divisible(size,M,N);
     if(alimit > astart+1 || stop-start >= 1) {
       if(globalrank == 0)
         std::cout << std::endl << "Timing:" << std::endl;
@@ -349,6 +361,7 @@ public:
       for(int alltoall=start; alltoall <= stop; ++alltoall) {
         if(globalrank == 0) std::cout << "alltoall=" << alltoall << std::endl;
         for(a=astart; a < alimit; a++) {
+          if(uniform && (size % a != 0)) continue;
           b=std::min(nlast+(n0 == np),mlast+(m0 == mp))/a;
           options.alltoall=alltoall;
           init(data);
@@ -440,7 +453,7 @@ public:
   }
 
   void init(T *data) {
-    uniform=divisible(size,M,N) && a*b == size;
+    uniform=uniform && a*b == size;
     subblock=a > 1 && rank < a*b;
     
     Tout1=uniform || subblock ? 
