@@ -1137,9 +1137,9 @@ public:
 //
 class mrcfft1d : public fftw, public Threadtable<keytype3,keyless3> {
   unsigned int nx;
+  unsigned int M;
   size_t rstride,cstride;
   size_t rdist,cdist;
-  unsigned int M;
   fftw_plan plan1,plan2;
   unsigned int T,Q,R;
   static Table threadtable;
@@ -1155,16 +1155,16 @@ public:
   */
 
   mrcfft1d(unsigned int nx,
+           unsigned int M,
            size_t rstride, size_t cstride,
            size_t rdist, size_t cdist,
-           unsigned int M,
            double *in, Complex *out=NULL,
            unsigned int Threads=maxthreads) 
-    : fftw(nx*M,-1,Threads,nx), 
-      nx(nx),
+    : fftw(nx*M,-1,Threads,nx),  // TODO: Fix doubles
+      nx(nx), M(M),
       rstride(rstride), cstride(cstride),
       rdist(rdist), cdist(cdist),
-      M(M), plan1(NULL), plan2(NULL) {
+      plan1(NULL), plan2(NULL) {
 
     T=1;
     Q=M;

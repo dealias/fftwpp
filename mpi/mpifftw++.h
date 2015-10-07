@@ -344,22 +344,16 @@ public:
     T=new mpitranspose<Complex>(dc.X,dc.y,dc.x,dc.Y,1,g,dc.communicator,
                                 options);
     
-    bool inplace=f == (double*) g;
-    if(inplace)
-      exit(1);
-    
-    {
+    if(f == (double*) g) {
       unsigned int n=dr.Y;
       unsigned int M=dr.x;
       ptrdiff_t rstride=1;
       ptrdiff_t cstride=1;
-      ptrdiff_t rdist=inplace ? dr.Y+2 : dr.Y;
+      ptrdiff_t rdist=dr.Y+2;
       ptrdiff_t cdist=dr.Y/2+1;
-      yForwards=new mrcfft1d(n,rstride,cstride,rdist,cdist,M,f,g);
-      yBackwards=new mcrfft1d(n,rstride,cstride,rdist,cdist,M,g,f);
-    }
-    
-    {    
+      yForwards=new mrcfft1d(n,M,rstride,cstride,rdist,cdist,f,g,threads);
+      yBackwards=new mcrfft1d(n,M,rstride,cstride,rdist,cdist,g,f,threads);
+    } else {    
       unsigned int n=dc.X;
       unsigned int M=dc.y;
       unsigned int stride=dc.y;

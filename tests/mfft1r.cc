@@ -98,19 +98,19 @@ int main(int argc, char* argv[])
   size_t cdist=np;
   
   mrcfft1d Forward(mx, // length of transform
+		   M,  // number of transforms
 		   rstride,
 		   cstride,
 		   rdist,
 		   cdist,
-		   M,  // number of transforms
 		   f,  // input array
 		   g); // output array
   mcrfft1d Backward(mx, // length of transform
+		    M,  // number of transforms
 		    rstride,
 		    cstride,
 		    rdist,
 		    cdist,
-		    M,  // number of transforms
 		    g,  // input array
 		    f); // output array
 
