@@ -46,7 +46,7 @@ vpath %.cc ../
 vpath %.cc ../../
 
 FFTW=fftw++
-FILES= fft2r
+FILES= fft2rconv
 UTILS=$(FFTW) mpiutils
 MPITRANSPOSE=$(UTILS) mpitranspose
 MPIFFT=$(MPITRANSPOSE) mpifftw++
@@ -59,37 +59,7 @@ all: $(FILES)
 %.o : %.cc %.h
 	$(MPICXX) $(CXXFLAGS) $(OPTS) -o $@ -c $<
 
-cconv2: cconv2.o $(MPICONVOLUTION:=.o)
-	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
-
-conv2: conv2.o $(MPICONVOLUTION:=.o)
-	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
-
-cconv3: cconv3.o $(MPICONVOLUTION:=.o)
-	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
-
-conv3: conv3.o $(MPICONVOLUTION:=.o)
-	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
-
-fft2: fft2.o $(MPIFFT:=.o)
-	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
-
-fft2r: fft2r.o $(MPIFFT:=.o)
-	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
-
-fft3: fft3.o $(MPIFFT:=.o)
-	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
-
-transpose: transpose.o $(MPIFFT:=.o)
-	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
-
-gather: gather.o $(MPIFFT:=.o)
-	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
-
-gatheryz: gatheryz.o $(MPIFFT:=.o)
-	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
-
-gatherxy: gatherxy.o $(MPIFFT:=.o)
+fft2rconv: fft2rconv.o $(MPIFFT:=.o) $(MPICONVOLUTION:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
 clean:  FORCE

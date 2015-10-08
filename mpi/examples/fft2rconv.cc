@@ -1,4 +1,5 @@
 #include "Array.h"
+#include "mpiconvolution.h"
 #include "mpifftw++.h"
 #include "utils.h"
 #include "mpiutils.h"
@@ -26,9 +27,6 @@ int main(int argc, char* argv[])
 
   unsigned int mx=4;
   unsigned int my=4;
-  bool shift=false;
-  
-  cout << "shift: " << shift << endl;
   
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_MULTIPLE,&provided);
@@ -44,7 +42,7 @@ int main(int argc, char* argv[])
 
   if(group.rank == 0) {
     cout << "Configuration: " 
-	 << group.size << " nodes X " << fftw::maxthreads 
+	 << group.size << " nodes X " << fftw::maxthreads
 	 << " threads/node" << endl;
   }
 
@@ -58,34 +56,53 @@ int main(int argc, char* argv[])
     split df(mx,my,group.active);
     split dg(mx,myp,group.active);
   
-    double *f=doubleAlign(df.n);
-    Complex *g=ComplexAlign(dg.n);
+    double *f0=doubleAlign(df.n);
+    Complex *g0=ComplexAlign(dg.n);
+    double *f1=doubleAlign(df.n);
+    Complex *g1=ComplexAlign(dg.n);
 
     // Create instance of FFT
-    rcfft2dMPI rcfft(df,dg,f,g,mpiOptions(fftw::maxthreads));
- 
-    init(f,df);
-      
+    rcfft2dMPI rcfft(df,dg,f0,g0,mpiOptions(fftw::maxthreads));
+
+    // Create instance of convolution
+    Complex **G=new Complex *[2];
+    G[0]=g0;
+    G[1]=g1;
+    ImplicitHConvolution2MPI C(mx,my,dg,dg,g0,2,1);
+    realmultiplier *mult=multbinary;
+
+    // Init the real-valued inputs
+    init(f0,df);
+    init(f1,df);
+
     if(main) cout << "\nDistributed input:" << endl;
-    show(f,df.x,my,group.active);
-      
-    if(shift)
-      rcfft.Forwards0(f,g);
-    else
-      rcfft.Forwards(f,g);
+    show(f0,df.x,my,group.active);
+    show(f1,df.x,my,group.active);
+
+    // Transform to complex space
+    rcfft.Forwards0(f0,g0);
+    rcfft.Forwards0(f1,g1);
       
     if(main) cout << "\nDistributed output:" << endl;
-    show(g,dg.X,dg.y,group.active);
+    show(g0,dg.X,dg.y,group.active);
+    show(g1,dg.X,dg.y,group.active);
 
-    if(shift)
-      rcfft.Backwards0Normalized(g,f);
-    else
-      rcfft.BackwardsNormalized(g,f);
+    // Convolve in complex space
+    C.convolve(G,mult);
+    if(main) cout << "\nAfter convolution:" << endl;
+    show(g0,dg.X,dg.y,group.active);
 
-    if(main) cout << "\nDistributed back to input:" << endl;
-    show(f,df.x,my,group.active);
+    // Transform back to real space.
+    rcfft.Backwards0Normalized(g0,f0);
 
-    deleteAlign(f);
+    if(main) cout << "\nTransformed back to real-space:" << endl;
+    show(f0,df.x,my,group.active);
+
+    deleteAlign(f0);
+    deleteAlign(f1);
+    deleteAlign(g0);
+    deleteAlign(g1);
+    delete[] G;
   }
   
   MPI_Finalize();
