@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
         test=true;
         break;
       case 'h':
-        usage(2);
+        usage(2); // TODO: Add shift, compact flags
         usageTranspose();
         exit(1);
     }
