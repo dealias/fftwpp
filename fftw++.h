@@ -600,7 +600,7 @@ public:
       }
     }
   }
-  
+
 }; // class fftw
 
 inline unsigned int ceilquotient(unsigned int a, unsigned int b)
