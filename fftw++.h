@@ -330,6 +330,7 @@ public:
     }
   }
   
+  fftw() {}
   fftw(unsigned int doubles, int sign, unsigned int threads,
        unsigned int n=0) :
     doubles(doubles), sign(sign), threads(threads), 
@@ -863,42 +864,19 @@ public:
   }
 };
   
-// Compute the complex Fourier transform of M complex vectors, each of
-// length n.
-// Before calling fft(), the arrays in and out (which may coincide) must be
-// allocated as Complex[M*n].
-//
-// Out-of-place usage: 
-//
-//   mfft1d Forward(n,-1,M,stride,dist,in,out);
-//   Forward.fft(in,out);
-//
-// In-place usage:
-//
-//   mfft1d Forward(n,-1,M,stride,dist);
-//   Forward.fft(in);
-//
-// Notes:
-//   stride is the spacing between the elements of each Complex vector;
-//   dist is the spacing between the first elements of the vectors.
-//
-//
-class mfft1d : public fftw, public Threadtable<keytype3,keyless3> {
+class fftwblock : public virtual fftw {
+public:
   unsigned int nx;
   unsigned int M;
   size_t stride;
   size_t dist;
+  int type;
   fftw_plan plan1,plan2;
   unsigned int T,Q,R;
-  static Table threadtable;
-public:  
-  mfft1d(unsigned int nx, int sign, unsigned int M=1, size_t stride=1,
-         size_t dist=0, Complex *in=NULL, Complex *out=NULL,
-         unsigned int Threads=maxthreads) 
-    : fftw(2*((nx-1)*stride+(M-1)*Dist(nx,stride,dist)+1),sign,Threads,nx),
-      nx(nx), M(M), stride(stride), dist(Dist(nx,stride,dist)),
-      plan1(NULL), plan2(NULL)
-  {
+  fftwblock(int type, unsigned int nx, unsigned int M, unsigned int stride,
+            unsigned int dist, Complex *in, Complex *out, unsigned int Threads)
+    : fftw(), nx(nx), M(M), stride(stride),
+      dist(Dist(nx,stride,dist)), type(type),plan1(NULL), plan2(NULL) {
     T=1;
     Q=M;
     R=0;
@@ -934,18 +912,11 @@ public:
         threads=ST.threads;
       }
     }
-  } 
-  
-  unsigned int Threads() {return std::max(T,threads);}
-  
-  threaddata lookup(bool inplace, unsigned int threads) {
-    return Lookup(threadtable,keytype3(nx,Q,R,threads,inplace));
-  }
-  void store(bool inplace, const threaddata& data) {
-    Store(threadtable,keytype3(nx,Q,R,data.threads,inplace),data);
   }
   
   fftw_plan Plan(Complex *in, Complex *out) {
+    switch(type) {
+      case 0:
     int n=(int) nx;
     if(R > 0) {
       plan2=fftw_plan_many_dft(1,&n,Q+1,
@@ -959,10 +930,51 @@ public:
                               (fftw_complex *) in,NULL,stride,dist,
                               (fftw_complex *) out,NULL,stride,dist,
                               sign,effort);
+    }
+    return NULL;
   }
   
-  ~mfft1d() {
+  unsigned int Threads() {return std::max(T,threads);}
+  
+  ~fftwblock() {
     if(plan2) fftw_destroy_plan(plan2);
+  }
+};
+  
+// Compute the complex Fourier transform of M complex vectors, each of
+// length n.
+// Before calling fft(), the arrays in and out (which may coincide) must be
+// allocated as Complex[M*n].
+//
+// Out-of-place usage: 
+//
+//   mfft1d Forward(n,-1,M,stride,dist,in,out);
+//   Forward.fft(in,out);
+//
+// In-place usage:
+//
+//   mfft1d Forward(n,-1,M,stride,dist);
+//   Forward.fft(in);
+//
+// Notes:
+//   stride is the spacing between the elements of each Complex vector;
+//   dist is the spacing between the first elements of the vectors.
+//
+//
+class mfft1d : public fftwblock, public Threadtable<keytype3,keyless3> {
+  static Table threadtable;
+public:  
+  mfft1d(unsigned int nx, int sign, unsigned int M=1, size_t stride=1,
+         size_t dist=0, Complex *in=NULL, Complex *out=NULL,
+         unsigned int Threads=maxthreads) :
+    fftw(2*((nx-1)*stride+(M-1)*Dist(nx,stride,dist)+1),sign,Threads,nx),
+    fftwblock(0,nx,M,stride,dist,in,out,Threads) {} 
+  
+  threaddata lookup(bool inplace, unsigned int threads) {
+    return Lookup(threadtable,keytype3(nx,Q,R,threads,inplace));
+  }
+  void store(bool inplace, const threaddata& data) {
+    Store(threadtable,keytype3(nx,Q,R,data.threads,inplace),data);
   }
   
   void Execute(Complex *in, Complex *out, bool=false) {
@@ -1112,7 +1124,6 @@ public:
   }
 };
 
-// FIXME: update docs
 // Compute the real Fourier transform of M real vectors, each of length n,
 // using phase sign -1. Before calling fft(), the array in must be
 // allocated as double[M*n] and the array out must be allocated as
