@@ -577,6 +577,11 @@ public:
     fftNormalized((Complex *) in,out,shift);
   }
   
+  template<class I, class O>
+  void fft0Normalized(I in, O out) {
+    fftNormalized(in,out,false);
+  }
+  
 }; // class fftw
 
 inline unsigned int ceilquotient(unsigned int a, unsigned int b)
