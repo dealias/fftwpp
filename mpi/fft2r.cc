@@ -38,12 +38,14 @@ int main(int argc, char* argv[])
   
   bool quiet=false;
   bool test=false;
+
+  bool shift=false;
   
 #ifdef __GNUC__ 
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"hN:a:m:s:x:y:n:T:qt");
+    int c = getopt(argc,argv,"hN:a:m:s:x:y:n:T:o:qt");
     if (c == -1) break;
                 
     switch (c) {
@@ -70,6 +72,9 @@ int main(int argc, char* argv[])
       case 'n':
         N0=atoi(optarg);
         break;
+      case 'o':
+        shift=atoi(optarg);
+        break;
       case 'T':
         fftw::maxthreads=atoi(optarg);
         break;
@@ -86,6 +91,8 @@ int main(int argc, char* argv[])
     }
   }
 
+  cout << "shift: " << shift << endl;
+  
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_MULTIPLE,&provided);
 
@@ -95,7 +102,7 @@ int main(int argc, char* argv[])
     N=N0/mx/my;
     if(N < 10) N=10;
   }
-  
+
   int fftsize=min(mx,my);
 
   MPIgroup group(MPI_COMM_WORLD,fftsize);
@@ -154,8 +161,11 @@ int main(int argc, char* argv[])
 	cout << endl << "Gathered input:\n" << flocal << endl;
       }
 
-      rcfft.Forwards(f,g);
-
+      if(shift)
+	rcfft.Forwards0(f,g);
+      else
+	rcfft.Forwards(f,g);
+      
       if(!quiet && mx*my < outlimit) {
       	if(main) cout << "\nDistributed output:" << endl;
       	show(g,dg.X,dg.y,group.active);
@@ -166,7 +176,10 @@ int main(int argc, char* argv[])
 
       MPI_Barrier(group.active);
       if(main) {
-	localForward.fft(flocal,glocal);
+	if(shift)
+	  localForward.fft0(flocal,glocal);
+	else
+	  localForward.fft(flocal,glocal);
 	if(!quiet) {
 	  cout << "\nLocal output:\n" << glocal << endl;
 	  cout << "\nGathered output:\n" << ggather << endl;
@@ -174,7 +187,10 @@ int main(int argc, char* argv[])
         retval += checkerror(glocal(),ggather(),dg.X*dg.Y);
       }
 
-      rcfft.BackwardsNormalized(g,f);
+      if(shift)
+	rcfft.Backwards0Normalized(g,f);
+      else
+	rcfft.BackwardsNormalized(g,f);
 
       if(!quiet && mx*my < outlimit) {
       	if(main) cout << "\nDistributed back to input:" << endl;
@@ -185,7 +201,10 @@ int main(int argc, char* argv[])
       gatherx(f, flocal0(), df, 1, group.active);
       MPI_Barrier(group.active);
       if(main) {
-	localBackward.fftNormalized(glocal,flocal);
+	if(shift)
+	  localBackward.fft0Normalized(glocal,flocal);
+	else
+	  localBackward.fftNormalized(glocal,flocal);
       	if(!quiet) {
       	  cout << "\nLocal output:\n" << flocal << endl;
       	  cout << "\nGathered output:\n" << flocal0 << endl;

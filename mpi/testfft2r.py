@@ -46,6 +46,7 @@ def main(argv):
         Xlist = [1,2,3,4,5,random.randint(6,64)]
         Ylist = [1,2,3,4,5,random.randint(6,64)]
         Plist = [1,2,3,4,random.randint(6,10)]
+        shiftlist = [0,1]
 
         if(shortrun):
             print "Short run."
@@ -64,19 +65,23 @@ def main(argv):
         for P in Plist:
             for X in Xlist:
                 for Y in Ylist:
-                    ntest += 1
-                    args = []
-                    args.append("-x" + str(X))
-                    args.append("-y" + str(Y))
-                    args.append("-N0")
-                    args.append("-t")
-                    args.append("-q")
-                    rtest, cmd = runtest(pname, P, args, logfile, timeout)
-                    if not rtest == 0:
-                        nfails += 1
-                        failcases += " ".join(cmd)
-                        failcases += "\t(code " + str(rtest) + ")"
-                        failcases += "\n"
+                    for shift in shiftlist:
+                        if (shift == 0) or X % 2 == 0: 
+                            ntest += 1
+                            args = []
+                            args.append("-x" + str(X))
+                            args.append("-y" + str(Y))
+                            args.append("-o" + str(shift))
+                            args.append("-N0")
+                            args.append("-t")
+                            args.append("-q")
+                            rtest, cmd = runtest(pname, P, args, logfile, \
+                                                 timeout)
+                            if not rtest == 0:
+                                nfails += 1
+                                failcases += " ".join(cmd)
+                                failcases += "\t(code " + str(rtest) + ")"
+                                failcases += "\n"
 
         if nfails > 0:
             print "Failure cases:"

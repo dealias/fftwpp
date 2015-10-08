@@ -199,6 +199,27 @@ void fft3dMPI::BackwardsNormalized(Complex *f)
   Normalize(f);
 }
 
+void rcfft2dMPI::Shift(double *f)
+{
+  if(dr.X%2 == 0) {
+    const unsigned int start=(dr.x0+1) % 2;
+    const unsigned int stop=dr.x;
+    const unsigned int ydist=dr.Y; // FIXME: inplace?
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif
+    for(unsigned int i=start; i < stop; i += 2) {
+      double *p=f+i*ydist;
+      for(unsigned int j=0; j < dr.Y; ++j) {
+	p[j]=-p[j];
+      }
+    }
+  } else {
+    std::cerr << "Shift is not implemented for odd X." << std::endl;
+    exit(1);
+  }
+}
+
 void rcfft2dMPI::Forwards(double *f, Complex *g)
 {
   yForwards->fft(f,g);
@@ -208,14 +229,8 @@ void rcfft2dMPI::Forwards(double *f, Complex *g)
 
 void rcfft2dMPI::Forwards0(double *f, Complex *g)
 {
-  // FIXME: add shift
+  Shift(f);
   Forwards(f,g);
-}
-
-void rcfft2dMPI::Backwards0(Complex *g, double *f)
-{
-  // FIXME: add shift
-  Backwards(g,f);
 }
 
 void rcfft2dMPI::Backwards(Complex *g, double *f)
@@ -223,6 +238,12 @@ void rcfft2dMPI::Backwards(Complex *g, double *f)
   xBackwards->fft(g);
   T->transpose(g,false,true);
   yBackwards->fft(g,f);
+}
+
+void rcfft2dMPI::Backwards0(Complex *g, double *f)
+{
+  Backwards(g,f);
+  Shift(f);
 }
 
 void rcfft2dMPI::Normalize(double *f)
@@ -247,8 +268,8 @@ void rcfft2dMPI::BackwardsNormalized(Complex *g, double *f)
 
 void rcfft2dMPI::Backwards0Normalized(Complex *g, double *f)
 {
-  // FIXME: add shift
   BackwardsNormalized(g,f);
+  Shift(f);
 }
 
 

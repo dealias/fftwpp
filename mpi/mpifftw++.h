@@ -379,6 +379,7 @@ public:
   }
 
   void Normalize(double *f);
+  void Shift(double *f);
   void Forwards(double *f, Complex * g);
   void Backwards(Complex *g, double *f);
   void BackwardsNormalized(Complex *g, double *f);
