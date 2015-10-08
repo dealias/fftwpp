@@ -378,10 +378,13 @@ public:
     // FIXME
   }
 
+  void Normalize(double *f);
   void Forwards(double *f, Complex * g);
   void Backwards(Complex *g, double *f);
-  void Normalize(double *f);
   void BackwardsNormalized(Complex *g, double *f);
+  void Forwards0(double *f, Complex * g);
+  void Backwards0(Complex *g, double *f);
+  void Backwards0Normalized(Complex *g, double *f);
 
   // FIXME: implement shift!
   //void Shift(double *f);

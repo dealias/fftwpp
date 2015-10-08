@@ -206,6 +206,18 @@ void rcfft2dMPI::Forwards(double *f, Complex *g)
   xForwards->fft(g);
 }
 
+void rcfft2dMPI::Forwards0(double *f, Complex *g)
+{
+  // FIXME: add shift
+  Forwards(f,g);
+}
+
+void rcfft2dMPI::Backwards0(Complex *g, double *f)
+{
+  // FIXME: add shift
+  Backwards(g,f);
+}
+
 void rcfft2dMPI::Backwards(Complex *g, double *f)
 {
   xBackwards->fft(g);
@@ -230,6 +242,13 @@ void rcfft2dMPI::BackwardsNormalized(Complex *g, double *f)
 {
   Backwards(g,f);
   Normalize(f);
+}
+
+
+void rcfft2dMPI::Backwards0Normalized(Complex *g, double *f)
+{
+  // FIXME: add shift
+  BackwardsNormalized(g,f);
 }
 
 
