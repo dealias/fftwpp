@@ -561,58 +561,20 @@ public:
     for(unsigned int i=0; i < doubles; i++) out[i] *= norm;
   }
   
-  virtual void fftNormalized(Complex *in, Complex *out=NULL) {
+  virtual void fftNormalized(Complex *in, Complex *out=NULL, bool shift=false) {
     out=Setout(in,out);
-    Execute(in,out);
+    Execute(in,out,shift);
     Normalize(out);
   }
   
-  void fftNormalized(Complex *in, double *out) {
+  void fftNormalized(Complex *in, double *out, bool shift=false) {
     out=(double *) Setout(in,(Complex *) out);
-    Execute(in,(Complex *) out);
+    Execute(in,(Complex *) out,shift);
     Normalize(out);
   }
   
-  void fftNormalized(double *in, Complex *out) {
-    fftNormalized((Complex *) in,out);
-  }
-  
-  void fft0Normalized(Complex *in, Complex *out=NULL) {
-    out=Setout(in,out);
-    Execute(in,out,true);
-    Normalize(out);
-  }
-  
-  void fft0Normalized(Complex *in, double *out) {
-    out=(double *) Setout(in,(Complex *) out);
-    Execute(in,(Complex *) out,true);
-    Normalize(out);
-  }
-  
-  void fft0Normalized(double *in, Complex *out) {
-    fft0Normalized((Complex *) in,out);
-  }
-  
-  void fftNormalized(Complex *in, Complex *out,
-                     unsigned int nx, unsigned int M,
-                     size_t stride, size_t dist) {
-    if(stride == 1 && dist == nx) fftw::fftNormalized(in,out);
-    else {
-      out=Setout(in,out);
-      Execute(in,out);
-
-      unsigned int stop=nx*stride;
-      Complex *outMdist=out+M*dist;
-#ifndef FFTWPP_SINGLE_THREAD
-#pragma omp parallel for num_threads(threads)
-#endif
-      for(unsigned int i=0; i < stop; i += stride) {
-        Complex *pstop=outMdist+i;
-        for(Complex *p=out+i; p < pstop; p += dist) {
-          *p *= norm;
-        }
-      }
-    }
+  void fftNormalized(double *in, Complex *out, bool shift=false) {
+    fftNormalized((Complex *) in,out,shift);
   }
   
 }; // class fftw
@@ -864,19 +826,21 @@ public:
   }
 };
   
+template<class I, class O>
 class fftwblock : public virtual fftw {
 public:
-  unsigned int nx;
+  int nx;
   unsigned int M;
-  size_t stride;
-  size_t dist;
-  int type;
+  size_t istride,ostride;
+  size_t idist,odist;
   fftw_plan plan1,plan2;
   unsigned int T,Q,R;
-  fftwblock(int type, unsigned int nx, unsigned int M, unsigned int stride,
-            unsigned int dist, Complex *in, Complex *out, unsigned int Threads)
-    : fftw(), nx(nx), M(M), stride(stride),
-      dist(Dist(nx,stride,dist)), type(type),plan1(NULL), plan2(NULL) {
+  fftwblock(unsigned int nx, unsigned int M,
+            size_t istride, size_t ostride, size_t idist, size_t odist,
+            Complex *in, Complex *out, unsigned int Threads)
+    : fftw(), nx(nx), M(M), istride(istride), ostride(ostride),
+      idist(Dist(nx,istride,idist)), odist(Dist(nx,ostride,odist)),
+            plan1(NULL), plan2(NULL) {
     T=1;
     Q=M;
     R=0;
@@ -896,7 +860,7 @@ public:
         plan2=plan1;
       }
 
-      if(ST.mean > S1.mean-S1.stdev) {
+      if(ST.mean > S1.mean-S1.stdev) { // Use FFTW's multi-threading
         fftw_destroy_plan(plan);
         if(R > 0) {
           fftw_destroy_plan(plan2);
@@ -907,31 +871,78 @@ public:
         R=0;
         plan=planT1;
         threads=S1.threads;
-      } else {
+      } else {                         // Do the multi-threading ourselves
         fftw_destroy_plan(planT1);
         threads=ST.threads;
       }
     }
   }
   
+  fftw_plan Plan(int Q, fftw_complex *in, fftw_complex *out) {
+    return fftw_plan_many_dft(1,&nx,Q,in,NULL,istride,idist,
+                              out,NULL,ostride,odist,sign,effort);
+  }
+  
+  fftw_plan Plan(int Q, double *in, fftw_complex *out) {
+    return fftw_plan_many_dft_r2c(1,&nx,Q,in,NULL,istride,idist,
+                                  out,NULL,ostride,odist,effort);
+  }
+  
   fftw_plan Plan(Complex *in, Complex *out) {
-    switch(type) {
-      case 0:
-    int n=(int) nx;
     if(R > 0) {
-      plan2=fftw_plan_many_dft(1,&n,Q+1,
-                               (fftw_complex *) in,NULL,stride,dist,
-                               (fftw_complex *) out,NULL,stride,dist,
-                               sign,effort);
+      plan2=Plan(Q+1,(I *) in,(O *) out);
       if(!plan2) return NULL;
       if(threads == 1) plan1=plan2;
     }
-    return fftw_plan_many_dft(1,&n,Q,
-                              (fftw_complex *) in,NULL,stride,dist,
-                              (fftw_complex *) out,NULL,stride,dist,
-                              sign,effort);
+    return Plan(Q,(I *) in,(O *) out);
+  }
+    
+  void Execute(fftw_plan plan, fftw_complex *in, fftw_complex *out) {
+    fftw_execute_dft(plan,in,out);
+  }
+  
+  void Execute(fftw_plan plan, double *in, fftw_complex *out) {
+    fftw_execute_dft_r2c(plan,in,out);
+  }
+
+  void Execute(Complex *in, Complex *out, bool=false) {
+    if(T == 1)
+      Execute(plan,(I *) in,(O *) out);
+    else {
+      unsigned int extra=T-R;
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(T)
+#endif
+      for(unsigned int i=0; i < T; ++i) {
+        unsigned int iQ=i*Q;
+        if(i < extra)
+          Execute(plan,(I *) in+iQ*idist,(O *) out+iQ*odist);
+        else {
+          unsigned int offset=iQ+i-extra;
+          Execute(plan2,(I *) in+offset*idist,(O *) out+offset*odist);
+        }
+      }
     }
-    return NULL;
+  }
+  
+  void fftNormalized(Complex *in, Complex *out=NULL, bool shift=false) {
+    if(ostride == 1 && odist == (size_t) nx) fftw::fftNormalized(in,out);
+    else {
+      out=Setout(in,out);
+      Execute(in,out,shift);
+
+      unsigned int stop=nx*ostride;
+      Complex *outMdist=out+M*odist;
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif
+      for(unsigned int i=0; i < stop; i += ostride) {
+        Complex *pstop=outMdist+i;
+        for(Complex *p=out+i; p < pstop; p += odist) {
+          *p *= norm;
+        }
+      }
+    }
   }
   
   unsigned int Threads() {return std::max(T,threads);}
@@ -961,47 +972,21 @@ public:
 //   dist is the spacing between the first elements of the vectors.
 //
 //
-class mfft1d : public fftwblock, public Threadtable<keytype3,keyless3> {
+class mfft1d : public fftwblock<fftw_complex,fftw_complex>,
+               public Threadtable<keytype3,keyless3> {
   static Table threadtable;
 public:  
   mfft1d(unsigned int nx, int sign, unsigned int M=1, size_t stride=1,
          size_t dist=0, Complex *in=NULL, Complex *out=NULL,
          unsigned int Threads=maxthreads) :
     fftw(2*((nx-1)*stride+(M-1)*Dist(nx,stride,dist)+1),sign,Threads,nx),
-    fftwblock(0,nx,M,stride,dist,in,out,Threads) {} 
+    fftwblock(nx,M,stride,stride,dist,dist,in,out,Threads) {} 
   
   threaddata lookup(bool inplace, unsigned int threads) {
     return Lookup(threadtable,keytype3(nx,Q,R,threads,inplace));
   }
   void store(bool inplace, const threaddata& data) {
     Store(threadtable,keytype3(nx,Q,R,data.threads,inplace),data);
-  }
-  
-  void Execute(Complex *in, Complex *out, bool=false) {
-    if(T == 1) {
-      fftw_execute_dft(plan,(fftw_complex *) in,(fftw_complex *) out);
-    } else {
-      unsigned int Tdist=T*dist;
-      unsigned int extra=(T-R)*dist;
-#ifndef FFTWPP_SINGLE_THREAD
-#pragma omp parallel for num_threads(T)
-#endif
-      for(unsigned int i=0; i < Tdist; i += dist) {
-        unsigned int iQ=i*Q;
-        if(i < extra)
-          fftw_execute_dft(plan,(fftw_complex *) in+iQ,
-                           (fftw_complex *) out+iQ);
-        else {
-          size_t offset=iQ+i-extra;
-          fftw_execute_dft(plan2,(fftw_complex *) in+offset,
-                           (fftw_complex *) out+offset);
-        }
-      }
-    }
-  }
-  
-  void fftNormalized(Complex *in, Complex *out=NULL) {
-    fftw::fftNormalized(in,out,nx,M,stride,dist);
   }
 };
   
@@ -1148,62 +1133,16 @@ public:
 //   in contains the n real values stored as a Complex array;
 //   out contains the first n/2+1 Complex Fourier values.
 //
-class mrcfft1d : public fftw, public Threadtable<keytype3,keyless3> {
-  unsigned int nx;
-  unsigned int M;
-  size_t rstride,cstride;
-  size_t rdist,cdist;
-  fftw_plan plan1,plan2;
-  unsigned int T,Q,R;
+class mrcfft1d : public fftwblock<double,fftw_complex>,
+                 public Threadtable<keytype3,keyless3> {
   static Table threadtable;
-
 public:
   mrcfft1d(unsigned int nx, unsigned int M, size_t rstride, size_t cstride,
            size_t rdist, size_t cdist, double *in=NULL, Complex *out=NULL,
            unsigned int Threads=maxthreads) 
     : fftw(std::max((realsize(nx,in,out)-2)*rstride+(M-1)*rdist+2,
                     2*(nx/2*cstride+(M-1)*cdist+1)),-1,Threads,nx),
-      nx(nx), M(M), rstride(rstride), cstride(cstride),
-      rdist(rdist), cdist(cdist), plan1(NULL), plan2(NULL) {
-    T=1;
-    Q=M;
-    R=0;
-    
-    threaddata S1=Setup(in,out);
-    fftw_plan planT1=plan;
-    
-    if(Threads > 1) {
-      T=std::min(M,Threads);
-      Q=T > 0 ? M/T : 0;
-      R=M-Q*T;
-      
-      threads=Threads;
-      threaddata ST=Setup(in,out);
-    
-      if(R > 0 && threads == 1 && plan1 != plan2) {
-        fftw_destroy_plan(plan2);
-        plan2=plan1;
-      }
-
-      if(ST.mean > S1.mean-S1.stdev) {
-        // Use FFTW's multi-threading
-        fftw_destroy_plan(plan);
-        if(R > 0) {
-          fftw_destroy_plan(plan2);
-          plan2=NULL;
-        }
-        T=1;
-        Q=M;
-        R=0;
-        plan=planT1;
-        threads=S1.threads;
-      } else {
-        // Do the multi-threading ourselves
-        fftw_destroy_plan(planT1);
-        threads=ST.threads;
-      }
-    }
-  } 
+      fftwblock(nx,M,rstride,cstride,rdist,cdist,(Complex *) in,out,Threads) {}
   
   unsigned int Threads() {return std::max(T,threads);}
   
@@ -1212,53 +1151,6 @@ public:
   }
   void store(bool inplace, const threaddata& data) {
     Store(threadtable,keytype3(nx,Q,R,data.threads,inplace),data);
-  }
-  
-  fftw_plan Plan(Complex *in, Complex *out) {
-    int n=(int) nx;
-    if(R > 0) {
-      plan2=fftw_plan_many_dft_r2c(1,&n,Q+1,
-                                   (double *) in,NULL,rstride,rdist,
-                                   (fftw_complex *) out,NULL,cstride,cdist,
-                                   effort);
-      if(!plan2) return NULL;
-      if(threads == 1) plan1=plan2;
-    }
-    return fftw_plan_many_dft_r2c(1,&n,Q,
-                                  (double *) in,NULL,rstride,rdist,
-                                  (fftw_complex *) out,NULL,cstride,cdist,
-                                  effort);
-    
-  }
-  
-  ~mrcfft1d() {
-    if(plan2) fftw_destroy_plan(plan2);
-  }
-  
-  void Execute(Complex *in, Complex *out, bool=false) {
-    if(T == 1) {
-      fftw_execute_dft_r2c(plan,(double *) in,(fftw_complex *) out);
-    } else {
-      unsigned int extra=T-R;
-#ifndef FFTWPP_SINGLE_THREAD
-#pragma omp parallel for num_threads(T)
-#endif
-      for(unsigned int i=0; i < T; ++i) {
-        unsigned int iQ=i*Q;
-        if(i < extra)
-          fftw_execute_dft_r2c(plan,(double *) in+iQ*rdist,
-                               (fftw_complex *) out+iQ*cdist);
-        else {
-          unsigned int offset=iQ+i-extra;
-          fftw_execute_dft_r2c(plan2,(double *) in+offset*rdist,
-                               (fftw_complex *) out+offset*cdist);
-        }
-      }
-    }
-  }
-  
-  void fftNormalized(Complex *in, Complex *out=NULL) {
-//    fftw::fftNormalized(in,out,nx/2+1,M,cstride,cdist);
   }
 };
 
