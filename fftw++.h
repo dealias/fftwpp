@@ -579,7 +579,7 @@ public:
   
   template<class I, class O>
   void fft0Normalized(I in, O out) {
-    fftNormalized(in,out,false);
+    fftNormalized(in,out,true);
   }
   
 }; // class fftw
