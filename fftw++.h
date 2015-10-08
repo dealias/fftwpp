@@ -1121,17 +1121,19 @@ public:
 //
 // Out-of-place usage: 
 //
-//   mrcfft1d Forward(n,M,stride,dist,in,out);
+//   mrcfft1d Forward(n,M,rstride,cstride,rdist,cdist,in,out);
 //   Forward.fft(in,out);
 //
 // In-place usage:
 //
-//   mrcfft1d Forward(n,M,stride,dist);
+//   mrcfft1d Forward(n,M,rstride,cstride,rdist,cdist);
 //   Forward.fft(out);
 // 
 // Notes:
-//   stride is the spacing between the elements of each Complex vector;
-//   dist is the spacing between the first elements of the vectors;
+//   rstride is the spacing between the elements of each real vector;
+//   cstride is the spacing between the elements of each Complex vector;
+//   rdist is the spacing between the first elements of the real vectors;
+//   cdist is the spacing between the first elements of the Complex vectors;
 //   in contains the n real values stored as a Complex array;
 //   out contains the first n/2+1 Complex Fourier values.
 //
@@ -1145,22 +1147,11 @@ class mrcfft1d : public fftw, public Threadtable<keytype3,keyless3> {
   static Table threadtable;
 
 public:
-  /*
-  mrcfft1d(unsigned int nx, unsigned int M=1, size_t stride=1,
-           size_t dist=0, Complex *out=NULL, unsigned int Threads=maxthreads) 
-    : fftw(2*(nx/2*stride+(M-1)*Dist(nx,stride,dist)+1),-1,Threads,nx), nx(nx),
-      M(M), stride(stride), plan1(NULL), plan2(NULL) {
-    mrcfft1d(nx,M,stride,dist,(double *) out,out,Threads); 
-    }
-  */
-
-  mrcfft1d(unsigned int nx,
-           unsigned int M,
-           size_t rstride, size_t cstride,
-           size_t rdist, size_t cdist,
-           double *in, Complex *out=NULL,
+  mrcfft1d(unsigned int nx, unsigned int M, size_t rstride, size_t cstride,
+           size_t rdist, size_t cdist, double *in=NULL, Complex *out=NULL,
            unsigned int Threads=maxthreads) 
-    : fftw(nx*M,-1,Threads,nx),  // TODO: Fix doubles
+    : fftw(std::max((realsize(nx,in,out)-2)*rstride+(M-1)*rdist+2,
+                    2*(nx/2*cstride+(M-1)*cdist+1)),-1,Threads,nx),
       nx(nx), M(M), rstride(rstride), cstride(cstride),
       rdist(rdist), cdist(cdist), plan1(NULL), plan2(NULL) {
     T=1;
@@ -1256,8 +1247,7 @@ public:
   }
   
   void fftNormalized(Complex *in, Complex *out=NULL) {
-    // FIXME
-    //fftw::fftNormalized(in,out,nx/2+1,M,stride,odist);
+//    fftw::fftNormalized(in,out,nx/2+1,M,cstride,cdist);
   }
 };
 
@@ -1328,6 +1318,7 @@ public:
   }
   
   void fftNormalized(Complex *in, double *out=NULL) {
+    out=(double *) fftw::Setout(in,(Complex *) out);
     Execute(in,(Complex*) out);
 
     unsigned int stop=nx*rstride;
