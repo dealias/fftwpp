@@ -22,17 +22,16 @@ int main(int argc, char* argv[])
   fftw::effort |= FFTW_NO_SIMD;
 #endif
 
-  // Must be even for 2/3 padding convolutions.
   unsigned int mx=4;
   unsigned int my=4;
+  
+  unsigned int nx=2*mx;
+  unsigned int ny=my+1;
   
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_MULTIPLE,&provided);
 
-  // MPI group size cannot be larger than minimum dimensions of arrays.
-  int fftsize=min(mx,my/2+1);
-
-  MPIgroup group(MPI_COMM_WORLD,fftsize);
+  MPIgroup group(MPI_COMM_WORLD,ny);
 
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;
@@ -47,12 +46,13 @@ int main(int argc, char* argv[])
     bool main=group.rank == 0;
     if(main) {
       cout << "mx=" << mx << ", my=" << my << endl;
+      cout << "nx=" << nx << ", ny=" << ny << endl;
     } 
-    unsigned int myp=my/2+1;
 
     // Set up per-process dimensions
-    split df(mx,my,group.active);
-    split dg(mx,myp,group.active);
+    split df(nx,ny,group.active);
+    split dg(nx,ny,group.active);
+    split du(mx+1,ny,group.active);
 
     // Allocate complex-aligned memory
     double *f0=doubleAlign(df.n);
@@ -67,16 +67,16 @@ int main(int argc, char* argv[])
     Complex **G=new Complex *[2];
     G[0]=g0;
     G[1]=g1;
-    ImplicitHConvolution2MPI C(mx/2,my/2,dg,dg,g0,2,1);
+    ImplicitHConvolution2MPI C(mx,my,dg,du,g0,2,1);
     realmultiplier *mult=multbinary;
 
     if(main) cout << "\nDistributed input (split in x-direction):" << endl;
     if(main) cout << "f0:" << endl;
     init(f0,df);
-    show(f0,df.x,my,group.active);
+    show(f0,df.x,df.Y,group.active);
     if(main) cout << "f1:" << endl;
     init(f1,df);
-    show(f1,df.x,my,group.active);
+    show(f1,df.x,df.Y,group.active);
       
     if(main) cout << "\nDistributed output (split in y-direction:)" << endl;
     if(main) cout << "g0:" << endl;
@@ -95,7 +95,7 @@ int main(int argc, char* argv[])
 		  << endl;
     if(main) cout << "f0:" << endl;
     rcfft.Backwards0Normalized(g0,f0);
-    show(f0,df.x,my,group.active);
+    show(f0,df.x,df.Y,group.active);
 
     deleteAlign(f0);
     deleteAlign(f1);
