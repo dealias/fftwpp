@@ -82,7 +82,7 @@ struct convolveOptions {
   mpiOptions mpi;                  // |
   
   convolveOptions(unsigned int threads=fftw::maxthreads,
-                  bool xcompact=true, bool ycompact=true, bool zcompact=true,
+                  bool xcompact=false, bool ycompact=false, bool zcompact=false,
                   unsigned int nx=0, unsigned int ny=0, unsigned int nz=0,
                   unsigned int stride2=0, unsigned int stride3=0) :
     threads(threads),

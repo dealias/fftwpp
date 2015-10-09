@@ -68,34 +68,41 @@ int main(int argc, char* argv[])
     Complex **G=new Complex *[2];
     G[0]=g0;
     G[1]=g1;
-    ImplicitHConvolution2MPI C(mx,my,dg,dg,g0,2,1);
+    ImplicitHConvolution2MPI C(mx/2,my/2,dg,dg,g0,2,1);
     realmultiplier *mult=multbinary;
 
     // Init the real-valued inputs
     init(f0,df);
     init(f1,df);
 
-    if(main) cout << "\nDistributed input:" << endl;
+    if(main) cout << "\nDistributed input (split in x-direction):" << endl;
+    if(main) cout << "f0:" << endl;
     show(f0,df.x,my,group.active);
+    if(main) cout << "f1:" << endl;
     show(f1,df.x,my,group.active);
 
     // Transform to complex space
     rcfft.Forwards0(f0,g0);
     rcfft.Forwards0(f1,g1);
       
-    if(main) cout << "\nDistributed output:" << endl;
+    if(main) cout << "\nDistributed output (split in y-direction:)" << endl;
+    if(main) cout << "g0:" << endl;
     show(g0,dg.X,dg.y,group.active);
+    if(main) cout << "g1:" << endl;
     show(g1,dg.X,dg.y,group.active);
 
     // Convolve in complex space
     C.convolve(G,mult);
-    if(main) cout << "\nAfter convolution:" << endl;
+    if(main) cout << "\nAfter convolution (split in y-direction):" << endl;
+    if(main) cout << "g0:" << endl;
     show(g0,dg.X,dg.y,group.active);
 
     // Transform back to real space.
     rcfft.Backwards0Normalized(g0,f0);
 
-    if(main) cout << "\nTransformed back to real-space:" << endl;
+    if(main) cout << "\nTransformed back to real-space (split in x-direction):"
+		  << endl;
+    if(main) cout << "f1:" << endl;
     show(f0,df.x,my,group.active);
 
     deleteAlign(f0);
