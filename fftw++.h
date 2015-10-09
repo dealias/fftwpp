@@ -867,7 +867,6 @@ public:
     istride(istride), idist(Dist(nx,istride,idist)),
     ostride(ostride), odist(Dist(nx,ostride,odist)),
     plan1(NULL), plan2(NULL) {
-    
     T=1;
     Q=M;
     R=0;
@@ -1118,12 +1117,12 @@ public:
 //
 // Out-of-place usage: 
 //
-//   mrcfft1d Forward(n,M,istride,idist,ostride,odist,in,out);
+//   mrcfft1d Forward(n,M,istride,ostride,idist,odist,in,out);
 //   Forward.fft(in,out);
 //
 // In-place usage:
 //
-//   mrcfft1d Forward(n,M,istride,idist,ostride,odist);
+//   mrcfft1d Forward(n,M,istride,ostride,idist,odist);
 //   Forward.fft(out);
 // 
 // Notes:
