@@ -20,25 +20,25 @@ int main()
   array2<double> f(nx,ny,align);
   array2<Complex> g(nx,nyp,align);
   size_t rstride=1;
-  size_t cstride=1;
   size_t rdist=ny;
+  size_t cstride=1;
   size_t cdist=nyp;
   unsigned int M=nx;
   
   mrcfft1d Forward(ny, // length of transform
-		   rstride,
-		   cstride,
-		   rdist,
-		   cdist,
 		   M,  // number of transforms
+		   rstride,
+		   rdist,
+		   cstride,
+		   cdist,
 		   f,  // input array
 		   g); // output array
   mcrfft1d Backward(ny, // length of transform
-		    rstride,
-		    cstride,
-		    rdist,
-		    cdist,
 		    M,  // number of transforms
+		    cstride,
+		    cdist,
+		    rstride,
+		    rdist,
 		    g,  // input array
 		    f); // output array
 
