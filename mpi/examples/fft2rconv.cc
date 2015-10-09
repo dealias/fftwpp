@@ -1,12 +1,9 @@
-#include "Array.h"
-#include "mpiconvolution.h"
 #include "mpifftw++.h"
-#include "utils.h"
-#include "mpiutils.h"
+#include "mpiconvolution.h"
+#include "mpiutils.h" // For output of distritubed arrays
 
 using namespace std;
 using namespace fftwpp;
-using namespace Array;
 
 inline void init(double *f, split d) 
 {
@@ -25,15 +22,15 @@ int main(int argc, char* argv[])
   fftw::effort |= FFTW_NO_SIMD;
 #endif
 
+  // Must be even for 2/3 padding convolutions.
   unsigned int mx=4;
   unsigned int my=4;
   
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_MULTIPLE,&provided);
 
-  if(my == 0) my=mx;
-
-  int fftsize=min(mx,my);
+  // MPI group size cannot be larger than minimum dimensions of arrays.
+  int fftsize=min(mx,my/2+1);
 
   MPIgroup group(MPI_COMM_WORLD,fftsize);
 
@@ -52,13 +49,15 @@ int main(int argc, char* argv[])
       cout << "mx=" << mx << ", my=" << my << endl;
     } 
     unsigned int myp=my/2+1;
-    
+
+    // Set up per-process dimensions
     split df(mx,my,group.active);
     split dg(mx,myp,group.active);
-  
+
+    // Allocate complex-aligned memory
     double *f0=doubleAlign(df.n);
-    Complex *g0=ComplexAlign(dg.n);
     double *f1=doubleAlign(df.n);
+    Complex *g0=ComplexAlign(dg.n);
     Complex *g1=ComplexAlign(dg.n);
 
     // Create instance of FFT
@@ -71,38 +70,31 @@ int main(int argc, char* argv[])
     ImplicitHConvolution2MPI C(mx/2,my/2,dg,dg,g0,2,1);
     realmultiplier *mult=multbinary;
 
-    // Init the real-valued inputs
-    init(f0,df);
-    init(f1,df);
-
     if(main) cout << "\nDistributed input (split in x-direction):" << endl;
     if(main) cout << "f0:" << endl;
+    init(f0,df);
     show(f0,df.x,my,group.active);
     if(main) cout << "f1:" << endl;
+    init(f1,df);
     show(f1,df.x,my,group.active);
-
-    // Transform to complex space
-    rcfft.Forwards0(f0,g0);
-    rcfft.Forwards0(f1,g1);
       
     if(main) cout << "\nDistributed output (split in y-direction:)" << endl;
     if(main) cout << "g0:" << endl;
+    rcfft.Forwards0(f0,g0);
     show(g0,dg.X,dg.y,group.active);
     if(main) cout << "g1:" << endl;
+    rcfft.Forwards0(f1,g1);
     show(g1,dg.X,dg.y,group.active);
 
-    // Convolve in complex space
-    C.convolve(G,mult);
     if(main) cout << "\nAfter convolution (split in y-direction):" << endl;
+    C.convolve(G,mult);
     if(main) cout << "g0:" << endl;
     show(g0,dg.X,dg.y,group.active);
 
-    // Transform back to real space.
-    rcfft.Backwards0Normalized(g0,f0);
-
     if(main) cout << "\nTransformed back to real-space (split in x-direction):"
 		  << endl;
-    if(main) cout << "f1:" << endl;
+    if(main) cout << "f0:" << endl;
+    rcfft.Backwards0Normalized(g0,f0);
     show(f0,df.x,my,group.active);
 
     deleteAlign(f0);
