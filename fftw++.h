@@ -993,14 +993,16 @@ public:
          size_t dist=0, Complex *in=NULL, Complex *out=NULL,
          unsigned int threads=maxthreads) :
     fftw(2*((nx-1)*stride+(M-1)*Dist(nx,stride,dist)+1),sign,threads,nx),
-    fftwblock(nx,M,stride,stride,dist,dist,in,out,threads) {} 
+    fftwblock<fftw_complex,fftw_complex>
+    (nx,M,stride,stride,dist,dist,in,out,threads) {} 
   
   mfft1d(unsigned int nx, int sign, unsigned int M,
          size_t istride, size_t ostride, size_t idist, size_t odist,
          Complex *in=NULL, Complex *out=NULL, unsigned int threads=maxthreads) :
     fftw(std::max(2*((nx-1)*istride+(M-1)*Dist(nx,istride,idist)+1),
              2*((nx-1)*ostride+(M-1)*Dist(nx,ostride,odist)+1)),sign,threads,nx),
-    fftwblock(nx,M,istride,ostride,idist,odist,in,out,threads) {} 
+    fftwblock<fftw_complex,fftw_complex>
+    (nx,M,istride,ostride,idist,odist,in,out,threads) {} 
   
   threaddata lookup(bool inplace, unsigned int threads) {
     return Lookup(threadtable,keytype3(nx,Q,R,threads,inplace));
@@ -1137,7 +1139,8 @@ public:
            unsigned int threads=maxthreads) 
     : fftw(std::max((realsize(nx,in,out)-2)*istride+(M-1)*idist+2,
                     2*(nx/2*ostride+(M-1)*odist+1)),-1,threads,nx),
-      fftwblock(nx,M,istride,ostride,idist,odist,(Complex *) in,out,threads) {}
+      fftwblock<double,fftw_complex>
+    (nx,M,istride,ostride,idist,odist,(Complex *) in,out,threads) {}
   
   threaddata lookup(bool inplace, unsigned int threads) {
     return Lookup(threadtable,keytype3(nx,Q,R,threads,inplace));
@@ -1185,7 +1188,8 @@ public:
            unsigned int threads=maxthreads) 
     : fftw(std::max(2*(nx/2*istride+(M-1)*idist+1),
                     (realsize(nx,in,out)-2)*ostride+(M-1)*odist+2),1,threads,nx),
-      fftwblock(nx,M,istride,ostride,idist,odist,in,(Complex *) out,threads) {}
+      fftwblock<fftw_complex,double>
+    (nx,M,istride,ostride,idist,odist,in,(Complex *) out,threads) {}
   
   threaddata lookup(bool inplace, unsigned int threads) {
     return Lookup(threadtable,keytype3(nx,Q,R,threads,inplace));
