@@ -89,9 +89,9 @@ int main(int argc, char* argv[])
   // }
 
   if(r == -1 || r == 1) {
-    array3<double> f(mx, my, mz, align);
-    rcfft3d Forward0(mz, f, g);
-    //crfft1d Backward0(1, g, f);
+    array3<double> f(mx,my,mz,align);
+    rcfft3d Forward0(mx,my,mz,f,g);
+    //crfft1d Backward0(1,g,f);
 
     for(int i = 0; i < N; ++i) {
       finit(f, mx, my, mz);

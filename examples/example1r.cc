@@ -20,6 +20,7 @@ int main()
   
   array1<double> f(n,align);
   array1<Complex> g(np,align);
+//  array1<double> f(2*np,(double *) g()); // For in-place transforms
   
   rcfft1d Forward(n,f,g);
   crfft1d Backward(n,g,f);

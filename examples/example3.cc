@@ -19,8 +19,8 @@ int main()
   
   array3<Complex> f(nx,ny,nz,align);
   
-  fft3d Forward3(-1,f);
-  fft3d Backward3(1,f);
+  fft3d Forward(-1,f);
+  fft3d Backward(1,f);
   
   for(unsigned int i=0; i < nx; i++) 
     for(unsigned int j=0; j < ny; j++) 
@@ -29,11 +29,11 @@ int main()
 	
   cout << "\ninput:\n" << f;
   
-  Forward3.fft(f);
+  Forward.fft(f);
   
   cout << "\noutput:\n" << f;
   
-  Backward3.fftNormalized(f);
+  Backward.fftNormalized(f);
   
   cout << "\nback to input:\n" << f;
 }

@@ -18,8 +18,8 @@ int main()
   
   array2<Complex> f(nx,ny,align);
   
-  fft2d Forward2(-1,f);
-  fft2d Backward2(1,f);
+  fft2d Forward(-1,f);
+  fft2d Backward(1,f);
   
   for(unsigned int i=0; i < nx; i++) 
     for(unsigned int j=0; j < ny; j++) 
@@ -27,11 +27,11 @@ int main()
 
   cout << "\ninput:\n" << f;
   
-  Forward2.fft(f);
+  Forward.fft(f);
   
   cout << "\noutput:\n" << f;
   
-  Backward2.fftNormalized(f);
+  Backward.fftNormalized(f);
 
   cout << "\nback to input:\n" << f;
 }
