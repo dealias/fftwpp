@@ -21,9 +21,9 @@ int main()
   array3<double> f(nx,ny,nz,align);
   array3<Complex> g(nx,ny,nzp,align);
 //  array3<double> f(nx,ny,2*nzp,(double *) g()); // For in-place transforms
- 
-  rcfft3d Forward3(nz,f,g);
-  crfft3d Backward3(nz,g,f);
+
+  rcfft3d Forward(nx,ny,nz,f,g);
+  crfft3d Backward(nx,ny,nz,g,f);
   
   for(unsigned int i=0; i < nx; i++) 
     for(unsigned int j=0; j < ny; j++) 
@@ -32,11 +32,11 @@ int main()
 	
   cout << "\ninput:\n" << f;
   
-  Forward3.fft(f,g);
+  Forward.fft(f,g);
   
   cout << "\noutput:\n" << g;
   
-  Backward3.fftNormalized(g,f);
+  Backward.fftNormalized(g,f);
   
   cout << "\nback to input:\n" << f;
 }

@@ -88,8 +88,8 @@ int main(int argc, char* argv[])
   // }
 
   if(r == -1 || r == 1) {
-    array2<double> f(mx, my, align);
-    rcfft2d Forward0(my, f, g);
+    array2<double> f(mx,my,align);
+    rcfft2d Forward0(mx,my,f,g);
     //crfft1d Backward0(1, g, f);
 
     for(int i = 0; i < N; ++i) {

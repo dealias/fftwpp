@@ -300,7 +300,7 @@ public:
         }
       }
     } else {
-      std::cerr << oddshift << "or odd ny" << std::endl;
+      std::cerr << oddshift << " or odd ny" << std::endl;
       exit(1);
     }
   }
@@ -325,7 +325,7 @@ public:
         }
       }
     } else {
-      std::cerr << oddshift << "or odd ny" << std::endl;
+      std::cerr << oddshift << " or odd ny" << std::endl;
       exit(1);
     }
   }
@@ -547,7 +547,7 @@ public:
   }
   
   void Normalize(Complex *out) {
-    unsigned int stop=(doubles+1)/2;
+    unsigned int stop=doubles/2;
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif
@@ -993,14 +993,16 @@ public:
          size_t dist=0, Complex *in=NULL, Complex *out=NULL,
          unsigned int threads=maxthreads) :
     fftw(2*((nx-1)*stride+(M-1)*Dist(nx,stride,dist)+1),sign,threads,nx),
-    fftwblock(nx,M,stride,stride,dist,dist,in,out,threads) {} 
+    fftwblock<fftw_complex,fftw_complex>
+    (nx,M,stride,stride,dist,dist,in,out,threads) {} 
   
   mfft1d(unsigned int nx, int sign, unsigned int M,
          size_t istride, size_t ostride, size_t idist, size_t odist,
          Complex *in=NULL, Complex *out=NULL, unsigned int threads=maxthreads) :
     fftw(std::max(2*((nx-1)*istride+(M-1)*Dist(nx,istride,idist)+1),
              2*((nx-1)*ostride+(M-1)*Dist(nx,ostride,odist)+1)),sign,threads,nx),
-    fftwblock(nx,M,istride,ostride,idist,odist,in,out,threads) {} 
+    fftwblock<fftw_complex,fftw_complex>
+    (nx,M,istride,ostride,idist,odist,in,out,threads) {} 
   
   threaddata lookup(bool inplace, unsigned int threads) {
     return Lookup(threadtable,keytype3(nx,Q,R,threads,inplace));
@@ -1038,18 +1040,7 @@ public:
   
   rcfft1d(unsigned int nx, double *in, Complex *out=NULL,
           unsigned int threads=maxthreads)  
-    : fftw(realsize(nx,in,out),-1,threads,nx), nx(nx) {Setup(in,out);}
-  
-#ifdef __Array_h__
-  rcfft1d(unsigned int nx, const Array::array1<Complex>& out,
-          unsigned int threads=maxthreads)  
-    : fftw(out.Size(),-1,threads,nx), nx(nx) {Setup(out,(double*) NULL);} 
-  
-  rcfft1d(unsigned int nx, const Array::array1<double>& in, 
-          const Array::array1<Complex>& out=Array::NULL1,
-          unsigned int threads=maxthreads)
-    : fftw(realsize(nx,in(),out()),-1,threads,nx), nx(nx) {Setup(in,out);} 
-#endif  
+    : fftw(2*(nx/2+1),-1,threads,nx), nx(nx) {Setup(in,out);}
   
   threaddata lookup(bool inplace, unsigned int threads) {
     return Lookup(threadtable,keytype1(nx,threads,inplace));
@@ -1098,20 +1089,6 @@ public:
   crfft1d(unsigned int nx, Complex *in, double *out=NULL, 
           unsigned int threads=maxthreads)
     : fftw(realsize(nx,in,out),1,threads,nx), nx(nx) {Setup(in,out);} 
-  
-#ifdef __Array_h__
-  crfft1d(unsigned int nx, const Array::array1<double>& out,
-          unsigned int threads=maxthreads)
-    : fftw(out.Size(),1,threads,nx), nx(nx) {Setup(out);}
-  
-  crfft1d(unsigned int nx, const Array::array1<Complex>& in,
-          unsigned int threads=maxthreads)
-    : fftw(2*in.Size(),1,threads,nx), nx(nx) {Setup(in);}
-  
-  crfft1d(unsigned int nx, const Array::array1<Complex>& in,
-          const Array::array1<double>& out)
-    : fftw(out.Size(),1,threads,nx), nx(nx) {Setup(in,out);}
-#endif  
   
   threaddata lookup(bool inplace, unsigned int threads) {
     return Lookup(threadtable,keytype1(nx,threads,inplace));
@@ -1162,7 +1139,8 @@ public:
            unsigned int threads=maxthreads) 
     : fftw(std::max((realsize(nx,in,out)-2)*istride+(M-1)*idist+2,
                     2*(nx/2*ostride+(M-1)*odist+1)),-1,threads,nx),
-      fftwblock(nx,M,istride,ostride,idist,odist,(Complex *) in,out,threads) {}
+      fftwblock<double,fftw_complex>
+    (nx,M,istride,ostride,idist,odist,(Complex *) in,out,threads) {}
   
   threaddata lookup(bool inplace, unsigned int threads) {
     return Lookup(threadtable,keytype3(nx,Q,R,threads,inplace));
@@ -1210,7 +1188,8 @@ public:
            unsigned int threads=maxthreads) 
     : fftw(std::max(2*(nx/2*istride+(M-1)*idist+1),
                     (realsize(nx,in,out)-2)*ostride+(M-1)*odist+2),1,threads,nx),
-      fftwblock(nx,M,istride,ostride,idist,odist,in,(Complex *) out,threads) {}
+      fftwblock<fftw_complex,double>
+    (nx,M,istride,ostride,idist,odist,in,(Complex *) out,threads) {}
   
   threaddata lookup(bool inplace, unsigned int threads) {
     return Lookup(threadtable,keytype3(nx,Q,R,threads,inplace));
@@ -1318,23 +1297,10 @@ public:
   
   rcfft2d(unsigned int nx, unsigned int ny, double *in, Complex *out=NULL,
           unsigned int threads=maxthreads) 
-    : fftw(nx*realsize(ny,in,out),-1,threads,nx*ny), nx(nx), ny(ny) {
+    : fftw(2*nx*(ny/2+1),-1,threads,nx*ny), nx(nx), ny(ny) {
     Setup(in,out);
   } 
   
-#ifdef __Array_h__
-  rcfft2d(unsigned int ny, const Array::array2<Complex>& out,
-          unsigned int threads=maxthreads) 
-    : fftw(out.Size(),-1,threads,out.Nx()*ny), nx(out.Nx()), ny(ny) {
-    Setup(out);
-  } 
-  
-  rcfft2d(unsigned int ny, const Array::array2<double>& in,
-          const Array::array2<Complex>& out=Array::NULL2,
-          unsigned int threads=maxthreads) 
-    : fftw(in.Nx()*realsize(ny,in(),out()),-1,threads,in.Nx()*ny),
-      nx(in.Nx()), ny(ny) {Setup(in,out);} 
-#endif
   
   fftw_plan Plan(Complex *in, Complex *out) {
     return fftw_plan_dft_r2c_2d(nx,ny,(double *) in,(fftw_complex *) out,
@@ -1378,30 +1344,15 @@ class crfft2d : public fftw {
   unsigned int nx;
   unsigned int ny;
 public:  
-  crfft2d(unsigned int nx, unsigned int ny, Complex *in=NULL,
+  crfft2d(unsigned int nx, unsigned int ny, double *out=NULL,
           unsigned int threads=maxthreads) :
-    fftw(2*nx*(ny/2+1),1,threads,nx*ny), nx(nx), ny(ny) {Setup(in);} 
+    fftw(2*nx*(ny/2+1),1,threads,nx*ny), nx(nx), ny(ny) {Setup(out);} 
   
-  crfft2d(unsigned int nx, unsigned int ny, Complex *in, double *out,
+  crfft2d(unsigned int nx, unsigned int ny, Complex *in, double *out=NULL,
           unsigned int threads=maxthreads)
     : fftw(nx*realsize(ny,in,out),1,threads,nx*ny), nx(nx), ny(ny) {
     Setup(in,out);
   } 
-  
-#ifdef __Array_h__
-  crfft2d(unsigned int ny, const Array::array2<double>& out,
-          unsigned int threads=maxthreads)
-    : fftw(out.Size(),1,threads,out.Nx()*ny), nx(out.Nx()), ny(ny) {Setup(out);}
-
-  crfft2d(unsigned int ny, const Array::array2<Complex>& in,
-          unsigned int threads=maxthreads) 
-    : fftw(2*in.Size(),1,threads,in.Nx()*ny), nx(in.Nx()), ny(ny) {Setup(in);}
-  
-  crfft2d(unsigned int ny, const Array::array2<Complex>& in,
-          const Array::array2<double>& out,
-          unsigned int threads=maxthreads) 
-    : fftw(out.Size(),1,threads,in.Nx()*ny), nx(in.Nx()), ny(ny) {Setup(in,out);}
-#endif
   
   fftw_plan Plan(Complex *in, Complex *out) {
     return fftw_plan_dft_c2r_2d(nx,ny,(fftw_complex *) in,(double *) out,
@@ -1495,26 +1446,16 @@ class rcfft3d : public fftw {
   unsigned int ny;
   unsigned int nz;
 public:  
-  rcfft3d(unsigned int nx, unsigned int ny, unsigned int nz, Complex *out=NULL)
-    : fftw(2*nx*ny*(nz/2+1),-1,threads,nx*ny*nz), nx(nx), ny(ny), nz(nz) {Setup(out);} 
+  rcfft3d(unsigned int nx, unsigned int ny, unsigned int nz, Complex *out=NULL,
+    unsigned int threads=maxthreads)
+    : fftw(2*nx*ny*(nz/2+1),-1,threads,nx*ny*nz), nx(nx), ny(ny), nz(nz) {
+    Setup(out);
+  } 
   
   rcfft3d(unsigned int nx, unsigned int ny, unsigned int nz, double *in,
           Complex *out=NULL, unsigned int threads=maxthreads) 
-    : fftw(nx*ny*realsize(nz,in,out),-1,threads,nx*ny*nz),
+    : fftw(2*nx*ny*(nz/2+1),-1,threads,nx*ny*nz),
       nx(nx), ny(ny), nz(nz) {Setup(in,out);} 
-  
-#ifdef __Array_h__
-  rcfft3d(unsigned int nz, const Array::array3<Complex>& out,
-          unsigned int threads=maxthreads) 
-    : fftw(out.Size(),-1,threads,out.Nx()*out.Ny()*nz),
-      nx(out.Nx()), ny(out.Ny()), nz(nz) {Setup(out);} 
-  
-  rcfft3d(unsigned int nz, const Array::array3<double>& in,
-          const Array::array3<Complex>& out=Array::NULL3,
-          unsigned int threads=maxthreads) 
-    : fftw(in.Nx()*in.Ny()*realsize(nz,in(),out()),-1,threads,in.Size()),
-      nx(in.Nx()), ny(in.Ny()), nz(nz) {Setup(in,out);} 
-#endif  
   
   fftw_plan Plan(Complex *in, Complex *out) {
     return fftw_plan_dft_r2c_3d(nx,ny,nz,(double *) in,(fftw_complex *) out,
@@ -1559,33 +1500,15 @@ class crfft3d : public fftw {
   unsigned int ny;
   unsigned int nz;
 public:  
-  crfft3d(unsigned int nx, unsigned int ny, unsigned int nz, Complex *in=NULL,
+  crfft3d(unsigned int nx, unsigned int ny, unsigned int nz, double *out=NULL,
           unsigned int threads=maxthreads) 
     : fftw(2*nx*ny*(nz/2+1),1,threads,nx*ny*nz), nx(nx), ny(ny), nz(nz)
-  {Setup(in);} 
+  {Setup(out);} 
   
   crfft3d(unsigned int nx, unsigned int ny, unsigned int nz, Complex *in,
           double *out=NULL, unsigned int threads=maxthreads) 
     : fftw(nx*ny*(realsize(nz,in,out)),1,threads,nx*ny*nz), nx(nx), ny(ny),
       nz(nz) {Setup(in,out);} 
-  
-#ifdef __Array_h__
-  crfft3d(unsigned int nz, const Array::array3<double>& out,
-          unsigned int threads=maxthreads) 
-    : fftw(out.Size(),1,threads,out.Nx()*out.Ny()*nz),
-      nx(out.Nx()), ny(out.Ny()), nz(nz) {Setup(out);} 
-  
-  crfft3d(unsigned int nz, const Array::array3<Complex>& in,
-          unsigned int threads=maxthreads) 
-    : fftw(2*in.Size(),1,threads,in.Nx()*in.Ny()*nz),
-      nx(in.Nx()), ny(in.Ny()), nz(nz) {Setup(in);} 
-  
-  crfft3d(unsigned int nz, const Array::array3<Complex>& in,
-          const Array::array3<double>& out,
-          unsigned int threads=maxthreads) 
-    : fftw(out.Size(),1,threads,in.Nx()*in.Ny()*nz),
-      nx(in.Nx()), ny(in.Ny()), nz(nz) {Setup(in,out);} 
-#endif  
   
   fftw_plan Plan(Complex *in, Complex *out) {
     return fftw_plan_dft_c2r_3d(nx,ny,nz,(fftw_complex *) in,(double *) out,
