@@ -456,8 +456,8 @@ public:
     uniform=uniform && a*b == size;
     subblock=a > 1 && rank < a*b;
     
-    Tout1=uniform || subblock ? 
-                             new Transpose(n*a,b,m*L,data,this->work,threads) : NULL;
+    Tout1=uniform || subblock ? new Transpose(n*a,b,m*L,data,this->work,threads)
+      : NULL;
     Tin1=uniform ? new Transpose(b,n*a,m*L,data,this->work,threads) : NULL;
     
     if(subblock) {

@@ -9,7 +9,7 @@ const double fftw::twopi=2.0*acos(-1.0);
 unsigned int fftw::effort=FFTW_MEASURE;
 const char *fftw::WisdomName="wisdom3.txt";
 unsigned int fftw::maxthreads=1;
-double fftw::testseconds=1.0; // Time limit for threading efficiency tests
+double fftw::testseconds=0.2; // Time limit for threading efficiency tests
 
 fftw_plan (*fftw::planner)(fftw *f, Complex *in, Complex *out)=Planner;
 

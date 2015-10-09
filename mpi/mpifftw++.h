@@ -375,7 +375,11 @@ public:
   }
    
   virtual ~rcfft2dMPI() {
-    // FIXME
+    delete xBackwards;
+    delete xForwards;
+    delete yBackwards;
+    delete yForwards;
+    delete T;
   }
 
   void Normalize(double *f);
@@ -386,12 +390,7 @@ public:
   void Forwards0(double *f, Complex * g);
   void Backwards0(Complex *g, double *f);
   void Backwards0Normalized(Complex *g, double *f);
-
-  // FIXME: implement shift!
-  //void Shift(double *f);
 };
-
-
   
 } // end namespace fftwpp
 
