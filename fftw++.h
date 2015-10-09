@@ -1137,19 +1137,19 @@ public:
 //
 // Out-of-place usage: 
 //
-//   mrcfft1d Forward(n,M,rstride,cstride,rdist,cdist,in,out);
+//   mrcfft1d Forward(n,M,istride,ostride,idist,odist,in,out);
 //   Forward.fft(in,out);
 //
 // In-place usage:
 //
-//   mrcfft1d Forward(n,M,rstride,cstride,rdist,cdist);
+//   mrcfft1d Forward(n,M,istride,ostride,idist,odist);
 //   Forward.fft(out);
 // 
 // Notes:
-//   rstride is the spacing between the elements of each real vector;
-//   cstride is the spacing between the elements of each Complex vector;
-//   rdist is the spacing between the first elements of the real vectors;
-//   cdist is the spacing between the first elements of the Complex vectors;
+//   istride is the spacing between the elements of each real vector;
+//   ostride is the spacing between the elements of each Complex vector;
+//   idist is the spacing between the first elements of the real vectors;
+//   odist is the spacing between the first elements of the Complex vectors;
 //   in contains the n real values stored as a Complex array;
 //   out contains the first n/2+1 Complex Fourier values.
 //
@@ -1157,14 +1157,12 @@ class mrcfft1d : public fftwblock<double,fftw_complex>,
                  public Threadtable<keytype3,keyless3> {
   static Table threadtable;
 public:
-  mrcfft1d(unsigned int nx, unsigned int M, size_t rstride, size_t cstride,
-           size_t rdist, size_t cdist, double *in=NULL, Complex *out=NULL,
+  mrcfft1d(unsigned int nx, unsigned int M, size_t istride, size_t ostride,
+           size_t idist, size_t odist, double *in=NULL, Complex *out=NULL,
            unsigned int threads=maxthreads) 
-    : fftw(std::max((realsize(nx,in,out)-2)*rstride+(M-1)*rdist+2,
-                    2*(nx/2*cstride+(M-1)*cdist+1)),-1,threads,nx),
-      fftwblock(nx,M,rstride,cstride,rdist,cdist,(Complex *) in,out,threads) {}
-  
-  unsigned int Threads() {return std::max(T,threads);}
+    : fftw(std::max((realsize(nx,in,out)-2)*istride+(M-1)*idist+2,
+                    2*(nx/2*ostride+(M-1)*odist+1)),-1,threads,nx),
+      fftwblock(nx,M,istride,ostride,idist,odist,(Complex *) in,out,threads) {}
   
   threaddata lookup(bool inplace, unsigned int threads) {
     return Lookup(threadtable,keytype3(nx,Q,R,threads,inplace));
@@ -1172,8 +1170,11 @@ public:
   void store(bool inplace, const threaddata& data) {
     Store(threadtable,keytype3(nx,Q,R,data.threads,inplace),data);
   }
-  void fftNormalized(double *in, Complex *out=NULL, bool shift=false) {
-    fftw::fftNormalized<double,Complex>(nx/2+1,M,ostride,odist,in,out,shift);
+  void fftNormalized(double *in, Complex *out=NULL) {
+    fftw::fftNormalized<double,Complex>(nx/2+1,M,ostride,odist,in,out,false);
+  }
+  void fft0Normalized(double *in, Complex *out=NULL) {
+    fftw::fftNormalized<double,Complex>(nx/2+1,M,ostride,odist,in,out,true);
   }
 };
 
@@ -1186,12 +1187,12 @@ public:
 //
 // Out-of-place usage (input destroyed):
 //
-//   mcrfft1d Backward(n,M,rstride,cstride,rdist,cdist,in,out);
+//   mcrfft1d Backward(n,M,istride,ostride,idist,odist,in,out);
 //   Backward.fft(in,out);
 //
 // In-place usage:
 //
-//   mcrfft1d Backward(n,M,rstride,cstride,rdist,cdist);
+//   mcrfft1d Backward(n,M,istride,ostride,idist,odist);
 //   Backward.fft(out);
 // 
 // Notes:
@@ -1204,12 +1205,12 @@ class mcrfft1d : public fftwblock<fftw_complex,double>,
                  public Threadtable<keytype3,keyless3> {
   static Table threadtable;
 public:
-  mcrfft1d(unsigned int nx, unsigned int M, size_t rstride, size_t cstride,
-           size_t rdist, size_t cdist, Complex *in=NULL, double *out=NULL,
+  mcrfft1d(unsigned int nx, unsigned int M, size_t istride, size_t ostride,
+           size_t idist, size_t odist, Complex *in=NULL, double *out=NULL,
            unsigned int threads=maxthreads) 
-    : fftw(std::max((realsize(nx,in,out)-2)*rstride+(M-1)*rdist+2,
-                    2*(nx/2*cstride+(M-1)*cdist+1)),1,threads,nx),
-      fftwblock(nx,M,cstride,rstride,cdist,rdist,in,(Complex *) out,threads) {}
+    : fftw(std::max(2*(nx/2*istride+(M-1)*idist+1),
+                    (realsize(nx,in,out)-2)*ostride+(M-1)*odist+2),1,threads,nx),
+      fftwblock(nx,M,istride,ostride,idist,odist,in,(Complex *) out,threads) {}
   
   threaddata lookup(bool inplace, unsigned int threads) {
     return Lookup(threadtable,keytype3(nx,Q,R,threads,inplace));
@@ -1217,13 +1218,11 @@ public:
   void store(bool inplace, const threaddata& data) {
     Store(threadtable,keytype3(nx,Q,R,data.threads,inplace),data);
   }
-  
   void fftNormalized(Complex *in, double *out=NULL) {
-    fftw::fftNormalized<Complex,double>(nx,M,ostride,odist,in,out,true);
-  }
-  
-  void fft0Normalized(Complex *in, double *out=NULL) {
     fftw::fftNormalized<Complex,double>(nx,M,ostride,odist,in,out,false);
+  }
+  void fft0Normalized(Complex *in, double *out=NULL) {
+    fftw::fftNormalized<Complex,double>(nx,M,ostride,odist,in,out,true);
   }
 };
   

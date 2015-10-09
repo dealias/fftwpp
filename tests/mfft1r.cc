@@ -36,41 +36,41 @@ int main(int argc, char* argv[])
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
   
-#ifdef __GNUC__	
+#ifdef __GNUC__ 
   optind=0;
-#endif	
+#endif  
   for (;;) {
     int c = getopt(argc,argv,"hN:m:x:y:n:T:S:");
     if (c == -1) break;
     switch (c) {
-    case 0:
-      break;
-    case 'N':
-      Nset = true;
-      N=atoi(optarg);
-      break;
-    case 'm':
-      mx=my=atoi(optarg);
-      break;
-    case 'x':
-      mx=atoi(optarg);
-      break;
-    case 'y':
-      my=atoi(optarg);
-      break;
-    case 'n':
-      N0=atoi(optarg);
-      break;
-    case 'T':
-      fftw::maxthreads=max(atoi(optarg),1);
-      break;
-    case 'S':
-      stats=atoi(optarg);
-      break;
-    case 'h':
-    default:
-      fft_usage(2);
-      exit(0);
+      case 0:
+        break;
+      case 'N':
+        Nset = true;
+        N=atoi(optarg);
+        break;
+      case 'm':
+        mx=my=atoi(optarg);
+        break;
+      case 'x':
+        mx=atoi(optarg);
+        break;
+      case 'y':
+        my=atoi(optarg);
+        break;
+      case 'n':
+        N0=atoi(optarg);
+        break;
+      case 'T':
+        fftw::maxthreads=max(atoi(optarg),1);
+        break;
+      case 'S':
+        stats=atoi(optarg);
+        break;
+      case 'h':
+      default:
+        fft_usage(2);
+        exit(0);
     }
   }
 
@@ -98,21 +98,21 @@ int main(int argc, char* argv[])
   size_t cdist=np;
   
   mrcfft1d Forward(mx, // length of transform
-		   M,  // number of transforms
-		   rstride,
-		   cstride,
-		   rdist,
-		   cdist,
-		   f,  // input array
-		   g); // output array
+                   M,  // number of transforms
+                   rstride,
+                   cstride,
+                   rdist,
+                   cdist,
+                   f,  // input array
+                   g); // output array
   mcrfft1d Backward(mx, // length of transform
-		    M,  // number of transforms
-		    rstride,
-		    cstride,
-		    rdist,
-		    cdist,
-		    g,  // input array
-		    f); // output array
+                    M,  // number of transforms
+                    cstride,
+                    rstride,
+                    cdist,
+                    rdist,
+                    g,  // input array
+                    f); // output array
 
   cout << "\nInput:" << endl;
   init(f,mx,my);

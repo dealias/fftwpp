@@ -320,7 +320,7 @@ public:
 	ptrdiff_t rdist=2*cdist; // in-place transform
 	unsigned int M=nx;
 	yForwards=new mrcfft1d(n,M,rstride,cstride,rdist,cdist,(double*) f);
-	yBackwards=new mcrfft1d(n,M,rstride,cstride,rdist,cdist,f);
+	yBackwards=new mcrfft1d(n,M,cstride,rstride,cdist,rdist,f);
       }
 
       threads=xForwards->Threads();
