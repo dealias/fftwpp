@@ -158,8 +158,8 @@ public:
 	ptrdiff_t rdist=2*cdist; // in-place transform
 	unsigned int M=nx;
 	unsigned int n=ny;
-	yForwards=new mrcfft1d(n,M,rstride,cstride,rdist,cdist,(double*) f);
-	yBackwards=new mcrfft1d(n,M,rstride,cstride,rdist,cdist,f);
+	yForwards=new mrcfft1d(n,M,rstride,rdist,cstride,cdist,(double*) f);
+	yBackwards=new mcrfft1d(n,M,rstride,rdist,cstride,cdist,f);
       }
       
     } else {
@@ -319,8 +319,8 @@ public:
 	ptrdiff_t cdist=nx/2+1;
 	ptrdiff_t rdist=2*cdist; // in-place transform
 	unsigned int M=nx;
-	yForwards=new mrcfft1d(n,M,rstride,cstride,rdist,cdist,(double*) f);
-	yBackwards=new mcrfft1d(n,M,cstride,rstride,cdist,rdist,f);
+	yForwards=new mrcfft1d(n,M,rstride,rdist,cstride,cdist,(double*) f);
+	yBackwards=new mcrfft1d(n,M,cstride,cdist,rstride,rdist,f);
       }
 
       threads=xForwards->Threads();

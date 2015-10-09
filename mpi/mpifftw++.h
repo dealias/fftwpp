@@ -358,8 +358,8 @@ public:
       size_t cstride=1;
       size_t rdist=inplace ? dr.Y+2 : dr.Y;
       size_t cdist=dr.Y/2+1;
-      yForwards=new mrcfft1d(n,M,rstride,cstride,rdist,cdist,f,g);
-      yBackwards=new mcrfft1d(n,M,cstride,rstride,cdist,rdist,g,f);
+      yForwards=new mrcfft1d(n,M,rstride,rdist,cstride,cdist,f,g);
+      yBackwards=new mcrfft1d(n,M,cstride,cdist,rstride,rdist,g,f);
     }
 
     // Set up x-direction transforms
