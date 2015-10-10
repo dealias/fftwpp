@@ -331,7 +331,6 @@ private:
   mrcfft1d *yForwards;
   mcrfft1d *yBackwards;
   bool inplace;
-  //unsigned int rdist;
 protected:
   mpitranspose<Complex> *T;
 public:
@@ -358,8 +357,8 @@ public:
       size_t cstride=1;
       size_t rdist=inplace ? dr.Y+2 : dr.Y;
       size_t cdist=dr.Y/2+1;
-      yForwards=new mrcfft1d(n,M,rstride,cstride,rdist,cdist,f,g);
-      yBackwards=new mcrfft1d(n,M,cstride,rstride,cdist,rdist,g,f);
+      yForwards=new mrcfft1d(n,M,rstride,cstride,rdist,cdist,f,g,threads);
+      yBackwards=new mcrfft1d(n,M,cstride,rstride,cdist,rdist,g,f,threads);
     }
 
     // Set up x-direction transforms

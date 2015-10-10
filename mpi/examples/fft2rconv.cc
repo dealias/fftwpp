@@ -1,6 +1,8 @@
+//#include "Array.h"
+
 #include "mpifftw++.h"
 #include "mpiconvolution.h"
-#include "mpiutils.h" // For output of distritubed arrays
+#include "mpiutils.h" // For output of distributed arrays
 
 using namespace std;
 using namespace fftwpp;
@@ -25,13 +27,21 @@ int main(int argc, char* argv[])
   unsigned int mx=4;
   unsigned int my=4;
   
-  unsigned int nx=2*mx;
-  unsigned int ny=my+1;
+  int divisor=1;
+  int alltoall=1;
+  convolveOptions options;
+  options.xcompact=false;
+  options.ycompact=false;
+  options.mpi=mpiOptions(fftw::maxthreads,divisor,alltoall);
+    
+  unsigned int nx=2*mx-1+!options.xcompact;
+  unsigned int ny=2*my-1+!options.ycompact;
+  unsigned int nyp=my+!options.ycompact;
   
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_MULTIPLE,&provided);
 
-  MPIgroup group(MPI_COMM_WORLD,ny);
+  MPIgroup group(MPI_COMM_WORLD,nyp);
 
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;
@@ -46,13 +56,13 @@ int main(int argc, char* argv[])
     bool main=group.rank == 0;
     if(main) {
       cout << "mx=" << mx << ", my=" << my << endl;
-      cout << "nx=" << nx << ", ny=" << ny << endl;
+      cout << "nx=" << nx << ", ny=" << ny << " " << nyp << nyp << endl;
     } 
 
-    // Set up per-process dimensions
+     // Set up per-process dimensions
     split df(nx,ny,group.active);
-    split dg(nx,ny,group.active);
-    split du(mx+1,ny,group.active);
+    split dg(nx,nyp,group.active);
+    split du(mx+options.xcompact,nyp,group.active);
 
     // Allocate complex-aligned memory
     double *f0=doubleAlign(df.n);
@@ -61,15 +71,13 @@ int main(int argc, char* argv[])
     Complex *g1=ComplexAlign(dg.n);
 
     // Create instance of FFT
-    rcfft2dMPI rcfft(df,dg,f0,g0,mpiOptions(fftw::maxthreads));
+    rcfft2dMPI rcfft(df,dg,f0,g0,options.mpi);
 
     // Create instance of convolution
-    Complex **G=new Complex *[2];
-    G[0]=g0;
-    G[1]=g1;
-    ImplicitHConvolution2MPI C(mx,my,dg,du,g0,2,1);
-    realmultiplier *mult=multbinary;
-
+    Complex *G[]={g0,g1};
+    ImplicitHConvolution2MPI C(mx,my,dg,du,g0,2,1,
+                               convolveOptions(options,fftw::maxthreads));
+    
     if(main) cout << "\nDistributed input (split in x-direction):" << endl;
     if(main) cout << "f0:" << endl;
     init(f0,df);
@@ -87,8 +95,12 @@ int main(int argc, char* argv[])
     show(g1,dg.X,dg.y,group.active);
 
     if(main) cout << "\nAfter convolution (split in y-direction):" << endl;
-    C.convolve(G,mult);
+    C.convolve(G,multbinary);
+    
     if(main) cout << "g0:" << endl;
+//    for(unsigned int i=0; i < dg.y; ++i) g0[i]=0.0;
+//    Array::array2<Complex> h(dg.X,dg.y,g0);
+//    h[0][0]=... // We don't calculate the x Nyquuist modes!
     show(g0,dg.X,dg.y,group.active);
 
     if(main) cout << "\nTransformed back to real-space (split in x-direction):"
@@ -101,7 +113,6 @@ int main(int argc, char* argv[])
     deleteAlign(f1);
     deleteAlign(g0);
     deleteAlign(g1);
-    delete[] G;
   }
   
   MPI_Finalize();

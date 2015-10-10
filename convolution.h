@@ -528,7 +528,7 @@ public:
 // The arrays in and out (which may coincide) must be allocated as
 // Complex[M*2m]. The array u must be allocated as Complex[M*m].
 //
-//   fft0pad fft(m,M,stride,u);
+//   fft0padwide fft(m,M,stride,u);
 //   fft.backwards(in,u);
 //   fft.forwards(in,u);
 //

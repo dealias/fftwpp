@@ -87,11 +87,11 @@ public:
     }
   }
   
+  // f is a temporary array of size d.n needed only during construction.
   // u1 is a temporary array of size (my/2+1)*A*options.threads.
   // u2 is a temporary array of size du.n*A.
   // A is the number of inputs.
   // B is the number of outputs.
-  // f is a temporary array of size d.n needed only during construction.
   ImplicitHConvolution2MPI(unsigned int mx, unsigned int my,
                            const split& d, const split& du,
                            Complex *f, Complex *u1, Complex *u2,
@@ -248,6 +248,7 @@ public:
     }
   }
   
+  // f is a temporary array of size d.n needed only during construction.
   // u1 is a temporary array of size (mz/2+1)*A*options.threads,
   // u2 is a temporary array of size du.n2*A*(d.z < mz ? 1 : threads).
   // u3 is a temporary array of size du.n2*A.

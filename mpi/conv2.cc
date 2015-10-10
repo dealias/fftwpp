@@ -10,8 +10,8 @@ using namespace Array;
 // Number of iterations.
 unsigned int N0=1000000;
 unsigned int N=0;
-bool xcompact=true;
-bool ycompact=true;
+bool xcompact=false;
+bool ycompact=false;
 int divisor=0; // Test for best block divisor
 int alltoall=-1; // Test for best alltoall routine
 
@@ -132,9 +132,9 @@ int main(int argc, char* argv[])
   }
   
   unsigned int nx=2*mx-xcompact;
-  unsigned int ny=my+!ycompact;
+  unsigned int nyp=my+!ycompact;
   
-  MPIgroup group(MPI_COMM_WORLD,ny);
+  MPIgroup group(MPI_COMM_WORLD,nyp);
   
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;
@@ -152,11 +152,11 @@ int main(int argc, char* argv[])
     bool main=group.rank == 0;
     if(main) {
       cout << "mx=" << mx << ", my=" << my << endl;
-      cout << "nx=" << nx << ", ny=" << ny << endl;
+      cout << "nx=" << nx << ", nyp=" << nyp << endl;
     }
     
-    split d(nx,ny,group.active);
-    split du(mx+xcompact,ny,group.active);
+    split d(nx,nyp,group.active);
+    split du(mx+xcompact,nyp,group.active);
   
     Complex **F=new Complex *[A];
     for(unsigned int i=0; i < A; ++i) {
@@ -202,7 +202,7 @@ int main(int argc, char* argv[])
 
       Complex **Flocal=new Complex *[A];
       for(unsigned int i=0; i < A; ++i) {
-	Flocal[i]=ComplexAlign(nx*ny);
+	Flocal[i]=ComplexAlign(nx*nyp);
 	gathery(F[i],Flocal[i],d,1,group.active);
 	if(!quiet && main)  {
 	  cout << "\nGathered input " << i << ":" << endl;
@@ -214,18 +214,15 @@ int main(int argc, char* argv[])
 
       C.convolve(F,mult);
 
-      Complex *Foutgather=ComplexAlign(nx*ny);
+      Complex *Foutgather=ComplexAlign(nx*nyp);
       gathery(F[0],Foutgather,d,1,group.active);
 
       if(main) {
-        convolveOptions options;
-        options.xcompact=xcompact;
-        options.ycompact=ycompact;
 	ImplicitHConvolution2 Clocal(mx,my,A,B,options);
 	Clocal.convolve(Flocal,mult);
 	if(!quiet) {
 	  cout << "Local output:" << endl;
-	  Array2<Complex> AFlocal0(nx,ny,Flocal[0]);
+	  Array2<Complex> AFlocal0(nx,nyp,Flocal[0]);
 	  cout << AFlocal0 << endl;
 	}
         retval += checkerror(Flocal[0],Foutgather,d.X*d.Y);
@@ -250,7 +247,7 @@ int main(int argc, char* argv[])
       if(!quiet && nx*my < outlimit) {
 	show(F[0],nx,d.y,
 	     !xcompact,0,
-	     nx,ycompact || d.y0+d.y < ny ? d.y : d.y-1,group.active);
+	     nx,ycompact || d.y0+d.y < nyp ? d.y : d.y-1,group.active);
       }
     }
     

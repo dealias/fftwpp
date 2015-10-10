@@ -51,7 +51,7 @@ void ImplicitHConvolution2MPI::convolve(Complex **F, realmultiplier *pmult,
     
   subconvolution(F,pmult,offset,d.x*d.Y+offset,d.Y);
   subconvolution(U2,pmult,0,du.x*du.Y,du.Y);
-    
+   
   transpose(T,B,F,true,false,offset);
   transpose(U,B,U2,true,false);
    

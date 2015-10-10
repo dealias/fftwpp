@@ -23,12 +23,12 @@ int main()
   
   for(unsigned int i=0; i < n; i++) f[i]=i;
 	
-  cout << "\ninput ("<<n<<" doubles):" << endl;
+  cout << "\ninput (" << n << " doubles):" << endl;
   for(unsigned int i=0; i < n; i++) cout << f[i] << (i!=n-1 ? " " : "\n");
 
   Forward.fft(f,g);
   
-  cout << "\noutput ("<<np<<" complex):" << endl;
+  cout << "\noutput (" << np << " complex):" << endl;
   for(unsigned int i=0; i < np; i++) cout << g[i] <<  (i!=np-1 ? " " : "\n");
   
   Backward.fftNormalized(g,f);
