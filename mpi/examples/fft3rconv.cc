@@ -74,7 +74,8 @@ int main(int argc, char* argv[])
 
     // Set up per-process dimensions
     split3 df(nx,ny,nz,group);
-    split3 dg(nx,ny,nzp,group);
+    split3 dg(nx,ny,nzp,group,true);
+    split3 du(mx,ny,nzp,group,true);
     
     // Allocate complex-aligned memory
     double *f0=doubleAlign(df.n);
@@ -85,6 +86,10 @@ int main(int argc, char* argv[])
     // Create instance of FFT
     rcfft3dMPI rcfft(df,dg,f0,g0,options.mpi);
 
+    // Create instance of convolution
+    Complex *G[]={g0,g1};
+    ImplicitHConvolution3MPI C(mx,my,mz,dg,du,g0,2,1,
+                               convolveOptions(options,fftw::maxthreads));
     init(f0,df);
     init(f1,df);
 
@@ -103,11 +108,6 @@ int main(int argc, char* argv[])
     show(g1,dg.X,dg.y,dg.Z,group.active);
     
     if(main) cout << "\nAfter convolution (split in yz):" << endl;
-    // Create instance of convolution
-    Complex *G[]={g0,g1};
-    split3 du(mx,my,mz,group,true);
-    ImplicitHConvolution3MPI C(mx,my,mz,dg,du,g0,2,1,
-                               convolveOptions(options,fftw::maxthreads));
     
     C.convolve(G,multbinary);
     if(main) cout << "g0:" << endl;
