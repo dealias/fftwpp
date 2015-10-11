@@ -34,6 +34,7 @@ def main(argv):
     ffttestlist.append("testfft2.py")
     ffttestlist.append("testfft3.py")
     ffttestlist.append("testfft2r.py")
+    ffttestlist.append("testfft3r.py")
 
     logfile = 'testfft.log'
     print "Log in " + logfile + "\n"
