@@ -31,6 +31,12 @@ inline void init(Complex **F, split d, unsigned int A=2,
       double ffactor=S*factor;
       double gfactor=1.0/S*factor;
 
+      if(!xcompact) {
+        for(unsigned int j=0; j < d.y; j++) {
+          f[0][j]=0.0;
+          g[0][j]=0.0;
+        }
+      }
       for(unsigned int i=!xcompact; i < d.X; ++i) {
 	unsigned int ii=i-!xcompact;
 	for(unsigned int j=0; j < d.y; j++) {

@@ -491,7 +491,6 @@ void ImplicitHConvolution::convolve(Complex **F,
   }
 
   const bool out_of_place=A >= 2*B;
-//  const bool out_of_place=false;
   
   if(out_of_place) { 
     for(unsigned int i=0; i < A-1; ++i) {
@@ -507,9 +506,7 @@ void ImplicitHConvolution::convolve(Complex **F,
   }
   double **d2=(double **) c2;
 
-  // premult:
   premult(F,offset,c1c);
-
 
   // Complex-to-real FFTs and pmults:
   Complex *S=new Complex[B];
@@ -765,8 +762,11 @@ void fft0padwide::backwards(Complex *f, Complex *u)
 {
   unsigned int mstride=m*stride;
   Complex *fmstride=f+mstride;
-  for(unsigned int i=0; i < M; ++i)
-    u[i]=f[i]=fmstride[i];
+  for(unsigned int i=0; i < M; ++i) {
+    Complex Nyquist=f[i];
+    f[i]=fmstride[i]+Nyquist;
+    u[i]=fmstride[i] -= 0.5*Nyquist;
+  }
     
   Vec Mhalf=LOAD(-0.5);
   Vec Mhsqrt3=LOAD(-hsqrt3);
@@ -815,9 +815,13 @@ void fft0padwide::forwards(Complex *f, Complex *u)
   Forwards->fft(u);
 
   double ninv=1.0/(3.0*m);
-  for(unsigned int i=0; i < M; ++i)
-    fmstride[i]=(f[i]+fmstride[i]+u[i])*ninv;
-
+  for(unsigned int i=0; i < M; ++i) {
+    Complex f0=f[i];
+    Complex f1=fmstride[i];
+    Complex f2=u[i];
+    f[i]=(2.0*f0-f1-f2)*ninv;
+    fmstride[i]=(f0+f1+f2)*ninv;
+  }
   Vec Ninv=LOAD(ninv);
   Vec Mhalf=LOAD(-0.5);
   Vec HSqrt3=LOAD(hsqrt3);

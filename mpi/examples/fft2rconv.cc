@@ -1,4 +1,4 @@
-//#include "Array.h"
+#include "Array.h"
 
 #include "mpifftw++.h"
 #include "mpiconvolution.h"
@@ -56,7 +56,7 @@ int main(int argc, char* argv[])
     bool main=group.rank == 0;
     if(main) {
       cout << "mx=" << mx << ", my=" << my << endl;
-      cout << "nx=" << nx << ", ny=" << ny << " " << nyp << nyp << endl;
+      cout << "nx=" << nx << ", ny=" << ny << ", nyp=" << nyp << endl;
     } 
 
      // Set up per-process dimensions
@@ -78,12 +78,22 @@ int main(int argc, char* argv[])
     ImplicitHConvolution2MPI C(mx,my,dg,du,g0,2,1,
                                convolveOptions(options,fftw::maxthreads));
     
+    init(f0,df);
+    rcfft.Forwards0(f0,g0);
+    Array::array2<Complex> h0(dg.X,dg.y,g0);
+    h0[mx][my]=0;
+    rcfft.Backwards0Normalized(g0,f0);
+    
+    init(f1,df);
+    rcfft.Forwards0(f1,g1);
+    Array::array2<Complex> h1(dg.X,dg.y,g1);
+    h1[mx][my]=0;
+    rcfft.Backwards0Normalized(g1,f1);
+
     if(main) cout << "\nDistributed input (split in x-direction):" << endl;
     if(main) cout << "f0:" << endl;
-    init(f0,df);
     show(f0,df.x,df.Y,group.active);
     if(main) cout << "f1:" << endl;
-    init(f1,df);
     show(f1,df.x,df.Y,group.active);
       
     if(main) cout << "\nDistributed output (split in y-direction:)" << endl;
@@ -96,11 +106,7 @@ int main(int argc, char* argv[])
 
     if(main) cout << "\nAfter convolution (split in y-direction):" << endl;
     C.convolve(G,multbinary);
-    
     if(main) cout << "g0:" << endl;
-//    for(unsigned int i=0; i < dg.y; ++i) g0[i]=0.0;
-//    Array::array2<Complex> h(dg.X,dg.y,g0);
-//    h[0][0]=... // We don't calculate the x Nyquuist modes!
     show(g0,dg.X,dg.y,group.active);
 
     if(main) cout << "\nTransformed back to real-space (split in x-direction):"

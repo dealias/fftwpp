@@ -21,8 +21,8 @@ unsigned int mz=4;
 unsigned int nxp;
 unsigned int nyp;
 unsigned int nzp;
-bool xcompact=false;
-bool ycompact=false;
+bool xcompact=true;
+bool ycompact=true;
 bool zcompact=true;
 
 bool Direct=false, Implicit=true;
@@ -37,7 +37,7 @@ inline void init(Complex **F,
   if(A % 2 == 0) {
     unsigned int M=A/2;
     unsigned int xstop=2*mx-1;
-    unsigned int ystop=2*my-1;
+    unsigned int ystop=2*my-ycompact;
     
     double factor=1.0/sqrt((double) M);
     for(unsigned int s=0; s < M; ++s) {
@@ -48,13 +48,20 @@ inline void init(Complex **F,
       array3<Complex> f(nxp,nyp,nzp,F[s]);
       array3<Complex> g(nxp,nyp,nzp,F[M+s]);
 
+      if(!xcompact) {
+	for(unsigned int j=0; j < ystop; ++j) {
+	  for(unsigned int k=0; k < mz; ++k) {
+            f[0][j][k]=0.0;
+            g[0][j][k]=0.0;
+          }
+        }
+      }
       for(unsigned int i=0; i < xstop; ++i) {
 	unsigned int I=i+!xcompact;
 	for(unsigned int j=0; j < ystop; ++j) {
-	  unsigned int J=j+!ycompact;
 	  for(unsigned int k=0; k < mz; ++k) {
-	    f[I][J][k]=ffactor*Complex(i+k,j+k);
-	    g[I][J][k]=gfactor*Complex(2*i+k,j+1+k);
+	    f[I][j][k]=ffactor*Complex(i+k,j+k);
+	    g[I][j][k]=gfactor*Complex(2*i+k,j+1+k);
 	  }
 	}
       }

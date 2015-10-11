@@ -45,8 +45,12 @@ inline void init(Complex **F,
       double gfactor=1.0/S*factor;
       array2<Complex> f(nxp,nyp,F[s]);
       array2<Complex> g(nxp,nyp,F[M+s]);
-      
-  for(unsigned int i=0; i < stop; ++i) {
+      if(!xcompact)
+        for(unsigned int j=0; j < my; j++) {
+          f[0][j]=0.0;
+          g[0][j]=0.0;
+        }
+      for(unsigned int i=0; i < stop; ++i) {
 	unsigned int I=i+offset;
 	for(unsigned int j=0; j < my; j++) {
 	  f[I][j]=ffactor*Complex(i,j);
@@ -183,9 +187,9 @@ int main(int argc, char* argv[])
 
     realmultiplier *mult;
     switch(A) {
-    case 2: mult=multbinary; break;
-    case 4: mult=multbinary2; break;
-    default: cerr << "A=" << A << " is not yet implemented" << endl; exit(1);
+      case 2: mult=multbinary; break;
+      case 4: mult=multbinary2; break;
+      default: cerr << "A=" << A << " is not yet implemented" << endl; exit(1);
     }
     
     

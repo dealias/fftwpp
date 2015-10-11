@@ -522,9 +522,8 @@ public:
 };
   
 // Compute the scrambled implicitly m-padded complex Fourier transform of M
-// complex vectors, each of length 2m with the origin at index m.
-// The first component of each vector is ignored; subsequent components
-// store the physical data for wavenumbers -m+1 to m-1).
+// complex vectors, each of length 2m with the origin at index m,
+// corresponding to wavenumbers -m to m-1.
 // The arrays in and out (which may coincide) must be allocated as
 // Complex[M*2m]. The array u must be allocated as Complex[M*m].
 //
@@ -541,12 +540,13 @@ public:
               Complex *u=NULL, unsigned int threads=fftw::maxthreads) :
     fft0pad(m,M,stride,u,threads) {}
 
+  // Unscramble indices, returning spatial index stored at position i
   virtual inline unsigned findex(unsigned i) {
-    return i < m ? 3*(i-1) : 3*(i-m)+1;
+    return i < m ? 3*i : 3*(i-m)+1;
   }
   
   virtual inline unsigned uindex(unsigned i) {
-    return i > 1 ? 3*i-4 : 3*m-1;
+    return i > 0 ? 3*i-1 : 3*m-1;
   }
   
   void backwards(Complex *f, Complex *u);
@@ -864,8 +864,7 @@ public:
     } else {
       ImplicitHConvolution *yconvolve0=yconvolve[0];
       for(unsigned int i=start; i < stop; i += stride)
-        yconvolve0->convolve(F,pmult,i);
-    }
+        yconvolve0->convolve(F,pmult,i);}
   }  
   
   void forwards(Complex **F, Complex **U2, unsigned int offset) {
