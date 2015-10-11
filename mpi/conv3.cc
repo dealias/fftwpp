@@ -172,8 +172,8 @@ int main(int argc, char* argv[])
       cout << "size=" << group.size << endl;
     }
 
-    split3 d(nx,ny,nz,group,true);
-    split3 du(mx+xcompact,ny,nz,group,true);
+    split3 d(nx,ny,nz,group);
+    split3 du(mx+xcompact,ny,nz,group);
     
     unsigned int Mn=M*d.n;
     Complex *f=ComplexAlign(Mn);

@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
     
     bool main=group.rank == 0;
 
-    split3 d(mx,my,mz,group,true);
+    split3 d(mx,my,mz,group);
 
     if(!quiet) {
       // if(group.rank == 1) {

@@ -184,7 +184,7 @@ int main(int argc, char* argv[])
       cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
       cout << "group size=" << group.size << endl;
     }
-    split3 d(mx,my,mz,group,true);
+    split3 d(mx,my,mz,group);
 
     //cout << "Local data size: " << d.n << endl;
     
