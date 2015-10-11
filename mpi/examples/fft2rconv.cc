@@ -85,35 +85,37 @@ int main(int argc, char* argv[])
     init(f0,df);
     init(f1,df);
 
-    if(main) cout << "\nDistributed input (split in x-direction):" << endl;
+    if(main) cout << "\nDistributed input (split in x direction):" << endl;
     if(main) cout << "f0:" << endl;
     show(f0,df.x,df.Y,group.active);
     if(main) cout << "f1:" << endl;
     show(f1,df.x,df.Y,group.active);
       
-    if(main) cout << "\nDistributed output (split in y-direction:)" << endl;
+    if(main) cout << "\nDistributed output (split in y direction:)" << endl;
     if(main) cout << "g0:" << endl;
     rcfft.Forwards0(f0,g0);
+    rcfft.deNyquist(g0);
     show(g0,dg.X,dg.y,group.active);
     if(main) cout << "g1:" << endl;
     rcfft.Forwards0(f1,g1);
+    rcfft.deNyquist(g1);
     show(g1,dg.X,dg.y,group.active);
 
-    if(main) cout << "\nAfter convolution (split in y-direction):" << endl;
+    if(main) cout << "\nAfter convolution (split in y direction):" << endl;
     C.convolve(G,multbinary);
     if(main) cout << "g0:" << endl;
     show(g0,dg.X,dg.y,group.active);
 
-    if(main) cout << "\nTransformed back to real-space (split in x-direction):"
+    if(main) cout << "\nTransformed back to real-space (split in x direction):"
 		  << endl;
     if(main) cout << "f0:" << endl;
     rcfft.Backwards0Normalized(g0,f0);
     show(f0,df.x,df.Y,group.active);
 
-    deleteAlign(f0);
-    deleteAlign(f1);
-    deleteAlign(g0);
     deleteAlign(g1);
+    deleteAlign(g0);
+    deleteAlign(f1);
+    deleteAlign(f0);
   }
   
   MPI_Finalize();

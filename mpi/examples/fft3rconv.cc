@@ -95,34 +95,35 @@ int main(int argc, char* argv[])
 
     if(main) cout << "\nDistributed input (split in xy):" << endl;
     if(main) cout << "f0:" << endl;
-    show(f0,df.x,df.Y,df.Z,group.active);
+    show(f0,df.x,df.y,df.Z,group.active);
     if(main) cout << "f1:" << endl;
-    show(f1,df.x,df.Y,df.Z,group.active);
+    show(f1,df.x,df.y,df.Z,group.active);
       
     if(main) cout << "\nDistributed output (split in yz:)" << endl;
     if(main) cout << "g0:" << endl;
     rcfft.Forwards0(f0,g0);
-    show(g0,dg.X,dg.y,dg.Z,group.active);
+    rcfft.deNyquist(g0);
+    show(g0,dg.X,dg.y,dg.z,group.active);
     if(main) cout << "g1:" << endl;
     rcfft.Forwards0(f1,g1);
-    show(g1,dg.X,dg.y,dg.Z,group.active);
+    rcfft.deNyquist(g1);
+    show(g1,dg.X,dg.y,dg.z,group.active);
     
     if(main) cout << "\nAfter convolution (split in yz):" << endl;
-    
     C.convolve(G,multbinary);
     if(main) cout << "g0:" << endl;
-    show(g0,dg.X,dg.y,dg.Z,group.active);
+    show(g0,dg.X,dg.y,dg.z,group.active);
 
     if(main) cout << "\nTransformed back to real-space (split in xy):"
 		  << endl;
     if(main) cout << "f0:" << endl;
     rcfft.Backwards0Normalized(g0,f0);
-    show(f0,df.x,df.Y,df.Z,group.active);
+    show(f0,df.x,df.y,df.Z,group.active);
 
-    deleteAlign(f0);
-    deleteAlign(f1);
-    deleteAlign(g0);
     deleteAlign(g1);
+    deleteAlign(g0);
+    deleteAlign(f1);
+    deleteAlign(f0);
   }
   
   MPI_Finalize();

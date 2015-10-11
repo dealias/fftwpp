@@ -25,8 +25,7 @@ void init(Complex *f,
     for(unsigned int j=0; j < y; j++) {
       unsigned int jj=y0+j;
       for(unsigned int k=0; k < Z; k++) {
-	unsigned int kk=k;
-	f[c++]=Complex(10*kk+ii,jj);
+	f[c++]=Complex(10*k+ii,jj);
       }
     }
   }

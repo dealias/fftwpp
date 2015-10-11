@@ -329,8 +329,8 @@ public:
 // Real-to-complex and complex-to-real in-place and out-of-place
 // distributed FFTs.
 //
-// The input has size mx x my, distributed in the x-direction.
-// The output has size mx x (my / 2 + 1), distributed in the y-direction. 
+// The input has size mx x my, distributed in the x direction.
+// The output has size mx x (my/2+1), distributed in the y direction. 
 // Basic interface:
 // Forwards(double *f, Complex * g);
 // Backwards(Complex *g, double *f);
@@ -401,6 +401,17 @@ public:
     delete T;
   }
 
+  // Remove the Nyquist mode for even transforms.
+  void deNyquist(Complex *f) {
+    if(dr.x % 2 == 0)
+      for(unsigned int j=0; j < dc.y; ++j)
+        f[j]=0.0;
+    
+    if(dr.y % 2 == 0 && dc.y0+dc.y == dc.Y) // Last processor
+      for(unsigned int i=0; i < dc.X; ++i)
+        f[(i+1)*dc.y-1]=0.0;
+  }
+  
   void Normalize(double *f);
   void Shift(double *f);
   void Forwards(double *f, Complex * g);
@@ -522,6 +533,29 @@ public:
     delete xBackwards;
   }
 
+  // Remove the Nyquist mode for even transforms.
+  void deNyquist(Complex *f) {
+    if(dr.x % 2 == 0) {
+      unsigned int stop=dc.y*dc.z;
+      for(unsigned int j=0; j < stop; ++j)
+        f[j]=0.0;
+    }
+    unsigned int yz=dc.y*dc.z;
+    
+    if(dr.y % 2 == 0 && dc.y0 == 0) {
+      for(unsigned int i=0; i < dc.X; ++i) {
+        unsigned int iyz=i*yz;
+        for(unsigned int k=0; k < dc.z; ++k)
+          f[iyz+k]=0.0;
+      }
+    }
+        
+    if(dr.z % 2 == 0 && dc.z0+dc.z == dc.Z) // Last processor
+      for(unsigned int i=0; i < dc.X; ++i)
+        for(unsigned int j=0; j < dc.y; ++j)
+          f[i*yz+(j+1)*dc.z-1]=0.0;
+  }
+  
   // FIXME add shifts as well
   void Forwards(double *f, Complex *g);
   void Backwards(Complex *g, double* f);
