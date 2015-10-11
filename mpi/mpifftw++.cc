@@ -322,14 +322,10 @@ void rcfft3dMPI::Shift(double *f)
 #pragma omp parallel for num_threads(xythreads)
 #endif
     for(unsigned int i=0; i < dr.x; ++i) {
-      //std::cout << "i: " << i << std::endl;
-      unsigned int ii=i+dr.x0;
-      unsigned int ystart=(ii+1+dr.y0) % 2;
-      //double *pi=f+i*dr.y*dist;
+      const unsigned int ystart=(i+dr.x0+dr.y0+1) % 2;
+      double *pi=f+i*dr.y*dist;
       for(unsigned int j=ystart; j < dr.y; j += 2) {
-        //std::cout << "j: " << j << std::endl;
-        //double *p=pi+j*dist;
-        double *p=f + (j + i * dr.y) * dist;
+        double *p=pi+j*dist;
         for(unsigned int k=0; k < dr.Z; ++k) {
           p[k]=-p[k];
         }
