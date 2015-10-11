@@ -47,7 +47,8 @@ def main(argv):
         Ylist = [1,2,3,4,5,random.randint(6,64)]
         Zlist = [1,2,3,4,5,random.randint(6,64)]
         Plist = [4,8,3,2,random.randint(9,12),1]
-
+        shiftlist = [0,1]
+        
         if(shortrun):
             print "Short run."
             Xlist = [2,3,random.randint(6,64)]
@@ -67,21 +68,26 @@ def main(argv):
             for X in Xlist:
                 for Y in Ylist:
                     for Z in Zlist:
-                        ntest += 1
-                        args = []
-                        args.append("-x" + str(X))
-                        args.append("-y" + str(Y))
-                        args.append("-z" + str(Z))
-                        args.append("-N1")
-                        args.append("-s1")
-                        args.append("-a1")
-                        args.append("-tq")
-                        rtest, cmd = runtest(pname, P, args, logfile, timeout)
-                        if not rtest == 0:
-                            nfails += 1
-                            failcases += " ".join(cmd)
-                            failcases += "\t(code " + str(rtest) + ")"
-                            failcases += "\n"
+                        for shift in shiftlist:
+                            if (shift == 0) or (X % 2 == 0 and Y % 2 == 0): 
+                                ntest += 1
+                                args = []
+                                args.append("-x" + str(X))
+                                args.append("-y" + str(Y))
+                                args.append("-z" + str(Z))
+                                args.append("-N1")
+                                args.append("-s1")
+                                args.append("-a1")
+                                args.append("-S" + str(shift))
+                                args.append("-t")
+                                args.append("-q")
+                                rtest, cmd = runtest(pname, P, args, logfile, \
+                                                     timeout)
+                                if not rtest == 0:
+                                    nfails += 1
+                                    failcases += " ".join(cmd)
+                                    failcases += "\t(code " + str(rtest) + ")"
+                                    failcases += "\n"
 
         if nfails > 0:
             print "Failure cases:"

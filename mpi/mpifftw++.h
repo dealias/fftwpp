@@ -527,6 +527,11 @@ public:
   void Backwards(Complex *g, double* f);
   void Normalize(double *f);
   void BackwardsNormalized(Complex *g, double* f);
+  void Shift(double *f);
+  void Forwards0(double *f, Complex *g);
+  void Backwards0(Complex *g, double* f);
+  void Backwards0Normalized(Complex *g, double* f);
+
 };
 
 } // end namespace fftwpp

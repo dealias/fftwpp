@@ -52,55 +52,59 @@ int main(int argc, char* argv[])
 
   bool quiet=false;
   bool test=false;
-  
+  bool shift=false;
+
 #ifdef __GNUC__ 
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"htN:T:a:m:n:s:x:y:z:q");
+    int c = getopt(argc,argv,"S:htN:T:a:m:n:s:x:y:z:q");
     if (c == -1) break;
                 
     switch (c) {
-      case 0:
-        break;
-      case 'a':
-        divisor=atoi(optarg);
-        break;
-      case 'N':
-        N=atoi(optarg);
-        break;
-      case 'm':
-        mx=my=mz=atoi(optarg);
-        break;
-      case 's':
-        alltoall=atoi(optarg);
-        break;
-      case 'x':
-        mx=atoi(optarg);
-        break;
-      case 'y':
-        my=atoi(optarg);
-        break;
-      case 'z':
-        mz=atoi(optarg);
-        break;
-      case 'n':
-        N0=atoi(optarg);
-        break;
-      case 'T':
-        fftw::maxthreads=atoi(optarg);
-        break;
-      case 'q':
-        quiet=true;
-        break;
-      case 't':
-        test=true;
-        break;
-      case 'h':
-      default:
-        usage(3);
-        usageTranspose();
-        exit(1);
+    case 0:
+      break;
+    case 'a':
+      divisor=atoi(optarg);
+      break;
+    case 'N':
+      N=atoi(optarg);
+      break;
+    case 'm':
+      mx=my=mz=atoi(optarg);
+      break;
+    case 's':
+      alltoall=atoi(optarg);
+      break;
+    case 'x':
+      mx=atoi(optarg);
+      break;
+    case 'y':
+      my=atoi(optarg);
+      break;
+    case 'z':
+      mz=atoi(optarg);
+      break;
+    case 'n':
+      N0=atoi(optarg);
+      break;
+    case 'S':
+      shift=atoi(optarg);
+      break;
+    case 'T':
+      fftw::maxthreads=atoi(optarg);
+      break;
+    case 'q':
+      quiet=true;
+      break;
+    case 't':
+      test=true;
+      break;
+    case 'h':
+    default:
+      usage(3);
+      usageTranspose();
+      exit(1);
     }
   }
 
@@ -170,7 +174,6 @@ int main(int argc, char* argv[])
 
       gatherxy(f, fgathered(), df, group.active);
 
-      
       init(flocal(),df.X,df.Y,df.Z,0,0,0,df.X,df.Y,df.Z);
       if(main) {
         if(!quiet) {
@@ -180,10 +183,21 @@ int main(int argc, char* argv[])
         retval += checkerror(flocal(),fgathered(),df.X*df.Y*df.Z);
       }
       
-      fft.Forwards(f,g);
+      if(shift)
+        fft.Forwards0(f,g);
+      else
+        fft.Forwards(f,g);
 
+      // FIXME: temp
+      //if(main) cout << "\ntwiddled input:" << endl;
+      //show(f,df.x,df.y,df.Z,group.active);
+
+      
       if(main) {
-        localForward.fft(flocal,glocal);
+        if(shift)
+          localForward.fft0(flocal,glocal);
+        else
+          localForward.fft(flocal,glocal);
         cout << endl;
       }
         
@@ -203,11 +217,18 @@ int main(int argc, char* argv[])
         cout << endl;
       }
 
-      fft.BackwardsNormalized(g,f);
+      if(shift)
+        fft.Backwards0Normalized(g,f);
+      else
+        fft.BackwardsNormalized(g,f);
 
-      if(main)
-        localBackward.fftNormalized(glocal,flocal);
-
+      if(main) {
+        if(shift)
+          localBackward.fft0Normalized(glocal,flocal);
+        else 
+          localBackward.fftNormalized(glocal,flocal);
+      }
+      
       if(!quiet) {
         if(main) cout << "Distributed back to input:" << endl;
         show(f,df.x,df.y,df.Z,group.active);
@@ -246,7 +267,7 @@ int main(int argc, char* argv[])
           T[i]=seconds();
         }
         if(!quiet)
-	  show(f,df.x,df.y,df.Z,group.active);
+          show(f,df.x,df.y,df.Z,group.active);
         
         if(main) timings("FFT timing:",mx,T,N);
         delete[] T;

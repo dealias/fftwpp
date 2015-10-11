@@ -45,49 +45,49 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"hN:a:m:s:x:y:n:T:o:qt");
+    int c = getopt(argc,argv,"hN:a:m:s:x:y:n:T:S:qt");
     if (c == -1) break;
                 
     switch (c) {
-      case 0:
-        break;
-      case 'N':
-        N=atoi(optarg);
-        break;
-      case 'a':
-        divisor=atoi(optarg);
-        break;
-      case 'm':
-        nx=ny=atoi(optarg);
-        break;
-      case 's':
-        alltoall=atoi(optarg);
-        break;
-      case 'x':
-        nx=atoi(optarg);
-        break;
-      case 'y':
-        ny=atoi(optarg);
-        break;
-      case 'n':
-        N0=atoi(optarg);
-        break;
-      case 'o':
-        shift=atoi(optarg);
-        break;
-      case 'T':
-        fftw::maxthreads=atoi(optarg);
-        break;
-      case 'q':
-        quiet=true;
-        break;
-      case 't':
-        test=true;
-        break;
-      case 'h':
-        usage(2); // TODO: Add shift, compact flags
-        usageTranspose();
-        exit(1);
+    case 0:
+      break;
+    case 'N':
+      N=atoi(optarg);
+      break;
+    case 'a':
+      divisor=atoi(optarg);
+      break;
+    case 'm':
+      nx=ny=atoi(optarg);
+      break;
+    case 's':
+      alltoall=atoi(optarg);
+      break;
+    case 'x':
+      nx=atoi(optarg);
+      break;
+    case 'y':
+      ny=atoi(optarg);
+      break;
+    case 'n':
+      N0=atoi(optarg);
+      break;
+    case 'S':
+      shift=atoi(optarg);
+      break;
+    case 'T':
+      fftw::maxthreads=atoi(optarg);
+      break;
+    case 'q':
+      quiet=true;
+      break;
+    case 't':
+      test=true;
+      break;
+    case 'h':
+      usage(2); // TODO: Add shift, compact flags
+      usageTranspose();
+      exit(1);
     }
   }
 
