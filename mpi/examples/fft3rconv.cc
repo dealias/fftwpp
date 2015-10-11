@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
     if(main) cout << "\nAfter convolution (split in yz):" << endl;
     // Create instance of convolution
     Complex *G[]={g0,g1};
-    split3 du(mx,my,mz,group);
+    split3 du(mx,my,mz,group,true);
     ImplicitHConvolution3MPI C(mx,my,mz,dg,du,g0,2,1,
                                convolveOptions(options,fftw::maxthreads));
     
