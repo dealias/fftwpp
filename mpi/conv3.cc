@@ -146,9 +146,9 @@ int main(int argc, char* argv[])
     
   unsigned int nx=2*mx-xcompact;
   unsigned int ny=2*my-ycompact;
-  unsigned int nz=mz+!zcompact;
+  unsigned int nzp=mz+!zcompact;
     
-  MPIgroup group(MPI_COMM_WORLD,nx,ny,nz);
+  MPIgroup group(MPI_COMM_WORLD,nx,ny,nzp);
   
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;
@@ -168,12 +168,12 @@ int main(int argc, char* argv[])
       seconds();
       cout << "N=" << N << endl;
       cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
-      cout << "nx=" << nx << ", ny=" << ny << ", nz=" << nz << endl;
+      cout << "nx=" << nx << ", ny=" << ny << ", nzp=" << nzp << endl;
       cout << "size=" << group.size << endl;
     }
 
-    split3 d(nx,ny,nz,group,true);
-    split3 du(mx+xcompact,ny,nz,group,true);
+    split3 d(nx,ny,nzp,group,true);
+    split3 du(mx+xcompact,ny,nzp,group,true);
     
     unsigned int Mn=M*d.n;
     Complex *f=ComplexAlign(Mn);
@@ -223,7 +223,7 @@ int main(int argc, char* argv[])
       if(nx*ny*mz < outlimit)
         show(f,nx,d.y,d.z,
              !xcompact,!ycompact && d.y0 == 0,0,
-             nx,d.y,zcompact || d.z0+d.z < nz ? d.z : d.z-1,group.active);
+             nx,d.y,zcompact || d.z0+d.z < nzp ? d.z : d.z-1,group.active);
   
       // check if the hash of the rounded output matches a known value
       if(dohash && xcompact && ycompact) {

@@ -31,8 +31,8 @@ int main(int argc, char* argv[])
   // Number of iterations.
   unsigned int N0=10000000;
   unsigned int N=0;
-  unsigned int mx=4;
-  unsigned int my=4;
+  unsigned int nx=4;
+  unsigned int ny=4;
   int divisor=0; // Test for best block divisor
   int alltoall=-1; // Test for best alltoall routine
   
@@ -56,16 +56,16 @@ int main(int argc, char* argv[])
         N=atoi(optarg);
         break;
       case 'm':
-        mx=my=atoi(optarg);
+        nx=ny=atoi(optarg);
         break;
       case 's':
         alltoall=atoi(optarg);
         break;
       case 'x':
-        mx=atoi(optarg);
+        nx=atoi(optarg);
         break;
       case 'y':
-        my=atoi(optarg);
+        ny=atoi(optarg);
         break;
       case 'n':
         N0=atoi(optarg);
@@ -90,14 +90,14 @@ int main(int argc, char* argv[])
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_MULTIPLE,&provided);
 
-  if(my == 0) my=mx;
+  if(ny == 0) ny=nx;
 
   if(!N == 0) {
-    N=N0/mx/my;
+    N=N0/nx/ny;
     if(N < 10) N=10;
   }
   
-  int fftsize=min(mx,my);
+  int fftsize=min(nx,ny);
 
   MPIgroup group(MPI_COMM_WORLD,fftsize);
 
@@ -119,10 +119,10 @@ int main(int argc, char* argv[])
     bool main=group.rank == 0;
     if(!quiet && main) {
       cout << "N=" << N << endl;
-      cout << "mx=" << mx << ", my=" << my << endl;
+      cout << "nx=" << nx << ", ny=" << ny << endl;
     } 
 
-    split d(mx,my,group.active);
+    split d(nx,ny,group.active);
   
     Complex *f=ComplexAlign(d.n);
 
@@ -135,13 +135,13 @@ int main(int argc, char* argv[])
     if(test) {
       init(f,d);
 
-      if(!quiet && mx*my < outlimit) {
+      if(!quiet && nx*ny < outlimit) {
 	if(main) cout << "\nDistributed input:" << endl;
-	show(f,d.x,my,group.active);
+	show(f,d.x,ny,group.active);
       }
 
       size_t align=sizeof(Complex);
-      array2<Complex> flocal(mx,my,align);
+      array2<Complex> flocal(nx,ny,align);
       fft2d localForward(-1,flocal);
       fft2d localBackward(1,flocal);
       gatherx(f, flocal(), d, 1, group.active);
@@ -152,12 +152,12 @@ int main(int argc, char* argv[])
 
       fft.Forwards(f);
 
-      if(!quiet && mx*my < outlimit) {
+      if(!quiet && nx*ny < outlimit) {
       	if(main) cout << "\nDistributed output:" << endl;
-      	show(f,mx,d.y,group.active);
+      	show(f,nx,d.y,group.active);
       }
       
-      array2<Complex> fgather(mx,my,align);
+      array2<Complex> fgather(nx,ny,align);
       gathery(f, fgather(), d, 1, group.active);
 
       MPI_Barrier(group.active);
@@ -183,9 +183,9 @@ int main(int argc, char* argv[])
       fft.Backwards(f);
       fft.Normalize(f);
 
-      if(!quiet && mx*my < outlimit) {
+      if(!quiet && nx*ny < outlimit) {
       	if(main) cout << "\nDistributed inverse:" << endl;
-      	show(f,d.x,my,group.active);
+      	show(f,d.x,ny,group.active);
       }
 
       gatherx(f, fgather(), d, 1, group.active);
@@ -218,7 +218,7 @@ int main(int argc, char* argv[])
 	  fft.Normalize(f);
 	  T[i]=seconds();
 	}    
-	if(main) timings("FFT timing:",mx,T,N);
+	if(main) timings("FFT timing:",nx,T,N);
 	delete [] T;
       }
     }

@@ -46,9 +46,9 @@ int main(int argc, char* argv[])
 #endif
   int retval=0;
 
-  unsigned int mx=4;
-  unsigned int my=0;
-  unsigned int mz=0;
+  unsigned int nx=4;
+  unsigned int ny=0;
+  unsigned int nz=0;
 
   bool quiet=false;
   bool test=false;
@@ -71,19 +71,19 @@ int main(int argc, char* argv[])
       N=atoi(optarg);
       break;
     case 'm':
-      mx=my=mz=atoi(optarg);
+      nx=ny=nz=atoi(optarg);
       break;
     case 's':
       alltoall=atoi(optarg);
       break;
     case 'x':
-      mx=atoi(optarg);
+      nx=atoi(optarg);
       break;
     case 'y':
-      my=atoi(optarg);
+      ny=atoi(optarg);
       break;
     case 'z':
-      mz=atoi(optarg);
+      nz=atoi(optarg);
       break;
     case 'n':
       N0=atoi(optarg);
@@ -111,15 +111,15 @@ int main(int argc, char* argv[])
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_MULTIPLE,&provided);
 
-  if(my == 0) my=mx;
-  if(mz == 0) mz=mx;
+  if(ny == 0) ny=nx;
+  if(nz == 0) nz=nx;
 
   if(N == 0) {
-    N=N0/mx/my;
+    N=N0/nx/ny;
     if(N < 10) N=10;
   }
   
-  MPIgroup group(MPI_COMM_WORLD,mz,mx,my);
+  MPIgroup group(MPI_COMM_WORLD,nz,nx,ny);
 
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;
@@ -138,16 +138,16 @@ int main(int argc, char* argv[])
   }
   
   if(group.rank < group.size) {
-    int mzp=mz/2+1;
+    int nzp=nz/2+1;
     bool main=group.rank == 0;
     if(!quiet && main) {
-      cout << "mx=" << mx << ", my=" << my << ", mz=" << mz <<
-        ", mzp=" << mzp << endl;
+      cout << "nx=" << nx << ", ny=" << ny << ", nz=" << nz <<
+        ", nzp=" << nzp << endl;
       cout << "size=" << group.size << endl;
     }
 
-    split3 df(mx,my,mz,group);
-    split3 dg(mx,my,mzp,group);
+    split3 df(nx,ny,nz,group);
+    split3 dg(nx,ny,nzp,group);
     
     double *f=FFTWdouble(df.n);
     Complex *g=ComplexAlign(dg.n);
@@ -157,20 +157,20 @@ int main(int argc, char* argv[])
     if(test) {
       init(f,df);
 
-      if(!quiet && mx*my < outlimit) {
+      if(!quiet && nx*ny < outlimit) {
         if(main) cout << "\ninput:" << endl;
         show(f,df.x,df.y,df.Z,group.active);
       }
 
       size_t align=sizeof(Complex);
 
-      array3<double> flocal(mx,my,mz,align);
-      array3<Complex> glocal(mx,my,mzp,align);
-      array3<double> fgathered(mx,my,mz,align);
-      array3<Complex> ggathered(mx,my,mzp,align);
+      array3<double> flocal(nx,ny,nz,align);
+      array3<Complex> glocal(nx,ny,nzp,align);
+      array3<double> fgathered(nx,ny,nz,align);
+      array3<Complex> ggathered(nx,ny,nzp,align);
       
-      rcfft3d localForward(mx,my,mz,fgathered(),ggathered());
-      crfft3d localBackward(mx,my,mz,ggathered(),fgathered());
+      rcfft3d localForward(nx,ny,nz,fgathered(),ggathered());
+      crfft3d localBackward(nx,ny,nz,ggathered(),fgathered());
 
       gatherxy(f, fgathered(), df, group.active);
 
@@ -269,7 +269,7 @@ int main(int argc, char* argv[])
         if(!quiet)
           show(f,df.x,df.y,df.Z,group.active);
         
-        if(main) timings("FFT timing:",mx,T,N);
+        if(main) timings("FFT timing:",nx,T,N);
         delete[] T;
       }
 

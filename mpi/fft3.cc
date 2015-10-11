@@ -46,9 +46,9 @@ int main(int argc, char* argv[])
 #endif
   int retval=0;
 
-  unsigned int mx=4;
-  unsigned int my=0;
-  unsigned int mz=0;
+  unsigned int nx=4;
+  unsigned int ny=0;
+  unsigned int nz=0;
 
   bool quiet=false;
   bool test=false;
@@ -70,19 +70,19 @@ int main(int argc, char* argv[])
         N=atoi(optarg);
         break;
       case 'm':
-        mx=my=mz=atoi(optarg);
+        nx=ny=nz=atoi(optarg);
         break;
       case 's':
         alltoall=atoi(optarg);
         break;
       case 'x':
-        mx=atoi(optarg);
+        nx=atoi(optarg);
         break;
       case 'y':
-        my=atoi(optarg);
+        ny=atoi(optarg);
         break;
       case 'z':
-        mz=atoi(optarg);
+        nz=atoi(optarg);
         break;
       case 'n':
         N0=atoi(optarg);
@@ -107,15 +107,15 @@ int main(int argc, char* argv[])
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_MULTIPLE,&provided);
 
-  if(my == 0) my=mx;
-  if(mz == 0) mz=mx;
+  if(ny == 0) ny=nx;
+  if(nz == 0) nz=nx;
 
   if(N == 0) {
-    N=N0/mx/my;
+    N=N0/nx/ny;
     if(N < 10) N=10;
   }
   
-  MPIgroup group(MPI_COMM_WORLD,mz,mx,my);
+  MPIgroup group(MPI_COMM_WORLD,nz,nx,ny);
 
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;
@@ -137,11 +137,11 @@ int main(int argc, char* argv[])
     bool main=group.rank == 0;
     if(!quiet && main) {
       cout << "N=" << N << endl;
-      cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
+      cout << "nx=" << nx << ", ny=" << ny << ", nz=" << nz << endl;
       cout << "size=" << group.size << endl;
     }
 
-    split3 d(mx,my,mz,group);
+    split3 d(nx,ny,nz,group);
     
     Complex *f=ComplexAlign(d.n);
     
@@ -150,18 +150,18 @@ int main(int argc, char* argv[])
     if(test) {
       init(f,d);
 
-      if(!quiet && mx*my < outlimit) {
+      if(!quiet && nx*ny < outlimit) {
 	if(main) cout << "\ninput:" << endl;
 	show(f,d.x,d.y,d.Z,group.active);
       }
 
       size_t align=sizeof(Complex);
-      array3<Complex> fgathered(mx,my,mz,align);
+      array3<Complex> fgathered(nx,ny,nz,align);
       fft3d localForward(-1,fgathered);
       fft3d localBackward(1,fgathered);
       gatherxy(f, fgathered(), d, group.active);
 
-      array3<Complex> flocal(mx,my,mz,align);
+      array3<Complex> flocal(nx,ny,nz,align);
       init(flocal(),d.X,d.Y,d.Z,0,0,0,d.X,d.Y,d.Z);
       if(main) {
 	if(!quiet) {
@@ -235,9 +235,8 @@ int main(int argc, char* argv[])
 	  T[i]=seconds();
 	}
 	if(!quiet) show(f,d.x,d.y,d.Z,group.active);
-//	if(!quiet) show(f,d.X,d.xy.y,d.z,group.active);
         
-	if(main) timings("FFT timing:",mx,T,N);
+	if(main) timings("FFT timing:",nx,T,N);
 	delete[] T;
       }
     }
