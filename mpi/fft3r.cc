@@ -14,7 +14,7 @@ unsigned int N=0;
 int divisor=0; // Test for best block divisor
 int alltoall=-1; // Test for best alltoall routine
 
-void init(Complex *f,
+void init(double *f,
 	  unsigned int X, unsigned int Y, unsigned int Z,
 	  unsigned int x0, unsigned int y0, unsigned int z0,
 	  unsigned int x, unsigned int y, unsigned int z)
@@ -26,13 +26,13 @@ void init(Complex *f,
       unsigned int jj=y0+j;
       for(unsigned int k=0; k < Z; k++) {
 	unsigned int kk=k;
-	f[c++]=Complex(10*kk+ii,jj);
+	f[c++] = ii + jj + kk;
       }
     }
   }
 }
 
-void init(Complex *f, split3 d)
+void init(double *f, split3 d)
 {
   init(f,d.X,d.Y,d.Z,d.x0,d.y0,d.z0,d.x,d.y,d.z);
 }
@@ -134,69 +134,76 @@ int main(int argc, char* argv[])
   }
   
   if(group.rank < group.size) {
+    int mzp=mz/2+1;
     bool main=group.rank == 0;
     if(!quiet && main) {
-      cout << "N=" << N << endl;
-      cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
+      cout << "mx=" << mx << ", my=" << my << ", mz=" << mz <<
+	", mzp=" << mzp << endl;
       cout << "size=" << group.size << endl;
     }
 
-    split3 d(mx,my,mz,group);
+    split3 df(mx,my,mz,group);
+    split3 dg(mx,my,mzp,group);
     
-    Complex *f=ComplexAlign(d.n);
+    double *f=FFTWdouble(df.n);
+    Complex *g=ComplexAlign(dg.n);
     
-    fft3dMPI fft(d,f,mpiOptions(fftw::maxthreads,divisor,alltoall));
+    rcfft3dMPI fft(df,dg,f,g,mpiOptions(fftw::maxthreads,divisor,alltoall));
 
     if(test) {
-      init(f,d);
+      init(f,df);
 
       if(!quiet && mx*my < outlimit) {
 	if(main) cout << "\ninput:" << endl;
-	show(f,d.x,d.y,d.Z,group.active);
+	show(f,df.x,df.y,df.Z,group.active);
       }
 
       size_t align=sizeof(Complex);
-      array3<Complex> fgathered(mx,my,mz,align);
-      fft3d localForward(-1,fgathered);
-      fft3d localBackward(1,fgathered);
-      gatherxy(f, fgathered(), d, group.active);
 
-      array3<Complex> flocal(mx,my,mz,align);
-      init(flocal(),d.X,d.Y,d.Z,0,0,0,d.X,d.Y,d.Z);
+      array3<double> flocal(mx,my,mz,align);
+      array3<Complex> glocal(mx,my,mzp,align);
+      array3<double> fgathered(mx,my,mz,align);
+      array3<Complex> ggathered(mx,my,mzp,align);
+      
+      rcfft3d localForward(mx,my,mz,fgathered(),ggathered());
+      crfft3d localBackward(mx,my,mz,ggathered(),fgathered());
+
+      gatherxy(f, fgathered(), df, group.active);
+
+      
+      init(flocal(),df.X,df.Y,df.Z,0,0,0,df.X,df.Y,df.Z);
       if(main) {
 	if(!quiet) {
 	  cout << "Gathered input:\n" <<  fgathered << endl;
 	  cout << "Local input:\n" <<  flocal << endl;
 	}
-        retval += checkerror(flocal(),fgathered(),d.X*d.Y*d.Z);
+        retval += checkerror(flocal(),fgathered(),df.X*df.Y*df.Z);
       }
       
-      fft.Forwards(f);
+      fft.Forwards(f,g);
 
-      if(main)
-	localForward.fft(flocal);
-      
+      if(main) localForward.fft(flocal,glocal);
+
       if(!quiet) {
 	if(main) cout << "Distributed output:" << endl;
-	show(f,d.X,d.xy.y,d.z,group.active);
+	show(g,dg.X,dg.xy.y,dg.z,group.active);
       }
-      gatheryz(f,fgathered(),d,group.active); 
+      gatheryz(g,ggathered(),dg,group.active); 
 
       if(!quiet && main) {
-	cout << "Gathered output:\n" <<  fgathered << endl;
-	cout << "Local output:\n" <<  flocal << endl;
+	cout << "Gathered output:\n" <<  ggathered << endl;
+	cout << "Local output:\n" <<  glocal << endl;
       }
       
-      if(main)
-        retval += checkerror(flocal(),fgathered(),d.X*d.Y*d.Z);
-      
-      fft.Backwards(f);
-      fft.Normalize(f);
-      if(main)
-	localBackward.fftNormalized(flocal);
+      if(main) retval += checkerror(glocal(),ggathered(),dg.X*dg.Y*dg.Z);
+
+      /*
+      //fft.Backwards(f);
+      //fft.Normalize(f);
+      //if(main) localBackward.fftNormalized(flocal);
       if(!quiet) {
 	if(main) cout << "Distributed output:" << endl;
-	show(f,d.x,d.y,d.Z,group.active);
+	show(g,dg.x,dg.y,dg.Z,group.active);
       }
 
       gatherxy(f, fgathered(), d, group.active);
@@ -220,9 +227,14 @@ int main(int argc, char* argv[])
           cout << "pass" << endl;
         else
           cout << "FAIL" << endl;
-
       }
+
+      */
+      
     } else {
+      /*
+	if(main)
+	cout << "N=" << N << endl;
       if(N > 0) {
     
 	double *T=new double[N];
@@ -235,11 +247,11 @@ int main(int argc, char* argv[])
 	  T[i]=seconds();
 	}
 	if(!quiet) show(f,d.x,d.y,d.Z,group.active);
-//	if(!quiet) show(f,d.X,d.xy.y,d.z,group.active);
         
 	if(main) timings("FFT timing:",mx,T,N);
 	delete[] T;
       }
+      */
     }
   
     deleteAlign(f);

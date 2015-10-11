@@ -214,7 +214,8 @@ int main(int argc, char* argv[])
   
   if(Explicit) {
     if(A != 2) {
-      cerr << "Explicit convolutions for A=" << A << " are not yet implemented" << endl;
+      cerr << "Explicit convolutions for A=" << A
+	   << " are not yet implemented" << endl;
       exit(1);
     }
 

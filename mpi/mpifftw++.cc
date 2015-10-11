@@ -273,4 +273,16 @@ void rcfft2dMPI::Backwards0Normalized(Complex *g, double *f)
 }
 
 
+void rcfft3dMPI::Forwards(double *f, Complex *g)
+{
+  zForwards->fft(f,g);
+  Tyz->transpose(g,true,false);
+  unsigned int stride=dc.z*dc.Y;
+  for(unsigned int i=0; i < dc.x; ++i) 
+    yForwards->fft(g+i*stride);
+  Txy->transpose(g,true,false);
+  xForwards->fft(g);
+}
+
+
 } // End of namespace fftwpp

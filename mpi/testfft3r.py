@@ -7,14 +7,14 @@ import getopt
 import os.path
 from testutils import *
 
-pname = "fft3"
+pname = "fft3r"
 timeout = 60 # cutoff time in seconds
 
 def main(argv):
-    print "MPI fft3 unit test"
+    print "MPI fft3r unit test"
     retval = 0
     usage = "Usage:\n"\
-            "./testfft3.py\n"\
+            "./testfft3r.py\n"\
             "\t-s\t\tSpecify a short run\n"\
             "\t-h\t\tShow usage"
 
@@ -33,7 +33,7 @@ def main(argv):
             sys.exit(0)
 
     
-    logfile = 'testfft3.log' 
+    logfile = 'testfft3r.log' 
     print "Log in " + logfile + "\n"
     log = open(logfile, 'w')
     log.close()

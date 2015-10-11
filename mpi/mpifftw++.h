@@ -250,20 +250,40 @@ public:
     if(d.z > 0)
       Txy=new mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,f,d.xy.communicator,
                                     xy);
-    unsigned int M=d.xy.y*d.z;
 
-    xForwards=new mfft1d(d.X,-1,M,M,1,f,f,xythreads);
-    xBackwards=new mfft1d(d.X,1,M,M,1,f,f,xythreads);
+    // Set up x-direction transforms
+    {
+      unsigned int n=d.X;
+      unsigned int M=d.xy.y*d.z;
+      size_t stride=M;
+      size_t dist=1;
+      xForwards=new mfft1d(n,-1,M,stride,dist,f,f,xythreads);
+      xBackwards=new mfft1d(n,1,M,stride,dist,f,f,xythreads);
+    }
     
     if(d.y < d.Y) {
       Tyz=new mpitranspose<Complex>(d.Y,d.z,d.y,d.Z,1,f,d.yz.communicator,yz);
-      
-      yForwards=new mfft1d(d.Y,-1,d.z,d.z,1,f,f,yzthreads);
-      yBackwards=new mfft1d(d.Y,1,d.z,d.z,1,f,f,yzthreads);
 
-      unsigned int M=d.x*d.y;
-      zForwards=new mfft1d(d.Z,-1,M,1,d.Z,f,f,yzthreads);
-      zBackwards=new mfft1d(d.Z,1,M,1,d.Z,f,f,yzthreads);
+      // Set up y-direction transforms
+      {
+	unsigned int n=d.Y;
+	unsigned int M=d.z;
+	size_t stride=d.z;
+	size_t dist=1;
+	yForwards=new mfft1d(n,-1,M,stride,dist,f,f,yzthreads);
+	yBackwards=new mfft1d(n,1,M,stride,dist,f,f,yzthreads);
+      }
+
+      // Set up z-direction transforms
+      {
+	unsigned int n=d.Z;
+	unsigned int M=d.x*d.y;
+	size_t stride=1;
+	size_t dist=d.Z;
+	zForwards=new mfft1d(n,-1,M,stride,dist,f,f,yzthreads);
+	zBackwards=new mfft1d(n,1,M,stride,dist,f,f,yzthreads);
+      }
+      
     } else {
       yzForwards=new fft2d(d.Y,d.Z,-1,f,f,yzthreads);
       yzBackwards=new fft2d(d.Y,d.Z,1,f,f,yzthreads);
@@ -391,6 +411,126 @@ public:
   void Backwards0Normalized(Complex *g, double *f);
 };
   
+// In-place OpenMP/MPI 3D complex FFT.
+// Fourier transform an mx x my x mz array, distributed first over x and
+// then over y. The array must be allocated as split3::n Complex words.
+//
+// Example:
+// MPIgroup group(MPI_COMM_WORLD,mx,my);
+// split3 d(mx,my,mz,group);
+// Complex *f=ComplexAlign(d.n);
+// fft3dMPI fft(d,f);
+// fft.Forwards(f);
+// fft.Backwards(f);
+// fft.Normalize(f);
+// deleteAlign(f);
+//
+class rcfft3dMPI {
+private:
+  split3 dr; // real-space dimensions
+  split3 dc; // complex-space dimensions
+  unsigned int xythreads,yzthreads;
+  mrcfft1d *zForwards;
+  mcrfft1d *zBackwards;
+  mfft1d *yForwards;
+  mfft1d *yBackwards;
+  mfft1d *xForwards;
+  mfft1d *xBackwards;
+  // fft2d *yzForwards,*yzBackwards;
+  mpitranspose<Complex> *Txy,*Tyz;
+  bool inplace;
+  
+public:
+  void init(double *f, Complex *g,
+	    const mpiOptions& xy, const mpiOptions &yz) {
+    inplace=f == (double *)g;
+
+    dc.Activate();
+    xythreads=xy.threads;
+    yzthreads=yz.threads; 
+
+    if(dc.z > 0) {
+       Txy=new mpitranspose<Complex>(dc.X,dc.xy.y,dc.x,dc.Y,dc.z,
+				     g,dc.xy.communicator,xy);
+    }
+    Tyz=new mpitranspose<Complex>(dc.Y,dc.z,dc.y,dc.Z,1,
+				  g,dc.yz.communicator,yz);
+
+    // Set up z-direction transforms
+    {
+      unsigned int n=dr.Z;
+      unsigned int M=dr.x*dr.y;
+      size_t rstride=1;
+      size_t cstride=1;
+      size_t rdist=inplace ? dr.Z+2 : dr.Z;
+      size_t cdist=dr.Z/2+1;
+      zForwards=new mrcfft1d(n,M,rstride,cstride,rdist,cdist,f,g,xythreads);
+      zBackwards=new mcrfft1d(n,M,cstride,rstride,cdist,rdist,g,f,xythreads);
+    }
+
+    // Set up y-direction transforms
+    {
+      unsigned int n=dc.Y;
+      unsigned int M=dc.z;
+      size_t stride=dc.z;
+      size_t dist=1;
+      yForwards=new mfft1d(n,-1,M,stride,dist,g,g,yzthreads);
+      yBackwards=new mfft1d(n,1,M,stride,dist,g,g,yzthreads);
+    }
+
+    // Set up x-direction transforms
+    {
+      unsigned int n=dc.X;
+      unsigned int M=dc.xy.y*dc.z;
+      size_t stride=M;
+      size_t dist=1;
+      xForwards=new mfft1d(n,-1,M,stride,dist,g,g,xythreads);
+      xBackwards=new mfft1d(n,1,M,stride,dist,g,g,xythreads);
+    }
+        
+    dc.Deactivate();
+  }
+  
+  rcfft3dMPI(const split3& dr, const split3& dc,
+	     double *f, Complex *g, const mpiOptions& xy,
+	     const mpiOptions& yz) : dr(dr) , dc(dc) {
+    init(f,g,xy,yz);
+  }
+  
+  rcfft3dMPI(const split3& dr, const split3& dc,
+	     double *f, Complex *g, const mpiOptions& xy) :
+    dr(dr), dc(dc) {
+    init(f,g,xy,xy);
+  }
+    
+  virtual ~rcfft3dMPI() {
+    /*
+    if(d.y < d.Y) {
+      delete zBackwards;
+      delete zForwards;
+      delete yBackwards;
+      delete yForwards;
+      delete Tyz;
+    } else {
+      delete yzBackwards;
+      delete yzForwards;
+    }
+    
+    delete xBackwards;
+    delete xForwards;
+
+    if(d.z > 0)
+      delete Txy;
+    */
+  }
+
+  // FIXME add shifts as well
+  void Forwards(double *f, Complex *g);
+  void Backwards(Complex *g, double* f);
+  void Normalize(double *f);
+  void BackwardsNormalized(Complex *g, double* f);
+};
+
 } // end namespace fftwpp
 
 #endif
