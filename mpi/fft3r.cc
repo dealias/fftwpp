@@ -232,26 +232,26 @@ int main(int argc, char* argv[])
       }
       
     } else {
-      /*
-        if(main)
+
+      if(main)
         cout << "N=" << N << endl;
       if(N > 0) {
     
         double *T=new double[N];
         for(unsigned int i=0; i < N; ++i) {
-          init(f,d);
+          init(f,df);
           seconds();
-          fft.Forwards(f);
-          fft.Backwards(f);
-          fft.Normalize(f);
+          fft.Forwards(f,g);
+          fft.BackwardsNormalized(g,f);
           T[i]=seconds();
         }
-        if(!quiet) show(f,d.x,d.y,d.Z,group.active);
+        if(!quiet)
+	  show(f,df.x,df.y,df.Z,group.active);
         
         if(main) timings("FFT timing:",mx,T,N);
         delete[] T;
       }
-      */
+
     }
   
     deleteAlign(f);
