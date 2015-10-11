@@ -37,8 +37,8 @@ fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out)
         if(plan) learned=true;
       }
       if(plan)  {
-      inspiration=fftw_export_wisdom_to_string();
-      length=strlen(inspiration);
+        inspiration=fftw_export_wisdom_to_string();
+        length=strlen(inspiration);
       }
     }
     for(int i=1; i < size; ++i)
@@ -211,7 +211,7 @@ void rcfft2dMPI::Shift(double *f)
     for(unsigned int i=start; i < stop; i += 2) {
       double *p=f+i*ydist;
       for(unsigned int j=0; j < dr.Y; ++j) {
-	p[j]=-p[j];
+        p[j]=-p[j];
       }
     }
   } else {
@@ -265,22 +265,21 @@ void rcfft2dMPI::BackwardsNormalized(Complex *g, double *f)
   Normalize(f);
 }
 
-
 void rcfft2dMPI::Backwards0Normalized(Complex *g, double *f)
 {
   BackwardsNormalized(g,f);
   Shift(f);
 }
 
-
 void rcfft3dMPI::Forwards(double *f, Complex *g)
 {
+  // FIXME: deal with in-place
   zForwards->fft(f,g);
-  Tyz->transpose(g,true,false);
-  unsigned int stride=dc.z*dc.Y;
+  if(Tyz) Tyz->transpose(g,true,false);
+  const unsigned int stride=dc.z*dc.Y;
   for(unsigned int i=0; i < dc.x; ++i) 
     yForwards->fft(g+i*stride);
-  Txy->transpose(g,true,false);
+  if(Txy) Txy->transpose(g,true,false);
   xForwards->fft(g);
 }
 

@@ -266,22 +266,22 @@ public:
 
       // Set up y-direction transforms
       {
-	unsigned int n=d.Y;
-	unsigned int M=d.z;
-	size_t stride=d.z;
-	size_t dist=1;
-	yForwards=new mfft1d(n,-1,M,stride,dist,f,f,yzthreads);
-	yBackwards=new mfft1d(n,1,M,stride,dist,f,f,yzthreads);
+        unsigned int n=d.Y;
+        unsigned int M=d.z;
+        size_t stride=d.z;
+        size_t dist=1;
+        yForwards=new mfft1d(n,-1,M,stride,dist,f,f,yzthreads);
+        yBackwards=new mfft1d(n,1,M,stride,dist,f,f,yzthreads);
       }
 
       // Set up z-direction transforms
       {
-	unsigned int n=d.Z;
-	unsigned int M=d.x*d.y;
-	size_t stride=1;
-	size_t dist=d.Z;
-	zForwards=new mfft1d(n,-1,M,stride,dist,f,f,yzthreads);
-	zBackwards=new mfft1d(n,1,M,stride,dist,f,f,yzthreads);
+        unsigned int n=d.Z;
+        unsigned int M=d.x*d.y;
+        size_t stride=1;
+        size_t dist=d.Z;
+        zForwards=new mfft1d(n,-1,M,stride,dist,f,f,yzthreads);
+        zBackwards=new mfft1d(n,1,M,stride,dist,f,f,yzthreads);
       }
       
     } else {
@@ -442,7 +442,7 @@ private:
   
 public:
   void init(double *f, Complex *g,
-	    const mpiOptions& xy, const mpiOptions &yz) {
+            const mpiOptions& xy, const mpiOptions &yz) {
     inplace=f == (double *)g;
 
     dc.Activate();
@@ -450,12 +450,19 @@ public:
     yzthreads=yz.threads; 
 
     if(dc.z > 0) {
-       Txy=new mpitranspose<Complex>(dc.X,dc.xy.y,dc.x,dc.Y,dc.z,
-				     g,dc.xy.communicator,xy);
+      Txy=new mpitranspose<Complex>(dc.X,dc.xy.y,dc.x,dc.Y,dc.z,
+                                     g,dc.xy.communicator,xy);
+    } else {
+      Txy=NULL;
     }
-    Tyz=new mpitranspose<Complex>(dc.Y,dc.z,dc.y,dc.Z,1,
-				  g,dc.yz.communicator,yz);
 
+    if(dc.y < dc.Y) {
+      Tyz=new mpitranspose<Complex>(dc.Y,dc.z,dc.y,dc.Z,1,
+                                    g,dc.yz.communicator,yz);
+    } else {
+      Tyz=NULL;
+    }
+    
     // Set up z-direction transforms
     {
       unsigned int n=dr.Z;
@@ -492,36 +499,27 @@ public:
   }
   
   rcfft3dMPI(const split3& dr, const split3& dc,
-	     double *f, Complex *g, const mpiOptions& xy,
-	     const mpiOptions& yz) : dr(dr) , dc(dc) {
+             double *f, Complex *g, const mpiOptions& xy,
+             const mpiOptions& yz) : dr(dr) , dc(dc) {
     init(f,g,xy,yz);
   }
   
   rcfft3dMPI(const split3& dr, const split3& dc,
-	     double *f, Complex *g, const mpiOptions& xy) :
+             double *f, Complex *g, const mpiOptions& xy) :
     dr(dr), dc(dc) {
     init(f,g,xy,xy);
   }
     
   virtual ~rcfft3dMPI() {
-    /*
-    if(d.y < d.Y) {
-      delete zBackwards;
-      delete zForwards;
-      delete yBackwards;
-      delete yForwards;
-      delete Tyz;
-    } else {
-      delete yzBackwards;
-      delete yzForwards;
-    }
-    
-    delete xBackwards;
-    delete xForwards;
+    if(Txy) delete Txy;
+    if(Tyz) delete Tyz;
 
-    if(d.z > 0)
-      delete Txy;
-    */
+    delete zForwards;
+    delete zBackwards;
+    delete yForwards;
+    delete yBackwards;
+    delete xForwards;
+    delete xBackwards;
   }
 
   // FIXME add shifts as well
