@@ -34,27 +34,29 @@ tests/timings*
 wrappers/*.so
 wrappers/*.mod
 
-examples/example0
-examples/example0m
-examples/example0mr
-examples/example0r
-examples/example1
-examples/example1r
-examples/example2
-examples/example2r
-examples/example3
-examples/example3r
-examples/examplecconv
-examples/examplecconv2
-examples/examplecconv3
-examples/exampleconv
-examples/exampleconv2
-examples/exampleconv3
-examples/exampletranspose
+fft2rconv
 
-mpi/gather
-mpi/gatheryz
-mpi/gatherxy
+example0
+example0m
+example0mr
+example0r
+example1
+example1r
+example2
+example2r
+example3
+example3r
+examplecconv
+examplecconv2
+examplecconv3
+exampleconv
+exampleconv2
+exampleconv3
+exampletranspose
+
+gather
+gatheryz
+gatherxy
 
 ### Debugging files
 core.*
