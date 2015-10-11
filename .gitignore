@@ -35,6 +35,7 @@ wrappers/*.so
 wrappers/*.mod
 
 fft2rconv
+fft3rconv
 
 example0
 example0m

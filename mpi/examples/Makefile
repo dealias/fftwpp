@@ -46,7 +46,7 @@ vpath %.cc ../
 vpath %.cc ../../
 
 FFTW=fftw++
-FILES= fft2rconv
+FILES= fft2rconv fft3rconv
 UTILS=$(FFTW) mpiutils
 MPITRANSPOSE=$(UTILS) mpitranspose
 MPIFFT=$(MPITRANSPOSE) mpifftw++
@@ -60,6 +60,9 @@ all: $(FILES)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) -o $@ -c $<
 
 fft2rconv: fft2rconv.o $(MPIFFT:=.o) $(MPICONVOLUTION:=.o)
+	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
+
+fft3rconv: fft3rconv.o $(MPIFFT:=.o) $(MPICONVOLUTION:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
 clean:  FORCE
