@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
   unsigned int nx=8;
   unsigned int ny=8;
 
-  // The y-dimension of the array in complex space"
+  // The y-dimension of the array in complex space:
   unsigned int nyp=ny/2+1;
 
   // Convolution dimensions:
@@ -41,7 +41,6 @@ int main(int argc, char* argv[])
   options.xcompact=false;
   options.ycompact=false;
   options.mpi=mpiOptions(fftw::maxthreads,divisor,alltoall);
-    
   
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_MULTIPLE,&provided);

@@ -33,13 +33,20 @@ int main(int argc, char* argv[])
   unsigned int ny=4;
   unsigned int nz=4;
 
-  // The z-dimension of the array in complex space"
+  // The z-dimension of the array in complex space:
   unsigned int nzp=nz/2+1;
 
-
+  // Convolution dimensions:
+  unsigned int mx=nx/2;
+  unsigned int my=ny/2;
+  unsigned int mz=nz/2;
+  
   int divisor=1;
   int alltoall=1;
   convolveOptions options;
+  options.xcompact=false;
+  options.ycompact=false;
+  options.zcompact=false;
   options.mpi=mpiOptions(fftw::maxthreads,divisor,alltoall);
     
   int provided;
@@ -66,8 +73,8 @@ int main(int argc, char* argv[])
     }
 
     // Set up per-process dimensions
-    split3 df(nx,ny,nz,group,true);
-    split3 dg(nx,ny,nzp,group,true);
+    split3 df(nx,ny,nz,group);
+    split3 dg(nx,ny,nzp,group);
     
     // Allocate complex-aligned memory
     double *f0=doubleAlign(df.n);
@@ -98,8 +105,8 @@ int main(int argc, char* argv[])
     if(main) cout << "\nAfter convolution (split in yz):" << endl;
     // Create instance of convolution
     Complex *G[]={g0,g1};
-    split3 du(nx/2,ny/2,nz/2,group,true);
-    ImplicitHConvolution3MPI C(nx/2,ny/2,nz/2,dg,du,g0,2,1,
+    split3 du(mx,my,mz,group,true);
+    ImplicitHConvolution3MPI C(mx,my,mz,dg,du,g0,2,1,
                                convolveOptions(options,fftw::maxthreads));
     
     C.convolve(G,multbinary);
