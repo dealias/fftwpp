@@ -10,6 +10,7 @@ using namespace fftwpp;
 bool Direct=false, Implicit=true, Explicit=false, Test=false;
 
 unsigned int A, B; // Number of inputs and outputs
+bool compact=false;
 
 // Pair-wise binary multiply for even A and B=1.
 // NB: example function, not optimised or threaded.
@@ -36,12 +37,16 @@ void mymultB(double ** F, unsigned int m, unsigned int threads)
 
 inline void init(Complex **F, unsigned int m,  unsigned int A) 
 {
+  if(!compact) 
+    for(unsigned int i=0; i < A; ++i)
+      F[i][m]=0.0;
+                 
   const Complex I(0.0,1.0);
   const double iE=exp(1.0);
   const double iF=sqrt(3.0);
   const double iG=sqrt(5.0);
   
-  if(A%2 != 0 && A != 1) {
+  if(A % 2 != 0 && A != 1) {
     cerr << "A=" << A << " is not yet implemented" << endl; 
     exit(1);
   }
@@ -51,7 +56,7 @@ inline void init(Complex **F, unsigned int m,  unsigned int A)
       f[k]=iF*pow(iE,k*I);
     }
   }
-  if(A%2 == 0) {
+  if(A % 2 == 0) {
     unsigned int M=A/2;
     double factor=1.0/sqrt((double) M);
     for(unsigned int s=0; s < M; s++) {
@@ -195,7 +200,7 @@ int main(int argc, char* argv[])
   }
   cout << "N=" << N << endl;
   
-  unsigned int np=Explicit ? n/2+1 : m;
+  unsigned int np=Explicit ? n/2+1 : m+!compact;
 
   // explicit and direct convolutions are only implemented for binary
   // convolutions.

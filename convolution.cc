@@ -225,12 +225,8 @@ void ImplicitHConvolution::premult(Complex ** F,
   if(even)
     S=new Complex[A];
   unsigned int m1=m-1;
-  for(unsigned int i=0; i < A; ++i) {
-    Complex *f=F[i]+offset;
-    P0[i]=f;
-    Complex *ui=U[i];
-    ui[0]=f->re;
-  }
+  for(unsigned int i=0; i < A; ++i)
+    P0[i]=F[i]+offset;
 
   if(even) {
     unsigned int a=1/s;
@@ -469,6 +465,8 @@ void ImplicitHConvolution::postmultadd0(Complex **c2, Complex **c0,
 void ImplicitHConvolution::convolve(Complex **F, 
                                     realmultiplier *pmult, unsigned int offset)
 {
+  bool compact=true;
+  
   // Set problem-size variables and pointers:
 
   unsigned int C=max(A,B);
@@ -485,8 +483,8 @@ void ImplicitHConvolution::convolve(Complex **F,
     Complex *f=F[i]+offset;
     c0[i]=f;
     c1[i]=f+start;
-    Complex *ui=U[i];
-    ui[0]=f->re;
+    Complex *u=U[i];
+    u[0]=compact ? f->re : f->re-0.5*f[m].re; // Nyquist
     c2[i]=U[i];
   }
 
@@ -521,6 +519,7 @@ void ImplicitHConvolution::convolve(Complex **F,
     for(unsigned int i=A; i-- > 0;) { // Loop from A-1 to 0.
       Complex *c0i=c0[i];
       T[i]=c0i[0].re; // r=0, k=0
+      if(!compact) c0i[0].re += c0i[m].re; // Nyquist
       (out_of_place ? cro : cr)->fft(c0i,d0[i]); 
     }
     (*pmult)(d0,m,threads);
@@ -530,7 +529,7 @@ void ImplicitHConvolution::convolve(Complex **F,
     // r=1:
     for(unsigned int i=A; i-- > 0;) { // Loop from A-1 to 0.
       Complex *c1i=c1[i];
-      c1i[0]=T[i];      // r=1, k=0
+      c1i[0]=compact ? T[i] : T[i]-0.5*c1i[c+1].re; // r=1, k=0 with Nyquist
       if(even) {
 	Complex tmp=c1c[i];
 	c1c[i]=c1i[1];  // r=0, k=c
@@ -569,6 +568,7 @@ void ImplicitHConvolution::convolve(Complex **F,
       // r=2:
       rco->fft(d2i,c2i);
 
+      if(!compact) c0i[m]=(2.0*c0i[0].re-c2Bi[0].re-c2i[0].re)*ninv;
       c0i[0]=(c0i[0].re+c2Bi[0].re+c2i[0].re)*ninv;
     }
     postmultadd(c2,c0,c2B);
@@ -590,6 +590,7 @@ void ImplicitHConvolution::convolve(Complex **F,
         c1i[1]=tmp;    // r=0, k=c
       }
       rc->fft(c0i);
+      if(!compact) c0i[m]=(2.0*c0i[0].re-R-c2i[0].re)*ninv;
       c0i[0]=(c0i[0].re+R+c2i[0].re)*ninv;
     }
     postmultadd0(c2,c0,c1c);
@@ -819,7 +820,7 @@ void fft0padwide::forwards(Complex *f, Complex *u)
     Complex f0=f[i];
     Complex f1=fmstride[i];
     Complex f2=u[i];
-    f[i]=(2.0*f0-f1-f2)*ninv;
+    f[i]=(2.0*f0.re-f1.re-f2.re)*ninv;
     fmstride[i]=(f0+f1+f2)*ninv;
   }
   Vec Ninv=LOAD(ninv);

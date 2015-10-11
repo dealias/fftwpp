@@ -79,16 +79,7 @@ int main(int argc, char* argv[])
                                convolveOptions(options,fftw::maxthreads));
     
     init(f0,df);
-    rcfft.Forwards0(f0,g0);
-    Array::array2<Complex> h0(dg.X,dg.y,g0);
-    h0[mx][my]=0;
-    rcfft.Backwards0Normalized(g0,f0);
-    
     init(f1,df);
-    rcfft.Forwards0(f1,g1);
-    Array::array2<Complex> h1(dg.X,dg.y,g1);
-    h1[mx][my]=0;
-    rcfft.Backwards0Normalized(g1,f1);
 
     if(main) cout << "\nDistributed input (split in x-direction):" << endl;
     if(main) cout << "f0:" << endl;
