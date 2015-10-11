@@ -15,9 +15,9 @@ int divisor=0; // Test for best block divisor
 int alltoall=-1; // Test for best alltoall routine
 
 void init(double *f,
-	  unsigned int X, unsigned int Y, unsigned int Z,
-	  unsigned int x0, unsigned int y0, unsigned int z0,
-	  unsigned int x, unsigned int y, unsigned int z)
+          unsigned int X, unsigned int Y, unsigned int Z,
+          unsigned int x0, unsigned int y0, unsigned int z0,
+          unsigned int x, unsigned int y, unsigned int z)
 {
   unsigned int c=0;
   for(unsigned int i=0; i < x; ++i) {
@@ -25,8 +25,8 @@ void init(double *f,
     for(unsigned int j=0; j < y; j++) {
       unsigned int jj=y0+j;
       for(unsigned int k=0; k < Z; k++) {
-	unsigned int kk=k;
-	f[c++] = ii + jj + kk;
+        unsigned int kk=k;
+        f[c++] = ii + jj + kk;
       }
     }
   }
@@ -128,7 +128,7 @@ int main(int argc, char* argv[])
     
     if(group.rank == 0) {
       cout << "Configuration: " 
-	   << group.size << " nodes X " << fftw::maxthreads 
+           << group.size << " nodes X " << fftw::maxthreads 
            << " threads/node" << endl;
     }
   }
@@ -138,7 +138,7 @@ int main(int argc, char* argv[])
     bool main=group.rank == 0;
     if(!quiet && main) {
       cout << "mx=" << mx << ", my=" << my << ", mz=" << mz <<
-	", mzp=" << mzp << endl;
+        ", mzp=" << mzp << endl;
       cout << "size=" << group.size << endl;
     }
 
@@ -154,8 +154,8 @@ int main(int argc, char* argv[])
       init(f,df);
 
       if(!quiet && mx*my < outlimit) {
-	if(main) cout << "\ninput:" << endl;
-	show(f,df.x,df.y,df.Z,group.active);
+        if(main) cout << "\ninput:" << endl;
+        show(f,df.x,df.y,df.Z,group.active);
       }
 
       size_t align=sizeof(Complex);
@@ -173,53 +173,55 @@ int main(int argc, char* argv[])
       
       init(flocal(),df.X,df.Y,df.Z,0,0,0,df.X,df.Y,df.Z);
       if(main) {
-	if(!quiet) {
-	  cout << "Gathered input:\n" <<  fgathered << endl;
-	  cout << "Local input:\n" <<  flocal << endl;
-	}
+        if(!quiet) {
+          cout << "Gathered input:\n" <<  fgathered << endl;
+          cout << "Local input:\n" <<  flocal << endl;
+        }
         retval += checkerror(flocal(),fgathered(),df.X*df.Y*df.Z);
       }
       
       fft.Forwards(f,g);
 
-      if(main) localForward.fft(flocal,glocal);
-
+      if(main) {
+        localForward.fft(flocal,glocal);
+        cout << endl;
+      }
+        
       if(!quiet) {
-	if(main) cout << "Distributed output:" << endl;
-	show(g,dg.X,dg.xy.y,dg.z,group.active);
+        if(main) cout << "Distributed output:" << endl;
+        show(g,dg.X,dg.xy.y,dg.z,group.active);
       }
       gatheryz(g,ggathered(),dg,group.active); 
 
       if(!quiet && main) {
-	cout << "Gathered output:\n" <<  ggathered << endl;
-	cout << "Local output:\n" <<  glocal << endl;
+        cout << "Gathered output:\n" <<  ggathered << endl;
+        cout << "Local output:\n" <<  glocal << endl;
       }
       
-      if(main) retval += checkerror(glocal(),ggathered(),dg.X*dg.Y*dg.Z);
-
-      /*
-      //fft.Backwards(f);
-      //fft.Normalize(f);
-      //if(main) localBackward.fftNormalized(flocal);
-      if(!quiet) {
-	if(main) cout << "Distributed output:" << endl;
-	show(g,dg.x,dg.y,dg.Z,group.active);
+      if(main) {
+        retval += checkerror(glocal(),ggathered(),dg.X*dg.Y*dg.Z);
+        cout << endl;
       }
 
-      gatherxy(f, fgathered(), d, group.active);
+      fft.BackwardsNormalized(g,f);
+
+      if(main)
+        localBackward.fftNormalized(glocal,flocal);
+
+      if(!quiet) {
+        if(main) cout << "Distributed back to input:" << endl;
+        show(f,df.x,df.y,df.Z,group.active);
+      }
+
+      gatherxy(f,fgathered(),df,group.active);
       
       if(!quiet && main) {
-	cout << "Gathered output:\n" <<  fgathered << endl;
-	cout << "Local output:\n" <<  flocal << endl;
+        cout << "Gathered back to input:\n" <<  fgathered << endl;
+        cout << "Local back to input:\n" <<  flocal << endl;
       }
       
       if(main)
-        retval += checkerror(flocal(),fgathered(),d.X*d.Y*d.Z);
-      
-      if(!quiet) {
-	if(main) cout << "\nback to input:" << endl;
-	show(f,d.x,d.y,d.Z,group.active);
-      }
+        retval += checkerror(flocal(),fgathered(),df.X*df.Y*df.Z);
       
       if(!quiet && group.rank == 0) {
         cout << endl;
@@ -228,28 +230,26 @@ int main(int argc, char* argv[])
         else
           cout << "FAIL" << endl;
       }
-
-      */
       
     } else {
       /*
-	if(main)
-	cout << "N=" << N << endl;
+        if(main)
+        cout << "N=" << N << endl;
       if(N > 0) {
     
-	double *T=new double[N];
-	for(unsigned int i=0; i < N; ++i) {
-	  init(f,d);
-	  seconds();
-	  fft.Forwards(f);
-	  fft.Backwards(f);
-	  fft.Normalize(f);
-	  T[i]=seconds();
-	}
-	if(!quiet) show(f,d.x,d.y,d.Z,group.active);
+        double *T=new double[N];
+        for(unsigned int i=0; i < N; ++i) {
+          init(f,d);
+          seconds();
+          fft.Forwards(f);
+          fft.Backwards(f);
+          fft.Normalize(f);
+          T[i]=seconds();
+        }
+        if(!quiet) show(f,d.x,d.y,d.Z,group.active);
         
-	if(main) timings("FFT timing:",mx,T,N);
-	delete[] T;
+        if(main) timings("FFT timing:",mx,T,N);
+        delete[] T;
       }
       */
     }

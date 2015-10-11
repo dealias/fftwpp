@@ -283,5 +283,37 @@ void rcfft3dMPI::Forwards(double *f, Complex *g)
   xForwards->fft(g);
 }
 
+void rcfft3dMPI::Backwards(Complex *g, double *f)
+{
+  // FIXME: deal with in-place
+  xBackwards->fft(g);
+  if(Txy) Txy->transpose(g,false,true);
+  const unsigned int stride=dc.z*dc.Y;
+  for(unsigned int i=0; i < dc.x; ++i) 
+    yBackwards->fft(g+i*stride);
+  if(Tyz) Tyz->transpose(g,false,true);
+  zBackwards->fft(g,f);
+}
+
+void rcfft3dMPI::Normalize(double *f)
+{
+  // FIXME: deal with in-place
+  unsigned int N=dr.X*dr.Y*dr.Z;
+  unsigned int n=dr.x*dr.y*dr.Z;
+  double denom=1.0/N;
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(yzthreads)
+#endif
+  for(unsigned int i=0; i < n; ++i) 
+    f[i] *= denom;
+}
+
+
+void rcfft3dMPI::BackwardsNormalized(Complex *g, double *f)
+{
+  Backwards(g,f);
+  Normalize(f);
+}
+
 
 } // End of namespace fftwpp
