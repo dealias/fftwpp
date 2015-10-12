@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
   fftw::effort |= FFTW_NO_SIMD;
 #endif
 
-  // The real-space problem size:
+  // The real-space problem size (must be even in each dimension:
   unsigned int nx=8;
   unsigned int ny=8;
 

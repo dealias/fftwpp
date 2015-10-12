@@ -7,7 +7,7 @@ MPI_Comm Active=MPI_COMM_NULL;
 
 fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out) 
 {
- if(Active == MPI_COMM_NULL)
+  if(Active == MPI_COMM_NULL)
     return Planner(F,in,out);
   fftw_plan plan;
   int rank;
@@ -92,8 +92,8 @@ fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out)
       fftw_forget_wisdom();
       plan=F->Plan(in,out);
       if(plan) {
-      inspiration=fftw_export_wisdom_to_string();
-      length=strlen(inspiration);
+        inspiration=fftw_export_wisdom_to_string();
+        length=strlen(inspiration);
       } else length=0;
     }
     MPI_Gather(&length,1,MPI_INT,NULL,1,MPI_INT,0,Active);
@@ -154,7 +154,7 @@ void fft3dMPI::Forwards(Complex *f)
       yzForwards->fft(f+i*stride);
   }
   
-  if(d.z > 0) 
+  if(Txy)
     Txy->transpose(f,true,false);
   
   xForwards->fft(f);
@@ -164,19 +164,19 @@ void fft3dMPI::Backwards(Complex *f)
 {
   xBackwards->fft(f);
 
-  if(d.z > 0) 
+  if(Txy)
     Txy->transpose(f,false,true);
 
   unsigned int stride=d.z*d.Y;
   if(d.y < d.Y) {
-  for(unsigned int i=0; i < d.x; ++i)
-    yBackwards->fft(f+i*stride);
+    for(unsigned int i=0; i < d.x; ++i)
+      yBackwards->fft(f+i*stride); // This should be an mfft.
 
-  Tyz->transpose(f,false,true);
+    Tyz->transpose(f,false,true);
 
-  zBackwards->fft(f);
+    zBackwards->fft(f);
   } else {
-    for(unsigned int i=0; i < d.x; ++i) 
+    for(unsigned int i=0; i < d.x; ++i)  // This should be an mfft.
       yzBackwards->fft(f+i*stride);
   }
 }
@@ -201,7 +201,7 @@ void fft3dMPI::BackwardsNormalized(Complex *f)
 
 void rcfft2dMPI::Shift(double *f)
 {
-  if(dr.X%2 == 0) {
+  if(dr.X % 2 == 0) {
     const unsigned int start=(dr.x0+1) % 2;
     const unsigned int stop=dr.x;
     const unsigned int ydist=dr.Y; // FIXME: inplace?
@@ -254,7 +254,7 @@ void rcfft2dMPI::Normalize(double *f)
   double denom=1.0/N;
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
- #endif
+#endif
   for(unsigned int i=0; i < n; ++i) 
     f[i] *= denom;
 }

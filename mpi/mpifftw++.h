@@ -160,13 +160,14 @@ public:
   }
 };
   
-// In-place OpenMP/MPI 2D complex FFT.
-// Fourier transform an mx x my array, distributed first over x.
+// 2D OpenMP/MPI complex in-place and out-of-place 
+// xY -> Xy distributed FFT.
+// Fourier transform an nx x ny array, distributed first over x.
 // The array must be allocated as split::n Complex words.
 //
 // Example:
-// MPIgroup group(MPI_COMM_WORLD,mx);
-// split d(mx,my,group.active);
+// MPIgroup group(MPI_COMM_WORLD,nx);
+// split d(nx,ny,group.active);
 // Complex *f=ComplexAlign(d.n);
 // fft2dMPI fft(d,f);
 // fft.Forwards(f);
@@ -218,13 +219,14 @@ public:
   void BackwardsNormalized(Complex *f);
 };
 
-// In-place OpenMP/MPI 3D complex FFT.
-// Fourier transform an mx x my x mz array, distributed first over x and
+// 3D OpenMP/MPI complex in-place and out-of-place 
+// xyZ -> Xyz distributed FFT.
+// Fourier transform an nx x ny x nz array, distributed first over x and
 // then over y. The array must be allocated as split3::n Complex words.
 //
 // Example:
-// MPIgroup group(MPI_COMM_WORLD,mx,my);
-// split3 d(mx,my,mz,group);
+// MPIgroup group(MPI_COMM_WORLD,nx,ny,nz);
+// split3 d(nx,ny,nz,group);
 // Complex *f=ComplexAlign(d.n);
 // fft3dMPI fft(d,f);
 // fft.Forwards(f);
@@ -247,9 +249,9 @@ public:
     d.Activate();
     xythreads=xy.threads;
     yzthreads=yz.threads; 
-    if(d.z > 0)
-      Txy=new mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,f,d.xy.communicator,
-                                    xy);
+    Txy=d.z > 0 ? 
+      new mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,f,d.xy.communicator,xy) :
+      NULL;
 
     // Set up x-direction transforms
     {
@@ -315,7 +317,7 @@ public:
     delete xBackwards;
     delete xForwards;
 
-    if(d.z > 0)
+    if(Txy)
       delete Txy;
   }
 
@@ -325,24 +327,23 @@ public:
   void BackwardsNormalized(Complex *f);
 };
 
-// rcfft2dMPI:
-// Real-to-complex and complex-to-real in-place and out-of-place
-// distributed FFTs.
+// 2D real-to-complex and complex-to-real in-place and out-of-place
+// xY->Xy distributed FFT.
 //
-// The input has size mx x my, distributed in the x direction.
-// The output has size mx x (my/2+1), distributed in the y direction. 
+// The input has size nx x ny, distributed in the x direction.
+// The output has size nx x (ny/2+1), distributed in the y direction. 
+// The arrays must be allocated as split3::n Complex words.
+//
 // Basic interface:
 // Forwards(double *f, Complex * g);
 // Backwards(Complex *g, double *f);
 //
-// TODO:
-// Shift Fourier origin from (0,0) to (X/2,0):
-// Forwards0(double *f, Complex * g);
-// Backwards0(Complex *g, double *f);
+// Forwards0(double *f, Complex * g); // Fourier origin at (nx/2,0)
+// Backwards0(Complex *g, double *f); // Fourier origin at (nx/2,0)
 //
 // Normalize:
 // BackwardsNormalized(Complex *g, double *f);
-// Backwards0Normalized(Complex *g, double *f);
+// Backwards0Normalized(Complex *g, double *f); // Fourier origin at (nx/2,0)
 class rcfft2dMPI {
 private:
   split dr,dc; // real and complex MPI dimensions.
@@ -403,11 +404,11 @@ public:
 
   // Remove the Nyquist mode for even transforms.
   void deNyquist(Complex *f) {
-    if(dr.x % 2 == 0)
+    if(dr.X % 2 == 0)
       for(unsigned int j=0; j < dc.y; ++j)
         f[j]=0.0;
     
-    if(dr.y % 2 == 0 && dc.y0+dc.y == dc.Y) // Last processor
+    if(dr.Y % 2 == 0 && dc.y0+dc.y == dc.Y) // Last processor
       for(unsigned int i=0; i < dc.X; ++i)
         f[(i+1)*dc.y-1]=0.0;
   }
@@ -422,13 +423,16 @@ public:
   void Backwards0Normalized(Complex *g, double *f);
 };
   
-// In-place OpenMP/MPI 3D complex FFT.
-// Fourier transform an mx x my x mz array, distributed first over x and
-// then over y. The array must be allocated as split3::n Complex words.
+// 3D real-to-complex and complex-to-real in-place and out-of-place
+// xyZ -> Xyz distributed FFT.
+//
+// The input has size nx x ny x nz, distributed in the x and y directions.
+// The output has size nx x ny x (nz/2+1), distributed in the y and z directions.
+// The arrays must be allocated as split3::n Complex words.
 //
 // Example:
-// MPIgroup group(MPI_COMM_WORLD,mx,my);
-// split3 d(mx,my,mz,group);
+// MPIgroup group(MPI_COMM_WORLD,nx,ny);
+// split3 d(nx,ny,nz,group);
 // Complex *f=ComplexAlign(d.n);
 // fft3dMPI fft(d,f);
 // fft.Forwards(f);
@@ -441,13 +445,10 @@ private:
   split3 dr; // real-space dimensions
   split3 dc; // complex-space dimensions
   unsigned int xythreads,yzthreads;
+  mfft1d *xForwards,*xBackwards;
+  mfft1d *yForwards,*yBackwards;
   mrcfft1d *zForwards;
   mcrfft1d *zBackwards;
-  mfft1d *yForwards;
-  mfft1d *yBackwards;
-  mfft1d *xForwards;
-  mfft1d *xBackwards;
-  // fft2d *yzForwards,*yzBackwards;
   mpitranspose<Complex> *Txy,*Tyz;
   bool inplace;
   
@@ -460,19 +461,11 @@ public:
     xythreads=xy.threads;
     yzthreads=yz.threads; 
 
-    if(dc.z > 0) {
-      Txy=new mpitranspose<Complex>(dc.X,dc.xy.y,dc.x,dc.Y,dc.z,
-                                     g,dc.xy.communicator,xy);
-    } else {
-      Txy=NULL;
-    }
+    Txy=dc.z > 0 ? new mpitranspose<Complex>(dc.X,dc.xy.y,dc.x,dc.Y,dc.z,
+                                             g,dc.xy.communicator,xy) : NULL;
 
-    if(dc.y < dc.Y) {
-      Tyz=new mpitranspose<Complex>(dc.Y,dc.z,dc.y,dc.Z,1,
-                                    g,dc.yz.communicator,yz);
-    } else {
-      Tyz=NULL;
-    }
+    Tyz=dc.y < dc.Y ? new mpitranspose<Complex>(dc.Y,dc.z,dc.y,dc.Z,1,
+                                                g,dc.yz.communicator,yz) : NULL;
     
     // Set up z-direction transforms
     {
@@ -522,27 +515,27 @@ public:
   }
     
   virtual ~rcfft3dMPI() {
-    if(Txy) delete Txy;
-    if(Tyz) delete Tyz;
-
-    delete zForwards;
-    delete zBackwards;
-    delete yForwards;
-    delete yBackwards;
-    delete xForwards;
     delete xBackwards;
+    delete xForwards;
+    delete yBackwards;
+    delete yForwards;
+    delete zBackwards;
+    delete zForwards;
+    
+    if(Tyz) delete Tyz;
+    if(Txy) delete Txy;
   }
 
   // Remove the Nyquist mode for even transforms.
   void deNyquist(Complex *f) {
-    if(dr.x % 2 == 0) {
+    if(dr.X % 2 == 0) {
       unsigned int stop=dc.y*dc.z;
-      for(unsigned int j=0; j < stop; ++j)
-        f[j]=0.0;
+      for(unsigned int k=0; k < stop; ++k)
+        f[k]=0.0;
     }
     unsigned int yz=dc.y*dc.z;
     
-    if(dr.y % 2 == 0 && dc.y0 == 0) {
+    if(dr.Y % 2 == 0 && dc.y0 == 0) {
       for(unsigned int i=0; i < dc.X; ++i) {
         unsigned int iyz=i*yz;
         for(unsigned int k=0; k < dc.z; ++k)
@@ -550,7 +543,7 @@ public:
       }
     }
         
-    if(dr.z % 2 == 0 && dc.z0+dc.z == dc.Z) // Last processor
+    if(dr.Z % 2 == 0 && dc.z0+dc.z == dc.Z) // Last processor
       for(unsigned int i=0; i < dc.X; ++i)
         for(unsigned int j=0; j < dc.y; ++j)
           f[i*yz+(j+1)*dc.z-1]=0.0;
