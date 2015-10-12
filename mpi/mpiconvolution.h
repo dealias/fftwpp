@@ -143,10 +143,10 @@ protected:
   mpitranspose<Complex> *T;
 public:  
   void inittranspose(const mpiOptions& mpioptions) {
-    if(d.y < d.Y) {
-      T=new mpitranspose<Complex>(d.X,d.y,d.x,d.Y,d.z,u3,
-                                  d.xy.communicator,mpioptions,d.communicator);
-    }
+    T=d.xy.y < d.Y ? 
+               new mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,u3,
+                                         d.xy.communicator,mpioptions,
+                                         d.communicator) : NULL;
   }
 
   void initMPI(const convolveOptions& options) {
@@ -174,7 +174,7 @@ public:
                           unsigned int A=2, unsigned int B=1,
                           convolveOptions options=defaultconvolveOptions) :
     ImplicitConvolution3(mx,my,mz,u1,u2,u3,A,B,
-                         convolveOptions(options,d.y,d.z,d.n2,d.Activate())),
+                         convolveOptions(options,d.xy.y,d.z,d.n2,d.Activate())),
     d(d) {
     initMPI(options);
     inittranspose(options.mpi);
@@ -186,7 +186,7 @@ public:
                           unsigned int A=2, unsigned int B=1,
                           convolveOptions options=defaultconvolveOptions) :
     ImplicitConvolution3(mx,my,mz,A,B,
-                         convolveOptions(options,d.y,d.z,d.n2,d.Activate())),
+                         convolveOptions(options,d.xy.y,d.z,d.n2,d.Activate())),
     d(d) {
     initMPI(options);
     inittranspose(options.mpi);
@@ -194,8 +194,7 @@ public:
   }
   
   virtual ~ImplicitConvolution3MPI() {
-    if(d.y < d.Y)
-      delete T;
+    if(T) delete T;
   }
   
   // F is a pointer to A distinct data blocks each of size
@@ -227,12 +226,12 @@ protected:
   MPI_Comm global;
 public:  
   void inittranspose(Complex *f, const mpiOptions& mpioptions) {
-    if(d.y < d.Y) {
-      T=new mpitranspose<double>(d.X,d.y,d.x,d.Y,2*d.z,(double *) f,
+    if(d.xy.y < d.Y) {
+      T=new mpitranspose<double>(d.X,d.xy.y,d.x,d.Y,2*d.z,(double *) f,
                                  d.xy.communicator,mpioptions,global);
-      U=new mpitranspose<double>(du.X,du.y,du.x,du.Y,2*d.z,(double *) u3,
+      U=new mpitranspose<double>(du.X,du.xy.y,du.x,du.Y,2*d.z,(double *) u3,
                                  du.xy.communicator,mpioptions,global);
-    }
+    } else {T=U=NULL;}
   }
 
   void initMPI(Complex *f, const convolveOptions& options) {
@@ -261,7 +260,7 @@ public:
                            convolveOptions options=defaultconvolveOptions,
                            MPI_Comm global=0) :
     ImplicitHConvolution3(mx,my,mz,u1,u2,u3,A,B,
-                          convolveOptions(options,d.y,d.z,du.n2,
+                          convolveOptions(options,d.xy.y,d.z,du.n2,
                                           du.Activate())), 
     d(d), du(du), global(global ? global : d.communicator) { 
     initMPI(f,options);
@@ -275,7 +274,7 @@ public:
                            convolveOptions options=defaultconvolveOptions,
                            MPI_Comm global=0) :
     ImplicitHConvolution3(mx,my,mz,A,B,
-                          convolveOptions(options,d.y,d.z,du.n2,
+                          convolveOptions(options,d.xy.y,d.z,du.n2,
                                           du.Activate())),
     d(d), du(du), global(global ? global : d.communicator) {
     initMPI(f,options);
@@ -284,7 +283,7 @@ public:
   }
   
   virtual ~ImplicitHConvolution3MPI() {
-    if(d.y < d.Y) {
+    if(T) {
       delete U;
       delete T;
     }

@@ -67,12 +67,12 @@ void ImplicitConvolution3MPI::convolve(Complex **F, multiplier *pmult,
     xfftpad->expand(f,u);
     if(a > 0 && d.y < d.Y) T->wait0();
     xfftpad->Backwards->fft(f);
-    if(d.y < d.Y) {
+    if(T) {
       if(a > 0) T->wait2();
       T->transpose1(f,false,true);
     }
     xfftpad->Backwards->fft(u);
-    if(d.y < d.Y) {
+    if(T) {
       T->wait1();
       T->transpose2(u,false,true);
     }
@@ -82,13 +82,13 @@ void ImplicitConvolution3MPI::convolve(Complex **F, multiplier *pmult,
   unsigned int size=d.x*stride;
     
   subconvolution(F,pmult,offset,size+offset,stride);
-  if(d.y < d.Y) {
+  if(T) {
     T->wait0();
     T->wait2();
     T->transpose1(F[0]+offset,true,false);
   }
   subconvolution(U3,pmult,0,size,stride);
-  if(d.y < d.Y) {
+  if(T) {
     T->wait1();
     for(unsigned int b=1; b < B; ++b)
       T->transpose(F[b]+offset,true,false);
@@ -97,10 +97,10 @@ void ImplicitConvolution3MPI::convolve(Complex **F, multiplier *pmult,
   for(unsigned int b=0; b < B; ++b) {
     Complex *f=F[b]+offset;
     Complex *u=U3[b];
-    if(d.y < d.Y)
+    if(T)
       T->transpose1(u,true,false);
     xfftpad->Forwards->fft(f);
-    if(d.y < d.Y)
+    if(T)
       T->wait1();
     xfftpad->Forwards->fft(u);
     xfftpad->reduce(f,u);
@@ -113,7 +113,7 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
                               split3& d, bool xcompact, bool ycompact,
                               Complex *f, unsigned int nu, Complex *u0)
 {
-  if(d.y == d.Y && d.z == d.Z) {
+  if(d.xy.y == d.Y && d.z == d.Z) {
     HermitianSymmetrizeXY(mx,my,d.Z,mx-xcompact,my-ycompact,f);
     return;
   }
@@ -124,8 +124,8 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
   unsigned int yextra=!ycompact;
   unsigned int yorigin=my-ycompact;
   unsigned int nx=d.X-xextra;
-  unsigned int y0=d.y0;
-  unsigned int dy=d.y;
+  unsigned int y0=d.xy.y0;
+  unsigned int dy=d.xy.y;
   unsigned int j0=y0 == 0 ? yextra : 0;
   unsigned int start=(yorigin > y0) ? yorigin-y0 : 0;
   
@@ -201,7 +201,7 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
     }
   }
   
-  if(nu < nx) delete[] u;
+  if(nu < nx) deleteAlign(u);
 }
 
 void ImplicitHConvolution3MPI::convolve(Complex **F, realmultiplier *pmult,
@@ -209,7 +209,7 @@ void ImplicitHConvolution3MPI::convolve(Complex **F, realmultiplier *pmult,
 {
   backwards(F,U3,symmetrize,offset);
 
-  if(d.y < d.Y) {
+  if(T) {
     transpose(T,A,F,false,true,offset);
     transpose(U,A,U3,false,true);
   }
@@ -219,7 +219,7 @@ void ImplicitHConvolution3MPI::convolve(Complex **F, realmultiplier *pmult,
   subconvolution(F,pmult,offset,d.x*stride+offset,stride);
   subconvolution(U3,pmult,0,du.x*ustride,ustride);
     
-  if(d.y < d.Y) {
+  if(T) {
     transpose(T,B,F,true,false,offset);
     transpose(U,B,U3,true,false);
   }
