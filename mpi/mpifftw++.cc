@@ -142,7 +142,7 @@ void fft2dMPI::BackwardsNormalized(Complex *f)
 void fft3dMPI::Forwards(Complex *f)
 {
   unsigned int stride=d.z*d.Y;
-  if(d.y < d.Y) {
+  if(d.yz.x < d.Y) {
     zForwards->fft(f);
 
     Tyz->transpose(f,true,false);
@@ -168,7 +168,7 @@ void fft3dMPI::Backwards(Complex *f)
     Txy->transpose(f,false,true);
 
   unsigned int stride=d.z*d.Y;
-  if(d.y < d.Y) {
+  if(d.yz.x < d.Y) {
     for(unsigned int i=0; i < d.x; ++i)
       yBackwards->fft(f+i*stride); // This should be an mfft.
 
@@ -279,7 +279,7 @@ void rcfft3dMPI::Forwards(double *f, Complex *g)
   const unsigned int stride=dc.z*dc.Y;
   for(unsigned int i=0; i < dc.x; ++i) 
     yForwards->fft(g+i*stride);
-  if(Txy) Txy->transpose(g,true,false);
+ if(Txy) Txy->transpose(g,true,false);
   xForwards->fft(g);
 }
 
@@ -299,7 +299,7 @@ void rcfft3dMPI::Normalize(double *f)
 {
   // FIXME: deal with in-place
   unsigned int N=dr.X*dr.Y*dr.Z;
-  unsigned int n=dr.x*dr.y*dr.Z;
+  unsigned int n=dr.x*dr.yz.x*dr.Z;
   double denom=1.0/N;
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(yzthreads)
@@ -322,9 +322,9 @@ void rcfft3dMPI::Shift(double *f)
 #pragma omp parallel for num_threads(xythreads)
 #endif
     for(unsigned int i=0; i < dr.x; ++i) {
-      const unsigned int ystart=(i+dr.x0+dr.y0+1) % 2;
-      double *pi=f+i*dr.y*dist;
-      for(unsigned int j=ystart; j < dr.y; j += 2) {
+      const unsigned int ystart=(i+dr.x0+dr.yz.x0+1) % 2;
+      double *pi=f+i*dr.yz.x*dist;
+      for(unsigned int j=ystart; j < dr.yz.x; j += 2) {
         double *p=pi+j*dist;
         for(unsigned int k=0; k < dr.Z; ++k) {
           p[k]=-p[k];

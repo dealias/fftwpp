@@ -263,8 +263,8 @@ public:
       xBackwards=new mfft1d(n,1,M,stride,dist,f,f,xythreads);
     }
     
-    if(d.y < d.Y) {
-      Tyz=new mpitranspose<Complex>(d.Y,d.z,d.y,d.Z,1,f,d.yz.communicator,yz);
+    if(d.yz.x < d.Y) {
+      Tyz=new mpitranspose<Complex>(d.Y,d.z,d.yz.x,d.Z,1,f,d.yz.communicator,yz);
 
       // Set up y-direction transforms
       {
@@ -279,7 +279,7 @@ public:
       // Set up z-direction transforms
       {
         unsigned int n=d.Z;
-        unsigned int M=d.x*d.y;
+        unsigned int M=d.x*d.yz.x;
         size_t stride=1;
         size_t dist=d.Z;
         zForwards=new mfft1d(n,-1,M,stride,dist,f,f,yzthreads);
@@ -303,7 +303,7 @@ public:
   }
     
   virtual ~fft3dMPI() {
-    if(d.y < d.Y) {
+    if(d.yz.x < d.Y) {
       delete zBackwards;
       delete zForwards;
       delete yBackwards;
@@ -327,7 +327,7 @@ public:
   void BackwardsNormalized(Complex *f);
 };
 
-// 2D real-to-complex and complex-to-real in-place and out-of-place
+// 2D OpenMP/MPI real-to-complex and complex-to-real in-place and out-of-place
 // xY->Xy distributed FFT.
 //
 // The input has size nx x ny, distributed in the x direction.
@@ -408,7 +408,7 @@ public:
       for(unsigned int j=0; j < dc.y; ++j)
         f[j]=0.0;
     
-    if(dr.Y % 2 == 0 && dc.y0+dc.y == dc.Y) // Last processor
+    if(dr.Y % 2 == 0 && dc.y0+dc.y == dc.Y) // Last process
       for(unsigned int i=0; i < dc.X; ++i)
         f[(i+1)*dc.y-1]=0.0;
   }
@@ -464,13 +464,14 @@ public:
     Txy=dc.z > 0 ? new mpitranspose<Complex>(dc.X,dc.xy.y,dc.x,dc.Y,dc.z,
                                              g,dc.xy.communicator,xy) : NULL;
 
-    Tyz=dc.y < dc.Y ? new mpitranspose<Complex>(dc.Y,dc.z,dc.y,dc.Z,1,
-                                                g,dc.yz.communicator,yz) : NULL;
+    Tyz=dc.yz.x < dc.Y ? new mpitranspose<Complex>(dc.Y,dc.z,dc.yz.x,dc.Z,1,
+                                                   g,dc.yz.communicator,yz) :
+      NULL;
     
     // Set up z-direction transforms
     {
       unsigned int n=dr.Z;
-      unsigned int M=dr.x*dr.y;
+      unsigned int M=dr.x*dr.yz.x;
       size_t rstride=1;
       size_t cstride=1;
       size_t rdist=inplace ? dr.Z+2 : dr.Z;
@@ -529,13 +530,13 @@ public:
   // Remove the Nyquist mode for even transforms.
   void deNyquist(Complex *f) {
     if(dr.X % 2 == 0) {
-      unsigned int stop=dc.y*dc.z;
+      unsigned int stop=dc.xy.y*dc.z;
       for(unsigned int k=0; k < stop; ++k)
         f[k]=0.0;
     }
-    unsigned int yz=dc.y*dc.z;
+    unsigned int yz=dc.xy.y*dc.z;
     
-    if(dr.Y % 2 == 0 && dc.y0 == 0) {
+    if(dr.Y % 2 == 0 && dc.xy.y0 == 0) {
       for(unsigned int i=0; i < dc.X; ++i) {
         unsigned int iyz=i*yz;
         for(unsigned int k=0; k < dc.z; ++k)
@@ -543,13 +544,12 @@ public:
       }
     }
         
-    if(dr.Z % 2 == 0 && dc.z0+dc.z == dc.Z) // Last processor
+    if(dr.Z % 2 == 0 && dc.z0+dc.z == dc.Z) // Last process
       for(unsigned int i=0; i < dc.X; ++i)
-        for(unsigned int j=0; j < dc.y; ++j)
+        for(unsigned int j=0; j < dc.xy.y; ++j)
           f[i*yz+(j+1)*dc.z-1]=0.0;
   }
   
-  // FIXME add shifts as well
   void Forwards(double *f, Complex *g);
   void Backwards(Complex *g, double* f);
   void Normalize(double *f);
