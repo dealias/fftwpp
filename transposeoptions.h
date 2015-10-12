@@ -1,5 +1,5 @@
-#ifndef __mpioptions_h__
-#define __mpioptions_h__ 1
+#ifndef __transposeoptions_h__
+#define __transposeoptions_h__ 1
 
 struct mpiOptions {
   unsigned int threads;

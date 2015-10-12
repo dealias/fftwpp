@@ -42,7 +42,7 @@
 #include "../fftw++.h"
 
 namespace fftwpp {
-#include "mpioptions.h"
+#include "../transposeoptions.h"
 
 extern double safetyfactor; // For conservative latency estimate.
 extern bool overlap; // Allow overlapped communication.
