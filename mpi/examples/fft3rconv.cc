@@ -37,9 +37,9 @@ int main(int argc, char* argv[])
   unsigned int nzp=nz/2+1;
 
   // Convolution dimensions:
-  unsigned int mx=nx/2;
-  unsigned int my=ny/2;
-  unsigned int mz=nz/2;
+  unsigned int mx=(nx+1)/2;
+  unsigned int my=(ny+1)/2;
+  unsigned int mz=(nz+1)/2;
   
   int divisor=1;
   int alltoall=1;
@@ -53,7 +53,6 @@ int main(int argc, char* argv[])
   MPI_Init_thread(&argc,&argv,MPI_THREAD_MULTIPLE,&provided);
 
   MPIgroup group(MPI_COMM_WORLD,nzp,nx,ny);
-
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;
 
@@ -102,15 +101,14 @@ int main(int argc, char* argv[])
     if(main) cout << "\nDistributed output (split in yz:)" << endl;
     if(main) cout << "g0:" << endl;
     rcfft.Forwards0(f0,g0);
-    rcfft.deNyquist(g0);
     show(g0,dg.X,dg.y,dg.z,group.active);
     if(main) cout << "g1:" << endl;
     rcfft.Forwards0(f1,g1);
-    rcfft.deNyquist(g1);
     show(g1,dg.X,dg.y,dg.z,group.active);
     
     if(main) cout << "\nAfter convolution (split in yz):" << endl;
     C.convolve(G,multbinary);
+    rcfft.deNyquist(g0);
     if(main) cout << "g0:" << endl;
     show(g0,dg.X,dg.y,dg.z,group.active);
 
