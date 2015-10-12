@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_MULTIPLE,&provided);
 
-  MPIgroup group(MPI_COMM_WORLD,nx,ny,nzp);
+  MPIgroup group(MPI_COMM_WORLD,nzp,nx,ny);
 
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;
