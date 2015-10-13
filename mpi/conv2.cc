@@ -10,8 +10,8 @@ using namespace Array;
 // Number of iterations.
 unsigned int N0=1000000;
 unsigned int N=0;
-bool xcompact=false;
-bool ycompact=false;
+bool xcompact=true;
+bool ycompact=true;
 int divisor=0; // Test for best block divisor
 int alltoall=-1; // Test for best alltoall routine
 
@@ -179,8 +179,6 @@ int main(int argc, char* argv[])
     }
 
     convolveOptions options;
-    options.xcompact=xcompact;
-    options.ycompact=ycompact;
     options.mpi.a=divisor;
     options.mpi.alltoall=alltoall;
     ImplicitHConvolution2MPI C(mx,my,xcompact,ycompact,d,du,F[0],A,B,options);
@@ -224,7 +222,7 @@ int main(int argc, char* argv[])
       gathery(F[0],Foutgather,d,1,group.active);
 
       if(main) {
-	ImplicitHConvolution2 Clocal(mx,my,A,B,options);
+	ImplicitHConvolution2 Clocal(mx,my,xcompact,ycompact,A,B,options);
 	Clocal.convolve(Flocal,mult);
 	if(!quiet) {
 	  cout << "Local output:" << endl;

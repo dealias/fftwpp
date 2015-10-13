@@ -135,8 +135,7 @@ public:
                            convolveOptions options=defaultconvolveOptions,
                            MPI_Comm global=0) :
     ImplicitHConvolution2(mx,my,xcompact,ycompact,A,B,
-                          convolveOptions(options,d.x,d.y,
-                                          du.Activate())),
+                          convolveOptions(options,d.x,d.y,du.Activate())),
     d(d), du(du), global(global ? global : d.communicator) {
     inittranspose(f,options.mpi);
   }
