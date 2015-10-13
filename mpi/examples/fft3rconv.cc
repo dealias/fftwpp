@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
     // Set up per-process dimensions
     split3 df(nx,ny,nz,group);
     split3 dg(nx,ny,nzp,group,true);
-    split3 du(mx,ny,nzp,group,true);
+    split3 du(mx+xcompact,ny,my+ycompact,nzp,group,true);
     
     // Allocate complex-aligned memory
     double *f0=doubleAlign(df.n);

@@ -47,8 +47,8 @@ def main(argv):
         start=30
         stop=40
 
-        xlist = [1,2,3,4,5,6,7,8,9,10,random.randint(start,stop)]
-        ylist = [1,2,3,4,5,6,7,8,9,10,random.randint(start,stop)]
+        xlist = [2,1,3,4,5,6,7,8,9,10,random.randint(start,stop)]
+        ylist = [2,1,3,4,5,6,7,8,9,10,random.randint(start,stop)]
         Plist = [8,4,3,2,random.randint(9,12),1]
 
         if(shortrun):
@@ -86,7 +86,6 @@ def main(argv):
                              failcases += " ".join(cmd)
                              failcases += "\t(code " + str(rtest) + ")"
                              failcases += "\n"
-
         if nfails > 0:
             print "Failure cases:"
             print failcases

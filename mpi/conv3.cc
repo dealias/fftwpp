@@ -173,7 +173,7 @@ int main(int argc, char* argv[])
     }
 
     split3 d(nx,ny,nzp,group,true);
-    split3 du(mx+xcompact,ny,nzp,group,true);
+    split3 du(mx+xcompact,ny,my+ycompact,nzp,group,true);
     
     unsigned int Mn=M*d.n;
     Complex *f=ComplexAlign(Mn);

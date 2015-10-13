@@ -113,7 +113,7 @@ class split3 {
 public:
   unsigned int n;             // Total storage (words) for xy transpose
   unsigned int n2;            // Total storage (words) for yz transpose
-  unsigned int X,Y,Z;         // Global dimensions
+  unsigned int X,Y,Y2,Z;      // Global dimensions
   unsigned int x,y,z;         // Local dimensions
   unsigned int x0,y0,z0;      // Local offsets
   split yz,xy;
@@ -121,11 +121,9 @@ public:
   MPI_Comm *XYplane;          // Used by HermitianSymmetrizeXYMPI
   int *reflect;               // Used by HermitianSymmetrizeXYMPI
   split3() {}
-  split3(unsigned int X, unsigned int Y, unsigned int Z,
-         const MPIgroup& group, bool spectral=false) : 
-    X(X), Y(Y), Z(Z), communicator(group.active), XYplane(NULL) {
+  void init(const MPIgroup& group, bool spectral) {
     xy=split(X,Y,group.communicator);
-    yz=split(Y,Z,group.communicator2);
+    yz=split(Y2,Z,group.communicator2);
     x=xy.x;
     x0=xy.x0;
     if(spectral) {
@@ -138,7 +136,20 @@ public:
     z=yz.y;
     z0=yz.y0;
     n2=yz.n;
-    n=std::max(xy.n*z,x*n2);
+    n=std::max(xy.n*z,group.size*n2);
+    show();
+  }
+  
+  split3(unsigned int X, unsigned int Y, unsigned int Z,
+         const MPIgroup& group, bool spectral=false) :
+    X(X), Y(Y), Y2(Y), Z(Z), communicator(group.active), XYplane(NULL) {
+    init(group,spectral);
+  }
+    
+  split3(unsigned int X, unsigned int Y, unsigned int Y2, unsigned int Z,
+         const MPIgroup& group, bool spectral=false) : 
+    X(X), Y(Y), Y2(Y2), Z(Z), communicator(group.active), XYplane(NULL) {
+    init(group,spectral);
   }
   
   int Activate() const {

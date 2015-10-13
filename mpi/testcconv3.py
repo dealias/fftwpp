@@ -44,9 +44,9 @@ def main(argv):
         print "Error: executable", pname, "not present!"
         retval += 1
     else:
-        Xlist = [1,2,3,4,5,6,7,8,9,10,random.randint(start,stop)]
-        Ylist = [1,2,3,4,5,6,7,8,9,10,random.randint(start,stop)]
-        Zlist = [1,2,3,10,random.randint(start,stop)]
+        Xlist = [2,1,3,4,5,6,7,8,9,10,random.randint(start,stop)]
+        Ylist = [2,1,3,4,5,6,7,8,9,10,random.randint(start,stop)]
+        Zlist = [2,1,3,10,random.randint(start,stop)]
         Plist = [8,4,3,2,random.randint(9,12),1]
 
         if(shortrun):
