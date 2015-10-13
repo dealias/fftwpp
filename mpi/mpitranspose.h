@@ -386,7 +386,7 @@ public:
     
     a=options.a;
     b=std::min(nlast+(n0 == np),mlast+(m0 == mp))/a;
-    if(b == 1) {b=a; a=1;}
+    if(b <= 1) {b=a; a=1;}
     
     if(globalrank == 0)
       std::cout << std::endl << "Using alltoall=" << 
@@ -560,7 +560,6 @@ public:
     deallocate();
     if(Tout3) delete Tout3;
     if(Tin3) delete Tin3;
-//    MPI_Barrier(global);
     if(allocated)
       Array::deleteAlign(work,allocated);
   }
