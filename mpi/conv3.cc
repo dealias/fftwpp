@@ -62,14 +62,14 @@ int main(int argc, char* argv[])
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
-  bool dohash=false;
   int retval=0;
+  bool quiet=false;
 
 #ifdef __GNUC__ 
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"heipHM:N:a:m:s:x:y:z:n:T:X:Y:Z:");
+    int c = getopt(argc,argv,"heiqM:N:a:m:s:x:y:z:n:T:X:Y:Z:");
     if (c == -1) break;
                 
     switch (c) {
@@ -83,12 +83,6 @@ int main(int argc, char* argv[])
         break;
       case 'i':
         Implicit=true;
-        break;
-      case 'p':
-        Implicit=false;
-        break;
-      case 'H':
-	dohash=true;
         break;
       case 'M':
         M=atoi(optarg);
@@ -113,6 +107,9 @@ int main(int argc, char* argv[])
         break;
       case 'n':
         N0=atoi(optarg);
+        break;
+      case 'q':
+        quiet=true;
         break;
       case 'T':
         fftw::maxthreads=atoi(optarg);
@@ -153,19 +150,17 @@ int main(int argc, char* argv[])
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;
   
-  if(group.rank == 0) {
-    cout << "provided: " << provided << endl;
-    cout << "fftw::maxthreads: " << fftw::maxthreads << endl;
-    
-    cout << "Configuration: " 
-         << group.size << " nodes X " << fftw::maxthreads 
-         << " threads/node" << endl;
-  }
-  
   if(group.rank < group.size) {
     bool main=group.rank == 0;
-    if(main) {
+    if(!quiet && main) {
       seconds();
+      cout << "provided: " << provided << endl;
+      cout << "fftw::maxthreads: " << fftw::maxthreads << endl;
+    
+      cout << "Configuration: " 
+           << group.size << " nodes X " << fftw::maxthreads 
+           << " threads/node" << endl;
+    
       cout << "N=" << N << endl;
       cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
       cout << "nx=" << nx << ", ny=" << ny << ", nzp=" << nzp << endl;
@@ -203,7 +198,7 @@ int main(int argc, char* argv[])
         F[2*s+1]=g+sstride;
       }
       MPI_Barrier(group.active);
-      if(main)
+      if(!quiet && main)
         cout << "Initialized after " << seconds() << " seconds." << endl;
       for(unsigned int i=0; i < N; ++i) {
         init(f,g,d,M,xcompact,ycompact);
@@ -218,25 +213,10 @@ int main(int argc, char* argv[])
     
       delete [] F;
       
-      if(nx*ny*mz < outlimit)
+      if(!quiet && nx*ny*mz < outlimit)
         show(f,nx,d.y,d.z,
              !xcompact,!ycompact && d.y0 == 0,0,
              nx,d.y,zcompact || d.z0+d.z < nzp ? d.z : d.z-1,group.active);
-  
-      // check if the hash of the rounded output matches a known value
-      if(dohash && xcompact && ycompact) {
-	int hashval=hash(f,nx,d.y,d.z,group.active);
-	if(group.rank == 0) cout << hashval << endl;
-	if(mx == 4 && my == 4 && mz == 4) {
-	  if(hashval != -1156278167) {
-	    retval=1;
-	    if(group.rank == 0) cout << "error: hash does not match" << endl;
-	  } else {
-	    if(group.rank == 0) cout << "hash value OK." << endl;
-	  }
-	}
-      }
-
     }
   
     deleteAlign(f);

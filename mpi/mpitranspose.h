@@ -560,7 +560,7 @@ public:
     deallocate();
     if(Tout3) delete Tout3;
     if(Tin3) delete Tin3;
-    MPI_Barrier(global);
+//    MPI_Barrier(global);
     if(allocated)
       Array::deleteAlign(work,allocated);
   }
