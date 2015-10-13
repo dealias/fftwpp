@@ -35,6 +35,7 @@ def main(argv):
     testlist.append("testcconv2.py")
     testlist.append("testcconv3.py")
     testlist.append("testconv2.py")
+    testlist.append("testconv3.py")
 
     print "Log in " + logfile + "\n"
     log = open(logfile, 'w')
@@ -43,7 +44,7 @@ def main(argv):
     log.close()
 
     ntests = 0
-    nfails = 0
+    nfail = 0
     tstart = time.time()
     for test in testlist:
         ntests += 1
@@ -99,7 +100,7 @@ def main(argv):
     tend = time.time()
     print "\nElapsed time (s):", tend - tstart
 
-    sys.exit(nfails)
+    sys.exit(nfail)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

@@ -179,7 +179,7 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
     else {
       int offset=2*yorigin-y0;
       if(y0+j != yorigin) {
-        unsigned int even=1+ycompact-(J % 2);
+        unsigned int even=1+xcompact-(J % 2);
         for(unsigned int i=0; i < nx; ++i)
           f[stride*(i-even)+d.z*(offset-j)]=u[i];
       } else {

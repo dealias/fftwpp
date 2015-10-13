@@ -137,7 +137,6 @@ public:
     z0=yz.y0;
     n2=yz.n;
     n=std::max(xy.n*z,group.size*n2);
-    show();
   }
   
   split3(unsigned int X, unsigned int Y, unsigned int Z,
@@ -168,7 +167,7 @@ public:
     std::cout << "xy.y=" << xy.y << "\txy.y0=" << xy.y0 << std::endl;
     std::cout << "yz.x=" << yz.x << "\tyz.x0=" << yz.x0 << std::endl;
     std::cout << "n=" << n << std::endl;
-    std::cout << "n2=" << n << std::endl;
+    std::cout << "n2=" << n << " Y2=" << Y2 << std::endl;
   }
 };
   
