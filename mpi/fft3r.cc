@@ -115,7 +115,7 @@ int main(int argc, char* argv[])
   if(nz == 0) nz=nx;
 
   if(N == 0) {
-    N=N0/nx/ny;
+    N=N0/nx/ny/nz;
     if(N < 10) N=10;
   }
   
