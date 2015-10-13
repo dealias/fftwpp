@@ -177,9 +177,9 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
     if(J != rank)
       MPI_Send(u,2*nx,MPI_DOUBLE,J,0,*d.XYplane);
     else {
-      int offset=2*yorigin-y0;
       if(y0+j != yorigin) {
-        unsigned int even=1+xcompact-(J % 2);
+        int offset=2*yorigin-y0;
+        unsigned int even=1+(J % 2);
         for(unsigned int i=0; i < nx; ++i)
           f[stride*(i-even)+d.z*(offset-j)]=u[i];
       } else {
