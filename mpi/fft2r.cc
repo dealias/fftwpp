@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
       N0=atoi(optarg);
       break;
     case 'S':
-      shift=atoi(optarg);
+      shift=atoi(optarg); // TODO: Resolve conflict with -S<int> for stats
       break;
     case 'T':
       fftw::maxthreads=atoi(optarg);
@@ -85,20 +85,18 @@ int main(int argc, char* argv[])
       test=true;
       break;
     case 'h':
-      usage(2); // TODO: Add shift, compact flags
+      usage(2); // TODO: Add shift, compact flags here and also in fft3r
       usageTranspose();
       exit(1);
     }
   }
 
-  cout << "shift: " << shift << endl;
-  
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_MULTIPLE,&provided);
 
   if(ny == 0) ny=nx;
 
-  if(!N == 0) {
+  if(N == 0) {
     N=N0/nx/ny;
     if(N < 10) N=10;
   }

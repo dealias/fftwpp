@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
 
   if(ny == 0) ny=nx;
 
-  if(!N == 0) {
+  if(N == 0) {
     N=N0/nx/ny;
     if(N < 10) N=10;
   }
