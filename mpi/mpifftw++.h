@@ -250,7 +250,8 @@ public:
     xythreads=xy.threads;
     yzthreads=yz.threads; 
     Txy=d.z > 0 ? 
-      new mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,f,d.xy.communicator,xy) :
+      new mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,f,d.xy.communicator,xy,
+                                d.communicator) :
       NULL;
 
     // Set up x-direction transforms
@@ -264,7 +265,8 @@ public:
     }
     
     if(d.yz.x < d.Y) {
-      Tyz=new mpitranspose<Complex>(d.Y,d.z,d.yz.x,d.Z,1,f,d.yz.communicator,yz);
+      Tyz=new mpitranspose<Complex>(d.Y,d.z,d.yz.x,d.Z,1,f,d.yz.communicator,yz,
+        d.communicator);
 
       // Set up y-direction transforms
       {
@@ -462,11 +464,12 @@ public:
     yzthreads=yz.threads; 
 
     Txy=dc.z > 0 ? new mpitranspose<Complex>(dc.X,dc.xy.y,dc.x,dc.Y,dc.z,
-                                             g,dc.xy.communicator,xy) : NULL;
+                                             g,dc.xy.communicator,xy,
+      dc.communicator) : NULL;
 
     Tyz=dc.yz.x < dc.Y ? new mpitranspose<Complex>(dc.Y,dc.z,dc.yz.x,dc.Z,1,
-                                                   g,dc.yz.communicator,yz) :
-      NULL;
+                                                   g,dc.yz.communicator,yz,
+      dc.communicator) : NULL;
     
     // Set up z-direction transforms
     {
