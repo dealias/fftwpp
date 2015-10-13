@@ -22,6 +22,8 @@ dirs=["timings1c/error.implicit", "timings1c/error.explicit" , "timings1r/error.
 C=[]
 d=0
 
+retval=0
+
 for filename in dirs:
     if (os.path.isfile(filename)):
         a = []
@@ -37,7 +39,7 @@ for filename in dirs:
         C[d] /= float(len(a))
         d += 1
     else:
-        print(prog+" does not exist; please compile.")
+        print(filename+" does not exist.")
         retval+=1
 
 
@@ -45,8 +47,6 @@ print("cconv\timplicit\t"+str(C[0]))
 print("cconv\texplicit\t"+str(C[1]))
 print("conv\timplicit\t"+str(C[2]))
 print("conv\texplicit\t"+str(C[3]))
-
-retval=0
 
 while(i < len(C)):
     if(float(C[i]) > 1e-10):

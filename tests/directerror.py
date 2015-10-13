@@ -250,7 +250,7 @@ def check_compact(proglist):
                             command.append("-T1")
                             command.append("-X" + str(X))
                             command.append("-Y" + str(Y))
-                            preprint = prog + "\tcomplact"\
+                            preprint = prog + "\tXY="\
                                            + str(X) + str(Y) \
                                            + "\tA=" + str(A)
                             preprint = prog + "\timplicit\tA=" + str(A)
@@ -271,7 +271,7 @@ def check_compact(proglist):
                                 command.append("-X" + str(X))
                                 command.append("-Y" + str(Y))
                                 command.append("-Z" + str(Z))
-                                preprint = prog + "\tcomplact"\
+                                preprint = prog + "\tXYZ="\
                                            + str(X) + str(Y) + str(Z) \
                                            + "\tA=" + str(A)
                                 ntests3, nfails3 = run3d(preprint, command, \
