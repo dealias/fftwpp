@@ -1108,7 +1108,7 @@ public:
     if(options.ny == 0) {
       options.ny=2*my-ycompact;
       options.nz=mz+!zcompact;
-      options.stride2=(my+ycompact)*options.nz;
+     options.stride2=(my+ycompact)*options.nz;
       options.stride3=(mx+xcompact)*options.ny*options.nz;
     }
   }

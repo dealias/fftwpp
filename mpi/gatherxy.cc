@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
   if(my == 0) my=mx;
   if(mz == 0) mz=mx;
   
-  MPIgroup group(MPI_COMM_WORLD,mz,mx,my);
+  MPIgroup group(MPI_COMM_WORLD,mx,my,mz);
 
   // If the process is unused, then do nothing.
   if(group.rank < group.size) {

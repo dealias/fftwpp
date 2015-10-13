@@ -119,7 +119,8 @@ int main(int argc, char* argv[])
     if(N < 10) N=10;
   }
   
-  MPIgroup group(MPI_COMM_WORLD,nz,nx,ny);
+  unsigned int nzp=nz/2+1;
+  MPIgroup group(MPI_COMM_WORLD,nx,ny,nzp);
 
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;
@@ -138,7 +139,6 @@ int main(int argc, char* argv[])
   }
   
   if(group.rank < group.size) {
-    int nzp=nz/2+1;
     bool main=group.rank == 0;
     if(!quiet && main) {
       cout << "nx=" << nx << ", ny=" << ny << ", nz=" << nz <<

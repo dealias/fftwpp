@@ -10,7 +10,7 @@ fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out);
 
 extern MPI_Comm Active;
 
-// Distribute first Y, then (if allowpencil=true) Z.
+// Distribute first X, then (if allowpencil=true) Y.
 class MPIgroup {
 public:  
   int rank,size;
@@ -26,10 +26,10 @@ public:
     MPI_Comm_split(comm,rank < size,0,&active);
   }
   
-  MPIgroup(const MPI_Comm& comm, unsigned int Y) {
+  MPIgroup(const MPI_Comm& comm, unsigned int X) {
     init(comm);
-    unsigned int yblock=ceilquotient(Y,size);
-    size=ceilquotient(Y,yblock);
+    unsigned int xblock=ceilquotient(X,size);
+    size=ceilquotient(X,xblock);
     activate(comm);
   }
   
@@ -37,13 +37,13 @@ public:
            unsigned int Z, bool allowPencil=true) {
     init(comm);
     unsigned int x=ceilquotient(X,size);
-    unsigned int y=ceilquotient(Y,size);
-    unsigned int z=allowPencil && X*y == x*Y ? ceilquotient(Z,size*y/Y) : Z;
-    size=ceilquotient(Y,y)*ceilquotient(Z,z);
+    unsigned int z=ceilquotient(Z,size);
+    unsigned int y=allowPencil && x*Z == X*z ? ceilquotient(Y,size*x/X) : Y;
+    size=ceilquotient(X,x)*ceilquotient(Y,y);
     
     activate(comm);
     if(rank < size) {
-      int major=ceilquotient(size,Y);
+      int major=ceilquotient(size,X);
       int p=rank % major;
       int q=rank / major;
   
@@ -157,6 +157,7 @@ public:
     std::cout << "xy.y=" << xy.y << "\txy.y0=" << xy.y0 << std::endl;
     std::cout << "yz.x=" << yz.x << "\tyz.x0=" << yz.x0 << std::endl;
     std::cout << "n=" << n << std::endl;
+    std::cout << "n2=" << n << std::endl;
   }
 };
   

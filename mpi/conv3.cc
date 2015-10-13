@@ -148,7 +148,7 @@ int main(int argc, char* argv[])
   unsigned int ny=2*my-ycompact;
   unsigned int nzp=mz+!zcompact;
     
-  MPIgroup group(MPI_COMM_WORLD,nx,ny,nzp);
+  MPIgroup group(MPI_COMM_WORLD,ny,nzp,nx);
   
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;

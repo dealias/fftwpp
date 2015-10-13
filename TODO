@@ -1,14 +1,11 @@
 Release todo:
 Transpose work memory
-MPI speed test
+Add shift=true option to 2D & 3D Hermitian convolutions
 wrappers
 update documentation
 Make sure that the PARALLEL pragma doesn't contain any "#ifdef"s
 
 Release done:
 speed test out-of-place conv: Done, seems to give 10% or so.
-
-Future todo:
-finish MPI ffts
 
 consider FFTW_DESTROY_INPUT 
