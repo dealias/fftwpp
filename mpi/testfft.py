@@ -12,7 +12,7 @@ def main(argv):
     print msg
 
     usage = "Usage:\n"\
-            "./testtranspose.py\n"\
+            "./testfft.py\n"\
             "\t-s\t\tSpecify a short run\n"\
             "\t-h\t\tShow usage"
 

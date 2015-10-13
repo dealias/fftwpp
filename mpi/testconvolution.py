@@ -8,12 +8,12 @@ import os.path
 
 def main(argv):
     msg = "MPI convolution unit tests"
-    logfile = 'testconvolutions.log'
+    logfile = 'testconvolution.log'
     print msg
 
     print "MPI convolution unit test"
     usage = "Usage:\n"\
-            "./testtranspose.py\n"\
+            "./testconvolution.py\n"\
             "\t-s\t\tSpecify a short run\n"\
             "\t-h\t\tShow usage"
 
@@ -95,7 +95,7 @@ def main(argv):
                 log.close()
                 nfail += 1
 
-    print "\n", nfails, "failures out of", ntests, "tests." 
+    print "\n", nfail, "failures out of", ntests, "tests." 
 
     tend = time.time()
     print "\nElapsed time (s):", tend - tstart

@@ -1,11 +1,13 @@
 Release todo:
 Transpose work memory
-Add shift=true option to 2D & 3D Hermitian convolutions
+Overlap MPI communication with Hermitian convolutions
 wrappers
 update documentation
-Make sure that the PARALLEL pragma doesn't contain any "#ifdef"s
 
 Release done:
 speed test out-of-place conv: Done, seems to give 10% or so.
 
+Possible future enhancements:
 consider FFTW_DESTROY_INPUT 
+Add shift=true option to 2D & 3D Hermitian convolutions via compact,shift
+structure hflags(bool compact=true, shift=true).
