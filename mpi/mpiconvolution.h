@@ -79,10 +79,8 @@ public:
   
   void transpose(mpitranspose<double> *T, unsigned int A, Complex **F,
                  bool inflag, bool outflag, unsigned int offset=0) {
-    for(unsigned int a=0; a < A; ++a) {
-      double *f=(double *) (F[a]+offset);
-      T->transpose(f,inflag,outflag);
-    }
+    for(unsigned int a=0; a < A; ++a)
+      T->transpose((double *) (F[a]+offset),inflag,outflag);
   }
   
   // f is a temporary array of size d.n needed only during construction.
@@ -249,7 +247,7 @@ public:
     if(d.xy.y < d.Y) {
       T=new mpitranspose<double>(d.X,d.xy.y,d.x,d.Y,2*d.z,(double *) f,
                                  d.xy.communicator,mpioptions,global);
-      U=new mpitranspose<double>(du.X,du.xy.y,du.x,du.Y,2*d.z,(double *) u3,
+      U=new mpitranspose<double>(du.X,du.xy.y,du.x,du.Y,2*du.z,(double *) u3,
                                  du.xy.communicator,mpioptions,global);
     } else {T=U=NULL;}
     du.Deactivate();
@@ -339,10 +337,8 @@ public:
   
   void transpose(mpitranspose<double> *T, unsigned int A, Complex **F,
                  bool inflag, bool outflag, unsigned int offset=0) {
-    for(unsigned int a=0; a < A; ++a) {
-      double *f=(double *) (F[a]+offset);
-      T->transpose(f,inflag,outflag);
-    }
+    for(unsigned int a=0; a < A; ++a)
+      T->transpose((double *) (F[a]+offset),inflag,outflag);
   }
   
   void HermitianSymmetrize(Complex *f, Complex *u) {
