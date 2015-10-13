@@ -120,8 +120,8 @@ public:
                            Complex *f, unsigned int A=2, unsigned int B=1,
                            convolveOptions options=defaultconvolveOptions,
                            MPI_Comm global=0) :
-    ImplicitHConvolution2(mx,my,A,B,convolveOptions(options,d.x,d.y,
-                                          du.Activate())),
+    ImplicitHConvolution2(mx,my,true,true,A,B,convolveOptions(options,d.x,d.y,
+                                                              du.Activate())),
     d(d), du(du) {
     inittranspose(f,options.mpi,global);
   }
@@ -310,7 +310,7 @@ public:
                            Complex *f, unsigned int A=2, unsigned int B=1,
                            convolveOptions options=defaultconvolveOptions,
                            MPI_Comm global=0) :
-    ImplicitHConvolution3(mx,my,mz,A,B,
+    ImplicitHConvolution3(mx,my,mz,true,true,true,A,B,
                           convolveOptions(options,d.xy.y,d.z,du.n2,
                                           du.Activate())),
     d(d), du(du) {
