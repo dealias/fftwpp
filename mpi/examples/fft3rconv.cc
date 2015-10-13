@@ -44,9 +44,9 @@ int main(int argc, char* argv[])
   int divisor=1;
   int alltoall=1;
   convolveOptions options;
-  options.xcompact=false;
-  options.ycompact=false;
-  options.zcompact=false;
+  bool xcompact=false;
+  bool ycompact=false;
+  bool zcompact=false;
   options.mpi=mpiOptions(fftw::maxthreads,divisor,alltoall);
     
   int provided;
@@ -87,7 +87,7 @@ int main(int argc, char* argv[])
 
     // Create instance of convolution
     Complex *G[]={g0,g1};
-    ImplicitHConvolution3MPI C(mx,my,mz,dg,du,g0,2,1,
+    ImplicitHConvolution3MPI C(mx,my,mz,xcompact,ycompact,zcompact,dg,du,g0,2,1,
                                convolveOptions(options,fftw::maxthreads));
     init(f0,df);
     init(f1,df);

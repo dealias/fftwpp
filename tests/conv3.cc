@@ -224,11 +224,7 @@ int main(int argc, char* argv[])
   double *T=new double[N];
 
   if(Implicit) {
-    convolveOptions options;
-    options.xcompact=xcompact;
-    options.ycompact=ycompact;
-    options.zcompact=zcompact;
-    ImplicitHConvolution3 C(mx,my,mz,A,B,options);
+    ImplicitHConvolution3 C(mx,my,mz,xcompact,ycompact,zcompact,A,B);
     cout << "threads=" << C.Threads() << endl << endl;
     
     realmultiplier *mult;

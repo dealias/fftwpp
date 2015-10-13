@@ -72,7 +72,7 @@ struct convolveOptions {
   mpiOptions mpi;                  // |
   
   convolveOptions(unsigned int threads=fftw::maxthreads,
-                  bool xcompact=false, bool ycompact=false, bool zcompact=false,
+                  bool xcompact=true, bool ycompact=true, bool zcompact=true,
                   unsigned int nx=0, unsigned int ny=0, unsigned int nz=0,
                   unsigned int stride2=0, unsigned int stride3=0) :
     threads(threads),
@@ -605,12 +605,11 @@ public:
   ImplicitConvolution2(unsigned int mx, unsigned int my,
                        unsigned int A=2, unsigned int B=1,
                        convolveOptions options=defaultconvolveOptions) :
-    ThreadBase(options.threads), mx(mx), my(my), A(A), B(B) {
+    ThreadBase(options.threads), mx(mx), my(my), A(A), B(B), allocated(true) {
     set(options);
     multithread(options.nx);
     u1=ComplexAlign(my*A*threads);
     u2=ComplexAlign(options.stride2*A);
-    allocated=true;
     init(options);
   }
   
@@ -775,12 +774,39 @@ public:
   ImplicitHConvolution2Base(unsigned int mx, unsigned int my,
                             unsigned int A=2, unsigned int B=1,
                             convolveOptions options=defaultconvolveOptions) :
-    ThreadBase(options.threads), mx(mx), my(my), A(A), B(B) {
+    ThreadBase(options.threads), mx(mx), my(my), A(A), B(B), allocated(true) {
     set(options);
     multithread(options.nx);
     u1=ComplexAlign((my/2+1)*A*threads);
     u2=ComplexAlign(options.stride2*A);
-    allocated=true;
+    init(options);
+  }
+  
+  ImplicitHConvolution2Base(unsigned int mx, unsigned int my,
+                            bool xcompact, bool ycompact,
+                            Complex *u1, Complex *u2,
+                            unsigned int A=2, unsigned int B=1,
+                            convolveOptions options=defaultconvolveOptions) :
+    ThreadBase(options.threads), mx(mx), my(my), u1(u1), u2(u2), A(A), B(B),
+    allocated(false) {
+    options.xcompact=xcompact;
+    options.ycompact=ycompact;
+    set(options);
+    multithread(options.nx);
+    init(options);
+  }
+  
+  ImplicitHConvolution2Base(unsigned int mx, unsigned int my,
+                            bool xcompact, bool ycompact,
+                            unsigned int A=2, unsigned int B=1,
+                            convolveOptions options=defaultconvolveOptions) :
+    ThreadBase(options.threads), mx(mx), my(my), A(A), B(B), allocated(true) {
+    options.xcompact=xcompact;
+    options.ycompact=ycompact;
+    set(options);
+    multithread(options.nx);
+    u1=ComplexAlign((my/2+1)*A*threads);
+    u2=ComplexAlign(options.stride2*A);
     init(options);
   }
   
@@ -824,6 +850,23 @@ public:
                         unsigned int A=2, unsigned int B=1,
                         convolveOptions options=defaultconvolveOptions) :
     ImplicitHConvolution2Base(mx,my,A,B,options) {
+    initconvolve();
+  }
+  
+  ImplicitHConvolution2(unsigned int mx, unsigned int my,
+                        bool xcompact, bool ycompact,
+                        Complex *u1, Complex *u2,
+                        unsigned int A=2, unsigned int B=1,
+                        convolveOptions options=defaultconvolveOptions) :
+    ImplicitHConvolution2Base(mx,my,xcompact,ycompact,u1,u2,A,B,options) {
+    initconvolve();
+  }
+  
+  ImplicitHConvolution2(unsigned int mx, unsigned int my,
+                        bool xcompact, bool ycompact,
+                        unsigned int A=2, unsigned int B=1,
+                        convolveOptions options=defaultconvolveOptions) :
+    ImplicitHConvolution2Base(mx,my,xcompact,ycompact,A,B,options) {
     initconvolve();
   }
   
@@ -1124,6 +1167,38 @@ public:
                         convolveOptions options=defaultconvolveOptions) :
     ThreadBase(options.threads), mx(mx), my(my), mz(mz), A(A), B(B),
     allocated(true) {
+    set(options);
+    multithread(mx);
+    u1=ComplexAlign((mz/2+1)*A*threads*innerthreads);
+    u2=ComplexAlign(options.stride2*A*threads);
+    u3=ComplexAlign(options.stride3*A);
+    init(options);
+  }
+  
+  ImplicitHConvolution3(unsigned int mx, unsigned int my, unsigned int mz,
+                        bool xcompact, bool ycompact, bool zcompact,
+                        Complex *u1, Complex *u2, Complex *u3,
+                        unsigned int A=2, unsigned int B=1,
+                        convolveOptions options=defaultconvolveOptions) :
+    ThreadBase(options.threads), mx(mx), my(my), mz(mz), u1(u1), u2(u2), u3(u3),
+    A(A), B(B), allocated(false) {
+    options.xcompact=xcompact;
+    options.ycompact=ycompact;
+    options.zcompact=zcompact;
+    set(options);
+    multithread(mx);
+    init(options);
+  }
+  
+  ImplicitHConvolution3(unsigned int mx, unsigned int my, unsigned int mz,
+                        bool xcompact, bool ycompact, bool zcompact,
+                        unsigned int A=2, unsigned int B=1,
+                        convolveOptions options=defaultconvolveOptions) :
+    ThreadBase(options.threads), mx(mx), my(my), mz(mz), A(A), B(B),
+    allocated(true) {
+    options.xcompact=xcompact;
+    options.ycompact=ycompact;
+    options.zcompact=zcompact;
     set(options);
     multithread(mx);
     u1=ComplexAlign((mz/2+1)*A*threads*innerthreads);

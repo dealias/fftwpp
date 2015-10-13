@@ -20,6 +20,7 @@ public:
   void inittranspose(const mpiOptions& mpioptions) {
     T=new mpitranspose<Complex>(d.X,d.y,d.x,d.Y,1,u2,d.communicator,mpioptions,
                                 global);
+    d.Deactivate();
   }
 
   // u1 is a temporary array of size my*A*options.threads.
@@ -35,7 +36,6 @@ public:
                                                          d.Activate())),
     d(d), global(global ? global : d.communicator) {
     inittranspose(options.mpi);
-    d.Deactivate();
   }
   
   ImplicitConvolution2MPI(unsigned int mx, unsigned int my, const split& d,
@@ -46,7 +46,6 @@ public:
                                                    d.Activate())),
     d(d), global(global ? global : d.communicator) {
     inittranspose(options.mpi);
-    d.Deactivate();
   }
   
   virtual ~ImplicitConvolution2MPI() {
@@ -77,6 +76,7 @@ public:
                                d.communicator,mpioptions,global);
     U=new mpitranspose<double>(du.X,du.y,du.x,du.Y,2,(double *) u2,
                                du.communicator,mpioptions,global);
+    du.Deactivate();
   }    
   
   void transpose(mpitranspose<double> *T, unsigned int A, Complex **F,
@@ -102,20 +102,43 @@ public:
                           convolveOptions(options,d.x,d.y,du.Activate())),
     d(d), du(du), global(global ? global : d.communicator) {
     inittranspose(f,options.mpi);
-    du.Deactivate();
+  }
+  
+  ImplicitHConvolution2MPI(unsigned int mx, unsigned int my,
+                           bool xcompact, bool ycompact,
+                           const split& d, const split& du,
+                           Complex *f, Complex *u1, Complex *u2,
+                           unsigned int A=2, unsigned int B=1,
+                           convolveOptions options=defaultconvolveOptions,
+                           MPI_Comm global=0) :
+    ImplicitHConvolution2(mx,my,xcompact,ycompact,u1,u2,A,B,
+                          convolveOptions(options,d.x,d.y,du.Activate())),
+    d(d), du(du), global(global ? global : d.communicator) {
+    inittranspose(f,options.mpi);
   }
   
   ImplicitHConvolution2MPI(unsigned int mx, unsigned int my,
                            const split& d, const split& du,
-                           Complex *f,
-                           unsigned int A=2, unsigned int B=1,
+                           Complex *f, unsigned int A=2, unsigned int B=1,
                            convolveOptions options=defaultconvolveOptions,
                            MPI_Comm global=0) :
     ImplicitHConvolution2(mx,my,A,B,convolveOptions(options,d.x,d.y,
-                                                    du.Activate())),
+                                          du.Activate())),
     d(d), du(du), global(global ? global : d.communicator) {
     inittranspose(f,options.mpi);
-    du.Deactivate();
+  }
+  
+  ImplicitHConvolution2MPI(unsigned int mx, unsigned int my,
+                           bool xcompact, bool ycompact,
+                           const split& d, const split& du,
+                           Complex *f, unsigned int A=2, unsigned int B=1,
+                           convolveOptions options=defaultconvolveOptions,
+                           MPI_Comm global=0) :
+    ImplicitHConvolution2(mx,my,xcompact,ycompact,A,B,
+                          convolveOptions(options,d.x,d.y,
+                                          du.Activate())),
+    d(d), du(du), global(global ? global : d.communicator) {
+    inittranspose(f,options.mpi);
   }
   
   virtual ~ImplicitHConvolution2MPI() {
@@ -147,6 +170,7 @@ public:
                new mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,u3,
                                          d.xy.communicator,mpioptions,
                                          d.communicator) : NULL;
+    d.Deactivate();
   }
 
   void initMPI(const convolveOptions& options) {
@@ -161,6 +185,7 @@ public:
                                                   d.communicator);
       initpointers3(U3,u3,d.n);
     }
+    inittranspose(options.mpi);
   }
   
   // u1 is a temporary array of size mz*A*options.threads.
@@ -177,8 +202,6 @@ public:
                          convolveOptions(options,d.xy.y,d.z,d.n2,d.Activate())),
     d(d) {
     initMPI(options);
-    inittranspose(options.mpi);
-    d.Deactivate();
   }
 
   ImplicitConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
@@ -189,8 +212,6 @@ public:
                          convolveOptions(options,d.xy.y,d.z,d.n2,d.Activate())),
     d(d) {
     initMPI(options);
-    inittranspose(options.mpi);
-    d.Deactivate();
   }
   
   virtual ~ImplicitConvolution3MPI() {
@@ -232,6 +253,7 @@ public:
       U=new mpitranspose<double>(du.X,du.xy.y,du.x,du.Y,2*d.z,(double *) u3,
                                  du.xy.communicator,mpioptions,global);
     } else {T=U=NULL;}
+    du.Deactivate();
   }
 
   void initMPI(Complex *f, const convolveOptions& options) {
@@ -245,6 +267,7 @@ public:
                                        convolveOptions(options,innerthreads));
       initpointers3(U3,u3,du.n);
     }
+    inittranspose(f,options.mpi);
   }
   
   // f is a temporary array of size d.n needed only during construction.
@@ -264,8 +287,20 @@ public:
                                           du.Activate())), 
     d(d), du(du), global(global ? global : d.communicator) { 
     initMPI(f,options);
-    inittranspose(f,options.mpi);
-    du.Deactivate();
+  }
+
+  ImplicitHConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
+                           bool xcompact, bool ycompact, bool zcompact,
+                           const split3& d, const split3& du,
+                           Complex *f, Complex *u1, Complex *u2, Complex *u3,
+                           unsigned int A=2, unsigned int B=1,
+                           convolveOptions options=defaultconvolveOptions,
+                           MPI_Comm global=0) :
+    ImplicitHConvolution3(mx,my,mz,xcompact,ycompact,zcompact,u1,u2,u3,A,B,
+                          convolveOptions(options,d.xy.y,d.z,du.n2,
+                                          du.Activate())), 
+    d(d), du(du), global(global ? global : d.communicator) { 
+    initMPI(f,options);
   }
 
   ImplicitHConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
@@ -278,8 +313,19 @@ public:
                                           du.Activate())),
     d(d), du(du), global(global ? global : d.communicator) {
     initMPI(f,options);
-    inittranspose(f,options.mpi);
-    du.Deactivate();
+  }
+  
+  ImplicitHConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
+                           bool xcompact, bool ycompact, bool zcompact,
+                           const split3& d, const split3& du,
+                           Complex *f, unsigned int A=2, unsigned int B=1,
+                           convolveOptions options=defaultconvolveOptions,
+                           MPI_Comm global=0) :
+    ImplicitHConvolution3(mx,my,mz,xcompact,ycompact,zcompact,A,B,
+                          convolveOptions(options,d.xy.y,d.z,du.n2,
+                                          du.Activate())),
+    d(d), du(du), global(global ? global : d.communicator) {
+    initMPI(f,options);
   }
   
   virtual ~ImplicitHConvolution3MPI() {

@@ -191,12 +191,10 @@ int main(int argc, char* argv[])
 
     if(Implicit) {
       convolveOptions options;
-      options.xcompact=xcompact;
-      options.ycompact=ycompact;
-      options.zcompact=zcompact;
       options.mpi.a=divisor;
       options.mpi.alltoall=alltoall;
-      ImplicitHConvolution3MPI C(mx,my,mz,d,du,f,A,B,options);
+      ImplicitHConvolution3MPI C(mx,my,mz,xcompact,ycompact,zcompact,d,du,f,A,B,
+                                 options);
       Complex **F=new Complex *[A];
       unsigned int stride=d.n;
       for(unsigned int s=0; s < M; ++s) {

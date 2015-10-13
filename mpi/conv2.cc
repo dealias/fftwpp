@@ -183,7 +183,7 @@ int main(int argc, char* argv[])
     options.ycompact=ycompact;
     options.mpi.a=divisor;
     options.mpi.alltoall=alltoall;
-    ImplicitHConvolution2MPI C(mx,my,d,du,F[0],A,B,options);
+    ImplicitHConvolution2MPI C(mx,my,xcompact,ycompact,d,du,F[0],A,B,options);
     
     MPI_Barrier(group.active);
 

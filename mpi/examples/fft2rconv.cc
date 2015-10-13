@@ -37,9 +37,9 @@ int main(int argc, char* argv[])
   
   int divisor=1;
   int alltoall=1;
+  bool xcompact=false;
+  bool ycompact=false;
   convolveOptions options;
-  options.xcompact=false;
-  options.ycompact=false;
   options.mpi=mpiOptions(fftw::maxthreads,divisor,alltoall);
   
   int provided;
@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
      // Set up per-process dimensions
     split df(nx,ny,group.active);
     split dg(nx,nyp,group.active);
-    split du(mx+options.xcompact,nyp,group.active);
+    split du(mx+xcompact,nyp,group.active);
 
     // Allocate complex-aligned memory
     double *f0=doubleAlign(df.n);
@@ -79,7 +79,7 @@ int main(int argc, char* argv[])
 
     // Create instance of convolution
     Complex *G[]={g0,g1};
-    ImplicitHConvolution2MPI C(mx,my,dg,du,g0,2,1,
+    ImplicitHConvolution2MPI C(mx,my,xcompact,ycompact,dg,du,g0,2,1,
                                convolveOptions(options,fftw::maxthreads));
     
     init(f0,df);
