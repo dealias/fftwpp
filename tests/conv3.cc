@@ -219,7 +219,7 @@ int main(int argc, char* argv[])
   array3<Complex> f(nxp,nyp,nzp,F[0]);
 
   array3<Complex> h0;
-  if(Direct) h0.Allocate(mx,my,mz,align);
+  if(Direct && Implicit) h0.Allocate(mx,my,mz,align);
 
   double *T=new double[N];
 

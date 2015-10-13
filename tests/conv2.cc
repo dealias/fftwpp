@@ -164,7 +164,7 @@ int main(int argc, char* argv[])
   size_t align=sizeof(Complex);
 
   array2<Complex> h0;
-  if(Direct && Implicit) h0.Allocate(mx,my,align);
+  if(Direct) h0.Allocate(mx,my,align);
 
   nxp=Explicit ? nx : 2*mx-xcompact;
   nyp=Explicit ? ny/2+1 : my+!ycompact;
@@ -230,6 +230,12 @@ int main(int argc, char* argv[])
     timings(Pruned ? "Pruned" : "Explicit",mx,T,N,stats);
 
     unsigned int offset=nx/2-mx+1;
+    
+    if(Direct) {
+      for(unsigned int i=0; i < mx; i++) 
+        for(unsigned int j=0; j < my; j++)
+	  h0[i][j]=f[offset+i][j];
+    }
 
     if(2*(mx-1)*my < outlimit) { 
       for(unsigned int i=offset; i < offset+2*mx-1; i++) {
@@ -243,7 +249,6 @@ int main(int argc, char* argv[])
   }
   
   if(Direct) {
-    Explicit=0;
     unsigned int nxp=2*mx-1;
     array2<Complex> h(nxp,my,align);
     DirectHConvolution2 C(mx,my);
