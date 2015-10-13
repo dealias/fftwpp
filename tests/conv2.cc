@@ -262,7 +262,7 @@ int main(int argc, char* argv[])
         cout << endl;
       } else cout << h[0][0] << endl;
 
-    if(Implicit) { // compare implicit or explicit version with direct verion:
+    { // compare implicit or explicit version with direct verion:
       double error=0.0;
       cout << endl;
       double norm=0.0;
@@ -276,7 +276,6 @@ int main(int argc, char* argv[])
       cout << "error=" << error << endl;
       if (error > 1e-12) cerr << "Caution! error=" << error << endl;
     }
-
   }
   
   delete [] T;

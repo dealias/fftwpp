@@ -290,7 +290,7 @@ int main(int argc, char* argv[])
       }
     else cout << h[0][0][0] << endl;
     
-    { // compare implicit or explicit version with direct verion:
+    if(Implicit) { // compare implicit version with direct verion:
       double error=0.0;
       double norm=0.0;
       for(unsigned int i=0; i < mx; i++) {

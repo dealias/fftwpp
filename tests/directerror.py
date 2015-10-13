@@ -253,7 +253,6 @@ def check_compact(proglist):
                             preprint = prog + "\tXY="\
                                            + str(X) + str(Y) \
                                            + "\tA=" + str(A)
-                            preprint = prog + "\timplicit\tA=" + str(A)
                             ntests2, nfails2 = run2d(preprint, command, \
                                                      xlist, ylist)
                             ntests += ntests2
@@ -290,7 +289,7 @@ def check_explicit(proglist):
     xlist = [0,8,9,10]
     ylist = [0,8,9,10]
     zlist = [0,8,9,10]
-    Alist = [2,4]
+    Alist = [2]
     typearg = "-e"
     for prog in proglist:
         for A in Alist:
@@ -352,8 +351,8 @@ cotests, cofails = check_compact(compactlist)
 ntests += cotests
 nfails += cofails
 
-elist = ["cconv", "cconv2", "cconv3", "conv"] 
-etests, efails = check_compact(elist)
+elist = ["cconv", "cconv2", "cconv3", "conv", "conv2"] 
+etests, efails = check_explicit(elist)
 ntests += etests
 nfails += efails
 
