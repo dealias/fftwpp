@@ -1314,7 +1314,7 @@ public:
     fftw_execute_dft_r2c(plan,(double *) in,(fftw_complex *) out);
   }
   
-  // Set Nyquist modes to zero.
+  // Set Nyquist modes of even shifted transforms to zero.
   void deNyquist(Complex *f) {
     unsigned int nyp=ny/2+1;
     if(nx % 2 == 0)
@@ -1383,7 +1383,7 @@ public:
     }
   }
   
-  // Set Nyquist modes to zero.
+  // Set Nyquist modes of even shifted transforms to zero.
   void deNyquist(Complex *f) {
     unsigned int nyp=ny/2+1;
     if(nx % 2 == 0)
@@ -1503,7 +1503,7 @@ public:
     fftw_execute_dft_r2c(plan,(double *) in,(fftw_complex *) out);
   }
   
-  // Set Nyquist modes to zero.
+  // Set Nyquist modes of even shifted transforms to zero.
   void deNyquist(Complex *f) {
     unsigned int nzp=nz/2+1;
     unsigned int yz=ny*nzp;
@@ -1588,7 +1588,7 @@ public:
     }
   }
   
-  // Set Nyquist modes to zero.
+  // Set Nyquist modes of even shifted transforms to zero.
   void deNyquist(Complex *f) {
     unsigned int nzp=nz/2+1;
     unsigned int yz=ny*nzp;

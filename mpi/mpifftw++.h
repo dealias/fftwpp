@@ -415,7 +415,7 @@ public:
     delete T;
   }
 
-  // Remove the Nyquist mode for even transforms.
+  // Set Nyquist modes of even shifted transforms to zero.
   void deNyquist(Complex *f) {
     if(dr.X % 2 == 0)
       for(unsigned int j=0; j < dc.y; ++j)
@@ -541,7 +541,7 @@ public:
     if(Txy) delete Txy;
   }
 
-  // Remove the Nyquist mode for even transforms.
+  // Set Nyquist modes of even shifted transforms to zero.
   void deNyquist(Complex *f) {
     unsigned int yz=dc.xy.y*dc.z;
     if(dr.X % 2 == 0) {
