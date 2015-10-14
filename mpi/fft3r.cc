@@ -147,7 +147,7 @@ int main(int argc, char* argv[])
     }
 
     split3 df(nx,ny,nz,group);
-    split3 dg(nx,ny,nzp,group);
+    split3 dg(nx,ny,nzp,group,true);
     
     double *f=FFTWdouble(df.n);
     Complex *g=ComplexAlign(dg.n);
@@ -203,7 +203,7 @@ int main(int argc, char* argv[])
         
       if(!quiet) {
         if(main) cout << "Distributed output:" << endl;
-        show(g,dg.X,dg.xy.y,dg.z,group.active);
+        show(g,dg.X,dg.y,dg.z,group.active);
       }
       gatheryz(g,ggathered(),dg,group.active); 
 
