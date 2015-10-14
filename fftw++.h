@@ -243,7 +243,7 @@ public:
   // Inplace shift of Fourier origin to (nx/2,0) for even nx.
   static void Shift(Complex *data, unsigned int nx, unsigned int ny,
                     unsigned int threads) {
-    const unsigned int nyp=ny/2+1;
+    unsigned int nyp=ny/2+1;
     unsigned int stop=nx*nyp;
     if(nx % 2 == 0) {
       unsigned int inc=2*nyp;
@@ -282,10 +282,10 @@ public:
   // Inplace shift of Fourier origin to (nx/2,ny/2,0) for even nx and ny.
   static void Shift(Complex *data, unsigned int nx, unsigned int ny,
                     unsigned int nz, unsigned int threads) {
-    const unsigned int nzp=nz/2+1;
-    const unsigned int nyzp=ny*nzp;
+    unsigned int nzp=nz/2+1;
+    unsigned int nyzp=ny*nzp;
     if(nx % 2 == 0 && ny % 2 == 0) {
-      const unsigned int pinc=2*nzp;
+      unsigned int pinc=2*nzp;
       Complex *pstop=data;
       Complex *p=data;
 #ifndef FFTWPP_SINGLE_THREAD
@@ -308,9 +308,9 @@ public:
   // Out-of-place shift of Fourier origin to (nx/2,ny/2,0) for even nx and ny.
   static void Shift(double *data, unsigned int nx, unsigned int ny,
                     unsigned int nz, unsigned int threads) {
-    const unsigned int nyz=ny*nz;
+    unsigned int nyz=ny*nz;
     if(nx % 2 == 0 && ny % 2 == 0) {
-      const unsigned int pinc=2*nz;
+      unsigned int pinc=2*nz;
       double *pstop=data;
       double *p=data;
 #ifndef FFTWPP_SINGLE_THREAD
@@ -1301,7 +1301,6 @@ public:
     Setup(in,out);
   } 
   
-  
   fftw_plan Plan(Complex *in, Complex *out) {
     return fftw_plan_dft_r2c_2d(nx,ny,(double *) in,(fftw_complex *) out,
                                 effort);
@@ -1313,6 +1312,23 @@ public:
       else Shift((double *) in,nx,ny,threads);
     }
     fftw_execute_dft_r2c(plan,(double *) in,(fftw_complex *) out);
+  }
+  
+  // Set Nyquist modes to zero.
+  void deNyquist(Complex *f) {
+    unsigned int nyp=ny/2+1;
+    if(nx % 2 == 0)
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif
+      for(unsigned int j=0; j < nyp; ++j)
+        f[j]=0.0;
+    if(ny % 2 == 0)
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif
+      for(unsigned int i=0; i < nx; ++i)
+        f[(i+1)*nyp-1]=0.0;
   }
 };
   
@@ -1365,6 +1381,23 @@ public:
       if(inplace) Shift(out,nx,ny,threads);
       else Shift((double *) out,nx,ny,threads);
     }
+  }
+  
+  // Set Nyquist modes to zero.
+  void deNyquist(Complex *f) {
+    unsigned int nyp=ny/2+1;
+    if(nx % 2 == 0)
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif
+      for(unsigned int j=0; j < nyp; ++j)
+        f[j]=0.0;
+    if(ny % 2 == 0)
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif
+      for(unsigned int i=0; i < nx; ++i)
+        f[(i+1)*nyp-1]=0.0;
   }
 };
 
@@ -1469,6 +1502,38 @@ public:
     }
     fftw_execute_dft_r2c(plan,(double *) in,(fftw_complex *) out);
   }
+  
+  // Set Nyquist modes to zero.
+  void deNyquist(Complex *f) {
+    unsigned int nzp=nz/2+1;
+    unsigned int yz=ny*nzp;
+    if(nx % 2 == 0) {
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif
+      for(unsigned int k=0; k < yz; ++k)
+        f[k]=0.0;
+    }
+    
+    if(ny % 2 == 0) {
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif
+      for(unsigned int i=0; i < nx; ++i) {
+        unsigned int iyz=i*yz;
+        for(unsigned int k=0; k < nzp; ++k)
+          f[iyz+k]=0.0;
+      }
+    }
+        
+    if(nz % 2 == 0)
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif
+      for(unsigned int i=0; i < nx; ++i)
+        for(unsigned int j=0; j < ny; ++j)
+          f[i*yz+(j+1)*nzp-1]=0.0;
+  }
 };
   
 // Compute the real two-dimensional inverse Fourier transform of the
@@ -1521,6 +1586,38 @@ public:
       if(inplace) Shift(out,nx,ny,nz,threads);
       else Shift((double *) out,nx,ny,nz,threads);
     }
+  }
+  
+  // Set Nyquist modes to zero.
+  void deNyquist(Complex *f) {
+    unsigned int nzp=nz/2+1;
+    unsigned int yz=ny*nzp;
+    if(nx % 2 == 0) {
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif
+      for(unsigned int k=0; k < yz; ++k)
+        f[k]=0.0;
+    }
+    
+    if(ny % 2 == 0) {
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif
+      for(unsigned int i=0; i < nx; ++i) {
+        unsigned int iyz=i*yz;
+        for(unsigned int k=0; k < nzp; ++k)
+          f[iyz+k]=0.0;
+      }
+    }
+        
+    if(nz % 2 == 0)
+#ifndef FFTWPP_SINGLE_THREAD
+#pragma omp parallel for num_threads(threads)
+#endif
+      for(unsigned int i=0; i < nx; ++i)
+        for(unsigned int j=0; j < ny; ++j)
+          f[i*yz+(j+1)*nzp-1]=0.0;
   }
 };
   

@@ -34,6 +34,9 @@ int main()
   
   Forward.fft(f,g);
   
+//  cout << endl << "output:" << endl << g;
+//  Forward.deNyquist(g);
+  
   cout << "\noutput:\n" << g;
   
   Backward.fftNormalized(g,f);

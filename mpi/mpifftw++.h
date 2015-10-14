@@ -543,12 +543,11 @@ public:
 
   // Remove the Nyquist mode for even transforms.
   void deNyquist(Complex *f) {
+    unsigned int yz=dc.xy.y*dc.z;
     if(dr.X % 2 == 0) {
-      unsigned int stop=dc.xy.y*dc.z;
-      for(unsigned int k=0; k < stop; ++k)
+      for(unsigned int k=0; k < yz; ++k)
         f[k]=0.0;
     }
-    unsigned int yz=dc.xy.y*dc.z;
     
     if(dr.Y % 2 == 0 && dc.xy.y0 == 0) {
       for(unsigned int i=0; i < dc.X; ++i) {
