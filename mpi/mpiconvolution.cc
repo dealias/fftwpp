@@ -168,7 +168,7 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
   if(d.z0 != 0) return;
   MPI_Comm_rank(*d.XYplane,&rank);
 
-  Complex *u=(nu < nx) ? ComplexAlign(nx+1) : u0;
+  Complex *u=(nu < nx) ? ComplexAlign(nx) : u0;
   unsigned int stride=dy*d.z;
   for(unsigned int j=start; j < dy; ++j) {
     for(unsigned int i=0; i < nx; ++i)
@@ -179,7 +179,7 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
     else {
       if(y0+j != yorigin) {
         int offset=2*yorigin-y0;
-        unsigned int even=1+(J % 2);
+        unsigned int even=1+ycompact-(J % 2);
         for(unsigned int i=0; i < nx; ++i)
           f[stride*(i-even)+d.z*(offset-j)]=u[i];
       } else {
