@@ -83,7 +83,7 @@ def main(argv):
                                     args.append("-X"+str(X))
                                     args.append("-Y"+str(Y))
                                     args.append("-Z"+str(Z))
-#                                    args.append("-tq")
+                                    args.append("-q")
                                     rtest, cmd = runtest(pname, P, args, logfile,
                                                          timeout)
                                     if not rtest == 0:
