@@ -506,9 +506,8 @@ public:
 };
   
 // Compute the scrambled implicitly m-padded complex Fourier transform of M
-// complex vectors, each of length 2m with the origin at index m.
-// The first component of each vector is ignored; subsequent components
-// store the physical data for wavenumbers -m+1 to m-1).
+// complex vectors, each of length 2m with the origin at index m,
+// corresponding to wavenumbers -m to m-1.
 // The arrays in and out (which may coincide) must be allocated as
 // Complex[M*2m]. The array u must be allocated as Complex[M*m].
 //

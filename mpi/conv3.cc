@@ -44,9 +44,9 @@ inline void init(Complex *f, Complex *g, const split3& d, unsigned int M=1,
     for(unsigned int i=!xcompact; i < d.X; ++i) {
       unsigned int I=s*d.n+d.y*d.z*i;
       unsigned int ii=i-!xcompact;
-      for(unsigned int j=d.y0 == 0 ? !ycompact : 0; j < d.y; ++j) {
+      for(unsigned int j=0; j < d.y; ++j) {
         unsigned int IJ=I+d.z*j;
-        unsigned int jj=d.y0-!ycompact+j;
+        unsigned int jj=d.y0+j;
         for(unsigned int k=0; k < d.z; ++k) {
           unsigned int kk=d.z0+k;
           f[IJ+k]=ffactor*Complex(ii+kk,jj+kk);
