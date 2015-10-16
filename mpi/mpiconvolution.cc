@@ -113,6 +113,8 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
                               split3& d, bool xcompact, bool ycompact,
                               Complex *f, unsigned int nu, Complex *u0)
 {
+  //TODO: Multithread
+  
   if(d.xy.y == d.Y && d.z == d.Z) {
     HermitianSymmetrizeXY(mx,my,d.Z,mx-xcompact,my-ycompact,f);
     return;

@@ -1,4 +1,7 @@
 Release todo:
+consolidate mfft
+fix & multthread HermitianSymmertrizeXYMPI
+add unscrambled index to mult routines
 Transpose work memory
 Overlap MPI communication with Hermitian convolutions
 wrappers

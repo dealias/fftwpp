@@ -108,7 +108,6 @@ int main(int argc, char* argv[])
     
     if(main) cout << "\nAfter convolution (split in yz):" << endl;
     C.convolve(G,multbinary);
-    rcfft.deNyquist(g0);
     if(main) cout << "g0:" << endl;
     show(g0,dg.X,dg.y,dg.z,group.active);
 
