@@ -59,10 +59,8 @@ int main(int argc, char* argv[])
 #endif
   int retval=0;
 
-  // Number of independent inputs
-  unsigned int A=2;
-  // Number of outputs
-  unsigned int B=1;   
+  unsigned int A=2; // Number of independent inputs
+  unsigned int B=1; // Number of outputs
   
   unsigned int mx=4;
   unsigned int my=4;
@@ -176,10 +174,8 @@ int main(int argc, char* argv[])
         exit(1);
     }
 
-    convolveOptions options;
-    options.mpi.a=divisor;
-    options.mpi.alltoall=alltoall;
-    ImplicitHConvolution2MPI C(mx,my,xcompact,ycompact,d,du,F[0],A,B,options);
+    ImplicitHConvolution2MPI C(mx,my,xcompact,ycompact,d,du,F[0],
+                               mpiOptions(divisor,alltoall),A,B);
     
     MPI_Barrier(group.active);
 
@@ -220,7 +216,7 @@ int main(int argc, char* argv[])
       gathery(F[0],Foutgather,d,1,group.active);
 
       if(main) {
-	ImplicitHConvolution2 Clocal(mx,my,xcompact,ycompact,A,B,options);
+	ImplicitHConvolution2 Clocal(mx,my,xcompact,ycompact,A,B);
 	Clocal.convolve(Flocal,mult);
 	if(!quiet) {
 	  cout << "Local output:" << endl;

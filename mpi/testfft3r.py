@@ -80,6 +80,7 @@ def main(argv):
                                 args.append("-a1")
                                 args.append("-S" + str(shift))
                                 args.append("-t")
+                                args.append("-T1")
                                 args.append("-q")
                                 rtest, cmd = runtest(pname, P, args, logfile, \
                                                      timeout)

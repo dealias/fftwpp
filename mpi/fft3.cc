@@ -144,7 +144,7 @@ int main(int argc, char* argv[])
     
     Complex *f=ComplexAlign(d.n);
     
-    fft3dMPI fft(d,f,mpiOptions(fftw::maxthreads,divisor,alltoall));
+    fft3dMPI fft(d,f,mpiOptions(divisor,alltoall));
 
     if(test) {
       init(f,d);

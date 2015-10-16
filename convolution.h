@@ -65,30 +65,21 @@ unsigned int BuildZeta(unsigned int n, unsigned int m,
 #include "transposeoptions.h"
     
 struct convolveOptions {
-  unsigned int threads;            // For outer subconvolution loop.
   unsigned int nx,ny,nz;           // |
   unsigned int stride2,stride3;    // | Used internally by the MPI interface.
   mpiOptions mpi;                  // |
   
-  convolveOptions(unsigned int threads=fftw::maxthreads,
-                  unsigned int nx=0, unsigned int ny=0, unsigned int nz=0,
+  convolveOptions(unsigned int nx=0, unsigned int ny=0, unsigned int nz=0,
                   unsigned int stride2=0, unsigned int stride3=0) :
-    threads(threads),
     nx(nx), ny(ny), nz(nz), stride2(stride2), stride3(stride3) {}
 
-  convolveOptions(const convolveOptions& options, unsigned int threads) :
-    threads(threads), mpi(options.mpi) {}
+  convolveOptions(unsigned int nx, unsigned int ny, unsigned int stride2,
+                  mpiOptions mpi) :
+    nx(nx), ny(ny), stride2(stride2), mpi(mpi) {}
     
-  convolveOptions(const convolveOptions& options,
-                  unsigned int nx, unsigned int ny, unsigned int stride2) :
-    threads(options.threads), nx(nx), ny(ny), stride2(stride2),
-    mpi(options.mpi) {}
-    
-  convolveOptions(const convolveOptions& options,
-                  unsigned int ny, unsigned int nz,
-                  unsigned int stride2, unsigned int stride3) :
-    threads(options.threads), ny(ny), nz(nz),
-    stride2(stride2), stride3(stride3), mpi(options.mpi) {}
+  convolveOptions(unsigned int ny, unsigned int nz,
+                  unsigned int stride2, unsigned int stride3, mpiOptions mpi) :
+    ny(ny), nz(nz), stride2(stride2), stride3(stride3), mpi(mpi) {}
 };
     
 static const convolveOptions defaultconvolveOptions;
@@ -607,8 +598,9 @@ public:
   ImplicitConvolution2(unsigned int mx, unsigned int my,
                        Complex *u1, Complex *u2,
                        unsigned int A=2, unsigned int B=1,
+                       unsigned int threads=fftw::maxthreads,
                        convolveOptions options=defaultconvolveOptions) :
-    ThreadBase(options.threads), mx(mx), my(my), u1(u1), u2(u2), A(A), B(B),
+    ThreadBase(threads), mx(mx), my(my), u1(u1), u2(u2), A(A), B(B),
     allocated(false) {
     set(options);
     multithread(options.nx);
@@ -617,8 +609,9 @@ public:
   
   ImplicitConvolution2(unsigned int mx, unsigned int my,
                        unsigned int A=2, unsigned int B=1,
+                       unsigned int threads=fftw::maxthreads,
                        convolveOptions options=defaultconvolveOptions) :
-    ThreadBase(options.threads), mx(mx), my(my), A(A), B(B), allocated(true) {
+    ThreadBase(threads), mx(mx), my(my), A(A), B(B), allocated(true) {
     set(options);
     multithread(options.nx);
     u1=ComplexAlign(my*A*threads);
@@ -774,8 +767,9 @@ public:
   ImplicitHConvolution2Base(unsigned int mx, unsigned int my,
                             Complex *u1, Complex *u2,
                             unsigned int A=2, unsigned int B=1,
+                            unsigned int threads=fftw::maxthreads,
                             convolveOptions options=defaultconvolveOptions) :
-    ThreadBase(options.threads), mx(mx), my(my), xcompact(true), ycompact(true),
+    ThreadBase(threads), mx(mx), my(my), xcompact(true), ycompact(true),
     u1(u1), u2(u2), A(A), B(B), allocated(false) {
     set(options);
     multithread(options.nx);
@@ -786,8 +780,9 @@ public:
                             bool xcompact, bool ycompact,
                             Complex *u1, Complex *u2,
                             unsigned int A=2, unsigned int B=1,
+                            unsigned int threads=fftw::maxthreads,
                             convolveOptions options=defaultconvolveOptions) :
-    ThreadBase(options.threads), mx(mx), my(my), 
+    ThreadBase(threads), mx(mx), my(my), 
     xcompact(xcompact), ycompact(ycompact), u1(u1), u2(u2), A(A), B(B),
     allocated(false) {
     set(options);
@@ -798,8 +793,9 @@ public:
   ImplicitHConvolution2Base(unsigned int mx, unsigned int my,
                             bool xcompact=true, bool ycompact=true,
                             unsigned int A=2, unsigned int B=1,
+                            unsigned int threads=fftw::maxthreads,
                             convolveOptions options=defaultconvolveOptions) :
-    ThreadBase(options.threads), mx(mx), my(my),
+    ThreadBase(threads), mx(mx), my(my),
     xcompact(xcompact), ycompact(ycompact), A(A), B(B), allocated(true) {
     set(options);
     multithread(options.nx);
@@ -839,8 +835,9 @@ public:
   ImplicitHConvolution2(unsigned int mx, unsigned int my,
                         Complex *u1, Complex *u2,
                         unsigned int A=2, unsigned int B=1,
+                        unsigned int threads=fftw::maxthreads,
                         convolveOptions options=defaultconvolveOptions) :
-    ImplicitHConvolution2Base(mx,my,u1,u2,A,B,options) {
+    ImplicitHConvolution2Base(mx,my,u1,u2,A,B,threads,options) {
     initconvolve();
   }
   
@@ -848,16 +845,19 @@ public:
                         bool xcompact, bool ycompact,
                         Complex *u1, Complex *u2,
                         unsigned int A=2, unsigned int B=1,
+                        unsigned int threads=fftw::maxthreads,
                         convolveOptions options=defaultconvolveOptions) :
-    ImplicitHConvolution2Base(mx,my,xcompact,ycompact,u1,u2,A,B,options) {
+    ImplicitHConvolution2Base(mx,my,xcompact,ycompact,u1,u2,A,B,threads,
+                              options) {
     initconvolve();
   }
   
   ImplicitHConvolution2(unsigned int mx, unsigned int my,
                         bool xcompact=true, bool ycompact=true,
                         unsigned int A=2, unsigned int B=1,
+                        unsigned int threads=fftw::maxthreads,
                         convolveOptions options=defaultconvolveOptions) :
-    ImplicitHConvolution2Base(mx,my,xcompact,ycompact,A,B,options) {
+    ImplicitHConvolution2Base(mx,my,xcompact,ycompact,A,B,threads,options) {
     initconvolve();
   }
   
@@ -977,8 +977,9 @@ public:
   ImplicitConvolution3(unsigned int mx, unsigned int my, unsigned int mz,
                        Complex *u1, Complex *u2, Complex *u3,
                        unsigned int A=2, unsigned int B=1, 
+                       unsigned int threads=fftw::maxthreads,
                        convolveOptions options=defaultconvolveOptions) :
-    ThreadBase(options.threads), mx(mx), my(my), mz(mz),
+    ThreadBase(threads), mx(mx), my(my), mz(mz),
     u1(u1), u2(u2), u3(u3), A(A), B(B), allocated(false) {
     set(options);
     multithread(mx);
@@ -987,8 +988,9 @@ public:
 
   ImplicitConvolution3(unsigned int mx, unsigned int my, unsigned int mz,
                        unsigned int A=2, unsigned int B=1, 
+                       unsigned int threads=fftw::maxthreads,
                        convolveOptions options=defaultconvolveOptions) :
-    ThreadBase(options.threads), mx(mx), my(my), mz(mz), A(A), B(B),
+    ThreadBase(threads), mx(mx), my(my), mz(mz), A(A), B(B),
     allocated(true) {
     set(options);
     multithread(mx);
@@ -1141,8 +1143,9 @@ public:
   ImplicitHConvolution3(unsigned int mx, unsigned int my, unsigned int mz,
                         Complex *u1, Complex *u2, Complex *u3,
                         unsigned int A=2, unsigned int B=1,
+                        unsigned int threads=fftw::maxthreads,
                         convolveOptions options=defaultconvolveOptions) :
-    ThreadBase(options.threads), mx(mx), my(my), mz(mz),
+    ThreadBase(threads), mx(mx), my(my), mz(mz),
     xcompact(true), ycompact(true), zcompact(true), u1(u1), u2(u2), u3(u3),
     A(A), B(B),
     allocated(false) {
@@ -1155,8 +1158,9 @@ public:
                         bool xcompact, bool ycompact, bool zcompact,
                         Complex *u1, Complex *u2, Complex *u3,
                         unsigned int A=2, unsigned int B=1,
+                        unsigned int threads=fftw::maxthreads,
                         convolveOptions options=defaultconvolveOptions) :
-    ThreadBase(options.threads), mx(mx), my(my), mz(mz),
+    ThreadBase(threads), mx(mx), my(my), mz(mz),
     xcompact(xcompact), ycompact(ycompact), zcompact(zcompact), 
     u1(u1), u2(u2), u3(u3), A(A), B(B), allocated(false) {
     set(options);
@@ -1168,8 +1172,9 @@ public:
                         bool xcompact=true, bool ycompact=true,
                         bool zcompact=true,
                         unsigned int A=2, unsigned int B=1,
+                        unsigned int threads=fftw::maxthreads,
                         convolveOptions options=defaultconvolveOptions) :
-    ThreadBase(options.threads), mx(mx), my(my), mz(mz),
+    ThreadBase(threads), mx(mx), my(my), mz(mz),
     xcompact(xcompact), ycompact(ycompact), zcompact(zcompact), A(A), B(B),
     allocated(true) {
     set(options);

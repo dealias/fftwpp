@@ -132,7 +132,7 @@ int main(int argc, char* argv[])
     Complex *g=ComplexAlign(dg.n);
 
     // Create instance of FFT
-    rcfft2dMPI rcfft(df,dg,f,g,mpiOptions(fftw::maxthreads,divisor,alltoall));
+    rcfft2dMPI rcfft(df,dg,f,g,mpiOptions(divisor,alltoall));
 
     if(!quiet && group.rank == 0)
       cout << "Initialized after " << seconds() << " seconds." << endl;    

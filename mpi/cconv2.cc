@@ -54,7 +54,9 @@ int main(int argc, char* argv[])
   int retval=0;
   bool test=false;
   bool quiet=false;
-  unsigned int A=2;
+  
+  unsigned int A=2; // Number of independent inputs
+  unsigned int B=1; // Number of outputs
   
 #ifdef __GNUC__ 
   optind=0;
@@ -171,10 +173,7 @@ int main(int argc, char* argv[])
         exit(1);
     }
 
-    convolveOptions options;
-    options.mpi.a=divisor;
-    options.mpi.alltoall=alltoall;
-    ImplicitConvolution2MPI C(mx,my,d,A,1,options);
+    ImplicitConvolution2MPI C(mx,my,d,mpiOptions(divisor,alltoall),A,B);
 
     MPI_Barrier(group.active);
     

@@ -127,7 +127,7 @@ int main(int argc, char* argv[])
     Complex *f=ComplexAlign(d.n);
 
     // Create instance of FFT
-    fft2dMPI fft(d,f,mpiOptions(fftw::maxthreads,divisor,alltoall));
+    fft2dMPI fft(d,f,mpiOptions(divisor,alltoall));
 
     if(!quiet && group.rank == 0)
       cout << "Initialized after " << seconds() << " seconds." << endl;    

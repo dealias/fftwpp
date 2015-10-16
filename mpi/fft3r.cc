@@ -152,7 +152,7 @@ int main(int argc, char* argv[])
     double *f=FFTWdouble(df.n);
     Complex *g=ComplexAlign(dg.n);
     
-    rcfft3dMPI fft(df,dg,f,g,mpiOptions(fftw::maxthreads,divisor,alltoall));
+    rcfft3dMPI fft(df,dg,f,g,mpiOptions(divisor,alltoall));
 
     if(test) {
       init(f,df);

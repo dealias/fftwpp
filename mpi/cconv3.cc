@@ -73,7 +73,10 @@ int main(int argc, char* argv[])
   unsigned int mx=4;
   unsigned int my=0;
   unsigned int mz=0;
-  unsigned int A=2;
+  
+  unsigned int A=2; // Number of independent inputs
+  unsigned int B=1; // Number of outputs
+    
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
@@ -150,8 +153,8 @@ int main(int argc, char* argv[])
   }
 
   MPIgroup group(MPI_COMM_WORLD,my,mz,mx);
-  if(group.size > 1 && provided < MPI_THREAD_FUNNELED);
-  fftw::maxthreads=1;
+  if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
+    fftw::maxthreads=1;  
 
   if(group.rank < group.size) {
     
@@ -193,10 +196,7 @@ int main(int argc, char* argv[])
       F[a]=ComplexAlign(d.n);
     }
 
-    convolveOptions options;
-    options.mpi.a=divisor;
-    options.mpi.alltoall=alltoall;
-    ImplicitConvolution3MPI C(mx,my,mz,d,A,1,options);
+    ImplicitConvolution3MPI C(mx,my,mz,d,mpiOptions(divisor,alltoall),A,B);
 
     if(test) {
       init(F,d,A);

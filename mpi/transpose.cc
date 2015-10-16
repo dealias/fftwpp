@@ -197,9 +197,7 @@ int transpose(int rank, int size, int N)
 
     //    show(data,X,y*Z,active);
     
-//    mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,fftw::maxthreads,active);
-    mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,active,
-                            mpiOptions(fftw::maxthreads,a,alltoall));
+    mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,active,mpiOptions(a,alltoall));
     init(data,X,y,Z,0,y0);
     T.transpose(data,false,true);
   
