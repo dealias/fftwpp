@@ -465,8 +465,6 @@ void ImplicitHConvolution::postmultadd0(Complex **c2, Complex **c0,
 void ImplicitHConvolution::convolve(Complex **F, 
                                     realmultiplier *pmult, unsigned int offset)
 {
-  bool compact=true;
-  
   // Set problem-size variables and pointers:
 
   unsigned int C=max(A,B);

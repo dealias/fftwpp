@@ -285,6 +285,7 @@ class ImplicitHConvolution : public ThreadBase {
 protected:
   unsigned int m;
   unsigned int c;
+  bool compact;
   Complex **U;
   unsigned int A;
   unsigned int B;
@@ -332,8 +333,16 @@ public:
   // B is the number of outputs.
   ImplicitHConvolution(unsigned int m, Complex **U, unsigned int A=2,
                        unsigned int B=1, unsigned int threads=fftw::maxthreads)
-    : ThreadBase(threads), m(m), c(m/2), U(U), A(A), B(B), pointers(false),
-      allocated(false) {
+    : ThreadBase(threads), m(m), c(m/2), compact(true), U(U), A(A), B(B),
+      pointers(false), allocated(false) {
+    init();
+  }
+
+  ImplicitHConvolution(unsigned int m, bool compact, Complex **U,
+                       unsigned int A=2, unsigned int B=1,
+                       unsigned int threads=fftw::maxthreads)
+    : ThreadBase(threads), m(m), c(m/2), compact(compact), U(U), A(A), B(B),
+      pointers(false), allocated(false) {
     init();
   }
 
@@ -341,9 +350,20 @@ public:
   // u is a work array of max(A,B)*(c+1) Complex values, where c=m/2
   // A is the number of inputs.
   // B is the number of outputs.
-  ImplicitHConvolution(unsigned int m, Complex *u, unsigned int A=2,
-                       unsigned int B=1, unsigned int threads=fftw::maxthreads)
-    : ThreadBase(threads), m(m), c(m/2), A(A), B(B), u(u), allocated(false) {
+  ImplicitHConvolution(unsigned int m, Complex *u,
+                       unsigned int A=2, unsigned int B=1,
+                       unsigned int threads=fftw::maxthreads)
+    : ThreadBase(threads), m(m), c(m/2), compact(true), A(A), B(B), u(u),
+    allocated(false) {
+    initpointers(U,u);
+    init();
+  }
+
+  ImplicitHConvolution(unsigned int m, bool compact, Complex *u,
+                       unsigned int A=2, unsigned int B=1,
+                       unsigned int threads=fftw::maxthreads)
+    : ThreadBase(threads), m(m), c(m/2), compact(compact), A(A), B(B), u(u), 
+      allocated(false) {
     initpointers(U,u);
     init();
   }
@@ -352,9 +372,9 @@ public:
   // u is a work array of max(A,B)*(c+1) Complex values, where c=m/2
   // A is the number of inputs.
   // B is the number of outputs.
-  ImplicitHConvolution(unsigned int m, unsigned int A=2,
+  ImplicitHConvolution(unsigned int m, bool compact=true, unsigned int A=2,
                        unsigned int B=1, unsigned int threads=fftw::maxthreads)
-    : ThreadBase(threads), m(m), c(m/2), A(A), B(B),
+    : ThreadBase(threads), m(m), c(m/2), compact(compact), A(A), B(B),
       u(ComplexAlign(max(A,B)*(c+1))), allocated(true) {
     initpointers(U,u);
     init();
@@ -808,7 +828,7 @@ public:
   void initconvolve() {
     yconvolve=new ImplicitHConvolution*[threads];
     for(unsigned int t=0; t < threads; ++t)
-      yconvolve[t]=new ImplicitHConvolution(my,u1+t*(my/2+1)*A,A,B,
+      yconvolve[t]=new ImplicitHConvolution(my,ycompact,u1+t*(my/2+1)*A,A,B,
                                             innerthreads);
   }
     

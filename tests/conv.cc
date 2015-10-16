@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptM:A:B:b:N:m:n:T:S:");
+    int c = getopt(argc,argv,"hdeiptM:A:B:b:N:m:n:T:S:X:");
     if (c == -1) break;
 		
     switch (c) {
@@ -180,6 +180,9 @@ int main(int argc, char* argv[])
       case 'S':
         stats=atoi(optarg);
         break;
+      case 'X':
+        compact=atoi(optarg) == 0;
+        break;
       case 'h':
       default:
         usage(1,true,true,false);
@@ -218,7 +221,7 @@ int main(int argc, char* argv[])
   double* T=new double[N];
 
   if(Implicit) {
-    ImplicitHConvolution C(m,A,B);
+    ImplicitHConvolution C(m,compact,A,B);
     cout << "threads=" << C.Threads() << endl << endl;
 
     if (A%2 != 0) {
