@@ -49,7 +49,7 @@ def runtest(filename, P, extraargs, logfilename, timeout):
     prc = proc.returncode
     out, err = proc.communicate() # capture output
     if (prc == 0): # did the process succeed?
-        msg = "\tpass"
+        msg = "pass"
         try:
             print msg
         except:
