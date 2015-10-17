@@ -32,12 +32,12 @@ unsigned int outlimit=300;
 inline void init(Complex **F,
 		 unsigned int mx, unsigned int my, unsigned int mz,
 		 unsigned int nxp, unsigned int nyp, unsigned int nzp,
-		 unsigned int A, bool xcompact, bool ycompact)
+		 unsigned int A, bool xcompact, bool ycompact, bool zcompact)
 {
   if(A % 2 == 0) {
     unsigned int M=A/2;
-    unsigned int xstop=2*mx-1;
-    unsigned int ystop=2*my-1;
+    unsigned int nx=2*mx-1;
+    unsigned int ny=2*my-1;
     
     double factor=1.0/sqrt((double) M);
     for(unsigned int s=0; s < M; ++s) {
@@ -49,24 +49,34 @@ inline void init(Complex **F,
       array3<Complex> g(nxp,nyp,nzp,F[M+s]);
 
       if(!xcompact) {
-	for(unsigned int j=0; j < ystop+!ycompact; ++j) {
-	  for(unsigned int k=0; k < mz; ++k) {
+	for(unsigned int j=0; j < ny+!ycompact; ++j) {
+	  for(unsigned int k=0; k < mz+!zcompact; ++k) {
             f[0][j][k]=0.0;
             g[0][j][k]=0.0;
           }
         }
       }
       if(!ycompact) {
-        for(unsigned int i=0; i < xstop+!xcompact; ++i) {
-	  for(unsigned int k=0; k < mz; ++k) {
+        for(unsigned int i=0; i < nx+!xcompact; ++i) {
+	  for(unsigned int k=0; k < mz+!zcompact; ++k) {
             f[i][0][k]=0.0;
             g[i][0][k]=0.0;
           }
         }
       }
-      for(unsigned int i=0; i < xstop; ++i) {
+
+      if(!zcompact) {
+        for(unsigned int i=0; i < nx+!xcompact; ++i) {
+          for(unsigned int j=0; j < ny+!ycompact; ++j) {
+            f[i][j][mz]=0.0;
+            g[i][j][mz]=0.0;
+          }
+        }
+      }
+
+      for(unsigned int i=0; i < nx; ++i) {
 	unsigned int I=i+!xcompact;
-	for(unsigned int j=0; j < ystop; ++j) {
+	for(unsigned int j=0; j < ny; ++j) {
           unsigned int J=j+!ycompact;
 	  for(unsigned int k=0; k < mz; ++k) {
 	    f[I][J][k]=ffactor*Complex(i+k,j+k);
@@ -85,17 +95,17 @@ inline void init(Complex **F,
 inline void init(array3<Complex>& f, array3<Complex>& g, unsigned int M=1,
                  bool xcompact=true, bool ycompact=true)
 {
-  unsigned int xstop=2*mx-1;
-  unsigned int ystop=2*my-1;
-  unsigned int xstopoffset=xstop+!xcompact;
+  unsigned int nx=2*mx-1;
+  unsigned int ny=2*my-1;
+  unsigned int nxoffset=nx+!xcompact;
   double factor=1.0/sqrt((double) M);
   for(unsigned int s=0; s < M; ++s) {
     double S=sqrt(1.0+s);
     double ffactor=S*factor;
     double gfactor=1.0/S*factor;
-    for(unsigned int i=0; i < xstop; ++i) {
-      unsigned int I=s*xstopoffset+i+!xcompact;
-      for(unsigned int j=0; j < ystop; ++j) {
+    for(unsigned int i=0; i < nx; ++i) {
+      unsigned int I=s*nxoffset+i+!xcompact;
+      for(unsigned int j=0; j < ny; ++j) {
         unsigned int J=j+!ycompact;
         for(unsigned int k=0; k < mz; ++k) {
           f[I][J][k]=ffactor*Complex(i+k,j+k);
@@ -235,7 +245,7 @@ int main(int argc, char* argv[])
     }
 
     for(unsigned int i=0; i < N; ++i) {
-      init(F,mx,my,mz,nxp,nyp,nzp,A,xcompact,ycompact);
+      init(F,mx,my,mz,nxp,nyp,nzp,A,xcompact,ycompact,zcompact);
       seconds();
       C.convolve(F,mult);
 //      C.convolve(f,g);

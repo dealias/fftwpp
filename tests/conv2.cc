@@ -30,14 +30,14 @@ inline void init(Complex **F,
 		 unsigned int mx, unsigned int my,
 		 unsigned int nxp, unsigned int nyp,
 		 unsigned int A,
-                 bool xcompact)
+                 bool xcompact, bool ycompact)
 {
   if(A % 2 == 0) {
     unsigned int M=A/2;
 
     unsigned int coffset=xcompact ? 0 : 1;
     unsigned int offset=Explicit ? nxp/2-mx+1 : coffset;
-    unsigned int stop=2*mx-1;
+    unsigned int nx=2*mx-1;
     double factor=1.0/sqrt((double) M);
     for(unsigned int s=0; s < M; ++s) {
       double S=sqrt(1.0+s);
@@ -45,12 +45,19 @@ inline void init(Complex **F,
       double gfactor=1.0/S*factor;
       array2<Complex> f(nxp,nyp,F[s]);
       array2<Complex> g(nxp,nyp,F[M+s]);
-      if(!xcompact)
-        for(unsigned int j=0; j < my; j++) {
+      if(!xcompact) {
+        for(unsigned int j=0; j < my+!ycompact; j++) {
           f[0][j]=0.0;
           g[0][j]=0.0;
         }
-      for(unsigned int i=0; i < stop; ++i) {
+      }
+      if(!ycompact) {
+        for(unsigned int i=0; i < nx+!xcompact; ++i) {
+          f[i][my]=0.0;
+          g[i][my]=0.0;
+        }
+      }
+      for(unsigned int i=0; i < nx; ++i) {
 	unsigned int I=i+offset;
 	for(unsigned int j=0; j < my; j++) {
 	  f[I][j]=ffactor*Complex(i,j);
@@ -191,7 +198,7 @@ int main(int argc, char* argv[])
     
     
     for(unsigned int i=0; i < N; ++i) {
-      init(F,mx,my,nxp,nyp,A,xcompact);
+      init(F,mx,my,nxp,nyp,A,xcompact,ycompact);
       seconds();
       C.convolve(F,mult);
 //      C.convolve(f,g);
@@ -220,7 +227,7 @@ int main(int argc, char* argv[])
     ExplicitHConvolution2 C(nx,ny,mx,my,f,M,Pruned);
     
     for(unsigned int i=0; i < N; ++i) {
-      init(F,mx,my,nxp,nyp,A,true);
+      init(F,mx,my,nxp,nyp,A,true,true);
       seconds();
       C.convolve(F,F+M);
       T[i]=seconds();
@@ -252,7 +259,7 @@ int main(int argc, char* argv[])
     unsigned int nxp=2*mx-1;
     array2<Complex> h(nxp,my,align);
     DirectHConvolution2 C(mx,my);
-    init(F,mx,my,nxp,my,2,true);
+    init(F,mx,my,nxp,my,2,true,true);
     seconds();
     C.convolve(h,F[0],F[1]);
     T[0]=seconds();
