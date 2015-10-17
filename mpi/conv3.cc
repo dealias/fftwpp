@@ -30,19 +30,38 @@ inline void init(Complex *f, Complex *g, const split3& d, unsigned int M=1,
     double S=sqrt(1.0+s);
     double ffactor=S*factor;
     double gfactor=1.0/S*factor;
+    unsigned int stride=s*d.n;
     
     if(!xcompact) {
-      unsigned int I=s*d.n;
       for(unsigned int j=0; j < d.y; ++j) {
-        unsigned int IJ=I+d.z*j;
+        unsigned int IJ=stride+d.z*j;
         for(unsigned int k=0; k < d.z; ++k) {
           f[IJ+k]=0.0;
           g[IJ+k]=0.0;
         }
       }
     }
+    if(!ycompact) {
+      for(unsigned int j=0; j < d.y; ++j) {
+        unsigned int IJ=stride+d.z*j;
+        for(unsigned int k=0; k < d.z; ++k) {
+          f[IJ+k]=0.0;
+          g[IJ+k]=0.0;
+        }
+      }
+    }
+    if(!zcompact && d.z0+d.z == d.Z) { // Last process
+      for(unsigned int i=0; i < d.X; ++i) {
+        unsigned int I=stride+d.y*d.z*i;
+        for(unsigned int j=0; j < d.y; ++j) {
+          unsigned int IJ=I+d.z*j;
+          f[IJ+d.z-1]=0.0;
+          g[IJ+d.z-1]=0.0;
+        }
+      }
+    }
     for(unsigned int i=!xcompact; i < d.X; ++i) {
-      unsigned int I=s*d.n+d.y*d.z*i;
+      unsigned int I=stride+d.y*d.z*i;
       unsigned int ii=i-!xcompact;
       for(unsigned int j=0; j < d.y; ++j) {
         unsigned int IJ=I+d.z*j;
