@@ -13,11 +13,20 @@ bool Direct=false, Implicit=true;
 
 unsigned int outlimit=3000;
 
-inline void init(Complex *f, Complex *g, const split3& d, unsigned int M=1,
+inline void init(Complex **F, const split3& d, unsigned int A=2,
                  bool xcompact=true, bool ycompact=true, bool zcompact=true)
 {
+  if(A % 2 != 0) {
+    cout << "A=" << A << " is not yet implemented" << endl;
+    exit(1);
+  }
+
+  unsigned int M=A/2;
   double factor=1.0/sqrt((double) M);
   for(unsigned int s=0; s < M; ++s) {
+    Complex *f=F[s];
+    Complex *g=F[s+M];
+
     double S=sqrt(1.0+s);
     double ffactor=S*factor;
     double gfactor=1.0/S*factor;
@@ -83,7 +92,8 @@ int main(int argc, char* argv[])
   unsigned int mx=4;
   unsigned int my=4;
   unsigned int mz=4;
-  unsigned int M=1;
+  unsigned int A=2;
+  unsigned int B=1;
   bool xcompact=true;
   bool ycompact=true;
   bool zcompact=true;
@@ -94,7 +104,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"heiqM:N:a:m:s:x:y:z:n:T:X:Y:Z:");
+    int c = getopt(argc,argv,"heiqA:M:N:a:m:s:x:y:z:n:T:X:Y:Z:");
     if (c == -1) break;
                 
     switch (c) {
@@ -109,8 +119,11 @@ int main(int argc, char* argv[])
       case 'i':
         Implicit=true;
         break;
+      case 'A':
+        A=atoi(optarg);
+        break;
       case 'M':
-        M=atoi(optarg);
+        A=2*atoi(optarg);
         break;
       case 'N':
         N=atoi(optarg);
@@ -155,9 +168,6 @@ int main(int argc, char* argv[])
     }
   }
 
-  unsigned int A=2*M; // Number of independent inputs
-  unsigned int B=1;   // Number of outputs
-  
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
 
@@ -194,57 +204,54 @@ int main(int argc, char* argv[])
 
     split3 d(nx,ny,nzp,group,true);
     split3 du(mx+xcompact,ny,my+ycompact,nzp,group,true);
-    
-    unsigned int Mn=M*d.n;
-    Complex *f=ComplexAlign(Mn);
-    Complex *g=ComplexAlign(Mn);
 
-    double *T=new double[N];
+    Complex **F=new Complex*[A];
+    for(unsigned int a=0; a < A; a++) {
+      F[a]=ComplexAlign(d.n);
+    }
 
     realmultiplier *mult;
   
-    switch(M) {
-      case 1: mult=multbinary; break;
-      case 2: mult=multbinary2; break;
-      default: cout << "M=" << M << " is not yet implemented" << endl; exit(1);
+    switch(A) {
+      case 2: mult=multbinary; break;
+      case 4: mult=multbinary2; break;
+      default: cout << "A=" << A << " is not yet implemented" << endl; exit(1);
     }
 
-    if(Implicit) {
-      ImplicitHConvolution3MPI C(mx,my,mz,xcompact,ycompact,zcompact,d,du,f,
-                                 mpiOptions(divisor,alltoall),A,B);
-      Complex **F=new Complex *[A];
-      unsigned int stride=d.n;
-      for(unsigned int s=0; s < M; ++s) {
-        unsigned int sstride=s*stride;
-        F[2*s]=f+sstride;
-        F[2*s+1]=g+sstride;
-      }
-      MPI_Barrier(group.active);
-      if(!quiet && main)
-        cout << "Initialized after " << seconds() << " seconds." << endl;
-      for(unsigned int i=0; i < N; ++i) {
-        init(f,g,d,M,xcompact,ycompact,zcompact);
-        if(main) seconds();
-        C.convolve(F,mult);
-//      C.convolve(f,g);
-        if(main) T[i]=seconds();
-      }
+    ImplicitHConvolution3MPI C(mx,my,mz,xcompact,ycompact,zcompact,d,du,F[0],
+                               mpiOptions(divisor,alltoall),A,B);
     
+    MPI_Barrier(group.active);
+    if(!quiet && main)
+      cout << "Initialized after " << seconds() << " seconds." << endl;
+
+    if(N > 0) {
+      double *T=new double[N];
+      for(unsigned int i=0; i < N; ++i) {
+        init(F,d,A,xcompact,ycompact,zcompact);
+        seconds();
+        C.convolve(F,mult);
+        // C.convolve(f,g);
+        T[i]=seconds();
+      }
+        
       if(main) 
         timings("Implicit",mx,T,N);
-    
-      delete [] F;
-      
-      if(!quiet && nx*ny*mz < outlimit)
-        show(f,d.X,d.y,d.z,
-             !xcompact,!ycompact && d.y0 == 0,0,
-             d.X,d.y,d.z0+d.z < d.Z ? d.z : d.z-!zcompact,group.active);
+
+      delete [] T;
     }
+
+      
+    if(!quiet && nx*ny*mz < outlimit)
+      show(F[0],d.X,d.y,d.z,
+           !xcompact,!ycompact && d.y0 == 0,0,
+           d.X,d.y,d.z0+d.z < d.Z ? d.z : d.z-!zcompact,group.active);
   
-    deleteAlign(f);
-    deleteAlign(g);
-  
-    delete [] T;
+    for(unsigned int a=0; a < A; a++)
+      deleteAlign(F[a]);
+    delete[] F;
+
+    
   }
 
   MPI_Finalize();
