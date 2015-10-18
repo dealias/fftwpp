@@ -113,8 +113,6 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
                               split3& d, bool xcompact, bool ycompact,
                               Complex *f, unsigned int nu, Complex *u0)
 {
-  //TODO: Multithread
-  
   int rank,size;
   MPI_Comm_size(d.communicator,&size);
   if(size == 1) {

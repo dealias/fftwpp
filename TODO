@@ -1,5 +1,4 @@
 Release todo:
-consolidate mfft
 add unscrambled index to mult routines
 Transpose work memory
 Overlap MPI communication with Hermitian convolutions
