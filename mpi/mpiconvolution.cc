@@ -115,11 +115,13 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
 {
   //TODO: Multithread
   
-  if(d.xy.y == d.Y && d.z == d.Z) {
-    HermitianSymmetrizeXY(mx,my,d.Z,mx-xcompact,my-ycompact,f);
+  int rank,size;
+  MPI_Comm_size(d.communicator,&size);
+  if(size == 1) {
+    if(mx > 0 && my > 0 && d.Z > 0)
+      HermitianSymmetrizeXY(mx,my,d.Z,mx-xcompact,my-ycompact,f);
     return;
   }
-  int rank,size;
   unsigned int xextra=!xcompact;
   unsigned int yextra=!ycompact;
   unsigned int yorigin=my-ycompact;
