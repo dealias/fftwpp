@@ -707,7 +707,8 @@ inline void HermitianSymmetrizeX(unsigned int mx, unsigned int my,
 // data.
 inline void HermitianSymmetrizeXY(unsigned int mx, unsigned int my,
                                   unsigned int mz, unsigned int xorigin,
-                                  unsigned int yorigin, Complex *f)
+                                  unsigned int yorigin, Complex *f,
+                                  unsigned int threads=fftw::maxthreads)
 {
   int stride=(yorigin+my)*mz;
   int mxstride=mx*stride;
@@ -719,12 +720,14 @@ inline void HermitianSymmetrizeXY(unsigned int mx, unsigned int my,
   for(int i=stride; i < mxstride; i += stride)
     f[origin-i]=conj(f[origin+i]);
   
-  for(int i=stride-mxstride; i < mxstride; i += stride) {
-    int stop=i+myz;
-    for(int j=i+mz; j < stop; j += mz) {
-      f[origin-j]=conj(f[origin+j]);
+  PARALLEL(
+    for(int i=stride-mxstride; i < mxstride; i += stride) {
+      int stop=i+myz;
+      for(int j=i+mz; j < stop; j += mz) {
+        f[origin-j]=conj(f[origin+j]);
+      }
     }
-  }
+    );
 }
 
 class ImplicitHConvolution2Base : public ThreadBase {
@@ -1203,8 +1206,9 @@ public:
     }
   }
   
-  virtual void HermitianSymmetrize(Complex *f, Complex *u) {
-    HermitianSymmetrizeXY(mx,my,mz+!zcompact,mx-xcompact,my-ycompact,f);
+  virtual void HermitianSymmetrize(Complex *f, Complex *u)
+  {      
+    HermitianSymmetrizeXY(mx,my,mz+!zcompact,mx-xcompact,my-ycompact,f,threads);
   }
   
   void backwards(Complex **F, Complex **U3, bool symmetrize,
