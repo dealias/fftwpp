@@ -57,7 +57,7 @@ inline void init(Complex *f, Complex *g, const split3& d, unsigned int M=1,
     for(unsigned int i=!xcompact; i < d.X; ++i) {
       unsigned int I=stride+d.y*d.z*i;
       unsigned int ii=i-!xcompact;
-      for(unsigned int j=!ycompact; j < d.y; ++j) {
+      for(unsigned int j=!ycompact && d.y == 0; j < d.y; ++j) {
         unsigned int IJ=I+d.z*j;
         unsigned int jj=d.y0+j-!ycompact;
         unsigned int stop=d.z0+d.z < d.Z ? d.z : d.z-!zcompact;
@@ -236,7 +236,7 @@ int main(int argc, char* argv[])
       
       if(!quiet && nx*ny*mz < outlimit)
         show(f,d.X,d.y,d.z,
-             !xcompact,!ycompact,0,
+             !xcompact,!ycompact && d.y0 == 0,0,
              d.X,d.y,d.z0+d.z < d.Z ? d.z : d.z-!zcompact,group.active);
     }
   
