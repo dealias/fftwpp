@@ -34,7 +34,7 @@ inline void init(Complex *f, Complex *g, const split3& d, unsigned int M=1,
     }
     
     if(!ycompact) {
-      for(unsigned int i=0; i < d.x; ++i) {
+      for(unsigned int i=0; i < d.X; ++i) {
         unsigned int IJ=stride+d.y*d.z*i;
         for(unsigned int k=0; k < d.z; ++k) {
           f[IJ+k]=0.0;
