@@ -54,14 +54,14 @@ def runtest(filename, P, extraargs, logfilename, timeout):
             print msg
         except:
             pass
-        log.write(msg + "\n")
+        log.write(" "+msg + "\n")
     else:
-        msg = "\tFAIL with code " + str(prc) + "!"
+        msg = " FAIL with code " + str(prc) + "!"
         try:
             print msg
         except:
             pass
-        log.write(msg + "\n")
+        log.write(" "+msg + "\n")
         log.write("stdout:\n" + out + "\n")
         log.write("stderr:\n" + err + "\n")
         #print out
