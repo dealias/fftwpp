@@ -330,9 +330,8 @@ public:
     }
   }
   
-  fftw() {}
-  fftw(unsigned int doubles, int sign, unsigned int threads,
-       unsigned int n=0) :
+  fftw() : plan(NULL) {}
+  fftw(unsigned int doubles, int sign, unsigned int threads, unsigned int n=0) :
     doubles(doubles), sign(sign), threads(threads), 
     norm(1.0/(n ? n : doubles/2)), plan(NULL) {
 #ifndef FFTWPP_SINGLE_THREAD
@@ -344,7 +343,7 @@ public:
     if(plan) fftw_destroy_plan(plan);
   }
   
-  virtual fftw_plan Plan(Complex *in, Complex *out)=0;
+  virtual fftw_plan Plan(Complex *in, Complex *out) {return NULL;};
   
   inline void CheckAlign(Complex *p, const char *s) {
     if((size_t) p % sizeof(Complex) == 0) return;
@@ -455,16 +454,21 @@ public:
   }
   virtual void store(bool inplace, const threaddata& data) {}
   
-  threaddata Setup(Complex *in, Complex *out=NULL) {
-    bool alloc=!in;
-    if(alloc) in=ComplexAlign((doubles+1)/2);
+  inline Complex *CheckAlign(Complex *in, Complex *out, bool constructor=true) {
 #ifndef NO_CHECK_ALIGN    
-    CheckAlign(in,"constructor input");
-    if(out) CheckAlign(out,"constructor output");
+    CheckAlign(in,constructor ? "constructor input" : "input");
+    if(out) CheckAlign(out,constructor ? "constructor output" : "output");
     else out=in;
 #else
     if(!out) out=in;
 #endif    
+    return out;
+  }
+  
+  threaddata Setup(Complex *in, Complex *out=NULL) {
+    bool alloc=!in;
+    if(alloc) in=ComplexAlign((doubles+1)/2);
+    out=CheckAlign(in,out);
     inplace=(out==in);
     
     threaddata data;
@@ -506,13 +510,7 @@ public:
   }
     
   Complex *Setout(Complex *in, Complex *out) {
-#ifndef NO_CHECK_ALIGN    
-    CheckAlign(in,"input");
-    if(out) CheckAlign(out,"output");
-    else out=in;
-#else
-    if(!out) out=in;
-#endif    
+    out=CheckAlign(in,out,false);
     if(inplace ^ (out == in)) {
       std::cerr << "ERROR: fft " << inout << std::endl;
       exit(1);

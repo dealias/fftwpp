@@ -127,7 +127,7 @@ int main(int argc, char* argv[])
     Complex *f=ComplexAlign(d.n);
 
     // Create instance of FFT
-    fft2dMPI fft(d,f,mpiOptions(divisor,alltoall));
+    fft2dMPI fft(d,f,f,mpiOptions(divisor,alltoall));
 
     if(!quiet && group.rank == 0)
       cout << "Initialized after " << seconds() << " seconds." << endl;    
@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
 	cout << "\nGathered input:\n" << flocal << endl;
       }
 
-      fft.Forwards(f);
+      fft.Forward(f);
 
       if(!quiet && nx*ny < outlimit) {
       	if(main) cout << "\nDistributed output:" << endl;
@@ -180,7 +180,7 @@ int main(int argc, char* argv[])
 	}
       }
 
-      fft.Backwards(f);
+      fft.Backward(f);
       fft.Normalize(f);
 
       if(!quiet && nx*ny < outlimit) {
@@ -213,8 +213,8 @@ int main(int argc, char* argv[])
 	for(unsigned int i=0; i < N; ++i) {
 	  init(f,d);
 	  seconds();
-	  fft.Forwards(f);
-	  fft.Backwards(f);
+	  fft.Forward(f);
+	  fft.Backward(f);
 	  fft.Normalize(f);
 	  T[i]=seconds();
 	}    

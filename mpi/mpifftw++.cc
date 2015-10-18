@@ -107,62 +107,46 @@ fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out)
   return plan;
 }
 
-void fft2dMPI::Forwards(Complex *f)
+void fft2dMPI::Forward(Complex *in, Complex *out)
 {
-  yForwards->fft(f);
-  T->transpose(f,true,false);
-  xForwards->fft(f);
+  out=Setout(in,out);
+  yForward->fft(in,out);
+  T->transpose(out,true,false);
+  xForward->fft(out);
 }
 
-void fft2dMPI::Backwards(Complex *f)
+void fft2dMPI::Backward(Complex *in, Complex *out)
 {
-  xBackwards->fft(f);
-  T->transpose(f,false,true);
-  yBackwards->fft(f);
+  out=Setout(in,out);
+  xBackward->fft(in,out);
+  T->transpose(out,false,true);
+  yBackward->fft(out);
 }
 
-void fft2dMPI::Normalize(Complex *f)
-{
-  unsigned int N=d.X*d.Y;
-  unsigned int n=d.x*d.Y;
-  double denom=1.0/N;
-#ifndef FFTWPP_SINGLE_THREAD
-#pragma omp parallel for num_threads(threads)
-#endif
-  for(unsigned int i=0; i < n; ++i) 
-    f[i] *= denom;
-}
-
-void fft2dMPI::BackwardsNormalized(Complex *f)
-{
-  Backwards(f);
-  Normalize(f);
-}
-
-void fft3dMPI::Forwards(Complex *f)
+void fft3dMPI::Forward(Complex *f)
 {
   unsigned int stride=d.z*d.Y;
   if(d.yz.x < d.Y) {
-    zForwards->fft(f);
+    zForward->fft(f);
 
     Tyz->transpose(f,true,false);
 
     for(unsigned int i=0; i < d.x; ++i) 
-      yForwards->fft(f+i*stride);
+      yForward->fft(f+i*stride);
   } else {
     for(unsigned int i=0; i < d.x; ++i) 
-      yzForwards->fft(f+i*stride);
+      yzForward->fft(f+i*stride);
   }
   
   if(Txy)
     Txy->transpose(f,true,false);
   
-  xForwards->fft(f);
+  xForward->fft(f);
 }
 
-void fft3dMPI::Backwards(Complex *f)
+void fft3dMPI::Backward(Complex *f)
 {
-  xBackwards->fft(f);
+  xBackward->fft(f);
 
   if(Txy)
     Txy->transpose(f,false,true);
@@ -170,14 +154,14 @@ void fft3dMPI::Backwards(Complex *f)
   unsigned int stride=d.z*d.Y;
   if(d.yz.x < d.Y) {
     for(unsigned int i=0; i < d.x; ++i)
-      yBackwards->fft(f+i*stride); // This should be an mfft.
+      yBackward->fft(f+i*stride); // This should be an mfft.
 
     Tyz->transpose(f,false,true);
 
-    zBackwards->fft(f);
+    zBackward->fft(f);
   } else {
     for(unsigned int i=0; i < d.x; ++i)  // This should be an mfft.
-      yzBackwards->fft(f+i*stride);
+      yzBackward->fft(f+i*stride);
   }
 }
 
@@ -193,9 +177,9 @@ void fft3dMPI::Normalize(Complex *f)
     f[i] *= denom;
 }
 
-void fft3dMPI::BackwardsNormalized(Complex *f)
+void fft3dMPI::BackwardNormalized(Complex *f)
 {
-  Backwards(f);
+  Backward(f);
   Normalize(f);
 }
 
@@ -220,29 +204,29 @@ void rcfft2dMPI::Shift(double *f)
   }
 }
 
-void rcfft2dMPI::Forwards(double *f, Complex *g)
+void rcfft2dMPI::Forward(double *f, Complex *g)
 {
-  yForwards->fft(f,g);
+  yForward->fft(f,g);
   T->transpose(g,true,false);
-  xForwards->fft(g);
+  xForward->fft(g);
 }
 
-void rcfft2dMPI::Forwards0(double *f, Complex *g)
+void rcfft2dMPI::Forward0(double *f, Complex *g)
 {
   Shift(f);
-  Forwards(f,g);
+  Forward(f,g);
 }
 
-void rcfft2dMPI::Backwards(Complex *g, double *f)
+void rcfft2dMPI::Backward(Complex *g, double *f)
 {
-  xBackwards->fft(g);
+  xBackward->fft(g);
   T->transpose(g,false,true);
-  yBackwards->fft(g,f);
+  yBackward->fft(g,f);
 }
 
-void rcfft2dMPI::Backwards0(Complex *g, double *f)
+void rcfft2dMPI::Backward0(Complex *g, double *f)
 {
-  Backwards(g,f);
+  Backward(g,f);
   Shift(f);
 }
 
@@ -259,40 +243,40 @@ void rcfft2dMPI::Normalize(double *f)
     f[i] *= denom;
 }
 
-void rcfft2dMPI::BackwardsNormalized(Complex *g, double *f)
+void rcfft2dMPI::BackwardNormalized(Complex *g, double *f)
 {
-  Backwards(g,f);
+  Backward(g,f);
   Normalize(f);
 }
 
-void rcfft2dMPI::Backwards0Normalized(Complex *g, double *f)
+void rcfft2dMPI::Backward0Normalized(Complex *g, double *f)
 {
-  BackwardsNormalized(g,f);
+  BackwardNormalized(g,f);
   Shift(f);
 }
 
-void rcfft3dMPI::Forwards(double *f, Complex *g)
+void rcfft3dMPI::Forward(double *f, Complex *g)
 {
   // FIXME: deal with in-place
-  zForwards->fft(f,g);
+  zForward->fft(f,g);
   if(Tyz) Tyz->transpose(g,true,false);
   const unsigned int stride=dc.z*dc.Y;
   for(unsigned int i=0; i < dc.x; ++i) 
-    yForwards->fft(g+i*stride);
+    yForward->fft(g+i*stride);
  if(Txy) Txy->transpose(g,true,false);
-  xForwards->fft(g);
+  xForward->fft(g);
 }
 
-void rcfft3dMPI::Backwards(Complex *g, double *f)
+void rcfft3dMPI::Backward(Complex *g, double *f)
 {
   // FIXME: deal with in-place
-  xBackwards->fft(g);
+  xBackward->fft(g);
   if(Txy) Txy->transpose(g,false,true);
   const unsigned int stride=dc.z*dc.Y;
   for(unsigned int i=0; i < dc.x; ++i) 
-    yBackwards->fft(g+i*stride);
+    yBackward->fft(g+i*stride);
   if(Tyz) Tyz->transpose(g,false,true);
-  zBackwards->fft(g,f);
+  zBackward->fft(g,f);
 }
 
 void rcfft3dMPI::Normalize(double *f)
@@ -308,9 +292,9 @@ void rcfft3dMPI::Normalize(double *f)
     f[i] *= denom;
 }
 
-void rcfft3dMPI::BackwardsNormalized(Complex *g, double *f)
+void rcfft3dMPI::BackwardNormalized(Complex *g, double *f)
 {
-  Backwards(g,f);
+  Backward(g,f);
   Normalize(f);
 }
 
@@ -338,21 +322,21 @@ void rcfft3dMPI::Shift(double *f)
   }
 }
 
-void rcfft3dMPI::Forwards0(double *f, Complex *g)
+void rcfft3dMPI::Forward0(double *f, Complex *g)
 {
   Shift(f);
-  Forwards(f,g);
+  Forward(f,g);
 }
   
-void rcfft3dMPI::Backwards0(Complex *g, double *f)
+void rcfft3dMPI::Backward0(Complex *g, double *f)
 {
-  Backwards(g,f);
+  Backward(g,f);
   Shift(f);
 }
 
-void rcfft3dMPI::Backwards0Normalized(Complex *g, double *f)
+void rcfft3dMPI::Backward0Normalized(Complex *g, double *f)
 {
-  BackwardsNormalized(g,f);
+  BackwardNormalized(g,f);
   Shift(f);
 }
 

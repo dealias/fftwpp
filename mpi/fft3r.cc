@@ -184,9 +184,9 @@ int main(int argc, char* argv[])
       }
       
       if(shift)
-        fft.Forwards0(f,g);
+        fft.Forward0(f,g);
       else
-        fft.Forwards(f,g);
+        fft.Forward(f,g);
 
       // FIXME: temp
       //if(main) cout << "\ntwiddled input:" << endl;
@@ -218,9 +218,9 @@ int main(int argc, char* argv[])
       }
 
       if(shift)
-        fft.Backwards0Normalized(g,f);
+        fft.Backward0Normalized(g,f);
       else
-        fft.BackwardsNormalized(g,f);
+        fft.BackwardNormalized(g,f);
 
       if(main) {
         if(shift)
@@ -262,8 +262,8 @@ int main(int argc, char* argv[])
         for(unsigned int i=0; i < N; ++i) {
           init(f,df);
           seconds();
-          fft.Forwards(f,g);
-          fft.BackwardsNormalized(g,f);
+          fft.Forward(f,g);
+          fft.BackwardNormalized(g,f);
           T[i]=seconds();
         }
         if(!quiet)

@@ -158,9 +158,9 @@ int main(int argc, char* argv[])
       }
 
       if(shift)
-	rcfft.Forwards0(f,g);
+	rcfft.Forward0(f,g);
       else
-	rcfft.Forwards(f,g);
+	rcfft.Forward(f,g);
       
       if(!quiet && nx*ny < outlimit) {
       	if(main) cout << "\nDistributed output:" << endl;
@@ -184,9 +184,9 @@ int main(int argc, char* argv[])
       }
 
       if(shift)
-	rcfft.Backwards0Normalized(g,f);
+	rcfft.Backward0Normalized(g,f);
       else
-	rcfft.BackwardsNormalized(g,f);
+	rcfft.BackwardNormalized(g,f);
 
       if(!quiet && nx*ny < outlimit) {
       	if(main) cout << "\nDistributed back to input:" << endl;
@@ -222,8 +222,8 @@ int main(int argc, char* argv[])
        	for(unsigned int i=0; i < N; ++i) {
        	  init(f,df);
        	  seconds();
-       	  rcfft.Forwards(f,g);
-       	  rcfft.BackwardsNormalized(g,f);
+       	  rcfft.Forward(f,g);
+       	  rcfft.BackwardNormalized(g,f);
        	  T[i]=seconds();
        	}    
        	if(main) timings("FFT timing:",nx,T,N);

@@ -170,7 +170,7 @@ int main(int argc, char* argv[])
         retval += checkerror(flocal(),fgathered(),d.X*d.Y*d.Z);
       }
       
-      fft.Forwards(f);
+      fft.Forward(f);
 
       if(main)
 	localForward.fft(flocal);
@@ -189,7 +189,7 @@ int main(int argc, char* argv[])
       if(main)
         retval += checkerror(flocal(),fgathered(),d.X*d.Y*d.Z);
       
-      fft.Backwards(f);
+      fft.Backward(f);
       fft.Normalize(f);
       if(main)
 	localBackward.fftNormalized(flocal);
@@ -228,8 +228,8 @@ int main(int argc, char* argv[])
 	for(unsigned int i=0; i < N; ++i) {
 	  init(f,d);
 	  seconds();
-	  fft.Forwards(f);
-	  fft.Backwards(f);
+	  fft.Forward(f);
+	  fft.Backward(f);
 	  fft.Normalize(f);
 	  T[i]=seconds();
 	}
