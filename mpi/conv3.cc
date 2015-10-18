@@ -8,22 +8,13 @@ using namespace fftwpp;
 // Number of iterations.
 unsigned int N0=1000000;
 unsigned int N=0;
-unsigned int mx=4;
-unsigned int my=4;
-unsigned int mz=4;
-unsigned int M=1;
-bool xcompact=true;
-bool ycompact=true;
-bool zcompact=true;
-int divisor=0; // Test for best block divisor
-int alltoall=-1; // Test for best alltoall routine
 
 bool Direct=false, Implicit=true;
 
 unsigned int outlimit=3000;
 
 inline void init(Complex *f, Complex *g, const split3& d, unsigned int M=1,
-                 bool xcompact=true, bool ycompact=true)
+                 bool xcompact=true, bool ycompact=true, bool zcompact=true)
 {
   double factor=1.0/sqrt((double) M);
   for(unsigned int s=0; s < M; ++s) {
@@ -41,15 +32,17 @@ inline void init(Complex *f, Complex *g, const split3& d, unsigned int M=1,
         }
       }
     }
+    
     if(!ycompact) {
-      for(unsigned int j=0; j < d.y; ++j) {
-        unsigned int IJ=stride+d.z*j;
+      for(unsigned int i=0; i < d.x; ++i) {
+        unsigned int IJ=stride+d.y*d.z*i;
         for(unsigned int k=0; k < d.z; ++k) {
           f[IJ+k]=0.0;
           g[IJ+k]=0.0;
         }
       }
     }
+    
     if(!zcompact && d.z0+d.z == d.Z) { // Last process
       for(unsigned int i=0; i < d.X; ++i) {
         unsigned int I=stride+d.y*d.z*i;
@@ -60,13 +53,15 @@ inline void init(Complex *f, Complex *g, const split3& d, unsigned int M=1,
         }
       }
     }
+    
     for(unsigned int i=!xcompact; i < d.X; ++i) {
       unsigned int I=stride+d.y*d.z*i;
       unsigned int ii=i-!xcompact;
-      for(unsigned int j=0; j < d.y; ++j) {
+      for(unsigned int j=!ycompact; j < d.y; ++j) {
         unsigned int IJ=I+d.z*j;
-        unsigned int jj=d.y0+j;
-        for(unsigned int k=0; k < d.z; ++k) {
+        unsigned int jj=d.y0+j-!ycompact;
+        unsigned int stop=d.z0+d.z < d.Z ? d.z : d.z-!zcompact;
+        for(unsigned int k=0; k < stop; ++k) {
           unsigned int kk=d.z0+k;
           f[IJ+k]=ffactor*Complex(ii+kk,jj+kk);
           g[IJ+k]=gfactor*Complex(2*ii+kk,jj+1+kk);
@@ -83,6 +78,16 @@ int main(int argc, char* argv[])
 #endif  
   int retval=0;
   bool quiet=false;
+
+  unsigned int mx=4;
+  unsigned int my=4;
+  unsigned int mz=4;
+  unsigned int M=1;
+  bool xcompact=true;
+  bool ycompact=true;
+  bool zcompact=true;
+  int divisor=0; // Test for best block divisor
+  int alltoall=-1; // Test for best alltoall routine
 
 #ifdef __GNUC__ 
   optind=0;
@@ -217,7 +222,7 @@ int main(int argc, char* argv[])
       if(!quiet && main)
         cout << "Initialized after " << seconds() << " seconds." << endl;
       for(unsigned int i=0; i < N; ++i) {
-        init(f,g,d,M,xcompact,ycompact);
+        init(f,g,d,M,xcompact,ycompact,zcompact);
         if(main) seconds();
         C.convolve(F,mult);
 //      C.convolve(f,g);
@@ -230,9 +235,9 @@ int main(int argc, char* argv[])
       delete [] F;
       
       if(!quiet && nx*ny*mz < outlimit)
-        show(f,nx,d.y,d.z,
-             !xcompact,!ycompact && d.y0 == 0,0,
-             nx,d.y,zcompact || d.z0+d.z < nzp ? d.z : d.z-1,group.active);
+        show(f,d.X,d.y,d.z,
+             !xcompact,!ycompact,0,
+             d.X,d.y,d.z0+d.z < d.Z ? d.z : d.z-!zcompact,group.active);
     }
   
     deleteAlign(f);

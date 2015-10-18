@@ -10,15 +10,10 @@ using namespace Array;
 // Number of iterations.
 unsigned int N0=1000000;
 unsigned int N=0;
-bool xcompact=true;
-bool ycompact=true;
-int divisor=0; // Test for best block divisor
-int alltoall=-1; // Test for best alltoall routine
-
 unsigned int outlimit=200;
 
 inline void init(Complex **F, split d, unsigned int A=2,
-                 bool xcompact=true)
+                 bool xcompact=true, bool ycompact=true)
 {
   if(A%2 == 0) {
     unsigned int M=A/2;
@@ -37,15 +32,18 @@ inline void init(Complex **F, split d, unsigned int A=2,
           g[0][j]=0.0;
         }
       }
+      
       if(!ycompact && d.y0+d.y == d.Y) { // Last process
         for(unsigned int i=0; i < d.X; ++i) {
           f[i][d.y-1]=0.0;
           g[i][d.y-1]=0.0;
         }
       }
+      
       for(unsigned int i=!xcompact; i < d.X; ++i) {
 	unsigned int ii=i-!xcompact;
-	for(unsigned int j=0; j < d.y; j++) {
+        unsigned int stop=d.y0+d.y < d.Y ? d.y : d.y-!ycompact;
+          for(unsigned int j=0; j < stop; j++) {
 	  unsigned int jj=j+d.y0;
 	  f[i][j]=ffactor*Complex(ii,jj);
 	  g[i][j]=gfactor*Complex(2*ii,jj+1);
@@ -70,6 +68,11 @@ int main(int argc, char* argv[])
   
   unsigned int mx=4;
   unsigned int my=4;
+
+  bool xcompact=true;
+  bool ycompact=true;
+  int divisor=0; // Test for best block divisor
+  int alltoall=-1; // Test for best alltoall routine
 
   bool quiet=false;
   bool test=false;
@@ -194,7 +197,7 @@ int main(int argc, char* argv[])
 	cout << "Testing!" << endl;
       }
 
-      init(F,d,A,xcompact);
+      init(F,d,A,xcompact,ycompact);
 
       if(!quiet) {
 	for(unsigned int a=0; a < A; ++a) {
@@ -238,7 +241,7 @@ int main(int argc, char* argv[])
 	cout << "N=" << N << endl;
       double *T=new double[N];
       for(unsigned int i=0; i < N; ++i) {
-	init(F,d,A,xcompact);
+	init(F,d,A,xcompact,ycompact);
 	if(main) seconds();
 	C.convolve(F,mult);
 	//C.convolve(f,g);
@@ -251,7 +254,7 @@ int main(int argc, char* argv[])
       if(!quiet && nx*my < outlimit) {
 	show(F[0],nx,d.y,
 	     !xcompact,0,
-	     nx,ycompact || d.y0+d.y < nyp ? d.y : d.y-1,group.active);
+	     nx,d.y0+d.y < d.Y ? d.y : d.y-!ycompact,group.active);
       }
     }
     
