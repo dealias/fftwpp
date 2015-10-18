@@ -119,8 +119,6 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
     HermitianSymmetrizeXY(mx,my,d.Z,mx-xcompact,my-ycompact,f);
     return;
   }
-
-  MPI_Status stat;
   int rank,size;
   unsigned int xextra=!xcompact;
   unsigned int yextra=!ycompact;
@@ -163,7 +161,7 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
       delete [] process;
     } else {
       for(unsigned int j=0; j < dy; ++j)
-        MPI_Recv(d.reflect+j,1,MPI_INT,0,j,*d.XYplane,&stat);
+        MPI_Recv(d.reflect+j,1,MPI_INT,0,j,*d.XYplane,MPI_STATUS_IGNORE);
     }
     delete [] indices;
   }
@@ -180,10 +178,18 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
       MPI_Send(u,2*nx,MPI_DOUBLE,J,0,*d.XYplane);
     else {
       if(y0+j != yorigin) {
-        int offset=2*yorigin-y0;
-        unsigned int even=1+ycompact-(J % 2);
-        for(unsigned int i=0; i < nx; ++i)
-          f[stride*(i-even)+d.z*(offset-j)]=u[i];
+        int offset=d.z*(2*yorigin-y0-j-y0);
+        for(unsigned int i=0; i < nx; ++i) {
+          unsigned int N=stride*(i+xextra)+offset;
+          if(N < d.n)
+            f[N]=u[i];
+          else {
+            if(rank == 0)
+              std::cerr << "Invalid index in HermitianSymmetrizeXYMPI."
+                        << std::endl;
+            exit(-1);
+          }
+        }
       } else {
         unsigned int origin=stride*(mx-xcompact)+d.z*j;
         f[origin].im=0.0;
@@ -197,7 +203,7 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
   for(unsigned int j=std::min(dy,start); j-- > j0;) {
     int J=d.reflect[j];
     if(J != rank) {
-      MPI_Recv(u,2*nx,MPI_DOUBLE,J,0,*d.XYplane,&stat);
+      MPI_Recv(u,2*nx,MPI_DOUBLE,J,0,*d.XYplane,MPI_STATUS_IGNORE);
       for(unsigned int i=0; i < nx; ++i)
         f[stride*(i+xextra)+d.z*j]=u[i];
     }
