@@ -19,21 +19,6 @@
 #include "fftw++.h"
 #include "cmult-sse2.h"
 
-#ifndef FFTWPP_SINGLE_THREAD
-#define PARALLEL(code)                                  \
-  if(threads > 1) {                                     \
-    _Pragma("omp parallel for num_threads(threads)")    \
-      code                                              \
-      } else {                                          \
-    code                                                \
-      }
-#else
-#define PARALLEL(code)                          \
-  {                                             \
-    code                                        \
-  }
-#endif
-
 namespace fftwpp {
 
 #ifndef __convolution_h__
@@ -83,28 +68,6 @@ struct convolveOptions {
 };
     
 static const convolveOptions defaultconvolveOptions;
-
-class ThreadBase
-{
-protected:
-  unsigned int threads;
-  unsigned int innerthreads;
-public:  
-  ThreadBase() {threads=fftw::maxthreads;}
-  ThreadBase(unsigned int threads) : threads(threads) {}
-  void Threads(unsigned int nthreads) {threads=nthreads;}
-  unsigned int Threads() {return threads;}
-  
-  void multithread(unsigned int nx) {
-    if(nx >= threads) {
-      innerthreads=1;
-    } else {
-      innerthreads=threads;
-      threads=1;
-    }
-  }
-  
-};
 
 typedef void multiplier(Complex **, unsigned int m, unsigned int threads); 
 typedef void realmultiplier(double **, unsigned int m, unsigned int threads); 

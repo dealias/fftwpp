@@ -62,4 +62,6 @@ fftw_plan Planner(fftw *F, Complex *in, Complex *out)
   return plan;
 }
 
+ThreadBase::ThreadBase() {threads=fftw::maxthreads;}
+
 }

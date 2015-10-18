@@ -8,6 +8,8 @@ struct mpiOptions {
   mpiOptions(unsigned int a=0, unsigned int alltoall=-1,
              unsigned int threads=fftw::maxthreads) :
     a(a), alltoall(alltoall), threads(threads) {}
+  mpiOptions(unsigned int threads) :
+    a(0), alltoall(1), threads(threads) {}
 };
 
 #endif

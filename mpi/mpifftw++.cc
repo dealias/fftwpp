@@ -123,64 +123,46 @@ void fft2dMPI::Backward(Complex *in, Complex *out)
   yBackward->fft(out);
 }
 
-void fft3dMPI::Forward(Complex *f)
+void fft3dMPI::Forward(Complex *in, Complex *out)
 {
-  unsigned int stride=d.z*d.Y;
+  out=Setout(in,out);
   if(d.yz.x < d.Y) {
-    zForward->fft(f);
-
-    Tyz->transpose(f,true,false);
-
-    for(unsigned int i=0; i < d.x; ++i) 
-      yForward->fft(f+i*stride);
+    zForward->fft(in,out);
+    Tyz->transpose(out,true,false);
+    yForward->fft(out);
   } else {
-    for(unsigned int i=0; i < d.x; ++i) 
-      yzForward->fft(f+i*stride);
+    unsigned int stride=d.Y*d.z;
+    unsigned int stop=d.x*stride;
+    PARALLEL(
+      for(unsigned int i=0; i < stop; i += stride)
+        yzForward->fft(in+i,out+i);
+      );
   }
   
   if(Txy)
-    Txy->transpose(f,true,false);
+    Txy->transpose(out,true,false);
   
-  xForward->fft(f);
+  xForward->fft(out);
 }
 
-void fft3dMPI::Backward(Complex *f)
+void fft3dMPI::Backward(Complex *in, Complex *out)
 {
-  xBackward->fft(f);
+  out=Setout(in,out);
+  xBackward->fft(in,out);
 
   if(Txy)
-    Txy->transpose(f,false,true);
+    Txy->transpose(out,false,true);
 
-  unsigned int stride=d.z*d.Y;
   if(d.yz.x < d.Y) {
-    for(unsigned int i=0; i < d.x; ++i)
-      yBackward->fft(f+i*stride); // This should be an mfft.
-
-    Tyz->transpose(f,false,true);
-
-    zBackward->fft(f);
+    yBackward->fft(out);
+    Tyz->transpose(out,false,true);
+    zBackward->fft(out);
   } else {
-    for(unsigned int i=0; i < d.x; ++i)  // This should be an mfft.
-      yzBackward->fft(f+i*stride);
+    unsigned int stride=d.z*d.Y;
+    unsigned int stop=d.x*stride;
+    for(unsigned int i=0; i < stop; i += stride)
+      yzBackward->fft(out+i);
   }
-}
-
-void fft3dMPI::Normalize(Complex *f)
-{
-  unsigned int N=d.X*d.Y*d.Z;
-  unsigned int n=d.x*d.y*d.Z;
-  double denom=1.0/N;
-#ifndef FFTWPP_SINGLE_THREAD
-#pragma omp parallel for num_threads(yzthreads)
-#endif
-  for(unsigned int i=0; i < n; ++i) 
-    f[i] *= denom;
-}
-
-void fft3dMPI::BackwardNormalized(Complex *f)
-{
-  Backward(f);
-  Normalize(f);
 }
 
 void rcfft2dMPI::Shift(double *f)

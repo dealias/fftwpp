@@ -56,6 +56,21 @@ inline int get_max_threads()
 #endif  
 }
 
+#ifndef FFTWPP_SINGLE_THREAD
+#define PARALLEL(code)                                  \
+  if(threads > 1) {                                     \
+    _Pragma("omp parallel for num_threads(threads)")    \
+      code                                              \
+      } else {                                          \
+    code                                                \
+      }
+#else
+#define PARALLEL(code)                          \
+  {                                             \
+    code                                        \
+  }
+#endif
+
 #ifndef __Complex_h__
 #include <complex>
 typedef std::complex<double> Complex;
@@ -197,9 +212,32 @@ struct threaddata {
     threads(threads), mean(mean), stdev(stdev) {}
 };
 
+class fftw;
+
+class ThreadBase
+{
+protected:
+  unsigned int threads;
+  unsigned int innerthreads;
+public:  
+  ThreadBase();
+  ThreadBase(unsigned int threads) : threads(threads) {}
+  void Threads(unsigned int nthreads) {threads=nthreads;}
+  unsigned int Threads() {return threads;}
+  
+  void multithread(unsigned int nx) {
+    if(nx >= threads) {
+      innerthreads=1;
+    } else {
+      innerthreads=threads;
+      threads=1;
+    }
+  }
+};
+
 // Base clase for fft routines
 //
-class fftw {
+class fftw : public ThreadBase {
 protected:
   unsigned int doubles; // number of double precision values in dataset
   int sign;
@@ -1618,7 +1656,7 @@ public:
           f[i*yz+(j+1)*nzp-1]=0.0;
   }
 };
-  
+
 }
 
 #endif

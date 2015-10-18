@@ -193,23 +193,34 @@ private:
   mfft1d *yForward,*yBackward;
   mpitranspose<Complex> *T;
 public:
-  fft2dMPI(const split& d, Complex *in, Complex *out=NULL,
-           const mpiOptions& options=defaultmpiOptions) : 
-    fftw(2*d.x*d.Y,0,threads,d.X*d.Y), d(d) {
+  void init(Complex *in, Complex *out, const mpiOptions& options) {
+    d.Activate();
     out=CheckAlign(in,out);
     inplace=(in == out);
     
-    d.Activate();
     threads=options.threads;
 
-    xForward=new mfft1d(d.X,-1,d.y,d.y,1,in,out,threads);
-    xBackward=new mfft1d(d.X,1,d.y,d.y,1,in,out,threads);
+    yForward=new mfft1d(d.Y,-1,d.x,1,d.Y,in,out,threads);
+    yBackward=new mfft1d(d.Y,1,d.x,1,d.Y,in,out,threads);
 
     T=new mpitranspose<Complex>(d.X,d.y,d.x,d.Y,1,out,d.communicator,options);
     
-    yForward=new mfft1d(d.Y,-1,d.x,1,d.Y,out,out,threads);
-    yBackward=new mfft1d(d.Y,1,d.x,1,d.Y,out,out,threads);
+    xForward=new mfft1d(d.X,-1,d.y,d.y,1,out,out,threads);
+    xBackward=new mfft1d(d.X,1,d.y,d.y,1,out,out,threads);
+    
     d.Deactivate();
+  }
+  
+  fft2dMPI(const split& d, Complex *in,
+           const mpiOptions& options=defaultmpiOptions) : 
+    fftw(2*d.x*d.Y,0,options.threads,d.X*d.Y), d(d) {
+    init(in,in,options);
+  }
+    
+  fft2dMPI(const split& d, Complex *in, Complex *out,
+           const mpiOptions& options=defaultmpiOptions) : 
+    fftw(2*d.x*d.Y,0,options.threads,d.X*d.Y), d(d) {
+    init(in,out,options);
   }
   
   virtual ~fft2dMPI() {
@@ -239,53 +250,60 @@ public:
 // fft.Normalize(f);
 // deleteAlign(f);
 //
-class fft3dMPI {
+class fft3dMPI : public fftw {
 private:
   split3 d;
-  unsigned int xythreads,yzthreads;
   mfft1d *xForward,*xBackward;
   mfft1d *yForward,*yBackward;
   mfft1d *zForward,*zBackward;
   fft2d *yzForward,*yzBackward;
   mpitranspose<Complex> *Txy,*Tyz;
 public:
-  
-  void init(Complex *f, const mpiOptions& xy, const mpiOptions &yz) {
+  void init(Complex *in, Complex *out, const mpiOptions& xy,
+            const mpiOptions &yz) {
     d.Activate();
-    xythreads=xy.threads;
-    yzthreads=yz.threads; 
-    Txy=d.z > 0 ?
-      new mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,f,d.xy.communicator,xy,
-                                d.communicator) : NULL;
-    unsigned int M=d.xy.y*d.z;
-    xForward=new mfft1d(d.X,-1,M,M,1,f,f,xythreads);
-    xBackward=new mfft1d(d.X,1,M,M,1,f,f,xythreads);
+    out=CheckAlign(in,out);
+    inplace=(in == out);
     
     if(d.yz.x < d.Y) {
-      yForward=new mfft1d(d.Y,-1,d.z,d.z,1,f,f,yzthreads);
-      yBackward=new mfft1d(d.Y,1,d.z,d.z,1,f,f,yzthreads);
-
-      Tyz=new mpitranspose<Complex>(d.Y,d.z,d.yz.x,d.Z,1,f,d.yz.communicator,yz,
-        d.communicator);
-
       unsigned int M=d.x*d.yz.x;
-      zForward=new mfft1d(d.Z,-1,M,1,d.Z,f,f,yzthreads);
-      zBackward=new mfft1d(d.Z,1,M,1,d.Z,f,f,yzthreads);
+      zForward=new mfft1d(d.Z,-1,M,1,d.Z,in,out,threads);
+      zBackward=new mfft1d(d.Z,1,M,1,d.Z,in,out,threads);
+      Tyz=new mpitranspose<Complex>(d.Y,d.z,d.yz.x,d.Z,1,out,d.yz.communicator,
+                                    yz,d.communicator);
+      yForward=new mfft1d(d.Y,-1,d.x*d.z,d.z,1,out,out,threads);
+      yBackward=new mfft1d(d.Y,1,d.x*d.z,d.z,1,out,out,threads);
     } else {
-      yzForward=new fft2d(d.Y,d.Z,-1,f,f,yzthreads);
-      yzBackward=new fft2d(d.Y,d.Z,1,f,f,yzthreads);
+      multithread(d.x);
+      yzForward=new fft2d(d.Y,d.Z,-1,in,out,innerthreads);
+      yzBackward=new fft2d(d.Y,d.Z,1,in,out,innerthreads);
     }
+    
+    Txy=d.z > 0 ?
+      new mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,out,d.xy.communicator,xy,
+                                d.communicator) : NULL;
+    unsigned int M=d.xy.y*d.z;
+    xForward=new mfft1d(d.X,-1,M,M,1,out,out,threads);
+    xBackward=new mfft1d(d.X,1,M,M,1,out,out,threads);
+    
     d.Deactivate();
   }
   
-  fft3dMPI(const split3& d, Complex *f, const mpiOptions& xy,
-           const mpiOptions& yz) : d(d) {
-    init(f,xy,yz);
-  }
+  fft3dMPI(const split3& d, Complex *in, Complex *out, const mpiOptions& xy,
+           const mpiOptions& yz) : fftw(2*d.x*d.y*d.Z,0,xy.threads,d.X*d.Y*d.Z),
+                                   d(d) {init(in,out,xy,yz);}
   
-  fft3dMPI(const split3& d, Complex *f, const mpiOptions& xy) : d(d) {
-    init(f,xy,xy);
-  }
+  fft3dMPI(const split3& d, Complex *in, Complex *out,
+           const mpiOptions& xy=defaultmpiOptions) :
+    fftw(2*d.x*d.y*d.Z,0,xy.threads,d.X*d.Y*d.Z), d(d) {init(in,out,xy,xy);}
+    
+  fft3dMPI(const split3& d, Complex *in, const mpiOptions& xy,
+           const mpiOptions& yz) : fftw(2*d.x*d.y*d.Z,0,xy.threads,d.X*d.Y*d.Z),
+                                   d(d) {init(in,in,xy,yz);}
+  
+  fft3dMPI(const split3& d, Complex *in,
+           const mpiOptions& xy=defaultmpiOptions) :
+    fftw(2*d.x*d.y*d.Z,0,xy.threads,d.X*d.Y*d.Z), d(d) {init(in,in,xy,xy);}
     
   virtual ~fft3dMPI() {
     if(d.yz.x < d.Y) {
@@ -306,10 +324,8 @@ public:
       delete Txy;
   }
 
-  void Forward(Complex *f);
-  void Backward(Complex *f);
-  void Normalize(Complex *f);
-  void BackwardNormalized(Complex *f);
+  void Forward(Complex *in, Complex *out=NULL);
+  void Backward(Complex *in, Complex *out=NULL);
 };
 
 // 2D OpenMP/MPI real-to-complex and complex-to-real in-place and out-of-place
