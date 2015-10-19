@@ -189,6 +189,11 @@ int main(int argc, char* argv[])
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
 
+  if(N == 0) {
+    N=N0/mx/my/mz;
+    if(N < 10) N=10;
+  }
+
   unsigned int nx=2*mx-xcompact;
   unsigned int ny=2*my-ycompact;
   unsigned int nzp=mz+!zcompact;
@@ -216,12 +221,12 @@ int main(int argc, char* argv[])
     }
 
     // Dimensions of the input data
-    split3 df(nx,ny,mz+!zcompact,group,true);
+    split3 d(nx,ny,nzp,group,true);
     
     Complex **F=new Complex*[A];
     for(unsigned int a=0; a < A; a++)
-      F[a]=ComplexAlign(df.n);
-    init(F,df,A,xcompact,ycompact,zcompact);
+      F[a]=ComplexAlign(d.n);
+    init(F,d,A,xcompact,ycompact,zcompact);
     
     realmultiplier *mult;
     switch(A) {
@@ -231,7 +236,6 @@ int main(int argc, char* argv[])
     }
 
     // Dimensions used in the MPI convolution
-    split3 d(nx,ny,nzp,group,true);
     split3 du(mx+xcompact,ny,my+ycompact,nzp,group,true);
     ImplicitHConvolution3MPI C(mx,my,mz,xcompact,ycompact,zcompact,d,du,F[0],
                                mpiOptions(divisor,alltoall),A,B);
@@ -245,7 +249,7 @@ int main(int argc, char* argv[])
         if(main) cout << "Distributed input:" << endl;
         for(unsigned int a=0; a < A; a++) {
           if(main) cout << "a: " << a << endl;
-          show(F[a],df.X,df.y,df.z,group.active);
+          show(F[a],d.X,d.y,d.z,group.active);
         }
       }
       
@@ -267,7 +271,7 @@ int main(int argc, char* argv[])
 
       if(!quiet && nx*ny*mz < outlimit) {
 	if(main) cout << "Distributed output: " << endl;
-	show(F[0],df.X,df.y,df.z,group.active);
+	show(F[0],d.X,d.y,d.z,group.active);
       }
       
       Complex **F0out=new Complex*[B];
@@ -309,9 +313,6 @@ int main(int argc, char* argv[])
       
     } else {
 
-      N=N0/mx/my/mz;
-      if(N < 10) N=10;
-
       double *T=new double[N];
       for(unsigned int i=0; i < N; ++i) {
         init(F,d,A,xcompact,ycompact,zcompact);
@@ -325,9 +326,8 @@ int main(int argc, char* argv[])
       
       if(!quiet && nx*ny*mz < outlimit) {
 	if(main) cout << "output: " << endl;
-	show(F[0],df.X,df.y,df.z,group.active);
+	show(F[0],d.X,d.y,d.z,group.active);
       }
-
     }
       
     for(unsigned int a=0; a < A; a++)
