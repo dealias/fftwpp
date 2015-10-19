@@ -173,7 +173,7 @@ public:
   
 // 2D OpenMP/MPI complex in-place and out-of-place 
 // xY -> Xy distributed FFT.
-// Fourier transform an nx x ny array, distributed first over x.
+// Fourier transform an nx*ny array, distributed first over x.
 // The array must be allocated as split::n Complex words.
 //
 // Example:
@@ -197,16 +197,14 @@ public:
     d.Activate();
     out=CheckAlign(in,out);
     inplace=(in == out);
-    
-    threads=options.threads;
 
     yForward=new mfft1d(d.Y,-1,d.x,1,d.Y,in,out,threads);
-    yBackward=new mfft1d(d.Y,1,d.x,1,d.Y,in,out,threads);
+    yBackward=new mfft1d(d.Y,1,d.x,1,d.Y,out,out,threads);
 
     T=new mpitranspose<Complex>(d.X,d.y,d.x,d.Y,1,out,d.communicator,options);
     
     xForward=new mfft1d(d.X,-1,d.y,d.y,1,out,out,threads);
-    xBackward=new mfft1d(d.X,1,d.y,d.y,1,out,out,threads);
+    xBackward=new mfft1d(d.X,1,d.y,d.y,1,in,out,threads);
     
     d.Deactivate();
   }
@@ -237,7 +235,7 @@ public:
 
 // 3D OpenMP/MPI complex in-place and out-of-place 
 // xyZ -> Xyz distributed FFT.
-// Fourier transform an nx x ny x nz array, distributed first over x and
+// Fourier transform an nx*ny*nz array, distributed first over x and
 // then over y. The array must be allocated as split3::n Complex words.
 //
 // Example:
@@ -268,10 +266,10 @@ public:
     if(d.yz.x < d.Y) {
       unsigned int M=d.x*d.yz.x;
       zForward=new mfft1d(d.Z,-1,M,1,d.Z,in,out,threads);
-      zBackward=new mfft1d(d.Z,1,M,1,d.Z,in,out,threads);
+      zBackward=new mfft1d(d.Z,1,M,1,d.Z,out,out,threads);
       Tyz=new mpitranspose<Complex>(d.Y,d.z,d.yz.x,d.Z,1,out,d.yz.communicator,
                                     yz,d.communicator);
-      yForward=new mfft1d(d.Y,-1,d.x*d.z,d.z,1,out,out,threads);
+      yForward=new mfft1d(d.Y,-1,d.x*d.z,d.z,1,in,out,threads);
       yBackward=new mfft1d(d.Y,1,d.x*d.z,d.z,1,out,out,threads);
     } else {
       multithread(d.x);
@@ -284,7 +282,7 @@ public:
                                 d.communicator) : NULL;
     unsigned int M=d.xy.y*d.z;
     xForward=new mfft1d(d.X,-1,M,M,1,out,out,threads);
-    xBackward=new mfft1d(d.X,1,M,M,1,out,out,threads);
+    xBackward=new mfft1d(d.X,1,M,M,1,in,out,threads);
     
     d.Deactivate();
   }
@@ -331,70 +329,60 @@ public:
 // 2D OpenMP/MPI real-to-complex and complex-to-real in-place and out-of-place
 // xY->Xy distributed FFT.
 //
-// The input has size nx x ny, distributed in the x direction.
-// The output has size nx x (ny/2+1), distributed in the y direction. 
-// The arrays must be allocated as split3::n Complex words.
+// The array in has size nx*ny, distributed in the x direction.
+// The array out has size nx*(ny/2+1), distributed in the y direction. 
+// The arrays must be allocated as split3::n words.
+// The arrays in and out may coincide, dimensioned according to out.
 //
 // Basic interface:
-// Forward(double *f, Complex * g);
-// Backward(Complex *g, double *f);
+// Forward(double *in, Complex *out=NULL);   // Fourier origin at (0,0)
+// Forward0(double *in, Complex *out=NULL);  // Fourier origin at (nx/2,0);
+//                                              input destroyed.
 //
-// Forward0(double *f, Complex * g); // Fourier origin at (nx/2,0)
-// Backward0(Complex *g, double *f); // Fourier origin at (nx/2,0)
+// Backward(Complex *in, double *out=NULL);  // Fourier origin at (0,0);
+//                                              input destroyed.
+// Backward0(Complex *in, double *out=NULL); // Fourier origin at (nx/2,0);
+//                                              input destroyed.
 //
-// Normalize:
-// BackwardNormalized(Complex *g, double *f);
-// Backward0Normalized(Complex *g, double *f); // Fourier origin at (nx/2,0)
-class rcfft2dMPI {
+// Normalize(Complex *out);
+class rcfft2dMPI : public fftw {
 private:
   split dr,dc; // real and complex MPI dimensions.
-  unsigned int threads;
   mfft1d *xForward,*xBackward;
   mrcfft1d *yForward;
   mcrfft1d *yBackward;
-  bool inplace;
 protected:
   mpitranspose<Complex> *T;
 public:
-  rcfft2dMPI(const split& dr, const split& dc,
-             double *f, Complex *g, const mpiOptions& options) : dr(dr), dc(dc)
-  {
-    threads=options.threads;
+  
+  void init(double *in, Complex *out, const mpiOptions& options) {
     dc.Activate();
+    out=CheckAlign((Complex *) in,out);
+    inplace=((Complex *) in == out);
     
-    T=new mpitranspose<Complex>(dc.X,dc.y,dc.x,dc.Y,1,g,dc.communicator,
+    T=new mpitranspose<Complex>(dc.X,dc.y,dc.x,dc.Y,1,out,dc.communicator,
                                 options);
 
-    bool inplace=f == (double*) g;
-    if(inplace) {
-      std::cerr << "In-place transform not yet implemented: TODO!" << std::endl;
-      exit(1);
-    }
+    size_t rdist=realsize(dr.Y,in,out);
+    size_t cdist=dr.Y/2+1;
+    yForward=new mrcfft1d(dr.Y,dr.x,1,1,rdist,cdist,in,out,threads);
+    yBackward=new mcrfft1d(dr.Y,dr.x,1,1,cdist,rdist,out,in,threads);
 
-    // Set up y-direction transforms
-    {
-      unsigned int n=dr.Y;
-      unsigned int M=dr.x;
-      size_t rstride=1;
-      size_t cstride=1;
-      size_t rdist=inplace ? dr.Y+2 : dr.Y;
-      size_t cdist=dr.Y/2+1;
-      yForward=new mrcfft1d(n,M,rstride,cstride,rdist,cdist,f,g,threads);
-      yBackward=new mcrfft1d(n,M,cstride,rstride,cdist,rdist,g,f,threads);
-    }
-
-    // Set up x-direction transforms
-    {    
-      unsigned int n=dc.X;
-      unsigned int M=dc.y;
-      unsigned int stride=dc.y;
-      unsigned int dist=1;
-      xForward=new mfft1d(n,-1,M,stride,dist,g,g,threads);
-      xBackward=new mfft1d(n,1,M,stride,dist,g,g,threads);
-    }
+    xForward=new mfft1d(dc.X,-1,dc.y,dc.y,1,out,out,threads);
+    xBackward=new mfft1d(dc.X,1,dc.y,dc.y,1,out,out,threads);
     dc.Deactivate();
   }
    
+  rcfft2dMPI(const split& dr, const split& dc, double *in,
+             Complex *out, const mpiOptions& options) :
+    fftw(dr.x*realsize(dr.Y,in,out),0,options.threads,dr.X*dr.Y), dr(dr), dc(dc)
+  {init(in,out,options);}
+  
+  rcfft2dMPI(const split& dr, const split& dc, Complex *out,
+             const mpiOptions& options) :
+    fftw(dr.x*2*(dr.Y/2+1),0,options.threads,dr.X*dr.Y), dr(dr), dc(dc) 
+  {init((double *) out,out,options);}
+  
   virtual ~rcfft2dMPI() {
     delete xBackward;
     delete xForward;
@@ -414,21 +402,21 @@ public:
         f[(i+1)*dc.y-1]=0.0;
   }
   
-  void Normalize(double *f);
-  void Shift(double *f);
-  void Forward(double *f, Complex * g);
-  void Backward(Complex *g, double *f);
-  void BackwardNormalized(Complex *g, double *f);
-  void Forward0(double *f, Complex * g);
-  void Backward0(Complex *g, double *f);
-  void Backward0Normalized(Complex *g, double *f);
+  void Shift(double *out);
+  void Forward(double *in, Complex *out);
+  void Backward(Complex *in, double *out);
+  void Forward0(double *in, Complex *out);
+  void Backward0(Complex *in, double *out);
+  
+  void Forward(Complex *out) {Forward((double *) out,out);}
+  void Backward(Complex *out) {Backward(out,(double *) out);}
 };
   
 // 3D real-to-complex and complex-to-real in-place and out-of-place
 // xyZ -> Xyz distributed FFT.
 //
-// The input has size nx x ny x nz, distributed in the x and y directions.
-// The output has size nx x ny x (nz/2+1), distributed in the y and z directions.
+// The input has size nx*ny*nz, distributed in the x and y directions.
+// The output has size nx*ny*(nz/2+1), distributed in the y and z directions.
 // The arrays must be allocated as split3::n Complex words.
 //
 // Example:

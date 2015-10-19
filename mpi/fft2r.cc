@@ -151,7 +151,7 @@ int main(int argc, char* argv[])
       rcfft2d localForward(nx, ny, flocal(), glocal());
       crfft2d localBackward(nx, ny, glocal(), flocal());
 
-      gatherx(f, flocal(), df, 1, group.active);
+      gatherx(f,flocal(),df,1,group.active);
 
       if(!quiet && main) {
 	cout << endl << "Gathered input:\n" << flocal << endl;
@@ -168,7 +168,7 @@ int main(int argc, char* argv[])
       }
 
       array2<Complex> ggather(nx,nyp,align);
-      gathery(g, ggather(), dg, 1, group.active);
+      gathery(g,ggather(),dg,1,group.active);
 
       MPI_Barrier(group.active);
       if(main) {
@@ -184,9 +184,10 @@ int main(int argc, char* argv[])
       }
 
       if(shift)
-	rcfft.Backward0Normalized(g,f);
+	rcfft.Backward0(g,f);
       else
-	rcfft.BackwardNormalized(g,f);
+	rcfft.Backward(g,f);
+      rcfft.Normalize(f);
 
       if(!quiet && nx*ny < outlimit) {
       	if(main) cout << "\nDistributed back to input:" << endl;
@@ -194,7 +195,7 @@ int main(int argc, char* argv[])
       }
 
       array2<double> flocal0(nx,ny,align);
-      gatherx(f, flocal0(), df, 1, group.active);
+      gatherx(f,flocal0(),df,1,group.active);
       MPI_Barrier(group.active);
       if(main) {
 	if(shift)
@@ -223,7 +224,8 @@ int main(int argc, char* argv[])
        	  init(f,df);
        	  seconds();
        	  rcfft.Forward(f,g);
-       	  rcfft.BackwardNormalized(g,f);
+       	  rcfft.Backward(g,f);
+       	  rcfft.Normalize(f);
        	  T[i]=seconds();
        	}    
        	if(main) timings("FFT timing:",nx,T,N);

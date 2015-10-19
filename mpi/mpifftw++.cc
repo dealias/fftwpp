@@ -186,55 +186,32 @@ void rcfft2dMPI::Shift(double *f)
   }
 }
 
-void rcfft2dMPI::Forward(double *f, Complex *g)
+void rcfft2dMPI::Forward(double *in, Complex *out)
 {
-  yForward->fft(f,g);
-  T->transpose(g,true,false);
-  xForward->fft(g);
+  out=Setout((Complex *) in,out);
+  yForward->fft(in,out);
+  T->transpose(out,true,false);
+  xForward->fft(out);
 }
 
-void rcfft2dMPI::Forward0(double *f, Complex *g)
+void rcfft2dMPI::Forward0(double *in, Complex *out)
 {
-  Shift(f);
-  Forward(f,g);
+  Shift(in);
+  Forward(in,out);
 }
 
-void rcfft2dMPI::Backward(Complex *g, double *f)
+void rcfft2dMPI::Backward(Complex *in, double *out)
 {
-  xBackward->fft(g);
-  T->transpose(g,false,true);
-  yBackward->fft(g,f);
+  out=(double *) Setout(in,(Complex *) out);
+  xBackward->fft(in);
+  T->transpose(in,false,true);
+  yBackward->fft(in,out);
 }
 
-void rcfft2dMPI::Backward0(Complex *g, double *f)
+void rcfft2dMPI::Backward0(Complex *in, double *out)
 {
-  Backward(g,f);
-  Shift(f);
-}
-
-void rcfft2dMPI::Normalize(double *f)
-{
-  // FIXME: deal with in-place.
-  unsigned int N=dr.X*dr.Y;
-  unsigned int n=dr.x*dr.Y;
-  double denom=1.0/N;
-#ifndef FFTWPP_SINGLE_THREAD
-#pragma omp parallel for num_threads(threads)
-#endif
-  for(unsigned int i=0; i < n; ++i) 
-    f[i] *= denom;
-}
-
-void rcfft2dMPI::BackwardNormalized(Complex *g, double *f)
-{
-  Backward(g,f);
-  Normalize(f);
-}
-
-void rcfft2dMPI::Backward0Normalized(Complex *g, double *f)
-{
-  BackwardNormalized(g,f);
-  Shift(f);
+  Backward(in,out);
+  Shift(out);
 }
 
 void rcfft3dMPI::Forward(double *f, Complex *g)
