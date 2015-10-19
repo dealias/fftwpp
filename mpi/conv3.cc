@@ -81,12 +81,27 @@ inline void init(Complex **F, const split3& d, unsigned int A=2,
   }
 }
 
+void show(Complex *F, unsigned int X, unsigned int Y, unsigned int Z)
+{
+  for(unsigned int i=0; i < X; ++i) {
+    for(unsigned int j=0; j < Y; ++j) {
+      for(unsigned int k=0; k < Z; ++k) {
+	unsigned int pos=i*Y*Z+j*Z+k;
+	cout << F[pos] << "\t";
+      }
+      cout << endl;
+    }
+    cout << endl;
+  }
+}
+
 int main(int argc, char* argv[])
 {
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
   int retval=0;
+  bool test=false;
   bool quiet=false;
 
   unsigned int mx=4;
@@ -104,7 +119,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"heiqA:M:N:a:m:s:x:y:z:n:T:X:Y:Z:");
+    int c = getopt(argc,argv,"heitqA:M:N:a:m:s:x:y:z:n:T:X:Y:Z:");
     if (c == -1) break;
                 
     switch (c) {
@@ -146,6 +161,9 @@ int main(int argc, char* argv[])
       case 'n':
         N0=atoi(optarg);
         break;
+      case 't':
+        test=true;
+        break;
       case 'q':
         quiet=true;
         break;
@@ -171,11 +189,6 @@ int main(int argc, char* argv[])
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
 
-  if(N == 0) {
-    N=N0/mx/my/mz;
-    if(N < 10) N=10;
-  }
-    
   unsigned int nx=2*mx-xcompact;
   unsigned int ny=2*my-ycompact;
   unsigned int nzp=mz+!zcompact;
@@ -202,22 +215,24 @@ int main(int argc, char* argv[])
       cout << "size=" << group.size << endl;
     }
 
-    split3 d(nx,ny,nzp,group,true);
-    split3 du(mx+xcompact,ny,my+ycompact,nzp,group,true);
-
+    // Dimensions of the input data
+    split3 df(nx,ny,mz+!zcompact,group,true);
+    
     Complex **F=new Complex*[A];
-    for(unsigned int a=0; a < A; a++) {
-      F[a]=ComplexAlign(d.n);
-    }
-
+    for(unsigned int a=0; a < A; a++)
+      F[a]=ComplexAlign(df.n);
+    init(F,df,A,xcompact,ycompact,zcompact);
+    
     realmultiplier *mult;
-  
     switch(A) {
       case 2: mult=multbinary; break;
       case 4: mult=multbinary2; break;
       default: cout << "A=" << A << " is not yet implemented" << endl; exit(1);
     }
 
+    // Dimensions used in the MPI convolution
+    split3 d(nx,ny,nzp,group,true);
+    split3 du(mx+xcompact,ny,my+ycompact,nzp,group,true);
     ImplicitHConvolution3MPI C(mx,my,mz,xcompact,ycompact,zcompact,d,du,F[0],
                                mpiOptions(divisor,alltoall),A,B);
     
@@ -225,28 +240,96 @@ int main(int argc, char* argv[])
     if(!quiet && main)
       cout << "Initialized after " << seconds() << " seconds." << endl;
 
-    if(N > 0) {
+    if(test) {
+      if(!quiet) {
+        if(main) cout << "Distributed input:" << endl;
+        for(unsigned int a=0; a < A; a++) {
+          if(main) cout << "a: " << a << endl;
+          show(F[a],df.X,df.y,df.z,group.active);
+        }
+      }
+      
+      if(!quiet && main) cout << "Gathered input:" << endl;
+      Complex **F0=new Complex*[A];
+      for(unsigned int a=0; a < A; a++) {
+        if(main) {
+          F0[a]=ComplexAlign(d.X*d.Y*d.Z);
+        }
+        gatheryz(F[a],F0[a],d,group.active);
+        if(!quiet && main) {
+          cout << "a: " << a << endl;
+	  show(F0[a],d.X,d.Y,d.Z);
+        }
+      }
+
+
+      C.convolve(F,mult);
+
+      if(!quiet && nx*ny*mz < outlimit) {
+	if(main) cout << "Distributed output: " << endl;
+	show(F[0],df.X,df.y,df.z,group.active);
+      }
+      
+      Complex **F0out=new Complex*[B];
+      if(main) {
+	for(unsigned int b=0; b < B; b++)
+          F0out[b]=ComplexAlign(d.X*d.Y*d.Z);
+      }
+      for(unsigned int b=0; b < B; b++) {
+	gatheryz(F[b],F0out[b],d,group.active);
+	if(!quiet && main) {
+	  cout << "Gathered output:" << endl;
+	  cout << "b: " << b << endl;
+	  show(F0out[b],d.X,d.Y,d.Z);
+	}
+      }
+
+      if(main) {
+	ImplicitHConvolution3 Clocal(mx,my,mz,xcompact,ycompact,zcompact,A,B);
+	Clocal.convolve(F0,mult);
+	if(!quiet && main) {
+	  cout << "Local output:" << endl;
+	  for(unsigned int b=0; b < B; b++) {
+	    cout << "b: " << b << endl;
+	    show(F0[b],d.X,d.Y,d.Z);
+	    retval += checkerror(F0[b],F0out[b],d.X*d.Y*d.Z);
+	  }
+	}
+
+      }
+      
+      if(main) {
+	for(unsigned int a=0; a < A; a++)
+	  deleteAlign(F0[a]);
+	for(unsigned int b=0; b < B; b++)
+	  deleteAlign(F0out[b]);
+      }
+      delete[] F0;
+      delete[] F0out;
+      
+    } else {
+
+      N=N0/mx/my/mz;
+      if(N < 10) N=10;
+
       double *T=new double[N];
       for(unsigned int i=0; i < N; ++i) {
         init(F,d,A,xcompact,ycompact,zcompact);
         seconds();
         C.convolve(F,mult);
-        // C.convolve(f,g);
         T[i]=seconds();
       }
-        
       if(main) 
         timings("Implicit",mx,T,N);
-
       delete [] T;
-    }
-
       
-    if(!quiet && nx*ny*mz < outlimit)
-      show(F[0],d.X,d.y,d.z,
-           !xcompact,!ycompact && d.y0 == 0,0,
-           d.X,d.y,d.z0+d.z < d.Z ? d.z : d.z-!zcompact,group.active);
-  
+      if(!quiet && nx*ny*mz < outlimit) {
+	if(main) cout << "output: " << endl;
+	show(F[0],df.X,df.y,df.z,group.active);
+      }
+
+    }
+      
     for(unsigned int a=0; a < A; a++)
       deleteAlign(F[a]);
     delete[] F;

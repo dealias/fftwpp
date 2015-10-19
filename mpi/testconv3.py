@@ -47,7 +47,7 @@ def main(argv):
         xlist = [2,1,3,4,5,6,7,8,9,10,random.randint(start,stop)]
         ylist = [2,1,3,4,5,6,7,8,9,10,random.randint(start,stop)]
         zlist = [2,1,3,10,random.randint(start,stop)]
-        Plist = [8,4,3,2,random.randint(9,12),1]
+        Plist = [1,2,3,4,5,random.randint(9,12)]
 
         if(shortrun):
             xlist = [2,random.randint(6,32)]
@@ -84,8 +84,10 @@ def main(argv):
                                     args.append("-Y"+str(Y))
                                     args.append("-Z"+str(Z))
                                     args.append("-T1")
+                                    args.append("-t")
                                     args.append("-q")
-                                    rtest, cmd = runtest(pname, P, args, logfile,
+                                    rtest, cmd = runtest(pname, P, args, \
+                                                         logfile, \
                                                          timeout)
                                     if not rtest == 0:
                                         nfails += 1
