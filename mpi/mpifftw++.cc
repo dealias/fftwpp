@@ -126,7 +126,7 @@ void fft2dMPI::Backward(Complex *in, Complex *out)
 void fft3dMPI::Forward(Complex *in, Complex *out)
 {
   out=Setout(in,out);
-  if(d.yz.x < d.Y) {
+  if(Tyz) {
     zForward->fft(in,out);
     Tyz->transpose(out,true,false);
     yForward->fft(out);
@@ -153,7 +153,7 @@ void fft3dMPI::Backward(Complex *in, Complex *out)
   if(Txy)
     Txy->transpose(out,false,true);
 
-  if(d.yz.x < d.Y) {
+  if(Tyz) {
     yBackward->fft(out);
     Tyz->transpose(out,false,true);
     zBackward->fft(out);
@@ -194,18 +194,18 @@ void rcfft2dMPI::Forward(double *in, Complex *out)
   xForward->fft(out);
 }
 
-void rcfft2dMPI::Forward0(double *in, Complex *out)
-{
-  Shift(in);
-  Forward(in,out);
-}
-
-void rcfft2dMPI::Backward(Complex *in, double *out)
+void rcfft2dMPI::Backward(Complex *in, double *out=NULL)
 {
   out=(double *) Setout(in,(Complex *) out);
   xBackward->fft(in);
   T->transpose(in,false,true);
   yBackward->fft(in,out);
+}
+
+void rcfft2dMPI::Forward0(double *in, Complex *out)
+{
+  Shift(in);
+  Forward(in,out);
 }
 
 void rcfft2dMPI::Backward0(Complex *in, double *out)
@@ -214,47 +214,28 @@ void rcfft2dMPI::Backward0(Complex *in, double *out)
   Shift(out);
 }
 
-void rcfft3dMPI::Forward(double *f, Complex *g)
+void rcfft3dMPI::Forward(double *in, Complex *out)
 {
-  // FIXME: deal with in-place
-  zForward->fft(f,g);
-  if(Tyz) Tyz->transpose(g,true,false);
+  out=Setout((Complex *) in,out);
+  zForward->fft(in,out);
+  if(Tyz) Tyz->transpose(out,true,false);
   const unsigned int stride=dc.z*dc.Y;
   for(unsigned int i=0; i < dc.x; ++i) 
-    yForward->fft(g+i*stride);
- if(Txy) Txy->transpose(g,true,false);
-  xForward->fft(g);
+    yForward->fft(out+i*stride);
+ if(Txy) Txy->transpose(out,true,false);
+  xForward->fft(out);
 }
 
-void rcfft3dMPI::Backward(Complex *g, double *f)
+void rcfft3dMPI::Backward(Complex *in, double *out=NULL)
 {
-  // FIXME: deal with in-place
-  xBackward->fft(g);
-  if(Txy) Txy->transpose(g,false,true);
+  out=(double *) Setout(in,(Complex *) out);
+  xBackward->fft(in);
+  if(Txy) Txy->transpose(in,false,true);
   const unsigned int stride=dc.z*dc.Y;
   for(unsigned int i=0; i < dc.x; ++i) 
-    yBackward->fft(g+i*stride);
-  if(Tyz) Tyz->transpose(g,false,true);
-  zBackward->fft(g,f);
-}
-
-void rcfft3dMPI::Normalize(double *f)
-{
-  // FIXME: deal with in-place
-  unsigned int N=dr.X*dr.Y*dr.Z;
-  unsigned int n=dr.x*dr.yz.x*dr.Z;
-  double denom=1.0/N;
-#ifndef FFTWPP_SINGLE_THREAD
-#pragma omp parallel for num_threads(yzthreads)
-#endif
-  for(unsigned int i=0; i < n; ++i) 
-    f[i] *= denom;
-}
-
-void rcfft3dMPI::BackwardNormalized(Complex *g, double *f)
-{
-  Backward(g,f);
-  Normalize(f);
+    yBackward->fft(in+i*stride);
+  if(Tyz) Tyz->transpose(in,false,true);
+  zBackward->fft(in,out);
 }
 
 void rcfft3dMPI::Shift(double *f)
@@ -262,7 +243,7 @@ void rcfft3dMPI::Shift(double *f)
   if(dr.X % 2 == 0 && dr.Y % 2 == 0) {
     const unsigned int dist=dr.Z; // FIXME: inplace?
 #ifndef FFTWPP_SINGLE_THREAD
-#pragma omp parallel for num_threads(xythreads)
+#pragma omp parallel for num_threads(threads)
 #endif
     for(unsigned int i=0; i < dr.x; ++i) {
       const unsigned int ystart=(i+dr.x0+dr.yz.x0+1) % 2;
@@ -281,22 +262,16 @@ void rcfft3dMPI::Shift(double *f)
   }
 }
 
-void rcfft3dMPI::Forward0(double *f, Complex *g)
+void rcfft3dMPI::Forward0(double *in, Complex *out)
 {
-  Shift(f);
-  Forward(f,g);
+  Shift(in);
+  Forward(in,out);
 }
   
-void rcfft3dMPI::Backward0(Complex *g, double *f)
+void rcfft3dMPI::Backward0(Complex *in, double *out=NULL)
 {
-  Backward(g,f);
-  Shift(f);
-}
-
-void rcfft3dMPI::Backward0Normalized(Complex *g, double *f)
-{
-  BackwardNormalized(g,f);
-  Shift(f);
+  Backward(in,out);
+  Shift(out);
 }
 
 } // End of namespace fftwpp

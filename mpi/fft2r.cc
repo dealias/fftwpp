@@ -232,7 +232,7 @@ int main(int argc, char* argv[])
       	delete [] T;
         
         if(!quiet && nx*ny < outlimit)
-          show(f,df.x,ny,group.active);
+          show(f,df.x,df.Y,group.active);
        }
     }
 

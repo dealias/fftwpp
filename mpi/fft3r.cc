@@ -152,8 +152,11 @@ int main(int argc, char* argv[])
     double *f=FFTWdouble(df.n);
     Complex *g=ComplexAlign(dg.n);
     
-    rcfft3dMPI fft(df,dg,f,g,mpiOptions(divisor,alltoall));
+    rcfft3dMPI rcfft(df,dg,f,g,mpiOptions(divisor,alltoall));
 
+    if(!quiet && group.rank == 0)
+      cout << "Initialized after " << seconds() << " seconds." << endl;    
+    
     if(test) {
       init(f,df);
 
@@ -184,14 +187,9 @@ int main(int argc, char* argv[])
       }
       
       if(shift)
-        fft.Forward0(f,g);
+	rcfft.Forward0(f,g);
       else
-        fft.Forward(f,g);
-
-      // FIXME: temp
-      //if(main) cout << "\ntwiddled input:" << endl;
-      //show(f,df.x,df.y,df.Z,group.active);
-
+	rcfft.Forward(f,g);
       
       if(main) {
         if(shift)
@@ -218,9 +216,10 @@ int main(int argc, char* argv[])
       }
 
       if(shift)
-        fft.Backward0Normalized(g,f);
+	rcfft.Backward0(g,f);
       else
-        fft.BackwardNormalized(g,f);
+	rcfft.Backward(g,f);
+      rcfft.Normalize(f);
 
       if(main) {
         if(shift)
@@ -262,8 +261,9 @@ int main(int argc, char* argv[])
         for(unsigned int i=0; i < N; ++i) {
           init(f,df);
           seconds();
-          fft.Forward(f,g);
-          fft.BackwardNormalized(g,f);
+          rcfft.Forward(f,g);
+          rcfft.Backward(g,f);
+          rcfft.Normalize(f);
           T[i]=seconds();
         }
         if(!quiet)

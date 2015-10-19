@@ -187,7 +187,6 @@ public:
 // deleteAlign(f);
 
 class fft2dMPI : public fftw {
-private:
   split d;
   mfft1d *xForward,*xBackward;
   mfft1d *yForward,*yBackward;
@@ -249,7 +248,6 @@ public:
 // deleteAlign(f);
 //
 class fft3dMPI : public fftw {
-private:
   split3 d;
   mfft1d *xForward,*xBackward;
   mfft1d *yForward,*yBackward;
@@ -275,6 +273,7 @@ public:
       multithread(d.x);
       yzForward=new fft2d(d.Y,d.Z,-1,in,out,innerthreads);
       yzBackward=new fft2d(d.Y,d.Z,1,in,out,innerthreads);
+      Tyz=NULL;
     }
     
     Txy=d.z > 0 ?
@@ -304,7 +303,7 @@ public:
     fftw(2*d.x*d.y*d.Z,0,xy.threads,d.X*d.Y*d.Z), d(d) {init(in,in,xy,xy);}
     
   virtual ~fft3dMPI() {
-    if(d.yz.x < d.Y) {
+    if(Tyz) {
       delete zBackward;
       delete zForward;
       delete yBackward;
@@ -346,12 +345,10 @@ public:
 //
 // Normalize(Complex *out);
 class rcfft2dMPI : public fftw {
-private:
   split dr,dc; // real and complex MPI dimensions.
   mfft1d *xForward,*xBackward;
   mrcfft1d *yForward;
   mcrfft1d *yBackward;
-protected:
   mpitranspose<Complex> *T;
 public:
   
@@ -373,8 +370,8 @@ public:
     dc.Deactivate();
   }
    
-  rcfft2dMPI(const split& dr, const split& dc, double *in,
-             Complex *out, const mpiOptions& options) :
+  rcfft2dMPI(const split& dr, const split& dc, double *in, Complex *out,
+             const mpiOptions& options) :
     fftw(dr.x*realsize(dr.Y,in,out),0,options.threads,dr.X*dr.Y), dr(dr), dc(dc)
   {init(in,out,options);}
   
@@ -409,7 +406,6 @@ public:
   void Backward0(Complex *in, double *out);
   
   void Forward(Complex *out) {Forward((double *) out,out);}
-  void Backward(Complex *out) {Backward(out,(double *) out);}
 };
   
 // 3D real-to-complex and complex-to-real in-place and out-of-place
@@ -429,82 +425,72 @@ public:
 // fft.Normalize(f);
 // deleteAlign(f);
 //
-class rcfft3dMPI {
-private:
-  split3 dr; // real-space dimensions
-  split3 dc; // complex-space dimensions
-  unsigned int xythreads,yzthreads;
+class rcfft3dMPI : public fftw {
+  split3 dr,dc; // real and complex MPI dimensions
   mfft1d *xForward,*xBackward;
   mfft1d *yForward,*yBackward;
   mrcfft1d *zForward;
   mcrfft1d *zBackward;
   mpitranspose<Complex> *Txy,*Tyz;
-  bool inplace;
-  
 public:
-  void init(double *f, Complex *g,
-            const mpiOptions& xy, const mpiOptions &yz) {
-    inplace=f == (double *)g;
-
+  void init(double *in, Complex *out, const mpiOptions& xy,
+            const mpiOptions &yz) {
     dc.Activate();
-    xythreads=xy.threads;
-    yzthreads=yz.threads; 
+    out=CheckAlign((Complex *) in,out);
+    inplace=((Complex *) in == out);
 
     Txy=dc.z > 0 ? new mpitranspose<Complex>(dc.X,dc.xy.y,dc.x,dc.Y,dc.z,
-                                             g,dc.xy.communicator,xy,
+                                             out,dc.xy.communicator,xy,
       dc.communicator) : NULL;
 
     Tyz=dc.yz.x < dc.Y ? new mpitranspose<Complex>(dc.Y,dc.z,dc.yz.x,dc.Z,1,
-                                                   g,dc.yz.communicator,yz,
+                                                   out,dc.yz.communicator,yz,
       dc.communicator) : NULL;
     
-    // Set up z-direction transforms
-    {
-      unsigned int n=dr.Z;
-      unsigned int M=dr.x*dr.yz.x;
-      size_t rstride=1;
-      size_t cstride=1;
-      size_t rdist=inplace ? dr.Z+2 : dr.Z;
-      size_t cdist=dr.Z/2+1;
-      zForward=new mrcfft1d(n,M,rstride,cstride,rdist,cdist,f,g,xythreads);
-      zBackward=new mcrfft1d(n,M,cstride,rstride,cdist,rdist,g,f,xythreads);
-    }
+    unsigned int M=dr.x*dr.yz.x;
+    size_t rdist=realsize(dr.Z,in,out);
+    size_t cdist=dr.Z/2+1;
+    zForward=new mrcfft1d(dr.Z,M,1,1,rdist,cdist,in,out,threads);
+    zBackward=new mcrfft1d(dr.Z,M,1,1,cdist,rdist,out,in,threads);
 
-    // Set up y-direction transforms
-    {
-      unsigned int n=dc.Y;
-      unsigned int M=dc.z;
-      size_t stride=dc.z;
-      size_t dist=1;
-      yForward=new mfft1d(n,-1,M,stride,dist,g,g,yzthreads);
-      yBackward=new mfft1d(n,1,M,stride,dist,g,g,yzthreads);
-    }
+    yForward=new mfft1d(dc.Y,-1,dc.z,dc.z,1,out,out,threads);
+    yBackward=new mfft1d(dc.Y,1,dc.z,dc.z,1,out,out,threads);
 
-    // Set up x-direction transforms
-    {
-      unsigned int n=dc.X;
-      unsigned int M=dc.xy.y*dc.z;
-      size_t stride=M;
-      size_t dist=1;
-      xForward=new mfft1d(n,-1,M,stride,dist,g,g,xythreads);
-      xBackward=new mfft1d(n,1,M,stride,dist,g,g,xythreads);
-    }
+    M=dc.xy.y*dc.z;
+    xForward=new mfft1d(dc.X,-1,M,M,1,out,out,threads);
+    xBackward=new mfft1d(dc.X,1,M,M,1,out,out,threads);
         
     dc.Deactivate();
   }
   
-  rcfft3dMPI(const split3& dr, const split3& dc,
-             double *f, Complex *g, const mpiOptions& xy,
-             const mpiOptions& yz) : dr(dr) , dc(dc) {
-    init(f,g,xy,yz);
+  rcfft3dMPI(const split3& dr, const split3& dc, double *in, Complex *out,
+             const mpiOptions& xy, const mpiOptions& yz) : 
+    fftw(dr.x*dr.yz.x*realsize(dr.Z,in,out),0,xy.threads,dr.X*dr.Y*dr.Z),
+    dr(dr), dc(dc) {
+    init(in,out,xy,yz);
   }
   
-  rcfft3dMPI(const split3& dr, const split3& dc,
-             double *f, Complex *g, const mpiOptions& xy) :
+  rcfft3dMPI(const split3& dr, const split3& dc, double *in, Complex *out,
+             const mpiOptions& xy) : 
+    fftw(dr.x*dr.yz.x*realsize(dr.Z,in,out),0,xy.threads,dr.X*dr.Y*dr.Z),
     dr(dr), dc(dc) {
-    init(f,g,xy,xy);
+    init(in,out,xy,xy);
   }
-    
+  
+  rcfft3dMPI(const split3& dr, const split3& dc, Complex *out,
+             const mpiOptions& xy, const mpiOptions& yz) : 
+    fftw(dr.x*dr.yz.x*2*(dr.Z/2+1),0,xy.threads,dr.X*dr.Y*dr.Z),
+    dr(dr), dc(dc) {
+    init((double *) out,out,xy,yz);
+  }
+  
+  rcfft3dMPI(const split3& dr, const split3& dc, Complex *out,
+             const mpiOptions& xy) : 
+    fftw(dr.x*dr.yz.x*2*(dr.Z/2+1),0,xy.threads,dr.X*dr.Y*dr.Z),
+    dr(dr), dc(dc) {
+    init((double *) out,out,xy,xy);
+  }
+  
   virtual ~rcfft3dMPI() {
     delete xBackward;
     delete xForward;
@@ -539,15 +525,13 @@ public:
           f[i*yz+(j+1)*dc.z-1]=0.0;
   }
   
-  void Forward(double *f, Complex *g);
-  void Backward(Complex *g, double* f);
-  void Normalize(double *f);
-  void BackwardNormalized(Complex *g, double* f);
-  void Shift(double *f);
-  void Forward0(double *f, Complex *g);
-  void Backward0(Complex *g, double* f);
-  void Backward0Normalized(Complex *g, double* f);
-
+  void Shift(double *out);
+  void Forward(double *in, Complex *out);
+  void Backward(Complex *in, double *out);
+  void Forward0(double *in, Complex *out);
+  void Backward0(Complex *in, double *out);
+  
+  void Forward(Complex *out) {Forward((double *) out,out);}
 };
 
 } // end namespace fftwpp
