@@ -267,8 +267,8 @@ public:
       zBackward=new mfft1d(d.Z,1,M,1,d.Z,out,out,threads);
       Tyz=new mpitranspose<Complex>(d.Y,d.z,d.yz.x,d.Z,1,out,d.yz.communicator,
                                     yz,d.communicator);
-      yForward=new mfft1d(d.Y,-1,d.x*d.z,d.z,1,in,out,threads);
-      yBackward=new mfft1d(d.Y,1,d.x*d.z,d.z,1,out,out,threads);
+      yForward=new mfft1d(d.Y,-1,d.z,d.z,1,in,out,innerthreads);
+      yBackward=new mfft1d(d.Y,1,d.z,d.z,1,out,out,innerthreads);
     } else {
       multithread(d.x);
       yzForward=new fft2d(d.Y,d.Z,-1,in,out,innerthreads);
@@ -453,8 +453,8 @@ public:
     zForward=new mrcfft1d(dr.Z,M,1,1,rdist,cdist,in,out,threads);
     zBackward=new mcrfft1d(dr.Z,M,1,1,cdist,rdist,out,in,threads);
 
-    yForward=new mfft1d(dc.Y,-1,dc.z,dc.z,1,out,out,threads);
-    yBackward=new mfft1d(dc.Y,1,dc.z,dc.z,1,out,out,threads);
+    yForward=new mfft1d(dc.Y,-1,dc.z,dc.z,1,out,out,innerthreads);
+    yBackward=new mfft1d(dc.Y,1,dc.z,dc.z,1,out,out,innerthreads);
 
     M=dc.xy.y*dc.z;
     xForward=new mfft1d(dc.X,-1,M,M,1,out,out,threads);

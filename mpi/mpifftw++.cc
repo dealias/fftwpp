@@ -126,16 +126,20 @@ void fft2dMPI::Backward(Complex *in, Complex *out)
 void fft3dMPI::Forward(Complex *in, Complex *out)
 {
   out=Setout(in,out);
+  unsigned int stride=d.z*d.Y;
+  unsigned int stop=d.x*stride;
   if(Tyz) {
     zForward->fft(in,out);
     Tyz->transpose(out,true,false);
-    yForward->fft(out);
-  } else {
-    unsigned int stride=d.Y*d.z;
-    unsigned int stop=d.x*stride;
     PARALLEL(
-      for(unsigned int i=0; i < stop; i += stride)
+      for(unsigned int i=0; i < stop; i += stride) 
+        yForward->fft(out+i);
+      );
+  } else {
+    PARALLEL(
+      for(unsigned int i=0; i < stop; i += stride) {
         yzForward->fft(in+i,out+i);
+      }
       );
   }
   
@@ -148,20 +152,25 @@ void fft3dMPI::Forward(Complex *in, Complex *out)
 void fft3dMPI::Backward(Complex *in, Complex *out)
 {
   out=Setout(in,out);
+  unsigned int stride=d.z*d.Y;
+  unsigned int stop=d.x*stride;
   xBackward->fft(in,out);
 
   if(Txy)
     Txy->transpose(out,false,true);
 
   if(Tyz) {
-    yBackward->fft(out);
+    PARALLEL(
+      for(unsigned int i=0; i < stop; i += stride) 
+        yBackward->fft(out+i);
+      );
     Tyz->transpose(out,false,true);
     zBackward->fft(out);
   } else {
-    unsigned int stride=d.z*d.Y;
-    unsigned int stop=d.x*stride;
-    for(unsigned int i=0; i < stop; i += stride)
-      yzBackward->fft(out+i);
+    PARALLEL(
+      for(unsigned int i=0; i < stop; i += stride) 
+        yzBackward->fft(out+i);
+      );
   }
 }
 
@@ -220,8 +229,11 @@ void rcfft3dMPI::Forward(double *in, Complex *out)
   zForward->fft(in,out);
   if(Tyz) Tyz->transpose(out,true,false);
   const unsigned int stride=dc.z*dc.Y;
-  for(unsigned int i=0; i < dc.x; ++i) 
-    yForward->fft(out+i*stride);
+  const unsigned int stop=dc.x*stride;
+  PARALLEL(
+    for(unsigned int i=0; i < stop; i += stride) 
+      yForward->fft(out+i);
+    )
  if(Txy) Txy->transpose(out,true,false);
   xForward->fft(out);
 }
@@ -232,8 +244,11 @@ void rcfft3dMPI::Backward(Complex *in, double *out=NULL)
   xBackward->fft(in);
   if(Txy) Txy->transpose(in,false,true);
   const unsigned int stride=dc.z*dc.Y;
-  for(unsigned int i=0; i < dc.x; ++i) 
-    yBackward->fft(in+i*stride);
+  const unsigned int stop=dc.x*stride;
+  PARALLEL(
+    for(unsigned int i=0; i < stop; i += stride) 
+      yBackward->fft(in+i);
+    );
   if(Tyz) Tyz->transpose(in,false,true);
   zBackward->fft(in,out);
 }
