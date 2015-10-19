@@ -179,12 +179,11 @@ void rcfft2dMPI::Shift(double *f)
   if(dr.X % 2 == 0) {
     const unsigned int start=(dr.x0+1) % 2;
     const unsigned int stop=dr.x;
-    const unsigned int ydist=dr.Y; // FIXME: inplace?
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif
     for(unsigned int i=start; i < stop; i += 2) {
-      double *p=f+i*ydist;
+      double *p=f+i*rdist;
       for(unsigned int j=0; j < dr.Y; ++j) {
         p[j]=-p[j];
       }
@@ -256,15 +255,14 @@ void rcfft3dMPI::Backward(Complex *in, double *out=NULL)
 void rcfft3dMPI::Shift(double *f)
 {
   if(dr.X % 2 == 0 && dr.Y % 2 == 0) {
-    const unsigned int dist=dr.Z; // FIXME: inplace?
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif
     for(unsigned int i=0; i < dr.x; ++i) {
       const unsigned int ystart=(i+dr.x0+dr.yz.x0+1) % 2;
-      double *pi=f+i*dr.yz.x*dist;
+      double *pi=f+i*dr.yz.x*rdist;
       for(unsigned int j=ystart; j < dr.yz.x; j += 2) {
-        double *p=pi+j*dist;
+        double *p=pi+j*rdist;
         for(unsigned int k=0; k < dr.Z; ++k) {
           p[k]=-p[k];
         }
