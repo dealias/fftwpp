@@ -5,6 +5,7 @@ Transpose work memory
 Overlap MPI communication with Hermitian convolutions
 wrappers
 update documentation
+Add MPI waits in MPI FFTs to allow overlap of comm/comp.
 
 Release done:
 speed test out-of-place conv: Done, seems to give 10% or so.
