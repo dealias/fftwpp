@@ -58,7 +58,7 @@ def main(argv):
         timeout = 60
 
         ntests = 0
-        ntests = len(xlist) * len(ylist) * len(zlist) * len(Plist) * 4
+        ntests = len(xlist) * len(ylist) * len(zlist) * len(Plist) * 8
         print "Running", ntests, "tests."
         tstart = time.time()
 
@@ -84,8 +84,7 @@ def main(argv):
                                     args.append("-Y"+str(Y))
                                     args.append("-Z"+str(Z))
                                     args.append("-T1")
-                                    args.append("-t")
-                                    args.append("-q")
+                                    args.append("-tq")
                                     rtest, cmd = runtest(pname, P, args, \
                                                          logfile, \
                                                          timeout)
