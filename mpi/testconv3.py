@@ -11,7 +11,7 @@ pname = "conv3"
 
 def main(argv):
     retval = 0
-    print "MPI conv3 unit test (TODO: ADD ERROR CHECKING!)"
+    print "MPI conv3 unit test"
     retval = 0
     usage = "Usage:\n"\
             "./testconv3.py\n"\
