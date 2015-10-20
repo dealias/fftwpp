@@ -226,7 +226,6 @@ int main(int argc, char* argv[])
     Complex **F=new Complex*[A];
     for(unsigned int a=0; a < A; a++)
       F[a]=ComplexAlign(d.n);
-    init(F,d,A,xcompact,ycompact,zcompact);
     
     realmultiplier *mult;
     switch(A) {
@@ -244,6 +243,8 @@ int main(int argc, char* argv[])
     if(!quiet && main)
       cout << "Initialized after " << seconds() << " seconds." << endl;
 
+    init(F,d,A,xcompact,ycompact,zcompact);
+    
     if(test) {
       if(!quiet) {
         if(main) cout << "Distributed input:" << endl;
