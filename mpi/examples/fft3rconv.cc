@@ -29,9 +29,9 @@ int main(int argc, char* argv[])
 #endif
 
   // The real-space problem size (must be even in each dimension:
-  unsigned int nx=4;
-  unsigned int ny=4;
-  unsigned int nz=4;
+  unsigned int nx=8;
+  unsigned int ny=8;
+  unsigned int nz=8;
 
   // The z-dimension of the array in complex space:
   unsigned int nzp=nz/2+1;
