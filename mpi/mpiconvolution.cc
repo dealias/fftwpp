@@ -18,12 +18,11 @@ void ImplicitConvolution2MPI::convolve(Complex **F, multiplier *pmult,
     T->transpose2(u,false,true);
   }
       
-  unsigned int size=d.x*d.Y;
-  subconvolution(F,pmult,offset,size+offset);
+  subconvolution(F,pmult,d.x,d.Y,offset);
   T->wait0();
   T->wait2();
   T->transpose1(F[0]+offset,true,false);
-  subconvolution(U2,pmult,0,size);
+  subconvolution(U2,pmult,d.x,d.Y);
   T->wait1();
   for(unsigned int b=1; b < B; ++b)
     T->transpose(F[b]+offset,true,false);
@@ -49,8 +48,8 @@ void ImplicitHConvolution2MPI::convolve(Complex **F, realmultiplier *pmult,
   transpose(T,A,F,false,true,offset);
   transpose(U,A,U2,false,true);
     
-  subconvolution(F,pmult,offset,d.x*d.Y+offset,d.Y);
-  subconvolution(U2,pmult,0,du.x*du.Y,du.Y);
+  subconvolution(F,pmult,d.x,d.Y,offset);
+  subconvolution(U2,pmult,du.x,du.Y);
    
   transpose(T,B,F,true,false,offset);
   transpose(U,B,U2,true,false);
@@ -79,15 +78,14 @@ void ImplicitConvolution3MPI::convolve(Complex **F, multiplier *pmult,
   }
       
   unsigned int stride=d.Y*d.z;
-  unsigned int size=d.x*stride;
     
-  subconvolution(F,pmult,offset,size+offset,stride);
+  subconvolution(F,pmult,d.x,stride,offset);
   if(T) {
     T->wait0();
     T->wait2();
     T->transpose1(F[0]+offset,true,false);
   }
-  subconvolution(U3,pmult,0,size,stride);
+  subconvolution(U3,pmult,d.x,stride);
   if(T) {
     T->wait1();
     for(unsigned int b=1; b < B; ++b)
@@ -222,10 +220,8 @@ void ImplicitHConvolution3MPI::convolve(Complex **F, realmultiplier *pmult,
     transpose(U,A,U3,false,true);
   }
     
-  unsigned int stride=d.Y*d.z;
-  unsigned int ustride=du.Y*du.z;
-  subconvolution(F,pmult,offset,d.x*stride+offset,stride);
-  subconvolution(U3,pmult,0,du.x*ustride,ustride);
+  subconvolution(F,pmult,d.x,d.Y*d.z,offset);
+  subconvolution(U3,pmult,du.x,du.Y*du.z);
     
   if(T) {
     transpose(T,B,F,true,false,offset);

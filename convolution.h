@@ -603,17 +603,18 @@ public:
   }
 
   void subconvolution(Complex **F, multiplier *pmult, 
-                      unsigned int start, unsigned int stop) {
+                      unsigned int M, unsigned int stride,
+                      unsigned int offset=0) {
     if(threads > 1) {
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif    
-      for(unsigned int i=start; i < stop; i += my)
-        yconvolve[get_thread_num()]->convolve(F,pmult,i);
+      for(unsigned int i=0; i < M; ++i)
+        yconvolve[get_thread_num()]->convolve(F,pmult,offset+i*stride);
     } else {
       ImplicitConvolution *yconvolve0=yconvolve[0];
-      for(unsigned int i=start; i < stop; i += my)
-        yconvolve0->convolve(F,pmult,i);
+      for(unsigned int i=0; i < M; ++i)
+        yconvolve0->convolve(F,pmult,offset+i*stride);
     }
   }
   
@@ -626,10 +627,9 @@ public:
   // shifted by offset (contents not preserved).
   virtual void convolve(Complex **F, multiplier *pmult,
                         unsigned int offset=0) {
-    unsigned int size=mx*my;
     backwards(F,U2,offset);
-    subconvolution(F,pmult,offset,size+offset);
-    subconvolution(U2,pmult,0,size);
+    subconvolution(F,pmult,mx,my,offset);
+    subconvolution(U2,pmult,mx,my);
     forwards(F,U2,offset);
   }
   
@@ -844,18 +844,18 @@ public:
   }
 
   void subconvolution(Complex **F, realmultiplier *pmult,
-                      unsigned int start, unsigned int stop,
-                      unsigned int stride) {
+                      unsigned int M, unsigned int stride,
+                      unsigned int offset=0) {
     if(threads > 1) {
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif    
-      for(unsigned int i=start; i < stop; i += stride)
-        yconvolve[get_thread_num()]->convolve(F,pmult,i);
+      for(unsigned int i=0; i < M; ++i)
+        yconvolve[get_thread_num()]->convolve(F,pmult,offset+i*stride);
     } else {
       ImplicitHConvolution *yconvolve0=yconvolve[0];
-      for(unsigned int i=start; i < stop; i += stride)
-        yconvolve0->convolve(F,pmult,i);}
+      for(unsigned int i=0; i < M; ++i)
+        yconvolve0->convolve(F,pmult,offset+i*stride);}
   }  
   
   void forwards(Complex **F, Complex **U2, unsigned int offset) {
@@ -867,10 +867,10 @@ public:
   // (2mx-compact)*(my+!ycompact), shifted by offset (contents not preserved).
   virtual void convolve(Complex **F, realmultiplier *pmult,
                         bool symmetrize=true, unsigned int offset=0) {
-    unsigned ny=my+!ycompact;
-    backwards(F,U2,ny,symmetrize,offset);
-    subconvolution(F,pmult,offset,(2*mx-xcompact)*ny+offset,ny);
-    subconvolution(U2,pmult,0,(mx+xcompact)*ny,ny);
+    unsigned stride=my+!ycompact;
+    backwards(F,U2,stride,symmetrize,offset);
+    subconvolution(F,pmult,2*mx-xcompact,stride,offset);
+    subconvolution(U2,pmult,mx+xcompact,stride);
     forwards(F,U2,offset);
   }
   
@@ -989,18 +989,18 @@ public:
   }
 
   void subconvolution(Complex **F, multiplier *pmult, 
-                      unsigned int start, unsigned int stop,
-                      unsigned int stride) {
+                      unsigned int M, unsigned int stride,
+                      unsigned int offset=0) {
     if(threads > 1) {
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif    
-      for(unsigned int i=start; i < stop; i += stride)
-        yzconvolve[get_thread_num()]->convolve(F,pmult,i);
+      for(unsigned int i=0; i < M; ++i)
+        yzconvolve[get_thread_num()]->convolve(F,pmult,offset+i*stride);
     } else {
       ImplicitConvolution2 *yzconvolve0=yzconvolve[0];
-      for(unsigned int i=start; i < stop; i += stride)
-        yzconvolve0->convolve(F,pmult,i);
+      for(unsigned int i=0; i < M; ++i)
+        yzconvolve0->convolve(F,pmult,offset+i*stride);
     }
   }
   
@@ -1011,13 +1011,12 @@ public:
   
   // F is a pointer to A distinct data blocks each of size mx*my*mz,
   // shifted by offset
-  virtual void convolve(Complex **F, multiplier *pmult, unsigned int offset=0) {
-    unsigned int myz=my*mz;
-    unsigned int size=mx*myz;
-    
+  virtual void convolve(Complex **F, multiplier *pmult, unsigned int offset=0)
+  {
+    unsigned int stride=my*mz;
     backwards(F,U3,offset);
-    subconvolution(F,pmult,offset,size+offset,myz);
-    subconvolution(U3,pmult,0,size,myz);
+    subconvolution(F,pmult,mx,stride,offset);
+    subconvolution(U3,pmult,mx,stride);
     forwards(F,U3,offset);
   }
   
@@ -1186,18 +1185,18 @@ public:
   }
 
   void subconvolution(Complex **F, realmultiplier *pmult,
-                      unsigned int start, unsigned int stop,
-                      unsigned int stride) {
+                      unsigned int M, unsigned int stride,
+                      unsigned int offset=0) {
     if(threads > 1) {
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif    
-      for(unsigned int i=start; i < stop; i += stride)
-        yzconvolve[get_thread_num()]->convolve(F,pmult,false,i);
+      for(unsigned int i=0; i < M; ++i)
+        yzconvolve[get_thread_num()]->convolve(F,pmult,false,offset+i*stride);
     } else {
       ImplicitHConvolution2 *yzconvolve0=yzconvolve[0];
-      for(unsigned int i=start; i < stop; i += stride)
-        yzconvolve0->convolve(F,pmult,false,i);
+      for(unsigned int i=0; i < M; ++i)
+        yzconvolve0->convolve(F,pmult,false,offset+i*stride);
     }
   }
 
@@ -1211,10 +1210,10 @@ public:
   // (contents not preserved).
   virtual void convolve(Complex **F, realmultiplier *pmult,
                         bool symmetrize=true, unsigned int offset=0) {
-    unsigned int nynz=(2*my-ycompact)*(mz+!zcompact);
+    unsigned int stride=(2*my-ycompact)*(mz+!zcompact);
     backwards(F,U3,symmetrize,offset);
-    subconvolution(F,pmult,offset,(2*mx-xcompact)*nynz+offset,nynz);
-    subconvolution(U3,pmult,0,(mx+xcompact)*nynz,nynz);
+    subconvolution(F,pmult,2*mx-xcompact,stride,offset);
+    subconvolution(U3,pmult,mx+xcompact,stride);
     forwards(F,U3,offset);
   }
     
