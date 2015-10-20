@@ -27,7 +27,7 @@ if not (p.returncode == 0):
 
 
 print "Checking local transpose...",
-p = Popen(['./transposetest.py'], stdout=PIPE, stderr=PIPE)
+p = Popen(['./testtranspose.py'], stdout=PIPE, stderr=PIPE)
 p.wait() # sets the return code
 out, err = p.communicate() # capture output
 print "...done."
