@@ -35,12 +35,12 @@ int main(int argc, char* argv[])
   unsigned int mx=(nx+1)/2;
   unsigned int my=(ny+1)/2;
   
-  int divisor=1;
-  int alltoall=1;
+  int divisor=0;    // Test for best divisor
+  int alltoall=-1;  // Test for best communication routine
+  mpiOptions options(divisor,alltoall);
+  
   bool xcompact=false;
   bool ycompact=false;
-  convolveOptions options;
-  options.mpi=mpiOptions(fftw::maxthreads,divisor,alltoall);
   
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_MULTIPLE,&provided);
@@ -75,12 +75,11 @@ int main(int argc, char* argv[])
     Complex *g1=ComplexAlign(dg.n);
 
     // Create instance of FFT
-    rcfft2dMPI rcfft(df,dg,f0,g0,options.mpi);
+    rcfft2dMPI rcfft(df,dg,f0,g0,options);
 
     // Create instance of convolution
     Complex *G[]={g0,g1};
-    ImplicitHConvolution2MPI C(mx,my,xcompact,ycompact,dg,du,g0,2,1,
-                               convolveOptions(options,fftw::maxthreads));
+    ImplicitHConvolution2MPI C(mx,my,xcompact,ycompact,dg,du,g0,options);
     
     init(f0,df);
     init(f1,df);
@@ -93,10 +92,10 @@ int main(int argc, char* argv[])
       
     if(main) cout << "\nDistributed output (split in y direction:)" << endl;
     if(main) cout << "g0:" << endl;
-    rcfft.Forwards0(f0,g0);
+    rcfft.Forward0(f0,g0);
     show(g0,dg.X,dg.y,group.active);
     if(main) cout << "g1:" << endl;
-    rcfft.Forwards0(f1,g1);
+    rcfft.Forward0(f1,g1);
     show(g1,dg.X,dg.y,group.active);
 
     if(main) cout << "\nAfter convolution (split in y direction):" << endl;
@@ -107,8 +106,9 @@ int main(int argc, char* argv[])
     if(main) cout << "\nTransformed back to real-space (split in x direction):"
 		  << endl;
     if(main) cout << "f0:" << endl;
-    rcfft.Backwards0Normalized(g0,f0);
-    show(f0,df.x,df.Y,group.active);
+    rcfft.Backward0(g0,f0);
+    rcfft.Normalize(f0);
+   show(f0,df.x,df.Y,group.active);
 
     deleteAlign(g1);
     deleteAlign(g0);
