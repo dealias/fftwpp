@@ -74,7 +74,8 @@ typedef void multiplier(Complex **, unsigned int m,
                         const std::vector<unsigned int>& index,
                         unsigned int r, unsigned int threads); 
 typedef void realmultiplier(double **, unsigned int m,
-                            unsigned int threads);
+                        const std::vector<unsigned int>& index,
+                        unsigned int r, unsigned int threads); 
   
 // Sample multiplier for binary convolutions for use with
 // function-pointer convolutions.
@@ -213,30 +214,26 @@ public:
                 std::vector<unsigned int>& index=nullindex,
                 unsigned int offset=0);
   
-  void autoconvolve( Complex *f,
-                     std::vector<unsigned int>& index=nullindex) {
+  void autoconvolve(Complex *f) {
     Complex *F[]={f};
-    convolve(F,multautoconvolution,index);
+    convolve(F,multautoconvolution);
   }
 
-  void autocorrelate(Complex *f,
-                     std::vector<unsigned int>& index=nullindex) {
+  void autocorrelate(Complex *f) {
     Complex *F[]={f};
-    convolve(F,multautocorrelation,index);
+    convolve(F,multautocorrelation);
   }
 
   // Binary convolution:
-  void convolve(Complex *f, Complex *g,
-                std::vector<unsigned int>& index=nullindex) {
+  void convolve(Complex *f, Complex *g) {
     Complex *F[]={f,g};
-    convolve(F,multbinary,index);
+    convolve(F,multbinary);
   }
 
   // Binary correlation:
-  void correlate(Complex *f, Complex *g,
-                 std::vector<unsigned int>& index=nullindex) {
+  void correlate(Complex *f, Complex *g) {
     Complex *F[]={f,g};
-    convolve(F,multcorrelation,index);
+    convolve(F,multcorrelation);
   }
     
   template<class T>
@@ -364,7 +361,9 @@ public:
   
   // F is an array of A pointers to distinct data blocks each of size m,
   // shifted by offset (contents not preserved).
-  void convolve(Complex **F, realmultiplier *pmult, unsigned int offset=0);
+  void convolve(Complex **F, realmultiplier *pmult,
+                std::vector<unsigned int>& index=nullindex,
+                unsigned int offset=0);
 
   void premult(Complex **F, 
 	       //Complex **crm, Complex **cr0, Complex **crp,
@@ -481,11 +480,11 @@ public:
   }
   
   // Unscramble indices, returning spatial j value stored at index i
-  virtual inline unsigned findex(unsigned i) {
+  inline static unsigned findex(unsigned i, unsigned int m) {
     return i < m-1 ? 3*i : 3*i+4-3*m; // for i >= m-1: j=3*(i-(m-1))+1
   }
 
-  virtual inline unsigned uindex(unsigned i) {
+  inline static unsigned uindex(unsigned i, unsigned int m) {
     return i > 0 ? (i < m ? 3*i-1 : 3*m-3) : 3*m-1;
   }
 
@@ -513,11 +512,11 @@ public:
     fft0pad(m,M,stride,u,threads) {}
 
   // Unscramble indices, returning spatial index stored at position i
-  virtual inline unsigned findex(unsigned i) {
+  inline static unsigned findex(unsigned i, unsigned int m) {
     return i < m ? 3*i : 3*(i-m)+1;
   }
   
-  virtual inline unsigned uindex(unsigned i) {
+  inline static unsigned uindex(unsigned i, unsigned int m) {
     return i > 0 ? 3*i-1 : 3*m-1;
   }
   
@@ -618,22 +617,21 @@ public:
 
   void subconvolution(Complex **F, multiplier *pmult, 
                       std::vector<unsigned int>& index,
-                      unsigned int M, unsigned int stride,
+                      unsigned int r, unsigned int M, unsigned int stride,
                       unsigned int offset=0) {
     unsigned int n=index.size()-1;
-    unsigned int base=index[n]+1;
     if(threads > 1) {
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif    
       for(unsigned int i=0; i < M; ++i) {
-        index[n]=base+i;
+        index[n]=2*i+r;
         yconvolve[get_thread_num()]->convolve(F,pmult,index,offset+i*stride);
       }
     } else {
       ImplicitConvolution *yconvolve0=yconvolve[0];
       for(unsigned int i=0; i < M; ++i) {
-        index[n]=base+i;
+        index[n]=2*i+r;
         yconvolve0->convolve(F,pmult,index,offset+i*stride);
       }
     }
@@ -651,10 +649,8 @@ public:
                         unsigned int offset=0) {
     
     backwards(F,U2,offset);
-    unsigned int n=index.size()-1;
-    index[n]=-1;
-    subconvolution(F,pmult,index,mx,my,offset);
-    subconvolution(U2,pmult,index,mx,my);
+    subconvolution(F,pmult,index,0,mx,my,offset);
+    subconvolution(U2,pmult,index,1,mx,my);
     forwards(F,U2,offset);
   }
   
@@ -806,6 +802,8 @@ public:
   }
 };
   
+typedef unsigned int IndexFunction(unsigned int, unsigned int m);
+
 // In-place implicitly dealiased 2D Hermitian convolution.
 class ImplicitHConvolution2 : public ImplicitHConvolution2Base {
 protected:
@@ -869,18 +867,26 @@ public:
   }
 
   void subconvolution(Complex **F, realmultiplier *pmult,
+                      std::vector<unsigned int>& index,
+                      IndexFunction indexfunction,
                       unsigned int M, unsigned int stride,
                       unsigned int offset=0) {
+    unsigned int n=index.size()-1;
     if(threads > 1) {
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif    
-      for(unsigned int i=0; i < M; ++i)
-        yconvolve[get_thread_num()]->convolve(F,pmult,offset+i*stride);
+      for(unsigned int i=0; i < M; ++i) {
+        index[n]=indexfunction(i,mx);
+        yconvolve[get_thread_num()]->convolve(F,pmult,index,offset+i*stride);
+      }
     } else {
       ImplicitHConvolution *yconvolve0=yconvolve[0];
-      for(unsigned int i=0; i < M; ++i)
-        yconvolve0->convolve(F,pmult,offset+i*stride);}
+      for(unsigned int i=0; i < M; ++i) {
+        index[n]=indexfunction(i,mx);
+        yconvolve0->convolve(F,pmult,index,offset+i*stride);
+      }
+    }
   }  
   
   void forwards(Complex **F, Complex **U2, unsigned int offset) {
@@ -891,11 +897,13 @@ public:
   // F is a pointer to A distinct data blocks each of size 
   // (2mx-compact)*(my+!ycompact), shifted by offset (contents not preserved).
   virtual void convolve(Complex **F, realmultiplier *pmult,
-                        bool symmetrize=true, unsigned int offset=0) {
+                        bool symmetrize=true,
+                        std::vector<unsigned int>& index=index1,
+                        unsigned int offset=0) {
     unsigned stride=my+!ycompact;
     backwards(F,U2,stride,symmetrize,offset);
-    subconvolution(F,pmult,2*mx-xcompact,stride,offset);
-    subconvolution(U2,pmult,mx+xcompact,stride);
+    subconvolution(F,pmult,index,xfftpad->findex,2*mx-xcompact,stride,offset);
+    subconvolution(U2,pmult,index,xfftpad->uindex,mx+xcompact,stride);
     forwards(F,U2,offset);
   }
   
@@ -1015,22 +1023,21 @@ public:
 
   void subconvolution(Complex **F, multiplier *pmult, 
                       std::vector<unsigned int>& index,
-                      unsigned int M, unsigned int stride,
+                      unsigned int r, unsigned int M, unsigned int stride,
                       unsigned int offset=0) {
     unsigned int n=index.size()-2;
-    unsigned int base=index[n]+1;
     if(threads > 1) {
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif    
       for(unsigned int i=0; i < M; ++i) {
-        index[n]=base+i;
+        index[n]=2*i+r;
         yzconvolve[get_thread_num()]->convolve(F,pmult,index,offset+i*stride);
       }
     } else {
       ImplicitConvolution2 *yzconvolve0=yzconvolve[0];
       for(unsigned int i=0; i < M; ++i) {
-        index[n]=base+i;
+        index[n]=2*i+r;
         yzconvolve0->convolve(F,pmult,index,offset+i*stride);
       }
     }
@@ -1049,10 +1056,8 @@ public:
   {
     unsigned int stride=my*mz;
     backwards(F,U3,offset);
-    unsigned int n=index.size()-2;
-    index[n]=-1;
-    subconvolution(F,pmult,index,mx,stride,offset);
-    subconvolution(U3,pmult,index,mx,stride);
+    subconvolution(F,pmult,index,0,mx,stride,offset);
+    subconvolution(U3,pmult,index,1,mx,stride);
     forwards(F,U3,offset);
   }
   
@@ -1221,18 +1226,26 @@ public:
   }
 
   void subconvolution(Complex **F, realmultiplier *pmult,
+                      std::vector<unsigned int>& index,
+                      IndexFunction indexfunction,
                       unsigned int M, unsigned int stride,
                       unsigned int offset=0) {
+    unsigned int n=index.size()-2;
     if(threads > 1) {
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif    
-      for(unsigned int i=0; i < M; ++i)
-        yzconvolve[get_thread_num()]->convolve(F,pmult,false,offset+i*stride);
+      for(unsigned int i=0; i < M; ++i) {
+        index[n]=indexfunction(i,mx);
+        yzconvolve[get_thread_num()]->convolve(F,pmult,false,index,
+                                               offset+i*stride);
+      }
     } else {
       ImplicitHConvolution2 *yzconvolve0=yzconvolve[0];
-      for(unsigned int i=0; i < M; ++i)
-        yzconvolve0->convolve(F,pmult,false,offset+i*stride);
+      for(unsigned int i=0; i < M; ++i) {
+        index[n]=indexfunction(i,mx);
+        yzconvolve0->convolve(F,pmult,false,index,offset+i*stride);
+      }
     }
   }
 
@@ -1245,11 +1258,13 @@ public:
   // (2mx-compact)*(2my-ycompact)*(mz+!zcompact), shifted by offset 
   // (contents not preserved).
   virtual void convolve(Complex **F, realmultiplier *pmult,
-                        bool symmetrize=true, unsigned int offset=0) {
+                        bool symmetrize=true, 
+                        std::vector<unsigned int>& index=index2,
+                        unsigned int offset=0) {
     unsigned int stride=(2*my-ycompact)*(mz+!zcompact);
     backwards(F,U3,symmetrize,offset);
-    subconvolution(F,pmult,2*mx-xcompact,stride,offset);
-    subconvolution(U3,pmult,mx+xcompact,stride);
+    subconvolution(F,pmult,index,xfftpad->findex,2*mx-xcompact,stride,offset);
+    subconvolution(U3,pmult,index,xfftpad->uindex,mx+xcompact,stride);
     forwards(F,U3,offset);
   }
     

@@ -467,8 +467,9 @@ void ImplicitHConvolution::postmultadd0(Complex **c2, Complex **c0,
   }
 }
 
-void ImplicitHConvolution::convolve(Complex **F, 
-                                    realmultiplier *pmult, unsigned int offset)
+void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
+                                    vector<unsigned int>& index,
+                                    unsigned int offset)
 {
   // Set problem-size variables and pointers:
 
@@ -515,7 +516,7 @@ void ImplicitHConvolution::convolve(Complex **F,
     // r=2:
     for(unsigned int i=0; i < A; ++i)
       cr->fft(c2[i],d2[i]);
-    (*pmult)(d2,m,threads);
+    (*pmult)(d2,m,index,2,threads);
 
     // r=0:
     double T[A]; // deal with overlap between r=0 and r=1
@@ -525,7 +526,7 @@ void ImplicitHConvolution::convolve(Complex **F,
       if(!compact) c0i[0].re += 2.0*c0i[m].re; // Nyquist
       (out_of_place ? cro : cr)->fft(c0i,d0[i]); 
     }
-    (*pmult)(d0,m,threads);
+    (*pmult)(d0,m,index,0,threads);
     for(unsigned int i=0; i < B; ++i)
       S[i]=((Complex *) d0[i])[start];   // r=0, k=start
     
@@ -540,7 +541,7 @@ void ImplicitHConvolution::convolve(Complex **F,
       }
       (out_of_place ? cro : cr)->fft(c1[i],d1[i]);
     }
-    (*pmult)(d1,m,threads);
+    (*pmult)(d1,m,index,1,threads);
   }
 
   // Real-to-complex FFTs and postmultadd:
@@ -1340,11 +1341,19 @@ void multautoconvolution(Complex **F, unsigned int m,
 // This multiplication routine is for binary Hermitian convolutions and takes
 // two inputs.
 // F[0][j] *= F[1][j];
-void multbinary(double **F, unsigned int m, unsigned int threads)
+void multbinary(double **F, unsigned int m, const vector<unsigned int>& index,
+                unsigned int r, unsigned int threads)
 {
   double* F0=F[0];
   double* F1=F[1];
   
+  size_t n=index.size();
+  for(unsigned int j=0; j < m; ++j) {
+    for(unsigned int d=0; d < n; ++d)
+      cout << index[d] << ",";
+    cout << 3*j+r << endl;
+  }
+      
 #ifdef __SSE2__
   unsigned int m1=m-1;
   PARALLEL(
@@ -1388,7 +1397,10 @@ void multbinary2(Complex **F, unsigned int m,
 }
 
 // F[0][j]=F[0][j]*F[2][j]+F[1][j]*F[3][j]
-void multbinary2(double **F, unsigned int m, unsigned int threads) {
+void multbinary2(double **F, unsigned int m,
+                 const vector<unsigned int>& index,
+                 unsigned int r, unsigned int threads)
+{
   double* F0=F[0];
   double* F1=F[1];
   double* F2=F[2];

@@ -14,7 +14,8 @@ bool compact=false;
 
 // Pair-wise binary multiply for even A and B=1.
 // NB: example function, not optimised or threaded.
-void mymult(double ** F, unsigned int m, unsigned int threads)
+void multA(double **F, unsigned int m, const vector<unsigned int>& index,
+           unsigned int r, unsigned int threads)
 {
   for(unsigned int i=0; i < m; ++i) {
     F[0][i] *= F[1][i];
@@ -26,9 +27,10 @@ void mymult(double ** F, unsigned int m, unsigned int threads)
 // Pair-wise binary multiply for even A.
 // All of the B outputs are identical.
 // NB: example function, not optimised or threaded.
-void mymultB(double ** F, unsigned int m, unsigned int threads)
+void multB(double **F, unsigned int m, const vector<unsigned int>& index,
+           unsigned int r, unsigned int threads)
 {
-  mymult(F,m,threads);
+  multA(F,m,index,r,threads);
   // copy output
   for(unsigned int i=0; i < m; ++i)
     for(unsigned int b=0; b < B; b++) 
@@ -234,10 +236,10 @@ int main(int argc, char* argv[])
       switch(A) {
       case 2: mult=multbinary; break;
       case 4: mult=multbinary2; break;
-      default: mult=mymult;
+      default: mult=multA;
       }
     } else
-      mult=mymultB;
+      mult=multB;
     
     for(unsigned int i=0; i < N; ++i) {
       init(F,m,A);
