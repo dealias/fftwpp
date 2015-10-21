@@ -1,5 +1,7 @@
 #include "convolution.h"
 
+using namespace std;
+
 namespace fftwpp {
 
 #ifdef __SSE2__
@@ -15,6 +17,10 @@ const union uvec sse2_mm = {
 const double sqrt3=sqrt(3.0);
 const double hsqrt3=0.5*sqrt3;
 const Complex zeta3(-0.5,hsqrt3);
+
+vector<unsigned int> index1(1);
+vector<unsigned int> index2(2);
+vector<unsigned int> index3(3);
 
 // Build zeta table, returning the floor of the square root of m.
 unsigned int BuildZeta(unsigned int n, unsigned int m,
@@ -45,8 +51,9 @@ unsigned int BuildZeta(unsigned int n, unsigned int m,
   return s;
 }
 
-void ImplicitConvolution::convolve(Complex **F,
-                                   multiplier *pmult, unsigned int offset)
+void ImplicitConvolution::convolve(Complex **F, multiplier *pmult,
+                                   vector<unsigned int>& index,
+                                   unsigned int offset)
 { 
   unsigned int C=max(A,B);
   Complex *P[C];
@@ -55,10 +62,13 @@ void ImplicitConvolution::convolve(Complex **F,
   
   // Backwards FFT (even indices):
   for(unsigned int i=0; i < A; ++i) {
-    //std::cout << P[i] << " " << U[i] << std::endl;
     BackwardsO->fft(P[i],U[i]);
   }
-  (*pmult)(U,m,threads); // multiply even indices
+  
+  size_t n=index.size();
+  index[n-1]=0;
+  (*pmult)(U,m,index,threads); // multiply even indices
+  index[n-1]=m;
 
   switch(A) {
     case 1: premult<premult1>(P); break;
@@ -76,7 +86,7 @@ void ImplicitConvolution::convolve(Complex **F,
 
     for(unsigned int i=A; i-- > 0;) // Loop from A-1 to 0.
       BackwardsO->fft(P[i],W[i]);
-    (*pmult)(W,m,threads); // multiply odd indices
+    (*pmult)(W,m,index,threads); // multiply odd indices
     
     // Return to original space
     Complex *lastW=W[A-1];
@@ -93,7 +103,7 @@ void ImplicitConvolution::convolve(Complex **F,
     // Backwards FFT (odd indices):
     for(unsigned int i=0; i < A; ++i)
       Backwards->fft(P[i]);
-    (*pmult)(P,m,threads); // multiply odd indices
+    (*pmult)(P,m,index,threads); // multiply odd indices
 
     // Return to original space:
     for(unsigned int i=0; i < B; ++i) {
@@ -1281,11 +1291,19 @@ void mult_correlation(Complex **F, unsigned int m, unsigned int threads)
 // This multiplication routine is for binary convolutions and takes two inputs
 // of size m.
 // F[0][j] *= F[1][j];
-void multbinary(Complex **F, unsigned int m, unsigned int threads)
+void multbinary(Complex **F, unsigned int m, const vector<unsigned int>& index,
+                unsigned int threads)
 {
   Complex* F0=F[0];
   Complex* F1=F[1];
   
+  size_t n=index.size();
+  for(unsigned int j=0; j < m; ++j) {
+    for(unsigned int d=0; d < n-1; ++d)
+      cout << index[d] << ",";
+    cout << index[n-1]+j << endl;
+  }
+      
 #ifdef __SSE2__
   PARALLEL(
     for(unsigned int j=0; j < m; ++j) {
@@ -1348,7 +1366,9 @@ void multbinary(double **F, unsigned int m, unsigned int threads)
 }
 
 // F[0][j]=F[0][j]*F[2][j]+F[1][j]*F[3][j]
-void multbinary2(Complex **F, unsigned int m, unsigned int threads) {
+void multbinary2(Complex **F, unsigned int m,
+                 const vector<unsigned int>& index, unsigned int threads)
+{
   Complex* F0=F[0];
   Complex* F1=F[1];
   Complex* F2=F[2];
@@ -1396,7 +1416,9 @@ void multbinary2(double **F, unsigned int m, unsigned int threads) {
 }
 
 // F[0][j]=F[0][j]*F[1][j]+F[2][j]*F[3][j]+F[4][j]*F[5][j];
-void multbinary3(Complex **F, unsigned int m, unsigned int threads) {
+void multbinary3(Complex **F, unsigned int m,
+                 const vector<unsigned int>& index, unsigned int threads)
+{
   Complex* F0=F[0];
   Complex* F1=F[1];
   Complex* F2=F[2];
@@ -1424,7 +1446,9 @@ void multbinary3(Complex **F, unsigned int m, unsigned int threads) {
 }
 
 // F[0][j]=F[0][j]*F[1][j]+F[2][j]*F[3][j]+F[4][j]*F[5][j]+F[6][j]*F[7][j];
-void multbinary4(Complex **F, unsigned int m, unsigned int threads) {
+void multbinary4(Complex **F, unsigned int m,
+                 const vector<unsigned int>& index, unsigned int threads)
+{
   Complex* F0=F[0];
   Complex* F1=F[1];
   Complex* F2=F[2];
@@ -1454,7 +1478,9 @@ void multbinary4(Complex **F, unsigned int m, unsigned int threads) {
 #endif
 }
 
-void multbinary8(Complex **F, unsigned int m, unsigned int threads) {
+void multbinary8(Complex **F, unsigned int m,
+                 const vector<unsigned int>& index, unsigned int threads)
+{
   Complex* F0=F[0];
   Complex* F1=F[1];
   Complex* F2=F[2];

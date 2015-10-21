@@ -7,7 +7,6 @@
 using namespace std;
 using namespace fftwpp;
 
-  
 // Constants used for initialization and testing.
 const Complex I(0.0,1.0);
 const double E=exp(1.0);
@@ -16,7 +15,9 @@ const Complex iG(sqrt(5.0),sqrt(11.0));
 
 bool Direct=false, Implicit=true, Explicit=false, Test=false;
 
-void xcorr_mult(Complex **F, unsigned int m, unsigned int threads)
+void xcorr_mult(Complex **F, unsigned int m,
+                const vector<unsigned int>& index,
+                unsigned int threads)
 {
   Complex* F0=F[0];
   Complex* F1=F[1];
@@ -24,14 +25,18 @@ void xcorr_mult(Complex **F, unsigned int m, unsigned int threads)
     F0[j] *= conj(F1[j]);
 }
 
-void autocorr_mult(Complex **F, unsigned int m, unsigned int threads)
+void autocorr_mult(Complex **F, unsigned int m,
+                   const vector<unsigned int>& index,
+                   unsigned int threads)
 {
   Complex* F0=F[0];
   for(unsigned int j=0; j < m; ++j)
     F0[j] *= conj(F0[j]);
 }
 
-void autoconv_mult(Complex **F, unsigned int m, unsigned int threads)
+void autoconv_mult(Complex **F, unsigned int m,
+                   const vector<unsigned int>& index,
+                   unsigned int threads)
 {
   Complex* F0=F[0];
   for(unsigned int j=0; j < m; ++j)

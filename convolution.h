@@ -15,6 +15,7 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA. */
 
+#include <vector>
 #include "Complex.h"
 #include "fftw++.h"
 #include "cmult-sse2.h"
@@ -69,8 +70,11 @@ struct convolveOptions {
     
 static const convolveOptions defaultconvolveOptions;
 
-typedef void multiplier(Complex **, unsigned int m, unsigned int threads); 
-typedef void realmultiplier(double **, unsigned int m, unsigned int threads); 
+typedef void multiplier(Complex **, unsigned int m,
+                        const std::vector<unsigned int>& index,
+                        unsigned int threads); 
+typedef void realmultiplier(double **, unsigned int m,
+                            unsigned int threads);
   
 // Sample multiplier for binary convolutions for use with
 // function-pointer convolutions.
@@ -91,6 +95,10 @@ struct premult1 {};
 struct premult2 {};
 struct premult3 {};
 struct premult4 {};
+
+extern std::vector<unsigned int> index1;
+extern std::vector<unsigned int> index2;
+extern std::vector<unsigned int> index3;
 
 // In-place implicitly dealiased 1D complex convolution using
 // function pointers for multiplication
@@ -201,28 +209,34 @@ public:
 
   // F is an array of A pointers to distinct data blocks each of size m,
   // shifted by offset (contents not preserved).
-  void convolve(Complex **F, multiplier *pmult, unsigned int offset=0);
+  void convolve(Complex **F, multiplier *pmult, 
+                std::vector<unsigned int>& index=index1,
+                unsigned int offset=0);
   
-  void autoconvolve(Complex *f) {
+  void autoconvolve( Complex *f,
+                     std::vector<unsigned int>& index=index1) {
     Complex *F[]={f};
-    convolve(F,mult_autoconvolution);
+    convolve(F,mult_autoconvolution,index);
   }
 
-  void autocorrelate(Complex *f) {
+  void autocorrelate(Complex *f,
+                     std::vector<unsigned int>& index=index1) {
     Complex *F[]={f};
-    convolve(F,mult_autocorrelation);
+    convolve(F,mult_autocorrelation,index);
   }
 
   // Binary convolution:
-  void convolve(Complex *f, Complex *g) {
+  void convolve(Complex *f, Complex *g,
+                std::vector<unsigned int>& index=index1) {
     Complex *F[]={f,g};
-    convolve(F,multbinary);
+    convolve(F,multbinary,index);
   }
 
   // Binary correlation:
-  void correlate(Complex *f, Complex *g) {
-    Complex *F[]={f, g};
-    convolve(F,mult_correlation);
+  void correlate(Complex *f, Complex *g,
+                 std::vector<unsigned int>& index=index1) {
+    Complex *F[]={f,g};
+    convolve(F,mult_correlation,index);
   }
     
   template<class T>
@@ -603,18 +617,25 @@ public:
   }
 
   void subconvolution(Complex **F, multiplier *pmult, 
+                      std::vector<unsigned int>& index,
                       unsigned int M, unsigned int stride,
                       unsigned int offset=0) {
+    unsigned int n=index.size()-2;
+    unsigned int base=index[n]+1;
     if(threads > 1) {
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif    
-      for(unsigned int i=0; i < M; ++i)
-        yconvolve[get_thread_num()]->convolve(F,pmult,offset+i*stride);
+      for(unsigned int i=0; i < M; ++i) {
+        index[n]=base+i;
+        yconvolve[get_thread_num()]->convolve(F,pmult,index,offset+i*stride);
+      }
     } else {
       ImplicitConvolution *yconvolve0=yconvolve[0];
-      for(unsigned int i=0; i < M; ++i)
-        yconvolve0->convolve(F,pmult,offset+i*stride);
+      for(unsigned int i=0; i < M; ++i) {
+        index[n]=base+i;
+        yconvolve0->convolve(F,pmult,index,offset+i*stride);
+      }
     }
   }
   
@@ -626,10 +647,14 @@ public:
   // F is a pointer to A distinct data blocks each of size mx*my,
   // shifted by offset (contents not preserved).
   virtual void convolve(Complex **F, multiplier *pmult,
+                        std::vector<unsigned int>& index=index2,
                         unsigned int offset=0) {
+    
+    unsigned int n=index.size()-2;
+    index[n]=-1;
     backwards(F,U2,offset);
-    subconvolution(F,pmult,mx,my,offset);
-    subconvolution(U2,pmult,mx,my);
+    subconvolution(F,pmult,index,mx,my,offset);
+    subconvolution(U2,pmult,index,mx,my);
     forwards(F,U2,offset);
   }
   
@@ -989,18 +1014,25 @@ public:
   }
 
   void subconvolution(Complex **F, multiplier *pmult, 
+                      std::vector<unsigned int>& index,
                       unsigned int M, unsigned int stride,
                       unsigned int offset=0) {
+    unsigned int n=index.size()-3;
+    unsigned int base=index[n]+1;
     if(threads > 1) {
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif    
-      for(unsigned int i=0; i < M; ++i)
-        yzconvolve[get_thread_num()]->convolve(F,pmult,offset+i*stride);
+      for(unsigned int i=0; i < M; ++i) {
+        index[n]=base+i;
+        yzconvolve[get_thread_num()]->convolve(F,pmult,index,offset+i*stride);
+      }
     } else {
       ImplicitConvolution2 *yzconvolve0=yzconvolve[0];
-      for(unsigned int i=0; i < M; ++i)
-        yzconvolve0->convolve(F,pmult,offset+i*stride);
+      for(unsigned int i=0; i < M; ++i) {
+        index[n]=base+i;
+        yzconvolve0->convolve(F,pmult,index,offset+i*stride);
+      }
     }
   }
   
@@ -1011,12 +1043,16 @@ public:
   
   // F is a pointer to A distinct data blocks each of size mx*my*mz,
   // shifted by offset
-  virtual void convolve(Complex **F, multiplier *pmult, unsigned int offset=0)
+  virtual void convolve(Complex **F, multiplier *pmult,
+                        std::vector<unsigned int>& index=index3,
+                        unsigned int offset=0)
   {
+    unsigned int n=index.size()-3;
+    index[n]=-1;
     unsigned int stride=my*mz;
     backwards(F,U3,offset);
-    subconvolution(F,pmult,mx,stride,offset);
-    subconvolution(U3,pmult,mx,stride);
+    subconvolution(F,pmult,index,mx,stride,offset);
+    subconvolution(U3,pmult,index,mx,stride);
     forwards(F,U3,offset);
   }
   
