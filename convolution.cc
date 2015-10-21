@@ -1294,12 +1294,14 @@ void multbinary(Complex **F, unsigned int m, const vector<unsigned int>& index,
   Complex* F0=F[0];
   Complex* F1=F[1];
   
+#if 0 // Spatial indices can be recovered, if needed.
   size_t n=index.size();
   for(unsigned int j=0; j < m; ++j) {
     for(unsigned int d=0; d < n; ++d)
       cout << index[d] << ",";
     cout << 2*j+r << endl;
   }
+#endif  
       
 #ifdef __SSE2__
   PARALLEL(
@@ -1347,12 +1349,14 @@ void multbinary(double **F, unsigned int m, const vector<unsigned int>& index,
   double* F0=F[0];
   double* F1=F[1];
   
+#if 0 // Spatial indices can be recovered, if needed.
   size_t n=index.size();
   for(unsigned int j=0; j < m; ++j) {
     for(unsigned int d=0; d < n; ++d)
       cout << index[d] << ",";
     cout << 3*j+r << endl;
   }
+#endif  
       
 #ifdef __SSE2__
   unsigned int m1=m-1;

@@ -1,6 +1,5 @@
 Release todo:
 test shifted inplace MPI transforms
-add unscrambled index to mult routines
 Transpose work memory
 Overlap MPI communication with Hermitian convolutions
 wrappers

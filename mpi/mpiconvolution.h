@@ -53,7 +53,8 @@ public:
   
   // F is a pointer to A distinct data blocks each of size mx*d.y,
   // shifted by offset (contents not preserved).
-  void convolve(Complex **F, multiplier *pmult, unsigned int offset=0);
+  void convolve(Complex **F, multiplier *pmult,
+                std::vector<unsigned int>&index=index1, unsigned int offset=0);
   
   // Binary convolution:
   void convolve(Complex *f, Complex *g) {
@@ -149,7 +150,8 @@ public:
   // F is a pointer to A distinct data blocks each of size 
   // (2mx-xcompact)*d.y, shifted by offset (contents not preserved).
   void convolve(Complex **F, realmultiplier *pmult,
-                bool symmetrize=true, unsigned int offset=0);
+                bool symmetrize=true,
+                std::vector<unsigned int>&index=index1, unsigned int offset=0);
 
   // Binary convolution:
   void convolve(Complex *f, Complex *g, bool symmetrize=true) {
@@ -223,7 +225,8 @@ public:
   
   // F is a pointer to A distinct data blocks each of size
   // 2mx*2d.y*d.z, shifted by offset (contents not preserved).
-  void convolve(Complex **F, multiplier *pmult, unsigned int offset=0);
+  void convolve(Complex **F, multiplier *pmult,
+                std::vector<unsigned int>&index=index2, unsigned int offset=0);
   
   // Binary convolution:
   void convolve(Complex *f, Complex *g) {
@@ -353,7 +356,7 @@ public:
   // F is a pointer to A distinct data blocks each of size
   // (2mx-xcompact)*d.y*d.z, shifted by offset (contents not preserved).
   void convolve(Complex **F, realmultiplier *pmult, bool symmetrize=true,
-                unsigned int offset=0);
+                std::vector<unsigned int>&index=index2, unsigned int offset=0);
   
   // Binary convolution:
   void convolve(Complex *f, Complex *g, bool symmetrize=true) {

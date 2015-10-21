@@ -3,6 +3,7 @@
 namespace fftwpp {
 
 void ImplicitConvolution2MPI::convolve(Complex **F, multiplier *pmult,
+                                       std::vector<unsigned int>& index,
                                        unsigned int offset)
 {
   for(unsigned int a=0; a < A; ++a) {
@@ -18,11 +19,11 @@ void ImplicitConvolution2MPI::convolve(Complex **F, multiplier *pmult,
     T->transpose2(u,false,true);
   }
       
-  subconvolution(F,pmult,d.x,d.Y,offset);
+  subconvolution(F,pmult,index,0,d.x,d.Y,offset);
   T->wait0();
   T->wait2();
   T->transpose1(F[0]+offset,true,false);
-  subconvolution(U2,pmult,d.x,d.Y);
+  subconvolution(U2,pmult,index,1,d.x,d.Y);
   T->wait1();
   for(unsigned int b=1; b < B; ++b)
     T->transpose(F[b]+offset,true,false);
@@ -39,7 +40,9 @@ void ImplicitConvolution2MPI::convolve(Complex **F, multiplier *pmult,
 }
   
 void ImplicitHConvolution2MPI::convolve(Complex **F, realmultiplier *pmult,
-                                        bool symmetrize, unsigned int offset)
+                                        bool symmetrize,
+                                        std::vector<unsigned int>&index,
+                                        unsigned int offset)
 {
   if(d.y0 > 0) symmetrize=false;
     
@@ -48,8 +51,8 @@ void ImplicitHConvolution2MPI::convolve(Complex **F, realmultiplier *pmult,
   transpose(T,A,F,false,true,offset);
   transpose(U,A,U2,false,true);
     
-  subconvolution(F,pmult,d.x,d.Y,offset);
-  subconvolution(U2,pmult,du.x,du.Y);
+  subconvolution(F,pmult,index,xfftpad->findex,d.x,d.Y,offset);
+  subconvolution(U2,pmult,index,xfftpad->uindex,du.x,du.Y);
    
   transpose(T,B,F,true,false,offset);
   transpose(U,B,U2,true,false);
@@ -58,6 +61,7 @@ void ImplicitHConvolution2MPI::convolve(Complex **F, realmultiplier *pmult,
 }
 
 void ImplicitConvolution3MPI::convolve(Complex **F, multiplier *pmult,
+                                       std::vector<unsigned int>& index,
                                        unsigned int offset) 
 {
   for(unsigned int a=0; a < A; ++a) {
@@ -79,13 +83,13 @@ void ImplicitConvolution3MPI::convolve(Complex **F, multiplier *pmult,
       
   unsigned int stride=d.Y*d.z;
     
-  subconvolution(F,pmult,d.x,stride,offset);
+  subconvolution(F,pmult,index,0,d.x,stride,offset);
   if(T) {
     T->wait0();
     T->wait2();
     T->transpose1(F[0]+offset,true,false);
   }
-  subconvolution(U3,pmult,d.x,stride);
+  subconvolution(U3,pmult,index,1,d.x,stride);
   if(T) {
     T->wait1();
     for(unsigned int b=1; b < B; ++b)
@@ -211,7 +215,9 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
 }
 
 void ImplicitHConvolution3MPI::convolve(Complex **F, realmultiplier *pmult,
-                                        bool symmetrize, unsigned int offset)
+                                        bool symmetrize,
+                                        std::vector<unsigned int>&index,
+                                        unsigned int offset)
 {
   backwards(F,U3,symmetrize,offset);
 
@@ -220,8 +226,8 @@ void ImplicitHConvolution3MPI::convolve(Complex **F, realmultiplier *pmult,
     transpose(U,A,U3,false,true);
   }
     
-  subconvolution(F,pmult,d.x,d.Y*d.z,offset);
-  subconvolution(U3,pmult,du.x,du.Y*du.z);
+  subconvolution(F,pmult,index,xfftpad->findex,d.x,d.Y*d.z,offset);
+  subconvolution(U3,pmult,index,xfftpad->uindex,du.x,du.Y*du.z);
     
   if(T) {
     transpose(T,B,F,true,false,offset);
