@@ -15,34 +15,6 @@ const Complex iG(sqrt(5.0),sqrt(11.0));
 
 bool Direct=false, Implicit=true, Explicit=false, Test=false;
 
-void xcorr_mult(Complex **F, unsigned int m,
-                const vector<unsigned int>& index,
-                unsigned int threads)
-{
-  Complex* F0=F[0];
-  Complex* F1=F[1];
-  for(unsigned int j=0; j < m; ++j)
-    F0[j] *= conj(F1[j]);
-}
-
-void autocorr_mult(Complex **F, unsigned int m,
-                   const vector<unsigned int>& index,
-                   unsigned int threads)
-{
-  Complex* F0=F[0];
-  for(unsigned int j=0; j < m; ++j)
-    F0[j] *= conj(F0[j]);
-}
-
-void autoconv_mult(Complex **F, unsigned int m,
-                   const vector<unsigned int>& index,
-                   unsigned int threads)
-{
-  Complex* F0=F[0];
-  for(unsigned int j=0; j < m; ++j)
-    F0[j] *= F0[j];
-}
-
 inline void init(Complex **F, unsigned int m, unsigned int A) 
 {
   if(A % 2 == 0) { // binary case
@@ -185,7 +157,7 @@ int main(int argc, char* argv[])
 
     multiplier *mult;
     switch(A) {
-    case 1: mult=autoconv_mult; break;
+    case 1: mult=multautoconvolution; break;
     case 2: mult=multbinary; break;
     case 4: mult=multbinary2; break;
     case 6: mult=multbinary3; break;
