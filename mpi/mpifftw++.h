@@ -258,6 +258,7 @@ public:
   void init(Complex *in, Complex *out, const mpiOptions& xy,
             const mpiOptions &yz) {
     d.Activate();
+    multithread(d.x);
     out=CheckAlign(in,out);
     inplace=(in == out);
     
@@ -270,7 +271,6 @@ public:
       yForward=new mfft1d(d.Y,-1,d.z,d.z,1,in,out,innerthreads);
       yBackward=new mfft1d(d.Y,1,d.z,d.z,1,out,out,innerthreads);
     } else {
-      multithread(d.x);
       yzForward=new fft2d(d.Y,d.Z,-1,in,out,innerthreads);
       yzBackward=new fft2d(d.Y,d.Z,1,in,out,innerthreads);
       Tyz=NULL;
@@ -370,12 +370,12 @@ public:
   }
    
   rcfft2dMPI(const split& dr, const split& dc, double *in, Complex *out,
-             const mpiOptions& options) :
+             const mpiOptions& options=defaultmpiOptions) :
     fftw(dr.x*realsize(dr.Y,in,out),0,options.threads,dr.X*dr.Y), dr(dr),
     dc(dc), rdist(realsize(dr.Y,in,out)) {init(in,out,options);}
   
   rcfft2dMPI(const split& dr, const split& dc, Complex *out,
-             const mpiOptions& options) :
+             const mpiOptions& options=defaultmpiOptions) :
     fftw(dr.x*2*(dr.Y/2+1),0,options.threads,dr.X*dr.Y), dr(dr), dc(dc),
     rdist(2*(dr.Y/2+1)) {init((double *) out,out,options);}
   
@@ -436,6 +436,7 @@ public:
   void init(double *in, Complex *out, const mpiOptions& xy,
             const mpiOptions &yz) {
     dc.Activate();
+    multithread(dc.x);
     out=CheckAlign((Complex *) in,out);
     inplace=((Complex *) in == out);
 
@@ -470,7 +471,7 @@ public:
   }
   
   rcfft3dMPI(const split3& dr, const split3& dc, double *in, Complex *out,
-             const mpiOptions& xy) : 
+             const mpiOptions& xy=defaultmpiOptions) : 
     fftw(dr.x*dr.yz.x*realsize(dr.Z,in,out),0,xy.threads,dr.X*dr.Y*dr.Z),
     dr(dr), dc(dc), rdist(realsize(dr.Z,in,out)) {
     init(in,out,xy,xy);
@@ -484,7 +485,7 @@ public:
   }
   
   rcfft3dMPI(const split3& dr, const split3& dc, Complex *out,
-             const mpiOptions& xy) : 
+             const mpiOptions& xy=defaultmpiOptions) : 
     fftw(dr.x*dr.yz.x*2*(dr.Z/2+1),0,xy.threads,dr.X*dr.Y*dr.Z),
     dr(dr), dc(dc), rdist(2*(dr.Z/2+1)) {
     init((double *) out,out,xy,xy);
