@@ -458,11 +458,12 @@ protected:
   unsigned int M;
   unsigned int s;
   unsigned int stride;
-  mfft1d *Forwards;
-  mfft1d *Backwards;
   Complex *ZetaH, *ZetaL;
   unsigned int threads;
 public:  
+  mfft1d *Forwards;
+  mfft1d *Backwards;
+  
   fft0pad(unsigned int m, unsigned int M, unsigned int stride, Complex *u=NULL,
           unsigned int Threads=fftw::maxthreads)
     : m(m), M(M), stride(stride), threads(std::min(m,Threads)) {
@@ -488,8 +489,15 @@ public:
     return i > 0 ? (i < m ? 3*i-1 : 3*m-3) : 3*m-1;
   }
 
-  virtual void backwards(Complex *f, Complex *u);
+  virtual void expand(Complex *f, Complex *u);
+  virtual void reduce(Complex *f, Complex *u);
+  
+  void backwards(Complex *f, Complex *u);
   virtual void forwards(Complex *f, Complex *u);
+  
+  virtual void Backwards1(Complex *f, Complex *u);
+  virtual void Forwards0(Complex *f);
+  virtual void Forwards1(Complex *f, Complex *u);
 };
   
 // Compute the scrambled implicitly m-padded complex Fourier transform of M
@@ -520,8 +528,14 @@ public:
     return i > 0 ? 3*i-1 : 3*m-1;
   }
   
-  void backwards(Complex *f, Complex *u);
+  void expand(Complex *f, Complex *u);
+  void reduce(Complex *f, Complex *u);
+  
   void forwards(Complex *f, Complex *u);
+  
+  void Backwards1(Complex *f, Complex *u);
+  void Forwards0(Complex *f);
+  void Forwards1(Complex *f, Complex *u);
 };
   
 // In-place implicitly dealiased 2D complex convolution.
@@ -554,6 +568,7 @@ public:
   void init(const convolveOptions& options) {
     xfftpad=new fftpad(mx,options.ny,options.ny,u2);
     yconvolve=new ImplicitConvolution*[threads];
+    std::cout << innerthreads << " " << threads << std::endl;
     for(unsigned int t=0; t < threads; ++t)
       yconvolve[t]=new ImplicitConvolution(my,u1+t*my*A,A,B,innerthreads);
     initpointers2(U2,u2,options.stride2);

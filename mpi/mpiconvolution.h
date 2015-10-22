@@ -67,23 +67,17 @@ public:
 class ImplicitHConvolution2MPI : public ImplicitHConvolution2 {
 protected:
   split d,du;
-  mpitranspose<double> *T,*U;
+  mpitranspose<Complex> *T,*U;
 public:  
   
   void inittranspose(Complex *f, const mpiOptions& mpi, MPI_Comm global) {
     global=global ? global : d.communicator;
-    T=new mpitranspose<double>(d.X,d.y,d.x,d.Y,2,(double *) f,
+    T=new mpitranspose<Complex>(d.X,d.y,d.x,d.Y,1,f,
                                d.communicator,mpi,global);
-    U=new mpitranspose<double>(du.X,du.y,du.x,du.Y,2,(double *) u2,
-                               du.communicator,mpi,global);
+    U=new mpitranspose<Complex>(du.X,du.y,du.x,du.Y,1,u2,
+                                du.communicator,mpi,global);
     du.Deactivate();
   }    
-  
-  void transpose(mpitranspose<double> *T, unsigned int A, Complex **F,
-                 bool inflag, bool outflag, unsigned int offset=0) {
-    for(unsigned int a=0; a < A; ++a)
-      T->transpose((double *) (F[a]+offset),inflag,outflag);
-  }
   
   // f is a temporary array of size d.n needed only during construction.
   // u1 is a temporary array of size (my/2+1)*A*options.threads.
@@ -249,13 +243,13 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
 class ImplicitHConvolution3MPI : public ImplicitHConvolution3 {
 protected:
   split3 d,du;
-  mpitranspose<double> *T,*U;
+  mpitranspose<Complex> *T,*U;
 public:  
   void inittranspose(Complex *f, const mpiOptions& mpi, MPI_Comm global) {
     if(d.xy.y < d.Y) {
-      T=new mpitranspose<double>(d.X,d.xy.y,d.x,d.Y,2*d.z,(double *) f,
+      T=new mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,f,
                                  d.xy.communicator,mpi,global);
-      U=new mpitranspose<double>(du.X,du.xy.y,du.x,du.Y,2*du.z,(double *) u3,
+      U=new mpitranspose<Complex>(du.X,du.xy.y,du.x,du.Y,du.z,u3,
                                  du.xy.communicator,mpi,global);
     } else {T=U=NULL;}
     du.Deactivate();
@@ -343,10 +337,10 @@ public:
     }
   }
   
-  void transpose(mpitranspose<double> *T, unsigned int A, Complex **F,
+  void transpose(mpitranspose<Complex> *T, unsigned int A, Complex **F,
                  bool inflag, bool outflag, unsigned int offset=0) {
     for(unsigned int a=0; a < A; ++a)
-      T->transpose((double *) (F[a]+offset),inflag,outflag);
+      T->transpose(F[a]+offset,inflag,outflag);
   }
   
   void HermitianSymmetrize(Complex *f, Complex *u) {

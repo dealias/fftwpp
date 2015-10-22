@@ -661,11 +661,9 @@ void fftpad::forwards(Complex *f, Complex *u)
   reduce(f,u);
 }
 
-void fft0pad::backwards(Complex *f, Complex *u)
+void fft0pad::expand(Complex *f, Complex *u)
 {
-  unsigned int m1=m-1;
-  unsigned int m1stride=m1*stride;
-  Complex *fm1stride=f+m1stride;
+  Complex *fm1stride=f+(m-1)*stride;
   for(unsigned int i=0; i < M; ++i)
     u[i]=fm1stride[i];
     
@@ -699,33 +697,30 @@ void fft0pad::backwards(Complex *f, Complex *u)
     }
     stop=min(stop+s,m);
   }
-  
-  Backwards->fft(f);
+}
+
+void fft0pad::Backwards1(Complex *f, Complex *u)
+{
   Complex *umstride=u+m*stride;
+  Complex *fm1stride=f+(m-1)*stride;
   for(unsigned int i=0; i < M; ++i) {
     umstride[i]=fm1stride[i]; // Store extra value here.
     fm1stride[i]=u[i];
   }
-    
   Backwards->fft(fm1stride);
+}
+
+void fft0pad::backwards(Complex *f, Complex *u)
+{
+  expand(f,u);
+  Backwards->fft(f);
+  Backwards1(f,u);
   Backwards->fft(u);
 }
 
-void fft0pad::forwards(Complex *f, Complex *u)
+void fft0pad::reduce(Complex *f, Complex *u)
 {
-  unsigned int m1stride=(m-1)*stride;
-  Complex *fm1stride=f+m1stride;
-  Forwards->fft(fm1stride);
   Complex *umstride=u+m*stride;
-  for(unsigned int i=0; i < M; ++i) {
-    Complex temp=umstride[i];
-    umstride[i]=fm1stride[i];
-    fm1stride[i]=temp;
-  }
-    
-  Forwards->fft(f);
-  Forwards->fft(u);
-
   double ninv=1.0/(3.0*m);
   for(unsigned int i=0; i < M; ++i)
     umstride[i]=(umstride[i]+f[i]+u[i])*ninv;
@@ -733,6 +728,7 @@ void fft0pad::forwards(Complex *f, Complex *u)
   Vec Ninv=LOAD(ninv);
   Vec Mhalf=LOAD(-0.5);
   Vec HSqrt3=LOAD(hsqrt3);
+  Complex *fm1stride=f+(m-1)*stride;
   
   unsigned int stop=s;
   for(unsigned int K=0; K < m; K += s) {
@@ -762,10 +758,35 @@ void fft0pad::forwards(Complex *f, Complex *u)
     fm1stride[i]=umstride[i];
 }
 
-void fft0padwide::backwards(Complex *f, Complex *u)
+void fft0pad::Forwards0(Complex *f)
 {
-  unsigned int mstride=m*stride;
-  Complex *fmstride=f+mstride;
+  Forwards->fft(f+(m-1)*stride);
+}
+  
+void fft0pad::Forwards1(Complex *f, Complex *u)
+{
+  Complex *umstride=u+m*stride;
+  unsigned int m1stride=(m-1)*stride;
+  Complex *fm1stride=f+m1stride;
+  for(unsigned int i=0; i < M; ++i) {
+    Complex temp=umstride[i];
+    umstride[i]=fm1stride[i];
+    fm1stride[i]=temp;
+  }
+}
+  
+void fft0pad::forwards(Complex *f, Complex *u)
+{
+  Forwards0(f);  
+  Forwards1(f,u);  
+  Forwards->fft(f);
+  Forwards->fft(u);
+  reduce(f,u);
+}
+
+void fft0padwide::expand(Complex *f, Complex *u)
+{
+  Complex *fmstride=f+m*stride;
   for(unsigned int i=0; i < M; ++i) {
     Complex Nyquist=f[i];
     f[i]=fmstride[i]+2.0*Nyquist;
@@ -803,20 +824,16 @@ void fft0padwide::backwards(Complex *f, Complex *u)
       }
     }
     );
-  
-  Backwards->fft(f);
-  Backwards->fft(fmstride);
-  Backwards->fft(u);
 }
 
-void fft0padwide::forwards(Complex *f, Complex *u)
+void fft0padwide::Backwards1(Complex *f, Complex *u)
 {
-  unsigned int mstride=m*stride;
-  Complex *fmstride=f+mstride;
-  
-  Forwards->fft(f);
-  Forwards->fft(fmstride);
-  Forwards->fft(u);
+  Backwards->fft(f+m*stride);
+}
+
+void fft0padwide::reduce(Complex *f, Complex *u)
+{
+  Complex *fmstride=f+m*stride;
 
   double ninv=1.0/(3.0*m);
   for(unsigned int i=0; i < M; ++i) {
@@ -855,6 +872,23 @@ void fft0padwide::forwards(Complex *f, Complex *u)
       }
     }
     );
+}
+
+void fft0padwide::Forwards0(Complex *f)
+{
+  Forwards->fft(f+m*stride);
+}
+
+void fft0padwide::Forwards1(Complex *f, Complex *u)
+{
+}
+
+void fft0padwide::forwards(Complex *f, Complex *u)
+{
+  Forwards->fft(f);
+  Forwards->fft(f+m*stride);
+  Forwards->fft(u);
+  reduce(f,u);
 }
 
 // a[0][k]=sum_i a[i][k]*b[i][k]*c[i][k]
@@ -1294,7 +1328,7 @@ void multbinary(Complex **F, unsigned int m, const vector<unsigned int>& index,
   Complex* F0=F[0];
   Complex* F1=F[1];
   
-#if 0 // Spatial indices can be recovered, if needed.
+#if 0 // Spatial indices are available, if needed.
   size_t n=index.size();
   for(unsigned int j=0; j < m; ++j) {
     for(unsigned int d=0; d < n; ++d)
@@ -1349,12 +1383,12 @@ void multbinary(double **F, unsigned int m, const vector<unsigned int>& index,
   double* F0=F[0];
   double* F1=F[1];
   
-#if 0 // Spatial indices can be recovered, if needed.
+#if 0 // Spatial indices are available, if needed.
   size_t n=index.size();
   for(unsigned int j=0; j < m; ++j) {
     for(unsigned int d=0; d < n; ++d)
       cout << index[d] << ",";
-    cout << 3*j+r << endl;
+    cout << 3*j+r << ": " << F[0][j] << endl;
   }
 #endif  
       

@@ -1,7 +1,7 @@
 Release todo:
 test shifted inplace MPI transforms
 Transpose work memory
-Overlap MPI communication with Hermitian convolutions
+add transpose verbose flag
 wrappers
 update documentation
 Add MPI waits in MPI FFTs to allow overlap of comm/comp.

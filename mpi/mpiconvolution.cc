@@ -45,19 +45,47 @@ void ImplicitHConvolution2MPI::convolve(Complex **F, realmultiplier *pmult,
                                         unsigned int offset)
 {
   if(d.y0 > 0) symmetrize=false;
-    
-  backwards(F,U2,d.y,symmetrize,offset);
-    
-  transpose(T,A,F,false,true,offset);
-  transpose(U,A,U2,false,true);
-    
+
+  for(unsigned int a=0; a < A; ++a) {
+    Complex *f=F[a]+offset;
+    Complex *u=U2[a];
+    if(symmetrize)
+      HermitianSymmetrizeX(mx,d.y,mx-xcompact,f);
+    xfftpad->expand(f,u);
+    xfftpad->Backwards->fft(f);
+    if(a > 0) U->wait0();
+    xfftpad->Backwards1(f,u);
+    if(a > 0) T->wait2();
+    T->transpose2(f,false,true);
+    xfftpad->Backwards->fft(u);
+    if(a > 0) U->wait2();
+    U->transpose2(u,false,true);
+    T->wait0();
+  }
+  
+      
+  T->wait2();
   subconvolution(F,pmult,index,xfftpad->findex,d.x,d.Y,offset);
+  U->wait0();
+  for(unsigned int b=0; b < B; ++b) {
+    if(b > 0) T->wait1();
+    T->transpose1(F[b]+offset,true,false);
+  }
+  U->wait2();
   subconvolution(U2,pmult,index,xfftpad->uindex,du.x,du.Y);
-   
-  transpose(T,B,F,true,false,offset);
-  transpose(U,B,U2,true,false);
-   
-  forwards(F,U2,offset);
+  T->wait1();
+    
+  for(unsigned int b=0; b < B; ++b) {
+    Complex *f=F[b]+offset;
+    Complex *u=U2[b];
+    U->transpose1(u,true,false);
+    xfftpad->Forwards0(f);
+    U->wait1();
+    xfftpad->Forwards1(f,u);
+    xfftpad->Forwards->fft(f);
+    xfftpad->Forwards->fft(u);
+    xfftpad->reduce(f,u);
+  }
 }
 
 void ImplicitConvolution3MPI::convolve(Complex **F, multiplier *pmult,
@@ -219,23 +247,53 @@ void ImplicitHConvolution3MPI::convolve(Complex **F, realmultiplier *pmult,
                                         std::vector<unsigned int>&index,
                                         unsigned int offset)
 {
-  backwards(F,U3,symmetrize,offset);
-
-  if(T) {
-    transpose(T,A,F,false,true,offset);
-    transpose(U,A,U3,false,true);
+  for(unsigned int a=0; a < A; ++a) {
+    Complex *f=F[a]+offset;
+    Complex *u=U3[a];
+    if(symmetrize)
+      HermitianSymmetrizeXYMPI(mx,my,d,xcompact,ycompact,f,du.n,u);
+    xfftpad->expand(f,u);
+    xfftpad->Backwards->fft(f);
+    if(U && a > 0) U->wait0();
+    xfftpad->Backwards1(f,u);
+    if(T) {
+      if(a > 0) T->wait2();
+      T->transpose2(f,false,true);
+    }
+    xfftpad->Backwards->fft(u);
+    if(U) {
+      if(a > 0) U->wait2();
+      U->transpose2(u,false,true);
+      T->wait0();
+    }
   }
-    
+
+  if(T) T->wait2();
   subconvolution(F,pmult,index,xfftpad->findex,d.x,d.Y*d.z,offset);
-  subconvolution(U3,pmult,index,xfftpad->uindex,du.x,du.Y*du.z);
-    
-  if(T) {
-    transpose(T,B,F,true,false,offset);
-    transpose(U,B,U3,true,false);
+  if(U) {
+    U->wait0();
+    for(unsigned int b=0; b < B; ++b) {
+      if(b > 0) T->wait1();
+      T->transpose1(F[b]+offset,true,false);
+    }
+    U->wait2();
   }
+  subconvolution(U3,pmult,index,xfftpad->uindex,du.x,du.Y*du.z);
+  if(T) T->wait1();
     
-  forwards(F,U3,offset);
+  for(unsigned int b=0; b < B; ++b) {
+    Complex *f=F[b]+offset;
+    Complex *u=U3[b];
+    if(U)
+      U->transpose1(u,true,false);
+    xfftpad->Forwards0(f);
+    if(U) 
+      U->wait1();
+    xfftpad->Forwards1(f,u);
+    xfftpad->Forwards->fft(f);
+    xfftpad->Forwards->fft(u);
+    xfftpad->reduce(f,u);
+  }
 }
-
 
 } // namespace fftwpp

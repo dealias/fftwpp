@@ -47,7 +47,7 @@ def main(argv):
         xlist = [2,1,3,4,5,6,7,8,9,10,random.randint(start,stop)]
         ylist = [2,1,3,4,5,6,7,8,9,10,random.randint(start,stop)]
         zlist = [2,1,3,10,random.randint(start,stop)]
-        Plist = [1,2,3,4,5,random.randint(9,12)]
+        Plist = [8,4,3,2,random.randint(9,12),1]
 
         if(shortrun):
             xlist = [2,random.randint(6,32)]
