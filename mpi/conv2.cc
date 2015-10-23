@@ -15,44 +15,43 @@ unsigned int outlimit=200;
 inline void init(Complex **F, split d, unsigned int A=2,
                  bool xcompact=true, bool ycompact=true)
 {
-  if(A%2 == 0) {
-    unsigned int M=A/2;
-    double factor=1.0/sqrt((double) M);
+  if(A % 2 != 0) {
+    cerr << "A=" << A << " is not yet implemented" << endl;
+    exit(1);
+  }
 
-    for(unsigned int s=0; s < M; ++s) {
-      double S=sqrt(1.0+s);
-      array2<Complex> f(d.X,d.y,F[s]);
-      array2<Complex> g(d.X,d.y,F[M+s]);
-      double ffactor=S*factor;
-      double gfactor=1.0/S*factor;
+  unsigned int M=A/2;
+  double factor=1.0/sqrt((double) M);
+  for(unsigned int s=0; s < M; ++s) {
+    double S=sqrt(1.0+s);
+    array2<Complex> f(d.X,d.y,F[s]);
+    array2<Complex> g(d.X,d.y,F[M+s]);
+    double ffactor=S*factor;
+    double gfactor=1.0/S*factor;
 
-      if(!xcompact) {
-        for(unsigned int j=0; j < d.y; j++) {
-          f[0][j]=0.0;
-          g[0][j]=0.0;
-        }
-      }
-      
-      if(!ycompact && d.y0+d.y == d.Y) { // Last process
-        for(unsigned int i=0; i < d.X; ++i) {
-          f[i][d.y-1]=0.0;
-          g[i][d.y-1]=0.0;
-        }
-      }
-      
-      for(unsigned int i=!xcompact; i < d.X; ++i) {
-	unsigned int ii=i-!xcompact;
-        unsigned int stop=d.y0+d.y < d.Y ? d.y : d.y-!ycompact;
-          for(unsigned int j=0; j < stop; j++) {
-	  unsigned int jj=j+d.y0;
-	  f[i][j]=ffactor*Complex(ii,jj);
-	  g[i][j]=gfactor*Complex(2*ii,jj+1);
-	}
+    if(!xcompact) {
+      for(unsigned int j=0; j < d.y; j++) {
+        f[0][j]=0.0;
+        g[0][j]=0.0;
       }
     }
-  } else {
-    cerr << "Init not implemented for A=" << A << endl;
-    exit(1);
+      
+    if(!ycompact && d.y0+d.y == d.Y) { // Last process
+      for(unsigned int i=0; i < d.X; ++i) {
+        f[i][d.y-1]=0.0;
+        g[i][d.y-1]=0.0;
+      }
+    }
+      
+    for(unsigned int i=!xcompact; i < d.X; ++i) {
+      unsigned int ii=i-!xcompact;
+      unsigned int stop=d.y0+d.y < d.Y ? d.y : d.y-!ycompact;
+      for(unsigned int j=0; j < stop; j++) {
+        unsigned int jj=d.y0+j;
+        f[i][j]=ffactor*Complex(ii,jj);
+        g[i][j]=gfactor*Complex(2*ii,jj+1);
+      }
+    }
   }
 }
 
@@ -162,11 +161,16 @@ int main(int argc, char* argv[])
            << group.size << " nodes X " << fftw::maxthreads 
            << " threads/node" << endl;
     
+      cout << "N=" << N << endl;
       cout << "mx=" << mx << ", my=" << my << endl;
       cout << "nx=" << nx << ", nyp=" << nyp << endl;
+      cout << "size=" << group.size << endl;
     }
     
+    // Dimensions of the data
     split d(nx,nyp,group.active);
+    
+    // Dimensions used in the MPI convolution
     split du(mx+xcompact,nyp,group.active);
   
     Complex **F=new Complex *[A];
@@ -193,9 +197,8 @@ int main(int argc, char* argv[])
 	
     // Test code
     if(test) {
-      if(!quiet && main) {
+      if(!quiet && main)
 	cout << "Testing!" << endl;
-      }
 
       init(F,d,A,xcompact,ycompact);
 
@@ -237,8 +240,6 @@ int main(int argc, char* argv[])
       
     } else {
       // Timing loop
-      if(!quiet && main)
-	cout << "N=" << N << endl;
       double *T=new double[N];
       for(unsigned int i=0; i < N; ++i) {
 	init(F,d,A,xcompact,ycompact);
@@ -251,11 +252,8 @@ int main(int argc, char* argv[])
 	timings("Implicit",mx,T,N);
       delete [] T;
     
-      if(!quiet && nx*my < outlimit) {
-	show(F[0],nx,d.y,
-	     !xcompact,0,
-	     nx,d.y0+d.y < d.Y ? d.y : d.y-!ycompact,group.active);
-      }
+      if(!quiet && nx*my < outlimit)
+	show(F[0],d.X,d.y,group.active);
     }
     
     for(unsigned int i=0; i < A; ++i)

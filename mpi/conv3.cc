@@ -1,9 +1,11 @@
 #include "mpiconvolution.h"
 #include "utils.h"
 #include "mpiutils.h"
+#include "Array.h"
 
 using namespace std;
 using namespace fftwpp;
+using namespace Array;
 
 // Number of iterations.
 unsigned int N0=1000000;
@@ -17,81 +19,59 @@ inline void init(Complex **F, const split3& d, unsigned int A=2,
                  bool xcompact=true, bool ycompact=true, bool zcompact=true)
 {
   if(A % 2 != 0) {
-    cout << "A=" << A << " is not yet implemented" << endl;
+    cerr << "A=" << A << " is not yet implemented" << endl;
     exit(1);
   }
 
   unsigned int M=A/2;
   double factor=1.0/sqrt((double) M);
   for(unsigned int s=0; s < M; ++s) {
-    Complex *f=F[s];
-    Complex *g=F[s+M];
-
     double S=sqrt(1.0+s);
+    array3<Complex> f(d.X,d.y,d.z,F[s]);
+    array3<Complex> g(d.X,d.y,d.z,F[M+s]);
     double ffactor=S*factor;
     double gfactor=1.0/S*factor;
-    unsigned int stride=s*d.n;
     
     if(!xcompact) {
       for(unsigned int j=0; j < d.y; ++j) {
-        unsigned int IJ=stride+d.z*j;
         for(unsigned int k=0; k < d.z; ++k) {
-          f[IJ+k]=0.0;
-          g[IJ+k]=0.0;
+          f[0][j][k]=0.0;
+          g[0][j][k]=0.0;
         }
       }
     }
     
     if(!ycompact) {
       for(unsigned int i=0; i < d.X; ++i) {
-        unsigned int IJ=stride+d.y*d.z*i;
         for(unsigned int k=0; k < d.z; ++k) {
-          f[IJ+k]=0.0;
-          g[IJ+k]=0.0;
+          f[i][0][k]=0.0;
+          g[i][0][k]=0.0;
         }
       }
     }
     
     if(!zcompact && d.z0+d.z == d.Z) { // Last process
       for(unsigned int i=0; i < d.X; ++i) {
-        unsigned int I=stride+d.y*d.z*i;
         for(unsigned int j=0; j < d.y; ++j) {
-          unsigned int IJ=I+d.z*j;
-          f[IJ+d.z-1]=0.0;
-          g[IJ+d.z-1]=0.0;
+          f[i][j][d.z-1]=0.0;
+          g[i][j][d.z-1]=0.0;
         }
       }
     }
     
     for(unsigned int i=!xcompact; i < d.X; ++i) {
-      unsigned int I=stride+d.y*d.z*i;
       unsigned int ii=i-!xcompact;
       unsigned int jstart=!ycompact && d.y0 == 0;
       for(unsigned int j=jstart; j < d.y; ++j) {
-        unsigned int IJ=I+d.z*j;
         unsigned int jj=d.y0+j-!ycompact;
         unsigned int stop=(d.z0+d.z < d.Z) ? d.z : d.z-!zcompact;
         for(unsigned int k=0; k < stop; ++k) {
           unsigned int kk=d.z0+k;
-          f[IJ+k]=ffactor*Complex(ii+kk,jj+kk);
-          g[IJ+k]=gfactor*Complex(2*ii+kk,jj+1+kk);
+          f[i][j][k]=ffactor*Complex(ii+kk,jj+kk);
+          g[i][j][k]=gfactor*Complex(2*ii+kk,jj+1+kk);
         }
       }
     }
-  }
-}
-
-void show(Complex *F, unsigned int X, unsigned int Y, unsigned int Z)
-{
-  for(unsigned int i=0; i < X; ++i) {
-    for(unsigned int j=0; j < Y; ++j) {
-      for(unsigned int k=0; k < Z; ++k) {
-	unsigned int pos=i*Y*Z+j*Z+k;
-	cout << F[pos] << "\t";
-      }
-      cout << endl;
-    }
-    cout << endl;
   }
 }
 
@@ -101,20 +81,23 @@ int main(int argc, char* argv[])
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
   int retval=0;
-  bool test=false;
-  bool quiet=false;
 
+  unsigned int A=2; // Number of independent inputs
+  unsigned int B=1; // Number of outputs
+  
   unsigned int mx=4;
   unsigned int my=4;
   unsigned int mz=4;
-  unsigned int A=2;
-  unsigned int B=1;
+  
   bool xcompact=true;
   bool ycompact=true;
   bool zcompact=true;
   int divisor=0; // Test for best block divisor
   int alltoall=-1; // Test for best alltoall routine
 
+  bool test=false;
+  bool quiet=false;
+  
 #ifdef __GNUC__ 
   optind=0;
 #endif  
@@ -220,32 +203,38 @@ int main(int argc, char* argv[])
       cout << "size=" << group.size << endl;
     }
 
-    // Dimensions of the input data
+    // Dimensions of the data
     split3 d(nx,ny,nzp,group,true);
+    
+    // Dimensions used in the MPI convolution
+    split3 du(mx+xcompact,ny,my+ycompact,nzp,group,true);
     
     Complex **F=new Complex*[A];
     for(unsigned int a=0; a < A; a++)
       F[a]=ComplexAlign(d.n);
     
     realmultiplier *mult;
+    
     switch(A) {
       case 2: mult=multbinary; break;
       case 4: mult=multbinary2; break;
       default: cout << "A=" << A << " is not yet implemented" << endl; exit(1);
     }
 
-    // Dimensions used in the MPI convolution
-    split3 du(mx+xcompact,ny,my+ycompact,nzp,group,true);
     ImplicitHConvolution3MPI C(mx,my,mz,xcompact,ycompact,zcompact,d,du,F[0],
                                mpiOptions(divisor,alltoall),A,B);
     
     MPI_Barrier(group.active);
+    
     if(!quiet && main)
       cout << "Initialized after " << seconds() << " seconds." << endl;
 
-    init(F,d,A,xcompact,ycompact,zcompact);
-    
     if(test) {
+      if(!quiet && main)
+	cout << "Testing!" << endl;
+      
+      init(F,d,A,xcompact,ycompact,zcompact);
+      
       if(!quiet) {
         if(main) cout << "Distributed input:" << endl;
         for(unsigned int a=0; a < A; a++) {
@@ -266,7 +255,6 @@ int main(int argc, char* argv[])
 	  show(F0[a],d.X,d.Y,d.Z);
         }
       }
-
 
       C.convolve(F,mult);
 
@@ -313,13 +301,13 @@ int main(int argc, char* argv[])
       delete[] F0out;
       
     } else {
-
+      // Timing loop
       double *T=new double[N];
       for(unsigned int i=0; i < N; ++i) {
         init(F,d,A,xcompact,ycompact,zcompact);
-        seconds();
+        if(main) seconds();
         C.convolve(F,mult);
-        T[i]=seconds();
+        if(main) T[i]=seconds();
       }
       if(main) 
         timings("Implicit",mx,T,N);
