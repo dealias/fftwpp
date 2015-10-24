@@ -149,7 +149,7 @@ int main(int argc, char* argv[])
     if(test) {
       init(f,d);
 
-      if(!quiet && nx*ny < outlimit) {
+      if(!quiet && nx*ny*nz < outlimit) {
 	if(main) cout << "\ninput:" << endl;
 	show(f,d.x,d.y,d.Z,group.active);
       }
