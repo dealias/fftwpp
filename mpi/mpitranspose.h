@@ -3,7 +3,7 @@
 
 /* 
    Globally transpose an N x M matrix of blocks of L complex elements
-   distributed over the second dimension. The in-place versions preserve inputs.
+   distributed over the second dimension. In-place versions preserve inputs.
 
    Beginner in-place and out-of-place interfaces:
    
@@ -397,8 +397,7 @@ public:
   
   mpitranspose(){}
 
-  // Here "in" is a local N x m matrix and "out" is a local n x M matrix.
-  // work is a temporary array of size N*m*L.
+  // data and work are arrays of size max(N*m,n*M)*L.
   mpitranspose(unsigned int N, unsigned int m, unsigned int n,
                unsigned int M, unsigned int L,
                T *data, T *work=NULL,
@@ -456,8 +455,8 @@ public:
     uniform=uniform && a*b == size;
     subblock=a > 1 && rank < a*b;
     
-    Tout1=uniform || subblock ? new Transpose(n*a,b,m*L,data,this->work,threads)
-      : NULL;
+    Tout1=uniform || subblock ? new Transpose(n*a,b,m*L,data,this->work,
+                                              threads) : NULL;
     Tin1=uniform ? new Transpose(b,n*a,m*L,data,this->work,threads) : NULL;
     
     if(subblock) {
@@ -782,7 +781,8 @@ public:
                           communicator,request);
     }
     if(uniform || subblock)
-      Ialltoall(work,n*m*sizeof(T)*(a > 1 ? b : a)*L,output,split2,Request,sched2);
+      Ialltoall(work,n*m*sizeof(T)*(a > 1 ? b : a)*L,output,split2,Request,
+                sched2);
   }
   
   void outsync1() {
@@ -853,7 +853,8 @@ public:
     if(overlap) Wait1();
   }
   
-  void transpose(T *in, bool intranspose=true, bool outtranspose=true, T *out=0)
+  void transpose(T *in, bool intranspose=true, bool outtranspose=true,
+                 T *out=0)
   {
     transpose1(in,intranspose,outtranspose,out);
     if(overlap) {
@@ -862,7 +863,8 @@ public:
     }
   }
   
-  void transpose1(T *in, bool intranspose=true, bool outtranspose=true, T *out=0)
+  void transpose1(T *in, bool intranspose=true, bool outtranspose=true,
+                  T *out=0)
   {
     inflag=intranspose;
     transpose2(in,intranspose,outtranspose,out);
@@ -870,7 +872,8 @@ public:
       wait0();
   }
   
-  void transpose2(T *in, bool intranspose=true, bool outtranspose=true, T *out=0)
+  void transpose2(T *in, bool intranspose=true, bool outtranspose=true,
+                  T *out=0)
   {
     if(!out) out=in;
     input=in;
