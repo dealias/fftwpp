@@ -145,6 +145,7 @@ int main(int argc, char* argv[])
     Complex *f=ComplexAlign(d.n);
     
     fft3dMPI fft(d,f,mpiOptions(divisor,alltoall));
+    std::cout << "Allocating " << d.n << " bytes." << endl;
 
     if(test) {
       init(f,d);

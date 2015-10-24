@@ -39,6 +39,7 @@ public:
     unsigned int x=ceilquotient(X,size);
     unsigned int z=ceilquotient(Z,size);
     unsigned int y=allowPencil && x*Z == X*z ? ceilquotient(Y,size*x/X) : Y;
+    if(rank == 0 && y < Y) std::cout << "Using pencil mode." << std::endl;
     size=ceilquotient(X,x)*ceilquotient(Y,y);
     
     activate(comm);
@@ -136,7 +137,7 @@ public:
     z=yz.y;
     z0=yz.y0;
     n2=yz.n;
-    n=std::max(xy.n*z,group.size*n2);
+    n=std::max(xy.n*z,ceilquotient(Y,y)*n2);
   }
   
   split3(unsigned int X, unsigned int Y, unsigned int Z,
