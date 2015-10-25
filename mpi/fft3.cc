@@ -49,6 +49,8 @@ int main(int argc, char* argv[])
   unsigned int ny=0;
   unsigned int nz=0;
 
+  bool inplace=true;
+  
   bool quiet=false;
   bool test=false;
   
@@ -56,50 +58,53 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"htN:T:a:m:n:s:x:y:z:q");
+    int c = getopt(argc,argv,"htN:T:a:i:m:n:s:x:y:z:q");
     if (c == -1) break;
                 
     switch (c) {
-      case 0:
-        break;
-      case 'a':
-        divisor=atoi(optarg);
-        break;
-      case 'N':
-        N=atoi(optarg);
-        break;
-      case 'm':
-        nx=ny=nz=atoi(optarg);
-        break;
-      case 's':
-        alltoall=atoi(optarg);
-        break;
-      case 'x':
-        nx=atoi(optarg);
-        break;
-      case 'y':
-        ny=atoi(optarg);
-        break;
-      case 'z':
-        nz=atoi(optarg);
-        break;
-      case 'n':
-        N0=atoi(optarg);
-        break;
-      case 'T':
-        fftw::maxthreads=atoi(optarg);
-        break;
-      case 'q':
-        quiet=true;
-        break;
-      case 't':
-        test=true;
-        break;
-      case 'h':
-      default:
-        usage(3);
-        usageTranspose();
-        exit(1);
+    case 0:
+      break;
+    case 'a':
+      divisor=atoi(optarg);
+      break;
+    case 'N':
+      N=atoi(optarg);
+      break;
+    case 'i':
+      inplace=atoi(optarg);
+      break;
+    case 'm':
+      nx=ny=nz=atoi(optarg);
+      break;
+    case 's':
+      alltoall=atoi(optarg);
+      break;
+    case 'x':
+      nx=atoi(optarg);
+      break;
+    case 'y':
+      ny=atoi(optarg);
+      break;
+    case 'z':
+      nz=atoi(optarg);
+      break;
+    case 'n':
+      N0=atoi(optarg);
+      break;
+    case 'T':
+      fftw::maxthreads=atoi(optarg);
+      break;
+    case 'q':
+      quiet=true;
+      break;
+    case 't':
+      test=true;
+      break;
+    case 'h':
+    default:
+      usage(3);
+      usageTranspose();
+      exit(1);
     }
   }
 
@@ -143,8 +148,9 @@ int main(int argc, char* argv[])
     split3 d(nx,ny,nz,group);
     
     Complex *f=ComplexAlign(d.n);
+    Complex *g=inplace ? f : ComplexAlign(d.n);
     
-    fft3dMPI fft(d,f,mpiOptions(divisor,alltoall));
+    fft3dMPI fft(d,f,g,mpiOptions(divisor,alltoall));
     if(main) std::cout << "Allocating " << d.n << " bytes." << endl;
 
     if(test) {
@@ -171,7 +177,7 @@ int main(int argc, char* argv[])
         retval += checkerror(flocal(),fgathered(),d.X*d.Y*d.Z);
       }
       
-      fft.Forward(f);
+      fft.Forward(f,g);
 
       if(main)
 	localForward.fft(flocal);
@@ -180,7 +186,7 @@ int main(int argc, char* argv[])
 	if(main) cout << "Distributed output:" << endl;
 	show(f,d.X,d.xy.y,d.z,group.active);
       }
-      gatheryz(f,fgathered(),d,group.active); 
+      gatheryz(g,fgathered(),d,group.active); 
 
       if(!quiet && main) {
 	cout << "Gathered output:\n" <<  fgathered << endl;
@@ -190,8 +196,9 @@ int main(int argc, char* argv[])
       if(main)
         retval += checkerror(flocal(),fgathered(),d.X*d.Y*d.Z);
       
-      fft.Backward(f);
+      fft.Backward(g,f);
       fft.Normalize(f);
+
       if(main)
 	localBackward.fftNormalized(flocal);
       if(!quiet) {
@@ -228,8 +235,8 @@ int main(int argc, char* argv[])
 	for(unsigned int i=0; i < N; ++i) {
 	  init(f,d);
 	  seconds();
-	  fft.Forward(f);
-	  fft.Backward(f);
+	  fft.Forward(f,g);
+	  fft.Backward(g,f);
 	  fft.Normalize(f);
 	  T[i]=seconds();
 	}
@@ -240,6 +247,8 @@ int main(int argc, char* argv[])
     }
   
     deleteAlign(f);
+    if(!inplace)
+      deleteAlign(g);
   }
   
   MPI_Finalize();

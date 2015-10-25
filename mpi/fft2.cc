@@ -220,8 +220,8 @@ int main(int argc, char* argv[])
         for(unsigned int i=0; i < N; ++i) {
           init(f,d);
           seconds();
-          fft.Forward(f);
-          fft.Backward(f);
+          fft.Forward(f,g);
+          fft.Backward(g,f);
           fft.Normalize(f);
           T[i]=seconds();
         }    
