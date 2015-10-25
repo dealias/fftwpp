@@ -35,6 +35,8 @@ int main(int argc, char* argv[])
   unsigned int ny=4;
   int divisor=0; // Test for best block divisor
   int alltoall=-1; // Test for best alltoall routine
+
+  bool inplace=false;
   
   bool quiet=false;
   bool test=false;
@@ -43,47 +45,51 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"hN:a:m:s:x:y:n:T:qt");
+    int c = getopt(argc,argv,"hN:a:i:m:s:x:y:n:T:qt");
     if (c == -1) break;
                 
     switch (c) {
-      case 0:
-        break;
-      case 'a':
-        divisor=atoi(optarg);
-        break;
-      case 'N':
-        N=atoi(optarg);
-        break;
-      case 'm':
-        nx=ny=atoi(optarg);
-        break;
-      case 's':
-        alltoall=atoi(optarg);
-        break;
-      case 'x':
-        nx=atoi(optarg);
-        break;
-      case 'y':
-        ny=atoi(optarg);
-        break;
-      case 'n':
-        N0=atoi(optarg);
-        break;
-      case 'T':
-        fftw::maxthreads=atoi(optarg);
-        break;
-      case 'q':
-        quiet=true;
-        break;
-      case 't':
-        test=true;
-        break;
-      case 'h':
-      default:
-        usage(2);
-        usageTranspose();
-        exit(1);
+    case 0:
+      break;
+    case 'a':
+      divisor=atoi(optarg);
+      break;
+    case 'N':
+      N=atoi(optarg);
+      break;
+    case 'i':
+      inplace=atoi(optarg);
+      break;
+        
+    case 'm':
+      nx=ny=atoi(optarg);
+      break;
+    case 's':
+      alltoall=atoi(optarg);
+      break;
+    case 'x':
+      nx=atoi(optarg);
+      break;
+    case 'y':
+      ny=atoi(optarg);
+      break;
+    case 'n':
+      N0=atoi(optarg);
+      break;
+    case 'T':
+      fftw::maxthreads=atoi(optarg);
+      break;
+    case 'q':
+      quiet=true;
+      break;
+    case 't':
+      test=true;
+      break;
+    case 'h':
+    default:
+      usage(2);
+      usageTranspose();
+      exit(1);
     }
   }
 
@@ -111,8 +117,8 @@ int main(int argc, char* argv[])
   
   if(!quiet && group.rank == 0) {
     cout << "Configuration: " 
-	 << group.size << " nodes X " << fftw::maxthreads 
-	 << " threads/node" << endl;
+         << group.size << " nodes X " << fftw::maxthreads 
+         << " threads/node" << endl;
   }
 
   if(group.rank < group.size) { 
@@ -125,9 +131,10 @@ int main(int argc, char* argv[])
     split d(nx,ny,group.active);
   
     Complex *f=ComplexAlign(d.n);
+    Complex *g=inplace ? f : ComplexAlign(d.n);
 
     // Create instance of FFT
-    fft2dMPI fft(d,f,mpiOptions(divisor,alltoall));
+    fft2dMPI fft(d,f,g,mpiOptions(divisor,alltoall));
 
     if(!quiet && group.rank == 0)
       cout << "Initialized after " << seconds() << " seconds." << endl;    
@@ -136,8 +143,8 @@ int main(int argc, char* argv[])
       init(f,d);
 
       if(!quiet && nx*ny < outlimit) {
-	if(main) cout << "\nDistributed input:" << endl;
-	show(f,d.x,ny,group.active);
+        if(main) cout << "\nDistributed input:" << endl;
+        show(f,d.x,ny,group.active);
       }
 
       size_t align=sizeof(Complex);
@@ -147,55 +154,55 @@ int main(int argc, char* argv[])
       gatherx(f, flocal(), d, 1, group.active);
 
       if(!quiet && main) {
-	cout << "\nGathered input:\n" << flocal << endl;
+        cout << "\nGathered input:\n" << flocal << endl;
       }
 
-      fft.Forward(f);
+      fft.Forward(f,g);
 
       if(!quiet && nx*ny < outlimit) {
-      	if(main) cout << "\nDistributed output:" << endl;
-      	show(f,nx,d.y,group.active);
+        if(main) cout << "\nDistributed output:" << endl;
+        show(f,nx,d.y,group.active);
       }
       
       array2<Complex> fgather(nx,ny,align);
-      gathery(f, fgather(), d, 1, group.active);
+      gathery(g, fgather(), d, 1, group.active);
 
       MPI_Barrier(group.active);
       if(main) {
-	localForward.fft(flocal);
-	if(!quiet) {
-	  cout << "\nGathered output:\n" << fgather << endl;
-	  cout << "\nLocal output:\n" << flocal << endl;
-	}
+        localForward.fft(flocal);
+        if(!quiet) {
+          cout << "\nGathered output:\n" << fgather << endl;
+          cout << "\nLocal output:\n" << flocal << endl;
+        }
         double maxerr=0.0, norm=0.0;
         unsigned int stop=d.X*d.Y;
         for(unsigned int i=0; i < stop; i++) {
           maxerr=std::max(maxerr,abs(fgather(i)-flocal(i)));
           norm=std::max(norm,abs(flocal(i)));
         }
-	cout << "max error: " << maxerr << endl;
+        cout << "max error: " << maxerr << endl;
         if(maxerr > 1e-12*norm) {
-	  cerr << "CAUTION: max error is LARGE!" << endl;
-	  retval += 1;
-	}
+          cerr << "CAUTION: max error is LARGE!" << endl;
+          retval += 1;
+        }
       }
 
-      fft.Backward(f);
+      fft.Backward(g,f);
       fft.Normalize(f);
 
       if(!quiet && nx*ny < outlimit) {
-      	if(main) cout << "\nDistributed inverse:" << endl;
-      	show(f,d.x,ny,group.active);
+        if(main) cout << "\nDistributed inverse:" << endl;
+        show(f,d.x,ny,group.active);
       }
 
       gatherx(f, fgather(), d, 1, group.active);
       MPI_Barrier(group.active);
       if(main) {
-	localBackward.fftNormalized(flocal);
-	if(!quiet) {
-	  cout << "\nGathered inverse:\n" << fgather << endl;
-	  cout << "\nLocal inverse:\n" << flocal << endl;
-	}
+        localBackward.fftNormalized(flocal);
+        if(!quiet) {
+          cout << "\nGathered inverse:\n" << fgather << endl;
+          cout << "\nLocal inverse:\n" << flocal << endl;
+        }
         retval += checkerror(flocal(),fgather(),d.X*d.Y);
       }
 
@@ -209,22 +216,24 @@ int main(int argc, char* argv[])
   
     } else {
       if(N > 0) {
-	double *T=new double[N];
-	for(unsigned int i=0; i < N; ++i) {
-	  init(f,d);
-	  seconds();
-	  fft.Forward(f);
-	  fft.Backward(f);
-	  fft.Normalize(f);
-	  T[i]=seconds();
-	}    
-	if(!quiet && nx*ny < outlimit) show(f,d.x,d.y,group.active);
-	if(main) timings("FFT timing:",nx,T,N);
-	delete [] T;
+        double *T=new double[N];
+        for(unsigned int i=0; i < N; ++i) {
+          init(f,d);
+          seconds();
+          fft.Forward(f);
+          fft.Backward(f);
+          fft.Normalize(f);
+          T[i]=seconds();
+        }    
+        if(!quiet && nx*ny < outlimit) show(f,d.x,d.y,group.active);
+        if(main) timings("FFT timing:",nx,T,N);
+        delete [] T;
       }
     }
 
     deleteAlign(f);
+    if(!inplace)
+      deleteAlign(g);
   }
   
   MPI_Finalize();

@@ -1170,8 +1170,10 @@ class mrcfft1d : public fftwblock<double,fftw_complex>,
                  public Threadtable<keytype3,keyless3> {
   static Table threadtable;
 public:
-  mrcfft1d(unsigned int nx, unsigned int M, size_t istride, size_t ostride,
-           size_t idist, size_t odist, double *in=NULL, Complex *out=NULL,
+  mrcfft1d(unsigned int nx, unsigned int M,
+           size_t istride, size_t ostride,
+           size_t idist, size_t odist,
+           double *in=NULL, Complex *out=NULL,
            unsigned int threads=maxthreads) 
     : fftw(std::max((realsize(nx,in,out)-2)*istride+(M-1)*idist+2,
                     2*(nx/2*ostride+(M-1)*odist+1)),-1,threads,nx),
@@ -1181,12 +1183,15 @@ public:
   threaddata lookup(bool inplace, unsigned int threads) {
     return Lookup(threadtable,keytype3(nx,Q,R,threads,inplace));
   }
+  
   void store(bool inplace, const threaddata& data) {
     Store(threadtable,keytype3(nx,Q,R,data.threads,inplace),data);
   }
+  
   void fftNormalized(double *in, Complex *out=NULL) {
     fftw::fftNormalized<double,Complex>(nx/2+1,M,ostride,odist,in,out,false);
   }
+  
   void fft0Normalized(double *in, Complex *out=NULL) {
     fftw::fftNormalized<double,Complex>(nx/2+1,M,ostride,odist,in,out,true);
   }
