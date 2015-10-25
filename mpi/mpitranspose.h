@@ -2,10 +2,11 @@
 #define __mpitranspose_h__ 1
 
 /* 
-   Globally transpose an N x M matrix of blocks of L complex elements
-   distributed over the second dimension. In-place versions preserve inputs.
+   Globally transpose an N x M matrix of blocks of L words of type T.
+   The in-place versions preserve inputs.
 
-   Beginner in-place and out-of-place interfaces:
+   Beginner in-place and out-of-place interfaces. Upper case letters denote
+   global dimensions; lower case letters denote distributed dimensions: 
    
    transpose(in);                 n x M -> m x N
    transpose(in,true,true,out);   n x M -> m x N
