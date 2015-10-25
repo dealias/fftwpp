@@ -224,7 +224,6 @@ int main(int argc, char* argv[])
       }
     } else {
       if(N > 0) {
-    
 	double *T=new double[N];
 	for(unsigned int i=0; i < N; ++i) {
 	  init(f,d);
@@ -234,8 +233,7 @@ int main(int argc, char* argv[])
 	  fft.Normalize(f);
 	  T[i]=seconds();
 	}
-	if(!quiet) show(f,d.x,d.y,d.Z,group.active);
-        
+	if(!quiet && nx*ny*nz < outlimit) show(f,d.x,d.y,d.Z,group.active);
 	if(main) timings("FFT timing:",nx,T,N);
 	delete[] T;
       }
