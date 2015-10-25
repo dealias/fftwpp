@@ -269,17 +269,17 @@ public:
       zBackward=new mfft1d(d.Z,1,M,1,d.Z,out,out,threads);
       Tyz=new mpitranspose<Complex>(d.Y,d.z,d.yz.x,d.Z,1,out,d.yz.communicator,
                                     yz,d.communicator);
-      yForward=new mfft1d(d.Y,-1,d.z,d.z,1,in,out,innerthreads);
+      yForward=new mfft1d(d.Y,-1,d.z,d.z,1,out,out,innerthreads);
       yBackward=new mfft1d(d.Y,1,d.z,d.z,1,out,out,innerthreads);
     } else {
       yzForward=new fft2d(d.Y,d.Z,-1,in,out,innerthreads);
-      yzBackward=new fft2d(d.Y,d.Z,1,in,out,innerthreads);
+      yzBackward=new fft2d(d.Y,d.Z,1,out,out,innerthreads);
       Tyz=NULL;
     }
     
     Txy=d.z > 0 ?
-      new mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,out,d.xy.communicator,xy,
-                                d.communicator) : NULL;
+      new mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,out,d.xy.communicator,
+                                xy,d.communicator) : NULL;
     unsigned int M=d.xy.y*d.z;
     xForward=new mfft1d(d.X,-1,M,M,1,out,out,threads);
     xBackward=new mfft1d(d.X,1,M,M,1,in,out,threads);
@@ -288,16 +288,16 @@ public:
   }
   
   fft3dMPI(const split3& d, Complex *in, Complex *out, const mpiOptions& xy,
-           const mpiOptions& yz) : fftw(2*d.x*d.y*d.Z,0,xy.threads,d.X*d.Y*d.Z),
-                                   d(d) {init(in,out,xy,yz);}
+           const mpiOptions& yz) :
+    fftw(2*d.x*d.y*d.Z,0,xy.threads,d.X*d.Y*d.Z), d(d) {init(in,out,xy,yz);}
   
   fft3dMPI(const split3& d, Complex *in, Complex *out,
            const mpiOptions& xy=defaultmpiOptions) :
     fftw(2*d.x*d.y*d.Z,0,xy.threads,d.X*d.Y*d.Z), d(d) {init(in,out,xy,xy);}
     
   fft3dMPI(const split3& d, Complex *in, const mpiOptions& xy,
-           const mpiOptions& yz) : fftw(2*d.x*d.y*d.Z,0,xy.threads,d.X*d.Y*d.Z),
-                                   d(d) {init(in,in,xy,yz);}
+           const mpiOptions& yz) :
+    fftw(2*d.x*d.y*d.Z,0,xy.threads,d.X*d.Y*d.Z), d(d) {init(in,in,xy,yz);}
   
   fft3dMPI(const split3& d, Complex *in,
            const mpiOptions& xy=defaultmpiOptions) :

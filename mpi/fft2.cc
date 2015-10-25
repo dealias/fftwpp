@@ -151,7 +151,7 @@ int main(int argc, char* argv[])
       array2<Complex> flocal(nx,ny,align);
       fft2d localForward(-1,flocal);
       fft2d localBackward(1,flocal);
-      gatherx(f, flocal(), d, 1, group.active);
+      gatherx(f,flocal(),d,1,group.active);
 
       if(!quiet && main) {
         cout << "\nGathered input:\n" << flocal << endl;
@@ -165,7 +165,7 @@ int main(int argc, char* argv[])
       }
       
       array2<Complex> fgather(nx,ny,align);
-      gathery(g, fgather(), d, 1, group.active);
+      gathery(g,fgather(),d,1,group.active);
 
       MPI_Barrier(group.active);
       if(main) {
@@ -195,7 +195,7 @@ int main(int argc, char* argv[])
         show(f,d.x,ny,group.active);
       }
 
-      gatherx(f, fgather(), d, 1, group.active);
+      gatherx(f,fgather(),d,1,group.active);
       MPI_Barrier(group.active);
       if(main) {
         localBackward.fftNormalized(flocal);

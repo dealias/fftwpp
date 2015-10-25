@@ -165,7 +165,7 @@ int main(int argc, char* argv[])
       array3<Complex> fgathered(nx,ny,nz,align);
       fft3d localForward(-1,fgathered);
       fft3d localBackward(1,fgathered);
-      gatherxy(f, fgathered(), d, group.active);
+      gatherxy(f,fgathered(),d,group.active);
 
       array3<Complex> flocal(nx,ny,nz,align);
       init(flocal(),d.X,d.Y,d.Z,0,0,0,d.X,d.Y,d.Z);
@@ -206,7 +206,7 @@ int main(int argc, char* argv[])
 	show(f,d.x,d.y,d.Z,group.active);
       }
 
-      gatherxy(f, fgathered(), d, group.active);
+      gatherxy(f,fgathered(),d,group.active);
       
       if(!quiet && main) {
 	cout << "Gathered output:\n" <<  fgathered << endl;
