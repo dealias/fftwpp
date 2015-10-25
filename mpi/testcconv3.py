@@ -44,12 +44,14 @@ def main(argv):
         print "Error: executable", pname, "not present!"
         retval += 1
     else:
+        Alist = [2,4,8,16]
         Xlist = [2,1,3,4,5,6,7,8,9,10,random.randint(start,stop)]
         Ylist = [2,1,3,4,5,6,7,8,9,10,random.randint(start,stop)]
         Zlist = [2,1,3,10,random.randint(start,stop)]
         Plist = [8,4,3,2,random.randint(9,12),1]
 
         if(shortrun):
+            Alist = [2,4]
             Xlist = [2,random.randint(6,32)]
             Ylist = [2,random.randint(6,32)]
             Zlist = [2,random.randint(6,32)]
@@ -69,22 +71,25 @@ def main(argv):
             for X in Xlist:
                 for Y in Ylist:
                     for Z in Zlist:
-                        ntest += 1
-                        args = []
-                        args.append("-x" + str(X))
-                        args.append("-y" + str(Y))
-                        args.append("-z" + str(Z))
-                        args.append("-N1")
-                        args.append("-s1")
-                        args.append("-a1")
-                        args.append("-T1")
-                        args.append("-tq")
-                        rtest, cmd = runtest(pname, P, args, logfile, timeout)
-                        if not rtest == 0:
-                            nfails += 1
-                            failcases += " ".join(cmd)
-                            failcases += "\t(code " + str(rtest) + ")"
-                            failcases += "\n"
+                        for A in Alist:
+                            ntest += 1
+                            args = []
+                            args.append("-x" + str(X))
+                            args.append("-y" + str(Y))
+                            args.append("-z" + str(Z))
+                            args.append("-A" + str(A))
+                            args.append("-N1")
+                            args.append("-s1")
+                            args.append("-a1")
+                            args.append("-T1")
+                            args.append("-t")
+                            args.append("-q")
+                            rtest, cmd = runtest(pname, P, args, logfile, timeout)
+                            if not rtest == 0:
+                                nfails += 1
+                                failcases += " ".join(cmd)
+                                failcases += "\t(code " + str(rtest) + ")"
+                                failcases += "\n"
 
         if nfails > 0:
             print "\nFailure cases:"
