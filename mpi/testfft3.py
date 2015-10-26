@@ -67,7 +67,7 @@ def main(argv):
             for X in Xlist:
                 for Y in Ylist:
                     for Z in Zlist:
-                        for i in range(0,2):
+                        for i in [0, 1]:
                             ntest += 1
                             args = []
                             args.append("-x" + str(X))
