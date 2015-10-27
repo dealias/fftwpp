@@ -204,7 +204,6 @@ class mpitranspose {
 private:
   unsigned int N,m,n,M;
   unsigned int L;
-  T *Work;
   T *input,*output,*work;
   MPI_Comm communicator;
   mpiOptions options;
@@ -308,11 +307,10 @@ public:
     nlast=ceilquotient(N,n0)-1;
     np=localdimension(N,nlast,size);
     
-    if(Work == NULL) {
+    if(work == NULL) {
       allocated=std::max(N*m,n*M)*L;
-      Array::newAlign(Work,allocated,sizeof(T));
+      Array::newAlign(this->work,allocated,sizeof(T));
     } else allocated=0;
-    work=Work;
     
     if(size == 1) {
       a=1;
@@ -407,7 +405,7 @@ public:
                MPI_Comm communicator=MPI_COMM_WORLD,
                const mpiOptions& options=defaultmpiOptions,
                MPI_Comm global=0) :
-    N(N), m(m), n(n), M(M), L(L), Work(work), communicator(communicator),
+    N(N), m(m), n(n), M(M), L(L), work(work), communicator(communicator),
     options(options), global(global ? global : communicator) {
     setup(data);
   }
@@ -417,7 +415,7 @@ public:
                T *data, MPI_Comm communicator=MPI_COMM_WORLD,
                const mpiOptions& options=defaultmpiOptions,
                MPI_Comm global=0) :
-    N(N), m(m), n(n), M(M), L(L), Work(NULL), communicator(communicator),
+    N(N), m(m), n(n), M(M), L(L), work(NULL), communicator(communicator),
     options(options), global(global ? global : communicator) {
     setup(data);
   }
@@ -427,7 +425,7 @@ public:
                MPI_Comm communicator=MPI_COMM_WORLD,
                const mpiOptions& options=defaultmpiOptions,
                MPI_Comm global=0) :
-    N(N), m(m), n(n), M(M), L(1), Work(work), communicator(communicator),
+    N(N), m(m), n(n), M(M), L(1), work(work), communicator(communicator),
     options(options), global(global ? global : communicator) {
     setup(data);
   }
@@ -458,13 +456,13 @@ public:
     uniform=uniform && a*b == size;
     subblock=a > 1 && rank < a*b;
     
-    Tout1=uniform || subblock ? new Transpose(n*a,b,m*L,data,work,
+    Tout1=uniform || subblock ? new Transpose(n*a,b,m*L,data,this->work,
                                               threads) : NULL;
-    Tin1=uniform ? new Transpose(b,n*a,m*L,data,work,threads) : NULL;
+    Tin1=uniform ? new Transpose(b,n*a,m*L,data,this->work,threads) : NULL;
     
     if(subblock) {
-      Tin2=new Transpose(a,n*b,m*L,data,work,threads);
-      Tout2=new Transpose(n*b,a,m*L,data,work,threads);
+      Tin2=new Transpose(a,n*b,m*L,data,this->work,threads);
+      Tout2=new Transpose(n*b,a,m*L,data,this->work,threads);
     } else {Tin2=Tout2=NULL;}
     
     if(size == 1) return;
@@ -563,7 +561,7 @@ public:
     if(Tout3) delete Tout3;
     if(Tin3) delete Tin3;
     if(allocated)
-      Array::deleteAlign(Work,allocated);
+      Array::deleteAlign(work,allocated);
   }
   
   void fillindices(int S, int size) {
@@ -867,9 +865,9 @@ public:
   }
   
   void transpose(T *in, bool intranspose=true, bool outtranspose=true,
-                 T *out=0, T *work=0)
+                 T *out=0)
   {
-    transpose1(in,intranspose,outtranspose,out,work);
+    transpose1(in,intranspose,outtranspose,out);
     if(overlap) {
       if(!inflag) Wait0();
       Wait1();
@@ -877,18 +875,17 @@ public:
   }
   
   void transpose1(T *in, bool intranspose=true, bool outtranspose=true,
-                  T *out=0, T *work=0)
+                  T *out=0)
   {
     inflag=intranspose;
-    transpose2(in,intranspose,outtranspose,out,work);
+    transpose2(in,intranspose,outtranspose,out);
     if(inflag)
       wait0();
   }
   
   void transpose2(T *in, bool intranspose=true, bool outtranspose=true,
-                  T *out=0, T *work=0)
+                  T *out=0)
   {
-    this->work=work ? work : Work;
     if(!out) out=in;
     input=in;
     output=out;
