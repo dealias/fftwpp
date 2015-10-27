@@ -23,19 +23,19 @@
    transpose(in,false,false);     N x m -> M x n
    transpose(in,false,false,out); N x m -> M x n
     
-   Advanced Interface (example):
+   Advanced interface (example):
     
-   transpose1(in);
+   itranspose(in);
    // User computation
-   wait1();
+   wait();
 
-   Guru Interface (example):
+   Guru interface (example):
     
-   transpose2(in);
-   // User computation 0; // Typically longest
+   itranspose(in);
+   // User computation 0 (typically longest)
    wait0();
    // User computation 1      
-   wait2();
+   wait1();
 */  
   
 #include <mpi.h>
@@ -854,36 +854,24 @@ public:
   }
   
   void wait1() {
-    if(overlap) {
-      if(!inflag) Wait0();
-      Wait1();
-    }
+    if(overlap) Wait1();
   }
   
-  void wait2() {
-    if(overlap) Wait1();
+  void wait() {
+    if(overlap) {
+      Wait0();
+      Wait1();
+    }
   }
   
   void transpose(T *in, bool intranspose=true, bool outtranspose=true,
                  T *out=0)
   {
-    transpose1(in,intranspose,outtranspose,out);
-    if(overlap) {
-      if(!inflag) Wait0();
-      Wait1();
-    }
+    itranspose(in,intranspose,outtranspose,out);
+    wait();
   }
   
-  void transpose1(T *in, bool intranspose=true, bool outtranspose=true,
-                  T *out=0)
-  {
-    inflag=intranspose;
-    transpose2(in,intranspose,outtranspose,out);
-    if(inflag)
-      wait0();
-  }
-  
-  void transpose2(T *in, bool intranspose=true, bool outtranspose=true,
+  void itranspose(T *in, bool intranspose=true, bool outtranspose=true,
                   T *out=0)
   {
     if(!out) out=in;
