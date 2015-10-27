@@ -32,10 +32,10 @@
    Guru Interface (example):
     
    transpose2(in);
-   // User computation 0
-   wait0(); // Typically longest when intranspose=false
+   // User computation 0; // Typically longest
+   wait0();
    // User computation 1      
-   wait2(); // Typically longest when intranspose=true
+   wait2();
 */  
   
 #include <mpi.h>
@@ -765,14 +765,16 @@ public:
     }
     if(subblock)
       Ialltoall(work,n*m*sizeof(T)*a*L,output,split,Request,sched1);
+    else outphase();
   }             
   
   void outsync0() {
     if(subblock)
       Wait(2*(splitsize-1),Request,sched1);
+    else outsync();
   }
   
-  void outphase1() {
+  void outphase() {
     if(size == 1) return;
     // Outer transpose a x a matrix of N/a x M/a blocks over a processes
     if(subblock)
@@ -788,12 +790,20 @@ public:
                 sched2);
   }
   
-  void outsync1() {
+  void outphase1() {
+    if(subblock) outphase();
+  }
+  
+  void outsync() {
     if(size == 1) return;
     if(!uniform)
       Wait(2*(size-(subblock ? a*b : 1)),request,sched);
     if(uniform || subblock)
       Wait(2*(split2size-1),Request,sched2);
+  }
+  
+  void outsync1() {
+    if(subblock) outsync();
   }
 
   void nMTranspose(T *in=0, T *out=0) {
