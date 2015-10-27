@@ -677,7 +677,7 @@ public:
 
     a=std::min(rows,threads);
     b=std::min(cols,threads/a);
-    
+
     unsigned int n=ceilquotient(rows,a);
     unsigned int m=ceilquotient(cols,b);
     
@@ -738,27 +738,41 @@ public:
       exit(1);
     }
 #ifndef FFTWPP_SINGLE_THREAD
-    if(threads == 1)
-#endif      
-      fftw_execute_r2r(plan,(double *) in,(double*) out);
-#ifndef FFTWPP_SINGLE_THREAD
-    else {
-      int A=a, B=b;
+      if(a > 1) {
+        if(b > 1) {
+          int A=a, B=b;
 #pragma omp parallel for num_threads(A)
-      for(unsigned int i=0; i < a; ++i) {
-        unsigned int I=i*nlength;
+          for(unsigned int i=0; i < a; ++i) {
+            unsigned int I=i*nlength;
+#pragma omp parallel for num_threads(B)
+            for(unsigned int j=0; j < b; ++j) {
+              unsigned int J=j*mlength;
+              fftw_execute_r2r((i < ilast && j < jlast) ? plan : plan2,
+                               (double *) in+cols*I+J,
+                               (double *) out+rows*J+I);
+            }
+          }
+        } else {
+          int A=a;
+#pragma omp parallel for num_threads(A)
+          for(unsigned int i=0; i < a; ++i) {
+            unsigned int I=i*nlength;
+            fftw_execute_r2r(i < ilast ? plan : plan2,
+                             (double *) in+cols*I,(double *) out+I);
+          }
+        }
+      } else if(b > 1) {
+        int B=b;
 #pragma omp parallel for num_threads(B)
         for(unsigned int j=0; j < b; ++j) {
           unsigned int J=j*mlength;
-          fftw_execute_r2r((i < ilast && j < jlast) ? plan : plan2,
-                           (double *) in+cols*I+J,
-                           (double *) out+rows*J+I);
+          fftw_execute_r2r(j < jlast ? plan : plan2,
+                           (double *) in+J,(double *) out+rows*J);
         }
-      }
-    }
+      } else
 #endif
+      fftw_execute_r2r(plan,(double *) in,(double*) out);
   }
-
 };
 
 template<class T, class L>

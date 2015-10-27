@@ -18,6 +18,7 @@ xlist = [1,2,3,4,5]
 xlist.append(random.randint(1, maxsize))
 ylist = [1,2,3,4,5]
 ylist.append(random.randint(1, maxsize))
+zlist = [1,3]
 
 tlist = [1,2,3,4,5,6,7]
 
@@ -30,24 +31,25 @@ nfailures = 0
 
 for mx in xlist:
     for my in ylist:
-        for t in tlist:
-            ntests += 1
-            command = ["./" + prog];
-            command.append("-x"+str(mx))
-            command.append("-y"+str(my))
-            command.append("-T"+str(t))
-            print " ".join(command),
-            p = Popen(command, stdout = PIPE, stderr = PIPE)
-            p.wait() # sets the return code
-            prc = p.returncode
-            out, err = p.communicate()
-            #print prc
-            if(prc == 0):
-                print "\tok"
-            else:
-                nfailures += 1
-                print "\tERROR!"
-
+        for mz in zlist:
+            for t in tlist:
+                ntests += 1
+                command = ["./" + prog];
+                command.append("-x"+str(mx))
+                command.append("-y"+str(my))
+                command.append("-z"+str(mz))
+                command.append("-T"+str(t))
+                print " ".join(command),
+                p = Popen(command, stdout = PIPE, stderr = PIPE)
+                p.wait() # sets the return code
+                prc = p.returncode
+                out, err = p.communicate()
+                #print prc
+                if(prc == 0):
+                    print "\tpass"
+                else:
+                    nfailures += 1
+                    print "\tERROR!"
 print
 
 if(nfailures == 0):

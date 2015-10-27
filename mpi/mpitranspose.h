@@ -5,7 +5,7 @@
    Globally transpose an N x M matrix of blocks of L words of type T.
    The in-place versions preserve inputs.
 
-   Beginner in-place and out-of-place interfaces. Upper case letters denote
+   Blocking in-place and out-of-place interfaces. Upper case letters denote
    global dimensions; lower case letters denote distributed dimensions: 
    
    transpose(in);                 n x M -> m x N
@@ -23,13 +23,13 @@
    transpose(in,false,false);     N x m -> M x n
    transpose(in,false,false,out); N x m -> M x n
     
-   Advanced interface (example):
+   Non-blocking interface (example):
     
    itranspose(in);
    // User computation
    wait();
 
-   Guru interface (example):
+   Double non-blocking interface (example):
     
    itranspose(in);
    // User computation 0 (typically longest)
@@ -54,11 +54,10 @@ template<class T>
 inline void copy(const T *from, T *to, unsigned int length,
 		 unsigned int threads=1)
 {
-#ifndef FFTWPP_SINGLE_THREAD
-#pragma omp parallel for num_threads(threads)
-#endif  
+  PARALLEL(
   for(unsigned int i=0; i < length; ++i)
     to[i]=from[i];
+    );
 }
 
 // Copy count blocks spaced stride apart to contiguous blocks in dest.
@@ -67,8 +66,10 @@ inline void copytoblock(const T *src, T *dest,
                         unsigned int count, unsigned int length,
                         unsigned int stride, unsigned int threads=1)
 {
+  PARALLEL(
   for(unsigned int i=0; i < count; ++i)
-    copy(src+i*stride,dest+i*length,length,threads);
+    copy(src+i*stride,dest+i*length,length);
+    );
 }
 
 // Copy count blocks spaced stride apart from contiguous blocks in src.
@@ -77,8 +78,10 @@ inline void copyfromblock(const T *src, T *dest,
                           unsigned int count, unsigned int length,
                           unsigned int stride, unsigned int threads=1)
 {
+  PARALLEL(
   for(unsigned int i=0; i < count; ++i)
-    copy(src+i*length,dest+i*stride,length,threads);
+    copy(src+i*length,dest+i*stride,length);
+    );
 }
 
 void fill1_comm_sched(int *sched, int which_pe, int npes);
@@ -137,39 +140,9 @@ inline int localdimension(int N, int rank, int size)
   return n;
 }
 
-inline int Ialltoallv(void *sendbuf, int *sendcounts, int *senddisplacements,
-                      void *recvbuf, int *recvcounts, int *recvdisplacements,
-                      MPI_Comm comm, MPI_Request *request, int *sched=NULL)
-{
-  if(!sched)
-    return MPI_Ialltoallv(sendbuf,sendcounts,senddisplacements,MPI_BYTE,
-                          recvbuf,recvcounts,recvdisplacements,MPI_BYTE,comm,
-                          request);
-  else {
-    int size;
-    int rank;
-    MPI_Comm_size(comm,&size);
-    MPI_Comm_rank(comm,&rank);
-    MPI_Request *srequest=request+size-1;
-    for(int p=0; p < size; ++p) {
-      int P=sched[p];
-      if(P != rank) {
-        int index=P < rank ? P : P-1;
-        MPI_Irecv((char *) recvbuf+recvdisplacements[P],recvcounts[P],
-		  MPI_BYTE,P,0,comm,request+index);
-        MPI_Isend((char *) sendbuf+senddisplacements[P],sendcounts[P],
-		  MPI_BYTE,P,0,comm,srequest+index);
-      }
-    }
-
-    copy((char *) sendbuf+senddisplacements[rank],
-         (char *) recvbuf+recvdisplacements[rank],sendcounts[rank]);
-    return 0;
-  }
-}
-  
 inline int Ialltoall(void *sendbuf, int count, void *recvbuf,
-                     MPI_Comm comm, MPI_Request *request, int *sched=NULL)
+                     MPI_Comm comm, MPI_Request *request, int *sched=NULL,
+                     unsigned int threads=1)
 {
   if(!sched)
     return MPI_Ialltoall(sendbuf,count,MPI_BYTE,recvbuf,count,MPI_BYTE,comm,
@@ -192,7 +165,7 @@ inline int Ialltoall(void *sendbuf, int count, void *recvbuf,
     }
   
     int offset=rank*count;
-    copy((char *) sendbuf+offset,(char *) recvbuf+offset,count);
+    copy((char *) sendbuf+offset,(char *) recvbuf+offset,count,threads);
     return 0;
   }
 }
@@ -580,7 +553,8 @@ public:
   int ni(int P) {return P < nlast ? n0 : (P == nlast ? np : 0);}
   int mi(int P) {return P < mlast ? m0 : (P == mlast ? mp : 0);}
   
-  void Ialltoallout(void* sendbuf, void *recvbuf, int start) {
+  void Ialltoallout(void* sendbuf, void *recvbuf, int start,
+                    unsigned int threads) {
     MPI_Request *srequest=rank >= start ? request+size-1 : request+size-start;
     int S=sizeof(T)*L;
     int nS=n*S;
@@ -599,11 +573,13 @@ public:
     }
 
     if(rank >= start)
-      copy((char *) sendbuf+nm0*rank,(char *) recvbuf+mn0*rank,nS*mi(rank));
+      copy((char *) sendbuf+nm0*rank,(char *) recvbuf+mn0*rank,nS*mi(rank),
+           threads);
   }
 
   
-  void Ialltoallin(void* sendbuf, void *recvbuf, int start) {
+  void Ialltoallin(void* sendbuf, void *recvbuf, int start,
+                   unsigned int threads) {
     MPI_Request *srequest=rank >= start ? request+size-1 : request+size-start;
     int S=sizeof(T)*L;
     int nS=n*S;
@@ -622,7 +598,8 @@ public:
     }
 
     if(rank >= start)
-      copy((char *) sendbuf+mn0*rank,(char *) recvbuf+nm0*rank,mS*ni(rank));
+      copy((char *) sendbuf+mn0*rank,(char *) recvbuf+nm0*rank,mS*ni(rank),
+           threads);
   }
 
 // inphase: N x m -> n x M
@@ -636,9 +613,9 @@ public:
     }
     if(uniform || subblock)
       Ialltoall(input,n*m*sizeof(T)*(a > 1 ? b : a)*L,work,split2,Request,
-                sched2);
+                sched2,threads);
     if(!uniform) {
-      if(sched) Ialltoallin(input,work,a > 1 ? a*b : 0);
+      if(sched) Ialltoallin(input,work,a > 1 ? a*b : 0,threads);
       else MPI_Ialltoallv(input,recvcounts,recvdisplacements,MPI_BYTE,
                           work,sendcounts,senddisplacements,MPI_BYTE,
                           communicator,request);
@@ -656,7 +633,7 @@ public:
   void inphase1() {
     if(subblock) {
       Tin2->transpose(work,output); // a x n*b x m*L
-      Ialltoall(output,n*m*sizeof(T)*a*L,work,split,Request,sched1);
+      Ialltoall(output,n*m*sizeof(T)*a*L,work,split,Request,sched1,threads);
     }
   }
 
@@ -677,23 +654,25 @@ public:
         unsigned int ostride=b*block;
         unsigned int extra=(M-m0*a*b)*L;
 
+        PARALLEL(
         for(unsigned int i=0; i < n; ++i) {
           for(int j=0; j < a; ++j)
             copytoblock(work+(a*i+j)*block,output+(a*i+j)*ostride+i*extra,b,
                         block,istride);
-        }
+        });
         if(extra > 0) {
           unsigned int lastblock=mp*L;
           istride=n*block;
           ostride=mlast*block+lastblock;
 
+          PARALLEL(
           for(unsigned int j=0; j < n; ++j) {
             T *dest=output+j*ostride;
             if(mlast > a*b)
               copytoblock(work+j*block+istride*a*b,dest+block*a*b,mlast-a*b,
                           block,istride);
             copy(work+j*lastblock+mlast*istride,dest+mlast*block,lastblock);
-          }
+          });
         }
       } else {
         unsigned int lastblock=mp*L;
@@ -701,11 +680,12 @@ public:
         unsigned int istride=n*block;
         unsigned int ostride=mlast*block+lastblock;
 
+        PARALLEL(
         for(unsigned int j=0; j < n; ++j) {
           T *dest=output+j*ostride;
           copytoblock(work+j*block,dest,mlast,block,istride);
           copy(work+j*lastblock+mlast*istride,dest+mlast*block,lastblock);
-        }
+        });
       }
     }
   }
@@ -730,23 +710,25 @@ public:
         unsigned int ostride=b*block;
         unsigned int extra=(M-m0*a*b)*L;
 
+        PARALLEL(
         for(unsigned int i=0; i < n; ++i) {
           for(int j=0; j < a; ++j)
             copyfromblock(input+(a*i+j)*ostride+i*extra,work+(a*i+j)*block,b,
                           block,istride);
-        }
+        });
         if(extra > 0) {
           unsigned int lastblock=mp*L;
           istride=n*block;
           ostride=mlast*block+lastblock;
 
+          PARALLEL(
           for(unsigned int j=0; j < n; ++j) {
             T *src=input+j*ostride;
             if(mlast > a*b)
               copyfromblock(src+block*a*b,work+j*block+istride*a*b,mlast-a*b,
                             block,istride);
             copy(src+mlast*block,work+j*lastblock+mlast*istride,lastblock);
-          }
+          });
         }
       } else {
         unsigned int lastblock=mp*L;
@@ -754,15 +736,16 @@ public:
         unsigned int istride=n*block;
         unsigned int ostride=mlast*block+lastblock;
 
+        PARALLEL(
         for(unsigned int j=0; j < n; ++j) {
           T *src=input+j*ostride;
           copyfromblock(src,work+j*block,mlast,block,istride);
           copy(src+mlast*block,work+j*lastblock+mlast*istride,lastblock);
-        }
+        });
       }
     }
     if(subblock)
-      Ialltoall(work,n*m*sizeof(T)*a*L,output,split,Request,sched1);
+      Ialltoall(work,n*m*sizeof(T)*a*L,output,split,Request,sched1,threads);
     else outphase();
   }             
   
@@ -778,14 +761,14 @@ public:
     if(subblock)
       Tout2->transpose(output,work); // n*b x a x m*L
     if(!uniform) {
-      if(sched) Ialltoallout(work,output,a > 1 ? a*b : 0);
+      if(sched) Ialltoallout(work,output,a > 1 ? a*b : 0,threads);
       else MPI_Ialltoallv(work,sendcounts,senddisplacements,MPI_BYTE,
                           output,recvcounts,recvdisplacements,MPI_BYTE,
                           communicator,request);
     }
     if(uniform || subblock)
       Ialltoall(work,n*m*sizeof(T)*(a > 1 ? b : a)*L,output,split2,Request,
-                sched2);
+                sched2,threads);
   }
   
   void outphase1() {
