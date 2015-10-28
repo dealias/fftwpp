@@ -144,9 +144,9 @@ int main(int argc, char* argv[])
     Complex *g=inplace ? f : ComplexAlign(d.n);
     
     fft3dMPI fft(d,f,g,mpiOptions(divisor,alltoall));
-    if(main) std::cout << "Allocating " << d.n << " bytes." << endl;
 
     if(test) {
+      if(main) std::cout << "Allocated " << d.n << " bytes." << endl;
       init(f,d);
 
       if(!quiet && nx*ny*nz < outlimit) {
@@ -239,6 +239,7 @@ int main(int argc, char* argv[])
                               FFT[0]->Tyz ? FFT[0]->Tyz->Options() :
                               defaultmpiOptions);
         }
+        if(main) std::cout << "Allocated " << M*d.n << " bytes." << endl;
         
 	double *T=new double[N];
 	for(unsigned int i=0; i < N; ++i) {
