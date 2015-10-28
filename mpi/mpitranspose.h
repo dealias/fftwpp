@@ -295,7 +295,7 @@ public:
       T2 += t3-t2;
     }
     latency=std::max(T1*(N2-N1)/(T2-T1)-N1,0.0)*sizeof(double);
-    if(globalrank == 0)
+    if(globalrank == 0 && options.verbose)
       std::cout << std::endl << "latency=" << latency << std::endl;
     MPI_Comm_free(&split); 
     return latency;
@@ -334,7 +334,7 @@ public:
     if(options.a >= size)
       options.a=-1;
       
-    if(globalrank == 0)
+    if(globalrank == 0 && options.verbose)
       std::cout << std::endl << "Initializing " << N << "x" << M
                 << " transpose of " << L*sizeof(T) << "-byte elements over " 
                 << size << " processes." << std::endl;
@@ -364,12 +364,13 @@ public:
       
     uniform=divisible(size,M,N);
     if(alimit > astart+1 || stop-start >= 1) {
-      if(globalrank == 0)
+      if(globalrank == 0 && options.verbose)
         std::cout << std::endl << "Timing:" << std::endl;
       
       double T0=DBL_MAX;
       for(int alltoall=start; alltoall <= stop; ++alltoall) {
-        if(globalrank == 0) std::cout << "alltoall=" << alltoall << std::endl;
+        if(globalrank == 0 && options.verbose)
+          std::cout << "alltoall=" << alltoall << std::endl;
         for(a=astart; a < alimit; a++) {
           if(uniform && (size % a != 0)) continue;
           b=std::min(nlast+(n0 == np),mlast+(m0 == mp))/a;
@@ -377,7 +378,7 @@ public:
           init(data);
           double t=time(data);
           deallocate();
-          if(globalrank == 0) {
+          if(globalrank == 0 && options.verbose) {
             std::cout << "a=" << a << ":\ttime=" << t << std::endl;
             if(t < T0) {
               T0=t;
@@ -398,7 +399,7 @@ public:
     b=std::min(nlast+(n0 == np),mlast+(m0 == mp))/a;
     if(b <= 1) {b=a; a=1;}
     
-    if(globalrank == 0)
+    if(globalrank == 0 && options.verbose)
       std::cout << std::endl << "Using alltoall=" << 
         options.alltoall << ", a=" << a << ", b=" << b <<
         ":" << std::endl;
