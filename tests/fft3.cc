@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
       N=atoi(optarg);
       break;
     case 'm':
-      mx=my=atoi(optarg);
+      mx=my=mz=atoi(optarg);
       break;
     case 'x':
       mx=atoi(optarg);
