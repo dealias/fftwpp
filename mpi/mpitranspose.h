@@ -42,13 +42,37 @@
 #include <cstring>
 #include <typeinfo>
 #include "../Complex.h"
-#include "../fftw++.h"
+#include "../seconds.h"
+#include "../Array.h"
+
+#ifndef FFTWPP_SINGLE_THREAD
+#define PARALLEL(code)                                  \
+  if(threads > 1) {                                     \
+    _Pragma("omp parallel for num_threads(threads)")    \
+      code                                              \
+      } else {                                          \
+    code                                                \
+      }
+#else
+#define PARALLEL(code)                          \
+  {                                             \
+    code                                        \
+  }
+#endif
+
+inline unsigned int ceilquotient(unsigned int a, unsigned int b)
+{
+  return (a+b-1)/b;
+}
+
+#include "../transposeoptions.h"
 
 namespace fftwpp {
-#include "../transposeoptions.h"
 
 extern double safetyfactor; // For conservative latency estimate.
 extern bool overlap; // Allow overlapped communication.
+extern double testseconds; // Limit for transpose timing tests
+extern mpiOptions defaultmpiOptions;
 
 template<class T>
 inline void copy(const T *from, T *to, unsigned int length,
@@ -82,6 +106,25 @@ inline void copyfromblock(const T *src, T *dest,
   for(unsigned int i=0; i < count; ++i)
     copy(src+i*length,dest+i*stride,length);
     );
+}
+
+template<class T>
+inline void localtranspose(const T *src, T *dest, unsigned int n,
+                           unsigned int m, unsigned int length,
+                           unsigned int threads)
+{
+  if(n > 1 && m > 1) {
+    unsigned int nlength=n*length;
+    unsigned int mlength=m*length;
+    PARALLEL(
+      for(unsigned int i=0; i < nlength; i += length) {
+        const T *Src=src+i*m;
+        T *Dest=dest+i;
+        for(unsigned int j=0; j < mlength; j += length)
+          copy(Src+j,Dest+j*n,length);
+      });
+  } else
+    copy(src,dest,n*m*length,threads);
 }
 
 void fill1_comm_sched(int *sched, int which_pe, int npes);
@@ -170,8 +213,6 @@ inline int Ialltoall(void *sendbuf, int count, void *recvbuf,
   }
 }
 
-extern mpiOptions defaultmpiOptions;
-  
 template<class T>
 class mpitranspose {
 private:
@@ -200,8 +241,6 @@ private:
   int *sched, *sched1, *sched2;
   MPI_Comm split;
   MPI_Comm split2;
-  Transpose *Tin1,*Tin2,*Tin3;
-  Transpose *Tout1,*Tout2,*Tout3;
   int a,b;
   bool inflag,outflag;
   bool uniform;
@@ -264,9 +303,6 @@ public:
 
   void setup(T *data) {
     threads=options.threads;
-    Tin3=NULL;
-    Tout3=NULL;
-    
     MPI_Comm_size(communicator,&size);
     MPI_Comm_rank(communicator,&rank);
     
@@ -407,7 +443,7 @@ public:
     double sum=0.0;
     unsigned int N=1;
     transpose(data,true,false); // Initialize communication buffers
-    double stop=totalseconds()+fftw::testseconds;
+    double stop=totalseconds()+testseconds;
     for(;;++N) {
       int end;
       double start=rank == 0 ? totalseconds() : 0.0;
@@ -428,15 +464,6 @@ public:
   void init(T *data) {
     uniform=uniform && a*b == size;
     subblock=a > 1 && rank < a*b;
-    
-    Tout1=uniform || subblock ? new Transpose(n*a,b,m*L,data,this->work,
-                                              threads) : NULL;
-    Tin1=uniform ? new Transpose(b,n*a,m*L,data,this->work,threads) : NULL;
-    
-    if(subblock) {
-      Tin2=new Transpose(a,n*b,m*L,data,this->work,threads);
-      Tout2=new Transpose(n*b,a,m*L,data,this->work,threads);
-    } else {Tin2=Tout2=NULL;}
     
     if(size == 1) return;
     
@@ -516,10 +543,6 @@ public:
         MPI_Comm_free(&block); 
       }
     }
-    if(Tout2) delete Tout2;
-    if(Tin2) delete Tin2;
-    if(Tin1) delete Tin1;
-    if(Tout1) delete Tout1;
 
     if(sendcounts) {
       delete [] sendcounts;
@@ -531,8 +554,6 @@ public:
   
   ~mpitranspose() {
     deallocate();
-    if(Tout3) delete Tout3;
-    if(Tin3) delete Tin3;
     if(allocated)
       Array::deleteAlign(work,allocated);
   }
@@ -632,7 +653,7 @@ public:
   
   void inphase1() {
     if(subblock) {
-      Tin2->transpose(work,output); // a x n*b x m*L
+      localtranspose(work,output,a,n*b,m*L,threads);
       Ialltoall(output,n*m*sizeof(T)*a*L,work,split,Request,sched1,threads);
     }
   }
@@ -645,7 +666,7 @@ public:
   void inpost() {
     if(size == 1) return;
     if(uniform)
-      Tin1->transpose(work,output); // b x n*a x m*L
+      localtranspose(work,output,b,n*a,m*L,threads);
     else {
       if(subblock) {
         unsigned int block=m0*L;
@@ -701,7 +722,7 @@ public:
     }
     // Inner transpose a N/a x M/a matrices over each team of b processes
     if(uniform)
-      Tout1->transpose(input,work); // n*a x b x m*L
+      localtranspose(input,work,n*a,b,m*L,threads);
     else {
       if(subblock) {
         unsigned int block=m0*L;
@@ -759,7 +780,7 @@ public:
     if(size == 1) return;
     // Outer transpose a x a matrix of N/a x M/a blocks over a processes
     if(subblock)
-      Tout2->transpose(output,work); // n*b x a x m*L
+      localtranspose(output,work,n*b,a,m*L,threads);
     if(!uniform) {
       if(sched) Ialltoallout(work,output,a > 1 ? a*b : 0,threads);
       else MPI_Ialltoallv(work,sendcounts,senddisplacements,MPI_BYTE,
@@ -791,24 +812,20 @@ public:
     if(n == 0) return;
     if(in == 0) in=output;
     if(out == 0) out=in;
-    if(!Tin3) Tin3=new Transpose(n,M,L,output,work,threads);
     if(in == out) {
-      Tin3->transpose(in,work); // n X M x L
+      localtranspose(in,work,n,M,L,threads);
       copy(work,output,n*M*L,threads);
-    } else {
-      Tin3->transpose(in,out); // n X M x L
-    }
+    } else localtranspose(in,out,n,M,L,threads);
   }
   
   void NmTranspose(T *in=0, T *out=0) {
     if(m == 0) return;
     if(in == 0) in=output;
     if(out == 0) out=in;
-    if(!Tout3) Tout3=new Transpose(N,m,L,output,work,threads);
     if(in == out) {
-      Tout3->transpose(in,work); // N x m x L
+      localtranspose(in,work,N,m,L,threads);
       copy(work,output,N*m*L,threads);
-    } else Tout3->transpose(in,out);
+    } else localtranspose(in,out,N,m,L,threads);
   }
   
   void Wait0() {

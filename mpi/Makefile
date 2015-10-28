@@ -36,7 +36,6 @@ LDFLAGS=
 ifneq ($(strip $(FFTW_LIB_PATH)),)
 LDFLAGS+=-L$(FFTW_LIB_PATH)
 endif
-#LDFLAGS= -lfftw3_mpi -lfftw3 -lfftw3_threads -lm
 LDFLAGS+= -lfftw3_omp -lfftw3 -lm
 
 MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
@@ -46,9 +45,9 @@ vpath %.cc ../
 FFTW=fftw++
 FILES=gather gatheryz gatherxy transpose fft2 fft3 fft2r fft3r  \
 	cconv2 conv2 cconv3 conv3 
-UTILS=$(FFTW) mpiutils
+UTILS=mpiutils
 MPITRANSPOSE=$(UTILS) mpitranspose
-MPIFFT=$(MPITRANSPOSE) mpifftw++
+MPIFFT=$(FFTW) $(MPITRANSPOSE) mpifftw++
 MPICONVOLUTION=$(MPIFFT) convolution mpiconvolution
 
 ALL=$(FILES) $(MPICONVOLUTION)
@@ -59,7 +58,7 @@ all: $(FILES)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) -o $@ -c $<
 
 transpose: transpose.o $(MPITRANSPOSE:=.o)
-	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
+	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ -lm -o $@
 
 gather: gather.o $(MPIFFT:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@

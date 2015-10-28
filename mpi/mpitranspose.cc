@@ -5,6 +5,7 @@ namespace fftwpp {
 
 double safetyfactor=2.0;
 bool overlap=true;
+double testseconds=0.2;
 mpiOptions defaultmpiOptions;
 
 /* Given a process which_pe and a number of processes npes, fills

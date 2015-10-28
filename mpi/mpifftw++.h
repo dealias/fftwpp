@@ -248,14 +248,27 @@ public:
 // fft.Normalize(f);
 // deleteAlign(f);
 //
+// Non-blocking interface:
+//    
+// fft.iForward(f);
+// User computation
+// fft.iForwardWait(f);
+
+// Double non-blocking interface (for pencil decomposition):
+// fft.iForward(f);
+// User computation 0
+// fft.iForwardWait0(f);
+// User computation 1
+// fft.iForwardWait1(f);
+
 class fft3dMPI : public fftw {
   split3 d;
   mfft1d *xForward,*xBackward;
   mfft1d *yForward,*yBackward;
   mfft1d *zForward,*zBackward;
   fft2d *yzForward,*yzBackward;
-  mpitranspose<Complex> *Txy,*Tyz;
 public:
+  mpitranspose<Complex> *Txy,*Tyz;
   void init(Complex *in, Complex *out, const mpiOptions& xy,
             const mpiOptions &yz) {
     d.Activate();
@@ -322,8 +335,40 @@ public:
       delete Txy;
   }
 
-  void Forward(Complex *in, Complex *out=NULL);
-  void Backward(Complex *in, Complex *out=NULL);
+  void iForward(Complex *in, Complex *out=NULL);
+  void ForwardWait0(Complex *out);
+  void ForwardWait1(Complex *out) {
+    if(Txy) {
+      Txy->wait();
+      xForward->fft(out);
+    }
+  }
+  void ForwardWait(Complex *out) {
+    ForwardWait0(out);
+    ForwardWait1(out);
+  }
+  void Forward(Complex *in, Complex *out) {
+    iForward(in,out);
+    ForwardWait(out);
+  }
+  
+  void iBackward(Complex *in, Complex *out=NULL);
+  void BackwardWait0(Complex *out);
+  void BackwardWait1(Complex *out) {
+    if(Tyz) {
+      Tyz->wait();
+      zBackward->fft(out);
+    }
+  }
+  void BackwardWait(Complex *out) {
+    BackwardWait0(out);
+    BackwardWait1(out);
+  }
+  void Backward(Complex *in, Complex *out) {
+    iBackward(in,out);
+    BackwardWait(out);
+  }
+  
 };
 
 // 2D OpenMP/MPI real-to-complex and complex-to-real in-place and out-of-place

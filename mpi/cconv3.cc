@@ -156,14 +156,13 @@ int main(int argc, char* argv[])
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;  
 
+  defaultmpithreads=fftw::maxthreads;
+
   if(group.rank < group.size) {
     
     bool main=group.rank == 0;
     
     if(!quiet && main) {
-      cout << "provided: " << provided << endl;
-      cout << "fftw::maxthreads: " << fftw::maxthreads << endl;
-    
       cout << "Configuration: " 
            << group.size << " nodes X " << fftw::maxthreads 
            << " threads/node" << endl;
@@ -185,7 +184,6 @@ int main(int argc, char* argv[])
         cout << "N=" << N << endl;
       cout << "A=" << A << endl;
       cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
-      cout << "group size=" << group.size << endl;
     }
     split3 d(mx,my,mz,group,true);
 

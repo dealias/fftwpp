@@ -123,23 +123,16 @@ int main(int argc, char* argv[])
 
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;
-
-  if(!quiet) {
-    if(group.rank == 0) {
-      cout << "provided: " << provided << endl;
-      cout << "fftw::maxthreads: " << fftw::maxthreads << endl;
-    }
-    
-    if(group.rank == 0) {
-      cout << "Configuration: " 
-	   << group.size << " nodes X " << fftw::maxthreads 
-           << " threads/node" << endl;
-    }
-  }
   
+  defaultmpithreads=fftw::maxthreads;
+    
   if(group.rank < group.size) {
     bool main=group.rank == 0;
     if(!quiet && main) {
+      cout << "Configuration: " 
+           << group.size << " nodes X " << fftw::maxthreads 
+           << " threads/node" << endl;
+      cout << "Using MPI VERSION " << MPI_VERSION << endl;
       cout << "N=" << N << endl;
       cout << "nx=" << nx << ", ny=" << ny << ", nz=" << nz << endl;
       cout << "size=" << group.size << endl;
@@ -231,17 +224,50 @@ int main(int argc, char* argv[])
       }
     } else {
       if(N > 0) {
+        unsigned int M=10;
+        Complex **F=new Complex *[M];
+        Complex **G=inplace ? F : new Complex *[M];
+        fft3dMPI **FFT=new fft3dMPI *[M];
+        F[0]=ComplexAlign(d.n);
+        if(!inplace) G[0]=ComplexAlign(d.n);
+        FFT[0]=new fft3dMPI(d,F[0],G[0],mpiOptions(divisor,alltoall),
+                            mpiOptions(divisor,alltoall));
+        for(unsigned int m=1; m < M; ++m) {
+          F[m]=ComplexAlign(d.n);
+          if(!inplace) G[m]=ComplexAlign(d.n);
+          FFT[m]=new fft3dMPI(d,F[m],G[m],FFT[0]->Txy->Options(),
+                              FFT[0]->Tyz ? FFT[0]->Tyz->Options() :
+                              defaultmpiOptions);
+        }
+        
 	double *T=new double[N];
 	for(unsigned int i=0; i < N; ++i) {
-	  init(f,d);
+          for(unsigned int m=0; m < M; ++m)
+            init(F[m],d);
 	  seconds();
-	  fft.Forward(f,g);
-	  fft.Backward(g,f);
-	  fft.Normalize(f);
+          for(unsigned int m=0; m < M; ++m)
+            FFT[m]->iForward(F[m],G[m]);
+          for(unsigned int m=0; m < M; ++m)
+            FFT[m]->ForwardWait(G[m]);
+          for(unsigned int m=0; m < M; ++m)
+            FFT[m]->iBackward(G[m],F[m]);
+          for(unsigned int m=0; m < M; ++m)
+            FFT[m]->BackwardWait(F[m]);
 	  T[i]=seconds();
+	  fft.Normalize(F[0]);
 	}
-	if(!quiet && nx*ny*nz < outlimit) show(f,d.x,d.y,d.Z,group.active);
+	if(!quiet && nx*ny*nz < outlimit) show(F[0],d.x,d.y,d.Z,group.active);
 	if(main) timings("FFT timing:",nx,T,N);
+        
+        for(unsigned int m=0; m < M; ++m) {
+          delete FFT[m];
+          if(!inplace) deleteAlign(G[m]);
+          deleteAlign(F[m]);
+        }        
+        
+        delete[] FFT; 
+        if(!inplace) delete[] G;
+        delete[] F;
 	delete[] T;
       }
     }

@@ -19,7 +19,8 @@
 #include "Complex.h"
 #include "fftw++.h"
 #include "cmult-sse2.h"
-
+#include "transposeoptions.h"
+    
 namespace fftwpp {
 
 #ifndef __convolution_h__
@@ -48,23 +49,22 @@ unsigned int BuildZeta(unsigned int n, unsigned int m,
                        Complex *&ZetaH, Complex *&ZetaL,
                        unsigned int threads=1);
 
-#include "transposeoptions.h"
-    
 struct convolveOptions {
   unsigned int nx,ny,nz;           // |
   unsigned int stride2,stride3;    // | Used internally by the MPI interface.
-  mpiOptions mpi;                  // |
+  fftwpp::mpiOptions mpi;                  // |
   
   convolveOptions(unsigned int nx=0, unsigned int ny=0, unsigned int nz=0,
                   unsigned int stride2=0, unsigned int stride3=0) :
     nx(nx), ny(ny), nz(nz), stride2(stride2), stride3(stride3) {}
 
   convolveOptions(unsigned int nx, unsigned int ny, unsigned int stride2,
-                  mpiOptions mpi) :
+                  fftwpp::mpiOptions mpi) :
     nx(nx), ny(ny), stride2(stride2), mpi(mpi) {}
     
   convolveOptions(unsigned int ny, unsigned int nz,
-                  unsigned int stride2, unsigned int stride3, mpiOptions mpi) :
+                  unsigned int stride2, unsigned int stride3,
+                  fftwpp::mpiOptions mpi) :
     ny(ny), nz(nz), stride2(stride2), stride3(stride3), mpi(mpi) {}
 };
     

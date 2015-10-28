@@ -140,18 +140,16 @@ int main(int argc, char* argv[])
 
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;
+  
+  defaultmpithreads=fftw::maxthreads;
 
   if(group.rank < group.size) {
     bool main=group.rank == 0;
     if(!quiet && main) {
-      cout << "provided: " << provided << endl;
-      cout << "fftw::maxthreads: " << fftw::maxthreads << endl;
-
       cout << "Configuration: " 
            << group.size << " nodes X " << fftw::maxthreads 
            << " threads/node" << endl;
-      cout << "N=" << N << endl;
-      cout << "mx=" << mx << ", my=" << my << endl;
+      cout << "Using MPI VERSION " << MPI_VERSION << endl;
     } 
 
     split d(mx,my,group.active);
@@ -173,6 +171,13 @@ int main(int argc, char* argv[])
         exit(1);
     }
 
+    if(!quiet && main) {
+      if(!test)
+        cout << "N=" << N << endl;
+      cout << "A=" << A << endl;
+      cout << "mx=" << mx << ", my=" << my << endl;
+    }
+    
     ImplicitConvolution2MPI C(mx,my,d,mpiOptions(divisor,alltoall),A,B);
 
     MPI_Barrier(group.active);

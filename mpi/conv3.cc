@@ -186,21 +186,16 @@ int main(int argc, char* argv[])
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;
   
+  defaultmpithreads=fftw::maxthreads=1;
+    
   if(group.rank < group.size) {
     bool main=group.rank == 0;
     if(!quiet && main) {
       seconds();
-      cout << "provided: " << provided << endl;
-      cout << "fftw::maxthreads: " << fftw::maxthreads << endl;
-    
       cout << "Configuration: " 
            << group.size << " nodes X " << fftw::maxthreads 
            << " threads/node" << endl;
-    
-      cout << "N=" << N << endl;
-      cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
-      cout << "nx=" << nx << ", ny=" << ny << ", nzp=" << nzp << endl;
-      cout << "size=" << group.size << endl;
+      cout << "Using MPI VERSION " << MPI_VERSION << endl;
     }
 
     // Dimensions of the data
@@ -221,6 +216,14 @@ int main(int argc, char* argv[])
       default: cout << "A=" << A << " is not yet implemented" << endl; exit(1);
     }
 
+    if(!quiet && main) {
+      if(!test)
+        cout << "N=" << N << endl;
+      cout << "A=" << A << endl;
+      cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
+      cout << "nx=" << nx << ", ny=" << ny << ", nzp=" << nzp << endl;
+    }
+    
     ImplicitHConvolution3MPI C(mx,my,mz,xcompact,ycompact,zcompact,d,du,F[0],
                                mpiOptions(divisor,alltoall),A,B);
     

@@ -106,20 +106,15 @@ int main(int argc, char* argv[])
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;
 
-  if(!quiet && group.rank == 0) {
-    cout << "provided: " << provided << endl;
-    cout << "fftw::maxthreads: " << fftw::maxthreads << endl;
-  }
-  
-  if(!quiet && group.rank == 0) {
-    cout << "Configuration: " 
-	 << group.size << " nodes X " << fftw::maxthreads 
-	 << " threads/node" << endl;
-  }
-
+  defaultmpithreads=fftw::maxthreads;
+    
   if(group.rank < group.size) { 
     bool main=group.rank == 0;
     if(!quiet && main) {
+      cout << "Configuration: " 
+           << group.size << " nodes X " << fftw::maxthreads
+           << " threads/node" << endl;
+      cout << "Using MPI VERSION " << MPI_VERSION << endl;
       cout << "N=" << N << endl;
       cout << "nx=" << nx << ", ny=" << ny << endl;
     } 

@@ -16,6 +16,10 @@ unsigned int X=8, Y=8, Z=1;
 int a=0; // Test for best block divisor
 int alltoall=-1; // Test for best alltoall routine
 
+namespace fftwpp {
+  unsigned int defaultmpithreads=1;
+}
+
 const unsigned int showlimit=1024;
 unsigned int N0=1000000;
 int N=0;
@@ -392,7 +396,7 @@ int main(int argc, char **argv)
         Z=atoi(optarg);
         break;
       case 'T':
-        fftw::maxthreads=atoi(optarg);
+        defaultmpithreads=atoi(optarg);
         break;
       case 't':
         test=true;
@@ -411,6 +415,8 @@ int main(int argc, char **argv)
 
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
+  if(provided < MPI_THREAD_FUNNELED)
+    defaultmpithreads=1;
 
   int rank,size;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
@@ -418,7 +424,7 @@ int main(int argc, char **argv)
   
   if(rank == 0) {
     cout << "size=" << size << endl;
-    cout << "threads=" << fftw::maxthreads << endl;
+    cout << "threads=" << defaultmpithreads << endl;
   }
   
   if(test) N=1;

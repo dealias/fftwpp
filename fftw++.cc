@@ -25,6 +25,8 @@ mrcfft1d::Table mrcfft1d::threadtable;
 mcrfft1d::Table mcrfft1d::threadtable;
 fft2d::Table fft2d::threadtable;
 
+unsigned int defaultmpithreads=1;
+
 void LoadWisdom()
 {
   static bool Wise=false;

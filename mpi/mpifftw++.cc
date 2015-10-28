@@ -123,49 +123,62 @@ void fft2dMPI::Backward(Complex *in, Complex *out)
   yBackward->fft(out);
 }
 
-void fft3dMPI::Forward(Complex *in, Complex *out)
+void fft3dMPI::iForward(Complex *in, Complex *out)
 {
   out=Setout(in,out);
-  unsigned int stride=d.z*d.Y;
-  unsigned int stop=d.x*stride;
   if(Tyz) {
     zForward->fft(in,out);
-    Tyz->transpose(out,true,false);
-    PARALLEL(
-      for(unsigned int i=0; i < stop; i += stride) 
-        yForward->fft(out+i);
-      );
+    Tyz->itranspose(out,true,false);
   } else {
+    unsigned int stride=d.z*d.Y;
+    unsigned int stop=d.x*stride;
     PARALLEL(
       for(unsigned int i=0; i < stop; i += stride) {
         yzForward->fft(in+i,out+i);
       }
       );
+    if(Txy)
+      Txy->itranspose(out,true,false);
   }
-  
-  if(Txy)
-    Txy->transpose(out,true,false);
-  
-  xForward->fft(out);
 }
 
-void fft3dMPI::Backward(Complex *in, Complex *out)
+void fft3dMPI::ForwardWait0(Complex *out)
+{
+  if(Tyz) {
+    Tyz->wait();
+    unsigned int stride=d.z*d.Y;
+    unsigned int stop=d.x*stride;
+    PARALLEL(
+      for(unsigned int i=0; i < stop; i += stride) 
+        yForward->fft(out+i);
+      );
+    if(Txy)
+      Txy->itranspose(out,true,false);
+  }
+}
+
+void fft3dMPI::iBackward(Complex *in, Complex *out)
 {
   out=Setout(in,out);
-  unsigned int stride=d.z*d.Y;
-  unsigned int stop=d.x*stride;
   xBackward->fft(in,out);
 
   if(Txy)
-    Txy->transpose(out,false,true);
+    Txy->itranspose(out,false,true);
+}
 
+void fft3dMPI::BackwardWait0(Complex *out)
+{
+  if(Txy) 
+    Txy->wait();
+
+  unsigned int stride=d.z*d.Y;
+  unsigned int stop=d.x*stride;
   if(Tyz) {
     PARALLEL(
       for(unsigned int i=0; i < stop; i += stride) 
         yBackward->fft(out+i);
       );
-    Tyz->transpose(out,false,true);
-    zBackward->fft(out);
+    Tyz->itranspose(out,false,true);
   } else {
     PARALLEL(
       for(unsigned int i=0; i < stop; i += stride) 

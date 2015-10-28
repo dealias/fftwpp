@@ -49,6 +49,8 @@ int main(int argc, char* argv[])
 
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;
+  
+  defaultmpithreads=fftw::maxthreads;
 
   if(group.rank == 0) {
     cout << "Configuration: " 
