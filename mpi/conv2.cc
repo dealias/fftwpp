@@ -57,7 +57,6 @@ inline void init(Complex **F, split d, unsigned int A=2,
 
 int main(int argc, char* argv[])
 {
-  seconds();
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif
@@ -157,6 +156,7 @@ int main(int argc, char* argv[])
   if(group.rank < group.size) {
     bool main=group.rank == 0;
     if(!quiet && main) {
+      seconds();
       cout << "Configuration: " 
            << group.size << " nodes X " << fftw::maxthreads 
            << " threads/node" << endl;
