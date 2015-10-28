@@ -57,6 +57,7 @@ inline void init(Complex **F, split d, unsigned int A=2,
 
 int main(int argc, char* argv[])
 {
+  seconds();
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif

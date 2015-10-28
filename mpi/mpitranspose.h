@@ -378,8 +378,9 @@ public:
           init(data);
           double t=time(data);
           deallocate();
-          if(globalrank == 0 && options.verbose) {
-            std::cout << "a=" << a << ":\ttime=" << t << std::endl;
+          if(globalrank == 0) {
+            if(options.verbose)
+              std::cout << "a=" << a << ":\ttime=" << t << std::endl;
             if(t < T0) {
               T0=t;
               options.a=a;
@@ -401,8 +402,7 @@ public:
     
     if(globalrank == 0 && options.verbose)
       std::cout << std::endl << "Using alltoall=" << 
-        options.alltoall << ", a=" << a << ", b=" << b <<
-        ":" << std::endl;
+        options.alltoall << ", a=" << a << ", b=" << b << ":" << std::endl;
     init(data);
   }
   

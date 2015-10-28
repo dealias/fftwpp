@@ -248,10 +248,10 @@ int main(int argc, char* argv[])
 	  seconds();
           for(unsigned int m=0; m < M; ++m)
             FFT[m]->iForward(F[m],G[m]);
-          for(unsigned int m=0; m < M; ++m)
+          for(unsigned int m=0; m < M; ++m) {
             FFT[m]->ForwardWait(G[m]);
-          for(unsigned int m=0; m < M; ++m)
             FFT[m]->iBackward(G[m],F[m]);
+          }
           for(unsigned int m=0; m < M; ++m)
             FFT[m]->BackwardWait(F[m]);
 	  T[i]=seconds();
