@@ -568,7 +568,6 @@ public:
   void init(const convolveOptions& options) {
     xfftpad=new fftpad(mx,options.ny,options.ny,u2);
     yconvolve=new ImplicitConvolution*[threads];
-    std::cout << innerthreads << " " << threads << std::endl;
     for(unsigned int t=0; t < threads; ++t)
       yconvolve[t]=new ImplicitConvolution(my,u1+t*my*A,A,B,innerthreads);
     initpointers2(U2,u2,options.stride2);
