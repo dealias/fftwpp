@@ -12,19 +12,7 @@
 
 using namespace std;
 using namespace utils;
-
-#ifdef __SSE2__
 using namespace fftwpp;
-
-namespace fftwpp {
-  const union uvec sse2_pm = {
-    { 0x00000000,0x00000000,0x00000000,0x80000000 }
-  };
-  const union uvec sse2_mm = {
-    { 0x00000000,0x80000000,0x00000000,0x80000000 }
-  };
-}
-#endif
 
 // compile with
 // mpicxx -o cconv3 cconv3.cc -lfftw3_mpi -lfftw3 -lm

@@ -14,17 +14,6 @@ using namespace std;
 using namespace utils;
 using namespace fftwpp;
 
-#ifdef __SSE2__
-namespace fftwpp {
-  const union uvec sse2_pm = {
-    { 0x00000000,0x00000000,0x00000000,0x80000000 }
-  };
-  const union uvec sse2_mm = {
-    { 0x00000000,0x80000000,0x00000000,0x80000000 }
-  };
-}
-#endif
-
 int main(int argc, char **argv)
 {
   int N=4, m=4;
