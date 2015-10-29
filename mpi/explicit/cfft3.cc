@@ -5,8 +5,6 @@
 #include "getopt.h"
 #include "seconds.h"
 #include "timing.h"
-#include <stdlib.h>
-#include "Complex.h"
 #include "cmult-sse2.h"
 #include "exmpiutils.h"
 
