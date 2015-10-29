@@ -16,13 +16,13 @@ protected:
   utils::mpitranspose<Complex> *T,*U;
 public:  
   
-  void inittranspose(const utils::mpiOptions& mpioptions,
+  void inittranspose(const utils::mpiOptions& mpioptions, Complex *work,
                      const MPI_Comm& global) {
-    T=new utils::mpitranspose<Complex>(d.X,d.y,d.x,d.Y,1,u2,d.communicator,
-                                       mpioptions,
+    T=new utils::mpitranspose<Complex>(d.X,d.y,d.x,d.Y,1,u2,work,
+                                       d.communicator,mpioptions,
                                        global ? global : d.communicator);
-    U=new utils::mpitranspose<Complex>(d.X,d.y,d.x,d.Y,1,u2,d.communicator,
-                                       T->Options(),
+    U=new utils::mpitranspose<Complex>(d.X,d.y,d.x,d.Y,1,u2,work,
+                                       d.communicator,T->Options(),
                                        global ? global : d.communicator);
     d.Deactivate();
   }
@@ -37,10 +37,10 @@ public:
                           utils::mpiOptions mpi=utils::defaultmpiOptions,
                           unsigned int A=2, unsigned int B=1,
                           unsigned int threads=fftw::maxthreads,
-                          MPI_Comm global=0) :
+                          Complex *work=NULL, MPI_Comm global=0) :
     ImplicitConvolution2(mx,my,u1,u2,A,B,threads,
                          convolveOptions(d.x,d.y,d.Activate(),mpi)), d(d) {
-    inittranspose(mpi,global);
+    inittranspose(mpi,work,global);
   }
   
   ImplicitConvolution2MPI(unsigned int mx, unsigned int my,
@@ -48,10 +48,10 @@ public:
                           utils::mpiOptions mpi=utils::defaultmpiOptions,
                           unsigned int A=2, unsigned int B=1,
                           unsigned int threads=fftw::maxthreads,
-                          MPI_Comm global=0) :
+                          Complex *work=NULL, MPI_Comm global=0) :
     ImplicitConvolution2(mx,my,A,B,threads,
                          convolveOptions(d.x,d.y,d.Activate(),mpi)), d(d) {
-    inittranspose(mpi,global);
+    inittranspose(mpi,work,global);
   }
   
   virtual ~ImplicitConvolution2MPI() {
@@ -78,12 +78,12 @@ protected:
   utils::mpitranspose<Complex> *T,*U;
 public:  
   
-  void inittranspose(Complex *f, const utils::mpiOptions& mpi,
+  void inittranspose(Complex *f, const utils::mpiOptions& mpi, Complex *work,
                      MPI_Comm global) {
     global=global ? global : d.communicator;
-    T=new utils::mpitranspose<Complex>(d.X,d.y,d.x,d.Y,1,f,
+    T=new utils::mpitranspose<Complex>(d.X,d.y,d.x,d.Y,1,f,work,
                                d.communicator,mpi,global);
-    U=new utils::mpitranspose<Complex>(du.X,du.y,du.x,du.Y,1,u2,
+    U=new utils::mpitranspose<Complex>(du.X,du.y,du.x,du.Y,1,u2,work,
                                 du.communicator,mpi,global);
     du.Deactivate();
   }    
@@ -99,11 +99,11 @@ public:
                            utils::mpiOptions mpi=utils::defaultmpiOptions,
                            unsigned int A=2, unsigned int B=1,
                            unsigned int threads=fftw::maxthreads,
-                           MPI_Comm global=0) :
+                           Complex *work=NULL, MPI_Comm global=0) :
     ImplicitHConvolution2(mx,my,u1,u2,A,B,threads,
                           convolveOptions(d.x,d.y,du.Activate(),mpi)),
     d(d), du(du) {
-    inittranspose(f,mpi,global);
+    inittranspose(f,mpi,work,global);
   }
   
   ImplicitHConvolution2MPI(unsigned int mx, unsigned int my,
@@ -113,11 +113,11 @@ public:
                            utils::mpiOptions mpi=utils::defaultmpiOptions,
                            unsigned int A=2, unsigned int B=1,
                            unsigned int threads=fftw::maxthreads,
-                           MPI_Comm global=0) :
+                           Complex *work=NULL, MPI_Comm global=0) :
     ImplicitHConvolution2(mx,my,xcompact,ycompact,u1,u2,A,B,threads,
                           convolveOptions(d.x,d.y,du.Activate(),mpi)),
     d(d), du(du) {
-    inittranspose(f,mpi,global);
+    inittranspose(f,mpi,work,global);
   }
   
   ImplicitHConvolution2MPI(unsigned int mx, unsigned int my,
@@ -126,11 +126,11 @@ public:
                            utils::mpiOptions mpi=utils::defaultmpiOptions,
                            unsigned int A=2, unsigned int B=1,
                            unsigned int threads=fftw::maxthreads,
-                           MPI_Comm global=0) :
+                           Complex *work=NULL, MPI_Comm global=0) :
     ImplicitHConvolution2(mx,my,true,true,A,B,threads,
                           convolveOptions(d.x,d.y,du.Activate(),mpi)),
     d(d), du(du) {
-    inittranspose(f,mpi,global);
+    inittranspose(f,mpi,work,global);
   }
   
   ImplicitHConvolution2MPI(unsigned int mx, unsigned int my,
@@ -140,11 +140,11 @@ public:
                            utils::mpiOptions mpi=utils::defaultmpiOptions,
                            unsigned int A=2, unsigned int B=1,
                            unsigned int threads=fftw::maxthreads,
-                           MPI_Comm global=0) :
+                           Complex *work=NULL, MPI_Comm global=0) :
     ImplicitHConvolution2(mx,my,xcompact,ycompact,A,B,threads,
                           convolveOptions(d.x,d.y,du.Activate(),mpi)),
     d(d), du(du) {
-    inittranspose(f,mpi,global);
+    inittranspose(f,mpi,work,global);
   }
   
   virtual ~ImplicitHConvolution2MPI() {
@@ -172,11 +172,12 @@ protected:
   fftw_plan intranspose,outtranspose;
   utils::mpitranspose<Complex> *T,*U;
 public:  
-  void inittranspose(const utils::mpiOptions& mpi, MPI_Comm global) {
+  void inittranspose(const utils::mpiOptions& mpi, Complex *work,
+                     MPI_Comm global) {
     if(d.xy.y < d.Y) { 
-      T=new utils::mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,u3,
+      T=new utils::mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,u3,work,
                                          d.xy.communicator,mpi,global);
-      U=new utils::mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,u3,
+      U=new utils::mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,u3,work,
                                          d.xy.communicator,T->Options(),
                                          global);
     } else {
@@ -185,7 +186,8 @@ public:
     d.Deactivate();
   }
 
-  void initMPI(const utils::mpiOptions& mpi, MPI_Comm global) {
+  void initMPI(const utils::mpiOptions& mpi, Complex *work, Complex *work2, 
+               MPI_Comm global) {
     global=global ? global : d.communicator;
     if(d.z < d.Z) {
       yzconvolve=new ImplicitConvolution2*[threads];
@@ -193,10 +195,10 @@ public:
         yzconvolve[t]=new ImplicitConvolution2MPI(my,mz,d.yz,
                                                   u1+t*mz*A*innerthreads,
                                                   u2+t*d.n2*A,mpi,A,B,
-                                                  innerthreads,global);
+                                                  innerthreads,work2,global);
       initpointers3(U3,u3,d.n);
     }
-    inittranspose(mpi,global);
+    inittranspose(mpi,work,global);
   }
   
   // u1 is a temporary array of size mz*A*options.threads.
@@ -210,11 +212,12 @@ public:
                           utils::mpiOptions mpi=utils::defaultmpiOptions,
                           unsigned int A=2, unsigned int B=1,
                           unsigned int threads=fftw::maxthreads,
+                          Complex *work=NULL, Complex *work2=NULL,
                           MPI_Comm global=0) :
     ImplicitConvolution3(mx,my,mz,u1,u2,u3,A,B,threads,
                          convolveOptions(d.xy.y,d.z,d.n2,d.Activate(),mpi)),
     d(d) {
-    initMPI(mpi,global);
+    initMPI(mpi,work,work2,global);
   }
 
   ImplicitConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
@@ -222,11 +225,12 @@ public:
                           utils::mpiOptions mpi=utils::defaultmpiOptions,
                           unsigned int A=2, unsigned int B=1,
                           unsigned int threads=fftw::maxthreads,
+                          Complex *work=NULL, Complex *work2=NULL,
                           MPI_Comm global=0) :
     ImplicitConvolution3(mx,my,mz,A,B,threads,
                          convolveOptions(d.xy.y,d.z,d.n2,d.Activate(),mpi)),
     d(d) {
-    initMPI(mpi,global);
+    initMPI(mpi,work,work2,global);
   }
   
   virtual ~ImplicitConvolution3MPI() {
@@ -264,18 +268,19 @@ protected:
   utils::split3 d,du;
   utils::mpitranspose<Complex> *T,*U;
 public:  
-  void inittranspose(Complex *f, const utils::mpiOptions& mpi,
+  void inittranspose(Complex *f, const utils::mpiOptions& mpi, Complex *work,
                      MPI_Comm global) {
     if(d.xy.y < d.Y) {
-      T=new utils::mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,f,
+      T=new utils::mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,f,work,
                                  d.xy.communicator,mpi,global);
-      U=new utils::mpitranspose<Complex>(du.X,du.xy.y,du.x,du.Y,du.z,u3,
+      U=new utils::mpitranspose<Complex>(du.X,du.xy.y,du.x,du.Y,du.z,u3,work,
                                  du.xy.communicator,mpi,global);
     } else {T=U=NULL;}
     du.Deactivate();
   }
 
-  void initMPI(Complex *f, const utils::mpiOptions& mpi, MPI_Comm global) {
+  void initMPI(Complex *f, const utils::mpiOptions& mpi,
+               Complex *work, Complex *work2, MPI_Comm global) {
     global=global ? global : d.communicator;
     if(d.z < d.Z) {
       yzconvolve=new ImplicitHConvolution2*[threads];
@@ -285,10 +290,10 @@ public:
                                        d.yz,du.yz,f,
                                        u1+t*(mz/2+1)*A*innerthreads,
                                        u2+t*du.n2*A,mpi,A,B,innerthreads,
-                                       global);
+                                       work2,global);
       initpointers3(U3,u3,du.n);
     }
-    inittranspose(f,mpi,global);
+    inittranspose(f,mpi,work,global);
   }
   
   // f is a temporary array of size d.n needed only during construction.
@@ -303,11 +308,12 @@ public:
                            utils::mpiOptions mpi=utils::defaultmpiOptions,
                            unsigned int A=2, unsigned int B=1,
                            unsigned int threads=fftw::maxthreads,
+                           Complex *work=NULL, Complex *work2=NULL,
                            MPI_Comm global=0) :
     ImplicitHConvolution3(mx,my,mz,u1,u2,u3,A,B,threads,
                           convolveOptions(d.xy.y,d.z,du.n2,du.Activate(),mpi)),
     d(d), du(du) {
-    initMPI(f,mpi,global);
+    initMPI(f,mpi,work,work2,global);
   }
 
   ImplicitHConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
@@ -317,12 +323,13 @@ public:
                            utils::mpiOptions mpi=utils::defaultmpiOptions,
                            unsigned int A=2, unsigned int B=1,
                            unsigned int threads=fftw::maxthreads,
+                           Complex *work=NULL, Complex *work2=NULL,
                            MPI_Comm global=0) :
     ImplicitHConvolution3(mx,my,mz,xcompact,ycompact,zcompact,u1,u2,u3,A,B,
                           threads,convolveOptions(d.xy.y,d.z,du.n2,
                                                   du.Activate(),mpi)),
     d(d), du(du) {
-    initMPI(f,mpi,global);
+    initMPI(f,mpi,work,work2,global);
   }
 
   ImplicitHConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
@@ -331,11 +338,12 @@ public:
                            utils::mpiOptions mpi=utils::defaultmpiOptions,
                            unsigned int A=2, unsigned int B=1,
                            unsigned int threads=fftw::maxthreads,
+                           Complex *work=NULL, Complex *work2=NULL,
                            MPI_Comm global=0) :
     ImplicitHConvolution3(mx,my,mz,true,true,true,A,B,threads,
                           convolveOptions(d.xy.y,d.z,du.n2,
                                           du.Activate(),mpi)), d(d), du(du) {
-    initMPI(f,mpi,global);
+    initMPI(f,mpi,work,work2,global);
   }
   
   ImplicitHConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
@@ -345,11 +353,12 @@ public:
                            utils::mpiOptions mpi=utils::defaultmpiOptions,
                            unsigned int A=2, unsigned int B=1,
                            unsigned int threads=fftw::maxthreads,
+                           Complex *work=NULL, Complex *work2=NULL,
                            MPI_Comm global=0) :
     ImplicitHConvolution3(mx,my,mz,xcompact,ycompact,zcompact,A,B,threads,
                           convolveOptions(d.xy.y,d.z,du.n2,
                                           du.Activate(),mpi)), d(d), du(du) {
-    initMPI(f,mpi,global);
+    initMPI(f,mpi,work,work2,global);
   }
   
   virtual ~ImplicitHConvolution3MPI() {

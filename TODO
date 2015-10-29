@@ -1,6 +1,5 @@
 Release todo:
 test shifted inplace MPI transforms
-Transpose work memory
 wrappers
 update documentation
 
