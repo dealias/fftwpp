@@ -261,7 +261,8 @@ public:
   }
   
   fftw() : plan(NULL) {}
-  fftw(unsigned int doubles, int sign, unsigned int threads, unsigned int n=0) :
+  fftw(unsigned int doubles, int sign, unsigned int threads,
+       unsigned int n=0) :
     doubles(doubles), sign(sign), threads(threads), 
     norm(1.0/(n ? n : doubles/2)), plan(NULL) {
 #ifndef FFTWPP_SINGLE_THREAD
@@ -343,7 +344,8 @@ public:
   }
   virtual void store(bool inplace, const threaddata& data) {}
   
-  inline Complex *CheckAlign(Complex *in, Complex *out, bool constructor=true) {
+  inline Complex *CheckAlign(Complex *in, Complex *out, bool constructor=true)
+  {
 #ifndef NO_CHECK_ALIGN    
     CheckAlign(in,constructor ? "constructor input" : "input");
     if(out) CheckAlign(out,constructor ? "constructor output" : "output");
@@ -448,7 +450,8 @@ public:
     for(unsigned int i=0; i < doubles; i++) out[i] *= norm;
   }
   
-  virtual void fftNormalized(Complex *in, Complex *out=NULL, bool shift=false) {
+  virtual void fftNormalized(Complex *in, Complex *out=NULL, bool shift=false) 
+  {
     out=Setout(in,out);
     Execute(in,out,shift);
     Normalize(out);
@@ -899,11 +902,12 @@ public:
   
   mfft1d(unsigned int nx, int sign, unsigned int M,
          size_t istride, size_t ostride, size_t idist, size_t odist,
-         Complex *in=NULL, Complex *out=NULL, unsigned int threads=maxthreads) :
+         Complex *in=NULL, Complex *out=NULL, unsigned int threads=maxthreads):
     fftw(std::max(2*((nx-1)*istride+(M-1)*Dist(nx,istride,idist)+1),
-             2*((nx-1)*ostride+(M-1)*Dist(nx,ostride,odist)+1)),sign,threads,nx),
-    fftwblock<fftw_complex,fftw_complex>
-    (nx,M,istride,ostride,idist,odist,in,out,threads) {} 
+                  2*((nx-1)*ostride+(M-1)*Dist(nx,ostride,odist)+1)),sign,
+         threads, nx),
+    fftwblock<fftw_complex,fftw_complex>(nx,M,istride,ostride,idist,odist,in,
+                                         out,threads) {} 
   
   threaddata lookup(bool inplace, unsigned int threads) {
     return Lookup(threadtable,keytype3(nx,Q,R,threads,inplace));
@@ -1150,7 +1154,9 @@ public:
   fft2d(int sign, const Array::array2<Complex>& in,
         const Array::array2<Complex>& out=Array::NULL2, 
         unsigned int threads=maxthreads) 
-    : fftw(2*in.Size(),sign,threads), nx(in.Nx()), ny(in.Ny()) {Setup(in,out);} 
+    : fftw(2*in.Size(),sign,threads), nx(in.Nx()), ny(in.Ny()) {
+    Setup(in,out);
+  }
 #endif  
   
   threaddata lookup(bool inplace, unsigned int threads) {

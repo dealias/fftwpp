@@ -1437,8 +1437,8 @@ public:
   
   void convolve(Complex *f, Complex *g, Complex *u, Complex *v);
   
-  // f and g are distinct pointers to data of size m+1 (contents not preserved).
-  // The output is returned in f.
+  // f and g are distinct pointers to data of size m+1 (contents not
+  // preserved). The output is returned in f.
   void convolve(Complex *f, Complex *g) {
     convolve(f,g,u,v);
   }

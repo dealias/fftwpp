@@ -18,27 +18,22 @@ bool Implicit=true, Explicit=false, Pruned=false;
 
 inline void init(Complex **F, split d, unsigned int A) 
 {
-  if(A%2 == 0) {
-    unsigned int M=A/2;
-    double factor=1.0/sqrt((double) M);
-    for(unsigned int s=0; s < M; ++s) {
-      array2<Complex> f(d.X,d.y,F[s]);
-      array2<Complex> g(d.X,d.y,F[M+s]);
-      double S=sqrt(1.0+s);
-      double ffactor=S*factor;
-      double gfactor=1.0/S*factor;
-      for(unsigned int i=0; i < d.X; ++i) {
-	//unsigned int I=s*d.n+d.y*i;
-	for(unsigned int j=0; j < d.y; j++) {
-	  unsigned int jj=d.y0+j;
-	  f[i][j]=ffactor*Complex(i,jj);
-	  g[i][j]=gfactor*Complex(2*i,jj+1);
-	}
+  unsigned int M=A/2;
+  double factor=1.0/sqrt((double) M);
+  for(unsigned int s=0; s < M; ++s) {
+    array2<Complex> f(d.X,d.y,F[s]);
+    array2<Complex> g(d.X,d.y,F[M+s]);
+    double S=sqrt(1.0+s);
+    double ffactor=S*factor;
+    double gfactor=1.0/S*factor;
+    for(unsigned int i=0; i < d.X; ++i) {
+      //unsigned int I=s*d.n+d.y*i;
+      for(unsigned int j=0; j < d.y; j++) {
+        unsigned int jj=d.y0+j;
+        f[i][j]=ffactor*Complex(i,jj);
+        g[i][j]=gfactor*Complex(2*i,jj+1);
       }
     }
-  } else {
-    cerr << "Init not implemented for A=" << A << endl;
-    exit(1);
   }
 }
 
@@ -166,7 +161,7 @@ int main(int argc, char* argv[])
       case 6: mult=multbinary3; break;
       case 8: mult=multbinary4; break;
       case 16: mult=multbinary8; break;
-      default: cout << "A=" << A << " is not yet implemented" << endl;
+      default: if(main) cout << "A=" << A << " is not yet implemented" << endl;
         exit(1);
     }
 

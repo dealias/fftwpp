@@ -16,9 +16,11 @@ protected:
   utils::mpitranspose<Complex> *T;
 public:  
   
-  void inittranspose(const utils::mpiOptions& mpioptions, const MPI_Comm& global) {
-    T=new utils::mpitranspose<Complex>(d.X,d.y,d.x,d.Y,1,u2,d.communicator,mpioptions,
-                                global ? global : d.communicator);
+  void inittranspose(const utils::mpiOptions& mpioptions,
+                     const MPI_Comm& global) {
+    T=new utils::mpitranspose<Complex>(d.X,d.y,d.x,d.Y,1,u2,d.communicator,
+                                       mpioptions,
+                                       global ? global : d.communicator);
     d.Deactivate();
   }
 
@@ -26,7 +28,8 @@ public:
   // u2 is a temporary array of size split(mx,my).n*A.
   // A is the number of inputs.
   // B is the number of outputs.
-  ImplicitConvolution2MPI(unsigned int mx, unsigned int my, const utils::split& d,
+  ImplicitConvolution2MPI(unsigned int mx, unsigned int my,
+                          const utils::split& d,
                           Complex *u1, Complex *u2, 
                           utils::mpiOptions mpi=utils::defaultmpiOptions,
                           unsigned int A=2, unsigned int B=1,
@@ -37,7 +40,8 @@ public:
     inittranspose(mpi,global);
   }
   
-  ImplicitConvolution2MPI(unsigned int mx, unsigned int my, const utils::split& d,
+  ImplicitConvolution2MPI(unsigned int mx, unsigned int my,
+                          const utils::split& d,
                           utils::mpiOptions mpi=utils::defaultmpiOptions,
                           unsigned int A=2, unsigned int B=1,
                           unsigned int threads=fftw::maxthreads,
@@ -70,7 +74,8 @@ protected:
   utils::mpitranspose<Complex> *T,*U;
 public:  
   
-  void inittranspose(Complex *f, const utils::mpiOptions& mpi, MPI_Comm global) {
+  void inittranspose(Complex *f, const utils::mpiOptions& mpi,
+                     MPI_Comm global) {
     global=global ? global : d.communicator;
     T=new utils::mpitranspose<Complex>(d.X,d.y,d.x,d.Y,1,f,
                                d.communicator,mpi,global);
@@ -113,7 +118,8 @@ public:
   
   ImplicitHConvolution2MPI(unsigned int mx, unsigned int my,
                            const utils::split& d, const utils::split& du,
-                           Complex *f, utils::mpiOptions mpi=utils::defaultmpiOptions,
+                           Complex *f,
+                           utils::mpiOptions mpi=utils::defaultmpiOptions,
                            unsigned int A=2, unsigned int B=1,
                            unsigned int threads=fftw::maxthreads,
                            MPI_Comm global=0) :
@@ -126,7 +132,8 @@ public:
   ImplicitHConvolution2MPI(unsigned int mx, unsigned int my,
                            bool xcompact, bool ycompact,
                            const utils::split& d, const utils::split& du,
-                           Complex *f, utils::mpiOptions mpi=utils::defaultmpiOptions,
+                           Complex *f,
+                           utils::mpiOptions mpi=utils::defaultmpiOptions,
                            unsigned int A=2, unsigned int B=1,
                            unsigned int threads=fftw::maxthreads,
                            MPI_Comm global=0) :
@@ -245,7 +252,8 @@ protected:
   utils::split3 d,du;
   utils::mpitranspose<Complex> *T,*U;
 public:  
-  void inittranspose(Complex *f, const utils::mpiOptions& mpi, MPI_Comm global) {
+  void inittranspose(Complex *f, const utils::mpiOptions& mpi,
+                     MPI_Comm global) {
     if(d.xy.y < d.Y) {
       T=new utils::mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,f,
                                  d.xy.communicator,mpi,global);
@@ -307,7 +315,8 @@ public:
 
   ImplicitHConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
                            const utils::split3& d, const utils::split3& du,
-                           Complex *f, utils::mpiOptions mpi=utils::defaultmpiOptions,
+                           Complex *f,
+                           utils::mpiOptions mpi=utils::defaultmpiOptions,
                            unsigned int A=2, unsigned int B=1,
                            unsigned int threads=fftw::maxthreads,
                            MPI_Comm global=0) :
@@ -320,7 +329,8 @@ public:
   ImplicitHConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
                            bool xcompact, bool ycompact, bool zcompact,
                            const utils::split3& d, const utils::split3& du,
-                           Complex *f, utils::mpiOptions mpi=utils::defaultmpiOptions,
+                           Complex *f,
+                           utils::mpiOptions mpi=utils::defaultmpiOptions,
                            unsigned int A=2, unsigned int B=1,
                            unsigned int threads=fftw::maxthreads,
                            MPI_Comm global=0) :

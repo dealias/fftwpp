@@ -17,11 +17,6 @@ void init(Complex **F,
 	  unsigned int x, unsigned int y, unsigned int z,
 	  unsigned int A=2)
 {
-  if(A % 2 != 0) {
-    cout << "A=" << A << " is not yet implemented" << endl;
-    exit(1);
-  }
-
   unsigned int M=A/2;
   double factor=1.0/sqrt((double) M);
   for(unsigned int s=0; s < M; ++s) {
@@ -176,7 +171,8 @@ int main(int argc, char* argv[])
       case 6: mult=multbinary3; break;
       case 8: mult=multbinary4; break;
       case 16: mult=multbinary8; break;
-      default: cout << "A=" << A << " is not yet implemented" << endl; exit(1);
+      default: if(main) cout << "A=" << A << " is not yet implemented" << endl;
+        exit(1);
     }
     
     if(!quiet && main) {
