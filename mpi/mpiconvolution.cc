@@ -12,9 +12,8 @@ void ImplicitConvolution2MPI::convolve(Complex **F, multiplier *pmult,
     Complex *f=F[a]+offset;
     Complex *u=U2[a];
     xfftpad->expand(f,u);
-    if(a > 0) T->wait0();
     xfftpad->Backwards->fft(f);
-    if(a > 0) T->wait1();
+    if(a > 0) T->wait();
     T->itranspose(f,false,true);
     xfftpad->Backwards->fft(u);
     T->wait();
@@ -54,8 +53,10 @@ void ImplicitHConvolution2MPI::convolve(Complex **F, realmultiplier *pmult,
       HermitianSymmetrizeX(mx,d.y,mx-xcompact,f);
     xfftpad->expand(f,u);
     xfftpad->Backwards->fft(f);
-    if(a > 0) T->wait0();
-    if(a > 0) U->wait0();
+    if(a > 0) {
+      T->wait0();
+      U->wait0();
+    }
     xfftpad->Backwards1(f,u);
     if(a > 0) T->wait1();
     T->itranspose(f,false,true);
@@ -97,10 +98,9 @@ void ImplicitConvolution3MPI::convolve(Complex **F, multiplier *pmult,
     Complex *f=F[a]+offset;
     Complex *u=U3[a];
     xfftpad->expand(f,u);
-    if(a > 0 && d.y < d.Y) T->wait0();
     xfftpad->Backwards->fft(f);
     if(T) {
-      if(a > 0) T->wait1();
+      if(a > 0) T->wait();
       T->itranspose(f,false,true);
     }
     xfftpad->Backwards->fft(u);
