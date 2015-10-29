@@ -138,19 +138,11 @@ complex non-centered convolutions.
 conv2.cc and conv3.cc are examples of two- and three-dimensional
 Hermitian-symmetric complex centered convolutions.
 
-cfft2.cc is an example of a two-dimensional hybrid MPI/OpenMP FFT
+fft2.cc is an example of a two-dimensional hybrid MPI/OpenMP FFT
 using a 1D data decomposition.
 
 timing.py is a script which performs timing tests for mpi-based
 convolutions.
-
-pret.py is a python-based unit testing script which checks the hash
-value of the result of the default convolution.
-
-ignorance.sh is a script to remove lines containing fftw_mpi_transpose
-from widsom3.txt in order to get around a bug in FFTW 3.3.3's MPI
-transpose routine for problems with two points in at least one
-dimension.
 
 mpi/explicit contains comparison code using FFTW's parallel MPI
 transform and explicit padding.
@@ -193,8 +185,8 @@ general multiplication to be performed.
 
 ######################## Availability and License ########################
 
-The latest developmental source code of fftw++ is available via Subversion:
-svn co https://svn.code.sf.net/p/fftwpp/code/trunk/fftw++
+To compile from Git developmental source code:
+git clone https://github.com/dealias/fftwpp
 
 All source files in the FFTW++ project, unless explicitly noted otherwise,
 are released under version 3 (or later) of the GNU Lesser General Public

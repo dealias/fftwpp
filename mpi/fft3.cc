@@ -222,7 +222,7 @@ int main(int argc, char* argv[])
       }
     } else {
       if(N > 0) {
-        unsigned int M=10;
+        unsigned int M=1;
         Complex **F=new Complex *[M];
         Complex **G=inplace ? F : new Complex *[M];
         fft3dMPI **FFT=new fft3dMPI *[M];
@@ -252,7 +252,7 @@ int main(int argc, char* argv[])
           }
           for(unsigned int m=0; m < M; ++m)
             FFT[m]->BackwardWait(F[m]);
-	  T[i]=seconds();
+	  T[i]=seconds()/M;
 	  fft.Normalize(F[0]);
 	}
 	if(!quiet && nx*ny*nz < outlimit) show(F[0],d.x,d.y,d.Z,group.active);

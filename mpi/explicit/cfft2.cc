@@ -11,6 +11,7 @@
 #include "exmpiutils.h"
 
 using namespace std;
+using namespace utils;
 using namespace fftwpp;
 
 #ifdef __SSE2__
