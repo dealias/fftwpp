@@ -17,13 +17,12 @@ protected:
 public:  
   
   void inittranspose(const utils::mpiOptions& mpioptions, Complex *work,
-                     const MPI_Comm& global) {
+                     MPI_Comm& global) {
+    global=global ? global : d.communicator;
     T=new utils::mpitranspose<Complex>(d.X,d.y,d.x,d.Y,1,u2,work,
-                                       d.communicator,mpioptions,
-                                       global ? global : d.communicator);
+                                       d.communicator,mpioptions,global);
     U=new utils::mpitranspose<Complex>(d.X,d.y,d.x,d.Y,1,u2,work,
-                                       d.communicator,T->Options(),
-                                       global ? global : d.communicator);
+                                       d.communicator,T->Options(),global);
     d.Deactivate();
   }
 
