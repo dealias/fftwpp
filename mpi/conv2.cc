@@ -188,16 +188,7 @@ int main(int argc, char* argv[])
     ImplicitHConvolution2MPI C(mx,my,xcompact,ycompact,d,du,F[0],
                                mpiOptions(divisor,alltoall),A,B);
     
-    MPI_Barrier(group.active);
-
-    if(!quiet && main)
-      cout << "Initialized after " << seconds() << " seconds." << endl;
-	
-    // Test code
     if(test) {
-      if(!quiet && main)
-	cout << "Testing!" << endl;
-
       init(F,d,A,xcompact,ycompact);
 
       if(!quiet) {
@@ -235,9 +226,12 @@ int main(int argc, char* argv[])
 	}
         retval += checkerror(Flocal[0],Foutgather,d.X*d.Y);
       }
-      
     } else {
-      // Timing loop
+      if(!quiet && main)
+	cout << "Initialized after " << seconds() << " seconds." << endl;
+
+      MPI_Barrier(group.active);
+      
       double *T=new double[N];
       for(unsigned int i=0; i < N; ++i) {
 	init(F,d,A,xcompact,ycompact);

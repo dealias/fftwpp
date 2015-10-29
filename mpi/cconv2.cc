@@ -140,6 +140,7 @@ int main(int argc, char* argv[])
   if(group.rank < group.size) {
     bool main=group.rank == 0;
     if(!quiet && main) {
+      seconds();
       cout << "Configuration: " 
            << group.size << " nodes X " << fftw::maxthreads 
            << " threads/node" << endl;
@@ -174,10 +175,7 @@ int main(int argc, char* argv[])
     
     ImplicitConvolution2MPI C(mx,my,d,mpiOptions(divisor,alltoall),A,B);
 
-    MPI_Barrier(group.active);
-    
     if(test) {
-      
       init(F,d,A);
 
       if(!quiet) {
@@ -230,11 +228,12 @@ int main(int argc, char* argv[])
       MPI_Barrier(group.active);
 
     } else {
-      if(group.rank == 0)
+      if(!quiet && main)
 	cout << "Initialized after " << seconds() << " seconds." << endl;
 
+      MPI_Barrier(group.active);
+      
       double *T=new double[N];
-
       for(unsigned int i=0; i < N; ++i) {
 	init(F,d,A);
 	if(main) seconds();

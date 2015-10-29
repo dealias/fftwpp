@@ -23,13 +23,13 @@
    transpose(in,false,false);     N x m -> M x n
    transpose(in,false,false,out); N x m -> M x n
     
-   Non-blocking interface (example):
+   Non-blocking interface:
     
    itranspose(in);
    // User computation
    wait();
 
-   Double non-blocking interface (example):
+   Double non-blocking interface:
     
    itranspose(in);
    // User computation 0 (typically longest)
@@ -892,6 +892,6 @@ public:
   
 };
 
-} // end namespace fftwpp
+}
 
 #endif

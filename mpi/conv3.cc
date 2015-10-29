@@ -222,15 +222,7 @@ int main(int argc, char* argv[])
     ImplicitHConvolution3MPI C(mx,my,mz,xcompact,ycompact,zcompact,d,du,F[0],
                                mpiOptions(divisor,alltoall),A,B);
     
-    MPI_Barrier(group.active);
-    
-    if(!quiet && main)
-      cout << "Initialized after " << seconds() << " seconds." << endl;
-
     if(test) {
-      if(!quiet && main)
-	cout << "Testing!" << endl;
-      
       init(F,d,A,xcompact,ycompact,zcompact);
       
       if(!quiet) {
@@ -299,7 +291,11 @@ int main(int argc, char* argv[])
       delete[] F0out;
       
     } else {
-      // Timing loop
+      if(!quiet && main)
+        cout << "Initialized after " << seconds() << " seconds." << endl;
+
+      MPI_Barrier(group.active);
+      
       double *T=new double[N];
       for(unsigned int i=0; i < N; ++i) {
         init(F,d,A,xcompact,ycompact,zcompact);

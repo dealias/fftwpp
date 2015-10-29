@@ -158,6 +158,7 @@ int main(int argc, char* argv[])
     bool main=group.rank == 0;
     
     if(!quiet && main) {
+      seconds();
       cout << "Configuration: " 
            << group.size << " nodes X " << fftw::maxthreads 
            << " threads/node" << endl;
@@ -248,9 +249,10 @@ int main(int argc, char* argv[])
           deleteAlign(F0[a]);
         delete[] F0;
       }
-    }
-    
-    if(!test && N > 0) {
+    } else {
+      if(!quiet && main)
+	cout << "Initialized after " << seconds() << " seconds." << endl;
+
       MPI_Barrier(group.active);
      
       double *T=new double[N];
