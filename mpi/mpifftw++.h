@@ -64,8 +64,27 @@ public:
     delete xForward;
   }
 
-  void Forward(Complex *in, Complex *out=NULL);
-  void Backward(Complex *in, Complex *out=NULL);
+  void iForward(Complex *in, Complex *out=NULL);
+  void ForwardWait(Complex *out)
+  {
+    T->wait();
+    xForward->fft(out);
+  }
+  void Forward(Complex *in, Complex *out=NULL) {
+    iForward(in,out);
+    ForwardWait(out);
+  }
+  
+  void iBackward(Complex *in, Complex *out=NULL);
+  void BackwardWait(Complex *out)
+  {
+    T->wait();
+    yBackward->fft(out);
+  }
+  void Backward(Complex *in, Complex *out=NULL) {
+    iBackward(in,out);
+    BackwardWait(out);
+  }
 };
 
 // 3D OpenMP/MPI complex in-place and out-of-place 
@@ -182,7 +201,7 @@ public:
     ForwardWait0(out);
     ForwardWait1(out);
   }
-  void Forward(Complex *in, Complex *out) {
+  void Forward(Complex *in, Complex *out=NULL) {
     iForward(in,out);
     ForwardWait(out);
   }
@@ -199,7 +218,7 @@ public:
     BackwardWait0(out);
     BackwardWait1(out);
   }
-  void Backward(Complex *in, Complex *out) {
+  void Backward(Complex *in, Complex *out=NULL) {
     iBackward(in,out);
     BackwardWait(out);
   }

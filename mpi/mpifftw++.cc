@@ -105,20 +105,18 @@ fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out)
   return plan;
 }
 
-void fft2dMPI::Forward(Complex *in, Complex *out)
+void fft2dMPI::iForward(Complex *in, Complex *out)
 {
   out=Setout(in,out);
   yForward->fft(in,out);
-  T->transpose(out,true,false);
-  xForward->fft(out);
+  T->itranspose(out,true,false);
 }
 
-void fft2dMPI::Backward(Complex *in, Complex *out)
+void fft2dMPI::iBackward(Complex *in, Complex *out)
 {
   out=Setout(in,out);
   xBackward->fft(in,out);
-  T->transpose(out,false,true);
-  yBackward->fft(out);
+  T->itranspose(out,false,true);
 }
 
 void fft3dMPI::iForward(Complex *in, Complex *out)

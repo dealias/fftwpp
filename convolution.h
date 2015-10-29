@@ -480,7 +480,7 @@ public:
     delete Backwards;
   }
   
-  // Unscramble indices, returning spatial j value stored at index i
+  // Unscramble indices, returning spatial index stored at position i
   inline static unsigned findex(unsigned i, unsigned int m) {
     return i < m-1 ? 3*i : 3*i+4-3*m; // for i >= m-1: j=3*(i-(m-1))+1
   }
