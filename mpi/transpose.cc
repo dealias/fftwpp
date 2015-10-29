@@ -1,10 +1,6 @@
-#include <mpi.h>
-#include "Complex.h"
-#include "seconds.h"
 #include "mpitranspose.h"
 #include "mpiutils.h"
 #include "utils.h"
-#include <unistd.h>
 #include "statistics.h"
 #include "align.h"
 

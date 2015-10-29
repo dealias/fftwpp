@@ -41,9 +41,9 @@
 #include <mpi.h>
 #include <cstring>
 #include <typeinfo>
-#include "../Complex.h"
-#include "../seconds.h"
-#include "../Array.h"
+#include "Complex.h"
+#include "seconds.h"
+#include "Array.h"
 
 #ifndef FFTWPP_SINGLE_THREAD
 #define PARALLEL(code)                                  \

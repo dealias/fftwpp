@@ -1,8 +1,4 @@
-#include "Array.h"
-
-#include "mpifftw++.h"
 #include "mpiconvolution.h"
-#include "mpiutils.h" // For output of distributed arrays
 
 using namespace std;
 using namespace utils;

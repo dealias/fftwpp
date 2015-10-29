@@ -2,10 +2,10 @@
 #define __mpiconvolution_h__ 1
   
 #include <mpi.h>
-#include "../convolution.h"
 #include <vector>
+#include "convolution.h"
 #include "mpifftw++.h"
-#include "mpi/mpitranspose.h"
+#include "mpitranspose.h"
 
 namespace fftwpp {
 
