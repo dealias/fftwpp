@@ -2,9 +2,9 @@
 #include "explicit.h"
 #include "direct.h"
 #include "utils.h"
-#include <unistd.h>
 
 using namespace std;
+using namespace utils;
 using namespace fftwpp;
 
 bool Direct=false, Implicit=true, Explicit=false, Test=false;

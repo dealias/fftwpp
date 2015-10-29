@@ -2,9 +2,9 @@
 #include "explicit.h"
 #include "direct.h"
 #include "utils.h"
-#include <unistd.h>
 
 using namespace std;
+using namespace utils;
 using namespace fftwpp;
 
 // Constants used for initialization and testing.

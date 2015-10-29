@@ -1,9 +1,9 @@
 #include "Array.h"
 #include "mpifftw++.h"
 #include "utils.h"
-#include "mpiutils.h"
 
 using namespace std;
+using namespace utils;
 using namespace fftwpp;
 using namespace Array;
 

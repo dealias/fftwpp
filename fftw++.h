@@ -77,118 +77,10 @@ typedef std::complex<double> Complex;
 #endif
 
 #include "seconds.h"
-
-#ifndef HAVE_POSIX_MEMALIGN
-
-#ifdef __GLIBC_PREREQ
-#if __GLIBC_PREREQ(2,3)
-#define HAVE_POSIX_MEMALIGN
-#endif
-#else
-#ifdef _POSIX_SOURCE
-#define HAVE_POSIX_MEMALIGN
-#endif
-#endif
-
-#endif
-
-#ifdef __Array_h__
-
-namespace Array {
-static const array1<Complex> NULL1;  
-static const array2<Complex> NULL2;  
-static const array3<Complex> NULL3;
-}
-
-#else
-
-#ifdef HAVE_POSIX_MEMALIGN
-#ifdef _AIX
-extern "C" int posix_memalign(void **memptr, size_t alignment, size_t size);
-#endif
-#else
-namespace Array {
-
-// Adapted from FFTW aligned malloc/free.  Assumes that malloc is at least
-// sizeof(void*)-aligned. Allocated memory must be freed with free0.
-inline int posix_memalign0(void **memptr, size_t alignment, size_t size)
-{
-  if(alignment % sizeof (void *) != 0 || (alignment & (alignment - 1)) != 0)
-    return EINVAL;
-  void *p0=malloc(size+alignment);
-  if(!p0) return ENOMEM;
-  void *p=(void *)(((size_t) p0+alignment)&~(alignment-1));
-  *((void **) p-1)=p0;
-  *memptr=p;
-  return 0;
-}
-
-inline void free0(void *p)
-{
-  if(p) free(*((void **) p-1));
-}
-
-}
-#endif
-
-namespace Array {
-
-template<class T>
-inline void newAlign(T *&v, size_t len, size_t align)
-{
-  void *mem=NULL;
-  const char *invalid="Invalid alignment requested";
-  const char *nomem="Memory limits exceeded";
-#ifdef HAVE_POSIX_MEMALIGN
-  int rc=posix_memalign(&mem,align,len*sizeof(T));
-#else  
-  int rc=posix_memalign0(&mem,align,len*sizeof(T));
-#endif  
-  if(rc == EINVAL) std::cerr << invalid << std::endl;
-  if(rc == ENOMEM) std::cerr << nomem << std::endl;
-  v=(T *) mem;
-  for(size_t i=0; i < len; i++) new(v+i) T;
-}
-
-template<class T>
-inline void deleteAlign(T *v, size_t len)
-{
-  for(size_t i=len; i-- > 0;) v[i].~T();
-#ifdef HAVE_POSIX_MEMALIGN
-  free(v);
-#else
-  free0(v);
-#endif  
-}
-}
-
-#endif
+#include "statistics.h"
+#include "align.h"
 
 namespace fftwpp {
-
-inline Complex *ComplexAlign(size_t size)
-{
-  Complex *v;
-  Array::newAlign(v,size,sizeof(Complex));
-  return v;
-}
-
-inline double *doubleAlign(size_t size)
-{
-  double *v;
-  Array::newAlign(v,size,sizeof(Complex));
-  return v;
-}
-
-template<class T>
-inline void deleteAlign(T *p)
-{
-#ifdef HAVE_POSIX_MEMALIGN
-  free(p);
-#else
-  Array::free0(p);
-#endif  
-}
 
 // Obsolete names:
 #define FFTWComplex ComplexAlign
@@ -401,51 +293,10 @@ public:
 #endif    
   }
   
-  class statistics {
-    unsigned int N;
-    double A;
-    double varL;
-    double varH;
-  public:
-    statistics() : N(0), A(0.0), varL(0.0), varH(0.0) {} 
-    double count() {return N;}
-    double mean() {return A;}
-    void add(double t) {
-      ++N;
-      double diff=t-A;
-      A += diff/N;
-      double v=diff*(t-A);
-      if(diff < 0.0)
-        varL += v;
-      else
-        varH += v;
-    }
-    double stdev(double var, double f) {
-      double factor=N > f ? f/(N-f) : 0.0;
-      return sqrt(var*factor);
-    }
-    double stdev() {
-      return stdev(varL+varH,1.0);
-    }
-    double stdevL() {
-      return stdev(varL,2.0);
-    }
-    double stdevH() {
-      return stdev(varH,2.0);
-    }
-    void output(const char *text, unsigned int m) {
-      std::cout << text << ":\n" 
-                << m << "\t" 
-                << A << "\t" 
-                << stdevL() << "\t" 
-                << stdevH() << std::endl;
-    }
-  };
-  
   threaddata time(fftw_plan plan1, fftw_plan planT, Complex *in, Complex *out,
                   unsigned int Threads) {
-    statistics S,ST;
-    double stop=totalseconds()+testseconds;
+    utils::statistics S,ST;
+    double stop=utils::totalseconds()+testseconds;
     threads=1;
     plan=plan1;
     fft(in,out);
@@ -454,17 +305,17 @@ public:
     fft(in,out);
     unsigned int N=1;
     for(;;) {
-      double t0=totalseconds();
+      double t0=utils::totalseconds();
       threads=1;
       plan=plan1;
       for(unsigned int i=0; i < N; ++i)
         fft(in,out);
-      double t1=totalseconds();
+      double t1=utils::totalseconds();
       threads=Threads;
       plan=planT;
       for(unsigned int i=0; i < N; ++i)
         fft(in,out);
-      double t=totalseconds();
+      double t=utils::totalseconds();
       S.add(t1-t0);
       ST.add(t-t1);
       if(S.mean() < 100.0/CLOCKS_PER_SEC) N *= 2;
@@ -505,7 +356,7 @@ public:
   
   threaddata Setup(Complex *in, Complex *out=NULL) {
     bool alloc=!in;
-    if(alloc) in=ComplexAlign((doubles+1)/2);
+    if(alloc) in=utils::ComplexAlign((doubles+1)/2);
     out=CheckAlign(in,out);
     inplace=(out==in);
     

@@ -2,9 +2,10 @@
 #include "explicit.h"
 #include "direct.h"
 #include "utils.h"
-#include <unistd.h>
+#include "Array.h"
 
 using namespace std;
+using namespace utils;
 using namespace fftwpp;
 
 // Number of iterations.

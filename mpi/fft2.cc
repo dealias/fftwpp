@@ -1,9 +1,9 @@
 #include "Array.h"
 #include "mpifftw++.h"
 #include "utils.h"
-#include "mpiutils.h"
 
 using namespace std;
+using namespace utils;
 using namespace fftwpp;
 using namespace Array;
 
@@ -103,9 +103,7 @@ int main(int argc, char* argv[])
     if(N < 10) N=10;
   }
   
-  int fftsize=min(nx,ny);
-
-  MPIgroup group(MPI_COMM_WORLD,fftsize);
+  MPIgroup group(MPI_COMM_WORLD,ny);
 
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;

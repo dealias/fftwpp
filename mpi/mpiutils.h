@@ -1,9 +1,9 @@
 #ifndef __mpiutils_h__
 #define __mpiutils_h__ 1
 
-#include "mpifftw++.h"
+#include "mpigroup.h"
 
-namespace fftwpp {
+namespace utils {
 
 // Gather an MPI-distributed array onto the rank 0 process.
 // The distributed array has dimensions x*Y*Z.

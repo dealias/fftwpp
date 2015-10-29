@@ -52,19 +52,19 @@ unsigned int BuildZeta(unsigned int n, unsigned int m,
 struct convolveOptions {
   unsigned int nx,ny,nz;           // |
   unsigned int stride2,stride3;    // | Used internally by the MPI interface.
-  fftwpp::mpiOptions mpi;                  // |
+  utils::mpiOptions mpi;    // |
   
   convolveOptions(unsigned int nx=0, unsigned int ny=0, unsigned int nz=0,
                   unsigned int stride2=0, unsigned int stride3=0) :
     nx(nx), ny(ny), nz(nz), stride2(stride2), stride3(stride3) {}
 
   convolveOptions(unsigned int nx, unsigned int ny, unsigned int stride2,
-                  fftwpp::mpiOptions mpi) :
+                  utils::mpiOptions mpi) :
     nx(nx), ny(ny), stride2(stride2), mpi(mpi) {}
     
   convolveOptions(unsigned int ny, unsigned int nz,
                   unsigned int stride2, unsigned int stride3,
-                  fftwpp::mpiOptions mpi) :
+                  utils::mpiOptions mpi) :
     ny(ny), nz(nz), stride2(stride2), stride3(stride3), mpi(mpi) {}
 };
     
@@ -137,7 +137,7 @@ public:
     out_of_place = A < B;
 
     Complex* U0=U[0];
-    Complex* U1=A == 1 ? ComplexAlign(m) : U[1];
+    Complex* U1=A == 1 ? utils::ComplexAlign(m) : U[1];
     
     BackwardsO=new fft1d(m,1,U0,U1);
     Backwards=new fft1d(m,1,U0);
@@ -151,7 +151,7 @@ public:
                        std::max(BackwardsO->Threads(),ForwardsO->Threads()));
     }
     
-    if(A == 1) deleteAlign(U1);
+    if(A == 1) utils::deleteAlign(U1);
 
     s=BuildZeta(2*m,m,ZetaH,ZetaL,threads);
   }
@@ -187,17 +187,17 @@ public:
 		      unsigned int A=2, unsigned int B=1,
 		      unsigned int threads=fftw::maxthreads)
     : ThreadBase(threads), m(m), A(A), B(B), allocated(true) {
-    u=ComplexAlign(max(A,B)*m);
+    u=utils::ComplexAlign(max(A,B)*m);
     initpointers(U,u);
     init();
   }
  
   ~ImplicitConvolution() {
-    deleteAlign(ZetaH);
-    deleteAlign(ZetaL);
+    utils::deleteAlign(ZetaH);
+    utils::deleteAlign(ZetaL);
     
     if(pointers) deletepointers(U);
-    if(allocated) deleteAlign(u);
+    if(allocated) utils::deleteAlign(u);
     
     delete ForwardsO;
     delete BackwardsO;    
@@ -278,7 +278,7 @@ public:
   
   void init() {
     Complex* U0=U[0];
-    Complex* U1=A == 1 ? ComplexAlign(m) : U[1];
+    Complex* U1=A == 1 ? utils::ComplexAlign(m) : U[1];
     
     rc=new rcfft1d(m,U0);
     cr=new crfft1d(m,U0);
@@ -286,7 +286,7 @@ public:
     rco=new rcfft1d(m,(double *) U0,U1);
     cro=new crfft1d(m,U1,(double *) U0);
     
-    if(A == 1) deleteAlign(U1);
+    if(A == 1) utils::deleteAlign(U1);
     
     threads=std::min(threads,std::max(rco->Threads(),cro->Threads()));
     s=BuildZeta(3*m,c+2,ZetaH,ZetaL,threads);
@@ -340,17 +340,17 @@ public:
   ImplicitHConvolution(unsigned int m, bool compact=true, unsigned int A=2,
                        unsigned int B=1, unsigned int threads=fftw::maxthreads)
     : ThreadBase(threads), m(m), c(m/2), compact(compact), A(A), B(B),
-      u(ComplexAlign(max(A,B)*(c+1))), allocated(true) {
+      u(utils::ComplexAlign(max(A,B)*(c+1))), allocated(true) {
     initpointers(U,u);
     init();
   }
 
   virtual ~ImplicitHConvolution() {
-    deleteAlign(ZetaH);
-    deleteAlign(ZetaL);
+    utils::deleteAlign(ZetaH);
+    utils::deleteAlign(ZetaL);
     
     if(pointers) deletepointers(U);
-    if(allocated) deleteAlign(u);
+    if(allocated) utils::deleteAlign(u);
 
     delete cro;
     delete rco;
@@ -426,8 +426,8 @@ public:
   }
   
   ~fftpad() {
-    deleteAlign(ZetaL);
-    deleteAlign(ZetaH);
+    utils::deleteAlign(ZetaL);
+    utils::deleteAlign(ZetaH);
     delete Forwards;
     delete Backwards;
   }
@@ -474,8 +474,8 @@ public:
   }
   
   virtual ~fft0pad() {
-    deleteAlign(ZetaL);
-    deleteAlign(ZetaH);
+    utils::deleteAlign(ZetaL);
+    utils::deleteAlign(ZetaH);
     delete Forwards;
     delete Backwards;
   }
@@ -605,8 +605,8 @@ public:
     ThreadBase(threads), mx(mx), my(my), A(A), B(B), allocated(true) {
     set(options);
     multithread(options.nx);
-    u1=ComplexAlign(my*A*threads);
-    u2=ComplexAlign(options.stride2*A);
+    u1=utils::ComplexAlign(my*A*threads);
+    u2=utils::ComplexAlign(options.stride2*A);
     init(options);
   }
   
@@ -620,8 +620,8 @@ public:
     delete xfftpad;
     
     if(allocated) {
-      deleteAlign(u2);
-      deleteAlign(u1);
+      utils::deleteAlign(u2);
+      utils::deleteAlign(u1);
     }
   }
   
@@ -801,8 +801,8 @@ public:
     xcompact(xcompact), ycompact(ycompact), A(A), B(B), allocated(true) {
     set(options);
     multithread(options.nx);
-    u1=ComplexAlign((my/2+1)*A*threads);
-    u2=ComplexAlign(options.stride2*A);
+    u1=utils::ComplexAlign((my/2+1)*A*threads);
+    u2=utils::ComplexAlign(options.stride2*A);
     init(options);
   }
   
@@ -810,8 +810,8 @@ public:
     deletepointers2(U2);
     
     if(allocated) {
-      deleteAlign(u2);
-      deleteAlign(u1);
+      utils::deleteAlign(u2);
+      utils::deleteAlign(u1);
     }
     delete xfftpad;
   }
@@ -1008,9 +1008,9 @@ public:
     allocated(true) {
     set(options);
     multithread(mx);
-    u1=ComplexAlign(mz*A*threads*innerthreads);
-    u2=ComplexAlign(options.stride2*A*threads);
-    u3=ComplexAlign(options.stride3*A);
+    u1=utils::ComplexAlign(mz*A*threads*innerthreads);
+    u2=utils::ComplexAlign(options.stride2*A*threads);
+    u3=utils::ComplexAlign(options.stride3*A);
     init(options);
   }
   
@@ -1025,9 +1025,9 @@ public:
     delete xfftpad;
     
     if(allocated) {
-      deleteAlign(u3);
-      deleteAlign(u2);
-      deleteAlign(u1);
+      utils::deleteAlign(u3);
+      utils::deleteAlign(u2);
+      utils::deleteAlign(u1);
     }
   }
   
@@ -1200,9 +1200,9 @@ public:
     allocated(true) {
     set(options);
     multithread(mx);
-    u1=ComplexAlign((mz/2+1)*A*threads*innerthreads);
-    u2=ComplexAlign(options.stride2*A*threads);
-    u3=ComplexAlign(options.stride3*A);
+    u1=utils::ComplexAlign((mz/2+1)*A*threads*innerthreads);
+    u2=utils::ComplexAlign(options.stride2*A*threads);
+    u3=utils::ComplexAlign(options.stride3*A);
     init(options);
   }
   
@@ -1218,9 +1218,9 @@ public:
     delete xfftpad;
     
     if(allocated) {
-      deleteAlign(u3);
-      deleteAlign(u2);
-      deleteAlign(u1);
+      utils::deleteAlign(u3);
+      utils::deleteAlign(u2);
+      utils::deleteAlign(u1);
     }
   }
   
@@ -1341,8 +1341,8 @@ public:
   }
   
   ImplicitHTConvolution(unsigned int m, unsigned int M=1) : 
-    m(m), u(ComplexAlign(m*M+M)), v(ComplexAlign(m*M+M)),
-    w(ComplexAlign(m*M+M)), M(M), allocated(true) {
+    m(m), u(utils::ComplexAlign(m*M+M)), v(utils::ComplexAlign(m*M+M)),
+    w(utils::ComplexAlign(m*M+M)), M(M), allocated(true) {
     init();
   }
   
@@ -1350,12 +1350,12 @@ public:
     deletepointers(W);
     
     if(allocated) {
-      deleteAlign(w);
-      deleteAlign(v);
-      deleteAlign(u);
+      utils::deleteAlign(w);
+      utils::deleteAlign(v);
+      utils::deleteAlign(u);
     }
-    deleteAlign(ZetaL);
-    deleteAlign(ZetaH);
+    utils::deleteAlign(ZetaL);
+    utils::deleteAlign(ZetaH);
     delete cro;
     delete rco;
     delete cr;
@@ -1417,17 +1417,17 @@ public:
   }
   
   ImplicitHFGGConvolution(unsigned int m) : 
-    m(m), u(ComplexAlign(m+1)), v(ComplexAlign(m+1)), allocated(true) {
+    m(m), u(utils::ComplexAlign(m+1)), v(utils::ComplexAlign(m+1)), allocated(true) {
     init();
   }
   
   ~ImplicitHFGGConvolution() {
     if(allocated) {
-      deleteAlign(v);
-      deleteAlign(u);
+      utils::deleteAlign(v);
+      utils::deleteAlign(u);
     }
-    deleteAlign(ZetaL);
-    deleteAlign(ZetaH);
+    utils::deleteAlign(ZetaL);
+    utils::deleteAlign(ZetaH);
     delete cro;
     delete rco;
     delete cr;
@@ -1480,16 +1480,16 @@ public:
   }
   
   ImplicitHFFFConvolution(unsigned int m) :
-    m(m), u(ComplexAlign(m+1)), allocated(true) {
+    m(m), u(utils::ComplexAlign(m+1)), allocated(true) {
     init();
   }
   
   ~ImplicitHFFFConvolution() {
     if(allocated)
-      deleteAlign(u);
+      utils::deleteAlign(u);
     
-    deleteAlign(ZetaL);
-    deleteAlign(ZetaH);
+    utils::deleteAlign(ZetaL);
+    utils::deleteAlign(ZetaH);
     delete cr;
     delete rc;
   }
@@ -1537,8 +1537,8 @@ public:
   }
   
   ~fft0bipad() {
-    deleteAlign(ZetaL);
-    deleteAlign(ZetaH);
+    utils::deleteAlign(ZetaL);
+    utils::deleteAlign(ZetaH);
     delete Forwards;
     delete Backwards;
   }
@@ -1633,12 +1633,12 @@ public:
                          unsigned int M=1,
                          unsigned int threads=fftw::maxthreads) :
     ThreadBase(threads), mx(mx), my(my),
-    u1(ComplexAlign((my+1)*M*threads)),
-    v1(ComplexAlign((my+1)*M*threads)),
-    w1(ComplexAlign((my+1)*M*threads)),
-    u2(ComplexAlign(2*mx*(my+1)*M)),
-    v2(ComplexAlign(2*mx*(my+1)*M)),
-    w2(ComplexAlign(2*mx*(my+1)*M)),
+    u1(utils::ComplexAlign((my+1)*M*threads)),
+    v1(utils::ComplexAlign((my+1)*M*threads)),
+    w1(utils::ComplexAlign((my+1)*M*threads)),
+    u2(utils::ComplexAlign(2*mx*(my+1)*M)),
+    v2(utils::ComplexAlign(2*mx*(my+1)*M)),
+    w2(utils::ComplexAlign(2*mx*(my+1)*M)),
     M(M), allocated(true) {
     init();
   }
@@ -1651,12 +1651,12 @@ public:
     delete xfftpad;
     
     if(allocated) {
-      deleteAlign(w2);
-      deleteAlign(v2);
-      deleteAlign(u2);
-      deleteAlign(w1);
-      deleteAlign(v1);
-      deleteAlign(u1);
+      utils::deleteAlign(w2);
+      utils::deleteAlign(v2);
+      utils::deleteAlign(u2);
+      utils::deleteAlign(w1);
+      utils::deleteAlign(v1);
+      utils::deleteAlign(u1);
     }
   }
   
@@ -1777,10 +1777,10 @@ public:
   ImplicitHFGGConvolution2(unsigned int mx, unsigned int my,
                            unsigned int threads=fftw::maxthreads) :
     ThreadBase(threads), mx(mx), my(my),
-    u1(ComplexAlign((my+1)*threads)),
-    v1(ComplexAlign((my+1)*threads)),
-    u2(ComplexAlign(2*mx*(my+1))),
-    v2(ComplexAlign(2*mx*(my+1))),
+    u1(utils::ComplexAlign((my+1)*threads)),
+    v1(utils::ComplexAlign((my+1)*threads)),
+    u2(utils::ComplexAlign(2*mx*(my+1))),
+    v2(utils::ComplexAlign(2*mx*(my+1))),
     allocated(true) {
     init();
   }
@@ -1792,10 +1792,10 @@ public:
     delete xfftpad;
     
     if(allocated) {
-      deleteAlign(v2);
-      deleteAlign(u2);
-      deleteAlign(v1);
-      deleteAlign(u1);
+      utils::deleteAlign(v2);
+      utils::deleteAlign(u2);
+      utils::deleteAlign(v1);
+      utils::deleteAlign(u1);
     }
   }
   
@@ -1882,8 +1882,8 @@ public:
   ImplicitHFFFConvolution2(unsigned int mx, unsigned int my,
                            unsigned int threads=fftw::maxthreads) :
     ThreadBase(threads), mx(mx), my(my),
-    u1(ComplexAlign((my+1)*threads)),
-    u2(ComplexAlign(2*mx*(my+1))),
+    u1(utils::ComplexAlign((my+1)*threads)),
+    u2(utils::ComplexAlign(2*mx*(my+1))),
     allocated(true) {
     init();
   }
@@ -1894,8 +1894,8 @@ public:
     delete xfftpad;
     
     if(allocated) {
-      deleteAlign(u2);
-      deleteAlign(u1);
+      utils::deleteAlign(u2);
+      utils::deleteAlign(u1);
     }
   }
   

@@ -5,6 +5,7 @@
 #include "mpiutils.h" // For output of distributed arrays
 
 using namespace std;
+using namespace utils;
 using namespace fftwpp;
 
 void init(double *f, const split3 df)

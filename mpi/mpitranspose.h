@@ -67,7 +67,7 @@ inline unsigned int ceilquotient(unsigned int a, unsigned int b)
 
 #include "../transposeoptions.h"
 
-namespace fftwpp {
+namespace utils {
 
 extern double safetyfactor; // For conservative latency estimate.
 extern bool overlap; // Allow overlapped communication.
@@ -284,13 +284,13 @@ public:
     poll(send,recv,N2);
     for(unsigned int i=0; i < M; ++i) {
       MPI_Barrier(split);
-      double t0=totalseconds();
+      double t0=utils::totalseconds();
       poll(send,recv,N1);
-      double t1=totalseconds();
+      double t1=utils::totalseconds();
       MPI_Barrier(split);
-      double t2=totalseconds();
+      double t2=utils::totalseconds();
       poll(send,recv,N2);
-      double t3=totalseconds();
+      double t3=utils::totalseconds();
       T1 += t1-t0;
       T2 += t3-t2;
     }
@@ -444,13 +444,13 @@ public:
     double sum=0.0;
     unsigned int N=1;
     transpose(data,true,false); // Initialize communication buffers
-    double stop=totalseconds()+testseconds;
+    double stop=utils::totalseconds()+testseconds;
     for(;;++N) {
       int end;
-      double start=rank == 0 ? totalseconds() : 0.0;
+      double start=rank == 0 ? utils::totalseconds() : 0.0;
       transpose(data,true,false);
       if(rank == 0) {
-        double t=totalseconds();
+        double t=utils::totalseconds();
         double seconds=t-start;
         sum += seconds;
         end=t > stop;

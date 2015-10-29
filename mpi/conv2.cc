@@ -1,9 +1,8 @@
 #include "mpiconvolution.h"
 #include "utils.h"
-#include "mpiutils.h"
-#include "Array.h"
 
 using namespace std;
+using namespace utils;
 using namespace fftwpp;
 using namespace Array;
 

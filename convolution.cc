@@ -1,6 +1,7 @@
 #include "convolution.h"
 
 using namespace std;
+using namespace utils;
 
 namespace fftwpp {
 

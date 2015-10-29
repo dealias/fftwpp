@@ -6,6 +6,7 @@
 // g++ -I .. -fopenmp examplecconv.cc ../convolution.cc ../fftw++.cc -lfftw3 -lfftw3_omp
 
 using namespace std;
+using namespace utils;
 using namespace Array;
 using namespace fftwpp;
 

@@ -3,19 +3,17 @@
 
 namespace fftwpp {
 
-MPI_Comm Active=MPI_COMM_NULL;
-
 fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out) 
 {
-  if(Active == MPI_COMM_NULL)
+  if(utils::Active == MPI_COMM_NULL)
     return Planner(F,in,out);
   fftw_plan plan;
   int rank;
-  MPI_Comm_rank(Active,&rank);
+  MPI_Comm_rank(utils::Active,&rank);
   
   if(rank == 0) {
     int size;
-    MPI_Comm_size(Active,&size);
+    MPI_Comm_size(utils::Active,&size);
     
     static bool Wise=false;
     bool learned=false;
@@ -42,9 +40,9 @@ fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out)
       }
     }
     for(int i=1; i < size; ++i)
-      MPI_Send(&length,1,MPI_INT,i,0,Active);
+      MPI_Send(&length,1,MPI_INT,i,0,utils::Active);
     if(length > 0) {
-      MPI_Bcast(inspiration,length,MPI_CHAR,0,Active);
+      MPI_Bcast(inspiration,length,MPI_CHAR,0,utils::Active);
       if(Wise) {
         fftw_import_wisdom_from_string(experience);
         fftw_free(experience);
@@ -52,13 +50,13 @@ fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out)
       fftw_free(inspiration);
     }
     int rlength[size];
-    MPI_Gather(&length,1,MPI_INT,rlength,1,MPI_INT,0,Active);
+    MPI_Gather(&length,1,MPI_INT,rlength,1,MPI_INT,0,utils::Active);
     for(int i=1; i < size; ++i) {
       int length=rlength[i];
       if(length > 0) {
         learned=true;
         char inspiration[length+1];
-        MPI_Recv(&inspiration,length,MPI_CHAR,i,0,Active,MPI_STATUS_IGNORE);
+        MPI_Recv(&inspiration,length,MPI_CHAR,i,0,utils::Active,MPI_STATUS_IGNORE);
         inspiration[length]=0;
         fftw_import_wisdom_from_string(inspiration);
       }
@@ -68,15 +66,15 @@ fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out)
     int flag=false;
     MPI_Status status;
     while(true) {
-      MPI_Iprobe(0,0,Active,&flag,&status);
+      MPI_Iprobe(0,0,utils::Active,&flag,&status);
       if(flag) break;
       usleep(10000);
     }
     int length;
-    MPI_Recv(&length,1,MPI_INT,0,0,Active,MPI_STATUS_IGNORE);
+    MPI_Recv(&length,1,MPI_INT,0,0,utils::Active,MPI_STATUS_IGNORE);
     if(length > 0) {
       char inspiration[length+1];
-      MPI_Bcast(inspiration,length,MPI_CHAR,0,Active);
+      MPI_Bcast(inspiration,length,MPI_CHAR,0,utils::Active);
       inspiration[length]=0;
       fftw_import_wisdom_from_string(inspiration);
     }
@@ -96,9 +94,9 @@ fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out)
         length=strlen(inspiration);
       } else length=0;
     }
-    MPI_Gather(&length,1,MPI_INT,NULL,1,MPI_INT,0,Active);
+    MPI_Gather(&length,1,MPI_INT,NULL,1,MPI_INT,0,utils::Active);
     if(length > 0) {
-      MPI_Send(inspiration,length,MPI_CHAR,0,0,Active);
+      MPI_Send(inspiration,length,MPI_CHAR,0,0,utils::Active);
       fftw_import_wisdom_from_string(experience);
       fftw_free(experience);
       fftw_free(inspiration);
@@ -300,4 +298,14 @@ void rcfft3dMPI::Backward0(Complex *in, double *out)
   Shift(out);
 }
 
-} // End of namespace fftwpp
+}
+
+namespace utils {
+MPI_Comm Active=MPI_COMM_NULL;
+
+void setMPIplanner()
+{
+  fftwpp::fftw::planner=fftwpp::MPIplanner;
+}
+
+}

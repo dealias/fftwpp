@@ -4,6 +4,7 @@
 // g++ -I .. -fopenmp example0.cc ../fftw++.cc -lfftw3 -lfftw3_omp
 
 using namespace std;
+using namespace utils;
 using namespace fftwpp;
 
 int main()

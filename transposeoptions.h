@@ -1,7 +1,7 @@
 #ifndef __transposeoptions_h__
 #define __transposeoptions_h__ 1
 
-namespace fftwpp {
+namespace utils {
 extern unsigned int defaultmpithreads;
 
 struct mpiOptions {

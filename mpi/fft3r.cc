@@ -1,12 +1,11 @@
 #include "Array.h"
 #include "mpifftw++.h"
 #include "utils.h"
-#include "mpiutils.h"
-#include <unistd.h>
-using namespace Array;
 
 using namespace std;
+using namespace utils;
 using namespace fftwpp;
+using namespace Array;
 
 // Number of iterations.
 unsigned int N0=10000000;

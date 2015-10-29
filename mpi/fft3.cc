@@ -1,12 +1,11 @@
 #include "Array.h"
 #include "mpifftw++.h"
 #include "utils.h"
-#include "mpiutils.h"
-#include <unistd.h>
-using namespace Array;
 
 using namespace std;
+using namespace utils;
 using namespace fftwpp;
+using namespace Array;
 
 // Number of iterations.
 unsigned int N0=10000000;
@@ -135,7 +134,6 @@ int main(int argc, char* argv[])
       cout << "Using MPI VERSION " << MPI_VERSION << endl;
       cout << "N=" << N << endl;
       cout << "nx=" << nx << ", ny=" << ny << ", nz=" << nz << endl;
-      cout << "size=" << group.size << endl;
     }
 
     split3 d(nx,ny,nz,group);

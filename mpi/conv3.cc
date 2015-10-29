@@ -1,9 +1,8 @@
 #include "mpiconvolution.h"
 #include "utils.h"
-#include "mpiutils.h"
-#include "Array.h"
 
 using namespace std;
+using namespace utils;
 using namespace fftwpp;
 using namespace Array;
 
@@ -186,7 +185,7 @@ int main(int argc, char* argv[])
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;
   
-  defaultmpithreads=fftw::maxthreads=1;
+  defaultmpithreads=fftw::maxthreads;
     
   if(group.rank < group.size) {
     bool main=group.rank == 0;

@@ -1,7 +1,7 @@
 #include "mpitranspose.h"
 #include "cmult-sse2.h"
 
-namespace fftwpp {
+namespace utils {
 
 double safetyfactor=2.0;
 bool overlap=true;
@@ -59,4 +59,4 @@ void fill1_comm_sched(int *sched, int which_pe, int npes)
 //  assert(s == npes);
 }
 
-} // end namespace fftwpp
+}

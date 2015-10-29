@@ -1,13 +1,15 @@
 #include <mpi.h>
-#include "../Complex.h"
-#include "../seconds.h"
+#include "Complex.h"
+#include "seconds.h"
 #include "mpitranspose.h"
-#include "utils.h"
 #include "mpiutils.h"
+#include "utils.h"
 #include <unistd.h>
+#include "statistics.h"
+#include "align.h"
 
 using namespace std;
-using namespace fftwpp;
+using namespace utils;
 
 bool test=false;
 bool quiet=false;
@@ -16,7 +18,7 @@ unsigned int X=8, Y=8, Z=1;
 int a=0; // Test for best block divisor
 int alltoall=-1; // Test for best alltoall routine
 
-namespace fftwpp {
+namespace utils {
   unsigned int defaultmpithreads=1;
 }
 
@@ -101,8 +103,8 @@ void fftwTranspose(int rank, int size)
   if(showoutput)
     show(data,X,y*Z,MPI_COMM_WORLD);
   
-  fftw::statistics Sininit,Sinwait0,Sinwait1,Sin;
-  fftw::statistics Soutinit,Soutwait0,Soutwait1,Sout;
+  statistics Sininit,Sinwait0,Sinwait1,Sin;
+  statistics Soutinit,Soutwait0,Soutwait1,Sout;
 
   for(int k=0; k < N; ++k) {
     double begin=0.0, Tinit0=0.0, Tinit=0.0, Twait0=0.0, Twait1=0.0;
@@ -210,8 +212,8 @@ int transpose(int rank, int size, int N)
     T.NmTranspose();
     init(data,X,y,Z,0,y0);
     
-    fftw::statistics Sininit,Sinwait0,Sinwait1,Sin;
-    fftw::statistics Soutinit,Soutwait0,Soutwait1,Sout;
+    statistics Sininit,Sinwait0,Sinwait1,Sin;
+    statistics Soutinit,Soutwait0,Soutwait1,Sout;
 
     bool showoutput=!quiet && (test || (!X*Y < showlimit && N == 1));
 

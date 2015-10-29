@@ -1,8 +1,8 @@
 #include "mpiconvolution.h"
 #include "utils.h"
-#include "mpiutils.h"
 
 using namespace std;
+using namespace utils;
 using namespace fftwpp;
 
 // Number of iterations.

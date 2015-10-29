@@ -1,5 +1,7 @@
 #include "mpiconvolution.h"
 
+using namespace utils;
+
 namespace fftwpp {
 
 void ImplicitConvolution2MPI::convolve(Complex **F, multiplier *pmult,
