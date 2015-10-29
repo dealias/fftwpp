@@ -221,7 +221,7 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
             if(rank == 0)
               std::cerr << "Invalid index in HermitianSymmetrizeXYMPI."
                         << std::endl;
-            exit(-1);
+            exit(-3);
           }
         }
       } else {
