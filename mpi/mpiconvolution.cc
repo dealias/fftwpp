@@ -16,24 +16,27 @@ void ImplicitConvolution2MPI::convolve(Complex **F, multiplier *pmult,
     if(a > 0) T->wait();
     T->itranspose(f,false,true);
     xfftpad->Backwards->fft(u);
-    T->wait();
-    T->itranspose(u,false,true);
+    if(a > 0) U->wait();
+    U->itranspose(u,false,true);
   }
       
-  subconvolution(F,pmult,index,0,d.x,d.Y,offset);
   T->wait();
-  T->itranspose(F[0]+offset,true,false);
+  subconvolution(F,pmult,index,0,d.x,d.Y,offset);
+  U->wait0();
+  for(unsigned int b=0; b < B; ++b) {
+    if(b > 0) T->wait();
+    T->itranspose(F[b]+offset,true,false);
+  }
+  U->wait1();
   subconvolution(U2,pmult,index,1,d.x,d.Y);
   T->wait();
-  for(unsigned int b=1; b < B; ++b)
-    T->transpose(F[b]+offset,true,false);
     
   for(unsigned int b=0; b < B; ++b) {
     Complex *f=F[b]+offset;
     Complex *u=U2[b];
-    T->itranspose(u,true,false);
+    U->itranspose(u,true,false);
     xfftpad->Forwards->fft(f);
-    T->wait();
+    U->wait();
     xfftpad->Forwards->fft(u);
     xfftpad->reduce(f,u);
   }
@@ -104,34 +107,35 @@ void ImplicitConvolution3MPI::convolve(Complex **F, multiplier *pmult,
       T->itranspose(f,false,true);
     }
     xfftpad->Backwards->fft(u);
-    if(T) {
-      T->wait();
-      T->itranspose(u,false,true);
+    if(U) {
+      if(a > 0) U->wait();
+      U->itranspose(u,false,true);
     }
   }
       
   unsigned int stride=d.Y*d.z;
     
+  if(T) T->wait();
   subconvolution(F,pmult,index,0,d.x,stride,offset);
-  if(T) {
-    T->wait();
-    T->itranspose(F[0]+offset,true,false);
+  if(U) {
+    U->wait0();
+    for(unsigned int b=0; b < B; ++b) {
+      if(b > 0) T->wait();
+      T->itranspose(F[b]+offset,true,false);
+    }
+    U->wait1();
   }
   subconvolution(U3,pmult,index,1,d.x,stride);
-  if(T) {
-    T->wait();
-    for(unsigned int b=1; b < B; ++b)
-      T->transpose(F[b]+offset,true,false);
-  }
+  if(T) T->wait();
     
   for(unsigned int b=0; b < B; ++b) {
     Complex *f=F[b]+offset;
     Complex *u=U3[b];
-    if(T)
-      T->itranspose(u,true,false);
+    if(U)
+      U->itranspose(u,true,false);
     xfftpad->Forwards->fft(f);
-    if(T)
-      T->wait();
+    if(U)
+      U->wait();
     xfftpad->Forwards->fft(u);
     xfftpad->reduce(f,u);
   }

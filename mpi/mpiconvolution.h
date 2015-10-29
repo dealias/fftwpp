@@ -13,13 +13,16 @@ namespace fftwpp {
 class ImplicitConvolution2MPI : public ImplicitConvolution2 {
 protected:
   utils::split d;
-  utils::mpitranspose<Complex> *T;
+  utils::mpitranspose<Complex> *T,*U;
 public:  
   
   void inittranspose(const utils::mpiOptions& mpioptions,
                      const MPI_Comm& global) {
     T=new utils::mpitranspose<Complex>(d.X,d.y,d.x,d.Y,1,u2,d.communicator,
                                        mpioptions,
+                                       global ? global : d.communicator);
+    U=new utils::mpitranspose<Complex>(d.X,d.y,d.x,d.Y,1,u2,d.communicator,
+                                       T->Options(),
                                        global ? global : d.communicator);
     d.Deactivate();
   }
@@ -53,6 +56,7 @@ public:
   
   virtual ~ImplicitConvolution2MPI() {
     delete T;
+    delete U;
   }
   
   // F is a pointer to A distinct data blocks each of size mx*d.y,
@@ -166,13 +170,18 @@ class ImplicitConvolution3MPI : public ImplicitConvolution3 {
 protected:
   utils::split3 d;
   fftw_plan intranspose,outtranspose;
-  utils::mpitranspose<Complex> *T;
+  utils::mpitranspose<Complex> *T,*U;
 public:  
   void inittranspose(const utils::mpiOptions& mpi, MPI_Comm global) {
-    T=d.xy.y < d.Y ? 
-               new utils::mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,u3,
-                                         d.xy.communicator,mpi,global) :
-      NULL;
+    if(d.xy.y < d.Y) { 
+      T=new utils::mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,u3,
+                                         d.xy.communicator,mpi,global);
+      U=new utils::mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,u3,
+                                         d.xy.communicator,T->Options(),
+                                         global);
+    } else {
+      T=U=NULL;
+    }
     d.Deactivate();
   }
 
@@ -221,7 +230,10 @@ public:
   }
   
   virtual ~ImplicitConvolution3MPI() {
-    if(T) delete T;
+    if(T) {
+      delete U;
+      delete T;
+    }
   }
   
   // F is a pointer to A distinct data blocks each of size
