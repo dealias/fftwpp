@@ -254,7 +254,10 @@ void ImplicitHConvolution3MPI::convolve(Complex **F, realmultiplier *pmult,
       HermitianSymmetrizeXYMPI(mx,my,d,xcompact,ycompact,f,du.n,u);
     xfftpad->expand(f,u);
     xfftpad->Backwards->fft(f);
-    if(U && a > 0) U->wait0();
+    if(T && a > 0) {
+      T->wait0();
+      U->wait0();
+    }
     xfftpad->Backwards1(f,u);
     if(T) {
       if(a > 0) T->wait1();
@@ -264,11 +267,10 @@ void ImplicitHConvolution3MPI::convolve(Complex **F, realmultiplier *pmult,
     if(U) {
       if(a > 0) U->wait1();
       U->itranspose(u,false,true);
-      T->wait0();
     }
   }
 
-  if(T) T->wait1();
+  if(T) T->wait();
   subconvolution(F,pmult,index,xfftpad->findex,d.x,d.Y*d.z,offset);
   if(U) {
     U->wait0();

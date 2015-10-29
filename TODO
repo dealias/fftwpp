@@ -1,7 +1,6 @@
 Release todo:
 test shifted inplace MPI transforms
 Transpose work memory
-add transpose verbose flag
 wrappers
 update documentation
 
@@ -11,4 +10,4 @@ speed test out-of-place conv: Done, seems to give 10% or so.
 Possible future enhancements:
 consider FFTW_DESTROY_INPUT 
 Add shift=true option to 2D & 3D Hermitian convolutions via compact,shift
-structure hflags(bool compact=true, shift=true).
+structure hflags (bool compact=true, shift=true).
