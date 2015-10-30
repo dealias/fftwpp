@@ -231,6 +231,7 @@ int main(int argc, char* argv[])
        }
     }
 
+    deleteAlign(g);
     deleteAlign(f);
   }
   

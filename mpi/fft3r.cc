@@ -142,7 +142,7 @@ int main(int argc, char* argv[])
     split3 df(nx,ny,nz,group);
     split3 dg(nx,ny,nzp,group,true);
     
-    double *f=FFTWdouble(df.n);
+    double *f=doubleAlign(df.n);
     Complex *g=ComplexAlign(dg.n);
     
     rcfft3dMPI rcfft(df,dg,f,g,mpiOptions(divisor,alltoall));
@@ -268,6 +268,7 @@ int main(int argc, char* argv[])
 
     }
   
+    deleteAlign(g);
     deleteAlign(f);
   }
   
