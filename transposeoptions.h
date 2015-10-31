@@ -5,7 +5,7 @@ namespace utils {
 extern unsigned int defaultmpithreads;
 
 struct mpiOptions {
-  int a; // Block divisor (-1=sqrt(size), 0=Tune)
+  int a; // Block divisor: -1=sqrt(size), 0=Tune
   int alltoall; // -1=Tune, 0=Optimized, 1=MPI
   unsigned int threads;
   unsigned int verbose;

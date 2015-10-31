@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptA:B:M::N:m:n:S:T:");
+    int c = getopt(argc,argv,"hdeiptA:B::N:m:n:S:T:");
     if (c == -1) break;
 		
     switch (c) {
@@ -93,9 +93,6 @@ int main(int argc, char* argv[])
       case 'B':
         B=atoi(optarg);
         break;
-      case 'M':
-        A=2*atoi(optarg);
-        break;
       case 'N':
         N=atoi(optarg);
         break;
@@ -116,10 +113,9 @@ int main(int argc, char* argv[])
         break;
       case 'h':
       default:
-        usage(1,true);
-	usageA();
-	usageB(false);
-	exit(0);
+        usage(1);
+        usageTest();
+	exit(1);
     }
   }
 
@@ -138,10 +134,15 @@ int main(int argc, char* argv[])
   // convolutions.
   if(!Implicit) A=2;
 
-  unsigned int np=Explicit ? n : m; // The explicit version needs more
-				    // memory.  FIXME: is this what we
-				    // actually want?
+ if(B < 1) B=1;
+  if(B > A) {
+    cerr << "B=" << B << " is not yet implemented for A=" << A << endl;
+    exit(1);
+  }
+  
+  unsigned int np=Explicit ? n : m;
   Complex *f=ComplexAlign(A*np);
+  
   Complex **F=new Complex *[A];
   for(unsigned int s=0; s < A; ++s)
     F[s]=f+s*np;

@@ -18,22 +18,12 @@ inline double cbrt(double x)
 #include <getopt.h>
 #endif
 
-inline void usage(int n, bool test=false, bool Explicit=true,
-		  bool compact=false)
+inline void usageCommon(int n)
 {
   std::cerr << "Options: " << std::endl;
   std::cerr << "-h\t\t help" << std::endl;
-  std::cerr << "-i\t\t implicitly padded convolution" << std::endl;
-  if(Explicit) {
-    std::cerr << "-e\t\t explicitly padded convolution" << std::endl;
-    if(n > 1)
-      std::cerr << "-p\t\t pruned explicitly padded convolution" << std::endl;
-  }
-  std::cerr << "-d\t\t direct convolution (slow)" << std::endl;
   std::cerr << "-T\t\t number of threads" << std::endl;
-  if(test) std::cerr << "-t\t\t accuracy test" << std::endl;
   std::cerr << "-N\t\t number of iterations" << std::endl;
-  std::cerr << "-M\t\t number of data blocks in dot product" << std::endl;
   std::cerr << "-m\t\t size" << std::endl;
   std::cerr << "-S<int>\t\t stats used in timing test: " 
 	    << "0=mean, 1=min, 2=max, 3=median, "
@@ -45,26 +35,51 @@ inline void usage(int n, bool test=false, bool Explicit=true,
   }
   if(n > 2)
     std::cerr << "-z\t\t z size" << std::endl;
-  
-   if(compact) {
-    if(n > 1) {
-      std::cerr << "-X\t\t x Hermitian padding (0 or 1)" << std::endl;
-      std::cerr << "-Y\t\t y Hermitian padding (0 or 1)" << std::endl;
-    }
-    if(n > 2)
-      std::cerr << "-Z\t\t z Hermitian padding (0 or 1)" << std::endl;
-  }
+} 
+
+inline void usageDirect()
+{
+  std::cerr << "-i\t\t implicitly padded convolution" << std::endl;
+  std::cerr << "-d\t\t direct convolution (slow)" << std::endl;
 }
 
-inline void usageA()
+inline void usage(int n)
 {
+  usageCommon(n);
   std::cerr << "-A\t\t number of data blocks in input" << std::endl;
+  std::cerr << "-B\t\t number of data blocks in output" << std::endl;
+} 
+
+inline void usageInplace(int n)
+{
+  usageCommon(n);
+  std::cerr << "-i\t\t 0=out-of-place, 1=inplace" << std::endl;
+} 
+
+inline void usageTest() 
+{
+  std::cerr << "-t\t\t accuracy test" << std::endl;
+}
+  
+inline void usageExplicit(unsigned int n) 
+{
+  usageDirect();
+  std::cerr << "-e\t\t explicitly padded convolution" << std::endl;
+  if(n > 1)
+    std::cerr << "-p\t\t pruned explicitly padded convolution" << std::endl;
 }
 
-inline void usageB(bool littleb=true)
+inline void usageCompact(unsigned int n)
 {
-  std::cerr << "-B\t\t number of data blocks in output" << std::endl;
-  if(littleb)
+  std::cerr << "-X\t\t x Hermitian padding (0 or 1)" << std::endl;
+  if(n > 1)
+    std::cerr << "-Y\t\t y Hermitian padding (0 or 1)" << std::endl;
+  if(n > 2)
+    std::cerr << "-Z\t\t z Hermitian padding (0 or 1)" << std::endl;
+}
+
+inline void usageb()
+{
     std::cerr << "-b\t\t which output block to check" << std::endl;
 }
 
@@ -74,34 +89,29 @@ inline void usageTranspose()
             << std::endl;
   std::cerr << "-s<int>\t\t alltoall: [-1]=Tune, 0=Optimized, 1=MPI"
             << std::endl;
+  std::cerr << "-q\t\t quiet" << std::endl;
 }
 
-void fft_usage(int dim)
+inline void usageShift()
 {
-  std::cout << "Usage:\n"
-	    << "-h\thelp\n"
-	    << "-T\tnumber of threads\n"
-	    << "-N\tnumber of iterations\n"
-	    << "-m\tsize\n";
-  
-  std::cout << "-r\ttype of run\n"
-	    << "\t\tr=-1: all runs\n"
-	    << "\t\tr=0: in-place\n"
-	    << "\t\tr=1: out-of-place\n";
-  if(dim > 1)
-    std::cout << "\t\tr=2: transpose, in-place\n"
-	      << "\t\tr=3: transpose, out-of-place\n"
-	      << "\t\tr=4: full transpose, in-place\n"
-	      << "\t\tr=5: full transpose, out-of-place\n"
-	      << "\t\tr=6: strided, in-place\n"
-	      << "\t\tr=7: strided, out-of-place\n";
+  std::cerr << "-O<int>\t\t [0]=Standard, 1=Shift origin"
+            << std::endl;
+}
 
-  std::cout << "-x\tsize in first dimension\n";
-  if(dim > 1)
-    std::cout << "-y\tsize in second dimension\n";
-  if(dim > 2)
-    std::cout << "-z\tsize in third dimension\n";
-  std::cout << std::endl;
+void usageFFT(int n)
+{
+  usageCommon(n);
+  std::cerr << "-r\t\t type of run:\n"
+	    << "\t\t r=-1: all runs\n"
+	    << "\t\t r=0: in-place\n"
+	    << "\t\t r=1: out-of-place\n";
+  if(n > 1)
+    std::cerr << "\t\t r=2: transpose, in-place\n"
+	      << "\t\t r=3: transpose, out-of-place\n"
+	      << "\t\t r=4: full transpose, in-place\n"
+	      << "\t\t r=5: full transpose, out-of-place\n"
+	      << "\t\t r=6: strided, in-place\n"
+	      << "\t\t r=7: strided, out-of-place\n";
 }
 
 unsigned int padding(unsigned int n)

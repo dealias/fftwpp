@@ -52,12 +52,13 @@ int main(int argc, char* argv[])
   
   bool quiet=false;
   bool test=false;
+  unsigned int stats=0; // Type of statistics used in timing test.
   
 #ifdef __GNUC__ 
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"htN:T:a:i:m:n:s:x:y:z:q");
+    int c = getopt(argc,argv,"htN:S:T:a:i:m:n:s:x:y:z:q");
     if (c == -1) break;
                 
     switch (c) {
@@ -90,6 +91,9 @@ int main(int argc, char* argv[])
     case 'n':
       N0=atoi(optarg);
       break;
+    case 'S':
+      stats=atoi(optarg);
+      break;
     case 'T':
       fftw::maxthreads=atoi(optarg);
       break;
@@ -101,7 +105,7 @@ int main(int argc, char* argv[])
       break;
     case 'h':
     default:
-      usage(3);
+      usageInplace(3);
       usageTranspose();
       exit(1);
     }
@@ -256,7 +260,7 @@ int main(int argc, char* argv[])
 	  fft.Normalize(F[0]);
 	}
 	if(!quiet && nx*ny*nz < outlimit) show(F[0],d.x,d.y,d.Z,group.active);
-	if(main) timings("FFT timing:",nx,T,N);
+	if(main) timings("FFT timing:",nx,T,N,stats);
         
         for(unsigned int m=0; m < M; ++m) {
           delete FFT[m];

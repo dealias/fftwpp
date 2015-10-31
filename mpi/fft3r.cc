@@ -52,12 +52,13 @@ int main(int argc, char* argv[])
   bool quiet=false;
   bool test=false;
   bool shift=false;
+  unsigned int stats=0; // Type of statistics used in timing test.
 
 #ifdef __GNUC__ 
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"S:htN:T:a:m:n:s:x:y:z:q");
+    int c = getopt(argc,argv,"S:htN:O:T:a:m:n:s:x:y:z:q");
     if (c == -1) break;
                 
     switch (c) {
@@ -87,8 +88,11 @@ int main(int argc, char* argv[])
     case 'n':
       N0=atoi(optarg);
       break;
-    case 'S':
+    case 'O':
       shift=atoi(optarg);
+      break;
+    case 'S':
+      stats=atoi(optarg);
       break;
     case 'T':
       fftw::maxthreads=atoi(optarg);
@@ -103,6 +107,7 @@ int main(int argc, char* argv[])
     default:
       usage(3);
       usageTranspose();
+      usageShift();
       exit(1);
     }
   }
@@ -262,7 +267,7 @@ int main(int argc, char* argv[])
         if(!quiet)
           show(f,df.x,df.y,df.Z,group.active);
         
-        if(main) timings("FFT timing:",nx,T,N);
+        if(main) timings("FFT timing:",nx,T,N,stats);
         delete[] T;
       }
 

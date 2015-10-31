@@ -13,6 +13,7 @@ unsigned int N0=10000000;
 unsigned int N=0;
 unsigned int m=12;
 unsigned int M=1;
+unsigned int B=1;
   
 bool Direct=false, Implicit=true, Explicit=false;
 
@@ -52,7 +53,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"hdeipA:M:N:m:n:T:S:");
+    int c = getopt(argc,argv,"hdeipA:B:N:m:n:T:S:");
     if (c == -1) break;
 		
     switch (c) {
@@ -71,11 +72,11 @@ int main(int argc, char* argv[])
         break;
       case 'p':
         break;
-      case 'M':
-        M=atoi(optarg);
-        break;
       case 'A':
         M=2*atoi(optarg);
+        break;
+      case 'B':
+        B=atoi(optarg);
         break;
       case 'N':
         N=atoi(optarg);
@@ -95,6 +96,7 @@ int main(int argc, char* argv[])
     case 'h':
       default:
         usage(1);
+        usageExplicit(1);
 	exit(0);
     }
   }
@@ -113,10 +115,14 @@ int main(int argc, char* argv[])
   Complex *h0=NULL;
   if(Direct && ! Explicit) h0=ComplexAlign(m);
 
-
   unsigned int m1=m+1;
   unsigned int np=Explicit ? n/2+1 : m1;
   if(Implicit) np *= M;
+    
+  if(B != 1) {
+    cerr << "B=" << B << " is not yet implemented" << endl;
+    exit(1);
+  }
     
   Complex *e=ComplexAlign(np);
   Complex *f=ComplexAlign(np);

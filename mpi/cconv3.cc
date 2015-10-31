@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"htqa:A:M:N:T:m:n:s:x:y:z:");
+    int c = getopt(argc,argv,"htqa:A:B:N:T:m:n:s:x:y:z:");
     if (c == -1) break;
                 
     switch (c) {
@@ -92,14 +92,14 @@ int main(int argc, char* argv[])
       case 'A':
         A=atoi(optarg);
         break;
+      case 'B':
+        B=atoi(optarg);
+        break;
       case 'a':
         divisor=atoi(optarg);
         break;
       case 'N':
         N=atoi(optarg);
-        break;
-      case 'M':
-        A=2*atoi(optarg);
         break;
       case 'm':
         mx=my=mz=atoi(optarg);
@@ -185,6 +185,11 @@ int main(int argc, char* argv[])
     split3 d(mx,my,mz,group,true);
 
     //cout << "Local data size: " << d.n << endl;
+    
+    if(B != 1) {
+      cerr << "Only B=1 is implemented" << endl;
+      exit(1);
+    }
     
     Complex **F=new Complex*[A];
     for(unsigned int a=0; a < A; a++) {

@@ -9,7 +9,8 @@ using namespace fftwpp;
 
 bool Direct=false, Implicit=true, Explicit=false, Test=false;
 
-unsigned int A, B; // Number of inputs and outputs
+unsigned int A=2; // Number of inputs
+unsigned int B=1; // Number of outputs
 bool compact=false;
 
 // Pair-wise binary multiply for even A and B=1.
@@ -117,8 +118,6 @@ int main(int argc, char* argv[])
   unsigned int m=11; // Problem size
   unsigned int M=1;
   
-  A=2; // Number of inputs
-  B=1; // Number of outputs
   unsigned int Bcheck=0; // Which output to check
 
   unsigned int stats=0; // Type of statistics used in timing test.
@@ -132,7 +131,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptM:A:B:b:N:m:n:T:S:X:");
+    int c = getopt(argc,argv,"hdeiptA:B:b:N:m:n:T:S:X:");
     if (c == -1) break;
 		
     switch (c) {
@@ -150,10 +149,6 @@ int main(int argc, char* argv[])
         Explicit=false;
         break;
       case 'p':
-        break;
-      case 'M':
-        M=atoi(optarg);
-	A=2*M; // Number of independent inputs
         break;
       case 'A':
         A=atoi(optarg);
@@ -187,9 +182,11 @@ int main(int argc, char* argv[])
         break;
       case 'h':
       default:
-        usage(1,true,true,false);
-	usageA();
-	usageB();
+        usage(1);
+        usageExplicit(1);
+        usageCompact(1);
+        usageTest();
+	usageb();
 	exit(1);
     }
   }
@@ -212,9 +209,18 @@ int main(int argc, char* argv[])
   if(!Implicit) 
     A=2;
   
-  Complex *f=ComplexAlign(A*np);
-  Complex **F=new Complex *[A];
-  for(unsigned int s=0; s < A; ++s)
+  if(B < 1) B=1;
+  if(B > A) {
+    cerr << "B=" << B << " is not yet implemented for A=" << A << endl;
+    exit(1);
+  }
+  
+  Bcheck=min(Bcheck,B-1);
+    
+  unsigned int C=max(A,B);
+  Complex *f=ComplexAlign(C*np);
+  Complex **F=new Complex *[C];
+  for(unsigned int s=0; s < C; ++s)
     F[s]=f+s*np;
 
   Complex *h0=NULL;

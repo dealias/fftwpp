@@ -17,6 +17,7 @@ unsigned int ny=0;
 unsigned int mx=4;
 unsigned int my=4;
 unsigned int M=1;
+unsigned int B=1; // Number of independent outputs
 
 unsigned int nxp;
 unsigned int nyp;
@@ -62,7 +63,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptA:M:N:m:x:y:n:T:S:");
+    int c = getopt(argc,argv,"hdeiptA:B:N:m:x:y:n:T:S:");
     if (c == -1) break;
 		
     switch (c) {
@@ -85,11 +86,11 @@ int main(int argc, char* argv[])
         Implicit=false;
         Pruned=true;
         break;
-      case 'M':
-        M=atoi(optarg);
-        break;
       case 'A':
         M=2*atoi(optarg);
+        break;
+      case 'B':
+        B=atoi(optarg);
         break;
       case 'N':
         N=atoi(optarg);
@@ -115,6 +116,8 @@ int main(int argc, char* argv[])
       case 'h':
       default:
         usage(2);
+        usageExplicit(2);
+        exit(1);
     }
   }
 
@@ -129,6 +132,11 @@ int main(int argc, char* argv[])
     if(N < 10) N=10;
   }
   cout << "N=" << N << endl;
+    
+  if(B != 1) {
+    cerr << "B=" << B << " is not yet implemented" << endl;
+    exit(1);
+  }
     
   size_t align=sizeof(Complex);
   array2<Complex> h0;
