@@ -198,7 +198,7 @@ int main(int argc, char* argv[])
     timings("Explicit",m,T,N,stats);
 
     if(m < 100) 
-      for(unsigned int i=0; i < m; i++) cout << F[1][i] << endl;
+      for(unsigned int i=0; i < m; i++) cout << F[0][i] << endl;
     else cout << F[0][0] << endl;
     cout << endl;
     if(Test || Direct) for(unsigned int i=0; i < m; i++) h0[i]=F[0][i];
