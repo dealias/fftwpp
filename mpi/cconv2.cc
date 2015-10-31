@@ -14,8 +14,6 @@ unsigned int my=4;
 int divisor=0; // Test for best block divisor
 int alltoall=-1; // Test for best alltoall routine
 
-bool Implicit=true, Explicit=false, Pruned=false;
-
 inline void init(Complex **F, split d, unsigned int A) 
 {
   unsigned int M=A/2;
@@ -56,7 +54,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"heipqHta:A:M:N:m:s:x:y:n:T:");
+    int c = getopt(argc,argv,"hqta:A:B:N:m:s:x:y:n:T:");
     if (c == -1) break;
                 
     switch (c) {
@@ -65,25 +63,11 @@ int main(int argc, char* argv[])
       case 'a':
         divisor=atoi(optarg);
         break;
-      case 'e':
-        Explicit=true;
-        Implicit=false;
-        Pruned=false;
-        break;
-      case 'i':
-        Implicit=true;
-        Explicit=false;
-        break;
-      case 'p':
-        Explicit=true;
-        Implicit=false;
-        Pruned=true;
-        break;
       case 'A':
         A=atoi(optarg);
         break;
-      case 'M':
-        A=2*atoi(optarg);
+      case 'B':
+        B=atoi(optarg);
         break;
       case 'N':
         N=atoi(optarg);
@@ -149,6 +133,11 @@ int main(int argc, char* argv[])
 
     split d(mx,my,group.active);
   
+    if(B != 1) {
+      cerr << "Only B=1 is implemented" << endl;
+      exit(1);
+    }
+    
     Complex **F=new Complex *[A];
     for(unsigned int a=0; a < A; ++a) {
       F[a]=ComplexAlign(d.n);

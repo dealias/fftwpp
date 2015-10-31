@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptA:B:M:N:m:x:y:n:T:S:");
+    int c = getopt(argc,argv,"hdeiptA:B:N:m:x:y:n:T:S:");
     if (c == -1) break;
 		
     switch (c) {
@@ -100,11 +100,8 @@ int main(int argc, char* argv[])
       case 'A':
         A=atoi(optarg);
         break;
-    case 'B':
-        A=atoi(optarg);
-        break;
-      case 'M':
-        A=2*atoi(optarg);
+      case 'B':
+        B=atoi(optarg);
         break;
       case 'N':
         N=atoi(optarg);
@@ -130,6 +127,8 @@ int main(int argc, char* argv[])
       case 'h':
       default:
         usage(2);
+        usageExplicit(2);
+        exit(1);
     }
   }
 
@@ -153,6 +152,15 @@ int main(int argc, char* argv[])
   int nxp=Explicit ? nx : mx;
   int nyp=Explicit ? ny : my;
 
+  if(!Implicit)
+    A=2;
+
+  if(B < 1) B=1;
+  if(B > A) {
+    cerr << "B=" << B << " is not yet implemented for A=" << A << endl;
+    exit(1);
+  }
+  
   // Allocate input/ouput memory and set up pointers
   Complex **F=new Complex *[A];
   for(unsigned int a=0; a < A; ++a)

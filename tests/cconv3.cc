@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
   fftw::maxthreads=get_max_threads();
 
   unsigned int A=2; // Number of independent inputs
-  unsigned int B=1; // Number of independent inputs
+  unsigned int B=1; // Number of independent outputs
   
   unsigned int stats=0; // Type of statistics used in timing test.
 
@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptA:B:M:N:m:x:y:z:n:T:S:");
+    int c = getopt(argc,argv,"hdeiptA:B:N:m:x:y:z:n:T:S:");
     if (c == -1) break;
 		
     switch (c) {
@@ -101,9 +101,6 @@ int main(int argc, char* argv[])
       case 'B':
         B=atoi(optarg);
         break;
-      case 'M':
-        A=2*atoi(optarg);
-        break;
       case 'N':
         N=atoi(optarg);
         break;
@@ -131,6 +128,8 @@ int main(int argc, char* argv[])
       case 'h':
       default:
         usage(3);
+        usageExplicit(3);
+        exit(1);
     }
   }
 
@@ -162,6 +161,12 @@ int main(int argc, char* argv[])
   if(!Implicit)
     A=2;
 
+  if(B < 1) B=1;
+  if(B > A) {
+    cerr << "B=" << B << " is not yet implemented for A=" << A << endl;
+    exit(1);
+  }
+  
   // Allocate input/ouput memory and set up pointers
   Complex **F=new Complex *[A];
   for(unsigned int a=0; a < A; ++a)

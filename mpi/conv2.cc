@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"hqtA:H:M:N:a:m:n:s:x:y:T:X:Y:");
+    int c = getopt(argc,argv,"hqtA:B:H:N:a:m:n:s:x:y:T:X:Y:");
     if (c == -1) break;
                 
     switch (c) {
@@ -83,11 +83,11 @@ int main(int argc, char* argv[])
       case 'A':
         A=atoi(optarg);
         break;
+      case 'B':
+        B=atoi(optarg);
+        break;
       case 'a':
         divisor=atoi(optarg);
-        break;
-      case 'M':
-        A=2*atoi(optarg);
         break;
       case 'N':
         N=atoi(optarg);
@@ -124,7 +124,9 @@ int main(int argc, char* argv[])
         break;
       case 'h':
       default:
-        usage(2,false,true,true);
+        usage(2);
+        usageCompact(2);
+        usageTranspose();
         exit(1);
     }
   }
@@ -163,6 +165,11 @@ int main(int argc, char* argv[])
     // Dimensions used in the MPI convolution
     split du(mx+xcompact,nyp,group.active);
   
+    if(B != 1) {
+      cerr << "Only B=1 is implemented" << endl;
+      exit(1);
+    }
+    
     Complex **F=new Complex *[A];
     for(unsigned int i=0; i < A; ++i) {
       F[i]=ComplexAlign(d.n);

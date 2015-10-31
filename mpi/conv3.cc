@@ -10,8 +10,6 @@ using namespace Array;
 unsigned int N0=1000000;
 unsigned int N=0;
 
-bool Direct=false, Implicit=true;
-
 unsigned int outlimit=3000;
 
 inline void init(Complex **F, const split3& d, unsigned int A=2,
@@ -96,7 +94,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"heitqA:M:N:a:m:s:x:y:z:n:T:X:Y:Z:");
+    int c = getopt(argc,argv,"htqA:B:N:a:m:s:x:y:z:n:T:X:Y:Z:");
     if (c == -1) break;
                 
     switch (c) {
@@ -105,17 +103,11 @@ int main(int argc, char* argv[])
       case 'a':
         divisor=atoi(optarg);
         break;
-      case 'e':
-        Implicit=false;
-        break;
-      case 'i':
-        Implicit=true;
-        break;
       case 'A':
         A=atoi(optarg);
         break;
-      case 'M':
-        A=2*atoi(optarg);
+      case 'B':
+        B=atoi(optarg);
         break;
       case 'N':
         N=atoi(optarg);
@@ -158,7 +150,9 @@ int main(int argc, char* argv[])
         break;
       case 'h':
       default:
-        usage(3,false,false,true);
+        usage(3);
+        usageCompact(3);
+        usageTranspose();
         exit(1);
     }
   }
@@ -197,6 +191,11 @@ int main(int argc, char* argv[])
     
     // Dimensions used in the MPI convolution
     split3 du(mx+xcompact,ny,my+ycompact,nzp,group,true);
+    
+    if(B != 1) {
+      cerr << "Only B=1 is implemented" << endl;
+      exit(1);
+    }
     
     Complex **F=new Complex*[A];
     for(unsigned int a=0; a < A; a++)

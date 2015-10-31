@@ -78,7 +78,7 @@ def main(argv):
                                 args.append("-N1")
                                 args.append("-s1")
                                 args.append("-a1")
-                                args.append("-S" + str(shift))
+                                args.append("-O" + str(shift))
                                 args.append("-t")
                                 args.append("-T1")
                                 args.append("-q")

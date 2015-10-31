@@ -38,56 +38,61 @@ int main(int argc, char* argv[])
   
   bool quiet=false;
   bool test=false;
-
   bool shift=false;
+  unsigned int stats=0; // Type of statistics used in timing test.
   
 #ifdef __GNUC__ 
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"hN:a:m:s:x:y:n:T:S:qt");
+    int c = getopt(argc,argv,"hN:a:m:s:x:y:n:T:S:O:qt");
     if (c == -1) break;
                 
     switch (c) {
-    case 0:
-      break;
-    case 'N':
-      N=atoi(optarg);
-      break;
-    case 'a':
-      divisor=atoi(optarg);
-      break;
-    case 'm':
-      nx=ny=atoi(optarg);
-      break;
-    case 's':
-      alltoall=atoi(optarg);
-      break;
-    case 'x':
-      nx=atoi(optarg);
-      break;
-    case 'y':
-      ny=atoi(optarg);
-      break;
-    case 'n':
-      N0=atoi(optarg);
-      break;
-    case 'S':
-      shift=atoi(optarg); // TODO: Resolve conflict with -S<int> for stats
-      break;
-    case 'T':
-      fftw::maxthreads=atoi(optarg);
-      break;
-    case 'q':
-      quiet=true;
-      break;
-    case 't':
-      test=true;
-      break;
-    case 'h':
-      usage(2); // TODO: Add shift, compact flags here and also in fft3r
-      usageTranspose();
-      exit(1);
+      case 0:
+        break;
+      case 'N':
+        N=atoi(optarg);
+        break;
+      case 'a':
+        divisor=atoi(optarg);
+        break;
+      case 'm':
+        nx=ny=atoi(optarg);
+        break;
+      case 's':
+        alltoall=atoi(optarg);
+        break;
+      case 'x':
+        nx=atoi(optarg);
+        break;
+      case 'y':
+        ny=atoi(optarg);
+        break;
+      case 'n':
+        N0=atoi(optarg);
+        break;
+      case 'O':
+        shift=atoi(optarg);
+        break;
+      case 'S':
+        stats=atoi(optarg);
+        break;
+      case 'T':
+        fftw::maxthreads=atoi(optarg);
+        break;
+      case 'q':
+        quiet=true;
+        break;
+      case 't':
+        test=true;
+        break;
+      case 'h':
+      default:
+        usageInplace(2);
+        usageTranspose();
+        usageShift();
+        exit(1);
     }
   }
 
@@ -213,7 +218,7 @@ int main(int argc, char* argv[])
       }  
   
     } else {
-       if(N > 0) {
+      if(N > 0) {
        	double *T=new double[N];
        	for(unsigned int i=0; i < N; ++i) {
        	  init(f,df);
@@ -223,12 +228,12 @@ int main(int argc, char* argv[])
        	  rcfft.Normalize(f);
        	  T[i]=seconds();
        	}    
-       	if(main) timings("FFT timing:",nx,T,N);
+       	if(main) timings("FFT timing:",nx,T,N,stats);
       	delete [] T;
         
         if(!quiet && nx*ny < outlimit)
           show(f,df.x,df.Y,group.active);
-       }
+      }
     }
 
     deleteAlign(g);

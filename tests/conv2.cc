@@ -87,7 +87,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"hdeipt:A:B:M:N:m:x:y:n:T:S:X:Y:");
+    int c = getopt(argc,argv,"hdeipA:B:N:m:x:y:n:T:S:X:Y:");
     if (c == -1) break;
 		
     switch (c) {
@@ -115,9 +115,6 @@ int main(int argc, char* argv[])
         break;
       case 'B':
         B=atoi(optarg);
-        break;
-      case 'M':
-        A=2*atoi(optarg);
         break;
       case 'N':
         N=atoi(optarg);
@@ -148,10 +145,10 @@ int main(int argc, char* argv[])
         break;
       case 'h':
       default:
-        usage(2,false,true,true);
-	usageA();
-	usageB(false);
-	exit(0);
+        usage(2);
+        usageExplicit(2);
+        usageCompact(2);
+        exit(1);
     }
   }
 
@@ -175,6 +172,12 @@ int main(int argc, char* argv[])
   nxp=Explicit ? nx : 2*mx-xcompact;
   nyp=Explicit ? ny/2+1 : my+!ycompact;
 
+  if(B < 1) B=1;
+  if(B > A) {
+    cerr << "B=" << B << " is not yet implemented for A=" << A << endl;
+    exit(1);
+  }
+    
   Complex **F=new Complex *[A];
   for(unsigned int a=0; a < A; ++a)
     F[a]=ComplexAlign(nxp*nyp);
