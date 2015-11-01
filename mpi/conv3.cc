@@ -241,7 +241,7 @@ int main(int argc, char* argv[])
         gatheryz(F[a],F0[a],d,group.active);
         if(!quiet && main) {
           cout << "a: " << a << endl;
-	  show(F0[a],d.X,d.Y,d.Z,group.active);
+	  show(F0[a],d.X,d.Y,d.Z,0,0,0,d.X,d.Y,d.Z);
         }
       }
 
@@ -262,7 +262,7 @@ int main(int argc, char* argv[])
 	if(!quiet && main) {
 	  cout << "Gathered output:" << endl;
 	  cout << "b: " << b << endl;
-	  show(F0out[b],d.X,d.Y,d.Z,group.active);
+          show(F0out[b],d.X,d.Y,d.Z,0,0,0,d.X,d.Y,d.Z);
 	}
       }
 
@@ -273,7 +273,7 @@ int main(int argc, char* argv[])
 	  cout << "Local output:" << endl;
 	  for(unsigned int b=0; b < B; b++) {
 	    cout << "b: " << b << endl;
-	    show(F0[b],d.X,d.Y,d.Z,group.active);
+            show(F0[b],d.X,d.Y,d.Z,0,0,0,d.X,d.Y,d.Z);
 	    retval += checkerror(F0[b],F0out[b],d.X*d.Y*d.Z);
 	  }
 	}
