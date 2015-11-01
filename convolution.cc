@@ -517,7 +517,7 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
     // r=2:
     for(unsigned int i=0; i < A; ++i)
       cr->fft(c2[i],d2[i]);
-    (*pmult)(d2,m,index,2,threads);
+    (*pmult)(d2,m,index,-1,threads);
 
     // r=0:
     double T[A]; // deal with overlap between r=0 and r=1
@@ -1320,6 +1320,8 @@ void multcorrelation(Complex **F, unsigned int m, unsigned int threads)
 #endif
 }
 
+inline unsigned innerindex(unsigned j, int r) {return 2*j+r;}
+  
 // This multiplication routine is for binary convolutions and takes two inputs
 // of size m.
 // F[0][j] *= F[1][j];
@@ -1334,7 +1336,7 @@ void multbinary(Complex **F, unsigned int m, const vector<unsigned int>& index,
   for(unsigned int j=0; j < m; ++j) {
     for(unsigned int d=0; d < n; ++d)
       cout << index[d] << ",";
-    cout << 2*j+r << endl;
+    cout << innerindex(j,r) << endl;
   }
 #endif  
       
@@ -1375,6 +1377,12 @@ void multautoconvolution(Complex **F, unsigned int m,
 #endif
 }
 
+// Unscramble indices, returning spatial index for remainder r at position j.
+inline unsigned innerindex(unsigned j, int r, unsigned int m) {
+  int x=3*j+r;
+  return x >= 0 ? x : 3*m-1;
+}
+  
 // This multiplication routine is for binary Hermitian convolutions and takes
 // two inputs.
 // F[0][j] *= F[1][j];
@@ -1389,9 +1397,9 @@ void multbinary(double **F, unsigned int m, const vector<unsigned int>& index,
   for(unsigned int j=0; j < m; ++j) {
     for(unsigned int d=0; d < n; ++d)
       cout << index[d] << ",";
-    cout << 3*j+r << ": " << F[0][j] << endl;
+    cout << innerindex(j,r,m) << endl;
   }
-#endif  
+#endif
       
 #ifdef __SSE2__
   unsigned int m1=m-1;
