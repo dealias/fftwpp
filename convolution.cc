@@ -1320,6 +1320,7 @@ void multcorrelation(Complex **F, unsigned int m, unsigned int threads)
 #endif
 }
 
+// Unscramble indices, returning spatial index for remainder r at position j.
 inline unsigned innerindex(unsigned j, int r) {return 2*j+r;}
   
 // This multiplication routine is for binary convolutions and takes two inputs
