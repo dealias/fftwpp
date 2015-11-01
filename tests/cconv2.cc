@@ -198,16 +198,17 @@ int main(int argc, char* argv[])
     timings("Implicit",mx,T,N,stats);
 
     if(Direct) {
-      for(unsigned int i=0; i < mx; i++) 
+      for(unsigned int i=0; i < mx; i++)
         for(unsigned int j=0; j < my; j++)
 	  h0[i][j]=f[i][j];
     }
     
     if(mx*my < outlimit) {
-      for(unsigned int i=0; i < mx; i++)
+      for(unsigned int i=0; i < mx; i++) {
         for(unsigned int j=0; j < my; j++)
           cout << f[i][j] << "\t";
-      cout << endl;
+        cout << endl;
+      }
     } else {
       cout << f[0][0] << endl;
     }
@@ -241,7 +242,7 @@ int main(int argc, char* argv[])
         for(unsigned int j=0; j < my; j++) {
 	  cout << F[0][nyp*i+j] << "\t";
 	}
-      cout << endl;
+        cout << endl;
       }
     }
     else
