@@ -548,6 +548,7 @@ protected:
   fftpad *xfftpad;
   ImplicitConvolution **yconvolve;
   Complex **U2;
+  std::vector<unsigned int> *Index;
   bool allocated;
 public:  
   unsigned int getmx() {return mx;}
@@ -571,6 +572,7 @@ public:
     for(unsigned int t=0; t < threads; ++t)
       yconvolve[t]=new ImplicitConvolution(my,u1+t*my*A,A,B,innerthreads);
     initpointers2(U2,u2,options.stride2);
+    if(threads > 1) Index=new std::vector<unsigned int>[threads];
   }
   
   void set(convolveOptions& options) {
@@ -610,6 +612,7 @@ public:
   }
   
   virtual ~ImplicitConvolution2() {
+    if(threads > 1) delete [] Index;
     deletepointers2(U2);
     
     for(unsigned int t=0; t < threads; ++t)
@@ -635,12 +638,16 @@ public:
                       unsigned int offset=0) {
     unsigned int n=index.size()-1;
     if(threads > 1) {
+      for(unsigned int t=0; t < threads; ++t)
+        Index[t]=index;
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif    
       for(unsigned int i=0; i < M; ++i) {
+        unsigned int t=get_thread_num();
+        std::vector<unsigned int>& index=Index[t];
         index[n]=2*i+r;
-        yconvolve[get_thread_num()]->convolve(F,pmult,index,offset+i*stride);
+        yconvolve[t]->convolve(F,pmult,index,offset+i*stride);
       }
     } else {
       ImplicitConvolution *yconvolve0=yconvolve[0];
@@ -823,12 +830,14 @@ class ImplicitHConvolution2 : public ImplicitHConvolution2Base {
 protected:
   ImplicitHConvolution **yconvolve;
   Complex ***U;
+  std::vector<unsigned int> *Index;
 public:
   void initconvolve() {
     yconvolve=new ImplicitHConvolution*[threads];
     for(unsigned int t=0; t < threads; ++t)
       yconvolve[t]=new ImplicitHConvolution(my,ycompact,u1+t*(my/2+1)*A,A,B,
                                             innerthreads);
+    if(threads > 1) Index=new std::vector<unsigned int>[threads];
   }
     
   // u1 is a temporary array of size (my/2+1)*A*threads.
@@ -865,6 +874,7 @@ public:
   }
   
   virtual ~ImplicitHConvolution2() {
+    if(threads > 1) delete [] Index;
     for(unsigned int t=0; t < threads; ++t)
       delete yconvolve[t];
     delete [] yconvolve;
@@ -887,10 +897,14 @@ public:
                       unsigned int offset=0) {
     unsigned int n=index.size()-1;
     if(threads > 1) {
+      for(unsigned int t=0; t < threads; ++t)
+        Index[t]=index;
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif    
       for(unsigned int i=0; i < M; ++i) {
+        unsigned int t=get_thread_num();
+        std::vector<unsigned int>& index=Index[t];
         index[n]=indexfunction(i,mx);
         yconvolve[get_thread_num()]->convolve(F,pmult,index,offset+i*stride);
       }
@@ -939,8 +953,8 @@ protected:
   fftpad *xfftpad;
   ImplicitConvolution2 **yzconvolve;
   Complex **U3;
-  
   bool allocated;
+  std::vector<unsigned int> *Index;
 public:  
   unsigned int getmx() {return mx;}
   unsigned int getmy() {return my;}
@@ -969,6 +983,7 @@ public:
                                                u2+t*options.stride2*A,A,B,
                                                innerthreads);
       initpointers3(U3,u3,options.stride3);
+      if(threads > 1) Index=new std::vector<unsigned int>[threads];
     } else yzconvolve=NULL;
   }
   
@@ -1015,6 +1030,7 @@ public:
   
   virtual ~ImplicitConvolution3() {
     if(yzconvolve) {
+      if(threads > 1) delete [] Index;
       deletepointers3(U3);
 
       for(unsigned int t=0; t < threads; ++t)
@@ -1041,10 +1057,14 @@ public:
                       unsigned int offset=0) {
     unsigned int n=index.size()-2;
     if(threads > 1) {
+      for(unsigned int t=0; t < threads; ++t)
+        Index[t]=index;
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif    
       for(unsigned int i=0; i < M; ++i) {
+        unsigned int t=get_thread_num();
+        std::vector<unsigned int>& index=Index[t];
         index[n]=2*i+r;
         yzconvolve[get_thread_num()]->convolve(F,pmult,index,offset+i*stride);
       }
@@ -1110,6 +1130,7 @@ protected:
   fft0pad *xfftpad;
   ImplicitHConvolution2 **yzconvolve;
   Complex **U3;
+  std::vector<unsigned int> *Index;
   bool allocated;
 public:     
   unsigned int getmx() {return mx;}
@@ -1142,6 +1163,7 @@ public:
                                                 u2+t*options.stride2*A,
                                                 A,B,innerthreads);
       initpointers3(U3,u3,options.stride3);
+      if(threads > 1) Index=new std::vector<unsigned int>[threads];
     } else yzconvolve=NULL;
   }
   
@@ -1207,6 +1229,7 @@ public:
   
   virtual ~ImplicitHConvolution3() {
     if(yzconvolve) {
+      if(threads > 1) delete [] Index;
       deletepointers3(U3);
       
       for(unsigned int t=0; t < threads; ++t)
@@ -1246,13 +1269,16 @@ public:
                       unsigned int offset=0) {
     unsigned int n=index.size()-2;
     if(threads > 1) {
+      for(unsigned int t=0; t < threads; ++t)
+        Index[t]=index;
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif    
       for(unsigned int i=0; i < M; ++i) {
+        unsigned int t=get_thread_num();
+        std::vector<unsigned int>& index=Index[t];
         index[n]=indexfunction(i,mx);
-        yzconvolve[get_thread_num()]->convolve(F,pmult,false,index,
-                                               offset+i*stride);
+        yzconvolve[t]->convolve(F,pmult,false,index,offset+i*stride);
       }
     } else {
       ImplicitHConvolution2 *yzconvolve0=yzconvolve[0];
