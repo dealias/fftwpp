@@ -68,7 +68,8 @@ def main(argv):
             log.close()
 
             #print cmd
-            proc = Popen(cmd, stdout = PIPE, stderr = PIPE, stdin = None)
+            DEVNULL = open(os.devnull, 'wb')
+            proc = Popen(cmd, stdout = DEVNULL, stderr = PIPE, stdin = DEVNULL)
             proc.wait() # sets the return code
 
             prc = proc.returncode
@@ -90,7 +91,6 @@ def main(argv):
                     pass
                 log = open(logfile, 'a')
                 log.write(msg + "\n")
-                log.write("stdout:\n" + out + "\n")
                 log.write("stderr:\n" + err + "\n")
                 log.close()
                 nfail += 1

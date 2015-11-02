@@ -4,6 +4,7 @@ import sys # so that we can return a value at the end.
 import random # for randum number generators
 import getopt
 import os.path
+import sys
 
 from testutils import *
 
@@ -30,15 +31,14 @@ def main(argv):
             
     retval = 0
 
-    print "MPI transpose unit test"
-
     proglist = []
     proglist.append("gather")
     proglist.append("gatheryz")
     proglist.append("gatherxy")
 
     logfile = 'testgather.log' 
-    print "Log in " + logfile + "\n"
+    Print("MPI transpose unit test")
+    Print("Log in " + logfile + "\n")
     log = open(logfile, 'w')
     log.close()
 
@@ -67,7 +67,7 @@ def main(argv):
             retval += 1
         else:
             msg = "Running " + str(progname)
-            print msg
+            Print(msg)
             log = open(logfile, 'a')
             log.write(msg)
             log.close()
@@ -92,14 +92,16 @@ def main(argv):
                                 failcases += "\t(code " + str(rtest) + ")"
                                 failcases += "\n"
 
-    if nfails > 0:
-        print "Failure cases:"
-        print failcases
-        retval += 1
-    print "\n", nfails, "failures out of", ntests, "tests." 
-
-    sys.exit(retval)
+    try:
+        if nfails > 0:
+            print "Failure cases:"
+            print failcases
+            retval += 1
+            print "\n", nfails, "failures out of", ntests, "tests." 
+    except:
+        pass
     
-
 if __name__ == "__main__":
     main(sys.argv[1:])
+
+    

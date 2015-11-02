@@ -1,8 +1,14 @@
 import time
 from subprocess import * # so that we can run commands
 import os
+import sys
 
-os.close(0)
+def Print(msg) :
+    try:
+        print msg
+    except:
+        pass
+    return
 
 def waitandkill(proc, timeout):
     if(timeout == 0):
@@ -40,7 +46,7 @@ def runtest(filename, P, extraargs, logfilename, timeout):
     log.write(" ".join(cmd)),
     
     DEVNULL = open(os.devnull, 'wb')
-    proc = Popen(cmd, stdout = DEVNULL, stderr = None, stdin = None)
+    proc = Popen(cmd, stdout = DEVNULL, stderr = PIPE, stdin = DEVNULL)
     if(waitandkill(proc, timeout)):
         msg = "\tFAIL: Process killed after " + str(timeout) +"s!"
         #print msg
@@ -51,18 +57,13 @@ def runtest(filename, P, extraargs, logfilename, timeout):
     out, err = proc.communicate() # capture output
     if (prc == 0): # did the process succeed?
         msg = "pass"
-        try:
-            print msg
-        except:
-            pass
+        Print(msg)
         log.write(" "+msg + "\n")
     else:
         msg = " FAIL with code " + str(prc) + "!"
-        try:
-            print msg
-        except:
-            pass
+        Print(msg)
         log.write(" "+msg + "\n")
+        log.write("stderr:\n" + str(err) + "\n")
         #print out
         #print err
         retval += 1
