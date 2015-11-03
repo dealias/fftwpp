@@ -7,13 +7,17 @@ using namespace utils;
 using namespace fftwpp;
 using namespace Array;
 
-inline void init(double *f, split d) 
+inline void init(double *f, split d, bool inplace=false) 
 {
   unsigned int c=0;
   for(unsigned int i=0; i < d.x; ++i) {
     unsigned int ii=d.x0+i;
     for(unsigned int j=0; j < d.Y; j++) {
       f[c++]=j+ii;
+    }
+    if(inplace) {
+      f[c++]=0.0;
+      f[c++]=0.0;
     }
   }
 }
@@ -35,6 +39,8 @@ int main(int argc, char* argv[])
   unsigned int ny=4;
   int divisor=0; // Test for best block divisor
   int alltoall=-1; // Test for best alltoall routine
+
+  bool inplace=false;
   
   bool quiet=false;
   bool test=false;
@@ -45,7 +51,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"hN:a:m:s:x:y:n:T:S:O:qt");
+    int c = getopt(argc,argv,"hN:a:i:m:s:x:y:n:T:S:O:qt");
     if (c == -1) break;
                 
     switch (c) {
@@ -56,6 +62,9 @@ int main(int argc, char* argv[])
         break;
       case 'a':
         divisor=atoi(optarg);
+        break;
+      case 'i':
+        inplace=atoi(optarg);
         break;
       case 'm':
         nx=ny=atoi(optarg);
@@ -126,10 +135,11 @@ int main(int argc, char* argv[])
     unsigned int nyp=ny/2+1;
     
     split df(nx,ny,group.active);
+    split df0(nx,ny+2*inplace,group.active);
     split dg(nx,nyp,group.active);
   
-    double *f=doubleAlign(df.n);
-    Complex *g=ComplexAlign(dg.n);
+    double *f=inplace ? doubleAlign(2 * dg.n) : doubleAlign(df.n);
+    Complex *g=inplace ? (Complex *)f : ComplexAlign(dg.n);
 
     // Create instance of FFT
     rcfft2dMPI rcfft(df,dg,f,g,mpiOptions(divisor,alltoall));
@@ -138,30 +148,35 @@ int main(int argc, char* argv[])
       cout << "Initialized after " << seconds() << " seconds." << endl;    
 
     if(test) {
-      init(f,df);
+      init(f,df,inplace);
 
       if(!quiet && nx*ny < outlimit) {
 	if(main) cout << "\nDistributed input:" << endl;
-	show(f,df.x,ny,group.active);
+	show(f,df0.x,df0.Y,group.active);
       }
       
       size_t align=sizeof(Complex);
-      array2<double> flocal(nx,ny,align);
-      array2<Complex> glocal(nx,nyp,align);
+      double *pflocal=inplace ? doubleAlign(nx*(ny+2)) : doubleAlign(nx*ny);
+      double *pfgather=inplace ? doubleAlign(nx*(ny+2)) : doubleAlign(nx*ny);
+      array2<double> flocal(nx,ny,pflocal);
+      array2<double> fgather(nx,ny,pfgather);
+      array2<double> f0local(nx,ny+2*inplace,pflocal);
+      Complex *pglocal=inplace ? (Complex *) pflocal : ComplexAlign(nx*nyp);
+      array2<Complex> glocal(nx,nyp,pglocal);
       rcfft2d localForward(nx, ny, flocal(), glocal());
       crfft2d localBackward(nx, ny, glocal(), flocal());
 
-      gatherx(f,flocal(),df,1,group.active);
+      gatherx(f,fgather(),df0,1,group.active);
+      gatherx(f,flocal(),df0,1,group.active);
 
       if(!quiet && main) {
-	cout << endl << "Gathered input:\n" << flocal << endl;
+	cout << endl << "Gathered input:\n" << f0local << endl;
       }
 
       if(shift)
 	rcfft.Forward0(f,g);
       else
-	rcfft.Forward(f,g);
-      
+	rcfft.Forward(f,g);      
       if(!quiet && nx*ny < outlimit) {
       	if(main) cout << "\nDistributed output:" << endl;
       	show(g,dg.X,dg.y,group.active);
@@ -173,9 +188,9 @@ int main(int argc, char* argv[])
       MPI_Barrier(group.active);
       if(main) {
 	if(shift)
-	  localForward.fft0(flocal,glocal);
+	  localForward.fft0(f0local,glocal);
 	else
-	  localForward.fft(flocal,glocal);
+	  localForward.fft(f0local,glocal);
 	if(!quiet) {
 	  cout << "\nLocal output:\n" << glocal << endl;
 	  cout << "\nGathered output:\n" << ggather << endl;
@@ -191,11 +206,11 @@ int main(int argc, char* argv[])
 
       if(!quiet && nx*ny < outlimit) {
       	if(main) cout << "\nDistributed back to input:" << endl;
-      	show(f,df.x,ny,group.active);
+      	show(f,df0.x,ny,group.active);
       }
 
-      array2<double> flocal0(nx,ny,align);
-      gatherx(f,flocal0(),df,1,group.active);
+      array2<double> flocal0(nx,ny+2*inplace,align);
+      gatherx(f,flocal0(),df0,1,group.active);
       MPI_Barrier(group.active);
       if(main) {
 	if(shift)
@@ -203,10 +218,10 @@ int main(int argc, char* argv[])
 	else
 	  localBackward.fftNormalized(glocal,flocal);
       	if(!quiet) {
-      	  cout << "\nLocal output:\n" << flocal << endl;
+      	  cout << "\nLocal output:\n" << f0local << endl;
       	  cout << "\nGathered output:\n" << flocal0 << endl;
       	}
-	retval += checkerror(flocal0(),flocal(),df.X*df.Y);
+	retval += checkerror(flocal0(),flocal(),df0.X*df0.Y);
       }
 
       if(!quiet && group.rank == 0) {
@@ -221,7 +236,7 @@ int main(int argc, char* argv[])
       if(N > 0) {
        	double *T=new double[N];
        	for(unsigned int i=0; i < N; ++i) {
-       	  init(f,df);
+       	  init(f,df,inplace);
        	  seconds();
        	  rcfft.Forward(f,g);
        	  rcfft.Backward(g,f);
@@ -230,14 +245,15 @@ int main(int argc, char* argv[])
        	}    
        	if(main) timings("FFT timing:",nx,T,N,stats);
       	delete [] T;
-        
+	
         if(!quiet && nx*ny < outlimit)
           show(f,df.x,df.Y,group.active);
       }
     }
 
-    deleteAlign(g);
-    deleteAlign(f);
+    // if(!inplace)
+    //   deleteAlign(g);
+    // deleteAlign(f);
   }
   
   MPI_Finalize();

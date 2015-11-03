@@ -64,16 +64,16 @@ def main(argv):
         for P in Plist:
             for X in Xlist:
                 for Y in Ylist:
-                    for i in [0, 1]:
+                    for inplace in [0, 1]:
                         ntest += 1
                         args = []
                         args.append("-x" + str(X))
                         args.append("-y" + str(Y))
+                        args.append("-i" + str(inplace))
                         args.append("-N1")
                         args.append("-s1")
                         args.append("-a1")
                         args.append("-T1")
-                        args.append("-i" + str(i))
                         args.append("-t")
                         args.append("-q")
                         rtest, cmd = runtest(pname, P, args, logfile, timeout)
