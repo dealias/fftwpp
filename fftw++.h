@@ -71,8 +71,6 @@ inline int get_max_threads()
   }
 #endif
 
-#include "utils.h"
-
 #ifndef __Complex_h__
 #include <complex>
 typedef std::complex<double> Complex;

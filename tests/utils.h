@@ -20,11 +20,6 @@ inline double cbrt(double x)
 
 namespace utils {
 
-inline unsigned int ceilquotient(unsigned int a, unsigned int b)
-{
-  return (a+b-1)/b;
-}
-
 inline void usageCommon(int n)
 {
   std::cerr << "Options: " << std::endl;

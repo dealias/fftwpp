@@ -1,5 +1,5 @@
 #ifndef __align_h__
-#define __align__ 1
+#define __align_h__ 1
 
 #ifndef HAVE_POSIX_MEMALIGN
 
@@ -88,6 +88,11 @@ inline void deleteAlign(T *v, size_t len)
 #endif
 
 namespace utils {
+
+inline unsigned int ceilquotient(unsigned int a, unsigned int b)
+{
+  return (a+b-1)/b;
+}
 
 inline Complex *ComplexAlign(size_t size)
 {

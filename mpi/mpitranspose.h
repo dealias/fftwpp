@@ -45,6 +45,7 @@
 #include "seconds.h"
 #include "Array.h"
 #include "utils.h"
+#include "align.h"
 
 #ifndef FFTWPP_SINGLE_THREAD
 #define PARALLEL(code)                                  \
