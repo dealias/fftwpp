@@ -5,15 +5,14 @@ import time
 from subprocess import * # so that we can run commands
 import os.path
 import getopt
-
-sys.stdin.close()
-os.close(0)
+import sys
+from testutils import Print
 
 def main(argv):
 
     msg = "MPI fft unit test"
     logfile = 'unittests.log'
-    print msg
+    Print(msg)
 
     usage = "Usage:\n"\
             "./testtranspose.py\n"\
@@ -35,9 +34,9 @@ def main(argv):
             sys.exit(0)
 
     if(shortrun):
-        print "Running short tests"
+        Print("Running short tests")
     else:
-        print "Running long tests"
+        Print("Running long tests")
 
     testlist = []
     testlist.append("testgather.py")
@@ -45,7 +44,7 @@ def main(argv):
     testlist.append("testfft.py")
     testlist.append("testconvolution.py")
     
-    print "Log in " + logfile + "\n"
+    Print("Log in " + logfile + "\n")
     log = open(logfile, 'w')
     log.write(msg)
     log.write("\n")
@@ -58,7 +57,7 @@ def main(argv):
         ntests += 1
         if not os.path.isfile(test):
             msg = "Error: "+ pname + "not present!"
-            print msg
+            Print(msg)
             log = open(logfile, 'a')
             log.write(msg + "\n")
             log.close()
@@ -70,28 +69,30 @@ def main(argv):
                 cmd.append("-s")
 
             msg = "Running " + " ".join(cmd)
-            print(msg),
+            try:
+                print(msg),
+            except:
+                pass
             log = open(logfile, 'a')
             log.write(msg)
             log.close()
             
-            proc = Popen(cmd, stdout = PIPE, stderr = PIPE, stdin = None)
+            DEVNULL = open(os.devnull, 'wb')
+            proc=Popen(cmd,stdout=DEVNULL,stderr=PIPE,stdin=DEVNULL)
             proc.wait() # sets the return code
 
             prc = proc.returncode
-            out, err = proc.communicate() # capture output
             if (prc == 0): # did the process succeed?
                 msg = "\t\tpass"
-                print msg
+                Print(msg)
                 log = open(logfile, 'a')
                 log.write(msg + "\n")
                 log.close()
             else:
                 msg = "\t\tFAILED!" 
-                print msg
+                Print(msg)
                 log = open(logfile, 'a')
                 log.write(msg + "\n")
-                log.write("stdout:\n" + out + "\n")
                 log.write("stderr:\n" + err + "\n")
                 log.close()
                 nfails += 1

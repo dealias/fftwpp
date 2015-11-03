@@ -67,7 +67,8 @@ def main(argv):
             log.write(msg)
             log.close()
 
-            proc = Popen(cmd, stdout = PIPE, stderr = PIPE, stdin = None)
+            DEVNULL = open(os.devnull, 'wb')
+            proc = Popen(cmd, stdout = DEVNULL, stderr = PIPE, stdin = DEVNULL)
             proc.wait() # sets the return code
 
             prc = proc.returncode
@@ -83,23 +84,25 @@ def main(argv):
                 log.close()
             else:
                 nfails += 1
-                msg = "\tFAILLED!"
+                msg = "\tFAILED!"
                 try:
                     print msg
                 except:
                     pass
                 log = open(logfile, 'a')
                 log.write(msg + "\n")
-                log.write("stdout:\n" + out + "\n")
                 log.write("stderr:\n" + err + "\n")
                 log.close()
 
-    print "\n", nfails, "failures out of", ntests, "tests." 
+    try:
+        print "\n", nfails, "failures out of", ntests, "tests." 
 
-    tend = time.time()
-    print "\nElapsed time (s):", tend - tstart
+        tend = time.time()
+        print "\nElapsed time (s):", tend - tstart
 
-    sys.exit(nfails)
+        sys.exit(nfails)
+    except:
+        pass
 
 if __name__ == "__main__":
     main(sys.argv[1:])

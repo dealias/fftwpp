@@ -11,7 +11,7 @@ from math import sqrt
 def main(argv):
     retval = 0
     
-    print "MPI transpose unit test"
+    Print("MPI transpose unit test")
     usage = "Usage:\n"\
             "./testtranspose.py\n"\
             "\t-s\t\tSpecify a short run\n"\
@@ -38,7 +38,7 @@ def main(argv):
     else:
         
         logfile = 'testtranspose.log' 
-        print "Log in " + logfile + "\n"
+        Print("Log in " + logfile + "\n")
         log = open(logfile, 'w')
         log.close()
 
@@ -64,7 +64,8 @@ def main(argv):
                         for a in range(1,int(sqrt(P)+1.5)):
                             for s in range(0,2):
                                 ntests += 1
-        print "Running", ntests, "tests."
+
+        Print("Running "+str(ntests)+" tests.")
         tstart = time.time()
 
         failcases = ""
@@ -97,14 +98,18 @@ def main(argv):
                                     failcases += "\t(code " + str(rtest) + ")"
                                     failcases += "\n"
                                     
-        if nfails > 0:
-            print "Failure cases:"
-            print failcases
-            retval += 1
-        print "\n", nfails, "failures out of", ntests, "tests." 
+        try:                            
+            if nfails > 0:
+                print "Failure cases:"
+                print failcases
+                retval += 1
+                print "\n", nfails, "failures out of", ntests, "tests." 
 
-        tend = time.time()
-        print "\nElapsed time (s):", tend - tstart
+                tend = time.time()
+                print "\nElapsed time (s):", tend - tstart
+        except:
+            pass
+    
         
     sys.exit(retval)
 
