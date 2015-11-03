@@ -278,6 +278,7 @@ class rcfft2dMPI : public fftw {
   unsigned int rdist;
 public:
   
+    
   void init(double *in, Complex *out, const utils::mpiOptions& options) {
     dc.Activate();
     out=CheckAlign((Complex *) in,out);
@@ -285,9 +286,17 @@ public:
     
     T=new utils::mpitranspose<Complex>(dc.X,dc.y,dc.x,dc.Y,1,out,
                                        dc.communicator,options);
+
     size_t cdist=dr.Y/2+1;
-    yForward=new mrcfft1d(dr.Y,dr.x,1,1,rdist,cdist,in,out,threads);
-    yBackward=new mcrfft1d(dr.Y,dr.x,1,1,cdist,rdist,out,in,threads);
+    rdist=inplace ? 2*cdist : realsize(dr.Y,in,out);
+    {
+      int n=dr.Y;
+      int M=dr.x;
+      size_t istride=1;
+      size_t ostride=1;
+      yForward=new mrcfft1d(n,M,istride,ostride,rdist,cdist,in,out,threads);
+      yBackward=new mcrfft1d(n,M,ostride,istride,cdist,rdist,out,in,threads);
+    }
 
     xForward=new mfft1d(dc.X,-1,dc.y,dc.y,1,out,out,threads);
     xBackward=new mfft1d(dc.X,1,dc.y,dc.y,1,out,out,threads);
@@ -297,14 +306,14 @@ public:
   rcfft2dMPI(const utils::split& dr, const utils::split& dc, double *in,
              Complex *out,
              const utils::mpiOptions& options=utils::defaultmpiOptions) :
-    fftw(dr.x*realsize(dr.Y,in,out),0,options.threads,dr.X*dr.Y), dr(dr),
-    dc(dc), rdist(realsize(dr.Y,in,out)) {init(in,out,options);}
-  
+    fftw(dr.x*realsize(dr.Y,in,out),0,options.threads,dr.X*dr.Y), dr(dr), dc(dc)
+    {init(in,out,options);}
+    
   rcfft2dMPI(const utils::split& dr, const utils::split& dc, Complex *out,
-             const utils::mpiOptions& options=utils::defaultmpiOptions) :
-    fftw(dr.x*2*(dr.Y/2+1),0,options.threads,dr.X*dr.Y), dr(dr), dc(dc),
-    rdist(2*(dr.Y/2+1)) {init((double *) out,out,options);}
-  
+	    const utils::mpiOptions& options=utils::defaultmpiOptions) :
+    fftw(dr.x*2*(dr.Y/2+1),0,options.threads,dr.X*dr.Y), dr(dr), dc(dc)
+    {init((double *) out,out,options);}
+    
   virtual ~rcfft2dMPI() {
     delete xBackward;
     delete xForward;

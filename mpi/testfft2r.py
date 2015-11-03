@@ -54,9 +54,6 @@ def main(argv):
             Ylist = [2,3,random.randint(6,64)]
             Plist = [1,2]
             
-        ntests = 0
-        ntests = len(Xlist) * len(Ylist) * len(Plist)
-        print "Running", ntests, "tests."
         tstart = time.time()
 
         failcases = ""
@@ -65,31 +62,34 @@ def main(argv):
         for P in Plist:
             for X in Xlist:
                 for Y in Ylist:
-                    for shift in shiftlist:
-                        if (shift == 0) or X % 2 == 0: 
-                            ntest += 1
-                            args = []
-                            args.append("-x" + str(X))
-                            args.append("-y" + str(Y))
-                            args.append("-O" + str(shift))
-                            args.append("-N1")
-                            args.append("-s1")
-                            args.append("-a1")
-                            args.append("-T1")
-                            args.append("-tq")
-                            rtest, cmd = runtest(pname, P, args, logfile, \
-                                                 timeout)
-                            if not rtest == 0:
-                                nfails += 1
-                                failcases += " ".join(cmd)
-                                failcases += "\t(code " + str(rtest) + ")"
-                                failcases += "\n"
+                    for inplace in [0, 1]:
+                        for shift in shiftlist:
+                            if (shift == 0) or X % 2 == 0: 
+                                ntest += 1
+                                args = []
+                                args.append("-x" + str(X))
+                                args.append("-y" + str(Y))
+                                args.append("-i" + str(inplace))
+                                args.append("-O" + str(shift))
+                                args.append("-N1")
+                                args.append("-s1")
+                                args.append("-a1")
+                                args.append("-T1")
+                                args.append("-t")
+                                args.append("-q")
+                                rtest, cmd = runtest(pname, P, args, logfile, \
+                                                     timeout)
+                                if not rtest == 0:
+                                    nfails += 1
+                                    failcases += " ".join(cmd)
+                                    failcases += "\t(code " + str(rtest) + ")"
+                                    failcases += "\n"
 
         if nfails > 0:
-            print "Failure cases:"
+            print "\nFailure cases:"
             print failcases
             retval += 1
-        print "\n", nfails, "failures out of", ntests, "tests." 
+        print "\n", nfails, "failures out of", ntest, "tests." 
 
         tend = time.time()
         print "\nElapsed time (s):", tend - tstart
