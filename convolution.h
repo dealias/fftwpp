@@ -52,7 +52,7 @@ unsigned int BuildZeta(unsigned int n, unsigned int m,
 struct convolveOptions {
   unsigned int nx,ny,nz;           // |
   unsigned int stride2,stride3;    // | Used internally by the MPI interface.
-  utils::mpiOptions mpi;    // |
+  utils::mpiOptions mpi;           // |
   
   convolveOptions(unsigned int nx=0, unsigned int ny=0, unsigned int nz=0,
                   unsigned int stride2=0, unsigned int stride3=0) :
@@ -983,8 +983,8 @@ public:
                                                u2+t*options.stride2*A,A,B,
                                                innerthreads);
       initpointers3(U3,u3,options.stride3);
-      if(threads > 1) Index=new std::vector<unsigned int>[threads];
     } else yzconvolve=NULL;
+    if(threads > 1) Index=new std::vector<unsigned int>[threads];
   }
   
   void set(convolveOptions &options)
@@ -1163,15 +1163,15 @@ public:
                                                 u2+t*options.stride2*A,
                                                 A,B,innerthreads);
       initpointers3(U3,u3,options.stride3);
-      if(threads > 1) Index=new std::vector<unsigned int>[threads];
     } else yzconvolve=NULL;
+    if(threads > 1) Index=new std::vector<unsigned int>[threads];
   }
   
   void set(convolveOptions& options) {
     if(options.ny == 0) {
       options.ny=2*my-ycompact;
       options.nz=mz+!zcompact;
-     options.stride2=(my+ycompact)*options.nz;
+      options.stride2=(my+ycompact)*options.nz;
       options.stride3=(mx+xcompact)*options.ny*options.nz;
     }
   }

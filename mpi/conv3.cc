@@ -191,6 +191,7 @@ int main(int argc, char* argv[])
     
     // Dimensions used in the MPI convolution
     split3 du(mx+xcompact,ny,my+ycompact,nzp,group,true);
+    du.n=max(du.n,d.n2);
     
     if(B != 1) {
       cerr << "Only B=1 is implemented" << endl;
@@ -269,15 +270,15 @@ int main(int argc, char* argv[])
       if(main) {
 	ImplicitHConvolution3 Clocal(mx,my,mz,xcompact,ycompact,zcompact,A,B);
 	Clocal.convolve(F0,mult);
-	if(!quiet && main) {
+	if(!quiet)
 	  cout << "Local output:" << endl;
-	  for(unsigned int b=0; b < B; b++) {
-	    cout << "b: " << b << endl;
+        for(unsigned int b=0; b < B; b++) {
+          if(!quiet) {
+            cout << "b: " << b << endl;
             show(F0[b],d.X,d.Y,d.Z,0,0,0,d.X,d.Y,d.Z);
-	    retval += checkerror(F0[b],F0out[b],d.X*d.Y*d.Z);
-	  }
-	}
-
+          }
+          retval += checkerror(F0[b],F0out[b],d.X*d.Y*d.Z);
+        }
       }
       
       if(main) {

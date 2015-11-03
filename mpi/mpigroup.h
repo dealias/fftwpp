@@ -135,7 +135,7 @@ public:
     z=yz.y;
     z0=yz.y0;
     n2=yz.n;
-    n=y > 0 ? std::max(xy.n*z,ceilquotient(Y,y)*n2) : xy.n*z;
+    n=std::max(xy.n*z,x*n2);
   }
   
   split3(unsigned int X, unsigned int Y, unsigned int Z,
