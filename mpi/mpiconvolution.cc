@@ -170,34 +170,32 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
     MPI_Comm_rank(*d.XYplane,&rank);
     MPI_Comm_size(*d.XYplane,&size);
     d.reflect=new int[dy];
-    range *indices=new range[size];
-    indices[rank].n=dy;
-    indices[rank].start=y0;
-    MPI_Allgather(MPI_IN_PLACE,0,MPI_INT,indices,
-                  sizeof(range)/sizeof(MPI_INT),MPI_INT,*d.XYplane);
-  
+    unsigned int n[size];
+    unsigned int start[size];
+    n[rank]=dy;
+    start[rank]=y0;
+    MPI_Allgather(MPI_IN_PLACE,0,MPI_UNSIGNED,n,1,MPI_UNSIGNED,*d.XYplane);
+    MPI_Allgather(MPI_IN_PLACE,0,MPI_UNSIGNED,start,1,MPI_UNSIGNED,*d.XYplane);
     if(rank == 0) {
-      int *process=new int[d.Y];
+      int process[d.Y];
       for(int p=0; p < size; ++p) {
-        unsigned int stop=indices[p].start+indices[p].n;
-        for(unsigned int j=indices[p].start; j < stop; ++j)
+        unsigned int stop=start[p]+n[p];
+        for(unsigned int j=start[p]; j < stop; ++j)
           process[j]=p;
       }
     
       for(unsigned int j=j0; j < dy; ++j)
         d.reflect[j]=process[2*yorigin-y0-j];
       for(int p=1; p < size; ++p) {
-        for(unsigned int j=indices[p].start == 0 ? yextra : 0; j < indices[p].n;
+        for(unsigned int j=start[p] == 0 ? yextra : 0; j < n[p];
             ++j)
-          MPI_Send(process+2*yorigin-indices[p].start-j,1,MPI_INT,p,j,
+          MPI_Send(process+2*yorigin-start[p]-j,1,MPI_INT,p,j,
                    *d.XYplane);
       }
-      delete [] process;
     } else {
       for(unsigned int j=0; j < dy; ++j)
         MPI_Recv(d.reflect+j,1,MPI_INT,0,j,*d.XYplane,MPI_STATUS_IGNORE);
     }
-    delete [] indices;
   }
   if(d.z0 != 0) return;
   MPI_Comm_rank(*d.XYplane,&rank);

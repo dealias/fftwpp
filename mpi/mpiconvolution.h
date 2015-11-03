@@ -251,12 +251,6 @@ public:
   }
 };
 
-class range {
-public:
-  unsigned int n;
-  int start;
-};
-
 void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
 			      utils::split3& d, bool xcompact, bool ycompact,
                               Complex *f, unsigned int nu=0, Complex *u=NULL);

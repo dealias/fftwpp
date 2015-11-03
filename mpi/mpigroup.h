@@ -158,6 +158,10 @@ public:
     xy.Deactivate();
   }
 
+  ~split3() {
+    if(XYplane && z0 == 0) delete [] reflect;
+  }
+  
   void show() {
     std::cout << "X=" << X << "\tY=" << Y << "\tZ=" << Z << std::endl;
     std::cout << "x=" << x << "\ty=" << y << "\tz=" << z << std::endl;
