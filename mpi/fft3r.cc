@@ -124,7 +124,7 @@ int main(int argc, char* argv[])
   }
   
   unsigned int nzp=nz/2+1;
-  MPIgroup group(MPI_COMM_WORLD,nx,ny,nzp);
+  MPIgroup group(MPI_COMM_WORLD,nx,ny);
 
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;

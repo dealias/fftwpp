@@ -100,7 +100,7 @@ public:
 // then over y. The array must be allocated as split3::n Complex words.
 //
 // Example:
-// MPIgroup group(MPI_COMM_WORLD,nx,ny,nz);
+// MPIgroup group(MPI_COMM_WORLD,nx,ny);
 // split3 d(nx,ny,nz,group);
 // Complex *f=ComplexAlign(d.n);
 // fft3dMPI fft(d,f);
@@ -368,7 +368,7 @@ public:
 // The arrays must be allocated as split3::n Complex words.
 //
 // Example:
-// MPIgroup group(MPI_COMM_WORLD,nx,ny,nz/2+1);
+// MPIgroup group(MPI_COMM_WORLD,nx,ny);
 // split3 df(nx,ny,nz,group);
 // split3 dg(nx,ny,nz/2+1,group);
 // double *f=doubleAlign(df.n);

@@ -8,7 +8,6 @@ namespace utils {
 extern MPI_Comm Active;
 void setMPIplanner();
 
-// Distribute first X, then (if allowpencil=true) Y.
 class MPIgroup {
 public:  
   int rank,size;
@@ -24,6 +23,7 @@ public:
     MPI_Comm_split(comm,rank < size,0,&active);
   }
   
+// Distribute X.
   MPIgroup(const MPI_Comm& comm, unsigned int X) {
     init(comm);
     unsigned int xblock=ceilquotient(X,size);
@@ -31,13 +31,12 @@ public:
     activate(comm);
   }
   
+// Distribute first X, then (if allowpencil=true) Y.
   MPIgroup(const MPI_Comm& comm, unsigned int X, unsigned int Y,
-           unsigned int Z, bool allowPencil=true) {
+           bool allowPencil=true) {
     init(comm);
     unsigned int x=ceilquotient(X,size);
-    unsigned int z=ceilquotient(Z,size);
-    unsigned int y=allowPencil && x*Z == X*z ? ceilquotient(Y,size*x/X) : Y;
-    if(rank == 0 && y < Y) std::cout << "Using pencil mode." << std::endl;
+    unsigned int y=allowPencil ? ceilquotient(Y,size*x/X) : Y;
     size=ceilquotient(X,x)*ceilquotient(Y,y);
     
     activate(comm);

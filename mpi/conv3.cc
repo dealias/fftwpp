@@ -169,7 +169,15 @@ int main(int argc, char* argv[])
   unsigned int ny=2*my-ycompact;
   unsigned int nzp=mz+!zcompact;
     
-  MPIgroup group(MPI_COMM_WORLD,ny,nzp,nx);
+  int size;
+  MPI_Comm_size(MPI_COMM_WORLD,&size);
+  unsigned int x=ceilquotient(nx,size);
+  unsigned int y=ceilquotient(ny,size);
+  unsigned int X2=mx+xcompact;
+  unsigned int x2=ceilquotient(X2,size);
+  bool allowpencil=nx*y == x*ny && X2*y == x2*ny;
+  
+  MPIgroup group(MPI_COMM_WORLD,ny,nzp,allowpencil);
   
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;
@@ -191,7 +199,7 @@ int main(int argc, char* argv[])
     
     // Dimensions used in the MPI convolution
     split3 du(mx+xcompact,ny,my+ycompact,nzp,group,true);
-    du.n=max(du.n,d.n2);
+//    du.n=max(du.n,d.n2);
     
     if(B != 1) {
       cerr << "Only B=1 is implemented" << endl;

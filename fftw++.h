@@ -71,6 +71,8 @@ inline int get_max_threads()
   }
 #endif
 
+#include "utils.h"
+
 #ifndef __Complex_h__
 #include <complex>
 typedef std::complex<double> Complex;
@@ -493,11 +495,6 @@ public:
 
 }; // class fftw
 
-inline unsigned int ceilquotient(unsigned int a, unsigned int b)
-{
-  return (a+b-1)/b;
-}
-
 class Transpose {
   fftw_plan plan;
   fftw_plan plan2;
@@ -532,8 +529,8 @@ public:
     a=std::min(rows,threads);
     b=std::min(cols,threads/a);
 
-    unsigned int n=ceilquotient(rows,a);
-    unsigned int m=ceilquotient(cols,b);
+    unsigned int n=utils::ceilquotient(rows,a);
+    unsigned int m=utils::ceilquotient(cols,b);
     
     // If rows <= threads then a=rows and n=1.
     // If rows >= threads then b=1 and m=cols.
@@ -563,14 +560,14 @@ public:
     jlast=b;
     
     if(n*a > rows) { // Only happens when rows > threads.
-      a=ceilquotient(rows,n);
+      a=utils::ceilquotient(rows,n);
       ilast=a-1;
       dims[0].n=rows-n*ilast;
       plan2=fftw_plan_guru_r2r(0,NULL,3,dims,(double *) in,(double *) out,
                                NULL,fftw::effort);
     } else { // Only happens when rows < threads.
       if(m*b > cols) {
-        b=ceilquotient(cols,m);
+        b=utils::ceilquotient(cols,m);
         jlast=b-1;
         dims[1].n=cols-m*jlast;
         plan2=fftw_plan_guru_r2r(0,NULL,3,dims,(double *) in,(double *) out,

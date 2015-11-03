@@ -44,6 +44,7 @@
 #include "Complex.h"
 #include "seconds.h"
 #include "Array.h"
+#include "utils.h"
 
 #ifndef FFTWPP_SINGLE_THREAD
 #define PARALLEL(code)                                  \
@@ -59,11 +60,6 @@
     code                                        \
   }
 #endif
-
-inline unsigned int ceilquotient(unsigned int a, unsigned int b)
-{
-  return (a+b-1)/b;
-}
 
 #include "../transposeoptions.h"
 
@@ -163,7 +159,7 @@ inline void Wait(int count, MPI_Request *request, int *sched=NULL)
 
 inline int localsize(int N, int size)
 {
-  int n=ceilquotient(N,size);
+  int n=utils::ceilquotient(N,size);
   size=N/n;
   if(N > n*size) ++size;
   return size;
@@ -171,12 +167,12 @@ inline int localsize(int N, int size)
 
 inline int localstart(int N, int rank, int size)
 {
-  return ceilquotient(N,size)*rank;
+  return utils::ceilquotient(N,size)*rank;
 }
 
 inline int localdimension(int N, int rank, int size)
 {
-  int n=ceilquotient(N,size);
+  int n=utils::ceilquotient(N,size);
   int extra=N-n*rank;
   if(extra < 0) extra=0;
   if(n > extra) n=extra;
@@ -309,11 +305,11 @@ public:
     MPI_Comm_rank(global,&globalrank);
     
     m0=localdimension(M,0,size);
-    mlast=ceilquotient(M,m0)-1;
+    mlast=utils::ceilquotient(M,m0)-1;
     mp=localdimension(M,mlast,size);
     
     n0=localdimension(N,0,size);
-    nlast=ceilquotient(N,n0)-1;
+    nlast=utils::ceilquotient(N,n0)-1;
     np=localdimension(N,nlast,size);
     
     if(work == NULL) {

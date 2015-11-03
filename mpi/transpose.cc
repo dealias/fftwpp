@@ -1,6 +1,5 @@
 #include "mpitranspose.h"
 #include "mpiutils.h"
-#include "utils.h"
 #include "statistics.h"
 #include "align.h"
 

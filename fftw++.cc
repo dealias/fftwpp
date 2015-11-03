@@ -1,5 +1,8 @@
 #include <cstring>
+#include <sstream>
 #include "fftw++.h"
+
+using namespace std;
 
 namespace fftwpp {
 
@@ -29,9 +32,9 @@ void LoadWisdom()
 {
   static bool Wise=false;
   if(!Wise) {
-    std::ifstream ifWisdom;
+    ifstream ifWisdom;
     ifWisdom.open(fftw::WisdomName);
-    std::ostringstream wisdom;
+    ostringstream wisdom;
     wisdom << ifWisdom.rdbuf();
     ifWisdom.close();
     fftw_import_wisdom_from_string(wisdom.str().c_str());
@@ -41,7 +44,7 @@ void LoadWisdom()
 
 void SaveWisdom()
 {
-  std::ofstream ofWisdom;
+  ofstream ofWisdom;
   ofWisdom.open(fftw::WisdomName);
   char *wisdom=fftw_export_wisdom_to_string();
   ofWisdom << wisdom;

@@ -147,9 +147,15 @@ int main(int argc, char* argv[])
     if(N < 10) N=10;
   }
 
-  MPIgroup group(MPI_COMM_WORLD,my,mz,mx);
+  int size;
+  MPI_Comm_size(MPI_COMM_WORLD,&size);
+  unsigned int x=ceilquotient(mx,size);
+  unsigned int y=ceilquotient(my,size);
+  bool allowpencil=mx*y == x*my;
+  
+  MPIgroup group(MPI_COMM_WORLD,my,mz,allowpencil);
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
-    fftw::maxthreads=1;  
+    fftw::maxthreads=1;
 
   defaultmpithreads=fftw::maxthreads;
 
@@ -183,8 +189,6 @@ int main(int argc, char* argv[])
       cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
     }
     split3 d(mx,my,mz,group,true);
-
-    //cout << "Local data size: " << d.n << endl;
     
     if(B != 1) {
       cerr << "Only B=1 is implemented" << endl;

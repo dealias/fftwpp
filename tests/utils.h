@@ -18,6 +18,13 @@ inline double cbrt(double x)
 #include <getopt.h>
 #endif
 
+namespace utils {
+
+inline unsigned int ceilquotient(unsigned int a, unsigned int b)
+{
+  return (a+b-1)/b;
+}
+
 inline void usageCommon(int n)
 {
   std::cerr << "Options: " << std::endl;
@@ -98,7 +105,7 @@ inline void usageShift()
             << std::endl;
 }
 
-void usageFFT(int n)
+inline void usageFFT(int n)
 {
   usageCommon(n);
   std::cerr << "-r\t\t type of run:\n"
@@ -114,7 +121,7 @@ void usageFFT(int n)
 	      << "\t\t r=7: strided, out-of-place\n";
 }
 
-unsigned int padding(unsigned int n)
+inline unsigned int padding(unsigned int n)
 {
   std::cout << "min padded buffer=" << n << std::endl;
   unsigned int log2n;
@@ -123,17 +130,17 @@ unsigned int padding(unsigned int n)
   return 1 << log2n;
 }
   
-unsigned int cpadding(unsigned int m)
+inline unsigned int cpadding(unsigned int m)
 {
   return padding(2*m);
 }
 
-unsigned int hpadding(unsigned int m)
+inline unsigned int hpadding(unsigned int m)
 {
   return padding(3*m-2);
 }
 
-unsigned int tpadding(unsigned int m)
+inline unsigned int tpadding(unsigned int m)
 {
   return padding(4*m-3);
 }
@@ -147,6 +154,8 @@ inline int hash(Complex* f, unsigned int m)
     h= (h+ (324723947+(int)(f[i].im+0.5)))^93485734985;
   }
   return h;
+}
+
 }
 
 #endif
