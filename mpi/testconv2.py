@@ -34,7 +34,7 @@ def main(argv):
             print usage
             sys.exit(0)
 
-    
+   
     logfile = 'testconv2.log' 
     print "Log in " + logfile + "\n"
     log = open(logfile, 'w')
@@ -59,21 +59,13 @@ def main(argv):
             ylist = [2,3,random.randint(6,64)]
             Plist = [1,2]
             
-        ntests = 0
-        ntests = len(xlist) * len(ylist) * len(Plist) * 4
-        print "Running", ntests, "tests."
-        tstart = time.time()
-
-        failcases = ""
-        ntest = 0
-        nfails = 0
+        testcases = []
         for P in Plist:
             for x in xlist:
                 for y in ylist:
                  for X in range(0,2):
                      for Y in range(0,2):
                          for A in Alist:
-                             ntest += 1
                              args = []
                              args.append("-x" + str(x))
                              args.append("-y" + str(y))
@@ -86,17 +78,29 @@ def main(argv):
                              args.append("-T1")
                              args.append("-t")
                              args.append("-q")
-                             rtest, cmd = runtest(pname, P, args, logfile, timeout)
-                             if not rtest == 0:
-                                 nfails += 1
-                                 failcases += " ".join(cmd)
-                                 failcases += "\t(code " + str(rtest) + ")"
-                                 failcases += "\n"
+                             testcases.append(args)
+
+
+        tstart = time.time()
+        ntest = len(testcases)
+        print "Running", ntest, "tests."
+
+        failcases = ""
+        nfails = 0
+                
+        for args in testcases:
+            rtest, cmd = runtest(pname, P, args, logfile, timeout)
+            if not rtest == 0:
+                nfails += 1
+                failcases += " ".join(cmd)
+                failcases += "\t(code " + str(rtest) + ")"
+                failcases += "\n"
+
         if nfails > 0:
             print "Failure cases:"
             print failcases
             retval += 1
-        print "\n", nfails, "failures out of", ntests, "tests." 
+        print "\n", nfails, "failures out of", ntest, "tests." 
 
         tend = time.time()
         print "\nElapsed time (s):", tend - tstart
