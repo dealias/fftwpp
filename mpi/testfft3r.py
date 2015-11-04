@@ -68,27 +68,31 @@ def main(argv):
             for X in Xlist:
                 for Y in Ylist:
                     for Z in Zlist:
-                        for shift in shiftlist:
-                            if (shift == 0) or (X % 2 == 0 and Y % 2 == 0): 
-                                ntest += 1
-                                args = []
-                                args.append("-x" + str(X))
-                                args.append("-y" + str(Y))
-                                args.append("-z" + str(Z))
-                                args.append("-N1")
-                                args.append("-s1")
-                                args.append("-a1")
-                                args.append("-O" + str(shift))
-                                args.append("-t")
-                                args.append("-T1")
-                                args.append("-q")
-                                rtest, cmd = runtest(pname, P, args, logfile, \
-                                                     timeout)
-                                if not rtest == 0:
-                                    nfails += 1
-                                    failcases += " ".join(cmd)
-                                    failcases += "\t(code " + str(rtest) + ")"
-                                    failcases += "\n"
+                        for inplace in [0, 1]:
+                            for shift in shiftlist:
+                                if (shift == 0) or (X % 2 == 0 and Y % 2 == 0): 
+                                    ntest += 1
+                                    args = []
+                                    args.append("-x" + str(X))
+                                    args.append("-y" + str(Y))
+                                    args.append("-z" + str(Z))
+                                    args.append("-i" + str(inplace))
+                                    args.append("-O" + str(shift))
+                                    args.append("-N1")
+                                    args.append("-s1")
+                                    args.append("-a1")
+                                    args.append("-T1")
+                                    args.append("-t")
+                                    args.append("-q")
+                                    rtest, cmd = runtest(pname, P, args, \
+                                                         logfile, \
+                                                         timeout)
+                                    if not rtest == 0:
+                                        nfails += 1
+                                        failcases += " ".join(cmd)
+                                        failcases += "\t(code " + str(rtest) \
+                                                     + ")"
+                                        failcases += "\n"
 
         if nfails > 0:
             print "Failure cases:"

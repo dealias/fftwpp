@@ -7,12 +7,6 @@ using namespace utils;
 using namespace fftwpp;
 using namespace Array;
 
-// Number of iterations.
-unsigned int N0=10000000;
-unsigned int N=0;
-int divisor=0; // Test for best block divisor
-int alltoall=-1; // Test for best alltoall routine
-
 inline void init(array3<double> f, split3 d)
 {
   for(unsigned int i=0; i < d.x; ++i) {
@@ -20,7 +14,7 @@ inline void init(array3<double> f, split3 d)
     for(unsigned int j=0; j < d.y; j++) {
       unsigned int jj=d.y0+j;
       for(unsigned int k=0; k < d.Z; k++) {
-        f(i,j,k)=ii+jj+k;
+        f(i,j,k)=ii+jj+k +1;
       }
     }
   }
@@ -30,11 +24,18 @@ unsigned int outlimit=3000;
 
 int main(int argc, char* argv[])
 {
+
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif
   int retval=0;
 
+  // Default number of iterations.
+  unsigned int N0=10000000;
+  unsigned int N=0;
+  int divisor=0; // Test for best block divisor
+  int alltoall=-1; // Test for best alltoall routine
+  
   unsigned int nx=4;
   unsigned int ny=0;
   unsigned int nz=0;
@@ -50,7 +51,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"S:hti:N:O:T:a:m:n:s:x:y:z:q");
+    int c = getopt(argc,argv,"S:hti:N:O:T:a:i:m:n:s:x:y:z:q");
     if (c == -1) break;
                 
     switch (c) {
@@ -133,7 +134,6 @@ int main(int argc, char* argv[])
            << group.size << " nodes X " << fftw::maxthreads 
            << " threads/node" << endl;
       cout << "Using MPI VERSION " << MPI_VERSION << endl;
-      cout << "N=" << N << endl;
       cout << "nx=" << nx << ", ny=" << ny << ", nz=" << nz << ", nzp=" << nzp
            << endl;
       cout << "size=" << group.size << endl;
@@ -141,9 +141,9 @@ int main(int argc, char* argv[])
 
     split3 df(nx,ny,nz,group);
     split3 dg(nx,ny,nzp,group,true);
-    
-    unsigned int dfZ=inplace ? 2*dg.Z : df.Z;
-    
+
+    split3 dfgather(nx,ny,inplace ? 2*dg.Z : df.Z,group);
+        
     array3<Complex> g(dg.x,dg.y,dg.Z,ComplexAlign(dg.n));
     array3<double> f;
     if(inplace)
@@ -158,34 +158,31 @@ int main(int argc, char* argv[])
     
     if(test) {
       init(f,df);
-
-#if 0      
+      
       if(!quiet && nx*ny < outlimit) {
-        if(main) cout << "\ninput:" << endl;
-        show(f,df.x,df.y,df.Z,group.active);
+        if(main) cout << "\nDistributed input:" << endl;
+        show(f(),dfgather.x,dfgather.y,dfgather.Z,group.active);
       }
 
       size_t align=sizeof(Complex);
 
-      array3<double> flocal(nx,ny,nz,align);
+      array3<Complex> ggather(nx,ny,nzp,align);
       array3<Complex> glocal(nx,ny,nzp,align);
-      array3<double> fgathered(nx,ny,nz,align);
-      array3<Complex> ggathered(nx,ny,nzp,align);
+      array3<double> fgather(dfgather.X,dfgather.Y,dfgather.Z,align);
+      array3<double> flocal;
+      if(inplace)
+      	flocal.Dimension(nx,ny,2*nzp,(double *) glocal());
+      else
+      	flocal.Allocate(nx,ny,nz,align);
       
-      rcfft3d localForward(nx,ny,nz,fgathered(),ggathered());
-      crfft3d localBackward(nx,ny,nz,ggathered(),fgathered());
+      rcfft3d localForward(nx,ny,nz,flocal(),glocal());
+      crfft3d localBackward(nx,ny,nz,glocal(),flocal());
 
-      gatherxy(f, fgathered(), df, group.active);
-
-      init(flocal(),df.X,df.Y,df.Z,0,0,0,df.X,df.Y,df.Z);
-      if(main) {
-        if(!quiet) {
-          cout << "Gathered input:\n" <<  fgathered << endl;
-          cout << "Local input:\n" <<  flocal << endl;
-        }
-        retval += checkerror(flocal(),fgathered(),df.X*df.Y*df.Z);
-      }
-      
+      gatherxy(f(), flocal(), dfgather, group.active);
+      gatherxy(f(), fgather(), dfgather, group.active);
+      if(main && !quiet)
+	cout << "Gathered input:\n" <<  fgather << endl;
+	      
       if(shift)
 	rcfft.Forward0(f,g);
       else
@@ -201,25 +198,33 @@ int main(int argc, char* argv[])
         
       if(!quiet) {
         if(main) cout << "Distributed output:" << endl;
-        show(g,dg.X,dg.y,dg.z,group.active);
+        show(g(),dg.X,dg.y,dg.z,group.active);
       }
-      gatheryz(g,ggathered(),dg,group.active); 
 
-      if(!quiet && main) {
-        cout << "Gathered output:\n" <<  ggathered << endl;
-        cout << "Local output:\n" <<  glocal << endl;
-      }
+      gatheryz(g(),ggather(),dg,group.active); 
+      if(!quiet && main)
+         cout << "Gathered output:\n" <<  ggather << endl;
+
+      if(!quiet && main) 
+	cout << "Local output:\n" <<  glocal << endl;
       
-      if(main) {
-        retval += checkerror(glocal(),ggathered(),dg.X*dg.Y*dg.Z);
-        cout << endl;
-      }
+      if(main)
+	retval += checkerror(glocal(),ggather(),dg.X*dg.Y*dg.Z);
 
       if(shift)
 	rcfft.Backward0(g,f);
       else
 	rcfft.Backward(g,f);
       rcfft.Normalize(f);
+
+      if(!quiet) {
+        if(main) cout << "Distributed back to input:" << endl;
+        show(f(),dfgather.x,dfgather.y,dfgather.Z,group.active);
+      }
+
+      gatherxy(f(),fgather(),dfgather,group.active);
+      if(!quiet && main)
+	cout << "Gathered back to input:\n" <<  fgather << endl;
 
       if(main) {
         if(shift)
@@ -228,20 +233,11 @@ int main(int argc, char* argv[])
           localBackward.fftNormalized(glocal,flocal);
       }
       
-      if(!quiet) {
-        if(main) cout << "Distributed back to input:" << endl;
-        show(f,df.x,df.y,df.Z,group.active);
-      }
-
-      gatherxy(f,fgathered(),df,group.active);
-      
-      if(!quiet && main) {
-        cout << "Gathered back to input:\n" <<  fgathered << endl;
-        cout << "Local back to input:\n" <<  flocal << endl;
-      }
+      if(!quiet && main) 
+	cout << "Local back to input:\n" <<  flocal << endl;
       
       if(main)
-        retval += checkerror(flocal(),fgathered(),df.X*df.Y*df.Z);
+        retval += checkerror(flocal(),fgather(),df.Z,df.X*df.Y,dfgather.Z);
       
       if(!quiet && group.rank == 0) {
         cout << endl;
@@ -250,9 +246,11 @@ int main(int argc, char* argv[])
         else
           cout << "FAIL" << endl;
       }
-#endif      
+
     } else {
+      if(main) cout << "N=" << N << endl;
       double *T=new double[N];
+
       for(unsigned int i=0; i < N; ++i) {
         init(f,df);
         if(shift) {
@@ -270,7 +268,7 @@ int main(int argc, char* argv[])
         }
       }
       if(!quiet)
-        show(f(),df.x,df.y,dfZ,0,0,0,df.x,df.y,df.Z,group.active);
+        show(f(),df.x,df.y,dfgather.Z,0,0,0,df.x,df.y,df.Z,group.active);
         
       if(main) timings("FFT timing:",nx,T,N,stats);
       delete[] T;
