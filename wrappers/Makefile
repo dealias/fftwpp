@@ -46,18 +46,22 @@ endif
 
 ifeq ($(strip $(CPLUS_INCLUDE_PATH)),)
 else
-CXXFLAGS +=-I$(CPLUS_INCLUDE_PATH)
+#CXXFLAGS +=-I$(CPLUS_INCLUDE_PATH)
 endif
 
 ifeq ($(strip $(FORTRAN_INCLUDE_FLAGS)),)
 FIFLAGS += -I/usr/include
 else
-FIFLAGS += $(FORTRAN_INCLUDE_FLAGS)
+#FIFLAGS += $(FORTRAN_INCLUDE_FLAGS)
+endif
+
+ifneq ($(strip $(FFTW_LIB_PATH)),)
+LDFLAGS=-L$(FFTW_LIB_PATH)
 endif
 
 ifeq ($(strip $(LD_LIBRARY_PATH)),)
 else
-LDFLAGS +=-L$(LD_LIBRARY_PATH)
+#LDFLAGS +=-L$(LD_LIBRARY_PATH)
 endif
 
 LDFLAGS += -lfftw3_omp -lfftw3 -lm -lstdc++
