@@ -18,19 +18,19 @@ extern "C" {
   namespace fftwpp {
     // Wrappers for allocating aligned memory arrays
     double *create_doubleAlign(unsigned int n) {
-      return (double  *) fftwpp::doubleAlign(n); 
+      return (double  *) utils::doubleAlign(n); 
     }
     
     void delete_doubleAlign(double * p) {
-      deleteAlign(p);
+      utils::deleteAlign(p);
     }
 
     double __complex__  *create_complexAlign(unsigned int n) {
-      return (double __complex__ * ) fftwpp::ComplexAlign(n); 
+      return (double __complex__ * ) utils::ComplexAlign(n); 
     }
 
     void delete_complexAlign(double __complex__ * p) {
-      deleteAlign(p);
+      utils::deleteAlign(p);
     }
 
     // Wrappers for multiple threads
