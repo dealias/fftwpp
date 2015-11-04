@@ -236,16 +236,24 @@ void gatherxy(const ftype *part,
   }
 }
 
+
 template<class T>
-int checkerror(const T *f, const T *control, unsigned int stop)
+int checkerror(const T *f, const T *control, unsigned int n, unsigned int M,
+	       unsigned int dist)
 {
-  double maxerr=0.0, norm=0.0;
-  for(unsigned int i=0; i < stop; i++) {
-    double diff=abs(f[i]-control[i]);
-    maxerr=std::max(maxerr,diff);
-    double absc=abs(control[i]);
-    norm=std::max(norm,absc);
+  double maxerr=0.0;
+  double norm=0.0;
+  for(unsigned int i = 0; i < M; ++i) {
+    int pos = i * dist;
+    for(unsigned int j = 0; j < n; ++j) {
+      int posj = pos + j;
+      double diff=abs(f[posj]-control[posj]);
+      maxerr=std::max(maxerr,diff);
+      double absc=abs(control[posj]);
+      norm=std::max(norm,absc);
+    }
   }
+
   std::cout << "Maximum error: " << maxerr << std::endl;
   if(maxerr <= 1e-12*norm) {
     std::cout << "Error ok." << std::endl;
@@ -253,6 +261,12 @@ int checkerror(const T *f, const T *control, unsigned int stop)
   }
   std::cout << "CAUTION! Large error!" << std::endl;
   return 1;
+}
+
+template<class T>
+int checkerror(const T *f, const T *control, unsigned int stop)
+{
+  return checkerror(f, control, stop, 1, stop);
 }
 
 template<class ftype>

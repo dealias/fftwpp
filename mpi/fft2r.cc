@@ -150,29 +150,30 @@ int main(int argc, char* argv[])
     if(test) {
       init(f,df);
 
-#if 0      
       if(!quiet && nx*ny < outlimit) {
 	if(main) cout << "\nDistributed input:" << endl;
-	show(f,df0.x,df0.Y,group.active);
+	show(f(),df.x,df.Y,group.active);
       }
       
-      double *pflocal=inplace ? doubleAlign(2*nx*nyp) : doubleAlign(nx*ny);
-      double *pfgather=inplace ? doubleAlign(2*nx*nyp) : doubleAlign(nx*ny);
-      array2<double> flocal(nx,ny,pflocal);
-      array2<double> fgather(nx,ny,pfgather);
-      array2<double> f0local(nx,2*nyp,pflocal);
-      Complex *pglocal=inplace ? (Complex *) pflocal : ComplexAlign(nx*nyp);
-      array2<Complex> glocal(nx,nyp,pglocal);
-      rcfft2d localForward(nx,ny,flocal(),glocal());
-      crfft2d localBackward(nx,ny,glocal(),flocal());
+      split dfgather(nx,inplace ? 2*nyp : ny,group.active);
+      size_t align=sizeof(Complex);
+      array2<Complex> ggather(nx,nyp,align);
+      array2<Complex> glocal(nx,nyp,align);
+      array2<double> fgather(nx,inplace ? 2*nyp : ny,align);
+      array2<double> flocal;
+      if(inplace)
+      	flocal.Dimension(nx,2*nyp,(double *) glocal());
+      else
+      	flocal.Allocate(nx,ny,align);
+  
+      rcfft2d localForward(nx,ny,flocal,glocal);
+      crfft2d localBackward(nx,ny,glocal,flocal);
 
-      gatherx(f,fgather(),df0,1,group.active);
-      gatherx(f,flocal(),df0,1,group.active);
-
-      if(!quiet && main) {
-	cout << endl << "Gathered input:\n" << f0local << endl;
-      }
-
+      gatherx(f(),flocal(),dfgather,1,group.active);
+      gatherx(f(),fgather(),dfgather,1,group.active);
+      if(!quiet && main)
+	cout << endl << "Gathered input:\n" << fgather << endl;
+      
       if(shift)
 	rcfft.Forward0(f,g);
       else
@@ -180,25 +181,22 @@ int main(int argc, char* argv[])
       
       if(!quiet && nx*ny < outlimit) {
       	if(main) cout << "\nDistributed output:" << endl;
-      	show(g,dg.X,dg.y,group.active);
+      	show(g(),dg.X,dg.y,group.active);
       }
 
-      array2<Complex> ggather(nx,nyp,align);
-      gathery(g,ggather(),dg,1,group.active);
-
-      MPI_Barrier(group.active);
+      gathery(g(),ggather(),dg,1,group.active);
+      if(main && !quiet)
+	cout << "\nGathered output:\n" << ggather << endl;
+      
       if(main) {
 	if(shift)
-	  localForward.fft0(f0local,glocal);
+	  localForward.fft0(flocal,glocal);
 	else
-	  localForward.fft(f0local,glocal);
-	if(!quiet) {
+	  localForward.fft(flocal,glocal);
+	if(!quiet)
 	  cout << "\nLocal output:\n" << glocal << endl;
-	  cout << "\nGathered output:\n" << ggather << endl;
-	}
         retval += checkerror(glocal(),ggather(),dg.X*dg.Y);
       }
-#endif      
 
       if(shift)
 	rcfft.Backward0(g,f);
@@ -206,29 +204,28 @@ int main(int argc, char* argv[])
 	rcfft.Backward(g,f);
       rcfft.Normalize(f);
 
-#if 0      
       if(!quiet && nx*ny < outlimit) {
       	if(main) cout << "\nDistributed back to input:" << endl;
-      	show(f,df0.x,ny,group.active);
+      	show(f(),dfgather.x,dfgather.Y,group.active);
       }
 
-      size_t align=sizeof(Complex);
-      array2<double> flocal0(nx,ny+2*inplace,align);
-      gatherx(f,flocal0(),df0,1,group.active);
-      MPI_Barrier(group.active);
+      gatherx(f(),fgather(),dfgather,1,group.active);
+      if(!quiet && main)
+	cout << endl << "Gathered back to input:\n" << fgather << endl;
+      
       if(main) {
 	if(shift)
 	  localBackward.fft0Normalized(glocal,flocal);
 	else
 	  localBackward.fftNormalized(glocal,flocal);
-      	if(!quiet) {
-      	  cout << "\nLocal output:\n" << f0local << endl;
-      	  cout << "\nGathered output:\n" << flocal0 << endl;
-      	}
-	retval += checkerror(flocal0(),flocal(),df0.X*df0.Y);
+	if(!quiet)
+	  cout << "\nLocal back to input:\n" << flocal << endl;
+	cout << "df.X: " << df.X << endl;
+	cout << "df.Y: " << df.Y << endl;
+	cout << "dfgather.Y: " << dfgather.Y << endl;
+	retval += checkerror(fgather(),flocal(),df.Y,df.X,dfgather.Y);
       }
-#endif      
-
+      
       if(!quiet && group.rank == 0) {
         cout << endl;
         if(retval == 0)
