@@ -13,27 +13,17 @@ unsigned int N=0;
 int divisor=0; // Test for best block divisor
 int alltoall=-1; // Test for best alltoall routine
 
-void init(double *f,
-          unsigned int X, unsigned int Y, unsigned int Z,
-          unsigned int x0, unsigned int y0, unsigned int z0,
-          unsigned int x, unsigned int y, unsigned int z)
+inline void init(array3<double> f, split3 d)
 {
-  unsigned int c=0;
-  for(unsigned int i=0; i < x; ++i) {
-    unsigned int ii=x0+i;
-    for(unsigned int j=0; j < y; j++) {
-      unsigned int jj=y0+j;
-      for(unsigned int k=0; k < Z; k++) {
-        unsigned int kk=k;
-        f[c++] = ii + jj + kk;
+  for(unsigned int i=0; i < d.x; ++i) {
+    unsigned int ii=d.x0+i;
+    for(unsigned int j=0; j < d.y; j++) {
+      unsigned int jj=d.y0+j;
+      for(unsigned int k=0; k < d.Z; k++) {
+        f(i,j,k)=ii+jj+k;
       }
     }
   }
-}
-
-void init(double *f, split3 d)
-{
-  init(f,d.X,d.Y,d.Z,d.x0,d.y0,d.z0,d.x,d.y,d.z);
 }
 
 unsigned int outlimit=3000;
@@ -49,6 +39,8 @@ int main(int argc, char* argv[])
   unsigned int ny=0;
   unsigned int nz=0;
 
+  bool inplace=false;
+  
   bool quiet=false;
   bool test=false;
   bool shift=false;
@@ -58,7 +50,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"S:htN:O:T:a:m:n:s:x:y:z:q");
+    int c = getopt(argc,argv,"S:hti:N:O:T:a:m:n:s:x:y:z:q");
     if (c == -1) break;
                 
     switch (c) {
@@ -66,6 +58,9 @@ int main(int argc, char* argv[])
       break;
     case 'a':
       divisor=atoi(optarg);
+      break;
+    case 'i':
+      inplace=atoi(optarg);
       break;
     case 'N':
       N=atoi(optarg);
@@ -147,9 +142,15 @@ int main(int argc, char* argv[])
     split3 df(nx,ny,nz,group);
     split3 dg(nx,ny,nzp,group,true);
     
-    double *f=doubleAlign(df.n);
-    Complex *g=ComplexAlign(dg.n);
+    unsigned int dfZ=inplace ? 2*dg.Z : df.Z;
     
+    array3<Complex> g(dg.x,dg.y,dg.Z,ComplexAlign(dg.n));
+    array3<double> f;
+    if(inplace)
+      f.Dimension(df.x,df.y,2*dg.Z,(double *) g());
+    else
+      f.Dimension(df.x,df.y,df.Z,doubleAlign(df.n));
+  
     rcfft3dMPI rcfft(df,dg,f,g,mpiOptions(divisor,alltoall));
 
     if(!quiet && group.rank == 0)
@@ -158,6 +159,7 @@ int main(int argc, char* argv[])
     if(test) {
       init(f,df);
 
+#if 0      
       if(!quiet && nx*ny < outlimit) {
         if(main) cout << "\ninput:" << endl;
         show(f,df.x,df.y,df.Z,group.active);
@@ -248,33 +250,34 @@ int main(int argc, char* argv[])
         else
           cout << "FAIL" << endl;
       }
-      
+#endif      
     } else {
-
-      if(main)
-        cout << "N=" << N << endl;
-      if(N > 0) {
-    
-        double *T=new double[N];
-        for(unsigned int i=0; i < N; ++i) {
-          init(f,df);
+      double *T=new double[N];
+      for(unsigned int i=0; i < N; ++i) {
+        init(f,df);
+        if(shift) {
+          seconds();
+          rcfft.Forward0(f,g);
+          rcfft.Backward0(g,f);
+          rcfft.Normalize(f);
+          T[i]=seconds();
+        } else {
           seconds();
           rcfft.Forward(f,g);
           rcfft.Backward(g,f);
           rcfft.Normalize(f);
           T[i]=seconds();
         }
-        if(!quiet)
-          show(f,df.x,df.y,df.Z,group.active);
-        
-        if(main) timings("FFT timing:",nx,T,N,stats);
-        delete[] T;
       }
-
+      if(!quiet)
+        show(f(),df.x,df.y,dfZ,0,0,0,df.x,df.y,df.Z,group.active);
+        
+      if(main) timings("FFT timing:",nx,T,N,stats);
+      delete[] T;
     }
-  
-    deleteAlign(g);
-    deleteAlign(f);
+    
+    deleteAlign(g());
+    if(!inplace) deleteAlign(f());
   }
   
   MPI_Finalize();
