@@ -80,7 +80,7 @@ def main(argv):
         tstart = time.time()
         ntest = len(testcases)
         print "Running", ntest, "tests."
-                                    
+        
         failcases = ""
         nfails = 0
 

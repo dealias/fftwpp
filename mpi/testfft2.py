@@ -42,7 +42,6 @@ def main(argv):
         print "Error: executable", pname, "not present!"
         retval += 1
     else:
-
         Xlist = [1,2,3,4,5,random.randint(6,64)]
         Ylist = [1,2,3,4,5,random.randint(6,64)]
         Plist = [1,2,3,4,random.randint(6,10)]
@@ -53,19 +52,11 @@ def main(argv):
             Ylist = [2,3,random.randint(6,64)]
             Plist = [1,2]
             
-        ntests = 0
-        ntests = len(Xlist) * len(Ylist) * len(Plist)
-        print "Running", ntests, "tests."
-        tstart = time.time()
-
-        failcases = ""
-        ntest = 0
-        nfails = 0
+        testcases = []
         for P in Plist:
             for X in Xlist:
                 for Y in Ylist:
                     for inplace in [0, 1]:
-                        ntest += 1
                         args = []
                         args.append("-x" + str(X))
                         args.append("-y" + str(Y))
@@ -76,18 +67,28 @@ def main(argv):
                         args.append("-T1")
                         args.append("-t")
                         args.append("-q")
-                        rtest, cmd = runtest(pname, P, args, logfile, timeout)
-                        if not rtest == 0:
-                            nfails += 1
-                            failcases += " ".join(cmd)
-                            failcases += "\t(code " + str(rtest) + ")"
-                            failcases += "\n"
+                        testcases.append(args)
+
+        tstart = time.time()
+        ntest = len(testcases)
+        print "Running", ntest, "tests."
+
+        failcases = ""
+        nfails = 0
+                
+        for args in testcases:
+            rtest, cmd = runtest(pname, P, args, logfile, timeout)
+            if not rtest == 0:
+                nfails += 1
+                failcases += " ".join(cmd)
+                failcases += "\t(code " + str(rtest) + ")"
+                failcases += "\n"
 
         if nfails > 0:
             print "Failure cases:"
             print failcases
             retval += 1
-        print "\n", nfails, "failures out of", ntests, "tests." 
+        print "\n", nfails, "failures out of", ntest, "tests." 
 
         tend = time.time()
         print "\nElapsed time (s):", tend - tstart
