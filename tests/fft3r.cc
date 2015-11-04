@@ -8,107 +8,140 @@ using namespace utils;
 using namespace Array;
 using namespace fftwpp;
 
-void finit(array3<double> f, unsigned int mx, unsigned int my, unsigned int mz)
+void finit(array3<double> f, unsigned int nx, unsigned int ny, unsigned int nz)
 {
-  for(unsigned int i = 0; i < mx; ++i) 
-    for(unsigned int j = 0; j < my; ++j)
-      for(unsigned int k = 0; k < mz; ++k) 
-	f(i, j, k) = i + j + k;
+  for(unsigned int i=0; i < nx; ++i) 
+    for(unsigned int j=0; j < ny; ++j)
+      for(unsigned int k=0; k < nz; ++k) 
+	f(i,j,k)=i+j+k;
 }
 
-int main(int argc, char* argv[])
+int main(int argc,char* argv[])
 {
   cout << "3D real-to-complex FFT" << endl;
 
-  unsigned int mx = 11;
-  unsigned int my = 4;
-  unsigned int mz = 3;
+  unsigned int nx=11;
+  unsigned int ny=4;
+  unsigned int nz=3;
 
-  unsigned int outlimit=3000;
+  int N=1000;
+  unsigned int stats=MEAN; // Type of statistics used in timing test.
+
+  bool inplace=false;
+  bool shift=false;
+  bool quiet=false;
   
-  int N = 1000;
-  unsigned int stats = MEAN; // Type of statistics used in timing test.
-
-  fftw::maxthreads = get_max_threads();
+  fftw::maxthreads=get_max_threads();
  
 #ifdef __GNUC__	
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"N:m:x:y:z:T:S:h");
+    int c=getopt(argc,argv,"N:i:m:qx:y:z:T:S:h");
     if (c == -1) break;
     switch (c) {
     case 0:
       break;
     case 'N':
-      N = atoi(optarg);
+      N=atoi(optarg);
       break;
     case 'm':
-      mx = my = mz = atoi(optarg);
+      nx=ny=nz=atoi(optarg);
+      break;
+    case 'i':
+      inplace=atoi(optarg);
+      break;
+    case 'q':
+      quiet=true;
+      break;
+    case 's':
+      shift=atoi(optarg);
       break;
     case 'x':
-      mx = atoi(optarg);
+      nx=atoi(optarg);
       break;
     case 'y':
-      my = atoi(optarg);
+      ny=atoi(optarg);
       break;
     case 'z':
-      mz = atoi(optarg);
+      nz=atoi(optarg);
       break;
     case 'T':
-      fftw::maxthreads = max(atoi(optarg), 1);
+      fftw::maxthreads=max(atoi(optarg),1);
       break;
     case 'S':
-      stats = atoi(optarg);
+      stats=atoi(optarg);
       break;
     case 'h':
     default:
-      usageFFT(1);
+      usageInplace(3);
       exit(0);
     }
   }
 
-  size_t align = sizeof(Complex);
-  unsigned int mzp = mz/2+1;
-  array3<double> f(mx,my,mz,align);
-  array3<Complex> g(mx,my,mzp,align);
+  size_t align=sizeof(Complex);
+  
+  unsigned int nzp=nz/2+1;
+  
+  array3<Complex> g(nx,ny,nzp,align);
+  array3<double> f;
+  
+  if(inplace)
+    f.Dimension(nx,ny,2*nzp,(double *) g());
+  else
+    f.Allocate(nx,ny,nz,align);
 
-  rcfft3d Forward0(mx,my,mz,f,g);
-  crfft3d Backward0(mx,my,mz,g,f);
-
-  finit(f,mx,my,mz);
-  cout << "\nIinput:"  << endl;
-  if(mx*my*mz < outlimit) 
-    cout << f;
-  else 
-    cout << f[0][0][0] << endl;
-
-  Forward0.fft(f,g);
-
-  cout << "\nOutput:" << endl;
-  if(mx*my*mz < outlimit) 
-    cout << g;
-  else 
-    cout << g[0][0][0] << endl;
-
-  Backward0.fftNormalized(g,f);
-
-  cout << "\nBack to input:\n" << endl;
-  if(mx*my*mz < outlimit)
-    cout << f;
-  else 
-    cout << f[0][0][0] << endl;
-
-  if(N > 0) {
-    double *T = new double[N];
-    for(int i = 0; i < N; ++i) {
-      finit(f,mx,my,mz);
-      seconds();
-      Forward0.fft(f,g);
-      T[i] = seconds();
-      Backward0.fftNormalized(g, f);
+  rcfft3d Forward(nx,ny,nz,f,g);
+  crfft3d Backward(nx,ny,nz,g,f);
+  
+  if(!quiet) {
+    finit(f,nx,ny,nz);
+    cout << endl << "Input:" << endl;
+    for(unsigned int i=0; i < nx; ++i) {
+      for(unsigned int j=0; j < ny; ++j) {
+        for(unsigned int k=0; k < nz; ++k) {
+          cout << f(i,j,k) << " ";
+        }
+        cout << endl;
+      }
+      cout << endl;
     }
-    timings("fft3 out-of-place", mx, T, N, stats);
+
+    Forward.fft(f,g);
+
+    cout << endl << "Output:" << endl;
+      cout << g << endl;
+
+    Backward.fftNormalized(g,f);
+
+    cout << endl << "Back to input:" << endl;
+    for(unsigned int i=0; i < nx; ++i) {
+      for(unsigned int j=0; j < ny; ++j) {
+        for(unsigned int k=0; k < nz; ++k) {
+          cout << f(i,j,k) << " ";
+        }
+        cout << endl;
+      }
+      cout << endl;
+    }
   }
+
+  double *T=new double[N];
+   
+  for(int i=0; i < N; ++i) {
+    finit(f,nx,ny,nz);
+    if(shift) {
+      seconds();
+      Forward.fft0(f,g);
+      Backward.fft0Normalized(g,f);
+      T[i]=seconds();
+    } else {
+      seconds();
+      Forward.fft(f,g);
+      Backward.fftNormalized(g,f);
+      T[i]=seconds();
+    }
+  }
+  timings("fft3 out-of-place",nx,T,N,stats);
   
 }

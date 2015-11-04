@@ -8,14 +8,12 @@ using namespace utils;
 using namespace Array;
 using namespace fftwpp;
 
-void finit(array2<double> f, unsigned int nx, unsigned int ny,
-	   bool inplace=false)
+void finit(array2<double> f, unsigned int nx, unsigned int ny)
 {
   for(unsigned int i=0; i < nx; ++i) {
     for(unsigned int j=0; j < ny; ++j) {
-      f(i, j)=i + j;
+      f(i,j)=i+j;
     }
-    f(i, ny)=0;
   }
 }
 
@@ -24,7 +22,7 @@ int main(int argc, char* argv[])
   cout << "2D real-to-complex FFT" << endl;
 
   unsigned int nx=4;
-  unsigned int ny=4;
+  unsigned int ny=5;
     
   int N=1000;
   unsigned int stats=MEAN; // Type of statistics used in timing test.
@@ -66,14 +64,14 @@ int main(int argc, char* argv[])
       ny=atoi(optarg);
       break;
     case 'T':
-      fftw::maxthreads=max(atoi(optarg), 1);
+      fftw::maxthreads=max(atoi(optarg),1);
       break;
     case 'S':
       stats=atoi(optarg);
       break;
     case 'h':
     default:
-      usageFFT(1);
+      usageInplace(2);
       exit(0);
     }
   }
@@ -83,26 +81,43 @@ int main(int argc, char* argv[])
   unsigned int nyp=ny/2+1;
   
   array2<Complex> g(nx,nyp,align);
-  array2<double> f(nx,inplace ? 2*nyp : ny,(double *) g());
+  array2<double> f;
+  
+  if(inplace)
+    f.Dimension(nx,2*nyp,(double *) g());
+  else
+    f.Allocate(nx,ny,align);
   
   rcfft2d Forward(nx,ny,f,g);
   crfft2d Backward(nx,ny,g,f);
 
   if(!quiet) {
     finit(f,nx,ny);
-    cout << "\ninput:\n" << f << endl;
+    cout << endl << "Input:" << endl;
+    for(unsigned int i=0; i < nx; ++i) {
+      for(unsigned int j=0; j < ny; ++j) {
+        cout << f(i,j) << " ";
+      }
+      cout << endl;
+    }
 
     if(shift)
       Forward.fft0(f,g);
     else
       Forward.fft(f,g);
-    cout << "\noutput:\n" << g << endl;
+    cout << endl << "output:" << endl << g << endl;
 
     if(shift)
       Backward.fft0Normalized(g,f);
     else
       Backward.fftNormalized(g,f);
-    cout << "\nback to input:\n" << f << endl;
+    cout << endl << "Back to input:" << endl;
+    for(unsigned int i=0; i < nx; ++i) {
+      for(unsigned int j=0; j < ny; ++j) {
+        cout << f(i,j) << " ";
+      }
+      cout << endl;
+    }
   }
   
   double *T= new double[N];
