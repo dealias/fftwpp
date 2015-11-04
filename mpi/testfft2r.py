@@ -46,7 +46,6 @@ def main(argv):
         Xlist = [1,2,3,4,5,random.randint(6,64)]
         Ylist = [1,2,3,4,5,random.randint(6,64)]
         Plist = [1,2,3,4,random.randint(6,10)]
-        shiftlist = [0,1]
 
         if(shortrun):
             print "Short run."
@@ -54,6 +53,15 @@ def main(argv):
             Ylist = [2,3,random.randint(6,64)]
             Plist = [1,2]
             
+        ntest = 0
+        for P in Plist:
+            for X in Xlist:
+                for Y in Ylist:
+                    for inplace in [0,1]:
+                        for shift in [0,1]:
+                            if (shift == 0) or X % 2 == 0: 
+                                ntest += 1
+        print "Running", ntest, "tests."
         tstart = time.time()
 
         failcases = ""
@@ -62,8 +70,8 @@ def main(argv):
         for P in Plist:
             for X in Xlist:
                 for Y in Ylist:
-                    for inplace in [0, 1]:
-                        for shift in shiftlist:
+                    for inplace in [0,1]:
+                        for shift in [0,1]:
                             if (shift == 0) or X % 2 == 0: 
                                 ntest += 1
                                 args = []

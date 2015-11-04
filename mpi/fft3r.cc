@@ -142,7 +142,9 @@ int main(int argc, char* argv[])
     split3 df(nx,ny,nz,group);
     split3 dg(nx,ny,nzp,group,true);
 
-    split3 dfgather(nx,ny,inplace ? 2*dg.Z : df.Z,group);
+    unsigned int dfZ=inplace ? 2*dg.Z : df.Z;
+
+    split3 dfgather(nx,ny,dfZ,group);
         
     array3<Complex> g(dg.x,dg.y,dg.Z,ComplexAlign(dg.n));
     array3<double> f;
@@ -268,7 +270,7 @@ int main(int argc, char* argv[])
         }
       }
       if(!quiet)
-        show(f(),df.x,df.y,dfgather.Z,0,0,0,df.x,df.y,df.Z,group.active);
+        show(f(),df.x,df.y,dfZ,0,0,0,df.x,df.y,df.Z,group.active);
         
       if(main) timings("FFT timing:",nx,T,N,stats);
       delete[] T;

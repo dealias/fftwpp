@@ -47,7 +47,6 @@ def main(argv):
         Ylist = [1,2,3,4,5,random.randint(6,64)]
         Zlist = [1,2,3,4,5,random.randint(6,64)]
         Plist = [4,8,3,2,random.randint(9,12),1]
-        shiftlist = [0,1]
         
         if(shortrun):
             print "Short run."
@@ -55,10 +54,17 @@ def main(argv):
             Ylist = [2,3,random.randint(6,64)]
             Zlist = [2,3,random.randint(6,64)]
             Plist = [1,2]
-            
-        ntests = 0
-        ntests = len(Xlist) * len(Ylist) * len(Zlist) * len(Plist)
-        print "Running", ntests, "tests."
+
+        ntest = 0
+        for P in Plist:
+            for X in Xlist:
+                for Y in Ylist:
+                    for Z in Zlist:
+                        for inplace in [0,1]:
+                            for shift in [0,1]:
+                                if (shift == 0) or (X % 2 == 0 and Y % 2 == 0): 
+                                    ntest += 1
+        print "Running", ntest, "tests."
         tstart = time.time()
 
         failcases = ""
@@ -68,8 +74,8 @@ def main(argv):
             for X in Xlist:
                 for Y in Ylist:
                     for Z in Zlist:
-                        for inplace in [0, 1]:
-                            for shift in shiftlist:
+                        for inplace in [0,1]:
+                            for shift in [0,1]:
                                 if (shift == 0) or (X % 2 == 0 and Y % 2 == 0): 
                                     ntest += 1
                                     args = []

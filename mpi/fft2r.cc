@@ -155,11 +155,11 @@ int main(int argc, char* argv[])
 	show(f(),df.x,df.Y,group.active);
       }
       
-      split dfgather(nx,inplace ? 2*nyp : ny,group.active);
+      split dfgather(nx,dfY,group.active);
       size_t align=sizeof(Complex);
       array2<Complex> ggather(nx,nyp,align);
       array2<Complex> glocal(nx,nyp,align);
-      array2<double> fgather(nx,inplace ? 2*nyp : ny,align);
+      array2<double> fgather(nx,dfY,align);
       array2<double> flocal;
       if(inplace)
       	flocal.Dimension(nx,2*nyp,(double *) glocal());
