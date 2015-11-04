@@ -37,7 +37,7 @@ def main(argv):
     proglist.append("gatherxy")
 
     logfile = 'testgather.log' 
-    Print("MPI transpose unit test")
+    Print("MPI gather unit test")
     Print("Log in " + logfile + "\n")
     log = open(logfile, 'w')
     log.close()
@@ -74,32 +74,45 @@ def main(argv):
 
             timeout = 0
 
+            testcases = []
             for X in Xlist:
                 for Y in Ylist:
                     for Z in Zlist:
                         for P in Plist:
-                            ntests += 1
                             args = []
                             args.append("-x" + str(X))
                             args.append("-y" + str(Y))
                             args.append("-z" + str(Z))
                             args.append("-q")
-                            rtest, cmd = runtest(progname, P, args, logfile, \
-                                                 timeout)
-                            if not rtest == 0:
-                                nfails += 1
-                                failcases += " ".join(cmd)
-                                failcases += "\t(code " + str(rtest) + ")"
-                                failcases += "\n"
+                            testcases.append(args)
+                            
+        tstart = time.time()
+        ntest = len(testcases)
+        print "Running", ntest, "tests."
+
+        failcases = ""
+        nfails = 0
+        timeout = 60
+        for args in testcases:
+            rtest, cmd = runtest(progname, P, args, logfile, timeout)
+            if not rtest == 0:
+                nfails += 1
+                failcases += " ".join(cmd)
+                failcases += "\t(code " + str(rtest) + ")"
+                failcases += "\n"
 
     try:
         if nfails > 0:
             print "Failure cases:"
             print failcases
             retval += 1
-            print "\n", nfails, "failures out of", ntests, "tests." 
+            print "\n", nfails, "failures out of", ntest, "tests." 
     except:
         pass
+
+    tend = time.time()
+    print "\nElapsed time (s):", tend - tstart
+
     
 if __name__ == "__main__":
     main(sys.argv[1:])
