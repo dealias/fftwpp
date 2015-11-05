@@ -13,7 +13,7 @@ const double E=exp(1.0);
 const Complex iF(sqrt(3.0),sqrt(7.0));
 const Complex iG(sqrt(5.0),sqrt(11.0));
 
-bool Direct=false, Implicit=true, Explicit=false, Test=false;
+bool Test=false;
 
 inline void init(Complex **F, unsigned int m, unsigned int A) 
 {
@@ -39,7 +39,6 @@ inline void init(Complex **F, unsigned int m, unsigned int A)
   } else {
     for(unsigned int a=0; a < A; ++a) {
       for(unsigned int k=0; k < m; ++k) {
-	//F[a][k]=(a+1)*Complex(k,k+1);
 	F[a][k]=(a+1)*Complex(k,k+1);
       }
     }
@@ -50,6 +49,10 @@ int main(int argc, char* argv[])
 {
   fftw::maxthreads=get_max_threads();
 
+  bool Direct=false;
+  bool Implicit=true;
+  bool Explicit=false;
+  
   // Number of iterations.
   unsigned int N0=10000000;
   unsigned int N=0;
