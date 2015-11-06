@@ -71,7 +71,8 @@ struct convolveOptions {
 static const convolveOptions defaultconvolveOptions;
 
 typedef void multiplier(Complex **, unsigned int m,
-                        const std::vector<unsigned int>& index,
+                        const unsigned int *index,
+                        const unsigned int indexsize,
                         unsigned int r, unsigned int threads); 
 typedef void realmultiplier(double **, unsigned int m,
                         const unsigned int *index,
