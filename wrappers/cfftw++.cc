@@ -62,20 +62,20 @@ extern "C" {
       conv->convolve((Complex *) a, (Complex *) b);
     }
 
-    void fftwpp_conv1d_correlate(ImplicitConvolution *conv, 
-				double __complex__ *a, double __complex__ *b) {
-      conv->correlate((Complex *) a, (Complex *) b);
-    }
+    // void fftwpp_conv1d_correlate(ImplicitConvolution *conv, 
+    // 				double __complex__ *a, double __complex__ *b) {
+    //   conv->correlate((Complex *) a, (Complex *) b);
+    // }
     
     void fftwpp_conv1d_autoconvolve(ImplicitConvolution *conv, 
 				    double __complex__ *a) {
       conv->autoconvolve((Complex *) a);
     }
 
-    void fftwpp_conv1d_autocorrelate(ImplicitConvolution *conv, 
-				     double __complex__ *a) {
-      conv->autocorrelate((Complex *) a);
-    }
+    // void fftwpp_conv1d_autocorrelate(ImplicitConvolution *conv, 
+    // 				     double __complex__ *a) {
+    //   conv->autocorrelate((Complex *) a);
+    // }
     
     // ImplicitConvolution *fftwpp_create_conv1d_work(unsigned int m,
     // 						   double __complex__ *u, 
@@ -188,20 +188,20 @@ extern "C" {
       pconv->convolve((Complex *) a, (Complex *) b);
     }
 
-    void fftwpp_conv2d_correlate(ImplicitConvolution2 *conv, 
-				double __complex__ *a, double __complex__ *b) {
-      conv->correlate((Complex *) a, (Complex *) b);
-    }
+    // void fftwpp_conv2d_correlate(ImplicitConvolution2 *conv, 
+    // 				double __complex__ *a, double __complex__ *b) {
+    //   conv->correlate((Complex *) a, (Complex *) b);
+    // }
 
     void fftwpp_conv2d_autoconvolve(ImplicitConvolution2 *pconv, 
 				    double __complex__ *a) {
       pconv->autoconvolve((Complex *) a);
     }
 
-    void fftwpp_conv2d_autocorrelate(ImplicitConvolution2 *pconv, 
-				     double __complex__ *a) {
-      pconv->autocorrelate((Complex *) a);
-    }
+    // void fftwpp_conv2d_autocorrelate(ImplicitConvolution2 *pconv, 
+    // 				     double __complex__ *a) {
+    //   pconv->autocorrelate((Complex *) a);
+    // }
 
     /*
     ImplicitConvolution2 *fftwpp_create_conv2d_dot(unsigned int mx, 
@@ -344,20 +344,20 @@ extern "C" {
       pconv->convolve((Complex *) a, (Complex *) b);
     }
     
-    void fftwpp_conv3d_correlate(ImplicitConvolution3 *conv, 
-				double __complex__ *a, double __complex__ *b) {
-      conv->correlate((Complex *) a, (Complex *) b);
-    }
+    // void fftwpp_conv3d_correlate(ImplicitConvolution3 *conv, 
+    // 				double __complex__ *a, double __complex__ *b) {
+    //   conv->correlate((Complex *) a, (Complex *) b);
+    // }
 
     void fftwpp_conv3d_autoconvolve(ImplicitConvolution3 *pconv, 
 				    double __complex__ *a) {
       pconv->autoconvolve((Complex *) a);
     }
 
-    void fftwpp_conv3d_autocorrelate(ImplicitConvolution3 *pconv, 
-				     double __complex__ *a) {
-      pconv->autocorrelate((Complex *) a);
-    }
+    // void fftwpp_conv3d_autocorrelate(ImplicitConvolution3 *pconv, 
+    // 				     double __complex__ *a) {
+    //   pconv->autocorrelate((Complex *) a);
+    // }
 
     // 3d non-centered complex convolution
     ImplicitHConvolution3 *fftwpp_create_hconv3d(unsigned int nx, 
