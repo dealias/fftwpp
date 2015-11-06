@@ -83,8 +83,8 @@ typedef void realmultiplier(double **, unsigned int m,
 // function-pointer convolutions.
 multiplier multautoconvolution;
 multiplier multautocorrelation;
-multiplier multcorrelation;
 multiplier multbinary;
+multiplier multcorrelation;
 multiplier multbinary2;
 multiplier multbinary3;
 multiplier multbinary4;

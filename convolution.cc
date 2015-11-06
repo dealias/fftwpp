@@ -1297,13 +1297,10 @@ void multautocorrelation(Complex **F, unsigned int m,
 #endif
 }
 
-// This multiplication routine is for binary convolutions and takes two inputs
-// of size m.
-// F[0][j] *= conj(F[0][j]);
-void multcorrelation(Complex **F,
+void multcorrelation(Complex **F, unsigned int m,
                      const unsigned int *index,
                      const unsigned int indexsize,
-                     unsigned int m, unsigned int threads)
+                     unsigned int r, unsigned int threads)
 {
   Complex* F0=F[0];
   Complex* F1=F[1];

@@ -137,6 +137,7 @@ int main()
     show(g, nx);
     
     fftwpp_conv1d_convolve(cconv, f, g);
+    //fftwpp_conv1d_correlate(cconv, f, g);
     
     printf("Output f:\n");
     show(f, nx);

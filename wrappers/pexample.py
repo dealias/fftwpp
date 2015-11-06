@@ -36,19 +36,19 @@ conv.convolve(f, g)
 #conv.correlate(f, g)
 print f
 
-# print
-# print "1d non-centered complex autoconvolution:"
-# init(f, g)
-# conv = fftwpp.AutoConvolution(f.shape)
-# conv.autoconvolve(f)
-# print f
+print
+print "1d non-centered complex autoconvolution:"
+init(f, g)
+conv = fftwpp.AutoConvolution(f.shape)
+conv.autoconvolve(f)
+print f
 
-# print
-# print "1d non-centered complex autocorrelation:"
-# init(f, g)
-# conv.autocorrelate(f)
-# print f
-# print
+print
+print "1d non-centered complex autocorrelation:"
+init(f, g)
+conv.autocorrelate(f)
+print f
+print
 
 
 print
