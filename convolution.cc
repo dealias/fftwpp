@@ -219,8 +219,8 @@ void ImplicitConvolution::postmultadd(Complex *f, Complex *u)
 }
 
 void ImplicitHConvolution::premult(Complex ** F,
-				   unsigned int offset,
-				   Complex* f1c)
+                                   unsigned int offset,
+                                   Complex* f1c)
 {
   unsigned int C=max(A,B);
   Complex *P0[C];
@@ -322,7 +322,7 @@ void ImplicitHConvolution::premult(Complex ** F,
 // Out of place version (with f1 stored in a separate array c2B):
 // Assume that c0 and c1 are contiguous (and, in fact, overlapping).
 void ImplicitHConvolution::postmultadd(Complex **c2, Complex **c0, 
-				       Complex **c2B)
+                                       Complex **c2B)
 {
   double ninv=1.0/(3.0*m);
   Vec Ninv=LOAD(ninv);
@@ -517,7 +517,7 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
     // r=2:
     for(unsigned int i=0; i < A; ++i)
       cr->fft(c2[i],d2[i]);
-    (*pmult)(d2,m,index,-1,threads);
+    (*pmult)(d2,m,&index.front(),index.size(),-1,threads);
 
     // r=0:
     double T[A]; // deal with overlap between r=0 and r=1
@@ -527,7 +527,7 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
       if(!compact) c0i[0].re += 2.0*c0i[m].re; // Nyquist
       (out_of_place ? cro : cr)->fft(c0i,d0[i]); 
     }
-    (*pmult)(d0,m,index,0,threads);
+    (*pmult)(d0,m,&index.front(),index.size(),0,threads);
     for(unsigned int i=0; i < B; ++i)
       S[i]=((Complex *) d0[i])[start];   // r=0, k=start
     
@@ -536,13 +536,13 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
       Complex *c1i=c1[i];
       c1i[0]=compact ? T[i] : T[i]-c1i[c+1].re; // r=1, k=0 with Nyquist
       if(even) {
-	Complex tmp=c1c[i];
-	c1c[i]=c1i[1];  // r=0, k=c
-	c1i[1]=tmp;     // r=1, k=1
+        Complex tmp=c1c[i];
+        c1c[i]=c1i[1];  // r=0, k=c
+        c1i[1]=tmp;     // r=1, k=1
       }
       (out_of_place ? cro : cr)->fft(c1[i],d1[i]);
     }
-    (*pmult)(d1,m,index,1,threads);
+    (*pmult)(d1,m,&index.front(),index.size(),1,threads);
   }
 
   // Real-to-complex FFTs and postmultadd:
@@ -1387,14 +1387,17 @@ inline unsigned innerindex(unsigned j, int r, unsigned int m) {
 // This multiplication routine is for binary Hermitian convolutions and takes
 // two inputs.
 // F[0][j] *= F[1][j];
-void multbinary(double **F, unsigned int m, const vector<unsigned int>& index,
+void multbinary(double **F, unsigned int m,
+                const unsigned int *index,
+                const unsigned int indexsize,
                 unsigned int r, unsigned int threads)
 {
   double* F0=F[0];
   double* F1=F[1];
   
 #if 0 // Spatial indices are available, if needed.
-  size_t n=index.size();
+  //size_t n=index.size();
+  size_t n=indexsize;
   for(unsigned int j=0; j < m; ++j) {
     for(unsigned int d=0; d < n; ++d)
       cout << index[d] << ",";
@@ -1446,7 +1449,8 @@ void multbinary2(Complex **F, unsigned int m,
 
 // F[0][j]=F[0][j]*F[2][j]+F[1][j]*F[3][j]
 void multbinary2(double **F, unsigned int m,
-                 const vector<unsigned int>& index,
+                 const unsigned int *index,
+                 const unsigned int indexsize,
                  unsigned int r, unsigned int threads)
 {
   double* F0=F[0];
@@ -1492,7 +1496,7 @@ void multbinary3(Complex **F, unsigned int m,
       Complex *F0j=F0+j;
       STORE(F0j,ZMULT(LOAD(F0j),LOAD(F1+j))
             +ZMULT(LOAD(F2+j),LOAD(F3+j))
-	    +ZMULT(LOAD(F4+j),LOAD(F5+j))
+            +ZMULT(LOAD(F4+j),LOAD(F5+j))
         );
     }
     );
@@ -1525,8 +1529,8 @@ void multbinary4(Complex **F, unsigned int m,
       Complex *F0j=F0+j;
       STORE(F0j,ZMULT(LOAD(F0j),LOAD(F1+j))
             +ZMULT(LOAD(F2+j),LOAD(F3+j))
-	    +ZMULT(LOAD(F4+j),LOAD(F5+j))
-	    +ZMULT(LOAD(F6+j),LOAD(F7+j))
+            +ZMULT(LOAD(F4+j),LOAD(F5+j))
+            +ZMULT(LOAD(F6+j),LOAD(F7+j))
         );
     }
     );
@@ -1565,14 +1569,14 @@ void multbinary8(Complex **F, unsigned int m,
     for(unsigned int j=0; j < m; ++j) {
       Complex *F0j=F0+j;
       STORE(F0j,
-	    ZMULT(LOAD(F0j),LOAD(F1+j))
+            ZMULT(LOAD(F0j),LOAD(F1+j))
             +ZMULT(LOAD(F2+j),LOAD(F3+j))
-	    +ZMULT(LOAD(F4+j),LOAD(F5+j))
-	    +ZMULT(LOAD(F6+j),LOAD(F7+j))
-	    +ZMULT(LOAD(F8+j),LOAD(F9+j))
-	    +ZMULT(LOAD(F10+j),LOAD(F11+j))
-	    +ZMULT(LOAD(F12+j),LOAD(F13+j))
-	    +ZMULT(LOAD(F14+j),LOAD(F15+j))
+            +ZMULT(LOAD(F4+j),LOAD(F5+j))
+            +ZMULT(LOAD(F6+j),LOAD(F7+j))
+            +ZMULT(LOAD(F8+j),LOAD(F9+j))
+            +ZMULT(LOAD(F10+j),LOAD(F11+j))
+            +ZMULT(LOAD(F12+j),LOAD(F13+j))
+            +ZMULT(LOAD(F14+j),LOAD(F15+j))
         );
     }
     );

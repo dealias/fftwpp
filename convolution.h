@@ -74,7 +74,8 @@ typedef void multiplier(Complex **, unsigned int m,
                         const std::vector<unsigned int>& index,
                         unsigned int r, unsigned int threads); 
 typedef void realmultiplier(double **, unsigned int m,
-                        const std::vector<unsigned int>& index,
+                        const unsigned int *index,
+                        const unsigned int indexsize,
                         unsigned int r, unsigned int threads); 
   
 // Sample multiplier for binary convolutions for use with
@@ -184,8 +185,8 @@ public:
   // A is the number of inputs.
   // B is the number of outputs.
   ImplicitConvolution(unsigned int m,
-		      unsigned int A=2, unsigned int B=1,
-		      unsigned int threads=fftw::maxthreads)
+                      unsigned int A=2, unsigned int B=1,
+                      unsigned int threads=fftw::maxthreads)
     : ThreadBase(threads), m(m), A(A), B(B), allocated(true) {
     u=utils::ComplexAlign(max(A,B)*m);
     initpointers(U,u);
@@ -366,9 +367,9 @@ public:
                 unsigned int offset=0);
 
   void premult(Complex **F, 
-	       //Complex **crm, Complex **cr0, Complex **crp,
-	       unsigned int offset,
-	       Complex* f1c);
+               //Complex **crm, Complex **cr0, Complex **crp,
+               unsigned int offset,
+               Complex* f1c);
   
   void postmultadd(Complex **c2, Complex **c0, Complex **Q);
   void postmultadd0(Complex **c2, Complex **c0, Complex *f1c);

@@ -15,7 +15,9 @@ bool compact=false;
 
 // Pair-wise binary multiply for even A and B=1.
 // NB: example function, not optimised or threaded.
-void multA(double **F, unsigned int m, const vector<unsigned int>& index,
+void multA(double **F, unsigned int m,
+           const unsigned int* index,
+           const unsigned int indexsize,
            unsigned int r, unsigned int threads)
 {
   for(unsigned int i=0; i < m; ++i) {
@@ -28,10 +30,12 @@ void multA(double **F, unsigned int m, const vector<unsigned int>& index,
 // Pair-wise binary multiply for even A.
 // All of the B outputs are identical.
 // NB: example function, not optimised or threaded.
-void multB(double **F, unsigned int m, const vector<unsigned int>& index,
+void multB(double **F, unsigned int m,
+           const unsigned int *index,
+           const unsigned int indexsize,
            unsigned int r, unsigned int threads)
 {
-  multA(F,m,index,r,threads);
+  multA(F,m,index,indexsize,r,threads);
   // copy output
   for(unsigned int i=0; i < m; ++i)
     for(unsigned int b=0; b < B; b++) 
@@ -68,15 +72,15 @@ inline void init(Complex **F, unsigned int m,  unsigned int A)
       Complex *fs=F[s];
       Complex *gs=F[s+M];
       if(Test) {
-	for(unsigned int k=0; k < m; k++) fs[k]=factor*iF*pow(iE,k*I);
-	for(unsigned int k=0; k < m; k++) gs[k]=factor*iG*pow(iE,k*I);
-	//    for(unsigned int k=0; k < m; k++) fs[k]=factor*iF*k;
-	//    for(unsigned int k=0; k < m; k++) gs[k]=factor*iG*k;
+        for(unsigned int k=0; k < m; k++) fs[k]=factor*iF*pow(iE,k*I);
+        for(unsigned int k=0; k < m; k++) gs[k]=factor*iG*pow(iE,k*I);
+        //    for(unsigned int k=0; k < m; k++) fs[k]=factor*iF*k;
+        //    for(unsigned int k=0; k < m; k++) gs[k]=factor*iG*k;
       } else {
-	fs[0]=1.0*ffactor;
-	for(unsigned int k=1; k < m; k++) fs[k]=ffactor*Complex(k,k+1);
-	gs[0]=2.0*gfactor;
-	for(unsigned int k=1; k < m; k++) gs[k]=gfactor*Complex(k,2*k+1);
+        fs[0]=1.0*ffactor;
+        for(unsigned int k=1; k < m; k++) fs[k]=ffactor*Complex(k,k+1);
+        gs[0]=2.0*gfactor;
+        for(unsigned int k=1; k < m; k++) gs[k]=gfactor*Complex(k,2*k+1);
       }
     }
   }
@@ -127,13 +131,13 @@ int main(int argc, char* argv[])
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
   
-#ifdef __GNUC__	
+#ifdef __GNUC__ 
   optind=0;
-#endif	
+#endif  
   for (;;) {
     int c = getopt(argc,argv,"hdeiptA:B:b:N:m:n:T:S:X:");
     if (c == -1) break;
-		
+                
     switch (c) {
       case 0:
         break;
@@ -186,8 +190,8 @@ int main(int argc, char* argv[])
         usageExplicit(1);
         usageCompact(1);
         usageTest();
-	usageb();
-	exit(1);
+        usageb();
+        exit(1);
     }
   }
 
@@ -304,8 +308,8 @@ int main(int argc, char* argv[])
       cout << endl;
       double norm=0.0;
       for(unsigned long long k=0; k < m; k++) {
-	error += abs2(h0[k]-h[k]);
-	norm += abs2(h[k]);
+        error += abs2(h0[k]-h[k]);
+        norm += abs2(h[k]);
       }
       if(norm > 0) error=sqrt(error/norm);
       cout << "error=" << error << endl;
