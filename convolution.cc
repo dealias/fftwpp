@@ -66,7 +66,7 @@ void ImplicitConvolution::convolve(Complex **F, multiplier *pmult,
     BackwardsO->fft(P[i],U[i]);
   }
   
-  (*pmult)(U,m,&index.front(),index.size(),0,threads); // multiply even indices
+  (*pmult)(U,m,index.size(),&index.front(),0,threads); // multiply even indices
 
   switch(A) {
     case 1: premult<premult1>(P); break;
@@ -84,7 +84,7 @@ void ImplicitConvolution::convolve(Complex **F, multiplier *pmult,
 
     for(unsigned int i=A; i-- > 0;) // Loop from A-1 to 0.
       BackwardsO->fft(P[i],W[i]);
-    (*pmult)(W,m,&index.front(),index.size(),1,threads); // multiply odd indices
+    (*pmult)(W,m,index.size(),&index.front(),1,threads); // multiply odd indices
     
     // Return to original space
     Complex *lastW=W[A-1];
@@ -101,7 +101,7 @@ void ImplicitConvolution::convolve(Complex **F, multiplier *pmult,
     // Backwards FFT (odd indices):
     for(unsigned int i=0; i < A; ++i)
       Backwards->fft(P[i]);
-    (*pmult)(P,m,&index.front(),index.size(),1,threads); // multiply odd indices
+    (*pmult)(P,m,index.size(),&index.front(),1,threads); //multiply odd indices
 
     // Return to original space:
     for(unsigned int i=0; i < B; ++i) {
@@ -517,7 +517,7 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
     // r=2:
     for(unsigned int i=0; i < A; ++i)
       cr->fft(c2[i],d2[i]);
-    (*pmult)(d2,m,&index.front(),index.size(),-1,threads);
+    (*pmult)(d2,m,index.size(),&index.front(),-1,threads);
 
     // r=0:
     double T[A]; // deal with overlap between r=0 and r=1
@@ -527,7 +527,7 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
       if(!compact) c0i[0].re += 2.0*c0i[m].re; // Nyquist
       (out_of_place ? cro : cr)->fft(c0i,d0[i]); 
     }
-    (*pmult)(d0,m,&index.front(),index.size(),0,threads);
+    (*pmult)(d0,m,index.size(),&index.front(),0,threads);
     for(unsigned int i=0; i < B; ++i)
       S[i]=((Complex *) d0[i])[start];   // r=0, k=start
     
@@ -542,7 +542,7 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
       }
       (out_of_place ? cro : cr)->fft(c1[i],d1[i]);
     }
-    (*pmult)(d1,m,&index.front(),index.size(),1,threads);
+    (*pmult)(d1,m,index.size(),&index.front(),1,threads);
   }
 
   // Real-to-complex FFTs and postmultadd:
@@ -1276,8 +1276,8 @@ void fft0bipad::forwards(Complex *f, Complex *u)
 // of size m.
 // F[0][j] *= conj(F[0][j]);
 void multautocorrelation(Complex **F, unsigned int m,
-                         const unsigned int *index,
                          const unsigned int indexsize,
+                         const unsigned int *index,
                          unsigned int r, unsigned int threads)
 {
   Complex* F0=F[0];
@@ -1298,8 +1298,8 @@ void multautocorrelation(Complex **F, unsigned int m,
 }
 
 void multcorrelation(Complex **F, unsigned int m,
-                     const unsigned int *index,
                      const unsigned int indexsize,
+                     const unsigned int *index,
                      unsigned int r, unsigned int threads)
 {
   Complex* F0=F[0];
@@ -1328,8 +1328,8 @@ inline unsigned innerindex(unsigned j, int r) {return 2*j+r;}
 // of size m.
 // F[0][j] *= F[1][j];
 void multbinary(Complex **F, unsigned int m,
-                const unsigned int *index,
                 const unsigned int indexsize,
+                const unsigned int *index,
                 unsigned int r, unsigned int threads)
 {
   Complex* F0=F[0];
@@ -1361,8 +1361,8 @@ void multbinary(Complex **F, unsigned int m,
 
 // F[0][j] *= F[0][j];
 void multautoconvolution(Complex **F, unsigned int m,
-                         const unsigned int *index,
                          const unsigned int indexsize,
+                         const unsigned int *index,
                          unsigned int r, unsigned int threads)
 {
   Complex* F0=F[0];
@@ -1392,8 +1392,8 @@ inline unsigned innerindex(unsigned j, int r, unsigned int m) {
 // two inputs.
 // F[0][j] *= F[1][j];
 void multbinary(double **F, unsigned int m,
-                const unsigned int *index,
                 const unsigned int indexsize,
+                const unsigned int *index,
                 unsigned int r, unsigned int threads)
 {
   double* F0=F[0];
@@ -1429,8 +1429,8 @@ void multbinary(double **F, unsigned int m,
 
 // F[0][j]=F[0][j]*F[2][j]+F[1][j]*F[3][j]
 void multbinary2(Complex **F, unsigned int m,
-                 const unsigned int *index,
                  const unsigned int indexsize,
+                 const unsigned int *index,
                  unsigned int r, unsigned int threads)
 {
   Complex* F0=F[0];
@@ -1454,8 +1454,8 @@ void multbinary2(Complex **F, unsigned int m,
 
 // F[0][j]=F[0][j]*F[2][j]+F[1][j]*F[3][j]
 void multbinary2(double **F, unsigned int m,
-                 const unsigned int *index,
                  const unsigned int indexsize,
+                 const unsigned int *index,
                  unsigned int r, unsigned int threads)
 {
   double* F0=F[0];
@@ -1485,8 +1485,8 @@ void multbinary2(double **F, unsigned int m,
 
 // F[0][j]=F[0][j]*F[1][j]+F[2][j]*F[3][j]+F[4][j]*F[5][j];
 void multbinary3(Complex **F, unsigned int m,
-                 const unsigned int *index,
                  const unsigned int indexsize,
+                 const unsigned int *index,
                  unsigned int r, unsigned int threads)
 {
   Complex* F0=F[0];
@@ -1517,8 +1517,8 @@ void multbinary3(Complex **F, unsigned int m,
 
 // F[0][j]=F[0][j]*F[1][j]+F[2][j]*F[3][j]+F[4][j]*F[5][j]+F[6][j]*F[7][j];
 void multbinary4(Complex **F, unsigned int m,
-                 const unsigned int *index,
                  const unsigned int indexsize,           
+                 const unsigned int *index,
                  unsigned int r, unsigned int threads)
 {
   Complex* F0=F[0];
@@ -1551,8 +1551,8 @@ void multbinary4(Complex **F, unsigned int m,
 }
 
 void multbinary8(Complex **F, unsigned int m,
-                 const unsigned int *index,
                  const unsigned int indexsize,
+                 const unsigned int *index,
                  unsigned int r, unsigned int threads)
 {
   Complex* F0=F[0];

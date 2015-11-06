@@ -16,8 +16,8 @@ bool compact=false;
 // Pair-wise binary multiply for even A and B=1.
 // NB: example function, not optimised or threaded.
 void multA(double **F, unsigned int m,
-           const unsigned int* index,
            const unsigned int indexsize,
+           const unsigned int* index,
            unsigned int r, unsigned int threads)
 {
   for(unsigned int i=0; i < m; ++i) {
@@ -31,11 +31,11 @@ void multA(double **F, unsigned int m,
 // All of the B outputs are identical.
 // NB: example function, not optimised or threaded.
 void multB(double **F, unsigned int m,
-           const unsigned int *index,
            const unsigned int indexsize,
+           const unsigned int *index,
            unsigned int r, unsigned int threads)
 {
-  multA(F,m,index,indexsize,r,threads);
+  multA(F,m,indexsize,index,r,threads);
   // copy output
   for(unsigned int i=0; i < m; ++i)
     for(unsigned int b=0; b < B; b++) 
