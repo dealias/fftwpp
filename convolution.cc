@@ -1436,16 +1436,18 @@ void multbinary2(Complex **F, unsigned int m,
   Complex* F3=F[3];
   
 #ifdef __SSE2__
-  PARALLEL(for(unsigned int j=0; j < m; ++j) {
+  PARALLEL(
+    for(unsigned int j=0; j < m; ++j) {
       Complex *F0j=F0+j;
       STORE(F0j,ZMULT(LOAD(F0j),LOAD(F2+j))
             +ZMULT(LOAD(F1+j),LOAD(F3+j)));
-    });
+    }
+    );
 #else
-  // TODO: Compare to optimized version
-  PARALLEL(for(unsigned int j=0; j < m; ++j) {
-      F0[j]=F0[j]*F2[j] + F1[j]*F3[j];
-    });
+  PARALLEL(
+    for(unsigned int j=0; j < m; ++j)
+      F0[j]=F0[j]*F2[j]+F1[j]*F3[j];
+    );
 #endif
 }
 
@@ -1471,11 +1473,9 @@ void multbinary2(double **F, unsigned int m,
   if(m % 2)
     F0[m1]=F0[m1]*F2[m1]+F1[m1]*F3[m1];
 #else
-  // TODO: Compare to optimized version
   PARALLEL(
-    for(unsigned int j=0; j < m; ++j) {
-      F0[j]=F0[j]*F2[j] + F1[j]*F3[j];
-    }
+    for(unsigned int j=0; j < m; ++j)
+      F0[j]=F0[j]*F2[j]+F1[j]*F3[j];
     );
 #endif
 }

@@ -1,6 +1,6 @@
         FFTW++: Fast Fourier Transform C++ Header Class for FFTW3 Library
  
-Copyright (C) 2004-12 John C. Bowman and Malcolm Roberts, University of Alberta
+Copyright (C) 2004-15 John C. Bowman and Malcolm Roberts, University of Alberta
                     http://fftwpp.sourceforge.net
 
 FFTW++ is a C++ header class for Version 3 of the highly optimized FFTW

@@ -1,5 +1,5 @@
 /* Implicitly dealiased convolution routines.
-   Copyright (C) 2010-2012 John C. Bowman and Malcolm Roberts, Univ. of Alberta
+   Copyright (C) 2010-2015 John C. Bowman and Malcolm Roberts, Univ. of Alberta
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
