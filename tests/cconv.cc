@@ -133,8 +133,7 @@ int main(int argc, char* argv[])
   }
   cout << "N=" << N << endl;
 
-  // explicit and direct methods are only implemented for binary
-  // convolutions.
+  // explicit and direct methods are only implemented for binary convolutions.
   if(!Implicit) A=2;
 
  if(B < 1) B=1;

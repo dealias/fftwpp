@@ -95,6 +95,9 @@ Examples of implicitly dealiased convolutions on complex
 Hermitian-symmetric centered data in 1, 2, and 3 dimensions:
 exampleconv.cc, exampleconv2.cc, exampleconv3.cc
 
+Local transpose (in-place or out-of-place):
+exampletranspose.cc
+
 More general types of convolutions (for example, autoconvolutions)
 can be performed by defining a custom multiplier or realmultiplier
 function pointer.

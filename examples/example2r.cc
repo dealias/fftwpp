@@ -19,24 +19,24 @@ int main()
   unsigned int nyp=ny/2+1;
   size_t align=sizeof(Complex);
   
-//  array2<double> f(nx,ny,align);
-  array2<Complex> g(nx,nyp,align);
-  array2<double> f(nx,2*nyp,(double *) g()); // For in-place transforms
+  array2<Complex> F(nx,nyp,align);
+  array2<double> f(nx,ny,align);               // For out-of-place transforms
+//  array2<double> f(nx,2*nyp,(double *) F()); // For in-place transforms
   
-  rcfft2d Forward(nx,ny,f,g);
-  crfft2d Backward(nx,ny,g,f);
+  rcfft2d Forward(nx,ny,f,F);
+  crfft2d Backward(nx,ny,F,f);
   
   for(unsigned int i=0; i < nx; i++) 
     for(unsigned int j=0; j < ny; j++) 
       f(i,j)=i+j;
-	
+        
   cout << endl << "input:" << endl << f;
 
-  Forward.fft0(f,g);
+  Forward.fft0(f,F);
   
-  cout << endl << "output:" << endl << g;
+  cout << endl << "output:" << endl << F;
   
-  Backward.fft0Normalized(g,f);
+  Backward.fft0Normalized(F,f);
   
   cout << endl << "back to input:" << endl << f;
 }
