@@ -55,7 +55,7 @@ inline void usage(int n)
 inline void usageInplace(int n)
 {
   usageCommon(n);
-  std::cerr << "-i\t\t 0=out-of-place, 1=inplace" << std::endl;
+  std::cerr << "-i\t\t 0=out-of-place, 1=in-place" << std::endl;
 } 
 
 inline void usageTest() 

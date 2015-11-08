@@ -1,5 +1,5 @@
 /* Array.h:  A high-performance multi-dimensional C++ array class
-Copyright (C) 1997-2010 John C. Bowman
+Copyright (C) 1997-2015 John C. Bowman
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

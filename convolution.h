@@ -84,8 +84,8 @@ typedef void realmultiplier(double **, unsigned int m,
                             const unsigned int *index,
                             unsigned int r, unsigned int threads); 
   
-// Sample multiplier for binary convolutions for use with
-// function-pointer convolutions.
+// Multipliers for binary convolutions.
+
 multiplier multautoconvolution;
 multiplier multautocorrelation;
 multiplier multbinary;

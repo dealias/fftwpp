@@ -29,11 +29,11 @@ FFTW++ supports multithreaded transforms and convolutions.
 The global variable fftw::maxthreads specifies the maximum number of threads
 to use. The constructors invoke a short timing test to check that using
 multiple threads is actually beneficial for the given problem size.
-Multithreaded routines require linking with a multithreaded FFTW implementation;
-multithreading can be disabled by adding -DFFTWPP_SINGLE_THREAD to CFLAGS. 
+Multithreading requires linking with a multithreaded FFTW implementation
+and can be disabled by adding -DFFTWPP_SINGLE_THREAD to CFLAGS. 
 
 FFTW++ can also exploit the high-performance Array class available at
-http://www.math.ualberta.ca/~bowman/Array (version 1.47 or higher),
+http://www.math.ualberta.ca/~bowman/Array (version 1.48 or higher),
 designed for scientific computing. The arrays in that package do
 memory bounds checking in debugging mode, but can be optimized by
 specifying the -DNDEBUG compilation option (1D arrays optimize
@@ -52,9 +52,17 @@ can be disabled with the -DNO_CHECK_ALIGN compiler option.
 
 Hybrid OpenMP/MPI versions of the convolution routines in 2 and 3
 dimensions are available in the mpi/ directory.  Parallelization is
-accomplished using FFTW's MPI transpose routine, which has been
-adapted to provide both 1D ("slab") and 2D ("pencil") decompositions
-in computing 3 dimensional convolutions.
+accomplished using the adaptive hybrid OpenMP/MPI transpose routine
+described in "Adaptive Matrix Transpose Algorithms for Distributed
+Multicore Processors", J. C. Bowman and Malcolm Roberts,
+Interdisciplinary Topics in Applied Mathematics, Modeling and Computational
+Science, Springer Proceedings in Mathematics & Statistics</I> <B>117</B>,
+97-103 (2015):
+
+http://www.math.ualberta.ca/~bowman/publications/transpose.pdf.
+
+Either a 1D ("slab") and 2D ("pencil") data decomposition is used
+for the three-dimensional convolutions, depending on the number of processors. 
 
 mpi/fftw/ contains comparison code using FFTW's parallel MPI transform
 and explicit padding.
@@ -82,14 +90,14 @@ example3r.cc
 Examples of implicitly dealiased convolutions on complex non-centered
 data in 1, 2, and 3 dimensions:
 examplecconv.cc, examplecconv2.cc, examplecconv3.cc
-More general types of convolutions (for example, self-convolutions)
-can be performed by passing a function pointer, as shown in the
-following examples:
-examplepcconv.cc, examplepcconv2.cc, examplepcconv3.cc
 
 Examples of implicitly dealiased convolutions on complex
 Hermitian-symmetric centered data in 1, 2, and 3 dimensions:
 exampleconv.cc, exampleconv2.cc, exampleconv3.cc
+
+More general types of convolutions (for example, autoconvolutions)
+can be performed by defining a custom multiplier or realmultiplier
+function pointer.
 
 ########################## Wrappers ##########################
 
@@ -127,10 +135,7 @@ pexample.py
 ########################## MPI ##########################
 
 Hybrid OpenMP/MPI versions of the convolution routines in 2 and 3
-dimensions are available in the mpi directory.  Parallelization is
-accomplished using FFTW's MPI transpose routine, which has been
-adapted to provide both 1D ("slab") and 2D ("pencil") decompositions
-in computing 3 dimensional convolutions.
+dimensions are available in the mpi directory.
 
 cconv2.cc and cconv3.cc are examples of two- and three-dimensional
 complex non-centered convolutions.
@@ -138,14 +143,18 @@ complex non-centered convolutions.
 conv2.cc and conv3.cc are examples of two- and three-dimensional
 Hermitian-symmetric complex centered convolutions.
 
-fft2.cc is an example of a two-dimensional hybrid MPI/OpenMP FFT
-using a 1D data decomposition.
+fft2.cc and fft2r are examples of two-dimensional hybrid MPI/OpenMP FFTs
+using a 1D data decomposition, for complex and real data, respectively.
+
+fft3.cc and fft3r are examples of three-dimensional hybrid MPI/OpenMP FFTs
+using a 1D (slab) or 2D (pencil) data decomposition (depending on the
+number of MPI processes), for complex and real data, respectively.
 
 timing.py is a script which performs timing tests for mpi-based
 convolutions.
 
-mpi/explicit contains comparison code using FFTW's parallel MPI
-transform and explicit padding.
+The directory mpi/explicit contains comparison code using FFTW's parallel
+MPI transform and explicit padding.
 
 
 ########################## Test Programs ##########################
@@ -179,9 +188,30 @@ cconv3.cc
 3D Hermitian convolution test:
 conv3.cc
 
-In addition, the file pcconv.cc has examples for 1D, 2D, and 3D
-complex convolutions using function pointers, which allows a more
-general multiplication to be performed.
+1D FFT:
+fft1.cc
+
+1D real FFT:
+fft1r.cc
+
+1D multiple FFT:
+mfft1.cc
+
+1D multiple real FFT:
+mfft1r.cc
+
+2D FFT:
+fft2.cc
+
+2D real FFT:
+fft2r.cc
+
+3D FFT:
+fft3.cc
+
+3D real FFT:
+fft3r.cc
+
 
 ######################## Availability and License ########################
 

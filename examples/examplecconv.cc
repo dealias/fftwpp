@@ -46,9 +46,6 @@ int main(int argc, char* argv[])
   cout << "\noutput:" << endl;
   for(unsigned int i=0; i < m; i++) cout << f[i] << endl;
   
-  cout << "\noutput:" << endl;
-  for(unsigned int i=0; i < m; i++) cout << f[i] << endl;
-    
   deleteAlign(g);
   deleteAlign(f);
 
