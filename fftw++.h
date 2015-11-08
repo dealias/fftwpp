@@ -166,8 +166,6 @@ public:
   
   virtual unsigned int Threads() {return threads;}
   
-  bool get_inplace() {return inplace;}
-
   static const char *oddshift;
   
   // Inplace shift of Fourier origin to (nx/2,0) for even nx.

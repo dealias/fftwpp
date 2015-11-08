@@ -123,8 +123,6 @@ private:
   unsigned int indexsize;
 public:
   unsigned int *index;
-  // Accessor functions for wrappers.
-  unsigned int getm() {return m;}
   
   void initpointers(Complex **&U, Complex *u) {
     unsigned int C=max(A,B);
@@ -566,10 +564,6 @@ protected:
   bool toplevel;
 public:  
   unsigned int *index;
-  unsigned int getmx() {return mx;}
-  unsigned int getmy() {return my;}
-  unsigned int getA() {return A;}
-  unsigned int getB() {return B;}
 
   void initpointers2(Complex **&U2, Complex *u2, unsigned int stride) {
     U2=new Complex *[A];
@@ -963,11 +957,6 @@ protected:
   bool toplevel;
 public:  
   unsigned int *index;
-  unsigned int getmx() {return mx;}
-  unsigned int getmy() {return my;}
-  unsigned int getmz() {return mz;}
-  unsigned int getA() {return A;}
-  unsigned int getB() {return B;}
 
   void initpointers3(Complex **&U3, Complex *u3, unsigned int stride) {
     U3=new Complex *[A];
@@ -1157,11 +1146,6 @@ protected:
   bool toplevel;
 public:     
   unsigned int *index;
-  unsigned int getmx() {return mx;}
-  unsigned int getmy() {return my;}
-  unsigned int getmz() {return mz;}
-  unsigned int getA() {return A;}
-  unsigned int getB() {return B;}
   
   void initpointers3(Complex **&U3, Complex *u3, unsigned int stride) {
     U3=new Complex *[A];
