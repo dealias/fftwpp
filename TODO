@@ -1,10 +1,5 @@
 Release todo:
-test shifted inplace MPI transforms
-wrappers
 update documentation
-
-Release done:
-speed test out-of-place conv: Done, seems to give 10% or so.
 
 Possible future enhancements:
 consider FFTW_DESTROY_INPUT 
