@@ -832,10 +832,10 @@ public:
   // A is the number of inputs.
   // B is the number of outputs.
   ImplicitHConvolution2(unsigned int mx, unsigned int my,
-                            Complex *u1, Complex *u2,
-                            unsigned int A=2, unsigned int B=1,
-                            unsigned int threads=fftw::maxthreads,
-                            convolveOptions options=defaultconvolveOptions) :
+                        Complex *u1, Complex *u2,
+                        unsigned int A=2, unsigned int B=1,
+                        unsigned int threads=fftw::maxthreads,
+                        convolveOptions options=defaultconvolveOptions) :
     ThreadBase(threads), mx(mx), my(my), xcompact(true), ycompact(true),
     u1(u1), u2(u2), A(A), B(B), allocated(false) {
     set(options);
@@ -901,7 +901,6 @@ public:
                       unsigned int M, unsigned int stride,
                       unsigned int offset=0) {
     if(threads > 1) {
-      for(unsigned int t=0; t < threads; ++t)
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif    
@@ -1308,7 +1307,6 @@ public:
                       unsigned int M, unsigned int stride,
                       unsigned int offset=0) {
     if(threads > 1) {
-      for(unsigned int t=0; t < threads; ++t)
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif    
