@@ -45,6 +45,12 @@ int main(int argc, char* argv[])
   unsigned int my=4;
   unsigned int mz=1;
   
+  int provided;
+  MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
+
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+  if(rank != 0) opterr=0;
 #ifdef __GNUC__ 
   optind=0;
 #endif  
@@ -72,12 +78,11 @@ int main(int argc, char* argv[])
       break;
     case 'h':
     default:
-      cout << "FIXME: usage" << endl;
+      if(rank == 0)
+        usageGather();
+      exit(1);
     }
   }
-
-  int provided;
-  MPI_Init_thread(&argc,&argv,MPI_THREAD_MULTIPLE,&provided);
 
   if(my == 0) my=mx;
   
@@ -89,7 +94,7 @@ int main(int argc, char* argv[])
 
     split d(mx,my,group. active);
     
-    Complex *f=ComplexAlign(d.n * mz);
+    Complex *f=ComplexAlign(d.n*mz);
 
     init(f,d.X,d.Y,d.x0,d.y0,d.x,d.y,mz,false);
 
@@ -98,7 +103,7 @@ int main(int argc, char* argv[])
 	if(main)
 	  cout << "\ninput:" << endl;
 	cout << "process " << group.rank << endl;
-	for(unsigned int i=0; i < d.n * mz; ++i) {
+	for(unsigned int i=0; i < d.n*mz; ++i) {
 	  cout << f[i] << endl;
 	}
       }

@@ -358,6 +358,12 @@ int transpose(int rank, int size, int N)
 
 int main(int argc, char **argv)
 {
+  int provided;
+  MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
+
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+  if(rank != 0) opterr=0;
 #ifdef __GNUC__ 
   optind=0;
 #endif  
@@ -406,17 +412,15 @@ int main(int argc, char **argv)
         break;
       case 'h':
       default:
-        usage();
+        if(rank == 0)
+          usage();
     }
   }
 
-  int provided;
-  MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
   if(provided < MPI_THREAD_FUNNELED)
     defaultmpithreads=1;
 
-  int rank,size;
-  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+  int size;
   MPI_Comm_size(MPI_COMM_WORLD,&size);
   
   if(rank == 0) {

@@ -116,6 +116,17 @@ inline void usageFFT(int n)
 	      << "\t\t r=7: strided, out-of-place\n";
 }
 
+inline void usageGather()
+{
+  std::cerr << "Options: " << std::endl;
+  std::cerr << "-h\t\t help" << std::endl;
+  std::cerr << "-m\t\t size" << std::endl;
+  std::cerr << "-x\t\t x size" << std::endl;
+  std::cerr << "-y\t\t y size" << std::endl;
+  std::cerr << "-z\t\t z size" << std::endl;
+  std::cerr << "-q\t\t quiet" << std::endl;
+}
+
 inline unsigned int padding(unsigned int n)
 {
   std::cout << "min padded buffer=" << n << std::endl;

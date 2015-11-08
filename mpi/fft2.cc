@@ -42,6 +42,12 @@ int main(int argc, char* argv[])
   bool test=false;
   unsigned int stats=0; // Type of statistics used in timing test.
   
+  int provided;
+  MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
+
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+  if(rank != 0) opterr=0;
 #ifdef __GNUC__ 
   optind=0;
 #endif  
@@ -90,14 +96,13 @@ int main(int argc, char* argv[])
       break;
     case 'h':
     default:
-      usageInplace(2);
-      usageTranspose();
+      if(rank == 0) {
+        usageInplace(2);
+        usageTranspose();
+      }
       exit(1);
     }
   }
-
-  int provided;
-  MPI_Init_thread(&argc,&argv,MPI_THREAD_MULTIPLE,&provided);
 
   if(ny == 0) ny=nx;
 

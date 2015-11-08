@@ -37,6 +37,12 @@ int main(int argc, char* argv[])
   unsigned int my=4;
   unsigned int mz=4;
   
+  int provided;
+  MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
+
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+  if(rank != 0) opterr=0;
 #ifdef __GNUC__ 
   optind=0;
 #endif  
@@ -64,18 +70,17 @@ int main(int argc, char* argv[])
         break;
       case 'h':
       default:
-        cout << "FIXME: usage" << endl;
+        if(rank == 0)
+          usageGather();
+        exit(1);
     }
   }
-
-  int provided;
-  MPI_Init_thread(&argc,&argv,MPI_THREAD_MULTIPLE,&provided);
 
   if(mx == 0) mx=4;
   if(my == 0) my=mx;
   if(mz == 0) mz=mx;
   
-  MPIgroup group(MPI_COMM_WORLD,mx,my,mz);
+  MPIgroup group(MPI_COMM_WORLD,mx,my);
 
   // If the process is unused, then do nothing.
   if(group.rank < group.size) {
@@ -103,7 +108,7 @@ int main(int argc, char* argv[])
       // }
       cout << "process " << group.rank << endl;
       cout << F0 << endl;
-      d.show();
+//      d.show();
     }
     
     if(!quiet && main)

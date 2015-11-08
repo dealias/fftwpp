@@ -79,6 +79,12 @@ int main(int argc, char* argv[])
   bool test=false;
   bool quiet=false;
   
+  int provided;
+  MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
+
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+  if(rank != 0) opterr=0;
 #ifdef __GNUC__ 
   optind=0;
 #endif  
@@ -130,15 +136,14 @@ int main(int argc, char* argv[])
         break;
       case 'h':
       default:
-        usage(3);
-        usageTranspose();
+        if(rank == 0) {
+          usage(3);
+          usageTranspose();
+        }
         exit(1);
     }
   }
   
-  int provided;
-  MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
-
   if(my == 0) my=mx;
   if(mz == 0) mz=mx;
   

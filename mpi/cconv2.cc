@@ -50,6 +50,12 @@ int main(int argc, char* argv[])
   unsigned int A=2; // Number of independent inputs
   unsigned int B=1; // Number of outputs
   
+  int provided;
+  MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
+
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+  if(rank != 0) opterr=0;
 #ifdef __GNUC__ 
   optind=0;
 #endif  
@@ -98,14 +104,13 @@ int main(int argc, char* argv[])
         break;
       case 'h':
       default:
-        usage(2);
-        usageTranspose();
+        if(rank == 0) {
+          usage(2);
+          usageTranspose();
+        }
         exit(1);
     }
   }
-
-  int provided;
-  MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
 
   if(my == 0) my=mx;
 

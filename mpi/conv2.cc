@@ -70,6 +70,12 @@ int main(int argc, char* argv[])
   bool quiet=false;
   bool test=false;
   
+  int provided;
+  MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
+
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+  if(rank != 0) opterr=0;
 #ifdef __GNUC__ 
   optind=0;
 #endif  
@@ -124,16 +130,17 @@ int main(int argc, char* argv[])
         break;
       case 'h':
       default:
-        usage(2);
-        usageCompact(2);
-        usageTranspose();
+        if(rank == 0) {
+          usage(2);
+          usageCompact(2);
+          usageTranspose();
+        }
         exit(1);
     }
   }
   
-  int provided;
-  MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
-
+  if(my == 0) my=mx;
+  
   if(N == 0) {
     N=N0/mx/my;
     if(N < 10) N=10;
