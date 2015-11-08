@@ -1,0 +1,129 @@
+<HTML>
+<HEAD>
+<TITLE>FFTW++: Fast Fourier Transform C++ Header Class for FFTW3 Library
+</TITLE>
+<META NAME="Keywords" CONTENT="fftw++, fftwpp, fftw, C++, header, class, wrapper">
+<META NAME="Description" CONTENT="Fast Fourier Transform C++ Header Class for FFTW3 Library">
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF">
+<CENTER>
+<a href="http://sourceforge.net/projects/fftwpp">
+<img src="http://sflogo.sourceforge.net/sflogo.php?group_id=308786&amp;type=13" width="120" height="30" border=0 alt="Get fftw++ at SourceForge.net. Fast, secure and Free Open Source software downloads" align="RIGHT"/>
+</a>
+
+<H1>FFTW++: Fast Fourier Transform C++ Header Class for FFTW3</H1>
+</CENTER>
+<P>
+<HR>
+<A href="http://sourceforge.net/projects/fftwpp" target="_top">FFTW++</A>
+is a C++ header class for Version 3 of the highly optimized 
+<a href="http://www.fftw.org">FFTW</a> Fourier Transform library.
+Version 2.00 is now available for
+<A href="http://sourceforge.net/projects/fftwpp" target="_top">download<A>.
+</LI><P>
+
+<P>
+FFTW++ provides a simple
+interface for 1D, 2D, and 3D complex-to-complex, real-to-complex, and
+complex-to-real Fast Fourier Transforms that takes care of the technical
+aspects of memory allocation, alignment, planning, and wisdom. Wrappers for
+multiple 1D transforms are also provided. As with the FFTW3 library,
+in-place and out-of-place multithreaded transforms of arbitrary size are
+supported.
+
+<P>
+Implicit dealiasing of standard and centered Hermitian convolutions is
+also implemented; in 2D and 3D this implicit zero-padding substantially
+reduces memory usage and computation time. See
+<a href="http://www.math.ualberta.ca/~bowman/publications/dealias.pdf">
+Efficient Dealiased Convolutions without Padding</a>
+by John C. Bowman and Malcolm Roberts, SIAM Journal on Scientific
+Computing, 33:1, 386-406 (2011):
+
+<P>
+Convenient optional shift routines that place the Fourier origin in the logical
+center of the domain are provided for centered complex-to-real transforms
+in 2D and 3D; see fftw++.h for details.
+<P>
+FFTW++ can also exploit the high-performance
+<a href=http://www.math.ualberta.ca/~bowman/Array>Array</a> class (version
+1.48 or higher), designed for scientific computing. The
+arrays in that package do memory bounds checking in debugging mode, but can
+be optimized by specifying the -DNDEBUG compilation option (1D arrays
+optimize completely to pointer operations).
+<P>
+FFTW++ includes interfaces and examples for calling FFTW++ from C++, C,
+Python, and Fortran.
+<P>
+Detailed documentation is provided before each class in the fftw++.h header
+file. The included examples illustrate how easy it is to use FFTW in C++
+with the FFTW++ header class. Use of the Array class is optional, but
+encouraged. If for some reason the Array class is not used, memory should
+be allocated with ComplexAlign (or doubleAlign) to ensure that the data is
+optimally aligned to sizeof(Complex), to enable the SIMD extensions.
+The optional alignment check in fftw++.h can be disabled with the
+-DNO_CHECK_ALIGN compiler option.
+
+<P>
+Examples using ComplexAlign allocator:
+<P>
+<a HREF="example0.cc">1D complex</a>
+<a HREF="example0r.cc">1D real-to-complex</a>
+<P>
+Examples using <a href=http://www.math.ualberta.ca/~bowman/Array>Array</a>
+class:
+<P>
+<a HREF="example1.cc">1D complex</a>
+<a HREF="example1r.cc">1D real-to-complex</a>
+<P>
+<a HREF="example2.cc">2D complex</a>
+<a HREF="example2r.cc">2D real-to-complex</a>
+<P>
+<a HREF="example3.cc">3D complex</a>
+<a HREF="example3r.cc">3D real-to-complex</a>
+
+<P>Implicitly dealiased convolutions:
+<P>
+<a HREF="examplecconv.cc">1D complex convolution example</a>
+<BR>
+<a HREF="exampleconv.cc">1D Hermitian convolution example</a>
+<P>
+<a HREF="examplecconv2.cc">2D complex convolution example</a>
+<BR>
+<a HREF="exampleconv2.cc">2D Hermitian convolution example</a>
+<BR>
+<P>
+<a HREF="examplecconv3.cc">3D complex convolution example</a>
+<BR>
+<a HREF="exampleconv3.cc">3D Hermitian convolution example</a>
+
+<P>
+<HR>
+<P>
+<LI>
+<a HREF="http://www.math.ualberta.ca/~bowman/Array.html">
+High-performance multi-dimensional C++ Array class</A> (as fast as Fortran)
+</a>
+</LI>
+
+<P>
+<LI>
+The latest git developmental source code for fftw++ is available from
+<a HREF="https://github.com/dealias/fftwpp"
+target="_top">
+https://github.com/dealias/fftwpp
+</a>
+</LI>
+
+<P>
+All source files in the FFTW++ project, unless explicitly noted otherwise,
+are released under version 3 (or later) of the GNU Lesser General Public
+License (see the files LICENSE.LESSER and LICENSE in the top-level source
+directory).
+<P>
+<STRONG>HOME: </STRONG><A HREF="http://www.math.ualberta.ca/~bowman/index.html">http://www.math.ualberta.ca/~bowman</A></TD>
+
+</BODY>
+</HTML>
+
