@@ -8,6 +8,8 @@ import sys
 
 from testutils import *
 
+timeout = 60
+
 def main(argv):
 
     usage = "Usage:\n"\
@@ -45,13 +47,13 @@ def main(argv):
     Xlist = [1,2,3,4,5,random.randint(10,64)]
     Ylist = [1,2,3,4,5,random.randint(10,64)]
     Zlist = [1,2,random.randint(3,64)]
-    Plist = [1,2,3,4,5]
+    Plist = [2,3,4,5,1]
     
     if shortrun:
         Xlist = [2,random.randint(10,64)]
         Ylist = [2,5,random.randint(10,64)]
         Zlist = [1,2,random.randint(3,64)]
-        Plist = [1,2]
+        Plist = [2,3,1]
     
     ntests = 0
     nfails = 0
@@ -72,34 +74,32 @@ def main(argv):
             log.write(msg)
             log.close()
 
-            timeout = 0
-
             testcases = []
             for X in Xlist:
                 for Y in Ylist:
                     for Z in Zlist:
-                        for P in Plist:
-                            args = []
-                            args.append("-x" + str(X))
-                            args.append("-y" + str(Y))
-                            args.append("-z" + str(Z))
-                            args.append("-q")
-                            testcases.append(args)
+                        args = []
+                        args.append("-x" + str(X))
+                        args.append("-y" + str(Y))
+                        args.append("-z" + str(Z))
+                        args.append("-q")
+                        testcases.append(args)
                             
         tstart = time.time()
-        ntest = len(testcases)
+        ntest = len(testcases)*len(Plist)
         print "Running", ntest, "tests."
 
         failcases = ""
         nfails = 0
-        timeout = 60
-        for args in testcases:
-            rtest, cmd = runtest(progname, P, args, logfile, timeout)
-            if not rtest == 0:
-                nfails += 1
-                failcases += " ".join(cmd)
-                failcases += "\t(code " + str(rtest) + ")"
-                failcases += "\n"
+
+        for P in Plist:
+            for args in testcases:
+                rtest, cmd = runtest(progname, P, args, logfile, timeout)
+                if not rtest == 0:
+                    nfails += 1
+                    failcases += " ".join(cmd)
+                    failcases += "\t(code " + str(rtest) + ")"
+                    failcases += "\n"
 
     try:
         if nfails > 0:

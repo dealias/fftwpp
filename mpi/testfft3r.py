@@ -46,51 +46,52 @@ def main(argv):
         Xlist = [1,2,3,4,5,random.randint(6,64)]
         Ylist = [1,2,3,4,5,random.randint(6,64)]
         Zlist = [1,2,3,4,5,random.randint(6,64)]
-        Plist = [4,8,3,2,random.randint(9,12),1]
+        Plist = [8,4,3,2,random.randint(9,12),1]
         
         if(shortrun):
             print "Short run."
             Xlist = [2,3,random.randint(6,64)]
             Ylist = [2,3,random.randint(6,64)]
             Zlist = [2,3,random.randint(6,64)]
-            Plist = [1,2]
+            Plist = [2,random.randint(4,8)]
 
         testcases = []
-        for P in Plist:
-            for X in Xlist:
-                for Y in Ylist:
-                    for Z in Zlist:
-                        for inplace in [0,1]:
-                            for shift in [0,1]:
-                                if (shift == 0) or (X % 2 == 0 and Y % 2 == 0): 
-                                    args = []
-                                    args.append("-x" + str(X))
-                                    args.append("-y" + str(Y))
-                                    args.append("-z" + str(Z))
-                                    args.append("-i" + str(inplace))
-                                    args.append("-O" + str(shift))
-                                    args.append("-N1")
-                                    args.append("-s1")
-                                    args.append("-a1")
-                                    args.append("-T1")
-                                    args.append("-t")
-                                    args.append("-q")
-                                    testcases.append(args)
+        for X in Xlist:
+            for Y in Ylist:
+                for Z in Zlist:
+                    for inplace in [0,1]:
+                        for shift in [0,1]:
+                            if (shift == 0) or (X % 2 == 0 and Y % 2 == 0): 
+                                args = []
+                                args.append("-x" + str(X))
+                                args.append("-y" + str(Y))
+                                args.append("-z" + str(Z))
+                                args.append("-i" + str(inplace))
+                                args.append("-O" + str(shift))
+                                args.append("-N1")
+                                args.append("-s1")
+                                args.append("-a1")
+                                args.append("-T1")
+                                args.append("-t")
+                                args.append("-q")
+                                testcases.append(args)
 
         tstart = time.time()
-        ntest = len(testcases)
+
+        ntest = len(testcases)*len(Plist)
         print "Running", ntest, "tests."
         
         failcases = ""
         nfails = 0
 
-        for args in testcases:
-            rtest, cmd = runtest(pname, P, args,logfile, timeout)
-            if not rtest == 0:
-                nfails += 1
-                failcases += " ".join(cmd)
-                failcases += "\t(code " + str(rtest) + ")"
-                failcases += "\n"
+        for P in Plist:
+            for args in testcases:
+                rtest, cmd = runtest(pname, P, args,logfile, timeout)
+                if not rtest == 0:
+                    nfails += 1
+                    failcases += " ".join(cmd)
+                    failcases += "\t(code " + str(rtest) + ")"
+                    failcases += "\n"
                                         
         if nfails > 0:
             print "Failure cases:"
