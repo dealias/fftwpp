@@ -69,9 +69,8 @@ struct convolveOptions {
     ny(ny), nz(nz), stride2(stride2), stride3(stride3), mpi(mpi),
     toplevel(toplevel) {}
   
-  convolveOptions(bool toplevel=true) : toplevel(toplevel) {
-  }
-  
+  convolveOptions(bool toplevel=true) : nx(0), ny(0), nz(0),
+                                        toplevel(toplevel) {}
 };
     
 static const convolveOptions defaultconvolveOptions;

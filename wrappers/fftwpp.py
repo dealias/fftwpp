@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # fftwpp.py - Python wrapper of the C callable FFTW+ wrapper.
 #
 # Authors: Matthew Emmett <memmett@gmail.com>
