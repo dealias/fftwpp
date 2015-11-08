@@ -36,9 +36,11 @@ public:
                           utils::mpiOptions mpi=utils::defaultmpiOptions,
                           unsigned int A=2, unsigned int B=1,
                           unsigned int threads=fftw::maxthreads,
-                          Complex *work=NULL, MPI_Comm global=0) :
+                          Complex *work=NULL, MPI_Comm global=0,
+                          bool toplevel=true) :
     ImplicitConvolution2(mx,my,u1,u2,A,B,threads,
-                         convolveOptions(d.x,d.y,d.Activate(),mpi)), d(d) {
+                         convolveOptions(d.x,d.y,d.Activate(),mpi,toplevel)),
+    d(d) {
     inittranspose(mpi,work,global);
   }
   
@@ -47,9 +49,11 @@ public:
                           utils::mpiOptions mpi=utils::defaultmpiOptions,
                           unsigned int A=2, unsigned int B=1,
                           unsigned int threads=fftw::maxthreads,
-                          Complex *work=NULL, MPI_Comm global=0) :
+                          Complex *work=NULL, MPI_Comm global=0,
+                          bool toplevel=true) :
     ImplicitConvolution2(mx,my,A,B,threads,
-                         convolveOptions(d.x,d.y,d.Activate(),mpi)), d(d) {
+                         convolveOptions(d.x,d.y,d.Activate(),mpi,toplevel)),
+    d(d) {
     inittranspose(mpi,work,global);
   }
   
@@ -60,8 +64,8 @@ public:
   
   // F is a pointer to A distinct data blocks each of size mx*d.y,
   // shifted by offset (contents not preserved).
-  void convolve(Complex **F, multiplier *pmult,
-                std::vector<unsigned int>&index=index1, unsigned int offset=0);
+  void convolve(Complex **F, multiplier *pmult, unsigned int i=0,
+                unsigned int offset=0);
   
   // Binary convolution:
   void convolve(Complex *f, Complex *g) {
@@ -98,9 +102,10 @@ public:
                            utils::mpiOptions mpi=utils::defaultmpiOptions,
                            unsigned int A=2, unsigned int B=1,
                            unsigned int threads=fftw::maxthreads,
-                           Complex *work=NULL, MPI_Comm global=0) :
+                           Complex *work=NULL, MPI_Comm global=0,
+                           bool toplevel=true) :
     ImplicitHConvolution2(mx,my,u1,u2,A,B,threads,
-                          convolveOptions(d.x,d.y,du.Activate(),mpi)),
+                          convolveOptions(d.x,d.y,du.Activate(),mpi,toplevel)),
     d(d), du(du) {
     inittranspose(f,mpi,work,global);
   }
@@ -112,9 +117,10 @@ public:
                            utils::mpiOptions mpi=utils::defaultmpiOptions,
                            unsigned int A=2, unsigned int B=1,
                            unsigned int threads=fftw::maxthreads,
-                           Complex *work=NULL, MPI_Comm global=0) :
+                           Complex *work=NULL, MPI_Comm global=0,
+                           bool toplevel=true) :
     ImplicitHConvolution2(mx,my,xcompact,ycompact,u1,u2,A,B,threads,
-                          convolveOptions(d.x,d.y,du.Activate(),mpi)),
+                          convolveOptions(d.x,d.y,du.Activate(),mpi,toplevel)),
     d(d), du(du) {
     inittranspose(f,mpi,work,global);
   }
@@ -125,9 +131,10 @@ public:
                            utils::mpiOptions mpi=utils::defaultmpiOptions,
                            unsigned int A=2, unsigned int B=1,
                            unsigned int threads=fftw::maxthreads,
-                           Complex *work=NULL, MPI_Comm global=0) :
+                           Complex *work=NULL, MPI_Comm global=0,
+                           bool toplevel=true) :
     ImplicitHConvolution2(mx,my,true,true,A,B,threads,
-                          convolveOptions(d.x,d.y,du.Activate(),mpi)),
+                          convolveOptions(d.x,d.y,du.Activate(),mpi,toplevel)),
     d(d), du(du) {
     inittranspose(f,mpi,work,global);
   }
@@ -139,9 +146,10 @@ public:
                            utils::mpiOptions mpi=utils::defaultmpiOptions,
                            unsigned int A=2, unsigned int B=1,
                            unsigned int threads=fftw::maxthreads,
-                           Complex *work=NULL, MPI_Comm global=0) :
+                           Complex *work=NULL, MPI_Comm global=0,
+                           bool toplevel=true) :
     ImplicitHConvolution2(mx,my,xcompact,ycompact,A,B,threads,
-                          convolveOptions(d.x,d.y,du.Activate(),mpi)),
+                          convolveOptions(d.x,d.y,du.Activate(),mpi,toplevel)),
     d(d), du(du) {
     inittranspose(f,mpi,work,global);
   }
@@ -153,9 +161,8 @@ public:
 
   // F is a pointer to A distinct data blocks each of size 
   // (2mx-xcompact)*d.y, shifted by offset (contents not preserved).
-  void convolve(Complex **F, realmultiplier *pmult,
-                bool symmetrize=true,
-                std::vector<unsigned int>&index=index1, unsigned int offset=0);
+  void convolve(Complex **F, realmultiplier *pmult, bool symmetrize=true,
+                unsigned int i=0, unsigned int offset=0);
 
   // Binary convolution:
   void convolve(Complex *f, Complex *g, bool symmetrize=true) {
@@ -194,7 +201,8 @@ public:
         yzconvolve[t]=new ImplicitConvolution2MPI(my,mz,d.yz,
                                                   u1+t*mz*A*innerthreads,
                                                   u2+t*d.n2*A,mpi,A,B,
-                                                  innerthreads,work2,global);
+                                                  innerthreads,work2,global,
+                                                  false);
       initpointers3(U3,u3,d.n);
     }
     inittranspose(mpi,work,global);
@@ -241,8 +249,8 @@ public:
   
   // F is a pointer to A distinct data blocks each of size
   // 2mx*2d.y*d.z, shifted by offset (contents not preserved).
-  void convolve(Complex **F, multiplier *pmult,
-                std::vector<unsigned int>&index=index2, unsigned int offset=0);
+  void convolve(Complex **F, multiplier *pmult, unsigned int i=0,
+                unsigned int offset=0);
   
   // Binary convolution:
   void convolve(Complex *f, Complex *g) {
@@ -283,7 +291,7 @@ public:
                                        d.yz,du.yz,f,
                                        u1+t*(mz/2+1)*A*innerthreads,
                                        u2+t*du.n2*A,mpi,A,B,innerthreads,
-                                       work2,global);
+                                       work2,global,false);
       initpointers3(U3,u3,du.n);
     }
     inittranspose(f,mpi,work,global);
@@ -374,7 +382,7 @@ public:
   // F is a pointer to A distinct data blocks each of size
   // (2mx-xcompact)*d.y*d.z, shifted by offset (contents not preserved).
   void convolve(Complex **F, realmultiplier *pmult, bool symmetrize=true,
-                std::vector<unsigned int>&index=index2, unsigned int offset=0);
+                unsigned int i=0, unsigned int offset=0);
   
   // Binary convolution:
   void convolve(Complex *f, Complex *g, bool symmetrize=true) {

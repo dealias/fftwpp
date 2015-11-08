@@ -19,10 +19,6 @@ const double sqrt3=sqrt(3.0);
 const double hsqrt3=0.5*sqrt3;
 const Complex zeta3(-0.5,hsqrt3);
 
-vector<unsigned int> nullindex;
-vector<unsigned int> index1(1);
-vector<unsigned int> index2(2);
-
 // Build zeta table, returning the floor of the square root of m.
 unsigned int BuildZeta(unsigned int n, unsigned int m,
                        Complex *&ZetaH, Complex *&ZetaL, unsigned int threads)
@@ -53,9 +49,10 @@ unsigned int BuildZeta(unsigned int n, unsigned int m,
 }
 
 void ImplicitConvolution::convolve(Complex **F, multiplier *pmult,
-                                   vector<unsigned int>& index,
-                                   unsigned int offset)
+                                   unsigned int i, unsigned int offset)
 { 
+  if(indexsize >= 1) index[indexsize-1]=i;
+  
   unsigned int C=max(A,B);
   Complex *P[C];
   for(unsigned int i=0; i < A; ++i)
@@ -66,7 +63,7 @@ void ImplicitConvolution::convolve(Complex **F, multiplier *pmult,
     BackwardsO->fft(P[i],U[i]);
   }
   
-  (*pmult)(U,m,index.size(),&index.front(),0,threads); // multiply even indices
+  (*pmult)(U,m,indexsize,index,0,threads); // multiply even indices
 
   switch(A) {
     case 1: premult<premult1>(P); break;
@@ -84,7 +81,7 @@ void ImplicitConvolution::convolve(Complex **F, multiplier *pmult,
 
     for(unsigned int i=A; i-- > 0;) // Loop from A-1 to 0.
       BackwardsO->fft(P[i],W[i]);
-    (*pmult)(W,m,index.size(),&index.front(),1,threads); // multiply odd indices
+    (*pmult)(W,m,indexsize,index,1,threads); // multiply odd indices
     
     // Return to original space
     Complex *lastW=W[A-1];
@@ -101,7 +98,7 @@ void ImplicitConvolution::convolve(Complex **F, multiplier *pmult,
     // Backwards FFT (odd indices):
     for(unsigned int i=0; i < A; ++i)
       Backwards->fft(P[i]);
-    (*pmult)(P,m,index.size(),&index.front(),1,threads); //multiply odd indices
+    (*pmult)(P,m,indexsize,index,1,threads); //multiply odd indices
 
     // Return to original space:
     for(unsigned int i=0; i < B; ++i) {
@@ -469,11 +466,11 @@ void ImplicitHConvolution::postmultadd0(Complex **c2, Complex **c0,
 }
 
 void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
-                                    vector<unsigned int>& index,
-                                    unsigned int offset)
+                                    unsigned int i, unsigned int offset)
 {
+  if(indexsize >= 1) index[indexsize-1]=i;
+  
   // Set problem-size variables and pointers:
-
   unsigned int C=max(A,B);
   Complex *c1c=ComplexAlign(C);
 
@@ -514,10 +511,10 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
   // Complex-to-real FFTs and pmults:
   Complex *S=new Complex[B];
   {
-    // r=2:
+    // r=-1:
     for(unsigned int i=0; i < A; ++i)
       cr->fft(c2[i],d2[i]);
-    (*pmult)(d2,m,index.size(),&index.front(),-1,threads);
+    (*pmult)(d2,m,indexsize,index,-1,threads);
 
     // r=0:
     double T[A]; // deal with overlap between r=0 and r=1
@@ -527,7 +524,7 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
       if(!compact) c0i[0].re += 2.0*c0i[m].re; // Nyquist
       (out_of_place ? cro : cr)->fft(c0i,d0[i]); 
     }
-    (*pmult)(d0,m,index.size(),&index.front(),0,threads);
+    (*pmult)(d0,m,indexsize,index,0,threads);
     for(unsigned int i=0; i < B; ++i)
       S[i]=((Complex *) d0[i])[start];   // r=0, k=start
     
@@ -542,7 +539,7 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
       }
       (out_of_place ? cro : cr)->fft(c1[i],d1[i]);
     }
-    (*pmult)(d1,m,index.size(),&index.front(),1,threads);
+    (*pmult)(d1,m,indexsize,index,1,threads);
   }
 
   // Real-to-complex FFTs and postmultadd:

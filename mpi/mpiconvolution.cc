@@ -5,8 +5,7 @@ using namespace utils;
 namespace fftwpp {
 
 void ImplicitConvolution2MPI::convolve(Complex **F, multiplier *pmult,
-                                       std::vector<unsigned int>& index,
-                                       unsigned int offset)
+                                       unsigned int i, unsigned int offset)
 {
   for(unsigned int a=0; a < A; ++a) {
     Complex *f=F[a]+offset;
@@ -21,14 +20,14 @@ void ImplicitConvolution2MPI::convolve(Complex **F, multiplier *pmult,
   }
       
   T->wait();
-  subconvolution(F,pmult,index,0,d.x,d.Y,offset);
+  subconvolution(F,pmult,0,d.x,d.Y,offset);
   U->wait0();
   for(unsigned int b=0; b < B; ++b) {
     if(b > 0) T->wait();
     T->itranspose(F[b]+offset,true,false);
   }
   U->wait1();
-  subconvolution(U2,pmult,index,1,d.x,d.Y);
+  subconvolution(U2,pmult,1,d.x,d.Y);
   T->wait();
     
   for(unsigned int b=0; b < B; ++b) {
@@ -43,8 +42,7 @@ void ImplicitConvolution2MPI::convolve(Complex **F, multiplier *pmult,
 }
   
 void ImplicitHConvolution2MPI::convolve(Complex **F, realmultiplier *pmult,
-                                        bool symmetrize,
-                                        std::vector<unsigned int>&index,
+                                        bool symmetrize, unsigned int i,
                                         unsigned int offset)
 {
   if(d.y0 > 0) symmetrize=false;
@@ -70,14 +68,14 @@ void ImplicitHConvolution2MPI::convolve(Complex **F, realmultiplier *pmult,
   
       
   T->wait();
-  subconvolution(F,pmult,index,xfftpad->findex,d.x,d.Y,offset);
+  subconvolution(F,pmult,xfftpad->findex,d.x,d.Y,offset);
   U->wait0();
   for(unsigned int b=0; b < B; ++b) {
     if(b > 0) T->wait();
     T->itranspose(F[b]+offset,true,false);
   }
   U->wait1();
-  subconvolution(U2,pmult,index,xfftpad->uindex,du.x,du.Y);
+  subconvolution(U2,pmult,xfftpad->uindex,du.x,du.Y);
   T->wait();
     
   for(unsigned int b=0; b < B; ++b) {
@@ -94,8 +92,7 @@ void ImplicitHConvolution2MPI::convolve(Complex **F, realmultiplier *pmult,
 }
 
 void ImplicitConvolution3MPI::convolve(Complex **F, multiplier *pmult,
-                                       std::vector<unsigned int>& index,
-                                       unsigned int offset) 
+                                       unsigned int i, unsigned int offset) 
 {
   for(unsigned int a=0; a < A; ++a) {
     Complex *f=F[a]+offset;
@@ -116,7 +113,7 @@ void ImplicitConvolution3MPI::convolve(Complex **F, multiplier *pmult,
   unsigned int stride=d.Y*d.z;
     
   if(T) T->wait();
-  subconvolution(F,pmult,index,0,d.x,stride,offset);
+  subconvolution(F,pmult,0,d.x,stride,offset);
   if(U) {
     U->wait0();
     for(unsigned int b=0; b < B; ++b) {
@@ -125,7 +122,7 @@ void ImplicitConvolution3MPI::convolve(Complex **F, multiplier *pmult,
     }
     U->wait1();
   }
-  subconvolution(U3,pmult,index,1,d.x,stride);
+  subconvolution(U3,pmult,1,d.x,stride);
   if(T) T->wait();
     
   for(unsigned int b=0; b < B; ++b) {
@@ -245,8 +242,7 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
 }
 
 void ImplicitHConvolution3MPI::convolve(Complex **F, realmultiplier *pmult,
-                                        bool symmetrize,
-                                        std::vector<unsigned int>&index,
+                                        bool symmetrize, unsigned int i,
                                         unsigned int offset)
 {
   for(unsigned int a=0; a < A; ++a) {
@@ -273,7 +269,7 @@ void ImplicitHConvolution3MPI::convolve(Complex **F, realmultiplier *pmult,
   }
 
   if(T) T->wait();
-  subconvolution(F,pmult,index,xfftpad->findex,d.x,d.Y*d.z,offset);
+  subconvolution(F,pmult,xfftpad->findex,d.x,d.Y*d.z,offset);
   if(U) {
     U->wait0();
     for(unsigned int b=0; b < B; ++b) {
@@ -282,7 +278,7 @@ void ImplicitHConvolution3MPI::convolve(Complex **F, realmultiplier *pmult,
     }
     U->wait1();
   }
-  subconvolution(U3,pmult,index,xfftpad->uindex,du.x,du.Y*du.z);
+  subconvolution(U3,pmult,xfftpad->uindex,du.x,du.Y*du.z);
   if(T) T->wait();
     
   for(unsigned int b=0; b < B; ++b) {
