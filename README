@@ -8,9 +8,10 @@ FFTW++ is a C++ header class for Version 3 of the highly optimized FFTW
 interface for 1D, 2D, and 3D complex-to-complex, real-to-complex, and
 complex-to-real Fast Fourier Transforms and convolutions. It takes
 care of the technical aspects of memory allocation, alignment, planning,
-and wisdom. Wrappers for multiple 1D transforms are also provided. As with
-the FFTW3 library itself, both in-place and out-of-place transforms of
-arbitrary size are supported. 
+wisdom, and communication on both serial and parallel (OpenMP/MPI)
+architectures. Wrappers for multiple 1D transforms are also provided. As
+with the FFTW3 library itself, both in-place and out-of-place transforms of
+arbitrary size are supported.
 
 Implicit dealiasing of standard and centered Hermitian convolutions is
 also implemented; in 2D and 3D implicit zero-padding substantially
@@ -54,9 +55,9 @@ Hybrid OpenMP/MPI versions of the convolution routines in 2 and 3
 dimensions are available in the mpi/ directory.  Parallelization is
 accomplished using the adaptive hybrid OpenMP/MPI transpose routine
 described in "Adaptive Matrix Transpose Algorithms for Distributed
-Multicore Processors", J. C. Bowman and Malcolm Roberts,
+Multicore Processors", John C. Bowman and Malcolm Roberts,
 Interdisciplinary Topics in Applied Mathematics, Modeling and Computational
-Science, Springer Proceedings in Mathematics & Statistics</I> <B>117</B>,
+Science, Springer Proceedings in Mathematics & Statistics 117,
 97-103 (2015):
 
 http://www.math.ualberta.ca/~bowman/publications/transpose.pdf.

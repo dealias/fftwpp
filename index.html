@@ -27,10 +27,11 @@ Version 2.00 is now available for
 FFTW++ provides a simple
 interface for 1D, 2D, and 3D complex-to-complex, real-to-complex, and
 complex-to-real Fast Fourier Transforms that takes care of the technical
-aspects of memory allocation, alignment, planning, and wisdom. Wrappers for
-multiple 1D transforms are also provided. As with the FFTW3 library,
-in-place and out-of-place multithreaded transforms of arbitrary size are
-supported.
+aspects of memory allocation, alignment, planning, wisdom, and
+communication on both serial and parallel (OpenMP/MPI)
+architectures. Wrappers for multiple 1D transforms are also provided.
+As with the FFTW3 library, in-place and out-of-place multithreaded
+transforms of arbitrary size are supported.
 
 <P>
 Implicit dealiasing of standard and centered Hermitian convolutions is
@@ -39,7 +40,15 @@ reduces memory usage and computation time. See
 <a href="http://www.math.ualberta.ca/~bowman/publications/dealias.pdf">
 Efficient Dealiased Convolutions without Padding</a>
 by John C. Bowman and Malcolm Roberts, SIAM Journal on Scientific
-Computing, 33:1, 386-406 (2011):
+Computing, <B>33:1</B>, 386-406 (2011).
+<P>
+On distributed memory architectures, FFTW++ relies on the adaptive hybrid
+OpenMP/MPI transpose routine described in
+<a href="http://www.math.ualberta.ca/~bowman/publications/transpose.pdf">
+Adaptive Matrix Transpose Algorithms for Distributed Multicore Processors,</a>
+John C. Bowman and Malcolm Roberts, Interdisciplinary Topics in Applied
+Mathematics, Modeling and Computational Science, Springer Proceedings in
+Mathematics & Statistics</I> <B>117</B>, 97-103 (2015).
 
 <P>
 Convenient optional shift routines that place the Fourier origin in the logical
@@ -121,9 +130,6 @@ All source files in the FFTW++ project, unless explicitly noted otherwise,
 are released under version 3 (or later) of the GNU Lesser General Public
 License (see the files LICENSE.LESSER and LICENSE in the top-level source
 directory).
-<P>
-<STRONG>HOME: </STRONG><A HREF="http://www.math.ualberta.ca/~bowman/index.html">http://www.math.ualberta.ca/~bowman</A></TD>
-
 </BODY>
 </HTML>
 
