@@ -1,9 +1,9 @@
-        FFTW++: Fast Fourier Transform C++ Header Class for FFTW3 Library
+     FFTW++: Fast Fourier Transform C++ Header/MPI Transpose for FFTW3 Library
  
 Copyright (C) 2004-15 John C. Bowman and Malcolm Roberts, University of Alberta
                     http://fftwpp.sourceforge.net
 
-FFTW++ is a C++ header class for Version 3 of the highly optimized FFTW
+FFTW++ is a C++ header/MPI transpose for Version 3 of the highly optimized FFTW
 (http://www.fftw.org) Fourier Transform library. It provides a simple
 interface for 1D, 2D, and 3D complex-to-complex, real-to-complex, and
 complex-to-real Fast Fourier Transforms and convolutions. It takes
