@@ -10,47 +10,47 @@ import os
 import re # regexp package
 
 def max_m(p,RAM,runtype):
-    b=0
+    b = 0
     if p == "cconv":
-        b=min(int(floor(log(RAM/4)/log(2))),b)
-        b=min(b,20) # because we aren't crazy
+        b = int(floor(log(RAM / 4) / log(2)))
+        b = min(b, 20) # because we aren't crazy
     if p == "cconv2":
         if runtype == "implicit":
-            b=min(int(floor(0.5*log(RAM/64)/log(2))),b)
+            b = int(floor(0.5 * log(RAM / 64) / log(2)))
         else:
-            b=min(int(floor(log(RAM/16/2/2**2)/log(2)/2)),b)
+            b = int(floor(log(RAM / 16 / 2 / 2**2) / log(2) / 2))
     if p == "cconv3":
        if runtype == "implicit":
-           b=min(int(floor(log(RAM/96)/log(2)/3)),b)
+           b = int(floor(log(RAM / 96) / log(2) / 3))
        else:
-           b=min(int(floor(log(RAM/16/2**3)/log(2)/3)),b)
+           b = int(floor(log(RAM / 16 / 2**3) / log(2) / 3))
 
     if p == "tconv":
-        b=int(floor(log(RAM/6)/log(2)))
-        b=min(b,20) # because we aren't crazy
+        b = int(floor(log(RAM / 6) / log(2)))
+        b = min(b, 20) # because we aren't crazy
     if p == "tconv2":
         if runtype == "implicit":
-            b=int(floor(log(RAM/(8*12))/(2*log(2))))
+            b = int(floor(log(RAM / (8 * 12)) / (2 * log(2))))
         else:
-            b=int(floor(log(RAM/(8*6))/(2*log(2))))
+            b = int(floor(log(RAM / (8 * 6)) / (2 * log(2))))
 
     if p == "conv":
-        b=min(int(floor(log(RAM/6)/log(2))),b)
-        b=min(b,20) # because we aren't crazy
+        b = int(floor(log(RAM / 6) / log(2)))
+        b = min(b, 20) # because we aren't crazy
     if p == "conv2":
         if runtype == "implicit":
-            b=min(int(floor(0.5*log(RAM/96)/log(2))),b)
+            b = int(floor(0.5 * log(RAM / 96) / log(2)))
         else:
-            b=min(int(floor(log(RAM/8/3**2)/log(2)/2)),b)
+            b = int(floor(log(RAM / 8 / 3**2)/log(2) / 2))
     if p == "conv3":
-        b=min(int(floor(log(RAM/192)/log(2)/3)),b)
+        b = int(floor(log(RAM / 192) / log(2) / 3))
 
     if p == "fft1":
-        b=min(int(floor(0.5*log(RAM/64)/log(2))),b)
+        b = int(floor(0.5 * log(RAM / 64) / log(2)))
     if p == "mft1":
-        b=min(int(floor(0.5*log(RAM/64)/log(2))),b)
+        b = int(floor(0.5 * log(RAM / 64) / log(2)))
     if p == "ft2":
-        b=min(int(floor(0.5*log(RAM/64)/log(2))),b)
+        b = int(floor(0.5 * log(RAM / 64) / log(2)))
 
     return b
 
@@ -230,8 +230,9 @@ def main(argv):
         sys.exit(2)
 
     if RAM != 0:
-        b=max_m(p,RAM,runtype)
-
+        b = max_m(p, RAM, runtype)
+        print "max value of b with ram provided:", b
+        
     if out == "":
         if runtype == "implicit":
             outfile="implicit"

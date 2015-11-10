@@ -6,7 +6,7 @@ import sys, getopt
 import numpy as np
 from math import *
 import os
-
+from subprocess import * # for popen, running processes
 
 def main(argv):
     usage = '''
@@ -24,11 +24,11 @@ def main(argv):
     dryrun=False
     R=0
 
-    nthreads=0
-    r="implicit"
-    out=""
-    A=""
-    runtype=""
+    outdir = "timings"
+    nthreads = 0
+    #out = ""
+    A = []
+    runtype = "implicit"
 
     try:
         opts, args = getopt.getopt(argv,"dp:T:r:R:o:D:g:A:")
@@ -42,18 +42,19 @@ def main(argv):
             R=float(arg)
         elif opt in ("-d"):
             dryrun=True
-        elif opt in ("-o"):
-            out=str(arg)
         elif opt in ("-D"):
-            outdir=str(arg)
+            outdir = str(arg)
         elif opt in ("-g"):
-            rname=str(arg)
+            rname = str(arg)
         elif opt in ("-A"):
-            A+=str(arg)
+            A.append(str(arg))
         elif opt in ("-r"):
-            runtype=str(arg)
+            runtype = str(arg)
 
-    progs=[["cconv" , "conv", "tconv"], ["cconv2","conv2","tconv2"],["cconv3","conv3"]]
+    progs=[["cconv" , "conv", "tconv"], \
+           ["cconv2","conv2","tconv2"],\
+           ["cconv3","conv3"]]
+
     ab=[[6,20],[6,10],[2,6]] # problem size limits
     
     if runtype == "explicit":
@@ -61,38 +62,45 @@ def main(argv):
     if runtype == "pruned":
         progs = [["cconv2","conv2"],["cconv3"]]
         ab=[[6,10],[2,6]] # problem size limits
-    if out == "":
-        out="implicit"
-        if runtype == "explicit":
-            out="explicit"
-        if runtype == "pruned":
-            out="pruned"
-    print A
 
-    i=0
-    while(i<len(progs)):
-        a=ab[i][0]
-        b=ab[i][1]
-        cmd = "./timing.py"
-        if R == 0.0:
-            cmd += " -a " + str(a)+" -b "+str(b)
-        else:
-            cmd += " -R "+str(R)
-        if not nthreads == 0 :
-            cmd += " -T"+str(nthreads)
-        if out != "":
-            cmd += " -o "+out
-        if runtype != "":
-            cmd += " -r"+runtype
-        if runtype != "":
-            cmd += " -r"+runtype
-        if A != "":
-            cmd += " -A\" "+A +"\""
+    print "extra args:", A
+
+    i = 0
+    while(i < len(progs)):
+        a = ab[i][0]
+        b = ab[i][1]
         for p in progs[i]:
-            pcmd=cmd+" -p "+p
-            print(pcmd)
+            cmd = []
+            cmd.append("./timing.py")
+            cmd.append("-p" + p)
+            if R == 0.0:
+                cmd.append("-a" + str(a))
+                cmd.append("-b" + str(b))
+            else:
+                cmd.append("-R" + str(R))
+            if not nthreads == 0 :
+                cmd.append("-T" + str(nthreads))
+            if runtype != "":
+                cmd.append("-r" + runtype)
+            cmd.append("-D" + outdir)
+            cmd.append("-o" + p + "_" + runtype)
+            if A != "":
+                while i < len(A):
+                    cmd.append(A[i])
+                    i += 1
+            print cmd
             if not dryrun:
-                os.system(pcmd)
+                p=Popen(cmd)
+                p.wait() # sets the return code
+                prc=p.returncode
+            else:
+                print " ".join(cmd)
+    
+
+            # pcmd=cmd+" -p "+p
+            # print(pcmd)
+            # if not dryrun:
+            #     os.system(pcmd)
         i += 1 
             
 if __name__ == "__main__":
