@@ -60,7 +60,7 @@ Interdisciplinary Topics in Applied Mathematics, Modeling and Computational
 Science, Springer Proceedings in Mathematics & Statistics 117,
 97-103 (2015):
 
-http://www.math.ualberta.ca/~bowman/publications/transpose.pdf.
+http://www.math.ualberta.ca/~bowman/publications/transpose.pdf
 
 Either a 1D ("slab") and 2D ("pencil") data decomposition is used
 for the three-dimensional convolutions, depending on the number of processors. 

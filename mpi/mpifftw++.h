@@ -71,8 +71,8 @@ public:
     delete xForward;
   }
 
-  void iForward(Complex *in, Complex *out=NULL);
-  void ForwardWait(Complex *out)
+  virtual void iForward(Complex *in, Complex *out=NULL);
+  virtual void ForwardWait(Complex *out)
   {
     T->wait();
     xForward->fft(out);
@@ -82,8 +82,8 @@ public:
     ForwardWait(out);
   }
   
-  void iBackward(Complex *in, Complex *out=NULL);
-  void BackwardWait(Complex *out)
+  virtual void iBackward(Complex *in, Complex *out=NULL);
+  virtual void BackwardWait(Complex *out)
   {
     T->wait();
     yBackward->fft(out);
@@ -197,9 +197,9 @@ public:
       delete Txy;
   }
 
-  void iForward(Complex *in, Complex *out=NULL);
-  void ForwardWait0(Complex *out);
-  void ForwardWait1(Complex *out) {
+  virtual void iForward(Complex *in, Complex *out=NULL);
+  virtual void ForwardWait0(Complex *out);
+  virtual void ForwardWait1(Complex *out) {
     if(Txy) {
       Txy->wait();
       xForward->fft(out);
@@ -214,9 +214,9 @@ public:
     ForwardWait(out);
   }
   
-  void iBackward(Complex *in, Complex *out=NULL);
-  void BackwardWait0(Complex *out);
-  void BackwardWait1(Complex *out) {
+  virtual void iBackward(Complex *in, Complex *out=NULL);
+  virtual void BackwardWait0(Complex *out);
+  virtual void BackwardWait1(Complex *out) {
     if(Tyz) {
       Tyz->wait();
       zBackward->fft(out);
@@ -335,8 +335,8 @@ public:
   
   void Shift(double *out);
   
-  void iForward(double *in, Complex *out=NULL);
-  void ForwardWait(Complex *out) {
+  virtual void iForward(double *in, Complex *out=NULL);
+  virtual void ForwardWait(Complex *out) {
     T->wait();
     xForward->fft(out);
   };
@@ -349,8 +349,8 @@ public:
     Forward(in,out);
   }
   
-  void iBackward(Complex *in, double *out=NULL);
-  void BackwardWait(Complex *in, double *out=NULL) {
+  virtual void iBackward(Complex *in, double *out=NULL);
+  virtual void BackwardWait(Complex *in, double *out=NULL) {
     out=(double *) Setout(in,(Complex *) out);
     T->wait();
     yBackward->fft(in,out);
@@ -508,9 +508,9 @@ public:
   }
   
   void Shift(double *out);
-  void iForward(double *in, Complex *out=NULL);
-  void ForwardWait0(Complex *out);
-  void ForwardWait1(Complex *out) {
+  virtual void iForward(double *in, Complex *out=NULL);
+  virtual void ForwardWait0(Complex *out);
+  virtual void ForwardWait1(Complex *out) {
     if(Txy) {
       Txy->wait();
       xForward->fft(out);
@@ -529,9 +529,9 @@ public:
     Forward(in,out);
   }
   
-  void iBackward(Complex *in, double *out=NULL);
-  void BackwardWait0(Complex *in, double *out=NULL);
-  void BackwardWait1(Complex *in, double *out=NULL) {
+  virtual void iBackward(Complex *in, double *out=NULL);
+  virtual void BackwardWait0(Complex *in, double *out=NULL);
+  virtual void BackwardWait1(Complex *in, double *out=NULL) {
     if(Tyz) Tyz->wait();
     zBackward->fft(in,out);
   }
