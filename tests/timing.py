@@ -124,7 +124,7 @@ def main(argv):
     outdir=""
     outfile=""
     rname=""
-    N=100
+    N=0
 
 
     try:
