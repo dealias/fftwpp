@@ -14,11 +14,13 @@ def max_m(p,RAM,runtype):
     if p == "cconv":
         b = int(floor(log(RAM / 4) / log(2)))
         b = min(b, 20) # because we aren't crazy
+        
     if p == "cconv2":
         if runtype == "implicit":
             b = int(floor(0.5 * log(RAM / 64) / log(2)))
         else:
             b = int(floor(log(RAM / 16 / 2 / 2**2) / log(2) / 2))
+            
     if p == "cconv3":
        if runtype == "implicit":
            b = int(floor(log(RAM / 96) / log(2) / 3))
@@ -28,27 +30,32 @@ def max_m(p,RAM,runtype):
     if p == "tconv":
         b = int(floor(log(RAM / 6) / log(2)))
         b = min(b, 20) # because we aren't crazy
+
     if p == "tconv2":
         if runtype == "implicit":
-            b = int(floor(log(RAM / (8 * 12)) / (2 * log(2))))
+            b = int(floor(log(RAM / (2 * 12)) / (2 * log(2))))
         else:
-            b = int(floor(log(RAM / (8 * 6)) / (2 * log(2))))
+            b = int(floor(log(RAM / (2 * 24)) / (2 * log(2))))
 
     if p == "conv":
         b = int(floor(log(RAM / 6) / log(2)))
         b = min(b, 20) # because we aren't crazy
+        
     if p == "conv2":
         if runtype == "implicit":
             b = int(floor(0.5 * log(RAM / 96) / log(2)))
         else:
             b = int(floor(log(RAM / 8 / 3**2)/log(2) / 2))
+            
     if p == "conv3":
         b = int(floor(log(RAM / 192) / log(2) / 3))
 
     if p == "fft1":
         b = int(floor(0.5 * log(RAM / 64) / log(2)))
+        
     if p == "mft1":
         b = int(floor(0.5 * log(RAM / 64) / log(2)))
+        
     if p == "ft2":
         b = int(floor(0.5 * log(RAM / 64) / log(2)))
 
