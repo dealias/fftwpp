@@ -38,6 +38,7 @@ inline void init(Array2<Complex>& e, Array2<Complex>& f, Array2<Complex>& g,
     double efactor=1.0/S*factor;
     double ffactor=(1.0+S)*S*factor;
     double gfactor=1.0/(1.0+S)*factor;
+#pragma omp parallel for
     for(unsigned int i=0; i < stop; i++) {
       unsigned int I=s*stopoffset+i+offset;
       for(unsigned int j=0; j < my; j++) {

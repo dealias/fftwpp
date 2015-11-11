@@ -35,6 +35,7 @@ inline void init(Complex **F,
       double gfactor=1.0/S*factor;
       array3<Complex> f(nxp,nyp,nzp,F[s]);
       array3<Complex> g(nxp,nyp,nzp,F[M+s]);
+#pragma omp parallel for
       for(unsigned int i=0; i < mx; ++i) {
 	for(unsigned int j=0; j < my; j++) {
 	  for(unsigned int k=0; k < mz; k++) {

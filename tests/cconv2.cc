@@ -30,6 +30,7 @@ inline void init(Complex **F, unsigned int nxp, unsigned int nyp, unsigned int A
       double gfactor=1.0/S*factor;
       array2<Complex> f(nxp,nyp,F[s]);
       array2<Complex> g(nxp,nyp,F[M+s]);
+#pragma omp parallel for
       for(unsigned int i=0; i < mx; ++i) {
 	for(unsigned int j=0; j < my; j++) {
 	  f[i][j]=ffactor*Complex(i,j);

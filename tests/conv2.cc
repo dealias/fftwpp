@@ -56,6 +56,7 @@ inline void init(Complex **F,
           g[i][my]=0.0;
         }
       }
+#pragma omp parallel for
       for(unsigned int i=0; i < nx; ++i) {
 	unsigned int I=i+offset;
 	for(unsigned int j=0; j < my; j++) {
