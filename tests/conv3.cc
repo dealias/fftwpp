@@ -74,6 +74,7 @@ inline void init(Complex **F,
         }
       }
 
+#pragma omp parallel for
       for(unsigned int i=0; i < nx; ++i) {
 	unsigned int I=i+!xcompact;
 	for(unsigned int j=0; j < ny; ++j) {
