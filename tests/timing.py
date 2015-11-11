@@ -17,15 +17,19 @@ def max_m(p,RAM,runtype):
         
     if p == "cconv2":
         if runtype == "implicit":
-            b = int(floor(0.5 * log(RAM / 64) / log(2)))
+            # A * 2m^2 * 16
+            b = int(floor(log(RAM / 64) / ( 2 * log(2)) ))
         else:
-            b = int(floor(log(RAM / 16 / 2 / 2**2) / log(2) / 2))
+            # A * 4m^2 * 16
+            b = int(floor(log(RAM / 128) / (2 * log(2)) ))
             
     if p == "cconv3":
        if runtype == "implicit":
-           b = int(floor(log(RAM / 96) / log(2) / 3))
+           # A * 2m^3 * 16
+           b = int(floor(log(RAM / 64) / (3 * log(2)) ))
        else:
-           b = int(floor(log(RAM / 16 / 2**3) / log(2) / 3))
+           # A * 8m^3 * 16
+           b = int(floor(log(RAM / 256) / (3 * log(2)) ))
 
     if p == "tconv":
         b = int(floor(log(RAM / 6) / log(2)))
@@ -33,9 +37,11 @@ def max_m(p,RAM,runtype):
 
     if p == "tconv2":
         if runtype == "implicit":
-            b = int(floor(log(RAM / (2 * 12)) / (2 * log(2))))
+            # A * 12m^2 * 16
+            b = int(floor(log(RAM / 384) / (2 * log(2)) ))
         else:
-            b = int(floor(log(RAM / (2 * 24)) / (2 * log(2))))
+            # A * 24m^2 * 16
+            b = int(floor(log(RAM / 768) / (2 * log(2)) ))
 
     if p == "conv":
         b = int(floor(log(RAM / 6) / log(2)))
@@ -43,12 +49,15 @@ def max_m(p,RAM,runtype):
         
     if p == "conv2":
         if runtype == "implicit":
-            b = int(floor(0.5 * log(RAM / 96) / log(2)))
+            # A * 6 m^2 * 16
+            b = int(floor(log(RAM / 192) / (2 * log(2)) ))
         else:
-            b = int(floor(log(RAM / 8 / 3**2)/log(2) / 2))
+            # A * 9 m^2 * 16
+            b = int(floor(log(RAM / 288) / (2 * log(2)) ))
             
     if p == "conv3":
-        b = int(floor(log(RAM / 192) / log(2) / 3))
+        # A * 12 m^3 * 16
+        b = int(floor(log(RAM / 384) / (3 * log(2)) ))
 
     if p == "fft1":
         b = int(floor(0.5 * log(RAM / 64) / log(2)))
