@@ -29,6 +29,7 @@ namespace fftwpp {
 // fft.ForwardWait(f);
 
 class fft2dMPI : public fftw {
+protected:
   utils::split d;
   mfft1d *xForward,*xBackward;
   mfft1d *yForward,*yBackward;
@@ -123,6 +124,7 @@ public:
 // fft.ForwardWait1(f);
 
 class fft3dMPI : public fftw {
+protected:
   utils::split3 d;
   mfft1d *xForward,*xBackward;
   mfft1d *yForward,*yBackward;
@@ -270,6 +272,7 @@ public:
 // fft.ForwardWait(f);
 
 class rcfft2dMPI : public fftw {
+protected:
   utils::split dr,dc; // real and complex MPI dimensions.
   mfft1d *xForward,*xBackward;
   mrcfft1d *yForward;
@@ -403,6 +406,7 @@ public:
 // fft.ForwardWait1(g);
 //
 class rcfft3dMPI : public fftw {
+protected:
   utils::split3 dr,dc; // real and complex MPI dimensions
   mfft1d *xForward,*xBackward;
   mfft1d *yForward,*yBackward;

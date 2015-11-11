@@ -1,5 +1,3 @@
-Make ForwardWait1 and iBackward virtual, etc.
-
 Possible future enhancements:
 consider FFTW_DESTROY_INPUT 
 Add shift=true option to 2D & 3D Hermitian convolutions via compact,shift
