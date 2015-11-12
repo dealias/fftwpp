@@ -10,6 +10,7 @@ import os
 import re # regexp package
 
 def max_m(p,RAM,runtype):
+    print "runtype:", runtype
     b = 0
     if p == "cconv":
         b = int(floor(log(RAM / 4) / log(2)))
@@ -26,10 +27,10 @@ def max_m(p,RAM,runtype):
     if p == "cconv3":
        if runtype == "implicit":
            # A * 2m^3 * 16
-           b = int(floor(log(RAM / 64) / (3 * log(2)) ))
+           b = int(floor( log(RAM / 64) / (3 * log(2)) ))
        else:
            # A * 8m^3 * 16
-           b = int(floor(log(RAM / 256) / (3 * log(2)) ))
+           b = int(floor( log(RAM / 256) / (3 * log(2)) ))
 
     if p == "tconv":
         b = int(floor(log(RAM / 6) / log(2)))
@@ -37,11 +38,11 @@ def max_m(p,RAM,runtype):
 
     if p == "tconv2":
         if runtype == "implicit":
-            # A * 12m^2 * 16
-            b = int(floor(log(RAM / 384) / (2 * log(2)) ))
+            # A * 6m^2 * 16
+            b = int(floor( log(RAM / 192) / (2 * log(2)) ))
         else:
-            # A * 24m^2 * 16
-            b = int(floor(log(RAM / 768) / (2 * log(2)) ))
+            # A * 12m^2 * 16
+            b = int(floor( log(RAM / 768) / (2 * log(2)) ))
 
     if p == "conv":
         b = int(floor(log(RAM / 6) / log(2)))
@@ -49,15 +50,15 @@ def max_m(p,RAM,runtype):
         
     if p == "conv2":
         if runtype == "implicit":
-            # A * 6 m^2 * 16
-            b = int(floor(log(RAM / 192) / (2 * log(2)) ))
+            # A * 3 m^2 * 16
+            b = int(floor(log(RAM / 96) / (2 * log(2)) ))
         else:
-            # A * 9 m^2 * 16
-            b = int(floor(log(RAM / 288) / (2 * log(2)) ))
+            # A * 4.5 m^2 * 16
+            b = int(floor(log(RAM / 144) / (2 * log(2)) ))
             
     if p == "conv3":
-        # A * 12 m^3 * 16
-        b = int(floor(log(RAM / 384) / (3 * log(2)) ))
+        # A * 6 m^3 * 16
+        b = int(floor(log(RAM / 192) / (3 * log(2)) ))
 
     if p == "fft1":
         b = int(floor(0.5 * log(RAM / 64) / log(2)))
