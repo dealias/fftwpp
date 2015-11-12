@@ -324,6 +324,14 @@ if(gtype == "scaling") {
   real[][] ym;
   real[][] x;
 
+  real[] procs = new real[nn];
+  for(int c=0; c < procs.length; ++c) {
+    procs[c] = getint("ncores" + string(c) );
+
+    // This isn't dealt with by history properly.
+    //procs[c] = getint("cores in " + runnames[c] );
+  }
+  
   for(int c=0; c < thems.length; ++c) {
     real m=thems[c];
     y[c]=new real[];
@@ -365,36 +373,37 @@ if(gtype == "scaling") {
     }
   }
   
-  //draw(graph(x[c],2^(x[c]-x[c][0])),black+dashed);
-
   bool linleg=true;
   for(int c=0; c < y.length; ++c) {
     marker mark1=marker(scale(0.6mm)*polygon(3+c),Draw(linePen(c)+solid));
-    draw(graph(x[c],s[c]),linePen(c),Label("$"+(string) thems[c]+"^"+(string)d+"$"),mark1);
+    draw(graph(procs,s[c]),linePen(c),
+	 Label("$"+(string) thems[c]+"^"+(string)d+"$"),mark1);
     if(drawlin[c]) {
       if(linleg) {
-	draw(graph(x[c],2^(x[c]-x[c][0])),black+dashed);
+	draw(graph(procs,procs), black+dashed);
 	linleg=false;
       } else {
-	draw(graph(x[c],2^(x[c]-x[c][0])),black+dashed);      }
+	draw(graph(x[c],2^(x[c]-x[c][0])),black+dashed);
+      }
     }
   }
   
   yaxis("speedup",LeftRight,RightTicks);
 
-  if(myleg)
+  if(myleg) {
     xaxis("Number of cores",BottomTop,LeftTicks(new string(real x) {
 	  return legends[round(x)];}));
-  else {
+  } else {
+
+    /*
     xaxis("Number of cores",
 	  BottomTop,LeftTicks(new string(real x) {
 	      return texify(runnames[round(x)]);
 	    })
 	  );
-
-    //frame label;
-    //label(label,rotate(angle)*TeXify(runnames),(0,0),N);
-    //xaxis(BottomTop);
+    */
+    
+    xaxis("Number of cores", BottomTop, RightTicks(procs) );
   }
     
   label("Strong scaling: "+name,point(N),3N);
