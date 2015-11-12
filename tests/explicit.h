@@ -84,10 +84,10 @@ public:
                        Complex *f, bool prune=false) :
     nx(nx), ny(ny), mx(mx), my(my), prune(prune) {
     if(prune) {
-      xBackwards=new mfft1d(nx,1,my,ny,1,f);
-      yBackwards=new mfft1d(ny,1,nx,1,ny,f);
-      yForwards=new mfft1d(ny,-1,nx,1,ny,f);
-      xForwards=new mfft1d(nx,-1,my,ny,1,f);
+      xBackwards=new mfft1d(nx,1,my,ny,1,f,f);
+      yBackwards=new mfft1d(ny,1,nx,1,ny,f,f);
+      yForwards=new mfft1d(ny,-1,nx,1,ny,f,f);
+      xForwards=new mfft1d(nx,-1,my,ny,1,f,f);
       threads=xForwards->Threads();
     } else {
       Backwards=new fft2d(nx,ny,1,f);
@@ -151,14 +151,10 @@ public:
       xForwards=new mfft1d(nx,-1,My,nyp,1,f);
 
       {
-	ptrdiff_t cstride=1;
-	ptrdiff_t rstride=1;
 	ptrdiff_t cdist=nx/2+1;
 	ptrdiff_t rdist=2*cdist; // in-place transform
-	unsigned int M=nx;
-	unsigned int n=ny;
-	yForwards=new mrcfft1d(n,M,rstride,cstride,rdist,cdist,(double*) f);
-	yBackwards=new mcrfft1d(n,M,rstride,cstride,rdist,cdist,f);
+	yForwards=new mrcfft1d(ny,nx,1,1,rdist,cdist,(double*) f);
+	yBackwards=new mcrfft1d(ny,nx,1,1,cdist,rdist,f);
       }
       
     } else {
@@ -312,14 +308,10 @@ public:
       xBackwards=new mfft1d(nx,1,My,nyp,1,f);
       xForwards=new mfft1d(nx,-1,My,nyp,1,f);
       {
-	unsigned int n=ny;
-	ptrdiff_t cstride=1;
-	ptrdiff_t rstride=1;
 	ptrdiff_t cdist=nx/2+1;
 	ptrdiff_t rdist=2*cdist; // in-place transform
-	unsigned int M=nx;
-	yForwards=new mrcfft1d(n,M,rstride,cstride,rdist,cdist,(double*) f);
-	yBackwards=new mcrfft1d(n,M,cstride,rstride,cdist,rdist,f);
+	yForwards=new mrcfft1d(ny,nx,1,1,rdist,cdist,(double*) f);
+	yBackwards=new mcrfft1d(ny,nx,1,1,cdist,rdist,f);
       }
 
       threads=xForwards->Threads();
