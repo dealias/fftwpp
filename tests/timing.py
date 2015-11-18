@@ -305,11 +305,13 @@ def main(argv):
             
         if(runtype == "implicit"):
             cmd.append("-i")
-            if (p == "conv2" or p == "conv3"):
+            if (p == "conv2"):
+                cmd += ["-X1"]
+                cmd += ["-Y0"]
+            if (p == "conv3"):
                 cmd += ["-X1"]
                 cmd += ["-Y1"]
-                if(p == "conv3"):
-                    cmd += ["-Z1"]
+                cmd += ["-Z0"]
         
         if(N > 0):
             cmd.append("-N" + str(N))
