@@ -211,8 +211,8 @@ if(gtype == "time" || gtype == "mflops") {
     if(gtype=="mflops") {
       if(true || floor(ymax) <= ceil(ymin)) {
 	//if(ymax-ymin > 1) {
-	yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ns)${}^{-1}$",LeftRight,
-	      RightTicks);
+	yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ns)${}^{-1}$",
+	      LeftRight, RightTicks);
       } else {
 	// write the yticks as 10^{...} equally divided in log-space.
 	
@@ -234,7 +234,8 @@ if(gtype == "time" || gtype == "mflops") {
 	//write(yticks);
 	//yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ns)${}^{-1}$",LeftRight,
 	//    RightTicks(new string(real x) {return base10(log10(x));},yticks));
-	yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ns)${}^{-1}$",LeftRight,
+	yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ns)${}^{-1}$",
+	      LeftRight,
 	      RightTicks(defaultformat,yticks));
       }
       
@@ -305,7 +306,7 @@ if(gtype == "speedup") {
 
 if(gtype == "scaling") {
  
-  // find all values of problem size
+  // Find all values of problem size
   real[] thems;
   bool found=false;
   for(int a=0; a < mi.length; ++a) {
@@ -320,101 +321,64 @@ if(gtype == "scaling") {
 	thems.push(m);
     }
   }
-  real[][] y;
-  real[][] ym;
-  real[][] x;
-
+  
+  // Get the number of cores for each file.
   real[] procs = new real[nn];
   for(int c=0; c < procs.length; ++c) {
     procs[c] = getint("ncores" + string(c) );
 
-    // This isn't dealt with by history properly.
+    // This isn't dealt with by history properly:
     //procs[c] = getint("cores in " + runnames[c] );
   }
-  
-  for(int c=0; c < thems.length; ++c) {
-    real m=thems[c];
-    y[c]=new real[];
-    x[c]=new real[];
-    ym[c]=new real[];
-    for(int a=0; a < mi.length; ++a) {
-      for(int b=0; b < mi[a].length; ++b) {
+
+  // Collect the runtimes for each value of m:  
+  real[][] times; 
+  for(int c = 0; c < thems.length; ++c) {
+    real m = thems[c];
+    times[c] = new real[];
+    for(int a = 0; a < mi.length; ++a) {
+      for(int b = 0; b < mi[a].length; ++b) {
 	if(m == mi[a][b]) {
-	  x[c].push(a);
-	  y[c].push(i[a][b]);
-	  ym[c].push(m);
+	  times[c].push(i[a][b]);
 	}
       }
     }
   }
-  
-  real[][] s;
-  for(int c=0; c < y.length; ++c) {
-    s[c]=new real[];
-    for(int d=0; d < y[c].length; ++d) {
-      s[c].push((y[c][0]/y[c][d]));
+
+  // Compute the speedup relative to the first data point:
+  real[][] speedup;
+  for(int c = 0; c < times.length; ++c) {
+    speedup[c] = new real[];
+    for(int d=0; d < times[c].length; ++d) {
+      speedup[c].push((times[c][0] / times[c][d]));
     }
   }
-  
-  bool[] drawlin=new bool[x.length];
-  for(int a=0; a < x.length; ++a) {
-    drawlin[a]=true;
-  }
-  for(int a=0; a < x.length; ++a) {
-    for(int b=0; b < a; ++b) {
-      if(x[a][0] == x[b][0]) {
-	if(x[a].length < x[b].length) {
-	  drawlin[a]=false;
-	} else {
-	  drawlin[b]=false;
-	  drawlin[a]=true;
-	}
-      }
-    }
+
+  // The ideal case:
+  draw(graph(procs, procs), black+dashed);
+
+  // The actual data:
+  for(int c = 0; c < thems.length; ++c) {
+    marker mark1 = marker(scale(0.6mm) * polygon(3 + c),
+			  Draw(linePen(c) + solid));
+    draw(graph(procs, speedup[c]), linePen(c),
+	 Label("$" + (string) thems[c] + "^" + (string)d + "$"), mark1);
   }
   
-  bool linleg=true;
-  for(int c=0; c < y.length; ++c) {
-    marker mark1=marker(scale(0.6mm)*polygon(3+c),Draw(linePen(c)+solid));
-    draw(graph(procs,s[c]),linePen(c),
-	 Label("$"+(string) thems[c]+"^"+(string)d+"$"),mark1);
-    if(drawlin[c]) {
-      if(linleg) {
-	draw(graph(procs,procs), black+dashed);
-	linleg=false;
-      } else {
-	draw(graph(x[c],2^(x[c]-x[c][0])),black+dashed);
-      }
-    }
-  }
-  
-  yaxis("speedup",LeftRight,RightTicks);
+  yaxis("speedup", LeftRight, RightTicks);
 
   if(myleg) {
     xaxis("Number of cores",BottomTop,LeftTicks(new string(real x) {
 	  return legends[round(x)];}));
   } else {
-
-    /*
-    xaxis("Number of cores",
-	  BottomTop,LeftTicks(new string(real x) {
-	      return texify(runnames[round(x)]);
-	    })
-	  );
-    */
-    
     xaxis("Number of cores", BottomTop, RightTicks(procs) );
   }
     
   label("Strong scaling: "+name,point(N),3N);
 
   yequals(1,grey);
-  
 }
-
-
 
 legendlinelength=0.6cm;
 legendmargin=5;
-
 attach(legend(),point(E),10E);
