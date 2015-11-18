@@ -42,7 +42,10 @@ if(gtype == "mflops") {
   scale(Log,Linear);
   size(300,400,IgnoreAspect);
 }
-
+if(gtype == "scaling") {
+  //scale(Linear,Linear);
+  scale(Log,Log);
+}
 
 real[][] mi,i,li,hi;
 string[] runnames;
@@ -323,23 +326,26 @@ if(gtype == "scaling") {
   }
   
   // Get the number of cores for each file.
-  real[] procs = new real[nn];
-  for(int c=0; c < procs.length; ++c) {
-    procs[c] = getint("ncores" + string(c) );
+  real[] allprocs = new real[nn];
+  for(int c=0; c < allprocs.length; ++c) {
+    allprocs[c] = getint("ncores" + string(c) );
 
     // This isn't dealt with by history properly:
-    //procs[c] = getint("cores in " + runnames[c] );
+    //allprocs[c] = getint("cores in " + runnames[c] );
   }
 
-  // Collect the runtimes for each value of m:  
-  real[][] times; 
+  // Collect the runtime for each value of m:
+  real[][] runtime;
+  real[][] procs;
   for(int c = 0; c < thems.length; ++c) {
     real m = thems[c];
-    times[c] = new real[];
+    runtime[c] = new real[];
+    procs[c] = new real[];
     for(int a = 0; a < mi.length; ++a) {
       for(int b = 0; b < mi[a].length; ++b) {
 	if(m == mi[a][b]) {
-	  times[c].push(i[a][b]);
+	  runtime[c].push(i[a][b]);
+	  procs[c].push(allprocs[a]);
 	}
       }
     }
@@ -347,31 +353,87 @@ if(gtype == "scaling") {
 
   // Compute the speedup relative to the first data point:
   real[][] speedup;
-  for(int c = 0; c < times.length; ++c) {
+  for(int c = 0; c < runtime.length; ++c) {
     speedup[c] = new real[];
-    for(int d=0; d < times[c].length; ++d) {
-      speedup[c].push((times[c][0] / times[c][d]));
+    for(int d=0; d < runtime[c].length; ++d) {
+      speedup[c].push((runtime[c][0] / runtime[c][d]));
     }
   }
-
-  // The ideal case:
-  draw(graph(procs, procs), black+dashed);
-
-  // The actual data:
+  
+  // Plot the actual data:
   for(int c = 0; c < thems.length; ++c) {
     marker mark1 = marker(scale(0.6mm) * polygon(3 + c),
 			  Draw(linePen(c) + solid));
-    draw(graph(procs, speedup[c]), linePen(c),
+    draw(graph(procs[c], speedup[c]), linePen(c),
 	 Label("$" + (string) thems[c] + "^" + (string)d + "$"), mark1);
   }
-  
-  yaxis("speedup", LeftRight, RightTicks);
 
+  // Plot the ideal cases:
+  {
+    // Find the unique starting points for the scaling cases
+    real[][] procstarts;
+    procstarts[0] = new real[];
+    procstarts[0].push(allprocs[0]);
+    for(int c = 1; c < procs.length; ++c) {
+      bool found = false;
+      real p = procs[c][0];
+      for(int i = 0; i < procstarts.length; ++i) {
+	if(procstarts[i][0] == p)
+	  found = true;
+      }
+      if(!found) {
+	procstarts.push(new real[]);
+	procstarts[procstarts.length - 1][0] = p;
+      }
+    }
+
+    // For each unique starting point, find all scaling cases which start there
+    for(int c = 0; c < procs.length; ++c) {
+      for(int d = 0; d < procstarts.length; ++d) {
+	if(procs[c][0] == procstarts[d][0]) {
+	  for(int i = 1; i < procs[c].length; ++i) {
+	    real p = procs[c][i];
+	    bool found = false;
+	    for(int j = 1; j < procstarts[d].length; ++j) {
+	      real pp = procstarts[d][j];
+	      if(p == pp)
+		found = true;
+	    }
+	    if(!found) {
+	      procstarts[d].push(p);
+	    }
+	  }
+	}
+      }
+    }
+    //write(procstarts);
+
+    // Plot the perfect scaling for each unique starting point.
+    for(int c = 0; c < procstarts.length; ++c) {
+      real[] procsup;
+      procsup.push(1.0);
+      for(int i = 1; i < procstarts[c].length; ++i) {
+	procsup.push(procstarts[c][i] / procstarts[c][0]);
+      }
+      draw(graph(procstarts[c], procsup), black+dashed);
+    }
+  }
+
+  // y-axis points:
+  real[] procsup;
+  procsup.push(1.0);
+  for(int i = 1; i < allprocs.length; ++i) {
+    procsup.push(allprocs[i] / allprocs[0]);
+  }
+  //yaxis("speedup", LeftRight, RightTicks);
+  yaxis("Speedup", LeftRight, LeftTicks(DefaultFormat, procsup));
+  
   if(myleg) {
-    xaxis("Number of cores",BottomTop,LeftTicks(new string(real x) {
-	  return legends[round(x)];}));
+    xaxis("Number of cores", BottomTop,
+	  LeftTicks(new string(real x) {return legends[round(x)];}));
   } else {
-    xaxis("Number of cores", BottomTop, RightTicks(procs) );
+    xaxis("Number of cores", BottomTop, LeftTicks(DefaultFormat, allprocs));
+    //xaxis("Number of cores", BottomTop, RightTicks(procs) );
   }
     
   label("Strong scaling: "+name,point(N),3N);
