@@ -325,7 +325,11 @@ def main(argv):
             i += 1
             
         print cmd
-
+        if not dryrun:
+            with open(outdir + "/" + outfile, "a") as myfile:
+                myfile.write("# " + " ".join(cmd) + "\n")
+        
+        
         for i in range(a, b + 1):
             if not hermitian or runtype == "implicit": 
                 m = str(int(pow(2, i)))
