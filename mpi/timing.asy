@@ -66,9 +66,7 @@ if(sscale != "") {
   if(sscale == "linlin") scale(Linear,Linear);
 }
 
-
-string Nm=useN?"N":"m";
-
+string Nm = useN ? "N" : "m";
 
 bool myleg=((runlegs== "") ? false: true);
 bool flag=true;
@@ -83,7 +81,6 @@ if(myleg) {
     if(lastpos == -1) {runleg=""; flag=false;}
     
     runleg=substr(runlegs,lastpos,pos-lastpos);
-
 
     lastpos=pos > 0 ? pos+1 : -1;
     if(flag) legends.push(runleg);
@@ -104,7 +101,22 @@ if(name == "cconv3") {
 if(name == "conv3")
   expl=false;
 
-real d=getreal("dimension of FFT involved",1);
+real d;
+bool dknown = false;
+if(name == "cconv" || name == "conv" || name == "tconv") {
+  d = 1;
+  dknown = true;
+}
+if(name == "cconv2" || name == "conv2" || name == "tconv2") {
+  d = 2;
+  dknown = true;
+}
+if(name == "cconv3" || name == "conv3") {
+  d = 3;
+  dknown = true;
+}
+if(!dknown)
+  d=getreal("dimension of FFT involved",1);
 
 real ymin=infinity, ymax=-infinity;
 
