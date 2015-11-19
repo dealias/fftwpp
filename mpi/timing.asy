@@ -14,6 +14,9 @@ include graph;
 // asy timings.asy -u"sscale=\"loglog\""
 // forces the scale to be log-log.
 
+// asy timings.asy -u"sscale=\"minm=<float>\""
+// plots only data with problem size at least minm.
+
 // Note that the scaling figures assumes subsequent test double the
 // number of cores.
 
@@ -50,6 +53,7 @@ if(gtype == "scaling") {
 real[][] mi,i,li,hi;
 string[] runnames;
 
+real minm=0;
 string name;
 string runs;
 string runlegs;
@@ -184,11 +188,7 @@ pen linePen(int p) {
   return Pentype(p);
 }
 
-string base10(real x) {
-  return "$10^{"+string(x)+"}$";
-}
-// keep track of y bounds
-
+string base10(real x) {return "$10^{" + string(x) + "}$";}
 
 if(gtype == "time" || gtype == "mflops") {
   for(int p=0; p < nn; ++p) {
@@ -200,24 +200,22 @@ if(gtype == "time" || gtype == "mflops") {
     hi[p] /= f(mi[p]);
     li[p] /= f(mi[p]);
 
-
     for(int q=0; q < i[p].length; ++q) {
       real ii=i[p][q];
       ymin=min(ymin,ii);
       ymax=max(ymax,ii);
     }
 
-    if(drawerrorbars && gtype == "time")
-      errorbars(mi[p],i[p],0*mi[p],hi[p],0*mi[p],li[p],barPen(p));
-    guide the_graph=graph(mi[p],i[p]);
-    
-    { // get the min and max
-      //path p=the_graph;
-      //if(min(p).y > ymin) ymin=min(p).y;
-      //if(max(p).y < ymax) ymax=max(p).y;
+    bool[] drawme = i[p] > 0;
+    for(int i = 0; i < drawme.length; ++i) {
+      drawme[i] = drawme[i] &&  mi[p][i] >= minm;
     }
-      
-    draw(the_graph,linePen(p),
+    
+    if(drawerrorbars && gtype == "time") {
+      errorbars(mi[p],i[p],0*mi[p],hi[p],0*mi[p],li[p],drawme,barPen(p));
+    }
+    
+    draw(graph(mi[p],i[p],drawme),linePen(p),
     	 Label(myleg ? legends[p] : texify(runnames[p]),Lp+linePen(p)),mark1);
   }
 
@@ -285,39 +283,40 @@ if(gtype == "speedup") {
     
     int basep=p - (p % runples);
     if(plotme) {
-
       // find the matching problem sizes
-      for(int b=0; b < mi[p].length; ++b) {
+      for(int b = 0; b < mi[p].length; ++b) {
 	bool found=false;
-	for(int a=0; a < mi[basep].length; ++a) {
+	for(int a = 0; a < mi[basep].length; ++a) {
 	  if(mi[basep][a] == mi[p][b]) {
 	    // if we have a matching problem size, determine the speedup
-	    i[p][b] = i[basep][a]/i[p][b];
+	    i[p][b] = i[basep][a] / i[p][b];
 	    found=true;
 	  }
 	}
 	if(!found)
-	  i[p][b]=0.0;
+	  i[p][b] = 0.0;
       }
 
-      marker mark1=marker(scale(0.6mm)*polygon(3+gnum),
+      marker mark1 = marker(scale(0.6mm)*polygon(3+gnum),
 			  Draw(linePen(gnum)+solid));
-      draw(graph(mi[p],i[p],i[p] > 0),Pentype(gnum)+linePen(gnum),
+
+      bool[] drawme = i[p] > 0;
+      for(int i = 0; i < drawme.length; ++i) {
+	drawme[i] = drawme[i] &&  mi[p][i] >= minm;
+      }
+
+      draw(graph(mi[p], i[p], drawme),
+	   Pentype(gnum) + linePen(gnum),
 	   Label(myleg ? legends[gnum] :
-		 texify(runnames[p])+" vs "+texify(compname),
-		 linePen(gnum)+Lp),mark1);
+		 texify(runnames[p]) + " vs " + texify(compname),
+		 linePen(gnum) + Lp), mark1);
     }
     
   }
   
-  xaxis("$"+Nm+"$",BottomTop,LeftTicks);
-
+  xaxis("$" + Nm + "$", BottomTop, LeftTicks);
   yaxis("relative speed",LeftRight,RightTicks);
-
-  //  label(name+": speedup relative to ",point(N),7N);
-  //  label(runnames[0],point(N),3N);
 }
-
 
 if(gtype == "scaling") {
  
