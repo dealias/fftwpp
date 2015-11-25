@@ -4,6 +4,9 @@
 #include <math.h>
 #include <algorithm> // For std::sort
 
+#include <iostream>
+#include <fstream>
+
 /*
 inline double emptytime(double *T, unsigned int N)
 {
@@ -18,21 +21,20 @@ inline double emptytime(double *T, unsigned int N)
 }
 */
 
-enum timing_algorithm {MEAN, MIN, MAX, MEDIAN, P90, P80, P50};
+enum timing_algorithm {WRITETOFILE = -1, MEAN, MIN, MAX, MEDIAN, P90, P80, P50};
 
 inline double mean(double *T, unsigned int N, int algorithm) 
 {
   switch(algorithm) {
-  case MEAN: 
-    {
+    case WRITETOFILE: 
+    case MEAN: {
       double sum=0.0;
       for(unsigned int i=0; i < N; ++i)
 	sum += T[i];
       return sum/N;
+      break;
     }
-    break;
-  case MIN:
-    {
+    case MIN: {
       double min=T[0];
       for(unsigned int i=0; i < N; ++i) {
 	if(T[i] < min)
@@ -41,9 +43,7 @@ inline double mean(double *T, unsigned int N, int algorithm)
       return min;
       break;
     }
-    break;
-  case MAX:
-    {
+    case MAX: {
       double max=T[0];
       for(unsigned int i=0; i < N; ++i) {
 	if(T[i] > max)
@@ -52,16 +52,12 @@ inline double mean(double *T, unsigned int N, int algorithm)
       return max;
       break;
     }
-    break;
-  case MEDIAN:
-    {
+    case MEDIAN: {
       std::sort(T,T+N);
       return T[(int)ceil(N*0.5)];
+      break;
     }
-    break;
-
-  case P90:
-    {
+    case P90: {
       std::sort(T,T+N);
       unsigned int start=(int)ceil(N*0.05);
       unsigned int stop=(int)floor(N*0.95);
@@ -70,10 +66,9 @@ inline double mean(double *T, unsigned int N, int algorithm)
       for(unsigned int i=start; i < stop; ++i)
 	sum += T[i];
       return sum/(stop-start);
+      break;
     }
-    break;
-  case P80:
-    {
+    case P80: {
       std::sort(T,T+N);
       unsigned int start=(int)ceil(N*0.1);
       unsigned int stop=(int)floor(N*0.9);
@@ -82,10 +77,9 @@ inline double mean(double *T, unsigned int N, int algorithm)
       for(unsigned int i=start; i < stop; ++i)
 	sum += T[i];
       return sum/(stop-start);
+      break;
     }
-    break;
-  case P50:
-    {
+    case P50: {
       std::sort(T,T+N);
       unsigned int start=(int)ceil(N*0.25);
       unsigned int stop=(int)floor(N*0.75);
@@ -94,8 +88,8 @@ inline double mean(double *T, unsigned int N, int algorithm)
       for(unsigned int i=start; i < stop; ++i)
 	sum += T[i];
       return sum/(stop-start);
+      break;
     }
-    break;
   default:
     std::cout << "Error: invalid algorithm choice: " 
 	      << algorithm
@@ -110,8 +104,8 @@ inline void stdev(double *T, unsigned int N, double mean,
 		  int algorithm) 
 {
   switch(algorithm) {
-  case MEAN:
-    {
+    case WRITETOFILE: 
+    case MEAN:  {
       sigmaL=0.0, sigmaH=0.0;
       for(unsigned int i=0; i < N; ++i) {
 	double v=T[i]-mean;
@@ -124,51 +118,48 @@ inline void stdev(double *T, unsigned int N, double mean,
       sigmaL=sqrt(sigmaL*factor);
       sigmaH=sqrt(sigmaH*factor);
     }
-    break;
-  case MIN:
-    sigmaL=0.0;
-    sigmaH=0.0;
-    break;
-  case MAX:
-    sigmaL=0.0;
-    sigmaH=0.0;
-    break;
-  case MEDIAN:
-    {
-      // Return 68% confidence intervals
-      sigmaL=mean-T[(int)ceil(N*(0.19))];
-      sigmaH=T[(int)ceil(N*0.81)]-mean;
-    }
-    break;
-  case P90:
-    {
+      break;
+    case MIN:
+      sigmaL=0.0;
+      sigmaH=0.0;
+      break;
+    case MAX:
+      sigmaL=0.0;
+      sigmaH=0.0;
+      break;
+    case MEDIAN:
+      {
+	// Return 68% confidence intervals
+	sigmaL=mean-T[(int)ceil(N*(0.19))];
+	sigmaH=T[(int)ceil(N*0.81)]-mean;
+      }
+      break;
+    case P90:  {
       unsigned int start=(int)ceil(N*0.5);
       unsigned int stop=(int)floor(N*0.95);
       sigmaL=mean-T[start];
       sigmaH=T[stop]-mean;
     }
-    break;
-  case P80:
-    {
+      break;
+    case P80: {
       unsigned int start=(int)ceil(N*0.1);
       unsigned int stop=(int)floor(N*0.9);
       sigmaL=mean-T[start];
       sigmaH=T[stop]-mean;
     }
-    break;
-  case P50:
-    {
+      break;
+    case P50: {
       unsigned int start=(int)ceil(N*0.25);
       unsigned int stop=(int)floor(N*0.75);
       sigmaL=mean-T[start];
       sigmaH=T[stop]-mean;
     }
-    break;
-  default:
-    std::cout << "Error: invalid algorithm choice: " 
-	      << algorithm
-	      << std::endl;
-    exit(1);
+      break;
+    default:
+      std::cout << "Error: invalid algorithm choice: " 
+		<< algorithm
+		<< std::endl;
+      exit(1);
   }
 }
 
@@ -189,6 +180,15 @@ inline void timings(const char* text, unsigned int m, double *T,
 		    unsigned int N, int algorithm=MEAN)
 {
   double sigmaL=0.0, sigmaH=0.0;
+  if(algorithm == WRITETOFILE) {
+    std::ofstream myfile;
+    myfile.open ("timing.dat", std::fstream::app);
+    myfile << m << "\t";
+    for(unsigned int i=0;  i<N; ++i)
+      myfile << T[i] << "\t";
+    myfile << "\n";
+  }
+
   double avg=mean(T,N,algorithm);
   stdev(T,N,avg,sigmaL,sigmaH,algorithm);
   timings(text,m,N,avg,sigmaL,sigmaH);

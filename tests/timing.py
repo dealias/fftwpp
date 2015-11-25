@@ -9,7 +9,7 @@ from subprocess import * # for popen, running processes
 import os
 import re # regexp package
 
-def max_m(p,RAM,runtype):
+def max_m(p, RAM, runtype):
     print "runtype:", runtype
     b = 0
     if p == "cconv":
@@ -146,9 +146,10 @@ def main(argv):
     outfile = "" # output filename
     rname = ""   # output grep string
     N = 0        # number of tests
-
+    stats = 0
+    
     try:
-        opts, args = getopt.getopt(argv,"hdp:T:a:b:A:B:r:R:o:D:g:N:")
+        opts, args = getopt.getopt(argv,"hdp:T:a:b:A:B:r:R:S:o:D:g:N:")
     except getopt.GetoptError:
         print "error in parsing arguments."
         print usage
@@ -172,6 +173,8 @@ def main(argv):
             runtype = str(arg)
         elif opt in ("-R"):
             RAM = float(arg)*2**30
+        elif opt in ("-S"):
+            stats = int(arg)
         elif opt in ("-d"):
             dryrun = True
         elif opt in ("-o"):
@@ -313,6 +316,7 @@ def main(argv):
                 cmd += ["-Y1"]
                 cmd += ["-Z0"]
         
+        cmd.append("-S" + str(stats))
         if(N > 0):
             cmd.append("-N" + str(N))
         if(T > 0):
@@ -329,7 +333,12 @@ def main(argv):
             with open(outdir + "/" + outfile, "a") as myfile:
                 myfile.write("# " + " ".join(cmd) + "\n")
         
-        
+        if(stats == -1):
+            try:
+                os.remove("timing.dat")
+            except OSError:
+                pass
+                
         for i in range(a, b + 1):
             if not hermitian or runtype == "implicit": 
                 m = str(int(pow(2, i)))
@@ -381,6 +390,9 @@ def main(argv):
                     print "error:"
                     print err
                     
+        if(stats == -1):
+            os.rename("timing.dat", outdir + "/" + outfile)
+            
             sys.stdout.flush()
 
 if __name__ == "__main__":

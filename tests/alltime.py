@@ -12,8 +12,9 @@ def main(argv):
     usage = '''
     Usage:
     \nalltime.py
-    -T<number of threads> 
-    -R<ram in gigabytes> 
+    -T <number of threads> 
+    -R <ram in gigabytes> 
+    -S <int> statistical choice (-1 keeps raw data). 
     -d dry run
     -D<outdir>
     -o<outfile>
@@ -29,9 +30,10 @@ def main(argv):
     #out = ""
     A = []
     runtype = "implicit"
+    stats = 0
 
     try:
-        opts, args = getopt.getopt(argv,"dp:T:r:R:o:D:g:A:")
+        opts, args = getopt.getopt(argv,"dp:T:r:R:S:o:D:g:A:")
     except getopt.GetoptError:
         print usage
         sys.exit(2)
@@ -40,6 +42,8 @@ def main(argv):
             nthreads=int(arg)
         elif opt in ("-R"):
             R=float(arg)
+        if opt in ("-S"):
+            stats = int(arg)
         elif opt in ("-d"):
             dryrun=True
         elif opt in ("-D"):
@@ -73,6 +77,7 @@ def main(argv):
             cmd = []
             cmd.append("./timing.py")
             cmd.append("-p" + p)
+            cmd.append("-S" + str(stats))
             if R == 0.0:
                 cmd.append("-a" + str(a))
                 cmd.append("-b" + str(b))
