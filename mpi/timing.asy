@@ -60,6 +60,7 @@ string runlegs;
 bool useN=true;
 bool oldformat=false;
 string sscale="";
+string datatype="";
 
 usersetting();
 
@@ -71,6 +72,8 @@ if(sscale != "") {
 }
 
 string Nm = useN ? "N" : "m";
+
+if(datatype == "") datatype=getstring("datatype", "normal");
 
 bool myleg=((runlegs== "") ? false: true);
 bool flag=true;
@@ -124,10 +127,78 @@ if(!dknown)
 
 real ymin=infinity, ymax=-infinity;
 
+
+
 string[] runnames;
 
 if(runs == "") runs=getstring("files");
 string run;
+
+string stats="median90";
+
+real datactr(real[] data) {
+  if(stats == "median90") {
+    data = sort(data);
+    int N = data.length;
+    real median = data[floor(N/2)];
+    return median;
+  }
+  if(stats == "mean") {
+    int N = data.length;
+    real mean = sum(data) / N;
+    return mean;
+  }
+  return 0;
+}
+
+real ldev(real[] data) {
+  if(stats == "median90") {
+    data = sort(data);
+    int N = data.length;
+    real median = data[floor(N/2)];
+    return median - data[floor(0.1*N)];
+  }
+  
+  if(stats == "mean") {
+      real sigmaL=0.0;
+      real mean=datactr(data);
+    int N = data.length;
+      for(int i=0; i < N; ++i) {
+	real v=data[i]-mean;
+	if(v < 0)
+	  sigmaL += v*v;
+      }
+      real factor=N > 2 ? 2.0/(N-2.0) : 0.0; 
+      return sqrt(sigmaL*factor);
+  }
+
+  return 0;
+}
+
+real hdev(real[] data) {
+  if(stats == "median90") {
+    data = sort(data);
+    int N = data.length;
+    real median = data[floor(N/2)];
+    return data[floor(0.9*N)] - median;
+  }
+  
+  if(stats == "mean") {
+      real sigmaH=0.0;
+      real mean=datactr(data);
+    int N = data.length;
+      for(int i=0; i < N; ++i) {
+	real v=data[i]-mean;
+	if(v > 0)
+	  sigmaH += v*v;
+      }
+      real factor=N > 2 ? 2.0/(N-2.0) : 0.0; 
+      return sqrt(sigmaH*factor);
+  }
+
+  return 0;
+}
+
 n=-1;
 flag=true;
 while(flag) {
@@ -138,14 +209,53 @@ while(flag) {
   if(flag) {
     write(run);
     runnames.push(run);
-    file fin=input(run).line();
-    real[][] a=fin.dimension(0,0);
-    a=transpose(a);
-    mi[n]=copy(a[0]); i[n]=copy(a[1]); li[n]=copy(a[2]); hi[n]=copy(a[3]);
+    
+    if(datatype != "raw") {
+      // The input data is in the format: m mean stddevlow stdevhigh
+      file fin=input(run).line();
+      real[][] a=fin.dimension(0,0);
+      a=transpose(a);
+      mi[n]=copy(a[0]); i[n]=copy(a[1]); li[n]=copy(a[2]); hi[n]=copy(a[3]);
+    } else {
+      // The input data is in the format: m N t_0 t_1 ... t_{N-1}
+
+      stats=getstring("stats");
+      
+      file fin=input(run);
+      bool go=true;
+
+      real[] nmi;
+      real[] ni;
+      real[] nli;
+      real[] nhi;
+      while(go) {
+	int m = fin;
+	if(m == 0) {
+	  go=false;
+	  break;
+	}
+
+	nmi.push(m);
+	int N = fin;
+	real times[] = new real[N];
+	for(int i = 0; i < N; ++i)
+	  times[i] = fin;
+
+	ni.push(datactr(times));
+	nli.push(ldev(times));
+	nhi.push(hdev(times));
+      }
+      mi[n] = copy(nmi);
+      i[n] = copy(ni);
+      li[n] = copy(nli);
+      hi[n] = copy(nhi);
+    }
+    
     runnames[n]=run;
     lastpos=pos > 0 ? pos+1 : -1;
   }
 }
+
 
 nn=n;
 
