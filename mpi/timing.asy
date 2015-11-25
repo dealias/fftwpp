@@ -136,6 +136,7 @@ string run;
 
 string stats="median90";
 
+// FIXME: this could just be a triple return value.
 real datactr(real[] data) {
   if(stats == "median90") {
     data = sort(data);
