@@ -46,14 +46,14 @@ def main(argv):
         Xlist = [1,2,3,4,5,random.randint(6,64)]
         Ylist = [1,2,3,4,5,random.randint(6,64)]
         Zlist = [1,2,3,4,5,random.randint(6,64)]
-        Plist = [8,4,3,2,random.randint(9,12),1]
+        Plist = [16,8,4,3,2,random.randint(9,12),1]
         
         if(shortrun):
             print "Short run."
-            Xlist = [2,3,random.randint(6,64)]
-            Ylist = [2,3,random.randint(6,64)]
-            Zlist = [2,3,random.randint(6,64)]
-            Plist = [2,random.randint(4,8)]
+            Xlist = [2,3,4,random.randint(6,64)]
+            Ylist = [2,3,4,random.randint(6,64)]
+            Zlist = [2,3,4,random.randint(6,64)]
+            Plist = [2,4,random.randint(5,8)]
 
         testcases = []
         for X in Xlist:
@@ -78,7 +78,7 @@ def main(argv):
 
         tstart = time.time()
 
-        ntest = len(testcases)*len(Plist)
+        ntest = len(testcases) * len(Plist)
         print "Running", ntest, "tests."
         
         failcases = ""
