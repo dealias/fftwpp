@@ -74,9 +74,13 @@ def main(argv):
 
         failcases = ""
         nfails = 0
-                
+
+        itest = 0
+        
         for P in Plist:
             for args in testcases:
+                print "test", itest, "of", ntest, ":",
+                itest += 1
                 rtest, cmd = runtest(pname, P, args, logfile, timeout)
                 if not rtest == 0:
                     nfails += 1

@@ -56,31 +56,34 @@ def main(argv):
             Zlist = [1,2,3,10,random.randint(start,stop)]
             Plist = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,1]
 
-        ntests = 0
+        ntest = 0
         for X in Xlist:
             for Y in Ylist:
                 for Z in Zlist:
                     for P in Plist:
                         for a in range(1,int(sqrt(P)+1.5)):
                             for s in range(0,2):
-                                ntests += 1
+                                ntest += 1
 
-        Print("Running "+str(ntests)+" tests.")
+        Print("Running "+str(ntest)+" tests.")
         tstart = time.time()
 
         failcases = ""
 
         # timeout cutoff in seconds (0 disables timeout)
         timeout = 60 
-        ntests = 0
         nfails = 0
+
+        itest = 0
+        
         for X in Xlist:
             for Y in Ylist:
                 for Z in Zlist:
                     for P in Plist:
                         for a in range(1,int(sqrt(P)+1.5)):
                             for s in range(0,2):
-                                ntests += 1
+                                print "test", itest, "of", ntest, ":",
+                                itest += 1
                                 args = []
                                 args.append("-x" + str(X))
                                 args.append("-y" + str(Y))
@@ -103,7 +106,7 @@ def main(argv):
                 print "Failure cases:"
                 print failcases
                 retval += 1
-                print "\n", nfails, "failures out of", ntests, "tests." 
+                print "\n", nfails, "failures out of", ntest, "tests." 
 
                 tend = time.time()
                 print "\nElapsed time (s):", tend - tstart
