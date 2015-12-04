@@ -154,9 +154,8 @@ public:
       Tyz=NULL;
     }
     
-    Txy=d.z > 0 ? new utils::mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,out,
-                                                   d.xy.communicator,
-                                                   xy,d.communicator) : NULL;
+    Txy=new utils::mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,out,
+                                         d.xy.communicator,xy,d.communicator);
     unsigned int M=d.xy.y*d.z;
     xForward=new mfft1d(d.X,-1,M,M,1,out,out,threads);
     xBackward=new mfft1d(d.X,1,M,M,1,in,out,threads);
@@ -194,18 +193,14 @@ public:
     
     delete xBackward;
     delete xForward;
-
-    if(Txy)
-      delete Txy;
+    delete Txy;
   }
 
   virtual void iForward(Complex *in, Complex *out=NULL);
   virtual void ForwardWait0(Complex *out);
   virtual void ForwardWait1(Complex *out) {
-    if(Txy) {
-      Txy->wait();
-      xForward->fft(out);
-    }
+    Txy->wait();
+    xForward->fft(out);
   }
   void ForwardWait(Complex *out) {
     ForwardWait0(out);
@@ -422,11 +417,9 @@ public:
     out=CheckAlign((Complex *) in,out);
     inplace=((Complex *) in == out);
 
-    Txy=dc.z > 0 ? 
-      new utils::mpitranspose<Complex>(dc.X,dc.xy.y,dc.x,dc.Y,dc.z,
-                                       out,dc.xy.communicator,xy,
-                                       dc.communicator) : NULL;
-
+    Txy=new utils::mpitranspose<Complex>(dc.X,dc.xy.y,dc.x,dc.Y,dc.z,
+                                         out,dc.xy.communicator,xy,
+                                         dc.communicator);
     Tyz=dc.yz.x < dc.Y ? 
                   new utils::mpitranspose<Complex>(dc.Y,dc.z,dc.yz.x,dc.Z,1,
                                                    out,dc.yz.communicator,yz,
