@@ -62,9 +62,7 @@ def main(argv):
         elif opt in ("-r"):
             runtype = str(arg)
 
-    progs=[["cconv" , "conv", "tconv"], \
-           ["cconv2","conv2","tconv2"],\
-           ["cconv3","conv3"]]
+    progs=[["cconv" , "conv", "tconv"], ["cconv2","conv2","tconv2"], ["cconv3","conv3"]]
 
     ab=[[6,20],[6,10],[2,6]] # problem size limits
     
@@ -97,18 +95,18 @@ def main(argv):
                 cmd.append("-r" + runtype)
             cmd.append("-D" + outdir)
             cmd.append("-o" + p + "_" + runtype)
-            i = 0
-            while i < len(A):
-                cmd.append("-A" + A[i])
-                i += 1
-            i = 0
-            while i < len(B):
-                cmd.append("-B" + B[i])
-                i += 1
-            i = 0
-            while i < len(E):
-                cmd.append("-E" + E[i])
-                i += 1
+            iA = 0
+            while iA < len(A):
+                cmd.append("-A" + A[iA])
+                iA += 1
+            iB = 0
+            while iB < len(B):
+                cmd.append("-B" + B[iB])
+                iB += 1
+            iE = 0
+            while iE < len(E):
+                cmd.append("-E" + E[iE])
+                iE += 1
             print cmd
             if not dryrun:
                 p = Popen(cmd)
