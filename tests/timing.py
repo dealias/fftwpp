@@ -138,6 +138,7 @@ def main(argv):
     p = "" # program name
     B = [] # precommands
     A = [] # postcommands
+    E = [] # environment variables (eg: -EGOMP_CPU_AFFINITY -E"0 1 2 3")
     a = 6  # minimum log of problem size
     b = 0  # maximum log of problem size
     runtype = "implicit"  # type of run
@@ -149,7 +150,7 @@ def main(argv):
     stats = 0
     
     try:
-        opts, args = getopt.getopt(argv,"hdp:T:a:b:A:B:r:R:S:o:D:g:N:")
+        opts, args = getopt.getopt(argv,"hdp:T:a:b:A:B:E:r:R:S:o:D:g:N:")
     except getopt.GetoptError:
         print "error in parsing arguments."
         print usage
@@ -169,6 +170,8 @@ def main(argv):
             A += [str(arg)]
         elif opt in ("-B"):
             B += [str(arg)]
+        elif opt in ("-E"):
+            E += [str(arg)]
         elif opt in ("-r"):
             runtype = str(arg)
         elif opt in ("-R"):
@@ -328,7 +331,7 @@ def main(argv):
             cmd.append(A[i]);
             i += 1
             
-        print cmd
+        print " ".join(cmd)
 
         if(stats == -1):
             try:
@@ -359,7 +362,13 @@ def main(argv):
             if dryrun:
                 print mcmd
             else:
-                p = Popen(mcmd, stdout = PIPE, stderr = PIPE)
+                denv = dict(os.environ)
+                i = 0
+                while i < len(E):
+                    denv[E[i]] = E[i + 1]
+                    i += 2
+                    
+                p = Popen(mcmd, stdout = PIPE, stderr = PIPE, env = denv)
                 p.wait() # sets the return code
                 prc = p.returncode
                 out, err = p.communicate() # capture output

@@ -20,6 +20,7 @@ def main(argv):
     -o<outfile>
     -r<implicit/explicit/pruned/fft>
     -A<quoted arg list for timed program>
+    -B<quoted arg list inserted before timed program>
     '''
 
     dryrun=False
@@ -29,11 +30,13 @@ def main(argv):
     nthreads = 0
     #out = ""
     A = []
+    B = []
+    E = []
     runtype = "implicit"
     stats = 0
 
     try:
-        opts, args = getopt.getopt(argv,"dp:T:r:R:S:o:D:g:A:")
+        opts, args = getopt.getopt(argv,"dp:T:r:R:S:o:D:g:A:B:E:")
     except getopt.GetoptError:
         print usage
         sys.exit(2)
@@ -52,6 +55,10 @@ def main(argv):
             rname = str(arg)
         elif opt in ("-A"):
             A.append(str(arg))
+        elif opt in ("-B"):
+            B.append(str(arg))
+        elif opt in ("-E"):
+            E += [str(arg)]
         elif opt in ("-r"):
             runtype = str(arg)
 
@@ -68,6 +75,7 @@ def main(argv):
         ab=[[6,10],[2,6]] # problem size limits
 
     print "extra args:", A
+    print "environment args:", E
 
     i = 0
     while(i < len(progs)):
@@ -89,19 +97,26 @@ def main(argv):
                 cmd.append("-r" + runtype)
             cmd.append("-D" + outdir)
             cmd.append("-o" + p + "_" + runtype)
-            if A != "":
-                while i < len(A):
-                    cmd.append(A[i])
-                    i += 1
+            i = 0
+            while i < len(A):
+                cmd.append("-A" + A[i])
+                i += 1
+            i = 0
+            while i < len(B):
+                cmd.append("-B" + B[i])
+                i += 1
+            i = 0
+            while i < len(E):
+                cmd.append("-E" + E[i])
+                i += 1
             print cmd
             if not dryrun:
-                p=Popen(cmd)
+                p = Popen(cmd)
                 p.wait() # sets the return code
-                prc=p.returncode
+                prc = p.returncode
             else:
                 print " ".join(cmd)
     
-
             # pcmd=cmd+" -p "+p
             # print(pcmd)
             # if not dryrun:
