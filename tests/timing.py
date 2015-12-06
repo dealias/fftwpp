@@ -291,6 +291,8 @@ def main(argv):
 
         print "output in " + outdir + "/" + outfile
 
+        print "environment variables:", E
+        
         if not dryrun:
             os.system("mkdir -p " + outdir)
             os.system("rm -f " + outdir + "/" + outfile)
