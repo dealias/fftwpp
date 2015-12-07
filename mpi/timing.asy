@@ -136,68 +136,43 @@ string run;
 
 string stats="median90";
 
-// FIXME: this could just be a triple return value.
-real datactr(real[] data) {
+triple statspm(real[] data) {
   if(stats == "median90") {
     data = sort(data);
     int N = data.length;
     real median = data[floor(N/2)];
-    return median;
+    real p5 = median - data[floor(0.5 * N)];
+    real p95 = data[floor(0.95 * N)] - median;
+    return (median, p5, p95);
   }
+  
   if(stats == "mean") {
     int N = data.length;
     real mean = sum(data) / N;
-    return mean;
-  }
-  return 0;
-}
 
-real ldev(real[] data) {
-  if(stats == "median90") {
-    data = sort(data);
-    int N = data.length;
-    real median = data[floor(N/2)];
-    return median - data[floor(0.1*N)];
+    real factor=N > 2 ? 2.0/(N-2.0) : 0.0;
+    
+    real sigmaH=0.0;
+    real sigmaL=0.0;
+    for(int i=0; i < N; ++i) {
+      real v=data[i] - mean;
+      if(v < 0)
+	sigmaL += v*v;
+      if(v > 0)
+	sigmaH += v*v;
+    }
+    sigmaL=sqrt(sigmaL*factor);
+    sigmaH=sqrt(sigmaH*factor);
+
+    return (mean, sigmaL, sigmaH);
   }
   
-  if(stats == "mean") {
-      real sigmaL=0.0;
-      real mean=datactr(data);
-    int N = data.length;
-      for(int i=0; i < N; ++i) {
-	real v=data[i]-mean;
-	if(v < 0)
-	  sigmaL += v*v;
-      }
-      real factor=N > 2 ? 2.0/(N-2.0) : 0.0; 
-      return sqrt(sigmaL*factor);
-  }
-
-  return 0;
-}
-
-real hdev(real[] data) {
-  if(stats == "median90") {
-    data = sort(data);
-    int N = data.length;
-    real median = data[floor(N/2)];
-    return data[floor(0.9*N)] - median;
+  if(stats == "min") {
+    real min = min(data);
+    return (min, 0, 0);
   }
   
-  if(stats == "mean") {
-      real sigmaH=0.0;
-      real mean=datactr(data);
-    int N = data.length;
-      for(int i=0; i < N; ++i) {
-	real v=data[i]-mean;
-	if(v > 0)
-	  sigmaH += v*v;
-      }
-      real factor=N > 2 ? 2.0/(N-2.0) : 0.0; 
-      return sqrt(sigmaH*factor);
-  }
-
-  return 0;
+  return (0, 0, 0);
 }
 
 n=-1;
@@ -242,9 +217,10 @@ while(flag) {
 	for(int i = 0; i < N; ++i)
 	  times[i] = fin;
 
-	ni.push(datactr(times));
-	nli.push(ldev(times));
-	nhi.push(hdev(times));
+	triple thestats = statspm(times);
+	ni.push(thestats.x);
+	nli.push(thestats.y);
+	nhi.push(thestats.z);
       }
       mi[n] = copy(nmi);
       i[n] = copy(ni);
