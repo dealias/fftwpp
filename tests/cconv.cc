@@ -129,25 +129,27 @@ int main(int argc, char* argv[])
   
   if(N == 0) {
     N=N0/n;
-    if(N < 10) N=10;
+    if(N < 20) N=20;
   }
   cout << "N=" << N << endl;
 
   // explicit and direct methods are only implemented for binary convolutions.
   if(!Implicit) A=2;
 
- if(B < 1) B=1;
+  if(B < 1) B=1;
   if(B > A) {
     cerr << "B=" << B << " is not yet implemented for A=" << A << endl;
     exit(1);
   }
   
   unsigned int np=Explicit ? n : m;
-  Complex *f=ComplexAlign(A*np);
   
   Complex **F=new Complex *[A];
-  for(unsigned int s=0; s < A; ++s)
-    F[s]=f+s*np;
+  for(unsigned int s=0; s < A; ++s) {
+    //Complex *f=ComplexAlign(A*np);
+    //F[s]=f+s*np;
+    F[s]=ComplexAlign(np);
+  }
   
   Complex *h0=NULL;
   if(Test || Direct) h0=ComplexAlign(m);
@@ -155,6 +157,7 @@ int main(int argc, char* argv[])
   double *T=new double[N];
   
   if(Implicit) {
+    
     ImplicitConvolution C(m,A,B);
     cout << "threads=" << C.Threads() << endl << endl;
 
@@ -169,20 +172,66 @@ int main(int argc, char* argv[])
     default: cerr << "A=" << A << " is not yet implemented" << endl; exit(1);
     }
     
-    for(unsigned int i=0; i < N; ++i) {
-      init(F,m,A);
-      seconds();
-      C.convolve(F,mult);
-      //C.convolve(F[0],F[1]);
-      T[i]=seconds();
+    double *Talt=new double[N];
+    
+    Complex **FE=new Complex *[A];
+    for(unsigned int s=0; s < A; ++s)
+      FE[s]=ComplexAlign(n);
+  
+    ExplicitConvolution CE(n,m,F[0]);
+    double *TE=new double[N];
+
+    unsigned int N0 = 0;
+    unsigned int N1 = 0;
+    unsigned int N2 = 0;
+    
+    while(N0 < N && N1 < N && N2 < N) {
+      unsigned int i = rand() % 3;
+
+      switch(i) {
+	case 0:
+	  if(N0 < N) {
+	    init(F,m,A);
+	    seconds();
+	    C.convolve(F,mult);
+	    //C.convolve(F[0],F[1]);
+	    T[N0]=seconds();
+	  }
+	  N0++;
+	  break;
+	case 1:
+	  if(N1 < N) {
+	    init(F,m,A);
+	    seconds();
+	    C.convolve(F,mult);
+	    //C.convolve(F[0],F[1]);
+	    Talt[N1]=seconds();
+	  }
+	  N1++;
+	  break;
+
+	case 2:
+	  if(N1 < N) {
+	    init(FE,m,A);
+	    seconds();
+	    CE.convolve(FE[0],FE[1]);
+	    TE[N2]=seconds();
+	  }
+	  N2++;
+	  break;
+
+      }
     }
 
-    timings("Implicit",m,T,N,stats);
+    timings("Implicit",m,T,N,stats,"implicit.dat");
+    timings("Implicit",m,Talt,N,stats,"implicit0.dat");
+    timings("Explicit",m,TE,N,stats,"explicit.dat");
+
 
     if(m < 100) 
       for(unsigned int i=0; i < m; i++) cout << F[0][i] << endl;
     else 
-      cout << f[0] << endl;
+      cout << F[0][0] << endl;
 
     if(Test || Direct) for(unsigned int i=0; i < m; i++) h0[i]=F[0][i];
   }
@@ -287,8 +336,9 @@ int main(int argc, char* argv[])
   }
 
   delete [] T;
+  for(unsigned int s=0; s < A; ++s) 
+    deleteAlign(F[s]);
   delete [] F;
-  deleteAlign(f);
 
   return 0;
 }

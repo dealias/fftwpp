@@ -177,12 +177,13 @@ inline void timings(const char* text, unsigned int m, unsigned int count,
 }
 
 inline void timings(const char* text, unsigned int m, double *T, 
-		    unsigned int N, int algorithm=MEAN)
+		    unsigned int N, int algorithm=MEAN,
+		    std::string filename="timing.dat")
 {
   double sigmaL=0.0, sigmaH=0.0;
   if(algorithm == WRITETOFILE) {
     std::ofstream myfile;
-    myfile.open ("timing.dat", std::fstream::app);
+    myfile.open (filename.c_str(), std::fstream::app);
     myfile << m << "\t";
     myfile << N << "\t";
     for(unsigned int i=0;  i<N; ++i)
