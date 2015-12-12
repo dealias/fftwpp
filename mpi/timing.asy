@@ -349,8 +349,26 @@ if(gtype == "time" || gtype == "mflops") {
       yaxis("time (ns)",LeftRight,RightTicks);
   }
   //label(name+": (MPI procs)$\times{}$(threads/proc)",point(N),5N);
-}
 
+  {
+    string pdata=getstring("pdata");
+    file fin=input(pdata).line();
+    real[][] a=fin.dimension(0,0);
+    a=transpose(a);
+    real[] pm = copy(a[0]);
+    real[] pp = copy(a[1]);
+
+
+    picture secondary=secondaryY(new void(picture pic) {
+	scale(pic,Log(true),Linear(true));
+	draw(pic,graph(pic,pm,pp),darkgreen);
+	yaxis(pic,"p-value",Right,darkgreen,LeftTicks(begin=false,end=false));
+      });
+                             
+    add(secondary);
+  }
+
+}
 
 if(gtype == "speedup") {
 
