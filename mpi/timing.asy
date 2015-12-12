@@ -14,7 +14,7 @@ include graph;
 // asy timings.asy -u"sscale=\"loglog\""
 // forces the scale to be log-log.
 
-// asy timings.asy -u"sscale=\"minm=<float>\""
+// asy timings.asy -u"minm=<float>"
 // plots only data with problem size at least minm.
 
 // Note that the scaling figures assumes subsequent test double the
@@ -25,7 +25,7 @@ size(250,300,IgnoreAspect);
 barfactor=10;
 
 bool drawerrorbars=true;
-//drawerrorbars=false;
+drawerrorbars=false;
 
 string gtype=getstring("time, mflops, scaling, or speedup","mflops");
 
@@ -73,7 +73,7 @@ if(sscale != "") {
 
 string Nm = useN ? "N" : "m";
 
-if(datatype == "") datatype=getstring("datatype", "normal");
+if(datatype == "") datatype=getstring("datatype (raw or normal)", "normal");
 
 bool myleg=((runlegs== "") ? false: true);
 bool flag=true;
@@ -541,4 +541,4 @@ if(gtype == "scaling") {
 
 legendlinelength=0.6cm;
 legendmargin=5;
-attach(legend(),point(E),10E);
+//attach(legend(),point(E),10E);

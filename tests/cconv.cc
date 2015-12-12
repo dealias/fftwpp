@@ -63,6 +63,8 @@ int main(int argc, char* argv[])
   
   unsigned int stats=0; // Type of statistics used in timing test.
 
+  int alg = 0;
+  
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
@@ -71,7 +73,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptA:B::N:m:n:S:T:");
+    int c = getopt(argc,argv,"hdeiptA:B::N:m:n:S:T:E:");
     if (c == -1) break;
 		
     switch (c) {
@@ -113,6 +115,9 @@ int main(int argc, char* argv[])
         break;
       case 'S':
         stats=atoi(optarg);
+        break;
+      case 'E':
+        alg=atoi(optarg);
         break;
       case 'h':
       default:
@@ -181,46 +186,91 @@ int main(int argc, char* argv[])
     ExplicitConvolution CE(n,m,F[0]);
     double *TE=new double[N];
 
-    unsigned int N0 = 0;
-    unsigned int N1 = 0;
-    unsigned int N2 = 0;
-    
-    while(N0 < N && N1 < N && N2 < N) {
-      unsigned int i = rand() % 3;
-
-      switch(i) {
-	case 0:
-	  if(N0 < N) {
-	    init(F,m,A);
-	    seconds();
-	    C.convolve(F,mult);
-	    //C.convolve(F[0],F[1]);
-	    T[N0]=seconds();
+    switch(alg) {
+    case 0:
+      {
+	unsigned int N0 = 0;
+	unsigned int N1 = 0;
+	unsigned int N2 = 0;
+      
+	while(N0 < N && N1 < N && N2 < N) {
+	  unsigned int i = rand() % 3;
+	  switch(i) {
+	  case 0:
+	    if(N0 < N) {
+	      init(F,m,A);
+	      seconds();
+	      C.convolve(F,mult);
+	      T[N0]=seconds();
+	    }
+	    N0++;
+	    break;
+	  case 1:
+	    if(N1 < N) {
+	      init(F,m,A);
+	      seconds();
+	      C.convolve(F,mult);
+	      Talt[N1]=seconds();
+	    }
+	    N1++;
+	    break;
+	  case 2:
+	    if(N1 < N) {
+	      init(FE,m,A);
+	      seconds();
+	      CE.convolve(FE[0],FE[1]);
+	      TE[N2]=seconds();
+	    }
+	    N2++;
+	    break;
 	  }
-	  N0++;
-	  break;
-	case 1:
-	  if(N1 < N) {
-	    init(F,m,A);
-	    seconds();
-	    C.convolve(F,mult);
-	    //C.convolve(F[0],F[1]);
-	    Talt[N1]=seconds();
-	  }
-	  N1++;
-	  break;
-
-	case 2:
-	  if(N1 < N) {
-	    init(FE,m,A);
-	    seconds();
-	    CE.convolve(FE[0],FE[1]);
-	    TE[N2]=seconds();
-	  }
-	  N2++;
-	  break;
-
+	}
       }
+      break;
+      
+    case 1:
+      {
+	for(unsigned int i = 0; i < N; ++i) {
+	  init(F,m,A);
+	  seconds();
+	  C.convolve(F,mult);
+	  T[i]=seconds();
+
+	  init(F,m,A);
+	  seconds();
+	  C.convolve(F,mult);
+	  Talt[i]=seconds();
+
+	  init(FE,m,A);
+	  seconds();
+	  CE.convolve(FE[0],FE[1]);
+	  TE[i]=seconds();
+	}
+      }
+      break;
+
+    case 2:
+      {
+	for(unsigned int i = 0; i < N; ++i) {
+	  init(F,m,A);
+	  seconds();
+	  C.convolve(F,mult);
+	  T[i]=seconds();
+	}
+	for(unsigned int i = 0; i < N; ++i) {	  
+	  init(F,m,A);
+	  seconds();
+	  C.convolve(F,mult);
+	  Talt[i]=seconds();
+	}
+	for(unsigned int i = 0; i < N; ++i) {
+	  init(FE,m,A);
+	  seconds();
+	  CE.convolve(FE[0],FE[1]);
+	  TE[i]=seconds();
+	}
+      }
+      break;
     }
 
     timings("Implicit",m,T,N,stats,"implicit.dat");
