@@ -524,12 +524,13 @@ public:
     if(size == 1) return;
     if(sched) {
       if(uniform || subblock) {
-        delete[] sched1;
-        delete[] sched2;
+        delete [] sched1;
+        delete [] sched2;
       }
-      delete[] sched;
+      delete [] sched;
     }
-    delete[] request;
+    delete [] Request;
+    delete [] request;
     if(a > 1) {
       int final;
       MPI_Finalized(&final);

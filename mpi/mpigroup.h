@@ -29,6 +29,7 @@ public:
     unsigned int xblock=ceilquotient(X,size);
     size=ceilquotient(X,xblock);
     activate(comm);
+    communicator=communicator2=MPI_COMM_NULL;
   }
   
 // Distribute first X, then (if allowpencil=true) Y.
@@ -51,6 +52,16 @@ public:
     }
   }
 
+  ~MPIgroup(){
+    int final;
+    MPI_Finalized(&final);
+    if(final) return;
+    if(rank < size && communicator != MPI_COMM_NULL) {
+      MPI_Comm_free(&communicator2);
+      MPI_Comm_free(&communicator);
+    }
+    MPI_Comm_free(&active);
+  }
 };
 
 // Class to compute the local array dimensions and storage requirements for
