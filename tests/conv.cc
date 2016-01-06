@@ -124,7 +124,7 @@ int main(int argc, char* argv[])
   
   unsigned int Bcheck=0; // Which output to check
 
-  unsigned int stats=0; // Type of statistics used in timing test.
+  int stats=0; // Type of statistics used in timing test.
 
 
 #ifndef __SSE2__
@@ -260,6 +260,7 @@ int main(int argc, char* argv[])
     }
 
     timings("Implicit",m,T,N,stats);
+
     
     if(m < 100) 
       for(unsigned int i=0; i < m; i++) cout << F[Bcheck][i] << endl;
@@ -279,7 +280,7 @@ int main(int argc, char* argv[])
     }
 
     cout << endl;
-    timings("Explicit",m,T,N);
+    timings("Explicit",m,T,N,stats);
 
     if(m < 100) 
       for(unsigned int i=0; i < m; i++) cout << f[i] << endl;

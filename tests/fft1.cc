@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
   unsigned int m=11; // Problem size
 
   int N=1000;
-  unsigned int stats=MEAN; // Type of statistics used in timing test.
+  int stats=MEAN; // Type of statistics used in timing test.
 
   fftw::maxthreads=get_max_threads();
   int r=-1;

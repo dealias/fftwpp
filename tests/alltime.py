@@ -107,7 +107,7 @@ def main(argv):
             while iE < len(E):
                 cmd.append("-E" + E[iE])
                 iE += 1
-            print cmd
+            print " ".join(cmd)
             if not dryrun:
                 p = Popen(cmd)
                 p.wait() # sets the return code

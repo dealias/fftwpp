@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
 {
   fftw::maxthreads=get_max_threads();
 
-  unsigned int stats=0; // Type of statistics used in timing test.
+  int stats=0; // Type of statistics used in timing test.
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;

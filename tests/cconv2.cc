@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
   unsigned int A=2;
   unsigned int B=1;
 
-  unsigned int stats=0; // Type of statistics used in timing test.
+  int stats=0; // Type of statistics used in timing test.
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
