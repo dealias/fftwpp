@@ -62,15 +62,16 @@ def main(argv):
         elif opt in ("-r"):
             runtype = str(arg)
 
-    progs=[["cconv" , "conv", "tconv"], ["cconv2","conv2","tconv2"], ["cconv3","conv3"]]
-
-    ab=[[6,20],[6,10],[2,6]] # problem size limits
+    progs = [["cconv" , "conv", "tconv"], ["cconv2", "conv2", "tconv2"], \
+             ["cconv3","conv3"]]
+    
+    ab = [[6,20],[4,10],[2,6]] # problem size limits
     
     if runtype == "explicit":
-        progs = [["cconv","conv"], ["cconv2","conv2"],["cconv3"]]
+        progs = [["cconv", "conv", "tconv"], ["cconv2", "conv2", "tconv2"], \
+                 ["cconv3"]]
     if runtype == "pruned":
-        progs = [["cconv2","conv2"],["cconv3"]]
-        ab=[[6,10],[2,6]] # problem size limits
+        progs = [[], ["cconv2", "conv2", "tconv2"], ["cconv3"]]
 
     print "extra args:", A
     print "environment args:", E
@@ -84,8 +85,8 @@ def main(argv):
             cmd.append("./timing.py")
             cmd.append("-p" + p)
             cmd.append("-S" + str(stats))
+            cmd.append("-a" + str(a))
             if R == 0.0:
-                cmd.append("-a" + str(a))
                 cmd.append("-b" + str(b))
             else:
                 cmd.append("-R" + str(R))
@@ -112,8 +113,6 @@ def main(argv):
                 p = Popen(cmd)
                 p.wait() # sets the return code
                 prc = p.returncode
-            else:
-                print " ".join(cmd)
     
             # pcmd=cmd+" -p "+p
             # print(pcmd)
