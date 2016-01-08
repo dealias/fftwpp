@@ -21,9 +21,9 @@ inline double cbrt(double x)
 namespace utils {
 
   template<class T, class S>
-  unsigned int max(const T a, const S b)
+  T max(const T a, const S b)
   {
-    return a > (S) b ? a : b;
+    return a > (T) b ? a : b;
   }
   
 inline void usageCommon(int n)
