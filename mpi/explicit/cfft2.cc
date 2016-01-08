@@ -14,7 +14,8 @@ using namespace fftwpp;
 
 int main(int argc, char **argv)
 {
-  int N=4, m=4;
+  int N=4;
+  int m=4;
   int nthreads=1; // Number of threads
 #ifdef __GNUC__	
   optind=0;
@@ -40,18 +41,15 @@ int main(int argc, char **argv)
 
   const unsigned int m0 = m, m1 = m;
   const unsigned int N0 = m0, N1 = m1;
-  fftw_plan fplan, iplan;
-  fftw_complex *f;
-  ptrdiff_t alloc_local, local_n0, local_0_start;
-  int threads_ok;
   int provided;
   MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &provided);
-  threads_ok = provided >= MPI_THREAD_FUNNELED;
+  int threads_ok = provided >= MPI_THREAD_FUNNELED;
   
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  if(threads_ok) threads_ok = fftw_init_threads();
+  if(threads_ok)
+    threads_ok = fftw_init_threads();
   fftw_mpi_init();
   
   if(threads_ok)
@@ -60,15 +58,17 @@ int main(int argc, char **argv)
     if(rank ==0) cout << "threads not ok!" << endl;
   
   /* get local data size and allocate */
-  alloc_local = fftw_mpi_local_size_2d(N0,N1,MPI_COMM_WORLD,
-				       &local_n0, &local_0_start);
-  f=fftw_alloc_complex(alloc_local);
+  ptrdiff_t local_n0, local_0_start;
+  ptrdiff_t alloc_local=fftw_mpi_local_size_2d(N0,N1,MPI_COMM_WORLD,
+					       &local_n0, &local_0_start);
+  
+  fftw_complex *f=fftw_alloc_complex(alloc_local);
   
   /* create plan for in-place DFT */
-  fplan=fftw_mpi_plan_dft_2d(N0,N1,f,f,MPI_COMM_WORLD,FFTW_FORWARD,
-			     FFTW_ESTIMATE | FFTW_MPI_TRANSPOSED_IN);
-  iplan=fftw_mpi_plan_dft_2d(N0,N1,f,f,MPI_COMM_WORLD,FFTW_BACKWARD,
-			     FFTW_ESTIMATE | FFTW_MPI_TRANSPOSED_OUT);
+  fftw_plan fplan=fftw_mpi_plan_dft_2d(N0,N1,f,f,MPI_COMM_WORLD,FFTW_FORWARD,
+				       FFTW_ESTIMATE | FFTW_MPI_TRANSPOSED_IN);
+  fftw_plan iplan=fftw_mpi_plan_dft_2d(N0,N1,f,f,MPI_COMM_WORLD,FFTW_BACKWARD,
+				       FFTW_ESTIMATE | FFTW_MPI_TRANSPOSED_OUT);
 
   double *T=new double[N];
   for(int i=0; i < N; ++i) {
@@ -78,7 +78,8 @@ int main(int argc, char **argv)
     fftw_mpi_execute_dft(iplan,f,f);
     T[i]=seconds();
   }  
-  if(rank == 0) timings("FFT",m,T,N);
+  if(rank == 0)
+    timings("FFT",m,T,N);
   delete[] T;
 
   fftw_destroy_plan(fplan);

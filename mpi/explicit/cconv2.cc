@@ -19,9 +19,10 @@ void convolve(fftw_complex *f, fftw_complex *g, double norm,
 {
   fftw_mpi_execute_dft(fplan,f,f);
   fftw_mpi_execute_dft(fplan,g,g);
+
+#ifdef __SSE2__
   Complex *F = (Complex *) f;
   Complex *G = (Complex *) g;
-#ifdef __SSE2__
   Vec Ninv=LOAD(norm);
   for (int k = 0; k < num; ++k)
     STORE(F+k,Ninv*ZMULT(LOAD(F+k),LOAD(G+k)));
@@ -29,13 +30,14 @@ void convolve(fftw_complex *f, fftw_complex *g, double norm,
   for (int k = 0; k < num; ++k)
     f[k] *= g[k]*norm;
 #endif
+  
   fftw_mpi_execute_dft(iplan,f,f);
 }
 
 int main(int argc, char **argv)
 {
-
-  int N=4, m=4;
+  int N=4;
+  int m=4;
 #ifdef __GNUC__	
   optind=0;
 #endif	
@@ -55,11 +57,10 @@ int main(int argc, char **argv)
     }
   }
 
-  const unsigned int m0 = m, m1 = m;
-  const unsigned int N0 = 2*m0, N1 = 2*m1;
-  fftw_plan fplan, iplan;
-  fftw_complex *f, *g;
-  ptrdiff_t alloc_local, local_n0, local_0_start;
+  const unsigned int m0 = m;
+  const unsigned int m1 = m;
+  const unsigned int N0 = 2*m0;
+  const unsigned int N1 = 2*m1;
   
   MPI_Init(&argc, &argv);
   fftw_mpi_init();
@@ -68,24 +69,25 @@ int main(int argc, char **argv)
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   
   /* get local data size and allocate */
-  alloc_local = fftw_mpi_local_size_2d(N0,N1,MPI_COMM_WORLD,
-				       &local_n0, &local_0_start);
-  f=fftw_alloc_complex(alloc_local);
-  g=fftw_alloc_complex(alloc_local);
+  ptrdiff_t local_n0, local_0_start;
+  ptrdiff_t alloc_local = fftw_mpi_local_size_2d(N0,N1,MPI_COMM_WORLD,
+						 &local_n0, &local_0_start);
+  fftw_complex *f=fftw_alloc_complex(alloc_local);
+  fftw_complex *g=fftw_alloc_complex(alloc_local);
   
   /* create plan for in-place DFT */
-  fplan=fftw_mpi_plan_dft_2d(N0,N1,f,f,MPI_COMM_WORLD,FFTW_FORWARD,
-			     FFTW_ESTIMATE | FFTW_MPI_TRANSPOSED_IN);
-  iplan=fftw_mpi_plan_dft_2d(N0,N1,f,f,MPI_COMM_WORLD,FFTW_BACKWARD,
-			     FFTW_ESTIMATE | FFTW_MPI_TRANSPOSED_OUT);
+  fftw_plan fplan=fftw_mpi_plan_dft_2d(N0,N1,f,f,MPI_COMM_WORLD,FFTW_FORWARD,
+				       FFTW_ESTIMATE | FFTW_MPI_TRANSPOSED_IN);
+  fftw_plan iplan=fftw_mpi_plan_dft_2d(N0,N1,f,f,MPI_COMM_WORLD,FFTW_BACKWARD,
+				       FFTW_ESTIMATE | FFTW_MPI_TRANSPOSED_OUT);
 
   
   initf(f,local_0_start,local_n0,N0,N1,m0,m1);
   initg(g,local_0_start,local_n0,N0,N1,m0,m1);
 
+  // Input data:
   // show(f,local_0_start,local_n0,N1,m0,m1,0);
-  // show(f,local_0_start,local_n0,N1,m0,m1,0);
-  //show(g,local_0_start,local_n0,N1,N0,N1,1);
+  // show(g,local_0_start,local_n0,N1,N0,N1,1);
 
   // determine number of elements per process after tranpose
   ptrdiff_t local_n1, local_1_start;
@@ -96,16 +98,17 @@ int main(int argc, char **argv)
   
   double *T=new double[N];
 
+  double overN=1.0/((double) (N0*N1));
   for(int i=0; i < N; ++i) {
     initf(f,local_0_start,local_n0,N0,N1,m0,m1);
     initg(g,local_0_start,local_n0,N0,N1,m0,m1);
-    double overN=1.0/((double) (N0*N1));
     seconds();
     convolve(f,g,overN,transize,fplan,iplan);
     T[i]=seconds();
   }  
 
-  if(rank == 0) timings("Explicit",m,T,N);
+  if(rank == 0)
+    timings("Explicit",m,T,N);
   
   if(m0*m1<100) {
     if(rank == 0) cout << "output:" << endl;
