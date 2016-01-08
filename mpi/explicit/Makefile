@@ -27,10 +27,14 @@ ifeq ($(shell $(MPICXX) -qversion 2>&1 | head -c 3),IBM)
 CXXFLAGS= -O5 -qsmp
 endif
 
-CXXFLAGS += -I$(IDIR) -I$(UDIR) -I$(CPLUS_INCLUDE_PATH) 
+CXXFLAGS += -I$(IDIR) -I$(UDIR)
 
 ifneq ($(strip $(FFTW_INCLUDE_PATH)),)
 CXXFLAGS += -I$(FFTW_INCLUDE_PATH)
+endif
+
+ifneq ($(strip $(MPI_INCLUDE_PATH)),)
+CXXFLAGS+=-I$(MPI_INCLUDE_PATH)
 endif
 
 #-L$(LIBRARY_PATH)
@@ -38,9 +42,15 @@ endif
 MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
 
 LDFLAGS=
+
 ifneq ($(strip $(FFTW_LIB_PATH)),)
 LDFLAGS+=-L$(FFTW_LIB_PATH)
 endif
+
+ifneq ($(strip $(MPI_LIB_PATH)),)
+LDFLAGS+=-L$(MPI_LIB_PATH)
+endif
+
 LDFLAGS+= -lfftw3_mpi -lfftw3_omp -lfftw3 -lm
 
 vpath %.cc ../../
