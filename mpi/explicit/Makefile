@@ -27,28 +27,35 @@ ifeq ($(shell $(MPICXX) -qversion 2>&1 | head -c 3),IBM)
 CXXFLAGS= -O5 -qsmp
 endif
 
-CXXFLAGS += -I$(IDIR) -I$(UDIR) -I$(CPLUS_INCLUDE_PATH) -L$(LIBRARY_PATH)
+CXXFLAGS += -I$(IDIR) -I$(UDIR) -I$(CPLUS_INCLUDE_PATH) 
 
-LDFLAGS = -lfftw3_mpi -lfftw3_omp -lfftw3 -lm
+ifneq ($(strip $(FFTW_INCLUDE_PATH)),)
+CXXFLAGS += -I$(FFTW_INCLUDE_PATH)
+endif
+
+#-L$(LIBRARY_PATH)
+
+MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
+
+LDFLAGS=
+ifneq ($(strip $(FFTW_LIB_PATH)),)
+LDFLAGS+=-L$(FFTW_LIB_PATH)
+endif
+LDFLAGS+= -lfftw3_mpi -lfftw3_omp -lfftw3 -lm
 
 vpath %.cc ../../
 
-EXTRA=exmpiutils
 
 FILES=cconv2 cconv3 cfft2 cfft3
+EXTRA=exmpiutils
+ALL=$(FILES) $(EXTRA)
 
 all: $(FILES)
-
-%.o : %.cc %.h
-	$(MPICXX) $(CXXFLAGS) $(OPTS) -o $@ -c $<
 
 cconv2: cconv2.o $(EXTRA:=.o)
 	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 cconv3: cconv3.o $(EXTRA:=.o)
-	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
-
-conv2: conv2.o $(EXTRA:=.o)
 	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 cfft2: cfft2.o $(EXTRA:=.o)
@@ -57,13 +64,11 @@ cfft2: cfft2.o $(EXTRA:=.o)
 cfft3: cfft3.o $(EXTRA:=.o)
 	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-clean:
-	rm -rf $(FILES) *.o *.d
-
-
 .SUFFIXES: .c .cc .o .d
-.cc.o:
-	$(MPICXX) $(CXXFLAGS) $(OPTS) $(INCL) -o $@ -c $<
+
+%.o : %.cc %.h
+	$(MPICXX) $(CXXFLAGS) -o $@ -c $<
+
 .cc.d:
 	@echo Creating $@; \
 	rm -f $@; \
@@ -71,6 +76,10 @@ clean:
 	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
 	rm -f $@.$$$$
 
+
+clean:
+	rm -rf $(FILES) *.o *.d
+
 ifeq (,$(findstring clean,${MAKECMDGOALS}))
--include $(ALL:=.d)
+-include $(FILES:=.d)
 endif
