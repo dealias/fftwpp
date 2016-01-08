@@ -38,11 +38,12 @@ int main(int argc, char **argv)
 {
   int N=4;
   int m=4;
+  int stats=0;
 #ifdef __GNUC__	
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"N:m:");
+    int c = getopt(argc,argv,"N:m:S:");
     if (c == -1) break;
     
     switch (c) {
@@ -53,6 +54,9 @@ int main(int argc, char **argv)
         break;
       case 'm':
         m=atoi(optarg);
+        break;
+      case 'S':
+        stats=atoi(optarg);
         break;
     }
   }
@@ -108,7 +112,7 @@ int main(int argc, char **argv)
   }  
 
   if(rank == 0)
-    timings("Explicit",m,T,N);
+    timings("Explicit",m,T,N,stats);
   
   if(m0*m1<100) {
     if(rank == 0) cout << "output:" << endl;

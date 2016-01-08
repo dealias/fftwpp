@@ -39,8 +39,10 @@ int main(int argc, char **argv)
     }
   }
 
-  const unsigned int m0 = m, m1 = m;
-  const unsigned int N0 = m0, N1 = m1;
+  const unsigned int m0 = m;
+  const unsigned int m1 = m;
+  const unsigned int N0 = m0;
+  const unsigned int N1 = m1;
   int provided;
   MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &provided);
   int threads_ok = provided >= MPI_THREAD_FUNNELED;

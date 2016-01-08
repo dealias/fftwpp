@@ -5,11 +5,6 @@ using namespace std;
 using namespace utils;
 using namespace fftwpp;
 
-// Number of iterations.
-unsigned int N0=1000000;
-unsigned int N=0;
-int divisor=0; // Test for best block divisor
-int alltoall=-1; // Test for best alltoall routine
 
 void init(Complex **F,
 	  unsigned int X, unsigned int Y, unsigned int Z,
@@ -65,6 +60,15 @@ unsigned int outlimit=3000;
 
 int main(int argc, char* argv[])
 {
+
+  // Number of iterations.
+  unsigned int N0=1000000;
+  unsigned int N=0;
+  int divisor=0; // Test for best block divisor
+  int alltoall=-1; // Test for best alltoall routine
+
+  int stats=0;
+  
   unsigned int mx=4;
   unsigned int my=0;
   unsigned int mz=0;
@@ -89,7 +93,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"htqa:A:B:N:T:m:n:s:x:y:z:");
+    int c = getopt(argc,argv,"htqa:A:B:N:T:S:m:n:s:x:y:z:");
     if (c == -1) break;
                 
     switch (c) {
@@ -133,6 +137,9 @@ int main(int argc, char* argv[])
         break;
       case 'T':
         fftw::maxthreads=atoi(optarg);
+        break;
+      case 'S':
+        stats=atoi(optarg);
         break;
       case 'h':
       default:
@@ -280,7 +287,7 @@ int main(int argc, char* argv[])
         MPI_Barrier(group.active);
       }
       if(main) 
-        timings("Implicit",mx,T,N);
+        timings("Implicit",mx,T,N,stats);
     
       delete[] T;
       if(!quiet && mx*my*mz < outlimit) 

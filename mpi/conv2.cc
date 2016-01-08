@@ -6,10 +6,6 @@ using namespace utils;
 using namespace fftwpp;
 using namespace Array;
 
-// Number of iterations.
-unsigned int N0=1000000;
-unsigned int N=0;
-unsigned int outlimit=200;
 
 inline void init(Complex **F, split d, unsigned int A=2,
                  bool xcompact=true, bool ycompact=true)
@@ -51,10 +47,16 @@ inline void init(Complex **F, split d, unsigned int A=2,
 
 int main(int argc, char* argv[])
 {
+  // Number of iterations.
+  unsigned int N0=1000000;
+  unsigned int N=0;
+  unsigned int outlimit=200;
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif
   int retval=0;
+  
+  int stats = 0;
 
   unsigned int A=2; // Number of independent inputs
   unsigned int B=1; // Number of outputs
@@ -80,7 +82,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"hqtA:B:H:N:a:m:n:s:x:y:T:X:Y:");
+    int c = getopt(argc,argv,"hqtA:B:H:N:a:m:n:s:x:y:T:S:X:Y:");
     if (c == -1) break;
                 
     switch (c) {
@@ -121,6 +123,9 @@ int main(int argc, char* argv[])
         break;
       case 'T':
         fftw::maxthreads=atoi(optarg);
+        break;
+      case 'S':
+        stats=atoi(optarg);
         break;
       case 'X':
         xcompact=atoi(optarg) == 0;
@@ -255,7 +260,7 @@ int main(int argc, char* argv[])
 	if(main) T[i]=seconds();
       }
       if(main)
-	timings("Implicit",mx,T,N);
+	timings("Implicit",mx,T,N,stats);
       delete [] T;
     
       if(!quiet && nx*my < outlimit)

@@ -49,6 +49,8 @@ int main(int argc, char* argv[])
   
   unsigned int A=2; // Number of independent inputs
   unsigned int B=1; // Number of outputs
+
+  int stats=0;
   
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
@@ -60,7 +62,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"hqta:A:B:N:m:s:x:y:n:T:");
+    int c = getopt(argc,argv,"hqta:A:B:N:m:s:x:y:n:T:S:");
     if (c == -1) break;
                 
     switch (c) {
@@ -95,6 +97,9 @@ int main(int argc, char* argv[])
         break;
       case 'T':
         fftw::maxthreads=atoi(optarg);
+        break;
+      case 'S':
+        stats=atoi(optarg);
         break;
       case 't':
         test=true;
@@ -237,7 +242,7 @@ int main(int argc, char* argv[])
       }
     
       if(main) 
-	timings("Implicit",mx,T,N);
+	timings("Implicit",mx,T,N,stats);
       delete [] T;
     }   
 

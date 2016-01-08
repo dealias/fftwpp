@@ -35,13 +35,15 @@ void convolve(fftw_complex *f, fftw_complex *g, double norm,
 
 int main(int argc, char **argv)
 {
+  int N=4;
+  int m=4;
+  int stats=0;
 
-  int N=4, m=4;
 #ifdef __GNUC__	
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"N:m:");
+    int c = getopt(argc,argv,"N:m:S:");
     if (c == -1) break;
     
     switch (c) {
@@ -53,14 +55,18 @@ int main(int argc, char **argv)
       case 'm':
         m=atoi(optarg);
         break;
+      case 'S':
+        stats=atoi(optarg);
+        break;
     }
   }
 
-  const unsigned int m0 = m, m1 = m, m2=m;
-  const unsigned int N0 = 2*m0, N1 = 2*m1, N2 = 2*m2;
-  fftw_plan fplan, iplan;
-  fftw_complex *f, *g;
-  ptrdiff_t alloc_local, local_n0, local_0_start;
+  const unsigned int m0 = m;
+  const unsigned int m1 = m;
+  const unsigned int m2=m;
+  const unsigned int N0 = 2*m0;
+  const unsigned int N1 = 2*m1;
+  const unsigned int N2 = 2*m2;
   
   MPI_Init(&argc, &argv);
   fftw_mpi_init();
@@ -69,21 +75,25 @@ int main(int argc, char **argv)
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   
   /* get local data size and allocate */
-  alloc_local = fftw_mpi_local_size_3d(N0,N1,N2,MPI_COMM_WORLD,
-				       &local_n0, &local_0_start);
+  ptrdiff_t local_n0;
+  ptrdiff_t local_0_start;
+  ptrdiff_t alloc_local = fftw_mpi_local_size_3d(N0,N1,N2,MPI_COMM_WORLD,
+						 &local_n0, &local_0_start);
   
   ptrdiff_t local_n1, local_1_start;
   int transize=fftw_mpi_local_size_3d_transposed(N0,N1,N2,MPI_COMM_WORLD,
 						 &local_n0,&local_0_start,
 						 &local_n1,&local_1_start);
-  f=fftw_alloc_complex(alloc_local);
-  g=fftw_alloc_complex(alloc_local);
+  fftw_complex *f=fftw_alloc_complex(alloc_local);
+  fftw_complex *g=fftw_alloc_complex(alloc_local);
   
   /* create plan for in-place DFT */
-  fplan=fftw_mpi_plan_dft_3d(N0,N1,N2,f,f,MPI_COMM_WORLD,FFTW_FORWARD,
-			     FFTW_ESTIMATE | FFTW_MPI_TRANSPOSED_IN);
-  iplan=fftw_mpi_plan_dft_3d(N0,N1,N2,f,f,MPI_COMM_WORLD,FFTW_BACKWARD,
-			     FFTW_ESTIMATE | FFTW_MPI_TRANSPOSED_OUT);
+  fftw_plan fplan=fftw_mpi_plan_dft_3d(N0,N1,N2,f,f,MPI_COMM_WORLD,
+				       FFTW_FORWARD,
+				       FFTW_ESTIMATE | FFTW_MPI_TRANSPOSED_IN);
+  fftw_plan iplan=fftw_mpi_plan_dft_3d(N0,N1,N2,f,f,MPI_COMM_WORLD,
+				       FFTW_BACKWARD,
+				       FFTW_ESTIMATE | FFTW_MPI_TRANSPOSED_OUT);
 
   initf(f,local_0_start,local_n0,N0,N1,N2,m0,m1,m2);
   initg(g,local_0_start,local_n0,N0,N1,N2,m0,m1,m2);
@@ -103,7 +113,7 @@ int main(int argc, char **argv)
     T[i]=seconds();
   }  
 
-  if(rank == 0) timings("Explicit",m,T,N);
+  if(rank == 0) timings("Explicit",m,T,N,stats);
   
   if(m0*m1*m2<100) {
     if(rank == 0) cout << "output:" << endl;

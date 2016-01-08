@@ -6,10 +6,6 @@ using namespace utils;
 using namespace fftwpp;
 using namespace Array;
 
-// Number of iterations.
-unsigned int N0=1000000;
-unsigned int N=0;
-
 unsigned int outlimit=3000;
 
 inline void init(Complex **F, const split3& d, unsigned int A=2,
@@ -69,6 +65,10 @@ inline void init(Complex **F, const split3& d, unsigned int A=2,
 
 int main(int argc, char* argv[])
 {
+  // Number of iterations.
+  unsigned int N0=1000000;
+  unsigned int N=0;
+  
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
@@ -89,6 +89,8 @@ int main(int argc, char* argv[])
 
   bool test=false;
   bool quiet=false;
+
+  int stats=0;
   
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
@@ -100,7 +102,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"htqA:B:N:a:m:s:x:y:z:n:T:X:Y:Z:");
+    int c = getopt(argc,argv,"htqA:B:N:a:m:s:x:y:z:n:T:S:X:Y:Z:");
     if (c == -1) break;
                 
     switch (c) {
@@ -144,6 +146,9 @@ int main(int argc, char* argv[])
         break;
       case 'T':
         fftw::maxthreads=atoi(optarg);
+        break;
+      case 'S':
+        stats=atoi(optarg);
         break;
       case 'X':
         xcompact=atoi(optarg) == 0;
@@ -320,7 +325,7 @@ int main(int argc, char* argv[])
         if(main) T[i]=seconds();
       }
       if(main) 
-        timings("Implicit",mx,T,N);
+        timings("Implicit",mx,T,N,stats);
       delete [] T;
       
       if(!quiet && nx*ny*mz < outlimit) {
