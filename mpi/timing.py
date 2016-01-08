@@ -22,25 +22,28 @@ def main(argv):
         "\n -l <string> specifies the name of the MPI launch program  "\
         "\n -s indicates that the MPI launcher does not take the number of processes as an argument  "\
         "\n -R <real value> specifies the ram size, which is used in determining the maximum problem size. "\
+        "\n -S <int> stats choice (-1: raw data, 0: mean, 1:median). "\
         "\n -d specifies a dry run; commands are shown but no convolutions are computed\n "\
         "\nfor example, try the command\n ./timing.py -pcconv2 -a 3 -b 4" \
         "\nor, to see the command run, try\n ./timing.py -pcconv2 -a 3 -b 4 -d"\
 
     
-    dryrun=False
-    Tset=0
-    P=1
-    T=1
-    p=""
-    cargs=""
-    A=""
-    M=""
-    a=0
-    b=0
-    r="implicit"
-    l="mpiexec --np"
-    RAM=0
-    skipnum=False
+    dryrun = False
+    Tset = 0
+    P = 1
+    T = 1
+    p = ""
+    cargs = ""
+    A = ""
+    M = ""
+    a =0
+    b = 0
+    r = "implicit"
+    l = "mpiexec --np"
+    RAM = 0
+    stats = 0
+    skipnum = False
+
     try:
         opts, args = getopt.getopt(argv,"p:T:P:a:b:A:M:r:l:R:ds")
     except getopt.GetoptError:
@@ -74,13 +77,15 @@ def main(argv):
                     sys.exit(2)
                 
         elif opt in ("-l"):
-            l=str(arg)
+            l = str(arg)
         elif opt in ("-R"):
-            RAM=float(arg)*2**30
+            RAM = float(arg)*2**30
+        elif opt in ("-S"):
+            stats = int(arg)
         elif opt in ("-d"):
             dryrun=True
         elif opt in ("-s"):
-            skipnum=True
+            skipnum = True
 
     if dryrun:
         print "Dry run!  No output actually created."
@@ -181,7 +186,7 @@ def main(argv):
     outdir=outdir+"/"+str(P)+"x"+str(T)
     command=l+" "
     if not skipnum:
-        command+=str(P)+" "
+        command += str(P)+" "
     command+=M+"  ./"+str(p)
 #    command=l+" "+str(P)+" "+M+"  ./"+str(p)
 
@@ -222,7 +227,7 @@ def main(argv):
     for i in range(a,b+1):
         print i,
         m=str(int(pow(2,i))) # problem size
-        run=command+cargs+" -m "+m+" "+A
+        run = command + cargs + " -m " + m + " " + A
         print run
         runfile=outdir+"/run"
         
@@ -249,11 +254,11 @@ def main(argv):
                 runout.write(out)
             
         # loop over all cases
-        pos=0
+        pos = 0
         while(pos < len(rlist)):
             #print(rlist[pos],rnamelist[pos])
-            r=rlist[pos] # output file
-            rname=rnamelist[pos] # string for which we grep
+            r = rlist[pos] # output file
+            rname = rnamelist[pos] # string for which we grep
             pos += 1
 
             grepc=" | grep -A 1 "+rname+" | tail -n 1"
@@ -262,12 +267,13 @@ def main(argv):
 
             if not dryrun:
                     # grep for the string.
-                gproc = subprocess.Popen(["cat "+runfile+grepc], stdout=subprocess.PIPE, shell=True)
+                gproc = subprocess.Popen(["cat "+runfile+grepc], \
+                                         stdout=subprocess.PIPE, shell=True)
                 (out, err) = gproc.communicate()
                     
                 # put the output of the grep in the output file:
-                outfile=outdir+"/"+r
-                os.system("touch "+outfile)
+                outfile = outdir + "/" + r
+                os.system("touch " + outfile)
                 # remove lines starting with the current problem size:
                 os.system("sed -i '/^"+m+"[ \\t]/d' " +outfile)
                 with open(outfile,"a") as fileout:
