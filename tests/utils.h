@@ -21,7 +21,7 @@ inline double cbrt(double x)
 namespace utils {
 
   template<class T, class S>
-  T max(const T a, const S b)
+  inline T max(const T a, const S b)
   {
     return a > (T) b ? a : b;
   }
