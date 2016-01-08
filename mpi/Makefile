@@ -32,11 +32,23 @@ ifneq ($(strip $(FFTW_INCLUDE_PATH)),)
 CXXFLAGS+=-I$(FFTW_INCLUDE_PATH)
 endif
 
+ifneq ($(strip $(MPI_INCLUDE_PATH)),)
+CXXFLAGS+=-I$(MPI_INCLUDE_PATH)
+endif
+
 LDFLAGS=
+
 ifneq ($(strip $(FFTW_LIB_PATH)),)
 LDFLAGS+=-L$(FFTW_LIB_PATH)
 endif
+
+ifneq ($(strip $(MPI_LIB_PATH)),)
+LDFLAGS+=-L$(MPI_LIB_PATH)
+endif
+
 LDFLAGS+= -lfftw3_omp -lfftw3 -lm
+
+
 
 MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
 
