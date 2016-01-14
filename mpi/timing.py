@@ -9,24 +9,29 @@ from math import *
 import os
 
 def main(argv):
-    usage='Usage: timings.py -a<start> -b<stop> -p<cconv2,conv2,cconv3,conv3> -T<number of threads per node> -P<number of nodes> -A<quoted arg list for timed program> -M <quoted arg list for mpi run command> -r<implicit/explicit> -l<name of mpi run command> -R<ram in gigabytes> -d' 
-    helpnotes=\
-        "\n -a <int> specifies the max exponent of the min problem size "\
-        "\n -b <int> specifies the max exponent of the max problem size "\
-        "\n -p <program name> specifies the program name "\
-        "\n -P <int> specifies the number of MPI process "\
-        "\n -T <int> specifies the number of OpenMP threads per MPI process"\
-        "\n -A <string> allows one to pass extra arguments to the convolution program "\
-        "\n -M <string> allows one to pass extra arguments to the mpi exec program "\
-        "\n -r <implicit/explicit> specifies the type of convolution  "\
-        "\n -l <string> specifies the name of the MPI launch program  "\
-        "\n -s indicates that the MPI launcher does not take the number of processes as an argument  "\
-        "\n -R <real value> specifies the ram size, which is used in determining the maximum problem size. "\
-        "\n -S <int> stats choice (-1: raw data, 0: mean, 1:median). "\
-        "\n -d specifies a dry run; commands are shown but no convolutions are computed\n "\
-        "\nfor example, try the command\n ./timing.py -pcconv2 -a 3 -b 4" \
-        "\nor, to see the command run, try\n ./timing.py -pcconv2 -a 3 -b 4 -d"\
-
+    helpnotes =\
+    "A python script for launching MPI test runs for fftw++"\
+    "\nUsage:"\
+    "\n./timing.py:"\
+    "\n\t-a <int> specifies the max exponent of the min problem size "\
+    "\n\t-b <int> specifies the max exponent of the max problem size "\
+    "\n\t-p <program name> specifies the program name "\
+    "\n\t-P <int> specifies the number of MPI process "\
+    "\n\t-T <int> specifies the number of OpenMP threads per MPI process"\
+    "\n\t-A <string> allows one to pass extra arguments to the program"\
+    "\n\t-M <string> allows one to pass extra arguments to the mpi exec "\
+    "program "\
+    "\n\t-r <implicit/explicit> specifies the type of convolution  "\
+    "\n\t-l <string> specifies the name of the MPI launch program  "\
+    "\n\t-s indicates that the MPI launcher does not take the number"\
+    "\n\t\tof processes as an argument  "\
+    "\n\t-R <real value> specifies the ram size, which is used in "\
+    "\n\t\tdetermining the maximum problem size. "\
+    "\n\t-S <int> stats choice (-1: raw data, 0: mean, 1:median). "\
+    "\n\t-d specifies a dry run; commands are shown but nothing is "\
+    "\n\t\tcomputed "\
+    "\n\nfor example, try the command\n ./timing.py -pcconv2 -a 3 -b 4" \
+    "\nor, to see the command run, try\n ./timing.py -pcconv2 -a 3 -b 4 -d"\
     
     dryrun = False
     Tset = 0
@@ -47,28 +52,27 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv,"p:T:P:a:b:A:M:r:l:R:ds")
     except getopt.GetoptError:
-        print usage
         print helpnotes
         sys.exit(2)
     for opt, arg in opts:
         if opt in ("-p"):
-            p=arg
+            p = arg
         elif opt in ("-T"):
-            Tset=1
-            cargs+=" -T"+str(arg)
-            T=arg
+            Tset = 1
+            cargs += " -T"+str(arg)
+            T = arg
         elif opt in ("-P"):
-            P=int(arg)
+            P = int(arg)
         elif opt in ("-a"):
-            a=int(arg)
+            a = int(arg)
         elif opt in ("-b"):
-            b=int(arg)
+            b = int(arg)
         elif opt in ("-A"):
-            A+=str(arg)
+            A += str(arg)
         elif opt in ("-M"):
-            M+=str(arg)
+            M += str(arg)
         elif opt in ("-r"):
-            r=str(arg)
+            r = str(arg)
             if(r != "explicit"):
                 if(r != "implicit"):
                     print r
@@ -98,14 +102,13 @@ def main(argv):
 
     outdir=""
 
-
     # if both the max problem size and the ram are unset, go up to 2^8
     if (b == 0 and RAM == 0):
-        b=8
+        b = 8
     # if RAM is set and the max problem size is not set, then RAM
     # determines the problem size on its own.
     if (b == 0 and RAM != 0):
-        b=sys.maxint
+        b = sys.maxint
 
     if p == "cconv2":
         if a == 0:
@@ -183,18 +186,17 @@ def main(argv):
         print usage
         sys.exit(2)
 
-    outdir=outdir+"/"+str(P)+"x"+str(T)
-    command=l+" "
+    outdir = outdir + "/" + str(P) + "x" + str(T)
+    command = l + " "
     if not skipnum:
         command += str(P)+" "
-    command+=M+"  ./"+str(p)
-#    command=l+" "+str(P)+" "+M+"  ./"+str(p)
+    command += M + "  ./" + str(p)
 
-    print "Output in "+outdir+"/"+r
+    print "Output in " + outdir + "/" + r
 
     if not dryrun:
-        print "command: "+command+cargs+" "+A
-        os.system("mkdir -p "+outdir)
+        print "command: " + command + cargs + " " + A
+        os.system("mkdir -p " + outdir)
         #os.system("rm -f "+outdir+"/"+r)
     
     rname="Implicit"
@@ -211,12 +213,12 @@ def main(argv):
         a=1
 
     if r == "transpose":
-        rlist=["Tininit","Tinwait0","Tinwait1","Tin",
-               "Toutinit","Toutwait0","Toutwait1","Tout"]
-        rnamelist=rlist
+        rlist = ["Tininit", "Tinwait0", "Tinwait1", "Tin",
+               "Toutinit", "Toutwait0", "Toutwait1", "Tout"]
+        rnamelist = rlist
     else:
-        rlist=[r]
-        rnamelist=[rname]
+        rlist = [r]
+        rnamelist = [rname]
 
     # remove old output files
     #for r in rlist:
@@ -224,12 +226,12 @@ def main(argv):
             #os.system("rm -f "+outdir+"/"+r)
             #print("rm -f "+outdir+"/"+r)
 
-    for i in range(a,b+1):
+    for i in range(a, b + 1):
         print i,
-        m=str(int(pow(2,i))) # problem size
+        m = str(int(pow(2, i))) # problem size
         run = command + cargs + " -m " + m + " " + A
         print run
-        runfile=outdir+"/run"
+        runfile = outdir + "/run"
         
         # run the program, collect the output in out.
         if not dryrun:
@@ -289,7 +291,7 @@ def main(argv):
     # lines so asy doesn't choke.  Also sort output.
     if not dryrun:
         for r in rlist:
-            outfile=outdir+"/"+r
+            outfile = outdir+"/"+r
             os.system("sed -i 's/[ \t]*$//' "+outfile)
             os.system("sed -i '/^$/d' "+outfile)
             os.system("sort -g  "+outfile+ " -o "+outfile)
