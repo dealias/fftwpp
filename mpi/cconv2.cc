@@ -121,7 +121,7 @@ int main(int argc, char* argv[])
 
   if(N == 0) {
     N=N0/mx/my;
-    if(N < 10) N=10;
+    if(N < 20) N=20;
   }
   
   MPIgroup group(MPI_COMM_WORLD,my);

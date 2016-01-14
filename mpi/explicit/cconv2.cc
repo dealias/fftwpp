@@ -36,7 +36,7 @@ void convolve(fftw_complex *f, fftw_complex *g, double norm,
 
 int main(int argc, char **argv)
 {
-  int N=4;
+  int N=0;
   int m=4;
   int stats=0;
 #ifdef __GNUC__	
@@ -65,6 +65,12 @@ int main(int argc, char **argv)
   const unsigned int m1 = m;
   const unsigned int N0 = 2*m0;
   const unsigned int N1 = 2*m1;
+  
+  if(N == 0) {
+    unsigned int N0=1000000;
+    N=N0/m0/m1;
+    if(N < 20) N=20;
+  }
   
   MPI_Init(&argc, &argv);
   fftw_mpi_init();

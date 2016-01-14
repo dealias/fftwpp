@@ -38,7 +38,6 @@ def default_outdir(p):
         outdir="transpose2"
     return outdir
 
-
 def max_m(p, RAM, runtype):
     print "runtype:", runtype
     b = 0
@@ -135,7 +134,6 @@ For example, try the command:\n./timing.py -pcconv2 -a 3 -b 4
     A = [] # Additional arguments for hte program
     a = 2
     b = 4
-    r = "implicit"
     stats = 0
     outdir = "" # output directory
     outfile = "" #output filename
@@ -189,7 +187,7 @@ For example, try the command:\n./timing.py -pcconv2 -a 3 -b 4
         outdir = default_outdir(p)
 
     if outfile == "":
-        outfile = "implicit"
+        outfile = runtype
             
     if outdir == "":
         print "empty outdir: please select a different program!"
@@ -202,39 +200,30 @@ For example, try the command:\n./timing.py -pcconv2 -a 3 -b 4
         mpiruncmd.append("--np")
     mpiruncmd.append(str(P))
     # TODO: the mpi run command doesn't always take the number of processes
-    
+
+    print "runtype:", runtype
+
     command = []
-    command.append("./" + p)
-    if(T != 0):
+    if(runtype == "explicit"):
+        command.append("explicit/" + p)
+    else:
+        command.append("./" + p)
         command.append("-T" + str(T))
     command.append("-S" + str(stats))
     
-    print "Output in " + outdir + "/" + r
+    print "Output in " + outdir + "/" + outfile
     logname = outdir + "/log"
     print "Log of run in " + logname
 
-    rname="Implicit"
-    if r == "explicit":
-        rname="Explicit"
-        if Tset == 1:
-            print "cannot use multiple threads with explicit: try without -T"
-            sys.exit(2)
-    if r == "fft":
+    rname = "Implicit"
+    if runtype == "explicit":
+        rname = "Explicit"
+    if runtype == "fft":
         rname = "FFT"
-    if r == "transpose":
+    if runtype == "transpose":
         rname = "transpose"
-    if a == 0:
-        a = 1
-
-    if r == "transpose":
-        rlist = ["Tininit", "Tinwait0", "Tinwait1", "Tin",
-               "Toutinit", "Toutwait0", "Toutwait1", "Tout"]
-        rnamelist = rlist
-    else:
-        rlist = [r]
-        rnamelist = [rname]
-
-    print "Search string for timing: " + rname
+    if(stats != -1):
+        print "Search string for timing: " + rname
         
     if RAM != 0:
         b = max_m(p, RAM, runtype)
@@ -244,8 +233,9 @@ For example, try the command:\n./timing.py -pcconv2 -a 3 -b 4
         os.system("mkdir -p " + outdir)
         os.system("rm -f " + outdir + "/" + outfile)
 
-    for i in range(a, b + 1):
-        m = int(pow(2, i))
+    print "Max size: " + str(b) + ": " +  str(int(pow(2, b)))
+    for logm in range(a, b + 1):
+        m = int(pow(2, logm))
         mcommand = []
         i = 0
         while i < len(mpiruncmd):
@@ -256,7 +246,7 @@ For example, try the command:\n./timing.py -pcconv2 -a 3 -b 4
             mcommand.append(command[i])
             i += 1
         mcommand.append("-m" + str(m))
-        print mcommand
+        print logm, m, mcommand
         if(not dryrun):
             p = Popen(mcommand, stdout = PIPE, stderr = PIPE)
             p.wait() # sets the return code
