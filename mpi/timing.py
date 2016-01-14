@@ -140,7 +140,7 @@ For example, try the command:\n./timing.py -pcconv2 -a 3 -b 4
     RAM = 0 # ram limit in GB
     
     try:
-        opts, args = getopt.getopt(argv,"a:b:d:l:o:p:r:A:D:M:P:S:T:R")
+        opts, args = getopt.getopt(argv,"a:b:d:l:o:p:r:A:D:M:P:S:T:R:")
     except getopt.GetoptError:
         print helpnotes
         sys.exit(2)
@@ -198,7 +198,13 @@ For example, try the command:\n./timing.py -pcconv2 -a 3 -b 4
         mpiruncmd.append("mpiexec")
         mpiruncmd.append("--np")
     mpiruncmd.append(str(P))
-    # TODO: the mpi run command doesn't always take the number of processes
+    i = 0
+    while i < len(mpirunextra):
+        mpiruncmd.append(mpirunextra[i])
+        i += 1
+        
+    # TODO: the mpi run command doesn't always take the number of
+    # processes, for example on Stampede.
 
     print "runtype:", runtype
 
@@ -289,7 +295,7 @@ For example, try the command:\n./timing.py -pcconv2 -a 3 -b 4
                 with open(logname, "a") as logfile:
                     logfile.write("FAILURE\n")
                 print "FAILURE:"
-                print cmd
+                print mcommand
                 print "with, return code:"
                 print prc
     if(stats == -1):
