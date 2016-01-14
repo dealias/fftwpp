@@ -73,43 +73,30 @@ def max_m(p, RAM, runtype):
 
 def default_outdir(p):
     outdir=""
-
     if p == "cconv":
         outdir = "timings1c"
-        
     if p == "cconv2":
         outdir = "timings2c"
-        
     if p == "cconv3":
         outdir = "timings3c"
-
     if p == "conv":
         outdir = "timings1r"
-        
     if p == "conv2":
         outdir = "timings2r"
-        
     if p == "conv3":
         outdir = "timings3r"
-
     if p == "tconv":
         outdir = "timings1t"
-        
     if p == "tconv2":
         outdir="timings2t"
-
     if p == "fft1":
         outdir = "timingsf1"
-        
     if p == "mfft1":
         outdir = "timingsmf1"
-        
     if p == "fft2":
         outdir = "timingsf2"
-        
     if p == "transpose":
         outdir="transpose2"
-
     return outdir
 
 def main(argv):
@@ -260,17 +247,8 @@ def main(argv):
         print "max value of b with ram provided:", b
         
     if outfile == "":
-        if runtype == "implicit":
-            outfile = "implicit"
-        if runtype == "explicit":
-            outfile = "explicit"
-        if runtype == "pruned":
-            outfile = "pruned"
-        if runtype == "fft":
-            outfile = "fft"
-        if runtype == "transpose":
-            outfile = "tranpose"
-
+        outfile = "implicit"
+        
     if dorun:
         if RAM != 0:
             print "max problem size is "+str(2**b)
