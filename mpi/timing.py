@@ -107,17 +107,17 @@ Usage:
 ./timing.py:
 \t-a <int> specifies the max exponent of the min problem size 
 \t-b <int> specifies the max exponent of the max problem size 
-\t-p <program name> specifies the program name 
-\t-P <int> specifies the number of MPI process 
-\t-T <int> specifies the number of OpenMP threads per MPI process
-\t-A <string> allows one to pass extra arguments to the program
-\t-M <string> allows one to pass extra arguments to the mpi exec program 
-\t-r <implicit/explicit> specifies the type of convolution  
-\t-l <string> specifies the name of the MPI launch program  
-\t-S <int> stats choice (-1: raw data, 0: mean, 1:median). 
-\t-d specifies a dry run; commands are shown but nothing is computed 
-\t-D <directory name> specifies output directory 
-\t-o <filename> specifies output filename 
+\t-d Launch a dry run.'
+\t-l Extra MPI command (eg: -l "mpiexec" -l "--np")
+\t-o <filename> The output filename.
+\t-p <string> The program to be tested (eg: -p cconv2)
+\t-r <implicit, explicit, fft, transpose> the type of run
+\t-A <string> Additional arguments for the program being tested.
+\t-D <directory> Output directory
+\t-M <string> Additional MPI launch arguments
+\t-P <int> Number of MPI processes
+\t-S <int> Choice ofstatistical output (-1: raw data, 0: mean, 1: median)
+\t-R <float> Max amount of RAM that can be used (in GB).
 
 For example, try the command:\n./timing.py -pcconv2 -a 3 -b 4
     '''
@@ -140,40 +140,39 @@ For example, try the command:\n./timing.py -pcconv2 -a 3 -b 4
     RAM = 0 # ram limit in GB
     
     try:
-        opts, args = getopt.getopt(argv,"p:T:P:a:b:A:M:r:l:D:R:S:o:d")
+        opts, args = getopt.getopt(argv,"a:b:d:l:o:p:r:A:D:M:P:S:T:R")
     except getopt.GetoptError:
         print helpnotes
         sys.exit(2)
     for opt, arg in opts:
-        if opt in ("-p"):
-            p = arg
-        elif opt in ("-T"):
-            T = int(arg)
-        elif opt in ("-P"):
-            P = int(arg)
-        elif opt in ("-a"):
+        if opt in ("-a"):
             a = int(arg)
         elif opt in ("-b"):
             b = int(arg)
-        elif opt in ("-A"):
-            A.append[str(arg)]
-        elif opt in ("-D"):
-            outdir = str(arg)
-        elif opt in ("-o"):
-            outfile = str(arg)
-        elif opt in ("-M"):
-            mpirunextra.append(str(arg))
-        elif opt in ("-r"):
-            runtype = str(arg)
-        elif opt in ("-l"):
-            mpiruncmmd.append(str(arg))
-        elif opt in ("-R"):
-            RAM = float(arg)*2**30
-        elif opt in ("-S"):
-            stats = int(arg)
         elif opt in ("-d"):
             dryrun=True
-
+        elif opt in ("-l"):
+            mpiruncmd.append(str(arg))
+        elif opt in ("-o"):
+            outfile = str(arg)
+        elif opt in ("-p"):
+            p = arg
+        elif opt in ("-r"):
+            runtype = str(arg)
+        elif opt in ("-A"):
+            A.append(str(arg))
+        elif opt in ("-D"):
+            outdir = str(arg)
+        elif opt in ("-M"):
+            mpirunextra.append(str(arg))
+        elif opt in ("-P"):
+            P = int(arg)
+        elif opt in ("-S"):
+            stats = int(arg)
+        elif opt in ("-T"):
+            T = int(arg)
+        elif opt in ("-R"):
+            RAM = float(arg)*2**30
     if dryrun:
         print "Dry run!  No output actually created."
 
@@ -210,6 +209,10 @@ For example, try the command:\n./timing.py -pcconv2 -a 3 -b 4
         command.append("./" + p)
         command.append("-T" + str(T))
     command.append("-S" + str(stats))
+    i = 0
+    while(i < len(A)):
+        command.append(A[i])
+        i += 1
     
     print "Output in " + outdir + "/" + outfile
     logname = outdir + "/log"
