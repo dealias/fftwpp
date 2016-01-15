@@ -132,8 +132,8 @@ For example, try the command:\n./timing.py -pcconv2 -a 3 -b 4
     runtype = "implicit"  # type of run
     cargs = ""
     A = [] # Additional arguments for hte program
-    a = 2
-    b = 4
+    a = 4
+    b = 6
     stats = 0
     outdir = "" # output directory
     outfile = "" #output filename
@@ -240,7 +240,9 @@ For example, try the command:\n./timing.py -pcconv2 -a 3 -b 4
     if not dryrun:
         os.system("mkdir -p " + outdir)
         os.system("rm -f " + outdir + "/" + outfile)
-
+        if(stats == -1):
+            os.system("rm -f timing.dat")
+        
     print "Max size: " + str(b) + ": " +  str(int(pow(2, b)))
     for logm in range(a, b + 1):
         m = int(pow(2, logm))
