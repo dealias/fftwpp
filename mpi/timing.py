@@ -101,7 +101,7 @@ def max_m(p, RAM, runtype):
     return b
 
 def main(argv):
-    helpnotes = '''
+    usage = '''
 A python script for launching MPI test runs for fftw++
 Usage:
 ./timing.py:
@@ -142,7 +142,7 @@ For example, try the command:\n./timing.py -pcconv2 -a 3 -b 4
     try:
         opts, args = getopt.getopt(argv,"a:b:d:l:o:p:r:A:D:M:P:S:T:R:")
     except getopt.GetoptError:
-        print helpnotes
+        print usage
         sys.exit(2)
     for opt, arg in opts:
         if opt in ("-a"):
@@ -179,7 +179,6 @@ For example, try the command:\n./timing.py -pcconv2 -a 3 -b 4
     if p == "":
         print "please specify a program with -p"
         print usage
-        print helpnotes
         sys.exit(2)
 
     if outdir == "":
