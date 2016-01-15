@@ -257,6 +257,7 @@ For example, try the command:\n./timing.py -pcconv2 -a 3 -b 4
             i += 1
         mcommand.append("-m" + str(m))
         print logm, m, mcommand
+        print " ".join(mcommand)
         if(not dryrun):
             p = Popen(mcommand, stdout = PIPE, stderr = PIPE)
             p.wait() # sets the return code
