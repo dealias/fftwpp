@@ -114,8 +114,9 @@ Usage:
 \t-r <implicit, explicit, fft, transpose> the type of run
 \t-A <string> Additional arguments for the program being tested.
 \t-D <directory> Output directory
+\t-E <string> Environment options (eg: 
 \t-M <string> Additional MPI launch arguments
-\t-P <int> Number of MPI processes
+\t-P <int> Number of MPI processes eg: -E"HYDRA_TOPO_DEBUG" -E"1"
 \t-S <int> Choice ofstatistical output (-1: raw data, 0: mean, 1: median)
 \t-R <float> Max amount of RAM that can be used (in GB).
 
@@ -131,7 +132,8 @@ For example, try the command:\n./timing.py -pcconv2 -a 3 -b 4
     p = "" # program name
     runtype = "implicit"  # type of run
     cargs = ""
-    A = [] # Additional arguments for hte program
+    A = [] # Additional arguments for the program
+    E = [] # Environment options (eg: -E"HYDRA_TOPO_DEBUG" -E"1"
     a = 4
     b = 6
     stats = 0
@@ -140,7 +142,7 @@ For example, try the command:\n./timing.py -pcconv2 -a 3 -b 4
     RAM = 0 # ram limit in GB
     
     try:
-        opts, args = getopt.getopt(argv,"a:b:d:l:o:p:r:A:D:M:P:S:T:R:")
+        opts, args = getopt.getopt(argv,"a:b:d:l:o:p:r:A:D:E:M:P:S:T:R:")
     except getopt.GetoptError:
         print usage
         sys.exit(2)
@@ -163,6 +165,8 @@ For example, try the command:\n./timing.py -pcconv2 -a 3 -b 4
             A.append(str(arg))
         elif opt in ("-D"):
             outdir = str(arg)
+        elif opt in ("-E"):
+            E.append(str(arg))
         elif opt in ("-M"):
             mpirunextra.append(str(arg))
         elif opt in ("-P"):
@@ -223,6 +227,8 @@ For example, try the command:\n./timing.py -pcconv2 -a 3 -b 4
     logname = outdir + "/log"
     print "Log of run in " + logname
 
+    print "environment variables:", E
+    
     rname = "Implicit"
     if runtype == "explicit":
         rname = "Explicit"
@@ -259,7 +265,14 @@ For example, try the command:\n./timing.py -pcconv2 -a 3 -b 4
         print logm, m, mcommand
         print " ".join(mcommand)
         if(not dryrun):
-            p = Popen(mcommand, stdout = PIPE, stderr = PIPE)
+            
+            denv = dict(os.environ)
+            i = 0
+            while i < len(E):
+                denv[E[i]] = E[i + 1]
+                i += 2
+                    
+            p = Popen(mcommand, stdout = PIPE, stderr = PIPE, env = denv)
             p.wait() # sets the return code
             prc = p.returncode
             out, err = p.communicate() # capture output
