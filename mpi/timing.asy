@@ -272,6 +272,8 @@ pen linePen(int p) {
       return barPen(p)+Dotted;
     return barPen(p);
   }
+  if(p == 2)
+    return Pentype(p) + Dotted;
   return Pentype(p);
 }
 
