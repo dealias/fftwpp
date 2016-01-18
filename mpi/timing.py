@@ -134,8 +134,8 @@ For example, try the command:\n./timing.py -pcconv2 -a 3 -b 4
     cargs = ""
     A = [] # Additional arguments for the program
     E = [] # Environment options (eg: -E"HYDRA_TOPO_DEBUG" -E"1"
-    a = 4
-    b = 6
+    a = 6
+    b = 8
     stats = 0
     outdir = "" # output directory
     outfile = "" #output filename
