@@ -1,4 +1,4 @@
-#!/usr/bin/python -u
+#!/usr/bin/python
 
 import sys # so that we can return a value at the end.
 import time

@@ -1,4 +1,4 @@
-#!/usr/bin/python -u
+#!/usr/bin/python
 
 # Unit-testing script for numerical accuracy of convolutions implicit
 # and explicit convolutions.

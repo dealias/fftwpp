@@ -1,4 +1,4 @@
-#!/usr/bin/python -u
+#!/usr/bin/python
 
 # Check whether the local-memory transpose routine produces the
 # correct results for a variety of problem sizes and number of
