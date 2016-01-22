@@ -47,7 +47,7 @@ if(gtype == "scaling") {
   scale(Log,Log);
 }
 if(gtype == "peff") {
-  scale(Linear,Linear);
+  scale(Log,Linear);
 }
 
 real[][] mi,i,li,hi;
