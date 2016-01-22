@@ -17,9 +17,6 @@ include graph;
 // asy timings.asy -u"sscale=\"minm=<float>\""
 // plots only data with problem size at least minm.
 
-// Note that the scaling figures assumes subsequent test double the
-// number of cores.
-
 size(250,300,IgnoreAspect);
 
 barfactor=10;
@@ -27,7 +24,7 @@ barfactor=10;
 bool drawerrorbars=true;
 //drawerrorbars=false;
 
-string gtype=getstring("time, mflops, scaling, or speedup","mflops");
+string gtype=getstring("time, mflops, scaling, peff, or speedup","mflops");
 
 scale(Linear,Log);
 if(gtype == "time")
@@ -48,6 +45,9 @@ if(gtype == "mflops") {
 if(gtype == "scaling") {
   //scale(Linear,Linear);
   scale(Log,Log);
+}
+if(gtype == "peff") {
+  scale(Linear,Linear);
 }
 
 real[][] mi,i,li,hi;
@@ -407,7 +407,7 @@ if(gtype == "speedup") {
   yaxis("relative speed",LeftRight,RightTicks);
 }
 
-if(gtype == "scaling") {
+if(gtype == "scaling" || gtype == "peff") {
  
   // Find all values of problem size
   real[] thems;
@@ -429,9 +429,9 @@ if(gtype == "scaling") {
   real[] allprocs = new real[nn];
   for(int c=0; c < allprocs.length; ++c) {
     allprocs[c] = getint("ncores" + string(c) );
-
+    
     // This isn't dealt with by history properly:
-    //allprocs[c] = getint("cores in " + runnames[c] );
+    // allprocs[c] = getint("cores in " + runnames[c] );
   }
 
   // Collect the runtime for each value of m:
@@ -456,7 +456,10 @@ if(gtype == "scaling") {
   for(int c = 0; c < runtime.length; ++c) {
     speedup[c] = new real[];
     for(int d=0; d < runtime[c].length; ++d) {
-      speedup[c].push((runtime[c][0] / runtime[c][d]));
+      if(gtype == "scaling")
+	speedup[c].push((runtime[c][0] / runtime[c][d]));
+      if(gtype == "peff")
+	speedup[c].push((runtime[c][0] / runtime[c][d] / procs[c][d]));
     }
   }
   
@@ -508,14 +511,16 @@ if(gtype == "scaling") {
     }
     //write(procstarts);
 
-    // Plot the perfect scaling for each unique starting point.
-    for(int c = 0; c < procstarts.length; ++c) {
-      real[] procsup;
-      procsup.push(1.0);
-      for(int i = 1; i < procstarts[c].length; ++i) {
-	procsup.push(procstarts[c][i] / procstarts[c][0]);
+    if(gtype == "scaling") {
+      // Plot the perfect scaling for each unique starting point.
+      for(int c = 0; c < procstarts.length; ++c) {
+	real[] procsup;
+	procsup.push(1.0);
+	for(int i = 1; i < procstarts[c].length; ++i) {
+	  procsup.push(procstarts[c][i] / procstarts[c][0]);
+	}
+	draw(graph(procstarts[c], procsup), black+dashed);
       }
-      draw(graph(procstarts[c], procsup), black+dashed);
     }
   }
 
@@ -525,8 +530,11 @@ if(gtype == "scaling") {
   for(int i = 1; i < allprocs.length; ++i) {
     procsup.push(allprocs[i] / allprocs[0]);
   }
-  //yaxis("speedup", LeftRight, RightTicks);
-  yaxis("Speedup", LeftRight, LeftTicks(DefaultFormat, procsup));
+  if(gtype == "scaling")
+    yaxis("Speedup", LeftRight, LeftTicks(DefaultFormat, procsup));
+  if(gtype == "peff")
+    yaxis("speedup", LeftRight, RightTicks);
+
   
   if(myleg) {
     xaxis("Number of cores", BottomTop,
@@ -535,10 +543,15 @@ if(gtype == "scaling") {
     xaxis("Number of cores", BottomTop, LeftTicks(DefaultFormat, allprocs));
     //xaxis("Number of cores", BottomTop, RightTicks(procs) );
   }
-    
-  label("Strong scaling: "+name,point(N),3N);
 
-  yequals(1,grey);
+  if(gtype == "scaling") {
+    label("Strong scaling: "+name,point(N),3N);
+    yequals(1,grey);
+  }
+  
+  if(gtype == "peff")
+    label("Parallel Efficiency: "+name,point(N),3N);
+
 }
 
 legendlinelength=0.6cm;
