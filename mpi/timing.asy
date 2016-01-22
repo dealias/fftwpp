@@ -533,7 +533,7 @@ if(gtype == "scaling" || gtype == "peff") {
   if(gtype == "scaling")
     yaxis("Speedup", LeftRight, LeftTicks(DefaultFormat, procsup));
   if(gtype == "peff")
-    yaxis("speedup", LeftRight, RightTicks);
+    yaxis("Efficiency", LeftRight, RightTicks);
 
   
   if(myleg) {
