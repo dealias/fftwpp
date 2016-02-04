@@ -100,6 +100,9 @@ void ImplicitConvolution::convolve(Complex **F, multiplier *pmult,
       Backwards->fft(P[i]);
     (*pmult)(P,m,indexsize,index,1,threads); //multiply odd indices
 
+    // TODO: after the first postmultadd, u[0] is free, which means
+    // that the remaining B-1 FFTs of u[i] could be done out-of-place.
+    
     // Return to original space:
     for(unsigned int i=0; i < B; ++i) {
       Complex *fi=P[i];
