@@ -14,7 +14,7 @@ include graph;
 // asy timings.asy -u"sscale=\"loglog\""
 // forces the scale to be log-log.
 
-// asy timings.asy -u"sscale=\"minm=<float>\""
+// asy timings.asy -u"minm=<float>"
 // plots only data with problem size at least minm.
 
 size(250,300,IgnoreAspect);
