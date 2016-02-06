@@ -229,7 +229,6 @@ void ImplicitHConvolution::premult(Complex ** F,
   Vec Mhalf=LOAD(-0.5);
   Vec HSqrt3=LOAD(hsqrt3);
     
-  bool even=m == 2*c;
   if(even)
     S=new Complex[A];
   unsigned int m1=m-1;
@@ -359,7 +358,6 @@ void ImplicitHConvolution::postmultadd0(Complex **c2, Complex **c0,
 {
   double ninv=1.0/(3.0*m);
   Vec Ninv=LOAD(ninv);
-  bool even=m == 2*c;
 
   Vec Mhalf=LOAD(-0.5);
   Vec HSqrt3=LOAD(hsqrt3);
@@ -483,19 +481,19 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
   double **d0=D0, **d1=D1;
 
   unsigned int start=m-1-c; // c-1 (c) for m=even (odd)
-  for(unsigned int i=0; i < A; ++i) {
-    Complex *f=F[i]+offset;
-    c0[i]=f;
-    c1[i]=f+start;
-    Complex *u=U[i];
+  for(unsigned int a=0; a < A; ++a) {
+    Complex *f=F[a]+offset;
+    c0[a]=f;
+    c1[a]=f+start;
+    Complex *u=U[a];
     u[0]=compact ? f->re : f->re-f[m].re; // Nyquist
-    c2[i]=U[i];
+    c2[a]=U[a];
   }
   
   if(out_of_place) { 
-    for(unsigned int i=0; i < A-1; ++i) {
-      d0[i]=(double *) c0[i+1];
-      d1[i]=(double *) c1[i+1];
+    for(unsigned int a=0; a < A-1; ++a) {
+      d0[a]=(double *) c0[a+1];
+      d1[a]=(double *) c1[a+1];
     }
     d0[A-1]=(double *) c2[A-1];
     d1[A-1]=(double *) c2[A-1];
@@ -511,32 +509,33 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
   Complex *S=new Complex[B];
   {
     // r=-1:
-    for(unsigned int i=0; i < A; ++i)
-      cr->fft(c2[i],d2[i]);
+    for(unsigned int a=0; a < A; ++a)
+      cr->fft(c2[a],d2[a]); // in-place transform
     (*pmult)(d2,m,indexsize,index,-1,threads);
 
     // r=0:
     double T[A]; // deal with overlap between r=0 and r=1
-    for(unsigned int i=A; i-- > 0;) { // Loop from A-1 to 0.
-      Complex *c0i=c0[i];
-      T[i]=c0i[0].re; // r=0, k=0
-      if(!compact) c0i[0].re += 2.0*c0i[m].re; // Nyquist
-      (out_of_place ? cro : cr)->fft(c0i,d0[i]); 
+    for(unsigned int a=A; a-- > 0;) { // Loop from A-1 to 0.
+      Complex *c0a=c0[a];
+      T[a]=c0a[0].re; // r=0, k=0
+      if(!compact)
+	c0a[0].re += 2.0*c0a[m].re; // Nyquist
+      (out_of_place ? cro : cr)->fft(c0a,d0[a]);
     }
     (*pmult)(d0,m,indexsize,index,0,threads);
-    for(unsigned int i=0; i < B; ++i)
-      S[i]=((Complex *) d0[i])[start];   // r=0, k=start
+    for(unsigned int b=0; b < B; ++b)
+      S[b]=((Complex *) d0[b])[start];   // r=0, k=start
     
     // r=1:
-    for(unsigned int i=A; i-- > 0;) { // Loop from A-1 to 0.
-      Complex *c1i=c1[i];
-      c1i[0]=compact ? T[i] : T[i]-c1i[c+1].re; // r=1, k=0 with Nyquist
+    for(unsigned int a=A; a-- > 0;) { // Loop from A-1 to 0.
+      Complex *c1a=c1[a];
+      c1a[0]=compact ? T[a] : T[a]-c1a[c+1].re; // r=1, k=0 with Nyquist
       if(even) {
-        Complex tmp=c1c[i];
-        c1c[i]=c1i[1];  // r=0, k=c
-        c1i[1]=tmp;     // r=1, k=1
+        Complex tmp=c1c[a];
+        c1c[a]=c1a[1];  // r=0, k=c
+        c1a[1]=tmp;     // r=1, k=1
       }
-      (out_of_place ? cro : cr)->fft(c1[i],d1[i]);
+      (out_of_place ? cro : cr)->fft(c1[a],d1[a]);
     }
     (*pmult)(d1,m,indexsize,index,1,threads);
   }
@@ -549,50 +548,50 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
     const double ninv=1.0/(3.0*m);
     
     // Return to original space:
-    for(unsigned int i=0; i < B; ++i) {
-      Complex *c0i=c0[i];
+    for(unsigned int b=0; b < B; ++b) {
+      Complex *c0b=c0[b];
 
-      double *d2i=d2[i];
+      double *d2b=d2[b];
       // Put transformed d2 into the second half of c0, save for postmultadd:
-      c2[i]=c0[i+B];
-      Complex *c2i=c2[i];
-      Complex *c2Bi=c2B[i];
+      c2[b]=c0[b+B];
+      Complex *c2b=c2[b];
+      Complex *c2Bb=c2B[b];
       
-      double *d0i=d0[i];
-      double *d1i=d1[i];
+      double *d0b=d0[b];
+      double *d1b=d1[b];
 
       // r=1:
-      rco->fft(d1i,c2Bi);
+      rco->fft(d1b,c2Bb);
       // r=0:
-      ((Complex *) d0i)[start]=S[i]; // r=0, k=c-1 (c) for m=even (odd)
-      rco->fft(d0i,c0i);
+      ((Complex *) d0b)[start]=S[b]; // r=0, k=c-1 (c) for m=even (odd)
+      rco->fft(d0b,c0b);
       // r=2:
-      rco->fft(d2i,c2i);
+      rco->fft(d2b,c2b);
 
-      if(!compact) c0i[m]=0.0; // Zero Nyquist mode, for Hermitian symmetry.
-      c0i[0]=(c0i[0].re+c2Bi[0].re+c2i[0].re)*ninv;
+      if(!compact) c0b[m]=0.0; // Zero Nyquist mode, for Hermitian symmetry.
+      c0b[0]=(c0b[0].re+c2Bb[0].re+c2b[0].re)*ninv;
     }
     postmultadd(c2,c0,c2B);
 
   } else { // FFTs are all in-place.
     // Return to original space:
     const double ninv=1.0/(3.0*m);
-    for(unsigned int i=0; i < B; ++i) {
-      Complex *c0i=c0[i];
-      Complex *c1i=c1[i];
-      Complex *c2i=c2[i];
-      rc->fft(c2i);
-      rc->fft(c1i);
-      double R=c1i[0].re;
-      c0i[start]=S[i]; // r=0, k=c-1 (c) for m=even (odd)
+    for(unsigned int b=0; b < B; ++b) {
+      Complex *c0b=c0[b];
+      Complex *c1b=c1[b];
+      Complex *c2b=c2[b];
+      rc->fft(c2b);
+      rc->fft(c1b);
+      double R=c1b[0].re;
+      c0b[start]=S[b]; // r=0, k=c-1 (c) for m=even (odd)
       if(even) {
-        Complex tmp=c1c[i];
-        c1c[i]=c1i[1]; // r=1, k=1
-        c1i[1]=tmp;    // r=0, k=c
+        Complex tmp=c1c[b];
+        c1c[b]=c1b[1]; // r=1, k=1
+        c1b[1]=tmp;    // r=0, k=c
       }
-      rc->fft(c0i);
-      if(!compact) c0i[m]=0.0; // Zero Nyquist mode, for Hermitian symmetry.
-      c0i[0]=(c0i[0].re+R+c2i[0].re)*ninv;
+      rc->fft(c0b);
+      if(!compact) c0b[m]=0.0; // Zero Nyquist mode, for Hermitian symmetry.
+      c0b[0]=(c0b[0].re+R+c2b[0].re)*ninv;
     }
     postmultadd0(c2,c0,c1c);
   }
