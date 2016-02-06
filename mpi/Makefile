@@ -69,6 +69,9 @@ all: $(FILES)
 %.o : %.cc %.h
 	$(MPICXX) $(CXXFLAGS) $(OPTS) -o $@ -c $<
 
+lock_demo: lock_demo.o $(MPIFFT:=.o)
+	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
+
 transpose: transpose.o $(MPITRANSPOSE:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ -lm -o $@
 

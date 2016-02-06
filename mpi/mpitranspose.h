@@ -219,6 +219,7 @@ private:
   MPI_Comm communicator;
   mpiOptions options;
   MPI_Comm global;
+  double latency;
   MPI_Comm block;
   
   unsigned int n0,m0;
@@ -260,7 +261,6 @@ public:
   
   // Estimate typical bandwidth saturation message size
   double Latency() {
-    static double latency=-1.0;
     if(size == 1) return 0.0;
     if(latency >= 0) return latency;
     
@@ -413,7 +413,7 @@ public:
                const mpiOptions& options=defaultmpiOptions,
                MPI_Comm global=0) :
     N(N), m(m), n(n), M(M), L(L), work(work), communicator(communicator),
-    options(options), global(global ? global : communicator) {
+    options(options), global(global ? global : communicator), latency(-1) {
     setup(data);
   }
   
@@ -423,7 +423,7 @@ public:
                const mpiOptions& options=defaultmpiOptions,
                MPI_Comm global=0) :
     N(N), m(m), n(n), M(M), L(L), work(NULL), communicator(communicator),
-    options(options), global(global ? global : communicator) {
+    options(options), global(global ? global : communicator), latency(-1) {
     setup(data);
   }
     
@@ -433,7 +433,7 @@ public:
                const mpiOptions& options=defaultmpiOptions,
                MPI_Comm global=0) :
     N(N), m(m), n(n), M(M), L(1), work(work), communicator(communicator),
-    options(options), global(global ? global : communicator) {
+    options(options), global(global ? global : communicator), latency(-1) {
     setup(data);
   }
     
