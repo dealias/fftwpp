@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import time
 from subprocess import * # so that we can run commands
 import os
