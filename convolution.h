@@ -270,6 +270,8 @@ protected:
   bool pointers;
   bool allocated;
   unsigned int indexsize;
+  bool out_of_place;
+  bool even;
 public:
   unsigned int *index;
 
@@ -306,6 +308,9 @@ public:
     
     threads=std::min(threads,std::max(rco->Threads(),cro->Threads()));
     s=BuildZeta(3*m,c+2,ZetaH,ZetaL,threads);
+
+    out_of_place=A >= 2*B;
+    even=m == 2*c;
   }
   
   // m is the number of independent data values

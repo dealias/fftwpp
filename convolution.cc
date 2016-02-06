@@ -482,7 +482,6 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
   Complex **c0=C0, **c1=C1;
   double **d0=D0, **d1=D1;
 
-  bool even=m == 2*c;
   unsigned int start=m-1-c; // c-1 (c) for m=even (odd)
   for(unsigned int i=0; i < A; ++i) {
     Complex *f=F[i]+offset;
@@ -492,8 +491,6 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
     u[0]=compact ? f->re : f->re-f[m].re; // Nyquist
     c2[i]=U[i];
   }
-
-  const bool out_of_place=A >= 2*B;
   
   if(out_of_place) { 
     for(unsigned int i=0; i < A-1; ++i) {
@@ -502,7 +499,6 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
     }
     d0[A-1]=(double *) c2[A-1];
     d1[A-1]=(double *) c2[A-1];
-    
   } else {
     d0=(double **) c0;
     d1=(double **) c1;
