@@ -1,5 +1,5 @@
 /* Fast Fourier transform C++ header class for the FFTW3 Library
-   Copyright (C) 2004-15 John C. Bowman, University of Alberta
+   Copyright (C) 2004-16 John C. Bowman, University of Alberta
                          Malcolm Roberts, University of Strasbourg
                          
    This program is free software; you can redistribute it and/or modify
