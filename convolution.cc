@@ -73,7 +73,7 @@ void ImplicitConvolution::convolve(Complex **F, multiplier *pmult,
     default: premult<general>(P);
   }
 
-  if(out_of_place) { // out-of-place FFTs: U[A-1] is free if A > B.
+  if(outofplace) { // out-of-place FFTs: U[A-1] is free if A > B.
     Complex *W[A];
     W[A-1]=U[A-1];
     for(unsigned int i=1; i < A; ++i) 
@@ -228,7 +228,8 @@ void ImplicitHConvolution::premult(Complex ** F,
 
   Vec Mhalf=LOAD(-0.5);
   Vec HSqrt3=LOAD(hsqrt3);
-    
+  
+  bool even=m == 2*c;
   if(even)
     S=new Complex[A];
   unsigned int m1=m-1;
@@ -358,6 +359,7 @@ void ImplicitHConvolution::postmultadd0(Complex **c2, Complex **c0,
 {
   double ninv=1.0/(3.0*m);
   Vec Ninv=LOAD(ninv);
+  bool even=m == 2*c;
 
   Vec Mhalf=LOAD(-0.5);
   Vec HSqrt3=LOAD(hsqrt3);
@@ -490,7 +492,7 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
     c2[a]=U[a];
   }
   
-  if(out_of_place) { 
+  if(outofplace) { 
     for(unsigned int a=0; a < A-1; ++a) {
       d0[a]=(double *) c0[a+1];
       d1[a]=(double *) c1[a+1];
@@ -505,6 +507,7 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
 
   premult(F,offset,c1c);
 
+  bool even=m == 2*c;
   // Complex-to-real FFTs and pmults:
   Complex *S=new Complex[B];
   {
@@ -520,7 +523,7 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
       T[a]=c0a[0].re; // r=0, k=0
       if(!compact)
 	c0a[0].re += 2.0*c0a[m].re; // Nyquist
-      (out_of_place ? cro : cr)->fft(c0a,d0[a]);
+      (outofplace ? cro : cr)->fft(c0a,d0[a]);
     }
     (*pmult)(d0,m,indexsize,index,0,threads);
     for(unsigned int b=0; b < B; ++b)
@@ -535,13 +538,13 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
         c1c[a]=c1a[1];  // r=0, k=c
         c1a[1]=tmp;     // r=1, k=1
       }
-      (out_of_place ? cro : cr)->fft(c1[a],d1[a]);
+      (outofplace ? cro : cr)->fft(c1[a],d1[a]);
     }
     (*pmult)(d1,m,indexsize,index,1,threads);
   }
 
   // Real-to-complex FFTs and postmultadd:
-  if(out_of_place) {
+  if(outofplace) {
     // Put d1 into the second half of c0:
     Complex **c2B=c2+B;
 

@@ -119,7 +119,7 @@ private:
   fft1d *Backwards,*Forwards;
   bool pointers;
   bool allocated;
-  bool out_of_place;
+  bool outofplace;
   unsigned int indexsize;
 public:
   unsigned int *index;
@@ -143,7 +143,7 @@ public:
   
   void init() {
     indexsize=0;
-    out_of_place = A < B;
+    outofplace=A > B;
 
     Complex* U0=U[0];
     Complex* U1=A == 1 ? utils::ComplexAlign(m) : U[1];
@@ -151,14 +151,13 @@ public:
     BackwardsO=new fft1d(m,1,U0,U1);
     Backwards=new fft1d(m,1,U0);
     Forwards=new fft1d(m,-1,U0);
-    if(out_of_place) {
-      threads=std::min(threads,
-                       std::max(Backwards->Threads(),Forwards->Threads()));
-    } else {
+    if(outofplace) {
       ForwardsO=new fft1d(m,-1,U0,U1);
       threads=std::min(threads,
                        std::max(BackwardsO->Threads(),ForwardsO->Threads()));
-    }
+    } else
+      threads=std::min(threads,
+                       std::max(Backwards->Threads(),Forwards->Threads()));
     
     if(A == 1) utils::deleteAlign(U1);
 
@@ -208,13 +207,12 @@ public:
     if(pointers) deletepointers(U);
     if(allocated) utils::deleteAlign(u);
     
-    delete ForwardsO;
-    delete BackwardsO;    
-    if(out_of_place) {
-      delete Forwards;
-      delete Backwards;
-    }
+    if(outofplace)
+      delete ForwardsO;
     
+    delete Forwards;
+    delete Backwards;
+    delete BackwardsO;    
   }
 
   // F is an array of A pointers to distinct data blocks each of size m,
@@ -270,8 +268,7 @@ protected:
   bool pointers;
   bool allocated;
   unsigned int indexsize;
-  bool out_of_place;
-  bool even;
+  bool outofplace;
 public:
   unsigned int *index;
 
@@ -309,8 +306,7 @@ public:
     threads=std::min(threads,std::max(rco->Threads(),cro->Threads()));
     s=BuildZeta(3*m,c+2,ZetaH,ZetaL,threads);
 
-    out_of_place=A >= 2*B;
-    even=m == 2*c;
+    outofplace=A >= 2*B;
   }
   
   // m is the number of independent data values
