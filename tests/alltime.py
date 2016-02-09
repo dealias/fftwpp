@@ -17,7 +17,6 @@ def main(argv):
     -S <int> statistical choice (-1 keeps raw data). 
     -d dry run
     -D<outdir>
-    -o<outfile>
     -r<implicit/explicit/pruned/fft>
     -A<quoted arg list for timed program>
     -B<quoted arg list inserted before timed program>
@@ -36,7 +35,7 @@ def main(argv):
     stats = 0
 
     try:
-        opts, args = getopt.getopt(argv,"dp:T:r:R:S:o:D:g:A:B:E:")
+        opts, args = getopt.getopt(argv,"dp:T:r:R:S:D:g:A:B:E:")
     except getopt.GetoptError:
         print usage
         sys.exit(2)
@@ -108,12 +107,54 @@ def main(argv):
             while iE < len(E):
                 cmd.append("-E" + E[iE])
                 iE += 1
-            print " ".join(cmd)
-            if not dryrun:
-                p = Popen(cmd)
-                p.wait() # sets the return code
-                prc = p.returncode
-    
+
+
+            if(runtype == "implicit" and (p == "conv2" or p == "conv3")):
+                if(p == "conv2"):
+                    for X in [0, 1]:
+                        for Y in [0, 1]:
+                            cmd0 = []
+                            ci =  0
+                            while ci < len(cmd):
+                                cmd0.append(cmd[ci])
+                                ci += 1
+                            cmd0.append("-A-X" + str(X))
+                            cmd0.append("-A-Y" + str(Y))
+                            cmd0.append("-occonv2_implicitX"\
+                                        + str(X) + "Y" + str(Y))
+                            print " ".join(cmd0)
+                            if not dryrun:
+                                p = Popen(cmd0)
+                                p.wait()
+                                prc = p.returncode
+                if(p == "conv3"):
+                    for X in [0, 1]:
+                        for Y in [0, 1]:
+                            for Z in [0, 1]:
+                                cmd0 = []
+                                ci =  0
+                                while ci < len(cmd):
+                                    cmd0.append(cmd[ci])
+                                    ci += 1
+                                cmd0.append("-A-X" + str(X))
+                                cmd0.append("-A-Y" + str(Y))
+                                cmd0.append("-A-Z" + str(Z))
+                                cmd0.append("-occonv2_implicitX"\
+                                            + str(X) + "Y" + str(Y)\
+                                            + "Z" + str(Z))
+                                print " ".join(cmd0)
+                                if not dryrun:
+                                    p = Popen(cmd0)
+                                    p.wait()
+                                    prc = p.returncode
+
+            else:
+                print " ".join(cmd)
+                if not dryrun:
+                    p = Popen(cmd)
+                    p.wait() # sets the return code
+                    prc = p.returncode
+
             # pcmd=cmd+" -p "+p
             # print(pcmd)
             # if not dryrun:
