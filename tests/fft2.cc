@@ -36,44 +36,44 @@ int main(int argc, char* argv[])
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
   
-#ifdef __GNUC__	
+#ifdef __GNUC__ 
   optind=0;
-#endif	
+#endif  
   for (;;) {
     int c = getopt(argc,argv,"hN:m:x:y:n:T:S:r:");
     if (c == -1) break;
-		
+                
     switch (c) {
-    case 0:
-      break;
-    case 'N':
-      N=atoi(optarg);
-      break;
-    case 'm':
-      mx=my=atoi(optarg);
-      break;
-    case 'x':
-      mx=atoi(optarg);
-      break;
-    case 'y':
-      my=atoi(optarg);
-      break;
-    case 'n':
-      N0=atoi(optarg);
-      break;
-    case 'T':
-      fftw::maxthreads=max(atoi(optarg),1);
-      break;
-    case 'S':
-      stats=atoi(optarg);
-      break;
-    case 'r':
-      r=atoi(optarg);
-      break;
-    case 'h':
-    default:
-      usageFFT(2);
-      exit(0);
+      case 0:
+        break;
+      case 'N':
+        N=atoi(optarg);
+        break;
+      case 'm':
+        mx=my=atoi(optarg);
+        break;
+      case 'x':
+        mx=atoi(optarg);
+        break;
+      case 'y':
+        my=atoi(optarg);
+        break;
+      case 'n':
+        N0=atoi(optarg);
+        break;
+      case 'T':
+        fftw::maxthreads=max(atoi(optarg),1);
+        break;
+      case 'S':
+        stats=atoi(optarg);
+        break;
+      case 'r':
+        r=atoi(optarg);
+        break;
+      case 'h':
+      default:
+        usageFFT(2);
+        exit(0);
     }
   }
 
@@ -108,7 +108,7 @@ int main(int argc, char* argv[])
     timings("fft2d, in-place",mx,T,N,stats);
   }
   
-   if(r == -1 || r == 1) { // conventional FFT, out-of-place
+  if(r == -1 || r == 1) { // conventional FFT, out-of-place
 
     fft2d Forward2(-1,f,g);
     fft2d Backward2(1,f,g);
@@ -177,7 +177,7 @@ int main(int argc, char* argv[])
     timings("transpose and mfft, out-of-place",mx,T,N,stats);
   }
   
-   if(r == -1 || r == 4) { // full transpose, in-place
+  if(r == -1 || r == 4) { // full transpose, in-place
 
     Transpose Txy(mx,my,1,f(),f(),fftw::maxthreads);
     Transpose Tyx(my,mx,1,f(),f(),fftw::maxthreads);
@@ -207,7 +207,7 @@ int main(int argc, char* argv[])
     timings("2 transposes and mfft, in-place",mx,T,N,stats);
   }
 
-   if(r == -1 || r == 5) { // full transpose, out-of-place
+  if(r == -1 || r == 5) { // full transpose, out-of-place
 
     Transpose Txy(mx,my,1,f(),g(),fftw::maxthreads);
     Transpose Tyx(my,mx,1,f(),g(),fftw::maxthreads);
@@ -261,7 +261,7 @@ int main(int argc, char* argv[])
   }
 
 
-   if(r == -1 || r == 7) { // using strides, out-of-place
+  if(r == -1 || r == 7) { // using strides, out-of-place
 
     mfft1d Forwardx(mx,-1,my,my,1,f,g);
     mfft1d Backwardx(mx,1,my,my,1,f,g);
@@ -283,15 +283,15 @@ int main(int argc, char* argv[])
     timings("strided mfft out-of-place",mx,T,N,stats);
   }
   
-   cout << endl;
-   if(mx*my < outlimit) {
-     for(unsigned int i=0; i < mx; i++) {
-       for(unsigned int j=0; j < my; j++)
-         cout << f[i][j] << "\t";
-       cout << endl;
-     }
-   }
-   else cout << f[0][0] << endl;
+  cout << endl;
+  if(mx*my < outlimit) {
+    for(unsigned int i=0; i < mx; i++) {
+      for(unsigned int j=0; j < my; j++)
+        cout << f[i][j] << "\t";
+      cout << endl;
+    }
+  }
+  else cout << f[0][0] << endl;
     
   delete [] T;
   

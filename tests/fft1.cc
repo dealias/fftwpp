@@ -21,37 +21,37 @@ int main(int argc, char* argv[])
   int r=-1;
 
   
-#ifdef __GNUC__	
+#ifdef __GNUC__ 
   optind=0;
-#endif	
+#endif  
   for (;;) {
     int c = getopt(argc,argv,"N:m:x:r:T:S:h");
     if (c == -1) break;
     switch (c) {
-    case 0:
-      break;
-    case 'N':
-      N=atoi(optarg);
-      break;
-    case 'm':
-      m=atoi(optarg);
-      break;
-    case 'r':
-      r=atoi(optarg);
-      break;
-    case 'x':
-      m=atoi(optarg);
-      break;
-    case 'T':
-      fftw::maxthreads=max(atoi(optarg),1);
-      break;
-    case 'S':
-      stats=atoi(optarg);
-      break;
-    case 'h':
-    default:
-      usageFFT(1);
-      exit(0);
+      case 0:
+        break;
+      case 'N':
+        N=atoi(optarg);
+        break;
+      case 'm':
+        m=atoi(optarg);
+        break;
+      case 'r':
+        r=atoi(optarg);
+        break;
+      case 'x':
+        m=atoi(optarg);
+        break;
+      case 'T':
+        fftw::maxthreads=max(atoi(optarg),1);
+        break;
+      case 'S':
+        stats=atoi(optarg);
+        break;
+      case 'h':
+      default:
+        usageFFT(1);
+        exit(0);
     }
   }
 

@@ -14,9 +14,9 @@ int divisor=0; // Test for best block divisor
 int alltoall=-1; // Test for best alltoall routine
 
 void init(Complex *f,
-	  unsigned int X, unsigned int Y, unsigned int Z,
-	  unsigned int x0, unsigned int y0, unsigned int z0,
-	  unsigned int x, unsigned int y, unsigned int z)
+          unsigned int X, unsigned int Y, unsigned int Z,
+          unsigned int x0, unsigned int y0, unsigned int z0,
+          unsigned int x, unsigned int y, unsigned int z)
 {
   unsigned int c=0;
   for(unsigned int i=0; i < x; ++i) {
@@ -24,7 +24,7 @@ void init(Complex *f,
     for(unsigned int j=0; j < y; j++) {
       unsigned int jj=y0+j;
       for(unsigned int k=0; k < Z; k++) {
-	f[c++]=Complex(10*k+ii,jj);
+        f[c++]=Complex(10*k+ii,jj);
       }
     }
   }
@@ -68,54 +68,54 @@ int main(int argc, char* argv[])
     if (c == -1) break;
                 
     switch (c) {
-    case 0:
-      break;
-    case 'a':
-      divisor=atoi(optarg);
-      break;
-    case 'N':
-      N=atoi(optarg);
-      break;
-    case 'i':
-      inplace=atoi(optarg);
-      break;
-    case 'm':
-      nx=ny=nz=atoi(optarg);
-      break;
-    case 's':
-      alltoall=atoi(optarg);
-      break;
-    case 'x':
-      nx=atoi(optarg);
-      break;
-    case 'y':
-      ny=atoi(optarg);
-      break;
-    case 'z':
-      nz=atoi(optarg);
-      break;
-    case 'n':
-      N0=atoi(optarg);
-      break;
-    case 'S':
-      stats=atoi(optarg);
-      break;
-    case 'T':
-      fftw::maxthreads=atoi(optarg);
-      break;
-    case 'q':
-      quiet=true;
-      break;
-    case 't':
-      test=true;
-      break;
-    case 'h':
-    default:
-      if(rank == 0) {
-        usageInplace(3);
-        usageTranspose();
-      }
-      exit(1);
+      case 0:
+        break;
+      case 'a':
+        divisor=atoi(optarg);
+        break;
+      case 'N':
+        N=atoi(optarg);
+        break;
+      case 'i':
+        inplace=atoi(optarg);
+        break;
+      case 'm':
+        nx=ny=nz=atoi(optarg);
+        break;
+      case 's':
+        alltoall=atoi(optarg);
+        break;
+      case 'x':
+        nx=atoi(optarg);
+        break;
+      case 'y':
+        ny=atoi(optarg);
+        break;
+      case 'z':
+        nz=atoi(optarg);
+        break;
+      case 'n':
+        N0=atoi(optarg);
+        break;
+      case 'S':
+        stats=atoi(optarg);
+        break;
+      case 'T':
+        fftw::maxthreads=atoi(optarg);
+        break;
+      case 'q':
+        quiet=true;
+        break;
+      case 't':
+        test=true;
+        break;
+      case 'h':
+      default:
+        if(rank == 0) {
+          usageInplace(3);
+          usageTranspose();
+        }
+        exit(1);
     }
   }
 
@@ -157,8 +157,8 @@ int main(int argc, char* argv[])
       init(f,d);
 
       if(!quiet && nx*ny*nz < outlimit) {
-	if(main) cout << "\ninput:" << endl;
-	show(f,d.x,d.y,d.Z,group.active);
+        if(main) cout << "\ninput:" << endl;
+        show(f,d.x,d.y,d.Z,group.active);
       }
 
       size_t align=sizeof(Complex);
@@ -170,27 +170,27 @@ int main(int argc, char* argv[])
       array3<Complex> flocal(nx,ny,nz,align);
       init(flocal(),d.X,d.Y,d.Z,0,0,0,d.X,d.Y,d.Z);
       if(main) {
-	if(!quiet) {
-	  cout << "Gathered input:\n" <<  fgathered << endl;
-	  cout << "Local input:\n" <<  flocal << endl;
-	}
+        if(!quiet) {
+          cout << "Gathered input:\n" <<  fgathered << endl;
+          cout << "Local input:\n" <<  flocal << endl;
+        }
         retval += checkerror(flocal(),fgathered(),d.X*d.Y*d.Z);
       }
       
       fft.Forward(f,g);
 
       if(main)
-	localForward.fft(flocal);
+        localForward.fft(flocal);
       
       if(!quiet) {
-	if(main) cout << "Distributed output:" << endl;
-	show(f,d.X,d.xy.y,d.z,group.active);
+        if(main) cout << "Distributed output:" << endl;
+        show(f,d.X,d.xy.y,d.z,group.active);
       }
       gatheryz(g,fgathered(),d,group.active); 
 
       if(!quiet && main) {
-	cout << "Gathered output:\n" <<  fgathered << endl;
-	cout << "Local output:\n" <<  flocal << endl;
+        cout << "Gathered output:\n" <<  fgathered << endl;
+        cout << "Local output:\n" <<  flocal << endl;
       }
       
       if(main)
@@ -200,25 +200,25 @@ int main(int argc, char* argv[])
       fft.Normalize(f);
 
       if(main)
-	localBackward.fftNormalized(flocal);
+        localBackward.fftNormalized(flocal);
       if(!quiet) {
-	if(main) cout << "Distributed output:" << endl;
-	show(f,d.x,d.y,d.Z,group.active);
+        if(main) cout << "Distributed output:" << endl;
+        show(f,d.x,d.y,d.Z,group.active);
       }
 
       gatherxy(f,fgathered(),d,group.active);
       
       if(!quiet && main) {
-	cout << "Gathered output:\n" <<  fgathered << endl;
-	cout << "Local output:\n" <<  flocal << endl;
+        cout << "Gathered output:\n" <<  fgathered << endl;
+        cout << "Local output:\n" <<  flocal << endl;
       }
       
       if(main)
         retval += checkerror(flocal(),fgathered(),d.X*d.Y*d.Z);
       
       if(!quiet) {
-	if(main) cout << "\nback to input:" << endl;
-	show(f,d.x,d.y,d.Z,group.active);
+        if(main) cout << "\nback to input:" << endl;
+        show(f,d.x,d.y,d.Z,group.active);
       }
       
       if(!quiet && group.rank == 0) {
@@ -248,11 +248,11 @@ int main(int argc, char* argv[])
         }
         if(main) std::cout << "Allocated " << M*d.n << " bytes." << endl;
         
-	double *T=new double[N];
-	for(unsigned int i=0; i < N; ++i) {
+        double *T=new double[N];
+        for(unsigned int i=0; i < N; ++i) {
           for(unsigned int m=0; m < M; ++m)
             init(F[m],d);
-	  seconds();
+          seconds();
           for(unsigned int m=0; m < M; ++m)
             FFT[m]->iForward(F[m],G[m]);
           for(unsigned int m=0; m < M; ++m) {
@@ -261,11 +261,11 @@ int main(int argc, char* argv[])
           }
           for(unsigned int m=0; m < M; ++m)
             FFT[m]->BackwardWait(F[m]);
-	  T[i]=seconds()/M;
-	  fft.Normalize(F[0]);
-	}
-	if(!quiet && nx*ny*nz < outlimit) show(F[0],d.x,d.y,d.Z,group.active);
-	if(main) timings("FFT timing:",nx,T,N,stats);
+          T[i]=seconds()/M;
+          fft.Normalize(F[0]);
+        }
+        if(!quiet && nx*ny*nz < outlimit) show(F[0],d.x,d.y,d.Z,group.active);
+        if(main) timings("FFT timing:",nx,T,N,stats);
         
         for(unsigned int m=0; m < M; ++m) {
           delete FFT[m];
@@ -276,7 +276,7 @@ int main(int argc, char* argv[])
         delete[] FFT; 
         if(!inplace) delete[] G;
         delete[] F;
-	delete[] T;
+        delete[] T;
       }
     }
   

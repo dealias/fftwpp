@@ -244,9 +244,9 @@ int main(int argc, char* argv[])
     realmultiplier *mult;
     if(B == 1) {
       switch(A) {
-      case 2: mult=multbinary; break;
-      case 4: mult=multbinary2; break;
-      default: mult=multA;
+        case 2: mult=multbinary; break;
+        case 4: mult=multbinary2; break;
+        default: mult=multA;
       }
     } else
       mult=multB;

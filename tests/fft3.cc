@@ -22,7 +22,7 @@ inline void init(array3<Complex>& f)
   for(unsigned int i = 0; i < mx; ++i)
     for(unsigned int j = 0; j < my; j++)
       for(unsigned int k = 0; k < mz; k++) 
-	f(i, j, k)=Complex(10 * k + i, j);
+        f(i, j, k)=Complex(10 * k + i, j);
 }
   
 unsigned int outlimit = 100;
@@ -38,47 +38,47 @@ int main(int argc, char* argv[])
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
   
-#ifdef __GNUC__	
+#ifdef __GNUC__ 
   optind=0;
-#endif	
+#endif  
   for (;;) {
     int c = getopt(argc,argv,"hN:m:x:y:z:n:T:S:r:");
     if (c == -1) break;
-		
+                
     switch (c) {
-    case 0:
-      break;
-    case 'N':
-      N=atoi(optarg);
-      break;
-    case 'm':
-      mx=my=mz=atoi(optarg);
-      break;
-    case 'x':
-      mx=atoi(optarg);
-      break;
-    case 'y':
-      my=atoi(optarg);
-      break;
-    case 'z':
-      mz=atoi(optarg);
-      break;
-    case 'n':
-      N0=atoi(optarg);
-      break;
-    case 'T':
-      fftw::maxthreads=max(atoi(optarg),1);
-      break;
-    case 'S':
-      stats=atoi(optarg);
-      break;
-    case 'r':
-      r=atoi(optarg);
-      break;
-    case 'h':
-    default:
-      usageFFT(2);
-      exit(0);
+      case 0:
+        break;
+      case 'N':
+        N=atoi(optarg);
+        break;
+      case 'm':
+        mx=my=mz=atoi(optarg);
+        break;
+      case 'x':
+        mx=atoi(optarg);
+        break;
+      case 'y':
+        my=atoi(optarg);
+        break;
+      case 'z':
+        mz=atoi(optarg);
+        break;
+      case 'n':
+        N0=atoi(optarg);
+        break;
+      case 'T':
+        fftw::maxthreads=max(atoi(optarg),1);
+        break;
+      case 'S':
+        stats=atoi(optarg);
+        break;
+      case 'r':
+        r=atoi(optarg);
+        break;
+      case 'h':
+      default:
+        usageFFT(2);
+        exit(0);
     }
   }
 

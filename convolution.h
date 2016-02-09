@@ -336,7 +336,7 @@ public:
                        unsigned int A=2, unsigned int B=1,
                        unsigned int threads=fftw::maxthreads)
     : ThreadBase(threads), m(m), c(m/2), compact(true), A(A), B(B), u(u),
-    allocated(false) {
+      allocated(false) {
     initpointers(U,u);
     init();
   }
@@ -1094,9 +1094,9 @@ public:
       index[indexsize-3]=i;
       if(threads > 1) {
         for(unsigned int t=1; t < threads; ++t) {
-        unsigned int *Index=yzconvolve[t]->index;
-        for(unsigned int i=0; i < indexsize; ++i)
-          Index[i]=index[i];
+          unsigned int *Index=yzconvolve[t]->index;
+          for(unsigned int i=0; i < indexsize; ++i)
+            Index[i]=index[i];
         }
       }
     }
@@ -1321,9 +1321,9 @@ public:
       index[indexsize-3]=i;
       if(threads > 1) {
         for(unsigned int t=1; t < threads; ++t) {
-        unsigned int *Index=yzconvolve[t]->index;
-        for(unsigned int i=0; i < indexsize; ++i)
-          Index[i]=index[i];
+          unsigned int *Index=yzconvolve[t]->index;
+          for(unsigned int i=0; i < indexsize; ++i)
+            Index[i]=index[i];
         }
       }
     }    

@@ -151,10 +151,10 @@ public:
       xForwards=new mfft1d(nx,-1,My,nyp,1,f);
 
       {
-	ptrdiff_t cdist=nx/2+1;
-	ptrdiff_t rdist=2*cdist; // in-place transform
-	yForwards=new mrcfft1d(ny,nx,1,1,rdist,cdist,(double*) f);
-	yBackwards=new mcrfft1d(ny,nx,1,1,cdist,rdist,f);
+        ptrdiff_t cdist=nx/2+1;
+        ptrdiff_t rdist=2*cdist; // in-place transform
+        yForwards=new mrcfft1d(ny,nx,1,1,rdist,cdist,(double*) f);
+        yBackwards=new mcrfft1d(ny,nx,1,1,cdist,rdist,f);
       }
       
     } else {
@@ -308,10 +308,10 @@ public:
       xBackwards=new mfft1d(nx,1,My,nyp,1,f);
       xForwards=new mfft1d(nx,-1,My,nyp,1,f);
       {
-	ptrdiff_t cdist=nx/2+1;
-	ptrdiff_t rdist=2*cdist; // in-place transform
-	yForwards=new mrcfft1d(ny,nx,1,1,rdist,cdist,(double*) f);
-	yBackwards=new mcrfft1d(ny,nx,1,1,cdist,rdist,f);
+        ptrdiff_t cdist=nx/2+1;
+        ptrdiff_t rdist=2*cdist; // in-place transform
+        yForwards=new mrcfft1d(ny,nx,1,1,rdist,cdist,(double*) f);
+        yBackwards=new mcrfft1d(ny,nx,1,1,cdist,rdist,f);
       }
 
       threads=xForwards->Threads();

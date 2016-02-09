@@ -73,11 +73,11 @@ extern mpiOptions defaultmpiOptions;
 
 template<class T>
 inline void copy(const T *from, T *to, unsigned int length,
-		 unsigned int threads=1)
+                 unsigned int threads=1)
 {
   PARALLEL(
-  for(unsigned int i=0; i < length; ++i)
-    to[i]=from[i];
+    for(unsigned int i=0; i < length; ++i)
+      to[i]=from[i];
     );
 }
 
@@ -88,8 +88,8 @@ inline void copytoblock(const T *src, T *dest,
                         unsigned int stride, unsigned int threads=1)
 {
   PARALLEL(
-  for(unsigned int i=0; i < count; ++i)
-    copy(src+i*stride,dest+i*length,length);
+    for(unsigned int i=0; i < count; ++i)
+      copy(src+i*stride,dest+i*length,length);
     );
 }
 
@@ -100,8 +100,8 @@ inline void copyfromblock(const T *src, T *dest,
                           unsigned int stride, unsigned int threads=1)
 {
   PARALLEL(
-  for(unsigned int i=0; i < count; ++i)
-    copy(src+i*length,dest+i*stride,length);
+    for(unsigned int i=0; i < count; ++i)
+      copy(src+i*length,dest+i*stride,length);
     );
 }
 
@@ -675,24 +675,24 @@ public:
         unsigned int extra=(M-m0*a*b)*L;
 
         PARALLEL(
-        for(unsigned int i=0; i < n; ++i) {
-          for(int j=0; j < a; ++j)
-            copytoblock(work+(a*i+j)*block,output+(a*i+j)*ostride+i*extra,b,
-                        block,istride);
-        });
+          for(unsigned int i=0; i < n; ++i) {
+            for(int j=0; j < a; ++j)
+              copytoblock(work+(a*i+j)*block,output+(a*i+j)*ostride+i*extra,b,
+                          block,istride);
+          });
         if(extra > 0) {
           unsigned int lastblock=mp*L;
           istride=n*block;
           ostride=mlast*block+lastblock;
 
           PARALLEL(
-          for(unsigned int j=0; j < n; ++j) {
-            T *dest=output+j*ostride;
-            if(mlast > a*b)
-              copytoblock(work+j*block+istride*a*b,dest+block*a*b,mlast-a*b,
-                          block,istride);
-            copy(work+j*lastblock+mlast*istride,dest+mlast*block,lastblock);
-          });
+            for(unsigned int j=0; j < n; ++j) {
+              T *dest=output+j*ostride;
+              if(mlast > a*b)
+                copytoblock(work+j*block+istride*a*b,dest+block*a*b,mlast-a*b,
+                            block,istride);
+              copy(work+j*lastblock+mlast*istride,dest+mlast*block,lastblock);
+            });
         }
       } else {
         unsigned int lastblock=mp*L;
@@ -701,11 +701,11 @@ public:
         unsigned int ostride=mlast*block+lastblock;
 
         PARALLEL(
-        for(unsigned int j=0; j < n; ++j) {
-          T *dest=output+j*ostride;
-          copytoblock(work+j*block,dest,mlast,block,istride);
-          copy(work+j*lastblock+mlast*istride,dest+mlast*block,lastblock);
-        });
+          for(unsigned int j=0; j < n; ++j) {
+            T *dest=output+j*ostride;
+            copytoblock(work+j*block,dest,mlast,block,istride);
+            copy(work+j*lastblock+mlast*istride,dest+mlast*block,lastblock);
+          });
       }
     }
   }
@@ -731,24 +731,24 @@ public:
         unsigned int extra=(M-m0*a*b)*L;
 
         PARALLEL(
-        for(unsigned int i=0; i < n; ++i) {
-          for(int j=0; j < a; ++j)
-            copyfromblock(input+(a*i+j)*ostride+i*extra,work+(a*i+j)*block,b,
-                          block,istride);
-        });
+          for(unsigned int i=0; i < n; ++i) {
+            for(int j=0; j < a; ++j)
+              copyfromblock(input+(a*i+j)*ostride+i*extra,work+(a*i+j)*block,b,
+                            block,istride);
+          });
         if(extra > 0) {
           unsigned int lastblock=mp*L;
           istride=n*block;
           ostride=mlast*block+lastblock;
 
           PARALLEL(
-          for(unsigned int j=0; j < n; ++j) {
-            T *src=input+j*ostride;
-            if(mlast > a*b)
-              copyfromblock(src+block*a*b,work+j*block+istride*a*b,mlast-a*b,
-                            block,istride);
-            copy(src+mlast*block,work+j*lastblock+mlast*istride,lastblock);
-          });
+            for(unsigned int j=0; j < n; ++j) {
+              T *src=input+j*ostride;
+              if(mlast > a*b)
+                copyfromblock(src+block*a*b,work+j*block+istride*a*b,mlast-a*b,
+                              block,istride);
+              copy(src+mlast*block,work+j*lastblock+mlast*istride,lastblock);
+            });
         }
       } else {
         unsigned int lastblock=mp*L;
@@ -757,11 +757,11 @@ public:
         unsigned int ostride=mlast*block+lastblock;
 
         PARALLEL(
-        for(unsigned int j=0; j < n; ++j) {
-          T *src=input+j*ostride;
-          copyfromblock(src,work+j*block,mlast,block,istride);
-          copy(src+mlast*block,work+j*lastblock+mlast*istride,lastblock);
-        });
+          for(unsigned int j=0; j < n; ++j) {
+            T *src=input+j*ostride;
+            copyfromblock(src,work+j*block,mlast,block,istride);
+            copy(src+mlast*block,work+j*lastblock+mlast*istride,lastblock);
+          });
       }
     }
     if(subblock)

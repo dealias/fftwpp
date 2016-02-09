@@ -57,8 +57,7 @@ vpath %.cc ../
 FFTW=fftw++
 FILES=gather gatheryz gatherxy transpose fft2 fft3 fft2r fft3r  \
 	cconv2 conv2 cconv3 conv3 
-UTILS=mpiutils
-MPITRANSPOSE=$(UTILS) mpitranspose
+MPITRANSPOSE=mpitranspose
 MPIFFT=$(FFTW) $(MPITRANSPOSE) mpifftw++
 MPICONVOLUTION=$(MPIFFT) convolution mpiconvolution
 

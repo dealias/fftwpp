@@ -32,10 +32,10 @@ inline void init(Complex **F, unsigned int nxp, unsigned int nyp, unsigned int A
       array2<Complex> g(nxp,nyp,F[M+s]);
 #pragma omp parallel for
       for(unsigned int i=0; i < mx; ++i) {
-	for(unsigned int j=0; j < my; j++) {
-	  f[i][j]=ffactor*Complex(i,j);
-	  g[i][j]=gfactor*Complex(2*i,j+1);
-	}
+        for(unsigned int j=0; j < my; j++) {
+          f[i][j]=ffactor*Complex(i,j);
+          g[i][j]=gfactor*Complex(2*i,j+1);
+        }
       }
     }
   } else {
@@ -71,13 +71,13 @@ int main(int argc, char* argv[])
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
   
-#ifdef __GNUC__	
+#ifdef __GNUC__ 
   optind=0;
-#endif	
+#endif  
   for (;;) {
     int c = getopt(argc,argv,"hdeiptA:B:N:m:x:y:n:T:S:");
     if (c == -1) break;
-		
+                
     switch (c) {
       case 0:
         break;
@@ -176,13 +176,13 @@ int main(int argc, char* argv[])
     multiplier *mult;
   
     switch(A) {
-    case 2: mult=multbinary; break;
-    case 4: mult=multbinary2; break;
-    case 6: mult=multbinary3; break;
-    case 8: mult=multbinary4; break;
-    case 16: mult=multbinary8; break;
-    default: cout << "Multiplication for A=" << A 
-		  << " is not yet implemented" << endl; exit(1);
+      case 2: mult=multbinary; break;
+      case 4: mult=multbinary2; break;
+      case 6: mult=multbinary3; break;
+      case 8: mult=multbinary4; break;
+      case 16: mult=multbinary8; break;
+      default: cout << "Multiplication for A=" << A 
+                    << " is not yet implemented" << endl; exit(1);
     }
 
     ImplicitConvolution2 C(mx,my,A,B);
@@ -201,7 +201,7 @@ int main(int argc, char* argv[])
     if(Direct) {
       for(unsigned int i=0; i < mx; i++)
         for(unsigned int j=0; j < my; j++)
-	  h0[i][j]=f[i][j];
+          h0[i][j]=f[i][j];
     }
     
     if(mx*my < outlimit) {
@@ -235,14 +235,14 @@ int main(int argc, char* argv[])
     if(Direct) {
       for(unsigned int i=0; i < mx; i++)
         for(unsigned int j=0; j < my; j++)
-	  h0[i][j]=F[0][nyp*i+j];
+          h0[i][j]=F[0][nyp*i+j];
     }
   
     if(mx*my < outlimit) {
       for(unsigned int i=0; i < mx; i++) {
         for(unsigned int j=0; j < my; j++) {
-	  cout << F[0][nyp*i+j] << "\t";
-	}
+          cout << F[0][nyp*i+j] << "\t";
+        }
         cout << endl;
       }
     }
@@ -274,9 +274,9 @@ int main(int argc, char* argv[])
       double norm=0.0;
       for(unsigned int i=0; i < mx; i++) {
         for(unsigned int j=0; j < my; j++) {
-	  error += abs2(h0[i][j]-h[i][j]);
-	  norm += abs2(h[i][j]);
-	}
+          error += abs2(h0[i][j]-h[i][j]);
+          norm += abs2(h[i][j]);
+        }
       }
       if(norm > 0) error=sqrt(error/norm);
       cout << "error=" << error << endl;

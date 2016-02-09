@@ -178,23 +178,23 @@ int main(int argc, char* argv[])
       init(F,d,A);
 
       if(!quiet) {
-	for(unsigned int a=0; a < A; ++a) {
-	  if(main) 
-	    cout << "\nDistributed input " << a  << ":"<< endl;
-	  show(F[a],mx,d.y,group.active);
-	}
+        for(unsigned int a=0; a < A; ++a) {
+          if(main) 
+            cout << "\nDistributed input " << a  << ":"<< endl;
+          show(F[a],mx,d.y,group.active);
+        }
       }
 
       Complex **Flocal=new Complex *[A];
       for(unsigned int a=0; a < A; ++a) {
-	Flocal[a]=ComplexAlign(mx*my);
-	gathery(F[a], Flocal[a], d, 1, group.active);
-	if(!quiet && main)  {
-	  cout << "\nGathered input " << a << ":" << endl;
-	  Array2<Complex> AFlocala(mx,my,Flocal[a]);
-	  cout << AFlocala << endl;
-	  // FIXME: add error check
-	}
+        Flocal[a]=ComplexAlign(mx*my);
+        gathery(F[a], Flocal[a], d, 1, group.active);
+        if(!quiet && main)  {
+          cout << "\nGathered input " << a << ":" << endl;
+          Array2<Complex> AFlocala(mx,my,Flocal[a]);
+          cout << AFlocala << endl;
+          // FIXME: add error check
+        }
       }
       
       C.convolve(F,mult);
@@ -203,46 +203,46 @@ int main(int argc, char* argv[])
       gathery(F[0],Foutgather,d,1,group.active);
 
       if(!quiet) {
-	if(main)
-	  cout << "Distributed output:" << endl;
-	show(F[0],mx,d.y,group.active);
+        if(main)
+          cout << "Distributed output:" << endl;
+        show(F[0],mx,d.y,group.active);
       }
       
       if(main) {
-	ImplicitConvolution2 Clocal(mx,my,A,1);
-	Clocal.convolve(Flocal,mult);
-	if(!quiet) {
-	  cout << "Local output:" << endl;
-	  Array2<Complex> AFlocal0(mx,my,Flocal[0]);
-	  cout << AFlocal0 << endl;
-	}
+        ImplicitConvolution2 Clocal(mx,my,A,1);
+        Clocal.convolve(Flocal,mult);
+        if(!quiet) {
+          cout << "Local output:" << endl;
+          Array2<Complex> AFlocal0(mx,my,Flocal[0]);
+          cout << AFlocal0 << endl;
+        }
         retval += checkerror(Flocal[0],Foutgather,d.X*d.Y);
       }
 
       deleteAlign(Foutgather);
       for(unsigned int a=0; a < A; ++a)
-	deleteAlign(Flocal[a]);
+        deleteAlign(Flocal[a]);
       delete [] Flocal;
       
       MPI_Barrier(group.active);
 
     } else {
       if(!quiet && main)
-	cout << "Initialized after " << seconds() << " seconds." << endl;
+        cout << "Initialized after " << seconds() << " seconds." << endl;
 
       MPI_Barrier(group.active);
       
       double *T=new double[N];
       for(unsigned int i=0; i < N; ++i) {
-	init(F,d,A);
-	if(main) seconds();
-	C.convolve(F,mult);
-	//      C.convolve(f,g);
-	if(main) T[i]=seconds();
+        init(F,d,A);
+        if(main) seconds();
+        C.convolve(F,mult);
+        //      C.convolve(f,g);
+        if(main) T[i]=seconds();
       }
     
       if(main) 
-	timings("Implicit",mx,T,N,stats);
+        timings("Implicit",mx,T,N,stats);
       delete [] T;
     }   
 

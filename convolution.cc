@@ -510,38 +510,37 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
   bool even=m == 2*c;
   // Complex-to-real FFTs and pmults:
   Complex *S=new Complex[B];
-  {
-    // r=-1:
-    for(unsigned int a=0; a < A; ++a)
-      cr->fft(c2[a],d2[a]); // in-place transform
-    (*pmult)(d2,m,indexsize,index,-1,threads);
 
-    // r=0:
-    double T[A]; // deal with overlap between r=0 and r=1
-    for(unsigned int a=A; a-- > 0;) { // Loop from A-1 to 0.
-      Complex *c0a=c0[a];
-      T[a]=c0a[0].re; // r=0, k=0
-      if(!compact)
-	c0a[0].re += 2.0*c0a[m].re; // Nyquist
-      (outofplace ? cro : cr)->fft(c0a,d0[a]);
-    }
-    (*pmult)(d0,m,indexsize,index,0,threads);
-    for(unsigned int b=0; b < B; ++b)
-      S[b]=((Complex *) d0[b])[start];   // r=0, k=start
-    
-    // r=1:
-    for(unsigned int a=A; a-- > 0;) { // Loop from A-1 to 0.
-      Complex *c1a=c1[a];
-      c1a[0]=compact ? T[a] : T[a]-c1a[c+1].re; // r=1, k=0 with Nyquist
-      if(even) {
-        Complex tmp=c1c[a];
-        c1c[a]=c1a[1];  // r=0, k=c
-        c1a[1]=tmp;     // r=1, k=1
-      }
-      (outofplace ? cro : cr)->fft(c1[a],d1[a]);
-    }
-    (*pmult)(d1,m,indexsize,index,1,threads);
+  // r=-1:
+  for(unsigned int a=0; a < A; ++a)
+    cr->fft(c2[a],d2[a]); // in-place transform
+  (*pmult)(d2,m,indexsize,index,-1,threads);
+
+  // r=0:
+  double T[A]; // deal with overlap between r=0 and r=1
+  for(unsigned int a=A; a-- > 0;) { // Loop from A-1 to 0.
+    Complex *c0a=c0[a];
+    T[a]=c0a[0].re; // r=0, k=0
+    if(!compact)
+      c0a[0].re += 2.0*c0a[m].re; // Nyquist
+    (outofplace ? cro : cr)->fft(c0a,d0[a]);
   }
+  (*pmult)(d0,m,indexsize,index,0,threads);
+  for(unsigned int b=0; b < B; ++b)
+    S[b]=((Complex *) d0[b])[start];   // r=0, k=start
+    
+  // r=1:
+  for(unsigned int a=A; a-- > 0;) { // Loop from A-1 to 0.
+    Complex *c1a=c1[a];
+    c1a[0]=compact ? T[a] : T[a]-c1a[c+1].re; // r=1, k=0 with Nyquist
+    if(even) {
+      Complex tmp=c1c[a];
+      c1c[a]=c1a[1];  // r=0, k=c
+      c1a[1]=tmp;     // r=1, k=1
+    }
+    (outofplace ? cro : cr)->fft(c1[a],d1[a]);
+  }
+  (*pmult)(d1,m,indexsize,index,1,threads);
 
   // Real-to-complex FFTs and postmultadd:
   if(outofplace) {
@@ -1282,8 +1281,8 @@ void multautocorrelation(Complex **F, unsigned int m,
   
 #ifdef __SSE2__
   PARALLEL(
-           for(unsigned int j=0; j < m; ++j) {
-             Complex *p=F0+j;
+    for(unsigned int j=0; j < m; ++j) {
+      Complex *p=F0+j;
       STORE(p,ZMULT(LOAD(p),CONJ(LOAD(p))));
     }
     );

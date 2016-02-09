@@ -263,36 +263,36 @@ int main(int argc, char* argv[])
         gatheryz(F[a],F0[a],d,group.active);
         if(!quiet && main) {
           cout << "a: " << a << endl;
-	  show(F0[a],d.X,d.Y,d.Z,0,0,0,d.X,d.Y,d.Z);
+          show(F0[a],d.X,d.Y,d.Z,0,0,0,d.X,d.Y,d.Z);
         }
       }
 
       C.convolve(F,mult);
 
       if(!quiet && nx*ny*mz < outlimit) {
-	if(main) cout << "Distributed output: " << endl;
-	show(F[0],d.X,d.y,d.z,group.active);
+        if(main) cout << "Distributed output: " << endl;
+        show(F[0],d.X,d.y,d.z,group.active);
       }
       
       Complex **F0out=new Complex*[B];
       if(main) {
-	for(unsigned int b=0; b < B; b++)
+        for(unsigned int b=0; b < B; b++)
           F0out[b]=ComplexAlign(d.X*d.Y*d.Z);
       }
       for(unsigned int b=0; b < B; b++) {
-	gatheryz(F[b],F0out[b],d,group.active);
-	if(!quiet && main) {
-	  cout << "Gathered output:" << endl;
-	  cout << "b: " << b << endl;
+        gatheryz(F[b],F0out[b],d,group.active);
+        if(!quiet && main) {
+          cout << "Gathered output:" << endl;
+          cout << "b: " << b << endl;
           show(F0out[b],d.X,d.Y,d.Z,0,0,0,d.X,d.Y,d.Z);
-	}
+        }
       }
 
       if(main) {
-	ImplicitHConvolution3 Clocal(mx,my,mz,xcompact,ycompact,zcompact,A,B);
-	Clocal.convolve(F0,mult);
-	if(!quiet)
-	  cout << "Local output:" << endl;
+        ImplicitHConvolution3 Clocal(mx,my,mz,xcompact,ycompact,zcompact,A,B);
+        Clocal.convolve(F0,mult);
+        if(!quiet)
+          cout << "Local output:" << endl;
         for(unsigned int b=0; b < B; b++) {
           if(!quiet) {
             cout << "b: " << b << endl;
@@ -303,10 +303,10 @@ int main(int argc, char* argv[])
       }
       
       if(main) {
-	for(unsigned int a=0; a < A; a++)
-	  deleteAlign(F0[a]);
-	for(unsigned int b=0; b < B; b++)
-	  deleteAlign(F0out[b]);
+        for(unsigned int a=0; a < A; a++)
+          deleteAlign(F0[a]);
+        for(unsigned int b=0; b < B; b++)
+          deleteAlign(F0out[b]);
       }
       delete[] F0;
       delete[] F0out;
@@ -329,8 +329,8 @@ int main(int argc, char* argv[])
       delete [] T;
       
       if(!quiet && nx*ny*mz < outlimit) {
-	if(main) cout << "output: " << endl;
-	show(F[0],d.X,d.y,d.z,group.active);
+        if(main) cout << "output: " << endl;
+        show(F[0],d.X,d.y,d.z,group.active);
       }
     }
       

@@ -27,21 +27,21 @@ int main()
   unsigned int M=nx;
   
   mrcfft1d Forward(ny, // length of transform
-		   M,  // number of transforms
-		   rstride,
-		   cstride,
-		   rdist,
-		   cdist,
-		   f,  // input array
-		   g); // output array
+                   M,  // number of transforms
+                   rstride,
+                   cstride,
+                   rdist,
+                   cdist,
+                   f,  // input array
+                   g); // output array
   mcrfft1d Backward(ny, // length of transform
-		    M,  // number of transforms
-		    cstride,
-		    rstride,
-		    cdist,
-		    rdist,
-		    g,  // input array
-		    f); // output array
+                    M,  // number of transforms
+                    cstride,
+                    rstride,
+                    cdist,
+                    rdist,
+                    g,  // input array
+                    f); // output array
 
   // Initialize data:
   for(unsigned int i=0; i < nx; i++) 

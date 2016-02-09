@@ -305,12 +305,12 @@ public:
              Complex *out,
              const utils::mpiOptions& options=utils::defaultmpiOptions) :
     fftw(dr.x*realsize(dr.Y,in,out),0,options.threads,dr.X*dr.Y), dr(dr), dc(dc)
-    {init(in,out,options);}
+  {init(in,out,options);}
     
   rcfft2dMPI(const utils::split& dr, const utils::split& dc, Complex *out,
-	    const utils::mpiOptions& options=utils::defaultmpiOptions) :
+             const utils::mpiOptions& options=utils::defaultmpiOptions) :
     fftw(dr.x*2*(dr.Y/2+1),0,options.threads,dr.X*dr.Y), dr(dr), dc(dc)
-    {init((double *) out,out,options);}
+  {init((double *) out,out,options);}
     
   virtual ~rcfft2dMPI() {
     delete xBackward;

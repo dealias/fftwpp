@@ -85,9 +85,9 @@ public:
                      MPI_Comm global) {
     global=global ? global : d.communicator;
     T=new utils::mpitranspose<Complex>(d.X,d.y,d.x,d.Y,1,f,work,
-                               d.communicator,mpi,global);
+                                       d.communicator,mpi,global);
     U=new utils::mpitranspose<Complex>(du.X,du.y,du.x,du.Y,1,u2,work,
-                                du.communicator,mpi,global);
+                                       du.communicator,mpi,global);
     du.Deactivate();
   }    
   
@@ -260,7 +260,7 @@ public:
 };
 
 void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
-			      utils::split3& d, bool xcompact, bool ycompact,
+                              utils::split3& d, bool xcompact, bool ycompact,
                               Complex *f, unsigned int nu=0, Complex *u=NULL);
  
 // In-place implicitly dealiased 3D complex convolution.
@@ -273,9 +273,9 @@ public:
                      MPI_Comm global) {
     if(d.xy.y < d.Y) {
       T=new utils::mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,f,work,
-                                 d.xy.communicator,mpi,global);
+                                         d.xy.communicator,mpi,global);
       U=new utils::mpitranspose<Complex>(du.X,du.xy.y,du.x,du.Y,du.z,u3,work,
-                                 du.xy.communicator,mpi,global);
+                                         du.xy.communicator,mpi,global);
     } else {T=U=NULL;}
     du.Deactivate();
   }

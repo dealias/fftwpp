@@ -26,9 +26,9 @@ bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 unsigned int outlimit=100;
 
 inline void init(Complex **F,
-		 unsigned int mx, unsigned int my,
-		 unsigned int nxp, unsigned int nyp,
-		 unsigned int A,
+                 unsigned int mx, unsigned int my,
+                 unsigned int nxp, unsigned int nyp,
+                 unsigned int A,
                  bool xcompact, bool ycompact)
 {
   if(A % 2 == 0) {
@@ -58,11 +58,11 @@ inline void init(Complex **F,
       }
 #pragma omp parallel for
       for(unsigned int i=0; i < nx; ++i) {
-	unsigned int I=i+offset;
-	for(unsigned int j=0; j < my; j++) {
-	  f[I][j]=ffactor*Complex(i,j);
-	  g[I][j]=gfactor*Complex(2*i,j+1);
-	}
+        unsigned int I=i+offset;
+        for(unsigned int j=0; j < my; j++) {
+          f[I][j]=ffactor*Complex(i,j);
+          g[I][j]=gfactor*Complex(2*i,j+1);
+        }
       }
     }
   } else {
@@ -84,13 +84,13 @@ int main(int argc, char* argv[])
   fftw::effort |= FFTW_NO_SIMD;
 #endif
   
-#ifdef __GNUC__	
+#ifdef __GNUC__ 
   optind=0;
-#endif	
+#endif  
   for (;;) {
     int c = getopt(argc,argv,"hdeipA:B:N:m:x:y:n:T:S:X:Y:");
     if (c == -1) break;
-		
+                
     switch (c) {
       case 0:
         break;
@@ -213,7 +213,7 @@ int main(int argc, char* argv[])
     if(Direct) {
       for(unsigned int i=0; i < mx; i++) 
         for(unsigned int j=0; j < my; j++)
-	  h0[i][j]=f[i+!xcompact][j];
+          h0[i][j]=f[i+!xcompact][j];
     }
     
     if(nxp*my < outlimit)
@@ -244,7 +244,7 @@ int main(int argc, char* argv[])
     if(Direct) {
       for(unsigned int i=0; i < mx; i++) 
         for(unsigned int j=0; j < my; j++)
-	  h0[i][j]=f[offset+i][j];
+          h0[i][j]=f[offset+i][j];
     }
 
     if(2*(mx-1)*my < outlimit) { 
@@ -283,9 +283,9 @@ int main(int argc, char* argv[])
       double norm=0.0;
       for(unsigned int i=0; i < mx; i++) {
         for(unsigned int j=0; j < my; j++) {
-	  error += abs2(h0[i][j]-h[i][j]);
-	  norm += abs2(h[i][j]);
-	}
+          error += abs2(h0[i][j]-h[i][j]);
+          norm += abs2(h[i][j]);
+        }
       }
       if(norm > 0) error=sqrt(error/norm);
       cout << "error=" << error << endl;

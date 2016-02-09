@@ -54,11 +54,11 @@ int main(int argc, char* argv[])
   cout << "g:" << endl << g;
   
   /*
-  cout << "input after symmetrization (done automatically):" << endl;
-  HermitianSymmetrizeX(mx,my,mx-1,f);
-  HermitianSymmetrizeX(mx,my,mx-1,g);
-  cout << "f:" << endl << f << endl;
-  cout << "g:" << endl << g << endl;
+    cout << "input after symmetrization (done automatically):" << endl;
+    HermitianSymmetrizeX(mx,my,mx-1,f);
+    HermitianSymmetrizeX(mx,my,mx-1,g);
+    cout << "f:" << endl << f << endl;
+    cout << "g:" << endl << g << endl;
   */
   
   bool symmetrize=true;

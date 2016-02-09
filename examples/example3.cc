@@ -26,8 +26,8 @@ int main()
   for(unsigned int i=0; i < nx; i++) 
     for(unsigned int j=0; j < ny; j++) 
       for(unsigned int k=0; k < nz; k++) 
-	f(i,j,k)=Complex(10*k+i,j);
-	
+        f(i,j,k)=Complex(10*k+i,j);
+        
   cout << "\ninput:\n" << f;
   
   Forward.fft(f);

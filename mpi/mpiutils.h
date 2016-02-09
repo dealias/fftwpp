@@ -39,12 +39,12 @@ void gatherx(const ftype *part, ftype *whole, const split d,
         ftype *C=new ftype[n];
         MPI_Recv(C,sizeof(ftype)*n,MPI_BYTE,p,0,communicator,
                  MPI_STATUS_IGNORE);
-	int offset=x0*Y*Z;
-	int count=x;
-	int length=Y*Z;
-	int stride=Y*Z;
-	copyfromblock(C,whole+offset,count,length,stride);
-	delete [] C;
+        int offset=x0*Y*Z;
+        int count=x;
+        int length=Y*Z;
+        int stride=Y*Z;
+        copyfromblock(C,whole+offset,count,length,stride);
+        delete [] C;
       }
     }
   } else {
@@ -90,12 +90,12 @@ void gathery(const ftype *part, ftype *whole, const split d,
         ftype *C=new ftype[n];
         MPI_Recv(C,sizeof(ftype)*n,MPI_BYTE,p,0,communicator,
                  MPI_STATUS_IGNORE);
-	int offset=y0*Z;
-	int count=X;
-	int length=y*Z;
-	int stride=Y*Z;
-	copyfromblock(C,whole+offset,count,length,stride);
-	delete [] C;
+        int offset=y0*Z;
+        int count=X;
+        int length=y*Z;
+        int stride=Y*Z;
+        copyfromblock(C,whole+offset,count,length,stride);
+        delete [] C;
       }
     }
   } else {
@@ -135,7 +135,7 @@ void gatheryz(const ftype *part, ftype *whole, const split3& d,
       const int outoffset=i*Y*Z+y0*Z+z0;
       const int inoffset=i*y*z;
       copyfromblock(part+inoffset,whole+outoffset,
-		    count,length,stride);
+                    count,length,stride);
     }
     for(int p=1; p < size; ++p) {
       unsigned int dims[4];
@@ -147,18 +147,18 @@ void gatheryz(const ftype *part, ftype *whole, const split3& d,
 
       unsigned int n=X*y*z;
       if(n > 0) {
-	ftype *C=new ftype[n];
-	MPI_Recv(C,sizeof(ftype)*n,MPI_BYTE,p,0,communicator,
+        ftype *C=new ftype[n];
+        MPI_Recv(C,sizeof(ftype)*n,MPI_BYTE,p,0,communicator,
                  MPI_STATUS_IGNORE);
-	const int count=y;
-	const int stride=Z;
-	const int length=z;
-	for(unsigned int i=0; i < X; ++i) {
-	  const int outoffset=i*Y*Z+y0*Z+z0;
-	  const int inoffset=i*y*z;
-	  copyfromblock(C+inoffset,whole+outoffset,count,length,stride);
-	}
-	delete [] C;
+        const int count=y;
+        const int stride=Z;
+        const int length=z;
+        for(unsigned int i=0; i < X; ++i) {
+          const int outoffset=i*Y*Z+y0*Z+z0;
+          const int inoffset=i*y*z;
+          copyfromblock(C+inoffset,whole+outoffset,count,length,stride);
+        }
+        delete [] C;
       }
     }
   } else {
@@ -175,9 +175,9 @@ void gatheryz(const ftype *part, ftype *whole, const split3& d,
 // The gathered array has dimensions    X*Y*Z.
 template<class ftype>
 void gatherxy(const ftype *part,
-	      ftype *whole,
-	      const split3 d,
-	      const MPI_Comm& communicator)
+              ftype *whole,
+              const split3 d,
+              const MPI_Comm& communicator)
 {
   int size, rank;
   MPI_Comm_size(communicator,&size);
@@ -199,7 +199,7 @@ void gatherxy(const ftype *part,
       const int poffset=i*y*Z;
       const int woffset=(x0+i)*Y*Z+y0*Z;
       copyfromblock(part+poffset,whole+woffset,
-		    count,length,stride);
+                    count,length,stride);
     }
     for(int p=1; p < size; ++p) {
       unsigned int dims[4];
@@ -211,20 +211,20 @@ void gatherxy(const ftype *part,
 
       unsigned int n=x*y*Z;
       if(n > 0) {
-	ftype *C=new ftype[n];
-	MPI_Recv(C,sizeof(ftype)*n,MPI_BYTE,p,0,communicator,
+        ftype *C=new ftype[n];
+        MPI_Recv(C,sizeof(ftype)*n,MPI_BYTE,p,0,communicator,
                  MPI_STATUS_IGNORE);
-	const int count=y;
-	const int stride=Z;
-	const int length=Z;
-	for(unsigned int i=0; i < x; ++i) {
-	  const int poffset=i*y*Z;
-	  const int woffset=(x0+i)*Y*Z+y0*Z;
-	  copyfromblock(C+poffset,whole+woffset,
-			count,length,stride);
+        const int count=y;
+        const int stride=Z;
+        const int length=Z;
+        for(unsigned int i=0; i < x; ++i) {
+          const int poffset=i*y*Z;
+          const int woffset=(x0+i)*Y*Z+y0*Z;
+          copyfromblock(C+poffset,whole+woffset,
+                        count,length,stride);
 
-	}
-	delete [] C;
+        }
+        delete [] C;
       }
     }
   } else {
@@ -239,7 +239,7 @@ void gatherxy(const ftype *part,
 
 template<class T>
 int checkerror(const T *f, const T *control, unsigned int n, unsigned int M,
-	       unsigned int dist)
+               unsigned int dist)
 {
   double maxerr=0.0;
   double norm=0.0;

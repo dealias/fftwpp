@@ -23,7 +23,7 @@ int main()
   crfft1d Backward(n,g,f);
   
   for(unsigned int i=0; i < n; i++) f[i]=i;
-	
+        
   cout << "\ninput (" << n << " doubles):" << endl;
   for(unsigned int i=0; i < n; i++) cout << f[i] << (i!=n-1 ? " " : "\n");
 

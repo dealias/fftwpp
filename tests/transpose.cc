@@ -32,11 +32,11 @@ inline void init(array3<Complex>& f, bool transpose=false)
   
 template<class T>
 inline void copy(const T *from, T *to, unsigned int length,
-		 unsigned int threads=1)
+                 unsigned int threads=1)
 {
   PARALLEL(
-  for(unsigned int i=0; i < length; ++i)
-    to[i]=from[i];
+    for(unsigned int i=0; i < length; ++i)
+      to[i]=from[i];
     );
 }
 
@@ -71,13 +71,13 @@ int main(int argc, char* argv[])
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
   
-#ifdef __GNUC__	
+#ifdef __GNUC__ 
   optind=0;
-#endif	
+#endif  
   for (;;) {
     int c = getopt(argc,argv,"hN:m:x:y:z:n:T:S:d");
     if (c == -1) break;
-		
+                
     switch (c) {
       case 0:
         break;
@@ -164,7 +164,7 @@ int main(int argc, char* argv[])
     for(unsigned int i=0; i < N; ++i) {
       init(f);
       seconds();
-     transpose.transpose(f(),g());
+      transpose.transpose(f(),g());
 //      localtranspose(f(),g(),mx,my,mz,fftw::maxthreads);
       T[i]=seconds();
     }

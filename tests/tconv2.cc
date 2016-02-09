@@ -60,13 +60,13 @@ int main(int argc, char* argv[])
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
   
-#ifdef __GNUC__	
+#ifdef __GNUC__ 
   optind=0;
-#endif	
+#endif  
   for (;;) {
     int c = getopt(argc,argv,"hdeiptA:B:N:m:x:y:n:T:S:");
     if (c == -1) break;
-		
+                
     switch (c) {
       case 0:
         break;
@@ -178,7 +178,7 @@ int main(int argc, char* argv[])
     if(Direct) {
       for(unsigned int i=0; i < mx; i++) 
         for(unsigned int j=0; j < my; j++)
-	  h0[i][j]=e[i][j];
+          h0[i][j]=e[i][j];
     }
 
     if(nxp*my < outlimit)
@@ -208,7 +208,7 @@ int main(int argc, char* argv[])
     if(Direct) {
       for(unsigned int i=0; i < mx; i++) 
         for(unsigned int j=0; j < my; j++)
-	  h0[i][j]=e[i][j];
+          h0[i][j]=e[i][j];
     }
 
     unsigned int offset=nx/2-mx+1;
@@ -248,9 +248,9 @@ int main(int argc, char* argv[])
       double norm=0.0;
       for(unsigned int i=0; i < mx; i++) {
         for(unsigned int j=0; j < my; j++) {
-	  error += abs2(h0[i][j]-h[i][j]);
-	  norm += abs2(h[i][j]);
-	}
+          error += abs2(h0[i][j]-h[i][j]);
+          norm += abs2(h[i][j]);
+        }
       }
       if(norm > 0) error=sqrt(error/norm);
       cout << "error=" << error << endl;

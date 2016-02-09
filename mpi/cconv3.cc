@@ -7,10 +7,10 @@ using namespace fftwpp;
 
 
 void init(Complex **F,
-	  unsigned int X, unsigned int Y, unsigned int Z,
-	  unsigned int x0, unsigned int y0, unsigned int z0,
-	  unsigned int x, unsigned int y, unsigned int z,
-	  unsigned int A=2)
+          unsigned int X, unsigned int Y, unsigned int Z,
+          unsigned int x0, unsigned int y0, unsigned int z0,
+          unsigned int x, unsigned int y, unsigned int z,
+          unsigned int A=2)
 {
   unsigned int M=A/2;
   double factor=1.0/sqrt((double) M);
@@ -22,13 +22,13 @@ void init(Complex **F,
     double gfactor=1.0/S*factor;
     for(unsigned int i=0; i < X; ++i) {
       for(unsigned int j=0; j < y; j++) {
-	unsigned int jj=y0+j;
-	for(unsigned int k=0; k < z; k++) {
+        unsigned int jj=y0+j;
+        for(unsigned int k=0; k < z; k++) {
           unsigned int kk=z0+k;
-	  unsigned int pos=i*y*z+j*z+k;
-	  Fs[pos]=ffactor*Complex(i+kk,jj+kk);
-	  Gs[pos]=gfactor*Complex(2*i+kk,jj+1+kk);
-	}
+          unsigned int pos=i*y*z+j*z+k;
+          Fs[pos]=ffactor*Complex(i+kk,jj+kk);
+          Gs[pos]=gfactor*Complex(2*i+kk,jj+1+kk);
+        }
       }
     }
   }
@@ -47,8 +47,8 @@ void show(Complex *F, unsigned int X, unsigned int Y, unsigned int Z)
   for(unsigned int i=0; i < X; ++i) {
     for(unsigned int j=0; j < Y; ++j) {
       for(unsigned int k=0; k < Z; ++k) {
-	unsigned int pos=i*Y*Z+j*Z+k;
-	cout << F[pos] << "\t";
+        unsigned int pos=i*Y*Z+j*Z+k;
+        cout << F[pos] << "\t";
       }
       cout << endl;
     }
@@ -272,7 +272,7 @@ int main(int argc, char* argv[])
       }
     } else {
       if(!quiet && main)
-	cout << "Initialized after " << seconds() << " seconds." << endl;
+        cout << "Initialized after " << seconds() << " seconds." << endl;
 
       MPI_Barrier(group.active);
      

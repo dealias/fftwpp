@@ -49,13 +49,13 @@ int main(int argc, char* argv[])
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
   
-#ifdef __GNUC__	
+#ifdef __GNUC__ 
   optind=0;
-#endif	
+#endif  
   for (;;) {
     int c = getopt(argc,argv,"hdeipA:B:N:m:n:T:S:");
     if (c == -1) break;
-		
+                
     switch (c) {
       case 0:
         break;
@@ -90,14 +90,14 @@ int main(int argc, char* argv[])
       case 'T':
         fftw::maxthreads=max(atoi(optarg),1);
         break;      
-    case 'S':
+      case 'S':
         stats=atoi(optarg);
         break;
-    case 'h':
+      case 'h':
       default:
         usage(1);
         usageExplicit(1);
-	exit(0);
+        exit(0);
     }
   }
 
@@ -198,8 +198,8 @@ int main(int argc, char* argv[])
       cout << endl;
       double norm=0.0;
       for(unsigned long long k=0; k < m; k++) {
-	error += abs2(h0[k]-h[k]);
-	norm += abs2(h[k]);
+        error += abs2(h0[k]-h[k]);
+        norm += abs2(h[k]);
       }
       if(norm > 0) error=sqrt(error/norm);
       cout << "error=" << error << endl;

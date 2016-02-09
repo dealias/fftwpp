@@ -6,7 +6,7 @@
    software; you can redistribute it and/or modify it under the terms of
    the GNU Library General Public License as published by the Free
    Software Foundation; either version 2 of the License, or (at your
-   option) any later version.	This library is distributed in the hope
+   option) any later version.   This library is distributed in the hope
    that it will be useful, but WITHOUT ANY WARRANTY; without even the
    implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
    PURPOSE.  See the GNU Library General Public License for more details.
@@ -31,27 +31,27 @@ using std::ws;
 class Complex
 {
 #ifdef __ATT_complex__
- public:
+public:
 #else
- protected:
+protected:
 #endif
 
   Real re;
   Real im;
 
- public:
+public:
 
   Complex() {}
   Complex(Real r, Real i=0) : re(r), im(i) {}
   Complex(const Complex& y) : re(y.re), im(y.im) {}
-	
+        
   ~Complex() {}
 
   Real real() const {return re;}
   Real imag() const {return im;}
 
   const Complex& operator = (const Complex& y);
-	
+        
   const Complex& operator += (const Complex& y);
   const Complex& operator += (Real y);
   const Complex& operator -= (const Complex& y);
@@ -60,7 +60,7 @@ class Complex
   const Complex& operator *= (Real y);
   const Complex& operator /= (const Complex& y); 
   const Complex& operator /= (Real y); 
-	
+        
   void error(char* msg) const;
 };
 
@@ -122,7 +122,7 @@ inline const Complex& Complex::operator /= (Real y)
   return *this;
 }
 
-//	functions
+//      functions
 
 inline int operator == (const Complex& x, const Complex& y)
 {

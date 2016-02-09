@@ -211,23 +211,23 @@ int main(int argc, char* argv[])
       init(F,d,A,xcompact,ycompact);
 
       if(!quiet) {
-	for(unsigned int a=0; a < A; ++a) {
-	  if(main) 
-	    cout << "\nDistributed input " << a  << ":"<< endl;
-	  show(F[a],mx,d.y,group.active);
-	}
+        for(unsigned int a=0; a < A; ++a) {
+          if(main) 
+            cout << "\nDistributed input " << a  << ":"<< endl;
+          show(F[a],mx,d.y,group.active);
+        }
       }
 
       Complex **Flocal=new Complex *[A];
       for(unsigned int i=0; i < A; ++i) {
-	Flocal[i]=ComplexAlign(nx*nyp);
-	gathery(F[i],Flocal[i],d,1,group.active);
-	if(!quiet && main)  {
-	  cout << "\nGathered input " << i << ":" << endl;
-	  Array2<Complex> AFlocala(mx,my,Flocal[i]);
-	  cout << AFlocala << endl;
-	  // FIXME: add error check
-	}
+        Flocal[i]=ComplexAlign(nx*nyp);
+        gathery(F[i],Flocal[i],d,1,group.active);
+        if(!quiet && main)  {
+          cout << "\nGathered input " << i << ":" << endl;
+          Array2<Complex> AFlocala(mx,my,Flocal[i]);
+          cout << AFlocala << endl;
+          // FIXME: add error check
+        }
       }
 
       C.convolve(F,mult);
@@ -236,35 +236,35 @@ int main(int argc, char* argv[])
       gathery(F[0],Foutgather,d,1,group.active);
 
       if(main) {
-	ImplicitHConvolution2 Clocal(mx,my,xcompact,ycompact,A,B);
-	Clocal.convolve(Flocal,mult);
-	if(!quiet) {
-	  cout << "Local output:" << endl;
-	  Array2<Complex> AFlocal0(nx,nyp,Flocal[0]);
-	  cout << AFlocal0 << endl;
-	}
+        ImplicitHConvolution2 Clocal(mx,my,xcompact,ycompact,A,B);
+        Clocal.convolve(Flocal,mult);
+        if(!quiet) {
+          cout << "Local output:" << endl;
+          Array2<Complex> AFlocal0(nx,nyp,Flocal[0]);
+          cout << AFlocal0 << endl;
+        }
         retval += checkerror(Flocal[0],Foutgather,d.X*d.Y);
       }
     } else {
       if(!quiet && main)
-	cout << "Initialized after " << seconds() << " seconds." << endl;
+        cout << "Initialized after " << seconds() << " seconds." << endl;
 
       MPI_Barrier(group.active);
       
       double *T=new double[N];
       for(unsigned int i=0; i < N; ++i) {
-	init(F,d,A,xcompact,ycompact);
-	if(main) seconds();
-	C.convolve(F,mult);
-	//C.convolve(f,g);
-	if(main) T[i]=seconds();
+        init(F,d,A,xcompact,ycompact);
+        if(main) seconds();
+        C.convolve(F,mult);
+        //C.convolve(f,g);
+        if(main) T[i]=seconds();
       }
       if(main)
-	timings("Implicit",mx,T,N,stats);
+        timings("Implicit",mx,T,N,stats);
       delete [] T;
     
       if(!quiet && nx*my < outlimit)
-	show(F[0],d.X,d.y,group.active);
+        show(F[0],d.X,d.y,group.active);
     }
     
     for(unsigned int i=0; i < A; ++i)

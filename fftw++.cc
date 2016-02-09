@@ -70,5 +70,5 @@ ThreadBase::ThreadBase() {threads=fftw::maxthreads;}
 }
 
 namespace utils {
-  unsigned int defaultmpithreads=1;
+unsigned int defaultmpithreads=1;
 }

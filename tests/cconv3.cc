@@ -23,8 +23,8 @@ bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
 
 inline void init(Complex **F, 
-		 unsigned int nxp, unsigned int nyp, unsigned int nzp, 
-		 unsigned int A) 
+                 unsigned int nxp, unsigned int nyp, unsigned int nzp, 
+                 unsigned int A) 
 {
   if(A %2 == 0) {
     unsigned int M=A/2;
@@ -37,15 +37,15 @@ inline void init(Complex **F,
       array3<Complex> g(nxp,nyp,nzp,F[M+s]);
 #pragma omp parallel for
       for(unsigned int i=0; i < mx; ++i) {
-	for(unsigned int j=0; j < my; j++) {
-	  for(unsigned int k=0; k < mz; k++) {
-	    f[i][j][k]=ffactor*Complex(i+k,j+k);
-	    g[i][j][k]=gfactor*Complex(2*i+k,j+1+k);
-	    //cout << f[i][j][k] << " ";
-	  }
-	  //cout << endl;
-	}
-	//cout << endl;
+        for(unsigned int j=0; j < my; j++) {
+          for(unsigned int k=0; k < mz; k++) {
+            f[i][j][k]=ffactor*Complex(i+k,j+k);
+            g[i][j][k]=gfactor*Complex(2*i+k,j+1+k);
+            //cout << f[i][j][k] << " ";
+          }
+          //cout << endl;
+        }
+        //cout << endl;
       }
     }
   } else {
@@ -69,13 +69,13 @@ int main(int argc, char* argv[])
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
   
-#ifdef __GNUC__	
+#ifdef __GNUC__ 
   optind=0;
-#endif	
+#endif  
   for (;;) {
     int c = getopt(argc,argv,"hdeiptA:B:N:m:x:y:z:n:T:S:");
     if (c == -1) break;
-		
+                
     switch (c) {
       case 0:
         break;
@@ -182,13 +182,13 @@ int main(int argc, char* argv[])
     multiplier *mult;
   
     switch(A) {
-    case 2: mult=multbinary; break;
-    case 4: mult=multbinary2; break;
-    case 6: mult=multbinary3; break;
-    case 8: mult=multbinary4; break;
-    case 10: mult=multbinary8; break;
-    default: cout << "mult for A=" << A 
-		  << " is not yet implemented" << endl; exit(1);
+      case 2: mult=multbinary; break;
+      case 4: mult=multbinary2; break;
+      case 6: mult=multbinary3; break;
+      case 8: mult=multbinary4; break;
+      case 10: mult=multbinary8; break;
+      default: cout << "mult for A=" << A 
+                    << " is not yet implemented" << endl; exit(1);
     }
 
     ImplicitConvolution3 C(mx,my,mz,A,B);
@@ -207,8 +207,8 @@ int main(int argc, char* argv[])
     if(Direct)
       for(unsigned int i=0; i < mx; i++) 
         for(unsigned int j=0; j < my; j++)
-	  for(unsigned int k=0; k < mz; k++)
-	    h0[i][j][k]=f[i][j][k];
+          for(unsigned int k=0; k < mz; k++)
+            h0[i][j][k]=f[i][j][k];
 
     cout << endl;
     if(mx*my*mz < outlimit) 
@@ -220,7 +220,7 @@ int main(int argc, char* argv[])
   if(Explicit) {
     if(A != 2) {
       cerr << "Explicit convolutions for A=" << A
-	   << " are not yet implemented" << endl;
+           << " are not yet implemented" << endl;
       exit(1);
     }
 
@@ -239,8 +239,8 @@ int main(int argc, char* argv[])
     if(Direct) {
       for(unsigned int i=0; i < mx; i++) 
         for(unsigned int j=0; j < my; j++)
-	  for(unsigned int k=0; k < mz; k++)
-	    h0[i][j][k]=F[0][nyp*nzp*i+nzp*j+k];
+          for(unsigned int k=0; k < mz; k++)
+            h0[i][j][k]=F[0][nyp*nzp*i+nzp*j+k];
     }
 
     if(mx*my*mz < outlimit) {
@@ -283,16 +283,16 @@ int main(int argc, char* argv[])
       double norm=0.0;
       for(unsigned int i=0; i < mx; i++) {
         for(unsigned int j=0; j < my; j++) {
-	  for(unsigned int k=0; k < mz; k++) {
-	    error += abs2(h0[i][j][k]-h[i][j][k]);
-	    norm += abs2(h[i][j][k]);
-	  }
-	}
+          for(unsigned int k=0; k < mz; k++) {
+            error += abs2(h0[i][j][k]-h[i][j][k]);
+            norm += abs2(h[i][j][k]);
+          }
+        }
       }
       if(norm > 0) error=sqrt(error/norm);
       cout << "error=" << error << endl;
       if (error > 1e-12) 
-	cerr << "Caution! error=" << error << endl;
+        cerr << "Caution! error=" << error << endl;
     }
 
   }

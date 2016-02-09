@@ -61,58 +61,58 @@ int main(int argc, char* argv[])
     if (c == -1) break;
                 
     switch (c) {
-    case 0:
-      break;
-    case 'a':
-      divisor=atoi(optarg);
-      break;
-    case 'i':
-      inplace=atoi(optarg);
-      break;
-    case 'N':
-      N=atoi(optarg);
-      break;
-    case 'm':
-      nx=ny=nz=atoi(optarg);
-      break;
-    case 's':
-      alltoall=atoi(optarg);
-      break;
-    case 'x':
-      nx=atoi(optarg);
-      break;
-    case 'y':
-      ny=atoi(optarg);
-      break;
-    case 'z':
-      nz=atoi(optarg);
-      break;
-    case 'n':
-      N0=atoi(optarg);
-      break;
-    case 'O':
-      shift=atoi(optarg);
-      break;
-    case 'S':
-      stats=atoi(optarg);
-      break;
-    case 'T':
-      fftw::maxthreads=atoi(optarg);
-      break;
-    case 'q':
-      quiet=true;
-      break;
-    case 't':
-      test=true;
-      break;
-    case 'h':
-    default:
-      if(rank == 0) {
-        usage(3);
-        usageTranspose();
-        usageShift();
-      }
-      exit(1);
+      case 0:
+        break;
+      case 'a':
+        divisor=atoi(optarg);
+        break;
+      case 'i':
+        inplace=atoi(optarg);
+        break;
+      case 'N':
+        N=atoi(optarg);
+        break;
+      case 'm':
+        nx=ny=nz=atoi(optarg);
+        break;
+      case 's':
+        alltoall=atoi(optarg);
+        break;
+      case 'x':
+        nx=atoi(optarg);
+        break;
+      case 'y':
+        ny=atoi(optarg);
+        break;
+      case 'z':
+        nz=atoi(optarg);
+        break;
+      case 'n':
+        N0=atoi(optarg);
+        break;
+      case 'O':
+        shift=atoi(optarg);
+        break;
+      case 'S':
+        stats=atoi(optarg);
+        break;
+      case 'T':
+        fftw::maxthreads=atoi(optarg);
+        break;
+      case 'q':
+        quiet=true;
+        break;
+      case 't':
+        test=true;
+        break;
+      case 'h':
+      default:
+        if(rank == 0) {
+          usage(3);
+          usageTranspose();
+          usageShift();
+        }
+        exit(1);
     }
   }
 
@@ -178,9 +178,9 @@ int main(int argc, char* argv[])
       array3<double> fgather(dfgather.X,dfgather.Y,dfgather.Z,align);
       array3<double> flocal;
       if(inplace)
-      	flocal.Dimension(nx,ny,2*nzp,(double *) glocal());
+        flocal.Dimension(nx,ny,2*nzp,(double *) glocal());
       else
-      	flocal.Allocate(nx,ny,nz,align);
+        flocal.Allocate(nx,ny,nz,align);
       
       rcfft3d localForward(nx,ny,nz,flocal(),glocal());
       crfft3d localBackward(nx,ny,nz,glocal(),flocal());
@@ -188,12 +188,12 @@ int main(int argc, char* argv[])
       gatherxy(f(), flocal(), dfgather, group.active);
       gatherxy(f(), fgather(), dfgather, group.active);
       if(main && !quiet)
-	cout << "Gathered input:\n" <<  fgather << endl;
-	      
+        cout << "Gathered input:\n" <<  fgather << endl;
+              
       if(shift)
-	rcfft.Forward0(f,g);
+        rcfft.Forward0(f,g);
       else
-	rcfft.Forward(f,g);
+        rcfft.Forward(f,g);
       
       if(main) {
         if(shift)
@@ -210,18 +210,18 @@ int main(int argc, char* argv[])
 
       gatheryz(g(),ggather(),dg,group.active); 
       if(!quiet && main)
-         cout << "Gathered output:\n" <<  ggather << endl;
+        cout << "Gathered output:\n" <<  ggather << endl;
 
       if(!quiet && main) 
-	cout << "Local output:\n" <<  glocal << endl;
+        cout << "Local output:\n" <<  glocal << endl;
       
       if(main)
-	retval += checkerror(glocal(),ggather(),dg.X*dg.Y*dg.Z);
+        retval += checkerror(glocal(),ggather(),dg.X*dg.Y*dg.Z);
 
       if(shift)
-	rcfft.Backward0(g,f);
+        rcfft.Backward0(g,f);
       else
-	rcfft.Backward(g,f);
+        rcfft.Backward(g,f);
       rcfft.Normalize(f);
 
       if(!quiet) {
@@ -231,7 +231,7 @@ int main(int argc, char* argv[])
 
       gatherxy(f(),fgather(),dfgather,group.active);
       if(!quiet && main)
-	cout << "Gathered back to input:\n" <<  fgather << endl;
+        cout << "Gathered back to input:\n" <<  fgather << endl;
 
       if(main) {
         if(shift)
@@ -241,7 +241,7 @@ int main(int argc, char* argv[])
       }
       
       if(!quiet && main) 
-	cout << "Local back to input:\n" <<  flocal << endl;
+        cout << "Local back to input:\n" <<  flocal << endl;
       
       if(main)
         retval += checkerror(flocal(),fgather(),df.Z,df.X*df.Y,dfgather.Z);
