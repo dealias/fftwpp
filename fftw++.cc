@@ -37,7 +37,8 @@ void LoadWisdom()
     ostringstream wisdom;
     wisdom << ifWisdom.rdbuf();
     ifWisdom.close();
-    fftw_import_wisdom_from_string(wisdom.str().c_str());
+    const string& s=wisdom.str();
+    fftw_import_wisdom_from_string(s.c_str());
     Wise=true;
   }
 }

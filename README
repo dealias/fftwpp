@@ -34,7 +34,7 @@ Multithreading requires linking with a multithreaded FFTW implementation
 and can be disabled by adding -DFFTWPP_SINGLE_THREAD to CFLAGS. 
 
 FFTW++ can also exploit the high-performance Array class available at
-http://www.math.ualberta.ca/~bowman/Array (version 1.48 or higher),
+http://www.math.ualberta.ca/~bowman/Array (version 1.49 or higher),
 designed for scientific computing. The arrays in that package do
 memory bounds checking in debugging mode, but can be optimized by
 specifying the -DNDEBUG compilation option (1D arrays optimize

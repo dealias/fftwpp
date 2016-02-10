@@ -1,5 +1,5 @@
 /* Array.h:  A high-performance multi-dimensional C++ array class
-   Copyright (C) 1997-2015 John C. Bowman
+   Copyright (C) 1997-2016 John C. Bowman, University of Alberta
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 #ifndef __Array_h__
 #define __Array_h__ 1
 
-#define __ARRAY_H_VERSION__ 1.48
+#define __ARRAY_H_VERSION__ 1.49
 
 // Defining NDEBUG improves optimization but disables argument checking.
 // Defining __NOARRAY2OPT inhibits special optimization of Array2[].
@@ -148,7 +148,8 @@ public:
       buf << "Array" << dim << " index ";
       if(m) buf << m << " ";
       buf << "is incompatible in assignment (" << a << " != " << b << ")";
-      ArrayExit(buf.str().c_str());
+      const std::string& s=buf.str();
+      ArrayExit(s.c_str());
     }
   }
         
@@ -169,7 +170,8 @@ public:
       std::ostringstream buf;
       buf << "Reallocation of Array" << dim
           << " attempted (must Deallocate first)";
-      ArrayExit(buf.str().c_str());
+      const std::string& s=buf.str();
+      ArrayExit(s.c_str());
     }
     Activate(align);
   }
@@ -231,7 +233,8 @@ public:
         else buf << " > " << n+o-1;
       }
       buf << ")";
-      ArrayExit(buf.str().c_str());
+      const std::string& s=buf.str();
+      ArrayExit(s.c_str());
     }
   }
         
