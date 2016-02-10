@@ -17,9 +17,15 @@ include graph;
 // asy timings.asy -u"minm=<float>"
 // plots only data with problem size at least minm.
 
+// asy timings.asy -u"skipm=<float>"
+// plots only data with problem size at least minm.
+
+// asy timings.asy -u"verbsoe=<true/false>"
+
 size(250,300,IgnoreAspect);
 
 barfactor=10;
+bool verbose=false;
 
 bool drawerrorbars=true;
 //drawerrorbars=false;
@@ -54,6 +60,7 @@ real[][] mi,i,li,hi;
 string[] runnames;
 
 real minm=0;
+int skipm=1;
 string name;
 string runs;
 string runlegs;
@@ -213,6 +220,8 @@ while(flag) {
 
 	nmi.push(m);
 	int N = fin;
+	if(verbose)
+	  write(N);
 	real times[] = new real[N];
 	for(int i = 0; i < N; ++i)
 	  times[i] = fin;
@@ -415,14 +424,24 @@ if(gtype == "scaling" || gtype == "peff") {
   for(int a=0; a < mi.length; ++a) {
     for(int b=0; b < mi[a].length; ++b) {
       real m=mi[a][b];
-      found=false;
-      for(int c=0; c < thems.length; ++c) {
-	if(thems[c]==m)
-	  found=true;
+      if(m >= minm) {
+	found=false;
+	for(int c=0; c < thems.length; ++c) {
+	  if(thems[c]==m)
+	    found=true;
+	}
+	if(!found)
+	  thems.push(m);
       }
-      if(!found)
-	thems.push(m);
     }
+  }
+
+  // if skipm is > 1, then we kick out some values.
+  if(skipm > 1) {
+    real[] newems;
+    for(int c = 0; c < thems.length; c += skipm)
+      newems.push(thems[c]);
+    thems = newems;
   }
   
   // Get the number of cores for each file.
@@ -450,7 +469,7 @@ if(gtype == "scaling" || gtype == "peff") {
       }
     }
   }
-
+  
   // Compute the speedup relative to the first data point:
   real[][] speedup;
   for(int c = 0; c < runtime.length; ++c) {
@@ -467,8 +486,12 @@ if(gtype == "scaling" || gtype == "peff") {
   for(int c = 0; c < thems.length; ++c) {
     marker mark1 = marker(scale(0.6mm) * polygon(3 + c),
 			  Draw(linePen(c) + solid));
-    draw(graph(procs[c], speedup[c]), linePen(c),
-	 Label("$" + (string) thems[c] + "^" + (string)d + "$"), mark1);
+    if(d == 1)
+      draw(graph(procs[c], speedup[c]), linePen(c),
+	   Label("$" + (string) thems[c] + "$"), mark1);
+    else
+      draw(graph(procs[c], speedup[c]), linePen(c),
+	   Label("$" + (string) thems[c] + "^" + (string)d + "$"), mark1);
   }
 
   // Plot the ideal cases:
@@ -544,13 +567,13 @@ if(gtype == "scaling" || gtype == "peff") {
     //xaxis("Number of cores", BottomTop, RightTicks(procs) );
   }
 
-  if(gtype == "scaling") {
-    label("Strong scaling: "+name,point(N),3N);
-    yequals(1,grey);
-  }
+  // if(gtype == "scaling") {
+  //   label("Strong scaling: "+name,point(N),3N);
+  //   yequals(1,grey);
+  // }
   
-  if(gtype == "peff")
-    label("Parallel Efficiency: "+name,point(N),3N);
+  //if(gtype == "peff")
+  //  label("Parallel Efficiency: "+name,point(N),3N);
 
 }
 
