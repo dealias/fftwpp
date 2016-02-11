@@ -403,6 +403,15 @@ if(gtype == "speedup") {
 	drawme[i] = drawme[i] &&  mi[p][i] >= minm;
       }
 
+      if(verbose) {
+	write("speedups:");
+	write(i[p]);
+	write("mean:");
+	write(sum(i[p]) / i[p].length);
+	write("max:");
+	write(max(i[p]));
+      }
+      
       draw(graph(mi[p], i[p], drawme),
 	   Pentype(gnum) + linePen(gnum),
 	   Label(myleg ? legends[gnum] :
