@@ -173,6 +173,9 @@ int main(int argc, char* argv[])
   nxp=Explicit ? nx : 2*mx-xcompact;
   nyp=Explicit ? ny/2+1 : my+!ycompact;
 
+  cout << "nxp=" << nxp << ", nyp=" << nyp << endl;
+
+  
   if(B < 1) B=1;
   if(B > A) {
     cerr << "B=" << B << " is not yet implemented for A=" << A << endl;

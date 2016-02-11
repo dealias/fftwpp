@@ -218,6 +218,8 @@ int main(int argc, char* argv[])
   nxp=2*mx-xcompact;
   nyp=2*my-ycompact;
   nzp=mz+!zcompact;
+
+  cout << "nxp=" << nxp << ", nyp" << nyp << ", nzp=" << nzp << endl;
   
   if(B < 1) B=1;
   if(B > A) {

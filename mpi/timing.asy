@@ -379,16 +379,22 @@ if(gtype == "speedup") {
 
   int runples=getint("how many runs are compared at once");
   string compname="";
+
+  bool drawyzero=false;
   
   int gnum=-1;
   bool plotme;
   for(int p=0; p < nn; ++p) {
-    if(p % runples != 0) {
-      ++gnum;
-      plotme=true;
-    } else {
+    if(p % runples == 0) {
       plotme=false;
       compname=runnames[p];
+    } else {
+      ++gnum;
+      plotme=true;
+      if(verbose) {
+	write("base case: " + compname );
+	write("comparison case: " + runnames[p]);
+      }
     }
     
     int basep=p - (p % runples);
@@ -398,8 +404,8 @@ if(gtype == "speedup") {
 	bool found=false;
 	for(int a = 0; a < mi[basep].length; ++a) {
 	  if(mi[basep][a] == mi[p][b]) {
-	    // if we have a matching problem size, determine the speedup
-	    i[p][b] = 100.0 * (1.0 - i[basep][a] / i[p][b]);
+	    // If we have a matching problem size, determine the speedup
+	    i[p][b] = i[basep][a] / i[p][b];
 	    found=true;
 	  }
 	}
@@ -408,12 +414,12 @@ if(gtype == "speedup") {
       }
 
       marker mark1 = marker(scale(0.6mm)*polygon(3+gnum),
-			  Draw(linePen(gnum)+solid));
+			    Draw(linePen(gnum)+solid));
 
       if(verbose) {
-	write("ms:");
+	write("m:");
 	write(mi[p]);
-	write("speedups: ", i[p]);
+	write("percent speedups: ", i[p]);
 	write("mean: ", sum(i[p]) / i[p].length);
 	write("max: ", max(i[p]));
 	write("min: ", min(i[p]));
@@ -428,10 +434,9 @@ if(gtype == "speedup") {
     
   }
 
-  //yequals(0,grey);
-  
+ 
   xaxis("$" + Nm + "$", BottomTop, LeftTicks);
-  yaxis("relative speed difference ($\%$)",LeftRight,RightTicks);
+  yaxis("relative speed",LeftRight,RightTicks);
 }
 
 if(gtype == "scaling" || gtype == "peff") {
