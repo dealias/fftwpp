@@ -402,18 +402,20 @@ if(gtype == "speedup") {
     
     int basep=p - (p % runples);
     if(plotme) {
+      real[] speedups;
+      real[] goodms;
+      
       // find the matching problem sizes
       for(int b = 0; b < mi[p].length; ++b) {
 	bool found=false;
 	for(int a = 0; a < mi[basep].length; ++a) {
 	  if(mi[basep][a] == mi[p][b]) {
 	    // If we have a matching problem size, determine the speedup
-	    i[p][b] = i[basep][a] / i[p][b];
+	    speedups.push(i[basep][a] / i[p][b]);
+	    goodms.push(mi[basep][a]);
 	    found=true;
 	  }
 	}
-	if(!found)
-	  i[p][b] = 0.0;
       }
 
       marker mark1 = marker(scale(0.6mm)*polygon(3+gnum),
@@ -421,18 +423,18 @@ if(gtype == "speedup") {
 
       if(verbose) {
 	write("m:", "      speedup:");
-	for(int v = 0; v < i[p].length; ++v) {
-	  write(mi[p][v],i[p][v]);
+	for(int v = 0; v < speedups.length; ++v) {
+	  write(mi[p][v],speedups[v]);
 	}
-	write("mean: ", sum(i[p]) / i[p].length);
-	write("max: ", max(i[p]));
-	write("min: ", min(i[p]));
+	write("mean: ", sum(speedups) / speedups.length);
+	write("max: ", max(speedups));
+	write("min: ", min(speedups));
       }
 
-      gmin = min(gmin,min(i[p]));
-      gmax = max(gmax,max(i[p]));
+      gmin = min(gmin,min(speedups));
+      gmax = max(gmax,max(speedups));
       
-      draw(graph(mi[p], i[p]),
+      draw(graph(goodms, speedups),
 	   Pentype(gnum) + linePen(gnum),
 	   Label(myleg ? legends[gnum] :
 		 texify(runnames[p]) + " vs " + texify(compname),
