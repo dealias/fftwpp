@@ -218,18 +218,25 @@ while(flag) {
 	  break;
 	}
 
-	nmi.push(m);
 	int N = fin;
-	if(verbose)
-	  write(N);
-	real times[] = new real[N];
-	for(int i = 0; i < N; ++i)
-	  times[i] = fin;
+	if(verbose) {
+	  write("m: " + (string) m +", N: " + (string) N);
+	}
 
-	triple thestats = statspm(times);
-	ni.push(thestats.x);
-	nli.push(thestats.y);
-	nhi.push(thestats.z);
+	if(m >= minm) { 
+	  real times[] = new real[N];
+	  for(int i = 0; i < N; ++i)
+	    times[i] = fin;
+	  triple thestats = statspm(times);
+	  nmi.push(m);
+	  ni.push(thestats.x);
+	  nli.push(thestats.y);
+	  nhi.push(thestats.z);
+	} else {
+	  real dummy;
+	  for(int i = 0; i < N; ++i)
+	    dummy = fin;
+	}
       }
       mi[n] = copy(nmi);
       i[n] = copy(ni);
@@ -307,6 +314,11 @@ if(gtype == "time" || gtype == "mflops") {
     bool[] drawme = i[p] > 0;
     for(int i = 0; i < drawme.length; ++i) {
       drawme[i] = drawme[i] &&  mi[p][i] >= minm;
+    }
+
+    if(verbose) {
+      write("time:");
+      write(i[p]);
     }
     
     if(drawerrorbars && gtype == "time") {
@@ -387,7 +399,7 @@ if(gtype == "speedup") {
 	for(int a = 0; a < mi[basep].length; ++a) {
 	  if(mi[basep][a] == mi[p][b]) {
 	    // if we have a matching problem size, determine the speedup
-	    i[p][b] = i[basep][a] / i[p][b];
+	    i[p][b] = 100.0 * (1.0 - i[basep][a] / i[p][b]);
 	    found=true;
 	  }
 	}
@@ -398,21 +410,16 @@ if(gtype == "speedup") {
       marker mark1 = marker(scale(0.6mm)*polygon(3+gnum),
 			  Draw(linePen(gnum)+solid));
 
-      bool[] drawme = i[p] > 0;
-      for(int i = 0; i < drawme.length; ++i) {
-	drawme[i] = drawme[i] &&  mi[p][i] >= minm;
-      }
-
       if(verbose) {
-	write("speedups:");
-	write(i[p]);
-	write("mean:");
-	write(sum(i[p]) / i[p].length);
-	write("max:");
-	write(max(i[p]));
+	write("ms:");
+	write(mi[p]);
+	write("speedups: ", i[p]);
+	write("mean: ", sum(i[p]) / i[p].length);
+	write("max: ", max(i[p]));
+	write("min: ", min(i[p]));
       }
       
-      draw(graph(mi[p], i[p], drawme),
+      draw(graph(mi[p], i[p]),
 	   Pentype(gnum) + linePen(gnum),
 	   Label(myleg ? legends[gnum] :
 		 texify(runnames[p]) + " vs " + texify(compname),
@@ -420,9 +427,11 @@ if(gtype == "speedup") {
     }
     
   }
+
+  //yequals(0,grey);
   
   xaxis("$" + Nm + "$", BottomTop, LeftTicks);
-  yaxis("relative speed",LeftRight,RightTicks);
+  yaxis("relative speed difference ($\%$)",LeftRight,RightTicks);
 }
 
 if(gtype == "scaling" || gtype == "peff") {
