@@ -220,7 +220,7 @@ while(flag) {
 
 	int N = fin;
 	if(verbose) {
-	  write("m: " + (string) m +", N: " + (string) N);
+	  write(("m: " + (string) m), (" N: " + (string) N));
 	}
 
 	if(m >= minm) { 
@@ -381,6 +381,9 @@ if(gtype == "speedup") {
   string compname="";
 
   bool drawyzero=false;
+
+  real gmin = realMax;
+  real gmax = -realMax;
   
   int gnum=-1;
   bool plotme;
@@ -417,13 +420,17 @@ if(gtype == "speedup") {
 			    Draw(linePen(gnum)+solid));
 
       if(verbose) {
-	write("m:");
-	write(mi[p]);
-	write("percent speedups: ", i[p]);
+	write("m:", "      speedup:");
+	for(int v = 0; v < i[p].length; ++v) {
+	  write(mi[p][v],i[p][v]);
+	}
 	write("mean: ", sum(i[p]) / i[p].length);
 	write("max: ", max(i[p]));
 	write("min: ", min(i[p]));
       }
+
+      gmin = min(gmin,min(i[p]));
+      gmax = max(gmax,max(i[p]));
       
       draw(graph(mi[p], i[p]),
 	   Pentype(gnum) + linePen(gnum),
@@ -434,7 +441,9 @@ if(gtype == "speedup") {
     
   }
 
- 
+  if(gmin < 1.0 && gmax > 1.0)
+    yequals(1,grey);
+  
   xaxis("$" + Nm + "$", BottomTop, LeftTicks);
   yaxis("relative speed",LeftRight,RightTicks);
 }
