@@ -291,13 +291,6 @@ def main(argv):
             
         if(runtype == "implicit"):
             cmd.append("-i")
-            if (p == "conv2"):
-                cmd += ["-X1"]
-                cmd += ["-Y0"]
-            if (p == "conv3"):
-                cmd += ["-X1"]
-                cmd += ["-Y1"]
-                cmd += ["-Z0"]
         
         cmd.append("-S" + str(stats))
         if(N > 0):

@@ -120,7 +120,7 @@ def main(argv):
                                 ci += 1
                             cmd0.append("-A-X" + str(X))
                             cmd0.append("-A-Y" + str(Y))
-                            cmd0.append("-occonv2_implicitX"\
+                            cmd0.append("-oconv2_implicitX"\
                                         + str(X) + "Y" + str(Y))
                             print " ".join(cmd0)
                             if not dryrun:
@@ -139,7 +139,7 @@ def main(argv):
                                 cmd0.append("-A-X" + str(X))
                                 cmd0.append("-A-Y" + str(Y))
                                 cmd0.append("-A-Z" + str(Z))
-                                cmd0.append("-occonv2_implicitX"\
+                                cmd0.append("-oconv3_implicitX"\
                                             + str(X) + "Y" + str(Y)\
                                             + "Z" + str(Z))
                                 print " ".join(cmd0)
