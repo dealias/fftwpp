@@ -109,7 +109,21 @@ def main(argv):
                 iE += 1
 
 
-            if(runtype == "implicit" and (p == "conv2" or p == "conv3")):
+            if(runtype == "implicit" and (p == "conv" or p == "conv2" or p == "conv3")):
+                if(p == "conv2"):
+                    for X in [0, 1]:
+                        cmd0 = []
+                        ci =  0
+                        while ci < len(cmd):
+                            cmd0.append(cmd[ci])
+                            ci += 1
+                        cmd0.append("-A-X" + str(X))
+                        cmd0.append("-oconv_implicit" + "X" + str(X))
+                        print " ".join(cmd0)
+                        if not dryrun:
+                            p = Popen(cmd0)
+                            p.wait()
+                            prc = p.returncode
                 if(p == "conv2"):
                     for X in [0, 1]:
                         for Y in [0, 1]:
