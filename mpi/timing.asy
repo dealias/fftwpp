@@ -18,9 +18,9 @@ include graph;
 // plots only data with problem size at least minm.
 
 // asy timings.asy -u"skipm=<float>"
-// plots only data with problem size at least minm.
+// plots one in every skipm values.
 
-// asy timings.asy -u"verbsoe=<true/false>"
+// asy timings.asy -u"verbose=<true/false>"
 
 size(250,300,IgnoreAspect);
 
@@ -64,7 +64,7 @@ int skipm=1;
 string name;
 string runs;
 string runlegs;
-bool useN=true;
+bool useN=false;
 bool oldformat=false;
 string sscale="";
 string datatype="";
@@ -198,7 +198,10 @@ while(flag) {
       file fin=input(run).line();
       real[][] a=fin.dimension(0,0);
       a=transpose(a);
-      mi[n]=copy(a[0]); i[n]=copy(a[1]); li[n]=copy(a[2]); hi[n]=copy(a[3]);
+      mi[n]=copy(a[0]);
+      i[n]=copy(a[1]);
+      li[n]=copy(a[2]);
+      hi[n]=copy(a[3]);
     } else {
       // The input data is in the format: m N t_0 t_1 ... t_{N-1}
 
@@ -258,13 +261,14 @@ colorPen[2]=deepgreen;
 
 pen Lp=fontsize(8pt);
 
-real[] f(real[] x) {
-  if(d==0) return x; // scaling
-  if(gtype == "time")
-    return 1e-9*x^d*d*log(x)/log(2);
-  if(gtype == "mflops")
-    return 5*1e-6*x^d*d*log(x)/log(2);
-  return 1.0+0.0*x; // scaling
+// Normalization function (based on computational complexity of FFT).
+real mscale(real m) {
+  return 1e-9 * m^d * d * log(m) / log(2);
+}
+
+// Normalization for computing "mflops" ala FFTW.
+real mspeed(real m) {
+  return 5e-6 *m^d * d * log(m) / log(2);
 }
 
 string D=d > 1 ? "^"+(string) d : "";
@@ -298,13 +302,18 @@ string base10(real x) {return "$10^{" + string(x) + "}$";}
 if(gtype == "time" || gtype == "mflops") {
   for(int p=0; p < nn; ++p) {
     marker mark1=marker(scale(0.6mm)*polygon(3+p),Draw(barPen(p)+solid));
-    if(gtype == "mflops")
-      i[p] = f(mi[p])/i[p];
-    if(gtype == "time")
-      i[p] /= f(mi[p]);
-    hi[p] /= f(mi[p]);
-    li[p] /= f(mi[p]);
-
+    if(gtype == "mflops") {
+      for(int v = 0; v < i[p].length; ++v) 
+	i[p][v] = mspeed(mi[p][v]) / i[p][v];
+    }
+    if(gtype == "time") {
+      for(int v = 0; v < i[p].length; ++v)  {
+	i[p][v] /= mscale(mi[p][v]);
+	hi[p][v] /= mscale(mi[p][v]);
+	li[p][v] /= mscale(mi[p][v]);
+      }
+    }
+    
     for(int q=0; q < i[p].length; ++q) {
       real ii=i[p][q];
       ymin=min(ymin,ii);
@@ -376,7 +385,6 @@ if(gtype == "time" || gtype == "mflops") {
 
 
 if(gtype == "speedup") {
-
   int runples=getint("how many runs are compared at once");
   string compname="";
 
@@ -388,6 +396,13 @@ if(gtype == "speedup") {
   int gnum=-1;
   bool plotme;
   for(int p=0; p < nn; ++p) {
+
+    for(int v = 0; v < i[p].length; ++v)  {
+      i[p][v] /= mscale(mi[p][v]);
+      //hi[p][v] /= mscale(mi[p][v]);
+      //li[p][v] /= mscale(mi[p][v]);
+    }
+
     if(p % runples == 0) {
       plotme=false;
       compname=runnames[p];
@@ -427,11 +442,19 @@ if(gtype == "speedup") {
 	    while(mi[basep][v] < m)
 	      ++v;
 	    v -= 1;
-	    real t0 = i[basep][v];
-	    real t1 = i[basep][v + 1];
 	    real m0 = mi[basep][v];
 	    real m1 = mi[basep][v + 1];
+	    real t0 = i[basep][v];
+	    real t1 = i[basep][v + 1];
 	    real t = t0 + (t1 - t0) * (m - m0) / (m1 - m0);
+	    if(verbose) {
+	      write("m: ", m);
+	      write("m0: ", m0);
+	      write("m1: ", m1);
+	      write("t0: ", t0);
+	      write("t1: ", t1);
+	      write("t: ", t);
+	    }
 	    speedups.push(t / i[p][b]);
 	    goodms.push(m);
 	  }
@@ -473,8 +496,7 @@ if(gtype == "speedup") {
 }
 
 if(gtype == "scaling" || gtype == "peff") {
- 
-  // Find all values of problem size
+   // Find all values of problem size
   real[] thems;
   bool found=false;
   for(int a=0; a < mi.length; ++a) {
