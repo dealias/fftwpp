@@ -407,40 +407,62 @@ if(gtype == "speedup") {
       
       // find the matching problem sizes
       for(int b = 0; b < mi[p].length; ++b) {
+	real m = mi[p][b];
 	bool found=false;
 	for(int a = 0; a < mi[basep].length; ++a) {
-	  if(mi[basep][a] == mi[p][b]) {
+	  real mbase = mi[basep][a]; 
+	  if(mbase == m) {
 	    // If we have a matching problem size, determine the speedup
 	    speedups.push(i[basep][a] / i[p][b]);
-	    goodms.push(mi[basep][a]);
+	    goodms.push(m);
 	    found=true;
+	    break;
+	  }
+	}
+	if(!found) {
+	  if((min(mi[basep]) < m) && (max(mi[basep]) > m)) {
+	    if(verbose)
+	      write("We can interpolate!");
+	    int v = 0;
+	    while(mi[basep][v] < m)
+	      ++v;
+	    v -= 1;
+	    real t0 = i[basep][v];
+	    real t1 = i[basep][v + 1];
+	    real m0 = mi[basep][v];
+	    real m1 = mi[basep][v + 1];
+	    real t = t0 + (t1 - t0) * (m - m0) / (m1 - m0);
+	    speedups.push(t / i[p][b]);
+	    goodms.push(m);
 	  }
 	}
       }
 
-      marker mark1 = marker(scale(0.6mm)*polygon(3+gnum),
-			    Draw(linePen(gnum)+solid));
+      if(goodms.length > 0) {
+	marker mark1 = marker(scale(0.6mm)*polygon(3+gnum),
+			      Draw(linePen(gnum)+solid));
 
-      if(verbose) {
-	write("m:", "      speedup:");
-	for(int v = 0; v < speedups.length; ++v) {
-	  write(mi[p][v],speedups[v]);
+	if(verbose) {
+	  write("m:", "      speedup:");
+	  for(int v = 0; v < speedups.length; ++v) {
+	    write(mi[p][v],speedups[v]);
+	  }
+	  write("mean: ", sum(speedups) / speedups.length);
+	  write("max: ", max(speedups));
+	  write("min: ", min(speedups));
 	}
-	write("mean: ", sum(speedups) / speedups.length);
-	write("max: ", max(speedups));
-	write("min: ", min(speedups));
-      }
 
-      gmin = min(gmin,min(speedups));
-      gmax = max(gmax,max(speedups));
+	gmin = min(gmin,min(speedups));
+	gmax = max(gmax,max(speedups));
       
-      draw(graph(goodms, speedups),
-	   Pentype(gnum) + linePen(gnum),
-	   Label(myleg ? legends[gnum] :
-		 texify(runnames[p]) + " vs " + texify(compname),
-		 linePen(gnum) + Lp), mark1);
+	draw(graph(goodms, speedups),
+	     Pentype(gnum) + linePen(gnum),
+	     Label(myleg ? legends[gnum] :
+		   texify(runnames[p]) + " vs " + texify(compname),
+		   linePen(gnum) + Lp), mark1);
+
+      }
     }
-    
   }
 
   if(gmin < 1.0 && gmax > 1.0)
