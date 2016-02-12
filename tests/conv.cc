@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
   fftw::maxthreads=get_max_threads();
 
   unsigned int N=0; // Number of iterations.
-  unsigned int N0=10000000; // Nominal number of iterations
+  unsigned int N0=1000000000; // Nominal number of iterations
   unsigned int m=11; // Problem size
   unsigned int M=1;
   

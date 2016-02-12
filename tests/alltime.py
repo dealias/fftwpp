@@ -110,7 +110,7 @@ def main(argv):
 
 
             if(runtype == "implicit" and (p == "conv" or p == "conv2" or p == "conv3")):
-                if(p == "conv2"):
+                if(p == "conv"):
                     for X in [0, 1]:
                         cmd0 = []
                         ci =  0
