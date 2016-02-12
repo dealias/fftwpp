@@ -144,7 +144,6 @@ public:
   void init() {
     indexsize=0;
     outofplace=A > B;
-    outofplace=false; // FIXME:temp
     
     Complex* U0=U[0];
     Complex* U1=A == 1 ? utils::ComplexAlign(m) : U[1];
@@ -308,7 +307,6 @@ public:
     s=BuildZeta(3*m,c+2,ZetaH,ZetaL,threads);
 
     outofplace=A >= 2*B;
-    outofplace=false; // FIXME: temp
   }
   
   // m is the number of independent data values
