@@ -2,7 +2,7 @@ include graph;
 // usage:
 // asy -f pdf timing.asy
 
-// asy -f pdf timing.asy -u "runlegs=\"1k,2k,4k,8k\""
+// asy -f pdf timing.asy -u"runlegs=\"1k,2k,4k,8k\""
 // to specify the legend.
 
 // asy -f pdf timing.asy -u "useN=true"
@@ -17,8 +17,15 @@ include graph;
 // asy timings.asy -u"minm=<float>"
 // plots only data with problem size at least minm.
 
+// asy timings.asy -u"maxm=<float>"
+// plots only data with problem size at <= maxm.
+
 // asy timings.asy -u"skipm=<float>"
 // plots one in every skipm values.
+
+// asy timings.asy -u"legp1=N"
+// asy timings.asy -u"legp2=10S"
+// Alignment and offset for legend.
 
 // asy timings.asy -u"verbose=<true/false>"
 
@@ -31,6 +38,9 @@ bool drawerrorbars=true;
 //drawerrorbars=false;
 
 string gtype=getstring("time, mflops, scaling, peff, or speedup","mflops");
+
+pair legp1 = E;
+pair legp2 = 10E;
 
 scale(Linear,Log);
 if(gtype == "time")
@@ -46,7 +56,7 @@ if(gtype == "speeduplog") {
 if(gtype == "mflops") {
   //scale(Log,Log);
   scale(Log,Linear);
-  size(300,400,IgnoreAspect);
+  //size(300,400,IgnoreAspect);
 }
 if(gtype == "scaling") {
   //scale(Linear,Linear);
@@ -60,6 +70,7 @@ real[][] mi,i,li,hi;
 string[] runnames;
 
 real minm=0;
+real maxm=realMax;
 int skipm=1;
 string name;
 string runs;
@@ -226,7 +237,7 @@ while(flag) {
 	  write(("m: " + (string) m), (" N: " + (string) N));
 	}
 
-	if(m >= minm) { 
+	if(m >= minm && m <= maxm) { 
 	  real times[] = new real[N];
 	  for(int i = 0; i < N; ++i)
 	    times[i] = fin;
@@ -322,7 +333,7 @@ if(gtype == "time" || gtype == "mflops") {
 
     bool[] drawme = i[p] > 0;
     for(int i = 0; i < drawme.length; ++i) {
-      drawme[i] = drawme[i] &&  mi[p][i] >= minm;
+      drawme[i] = drawme[i] &&  mi[p][i] >= minm &&  mi[p][i] <= maxm;
     }
 
     if(verbose) {
@@ -502,7 +513,7 @@ if(gtype == "scaling" || gtype == "peff") {
   for(int a=0; a < mi.length; ++a) {
     for(int b=0; b < mi[a].length; ++b) {
       real m=mi[a][b];
-      if(m >= minm) {
+      if(m >= minm && m <= maxm) {
 	found=false;
 	for(int c=0; c < thems.length; ++c) {
 	  if(thems[c]==m)
@@ -570,8 +581,15 @@ if(gtype == "scaling" || gtype == "peff") {
     else
       draw(graph(procs[c], speedup[c]), linePen(c),
 	   Label("$" + (string) thems[c] + "^" + (string)d + "$"), mark1);
+    if(verbose) {
+      write("m: ", thems[c]);
+      write("P:      speedup / efficiency");
+      for(int v = 0; v < speedup[c].length; ++ v) {
+	write(procs[c][v], speedup[c][v]);
+      }
+    }
   }
-
+  
   // Plot the ideal cases:
   {
     // Find the unique starting points for the scaling cases
@@ -657,4 +675,4 @@ if(gtype == "scaling" || gtype == "peff") {
 
 legendlinelength=0.6cm;
 legendmargin=5;
-attach(legend(),point(E),10E);
+attach(legend(),point(legp1),legp2);
