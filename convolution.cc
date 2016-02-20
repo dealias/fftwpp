@@ -781,7 +781,7 @@ void fft0pad::forwards(Complex *f, Complex *u)
   reduce(f,u);
 }
 
-void fft0padwide::expand(Complex *f, Complex *u)
+void fft1pad::expand(Complex *f, Complex *u)
 {
   Complex *fmstride=f+m*stride;
   for(unsigned int i=0; i < M; ++i) {
@@ -823,12 +823,12 @@ void fft0padwide::expand(Complex *f, Complex *u)
     );
 }
 
-void fft0padwide::Backwards1(Complex *f, Complex *u)
+void fft1pad::Backwards1(Complex *f, Complex *u)
 {
   Backwards->fft(f+m*stride);
 }
 
-void fft0padwide::reduce(Complex *f, Complex *u)
+void fft1pad::reduce(Complex *f, Complex *u)
 {
   Complex *fmstride=f+m*stride;
 
@@ -871,16 +871,16 @@ void fft0padwide::reduce(Complex *f, Complex *u)
     );
 }
 
-void fft0padwide::Forwards0(Complex *f)
+void fft1pad::Forwards0(Complex *f)
 {
   Forwards->fft(f+m*stride);
 }
 
-void fft0padwide::Forwards1(Complex *f, Complex *u)
+void fft1pad::Forwards1(Complex *f, Complex *u)
 {
 }
 
-void fft0padwide::forwards(Complex *f, Complex *u)
+void fft1pad::forwards(Complex *f, Complex *u)
 {
   Forwards->fft(f);
   Forwards->fft(f+m*stride);

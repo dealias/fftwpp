@@ -523,16 +523,16 @@ public:
 // The arrays in and out (which may coincide) must be allocated as
 // Complex[M*2m]. The array u must be allocated as Complex[M*m].
 //
-//   fft0padwide fft(m,M,stride,u);
+//   fft1pad fft(m,M,stride,u);
 //   fft.backwards(in,u);
 //   fft.forwards(in,u);
 //
 // Notes:
 //   stride is the spacing between the elements of each Complex vector.
 //
-class fft0padwide : public fft0pad {
+class fft1pad : public fft0pad {
 public:  
-  fft0padwide(unsigned int m, unsigned int M, unsigned int stride,
+  fft1pad(unsigned int m, unsigned int M, unsigned int stride,
               Complex *u=NULL, unsigned int threads=fftw::maxthreads) :
     fft0pad(m,M,stride,u,threads) {}
 
@@ -809,7 +809,7 @@ public:
   void init(const convolveOptions& options) {
     toplevel=options.toplevel;
     xfftpad=xcompact ? new fft0pad(mx,options.ny,options.ny,u2,threads) :
-      new fft0padwide(mx,options.ny,options.ny,u2,threads);
+      new fft1pad(mx,options.ny,options.ny,u2,threads);
     
     yconvolve=new ImplicitHConvolution*[threads];
     for(unsigned int t=0; t < threads; ++t)
@@ -1182,7 +1182,7 @@ public:
     toplevel=options.toplevel;
     unsigned int nyz=options.ny*options.nz;
     xfftpad=xcompact ? new fft0pad(mx,nyz,nyz,u3,threads) :
-      new fft0padwide(mx,nyz,nyz,u3,threads);
+      new fft1pad(mx,nyz,nyz,u3,threads);
 
     if(options.nz == mz+!zcompact) {
       yzconvolve=new ImplicitHConvolution2*[threads];
