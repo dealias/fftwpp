@@ -143,7 +143,6 @@ public:
   
   void init() {
     indexsize=0;
-    outofplace=A > B;
     
     Complex* U0=U[0];
     Complex* U1=A == 1 ? utils::ComplexAlign(m) : U[1];
@@ -151,6 +150,8 @@ public:
     BackwardsO=new fft1d(m,1,U0,U1);
     Backwards=new fft1d(m,1,U0);
     Forwards=new fft1d(m,-1,U0);
+    
+    outofplace=A > B;
     if(outofplace) {
       ForwardsO=new fft1d(m,-1,U0,U1);
       threads=std::min(threads,
@@ -298,15 +299,19 @@ public:
     rc=new rcfft1d(m,U0);
     cr=new crfft1d(m,U0);
 
-    rco=new rcfft1d(m,(double *) U0,U1);
-    cro=new crfft1d(m,U1,(double *) U0);
+    outofplace=A >= 2*B;
+    if(outofplace) {
+      rco=new rcfft1d(m,(double *) U0,U1);
+      cro=new crfft1d(m,U1,(double *) U0);
+    } else {
+      rco=rc;
+      cro=cr;
+    }
     
     if(A == 1) utils::deleteAlign(U1);
     
     threads=std::min(threads,std::max(rco->Threads(),cro->Threads()));
     s=BuildZeta(3*m,c+2,ZetaH,ZetaL,threads);
-
-    outofplace=A >= 2*B;
   }
   
   // m is the number of independent data values

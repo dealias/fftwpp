@@ -506,7 +506,6 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
 
   premult(F,offset,c1c);
 
-  bool even=m == 2*c;
   // Complex-to-real FFTs and pmults:
   Complex *S=new Complex[B];
 
@@ -522,13 +521,14 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
     T[a]=c0a[0].re; // r=0, k=0
     if(!compact)
       c0a[0].re += 2.0*c0a[m].re; // Nyquist
-    (outofplace ? cro : cr)->fft(c0a,d0[a]);
+    cro->fft(c0a,d0[a]);
   }
   (*pmult)(d0,m,indexsize,index,0,threads);
   for(unsigned int b=0; b < B; ++b)
     S[b]=((Complex *) d0[b])[start];   // r=0, k=start
     
   // r=1:
+  bool even=m == 2*c;
   for(unsigned int a=A; a-- > 0;) { // Loop from A-1 to 0.
     Complex *c1a=c1[a];
     c1a[0]=compact ? T[a] : T[a]-c1a[c+1].re; // r=1, k=0 with Nyquist
@@ -537,7 +537,7 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
       c1c[a]=c1a[1];  // r=0, k=c
       c1a[1]=tmp;     // r=1, k=1
     }
-    (outofplace ? cro : cr)->fft(c1[a],d1[a]);
+    cro->fft(c1[a],d1[a]);
   }
   (*pmult)(d1,m,indexsize,index,1,threads);
 
