@@ -319,8 +319,7 @@ void ImplicitHConvolution::premult(Complex ** F,
   }
 }
 
-// Out of place version (with f1 stored in a separate array c2B):
-// Assume that c0 and c1 are contiguous (and, in fact, overlapping).
+// Out-of-place version (with f1 stored in a separate array c2B):
 void ImplicitHConvolution::postmultadd(Complex **c2, Complex **c0, 
                                        Complex **c2B)
 {
@@ -544,7 +543,7 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
 
   // Real-to-complex FFTs and postmultadd:
   if(outofplace) {
-    // Put d1 into the second half of c0:
+    // Put d1 into the second half of c2:
     Complex **c2B=c2+B;
 
     const double ninv=1.0/(3.0*m);
