@@ -1,14 +1,20 @@
 include graph;
 // usage:
-// asy -f pdf timing.asy
+// asy timing.asy
 
-// asy -f pdf timing.asy -u"runlegs=\"1k,2k,4k,8k\""
-// to specify the legend.
+// asy  -u"legends=new string[] {\"a\",\"b\",\"c\"}"
+// Replaces the filenames with the specified legend.
 
-// asy -f pdf timing.asy -u "useN=true"
+// asy -u"filenames=new string[] {\"a\",\"b\",\"c\"}"
+// Specify the filenames.
+
+// asy -u"gtype=\"time\""
+// produce a time, mflops, scaling, peff, or speedup graph.
+
+// asy timing.asy -u "useN=true"
 // makes the legends use N instead of m.
 
-// asy -f pdf timing.asy -u "oldformat=true"
+// asy timing.asy -u "oldformat=true"
 // uses the same pens as in dealias.pdf
 
 // asy timings.asy -u"sscale=\"loglog\""
@@ -37,12 +43,31 @@ bool verbose=false;
 bool drawerrorbars=true;
 //drawerrorbars=false;
 
-string gtype=getstring("time, mflops, scaling, peff, or speedup","mflops");
+string gtype="";
 
 pair legp1 = E;
 pair legp2 = 10E;
 
 scale(Linear,Log);
+
+real[][] mi,i,li,hi;
+
+real minm=0;
+real maxm=realMax;
+int skipm=1;
+string name;
+bool useN=false;
+bool oldformat=false;
+string sscale="";
+string datatype="";
+string[] filenames;
+string legends[];
+
+usersetting();
+
+if(gtype == "")
+  gtype=getstring("time, mflops, scaling, peff, or speedup","mflops");
+
 if(gtype == "time")
   scale(Log,Linear);
 if(gtype == "speedup") {
@@ -66,22 +91,6 @@ if(gtype == "peff") {
   scale(Log,Linear);
 }
 
-real[][] mi,i,li,hi;
-string[] runnames;
-
-real minm=0;
-real maxm=realMax;
-int skipm=1;
-string name;
-string runs;
-string runlegs;
-bool useN=false;
-bool oldformat=false;
-string sscale="";
-string datatype="";
-
-usersetting();
-
 if(sscale != "") {
   if(sscale == "loglog") scale(Log,Log);
   if(sscale == "loglin") scale(Log,Linear);
@@ -93,28 +102,9 @@ string Nm = useN ? "N" : "m";
 
 if(datatype == "") datatype=getstring("datatype", "normal");
 
-bool myleg=((runlegs== "") ? false: true);
-bool flag=true;
-int n=-1;
-int lastpos=0;
-string legends[];
-if(myleg) {
-  string runleg;
-  while(flag) {
-    ++n;
-    int pos=find(runlegs,",",lastpos);
-    if(lastpos == -1) {runleg=""; flag=false;}
-    
-    runleg=substr(runlegs,lastpos,pos-lastpos);
-
-    lastpos=pos > 0 ? pos+1 : -1;
-    if(flag) legends.push(runleg);
-  }
-}
-lastpos=0;
+bool myleg = legends.length != 0;
 
 if(name == "") name=getstring("program name","cconv2");
-int nn;
 
 string prunelabel="$y$-pruned";
 
@@ -145,12 +135,6 @@ if(!dknown)
 
 real ymin=infinity, ymax=-infinity;
 
-
-
-string[] runnames;
-
-if(runs == "") runs=getstring("files");
-string run;
 
 string stats="median90";
 
@@ -193,78 +177,85 @@ triple statspm(real[] data) {
   return (0, 0, 0);
 }
 
-n=-1;
-flag=true;
-while(flag) {
-  ++n;
-  int pos=find(runs,",",lastpos);
-  if(lastpos == -1) {run=""; flag=false;}
-  run=substr(runs,lastpos,pos-lastpos);
-  if(flag) {
-    write(run);
-    runnames.push(run);
-    
-    if(datatype != "raw") {
-      // The input data is in the format: m mean stddevlow stdevhigh
-      file fin=input(run).line();
-      real[][] a=fin.dimension(0,0);
-      a=transpose(a);
-      mi[n]=copy(a[0]);
-      i[n]=copy(a[1]);
-      li[n]=copy(a[2]);
-      hi[n]=copy(a[3]);
-    } else {
-      // The input data is in the format: m N t_0 t_1 ... t_{N-1}
-
-      stats=getstring("stats");
-      
-      file fin=input(run);
-      bool go=true;
-
-      real[] nmi;
-      real[] ni;
-      real[] nli;
-      real[] nhi;
-      while(go) {
-	int m = fin;
-	if(m == 0) {
-	  go=false;
-	  break;
-	}
-
-	int N = fin;
-	if(verbose) {
-	  write(("m: " + (string) m), (" N: " + (string) N));
-	}
-
-	if(m >= minm && m <= maxm) { 
-	  real times[] = new real[N];
-	  for(int i = 0; i < N; ++i)
-	    times[i] = fin;
-	  triple thestats = statspm(times);
-	  nmi.push(m);
-	  ni.push(thestats.x);
-	  nli.push(thestats.y);
-	  nhi.push(thestats.z);
-	} else {
-	  real dummy;
-	  for(int i = 0; i < N; ++i)
-	    dummy = fin;
-	}
-      }
-      mi[n] = copy(nmi);
-      i[n] = copy(ni);
-      li[n] = copy(nli);
-      hi[n] = copy(nhi);
+// If the filenames are not set in usersettings, get it from a
+// comma-separated list.
+if(filenames.length == 0) {
+  string runs=getstring("files");
+  string run;
+  int n=-1;
+  bool flag=true;
+  int lastpos=0;
+  while(flag) {
+    ++n;
+    int pos=find(runs,",",lastpos);
+    if(lastpos == -1) {run=""; flag=false;}
+    run=substr(runs,lastpos,pos-lastpos);
+    if(flag) {
+      filenames.push(run);
+      lastpos=pos > 0 ? pos+1 : -1;
     }
-    
-    runnames[n]=run;
-    lastpos=pos > 0 ? pos+1 : -1;
   }
 }
 
+// Load the data from the individual files
+for(int n=0; n < filenames.length; ++n) {
+  string run = filenames[n];
 
-nn=n;
+  write(run);
+  if(datatype != "raw") {
+    // The input data is in the format: m mean stddevlow stdevhigh
+    file fin=input(run).line();
+    real[][] a=fin.dimension(0,0);
+    a=transpose(a);
+    mi[n]=copy(a[0]);
+    i[n]=copy(a[1]);
+    li[n]=copy(a[2]);
+    hi[n]=copy(a[3]);
+  } else {
+    // The input data is in the format: m N t_0 t_1 ... t_{N-1}
+
+    stats=getstring("stats");
+      
+    file fin=input(run);
+    bool go=true;
+
+    real[] nmi;
+    real[] ni;
+    real[] nli;
+    real[] nhi;
+    while(go) {
+      int m = fin;
+      if(m == 0) {
+	go=false;
+	break;
+      }
+
+      int N = fin;
+      if(verbose) {
+	write(("m: " + (string) m), (" N: " + (string) N));
+      }
+
+      if(m >= minm && m <= maxm) { 
+	real times[] = new real[N];
+	for(int i = 0; i < N; ++i)
+	  times[i] = fin;
+	triple thestats = statspm(times);
+	nmi.push(m);
+	ni.push(thestats.x);
+	nli.push(thestats.y);
+	nhi.push(thestats.z);
+      } else {
+	real dummy;
+	for(int i = 0; i < N; ++i)
+	  dummy = fin;
+      }
+    }
+    mi[n] = copy(nmi);
+    i[n] = copy(ni);
+    li[n] = copy(nli);
+    hi[n] = copy(nhi);
+  }
+}
 
 monoPen[0]=dashed;
 monoPen[1]=solid;
@@ -311,7 +302,7 @@ pen linePen(int p) {
 string base10(real x) {return "$10^{" + string(x) + "}$";}
 
 if(gtype == "time" || gtype == "mflops") {
-  for(int p=0; p < nn; ++p) {
+  for(int p=0; p < filenames.length; ++p) {
     marker mark1=marker(scale(0.6mm)*polygon(3+p),Draw(barPen(p)+solid));
     if(gtype == "mflops") {
       for(int v = 0; v < i[p].length; ++v) 
@@ -346,7 +337,7 @@ if(gtype == "time" || gtype == "mflops") {
     }
     
     draw(graph(mi[p],i[p],drawme),linePen(p),
-    	 Label(myleg ? legends[p] : texify(runnames[p]),Lp+linePen(p)),mark1);
+    	 Label(myleg ? legends[p] : texify(filenames[p]),Lp+linePen(p)),mark1);
   }
 
   xaxis("$"+Nm+"$",BottomTop,LeftTicks);
@@ -406,7 +397,7 @@ if(gtype == "speedup") {
   
   int gnum=-1;
   bool plotme;
-  for(int p=0; p < nn; ++p) {
+  for(int p=0; p < filenames.length; ++p) {
 
     for(int v = 0; v < i[p].length; ++v)  {
       i[p][v] /= mscale(mi[p][v]);
@@ -416,13 +407,13 @@ if(gtype == "speedup") {
 
     if(p % runples == 0) {
       plotme=false;
-      compname=runnames[p];
+      compname=filenames[p];
     } else {
       ++gnum;
       plotme=true;
       if(verbose) {
 	write("base case: " + compname );
-	write("comparison case: " + runnames[p]);
+	write("comparison case: " + filenames[p]);
       }
     }
     
@@ -492,7 +483,7 @@ if(gtype == "speedup") {
 	draw(graph(goodms, speedups),
 	     Pentype(gnum) + linePen(gnum),
 	     Label(myleg ? legends[gnum] :
-		   texify(runnames[p]) + " vs " + texify(compname),
+		   texify(filenames[p]) + " vs " + texify(compname),
 		   linePen(gnum) + Lp), mark1);
 
       }
@@ -534,12 +525,12 @@ if(gtype == "scaling" || gtype == "peff") {
   }
   
   // Get the number of cores for each file.
-  real[] allprocs = new real[nn];
+  real[] allprocs = new real[filenames.length];
   for(int c=0; c < allprocs.length; ++c) {
     allprocs[c] = getint("ncores" + string(c) );
     
     // This isn't dealt with by history properly:
-    // allprocs[c] = getint("cores in " + runnames[c] );
+    // allprocs[c] = getint("cores in " + filenames[c] );
   }
 
   // Collect the runtime for each value of m:
