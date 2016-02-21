@@ -294,21 +294,20 @@ public:
   void init() {
     indexsize=0;
     Complex* U0=U[0];
-    Complex* U1=A == 1 ? utils::ComplexAlign(m) : U[1];
     
     rc=new rcfft1d(m,U0);
     cr=new crfft1d(m,U0);
 
     outofplace=A >= 2*B;
     if(outofplace) {
+      Complex* U1=A == 1 ? utils::ComplexAlign(m) : U[1];
       rco=new rcfft1d(m,(double *) U0,U1);
       cro=new crfft1d(m,U1,(double *) U0);
+      if(A == 1) utils::deleteAlign(U1);
     } else {
       rco=rc;
       cro=cr;
     }
-    
-    if(A == 1) utils::deleteAlign(U1);
     
     threads=std::min(threads,std::max(rco->Threads(),cro->Threads()));
     s=BuildZeta(3*m,c+2,ZetaH,ZetaL,threads);
@@ -374,8 +373,10 @@ public:
     if(pointers) deletepointers(U);
     if(allocated) utils::deleteAlign(u);
 
-    delete cro;
-    delete rco;
+    if(outofplace) {
+      delete cro;
+      delete rco;
+    }
     
     delete cr;
     delete rc;
