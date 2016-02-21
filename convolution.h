@@ -143,7 +143,6 @@ public:
   
   void init() {
     indexsize=0;
-    outofplace=A > B;
     
     Complex* U0=U[0];
     Complex* U1=A == 1 ? utils::ComplexAlign(m) : U[1];
@@ -151,6 +150,8 @@ public:
     BackwardsO=new fft1d(m,1,U0,U1);
     Backwards=new fft1d(m,1,U0);
     Forwards=new fft1d(m,-1,U0);
+    
+    outofplace=A > B;
     if(outofplace) {
       ForwardsO=new fft1d(m,-1,U0,U1);
       threads=std::min(threads,
@@ -298,15 +299,19 @@ public:
     rc=new rcfft1d(m,U0);
     cr=new crfft1d(m,U0);
 
-    rco=new rcfft1d(m,(double *) U0,U1);
-    cro=new crfft1d(m,U1,(double *) U0);
+    outofplace=A >= 2*B;
+    if(outofplace) {
+      rco=new rcfft1d(m,(double *) U0,U1);
+      cro=new crfft1d(m,U1,(double *) U0);
+    } else {
+      rco=rc;
+      cro=cr;
+    }
     
     if(A == 1) utils::deleteAlign(U1);
     
     threads=std::min(threads,std::max(rco->Threads(),cro->Threads()));
     s=BuildZeta(3*m,c+2,ZetaH,ZetaL,threads);
-
-    outofplace=A >= 2*B;
   }
   
   // m is the number of independent data values
@@ -518,16 +523,16 @@ public:
 // The arrays in and out (which may coincide) must be allocated as
 // Complex[M*2m]. The array u must be allocated as Complex[M*m].
 //
-//   fft0padwide fft(m,M,stride,u);
+//   fft1pad fft(m,M,stride,u);
 //   fft.backwards(in,u);
 //   fft.forwards(in,u);
 //
 // Notes:
 //   stride is the spacing between the elements of each Complex vector.
 //
-class fft0padwide : public fft0pad {
+class fft1pad : public fft0pad {
 public:  
-  fft0padwide(unsigned int m, unsigned int M, unsigned int stride,
+  fft1pad(unsigned int m, unsigned int M, unsigned int stride,
               Complex *u=NULL, unsigned int threads=fftw::maxthreads) :
     fft0pad(m,M,stride,u,threads) {}
 
@@ -804,7 +809,7 @@ public:
   void init(const convolveOptions& options) {
     toplevel=options.toplevel;
     xfftpad=xcompact ? new fft0pad(mx,options.ny,options.ny,u2,threads) :
-      new fft0padwide(mx,options.ny,options.ny,u2,threads);
+      new fft1pad(mx,options.ny,options.ny,u2,threads);
     
     yconvolve=new ImplicitHConvolution*[threads];
     for(unsigned int t=0; t < threads; ++t)
@@ -1177,7 +1182,7 @@ public:
     toplevel=options.toplevel;
     unsigned int nyz=options.ny*options.nz;
     xfftpad=xcompact ? new fft0pad(mx,nyz,nyz,u3,threads) :
-      new fft0padwide(mx,nyz,nyz,u3,threads);
+      new fft1pad(mx,nyz,nyz,u3,threads);
 
     if(options.nz == mz+!zcompact) {
       yzconvolve=new ImplicitHConvolution2*[threads];
