@@ -296,6 +296,9 @@ pen linePen(int p) {
   }
   if(p == 2)
     return Pentype(p) + Dotted;
+  if(p == 4) {
+    return deepcyan + linetype(new real[] {8,8,0,8});
+  }
   return Pentype(p);
 }
 
@@ -647,7 +650,7 @@ if(gtype == "scaling" || gtype == "peff") {
 
   
   if(myleg) {
-    xaxis("Number of cores", BottomTop,
+    xaxis("Number of threads", BottomTop,
 	  LeftTicks(new string(real x) {return legends[round(x)];}));
   } else {
     xaxis("Number of cores", BottomTop, LeftTicks(DefaultFormat, allprocs));
