@@ -56,7 +56,7 @@ LDFLAGS+= -lfftw3_mpi -lfftw3_omp -lfftw3 -lm
 vpath %.cc ../../
 
 
-FILES=cconv2 cconv3 cfft2 cfft3
+FILES=cconv2 cconv3 fft2 fft3
 EXTRA=exmpiutils
 ALL=$(FILES) $(EXTRA)
 
@@ -68,10 +68,10 @@ cconv2: cconv2.o $(EXTRA:=.o)
 cconv3: cconv3.o $(EXTRA:=.o)
 	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-cfft2: cfft2.o $(EXTRA:=.o)
+fft2: fft2.o $(EXTRA:=.o)
 	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-cfft3: cfft3.o $(EXTRA:=.o)
+fft3: fft3.o $(EXTRA:=.o)
 	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 .SUFFIXES: .c .cc .o .d
