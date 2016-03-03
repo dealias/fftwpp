@@ -59,7 +59,7 @@ void show2c(const fftw_complex *F, const int local_n0, const int N1p)
       for (int i = 0; i < local_n0; ++i) {
 	for (int j = 0; j < N1p; ++j) {
 	  int pos = 2 * (i * N1p + j);
-	  cout << "(" << Fd[pos] << ","  << Fd[pos] << ") ";
+	  cout << "(" << Fd[pos] << ","  << Fd[pos + 1] << ") ";
 	}
 	cout << endl;
       }
