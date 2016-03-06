@@ -114,6 +114,7 @@ def main(argv):
     -o<output file name>
     -D<outdir>
     -o<outfile>
+    -P<path to executable>
     -g<grep string>
     -N<int> Number of tests to perform
     '''
@@ -135,9 +136,10 @@ def main(argv):
     rname = ""   # output grep string
     N = 0        # number of tests
     stats = 0
+    path = "./"
     
     try:
-        opts, args = getopt.getopt(argv,"hdp:T:a:b:A:B:E:r:R:S:o:D:g:N:")
+        opts, args = getopt.getopt(argv,"hdp:T:a:b:A:B:E:r:R:S:o:P:D:g:N:")
     except getopt.GetoptError:
         print "error in parsing arguments."
         print usage
@@ -169,6 +171,8 @@ def main(argv):
             dryrun = True
         elif opt in ("-o"):
             outfile = str(arg)
+        elif opt in ("-P"):
+            path = arg
         elif opt in ("-D"):
             outdir = str(arg)
         elif opt in ("-g"):
@@ -281,7 +285,7 @@ def main(argv):
             cmd.append(B[i]);
             i += 1
 
-        cmd += ["./" + str(p)]
+        cmd += [path + str(p)]
         
         if(runtype == "explicit"):
             cmd.append("-e")
@@ -289,8 +293,8 @@ def main(argv):
         if(runtype == "pruned"):
             cmd.append("-p")
             
-        if(runtype == "implicit"):
-            cmd.append("-i")
+        #if(runtype == "implicit"):
+        #    cmd.append("-i")
         
         cmd.append("-S" + str(stats))
         if(N > 0):
