@@ -349,6 +349,12 @@ def main(argv):
                 p.wait() # sets the return code
                 prc = p.returncode
                 out, err = p.communicate() # capture output
+
+                # copy the output and error to a log file.
+                with open(outdir + "/log", "a") as logfile:
+                    logfile.write(out)
+                    logfile.write(err)
+
                 if (prc == 0): # did the process succeed?
                     #print out
                     outlines = out.split('\n')
