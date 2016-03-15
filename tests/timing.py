@@ -147,6 +147,7 @@ def main(argv):
     rname = ""   # output grep string
     N = 0        # number of tests
     appendtofile = False
+    appendtofile = True
     stats = 0
     path = "./"
     
@@ -422,7 +423,6 @@ def main(argv):
                 with open(filename, "a") as fout:
                     with open("timing.dat") as fin:
                         for line in fin:
-                            print line,
                             fout.write(line)
                 os.remove("timing.dat")
             else:
