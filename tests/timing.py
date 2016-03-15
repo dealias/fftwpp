@@ -416,7 +416,7 @@ def main(argv):
                         print "error:"
                         print err
                     
-        if(stats == -1):
+        if(stats == -1 and os.path.isfile("timing.dat")):
             if(appendtofile):
                 # Concatenate the files and then remove timing.dat
                 with open(filename, "a") as fout:
