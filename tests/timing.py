@@ -9,6 +9,15 @@ from subprocess import * # for popen, running processes
 import os
 import re # regexp package
 
+def mvals_from_file(filename):
+    mvals = []
+    if os.path.isfile(filename):
+        with open(filename, 'r') as fin:
+            for line in fin:
+                if not line.startswith("#"):
+                    mvals.append(int(line.split()[0]))
+    return mvals
+                    
 def max_m(p, RAM, runtype):
     print "runtype:", runtype
     b = 0
@@ -104,7 +113,7 @@ def main(argv):
     \ntimings.py
     -a<start>
     -b<stop>
-    -p<cconv,cconv2,cconv3,conv,conv2,conv3,tconv,tconv2,pcconv,pcconv2,pcconv3>
+    -p<cconv,cconv2,cconv3,conv,conv2,conv3,tconv,tconv2>
     -T<number of threads> 
     -A<quoted arg list for timed program>
     -B<pre-commands (eg srun)>
@@ -117,6 +126,8 @@ def main(argv):
     -P<path to executable>
     -g<grep string>
     -N<int> Number of tests to perform
+    -e<0 or 1>: append to the timing data already existent (skipping 
+           already-done problem sizes).
     '''
 
     dryrun = False
@@ -135,11 +146,12 @@ def main(argv):
     outfile = "" # output filename
     rname = ""   # output grep string
     N = 0        # number of tests
+    appendtofile = False
     stats = 0
     path = "./"
     
     try:
-        opts, args = getopt.getopt(argv,"hdp:T:a:b:A:B:E:r:R:S:o:P:D:g:N:")
+        opts, args = getopt.getopt(argv,"hdp:T:a:b:A:B:E:e:d:r:R:S:o:P:D:g:N:")
     except getopt.GetoptError:
         print "error in parsing arguments."
         print usage
@@ -161,6 +173,8 @@ def main(argv):
             B += [str(arg)]
         elif opt in ("-E"):
             E += [str(arg)]
+        elif opt in ("-e"):
+            appendtofile = (int(arg) == 1)
         elif opt in ("-r"):
             runtype = str(arg)
         elif opt in ("-R"):
@@ -271,13 +285,18 @@ def main(argv):
 
         print "Search string for timing: " + rname
 
-        print "output in " + outdir + "/" + outfile
+        filename = outdir + "/" + outfile
+        print "output in " + filename
 
+        mdone = mvals_from_file(filename)
+        print "problem sizes already done:", mdone
+                                 
         print "environment variables:", E
         
         if not dryrun:
             os.system("mkdir -p " + outdir)
-            os.system("rm -f " + outdir + "/" + outfile)
+            if not appendtofile:
+                os.system("rm -f " + filename)
 
         cmd = []
         i = 0
@@ -317,12 +336,14 @@ def main(argv):
                 pass
 
         if not dryrun:
-            filename = outdir + "/" + outfile
-            if(stats == -1):
-                filename = "timing.dat"
-            with open(filename, "a") as myfile:
-                myfile.write("# " + " ".join(cmd) + "\n")
-                        
+            if (not appendtofile) or (not os.path.isfile(filename)):
+                if(stats == -1):
+                    with open("timing.dat", "a") as myfile:
+                        myfile.write("# " + " ".join(cmd) + "\n")
+                else:
+                    with open(filename, "a") as myfile:
+                        myfile.write("# " + " ".join(cmd) + "\n")
+                    
         for i in range(a, b + 1):
             if not hermitian or runtype == "implicit": 
                 m = str(int(pow(2, i)))
@@ -333,61 +354,79 @@ def main(argv):
                     m = str(int(floor((pow(2, i + 2) + 3) / 4)))
                     
             print str(i) + " m=" + str(m)
+
+            dothism = True
             
-            mcmd = cmd + ["-m" + str(m)]
+            if appendtofile and int(m) in mdone:
+                print "problem size", m, "is already done; skipping."
+                dothism = False
+                
+            if dothism:
+                mcmd = cmd + ["-m" + str(m)]
 
-            if dryrun:
-                print mcmd
-            else:
-                denv = dict(os.environ)
-                i = 0
-                while i < len(E):
-                    denv[E[i]] = E[i + 1]
-                    i += 2
-                    
-                p = Popen(mcmd, stdout = PIPE, stderr = PIPE, env = denv)
-                p.wait() # sets the return code
-                prc = p.returncode
-                out, err = p.communicate() # capture output
-
-                # copy the output and error to a log file.
-                with open(outdir + "/log", "a") as logfile:
-                    logfile.write(out)
-                    logfile.write(err)
-
-                if (prc == 0): # did the process succeed?
-                    #print out
-                    outlines = out.split('\n')
-                    itline = 0
-                    dataline = ""
-                    while itline < len(outlines):
-                        line = outlines[itline]
-                        #print line
-                        re.search(rname, line)
-                        if re.search(rname, line) is not None:
-                            print "\t" + str(outlines[itline])
-                            print "\t" + str(outlines[itline + 1])
-                            dataline = outlines[itline + 1]
-                            itline = len(outlines)
-                        itline += 1
-                    if not dataline == "":
-                        # append to output file
-                        with open(outdir + "/" + outfile, "a") as myfile:
-                            myfile.write(dataline + "\n")
-                    else:
-                        print "ERROR: no timing data found"
+                if dryrun:
+                    print mcmd
                 else:
-                    print "FAILURE:"
-                    print cmd
-                    print "with, return code:"
-                    print prc
-                    print "output:"
-                    print out
-                    print "error:"
-                    print err
+                    denv = dict(os.environ)
+                    i = 0
+                    while i < len(E):
+                        denv[E[i]] = E[i + 1]
+                        i += 2
+
+                    p = Popen(mcmd, stdout = PIPE, stderr = PIPE, env = denv)
+                    p.wait() # sets the return code
+                    prc = p.returncode
+                    out, err = p.communicate() # capture output
+
+                    # copy the output and error to a log file.
+                    with open(outdir + "/log", "a") as logfile:
+                        logfile.write(out)
+                        logfile.write(err)
+
+                    if (prc == 0): # did the process succeed?
+                        #print out
+                        outlines = out.split('\n')
+                        itline = 0
+                        dataline = ""
+                        while itline < len(outlines):
+                            line = outlines[itline]
+                            #print line
+                            re.search(rname, line)
+                            if re.search(rname, line) is not None:
+                                print "\t" + str(outlines[itline])
+                                print "\t" + str(outlines[itline + 1])
+                                dataline = outlines[itline + 1]
+                                itline = len(outlines)
+                            itline += 1
+                            
+                        if not stats == -1:
+                            if not dataline == "":
+                                # append to output file
+                                with open(filename, "a") as myfile:
+                                    myfile.write(dataline + "\n")
+                            else:
+                                print "ERROR: no timing data found"
+                    else:
+                        print "FAILURE:"
+                        print cmd
+                        print "with, return code:"
+                        print prc
+                        print "output:"
+                        print out
+                        print "error:"
+                        print err
                     
         if(stats == -1):
-            os.rename("timing.dat", outdir + "/" + outfile)
+            if(appendtofile):
+                # Concatenate the files and then remove timing.dat
+                with open(filename, "a") as fout:
+                    with open("timing.dat") as fin:
+                        for line in fin:
+                            print line,
+                            fout.write(line)
+                os.remove("timing.dat")
+            else:
+                os.rename("timing.dat", filename)
             
             sys.stdout.flush()
 
