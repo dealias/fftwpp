@@ -8,6 +8,8 @@ from math import *
 from subprocess import * # for popen, running processes
 import os
 import re # regexp package
+import shutil
+
 
 def mvals_from_file(filename):
     mvals = []
@@ -442,19 +444,17 @@ def main(argv):
                         print err
                         
                         
-        if(stats == -1 and os.path.isfile("timing.dat")):
-            if(appendtofile):
-                # Concatenate the files and then remove timing.dat
-                with open(filename, "a") as fout:
-                    with open("timing.dat") as fin:
-                        for line in fin:
-                            print line
-                            fout.write(line)
-                os.remove("timing.dat")
-            else:
-                os.rename("timing.dat", filename)
-                        
-            sys.stdout.flush()
-
+            if(stats == -1 and os.path.isfile("timing.dat")):
+                if(appendtofile):
+                    # Concatenate the files and then remove timing.dat
+                    with open(filename, "a") as fout:
+                        with open("timing.dat") as fin:
+                            for line in fin:
+                                fout.write(line)
+                else:
+                    shutil.copyfile("timing.dat", filename)
+                    
+        if(stats == -1):
+            os.remove("timing.dat")
 if __name__ == "__main__":
     main(sys.argv[1:])
