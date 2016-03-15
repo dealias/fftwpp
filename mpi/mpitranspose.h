@@ -158,26 +158,22 @@ inline void Wait(int count, MPI_Request *request, int *sched=NULL)
 }
 #endif
 
-inline int localsize(int N, int size)
+inline int localdimension(int N, int rank, int size)
 {
   int n=utils::ceilquotient(N,size);
-  size=N/n;
-  if(N > n*size) ++size;
-  return size;
+  if(N % n > 0 || true) {
+    int n0=N/size;
+    if(n0+(N % size) <= n) n=n0;
+  }
+  int extra=N-n*rank;
+  if(extra < 0) extra=0;
+  if(n > extra || rank == size-1) n=extra;
+  return n;
 }
 
 inline int localstart(int N, int rank, int size)
 {
-  return utils::ceilquotient(N,size)*rank;
-}
-
-inline int localdimension(int N, int rank, int size)
-{
-  int n=utils::ceilquotient(N,size);
-  int extra=N-n*rank;
-  if(extra < 0) extra=0;
-  if(n > extra) n=extra;
-  return n;
+  return localdimension(N,0,size)*rank;
 }
 
 inline int Ialltoall(void *sendbuf, int count, void *recvbuf,
@@ -305,13 +301,13 @@ public:
     
     MPI_Comm_rank(global,&globalrank);
     
-    m0=localdimension(M,0,size);
-    mlast=utils::ceilquotient(M,m0)-1;
-    mp=localdimension(M,mlast,size);
-    
     n0=localdimension(N,0,size);
-    nlast=utils::ceilquotient(N,n0)-1;
+    nlast=std::min((int) utils::ceilquotient(N,n0),size)-1;
     np=localdimension(N,nlast,size);
+    
+    m0=localdimension(M,0,size);
+    mlast=std::min((int) utils::ceilquotient(M,m0),size)-1;
+    mp=localdimension(M,mlast,size);
     
     if(work == NULL) {
       allocated=std::max(N*m,n*M)*L;
@@ -337,10 +333,13 @@ public:
                 << size << " processes." << std::endl;
       
     int alimit;
+    int Pbar=std::min(nlast+(n0 == np),mlast+(m0 == mp));
     if(options.a <= 0) {
       double latency=safetyfactor*Latency();
       if(globalrank == 0) {
-        if(N*M*L*sizeof(T) < latency*size*size) {
+//        std::cout << n0 << " " << nlast << " " << np << " " << Pbar << std::endl;
+//        std::cout << m0 << " " << mlast << " " << mp << " " << Pbar << std::endl;
+        if(N*M*L*sizeof(T) < latency*Pbar*Pbar) {
           if(options.a < 0) {
             int n=sqrt(size)+0.5;
             options.a=size/n;
@@ -358,7 +357,6 @@ public:
       MPI_Bcast(&options.a,1,MPI_INT,0,global);
     } else alimit=options.a+1;
     int astart=options.a;
-      
     uniform=divisible(size,M,N);
     if(alimit > astart+1 || stop-start >= 1) {
       if(globalrank == 0 && options.verbose)
@@ -370,7 +368,7 @@ public:
           std::cout << "alltoall=" << alltoall << std::endl;
         for(a=astart; a < alimit; a++) {
           if(uniform && (size % a != 0)) continue;
-          b=std::min(nlast+(n0 == np),mlast+(m0 == mp))/a;
+          b=Pbar/a;
           options.alltoall=alltoall;
           init(data);
           double t=time(data);
@@ -394,7 +392,7 @@ public:
     }
     
     a=options.a;
-    b=std::min(nlast+(n0 == np),mlast+(m0 == mp))/a;
+    b=Pbar/a;
     if(b <= 1) {b=a; a=1;}
     
     if(globalrank == 0 && options.verbose)

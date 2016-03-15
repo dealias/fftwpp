@@ -40,7 +40,6 @@ inline void usage()
   cerr << "-h\t\t help" << endl;
   cerr << "-T<int>\t\t number of threads" << endl;
   cerr << "-t\t\t test" << endl;
-  cerr << "-q\t\t quiet" << endl;
   cerr << "-N<int>\t\t number of timing tests"
        << endl;
   cerr << "-m<int>\t\t size" << endl;
@@ -198,7 +197,8 @@ int transpose(int rank, int size, int N)
 
     //    show(data,X,y*Z,active);
     
-    mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,active,mpiOptions(a,alltoall));
+    mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,active,
+                            mpiOptions(a,alltoall,defaultmpithreads,!quiet));
     init(data,X,y,Z,0,y0);
     T.transpose(data,false,true);
   
