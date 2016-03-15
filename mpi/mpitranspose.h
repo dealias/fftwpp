@@ -158,23 +158,24 @@ inline void Wait(int count, MPI_Request *request, int *sched=NULL)
 }
 #endif
 
-inline int localdimension(int N, int rank, int size)
-{
-  int n=utils::ceilquotient(N,size);
-  if(N % n > 0 || true) {
-    int n0=N/size;
-    if(n0+(N % size) <= n) n=n0;
+class localdimension {
+public:
+  int n;
+  int start;
+  
+  localdimension(int N, int rank, int size) {
+    n=utils::ceilquotient(N,size);
+    if(N % n > 0 || true) {
+      int n0=N/size;
+      if(n0+(N % size) <= n) n=n0;
+    }
+  
+    start=n*rank;
+    int extra=N-start;
+    if(extra < 0) extra=0;
+    if(n > extra || rank == size-1) n=extra;
   }
-  int extra=N-n*rank;
-  if(extra < 0) extra=0;
-  if(n > extra || rank == size-1) n=extra;
-  return n;
-}
-
-inline int localstart(int N, int rank, int size)
-{
-  return localdimension(N,0,size)*rank;
-}
+};
 
 inline int Ialltoall(void *sendbuf, int count, void *recvbuf,
                      MPI_Comm comm, MPI_Request *request, int *sched=NULL,
@@ -301,13 +302,13 @@ public:
     
     MPI_Comm_rank(global,&globalrank);
     
-    n0=localdimension(N,0,size);
+    n0=localdimension(N,0,size).n;
     nlast=std::min((int) utils::ceilquotient(N,n0),size)-1;
-    np=localdimension(N,nlast,size);
+    np=localdimension(N,nlast,size).n;
     
-    m0=localdimension(M,0,size);
+    m0=localdimension(M,0,size).n;
     mlast=std::min((int) utils::ceilquotient(M,m0),size)-1;
-    mp=localdimension(M,mlast,size);
+    mp=localdimension(M,mlast,size).n;
     
     if(work == NULL) {
       allocated=std::max(N*m,n*M)*L;
@@ -337,8 +338,6 @@ public:
     if(options.a <= 0) {
       double latency=safetyfactor*Latency();
       if(globalrank == 0) {
-//        std::cout << n0 << " " << nlast << " " << np << " " << Pbar << std::endl;
-//        std::cout << m0 << " " << mlast << " " << mp << " " << Pbar << std::endl;
         if(N*M*L*sizeof(T) < latency*Pbar*Pbar) {
           if(options.a < 0) {
             int n=sqrt(size)+0.5;
