@@ -365,9 +365,24 @@ public:
       for(int alltoall=start; alltoall <= stop; ++alltoall) {
         if(globalrank == 0 && options.verbose)
           std::cout << "alltoall=" << alltoall << std::endl;
+        unsigned int maxscore=0;
+        if(!uniform) {
+          // Only consider a,b values that yield largest possible submatrix.
+          for(a=std::max(2,astart); a < alimit; a++) {
+            b=Pbar/a;
+            unsigned int ab=a*b;
+            unsigned int score=ab*(N/ab)*ab*(M/ab);
+            if(score > maxscore) maxscore=score;
+          }
+        }
         for(a=astart; a < alimit; a++) {
-          if(uniform && (size % a != 0)) continue;
           b=Pbar/a;
+          if(uniform) {
+            if(a*b != size) continue;
+          } else {
+            unsigned int ab=a*b;
+            if(a > 1 && ab*(N/ab)*ab*(M/ab) < maxscore) continue;
+          }
           options.alltoall=alltoall;
           init(data);
           double t=time(data);
