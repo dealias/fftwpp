@@ -347,7 +347,7 @@ def main(argv):
             
         print " ".join(cmd)
 
-        if(stats == -1):
+        if not dryrun and stats == -1:
             try:
                 os.remove("timing.dat")
             except OSError:
@@ -444,7 +444,7 @@ def main(argv):
                         print err
                         
                         
-            if(stats == -1 and os.path.isfile("timing.dat")):
+            if not dryrun and (stats == -1 and os.path.isfile("timing.dat")):
                 if(appendtofile):
                     # Concatenate the files and then remove timing.dat
                     with open(filename, "a") as fout:
@@ -454,7 +454,7 @@ def main(argv):
                 else:
                     shutil.copyfile("timing.dat", filename)
                     
-        if(stats == -1):
+        if not dryrun and stats == -1:
             os.remove("timing.dat")
 if __name__ == "__main__":
     main(sys.argv[1:])
