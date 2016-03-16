@@ -340,12 +340,12 @@ public:
       if(globalrank == 0) {
         if(N*M*L*sizeof(T) < latency*Pbar*Pbar) {
           if(options.a < 0) {
-            int n=sqrt(size)+0.5;
-            options.a=size/n;
+            int n=sqrt(Pbar)+0.5;
+            options.a=Pbar/n;
             alimit=options.a+1;
           } else {
             options.a=1;
-            alimit=(int) (sqrt(size)+1.5);
+            alimit=(int) (sqrt(Pbar)+1.5);
           }
         } else { // Enforce a=1 if message length > latency.
           alimit=2;
