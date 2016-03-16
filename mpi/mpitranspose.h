@@ -165,7 +165,7 @@ public:
   
   localdimension(int N, int rank, int size) {
     n=utils::ceilquotient(N,size);
-    if(N % n > 0 || true) {
+    if(N % n > 0) {
       int n0=N/size;
       if(n0+(N % size) <= n) n=n0;
     }
