@@ -354,12 +354,14 @@ def main(argv):
                 pass
 
         if not dryrun:
+            # If we are not appending (or the output doesn't exist)
+            # add the metadata.
             if (not appendtofile) or (not os.path.isfile(filename)):
                 if(stats == -1):
-                    with open("timing.dat", "a") as myfile:
+                    with open("timing.dat", "w") as myfile:
                         myfile.write("# " + " ".join(cmd) + "\n")
                 else:
-                    with open(filename, "a") as myfile:
+                    with open(filename, "w") as myfile:
                         myfile.write("# " + " ".join(cmd) + "\n")
                         
         for i in range(a, b + 1):
@@ -443,18 +445,23 @@ def main(argv):
                         print "error:"
                         print err
                         
-                        
             if not dryrun and (stats == -1 and os.path.isfile("timing.dat")):
                 if(appendtofile):
-                    # Concatenate the files and then remove timing.dat
+                    # Append the new data ot the output.
                     with open(filename, "a") as fout:
                         with open("timing.dat") as fin:
+                            lines = []
                             for line in fin:
-                                fout.write(line)
+                                lines.append(line)
+                            fout.write(lines[len(lines) - 1])
+                                
                 else:
                     shutil.copyfile("timing.dat", filename)
                     
         if not dryrun and stats == -1:
-            os.remove("timing.dat")
+            try:
+                os.remove("timing.dat")
+            except OSError:
+                pass
 if __name__ == "__main__":
     main(sys.argv[1:])
