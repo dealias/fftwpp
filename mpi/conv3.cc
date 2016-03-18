@@ -102,7 +102,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"htqA:B:N:a:m:s:x:y:z:n:T:S:X:Y:Z:");
+    int c = getopt(argc,argv,"hitqA:B:N:a:m:s:x:y:z:n:T:S:X:Y:Z:");
     if (c == -1) break;
                 
     switch (c) {
@@ -159,6 +159,9 @@ int main(int argc, char* argv[])
       case 'Z':
         zcompact=atoi(optarg) == 0;
         break;
+      case 'i':
+	// For compatibility reasons with -i option in OpenMP version.
+	break;
       case 'h':
       default:
         if(rank == 0) {

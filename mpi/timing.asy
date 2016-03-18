@@ -66,6 +66,7 @@ string legends[];
 string datatype="";
 
 string stats="";
+int[] ncores;
 
 usersetting();
 
@@ -538,11 +539,18 @@ if(gtype == "scaling" || gtype == "peff") {
   
   // Get the number of cores for each file.
   real[] allprocs = new real[filenames.length];
-  for(int c=0; c < allprocs.length; ++c) {
-    allprocs[c] = getint("ncores" + string(c) );
-    
-    // This isn't dealt with by history properly:
-    // allprocs[c] = getint("cores in " + filenames[c] );
+
+  if(ncores.length == 0) {
+    for(int c=0; c < allprocs.length; ++c) {
+      allprocs[c] = getint("ncores" + string(c) );
+      
+      // This isn't dealt with by history properly:
+      // allprocs[c] = getint("cores in " + filenames[c] );
+    }
+  } else {
+    for(int c=0; c < allprocs.length; ++c) {
+      allprocs[c] = ncores[c];
+    }
   }
 
   // Collect the runtime for each value of m:
