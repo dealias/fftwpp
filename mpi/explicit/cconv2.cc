@@ -34,8 +34,11 @@ void convolve(fftw_complex *f, fftw_complex *g, double norm,
   fftw_mpi_execute_dft(iplan,f,f);
 }
 
+int threads_ok;
+
 int main(int argc, char **argv)
 {
+  int threads=1;
   int N=0;
   int m=4;
   int stats=0;
@@ -43,7 +46,7 @@ int main(int argc, char **argv)
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"N:m:S:");
+    int c = getopt(argc,argv,"N:m:S:T:");
     if (c == -1) break;
     
     switch (c) {
@@ -58,6 +61,9 @@ int main(int argc, char **argv)
       case 'S':
         stats=atoi(optarg);
         break;
+      case 'T':
+        threads=atoi(optarg);
+        break;
     }
   }
 
@@ -71,9 +77,19 @@ int main(int argc, char **argv)
     N=N0/m0/m1;
     if(N < 20) N=20;
   }
+
+  int provided;
+  MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &provided);
   
-  MPI_Init(&argc, &argv);
+  threads_ok = provided >= MPI_THREAD_FUNNELED;
+  if (threads_ok) {
+    threads_ok = fftw_init_threads();
+    cout << "Threads ok!" << endl;
+  }
+    
   fftw_mpi_init();
+
+  fftw_plan_with_nthreads(threads);
 
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);

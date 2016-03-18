@@ -59,11 +59,19 @@ string name;
 bool useN=false;
 bool oldformat=false;
 string sscale="";
-string datatype="";
+
 string[] filenames;
 string legends[];
 
+string datatype="";
+
+string stats="";
+
 usersetting();
+
+write(settings.user);
+
+write(datatype);
 
 if(gtype == "")
   gtype=getstring("time, mflops, scaling, peff, or speedup","mflops");
@@ -136,7 +144,8 @@ if(!dknown)
 real ymin=infinity, ymax=-infinity;
 
 
-string stats="median90";
+if(stats == "")
+  stats = "median90";
 
 triple statspm(real[] data) {
   if(stats == "median90") {
@@ -214,7 +223,7 @@ for(int n=0; n < filenames.length; ++n) {
   } else {
     // The input data is in the format: m N t_0 t_1 ... t_{N-1}
 
-    stats=getstring("stats");
+    //stats=getstring("stats");
       
     file fin=input(run);
     bool go=true;
