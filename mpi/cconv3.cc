@@ -93,7 +93,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"htqa:A:B:N:T:S:m:n:s:x:y:z:");
+    int c = getopt(argc,argv,"ihtqa:A:B:N:T:S:m:n:s:x:y:z:");
     if (c == -1) break;
                 
     switch (c) {
@@ -141,6 +141,9 @@ int main(int argc, char* argv[])
       case 'S':
         stats=atoi(optarg);
         break;
+      case 'i':
+	// For compatibility reasons with -i option in OpenMP version.
+	break;       
       case 'h':
       default:
         if(rank == 0) {

@@ -324,14 +324,14 @@ def main(argv):
 
         cmd += [path + str(p)]
         
-        #if(runtype == "explicit"):
-        #    cmd.append("-e")
+        if(runtype == "explicit"):
+            cmd.append("-e")
             
-        #if(runtype == "pruned"):
-        #    cmd.append("-p")
-            
-        #if(runtype == "implicit"):
-        #    cmd.append("-i")
+        if(runtype == "pruned"):
+            cmd.append("-p")
+           
+        if(runtype == "implicit"):
+            cmd.append("-i")
         
         cmd.append("-S" + str(stats))
         if(N > 0):

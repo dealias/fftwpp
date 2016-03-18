@@ -46,7 +46,7 @@ int main(int argc, char **argv)
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"N:m:S:T:");
+    int c = getopt(argc,argv,"N:m:S:T:e");
     if (c == -1) break;
     
     switch (c) {
@@ -64,6 +64,9 @@ int main(int argc, char **argv)
       case 'T':
         threads=atoi(optarg);
         break;
+      case 'e':
+	// For compatibility reasons with -e option in OpenMP version.
+	break;
     }
   }
 
