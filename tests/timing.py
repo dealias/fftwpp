@@ -354,14 +354,19 @@ def main(argv):
                 pass
 
         if not dryrun:
-            # If we are not appending (or the output doesn't exist)
-            # add the metadata.
-            if (not appendtofile) or (not os.path.isfile(filename)):
-                if(stats == -1):
-                    with open("timing.dat", "w") as myfile:
+            if(appendtofile):
+                if os.path.isfile(filename):
+                    with open(filename, "a") as myfile:
                         myfile.write("# " + " ".join(cmd) + "\n")
                 else:
                     with open(filename, "w") as myfile:
+                        myfile.write("# " + " ".join(cmd) + "\n")
+            else:
+                if not stats == -1:
+                    with open(filename, "w") as myfile:
+                        myfile.write("# " + " ".join(cmd) + "\n")
+                else:
+                    with open("timing.dat", "w") as myfile:
                         myfile.write("# " + " ".join(cmd) + "\n")
                         
         for i in range(a, b + 1):
