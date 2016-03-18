@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"hqtA:B:i:H:N:a:m:n:s:x:y:T:S:X:Y:");
+    int c = getopt(argc,argv,"hqtA:B:iH:N:a:m:n:s:x:y:T:S:X:Y:");
     if (c == -1) break;
                 
     switch (c) {
