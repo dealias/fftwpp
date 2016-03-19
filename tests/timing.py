@@ -313,6 +313,9 @@ def main(argv):
         
         if not dryrun:
             os.system("mkdir -p " + outdir)
+            with open(outdir + "/log", "a") as logfile:
+                logfile.write(str(sys.argv))
+                logfile.write("\n")
             if not appendtofile:
                 os.system("rm -f " + filename)
 
@@ -414,6 +417,8 @@ def main(argv):
 
                     # copy the output and error to a log file.
                     with open(outdir + "/log", "a") as logfile:
+                        logfile.write(" ".join(mcmd))
+                        logfile.write("\n")
                         logfile.write(out)
                         logfile.write(err)
 
