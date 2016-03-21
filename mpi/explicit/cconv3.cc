@@ -88,10 +88,6 @@ int main(int argc, char **argv)
   MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &provided);
 
   threads_ok = provided >= MPI_THREAD_FUNNELED;
-  if (threads_ok) {
-    threads_ok = fftw_init_threads();
-    cout << "Threads ok!" << endl;
-  }
 
   fftw_mpi_init();
 
@@ -99,6 +95,12 @@ int main(int argc, char **argv)
 
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  if(threads_ok && rank == 0) {
+    threads_ok = fftw_init_threads();
+    cout << "Threads ok!" << endl;
+  }
+
   
   /* get local data size and allocate */
   ptrdiff_t local_n0;
@@ -142,7 +144,8 @@ int main(int argc, char **argv)
   if(rank == 0) timings("Explicit",m,T,N,stats);
   
   if(m0*m1*m2<100) {
-    if(rank == 0) cout << "output:" << endl;
+    if(rank == 0)
+      cout << "output:" << endl;
     show(f,local_0_start,local_n0,N1,N2,m0,m1,m2,2);
   }
 
