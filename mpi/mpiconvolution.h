@@ -42,7 +42,6 @@ public:
                          convolveOptions(d.x,d.y,d.Activate(),mpi,toplevel)),
     d(d) {
     inittranspose(mpi,work,global);
-    std::cout << "threads: " << threads << std::endl;
   }
   
   ImplicitConvolution2MPI(unsigned int mx, unsigned int my,
@@ -56,7 +55,6 @@ public:
                          convolveOptions(d.x,d.y,d.Activate(),mpi,toplevel)),
     d(d) {
     inittranspose(mpi,work,global);
-    std::cout << "threads: " << threads << std::endl;
   }
   
   virtual ~ImplicitConvolution2MPI() {
