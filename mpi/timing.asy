@@ -70,7 +70,7 @@ int[] ncores;
 
 usersetting();
 
-write(settings.user);
+//write(settings.user);
 
 write(datatype);
 
