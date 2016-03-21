@@ -599,7 +599,7 @@ public:
   
   void init(const convolveOptions& options) {
     toplevel=options.toplevel;
-    xfftpad=new fftpad(mx,options.ny,options.ny,u2);
+    xfftpad=new fftpad(mx,options.ny,options.ny,u2,threads);
     yconvolve=new ImplicitConvolution*[threads];
     for(unsigned int t=0; t < threads; ++t)
       yconvolve[t]=new ImplicitConvolution(my,u1+t*my*A,A,B,innerthreads);
@@ -993,7 +993,7 @@ public:
   void init(const convolveOptions& options) {
     toplevel=options.toplevel;
     unsigned int nyz=options.ny*options.nz;
-    xfftpad=new fftpad(mx,nyz,nyz,u3);
+    xfftpad=new fftpad(mx,nyz,nyz,u3,threads);
     
     if(options.nz == mz) {
       yzconvolve=new ImplicitConvolution2*[threads];
@@ -1583,10 +1583,11 @@ class fft0bipad {
   unsigned int threads;
 public:  
   fft0bipad(unsigned int m, unsigned int M, unsigned int stride,
-            Complex *f) : m(m), M(M), stride(stride) {
+            Complex *f, unsigned int Threads=fftw::maxthreads) : 
+    m(m), M(M), stride(stride), threads(Threads) {
     unsigned int twom=2*m;
-    Backwards=new mfft1d(twom,1,M,stride,1,f);
-    Forwards=new mfft1d(twom,-1,M,stride,1,f);
+    Backwards=new mfft1d(twom,1,M,stride,1,f,NULL,threads);
+    Forwards=new mfft1d(twom,-1,M,stride,1,f,NULL,threads);
     
     threads=std::min(threads,
                      std::max(Backwards->Threads(),Forwards->Threads()));
@@ -1664,7 +1665,7 @@ public:
   }
   
   void init() {
-    xfftpad=new fft0bipad(mx,my,my+1,u2);
+    xfftpad=new fft0bipad(mx,my,my+1,u2,threads);
     
     yconvolve=new ImplicitHTConvolution(my,u1,v1,w1,M);
     yconvolve->Threads(1);
@@ -1812,7 +1813,7 @@ public:
   }
     
   void init() {
-    xfftpad=new fft0bipad(mx,my,my+1,u2);
+    xfftpad=new fft0bipad(mx,my,my+1,u2,threads);
     
     yconvolve=new ImplicitHFGGConvolution(my,u1,v1);
     yconvolve->Threads(1);
@@ -1919,7 +1920,7 @@ public:
   }
     
   void init() {
-    xfftpad=new fft0bipad(mx,my,my+1,u2);
+    xfftpad=new fft0bipad(mx,my,my+1,u2,threads);
     
     yconvolve=new ImplicitHFFFConvolution(my,u1);
     yconvolve->Threads(1);
