@@ -50,12 +50,14 @@ def main(argv):
         xlist = [2,1,3,4,5,6,7,8,9,10,random.randint(start,stop)]
         ylist = [2,1,3,4,5,6,7,8,9,10,random.randint(start,stop)]
         Plist = [8,4,3,2,random.randint(9,12),1]
+        Tlist = [1,2,random.randint(3,5)]
 
         if(shortrun):
             print "Short run."
             xlist = [2,3,random.randint(6,64)]
             ylist = [2,3,random.randint(6,64)]
             Plist = [1,2]
+            Tlist = [1,2]
             
         testcases = []
         for x in xlist:
@@ -63,19 +65,20 @@ def main(argv):
                 for X in range(0,2):
                     for Y in range(0,2):
                         for A in Alist:
-                            args = []
-                            args.append("-x" + str(x))
-                            args.append("-y" + str(y))
-                            args.append("-N1")
-                            args.append("-s1")
-                            args.append("-a1")
-                            args.append("-X"+str(X))
-                            args.append("-Y"+str(Y))
-                            args.append("-A"+str(A))
-                            args.append("-T1")
-                            args.append("-t")
-                            args.append("-q")
-                            testcases.append(args)
+                            for T in Tlist:
+                                args = []
+                                args.append("-x" + str(x))
+                                args.append("-y" + str(y))
+                                args.append("-N1")
+                                args.append("-s1")
+                                args.append("-a1")
+                                args.append("-X"+str(X))
+                                args.append("-Y"+str(Y))
+                                args.append("-A"+str(A))
+                                args.append("-T" + str(T))
+                                args.append("-t")
+                                args.append("-q")
+                                testcases.append(args)
 
         tstart = time.time()
         ntest = len(testcases)*len(Plist)

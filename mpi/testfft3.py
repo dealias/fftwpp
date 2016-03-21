@@ -47,6 +47,7 @@ def main(argv):
         Ylist = [1,2,3,4,5,random.randint(6,64)]
         Zlist = [1,2,3,4,5,random.randint(6,64)]
         Plist = [4,8,3,2,random.randint(9,12),1]
+        Tlist = [1,2,random.randint(3,5)]
 
         if(shortrun):
             print "Short run."
@@ -54,24 +55,26 @@ def main(argv):
             Ylist = [2,3,random.randint(6,64)]
             Zlist = [2,3,random.randint(6,64)]
             Plist = [1,2]
+            Tlist = [1,2]
 
         testcases = []
         for X in Xlist:
             for Y in Ylist:
                 for Z in Zlist:
                     for i in [0, 1]:
-                        args = []
-                        args.append("-x" + str(X))
-                        args.append("-y" + str(Y))
-                        args.append("-z" + str(Z))
-                        args.append("-i" + str(i))
-                        args.append("-N1")
-                        args.append("-s1")
-                        args.append("-a1")
-                        args.append("-T1")
-                        args.append("-t")
-                        args.append("-q")
-                        testcases.append(args)
+                        for T in Tlist:
+                            args = []
+                            args.append("-x" + str(X))
+                            args.append("-y" + str(Y))
+                            args.append("-z" + str(Z))
+                            args.append("-i" + str(i))
+                            args.append("-N1")
+                            args.append("-s1")
+                            args.append("-a1")
+                            args.append("-T" + str(T))
+                            args.append("-t")
+                            args.append("-q")
+                            testcases.append(args)
 
         tstart = time.time()
         ntest = len(testcases)*len(Plist)
