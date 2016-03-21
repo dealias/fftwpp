@@ -52,7 +52,8 @@ inline void usage()
   cerr << "-x<int>\t\t x size" << endl;
   cerr << "-y<int>\t\t y size" << endl;
   cerr << "-z<int>\t\t z size" << endl;
-  
+  cerr << "-I     \t\t Do in-transpose" << endl;
+  cerr << "-O     \t\t Do out-transpose" << endl;
   //usageTranspose();
   cerr << "-L\t\t locally transpose output" << endl;
   exit(1);
@@ -125,6 +126,9 @@ void fftwTranspose(int rank, int size, unsigned int N, int stats, int direction)
     if(direction == 1)
       timings("out transpose",X,Tout,N,stats);
   }
+
+  delete[] Tout;
+  delete[] Tin;
   
   if(showoutput) {
     if(outtranspose) {

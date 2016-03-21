@@ -26,6 +26,11 @@ def max_m(p, RAM, runtype):
     print "ram:", RAM
     
     b = 0
+    if "transpose" in p:
+        # NB: assumes Z=1.
+        b = int(floor(log(RAM / 32) / (2 * log(2))))
+        return b
+    
     if "cconv2" in p:
         if runtype == "implicit":
             # A * 2m^2 * 16
