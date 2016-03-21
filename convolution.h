@@ -434,7 +434,7 @@ public:
   fftpad(unsigned int m, unsigned int M,
          unsigned int stride, Complex *u=NULL,
          unsigned int Threads=fftw::maxthreads)
-    : m(m), M(M), stride(stride), threads(std::min(m,Threads)) {
+    : m(m), M(M), stride(stride), threads(Threads) {
     Backwards=new mfft1d(m,1,M,stride,1,u,NULL,threads);
     Forwards=new mfft1d(m,-1,M,stride,1,u,NULL,threads);
     
@@ -484,7 +484,7 @@ public:
   
   fft0pad(unsigned int m, unsigned int M, unsigned int stride, Complex *u=NULL,
           unsigned int Threads=fftw::maxthreads)
-    : m(m), M(M), stride(stride), threads(std::min(m,Threads)) {
+    : m(m), M(M), stride(stride), threads(Threads) {
     Backwards=new mfft1d(m,1,M,stride,1,u,NULL,threads);
     Forwards=new mfft1d(m,-1,M,stride,1,u,NULL,threads);
     
@@ -809,8 +809,8 @@ public:
   
   void init(const convolveOptions& options) {
     toplevel=options.toplevel;
-    xfftpad=xcompact ? new fft0pad(mx,options.ny,options.ny,u2,threads) :
-      new fft1pad(mx,options.ny,options.ny,u2,threads);
+    xfftpad=xcompact ? new fft0pad(mx,options.ny,options.ny,u2) :
+      new fft1pad(mx,options.ny,options.ny,u2);
     
     yconvolve=new ImplicitHConvolution*[threads];
     for(unsigned int t=0; t < threads; ++t)
@@ -1182,8 +1182,8 @@ public:
   void init(const convolveOptions& options) {
     toplevel=options.toplevel;
     unsigned int nyz=options.ny*options.nz;
-    xfftpad=xcompact ? new fft0pad(mx,nyz,nyz,u3,threads) :
-      new fft1pad(mx,nyz,nyz,u3,threads);
+    xfftpad=xcompact ? new fft0pad(mx,nyz,nyz,u3) :
+      new fft1pad(mx,nyz,nyz,u3);
 
     if(options.nz == mz+!zcompact) {
       yzconvolve=new ImplicitHConvolution2*[threads];
