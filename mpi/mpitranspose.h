@@ -300,6 +300,8 @@ public:
     MPI_Comm_size(communicator,&size);
     MPI_Comm_rank(communicator,&rank);
     
+    size=128;
+    
     MPI_Comm_rank(global,&globalrank);
     
     n0=localdimension(N,0,size).n;
@@ -335,6 +337,8 @@ public:
       
     int alimit;
     int Pbar=std::min(nlast+(n0 == np),mlast+(m0 == mp));
+    std::cout << Pbar << std::endl;
+    
     if(options.a <= 0) {
       double latency=safetyfactor*Latency();
       if(globalrank == 0) {

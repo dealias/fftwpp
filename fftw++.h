@@ -370,15 +370,17 @@ public:
     if(!plan) noplan();
     
     fftw_plan planT;
-    threads=Threads;
-    planThreads(threads);
-    planT=(*planner)(this,in,out);
+    if(fftw::maxthreads > 1) {
+      threads=Threads;
+      planThreads(threads);
+      planT=(*planner)(this,in,out);
     
-    if(data.threads == 0) {
-      if(planT)
-        data=time(plan,planT,in,out,threads);
-      else noplan();
-      store(inplace,threaddata(threads,data.mean,data.stdev));
+      if(data.threads == 0) {
+        if(planT)
+          data=time(plan,planT,in,out,threads);
+        else noplan();
+        store(inplace,threaddata(threads,data.mean,data.stdev));
+      }
     }
     
     if(alloc) Array::deleteAlign(in,(doubles+1)/2);
@@ -768,36 +770,38 @@ public:
     threaddata S1=Setup(in,out);
     fftw_plan planT1=plan;
     
-    threads=Threads;
-    threaddata ST=Setup(in,out);
+    if(fftw::maxthreads > 1) {
+      threads=Threads;
+      threaddata ST=Setup(in,out);
     
-    if(Threads > 1) {
-      T=std::min(M,Threads);
-      Q=T > 0 ? M/T : 0;
-      R=M-Q*T;
+      if(Threads > 1) {
+        T=std::min(M,Threads);
+        Q=T > 0 ? M/T : 0;
+        R=M-Q*T;
     
-      if(R > 0 && threads == 1 && plan1 != plan2) {
-        fftw_destroy_plan(plan2);
-        plan2=plan1;
-      }
-
-      if(ST.mean > S1.mean-S1.stdev) { // Use FFTW's multi-threading
-        fftw_destroy_plan(plan);
-        if(R > 0) {
+        if(R > 0 && threads == 1 && plan1 != plan2) {
           fftw_destroy_plan(plan2);
-          plan2=NULL;
+          plan2=plan1;
         }
-        T=1;
-        Q=M;
-        R=0;
-        plan=planT1;
-        threads=S1.threads;
-      } else {                         // Do the multi-threading ourselves
-        fftw_destroy_plan(planT1);
-        threads=ST.threads;
+
+        if(ST.mean > S1.mean-S1.stdev) { // Use FFTW's multi-threading
+          fftw_destroy_plan(plan);
+          if(R > 0) {
+            fftw_destroy_plan(plan2);
+            plan2=NULL;
+          }
+          T=1;
+          Q=M;
+          R=0;
+          plan=planT1;
+          threads=S1.threads;
+        } else {                         // Do the multi-threading ourselves
+          fftw_destroy_plan(planT1);
+          threads=ST.threads;
+        }
       }
     }
-  }
+  }    
   
   fftw_plan Plan(int Q, fftw_complex *in, fftw_complex *out) {
     return fftw_plan_many_dft(1,&nx,Q,in,NULL,istride,idist,
