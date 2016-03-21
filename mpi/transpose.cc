@@ -40,12 +40,13 @@ inline void usage()
   cerr << "-h\t\t help" << endl;
   cerr << "-T<int>\t\t number of threads" << endl;
   cerr << "-t\t\t test" << endl;
-  cerr << "-N<int>\t\t number of timing tests"
-       << endl;
+  cerr << "-N<int>\t\t number of timing tests" << endl;
   cerr << "-m<int>\t\t size" << endl;
   cerr << "-x<int>\t\t x size" << endl;
   cerr << "-y<int>\t\t y size" << endl;
   cerr << "-z<int>\t\t z size" << endl;
+  cerr << "-S<int>\t\t stats choice" << endl;
+  cerr << "-p<int>\t\t which part of the transpose to time" << endl;
   usageTranspose();
   cerr << "-L\t\t locally transpose output" << endl;
   exit(1);
@@ -89,7 +90,8 @@ void fftwTranspose(int rank, int size)
   fftw_plan outplan=fftw_mpi_plan_many_transpose(X,Y,2*Z,0,block,
                                                  (double*) data,(double*) data,
                                                  MPI_COMM_WORLD,
-                                                 outtranspose ? 0 : FFTW_MPI_TRANSPOSED_OUT);
+                                                 outtranspose ? 0 : \
+						 FFTW_MPI_TRANSPOSED_OUT);
   
   init(data,X,y,Z,0,y0);
 
@@ -161,7 +163,7 @@ void fftwTranspose(int rank, int size)
 }
 #endif  
   
-int transpose(int rank, int size, int N)
+int transpose(int rank, int size, int N, int stats, int timepart)
 {
   int retval=0;
 
@@ -278,12 +280,16 @@ int transpose(int rank, int size, int N)
     } else {
       if(rank == 0)
         cout << "\nSpeed test.\n" << endl;
+
+      double* Tp=new double[N];
+      
       for(int k=0; k < N; ++k) {
         init(data,X,y,Z,0,y0);
     
         double begin=0.0, Tinit0=0.0, Tinit=0.0, Twait0=0.0, Twait1=0.0;
         if(rank == 0) begin=totalseconds();
 
+	seconds();
         T.inphase0();
         if(rank == 0) Tinit0=totalseconds();
         T.insync0();
@@ -294,6 +300,9 @@ int transpose(int rank, int size, int N)
         if(rank == 0) Twait1=totalseconds();
         T.inpost();
 
+	// TODO: Tp should time different stages as determined by timepart.
+	Tp[k] = seconds();
+	
         if(rank == 0) {
           Sin.add(totalseconds()-begin);
           Sininit.add(Tinit0-begin);
@@ -325,7 +334,11 @@ int transpose(int rank, int size, int N)
           Soutwait1.add(Twait1-Tinit);
         }
       }
-  
+
+      if(rank == 0)
+	timings("transpose",X,Tp,N,stats);
+      delete[] Tp;
+      
       if(showoutput) {
         if(outtranspose) {
           if(rank == 0) cout << "\nOutput:" << endl;
@@ -361,6 +374,9 @@ int main(int argc, char **argv)
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
 
+  int stats=0;
+  int timepart=0;
+  
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
   if(rank != 0) opterr=0;
@@ -368,7 +384,7 @@ int main(int argc, char **argv)
   optind=0;
 #endif  
   for (;;) {
-    int c=getopt(argc,argv,"hLN:A:a:m:n:s:T:x:y:z:qt");
+    int c=getopt(argc,argv,"hLN:A:a:m:n:p:s:T:S:x:y:z:qt");
     if (c == -1) break;
                 
     switch (c) {
@@ -389,6 +405,9 @@ int main(int argc, char **argv)
       case 'm':
         X=Y=atoi(optarg);
         break;
+      case 'p':
+        timepart=atoi(optarg);
+        break;
       case 'x':
         X=atoi(optarg);
         break;
@@ -400,6 +419,9 @@ int main(int argc, char **argv)
         break;
       case 'T':
         defaultmpithreads=atoi(optarg);
+        break;
+      case 'S':
+        stats=atoi(optarg);
         break;
       case 't':
         test=true;
@@ -438,7 +460,7 @@ int main(int argc, char **argv)
 #ifdef OLD
   fftwTranspose(rank,size);
 #else
-  retval=transpose(rank,size,N);
+  retval=transpose(rank,size,N,stats,timepart);
 #endif  
   
   MPI_Finalize();

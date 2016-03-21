@@ -69,10 +69,8 @@ string stats="";
 int[] ncores;
 
 usersetting();
-
 //write(settings.user);
 
-write(datatype);
 
 if(gtype == "")
   gtype=getstring("time, mflops, scaling, peff, or speedup","mflops");
@@ -139,17 +137,17 @@ if(name == "cconv3" || name == "conv3") {
   d = 3;
   dknown = true;
 }
+if(name == "transpose") {
+  d = 2;
+  dknown = true;
+}
 if(!dknown)
   d=getreal("dimension of FFT involved",1);
 
 real ymin=infinity, ymax=-infinity;
 
-
-if(stats == "")
-  stats = "median90";
-
-triple statspm(real[] data) {
-  if(stats == "median90") {
+triple statspm(real[] data, string thestats) {
+  if(thestats == "median90") {
     data = sort(data);
     int N = data.length;
     real median = data[floor(N/2)];
@@ -158,7 +156,7 @@ triple statspm(real[] data) {
     return (median, p5, p95);
   }
   
-  if(stats == "mean") {
+  if(thestats == "mean") {
     int N = data.length;
     real mean = sum(data) / N;
 
@@ -179,7 +177,7 @@ triple statspm(real[] data) {
     return (mean, sigmaL, sigmaH);
   }
   
-  if(stats == "min") {
+  if(thestats == "min") {
     real min = min(data);
     return (min, 0, 0);
   }
@@ -224,8 +222,12 @@ for(int n=0; n < filenames.length; ++n) {
   } else {
     // The input data is in the format: m N t_0 t_1 ... t_{N-1}
 
-    //stats=getstring("stats");
-      
+    string thisstats;
+    if(stats == "")
+      thisstats=getstring("stats");
+    else
+      thisstats=stats;
+    
     file fin=input(run);
     bool go=true;
 
@@ -249,7 +251,7 @@ for(int n=0; n < filenames.length; ++n) {
 	real times[] = new real[N];
 	for(int i = 0; i < N; ++i)
 	  times[i] = fin;
-	triple thestats = statspm(times);
+	triple thestats = statspm(times, thisstats);
 	nmi.push(m);
 	ni.push(thestats.x);
 	nli.push(thestats.y);
@@ -275,11 +277,15 @@ pen Lp=fontsize(8pt);
 
 // Normalization function (based on computational complexity of FFT).
 real mscale(real m) {
+  if(d == 0)
+    return 1;
   return 1e-9 * m^d * d * log(m) / log(2);
 }
 
 // Normalization for computing "mflops" ala FFTW.
 real mspeed(real m) {
+  if(d == 0)
+    return 1;
   return 5e-6 *m^d * d * log(m) / log(2);
 }
 
