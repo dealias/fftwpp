@@ -26,6 +26,11 @@ public:
     d.Deactivate();
   }
 
+  void synchronizeWisdom(unsigned int threads) {
+    for(unsigned int t=this->threads; t < threads; ++t)
+      delete new ImplicitConvolution(my,u1,A,B,innerthreads);
+  }
+  
   // u1 is a temporary array of size my*A*options.threads.
   // u2 is a temporary array of size split(mx,my).n*A.
   // A is the number of inputs.
@@ -41,6 +46,7 @@ public:
     ImplicitConvolution2(mx,my,u1,u2,A,B,threads,
                          convolveOptions(d.x,d.y,d.Activate(),mpi,toplevel)),
     d(d) {
+    synchronizeWisdom(threads);
     inittranspose(mpi,work,global);
   }
   
@@ -54,6 +60,7 @@ public:
     ImplicitConvolution2(mx,my,A,B,threads,
                          convolveOptions(d.x,d.y,d.Activate(),mpi,toplevel)),
     d(d) {
+    synchronizeWisdom(threads);
     inittranspose(mpi,work,global);
   }
   
@@ -91,7 +98,12 @@ public:
     du.Deactivate();
   }    
   
-  // f is a temporary array of size d.n needed only during construction.
+ void synchronizeWisdom(unsigned int threads) {
+    for(unsigned int t=this->threads; t < threads; ++t)
+      delete new ImplicitHConvolution(my,ycompact,u1,A,B,innerthreads);
+  }
+  
+   // f is a temporary array of size d.n needed only during construction.
   // u1 is a temporary array of size (my/2+1)*A*options.threads.
   // u2 is a temporary array of size du.n*A.
   // A is the number of inputs.
@@ -107,6 +119,7 @@ public:
     ImplicitHConvolution2(mx,my,u1,u2,A,B,threads,
                           convolveOptions(d.x,d.y,du.Activate(),mpi,toplevel)),
     d(d), du(du) {
+    synchronizeWisdom(threads);
     inittranspose(f,mpi,work,global);
   }
   
@@ -122,6 +135,7 @@ public:
     ImplicitHConvolution2(mx,my,xcompact,ycompact,u1,u2,A,B,threads,
                           convolveOptions(d.x,d.y,du.Activate(),mpi,toplevel)),
     d(d), du(du) {
+    synchronizeWisdom(threads);
     inittranspose(f,mpi,work,global);
   }
   
@@ -136,6 +150,7 @@ public:
     ImplicitHConvolution2(mx,my,true,true,A,B,threads,
                           convolveOptions(d.x,d.y,du.Activate(),mpi,toplevel)),
     d(d), du(du) {
+    synchronizeWisdom(threads);
     inittranspose(f,mpi,work,global);
   }
   
@@ -151,6 +166,7 @@ public:
     ImplicitHConvolution2(mx,my,xcompact,ycompact,A,B,threads,
                           convolveOptions(d.x,d.y,du.Activate(),mpi,toplevel)),
     d(d), du(du) {
+    synchronizeWisdom(threads);
     inittranspose(f,mpi,work,global);
   }
   
@@ -193,7 +209,7 @@ public:
   }
 
   void initMPI(const utils::mpiOptions& mpi, Complex *work, Complex *work2, 
-               MPI_Comm global) {
+               MPI_Comm global, unsigned int Threads) {
     global=global ? global : d.communicator;
     if(d.z < d.Z) {
       yzconvolve=new ImplicitConvolution2*[threads];
@@ -205,6 +221,10 @@ public:
                                                   false);
       initpointers3(U3,u3,d.n);
     }
+    for(unsigned int t=d.z < d.Z ? threads : 0; t < Threads; ++t)
+      delete new ImplicitConvolution2MPI(my,mz,d.yz,u1,u2,mpi,A,B,
+                                         innerthreads,work2,global,
+                                         false);
     inittranspose(mpi,work,global);
   }
   
@@ -224,7 +244,7 @@ public:
     ImplicitConvolution3(mx,my,mz,u1,u2,u3,A,B,threads,
                          convolveOptions(d.xy.y,d.z,d.n2,d.Activate(),mpi)),
     d(d) {
-    initMPI(mpi,work,work2,global);
+    initMPI(mpi,work,work2,global,threads);
   }
 
   ImplicitConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
@@ -237,7 +257,7 @@ public:
     ImplicitConvolution3(mx,my,mz,A,B,threads,
                          convolveOptions(d.xy.y,d.z,d.n2,d.Activate(),mpi)),
     d(d) {
-    initMPI(mpi,work,work2,global);
+    initMPI(mpi,work,work2,global,threads);
   }
   
   virtual ~ImplicitConvolution3MPI() {
@@ -281,7 +301,8 @@ public:
   }
 
   void initMPI(Complex *f, const utils::mpiOptions& mpi,
-               Complex *work, Complex *work2, MPI_Comm global) {
+               Complex *work, Complex *work2, MPI_Comm global,
+               unsigned int Threads) {
     global=global ? global : d.communicator;
     if(d.z < d.Z) {
       yzconvolve=new ImplicitHConvolution2*[threads];
@@ -294,6 +315,10 @@ public:
                                        work2,global,false);
       initpointers3(U3,u3,du.n);
     }
+    for(unsigned int t=d.z < d.Z ? threads : 0; t < Threads; ++t)
+      delete new ImplicitHConvolution2MPI(my,mz,ycompact,zcompact,
+                                          d.yz,du.yz,f,u1,u2,mpi,A,B,
+                                          innerthreads,work2,global,false);
     inittranspose(f,mpi,work,global);
   }
   
@@ -314,7 +339,7 @@ public:
     ImplicitHConvolution3(mx,my,mz,u1,u2,u3,A,B,threads,
                           convolveOptions(d.xy.y,d.z,du.n2,du.Activate(),mpi)),
     d(d), du(du) {
-    initMPI(f,mpi,work,work2,global);
+    initMPI(f,mpi,work,work2,global,threads);
   }
 
   ImplicitHConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
@@ -330,7 +355,7 @@ public:
                           threads,convolveOptions(d.xy.y,d.z,du.n2,
                                                   du.Activate(),mpi)),
     d(d), du(du) {
-    initMPI(f,mpi,work,work2,global);
+    initMPI(f,mpi,work,work2,global,threads);
   }
 
   ImplicitHConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
@@ -344,7 +369,7 @@ public:
     ImplicitHConvolution3(mx,my,mz,true,true,true,A,B,threads,
                           convolveOptions(d.xy.y,d.z,du.n2,
                                           du.Activate(),mpi)), d(d), du(du) {
-    initMPI(f,mpi,work,work2,global);
+    initMPI(f,mpi,work,work2,global,threads);
   }
   
   ImplicitHConvolution3MPI(unsigned int mx, unsigned int my, unsigned int mz,
@@ -359,7 +384,7 @@ public:
     ImplicitHConvolution3(mx,my,mz,xcompact,ycompact,zcompact,A,B,threads,
                           convolveOptions(d.xy.y,d.z,du.n2,
                                           du.Activate(),mpi)), d(d), du(du) {
-    initMPI(f,mpi,work,work2,global);
+    initMPI(f,mpi,work,work2,global,threads);
   }
   
   virtual ~ImplicitHConvolution3MPI() {
