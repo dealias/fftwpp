@@ -2,6 +2,8 @@ ifndef MPICXX
 MPICXX=mpic++
 endif
 
+MPICXX=mpiCC
+
 IDIR =../../
 UDIR =../../tests/
 
@@ -56,7 +58,7 @@ LDFLAGS+= -lfftw3_mpi -lfftw3_omp -lfftw3 -lm
 vpath %.cc ../../
 
 
-FILES=fft2 fft3 fft2r fft3r cconv2 cconv3 conv2 transpose
+FILES=fft2 fft3 fft2r fft3r cconv2 cconv3 transpose
 EXTRA=exmpiutils
 ALL=$(FILES) $(EXTRA)
 
@@ -80,17 +82,16 @@ cconv2: cconv2.o $(EXTRA:=.o)
 cconv3: cconv3.o $(EXTRA:=.o)
 	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-conv2: conv2.o $(EXTRA:=.o)
-	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
-
 transpose: transpose.o $(EXTRA:=.o)
 	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
-
 
 .SUFFIXES: .c .cc .o .d
 
 %.o : %.cc %.h
-	$(MPICXX) $(CXXFLAGS) -o $@ -c $<
+	$(MPICXX) $(CXXFLAGS) $(OPTS) -o $@ -c $<
+
+%.o : %.cc
+	$(MPICXX) $(CXXFLAGS) $(OPTS) -o $@ -c $<
 
 .cc.d:
 	@echo Creating $@; \
