@@ -2,8 +2,6 @@ ifndef MPICXX
 MPICXX=mpic++
 endif
 
-MPICXX=mpiCC
-
 IDIR =../../
 UDIR =../../tests/
 
