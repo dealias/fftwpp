@@ -65,7 +65,7 @@ ALL=$(FILES) $(MPICONVOLUTION)
 
 all: $(FILES)
 
-%.o : %.cc %.h
+%.o : %.cc
 	$(MPICXX) $(CXXFLAGS) $(OPTS) -o $@ -c $<
 
 transpose: transpose.o $(MPITRANSPOSE:=.o)

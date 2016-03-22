@@ -49,7 +49,7 @@ ALL=$(FILES) $(EXTRA)
 
 all: $(FILES)
 
-%.o : %.cc %.h
+%.o : %.cc
 	$(CXX) $(CXXFLAGS) -o $@ -c $<
 
 conv: conv.o $(EXTRA:=.o)
