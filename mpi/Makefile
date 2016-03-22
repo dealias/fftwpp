@@ -15,10 +15,10 @@ ifeq ($(shell $(MPICXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
 endif
 
 #Intel compiler
-#ifeq ($(shell $(MPICXX) --version 2>&1 | head -c 4),icpc)
+ifeq ($(shell $(MPICXX) --version 2>&1 | head -c 4),icpc)
 CXXFLAGS=-O3 -openmp -ipo -ansi-alias -malign-double -fp-model fast=2
 # note that the -fast option forces static linkage
-#endif
+endif
 
 #IBM compiler
 ifeq ($(shell $(MPICXX) -qversion 2>&1 | head -c 3),IBM)
