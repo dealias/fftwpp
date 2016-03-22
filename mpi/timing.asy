@@ -9,7 +9,7 @@ include graph;
 // Specify the filenames.
 
 // asy -u"gtype=\"time\""
-// produce a time, mflops, scaling, peff, or speedup graph.
+// produce a time, performance, scaling, peff, or speedup graph.
 
 // asy timing.asy -u "useN=true"
 // makes the legends use N instead of m.
@@ -73,7 +73,7 @@ usersetting();
 
 
 if(gtype == "")
-  gtype=getstring("time, mflops, scaling, peff, or speedup","mflops");
+  gtype=getstring("time, performance, scaling, peff, or speedup","performance");
 
 if(gtype == "time")
   scale(Log,Linear);
@@ -85,7 +85,7 @@ if(gtype == "speeduplog") {
   scale(Log,Log);
   gtype="speedup";
 }
-if(gtype == "mflops") {
+if(gtype == "performance") {
   //scale(Log,Log);
   scale(Log,Linear);
   //size(300,400,IgnoreAspect);
@@ -282,11 +282,11 @@ real mscale(real m) {
   return 1e-9 * m^d * d * log(m) / log(2);
 }
 
-// Normalization for computing "mflops" ala FFTW.
+// Normalization for computing "performance" ala FFTW.
 real mspeed(real m) {
   if(d == 0)
     return 1;
-  return 5e-6 *m^d * d * log(m) / log(2);
+  return 1e-6 *m^d * d * log(m) / log(2);
 }
 
 string D=d > 1 ? "^"+(string) d : "";
@@ -320,10 +320,10 @@ pen linePen(int p) {
 
 string base10(real x) {return "$10^{" + string(x) + "}$";}
 
-if(gtype == "time" || gtype == "mflops") {
+if(gtype == "time" || gtype == "performance") {
   for(int p=0; p < filenames.length; ++p) {
     marker mark1=marker(scale(0.6mm)*polygon(3+p),Draw(barPen(p)+solid));
-    if(gtype == "mflops") {
+    if(gtype == "performance") {
       for(int v = 0; v < i[p].length; ++v) 
 	i[p][v] = mspeed(mi[p][v]) / i[p][v];
     }
@@ -361,10 +361,10 @@ if(gtype == "time" || gtype == "mflops") {
 
   xaxis("$"+Nm+"$",BottomTop,LeftTicks);
   if(d > 0) {
-    if(gtype=="mflops") {
+    if(gtype=="performance") {
       if(true || floor(ymax) <= ceil(ymin)) {
 	//if(ymax-ymin > 1) {
-	yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ns)${}^{-1}$",
+	yaxis("performance: $"+Nm+D+"\log_2 "+Nm+D+"$/time, (ns)${}^{-1}$",
 	      LeftRight, RightTicks);
       } else {
 	// write the yticks as 10^{...} equally divided in log-space.
@@ -385,9 +385,9 @@ if(gtype == "time" || gtype == "mflops") {
 	for(int i=0; i < nyticks; ++i)
 	  yticks.push((fymin+i*(fymax-fymin)/nyticks));
 	//write(yticks);
-	//yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ns)${}^{-1}$",LeftRight,
+	//yaxis("``performance\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ns)${}^{-1}$",LeftRight,
 	//    RightTicks(new string(real x) {return base10(log10(x));},yticks));
-	yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ns)${}^{-1}$",
+	yaxis("performance: $5"+Nm+D+"\log_2 "+Nm+D+"$/time, (ns)${}^{-1}$",
 	      LeftRight,
 	      RightTicks(defaultformat,yticks));
       }
@@ -396,8 +396,8 @@ if(gtype == "time" || gtype == "mflops") {
     if(gtype=="time")
       yaxis("time/($"+Nm+D+"\log_2 "+Nm+D+"$) (ns)",LeftRight,RightTicks);
   } else {
-    if(gtype=="mflops")
-      yaxis("speed: 1/time (ns)${}^{-1}$",LeftRight,RightTicks);
+    if(gtype=="performance")
+      yaxis("performance: 1/time, (ns)${}^{-1}$",LeftRight,RightTicks);
     if(gtype=="time")
       yaxis("time (ns)",LeftRight,RightTicks);
   }
