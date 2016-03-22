@@ -15,7 +15,7 @@ using namespace fftwpp;
 // mpicxx -o cconv2 cconv2.cc -lfftw3_mpi -lfftw3 -lm
 
 void convolve(fftw_complex *f, fftw_complex *g, double norm,
-	      int num, fftw_plan fplan, fftw_plan iplan) 
+	      int num, fftw_plan fplan, fftw_plan bplan) 
 {
   fftw_mpi_execute_dft(fplan,f,f);
   fftw_mpi_execute_dft(fplan,g,g);
@@ -31,7 +31,7 @@ void convolve(fftw_complex *f, fftw_complex *g, double norm,
     f[k] *= g[k]*norm;
 #endif
   
-  fftw_mpi_execute_dft(iplan,f,f);
+  fftw_mpi_execute_dft(bplan,f,f);
 }
 
 int threads_ok;
@@ -86,18 +86,21 @@ int main(int argc, char **argv)
   
   threads_ok = provided >= MPI_THREAD_FUNNELED;
     
+  if(threads_ok)
+    threads_ok = fftw_init_threads();
+
   fftw_mpi_init();
 
-  fftw_plan_with_nthreads(threads);
+  if(threads_ok) 
+    fftw_plan_with_nthreads(threads);
 
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  if (rank == 0 && threads_ok) {
-    threads_ok = fftw_init_threads();
+  if(threads_ok && rank == 0) {
     cout << "Threads ok!" << endl;
   }
-
+  
   
   /* get local data size and allocate */
   ptrdiff_t local_n0, local_0_start;
@@ -109,10 +112,10 @@ int main(int argc, char **argv)
   /* create plan for in-place DFT */
   fftw_plan fplan=fftw_mpi_plan_dft_2d(N0,N1,f,f,MPI_COMM_WORLD,FFTW_FORWARD,
 				       FFTW_ESTIMATE | FFTW_MPI_TRANSPOSED_IN);
-  fftw_plan iplan=fftw_mpi_plan_dft_2d(N0,N1,f,f,MPI_COMM_WORLD,FFTW_BACKWARD,
+  fftw_plan bplan=fftw_mpi_plan_dft_2d(N0,N1,f,f,MPI_COMM_WORLD,FFTW_BACKWARD,
 				       FFTW_ESTIMATE | FFTW_MPI_TRANSPOSED_OUT);
 
-  
+ 
   initf(f,local_0_start,local_n0,N0,N1,m0,m1);
   initg(g,local_0_start,local_n0,N0,N1,m0,m1);
 
@@ -127,6 +130,7 @@ int main(int argc, char **argv)
    				      &local_n0, &local_0_start,
    				      &local_n1, &local_1_start);
   
+
   double *T=new double[N];
 
   double overN=1.0/((double) (N0*N1));
@@ -134,10 +138,10 @@ int main(int argc, char **argv)
     initf(f,local_0_start,local_n0,N0,N1,m0,m1);
     initg(g,local_0_start,local_n0,N0,N1,m0,m1);
     seconds();
-    convolve(f,g,overN,transize,fplan,iplan);
+    convolve(f,g,overN,transize,fplan,bplan);
     T[i]=seconds();
   }  
-
+ 
   if(rank == 0)
     timings("Explicit",m,T,N,stats);
   
@@ -147,7 +151,7 @@ int main(int argc, char **argv)
     show(f,local_0_start,local_n0,N1,m0,m1,2);
   }
   fftw_destroy_plan(fplan);
-  fftw_destroy_plan(iplan);
+  fftw_destroy_plan(bplan);
 
   MPI_Finalize();
 

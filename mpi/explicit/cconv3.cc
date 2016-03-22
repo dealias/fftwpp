@@ -86,21 +86,24 @@ int main(int argc, char **argv)
   
   int provided;
   MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &provided);
-
+  
   threads_ok = provided >= MPI_THREAD_FUNNELED;
+    
+  if(threads_ok)
+    threads_ok = fftw_init_threads();
 
   fftw_mpi_init();
 
-  fftw_plan_with_nthreads(threads);
+  if(threads_ok) 
+    fftw_plan_with_nthreads(threads);
 
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   if(threads_ok && rank == 0) {
-    threads_ok = fftw_init_threads();
     cout << "Threads ok!" << endl;
   }
-
+  
   
   /* get local data size and allocate */
   ptrdiff_t local_n0;
