@@ -280,15 +280,15 @@ public:
       MPI_Barrier(split);
       double t0=utils::totalseconds();
       poll(send,recv,N1);
+      MPI_Barrier(split);
       double t1=utils::totalseconds();
+      poll(send,recv,N2);
       MPI_Barrier(split);
       double t2=utils::totalseconds();
-      poll(send,recv,N2);
-      double t3=utils::totalseconds();
       T1 += t1-t0;
-      T2 += t3-t2;
+      T2 += t2-t1;
     }
-    latency=std::max(T1*(N2-N1)/(T2-T1)-N1,0.0)*sizeof(double);
+    latency=std::max(T1*(N2-N1)/(T2-T1)-N1,0.0)*sizeof(T);
     if(globalrank == 0 && options.verbose)
       std::cout << std::endl << "latency=" << latency << std::endl;
     MPI_Comm_free(&split); 
@@ -407,8 +407,8 @@ public:
     }
     
     a=options.a;
-    b=Pbar/a;
-    if(b <= 1) {b=a; a=1;}
+    b=a > 1 || uniform ? Pbar/a : Pbar+1; 
+    if(b == 1) {b=a; a=1;}
     
     if(globalrank == 0 && options.verbose)
       std::cout << std::endl << "Using alltoall=" << 
