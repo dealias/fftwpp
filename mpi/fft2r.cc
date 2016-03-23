@@ -258,7 +258,8 @@ int main(int argc, char* argv[])
           T[i]=seconds();
         }
       }    
-      if(main) timings("FFT timing:",nx,T,N,stats);
+      if(main)
+	timings("FFT timing:",nx,T,N,stats);
       delete [] T;
         
       if(!quiet && nx*ny < outlimit)
@@ -266,7 +267,8 @@ int main(int argc, char* argv[])
     }
   
     deleteAlign(g());
-    if(!inplace) deleteAlign(f());
+    if(!inplace)
+      deleteAlign(f());
   }
   
   MPI_Finalize();

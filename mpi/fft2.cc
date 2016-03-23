@@ -227,8 +227,10 @@ int main(int argc, char* argv[])
           fft.Normalize(f);
           T[i]=seconds();
         }    
-        if(!quiet && nx*ny < outlimit) show(f,d.x,d.y,group.active);
-        if(main) timings("FFT timing:",nx,T,N,stats);
+        if(!quiet && nx*ny < outlimit)
+	  show(f,d.x,d.y,group.active);
+        if(main)
+	  timings("FFT timing:",nx,T,N,stats);
         delete [] T;
       }
     }

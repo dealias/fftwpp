@@ -68,6 +68,8 @@ string datatype="";
 string stats="";
 int[] ncores;
 
+real d=-1;
+
 usersetting();
 //write(settings.user);
 
@@ -123,25 +125,19 @@ if(name == "cconv3") {
 if(name == "conv3")
   expl=false;
 
-real d;
-bool dknown = false;
 if(name == "cconv" || name == "conv" || name == "tconv") {
   d = 1;
-  dknown = true;
 }
 if(name == "cconv2" || name == "conv2" || name == "tconv2") {
   d = 2;
-  dknown = true;
 }
 if(name == "cconv3" || name == "conv3") {
   d = 3;
-  dknown = true;
 }
 if(name == "transpose") {
   d = 2;
-  dknown = true;
 }
-if(!dknown)
+if(d == -1)
   d=getreal("dimension of FFT involved",1);
 
 real ymin=infinity, ymax=-infinity;
