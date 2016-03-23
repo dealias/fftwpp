@@ -147,8 +147,8 @@ int main(int argc, char **argv)
     init2r(f, local_n0, local_n0_start, N1);
     seconds();
     fftw_mpi_execute_dft_r2c(rcplan,f,F);
-    fftw_mpi_execute_dft_c2r(crplan,F,f);
     T[i]=seconds();
+    //fftw_mpi_execute_dft_c2r(crplan,F,f);
   }  
   if(mpirank == 0)
     timings("FFT",m,T,N);
