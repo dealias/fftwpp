@@ -205,8 +205,10 @@ int main(int argc, char* argv[])
       }
         
       if(!quiet) {
-        if(main) cout << "Distributed output:" << endl;
-        show(g(),dg.X,dg.y,dg.z,group.active);
+        if(main)
+	  cout << "Distributed output:" << endl;
+	if(!quiet && nx*ny < outlimit)
+	  show(g(),dg.X,dg.y,dg.z,group.active);
       }
 
       gatheryz(g(),ggather(),dg,group.active); 
@@ -228,7 +230,8 @@ int main(int argc, char* argv[])
       if(!quiet) {
         if(main)
 	  cout << "Distributed back to input:" << endl;
-        show(f(),dfgather.x,dfgather.y,dfgather.Z,group.active);
+	if(!quiet && nx*ny < outlimit) 
+	  show(f(),dfgather.x,dfgather.y,dfgather.Z,group.active);
       }
 
       gatherxy(f(),fgather(),dfgather,group.active);
@@ -278,7 +281,7 @@ int main(int argc, char* argv[])
           //rcfft.Normalize(f);
         }
       }
-      if(!quiet)
+      if(!quiet && nx*ny < outlimit)
         show(f(),df.x,df.y,dfZ,0,0,0,df.x,df.y,df.Z,group.active);
         
       if(main)

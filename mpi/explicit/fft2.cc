@@ -17,11 +17,12 @@ int main(int argc, char **argv)
   int N=4;
   int m=4;
   int nthreads=1; // Number of threads
+  int stats=0;
 #ifdef __GNUC__	
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"N:m:T:");
+    int c = getopt(argc,argv,"N:m:T:S:e");
     if (c == -1) break;
     
     switch (c) {
@@ -35,6 +36,12 @@ int main(int argc, char **argv)
         break;
       case 'T':
         nthreads=atoi(optarg);
+        break;
+      case 'S':
+        stats=atoi(optarg);
+        break;
+      case 'e':
+        // For compatibility with timing scripts
         break;
     }
   }
@@ -81,7 +88,7 @@ int main(int argc, char **argv)
     //fftw_mpi_execute_dft(iplan,f,f);
   }  
   if(rank == 0)
-    timings("FFT",m,T,N);
+    timings("FFT",m,T,N,stats);
   delete[] T;
 
   fftw_destroy_plan(fplan);

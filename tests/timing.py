@@ -27,9 +27,8 @@ def max_m(p, RAM, runtype):
     
     b = 0
     if "transpose" in p:
-        # NB: assumes Z=1.
-        b = int(floor(log(RAM / 32) / (2 * log(2))))
-        return b
+        # NB: assumes Z=1 and out-of-place
+        return int(floor(log(RAM / 32) / log(2) / 2))
     
     if "cconv2" in p:
         if runtype == "implicit":
@@ -88,8 +87,17 @@ def max_m(p, RAM, runtype):
     if "fft1" in p:
         return int(floor(0.5 * log(RAM / 64) / log(2)))
         
-    if "fft2" in p:
-        return int(floor(0.5 * log(RAM / 64) / log(2)))
+    if p == "fft2":
+        return int(floor(log(RAM / 32) / log(2) / 2))
+
+    if p == "fft2r":
+        return int(floor(log(RAM / 16) / log(2) / 2))
+
+    if p == "fft3":
+        return int(floor(log(RAM / 32) / log(2) / 3))
+
+    if p == "fft3r":
+        return int(floor(log(RAM / 16) / log(2) / 3))
 
     print "Error! Failed to determine b."
     return 0
@@ -146,6 +154,7 @@ def main(argv):
     '''
 
     dryrun = False
+    #dryrun = True
     
 
     bset = 0
@@ -331,15 +340,21 @@ def main(argv):
             i += 1
 
         cmd += [path + str(p)]
-        
-        if(runtype == "explicit"):
-            cmd.append("-e")
-            
-        if(runtype == "pruned"):
-            cmd.append("-p")
-           
-        if(runtype == "implicit"):
-            cmd.append("-i")
+
+        if not os.path.isfile(path + str(p)):
+            print path + str(p), "does not exist!"
+            sys.exit(1)
+                        
+
+        if not "fft" in p:
+            if(runtype == "explicit"):
+                cmd.append("-e")
+
+            if(runtype == "pruned"):
+                cmd.append("-p")
+
+            if(runtype == "implicit"):
+                cmd.append("-i")
         
         cmd.append("-S" + str(stats))
         if(N > 0):
@@ -361,21 +376,30 @@ def main(argv):
             except OSError:
                 pass
 
+            
         if not dryrun:
+            import time
+            date = time.strftime("%Y-%m-%d")
+
+            comment = ""
+            comment += "# " + " ".join(cmd)
+            comment += "\t" + date
+            comment += "\n"
+            
             if(appendtofile):
                 if os.path.isfile(filename):
                     with open(filename, "a") as myfile:
-                        myfile.write("# " + " ".join(cmd) + "\n")
+                        myfile.write(comment)
                 else:
-                    with open(filename, "w") as myfile:
-                        myfile.write("# " + " ".join(cmd) + "\n")
+                    with open(filename, "a") as myfile:
+                        myfile.write(comment)
             else:
-                if not stats == -1:
-                    with open(filename, "w") as myfile:
-                        myfile.write("# " + " ".join(cmd) + "\n")
-                else:
+                if stats == -1:
                     with open("timing.dat", "w") as myfile:
-                        myfile.write("# " + " ".join(cmd) + "\n")
+                        myfile.write(comment)
+                else:
+                    with open(filename, "w") as myfile:
+                        myfile.write(comment)
                         
         for i in range(a, b + 1):
             if not hermitian or runtype == "implicit": 

@@ -22,7 +22,7 @@ int main(int argc, char **argv)
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"N:m:T:S:");
+    int c = getopt(argc,argv,"N:m:T:S:e");
     if (c == -1) break;
     
     switch (c) {
@@ -39,6 +39,9 @@ int main(int argc, char **argv)
         break;
       case 'S':
         stats=atoi(optarg);
+        break;
+      case 'e':
+	// For compatibility with timing scripts
         break;
     }
   }

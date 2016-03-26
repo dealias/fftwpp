@@ -81,11 +81,12 @@ int main(int argc, char **argv)
   int N=4;
   int m=4;
   int nthreads=1; // Number of threads
+  int stats=0;
 #ifdef __GNUC__	
   optind=0;
 #endif	
   for (;;) {
-    int c = getopt(argc,argv,"N:m:T:");
+    int c = getopt(argc,argv,"N:m:T:S:e");
     if (c == -1) break;
     
     switch (c) {
@@ -100,9 +101,17 @@ int main(int argc, char **argv)
       case 'T':
         nthreads=atoi(optarg);
         break;
+      case 'S':
+        stats=atoi(optarg);
+        break;
+      case 'e':
+        // For compatibility with timing scripts
+        break;
     }
   }
 
+  unsigned int outlimit=3000;
+  
   const unsigned int m0 = m;
   const unsigned int m1 = m;
   const unsigned int m2 = m;
@@ -147,11 +156,14 @@ int main(int argc, char **argv)
 					    FFTW_MEASURE);
 
   init3r(f, local_n0, local_n0_start, N1, N2);
-  show3r(f, local_n0, N1, N2);
+  if(N0*N1*N2 < outlimit)
+    show3r(f, local_n0, N1, N2);
   fftw_mpi_execute_dft_r2c(rcplan,f,F);
-  show3c(F, local_n0, N1, N2p);
+  if(N0*N1*N2 < outlimit)
+    show3c(F, local_n0, N1, N2p);
   fftw_mpi_execute_dft_c2r(crplan,F,f);
-  show3r(f, local_n0, N1, N2);
+  if(N0*N1*N2 < outlimit)
+    show3r(f, local_n0, N1, N2);
   
   double *T=new double[N];
   for(int i=0; i < N; ++i) {
@@ -162,7 +174,7 @@ int main(int argc, char **argv)
     //fftw_mpi_execute_dft_c2r(crplan,F,f);
   }  
   if(mpirank == 0)
-    timings("FFT",m,T,N);
+    timings("FFT",m,T,N,stats);
   delete[] T;
 
   fftw_destroy_plan(rcplan);
