@@ -771,14 +771,14 @@ public:
     fftw_plan planT1=plan;
     
     if(fftw::maxthreads > 1) {
-      threads=Threads;
-      threaddata ST=Setup(in,out);
-    
       if(Threads > 1) {
         T=std::min(M,Threads);
         Q=T > 0 ? M/T : 0;
         R=M-Q*T;
     
+        threads=Threads;
+        threaddata ST=Setup(in,out);
+        
         if(R > 0 && threads == 1 && plan1 != plan2) {
           fftw_destroy_plan(plan2);
           plan2=plan1;
@@ -799,7 +799,8 @@ public:
           fftw_destroy_plan(planT1);
           threads=ST.threads;
         }
-      }
+      } else
+        Setup(in,out); // Synchronize wisdom
     }
   }    
   
