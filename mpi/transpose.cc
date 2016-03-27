@@ -52,117 +52,6 @@ inline void usage()
   exit(1);
 }
 
-#ifdef OLD
-#include <fftw3-mpi.h>
-void fftwTranspose(int rank, int size)
-{
-  Complex *data;
-  ptrdiff_t x,x0;
-  ptrdiff_t y,y0;
-  
-  fftw_mpi_init();
-  
-  /* get local data size and allocate */
-  ptrdiff_t NN[2]={Y,X};
-  unsigned int block=ceilquotient(Y,size);
-  ptrdiff_t alloc=
-    fftw_mpi_local_size_many_transposed(2,NN,Z,block,0,
-                                        MPI_COMM_WORLD,&y,
-                                        &y0,&x,&x0);
-  if(rank == 0) {
-    cout << "x=" << x << endl;
-    cout << "y=" << y << endl;
-    cout << "X=" << X << endl;
-    cout << "Y=" << Y << endl;
-    cout << "Z=" << Z << endl;
-    cout << "N=" << N << endl;
-  }
-
-  
-  data=ComplexAlign(alloc);
-  
-  if(rank == 0) cout << "\nOLD\n" << endl;
-  
-  fftw_plan inplan=fftw_mpi_plan_many_transpose(Y,X,2*Z,block,0,
-                                                (double*) data,(double*) data,
-                                                MPI_COMM_WORLD,
-                                                FFTW_MPI_TRANSPOSED_IN);
-  fftw_plan outplan=fftw_mpi_plan_many_transpose(X,Y,2*Z,0,block,
-                                                 (double*) data,(double*) data,
-                                                 MPI_COMM_WORLD,
-                                                 outtranspose ? 0 : \
-						 FFTW_MPI_TRANSPOSED_OUT);
-  
-  init(data,X,y,Z,0,y0);
-
-  bool showoutput=X*Y < showlimit && N == 1;
-  if(showoutput)
-    show(data,X,y*Z,MPI_COMM_WORLD);
-  
-  statistics Sininit,Sinwait0,Sinwait1,Sin;
-  statistics Soutinit,Soutwait0,Soutwait1,Sout;
-
-  for(int k=0; k < N; ++k) {
-    double begin=0.0, Tinit0=0.0, Tinit=0.0, Twait0=0.0, Twait1=0.0;
-    if(rank == 0) begin=totalseconds();
-    fftw_execute(inplan);
-    if(rank == 0) Tinit0=totalseconds();
-    if(rank == 0) Twait0=totalseconds();
-    if(rank == 0) Tinit=totalseconds();
-    if(rank == 0) Twait1=totalseconds();
-    if(rank == 0) {
-      Sin.add(totalseconds()-begin);
-      Sininit.add(Tinit0-begin);
-      Sinwait0.add(Twait0-Tinit0);
-      Sinwait1.add(Twait1-Tinit);
-    }
-
-    if(showoutput) {
-      if(rank == 0) cout << "\nTranspose:" << endl;
-      show(data,x,Y*Z,MPI_COMM_WORLD);
-    }
-    
-    if(rank == 0) begin=totalseconds();
-    fftw_execute(outplan);
-    if(rank == 0) Tinit0=totalseconds();
-    if(rank == 0) Twait0=totalseconds();
-    if(rank == 0) Tinit=totalseconds();
-    if(rank == 0) Twait1=totalseconds();
-    if(rank == 0) {
-      Sout.add(totalseconds()-begin);
-      Soutinit.add(Tinit0-begin);
-      Soutwait0.add(Twait0-Tinit0);
-      Soutwait1.add(Twait1-Tinit);
-    }
-  }
-  
-  if(showoutput) {
-    if(outtranspose) {
-      if(rank == 0) cout << "\nOutput:\n" << endl;
-      show(data,y,X*Z,MPI_COMM_WORLD);
-    } else {
-      if(rank == 0) cout << "\nOriginal:\n" << endl;
-      show(data,X,y*Z,MPI_COMM_WORLD);
-    }
-  }
-
-  if(rank == 0) {
-    Sininit.output("Tininit",X);
-    Sinwait0.output("Tinwait0",X);
-    Sinwait1.output("Tinwait1",X);
-    Sin.output("Tin",X);
-    cout << endl;
-    Soutinit.output("Toutinit",X);
-    Soutwait0.output("Toutwait0",X);
-    Soutwait1.output("Toutwait1",X);
-    Sout.output("Tout",X);
-  }
-  
-  fftw_destroy_plan(inplan);
-  fftw_destroy_plan(outplan);
-}
-#endif  
-  
 int transpose(int rank, int size, int N, int stats, int timepart)
 {
   int retval=0;
@@ -457,11 +346,7 @@ int main(int argc, char **argv)
   }
 
   int retval=0;
-#ifdef OLD
-  fftwTranspose(rank,size);
-#else
   retval=transpose(rank,size,N,stats,timepart);
-#endif  
   
   MPI_Finalize();
   return retval;

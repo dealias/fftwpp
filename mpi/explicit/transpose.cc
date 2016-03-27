@@ -86,9 +86,6 @@ void fftwTranspose(int rank, int size, unsigned int N, int stats, int direction)
   
   data=ComplexAlign(alloc);
   
-  if(rank == 0)
-    cout << "\nOLD\n" << endl;
-  
   fftw_plan inplan=fftw_mpi_plan_many_transpose(Y,X,2*Z,block,0,
                                                 (double*) data,(double*) data,
                                                 MPI_COMM_WORLD,
