@@ -52,13 +52,15 @@ inline void usage()
   exit(1);
 }
 
-int transpose(int rank, int size, int N, int stats, int timepart)
+int transpose(int N, int stats, int timepart)
 {
   int retval=0;
 
   Complex *data;
   
-  split d(X,Y,MPI_COMM_WORLD);
+  MPIgroup group(MPI_COMM_WORLD,Y);
+  
+  split d(X,Y,group.active);
   
   unsigned int x=d.x;
   unsigned int y=d.y;
@@ -66,14 +68,11 @@ int transpose(int rank, int size, int N, int stats, int timepart)
 //  unsigned int x0=d.x0;
   unsigned int y0=d.y0;
 
-  MPI_Comm active; 
-  MPI_Comm_split(MPI_COMM_WORLD,rank < size,0,&active);
-  
-  if(rank < size) {
+  if(group.rank < group.size) {
+    bool main=group.rank == 0;
 
-    if(rank == 0) {
-      cout << "rank=" << rank << endl;
-      cout << "size=" << size << endl;
+    if(main) {
+      cout << "size=" << group.size << endl;
       cout << "x=" << x << endl;
       cout << "y=" << y << endl;
       cout << "X=" << X << endl;
@@ -86,14 +85,14 @@ int transpose(int rank, int size, int N, int stats, int timepart)
   
     init(data,X,y,Z,0,d.y0);
 
-    //    show(data,X,y*Z,active);
+    //    show(data,X,y*Z,group.active);
     
-    mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,active,
+    mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,group.active,
                             mpiOptions(a,alltoall,defaultmpithreads,!quiet));
     init(data,X,y,Z,0,y0);
     T.transpose(data,false,true);
   
-    //    show(data,x,Y*Z,active);
+    //    show(data,x,Y*Z,group.active);
     
     T.NmTranspose();
     init(data,X,y,Z,0,y0);
@@ -104,31 +103,31 @@ int transpose(int rank, int size, int N, int stats, int timepart)
     bool showoutput=!quiet && (test || (!X*Y < showlimit && N == 1));
 
     if(showoutput) {
-      if(rank == 0) 
+      if(main) 
         cout << "\nInput:" << endl;
-      show(data,X,y*Z,active);
+      show(data,X,y*Z,group.active);
     }
     
     if(test) {
-      if(rank == 0)
+      if(main)
         cout << "\nDiagnostics and unit test.\n" << endl;
 
       init(data,X,y,Z,0,y0);
       if(showoutput) {
-        if(rank == 0) 
+        if(main) 
           cout << "Input:" << endl;
-        show(data,X,y*Z,active);
+        show(data,X,y*Z,group.active);
       }
 
       Complex *wholedata=NULL, *wholeoutput=NULL;
-      if(rank == 0) {
+      if(main) {
         wholedata=new Complex[X*Y*Z];
         wholeoutput=new Complex[X*Y*Z];
       }
 
-      gathery(data,wholedata,d,Z,active);
+      gathery(data,wholedata,d,Z,group.active);
 
-      if(showoutput && rank == 0) {
+      if(showoutput && main) {
         cout << "\nGathered input data:" << endl;
         show(wholedata,X,Y,0,0,X,Y);
       }
@@ -138,14 +137,14 @@ int transpose(int rank, int size, int N, int stats, int timepart)
       T.transpose(data,false,true); // N x m -> n x M
 
       if(showoutput) {
-        if(rank == 0)
+        if(main)
           cout << "\nOutput:" << endl;
-        show(data,X,y*Z,active);
+        show(data,X,y*Z,group.active);
       }
 
-      gatherx(data,wholeoutput,d,Z,active);
+      gatherx(data,wholeoutput,d,Z,group.active);
 
-      if(rank == 0) {
+      if(main) {
         if(showoutput) {
           cout << "\nGathered output data:" << endl;
           show(wholeoutput,X,Y,0,0,X,Y);
@@ -167,7 +166,7 @@ int transpose(int rank, int size, int N, int stats, int timepart)
 
       }
     } else {
-      if(rank == 0)
+      if(main)
         cout << "\nSpeed test.\n" << endl;
 
       double* Tp=new double[N];
@@ -176,23 +175,23 @@ int transpose(int rank, int size, int N, int stats, int timepart)
         init(data,X,y,Z,0,y0);
     
         double begin=0.0, Tinit0=0.0, Tinit=0.0, Twait0=0.0, Twait1=0.0;
-        if(rank == 0) begin=totalseconds();
+        if(main) begin=totalseconds();
 
 	seconds();
         T.inphase0();
-        if(rank == 0) Tinit0=totalseconds();
+        if(main) Tinit0=totalseconds();
         T.insync0();
-        if(rank == 0) Twait0=totalseconds();
+        if(main) Twait0=totalseconds();
         T.inphase1();
-        if(rank == 0) Tinit=totalseconds();
+        if(main) Tinit=totalseconds();
         T.insync1();
-        if(rank == 0) Twait1=totalseconds();
+        if(main) Twait1=totalseconds();
         T.inpost();
 
 	// TODO: Tp should time different stages as determined by timepart.
 	Tp[k] = seconds();
 	
-        if(rank == 0) {
+        if(main) {
           Sin.add(totalseconds()-begin);
           Sininit.add(Tinit0-begin);
           Sinwait0.add(Twait0-Tinit0);
@@ -200,23 +199,23 @@ int transpose(int rank, int size, int N, int stats, int timepart)
         }
 
         if(showoutput) {
-          if(rank == 0) cout << "Transpose:" << endl;
-          show(data,x,Y*Z,active);
-          if(rank == 0) cout << endl;
+          if(main) cout << "Transpose:" << endl;
+          show(data,x,Y*Z,group.active);
+          if(main) cout << endl;
         }
         
-        if(rank == 0) begin=totalseconds();
+        if(main) begin=totalseconds();
         T.outphase0();
-        if(rank == 0) Tinit0=totalseconds();
+        if(main) Tinit0=totalseconds();
         T.outsync0();
-        if(rank == 0) Twait0=totalseconds();
+        if(main) Twait0=totalseconds();
         T.outphase1();
-        if(rank == 0) Tinit=totalseconds();
+        if(main) Tinit=totalseconds();
         T.outsync1();
-        if(rank == 0) Twait1=totalseconds();
+        if(main) Twait1=totalseconds();
         if(outtranspose) T.NmTranspose();
     
-        if(rank == 0) {
+        if(main) {
           Sout.add(totalseconds()-begin);
           Soutinit.add(Tinit0-begin);
           Soutwait0.add(Twait0-Tinit0);
@@ -224,21 +223,21 @@ int transpose(int rank, int size, int N, int stats, int timepart)
         }
       }
 
-      if(rank == 0)
+      if(main)
 	timings("transpose",X,Tp,N,stats);
       delete[] Tp;
       
       if(showoutput) {
         if(outtranspose) {
-          if(rank == 0) cout << "\nOutput:" << endl;
-          show(data,y,X*Z,active);
+          if(main) cout << "\nOutput:" << endl;
+          show(data,y,X*Z,group.active);
         } else {
-          if(rank == 0) cout << "\nOriginal:" << endl;
-          show(data,X,y*Z,active);
+          if(main) cout << "\nOriginal:" << endl;
+          show(data,X,y*Z,group.active);
         }
       }
 
-      if(rank == 0) {
+      if(main) {
         cout << endl;
         Sininit.output("Tininit",X);
         Sinwait0.output("Tinwait0",X);
@@ -346,7 +345,7 @@ int main(int argc, char **argv)
   }
 
   int retval=0;
-  retval=transpose(rank,size,N,stats,timepart);
+  retval=transpose(N,stats,timepart);
   
   MPI_Finalize();
   return retval;

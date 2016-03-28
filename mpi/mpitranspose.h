@@ -165,15 +165,10 @@ public:
   
   localdimension(int N, int rank, int size) {
     n=utils::ceilquotient(N,size);
-    if(N % n > 0) {
-      int n0=N/size;
-      if(n0+(N % size) <= n) n=n0;
-    }
-  
     start=n*rank;
     int extra=N-start;
     if(extra < 0) extra=0;
-    if(n > extra || rank == size-1) n=extra;
+    if(n > extra) n=extra;
   }
 };
 
@@ -367,23 +362,17 @@ public:
         if(globalrank == 0 && options.verbose)
           std::cout << "alltoall=" << alltoall << std::endl;
         unsigned int maxscore=0;
-        if(!uniform) {
-          // Only consider a,b values that yield largest possible submatrix.
-          for(a=std::max(2,astart); a < alimit; a++) {
-            b=Pbar/a;
-            unsigned int ab=a*b;
-            unsigned int score=ab*(N/ab)*ab*(M/ab);
-            if(score > maxscore) maxscore=score;
-          }
+        // Only consider a,b values that yield largest possible submatrix.
+        for(a=std::max(2,astart); a < alimit; a++) {
+          b=Pbar/a;
+          unsigned int ab=a*b;
+          unsigned int score=ab*(N/ab)*ab*(M/ab);
+          if(score > maxscore) maxscore=score;
         }
         for(a=astart; a < alimit; a++) {
           b=Pbar/a;
-          if(uniform) {
-            if(a*b != size) continue;
-          } else {
-            unsigned int ab=a*b;
-            if(a > 1 && ab*(N/ab)*ab*(M/ab) < maxscore) continue;
-          }
+          unsigned int ab=a*b;
+          if(a > 1 && ab*(N/ab)*ab*(M/ab) < maxscore) continue;
           options.alltoall=alltoall;
           init(data);
           double t=time(data);
