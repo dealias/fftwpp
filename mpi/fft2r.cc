@@ -247,16 +247,15 @@ int main(int argc, char* argv[])
           init(f,df);
           seconds();
           rcfft.Forward0(f,g);
+          rcfft.Backward0(g,f);
+          rcfft.Normalize(f);
           T[i]=seconds();
-          //rcfft.Backward0(g,f);
-          //rcfft.Normalize(f);
-
         } else {
           seconds();
           rcfft.Forward(f,g);
-	  T[i]=seconds();
-          //rcfft.Backward(g,f);
-          //rcfft.Normalize(f);
+          rcfft.Backward(g,f);
+          rcfft.Normalize(f);
+          T[i]=seconds();
         }
       }    
       if(main)

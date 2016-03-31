@@ -124,8 +124,7 @@ int main(int argc, char* argv[])
 
   if(N == 0) {
     N=N0/nx/ny/nz;
-    if(N < 10)
-      N=10;
+    if(N < 10) N=10;
   }
   
   MPIgroup group(MPI_COMM_WORLD,nx,ny);
@@ -158,8 +157,7 @@ int main(int argc, char* argv[])
       init(f,d);
 
       if(!quiet && nx*ny*nz < outlimit) {
-        if(main)
-	  cout << "\ninput:" << endl;
+        if(main) cout << "\ninput:" << endl;
         show(f,d.x,d.y,d.Z,group.active);
       }
 
@@ -238,20 +236,17 @@ int main(int argc, char* argv[])
         Complex **G=inplace ? F : new Complex *[M];
         fft3dMPI **FFT=new fft3dMPI *[M];
         F[0]=ComplexAlign(d.n);
-        if(!inplace)
-	  G[0]=ComplexAlign(d.n);
+        if(!inplace) G[0]=ComplexAlign(d.n);
         FFT[0]=new fft3dMPI(d,F[0],G[0],mpiOptions(divisor,alltoall),
                             mpiOptions(divisor,alltoall));
         for(unsigned int m=1; m < M; ++m) {
           F[m]=ComplexAlign(d.n);
-          if(!inplace)
-	    G[m]=ComplexAlign(d.n);
+          if(!inplace) G[m]=ComplexAlign(d.n);
           FFT[m]=new fft3dMPI(d,F[m],G[m],FFT[0]->Txy->Options(),
                               FFT[0]->Tyz ? FFT[0]->Tyz->Options() :
                               defaultmpiOptions);
         }
-        if(main)
-	  std::cout << "Allocated " << M*d.n << " bytes." << endl;
+        if(main) std::cout << "Allocated " << M*d.n << " bytes." << endl;
         
         double *T=new double[N];
         for(unsigned int i=0; i < N; ++i) {
@@ -260,30 +255,26 @@ int main(int argc, char* argv[])
           seconds();
           for(unsigned int m=0; m < M; ++m)
             FFT[m]->iForward(F[m],G[m]);
-	  T[i]=seconds()/M;
-	  // for(unsigned int m=0; m < M; ++m) {
-          //   FFT[m]->ForwardWait(G[m]);
-          //   FFT[m]->iBackward(G[m],F[m]);
-          // }
-          // for(unsigned int m=0; m < M; ++m)
-          //   FFT[m]->BackwardWait(F[m]);
-	  //fft.Normalize(F[0]);
+          for(unsigned int m=0; m < M; ++m) {
+            FFT[m]->ForwardWait(G[m]);
+            FFT[m]->iBackward(G[m],F[m]);
+          }
+          for(unsigned int m=0; m < M; ++m)
+            FFT[m]->BackwardWait(F[m]);
+          T[i]=seconds()/M;
+          fft.Normalize(F[0]);
         }
-        if(!quiet && nx*ny*nz < outlimit)
-	  show(F[0],d.x,d.y,d.Z,group.active);
-        if(main)
-	  timings("FFT timing:",nx,T,N,stats);
+        if(!quiet && nx*ny*nz < outlimit) show(F[0],d.x,d.y,d.Z,group.active);
+        if(main) timings("FFT timing:",nx,T,N,stats);
         
         for(unsigned int m=0; m < M; ++m) {
           delete FFT[m];
-          if(!inplace)
-	    deleteAlign(G[m]);
+          if(!inplace) deleteAlign(G[m]);
           deleteAlign(F[m]);
         }        
         
         delete[] FFT; 
-        if(!inplace)
-	  delete[] G;
+        if(!inplace) delete[] G;
         delete[] F;
         delete[] T;
       }

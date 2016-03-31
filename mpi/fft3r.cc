@@ -167,8 +167,7 @@ int main(int argc, char* argv[])
       init(f,df);
       
       if(!quiet && nx*ny < outlimit) {
-        if(main)
-	  cout << "\nDistributed input:" << endl;
+        if(main) cout << "\nDistributed input:" << endl;
         show(f(),dfgather.x,dfgather.y,dfgather.Z,group.active);
       }
 
@@ -260,8 +259,7 @@ int main(int argc, char* argv[])
       }
 
     } else {
-      if(main)
-	cout << "N=" << N << endl;
+      if(main) cout << "N=" << N << endl;
       double *T=new double[N];
 
       for(unsigned int i=0; i < N; ++i) {
@@ -269,29 +267,26 @@ int main(int argc, char* argv[])
         if(shift) {
           seconds();
           rcfft.Forward0(f,g);
-	  T[i]=seconds();
-	  //rcfft.Backward0(g,f);
-          //rcfft.Normalize(f);
-          
+          rcfft.Backward0(g,f);
+          rcfft.Normalize(f);
+          T[i]=seconds();
         } else {
           seconds();
           rcfft.Forward(f,g);
-	  T[i]=seconds();
-	  //rcfft.Backward(g,f);
-          //rcfft.Normalize(f);
+          rcfft.Backward(g,f);
+          rcfft.Normalize(f);
+          T[i]=seconds();
         }
       }
       if(!quiet && nx*ny < outlimit)
         show(f(),df.x,df.y,dfZ,0,0,0,df.x,df.y,df.Z,group.active);
         
-      if(main)
-	timings("FFT timing:",nx,T,N,stats);
+      if(main) timings("FFT timing:",nx,T,N,stats);
       delete[] T;
     }
     
     deleteAlign(g());
-    if(!inplace)
-      deleteAlign(f());
+    if(!inplace) deleteAlign(f());
   }
   
   MPI_Finalize();
