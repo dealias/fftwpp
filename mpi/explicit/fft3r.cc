@@ -170,8 +170,8 @@ int main(int argc, char **argv)
     init3r(f, local_n0, local_n0_start, N1, N2);
     seconds();
     fftw_mpi_execute_dft_r2c(rcplan,f,F);
-    T[i]=seconds();
-    //fftw_mpi_execute_dft_c2r(crplan,F,f);
+    fftw_mpi_execute_dft_c2r(crplan,F,f);
+    T[i]=0.5*seconds();
   }  
   if(mpirank == 0)
     timings("FFT",m,T,N,stats);

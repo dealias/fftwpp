@@ -102,8 +102,9 @@ int main(int argc, char* argv[])
       init(f);
       seconds();
       Forward2.fft(f);
-      Backward2.fftNormalized(f);
-      T[i]=seconds();
+      Backward2.fft(f);
+      T[i]=0.5*seconds();
+      Backward2.Normalize(f);
     }
     timings("fft2d, in-place",mx,T,N,stats);
   }
@@ -117,8 +118,9 @@ int main(int argc, char* argv[])
       init(f);
       seconds();
       Forward2.fft(f,g);
-      Backward2.fftNormalized(g,f);
-      T[i]=seconds();
+      Backward2.fft(g,f);
+      T[i]=0.5*seconds();
+      Backward2.Normalize(f);
     }
     timings("fft2d, out-of-place",mx,T,N,stats);
   }
@@ -142,10 +144,12 @@ int main(int argc, char* argv[])
       Txy.transpose(f());
       Forwardx.fft(f);
 
-      Backwardx.fftNormalized(f);
+      Backwardx.fft(f);
       Tyx.transpose(f());
-      Backwardy.fftNormalized(f);
-      T[i]=seconds();
+      Backwardy.fft(f);
+      T[i]=0.5*seconds();
+      Backwardx.Normalize(f);
+      Backwardy.Normalize(f);
     }
     timings("transpose and mfft, in-place",mx,T,N,stats);
   }
@@ -169,10 +173,12 @@ int main(int argc, char* argv[])
       Txy.transpose(g(),f());
       Forwardx.fft(f,g);
 
-      Backwardx.fftNormalized(g,f);
+      Backwardx.fft(g,f);
       Tyx.transpose(f(),g());
-      Backwardy.fftNormalized(g,f);
-      T[i]=seconds();
+      Backwardy.fft(g,f);
+      T[i]=0.5*seconds();
+      Backwardx.Normalize(f);
+      Backwardy.Normalize(f);
     }
     timings("transpose and mfft, out-of-place",mx,T,N,stats);
   }
@@ -199,10 +205,12 @@ int main(int argc, char* argv[])
       Tyx.transpose(f());
       Txy.transpose(f());
 
-      Backwardx.fftNormalized(f);
+      Backwardx.fft(f);
       Tyx.transpose(f());
-      Backwardy.fftNormalized(f);
-      T[i]=seconds();
+      Backwardy.fft(f);
+      T[i]=0.5*seconds();
+      Backwardx.Normalize(f);
+      Backwardy.Normalize(f);
     }
     timings("2 transposes and mfft, in-place",mx,T,N,stats);
   }
@@ -230,10 +238,12 @@ int main(int argc, char* argv[])
       
       Txy.transpose(f(),g());
 
-      Backwardx.fftNormalized(g,f);
+      Backwardx.fft(g,f);
       Tyx.transpose(f(),g());
-      Backwardy.fftNormalized(g,f);
-      T[i]=seconds();
+      Backwardy.fft(g,f);
+      T[i]=0.5*seconds();
+      Backwardx.Normalize(f);
+      Backwardy.Normalize(f);
     }
     timings("2 transposes and mfft, out-of-place",mx,T,N,stats);
   }
@@ -253,9 +263,11 @@ int main(int argc, char* argv[])
       Forwardy.fft(f);
       Forwardx.fft(f);
 
-      Backwardx.fftNormalized(f);
-      Backwardy.fftNormalized(f);
-      T[i]=seconds();
+      Backwardx.fft(f);
+      Backwardy.fft(f);
+      T[i]=0.5*seconds();
+      Backwardx.Normalize(f);
+      Backwardy.Normalize(f);
     }
     timings("strided mfft in-place",mx,T,N,stats);
   }
@@ -276,9 +288,11 @@ int main(int argc, char* argv[])
       Forwardy.fft(f,g);
       Forwardx.fft(g,f);
 
-      Backwardx.fftNormalized(f,g);
-      Backwardy.fftNormalized(g,f);
-      T[i]=seconds();
+      Backwardx.fft(f,g);
+      Backwardy.fft(g,f);
+      T[i]=0.5*seconds();
+      Backwardx.Normalize(f);
+      Backwardy.Normalize(f);
     }
     timings("strided mfft out-of-place",mx,T,N,stats);
   }

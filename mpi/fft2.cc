@@ -224,8 +224,8 @@ int main(int argc, char* argv[])
           seconds();
           fft.Forward(f,g);
           fft.Backward(g,f);
+          T[i]=0.5*seconds();
           fft.Normalize(f);
-          T[i]=seconds();
         }    
         if(!quiet && nx*ny < outlimit)
 	  show(f,d.x,d.y,group.active);

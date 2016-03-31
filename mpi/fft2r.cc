@@ -248,14 +248,14 @@ int main(int argc, char* argv[])
           seconds();
           rcfft.Forward0(f,g);
           rcfft.Backward0(g,f);
+          T[i]=0.5*seconds();
           rcfft.Normalize(f);
-          T[i]=seconds();
         } else {
           seconds();
           rcfft.Forward(f,g);
           rcfft.Backward(g,f);
+          T[i]=0.5*seconds();
           rcfft.Normalize(f);
-          T[i]=seconds();
         }
       }    
       if(main)

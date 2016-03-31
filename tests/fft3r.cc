@@ -133,13 +133,15 @@ int main(int argc,char* argv[])
     if(shift) {
       seconds();
       Forward.fft0(f,g);
-      Backward.fft0Normalized(g,f);
-      T[i]=seconds();
+      Backward.fft0(g,f);
+      T[i]=0.5*seconds();
+      Backward.Normalize(f);
     } else {
       seconds();
       Forward.fft(f,g);
-      Backward.fftNormalized(g,f);
-      T[i]=seconds();
+      Backward.fft(g,f);
+      T[i]=0.5*seconds();
+      Backward.Normalize(f);
     }
   }
   timings("fft3 out-of-place",nx,T,N,stats);

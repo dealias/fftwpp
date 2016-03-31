@@ -261,7 +261,7 @@ int main(int argc, char* argv[])
           }
           for(unsigned int m=0; m < M; ++m)
             FFT[m]->BackwardWait(F[m]);
-          T[i]=seconds()/M;
+          T[i]=0.5*seconds()/M;
           fft.Normalize(F[0]);
         }
         if(!quiet && nx*ny*nz < outlimit) show(F[0],d.x,d.y,d.Z,group.active);

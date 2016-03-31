@@ -84,8 +84,8 @@ int main(int argc, char **argv)
     initf(f,local_0_start,local_n0,N0,N1,m0,m1);
     seconds();
     fftw_mpi_execute_dft(fplan,f,f);
-    T[i]=seconds();
-    //fftw_mpi_execute_dft(iplan,f,f);
+    fftw_mpi_execute_dft(iplan,f,f);
+    T[i]=0.5*seconds();
   }  
   if(rank == 0)
     timings("FFT",m,T,N,stats);

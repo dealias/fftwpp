@@ -108,8 +108,9 @@ int main(int argc, char* argv[])
       init(f);
       seconds();
       Forward3.fft(f);
-      Backward3.fftNormalized(f);
-      T[i] = seconds();
+      Backward3.fft(f);
+      T[i]=0.5*seconds();
+      Backward3.Normalize(f);
     }
     timings("fft3d, in-place", mx, T, N, stats);
   }
@@ -122,8 +123,9 @@ int main(int argc, char* argv[])
       init(f);
       seconds();
       Forward3.fft(f,g);
-      Backward3.fftNormalized(g,f);
-      T[i] = seconds();
+      Backward3.fft(g,f);
+      T[i]=0.5*seconds();
+      Backward3.Normalize(f);
     }
     timings("fft3d, out-of-place", mx, T, N, stats);
   }

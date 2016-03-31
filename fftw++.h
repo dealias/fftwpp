@@ -471,12 +471,9 @@ public:
     fftNormalized(in,out,true);
   }
   
-  template<class I, class O>
-  void fftNormalized(unsigned int nx, unsigned int M, size_t ostride,
-                     size_t odist, I *in, O *out=NULL, bool shift=false) {
-    out=(O *) Setout((Complex *) in,(Complex *) out);
-    Execute((Complex *) in,(Complex *) out,shift);
-
+  template<class O>
+  void Normalize(unsigned int nx, unsigned int M, size_t ostride,
+                 size_t odist, O *out) {
     unsigned int stop=nx*ostride;
     O *outMdist=out+M*odist;
 #ifndef FFTWPP_SINGLE_THREAD
@@ -488,6 +485,14 @@ public:
         *p *= norm;
       }
     }
+  }
+  
+  template<class I, class O>
+  void fftNormalized(unsigned int nx, unsigned int M, size_t ostride,
+                     size_t odist, I *in, O *out=NULL, bool shift=false) {
+    out=(O *) Setout((Complex *) in,(Complex *) out);
+    Execute((Complex *) in,(Complex *) out,shift);
+    Normalize(nx,M,ostride,odist,out);
   }
 
 }; // class fftw
@@ -1055,6 +1060,10 @@ public:
     Store(threadtable,keytype3(nx,Q,R,data.threads,inplace),data);
   }
   
+  void Normalize(Complex *out) {
+    fftw::Normalize<Complex>(nx/2+1,M,ostride,odist,out);
+  }
+  
   void fftNormalized(double *in, Complex *out=NULL) {
     fftw::fftNormalized<double,Complex>(nx/2+1,M,ostride,odist,in,out,false);
   }
@@ -1102,12 +1111,19 @@ public:
   threaddata lookup(bool inplace, unsigned int threads) {
     return Lookup(threadtable,keytype3(nx,Q,R,threads,inplace));
   }
+  
   void store(bool inplace, const threaddata& data) {
     Store(threadtable,keytype3(nx,Q,R,data.threads,inplace),data);
   }
+  
+  void Normalize(double *out) {
+    fftw::Normalize<double>(nx,M,ostride,odist,out);
+  }
+  
   void fftNormalized(Complex *in, double *out=NULL) {
     fftw::fftNormalized<Complex,double>(nx,M,ostride,odist,in,out,false);
   }
+  
   void fft0Normalized(Complex *in, double *out=NULL) {
     fftw::fftNormalized<Complex,double>(nx,M,ostride,odist,in,out,true);
   }
