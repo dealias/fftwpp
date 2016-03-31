@@ -295,6 +295,8 @@ pen barPen(int p) {
     if(p == 2)
       return Pen(1);
   }
+  if(p == 4)
+    return deepcyan;
   return Pen(p);
 }
 
