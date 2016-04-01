@@ -298,7 +298,10 @@ def main(argv):
         
     if outfile == "":
         outfile = "implicit"
-        
+
+    goodruns = []
+    badruns = []
+
     if dorun:
         if RAM != 0:
             print "max problem size is "+str(2**b)
@@ -400,7 +403,7 @@ def main(argv):
                 else:
                     with open(filename, "w") as myfile:
                         myfile.write(comment)
-                        
+
         for i in range(a, b + 1):
             if not hermitian or runtype == "implicit": 
                 m = str(int(pow(2, i)))
@@ -422,7 +425,7 @@ def main(argv):
                 mcmd = cmd + ["-m" + str(m)]
 
                 if dryrun:
-                    print mcmd
+                    #print mcmd
                     print " ".join(mcmd)
                 else:
                     denv = dict(os.environ)
@@ -437,7 +440,7 @@ def main(argv):
                     out, err = p.communicate() # capture output
                     if(verbose):
                         print "Output from timing.py's popen:"
-                        print " ".join(mcmd)
+                        #print " ".join(mcmd)
                         print "cwd:" , os.getcwd()
                         print "out:"
                         print out
@@ -469,11 +472,15 @@ def main(argv):
                         
                         if not stats == -1:
                             if not dataline == "":
+                                goodruns.append(mcmd)
                                 # append to output file
                                 with open(filename, "a") as myfile:
                                     myfile.write(dataline + "\n")
                             else:
                                 print "ERROR: no timing data found"
+                                badruns.append(mcmd)
+                        else:
+                            goodruns.append(mcmd)
                     else:
                         print "FAILURE:"
                         print cmd
@@ -483,6 +490,7 @@ def main(argv):
                         print out
                         print "error:"
                         print err
+                        badruns.append(mcmd)
                         
             if not dryrun and (stats == -1 and os.path.isfile("timing.dat")):
                 if(appendtofile):
@@ -502,5 +510,22 @@ def main(argv):
                 os.remove("timing.dat")
             except OSError:
                 pass
+
+    if not dryrun:
+         with open(outdir + "/log", "a") as logfile:
+            goodbads = ""
+            if len(goodruns) > 0:
+                goodbads += "Successful runs:\n"
+                for mcmd in goodruns:
+                    goodbads += " ".join(mcmd) + "\n"
+            if len(badruns) > 0:
+                goodbads += "Unsuccessful runs:\n"
+                for mcmd in badruns:
+                    goodbads += " ".join(mcmd) + "\n"
+            logfile.write(goodbads)
+            print goodbads
+
+
+            
 if __name__ == "__main__":
     main(sys.argv[1:])
