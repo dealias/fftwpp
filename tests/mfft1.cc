@@ -135,8 +135,9 @@ int main(int argc, char* argv[])
     init(f,mx,my);
     seconds();
     Forward.fft(f);
-    Backward.fftNormalized(f);
-    T[i]=seconds();
+    Backward.fft(f);
+    T[i]=0.5*seconds();
+    Backward.Normalize(f);
   }
   timings("mfft1, in-place",mx,T,N,stats);
   delete [] T;

@@ -59,17 +59,17 @@ def main(argv):
             for Y in Ylist:
                 for inplace in [0, 1]:
                         for T in Tlist:
-                        args = []
-                        args.append("-x" + str(X))
-                        args.append("-y" + str(Y))
-                        args.append("-i" + str(inplace))
-                        args.append("-N1")
-                        args.append("-s1")
-                        args.append("-a1")
-                        args.append("-T" + str(T))
-                        args.append("-t")
-                        args.append("-q")
-                        testcases.append(args)
+                            args = []
+                            args.append("-x" + str(X))
+                            args.append("-y" + str(Y))
+                            args.append("-i" + str(inplace))
+                            args.append("-N1")
+                            args.append("-s1")
+                            args.append("-a1")
+                            args.append("-T" + str(T))
+                            args.append("-t")
+                            args.append("-q")
+                            testcases.append(args)
 
         tstart = time.time()
         ntest = len(testcases)*len(Plist)

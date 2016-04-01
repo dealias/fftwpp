@@ -76,8 +76,9 @@ int main(int argc, char* argv[])
     for(int i=0; i < N; ++i) {
       seconds();
       Forward.fft(f);
-      T[i]=seconds();
-      Backward.fftNormalized(f);
+      Backward.fft(f);
+      T[i]=0.5*seconds();
+      Backward.Normalize(f);
     }
 
     timings("fft1 in-place",m,T,N,stats);
@@ -87,8 +88,9 @@ int main(int argc, char* argv[])
     for(int i=0; i < N; ++i) {
       seconds();
       Forward0.fft(f,g);
-      T[i]=seconds();
-      Backward0.fftNormalized(g,f);
+      Backward0.fft(g,f);
+      T[i]=0.5*seconds();
+      Backward0.Normalize(f);
     }
 
     timings("fft1 out-of-place",m,T,N,stats);
