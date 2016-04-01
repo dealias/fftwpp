@@ -290,10 +290,10 @@ public:
     return latency;
   }
 
-  void setup(T *data) {
+  void setup(T *data, MPI_Comm Communicator) {
     threads=options.threads;
-    MPI_Comm_size(communicator,&size);
-    MPI_Comm_rank(communicator,&rank);
+    MPI_Comm_size(Communicator,&size);
+    MPI_Comm_rank(Communicator,&rank);
     
     MPI_Comm_rank(global,&globalrank);
     
@@ -316,6 +316,10 @@ public:
       return;
     }
     
+    int Pbar=std::min(nlast+(n0 == np),mlast+(m0 == mp));
+    size=std::max(nlast+1,mlast+1);
+    MPI_Comm_split(Communicator,rank < size,0,&communicator);
+
     int start=0,stop=1;
     if(options.alltoall >= 0)
       start=stop=options.alltoall;
@@ -329,7 +333,6 @@ public:
                 << size << " processes." << std::endl;
       
     int alimit;
-    int Pbar=std::min(nlast+(n0 == np),mlast+(m0 == mp));
     
     if(options.a <= 0) {
       double latency=safetyfactor*Latency();
@@ -414,9 +417,9 @@ public:
                MPI_Comm communicator=MPI_COMM_WORLD,
                const mpiOptions& options=defaultmpiOptions,
                MPI_Comm global=0) :
-    N(N), m(m), n(n), M(M), L(L), work(work), communicator(communicator),
+    N(N), m(m), n(n), M(M), L(L), work(work),
     options(options), global(global ? global : communicator), latency(-1) {
-    setup(data);
+    setup(data,communicator);
   }
   
   mpitranspose(unsigned int N, unsigned int m, unsigned int n,
@@ -424,9 +427,9 @@ public:
                T *data, MPI_Comm communicator=MPI_COMM_WORLD,
                const mpiOptions& options=defaultmpiOptions,
                MPI_Comm global=0) :
-    N(N), m(m), n(n), M(M), L(L), work(NULL), communicator(communicator),
+    N(N), m(m), n(n), M(M), L(L), work(NULL),
     options(options), global(global ? global : communicator), latency(-1) {
-    setup(data);
+    setup(data,communicator);
   }
     
   mpitranspose(unsigned int N, unsigned int m, unsigned int n,
@@ -434,9 +437,9 @@ public:
                MPI_Comm communicator=MPI_COMM_WORLD,
                const mpiOptions& options=defaultmpiOptions,
                MPI_Comm global=0) :
-    N(N), m(m), n(n), M(M), L(1), work(work), communicator(communicator),
+    N(N), m(m), n(n), M(M), L(1), work(work),
     options(options), global(global ? global : communicator), latency(-1) {
-    setup(data);
+    setup(data,communicator);
   }
     
   double time(T *data) {
@@ -587,10 +590,16 @@ public:
       int P=sched[p];
       if(P != rank && (rank >= start || P >= start)) {
         int index=rank >= start ? (P < rank ? P : P-1) : P-start;
-        MPI_Irecv((char *) recvbuf+mn0*P,mS*ni(P),MPI_BYTE,P,0,communicator,
-                  request+index);
-        MPI_Isend((char *) sendbuf+nm0*P,nS*mi(P),MPI_BYTE,P,0,communicator,
-                  srequest+index);
+        int count=mS*ni(P);
+        if(count > 0)
+          MPI_Irecv((char *) recvbuf+mn0*P,count,MPI_BYTE,P,0,communicator,
+                    request+index);
+        else request[index]=MPI_REQUEST_NULL;
+        count=nS*mi(P);
+        if(count > 0)
+          MPI_Isend((char *) sendbuf+nm0*P,count,MPI_BYTE,P,0,communicator,
+                    srequest+index);
+        else srequest[index]=MPI_REQUEST_NULL;
       }
     }
 
@@ -612,10 +621,17 @@ public:
       int P=sched[p];
       if(P != rank && (rank >= start || P >= start)) {
         int index=rank >= start ? (P < rank ? P : P-1) : P-start;
-        MPI_Irecv((char *) recvbuf+nm0*P,nS*mi(P),MPI_BYTE,P,0,communicator,
-                  request+index);
-        MPI_Isend((char *) sendbuf+mn0*P,mS*ni(P),MPI_BYTE,P,0,communicator,
-                  srequest+index);
+        int count=nS*mi(P);
+        if(count > 0)
+          MPI_Irecv((char *) recvbuf+nm0*P,nS*mi(P),MPI_BYTE,P,0,communicator,
+                    request+index);
+        else request[index]=MPI_REQUEST_NULL;
+        count=mS*ni(P);
+        if(count > 0)
+          MPI_Isend((char *) sendbuf+mn0*P,mS*ni(P),MPI_BYTE,P,0,communicator,
+                    srequest+index);
+        else srequest[index]=MPI_REQUEST_NULL;
+
       }
     }
 
@@ -626,6 +642,7 @@ public:
 
 // inphase: N x m -> n x M
   void inphase0() {
+    if(rank >= size) return;
     if(size == 1) {
       if(input != output) {
         if(outflag) {NmTranspose(input,output); outflag=false;}
@@ -645,7 +662,7 @@ public:
   }
   
   void insync0() {
-    if(size == 1) return;
+    if(size == 1 || rank >= size) return;
     if(uniform || subblock)
       Wait(2*(split2size-1),Request,sched2);
     if(!uniform)
@@ -653,6 +670,7 @@ public:
   }
   
   void inphase1() {
+    if(rank >= size) return;
     if(subblock) {
       localtranspose(work,output,a,n*b,m*L,threads);
       Ialltoall(output,n*m*sizeof(T)*a*L,work,split,Request,sched1,threads);
@@ -660,12 +678,13 @@ public:
   }
 
   void insync1() {
+    if(rank >= size) return;
     if(subblock)
       Wait(2*(splitsize-1),Request,sched1);
   }
 
   void inpost() {
-    if(size == 1) return;
+    if(size == 1 || rank >= size) return;
     if(uniform)
       localtranspose(work,output,b,n*a,m*L,threads);
     else {
@@ -714,6 +733,7 @@ public:
   
 // outphase: n x M -> N x m
   void outphase0() {
+    if(rank >= size) return;
     if(size == 1) {
       if(input != output) {
         if(!outflag) {nMTranspose(input,output); outflag=true;}
@@ -772,13 +792,14 @@ public:
   }             
   
   void outsync0() {
+    if(rank >= size) return;
     if(subblock)
       Wait(2*(splitsize-1),Request,sched1);
     else outsync();
   }
   
   void outphase() {
-    if(size == 1) return;
+    if(size == 1 || rank >= size) return;
     // Outer transpose a x a matrix of N/a x M/a blocks over a processes
     if(subblock)
       localtranspose(output,work,n*b,a,m*L,threads);
@@ -798,7 +819,7 @@ public:
   }
   
   void outsync() {
-    if(size == 1) return;
+    if(size == 1 || rank >= size) return;
     if(!uniform)
       Wait(2*(size-(subblock ? a*b : 1)),request,sched);
     if(uniform || subblock)

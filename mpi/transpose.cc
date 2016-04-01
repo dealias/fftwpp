@@ -58,9 +58,13 @@ int transpose(int N, int stats, int timepart)
 
   Complex *data;
   
-  MPIgroup group(MPI_COMM_WORLD,Y);
+  int size,rank;
   
-  split d(X,Y,group.active);
+  MPI_Comm communicator=MPI_COMM_WORLD;
+  MPI_Comm_size(communicator,&size);
+  MPI_Comm_rank(communicator,&rank);
+
+  split d(X,Y,communicator);
   
   unsigned int x=d.x;
   unsigned int y=d.y;
@@ -68,11 +72,10 @@ int transpose(int N, int stats, int timepart)
 //  unsigned int x0=d.x0;
   unsigned int y0=d.y0;
 
-  if(group.rank < group.size) {
-    bool main=group.rank == 0;
+    bool main=rank == 0;
 
     if(main) {
-      cout << "size=" << group.size << endl;
+      cout << "size=" << size << endl;
       cout << "x=" << x << endl;
       cout << "y=" << y << endl;
       cout << "X=" << X << endl;
@@ -85,14 +88,14 @@ int transpose(int N, int stats, int timepart)
   
     init(data,X,y,Z,0,d.y0);
 
-    //    show(data,X,y*Z,group.active);
+    //    show(data,X,y*Z,communicator);
     
-    mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,group.active,
+    mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,communicator,
                             mpiOptions(a,alltoall,defaultmpithreads,!quiet));
     init(data,X,y,Z,0,y0);
     T.transpose(data,false,true);
   
-    //    show(data,x,Y*Z,group.active);
+    //    show(data,x,Y*Z,communicator);
     
     T.NmTranspose();
     init(data,X,y,Z,0,y0);
@@ -105,7 +108,7 @@ int transpose(int N, int stats, int timepart)
     if(showoutput) {
       if(main) 
         cout << "\nInput:" << endl;
-      show(data,X,y*Z,group.active);
+      show(data,X,y*Z,communicator);
     }
     
     if(test) {
@@ -116,7 +119,7 @@ int transpose(int N, int stats, int timepart)
       if(showoutput) {
         if(main) 
           cout << "Input:" << endl;
-        show(data,X,y*Z,group.active);
+        show(data,X,y*Z,communicator);
       }
 
       Complex *wholedata=NULL, *wholeoutput=NULL;
@@ -125,7 +128,7 @@ int transpose(int N, int stats, int timepart)
         wholeoutput=new Complex[X*Y*Z];
       }
 
-      gathery(data,wholedata,d,Z,group.active);
+      gathery(data,wholedata,d,Z,communicator);
 
       if(showoutput && main) {
         cout << "\nGathered input data:" << endl;
@@ -139,10 +142,10 @@ int transpose(int N, int stats, int timepart)
       if(showoutput) {
         if(main)
           cout << "\nOutput:" << endl;
-        show(data,X,y*Z,group.active);
+        show(data,X,y*Z,communicator);
       }
 
-      gatherx(data,wholeoutput,d,Z,group.active);
+      gatherx(data,wholeoutput,d,Z,communicator);
 
       if(main) {
         if(showoutput) {
@@ -200,7 +203,7 @@ int transpose(int N, int stats, int timepart)
 
         if(showoutput) {
           if(main) cout << "Transpose:" << endl;
-          show(data,x,Y*Z,group.active);
+          show(data,x,Y*Z,communicator);
           if(main) cout << endl;
         }
         
@@ -230,10 +233,10 @@ int transpose(int N, int stats, int timepart)
       if(showoutput) {
         if(outtranspose) {
           if(main) cout << "\nOutput:" << endl;
-          show(data,y,X*Z,group.active);
+          show(data,y,X*Z,communicator);
         } else {
           if(main) cout << "\nOriginal:" << endl;
-          show(data,X,y*Z,group.active);
+          show(data,X,y*Z,communicator);
         }
       }
 
@@ -252,8 +255,6 @@ int transpose(int N, int stats, int timepart)
 
     }
   
-  }
-
   return retval;
 }
 
