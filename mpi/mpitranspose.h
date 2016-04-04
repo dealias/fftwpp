@@ -267,7 +267,7 @@ public:
     T recv[N2*splitsize];
     for(unsigned int i=0; i < N2; ++i)
       send[N2*splitrank+i]=0.0;
-    unsigned int M=100;
+    unsigned int M=1000;
     double T1=0.0, T2=0.0;
     poll(send,recv,N1);
     poll(send,recv,N2);
