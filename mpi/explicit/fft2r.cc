@@ -138,10 +138,12 @@ int main(int argc, char **argv)
   fftw_complex* F=fftw_alloc_complex(alloc_local);
   
   fftw_plan rcplan=fftw_mpi_plan_dft_r2c_2d(N0, N1, f, F, MPI_COMM_WORLD,
-					    FFTW_MEASURE);
+					    FFTW_MEASURE
+					    | FFTW_MPI_TRANSPOSED_OUT);
   
   fftw_plan crplan=fftw_mpi_plan_dft_c2r_2d(N0, N1, F, f, MPI_COMM_WORLD,
-					    FFTW_MEASURE);
+					    FFTW_MEASURE
+					    | FFTW_MPI_TRANSPOSED_IN);
 
   init2r(f, local_n0, local_n0_start, N1);
   if(N0*N1 < outlimit)

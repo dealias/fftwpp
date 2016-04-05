@@ -78,10 +78,10 @@ int main(int argc, char **argv)
   /* create plan for in-place DFT */
   fftw_plan fplan=fftw_mpi_plan_dft_3d(N0,N1,N2,f,f,MPI_COMM_WORLD,
 				       FFTW_FORWARD,
-				       FFTW_ESTIMATE | FFTW_MPI_TRANSPOSED_IN);
+				       FFTW_MEASURE | FFTW_MPI_TRANSPOSED_OUT);
   fftw_plan iplan=fftw_mpi_plan_dft_3d(N0,N1,N2,f,f,MPI_COMM_WORLD,
 				       FFTW_BACKWARD,
-				       FFTW_ESTIMATE | FFTW_MPI_TRANSPOSED_OUT);
+				       FFTW_MEASURE | FFTW_MPI_TRANSPOSED_IN);
 
   double *T=new double[N];
   for(int i=0; i < N; ++i) {

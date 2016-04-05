@@ -281,7 +281,10 @@ void show(ftype *f, unsigned int, unsigned int ny,
   }
 }
 
-// output the contents of a 2D array
+// Output the contents of a distributed 2D array
+// nx, ny: global array dimenstions.
+// x0, y0: starting indices for the local part of the array.
+// x1, y1: ending indices for the local part of the array.
 template<class ftype>
 void show(ftype *f, unsigned int nx, unsigned int ny,
           unsigned int x0, unsigned int y0,

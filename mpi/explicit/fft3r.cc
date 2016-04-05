@@ -150,10 +150,12 @@ int main(int argc, char **argv)
   fftw_complex* F=fftw_alloc_complex(alloc_local);
   
   fftw_plan rcplan=fftw_mpi_plan_dft_r2c_3d(N0, N1, N2, f, F, MPI_COMM_WORLD,
-					    FFTW_MEASURE);
+					    FFTW_MEASURE
+					    | FFTW_MPI_TRANSPOSED_OUT);
   
   fftw_plan crplan=fftw_mpi_plan_dft_c2r_3d(N0, N1, N2, F, f, MPI_COMM_WORLD,
-					    FFTW_MEASURE);
+					    FFTW_MEASURE
+					    | FFTW_MPI_TRANSPOSED_IN);
 
   init3r(f, local_n0, local_n0_start, N1, N2);
   if(N0*N1*N2 < outlimit)

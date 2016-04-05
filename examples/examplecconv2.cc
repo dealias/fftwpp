@@ -11,8 +11,6 @@ using namespace Array;
 using namespace fftwpp;
 
 // size of problem
-unsigned int m=8;
-
 unsigned int mx=4;
 unsigned int my=4;
 

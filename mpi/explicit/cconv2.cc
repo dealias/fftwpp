@@ -5,7 +5,20 @@
 #include "getopt.h"
 #include "seconds.h"
 #include "timing.h"
-#include "exmpiutils.h"
+#include "cmult-sse2.h"
+#include "../mpiutils.h"
+
+#ifdef __SSE2__
+namespace fftwpp {
+  const union uvec sse2_pm = {
+    { 0x00000000,0x00000000,0x00000000,0x80000000 }
+  };
+  const union uvec sse2_mm = {
+    { 0x00000000,0x80000000,0x00000000,0x80000000 }
+  };
+}
+#endif
+
 
 using namespace std;
 using namespace utils;
@@ -14,8 +27,47 @@ using namespace fftwpp;
 // compile with
 // mpicxx -o cconv2 cconv2.cc -lfftw3_mpi -lfftw3 -lm
 
+void init(fftw_complex* f, unsigned int N0, unsigned int N1,
+	  unsigned int m0, unsigned int m1,
+	  unsigned int local_0_start, unsigned int local_n0) 
+{
+  // Load everything with zeros.
+  for(unsigned int i=0; i < local_n0; ++i) {
+    for(unsigned int j=0; j < N1; j++) {
+      f[i * N1 + j] = 0.0;
+    }
+  }
+
+  unsigned int local_0_stop = local_0_start + local_n0;
+  for(unsigned int ii=local_0_start; ii < local_0_stop; ++ii) {
+    if(ii < m0) {
+      // The logical index:
+      unsigned int i = ii - local_0_start; 
+      for(unsigned int j=0; j < m1; j++) {
+	f[i*N1+j]=ii + I * j;
+      }
+    }
+  }
+}
+
+void unpad_local(const fftw_complex* f, fftw_complex* f_nopad,
+		unsigned int N0, unsigned int N1,
+		unsigned int m0, unsigned int m1,
+		unsigned int local_0_start, unsigned int local_n0)
+{
+  unsigned int local_0_stop = local_0_start + local_n0;
+  for(unsigned int ii=local_0_start; ii < local_0_stop; ++ii) {
+    if(ii < m0) {
+      unsigned int i = ii - local_0_start; 
+      for(unsigned int j=0; j < m1; j++) {
+	f_nopad[i * m1 + j] = f[i*N1+j];
+      }
+    }
+  }
+}
+
 void convolve(fftw_complex *f, fftw_complex *g, double norm,
-	      int num, fftw_plan fplan, fftw_plan bplan) 
+	      int num, fftw_plan fplan, fftw_plan iplan) 
 {
   fftw_mpi_execute_dft(fplan,f,f);
   fftw_mpi_execute_dft(fplan,g,g);
@@ -31,7 +83,7 @@ void convolve(fftw_complex *f, fftw_complex *g, double norm,
     f[k] *= g[k]*norm;
 #endif
   
-  fftw_mpi_execute_dft(bplan,f,f);
+  fftw_mpi_execute_dft(iplan,f,f);
 }
 
 int threads_ok;
@@ -101,7 +153,6 @@ int main(int argc, char **argv)
     cout << "Threads ok!" << endl;
   }
   
-  
   /* get local data size and allocate */
   ptrdiff_t local_n0, local_0_start;
   ptrdiff_t alloc_local = fftw_mpi_local_size_2d(N0,N1,MPI_COMM_WORLD,
@@ -110,18 +161,12 @@ int main(int argc, char **argv)
   fftw_complex *g=fftw_alloc_complex(alloc_local);
   
   /* create plan for in-place DFT */
-  fftw_plan fplan=fftw_mpi_plan_dft_2d(N0,N1,f,f,MPI_COMM_WORLD,FFTW_FORWARD,
-				       FFTW_ESTIMATE | FFTW_MPI_TRANSPOSED_IN);
-  fftw_plan bplan=fftw_mpi_plan_dft_2d(N0,N1,f,f,MPI_COMM_WORLD,FFTW_BACKWARD,
-				       FFTW_ESTIMATE | FFTW_MPI_TRANSPOSED_OUT);
-
- 
-  initf(f,local_0_start,local_n0,N0,N1,m0,m1);
-  initg(g,local_0_start,local_n0,N0,N1,m0,m1);
-
-  // Input data:
-  // show(f,local_0_start,local_n0,N1,m0,m1,0);
-  // show(g,local_0_start,local_n0,N1,N0,N1,1);
+  fftw_plan fplan=fftw_mpi_plan_dft_2d(N0,N1,f,f,MPI_COMM_WORLD,
+				       FFTW_FORWARD,
+				       FFTW_MEASURE | FFTW_MPI_TRANSPOSED_OUT);
+  fftw_plan iplan=fftw_mpi_plan_dft_2d(N0,N1,f,f,MPI_COMM_WORLD,
+				       FFTW_BACKWARD,
+				       FFTW_MEASURE | FFTW_MPI_TRANSPOSED_IN);
 
   // determine number of elements per process after tranpose
   ptrdiff_t local_n1, local_1_start;
@@ -129,29 +174,59 @@ int main(int argc, char **argv)
     fftw_mpi_local_size_2d_transposed(N0,N1,MPI_COMM_WORLD,
    				      &local_n0, &local_0_start,
    				      &local_n1, &local_1_start);
-  
 
-  double *T=new double[N];
+  unsigned int outlimit = 256;
 
   double overN=1.0/((double) (N0*N1));
-  for(int i=0; i < N; ++i) {
-    initf(f,local_0_start,local_n0,N0,N1,m0,m1);
-    initg(g,local_0_start,local_n0,N0,N1,m0,m1);
-    seconds();
-    convolve(f,g,overN,transize,fplan,bplan);
-    T[i]=seconds();
-  }  
- 
-  if(rank == 0)
-    timings("Explicit",m,T,N,stats);
   
-  if(m0*m1<100) {
+  if(m0 * m1 < outlimit) {
+    init(f, N0, N1, m0, m1, local_0_start, local_n0);
+    init(g, N0, N1, m0, m1, local_0_start, local_n0);
+    Complex* f_nopad = new Complex[m0 * m1];
+    Complex* g_nopad = new Complex[m0 * m1];
+    unpad_local(f, (fftw_complex*) f_nopad,
+		N0, N1, m0, m1, local_0_start, local_n0);
+    unpad_local(g, (fftw_complex*) g_nopad,
+		N0, N1, m0, m1, local_0_start, local_n0);
+
+    unsigned int local_0_end = local_0_start + local_n0;
+    unsigned int local_m0 = local_0_start <= m0 ? local_0_end - m0 : 0;
+    
+    if(rank == 0)
+      cout << "input f:" << endl;
+    show(f_nopad, m0, m1, 0, 0, local_m0, m1, MPI_COMM_WORLD);
+    if(rank == 0)
+      cout << "input g:" << endl;
+    show(g_nopad, m0, m1, 0, 0, local_m0, m1, MPI_COMM_WORLD);
+
+    convolve(f,g,overN,transize,fplan,iplan);
+    
+    unpad_local(f, (fftw_complex*) f_nopad,
+		N0, N1, m0, m1, local_0_start, local_n0);
     if(rank == 0)
       cout << "output:" << endl;
-    show(f,local_0_start,local_n0,N1,m0,m1,2);
+    show(f_nopad, m0, m1, 0, 0, local_m0, m1, MPI_COMM_WORLD);
+    delete[] g_nopad;
+    delete[] f_nopad;
   }
+
+  if(N > 0) {
+    double *T=new double[N];
+  
+    for(int i=0; i < N; ++i) {
+      init(f, N0, N1, m0, m1, local_0_start, local_n0);
+      init(g, N0, N1, m0, m1, local_0_start, local_n0);
+      seconds();
+      convolve(f,g,overN,transize,fplan,iplan);
+      T[i]=seconds();
+    }  
+ 
+    if(rank == 0)
+      timings("Explicit",m,T,N,stats);
+  }
+  
   fftw_destroy_plan(fplan);
-  fftw_destroy_plan(bplan);
+  fftw_destroy_plan(iplan);
 
   MPI_Finalize();
 
