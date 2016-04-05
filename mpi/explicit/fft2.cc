@@ -105,10 +105,9 @@ int main(int argc, char **argv)
 
     // determine number of elements per process after tranpose
     ptrdiff_t local_n1, local_1_start;
-    unsigned int transize=
-      fftw_mpi_local_size_2d_transposed(N0,N1,MPI_COMM_WORLD,
-					&local_n0, &local_0_start,
-					&local_n1, &local_1_start);
+    fftw_mpi_local_size_2d_transposed(N0,N1,MPI_COMM_WORLD,
+				      &local_n0, &local_0_start,
+				      &local_n1, &local_1_start);
     if(rank == 0)
       cout << "output:" << endl;
     show((Complex *)f, N1, N0, 0, 0, local_n1, N0, MPI_COMM_WORLD);
