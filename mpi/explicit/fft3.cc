@@ -6,11 +6,25 @@
 #include "seconds.h"
 #include "timing.h"
 #include "cmult-sse2.h"
-#include "exmpiutils.h"
+#include "../mpiutils.h"
 
 using namespace std;
 using namespace utils;
 using namespace fftwpp;
+
+
+void init(fftw_complex* f, unsigned int N0, unsigned int N1, unsigned int N2,
+	  unsigned int local_0_start, unsigned int local_n0) 
+{
+  for(unsigned int i=0; i < local_n0; ++i) {
+    unsigned int ii=local_0_start+i;
+    for(unsigned int j=0; j < N1; j++) {
+      for(unsigned int k=0; k < N2; k++) {
+	f[i*N1*N2+j*N2+k]=ii + I * j * j + k * k *k;
+      }
+    }
+  }
+}
 
 int main(int argc, char **argv)
 {
@@ -48,7 +62,7 @@ int main(int argc, char **argv)
 
   const unsigned int m0 = m;
   const unsigned int m1 = m;
-  const unsigned int m2=m;
+  const unsigned int m2 = m;
   const unsigned int N0 = m0;
   const unsigned int N1 = m1;
   const unsigned int N2 = m2;
@@ -83,18 +97,47 @@ int main(int argc, char **argv)
 				       FFTW_BACKWARD,
 				       FFTW_MEASURE | FFTW_MPI_TRANSPOSED_IN);
 
-  double *T=new double[N];
-  for(int i=0; i < N; ++i) {
-    initf(f,local_0_start,local_n0,N0,N1,m0,m1);
-    seconds();
-    fftw_mpi_execute_dft(fplan,f,f);
-    fftw_mpi_execute_dft(iplan,f,f);
-    T[i]=0.5*seconds();
-  }  
-  if(rank == 0)
-    timings("FFT",m,T,N,stats);
-  delete[] T;
+  unsigned int outlimit = 512;
+  
+  if(N0 * N1 * N2 < outlimit) {
+    init(f, N0, N1 ,N2, local_0_start, local_n0);
+    if(rank == 0)
+      cout << "input:" << endl;
+    show((Complex *)f, N0, N1, N2, 0, 0, 0, local_n0, N1, N2, MPI_COMM_WORLD);
 
+    fftw_mpi_execute_dft(fplan,f,f);
+    
+    // // determine number of elements per process after tranpose
+    ptrdiff_t local_n1, local_1_start;
+    unsigned int transize=
+      fftw_mpi_local_size_3d_transposed(N0, N1, N2, MPI_COMM_WORLD,
+					&local_n0, &local_0_start,
+					&local_n1, &local_1_start);
+					
+    if(rank == 0)
+      cout << "output:" << endl;
+    show((Complex *)f, N1, N0, N2, 0, 0, 0, local_n1, N0, N2, MPI_COMM_WORLD);
+
+    fftw_mpi_execute_dft(iplan,f,f);
+    if(rank == 0)
+      cout << "back to input:" << endl;
+    show((Complex *)f, N0, N1, N2, 0, 0, 0, local_n0, N1, N2, MPI_COMM_WORLD);
+  }
+
+  if(N > 0) {
+    double *T=new double[N];
+    for(int i=0; i < N; ++i) {
+      init(f, N0, N1 ,N2, local_0_start, local_n0);
+      seconds();
+      fftw_mpi_execute_dft(fplan,f,f);
+      fftw_mpi_execute_dft(iplan,f,f);
+      T[i]=0.5*seconds();
+    }  
+    if(rank == 0)
+      timings("FFT",m,T,N,stats);
+    delete[] T;
+  }
+  
   fftw_destroy_plan(fplan);
   fftw_destroy_plan(iplan);
 
