@@ -70,6 +70,8 @@ int[] ncores;
 
 real d=-1;
 
+int runples=0;
+
 usersetting();
 //write(settings.user);
 
@@ -404,7 +406,8 @@ if(gtype == "time" || gtype == "performance") {
 
 
 if(gtype == "speedup") {
-  int runples=getint("how many runs are compared at once");
+  if(runples == 0)
+    runples=getint("how many runs are compared at once");
   string compname="";
 
   bool drawyzero=false;
