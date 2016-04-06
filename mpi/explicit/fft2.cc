@@ -60,6 +60,12 @@ int main(int argc, char **argv)
   unsigned int m0 = m;
   unsigned int m1 = m;
 
+  if(N == 0) {
+    unsigned int N0=1000000;
+    N=N0/m0/m1;
+    if(N < 20) N=20;
+  }
+  
   const unsigned int N0 = m0;
   const unsigned int N1 = m1;
   int provided;
@@ -95,7 +101,7 @@ int main(int argc, char **argv)
 
   unsigned int outlimit = 256;
 
-  if(N0 * N1 < outlimit) {
+  if(N0*N1 < outlimit) {
     init(f, N0, N1, local_0_start, local_n0);
     if(rank == 0)
       cout << "input:" << endl;
@@ -105,10 +111,9 @@ int main(int argc, char **argv)
 
     // determine number of elements per process after tranpose
     ptrdiff_t local_n1, local_1_start;
-    unsigned int transize=
-      fftw_mpi_local_size_2d_transposed(N0,N1,MPI_COMM_WORLD,
-					&local_n0, &local_0_start,
-					&local_n1, &local_1_start);
+    fftw_mpi_local_size_2d_transposed(N0,N1,MPI_COMM_WORLD,
+				      &local_n0, &local_0_start,
+				      &local_n1, &local_1_start);
     if(rank == 0)
       cout << "output:" << endl;
     show((Complex *)f, N1, N0, 0, 0, local_n1, N0, MPI_COMM_WORLD);

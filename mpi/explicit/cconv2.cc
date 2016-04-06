@@ -51,9 +51,9 @@ void init(fftw_complex* f, unsigned int N0, unsigned int N1,
 }
 
 void unpad_local(const fftw_complex* f, fftw_complex* f_nopad,
-		unsigned int N0, unsigned int N1,
-		unsigned int m0, unsigned int m1,
-		unsigned int local_0_start, unsigned int local_n0)
+		 unsigned int N0, unsigned int N1,
+		 unsigned int m0, unsigned int m1,
+		 unsigned int local_0_start, unsigned int local_n0)
 {
   unsigned int local_0_stop = local_0_start + local_n0;
   for(unsigned int ii=local_0_start; ii < local_0_stop; ++ii) {
@@ -175,10 +175,10 @@ int main(int argc, char **argv)
    				      &local_n0, &local_0_start,
    				      &local_n1, &local_1_start);
 
-  unsigned int outlimit = 256;
 
   double overN=1.0/((double) (N0*N1));
-  
+
+  unsigned int outlimit = 256;
   if(m0 * m1 < outlimit) {
     init(f, N0, N1, m0, m1, local_0_start, local_n0);
     init(g, N0, N1, m0, m1, local_0_start, local_n0);

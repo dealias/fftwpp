@@ -6,13 +6,11 @@
 #include "seconds.h"
 #include "timing.h"
 #include "cmult-sse2.h"
-#include "exmpiutils.h"
 
 using namespace std;
 using namespace utils;
 using namespace fftwpp;
 
-unsigned int outlimit=3000;
 
 void init2r(double *f,
 	    const int local_n0, const int local_n0_start,
@@ -108,13 +106,19 @@ int main(int argc, char **argv)
   const unsigned int N1 = m1;
 
   const unsigned int N1p = N1 / 2 + 1;
+
+  if(N == 0) {
+    unsigned int N0=1000000;
+    N=N0/m0/m1;
+    if(N < 20) N=20;
+  }
   
   int provided;
   MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &provided);
   int threads_ok = provided >= MPI_THREAD_FUNNELED;
   
-  int mpirank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   int mpisize;
   MPI_Comm_size(MPI_COMM_WORLD, &mpisize);
@@ -126,7 +130,7 @@ int main(int argc, char **argv)
   if(threads_ok)
     fftw_plan_with_nthreads(nthreads);
   else 
-    if(mpirank ==0) cout << "threads not ok!" << endl;
+    if(rank ==0) cout << "threads not ok!" << endl;
   
   /* get local data size and allocate */
   ptrdiff_t local_n0;
@@ -145,28 +149,37 @@ int main(int argc, char **argv)
 					    FFTW_MEASURE
 					    | FFTW_MPI_TRANSPOSED_IN);
 
-  init2r(f, local_n0, local_n0_start, N1);
-  if(N0*N1 < outlimit)
-    show2r(f, local_n0, N1);
-  fftw_mpi_execute_dft_r2c(rcplan,f,F);
-  if(N0*N1 < outlimit)
-    show2c(F, local_n0, N1p);
-  fftw_mpi_execute_dft_c2r(crplan,F,f);
-  if(N0*N1 < outlimit)
-    show2r(f, local_n0, N1);
+  unsigned int outlimit=3000;
   
-  double *T=new double[N];
-  for(int i=0; i < N; ++i) {
+  if(N0*N1 < outlimit) {
+    if(rank == 0)
+      cout << "input:" << endl;
     init2r(f, local_n0, local_n0_start, N1);
-    seconds();
+    show2r(f, local_n0, N1);
+    if(rank == 0)
+      cout << "output:" << endl;
     fftw_mpi_execute_dft_r2c(rcplan,f,F);
+    show2c(F, local_n0, N1p);
+    if(rank == 0)
+      cout << "back to input:" << endl;
     fftw_mpi_execute_dft_c2r(crplan,F,f);
-    T[i]=0.5*seconds();
-  }  
-  if(mpirank == 0)
-    timings("FFT",m,T,N,stats);
-  delete[] T;
+    show2r(f, local_n0, N1);
+  }
 
+  if(N > 0) {
+    double *T=new double[N];
+    for(int i=0; i < N; ++i) {
+      init2r(f, local_n0, local_n0_start, N1);
+      seconds();
+      fftw_mpi_execute_dft_r2c(rcplan,f,F);
+      fftw_mpi_execute_dft_c2r(crplan,F,f);
+      T[i]=0.5*seconds();
+    }  
+    if(rank == 0)
+      timings("FFT",m,T,N,stats);
+    delete[] T;
+  }
+  
   fftw_destroy_plan(rcplan);
   fftw_destroy_plan(crplan);
 

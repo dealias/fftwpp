@@ -354,7 +354,8 @@ void show(ftype *f, unsigned int nx, unsigned int ny, unsigned int nz,
 // x0, y0, z0: starting indices for the local part of the array.
 // x1, y1, z1: local array dimensions.
 template<class ftype>
-void show(ftype *f, unsigned int nx, unsigned int ny, unsigned int nz,
+void show(ftype *f,
+	  unsigned int nx, unsigned int ny, unsigned int nz,
           unsigned int x0, unsigned int y0, unsigned int z0,
           unsigned int x1, unsigned int y1, unsigned int z1,
           const MPI_Comm& communicator)
