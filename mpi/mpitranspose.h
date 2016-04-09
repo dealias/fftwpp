@@ -3,7 +3,7 @@
 
 /* 
    Globally transpose an N x M matrix of blocks of L words of type T.
-   The in-place versions preserve inputs.
+   The out-of-place versions preserve inputs.
 
    Blocking in-place and out-of-place interfaces. Upper case letters denote
    global dimensions; lower case letters denote distributed dimensions: 

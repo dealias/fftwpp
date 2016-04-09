@@ -9,7 +9,7 @@ struct mpiOptions {
   int alltoall; // -1=Tune, 0=Optimized, 1=MPI
   unsigned int threads;
   unsigned int verbose;
-  mpiOptions(unsigned int a=0, unsigned int alltoall=-1,
+  mpiOptions(int a=0, int alltoall=-1,
              unsigned int threads=defaultmpithreads,
              unsigned int verbose=0) :
     a(a), alltoall(alltoall), threads(threads), verbose(verbose) {}
