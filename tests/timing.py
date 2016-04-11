@@ -333,6 +333,8 @@ def main(argv):
             with open(outdir + "/log", "a") as logfile:
                 logfile.write(str(sys.argv))
                 logfile.write("\n")
+                logfile.write("intial exponent: " + str(a) + "\n")
+                logfile.write("final exponent: " + str(b) + "\n")
             if not appendtofile:
                 os.system("rm -f " + filename)
 
