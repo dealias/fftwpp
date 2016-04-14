@@ -1,18 +1,19 @@
 #include <mpi.h>
-#include <complex.h>
+#include "Complex.h"
 #include <fftw3-mpi.h>
 #include <iostream>
 #include "getopt.h"
 #include "seconds.h"
 #include "timing.h"
 #include "cmult-sse2.h"
+#include "exmpiutils.h"
 #include "../mpiutils.h"
 
 using namespace std;
 using namespace utils;
 using namespace fftwpp;
 
-void init(fftw_complex* f, unsigned int N0, unsigned int N1,
+void init(Complex* f, unsigned int N0, unsigned int N1,
 	  unsigned int local_0_start, unsigned int local_n0) 
 {
   for(unsigned int i=0; i < local_n0; ++i) {
@@ -89,13 +90,15 @@ int main(int argc, char **argv)
   ptrdiff_t alloc_local=fftw_mpi_local_size_2d(N0,N1,MPI_COMM_WORLD,
 					       &local_n0, &local_0_start);
   
-  fftw_complex *f=fftw_alloc_complex(alloc_local);
+  Complex *f=ComplexAlign(alloc_local);
   
   /* create plan for in-place DFT */
-  fftw_plan fplan=fftw_mpi_plan_dft_2d(N0,N1,f,f,MPI_COMM_WORLD,
+  fftw_plan fplan=fftw_mpi_plan_dft_2d(N0,N1,(fftw_complex *) f,
+                                       (fftw_complex *) f,MPI_COMM_WORLD,
 				       FFTW_FORWARD,
 				       FFTW_MEASURE | FFTW_MPI_TRANSPOSED_OUT);
-  fftw_plan iplan=fftw_mpi_plan_dft_2d(N0,N1,f,f,MPI_COMM_WORLD,
+  fftw_plan iplan=fftw_mpi_plan_dft_2d(N0,N1,(fftw_complex *) f,
+                                       (fftw_complex *) f,MPI_COMM_WORLD,
 				       FFTW_BACKWARD,
 				       FFTW_MEASURE | FFTW_MPI_TRANSPOSED_IN);
 
@@ -107,7 +110,7 @@ int main(int argc, char **argv)
       cout << "input:" << endl;
     show((Complex *)f, N0, N1, 0, 0, local_n0, N1, MPI_COMM_WORLD);
 
-    fftw_mpi_execute_dft(fplan,f,f);
+    fftw_mpi_execute_dft(fplan,(fftw_complex *) f,(fftw_complex *) f);
 
     // determine number of elements per process after tranpose
     ptrdiff_t local_n1, local_1_start;
@@ -116,12 +119,12 @@ int main(int argc, char **argv)
 				      &local_n1, &local_1_start);
     if(rank == 0)
       cout << "output:" << endl;
-    show((Complex *)f, N1, N0, 0, 0, local_n1, N0, MPI_COMM_WORLD);
+    show(f, N1, N0, 0, 0, local_n1, N0, MPI_COMM_WORLD);
 
-    fftw_mpi_execute_dft(iplan,f,f);
+    fftw_mpi_execute_dft(iplan,(fftw_complex *) f,(fftw_complex *) f);
     if(rank == 0)
       cout << "back to input:" << endl;
-    show((Complex *)f, N0, N1, 0, 0, local_n0, N1, MPI_COMM_WORLD);
+    show(f, N0, N1, 0, 0, local_n0, N1, MPI_COMM_WORLD);
   }
     
   if(N > 0) {
@@ -129,8 +132,8 @@ int main(int argc, char **argv)
     for(int i=0; i < N; ++i) {
       init(f, N0, N1, local_0_start, local_n0);
       seconds();
-      fftw_mpi_execute_dft(fplan,f,f);
-      fftw_mpi_execute_dft(iplan,f,f);
+      fftw_mpi_execute_dft(fplan,(fftw_complex *) f,(fftw_complex *) f);
+      fftw_mpi_execute_dft(iplan,(fftw_complex *) f,(fftw_complex *) f);
       T[i]=0.5*seconds();
     }  
     if(rank == 0)

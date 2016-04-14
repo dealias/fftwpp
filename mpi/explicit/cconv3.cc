@@ -1,10 +1,11 @@
 #include <mpi.h>
-#include <complex.h>
+#include "Complex.h"
 #include <fftw3-mpi.h>
 #include <iostream>
 #include "getopt.h"
 #include "seconds.h"
 #include "timing.h"
+#include "exmpiutils.h"
 #include "cmult-sse2.h"
 #include "../mpiutils.h"
 
@@ -15,7 +16,7 @@ using namespace fftwpp;
 // compile with
 // mpicxx -o cconv3 cconv3.cc -lfftw3_mpi -lfftw3 -lm
 
-void init(fftw_complex* f,
+void init(Complex *f,
 	  unsigned int N0, unsigned int N1, unsigned int N2,
 	  unsigned int m0, unsigned int m1, unsigned int m2,
 	  unsigned int local_0_start, unsigned int local_n0) 
@@ -43,7 +44,7 @@ void init(fftw_complex* f,
   }
 }
 
-void unpad_local(const Complex* f, Complex* f_nopad,
+void unpad_local(const Complex *f, Complex *f_nopad,
 		 unsigned int N1, unsigned int N2,
 		 unsigned int local_m0, unsigned int m1,unsigned int m2)
 {
@@ -56,13 +57,13 @@ void unpad_local(const Complex* f, Complex* f_nopad,
   }
 }
 
-void convolve(fftw_complex *f, fftw_complex *g, double norm,
+void convolve(Complex *f, Complex *g, double norm,
 	      int num, fftw_plan fplan, fftw_plan iplan) 
 {
-  fftw_mpi_execute_dft(fplan,f,f);
-  fftw_mpi_execute_dft(fplan,g,g);
-  Complex *F = (Complex *) f;
-  Complex *G = (Complex *) g;
+  fftw_mpi_execute_dft(fplan,(fftw_complex *) f,(fftw_complex *) f);
+  fftw_mpi_execute_dft(fplan,(fftw_complex *) g,(fftw_complex *) g);
+  Complex *F=f;
+  Complex *G=g;
 #ifdef __SSE2__
   Vec Ninv=LOAD(norm);
   for (int k = 0; k < num; ++k)
@@ -71,7 +72,7 @@ void convolve(fftw_complex *f, fftw_complex *g, double norm,
   for (int k = 0; k < num; ++k)
     f[k] *= g[k]*norm;
 #endif
-  fftw_mpi_execute_dft(iplan,f,f);
+  fftw_mpi_execute_dft(iplan,(fftw_complex *) f,(fftw_complex *) f);
 }
 
 int threads_ok;
@@ -155,14 +156,16 @@ int main(int argc, char **argv)
   int transize=fftw_mpi_local_size_3d_transposed(N0,N1,N2,MPI_COMM_WORLD,
 						 &local_n0,&local_0_start,
 						 &local_n1,&local_1_start);
-  fftw_complex *f=fftw_alloc_complex(alloc_local);
-  fftw_complex *g=fftw_alloc_complex(alloc_local);
+  Complex *f=ComplexAlign(alloc_local);
+  Complex *g=ComplexAlign(alloc_local);
   
   /* create plan for in-place DFT */
-  fftw_plan fplan=fftw_mpi_plan_dft_3d(N0,N1,N2,f,f,MPI_COMM_WORLD,
+  fftw_plan fplan=fftw_mpi_plan_dft_3d(N0,N1,N2,(fftw_complex *) f,
+                                       (fftw_complex *) f,MPI_COMM_WORLD,
 				       FFTW_FORWARD,
 				       FFTW_MEASURE | FFTW_MPI_TRANSPOSED_OUT);
-  fftw_plan iplan=fftw_mpi_plan_dft_3d(N0,N1,N2,f,f,MPI_COMM_WORLD,
+  fftw_plan iplan=fftw_mpi_plan_dft_3d(N0,N1,N2,(fftw_complex *) f,
+                                       (fftw_complex *) f,MPI_COMM_WORLD,
 				       FFTW_BACKWARD,
 				       FFTW_MEASURE | FFTW_MPI_TRANSPOSED_IN);
   double overN=1.0/((double) (N0*N1*N2));
@@ -178,25 +181,25 @@ int main(int argc, char **argv)
       local_m0 = local_n0;
     
     unsigned int n_nopad = local_m0 * m1 * m2;
-    Complex* f_nopad = n_nopad > 0 ? new Complex[n_nopad] : NULL;
-    Complex* g_nopad = n_nopad > 0 ? new Complex[n_nopad] : NULL;
+    Complex *f_nopad = n_nopad > 0 ? ComplexAlign(n_nopad) : NULL;
+    Complex *g_nopad = n_nopad > 0 ? ComplexAlign(n_nopad) : NULL;
     
     if(rank == 0)
       cout << "input f:" << endl;
-    unpad_local((Complex *)f, f_nopad, N1, N2, local_m0, m1, m2);
-    show((Complex*)f_nopad, local_m0, m1, m2, MPI_COMM_WORLD);
+    unpad_local(f, f_nopad, N1, N2, local_m0, m1, m2);
+    show(f_nopad, local_m0, m1, m2, MPI_COMM_WORLD);
 
     if(rank == 0)
       cout << "input g:" << endl;
-    unpad_local((Complex *)g, g_nopad, N1, N2, local_m0, m1, m2);
-    show((Complex*)g_nopad, local_m0, m1, m2, MPI_COMM_WORLD);
+    unpad_local(g, g_nopad, N1, N2, local_m0, m1, m2);
+    show(g_nopad, local_m0, m1, m2, MPI_COMM_WORLD);
 
     convolve(f,g,overN,transize,fplan,iplan);
 
     if(rank == 0)
       cout << "output f:" << endl;
-    unpad_local((Complex *)f, f_nopad, N1, N2, local_m0, m1, m2);
-    show((Complex*)f_nopad, local_m0, m1, m2, MPI_COMM_WORLD);
+    unpad_local(f, f_nopad, N1, N2, local_m0, m1, m2);
+    show(f_nopad, local_m0, m1, m2, MPI_COMM_WORLD);
 
     if(n_nopad > 0) {
       delete[] f_nopad;
