@@ -1,5 +1,5 @@
 #include <mpi.h>
-#include <complex.h>
+#include <Complex.h>
 #include <fftw3-mpi.h>
 #include <iostream>
 #include "getopt.h"

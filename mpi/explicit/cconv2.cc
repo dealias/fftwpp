@@ -1,10 +1,11 @@
 #include <mpi.h>
-#include <complex.h>
+#include "Complex.h"
 #include <fftw3-mpi.h>
 #include <iostream>
 #include "getopt.h"
 #include "seconds.h"
 #include "timing.h"
+#include "exmpiutils.h"
 #include "cmult-sse2.h"
 #include "../mpiutils.h"
 
@@ -15,7 +16,7 @@ using namespace fftwpp;
 // compile with
 // mpicxx -o cconv2 cconv2.cc -lfftw3_mpi -lfftw3 -lm
 
-void init(fftw_complex* f, unsigned int N0, unsigned int N1,
+void init(Complex* f, unsigned int N0, unsigned int N1,
 	  unsigned int m0, unsigned int m1,
 	  unsigned int local_0_start, unsigned int local_n0) 
 {
@@ -38,7 +39,7 @@ void init(fftw_complex* f, unsigned int N0, unsigned int N1,
   }
 }
 
-void unpad_local(const fftw_complex* f, fftw_complex* f_nopad,
+void unpad_local(const Complex* f, Complex* f_nopad,
 		 unsigned int N0, unsigned int N1,
 		 unsigned int m0, unsigned int m1,
 		 unsigned int local_0_start, unsigned int local_n0)
@@ -54,15 +55,15 @@ void unpad_local(const fftw_complex* f, fftw_complex* f_nopad,
   }
 }
 
-void convolve(fftw_complex *f, fftw_complex *g, double norm,
+void convolve(Complex *f, Complex *g, double norm,
 	      int num, fftw_plan fplan, fftw_plan iplan) 
 {
-  fftw_mpi_execute_dft(fplan,f,f);
-  fftw_mpi_execute_dft(fplan,g,g);
+  fftw_mpi_execute_dft(fplan,(fftw_complex *) f,(fftw_complex *) f);
+  fftw_mpi_execute_dft(fplan,(fftw_complex *) g,(fftw_complex *) g);
 
 #ifdef __SSE2__
-  Complex *F = (Complex *) f;
-  Complex *G = (Complex *) g;
+  Complex *F = f;
+  Complex *G = g;
   Vec Ninv=LOAD(norm);
   for (int k = 0; k < num; ++k)
     STORE(F+k,Ninv*ZMULT(LOAD(F+k),LOAD(G+k)));
@@ -71,7 +72,7 @@ void convolve(fftw_complex *f, fftw_complex *g, double norm,
     f[k] *= g[k]*norm;
 #endif
   
-  fftw_mpi_execute_dft(iplan,f,f);
+  fftw_mpi_execute_dft(iplan,(fftw_complex *) f,(fftw_complex *) f);
 }
 
 int threads_ok;
@@ -145,14 +146,16 @@ int main(int argc, char **argv)
   ptrdiff_t local_n0, local_0_start;
   ptrdiff_t alloc_local = fftw_mpi_local_size_2d(N0,N1,MPI_COMM_WORLD,
 						 &local_n0, &local_0_start);
-  fftw_complex *f=fftw_alloc_complex(alloc_local);
-  fftw_complex *g=fftw_alloc_complex(alloc_local);
+  Complex *f=ComplexAlign(alloc_local);
+  Complex *g=ComplexAlign(alloc_local);
   
   /* create plan for in-place DFT */
-  fftw_plan fplan=fftw_mpi_plan_dft_2d(N0,N1,f,f,MPI_COMM_WORLD,
+  fftw_plan fplan=fftw_mpi_plan_dft_2d(N0,N1,(fftw_complex *) f,
+                                       (fftw_complex *) f,MPI_COMM_WORLD,
 				       FFTW_FORWARD,
 				       FFTW_MEASURE | FFTW_MPI_TRANSPOSED_OUT);
-  fftw_plan iplan=fftw_mpi_plan_dft_2d(N0,N1,f,f,MPI_COMM_WORLD,
+  fftw_plan iplan=fftw_mpi_plan_dft_2d(N0,N1,(fftw_complex *) f,
+                                       (fftw_complex *) f,MPI_COMM_WORLD,
 				       FFTW_BACKWARD,
 				       FFTW_MEASURE | FFTW_MPI_TRANSPOSED_IN);
 
@@ -170,11 +173,11 @@ int main(int argc, char **argv)
   if(m0 * m1 < outlimit) {
     init(f, N0, N1, m0, m1, local_0_start, local_n0);
     init(g, N0, N1, m0, m1, local_0_start, local_n0);
-    Complex* f_nopad = new Complex[m0 * m1];
-    Complex* g_nopad = new Complex[m0 * m1];
-    unpad_local(f, (fftw_complex*) f_nopad,
+    Complex* f_nopad=ComplexAlign(m0*m1);
+    Complex* g_nopad=ComplexAlign(m0*m1);
+    unpad_local(f,f_nopad,
 		N0, N1, m0, m1, local_0_start, local_n0);
-    unpad_local(g, (fftw_complex*) g_nopad,
+    unpad_local(g,g_nopad,
 		N0, N1, m0, m1, local_0_start, local_n0);
 
     unsigned int local_0_end = local_0_start + local_n0;
@@ -189,7 +192,7 @@ int main(int argc, char **argv)
 
     convolve(f,g,overN,transize,fplan,iplan);
     
-    unpad_local(f, (fftw_complex*) f_nopad,
+    unpad_local(f,f_nopad,
 		N0, N1, m0, m1, local_0_start, local_n0);
     if(rank == 0)
       cout << "output:" << endl;
