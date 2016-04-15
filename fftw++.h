@@ -518,6 +518,7 @@ public:
                 << size;
       exit(1);
     }
+    plan=plan2=NULL;
     if(rows == 0 || cols == 0) return;
     size /= sizeof(double);
     length *= size;
@@ -557,7 +558,6 @@ public:
     // A plan with rank=0 is a transpose.
     plan=fftw_plan_guru_r2r(0,NULL,3,dims,(double *) in,(double *) out,
                             NULL,fftw::effort);
-    plan2=NULL;
     ilast=a;
     jlast=b;
     
