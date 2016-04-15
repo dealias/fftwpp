@@ -35,7 +35,7 @@ include graph;
 
 // asy timings.asy -u"verbose=<true/false>"
 
-size(250,300,IgnoreAspect);
+
 
 barfactor=10;
 bool verbose=false;
@@ -72,9 +72,14 @@ real d=-1;
 
 int runples=0;
 
+real sizex=250;
+real sizey=300;
+
 usersetting();
 //write(settings.user);
 
+
+size(sizex,sizey,IgnoreAspect);
 
 if(gtype == "")
   gtype=getstring("time, performance, scaling, peff, or speedup","performance");
@@ -144,7 +149,17 @@ if(d == -1)
 
 real ymin=infinity, ymax=-infinity;
 
-triple statspm(real[] data, string thestats) {
+triple statspm(real[] data, string thestats, string gtype) {
+  if(gtype == "performance") {
+    for(int i = 0; i < data.length; ++i) {
+      if(data[i] > 0.0) {
+	data[i] = 1.0 / data[i];
+      } else {
+	data.delete(i);
+      }
+    }
+  }
+
   if(thestats == "median90") {
     data = sort(data);
     int N = data.length;
@@ -249,7 +264,7 @@ for(int n=0; n < filenames.length; ++n) {
 	real times[] = new real[N];
 	for(int i = 0; i < N; ++i)
 	  times[i] = fin;
-	triple thestats = statspm(times, thisstats);
+	triple thestats = statspm(times, thisstats, gtype);
 	nmi.push(m);
 	ni.push(thestats.x);
 	nli.push(thestats.y);
@@ -324,8 +339,17 @@ if(gtype == "time" || gtype == "performance") {
   for(int p=0; p < filenames.length; ++p) {
     marker mark1=marker(scale(0.6mm)*polygon(3+p),Draw(barPen(p)+solid));
     if(gtype == "performance") {
-      for(int v = 0; v < i[p].length; ++v) 
-	i[p][v] = mspeed(mi[p][v]) / i[p][v];
+      if(datatype == "raw") {
+	for(int v = 0; v < i[p].length; ++v) {
+	  i[p][v] *= mspeed(mi[p][v]);
+	  hi[p][v] *= mspeed(mi[p][v]);
+	  li[p][v] *= mspeed(mi[p][v]);
+	}
+      } else {
+	for(int v = 0; v < i[p].length; ++v) {
+	  i[p][v] = mspeed(mi[p][v]) / i[p][v];	
+	}
+      }
     }
     if(gtype == "time") {
       for(int v = 0; v < i[p].length; ++v)  {
@@ -351,7 +375,7 @@ if(gtype == "time" || gtype == "performance") {
       write(i[p]);
     }
     
-    if(drawerrorbars && gtype == "time") {
+    if(drawerrorbars && (gtype == "time" || datatype == "raw")) {
       errorbars(mi[p],i[p],0*mi[p],hi[p],0*mi[p],li[p],drawme,barPen(p));
     }
     
@@ -674,7 +698,7 @@ if(gtype == "scaling" || gtype == "peff") {
 
   
   if(myleg) {
-    xaxis("Number of threads", BottomTop,
+    xaxis("Number of cores", BottomTop,
 	  LeftTicks(new string(real x) {return legends[round(x)];}));
   } else {
     xaxis("Number of cores", BottomTop, LeftTicks(DefaultFormat, allprocs));
