@@ -35,8 +35,9 @@ protected:
   utils::split d;
   mfft1d *xForward,*xBackward;
   mfft1d *yForward,*yBackward;
-  utils::mpitranspose<Complex> *T,*Tinv;
-  Transpose *Tout,*Tin;
+  utils::mpitranspose<Complex> *T;
+  Transpose *TXy,*TyX;
+  Transpose *TXyio;
   bool transposed;
 public:
   void init(Complex *in, Complex *out, const utils::mpiOptions& options) {
@@ -50,13 +51,12 @@ public:
 
     T=new utils::mpitranspose<Complex>(d.X,d.y,d.x,d.Y,1,out,d.communicator,
                                        options);
-    Tinv=(d.X == d.Y) ? T :
-      new utils::mpitranspose<Complex>(d.Y,d.x,d.y,d.X,1,out,d.communicator,
-                                          options);
-    if(!transposed) {
-      Tout=new Transpose(d.y,d.X,1,out,out,threads);
-      Tin=new Transpose(d.X,d.y,1,in,out,threads);
-    }
+    
+    TXy=new Transpose(d.X,d.y,1,out,out,threads);
+    TyX=new Transpose(d.y,d.X,1,out,out,threads);
+    
+    if(!transposed)
+      TXyio=new Transpose(d.X,d.y,1,in,out,threads);
     
     xForward=new mfft1d(d.X,sign,d.y,1,d.X,out,out,threads);
     xBackward=new mfft1d(d.X,-sign,d.y,1,d.X,transposed ? in : out,out,
@@ -91,8 +91,9 @@ public:
   virtual void ForwardWait(Complex *out)
   {
     T->wait();
+    TXy->transpose(out);
     xForward->fft(out);
-    if(!transposed) Tout->transpose(out);
+    if(!transposed) TyX->transpose(out);
   }
   void Forward(Complex *in, Complex *out=NULL) {
     iForward(in,out);
@@ -102,7 +103,7 @@ public:
   virtual void iBackward(Complex *in, Complex *out=NULL);
   virtual void BackwardWait(Complex *out)
   {
-    Tinv->wait();
+    T->wait();
     yBackward->fft(out);
   }
   void Backward(Complex *in, Complex *out=NULL) {
