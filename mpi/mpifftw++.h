@@ -35,7 +35,7 @@ protected:
   utils::split d;
   mfft1d *xForward,*xBackward;
   mfft1d *yForward,*yBackward;
-  utils::mpitranspose<Complex> *T;
+  utils::mpitranspose<Complex> *T,*Tinv;
   Transpose *Tout,*Tin;
   bool transposed;
 public:
@@ -50,13 +50,17 @@ public:
 
     T=new utils::mpitranspose<Complex>(d.X,d.y,d.x,d.Y,1,out,d.communicator,
                                        options);
+    Tinv=(d.X == d.Y) ? T :
+      new utils::mpitranspose<Complex>(d.Y,d.x,d.y,d.X,1,out,d.communicator,
+                                          options);
     if(!transposed) {
-      Tout=new Transpose(d.y,d.X,1,out,(Complex *) NULL,threads);
+      Tout=new Transpose(d.y,d.X,1,out,out,threads);
       Tin=new Transpose(d.X,d.y,1,in,out,threads);
     }
     
     xForward=new mfft1d(d.X,sign,d.y,1,d.X,out,out,threads);
-    xBackward=new mfft1d(d.X,-sign,d.y,1,d.X,in,out,threads);
+    xBackward=new mfft1d(d.X,-sign,d.y,1,d.X,transposed ? in : out,out,
+                         threads);
     
     d.Deactivate();
   }
@@ -98,16 +102,11 @@ public:
   virtual void iBackward(Complex *in, Complex *out=NULL);
   virtual void BackwardWait(Complex *out)
   {
-    T->wait();
+    Tinv->wait();
     yBackward->fft(out);
   }
   void Backward(Complex *in, Complex *out=NULL) {
-    if(transposed)
-      iBackward(in,out);
-    else {
-      Tin->transpose(in,out);
-      iBackward(out);
-    }
+    iBackward(in,out);
     BackwardWait(out);
   }
 };

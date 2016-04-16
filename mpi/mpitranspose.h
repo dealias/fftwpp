@@ -314,8 +314,8 @@ public:
     
     compact=options.alltoall == 2;
     
-    Tin3=new fftwpp::Transpose(n,M,L,data,(T *) NULL,threads);
-    Tout3=new fftwpp::Transpose(N,m,L,data,(T *) NULL,threads);
+    Tin3=new fftwpp::Transpose(n,M,L,data,data,threads);
+    Tout3=new fftwpp::Transpose(N,m,L,data,data,threads);
     
     allocated=0;
     if(size == 1) { // TODO: CHECK placement
@@ -495,13 +495,13 @@ public:
     
     if(compact) {
       if(uniform) {
-        Tin1=new fftwpp::Transpose(b,n*a,m*L,data,(T *) NULL,threads);
-        Tout1=new fftwpp::Transpose(n*a,b,m*L,data,(T*)NULL,threads);
+        Tin1=new fftwpp::Transpose(b,n*a,m*L,data,data,threads);
+        Tout1=new fftwpp::Transpose(n*a,b,m*L,data,data,threads);
       }
     
       if(subblock) {
-        Tin2=new fftwpp::Transpose(a,n*b,m*L,data,(T *) NULL,threads);
-        Tout2=new fftwpp::Transpose(n*b,a,m*L,data,(T *) NULL,threads);
+        Tin2=new fftwpp::Transpose(a,n*b,m*L,data,data,threads);
+        Tout2=new fftwpp::Transpose(n*b,a,m*L,data,data,threads);
       }
     }
     
