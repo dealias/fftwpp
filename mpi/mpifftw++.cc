@@ -109,14 +109,14 @@ void fft2dMPI::iForward(Complex *in, Complex *out)
 {
   out=Setout(in,out);
   yForward->fft(in,out);
-  T->itranspose(out,true,false);
+  T->itranspose(out,true,true);
 }
 
 void fft2dMPI::iBackward(Complex *in, Complex *out)
 {
   out=Setout(in,out);
   xBackward->fft(in,out);
-  T->itranspose(out,false,true);
+  T->itranspose(out,true,true);
 }
 
 void fft3dMPI::iForward(Complex *in, Complex *out)

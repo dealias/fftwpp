@@ -19,7 +19,7 @@ void init(Complex* f, unsigned int N0, unsigned int N1,
   for(unsigned int i=0; i < local_n0; ++i) {
     unsigned int ii=local_0_start+i;
     for(unsigned int j=0; j < N1; j++) {
-      f[i*N1+j]=ii + I * j * j;
+      f[i*N1+j]=ii + I * j;
     }
   }
 }

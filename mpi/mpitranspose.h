@@ -46,6 +46,7 @@
 #include "Array.h"
 #include "utils.h"
 #include "align.h"
+#include "fftw++.h"
 
 #ifndef FFTWPP_SINGLE_THREAD
 #define PARALLEL(code)                                  \
@@ -105,6 +106,7 @@ inline void copyfromblock(const T *src, T *dest,
     );
 }
 
+// multithreaded localtranspose with distinct src and dest
 template<class T>
 inline void localtranspose(const T *src, T *dest, unsigned int n,
                            unsigned int m, unsigned int length,
@@ -177,7 +179,8 @@ inline int Ialltoall(void *sendbuf, int count, void *recvbuf,
                      unsigned int threads=1)
 {
   if(!sched)
-    return MPI_Ialltoall(sendbuf,count,MPI_BYTE,recvbuf,count,MPI_BYTE,comm,
+    return MPI_Ialltoall(sendbuf == recvbuf ? MPI_IN_PLACE : sendbuf,
+                         count,MPI_BYTE,recvbuf,count,MPI_BYTE,comm,
                          request);
   else {
     int size;
@@ -231,10 +234,13 @@ private:
   int *sched, *sched1, *sched2;
   MPI_Comm split;
   MPI_Comm split2;
+  fftwpp::Transpose *Tin1,*Tin2,*Tin3;
+  fftwpp::Transpose *Tout1,*Tout2,*Tout3;
   int a,b;
   bool inflag,outflag;
   bool uniform;
   bool subblock;
+  bool compact;
   int *sendcounts,*senddisplacements;
   int *recvcounts,*recvdisplacements;
 public:
@@ -248,7 +254,8 @@ public:
   
   void poll(T *sendbuf, T *recvbuf, unsigned int N) {
     unsigned int sN=sizeof(T)*N;
-    MPI_Alltoall(sendbuf,sN,MPI_BYTE,recvbuf,sN,MPI_BYTE,split);
+    MPI_Alltoall(sendbuf == recvbuf ? MPI_IN_PLACE : sendbuf,
+                 sN,MPI_BYTE,recvbuf,sN,MPI_BYTE,split);
   }
   
   // Estimate typical bandwidth saturation message size
@@ -305,12 +312,13 @@ public:
     mlast=std::min((int) utils::ceilquotient(M,m0),size)-1;
     mp=localdimension(M,mlast,size).n;
     
-    if(work == NULL) {
-      allocated=std::max(N*m,n*M)*L;
-      Array::newAlign(this->work,allocated,sizeof(T));
-    } else allocated=0;
+    compact=options.alltoall == 2;
     
-    if(size == 1) {
+    Tin3=new fftwpp::Transpose(n,M,L,data,(T *) NULL,threads);
+    Tout3=new fftwpp::Transpose(N,m,L,data,(T *) NULL,threads);
+    
+    allocated=0;
+    if(size == 1) { // TODO: CHECK placement
       a=1;
       subblock=false;
       return;
@@ -354,6 +362,17 @@ public:
       MPI_Bcast(&alimit,1,MPI_UNSIGNED,0,global);
       MPI_Bcast(&options.a,1,MPI_INT,0,global);
     } else alimit=options.a+1;
+    
+    if(compact) work=data;
+    else {
+      // Eventually: work array only needed if options.alimit > 1 
+      // or options.alltoall=0;
+      if(work == NULL) {
+        allocated=std::max(N*m,n*M)*L;
+        Array::newAlign(this->work,allocated,sizeof(T));
+      }
+    }
+    
     int astart=options.a;
     uniform=divisible(size,M,N);
     if(alimit > astart+1 || stop-start >= 1) {
@@ -468,7 +487,23 @@ public:
     uniform=uniform && a*b == size;
     subblock=a > 1 && rank < a*b;
     
-    if(size == 1) return;
+    Tin1=NULL;
+    Tout1=NULL;
+    
+    Tin2=NULL;
+    Tout2=NULL;
+    
+    if(compact) {
+      if(uniform) {
+        Tin1=new fftwpp::Transpose(b,n*a,m*L,data,(T *) NULL,threads);
+        Tout1=new fftwpp::Transpose(n*a,b,m*L,data,(T*)NULL,threads);
+      }
+    
+      if(subblock) {
+        Tin2=new fftwpp::Transpose(a,n*b,m*L,data,(T *) NULL,threads);
+        Tout2=new fftwpp::Transpose(n*b,a,m*L,data,(T *) NULL,threads);
+      }
+    }
     
     if(a == 1) {
       split=split2=communicator;
@@ -548,6 +583,11 @@ public:
       }
     }
 
+    if(Tout2) delete Tout2;
+    if(Tin2) delete Tin2;
+    if(Tin1) delete Tin1;
+    if(Tout1) delete Tout1;
+
     if(sendcounts) {
       delete [] sendcounts;
       delete [] senddisplacements;
@@ -557,6 +597,8 @@ public:
   }
   
   ~mpitranspose() {
+    delete Tin3;
+    delete Tout3;
     deallocate();
     if(allocated)
       Array::deleteAlign(work,allocated);
@@ -650,6 +692,7 @@ public:
       }
       return;
     }
+    if(compact) work=output;
     if(uniform || subblock)
       Ialltoall(input,n*m*sizeof(T)*(a > 1 ? b : a)*L,work,split2,Request,
                 sched2,threads);
@@ -672,7 +715,10 @@ public:
   void inphase1() {
     if(rank >= size) return;
     if(subblock) {
-      localtranspose(work,output,a,n*b,m*L,threads);
+      if(work == output)
+        Tin2->transpose(work,output); // a x n*b x m*L
+      else
+        localtranspose(work,output,a,n*b,m*L,threads);
       Ialltoall(output,n*m*sizeof(T)*a*L,work,split,Request,sched1,threads);
     }
   }
@@ -685,8 +731,12 @@ public:
 
   void inpost() {
     if(size == 1 || rank >= size) return;
-    if(uniform)
-      localtranspose(work,output,b,n*a,m*L,threads);
+    if(uniform) {
+      if(work == output) 
+        Tin1->transpose(work,output); // b x n*a x m*L
+      else
+        localtranspose(work,output,b,n*a,m*L,threads);
+    }
     else {
       if(subblock) {
         unsigned int block=m0*L;
@@ -741,10 +791,14 @@ public:
       }
       return;
     }
+    if(compact) work=output;
     // Inner transpose a N/a x M/a matrices over each team of b processes
-    if(uniform)
-      localtranspose(input,work,n*a,b,m*L,threads);
-    else {
+    if(uniform) {
+      if(input == work)
+        Tout1->transpose(input,work); // n*a x b x m*L
+      else
+        localtranspose(input,work,n*a,b,m*L,threads);
+    } else {
       if(subblock) {
         unsigned int block=m0*L;
         unsigned int cols=n*a;
@@ -801,8 +855,12 @@ public:
   void outphase() {
     if(size == 1 || rank >= size) return;
     // Outer transpose a x a matrix of N/a x M/a blocks over a processes
-    if(subblock)
-      localtranspose(output,work,n*b,a,m*L,threads);
+    if(subblock) {
+      if(output == work)
+        Tout2->transpose(output,work); // n*b x a x m*L
+      else
+        localtranspose(output,work,n*b,a,m*L,threads);
+    }
     if(!uniform) {
       if(sched) Ialltoallout(work,output,a > 1 ? a*b : 0,threads);
       else MPI_Ialltoallv(work,sendcounts,senddisplacements,MPI_BYTE,
@@ -834,20 +892,16 @@ public:
     if(n == 0) return;
     if(in == 0) in=output;
     if(out == 0) out=in;
-    if(in == out) {
-      localtranspose(in,work,n,M,L,threads);
-      copy(work,output,n*M*L,threads);
-    } else localtranspose(in,out,n,M,L,threads);
+    if(in == out) Tin3->transpose(in); // n X M x L
+    else localtranspose(in,out,n,M,L,threads);
   }
   
   void NmTranspose(T *in=0, T *out=0) {
     if(m == 0) return;
     if(in == 0) in=output;
     if(out == 0) out=in;
-    if(in == out) {
-      localtranspose(in,work,N,m,L,threads);
-      copy(work,output,N*m*L,threads);
-    } else localtranspose(in,out,N,m,L,threads);
+    if(in == out) Tout3->transpose(in); // N x m x L
+    else localtranspose(in,out,N,m,L,threads);
   }
   
   void Wait0() {

@@ -66,8 +66,8 @@ all: $(FILES)
 %.o : %.cc
 	$(MPICXX) $(CXXFLAGS) $(OPTS) -o $@ -c $<
 
-transpose: transpose.o $(MPITRANSPOSE:=.o)
-	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ -lm -o $@
+transpose: transpose.o $(MPIFFT:=.o)
+	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
 gather: gather.o $(MPIFFT:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
