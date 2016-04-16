@@ -11,7 +11,7 @@ namespace fftwpp {
 // xY -> Xy distributed FFT.
 // Fourier transform an nx*ny array, distributed first over x.
 // The array must be allocated as split::n Complex words.
-// The sign (default -1) argument of the constructor specfies the sign
+// The sign argument (default -1) of the constructor specfies the sign
 // of the forward transform.
 //
 // Example:
@@ -45,18 +45,18 @@ public:
     out=CheckAlign(in,out);
     inplace=(in == out);
 
-    yForward=new mfft1d(d.Y,sign,d.x,1,d.Y,in,in,threads);
+    yForward=new mfft1d(d.Y,sign,d.x,1,d.Y,in,out,threads);
     yBackward=new mfft1d(d.Y,-sign,d.x,1,d.Y,out,out,threads);
 
     T=new utils::mpitranspose<Complex>(d.X,d.y,d.x,d.Y,1,out,d.communicator,
                                        options);
     if(!transposed) {
       Tout=new Transpose(d.y,d.X,1,out,(Complex *) NULL,threads);
-      Tin=new Transpose(d.X,d.y,1,out,(Complex *) NULL,threads);
+      Tin=new Transpose(d.X,d.y,1,in,out,threads);
     }
     
     xForward=new mfft1d(d.X,sign,d.y,1,d.X,out,out,threads);
-    xBackward=new mfft1d(d.X,-sign,d.y,1,d.X,in,in,threads);
+    xBackward=new mfft1d(d.X,-sign,d.y,1,d.X,in,out,threads);
     
     d.Deactivate();
   }
@@ -102,8 +102,11 @@ public:
     yBackward->fft(out);
   }
   void Backward(Complex *in, Complex *out=NULL) {
-    if(!transposed) Tin->transpose(in);
-    iBackward(in,out);
+    if(!transposed) {
+      Tin->transpose(in,out);
+      iBackward(out);
+    } else
+      iBackward(in,out);
     BackwardWait(out);
   }
 };
