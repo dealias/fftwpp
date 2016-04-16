@@ -102,11 +102,12 @@ public:
     yBackward->fft(out);
   }
   void Backward(Complex *in, Complex *out=NULL) {
-    if(!transposed) {
+    if(transposed)
+      iBackward(in,out);
+    else {
       Tin->transpose(in,out);
       iBackward(out);
-    } else
-      iBackward(in,out);
+    }
     BackwardWait(out);
   }
 };
