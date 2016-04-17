@@ -132,13 +132,15 @@ if(name == "cconv3") {
 if(name == "conv3")
   expl=false;
 
-if(name == "cconv" || name == "conv" || name == "tconv") {
+if(name == "cconv" || name == "conv" || name == "tconv"
+    || name == "fft1" || name == "fft1r") {
   d = 1;
 }
-if(name == "cconv2" || name == "conv2" || name == "tconv2") {
+if(name == "cconv2" || name == "conv2" || name == "tconv2"||
+   name == "fft2" || name == "fft2r") {
   d = 2;
 }
-if(name == "cconv3" || name == "conv3") {
+if(name == "cconv3" || name == "conv3"|| name == "fft3" || name == "fft3r") {
   d = 3;
 }
 if(name == "transpose") {
