@@ -168,7 +168,7 @@ triple statspm(real[] data, string thestats, string gtype) {
     real median = data[floor(N/2)];
     real alpha = 0.05;
     real p5 = median - data[floor(0.5 * alpha * N)];
-    real p95 = data[ceil((1.0 - 0.5 * alpha) * N)] - median;
+    real p95 = data[floor((1.0 - 0.5 * alpha) * N)] - median;
     return (median, p5, p95);
   }
   
@@ -178,7 +178,7 @@ triple statspm(real[] data, string thestats, string gtype) {
     real median = data[floor(N/2)];
 
     // We determine the confidence interval using the bootstrap method.
-    int nboot = 100;
+    int nboot = 1000;
     real[] rmedian = new real[nboot];
     real[] resample = new real[N];
 
