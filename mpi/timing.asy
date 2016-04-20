@@ -166,8 +166,41 @@ triple statspm(real[] data, string thestats, string gtype) {
     data = sort(data);
     int N = data.length;
     real median = data[floor(N/2)];
-    real p5 = median - data[floor(0.5 * N)];
-    real p95 = data[floor(0.95 * N)] - median;
+    real alpha = 0.05;
+    real p5 = median - data[floor(0.5 * alpha * N)];
+    real p95 = data[ceil((1.0 - 0.5 * alpha) * N)] - median;
+    return (median, p5, p95);
+  }
+  
+  if(thestats == "median") {
+    data = sort(data);
+    int N = data.length;
+    real median = data[floor(N/2)];
+
+    // We determine the confidence interval using the bootstrap method.
+    int nboot = 100;
+    real[] rmedian = new real[nboot];
+    real[] resample = new real[N];
+
+    for(int b = 0; b < nboot; ++b) {
+      // if(verbose)
+      // 	write(b);
+      for(int i = 0; i < N; ++i) {
+	resample[i] = data[rand() % N];
+      }
+      resample = sort(resample);
+      rmedian[b] = resample[floor(N/2)];
+    }
+
+    real alpha = 0.05;
+    rmedian = sort(rmedian);
+    real p5 = median - rmedian[floor(0.5 * alpha * nboot)];
+    real p95 = rmedian[ceil((1.0 - 0.5 * alpha) * nboot)] - median;
+
+    if(verbose) {
+      write((string)p5 +" " + (string)median + " " + (string)p95);
+    }
+    
     return (median, p5, p95);
   }
   
