@@ -427,7 +427,9 @@ class fftpad {
   unsigned int s;
   Complex *ZetaH, *ZetaL;
   unsigned int threads;
-public:  
+  Transpose *Txy;
+  Transpose *Tyx;
+ public:  
   mfft1d *Backwards; 
   mfft1d *Forwards;
   
@@ -435,12 +437,17 @@ public:
          unsigned int stride, Complex *u=NULL,
          unsigned int Threads=fftw::maxthreads)
     : m(m), M(M), stride(stride), threads(Threads) {
-    Backwards=new mfft1d(m,1,M,stride,1,u,NULL,threads);
-    Forwards=new mfft1d(m,-1,M,stride,1,u,NULL,threads);
+    /* Backwards=new mfft1d(m,1,M,stride,1,u,NULL,threads); */
+    /* Forwards=new mfft1d(m,-1,M,stride,1,u,NULL,threads); */
+    Backwards=new mfft1d(m,1,M,1,stride,u,NULL,threads);
+    Forwards=new mfft1d(m,-1,M,1,stride,u,NULL,threads);
     
     threads=std::max(Backwards->Threads(),Forwards->Threads());
     
     s=BuildZeta(2*m,m,ZetaH,ZetaL,threads);
+
+    Txy = new Transpose(m,M,1,u,u,threads);
+    Tyx = new Transpose(M,m,1,u,u,threads);
   }
   
   ~fftpad() {
@@ -448,6 +455,9 @@ public:
     utils::deleteAlign(ZetaH);
     delete Forwards;
     delete Backwards;
+
+    delete Tyx;
+    delete Txy;
   }
   
   void expand(Complex *f, Complex *u);
@@ -658,8 +668,9 @@ public:
   }
   
   void backwards(Complex **F, Complex **U2, unsigned int offset) {
-    for(unsigned int a=0; a < A; ++a)
+    for(unsigned int a=0; a < A; ++a) {
       xfftpad->backwards(F[a]+offset,U2[a]);
+    }
   }
 
   void subconvolution(Complex **F, multiplier *pmult, 
@@ -679,8 +690,9 @@ public:
   }
   
   void forwards(Complex **F, Complex **U2, unsigned int offset) {
-    for(unsigned int b=0; b < B; ++b)
+    for(unsigned int b=0; b < B; ++b) {
       xfftpad->forwards(F[b]+offset,U2[b]);
+    }
   }
   
   // F is a pointer to A distinct data blocks each of size mx*my,

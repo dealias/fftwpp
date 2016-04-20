@@ -624,8 +624,14 @@ void fftpad::expand(Complex *f, Complex *u)
 void fftpad::backwards(Complex *f, Complex *u)
 {
   expand(f,u);
+  
+  Tyx->transpose(f);
   Backwards->fft(f);
+  Txy->transpose(f);
+
+  Tyx->transpose(u);
   Backwards->fft(u);
+  Txy->transpose(u);
 }
 
 void fftpad::reduce(Complex *f, Complex *u)
@@ -653,8 +659,14 @@ void fftpad::reduce(Complex *f, Complex *u)
 
 void fftpad::forwards(Complex *f, Complex *u)
 {
+  Tyx->transpose(f);
   Forwards->fft(f);
+  Txy->transpose(f);
+
+  Tyx->transpose(u);
   Forwards->fft(u);
+  Txy->transpose(u);
+  
   reduce(f,u);
 }
 
