@@ -193,7 +193,7 @@ int main(int argc, char* argv[])
 	unsigned int N1 = 0;
 	unsigned int N2 = 0;
       
-	while(N0 < N && N1 < N && N2 < N) {
+	while(N0 < N || N1 < N || N2 < N) {
 	  unsigned int i = rand() % 3;
 	  switch(i) {
 	  case 0:
@@ -215,7 +215,7 @@ int main(int argc, char* argv[])
 	    N1++;
 	    break;
 	  case 2:
-	    if(N1 < N) {
+	    if(N2 < N) {
 	      init(FE,m,A);
 	      seconds();
 	      CE.convolve(FE[0],FE[1]);
