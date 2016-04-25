@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
   bool Explicit=false;
   
   // Number of iterations.
-  unsigned int N0=1000000000;
+  unsigned int N0=10000000;
   unsigned int N=0;
   
   unsigned int m=11; // Problem size
@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
   int stats=0; // Type of statistics used in timing test.
 
   int alg = 0;
-  
+    
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
@@ -134,7 +134,7 @@ int main(int argc, char* argv[])
   
   if(N == 0) {
     N=N0/n;
-    if(N < 20) N=20;
+    N = max(N, 20);
   }
   cout << "N=" << N << endl;
 
@@ -148,13 +148,11 @@ int main(int argc, char* argv[])
   }
   
   unsigned int np=Explicit ? n : m;
+  Complex *f=ComplexAlign(A*np);
   
   Complex **F=new Complex *[A];
-  for(unsigned int s=0; s < A; ++s) {
-    //Complex *f=ComplexAlign(A*np);
-    //F[s]=f+s*np;
-    F[s]=ComplexAlign(np);
-  }
+  for(unsigned int s=0; s < A; ++s)
+    F[s]=f+s*np;
   
   Complex *h0=NULL;
   if(Test || Direct) h0=ComplexAlign(m);
@@ -162,7 +160,6 @@ int main(int argc, char* argv[])
   double *T=new double[N];
   
   if(Implicit) {
-    
     ImplicitConvolution C(m,A,B);
     cout << "threads=" << C.Threads() << endl << endl;
 
@@ -183,54 +180,52 @@ int main(int argc, char* argv[])
     for(unsigned int s=0; s < A; ++s)
       FE[s]=ComplexAlign(n);
   
-    ExplicitConvolution CE(n,m,F[0]);
+    ExplicitConvolution CE(n,m,FE[0]);
     double *TE=new double[N];
 
+    
     switch(alg) {
-    case 0:
-      {
-	unsigned int N0 = 0;
-	unsigned int N1 = 0;
-	unsigned int N2 = 0;
+      case 0: {
+	unsigned int i0 = 0;
+	unsigned int i1 = 0;
+	unsigned int i2 = 0;
       
-	while(N0 < N || N1 < N || N2 < N) {
+	while(i0 < N || i1 < N || i2 < N) {
 	  unsigned int i = rand() % 3;
 	  switch(i) {
-	  case 0:
-	    if(N0 < N) {
-	      init(F,m,A);
-	      seconds();
-	      C.convolve(F,mult);
-	      T[N0]=seconds();
-	    }
-	    N0++;
-	    break;
-	  case 1:
-	    if(N1 < N) {
-	      init(F,m,A);
-	      seconds();
-	      C.convolve(F,mult);
-	      Talt[N1]=seconds();
-	    }
-	    N1++;
-	    break;
-	  case 2:
-	    if(N2 < N) {
-	      init(FE,m,A);
-	      seconds();
-	      CE.convolve(FE[0],FE[1]);
-	      TE[N2]=seconds();
-	    }
-	    N2++;
-	    break;
+	    case 0:
+	      if(i0 < N) {
+		init(F,m,A);
+		seconds();
+		C.convolve(F,mult);
+		T[i0]=seconds();
+	      }
+	      i0++;
+	      break;
+	    case 1:
+	      if(i1 < N) {
+		init(F,m,A);
+		seconds();
+		C.convolve(F,mult);
+		Talt[i1]=seconds();
+	      }
+	      i1++;
+	      break;
+	    case 2:
+	      if(i2 < N) {
+		init(FE,m,A);
+		seconds();
+		C.convolve(FE[0],FE[1]);
+		TE[i2]=seconds();
+	      }
+	      i2++;
+	      break;
 	  }
 	}
+	    
       }
-      break;
-      
-    case 1:
-      {
-	for(unsigned int i = 0; i < N; ++i) {
+      case 1: {
+	for(unsigned int i=0; i < N; ++i) {
 	  init(F,m,A);
 	  seconds();
 	  C.convolve(F,mult);
@@ -240,48 +235,52 @@ int main(int argc, char* argv[])
 	  seconds();
 	  C.convolve(F,mult);
 	  Talt[i]=seconds();
-
+	  
 	  init(FE,m,A);
 	  seconds();
 	  CE.convolve(FE[0],FE[1]);
 	  TE[i]=seconds();
 	}
       }
-      break;
-
-    case 2:
-      {
-	for(unsigned int i = 0; i < N; ++i) {
+      case 2: {
+	for(unsigned int i=0; i < N; ++i) {
 	  init(F,m,A);
 	  seconds();
 	  C.convolve(F,mult);
 	  T[i]=seconds();
 	}
-	for(unsigned int i = 0; i < N; ++i) {	  
+	for(unsigned int i=0; i < N; ++i) {
 	  init(F,m,A);
 	  seconds();
 	  C.convolve(F,mult);
 	  Talt[i]=seconds();
 	}
-	for(unsigned int i = 0; i < N; ++i) {
+	for(unsigned int i=0; i < N; ++i) {
 	  init(FE,m,A);
 	  seconds();
 	  CE.convolve(FE[0],FE[1]);
 	  TE[i]=seconds();
 	}
       }
-      break;
     }
-
     timings("Implicit",m,T,N,stats,"implicit.dat");
     timings("Implicit",m,Talt,N,stats,"implicit0.dat");
     timings("Explicit",m,TE,N,stats,"explicit.dat");
+    
+    // for(unsigned int i=0; i < N; ++i) {
+    //   init(F,m,A);
+    //   seconds();
+    //   C.convolve(F,mult);
+    //   //C.convolve(F[0],F[1]);
+    //   T[i]=seconds();
+    // }
 
+    //timings("Implicit",m,T,N,stats);
 
     if(m < 100) 
       for(unsigned int i=0; i < m; i++) cout << F[0][i] << endl;
     else 
-      cout << F[0][0] << endl;
+      cout << f[0] << endl;
 
     if(Test || Direct) for(unsigned int i=0; i < m; i++) h0[i]=F[0][i];
   }
@@ -386,9 +385,8 @@ int main(int argc, char* argv[])
   }
 
   delete [] T;
-  for(unsigned int s=0; s < A; ++s) 
-    deleteAlign(F[s]);
   delete [] F;
+  deleteAlign(f);
 
   return 0;
 }
