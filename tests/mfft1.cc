@@ -30,7 +30,7 @@ int main(int argc, char* argv[])
   unsigned int mx=4;
   unsigned int my=4;
 
-  unsigned int stats=0; // Type of statistics used in timing test.
+  int stats=0; // Type of statistics used in timing test.
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
@@ -44,33 +44,33 @@ int main(int argc, char* argv[])
     if (c == -1) break;
                 
     switch (c) {
-    case 0:
-      break;
-    case 'N':
-      N=atoi(optarg);
-      break;
-    case 'm':
-      mx=my=atoi(optarg);
-      break;
-    case 'x':
-      mx=atoi(optarg);
-      break;
-    case 'y':
-      my=atoi(optarg);
-      break;
-    case 'n':
-      N0=atoi(optarg);
-      break;
-    case 'T':
-      fftw::maxthreads=max(atoi(optarg),1);
-      break;
-    case 'S':
-      stats=atoi(optarg);
-      break;
-    case 'h':
-    default:
-      usageCommon(2);
-      exit(0);
+      case 0:
+        break;
+      case 'N':
+        N=atoi(optarg);
+        break;
+      case 'm':
+        mx=my=atoi(optarg);
+        break;
+      case 'x':
+        mx=atoi(optarg);
+        break;
+      case 'y':
+        my=atoi(optarg);
+        break;
+      case 'n':
+        N0=atoi(optarg);
+        break;
+      case 'T':
+        fftw::maxthreads=max(atoi(optarg),1);
+        break;
+      case 'S':
+        stats=atoi(optarg);
+        break;
+      case 'h':
+      default:
+        usageCommon(2);
+        exit(0);
     }
   }
 
@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
   
   if(N == 0) {
     N=N0/mx/my;
-    if(N < 10) N=10;
+    N = max(N, 20);
   }
   cout << "N=" << N << endl;
   
@@ -135,8 +135,9 @@ int main(int argc, char* argv[])
     init(f,mx,my);
     seconds();
     Forward.fft(f);
-    Backward.fftNormalized(f);
-    T[i]=seconds();
+    Backward.fft(f);
+    T[i]=0.5*seconds();
+    Backward.Normalize(f);
   }
   timings("mfft1, in-place",mx,T,N,stats);
   delete [] T;

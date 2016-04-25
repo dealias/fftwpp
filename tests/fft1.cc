@@ -15,43 +15,43 @@ int main(int argc, char* argv[])
   unsigned int m=11; // Problem size
 
   int N=1000;
-  unsigned int stats=MEAN; // Type of statistics used in timing test.
+  int stats=MEAN; // Type of statistics used in timing test.
 
   fftw::maxthreads=get_max_threads();
   int r=-1;
 
   
-#ifdef __GNUC__	
+#ifdef __GNUC__ 
   optind=0;
-#endif	
+#endif  
   for (;;) {
     int c = getopt(argc,argv,"N:m:x:r:T:S:h");
     if (c == -1) break;
     switch (c) {
-    case 0:
-      break;
-    case 'N':
-      N=atoi(optarg);
-      break;
-    case 'm':
-      m=atoi(optarg);
-      break;
-    case 'r':
-      r=atoi(optarg);
-      break;
-    case 'x':
-      m=atoi(optarg);
-      break;
-    case 'T':
-      fftw::maxthreads=max(atoi(optarg),1);
-      break;
-    case 'S':
-      stats=atoi(optarg);
-      break;
-    case 'h':
-    default:
-      usageFFT(1);
-      exit(0);
+      case 0:
+        break;
+      case 'N':
+        N=atoi(optarg);
+        break;
+      case 'm':
+        m=atoi(optarg);
+        break;
+      case 'r':
+        r=atoi(optarg);
+        break;
+      case 'x':
+        m=atoi(optarg);
+        break;
+      case 'T':
+        fftw::maxthreads=max(atoi(optarg),1);
+        break;
+      case 'S':
+        stats=atoi(optarg);
+        break;
+      case 'h':
+      default:
+        usageFFT(1);
+        exit(0);
     }
   }
 
@@ -76,8 +76,9 @@ int main(int argc, char* argv[])
     for(int i=0; i < N; ++i) {
       seconds();
       Forward.fft(f);
-      T[i]=seconds();
-      Backward.fftNormalized(f);
+      Backward.fft(f);
+      T[i]=0.5*seconds();
+      Backward.Normalize(f);
     }
 
     timings("fft1 in-place",m,T,N,stats);
@@ -87,8 +88,9 @@ int main(int argc, char* argv[])
     for(int i=0; i < N; ++i) {
       seconds();
       Forward0.fft(f,g);
-      T[i]=seconds();
-      Backward0.fftNormalized(g,f);
+      Backward0.fft(g,f);
+      T[i]=0.5*seconds();
+      Backward0.Normalize(f);
     }
 
     timings("fft1 out-of-place",m,T,N,stats);

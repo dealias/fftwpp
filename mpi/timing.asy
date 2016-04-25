@@ -1,14 +1,20 @@
 include graph;
 // usage:
-// asy -f pdf timing.asy
+// asy timing.asy
 
-// asy -f pdf timing.asy -u "runlegs=\"1k,2k,4k,8k\""
-// to specify the legend.
+// asy  -u"legends=new string[] {\"a\",\"b\",\"c\"}"
+// Replaces the filenames with the specified legend.
 
-// asy -f pdf timing.asy -u "useN=true"
+// asy -u"filenames=new string[] {\"a\",\"b\",\"c\"}"
+// Specify the filenames.
+
+// asy -u"gtype=\"time\""
+// produce a time, performance, scaling, peff, or speedup graph.
+
+// asy timing.asy -u "useN=true"
 // makes the legends use N instead of m.
 
-// asy -f pdf timing.asy -u "oldformat=true"
+// asy timing.asy -u "oldformat=true"
 // uses the same pens as in dealias.pdf
 
 // asy timings.asy -u"sscale=\"loglog\""
@@ -17,19 +23,67 @@ include graph;
 // asy timings.asy -u"minm=<float>"
 // plots only data with problem size at least minm.
 
-// Note that the scaling figures assumes subsequent test double the
-// number of cores.
+// asy timings.asy -u"maxm=<float>"
+// plots only data with problem size at <= maxm.
 
-size(250,300,IgnoreAspect);
+// asy timings.asy -u"skipm=<float>"
+// plots one in every skipm values.
+
+// asy timings.asy -u"legp1=N"
+// asy timings.asy -u"legp2=10S"
+// Alignment and offset for legend.
+
+// asy timings.asy -u"verbose=<true/false>"
+
+
 
 barfactor=10;
+bool verbose=false;
 
 bool drawerrorbars=true;
 drawerrorbars=false;
 
-string gtype=getstring("time, mflops, scaling, or speedup","mflops");
+string gtype="";
+
+pair legp1 = E;
+pair legp2 = 10E;
 
 scale(Linear,Log);
+
+real[][] mi,i,li,hi;
+
+real minm=0;
+real maxm=realMax;
+int skipm=1;
+string name;
+bool useN=false;
+bool oldformat=false;
+string sscale="";
+
+string[] filenames;
+string legends[];
+
+string datatype="";
+
+string stats="";
+int[] ncores;
+
+real d=-1;
+
+int runples=0;
+
+real sizex=250;
+real sizey=300;
+
+usersetting();
+//write(settings.user);
+
+
+size(sizex,sizey,IgnoreAspect);
+
+if(gtype == "")
+  gtype=getstring("time, performance, scaling, peff, or speedup","performance");
+
 if(gtype == "time")
   scale(Log,Linear);
 if(gtype == "speedup") {
@@ -40,29 +94,18 @@ if(gtype == "speeduplog") {
   scale(Log,Log);
   gtype="speedup";
 }
-if(gtype == "mflops") {
+if(gtype == "performance") {
   //scale(Log,Log);
   scale(Log,Linear);
-  size(300,400,IgnoreAspect);
+  //size(300,400,IgnoreAspect);
 }
 if(gtype == "scaling") {
   //scale(Linear,Linear);
   scale(Log,Log);
 }
-
-real[][] mi,i,li,hi;
-string[] runnames;
-
-real minm=0;
-string name;
-string runs;
-string runlegs;
-bool useN=true;
-bool oldformat=false;
-string sscale="";
-string datatype="";
-
-usersetting();
+if(gtype == "peff") {
+  scale(Log,Linear);
+}
 
 if(sscale != "") {
   if(sscale == "loglog") scale(Log,Log);
@@ -75,28 +118,9 @@ string Nm = useN ? "N" : "m";
 
 if(datatype == "") datatype=getstring("datatype (raw or normal)", "normal");
 
-bool myleg=((runlegs== "") ? false: true);
-bool flag=true;
-int n=-1;
-int lastpos=0;
-string legends[];
-if(myleg) {
-  string runleg;
-  while(flag) {
-    ++n;
-    int pos=find(runlegs,",",lastpos);
-    if(lastpos == -1) {runleg=""; flag=false;}
-    
-    runleg=substr(runlegs,lastpos,pos-lastpos);
-
-    lastpos=pos > 0 ? pos+1 : -1;
-    if(flag) legends.push(runleg);
-  }
-}
-lastpos=0;
+bool myleg = legends.length != 0;
 
 if(name == "") name=getstring("program name","cconv2");
-int nn;
 
 string prunelabel="$y$-pruned";
 
@@ -108,45 +132,79 @@ if(name == "cconv3") {
 if(name == "conv3")
   expl=false;
 
-real d;
-bool dknown = false;
-if(name == "cconv" || name == "conv" || name == "tconv") {
+if(name == "cconv" || name == "conv" || name == "tconv"
+    || name == "fft1" || name == "fft1r") {
   d = 1;
-  dknown = true;
 }
-if(name == "cconv2" || name == "conv2" || name == "tconv2") {
+if(name == "cconv2" || name == "conv2" || name == "tconv2"||
+   name == "fft2" || name == "fft2r") {
   d = 2;
-  dknown = true;
 }
-if(name == "cconv3" || name == "conv3") {
+if(name == "cconv3" || name == "conv3"|| name == "fft3" || name == "fft3r") {
   d = 3;
-  dknown = true;
 }
-if(!dknown)
+if(name == "transpose") {
+  d = 2;
+}
+if(d == -1)
   d=getreal("dimension of FFT involved",1);
 
 real ymin=infinity, ymax=-infinity;
 
+triple statspm(real[] data, string thestats, string gtype) {
+  if(gtype == "performance") {
+    for(int i = 0; i < data.length; ++i) {
+      if(data[i] > 0.0) {
+	data[i] = 1.0 / data[i];
+      } else {
+	data.delete(i);
+      }
+    }
+  }
 
-
-string[] runnames;
-
-if(runs == "") runs=getstring("files");
-string run;
-
-string stats="median90";
-
-triple statspm(real[] data) {
-  if(stats == "median90") {
+  if(thestats == "median90") {
     data = sort(data);
     int N = data.length;
     real median = data[floor(N/2)];
-    real p5 = median - data[floor(0.5 * N)];
-    real p95 = data[floor(0.95 * N)] - median;
+    real alpha = 0.05;
+    real p5 = median - data[floor(0.5 * alpha * N)];
+    real p95 = data[floor((1.0 - 0.5 * alpha) * N)] - median;
     return (median, p5, p95);
   }
   
-  if(stats == "mean") {
+  if(thestats == "median") {
+    data = sort(data);
+    int N = data.length;
+    real median = data[floor(N/2)];
+
+    // We determine the confidence interval using the bootstrap method.
+    int nboot = 1000;
+    real[] rmedian = new real[nboot];
+    real[] resample = new real[N];
+
+    for(int b = 0; b < nboot; ++b) {
+      // if(verbose)
+      // 	write(b);
+      for(int i = 0; i < N; ++i) {
+	resample[i] = data[rand() % N];
+      }
+      resample = sort(resample);
+      rmedian[b] = resample[floor(N/2)];
+    }
+
+    real alpha = 0.05;
+    rmedian = sort(rmedian);
+    real p5 = median - rmedian[floor(0.5 * alpha * nboot)];
+    real p95 = rmedian[ceil((1.0 - 0.5 * alpha) * nboot)] - median;
+
+    if(verbose) {
+      write((string)p5 +" " + (string)median + " " + (string)p95);
+    }
+    
+    return (median, p5, p95);
+  }
+  
+  if(thestats == "mean") {
     int N = data.length;
     real mean = sum(data) / N;
 
@@ -167,7 +225,7 @@ triple statspm(real[] data) {
     return (mean, sigmaL, sigmaH);
   }
   
-  if(stats == "min") {
+  if(thestats == "min") {
     real min = min(data);
     return (min, 0, 0);
   }
@@ -175,66 +233,89 @@ triple statspm(real[] data) {
   return (0, 0, 0);
 }
 
-n=-1;
-flag=true;
-while(flag) {
-  ++n;
-  int pos=find(runs,",",lastpos);
-  if(lastpos == -1) {run=""; flag=false;}
-  run=substr(runs,lastpos,pos-lastpos);
-  if(flag) {
-    write(run);
-    runnames.push(run);
-    
-    if(datatype != "raw") {
-      // The input data is in the format: m mean stddevlow stdevhigh
-      file fin=input(run).line();
-      real[][] a=fin.dimension(0,0);
-      a=transpose(a);
-      mi[n]=copy(a[0]); i[n]=copy(a[1]); li[n]=copy(a[2]); hi[n]=copy(a[3]);
-    } else {
-      // The input data is in the format: m N t_0 t_1 ... t_{N-1}
-
-      stats=getstring("stats");
-      
-      file fin=input(run);
-      bool go=true;
-
-      real[] nmi;
-      real[] ni;
-      real[] nli;
-      real[] nhi;
-      while(go) {
-	int m = fin;
-	if(m == 0) {
-	  go=false;
-	  break;
-	}
-
-	nmi.push(m);
-	int N = fin;
-	real times[] = new real[N];
-	for(int i = 0; i < N; ++i)
-	  times[i] = fin;
-
-	triple thestats = statspm(times);
-	ni.push(thestats.x);
-	nli.push(thestats.y);
-	nhi.push(thestats.z);
-      }
-      mi[n] = copy(nmi);
-      i[n] = copy(ni);
-      li[n] = copy(nli);
-      hi[n] = copy(nhi);
+// If the filenames are not set in usersettings, get it from a
+// comma-separated list.
+if(filenames.length == 0) {
+  string runs=getstring("files");
+  string run;
+  int n=-1;
+  bool flag=true;
+  int lastpos=0;
+  while(flag) {
+    ++n;
+    int pos=find(runs,",",lastpos);
+    if(lastpos == -1) {run=""; flag=false;}
+    run=substr(runs,lastpos,pos-lastpos);
+    if(flag) {
+      filenames.push(run);
+      lastpos=pos > 0 ? pos+1 : -1;
     }
-    
-    runnames[n]=run;
-    lastpos=pos > 0 ? pos+1 : -1;
   }
 }
 
+// Load the data from the individual files
+for(int n=0; n < filenames.length; ++n) {
+  string run = filenames[n];
 
-nn=n;
+  write(run);
+  if(datatype != "raw") {
+    // The input data is in the format: m mean stddevlow stdevhigh
+    file fin=input(run).line();
+    real[][] a=fin.dimension(0,0);
+    a=transpose(a);
+    mi[n]=copy(a[0]);
+    i[n]=copy(a[1]);
+    li[n]=copy(a[2]);
+    hi[n]=copy(a[3]);
+  } else {
+    // The input data is in the format: m N t_0 t_1 ... t_{N-1}
+
+    string thisstats;
+    if(stats == "")
+      thisstats=getstring("stats");
+    else
+      thisstats=stats;
+    
+    file fin=input(run);
+    bool go=true;
+
+    real[] nmi;
+    real[] ni;
+    real[] nli;
+    real[] nhi;
+    while(go) {
+      int m = fin;
+      if(m == 0) {
+	go=false;
+	break;
+      }
+
+      int N = fin;
+      if(verbose) {
+	write(("m: " + (string) m), (" N: " + (string) N));
+      }
+
+      if(m >= minm && m <= maxm) { 
+	real times[] = new real[N];
+	for(int i = 0; i < N; ++i)
+	  times[i] = fin;
+	triple thestats = statspm(times, thisstats, gtype);
+	nmi.push(m);
+	ni.push(thestats.x);
+	nli.push(thestats.y);
+	nhi.push(thestats.z);
+      } else {
+	real dummy;
+	for(int i = 0; i < N; ++i)
+	  dummy = fin;
+      }
+    }
+    mi[n] = copy(nmi);
+    i[n] = copy(ni);
+    li[n] = copy(nli);
+    hi[n] = copy(nhi);
+  }
+}
 
 monoPen[0]=dashed;
 monoPen[1]=solid;
@@ -242,13 +323,18 @@ colorPen[2]=deepgreen;
 
 pen Lp=fontsize(8pt);
 
-real[] f(real[] x) {
-  if(d==0) return x; // scaling
-  if(gtype == "time")
-    return 1e-9*x^d*d*log(x)/log(2);
-  if(gtype == "mflops")
-    return 5*1e-6*x^d*d*log(x)/log(2);
-  return 1.0+0.0*x; // scaling
+// Normalization function (based on computational complexity of FFT).
+real mscale(real m) {
+  if(d == 0)
+    return 1;
+  return 1e-9 * m^d * d * log(m) / log(2);
+}
+
+// Normalization for computing "performance" ala FFTW.
+real mspeed(real m) {
+  if(d == 0)
+    return 1;
+  return 1e-6 *m^d * d * log(m) / log(2);
 }
 
 string D=d > 1 ? "^"+(string) d : "";
@@ -261,6 +347,8 @@ pen barPen(int p) {
     if(p == 2)
       return Pen(1);
   }
+  if(p == 4)
+    return deepcyan;
   return Pen(p);
 }
 
@@ -272,21 +360,40 @@ pen linePen(int p) {
       return barPen(p)+Dotted;
     return barPen(p);
   }
+  if(p == 2)
+    return Pentype(p) + Dotted;
+  if(p == 4) {
+    return deepcyan + linetype(new real[] {8,8,0,8});
+  }
   return Pentype(p);
 }
 
 string base10(real x) {return "$10^{" + string(x) + "}$";}
 
-if(gtype == "time" || gtype == "mflops") {
-  for(int p=0; p < nn; ++p) {
+if(gtype == "time" || gtype == "performance") {
+  for(int p=0; p < filenames.length; ++p) {
     marker mark1=marker(scale(0.6mm)*polygon(3+p),Draw(barPen(p)+solid));
-    if(gtype == "mflops")
-      i[p] = f(mi[p])/i[p];
-    if(gtype == "time")
-      i[p] /= f(mi[p]);
-    hi[p] /= f(mi[p]);
-    li[p] /= f(mi[p]);
-
+    if(gtype == "performance") {
+      if(datatype == "raw") {
+	for(int v = 0; v < i[p].length; ++v) {
+	  i[p][v] *= mspeed(mi[p][v]);
+	  hi[p][v] *= mspeed(mi[p][v]);
+	  li[p][v] *= mspeed(mi[p][v]);
+	}
+      } else {
+	for(int v = 0; v < i[p].length; ++v) {
+	  i[p][v] = mspeed(mi[p][v]) / i[p][v];	
+	}
+      }
+    }
+    if(gtype == "time") {
+      for(int v = 0; v < i[p].length; ++v)  {
+	i[p][v] /= mscale(mi[p][v]);
+	hi[p][v] /= mscale(mi[p][v]);
+	li[p][v] /= mscale(mi[p][v]);
+      }
+    }
+    
     for(int q=0; q < i[p].length; ++q) {
       real ii=i[p][q];
       ymin=min(ymin,ii);
@@ -295,23 +402,28 @@ if(gtype == "time" || gtype == "mflops") {
 
     bool[] drawme = i[p] > 0;
     for(int i = 0; i < drawme.length; ++i) {
-      drawme[i] = drawme[i] &&  mi[p][i] >= minm;
+      drawme[i] = drawme[i] &&  mi[p][i] >= minm &&  mi[p][i] <= maxm;
+    }
+
+    if(verbose) {
+      write("time:");
+      write(i[p]);
     }
     
-    if(drawerrorbars && gtype == "time") {
+    if(drawerrorbars && (gtype == "time" || datatype == "raw")) {
       errorbars(mi[p],i[p],0*mi[p],hi[p],0*mi[p],li[p],drawme,barPen(p));
     }
     
     draw(graph(mi[p],i[p],drawme),linePen(p),
-    	 Label(myleg ? legends[p] : texify(runnames[p]),Lp+linePen(p)),mark1);
+    	 Label(myleg ? legends[p] : texify(filenames[p]),Lp+linePen(p)),mark1);
   }
 
   xaxis("$"+Nm+"$",BottomTop,LeftTicks);
   if(d > 0) {
-    if(gtype=="mflops") {
+    if(gtype=="performance") {
       if(true || floor(ymax) <= ceil(ymin)) {
 	//if(ymax-ymin > 1) {
-	yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ns)${}^{-1}$",
+	yaxis("performance: $"+Nm+D+"\log_2 "+Nm+D+"$/time, (ns)${}^{-1}$",
 	      LeftRight, RightTicks);
       } else {
 	// write the yticks as 10^{...} equally divided in log-space.
@@ -332,9 +444,9 @@ if(gtype == "time" || gtype == "mflops") {
 	for(int i=0; i < nyticks; ++i)
 	  yticks.push((fymin+i*(fymax-fymin)/nyticks));
 	//write(yticks);
-	//yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ns)${}^{-1}$",LeftRight,
+	//yaxis("``performance\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ns)${}^{-1}$",LeftRight,
 	//    RightTicks(new string(real x) {return base10(log10(x));},yticks));
-	yaxis("``mflops\": $5"+Nm+D+"\log_2 "+Nm+D+"$/time (ns)${}^{-1}$",
+	yaxis("performance: $5"+Nm+D+"\log_2 "+Nm+D+"$/time, (ns)${}^{-1}$",
 	      LeftRight,
 	      RightTicks(defaultformat,yticks));
       }
@@ -343,8 +455,8 @@ if(gtype == "time" || gtype == "mflops") {
     if(gtype=="time")
       yaxis("time/($"+Nm+D+"\log_2 "+Nm+D+"$) (ns)",LeftRight,RightTicks);
   } else {
-    if(gtype=="mflops")
-      yaxis("speed: 1/time (ns)${}^{-1}$",LeftRight,RightTicks);
+    if(gtype=="performance")
+      yaxis("performance: 1/time, (ns)${}^{-1}$",LeftRight,RightTicks);
     if(gtype=="time")
       yaxis("time (ns)",LeftRight,RightTicks);
   }
@@ -371,83 +483,158 @@ if(gtype == "time" || gtype == "mflops") {
 }
 
 if(gtype == "speedup") {
-
-  int runples=getint("how many runs are compared at once");
+  if(runples == 0)
+    runples=getint("how many runs are compared at once");
   string compname="";
+
+  bool drawyzero=false;
+
+  real gmin = realMax;
+  real gmax = -realMax;
   
   int gnum=-1;
   bool plotme;
-  for(int p=0; p < nn; ++p) {
-    if(p % runples != 0) {
+  for(int p=0; p < filenames.length; ++p) {
+
+    for(int v = 0; v < i[p].length; ++v)  {
+      i[p][v] /= mscale(mi[p][v]);
+      //hi[p][v] /= mscale(mi[p][v]);
+      //li[p][v] /= mscale(mi[p][v]);
+    }
+
+    if(p % runples == 0) {
+      plotme=false;
+      compname=filenames[p];
+    } else {
       ++gnum;
       plotme=true;
-    } else {
-      plotme=false;
-      compname=runnames[p];
+      if(verbose) {
+	write("base case: " + compname );
+	write("comparison case: " + filenames[p]);
+      }
     }
     
     int basep=p - (p % runples);
     if(plotme) {
+      real[] speedups;
+      real[] goodms;
+      
       // find the matching problem sizes
       for(int b = 0; b < mi[p].length; ++b) {
+	real m = mi[p][b];
 	bool found=false;
 	for(int a = 0; a < mi[basep].length; ++a) {
-	  if(mi[basep][a] == mi[p][b]) {
-	    // if we have a matching problem size, determine the speedup
-	    i[p][b] = i[basep][a] / i[p][b];
+	  real mbase = mi[basep][a]; 
+	  if(mbase == m) {
+	    // If we have a matching problem size, determine the speedup
+	    speedups.push(i[basep][a] / i[p][b]);
+	    goodms.push(m);
 	    found=true;
+	    break;
 	  }
 	}
-	if(!found)
-	  i[p][b] = 0.0;
+	if(!found) {
+	  if((min(mi[basep]) < m) && (max(mi[basep]) > m)) {
+	    if(verbose)
+	      write("We can interpolate!");
+	    int v = 0;
+	    while(mi[basep][v] < m)
+	      ++v;
+	    v -= 1;
+	    real m0 = mi[basep][v];
+	    real m1 = mi[basep][v + 1];
+	    real t0 = i[basep][v];
+	    real t1 = i[basep][v + 1];
+	    real t = t0 + (t1 - t0) * (m - m0) / (m1 - m0);
+	    if(verbose) {
+	      write("m: ", m);
+	      write("m0: ", m0);
+	      write("m1: ", m1);
+	      write("t0: ", t0);
+	      write("t1: ", t1);
+	      write("t: ", t);
+	    }
+	    speedups.push(t / i[p][b]);
+	    goodms.push(m);
+	  }
+	}
       }
 
-      marker mark1 = marker(scale(0.6mm)*polygon(3+gnum),
-			  Draw(linePen(gnum)+solid));
+      if(goodms.length > 0) {
+	marker mark1 = marker(scale(0.6mm)*polygon(3+gnum),
+			      Draw(linePen(gnum)+solid));
 
-      bool[] drawme = i[p] > 0;
-      for(int i = 0; i < drawme.length; ++i) {
-	drawme[i] = drawme[i] &&  mi[p][i] >= minm;
+	if(verbose) {
+	  write("m:", "      speedup:");
+	  for(int v = 0; v < speedups.length; ++v) {
+	    write(mi[p][v],speedups[v]);
+	  }
+	  write("mean: ", sum(speedups) / speedups.length);
+	  write("max: ", max(speedups));
+	  write("min: ", min(speedups));
+	}
+
+	gmin = min(gmin,min(speedups));
+	gmax = max(gmax,max(speedups));
+      
+	draw(graph(goodms, speedups),
+	     Pentype(gnum) + linePen(gnum),
+	     Label(myleg ? legends[gnum] :
+		   texify(filenames[p]) + " vs " + texify(compname),
+		   linePen(gnum) + Lp), mark1);
+
       }
-
-      draw(graph(mi[p], i[p], drawme),
-	   Pentype(gnum) + linePen(gnum),
-	   Label(myleg ? legends[gnum] :
-		 texify(runnames[p]) + " vs " + texify(compname),
-		 linePen(gnum) + Lp), mark1);
     }
-    
   }
+
+  if(gmin < 1.0 && gmax > 1.0)
+    yequals(1,grey);
   
   xaxis("$" + Nm + "$", BottomTop, LeftTicks);
   yaxis("relative speed",LeftRight,RightTicks);
 }
 
-if(gtype == "scaling") {
- 
-  // Find all values of problem size
+if(gtype == "scaling" || gtype == "peff") {
+   // Find all values of problem size
   real[] thems;
   bool found=false;
   for(int a=0; a < mi.length; ++a) {
     for(int b=0; b < mi[a].length; ++b) {
       real m=mi[a][b];
-      found=false;
-      for(int c=0; c < thems.length; ++c) {
-	if(thems[c]==m)
-	  found=true;
+      if(m >= minm && m <= maxm) {
+	found=false;
+	for(int c=0; c < thems.length; ++c) {
+	  if(thems[c]==m)
+	    found=true;
+	}
+	if(!found)
+	  thems.push(m);
       }
-      if(!found)
-	thems.push(m);
     }
+  }
+
+  // if skipm is > 1, then we kick out some values.
+  if(skipm > 1) {
+    real[] newems;
+    for(int c = 0; c < thems.length; c += skipm)
+      newems.push(thems[c]);
+    thems = newems;
   }
   
   // Get the number of cores for each file.
-  real[] allprocs = new real[nn];
-  for(int c=0; c < allprocs.length; ++c) {
-    allprocs[c] = getint("ncores" + string(c) );
+  real[] allprocs = new real[filenames.length];
 
-    // This isn't dealt with by history properly:
-    //allprocs[c] = getint("cores in " + runnames[c] );
+  if(ncores.length == 0) {
+    for(int c=0; c < allprocs.length; ++c) {
+      allprocs[c] = getint("ncores" + string(c) );
+      
+      // This isn't dealt with by history properly:
+      // allprocs[c] = getint("cores in " + filenames[c] );
+    }
+  } else {
+    for(int c=0; c < allprocs.length; ++c) {
+      allprocs[c] = ncores[c];
+    }
   }
 
   // Collect the runtime for each value of m:
@@ -466,13 +653,16 @@ if(gtype == "scaling") {
       }
     }
   }
-
+  
   // Compute the speedup relative to the first data point:
   real[][] speedup;
   for(int c = 0; c < runtime.length; ++c) {
     speedup[c] = new real[];
     for(int d=0; d < runtime[c].length; ++d) {
-      speedup[c].push((runtime[c][0] / runtime[c][d]));
+      if(gtype == "scaling")
+	speedup[c].push((runtime[c][0] / runtime[c][d]));
+      if(gtype == "peff")
+	speedup[c].push((runtime[c][0] / runtime[c][d] / procs[c][d]));
     }
   }
   
@@ -480,10 +670,21 @@ if(gtype == "scaling") {
   for(int c = 0; c < thems.length; ++c) {
     marker mark1 = marker(scale(0.6mm) * polygon(3 + c),
 			  Draw(linePen(c) + solid));
-    draw(graph(procs[c], speedup[c]), linePen(c),
-	 Label("$" + (string) thems[c] + "^" + (string)d + "$"), mark1);
+    if(d == 1)
+      draw(graph(procs[c], speedup[c]), linePen(c),
+	   Label("$" + (string) thems[c] + "$"), mark1);
+    else
+      draw(graph(procs[c], speedup[c]), linePen(c),
+	   Label("$" + (string) thems[c] + "^" + (string)d + "$"), mark1);
+    if(verbose) {
+      write("m: ", thems[c]);
+      write("P:      speedup / efficiency");
+      for(int v = 0; v < speedup[c].length; ++ v) {
+	write(procs[c][v], speedup[c][v]);
+      }
+    }
   }
-
+  
   // Plot the ideal cases:
   {
     // Find the unique starting points for the scaling cases
@@ -524,14 +725,16 @@ if(gtype == "scaling") {
     }
     //write(procstarts);
 
-    // Plot the perfect scaling for each unique starting point.
-    for(int c = 0; c < procstarts.length; ++c) {
-      real[] procsup;
-      procsup.push(1.0);
-      for(int i = 1; i < procstarts[c].length; ++i) {
-	procsup.push(procstarts[c][i] / procstarts[c][0]);
+    if(gtype == "scaling") {
+      // Plot the perfect scaling for each unique starting point.
+      for(int c = 0; c < procstarts.length; ++c) {
+	real[] procsup;
+	procsup.push(1.0);
+	for(int i = 1; i < procstarts[c].length; ++i) {
+	  procsup.push(procstarts[c][i] / procstarts[c][0]);
+	}
+	draw(graph(procstarts[c], procsup), black+dashed);
       }
-      draw(graph(procstarts[c], procsup), black+dashed);
     }
   }
 
@@ -541,8 +744,11 @@ if(gtype == "scaling") {
   for(int i = 1; i < allprocs.length; ++i) {
     procsup.push(allprocs[i] / allprocs[0]);
   }
-  //yaxis("speedup", LeftRight, RightTicks);
-  yaxis("Speedup", LeftRight, LeftTicks(DefaultFormat, procsup));
+  if(gtype == "scaling")
+    yaxis("Speedup", LeftRight, LeftTicks(DefaultFormat, procsup));
+  if(gtype == "peff")
+    yaxis("Efficiency", LeftRight, RightTicks);
+
   
   if(myleg) {
     xaxis("Number of cores", BottomTop,
@@ -551,12 +757,17 @@ if(gtype == "scaling") {
     xaxis("Number of cores", BottomTop, LeftTicks(DefaultFormat, allprocs));
     //xaxis("Number of cores", BottomTop, RightTicks(procs) );
   }
-    
-  label("Strong scaling: "+name,point(N),3N);
 
-  yequals(1,grey);
+  // if(gtype == "scaling") {
+  //   label("Strong scaling: "+name,point(N),3N);
+  //   yequals(1,grey);
+  // }
+  
+  //if(gtype == "peff")
+  //  label("Parallel Efficiency: "+name,point(N),3N);
+
 }
 
 legendlinelength=0.6cm;
 legendmargin=5;
-//attach(legend(),point(E),10E);
+attach(legend(),point(legp1),legp2);

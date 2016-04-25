@@ -1,4 +1,4 @@
-#!/usr/bin/python -u
+#!/usr/bin/python
 
 import sys # so that we can return a value at the end.
 import random # for randum number generators
@@ -49,29 +49,32 @@ def main(argv):
         Xlist = [1,2,3,4,5,random.randint(6,64)]
         Ylist = [1,2,3,4,5,random.randint(6,64)]
         Plist = [8,4,3,2,random.randint(9,12),1]
-
+        Tlist = [1,2,random.randint(3,5)]
+        
         if(shortrun):
             print "Short run."
             Alist = [2,4]
             Xlist = [2,3,random.randint(6,64)]
             Ylist = [2,3,random.randint(6,64)]
             Plist = [2,random.randint(4,8)]
+            Tlist = [1,2]
             
         testcases = []
         for X in Xlist:
             for Y in Ylist:
                 for A in Alist:
-                    args = []
-                    args.append("-x" + str(X))
-                    args.append("-y" + str(Y))
-                    args.append("-A" + str(A))
-                    args.append("-N1")
-                    args.append("-s1")
-                    args.append("-a1")
-                    args.append("-T1")
-                    args.append("-t")
-                    args.append("-q")
-                    testcases.append(args)
+                    for T in Tlist:
+                        args = []
+                        args.append("-x" + str(X))
+                        args.append("-y" + str(Y))
+                        args.append("-A" + str(A))
+                        args.append("-N1")
+                        args.append("-s1")
+                        args.append("-a1")
+                        args.append("-T" + str(T))
+                        args.append("-t")
+                        args.append("-q")
+                        testcases.append(args)
 
         tstart = time.time()
         ntest = len(testcases)*len(Plist)

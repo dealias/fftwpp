@@ -29,7 +29,7 @@ int main()
   for(unsigned int i=0; i < nx; i++) 
     for(unsigned int j=0; j < ny; j++) 
       for(unsigned int k=0; k < nz; k++) 
-      f(i,j,k)=i+j+k;
+        f(i,j,k)=i+j+k;
         
   cout << "\ninput:\n" << f;
   

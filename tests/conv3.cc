@@ -30,9 +30,9 @@ bool Direct=false, Implicit=true;
 unsigned int outlimit=300;
 
 inline void init(Complex **F,
-		 unsigned int mx, unsigned int my, unsigned int mz,
-		 unsigned int nxp, unsigned int nyp, unsigned int nzp,
-		 unsigned int A, bool xcompact, bool ycompact, bool zcompact)
+                 unsigned int mx, unsigned int my, unsigned int mz,
+                 unsigned int nxp, unsigned int nyp, unsigned int nzp,
+                 unsigned int A, bool xcompact, bool ycompact, bool zcompact)
 {
   if(A % 2 == 0) {
     unsigned int M=A/2;
@@ -49,8 +49,8 @@ inline void init(Complex **F,
       array3<Complex> g(nxp,nyp,nzp,F[M+s]);
 
       if(!xcompact) {
-	for(unsigned int j=0; j < ny+!ycompact; ++j) {
-	  for(unsigned int k=0; k < mz+!zcompact; ++k) {
+        for(unsigned int j=0; j < ny+!ycompact; ++j) {
+          for(unsigned int k=0; k < mz+!zcompact; ++k) {
             f[0][j][k]=0.0;
             g[0][j][k]=0.0;
           }
@@ -58,7 +58,7 @@ inline void init(Complex **F,
       }
       if(!ycompact) {
         for(unsigned int i=0; i < nx+!xcompact; ++i) {
-	  for(unsigned int k=0; k < mz+!zcompact; ++k) {
+          for(unsigned int k=0; k < mz+!zcompact; ++k) {
             f[i][0][k]=0.0;
             g[i][0][k]=0.0;
           }
@@ -76,14 +76,14 @@ inline void init(Complex **F,
 
 #pragma omp parallel for
       for(unsigned int i=0; i < nx; ++i) {
-	unsigned int I=i+!xcompact;
-	for(unsigned int j=0; j < ny; ++j) {
+        unsigned int I=i+!xcompact;
+        for(unsigned int j=0; j < ny; ++j) {
           unsigned int J=j+!ycompact;
-	  for(unsigned int k=0; k < mz; ++k) {
-	    f[I][J][k]=ffactor*Complex(i+k,j+k);
-	    g[I][J][k]=gfactor*Complex(2*i+k,j+1+k);
-	  }
-	}
+          for(unsigned int k=0; k < mz; ++k) {
+            f[I][J][k]=ffactor*Complex(i+k,j+k);
+            g[I][J][k]=gfactor*Complex(2*i+k,j+1+k);
+          }
+        }
       }
     }
   } else {
@@ -125,19 +125,19 @@ int main(int argc, char* argv[])
   unsigned int A=2; // Number of independent inputs
   unsigned int B=1; // Number of outputs
 
-  unsigned int stats=0; // Type of statistics used in timing test.
+  int stats=0; // Type of statistics used in timing test.
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
   
-#ifdef __GNUC__	
+#ifdef __GNUC__ 
   optind=0;
-#endif	
+#endif  
   for (;;) {
     int c = getopt(argc,argv,"hdeipA:B:N:m:x:y:z:n:T:S:X:Y:Z:");
     if (c == -1) break;
-		
+                
     switch (c) {
       case 0:
         break;
@@ -197,7 +197,7 @@ int main(int argc, char* argv[])
         usage(3);
         usageDirect();
         usageCompact(3);
-	exit(1);
+        exit(1);
     }
   }
 
@@ -210,7 +210,7 @@ int main(int argc, char* argv[])
   
   if(N == 0) {
     N=N0/nx/ny/nz;
-    if(N < 10) N=10;
+    N = max(N, 20);
   }
   cout << "N=" << N << endl;
     
@@ -218,6 +218,8 @@ int main(int argc, char* argv[])
   nxp=2*mx-xcompact;
   nyp=2*my-ycompact;
   nzp=mz+!zcompact;
+
+  cout << "nxp=" << nxp << ", nyp" << nyp << ", nzp=" << nzp << endl;
   
   if(B < 1) B=1;
   if(B > A) {
@@ -243,9 +245,9 @@ int main(int argc, char* argv[])
     
     realmultiplier *mult;
     switch(A) {
-    case 2: mult=multbinary; break;
-    case 4: mult=multbinary2; break;
-    default: cerr << "A=" << A << " is not yet implemented" << endl; exit(1);
+      case 2: mult=multbinary; break;
+      case 4: mult=multbinary2; break;
+      default: cerr << "A=" << A << " is not yet implemented" << endl; exit(1);
     }
 
     for(unsigned int i=0; i < N; ++i) {
@@ -261,8 +263,8 @@ int main(int argc, char* argv[])
     if(Direct) {
       for(unsigned int i=0; i < mx; i++) 
         for(unsigned int j=0; j < my; j++)
-	  for(unsigned int k=0; k < mz; k++)
-	    h0[i][j][k]=f[i+!xcompact][j+!ycompact][k];
+          for(unsigned int k=0; k < mz; k++)
+            h0[i][j][k]=f[i+!xcompact][j+!ycompact][k];
     }
 
     if(nxp*nyp*mz < outlimit) {
@@ -309,11 +311,11 @@ int main(int argc, char* argv[])
       double norm=0.0;
       for(unsigned int i=0; i < mx; i++) {
         for(unsigned int j=0; j < my; j++) {
-	  for(unsigned int k=0; k < mz; k++) {
-	    error += abs2(h0[i][j][k]-h[i][j][k]);
-	    norm += abs2(h[i][j][k]);
-	  }
-	}
+          for(unsigned int k=0; k < mz; k++) {
+            error += abs2(h0[i][j][k]-h[i][j][k]);
+            norm += abs2(h[i][j][k]);
+          }
+        }
       }
       if(norm > 0) error=sqrt(error/norm);
       cout << "error=" << error << endl;

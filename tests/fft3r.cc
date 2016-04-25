@@ -13,7 +13,7 @@ void finit(array3<double> f, unsigned int nx, unsigned int ny, unsigned int nz)
   for(unsigned int i=0; i < nx; ++i) 
     for(unsigned int j=0; j < ny; ++j)
       for(unsigned int k=0; k < nz; ++k) 
-	f(i,j,k)=i+j+k;
+        f(i,j,k)=i+j+k;
 }
 
 int main(int argc,char* argv[])
@@ -33,49 +33,49 @@ int main(int argc,char* argv[])
   
   fftw::maxthreads=get_max_threads();
  
-#ifdef __GNUC__	
+#ifdef __GNUC__ 
   optind=0;
-#endif	
+#endif  
   for (;;) {
     int c=getopt(argc,argv,"N:i:m:qx:y:z:T:S:h");
     if (c == -1) break;
     switch (c) {
-    case 0:
-      break;
-    case 'N':
-      N=atoi(optarg);
-      break;
-    case 'm':
-      nx=ny=nz=atoi(optarg);
-      break;
-    case 'i':
-      inplace=atoi(optarg);
-      break;
-    case 'q':
-      quiet=true;
-      break;
-    case 's':
-      shift=atoi(optarg);
-      break;
-    case 'x':
-      nx=atoi(optarg);
-      break;
-    case 'y':
-      ny=atoi(optarg);
-      break;
-    case 'z':
-      nz=atoi(optarg);
-      break;
-    case 'T':
-      fftw::maxthreads=max(atoi(optarg),1);
-      break;
-    case 'S':
-      stats=atoi(optarg);
-      break;
-    case 'h':
-    default:
-      usageInplace(3);
-      exit(0);
+      case 0:
+        break;
+      case 'N':
+        N=atoi(optarg);
+        break;
+      case 'm':
+        nx=ny=nz=atoi(optarg);
+        break;
+      case 'i':
+        inplace=atoi(optarg);
+        break;
+      case 'q':
+        quiet=true;
+        break;
+      case 's':
+        shift=atoi(optarg);
+        break;
+      case 'x':
+        nx=atoi(optarg);
+        break;
+      case 'y':
+        ny=atoi(optarg);
+        break;
+      case 'z':
+        nz=atoi(optarg);
+        break;
+      case 'T':
+        fftw::maxthreads=max(atoi(optarg),1);
+        break;
+      case 'S':
+        stats=atoi(optarg);
+        break;
+      case 'h':
+      default:
+        usageInplace(3);
+        exit(0);
     }
   }
 
@@ -110,7 +110,7 @@ int main(int argc,char* argv[])
     Forward.fft(f,g);
 
     cout << endl << "Output:" << endl;
-      cout << g << endl;
+    cout << g << endl;
 
     Backward.fftNormalized(g,f);
 
@@ -133,13 +133,15 @@ int main(int argc,char* argv[])
     if(shift) {
       seconds();
       Forward.fft0(f,g);
-      Backward.fft0Normalized(g,f);
-      T[i]=seconds();
+      Backward.fft0(g,f);
+      T[i]=0.5*seconds();
+      Backward.Normalize(f);
     } else {
       seconds();
       Forward.fft(f,g);
-      Backward.fftNormalized(g,f);
-      T[i]=seconds();
+      Backward.fft(g,f);
+      T[i]=0.5*seconds();
+      Backward.Normalize(f);
     }
   }
   timings("fft3 out-of-place",nx,T,N,stats);

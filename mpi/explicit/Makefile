@@ -2,14 +2,12 @@ ifndef MPICXX
 MPICXX=mpic++
 endif
 
-IDIR =../../
-UDIR =../../tests/
-
-CXXFLAGS= -O3
+IDIR=../../
+UDIR=../../tests/
 
 # GNU compiler
 ifeq ($(shell $(MPICXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
-CXXFLAGS += -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
+CXXFLAGS=-O3 -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
 	-fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native
 #For valgrind:
 #CXXFLAGS=-fopenmp -g -Wall -ansi -fomit-frame-pointer -fstrict-aliasing \
@@ -17,30 +15,62 @@ CXXFLAGS += -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
 endif
 
 #Intel compiler
-ifeq ($(shell $(MPICXX) -v 2>&1 | head -c 4),icpc)
-CXXFLAGS += -openmp -ansi-alias -malign-double -fp-model fast=2
+ifeq ($(shell $(MPICXX) --version 2>&1 | head -c 4),icpc)
+CXXFLAGS=-O3 -openmp -ipo -ansi-alias -malign-double -fp-model fast=2
 endif
 
 #IBM compiler
 ifeq ($(shell $(MPICXX) -qversion 2>&1 | head -c 3),IBM)
-#CXXFLAGS= -O5 -P -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp
-CXXFLAGS= -O5 -qsmp
+CXXFLAGS= -O5 -qsmp=speculative -qtune=qp -qipa -qarch=qp
 endif
 
-CXXFLAGS += -I$(IDIR) -I$(UDIR) -I$(CPLUS_INCLUDE_PATH) -L$(LIBRARY_PATH)
+CXXFLAGS += $(DEFS) -I$(IDIR) -I$(UDIR)
 
-LDFLAGS = -lfftw3_mpi -lfftw3_omp -lfftw3 -lm
+ifneq ($(strip $(FFTW_INCLUDE_PATH)),)
+CXXFLAGS += -I$(FFTW_INCLUDE_PATH)
+endif
+
+ifneq ($(strip $(MPI_INCLUDE_PATH)),)
+CXXFLAGS+=-I$(MPI_INCLUDE_PATH)
+endif
+
+LDFLAGS=
+
+ifneq ($(strip $(FFTW_LIB_PATH)),)
+LDFLAGS+=-L$(FFTW_LIB_PATH)
+endif
+
+ifneq ($(strip $(MPI_LIB_PATH)),)
+LDFLAGS+=-L$(MPI_LIB_PATH)
+endif
+
+LDFLAGS+= -lfftw3_mpi -lfftw3_omp -lfftw3 -lm
+
+MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
 
 vpath %.cc ../../
 
-EXTRA=exmpiutils
 
-FILES=cconv2 cconv3 cfft2 cfft3
+FILES=fft2 fft3 fft2r fft3r cconv2 cconv3 transpose
+EXTRA=exmpiutils
+ALL=$(FILES) $(EXTRA)
 
 all: $(FILES)
 
-%.o : %.cc %.h
+%.o : %.cc
 	$(MPICXX) $(CXXFLAGS) $(OPTS) -o $@ -c $<
+
+fft2: fft2.o $(EXTRA:=.o)
+	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
+fft3: fft3.o $(EXTRA:=.o)
+	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
+fft2r: fft2r.o $(EXTRA:=.o)
+	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
+fft3r: fft3r.o $(EXTRA:=.o)
+	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 cconv2: cconv2.o $(EXTRA:=.o)
 	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
@@ -48,22 +78,20 @@ cconv2: cconv2.o $(EXTRA:=.o)
 cconv3: cconv3.o $(EXTRA:=.o)
 	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-conv2: conv2.o $(EXTRA:=.o)
+transpose: transpose.o $(EXTRA:=.o)
 	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-cfft2: cfft2.o $(EXTRA:=.o)
-	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
-
-cfft3: cfft3.o $(EXTRA:=.o)
-	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
-
-clean:
-	rm -rf $(FILES) *.o *.d
-
+clean:  FORCE
+	rm -rf $(ALL) $(ALL:=.o) $(ALL:=.d)
 
 .SUFFIXES: .c .cc .o .d
-.cc.o:
-	$(MPICXX) $(CXXFLAGS) $(OPTS) $(INCL) -o $@ -c $<
+
+%.o : %.cc %.h
+	$(MPICXX) $(CXXFLAGS) $(OPTS) -o $@ -c $<
+
+%.o : %.cc
+	$(MPICXX) $(CXXFLAGS) $(OPTS) -o $@ -c $<
+
 .cc.d:
 	@echo Creating $@; \
 	rm -f $@; \
@@ -74,3 +102,5 @@ clean:
 ifeq (,$(findstring clean,${MAKECMDGOALS}))
 -include $(ALL:=.d)
 endif
+
+FORCE:

@@ -1,6 +1,6 @@
      FFTW++: Fast Fourier Transform C++ Header/MPI Transpose for FFTW3 Library
  
-Copyright (C) 2004-15 John C. Bowman and Malcolm Roberts, University of Alberta
+Copyright (C) 2004-16 John C. Bowman and Malcolm Roberts, University of Alberta
                     http://fftwpp.sourceforge.net
 
 FFTW++ is a C++ header/MPI transpose for Version 3 of the highly optimized FFTW
@@ -34,7 +34,7 @@ Multithreading requires linking with a multithreaded FFTW implementation
 and can be disabled by adding -DFFTWPP_SINGLE_THREAD to CFLAGS. 
 
 FFTW++ can also exploit the high-performance Array class available at
-http://www.math.ualberta.ca/~bowman/Array (version 1.48 or higher),
+http://www.math.ualberta.ca/~bowman/Array (version 1.49 or higher),
 designed for scientific computing. The arrays in that package do
 memory bounds checking in debugging mode, but can be optimized by
 specifying the -DNDEBUG compilation option (1D arrays optimize

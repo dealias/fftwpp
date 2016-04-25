@@ -29,7 +29,7 @@ int main()
   for(unsigned int i=0; i < n; i++) f[i]=i;
 
   cout << endl << "input:" << endl << f << endl;
-	
+        
   Forward.fft(f,F);
   
   cout << endl << "output:" << endl << F << endl;

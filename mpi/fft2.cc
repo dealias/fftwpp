@@ -56,51 +56,51 @@ int main(int argc, char* argv[])
     if (c == -1) break;
                 
     switch (c) {
-    case 0:
-      break;
-    case 'a':
-      divisor=atoi(optarg);
-      break;
-    case 'N':
-      N=atoi(optarg);
-      break;
-    case 'i':
-      inplace=atoi(optarg);
-      break;
-    case 'm':
-      nx=ny=atoi(optarg);
-      break;
-    case 's':
-      alltoall=atoi(optarg);
-      break;
-    case 'x':
-      nx=atoi(optarg);
-      break;
-    case 'y':
-      ny=atoi(optarg);
-      break;
-    case 'n':
-      N0=atoi(optarg);
-      break;
-    case 'S':
-      stats=atoi(optarg);
-      break;
-    case 'T':
-      fftw::maxthreads=atoi(optarg);
-      break;
-    case 'q':
-      quiet=true;
-      break;
-    case 't':
-      test=true;
-      break;
-    case 'h':
-    default:
-      if(rank == 0) {
-        usageInplace(2);
-        usageTranspose();
-      }
-      exit(1);
+      case 0:
+        break;
+      case 'a':
+        divisor=atoi(optarg);
+        break;
+      case 'N':
+        N=atoi(optarg);
+        break;
+      case 'i':
+        inplace=atoi(optarg);
+        break;
+      case 'm':
+        nx=ny=atoi(optarg);
+        break;
+      case 's':
+        alltoall=atoi(optarg);
+        break;
+      case 'x':
+        nx=atoi(optarg);
+        break;
+      case 'y':
+        ny=atoi(optarg);
+        break;
+      case 'n':
+        N0=atoi(optarg);
+        break;
+      case 'S':
+        stats=atoi(optarg);
+        break;
+      case 'T':
+        fftw::maxthreads=atoi(optarg);
+        break;
+      case 'q':
+        quiet=true;
+        break;
+      case 't':
+        test=true;
+        break;
+      case 'h':
+      default:
+        if(rank == 0) {
+          usageInplace(2);
+          usageTranspose();
+        }
+        exit(1);
     }
   }
 
@@ -224,11 +224,13 @@ int main(int argc, char* argv[])
           seconds();
           fft.Forward(f,g);
           fft.Backward(g,f);
+          T[i]=0.5*seconds();
           fft.Normalize(f);
-          T[i]=seconds();
         }    
-        if(!quiet && nx*ny < outlimit) show(f,d.x,d.y,group.active);
-        if(main) timings("FFT timing:",nx,T,N,stats);
+        if(!quiet && nx*ny < outlimit)
+	  show(f,d.x,d.y,group.active);
+        if(main)
+	  timings("FFT timing:",nx,T,N,stats);
         delete [] T;
       }
     }

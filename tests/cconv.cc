@@ -27,19 +27,19 @@ inline void init(Complex **F, unsigned int m, unsigned int A)
       Complex *fs=F[s];
       Complex *gs=F[M+s];
       if(Test) {
-	for(unsigned int k=0; k < m; k++) fs[k]=factor*iF*pow(E,k*I);
-	for(unsigned int k=0; k < m; k++) gs[k]=factor*iG*pow(E,k*I);
-	//    for(unsigned int k=0; k < m; k++) fs[k]=factor*iF*k;
-	//    for(unsigned int k=0; k < m; k++) gs[k]=factor*iG*k;
+        for(unsigned int k=0; k < m; k++) fs[k]=factor*iF*pow(E,k*I);
+        for(unsigned int k=0; k < m; k++) gs[k]=factor*iG*pow(E,k*I);
+        //    for(unsigned int k=0; k < m; k++) fs[k]=factor*iF*k;
+        //    for(unsigned int k=0; k < m; k++) gs[k]=factor*iG*k;
       } else {
-	for(unsigned int k=0; k < m; k++) fs[k]=ffactor*Complex(k,k+1);
-	for(unsigned int k=0; k < m; k++) gs[k]=gfactor*Complex(k,2*k+1);
+        for(unsigned int k=0; k < m; k++) fs[k]=ffactor*Complex(k,k+1);
+        for(unsigned int k=0; k < m; k++) gs[k]=gfactor*Complex(k,2*k+1);
       }
     }
   } else {
     for(unsigned int a=0; a < A; ++a) {
       for(unsigned int k=0; k < m; ++k) {
-	F[a][k]=(a+1)*Complex(k,k+1);
+        F[a][k]=(a+1)*Complex(k,k+1);
       }
     }
   }
@@ -54,14 +54,14 @@ int main(int argc, char* argv[])
   bool Explicit=false;
   
   // Number of iterations.
-  unsigned int N0=10000000;
+  unsigned int N0=1000000000;
   unsigned int N=0;
   
   unsigned int m=11; // Problem size
   unsigned int A=2; // number of inputs
   unsigned int B=1; // number of outputs
   
-  unsigned int stats=0; // Type of statistics used in timing test.
+  int stats=0; // Type of statistics used in timing test.
 
   int alg = 0;
   
@@ -69,13 +69,13 @@ int main(int argc, char* argv[])
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
   
-#ifdef __GNUC__	
+#ifdef __GNUC__ 
   optind=0;
-#endif	
+#endif  
   for (;;) {
     int c = getopt(argc,argv,"hdeiptA:B::N:m:n:S:T:E:");
     if (c == -1) break;
-		
+                
     switch (c) {
       case 0:
         break;
@@ -123,7 +123,7 @@ int main(int argc, char* argv[])
       default:
         usage(1);
         usageTest();
-	exit(1);
+        exit(1);
     }
   }
 
@@ -168,13 +168,13 @@ int main(int argc, char* argv[])
 
     multiplier *mult;
     switch(A) {
-    case 1: mult=multautoconvolution; break;
-    case 2: mult=multbinary; break;
-    case 4: mult=multbinary2; break;
-    case 6: mult=multbinary3; break;
-    case 8: mult=multbinary4; break;
-    case 16: mult=multbinary8; break;
-    default: cerr << "A=" << A << " is not yet implemented" << endl; exit(1);
+      case 1: mult=multautoconvolution; break;
+      case 2: mult=multbinary; break;
+      case 4: mult=multbinary2; break;
+      case 6: mult=multbinary3; break;
+      case 8: mult=multbinary4; break;
+      case 16: mult=multbinary8; break;
+      default: cerr << "A=" << A << " is not yet implemented" << endl; exit(1);
     }
     
     double *Talt=new double[N];
@@ -330,8 +330,8 @@ int main(int argc, char* argv[])
       cout << endl;
       double norm=0.0;
       for(unsigned long long k=0; k < m; k++) {
-	error += abs2(h0[k]-h[k]);
-	norm += abs2(h[k]);
+        error += abs2(h0[k]-h[k]);
+        norm += abs2(h[k]);
       }
       if(norm > 0) error=sqrt(error/norm);
       cout << "error=" << error << endl;
@@ -355,8 +355,8 @@ int main(int argc, char* argv[])
     if(A %2 == 0) {
       testok=true;
       for(unsigned long long k=0; k < m; k++) {
-	h[k]=iF*iG*(k+1)*pow(E,k*I);
-	//  h[k]=iF*iG*(k*(k+1)/2.0*(k-(2*k+1)/3.0));
+        h[k]=iF*iG*(k+1)*pow(E,k*I);
+        //  h[k]=iF*iG*(k*(k+1)/2.0*(k-(2*k+1)/3.0));
       }
     }
 
@@ -364,7 +364,7 @@ int main(int argc, char* argv[])
     if(A == 1) {
       testok=true;
       for(unsigned long long k=0; k < m; k++)
-	h[k]=k*(0.5*k*(k+1)) - k*(k+1)*(2*k+1)/6.0;
+        h[k]=k*(0.5*k*(k+1)) - k*(k+1)*(2*k+1)/6.0;
     }
     
     if(!testok) {

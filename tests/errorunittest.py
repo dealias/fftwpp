@@ -1,4 +1,4 @@
-#!/usr/bin/python -u
+#!/usr/bin/python
 
 # Unit-testing script for numerical accuracy of convolutions implicit
 # and explicit convolutions.
@@ -12,7 +12,7 @@ import os.path #for file-existence checking
 
 retval = 0
 
-print "Checking error vs direct routine...",
+print "Checking error vs direct routine..."
 p = Popen(['./directerror.py'], stdout=PIPE, stderr=PIPE)
 p.wait() # sets the return code
 out, err = p.communicate() # capture output
@@ -26,7 +26,7 @@ if not (p.returncode == 0):
     print "\tDIRECTERROR FAILED"
 
 
-print "Checking local transpose...",
+print "Checking local transpose..."
 p = Popen(['./testtranspose.py'], stdout=PIPE, stderr=PIPE)
 p.wait() # sets the return code
 out, err = p.communicate() # capture output
@@ -40,7 +40,7 @@ if not (p.returncode == 0):
     print "\tLOCAL TRANSPOSE FAILED"
 
 
-print "Checking error vs test case...",
+print "Checking error vs test case..."
 p=Popen(['./error.py'],stdout=PIPE,stderr=PIPE)
 p.wait() # sets the return code
 out, err = p.communicate() # capture output
@@ -54,7 +54,7 @@ if not (p.returncode == 0):
     print "\tTEST CASE ERROR FAILED"
 
 
-print "Running error scaling...",
+print "Running error scaling..."
 error1=["cconv","conv"]
 for prog in error1:
     if (os.path.isfile(prog)):
@@ -76,7 +76,7 @@ for prog in error1:
 print "...done."
 
 
-print "Checking error scaling:",
+print "Checking error scaling:"
 p=Popen(['./checkerror.py'],stdout=PIPE,stderr=PIPE)
 p.wait() # sets the return code
 out, err = p.communicate() # capture output

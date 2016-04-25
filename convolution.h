@@ -119,7 +119,7 @@ private:
   fft1d *Backwards,*Forwards;
   bool pointers;
   bool allocated;
-  bool out_of_place;
+  bool outofplace;
   unsigned int indexsize;
 public:
   unsigned int *index;
@@ -143,22 +143,22 @@ public:
   
   void init() {
     indexsize=0;
-    out_of_place = A < B;
-
+    
     Complex* U0=U[0];
     Complex* U1=A == 1 ? utils::ComplexAlign(m) : U[1];
     
     BackwardsO=new fft1d(m,1,U0,U1);
     Backwards=new fft1d(m,1,U0);
     Forwards=new fft1d(m,-1,U0);
-    if(out_of_place) {
-      threads=std::min(threads,
-                       std::max(Backwards->Threads(),Forwards->Threads()));
-    } else {
+    
+    outofplace=A > B;
+    if(outofplace) {
       ForwardsO=new fft1d(m,-1,U0,U1);
       threads=std::min(threads,
                        std::max(BackwardsO->Threads(),ForwardsO->Threads()));
-    }
+    } else
+      threads=std::min(threads,
+                       std::max(Backwards->Threads(),Forwards->Threads()));
     
     if(A == 1) utils::deleteAlign(U1);
 
@@ -208,13 +208,12 @@ public:
     if(pointers) deletepointers(U);
     if(allocated) utils::deleteAlign(u);
     
-    delete ForwardsO;
-    delete BackwardsO;    
-    if(out_of_place) {
-      delete Forwards;
-      delete Backwards;
-    }
+    if(outofplace)
+      delete ForwardsO;
     
+    delete Forwards;
+    delete Backwards;
+    delete BackwardsO;    
   }
 
   // F is an array of A pointers to distinct data blocks each of size m,
@@ -270,6 +269,7 @@ protected:
   bool pointers;
   bool allocated;
   unsigned int indexsize;
+  bool outofplace;
 public:
   unsigned int *index;
 
@@ -294,15 +294,20 @@ public:
   void init() {
     indexsize=0;
     Complex* U0=U[0];
-    Complex* U1=A == 1 ? utils::ComplexAlign(m) : U[1];
     
     rc=new rcfft1d(m,U0);
     cr=new crfft1d(m,U0);
 
-    rco=new rcfft1d(m,(double *) U0,U1);
-    cro=new crfft1d(m,U1,(double *) U0);
-    
-    if(A == 1) utils::deleteAlign(U1);
+    outofplace=A >= 2*B;
+    if(outofplace) {
+      Complex* U1=A == 1 ? utils::ComplexAlign(m) : U[1];
+      rco=new rcfft1d(m,(double *) U0,U1);
+      cro=new crfft1d(m,U1,(double *) U0);
+      if(A == 1) utils::deleteAlign(U1);
+    } else {
+      rco=rc;
+      cro=cr;
+    }
     
     threads=std::min(threads,std::max(rco->Threads(),cro->Threads()));
     s=BuildZeta(3*m,c+2,ZetaH,ZetaL,threads);
@@ -335,7 +340,7 @@ public:
                        unsigned int A=2, unsigned int B=1,
                        unsigned int threads=fftw::maxthreads)
     : ThreadBase(threads), m(m), c(m/2), compact(true), A(A), B(B), u(u),
-    allocated(false) {
+      allocated(false) {
     initpointers(U,u);
     init();
   }
@@ -368,8 +373,10 @@ public:
     if(pointers) deletepointers(U);
     if(allocated) utils::deleteAlign(u);
 
-    delete cro;
-    delete rco;
+    if(outofplace) {
+      delete cro;
+      delete rco;
+    }
     
     delete cr;
     delete rc;
@@ -427,7 +434,7 @@ public:
   fftpad(unsigned int m, unsigned int M,
          unsigned int stride, Complex *u=NULL,
          unsigned int Threads=fftw::maxthreads)
-    : m(m), M(M), stride(stride), threads(std::min(m,Threads)) {
+    : m(m), M(M), stride(stride), threads(Threads) {
     Backwards=new mfft1d(m,1,M,stride,1,u,NULL,threads);
     Forwards=new mfft1d(m,-1,M,stride,1,u,NULL,threads);
     
@@ -477,7 +484,7 @@ public:
   
   fft0pad(unsigned int m, unsigned int M, unsigned int stride, Complex *u=NULL,
           unsigned int Threads=fftw::maxthreads)
-    : m(m), M(M), stride(stride), threads(std::min(m,Threads)) {
+    : m(m), M(M), stride(stride), threads(Threads) {
     Backwards=new mfft1d(m,1,M,stride,1,u,NULL,threads);
     Forwards=new mfft1d(m,-1,M,stride,1,u,NULL,threads);
     
@@ -517,16 +524,16 @@ public:
 // The arrays in and out (which may coincide) must be allocated as
 // Complex[M*2m]. The array u must be allocated as Complex[M*m].
 //
-//   fft0padwide fft(m,M,stride,u);
+//   fft1pad fft(m,M,stride,u);
 //   fft.backwards(in,u);
 //   fft.forwards(in,u);
 //
 // Notes:
 //   stride is the spacing between the elements of each Complex vector.
 //
-class fft0padwide : public fft0pad {
+class fft1pad : public fft0pad {
 public:  
-  fft0padwide(unsigned int m, unsigned int M, unsigned int stride,
+  fft1pad(unsigned int m, unsigned int M, unsigned int stride,
               Complex *u=NULL, unsigned int threads=fftw::maxthreads) :
     fft0pad(m,M,stride,u,threads) {}
 
@@ -592,7 +599,7 @@ public:
   
   void init(const convolveOptions& options) {
     toplevel=options.toplevel;
-    xfftpad=new fftpad(mx,options.ny,options.ny,u2);
+    xfftpad=new fftpad(mx,options.ny,options.ny,u2,threads);
     yconvolve=new ImplicitConvolution*[threads];
     for(unsigned int t=0; t < threads; ++t)
       yconvolve[t]=new ImplicitConvolution(my,u1+t*my*A,A,B,innerthreads);
@@ -802,8 +809,8 @@ public:
   
   void init(const convolveOptions& options) {
     toplevel=options.toplevel;
-    xfftpad=xcompact ? new fft0pad(mx,options.ny,options.ny,u2,threads) :
-      new fft0padwide(mx,options.ny,options.ny,u2,threads);
+    xfftpad=xcompact ? new fft0pad(mx,options.ny,options.ny,u2) :
+      new fft1pad(mx,options.ny,options.ny,u2);
     
     yconvolve=new ImplicitHConvolution*[threads];
     for(unsigned int t=0; t < threads; ++t)
@@ -986,7 +993,7 @@ public:
   void init(const convolveOptions& options) {
     toplevel=options.toplevel;
     unsigned int nyz=options.ny*options.nz;
-    xfftpad=new fftpad(mx,nyz,nyz,u3);
+    xfftpad=new fftpad(mx,nyz,nyz,u3,threads);
     
     if(options.nz == mz) {
       yzconvolve=new ImplicitConvolution2*[threads];
@@ -1093,9 +1100,9 @@ public:
       index[indexsize-3]=i;
       if(threads > 1) {
         for(unsigned int t=1; t < threads; ++t) {
-        unsigned int *Index=yzconvolve[t]->index;
-        for(unsigned int i=0; i < indexsize; ++i)
-          Index[i]=index[i];
+          unsigned int *Index=yzconvolve[t]->index;
+          for(unsigned int i=0; i < indexsize; ++i)
+            Index[i]=index[i];
         }
       }
     }
@@ -1175,8 +1182,8 @@ public:
   void init(const convolveOptions& options) {
     toplevel=options.toplevel;
     unsigned int nyz=options.ny*options.nz;
-    xfftpad=xcompact ? new fft0pad(mx,nyz,nyz,u3,threads) :
-      new fft0padwide(mx,nyz,nyz,u3,threads);
+    xfftpad=xcompact ? new fft0pad(mx,nyz,nyz,u3) :
+      new fft1pad(mx,nyz,nyz,u3);
 
     if(options.nz == mz+!zcompact) {
       yzconvolve=new ImplicitHConvolution2*[threads];
@@ -1320,9 +1327,9 @@ public:
       index[indexsize-3]=i;
       if(threads > 1) {
         for(unsigned int t=1; t < threads; ++t) {
-        unsigned int *Index=yzconvolve[t]->index;
-        for(unsigned int i=0; i < indexsize; ++i)
-          Index[i]=index[i];
+          unsigned int *Index=yzconvolve[t]->index;
+          for(unsigned int i=0; i < indexsize; ++i)
+            Index[i]=index[i];
         }
       }
     }    
@@ -1576,10 +1583,11 @@ class fft0bipad {
   unsigned int threads;
 public:  
   fft0bipad(unsigned int m, unsigned int M, unsigned int stride,
-            Complex *f) : m(m), M(M), stride(stride) {
+            Complex *f, unsigned int Threads=fftw::maxthreads) : 
+    m(m), M(M), stride(stride), threads(Threads) {
     unsigned int twom=2*m;
-    Backwards=new mfft1d(twom,1,M,stride,1,f);
-    Forwards=new mfft1d(twom,-1,M,stride,1,f);
+    Backwards=new mfft1d(twom,1,M,stride,1,f,NULL,threads);
+    Forwards=new mfft1d(twom,-1,M,stride,1,f,NULL,threads);
     
     threads=std::min(threads,
                      std::max(Backwards->Threads(),Forwards->Threads()));
@@ -1657,7 +1665,7 @@ public:
   }
   
   void init() {
-    xfftpad=new fft0bipad(mx,my,my+1,u2);
+    xfftpad=new fft0bipad(mx,my,my+1,u2,threads);
     
     yconvolve=new ImplicitHTConvolution(my,u1,v1,w1,M);
     yconvolve->Threads(1);
@@ -1805,7 +1813,7 @@ public:
   }
     
   void init() {
-    xfftpad=new fft0bipad(mx,my,my+1,u2);
+    xfftpad=new fft0bipad(mx,my,my+1,u2,threads);
     
     yconvolve=new ImplicitHFGGConvolution(my,u1,v1);
     yconvolve->Threads(1);
@@ -1912,7 +1920,7 @@ public:
   }
     
   void init() {
-    xfftpad=new fft0bipad(mx,my,my+1,u2);
+    xfftpad=new fft0bipad(mx,my,my+1,u2,threads);
     
     yconvolve=new ImplicitHFFFConvolution(my,u1);
     yconvolve->Threads(1);

@@ -50,7 +50,7 @@ void fill1_comm_sched(int *sched, int which_pe, int npes)
       i = (pe - which_pe + (n - 1)) % (n - 1);
       if (i < n/2)
         sched[s++] = (pe + i) % (n - 1);
-	       
+               
       i = (which_pe - pe + (n - 1)) % (n - 1);
       if (i < n/2)
         sched[s++] = (pe - i + (n - 1)) % (n - 1);

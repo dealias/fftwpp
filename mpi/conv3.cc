@@ -6,10 +6,6 @@ using namespace utils;
 using namespace fftwpp;
 using namespace Array;
 
-// Number of iterations.
-unsigned int N0=1000000;
-unsigned int N=0;
-
 unsigned int outlimit=3000;
 
 inline void init(Complex **F, const split3& d, unsigned int A=2,
@@ -69,6 +65,10 @@ inline void init(Complex **F, const split3& d, unsigned int A=2,
 
 int main(int argc, char* argv[])
 {
+  // Number of iterations.
+  unsigned int N0=1000000;
+  unsigned int N=0;
+  
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
@@ -89,6 +89,8 @@ int main(int argc, char* argv[])
 
   bool test=false;
   bool quiet=false;
+
+  int stats=0;
   
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
@@ -100,7 +102,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"htqA:B:N:a:m:s:x:y:z:n:T:X:Y:Z:");
+    int c = getopt(argc,argv,"hitqA:B:N:a:m:s:x:y:z:n:T:S:X:Y:Z:");
     if (c == -1) break;
                 
     switch (c) {
@@ -145,6 +147,9 @@ int main(int argc, char* argv[])
       case 'T':
         fftw::maxthreads=atoi(optarg);
         break;
+      case 'S':
+        stats=atoi(optarg);
+        break;
       case 'X':
         xcompact=atoi(optarg) == 0;
         break;
@@ -154,6 +159,9 @@ int main(int argc, char* argv[])
       case 'Z':
         zcompact=atoi(optarg) == 0;
         break;
+      case 'i':
+	// For compatibility reasons with -i option in OpenMP version.
+	break;
       case 'h':
       default:
         if(rank == 0) {
@@ -258,36 +266,36 @@ int main(int argc, char* argv[])
         gatheryz(F[a],F0[a],d,group.active);
         if(!quiet && main) {
           cout << "a: " << a << endl;
-	  show(F0[a],d.X,d.Y,d.Z,0,0,0,d.X,d.Y,d.Z);
+          show(F0[a],d.X,d.Y,d.Z,0,0,0,d.X,d.Y,d.Z);
         }
       }
 
       C.convolve(F,mult);
 
       if(!quiet && nx*ny*mz < outlimit) {
-	if(main) cout << "Distributed output: " << endl;
-	show(F[0],d.X,d.y,d.z,group.active);
+        if(main) cout << "Distributed output: " << endl;
+        show(F[0],d.X,d.y,d.z,group.active);
       }
       
       Complex **F0out=new Complex*[B];
       if(main) {
-	for(unsigned int b=0; b < B; b++)
+        for(unsigned int b=0; b < B; b++)
           F0out[b]=ComplexAlign(d.X*d.Y*d.Z);
       }
       for(unsigned int b=0; b < B; b++) {
-	gatheryz(F[b],F0out[b],d,group.active);
-	if(!quiet && main) {
-	  cout << "Gathered output:" << endl;
-	  cout << "b: " << b << endl;
+        gatheryz(F[b],F0out[b],d,group.active);
+        if(!quiet && main) {
+          cout << "Gathered output:" << endl;
+          cout << "b: " << b << endl;
           show(F0out[b],d.X,d.Y,d.Z,0,0,0,d.X,d.Y,d.Z);
-	}
+        }
       }
 
       if(main) {
-	ImplicitHConvolution3 Clocal(mx,my,mz,xcompact,ycompact,zcompact,A,B);
-	Clocal.convolve(F0,mult);
-	if(!quiet)
-	  cout << "Local output:" << endl;
+        ImplicitHConvolution3 Clocal(mx,my,mz,xcompact,ycompact,zcompact,A,B);
+        Clocal.convolve(F0,mult);
+        if(!quiet)
+          cout << "Local output:" << endl;
         for(unsigned int b=0; b < B; b++) {
           if(!quiet) {
             cout << "b: " << b << endl;
@@ -298,10 +306,10 @@ int main(int argc, char* argv[])
       }
       
       if(main) {
-	for(unsigned int a=0; a < A; a++)
-	  deleteAlign(F0[a]);
-	for(unsigned int b=0; b < B; b++)
-	  deleteAlign(F0out[b]);
+        for(unsigned int a=0; a < A; a++)
+          deleteAlign(F0[a]);
+        for(unsigned int b=0; b < B; b++)
+          deleteAlign(F0out[b]);
       }
       delete[] F0;
       delete[] F0out;
@@ -320,12 +328,12 @@ int main(int argc, char* argv[])
         if(main) T[i]=seconds();
       }
       if(main) 
-        timings("Implicit",mx,T,N);
+        timings("Implicit",mx,T,N,stats);
       delete [] T;
       
       if(!quiet && nx*ny*mz < outlimit) {
-	if(main) cout << "output: " << endl;
-	show(F[0],d.X,d.y,d.z,group.active);
+        if(main) cout << "output: " << endl;
+        show(F[0],d.X,d.y,d.z,group.active);
       }
     }
       

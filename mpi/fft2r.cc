@@ -156,8 +156,8 @@ int main(int argc, char* argv[])
       init(f,df);
 
       if(!quiet && nx*ny < outlimit) {
-	if(main) cout << "\nDistributed input:" << endl;
-	show(f(),df.x,df.Y,group.active);
+        if(main) cout << "\nDistributed input:" << endl;
+        show(f(),df.x,df.Y,group.active);
       }
       
       split dfgather(nx,dfY,group.active);
@@ -167,9 +167,9 @@ int main(int argc, char* argv[])
       array2<double> fgather(nx,dfY,align);
       array2<double> flocal;
       if(inplace)
-      	flocal.Dimension(nx,2*nyp,(double *) glocal());
+        flocal.Dimension(nx,2*nyp,(double *) glocal());
       else
-      	flocal.Allocate(nx,ny,align);
+        flocal.Allocate(nx,ny,align);
   
       rcfft2d localForward(nx,ny,flocal,glocal);
       crfft2d localBackward(nx,ny,glocal,flocal);
@@ -177,58 +177,58 @@ int main(int argc, char* argv[])
       gatherx(f(),flocal(),dfgather,1,group.active);
       gatherx(f(),fgather(),dfgather,1,group.active);
       if(!quiet && main)
-	cout << endl << "Gathered input:\n" << fgather << endl;
+        cout << endl << "Gathered input:\n" << fgather << endl;
       
       if(shift)
-	rcfft.Forward0(f,g);
+        rcfft.Forward0(f,g);
       else
-	rcfft.Forward(f,g);      
+        rcfft.Forward(f,g);      
       
       if(!quiet && nx*ny < outlimit) {
-      	if(main) cout << "\nDistributed output:" << endl;
-      	show(g(),dg.X,dg.y,group.active);
+        if(main) cout << "\nDistributed output:" << endl;
+        show(g(),dg.X,dg.y,group.active);
       }
 
       gathery(g(),ggather(),dg,1,group.active);
       if(main && !quiet)
-	cout << "\nGathered output:\n" << ggather << endl;
+        cout << "\nGathered output:\n" << ggather << endl;
       
       if(main) {
-	if(shift)
-	  localForward.fft0(flocal,glocal);
-	else
-	  localForward.fft(flocal,glocal);
-	if(!quiet)
-	  cout << "\nLocal output:\n" << glocal << endl;
+        if(shift)
+          localForward.fft0(flocal,glocal);
+        else
+          localForward.fft(flocal,glocal);
+        if(!quiet)
+          cout << "\nLocal output:\n" << glocal << endl;
         retval += checkerror(glocal(),ggather(),dg.X*dg.Y);
       }
 
       if(shift)
-	rcfft.Backward0(g,f);
+        rcfft.Backward0(g,f);
       else
-	rcfft.Backward(g,f);
+        rcfft.Backward(g,f);
       rcfft.Normalize(f);
 
       if(!quiet && nx*ny < outlimit) {
-      	if(main) cout << "\nDistributed back to input:" << endl;
-      	show(f(),dfgather.x,dfgather.Y,group.active);
+        if(main) cout << "\nDistributed back to input:" << endl;
+        show(f(),dfgather.x,dfgather.Y,group.active);
       }
 
       gatherx(f(),fgather(),dfgather,1,group.active);
       if(!quiet && main)
-	cout << endl << "Gathered back to input:\n" << fgather << endl;
+        cout << endl << "Gathered back to input:\n" << fgather << endl;
       
       if(main) {
-	if(shift)
-	  localBackward.fft0Normalized(glocal,flocal);
-	else
-	  localBackward.fftNormalized(glocal,flocal);
-	if(!quiet)
-	  cout << "\nLocal back to input:\n" << flocal << endl;
-	cout << "df.X: " << df.X << endl;
-	cout << "df.Y: " << df.Y << endl;
-	cout << "dfgather.Y: " << dfgather.Y << endl;
-	retval += checkerror(fgather(),flocal(),df.Y,df.X,dfgather.Y);
+        if(shift)
+          localBackward.fft0Normalized(glocal,flocal);
+        else
+          localBackward.fftNormalized(glocal,flocal);
+        if(!quiet)
+          cout << "\nLocal back to input:\n" << flocal << endl;
+        cout << "df.X: " << df.X << endl;
+        cout << "df.Y: " << df.Y << endl;
+        cout << "dfgather.Y: " << dfgather.Y << endl;
+        retval += checkerror(fgather(),flocal(),df.Y,df.X,dfgather.Y);
       }
       
       if(!quiet && group.rank == 0) {
@@ -241,32 +241,34 @@ int main(int argc, char* argv[])
   
     } else {
       double *T=new double[N];
-        init(f,df);
+      init(f,df);
       for(unsigned int i=0; i < N; ++i) {
         if(shift) {
-        init(f,df);
+          init(f,df);
           seconds();
           rcfft.Forward0(f,g);
           rcfft.Backward0(g,f);
+          T[i]=0.5*seconds();
           rcfft.Normalize(f);
-          T[i]=seconds();
         } else {
           seconds();
           rcfft.Forward(f,g);
           rcfft.Backward(g,f);
+          T[i]=0.5*seconds();
           rcfft.Normalize(f);
-          T[i]=seconds();
         }
       }    
-      if(main) timings("FFT timing:",nx,T,N,stats);
+      if(main)
+	timings("FFT timing:",nx,T,N,stats);
       delete [] T;
-	
+        
       if(!quiet && nx*ny < outlimit)
         show(f(),df.x,dfY,0,0,df.x,df.Y,group.active);
     }
   
     deleteAlign(g());
-    if(!inplace) deleteAlign(f());
+    if(!inplace)
+      deleteAlign(f());
   }
   
   MPI_Finalize();

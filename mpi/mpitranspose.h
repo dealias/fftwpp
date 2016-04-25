@@ -3,7 +3,7 @@
 
 /* 
    Globally transpose an N x M matrix of blocks of L words of type T.
-   The in-place versions preserve inputs.
+   The out-of-place versions preserve inputs.
 
    Blocking in-place and out-of-place interfaces. Upper case letters denote
    global dimensions; lower case letters denote distributed dimensions: 
@@ -73,11 +73,11 @@ extern mpiOptions defaultmpiOptions;
 
 template<class T>
 inline void copy(const T *from, T *to, unsigned int length,
-		 unsigned int threads=1)
+                 unsigned int threads=1)
 {
   PARALLEL(
-  for(unsigned int i=0; i < length; ++i)
-    to[i]=from[i];
+    for(unsigned int i=0; i < length; ++i)
+      to[i]=from[i];
     );
 }
 
@@ -88,8 +88,8 @@ inline void copytoblock(const T *src, T *dest,
                         unsigned int stride, unsigned int threads=1)
 {
   PARALLEL(
-  for(unsigned int i=0; i < count; ++i)
-    copy(src+i*stride,dest+i*length,length);
+    for(unsigned int i=0; i < count; ++i)
+      copy(src+i*stride,dest+i*length,length);
     );
 }
 
@@ -100,8 +100,8 @@ inline void copyfromblock(const T *src, T *dest,
                           unsigned int stride, unsigned int threads=1)
 {
   PARALLEL(
-  for(unsigned int i=0; i < count; ++i)
-    copy(src+i*length,dest+i*stride,length);
+    for(unsigned int i=0; i < count; ++i)
+      copy(src+i*length,dest+i*stride,length);
     );
 }
 
@@ -158,27 +158,19 @@ inline void Wait(int count, MPI_Request *request, int *sched=NULL)
 }
 #endif
 
-inline int localsize(int N, int size)
-{
-  int n=utils::ceilquotient(N,size);
-  size=N/n;
-  if(N > n*size) ++size;
-  return size;
-}
-
-inline int localstart(int N, int rank, int size)
-{
-  return utils::ceilquotient(N,size)*rank;
-}
-
-inline int localdimension(int N, int rank, int size)
-{
-  int n=utils::ceilquotient(N,size);
-  int extra=N-n*rank;
-  if(extra < 0) extra=0;
-  if(n > extra) n=extra;
-  return n;
-}
+class localdimension {
+public:
+  int n;
+  int start;
+  
+  localdimension(int N, int rank, int size) {
+    n=utils::ceilquotient(N,size);
+    start=n*rank;
+    int extra=N-start;
+    if(extra < 0) extra=0;
+    if(n > extra) n=extra;
+  }
+};
 
 inline int Ialltoall(void *sendbuf, int count, void *recvbuf,
                      MPI_Comm comm, MPI_Request *request, int *sched=NULL,
@@ -219,6 +211,7 @@ private:
   MPI_Comm communicator;
   mpiOptions options;
   MPI_Comm global;
+  double latency;
   MPI_Comm block;
   
   unsigned int n0,m0;
@@ -260,7 +253,6 @@ public:
   
   // Estimate typical bandwidth saturation message size
   double Latency() {
-    static double latency=-1.0;
     if(size == 1) return 0.0;
     if(latency >= 0) return latency;
     
@@ -275,7 +267,7 @@ public:
     T recv[N2*splitsize];
     for(unsigned int i=0; i < N2; ++i)
       send[N2*splitrank+i]=0.0;
-    unsigned int M=100;
+    unsigned int M=1000;
     double T1=0.0, T2=0.0;
     poll(send,recv,N1);
     poll(send,recv,N2);
@@ -283,35 +275,35 @@ public:
       MPI_Barrier(split);
       double t0=utils::totalseconds();
       poll(send,recv,N1);
+      MPI_Barrier(split);
       double t1=utils::totalseconds();
+      poll(send,recv,N2);
       MPI_Barrier(split);
       double t2=utils::totalseconds();
-      poll(send,recv,N2);
-      double t3=utils::totalseconds();
       T1 += t1-t0;
-      T2 += t3-t2;
+      T2 += t2-t1;
     }
-    latency=std::max(T1*(N2-N1)/(T2-T1)-N1,0.0)*sizeof(double);
+    latency=std::max(T1*(N2-N1)/(T2-T1)-N1,0.0)*sizeof(T);
     if(globalrank == 0 && options.verbose)
       std::cout << std::endl << "latency=" << latency << std::endl;
     MPI_Comm_free(&split); 
     return latency;
   }
 
-  void setup(T *data) {
+  void setup(T *data, MPI_Comm Communicator) {
     threads=options.threads;
-    MPI_Comm_size(communicator,&size);
-    MPI_Comm_rank(communicator,&rank);
+    MPI_Comm_size(Communicator,&size);
+    MPI_Comm_rank(Communicator,&rank);
     
     MPI_Comm_rank(global,&globalrank);
     
-    m0=localdimension(M,0,size);
-    mlast=utils::ceilquotient(M,m0)-1;
-    mp=localdimension(M,mlast,size);
+    n0=localdimension(N,0,size).n;
+    nlast=std::min((int) utils::ceilquotient(N,n0),size)-1;
+    np=localdimension(N,nlast,size).n;
     
-    n0=localdimension(N,0,size);
-    nlast=utils::ceilquotient(N,n0)-1;
-    np=localdimension(N,nlast,size);
+    m0=localdimension(M,0,size).n;
+    mlast=std::min((int) utils::ceilquotient(M,m0),size)-1;
+    mp=localdimension(M,mlast,size).n;
     
     if(work == NULL) {
       allocated=std::max(N*m,n*M)*L;
@@ -324,6 +316,10 @@ public:
       return;
     }
     
+    int Pbar=std::min(nlast+(n0 == np),mlast+(m0 == mp));
+    size=std::max(nlast+1,mlast+1);
+    MPI_Comm_split(Communicator,rank < size,0,&communicator);
+
     int start=0,stop=1;
     if(options.alltoall >= 0)
       start=stop=options.alltoall;
@@ -337,17 +333,18 @@ public:
                 << size << " processes." << std::endl;
       
     int alimit;
+    
     if(options.a <= 0) {
       double latency=safetyfactor*Latency();
       if(globalrank == 0) {
-        if(N*M*L*sizeof(T) < latency*size*size) {
+        if(N*M*L*sizeof(T) < latency*Pbar*Pbar) {
           if(options.a < 0) {
-            int n=sqrt(size)+0.5;
-            options.a=size/n;
+            int n=sqrt(Pbar)+0.5;
+            options.a=Pbar/n;
             alimit=options.a+1;
           } else {
             options.a=1;
-            alimit=(int) (sqrt(size)+1.5);
+            alimit=(int) (sqrt(Pbar)+1.5);
           }
         } else { // Enforce a=1 if message length > latency.
           alimit=2;
@@ -358,7 +355,6 @@ public:
       MPI_Bcast(&options.a,1,MPI_INT,0,global);
     } else alimit=options.a+1;
     int astart=options.a;
-      
     uniform=divisible(size,M,N);
     if(alimit > astart+1 || stop-start >= 1) {
       if(globalrank == 0 && options.verbose)
@@ -368,9 +364,18 @@ public:
       for(int alltoall=start; alltoall <= stop; ++alltoall) {
         if(globalrank == 0 && options.verbose)
           std::cout << "alltoall=" << alltoall << std::endl;
+        unsigned int maxscore=0;
+        // Only consider a,b values that yield largest possible submatrix.
+        for(a=std::max(2,astart); a < alimit; a++) {
+          b=Pbar/a;
+          unsigned int ab=a*b;
+          unsigned int score=ab*(N/ab)*ab*(M/ab);
+          if(score > maxscore) maxscore=score;
+        }
         for(a=astart; a < alimit; a++) {
-          if(uniform && (size % a != 0)) continue;
-          b=std::min(nlast+(n0 == np),mlast+(m0 == mp))/a;
+          b=Pbar/a;
+          unsigned int ab=a*b;
+          if(a > 1 && ab*(N/ab)*ab*(M/ab) < maxscore) continue;
           options.alltoall=alltoall;
           init(data);
           double t=time(data);
@@ -394,8 +399,8 @@ public:
     }
     
     a=options.a;
-    b=std::min(nlast+(n0 == np),mlast+(m0 == mp))/a;
-    if(b <= 1) {b=a; a=1;}
+    b=a > 1 || uniform ? Pbar/a : Pbar+1; 
+    if(b == 1) {b=a; a=1;}
     
     if(globalrank == 0 && options.verbose)
       std::cout << std::endl << "Using alltoall=" << 
@@ -412,9 +417,9 @@ public:
                MPI_Comm communicator=MPI_COMM_WORLD,
                const mpiOptions& options=defaultmpiOptions,
                MPI_Comm global=0) :
-    N(N), m(m), n(n), M(M), L(L), work(work), communicator(communicator),
-    options(options), global(global ? global : communicator) {
-    setup(data);
+    N(N), m(m), n(n), M(M), L(L), work(work),
+    options(options), global(global ? global : communicator), latency(-1) {
+    setup(data,communicator);
   }
   
   mpitranspose(unsigned int N, unsigned int m, unsigned int n,
@@ -422,9 +427,9 @@ public:
                T *data, MPI_Comm communicator=MPI_COMM_WORLD,
                const mpiOptions& options=defaultmpiOptions,
                MPI_Comm global=0) :
-    N(N), m(m), n(n), M(M), L(L), work(NULL), communicator(communicator),
-    options(options), global(global ? global : communicator) {
-    setup(data);
+    N(N), m(m), n(n), M(M), L(L), work(NULL),
+    options(options), global(global ? global : communicator), latency(-1) {
+    setup(data,communicator);
   }
     
   mpitranspose(unsigned int N, unsigned int m, unsigned int n,
@@ -432,9 +437,9 @@ public:
                MPI_Comm communicator=MPI_COMM_WORLD,
                const mpiOptions& options=defaultmpiOptions,
                MPI_Comm global=0) :
-    N(N), m(m), n(n), M(M), L(1), work(work), communicator(communicator),
-    options(options), global(global ? global : communicator) {
-    setup(data);
+    N(N), m(m), n(n), M(M), L(1), work(work),
+    options(options), global(global ? global : communicator), latency(-1) {
+    setup(data,communicator);
   }
     
   double time(T *data) {
@@ -524,12 +529,13 @@ public:
     if(size == 1) return;
     if(sched) {
       if(uniform || subblock) {
-        delete[] sched1;
-        delete[] sched2;
+        delete [] sched1;
+        delete [] sched2;
       }
-      delete[] sched;
+      delete [] sched;
     }
-    delete[] request;
+    delete [] Request;
+    delete [] request;
     if(a > 1) {
       int final;
       MPI_Finalized(&final);
@@ -584,10 +590,16 @@ public:
       int P=sched[p];
       if(P != rank && (rank >= start || P >= start)) {
         int index=rank >= start ? (P < rank ? P : P-1) : P-start;
-        MPI_Irecv((char *) recvbuf+mn0*P,mS*ni(P),MPI_BYTE,P,0,communicator,
-                  request+index);
-        MPI_Isend((char *) sendbuf+nm0*P,nS*mi(P),MPI_BYTE,P,0,communicator,
-                  srequest+index);
+        int count=mS*ni(P);
+        if(count > 0)
+          MPI_Irecv((char *) recvbuf+mn0*P,count,MPI_BYTE,P,0,communicator,
+                    request+index);
+        else request[index]=MPI_REQUEST_NULL;
+        count=nS*mi(P);
+        if(count > 0)
+          MPI_Isend((char *) sendbuf+nm0*P,count,MPI_BYTE,P,0,communicator,
+                    srequest+index);
+        else srequest[index]=MPI_REQUEST_NULL;
       }
     }
 
@@ -609,10 +621,17 @@ public:
       int P=sched[p];
       if(P != rank && (rank >= start || P >= start)) {
         int index=rank >= start ? (P < rank ? P : P-1) : P-start;
-        MPI_Irecv((char *) recvbuf+nm0*P,nS*mi(P),MPI_BYTE,P,0,communicator,
-                  request+index);
-        MPI_Isend((char *) sendbuf+mn0*P,mS*ni(P),MPI_BYTE,P,0,communicator,
-                  srequest+index);
+        int count=nS*mi(P);
+        if(count > 0)
+          MPI_Irecv((char *) recvbuf+nm0*P,nS*mi(P),MPI_BYTE,P,0,communicator,
+                    request+index);
+        else request[index]=MPI_REQUEST_NULL;
+        count=mS*ni(P);
+        if(count > 0)
+          MPI_Isend((char *) sendbuf+mn0*P,mS*ni(P),MPI_BYTE,P,0,communicator,
+                    srequest+index);
+        else srequest[index]=MPI_REQUEST_NULL;
+
       }
     }
 
@@ -623,6 +642,7 @@ public:
 
 // inphase: N x m -> n x M
   void inphase0() {
+    if(rank >= size) return;
     if(size == 1) {
       if(input != output) {
         if(outflag) {NmTranspose(input,output); outflag=false;}
@@ -642,7 +662,7 @@ public:
   }
   
   void insync0() {
-    if(size == 1) return;
+    if(size == 1 || rank >= size) return;
     if(uniform || subblock)
       Wait(2*(split2size-1),Request,sched2);
     if(!uniform)
@@ -650,6 +670,7 @@ public:
   }
   
   void inphase1() {
+    if(rank >= size) return;
     if(subblock) {
       localtranspose(work,output,a,n*b,m*L,threads);
       Ialltoall(output,n*m*sizeof(T)*a*L,work,split,Request,sched1,threads);
@@ -657,12 +678,13 @@ public:
   }
 
   void insync1() {
+    if(rank >= size) return;
     if(subblock)
       Wait(2*(splitsize-1),Request,sched1);
   }
 
   void inpost() {
-    if(size == 1) return;
+    if(size == 1 || rank >= size) return;
     if(uniform)
       localtranspose(work,output,b,n*a,m*L,threads);
     else {
@@ -674,24 +696,24 @@ public:
         unsigned int extra=(M-m0*a*b)*L;
 
         PARALLEL(
-        for(unsigned int i=0; i < n; ++i) {
-          for(int j=0; j < a; ++j)
-            copytoblock(work+(a*i+j)*block,output+(a*i+j)*ostride+i*extra,b,
-                        block,istride);
-        });
+          for(unsigned int i=0; i < n; ++i) {
+            for(int j=0; j < a; ++j)
+              copytoblock(work+(a*i+j)*block,output+(a*i+j)*ostride+i*extra,b,
+                          block,istride);
+          });
         if(extra > 0) {
           unsigned int lastblock=mp*L;
           istride=n*block;
           ostride=mlast*block+lastblock;
 
           PARALLEL(
-          for(unsigned int j=0; j < n; ++j) {
-            T *dest=output+j*ostride;
-            if(mlast > a*b)
-              copytoblock(work+j*block+istride*a*b,dest+block*a*b,mlast-a*b,
-                          block,istride);
-            copy(work+j*lastblock+mlast*istride,dest+mlast*block,lastblock);
-          });
+            for(unsigned int j=0; j < n; ++j) {
+              T *dest=output+j*ostride;
+              if(mlast > a*b)
+                copytoblock(work+j*block+istride*a*b,dest+block*a*b,mlast-a*b,
+                            block,istride);
+              copy(work+j*lastblock+mlast*istride,dest+mlast*block,lastblock);
+            });
         }
       } else {
         unsigned int lastblock=mp*L;
@@ -700,17 +722,18 @@ public:
         unsigned int ostride=mlast*block+lastblock;
 
         PARALLEL(
-        for(unsigned int j=0; j < n; ++j) {
-          T *dest=output+j*ostride;
-          copytoblock(work+j*block,dest,mlast,block,istride);
-          copy(work+j*lastblock+mlast*istride,dest+mlast*block,lastblock);
-        });
+          for(unsigned int j=0; j < n; ++j) {
+            T *dest=output+j*ostride;
+            copytoblock(work+j*block,dest,mlast,block,istride);
+            copy(work+j*lastblock+mlast*istride,dest+mlast*block,lastblock);
+          });
       }
     }
   }
   
 // outphase: n x M -> N x m
   void outphase0() {
+    if(rank >= size) return;
     if(size == 1) {
       if(input != output) {
         if(!outflag) {nMTranspose(input,output); outflag=true;}
@@ -730,24 +753,24 @@ public:
         unsigned int extra=(M-m0*a*b)*L;
 
         PARALLEL(
-        for(unsigned int i=0; i < n; ++i) {
-          for(int j=0; j < a; ++j)
-            copyfromblock(input+(a*i+j)*ostride+i*extra,work+(a*i+j)*block,b,
-                          block,istride);
-        });
+          for(unsigned int i=0; i < n; ++i) {
+            for(int j=0; j < a; ++j)
+              copyfromblock(input+(a*i+j)*ostride+i*extra,work+(a*i+j)*block,b,
+                            block,istride);
+          });
         if(extra > 0) {
           unsigned int lastblock=mp*L;
           istride=n*block;
           ostride=mlast*block+lastblock;
 
           PARALLEL(
-          for(unsigned int j=0; j < n; ++j) {
-            T *src=input+j*ostride;
-            if(mlast > a*b)
-              copyfromblock(src+block*a*b,work+j*block+istride*a*b,mlast-a*b,
-                            block,istride);
-            copy(src+mlast*block,work+j*lastblock+mlast*istride,lastblock);
-          });
+            for(unsigned int j=0; j < n; ++j) {
+              T *src=input+j*ostride;
+              if(mlast > a*b)
+                copyfromblock(src+block*a*b,work+j*block+istride*a*b,mlast-a*b,
+                              block,istride);
+              copy(src+mlast*block,work+j*lastblock+mlast*istride,lastblock);
+            });
         }
       } else {
         unsigned int lastblock=mp*L;
@@ -756,11 +779,11 @@ public:
         unsigned int ostride=mlast*block+lastblock;
 
         PARALLEL(
-        for(unsigned int j=0; j < n; ++j) {
-          T *src=input+j*ostride;
-          copyfromblock(src,work+j*block,mlast,block,istride);
-          copy(src+mlast*block,work+j*lastblock+mlast*istride,lastblock);
-        });
+          for(unsigned int j=0; j < n; ++j) {
+            T *src=input+j*ostride;
+            copyfromblock(src,work+j*block,mlast,block,istride);
+            copy(src+mlast*block,work+j*lastblock+mlast*istride,lastblock);
+          });
       }
     }
     if(subblock)
@@ -769,13 +792,14 @@ public:
   }             
   
   void outsync0() {
+    if(rank >= size) return;
     if(subblock)
       Wait(2*(splitsize-1),Request,sched1);
     else outsync();
   }
   
   void outphase() {
-    if(size == 1) return;
+    if(size == 1 || rank >= size) return;
     // Outer transpose a x a matrix of N/a x M/a blocks over a processes
     if(subblock)
       localtranspose(output,work,n*b,a,m*L,threads);
@@ -795,7 +819,7 @@ public:
   }
   
   void outsync() {
-    if(size == 1) return;
+    if(size == 1 || rank >= size) return;
     if(!uniform)
       Wait(2*(size-(subblock ? a*b : 1)),request,sched);
     if(uniform || subblock)

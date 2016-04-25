@@ -8,9 +8,9 @@ using namespace fftwpp;
 using namespace Array;
 
 inline void init(Complex *f,
-		 unsigned int X, unsigned int Y, unsigned int Z,
-		 unsigned int x0, unsigned int y0, unsigned int z0,
-		 unsigned int x, unsigned int y, unsigned int z) 
+                 unsigned int X, unsigned int Y, unsigned int Z,
+                 unsigned int x0, unsigned int y0, unsigned int z0,
+                 unsigned int x, unsigned int y, unsigned int z) 
 {
   unsigned int c=0;
   for(unsigned int i=0; i < X; ++i) {
@@ -18,8 +18,8 @@ inline void init(Complex *f,
     for(unsigned int j=0; j < y; j++) {
       unsigned int jj=y0+j;
       for(unsigned int k=0; k < z; k++) {
-	unsigned int kk=z0+k;
-	f[c++]=Complex(10*kk+ii,jj);
+        unsigned int kk=z0+k;
+        f[c++]=Complex(10*kk+ii,jj);
       }
     }
   }
@@ -90,8 +90,8 @@ int main(int argc, char* argv[])
 
     if(!quiet) {
       // if(group.rank == 1) {
-      // 	 cout << "process " << group.rank << endl;
-      // 	  d.show();
+      //         cout << "process " << group.rank << endl;
+      //          d.show();
       // }
     }
 
@@ -117,23 +117,23 @@ int main(int argc, char* argv[])
       array3<Complex> g0(d.X,d.Y,d.Z);
       init(g0,d.X,d.Y,d.Z,0,0,0,d.X,d.Y,d.Z);
       if(!quiet) {
-	cout << "Local transpose=0:" << endl;
-	cout << f0 << endl;
-	cout << "local init:" << endl;
-	cout << g0 << endl << endl;;
+        cout << "Local transpose=0:" << endl;
+        cout << f0 << endl;
+        cout << "local init:" << endl;
+        cout << g0 << endl << endl;;
       }
 
       bool same=true;
       for(unsigned int i = 0; i < d.X; ++i) {
-	for(unsigned int j = 0; j < d.Y; ++j) {
-	  for(unsigned int k = 0; k < d.Z; ++k) {
-	    if(g0(i,j,k) != f0(i,j,k))
-	      same=false;
-	  }
-	}
+        for(unsigned int j = 0; j < d.Y; ++j) {
+          for(unsigned int k = 0; k < d.Z; ++k) {
+            if(g0(i,j,k) != f0(i,j,k))
+              same=false;
+          }
+        }
       }
       if(!same)
-	retval++;
+        retval++;
     }
   }
 

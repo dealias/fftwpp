@@ -45,28 +45,31 @@ def main(argv):
         Xlist = [1,2,3,4,5,random.randint(6,64)]
         Ylist = [1,2,3,4,5,random.randint(6,64)]
         Plist = [1,2,3,4,random.randint(6,10)]
+        Tlist = [1,2,random.randint(3,5)]
 
         if(shortrun):
             print "Short run."
             Xlist = [2,3,random.randint(6,64)]
             Ylist = [2,3,random.randint(6,64)]
             Plist = [1,2]
+            Tlist = [1,2]
             
         testcases = []
         for X in Xlist:
             for Y in Ylist:
                 for inplace in [0, 1]:
-                    args = []
-                    args.append("-x" + str(X))
-                    args.append("-y" + str(Y))
-                    args.append("-i" + str(inplace))
-                    args.append("-N1")
-                    args.append("-s1")
-                    args.append("-a1")
-                    args.append("-T1")
-                    args.append("-t")
-                    args.append("-q")
-                    testcases.append(args)
+                        for T in Tlist:
+                            args = []
+                            args.append("-x" + str(X))
+                            args.append("-y" + str(Y))
+                            args.append("-i" + str(inplace))
+                            args.append("-N1")
+                            args.append("-s1")
+                            args.append("-a1")
+                            args.append("-T" + str(T))
+                            args.append("-t")
+                            args.append("-q")
+                            testcases.append(args)
 
         tstart = time.time()
         ntest = len(testcases)*len(Plist)

@@ -23,12 +23,12 @@ int main()
   for(unsigned int i=0; i < n; i++) f[i]=i;
 
   cout << "\ninput:" << endl;
-  for(unsigned int i=0; i < n; i++) cout << f[i] << endl;	
+  for(unsigned int i=0; i < n; i++) cout << f[i] << endl;       
 
   Forward.fft(f);
 
   cout << "\noutput:" << endl;
-  for(unsigned int i=0; i < n; i++) cout << f[i] << endl;	
+  for(unsigned int i=0; i < n; i++) cout << f[i] << endl;       
 
   Backward.fftNormalized(f);
 

@@ -57,17 +57,17 @@ int main(int argc, char* argv[])
   
   if(group.rank == 0) {
     cout << "Configuration: " 
-	 << group.size << " nodes X " << fftw::maxthreads
-	 << " threads/node" << endl;
+         << group.size << " nodes X " << fftw::maxthreads
+         << " threads/node" << endl;
   }
 
   if(group.rank < group.size) { 
     bool main=group.rank == 0;
     if(main) {
       cout << "nx=" << nx
-	   << ", ny=" << ny
-	   << ", nz=" << nz
-	   << ", nzp=" << nzp << endl;
+           << ", ny=" << ny
+           << ", nz=" << nz
+           << ", nzp=" << nzp << endl;
     }
 
     // Set up per-process dimensions
@@ -111,7 +111,7 @@ int main(int argc, char* argv[])
     show(g0,dg.X,dg.y,dg.z,group.active);
 
     if(main) cout << "\nTransformed back to real-space (split in xy):"
-		  << endl;
+                  << endl;
     if(main) cout << "f0:" << endl;
     rcfft.Backward0(g0,f0);
     rcfft.Normalize(f0);

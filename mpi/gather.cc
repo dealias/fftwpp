@@ -8,27 +8,27 @@ using namespace fftwpp;
 using namespace Array;
 
 inline void init(Complex *f, unsigned int nx, unsigned int ny, unsigned int x0,
-		 unsigned int y0, unsigned int x, unsigned int y, 
-		 unsigned int nz, bool transposed) 
+                 unsigned int y0, unsigned int x, unsigned int y, 
+                 unsigned int nz, bool transposed) 
 {
   if(!transposed) {
     for(unsigned int i=0; i < x; ++i) {
       unsigned int ii=x0 + i;
       for(unsigned int j=0; j < ny; j++) {
-	for(unsigned int k=0; k < nz; k++) {
-	  int pos=i*ny*nz+j*nz+k;
-	  f[pos]=Complex(ii,j+(1.0*k)/nz);
-	}
+        for(unsigned int k=0; k < nz; k++) {
+          int pos=i*ny*nz+j*nz+k;
+          f[pos]=Complex(ii,j+(1.0*k)/nz);
+        }
       }
     }
   } else {
     for(unsigned int i=0; i < nx; ++i) {
       for(unsigned int j=0; j < y; j++) {
-	unsigned int jj=y0 + j;
-	for(unsigned int k=0; k < nz; k++) {
-	  int pos=i*y*nz+j*nz+k;
-	  f[pos]=Complex(i,jj+(1.0*k)/nz);
-	}
+        unsigned int jj=y0 + j;
+        for(unsigned int k=0; k < nz; k++) {
+          int pos=i*y*nz+j*nz+k;
+          f[pos]=Complex(i,jj+(1.0*k)/nz);
+        }
       }
     }
   }
@@ -59,28 +59,28 @@ int main(int argc, char* argv[])
     if (c == -1) break;
     
     switch (c) {
-    case 0:
-      break;
-    case 'm':
-      mx=my=atoi(optarg);
-      break;
-    case 'x':
-      mx=atoi(optarg);
-      break;
-    case 'y':
-      my=atoi(optarg);
-      break;
-    case 'z':
-      mz=atoi(optarg);
-      break;
-    case 'q':
-      quiet=true;
-      break;
-    case 'h':
-    default:
-      if(rank == 0)
-        usageGather();
-      exit(1);
+      case 0:
+        break;
+      case 'm':
+        mx=my=atoi(optarg);
+        break;
+      case 'x':
+        mx=atoi(optarg);
+        break;
+      case 'y':
+        my=atoi(optarg);
+        break;
+      case 'z':
+        mz=atoi(optarg);
+        break;
+      case 'q':
+        quiet=true;
+        break;
+      case 'h':
+      default:
+        if(rank == 0)
+          usageGather();
+        exit(1);
     }
   }
 
@@ -100,12 +100,12 @@ int main(int argc, char* argv[])
 
     if(!quiet) {
       if(mx * my < outlimit) {
-	if(main)
-	  cout << "\ninput:" << endl;
-	cout << "process " << group.rank << endl;
-	for(unsigned int i=0; i < d.n*mz; ++i) {
-	  cout << f[i] << endl;
-	}
+        if(main)
+          cout << "\ninput:" << endl;
+        cout << "process " << group.rank << endl;
+        for(unsigned int i=0; i < d.n*mz; ++i) {
+          cout << f[i] << endl;
+        }
       }
     }
     
@@ -115,32 +115,32 @@ int main(int argc, char* argv[])
     gatherx(f,localf(),d,mz,group.active);
     if(main) {
       if(!quiet) {
-	cout << "Gathered:" <<endl;
-	cout << localf << endl;
+        cout << "Gathered:" <<endl;
+        cout << localf << endl;
       }
       array3<Complex> localf0(mx,my,mz);
       init(localf0(),d.X,d.Y,0,0,d.X,d.Y,mz,false);
       if(!quiet) {
-	cout << "Local init:" << endl;
-	cout << localf0 << endl;
+        cout << "Local init:" << endl;
+        cout << localf0 << endl;
       }
       bool same=true;
       if(!quiet) {
-	for(unsigned int i=0; i < d.X; ++i) {
-	  for(unsigned int j=0; j < d.Y; ++j) {
-	    for(unsigned int k=0; k < mz; ++k) {
-	      cout << localf(i,j,k) << " " << localf0(i,j,k) << endl;
-	      if(localf(i,j,k) != localf0(i,j,k))
-		same=false;
-	    }
-	  }
-	}
+        for(unsigned int i=0; i < d.X; ++i) {
+          for(unsigned int j=0; j < d.Y; ++j) {
+            for(unsigned int k=0; k < mz; ++k) {
+              cout << localf(i,j,k) << " " << localf0(i,j,k) << endl;
+              if(localf(i,j,k) != localf0(i,j,k))
+                same=false;
+            }
+          }
+        }
       }
       if(same) {
-	cout << "OK." << endl;
+        cout << "OK." << endl;
       } else {
-	cout << "ERROR!" << endl;
-	retval += 1;
+        cout << "ERROR!" << endl;
+        retval += 1;
       }
     }
 
@@ -150,53 +150,53 @@ int main(int argc, char* argv[])
     init(f,d.X,d.Y,d.x0,d.y0,d.x,d.y,mz,true);
     if(!quiet) {
       if(mx*my < outlimit) {
-	if(main) cout << "\noutput:" << endl;
-	show(f,d.X,d.Y,mz,
-	     d.x0,d.y0,0,
-	     d.x,d.y,mz,
-	     group.active);
+        if(main) cout << "\noutput:" << endl;
+        show(f,d.X,d.Y,mz,
+             d.x0,d.y0,0,
+             d.x,d.y,mz,
+             group.active);
 
-	cout << "process " << group.rank << endl;
-	for(unsigned int i=0; i < d.n * mz; ++i) {
-	  cout << f[i] << endl;
-	}
+        cout << "process " << group.rank << endl;
+        for(unsigned int i=0; i < d.n * mz; ++i) {
+          cout << f[i] << endl;
+        }
       }
     }
-	
+        
     localf=0.0;
     gathery(f,localf(),d,mz,group.active);
     if(main) {
       if(!quiet) {
-	if(mx*my < outlimit) {
-	  cout << "\nGathered version:" << endl;
-	  cout << localf << endl;
-	}
+        if(mx*my < outlimit) {
+          cout << "\nGathered version:" << endl;
+          cout << localf << endl;
+        }
       }
       array3<Complex> localf0(mx,my,mz);
       init(localf0(),d.X,d.Y,0,0,d.X,d.Y,mz,false);
       if(!quiet) {
-	if(mx*my < outlimit) {
-	  cout << "Local init:" << endl;
-	  cout << localf0 << endl;
-	}
+        if(mx*my < outlimit) {
+          cout << "Local init:" << endl;
+          cout << localf0 << endl;
+        }
       }
-	
+        
       //cout << "Comparison:\n"  << endl;
       bool same=true;
       for(unsigned int i=0; i < d.X; ++i) {
-    	for(unsigned int j=0; j < d.Y; ++j) {
-    	  for(unsigned int k=0; k < mz; ++k) {
-    	    //cout << localf(i,j,k) << " " << localf0(i,j,k) << endl;
-    	    if(localf(i,j,k) != localf0(i,j,k))
-    	      same=false;
-    	  }
-    	}
+        for(unsigned int j=0; j < d.Y; ++j) {
+          for(unsigned int k=0; k < mz; ++k) {
+            //cout << localf(i,j,k) << " " << localf0(i,j,k) << endl;
+            if(localf(i,j,k) != localf0(i,j,k))
+              same=false;
+          }
+        }
       }
       if(same) {
-    	cout << "OK." << endl;
+        cout << "OK." << endl;
       } else {
-    	cout << "ERROR!" << endl;
-    	retval += 1;
+        cout << "ERROR!" << endl;
+        retval += 1;
       }
     }
       

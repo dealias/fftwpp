@@ -145,12 +145,12 @@ static inline Vec operator +(const Vec& a, const Vec& b)
 
 static inline Vec operator -(const Vec& a, const Vec& b)
 {
-    return Vec(a.x-b.x,a.y-b.y);
+  return Vec(a.x-b.x,a.y-b.y);
 }
 
 static inline Vec operator *(const Vec& a, const Vec& b)
 {
-    return Vec(a.x*b.x,a.y*b.y);
+  return Vec(a.x*b.x,a.y*b.y);
 }
 
 static inline Vec UNPACKL(const Vec& z, const Vec& w)

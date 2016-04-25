@@ -47,7 +47,7 @@ vpath %.cc ../../
 
 FFTW=fftw++
 FILES= fft2rconv fft3rconv
-UTILS=$(FFTW) mpiutils
+UTILS=$(FFTW)
 MPITRANSPOSE=$(UTILS) mpitranspose
 MPIFFT=$(MPITRANSPOSE) mpifftw++
 MPICONVOLUTION=$(MPIFFT) convolution mpiconvolution

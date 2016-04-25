@@ -124,7 +124,7 @@ int main(int argc, char* argv[])
   
   unsigned int Bcheck=0; // Which output to check
 
-  unsigned int stats=0; // Type of statistics used in timing test.
+  int stats=0; // Type of statistics used in timing test.
 
 
 #ifndef __SSE2__
@@ -202,7 +202,7 @@ int main(int argc, char* argv[])
   
   if(N == 0) {
     N=N0/n;
-    if(N < 10) N=10;
+    N = max(N, 20);
   }
   cout << "N=" << N << endl;
   
@@ -244,9 +244,9 @@ int main(int argc, char* argv[])
     realmultiplier *mult;
     if(B == 1) {
       switch(A) {
-      case 2: mult=multbinary; break;
-      case 4: mult=multbinary2; break;
-      default: mult=multA;
+        case 2: mult=multbinary; break;
+        case 4: mult=multbinary2; break;
+        default: mult=multA;
       }
     } else
       mult=multB;
@@ -260,6 +260,7 @@ int main(int argc, char* argv[])
     }
 
     timings("Implicit",m,T,N,stats);
+
     
     if(m < 100) 
       for(unsigned int i=0; i < m; i++) cout << F[Bcheck][i] << endl;
@@ -279,7 +280,7 @@ int main(int argc, char* argv[])
     }
 
     cout << endl;
-    timings("Explicit",m,T,N);
+    timings("Explicit",m,T,N,stats);
 
     if(m < 100) 
       for(unsigned int i=0; i < m; i++) cout << f[i] << endl;

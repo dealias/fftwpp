@@ -5,17 +5,12 @@ using namespace std;
 using namespace utils;
 using namespace fftwpp;
 
-// Number of iterations.
-unsigned int N0=1000000;
-unsigned int N=0;
-int divisor=0; // Test for best block divisor
-int alltoall=-1; // Test for best alltoall routine
 
 void init(Complex **F,
-	  unsigned int X, unsigned int Y, unsigned int Z,
-	  unsigned int x0, unsigned int y0, unsigned int z0,
-	  unsigned int x, unsigned int y, unsigned int z,
-	  unsigned int A=2)
+          unsigned int X, unsigned int Y, unsigned int Z,
+          unsigned int x0, unsigned int y0, unsigned int z0,
+          unsigned int x, unsigned int y, unsigned int z,
+          unsigned int A=2)
 {
   unsigned int M=A/2;
   double factor=1.0/sqrt((double) M);
@@ -27,13 +22,13 @@ void init(Complex **F,
     double gfactor=1.0/S*factor;
     for(unsigned int i=0; i < X; ++i) {
       for(unsigned int j=0; j < y; j++) {
-	unsigned int jj=y0+j;
-	for(unsigned int k=0; k < z; k++) {
+        unsigned int jj=y0+j;
+        for(unsigned int k=0; k < z; k++) {
           unsigned int kk=z0+k;
-	  unsigned int pos=i*y*z+j*z+k;
-	  Fs[pos]=ffactor*Complex(i+kk,jj+kk);
-	  Gs[pos]=gfactor*Complex(2*i+kk,jj+1+kk);
-	}
+          unsigned int pos=i*y*z+j*z+k;
+          Fs[pos]=ffactor*Complex(i+kk,jj+kk);
+          Gs[pos]=gfactor*Complex(2*i+kk,jj+1+kk);
+        }
       }
     }
   }
@@ -52,8 +47,8 @@ void show(Complex *F, unsigned int X, unsigned int Y, unsigned int Z)
   for(unsigned int i=0; i < X; ++i) {
     for(unsigned int j=0; j < Y; ++j) {
       for(unsigned int k=0; k < Z; ++k) {
-	unsigned int pos=i*Y*Z+j*Z+k;
-	cout << F[pos] << "\t";
+        unsigned int pos=i*Y*Z+j*Z+k;
+        cout << F[pos] << "\t";
       }
       cout << endl;
     }
@@ -65,6 +60,15 @@ unsigned int outlimit=3000;
 
 int main(int argc, char* argv[])
 {
+
+  // Number of iterations.
+  unsigned int N0=1000000;
+  unsigned int N=0;
+  int divisor=0; // Test for best block divisor
+  int alltoall=-1; // Test for best alltoall routine
+
+  int stats=0;
+  
   unsigned int mx=4;
   unsigned int my=0;
   unsigned int mz=0;
@@ -89,7 +93,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"htqa:A:B:N:T:m:n:s:x:y:z:");
+    int c = getopt(argc,argv,"ihtqa:A:B:N:T:S:m:n:s:x:y:z:");
     if (c == -1) break;
                 
     switch (c) {
@@ -134,6 +138,12 @@ int main(int argc, char* argv[])
       case 'T':
         fftw::maxthreads=atoi(optarg);
         break;
+      case 'S':
+        stats=atoi(optarg);
+        break;
+      case 'i':
+	// For compatibility reasons with -i option in OpenMP version.
+	break;       
       case 'h':
       default:
         if(rank == 0) {
@@ -149,7 +159,7 @@ int main(int argc, char* argv[])
   
   if(N == 0) {
     N=N0/mx/my/mz;
-    if(N < 10) N=10;
+    if(N < 20) N=20;
   }
 
   int size;
@@ -265,7 +275,7 @@ int main(int argc, char* argv[])
       }
     } else {
       if(!quiet && main)
-	cout << "Initialized after " << seconds() << " seconds." << endl;
+        cout << "Initialized after " << seconds() << " seconds." << endl;
 
       MPI_Barrier(group.active);
      
@@ -280,7 +290,7 @@ int main(int argc, char* argv[])
         MPI_Barrier(group.active);
       }
       if(main) 
-        timings("Implicit",mx,T,N);
+        timings("Implicit",mx,T,N,stats);
     
       delete[] T;
       if(!quiet && mx*my*mz < outlimit) 

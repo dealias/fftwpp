@@ -49,6 +49,8 @@ int main(int argc, char* argv[])
   
   unsigned int A=2; // Number of independent inputs
   unsigned int B=1; // Number of outputs
+
+  int stats=0;
   
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
@@ -60,7 +62,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"hqta:A:B:N:m:s:x:y:n:T:");
+    int c = getopt(argc,argv,"hqta:A:B:N:m:s:x:y:n:T:S:i");
     if (c == -1) break;
                 
     switch (c) {
@@ -96,6 +98,12 @@ int main(int argc, char* argv[])
       case 'T':
         fftw::maxthreads=atoi(optarg);
         break;
+      case 'S':
+        stats=atoi(optarg);
+        break;
+      case 'i':
+	// For compatibility reasons with -i option in OpenMP version.
+	break;
       case 't':
         test=true;
         break;
@@ -116,7 +124,7 @@ int main(int argc, char* argv[])
 
   if(N == 0) {
     N=N0/mx/my;
-    if(N < 10) N=10;
+    if(N < 20) N=20;
   }
   
   MPIgroup group(MPI_COMM_WORLD,my);
@@ -173,23 +181,23 @@ int main(int argc, char* argv[])
       init(F,d,A);
 
       if(!quiet) {
-	for(unsigned int a=0; a < A; ++a) {
-	  if(main) 
-	    cout << "\nDistributed input " << a  << ":"<< endl;
-	  show(F[a],mx,d.y,group.active);
-	}
+        for(unsigned int a=0; a < A; ++a) {
+          if(main) 
+            cout << "\nDistributed input " << a  << ":"<< endl;
+          show(F[a],mx,d.y,group.active);
+        }
       }
 
       Complex **Flocal=new Complex *[A];
       for(unsigned int a=0; a < A; ++a) {
-	Flocal[a]=ComplexAlign(mx*my);
-	gathery(F[a], Flocal[a], d, 1, group.active);
-	if(!quiet && main)  {
-	  cout << "\nGathered input " << a << ":" << endl;
-	  Array2<Complex> AFlocala(mx,my,Flocal[a]);
-	  cout << AFlocala << endl;
-	  // FIXME: add error check
-	}
+        Flocal[a]=ComplexAlign(mx*my);
+        gathery(F[a], Flocal[a], d, 1, group.active);
+        if(!quiet && main)  {
+          cout << "\nGathered input " << a << ":" << endl;
+          Array2<Complex> AFlocala(mx,my,Flocal[a]);
+          cout << AFlocala << endl;
+          // FIXME: add error check
+        }
       }
       
       C.convolve(F,mult);
@@ -198,46 +206,46 @@ int main(int argc, char* argv[])
       gathery(F[0],Foutgather,d,1,group.active);
 
       if(!quiet) {
-	if(main)
-	  cout << "Distributed output:" << endl;
-	show(F[0],mx,d.y,group.active);
+        if(main)
+          cout << "Distributed output:" << endl;
+        show(F[0],mx,d.y,group.active);
       }
       
       if(main) {
-	ImplicitConvolution2 Clocal(mx,my,A,1);
-	Clocal.convolve(Flocal,mult);
-	if(!quiet) {
-	  cout << "Local output:" << endl;
-	  Array2<Complex> AFlocal0(mx,my,Flocal[0]);
-	  cout << AFlocal0 << endl;
-	}
+        ImplicitConvolution2 Clocal(mx,my,A,1);
+        Clocal.convolve(Flocal,mult);
+        if(!quiet) {
+          cout << "Local output:" << endl;
+          Array2<Complex> AFlocal0(mx,my,Flocal[0]);
+          cout << AFlocal0 << endl;
+        }
         retval += checkerror(Flocal[0],Foutgather,d.X*d.Y);
       }
 
       deleteAlign(Foutgather);
       for(unsigned int a=0; a < A; ++a)
-	deleteAlign(Flocal[a]);
+        deleteAlign(Flocal[a]);
       delete [] Flocal;
       
       MPI_Barrier(group.active);
 
     } else {
       if(!quiet && main)
-	cout << "Initialized after " << seconds() << " seconds." << endl;
+        cout << "Initialized after " << seconds() << " seconds." << endl;
 
       MPI_Barrier(group.active);
       
       double *T=new double[N];
       for(unsigned int i=0; i < N; ++i) {
-	init(F,d,A);
-	if(main) seconds();
-	C.convolve(F,mult);
-	//      C.convolve(f,g);
-	if(main) T[i]=seconds();
+        init(F,d,A);
+        if(main) seconds();
+        C.convolve(F,mult);
+        //      C.convolve(f,g);
+        if(main) T[i]=seconds();
       }
     
       if(main) 
-	timings("Implicit",mx,T,N);
+        timings("Implicit",mx,T,N,stats);
       delete [] T;
     }   
 

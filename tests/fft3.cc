@@ -22,7 +22,7 @@ inline void init(array3<Complex>& f)
   for(unsigned int i = 0; i < mx; ++i)
     for(unsigned int j = 0; j < my; j++)
       for(unsigned int k = 0; k < mz; k++) 
-	f(i, j, k)=Complex(10 * k + i, j);
+        f(i, j, k)=Complex(10 * k + i, j);
 }
   
 unsigned int outlimit = 100;
@@ -32,53 +32,53 @@ int main(int argc, char* argv[])
   fftw::maxthreads = get_max_threads();
   int r = -1; // which of the 8 options do we do?  r=-1 does all of them.
 
-  unsigned int stats=0; // Type of statistics used in timing test.
+  int stats=0; // Type of statistics used in timing test.
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
   
-#ifdef __GNUC__	
+#ifdef __GNUC__ 
   optind=0;
-#endif	
+#endif  
   for (;;) {
     int c = getopt(argc,argv,"hN:m:x:y:z:n:T:S:r:");
     if (c == -1) break;
-		
+                
     switch (c) {
-    case 0:
-      break;
-    case 'N':
-      N=atoi(optarg);
-      break;
-    case 'm':
-      mx=my=mz=atoi(optarg);
-      break;
-    case 'x':
-      mx=atoi(optarg);
-      break;
-    case 'y':
-      my=atoi(optarg);
-      break;
-    case 'z':
-      mz=atoi(optarg);
-      break;
-    case 'n':
-      N0=atoi(optarg);
-      break;
-    case 'T':
-      fftw::maxthreads=max(atoi(optarg),1);
-      break;
-    case 'S':
-      stats=atoi(optarg);
-      break;
-    case 'r':
-      r=atoi(optarg);
-      break;
-    case 'h':
-    default:
-      usageFFT(2);
-      exit(0);
+      case 0:
+        break;
+      case 'N':
+        N=atoi(optarg);
+        break;
+      case 'm':
+        mx=my=mz=atoi(optarg);
+        break;
+      case 'x':
+        mx=atoi(optarg);
+        break;
+      case 'y':
+        my=atoi(optarg);
+        break;
+      case 'z':
+        mz=atoi(optarg);
+        break;
+      case 'n':
+        N0=atoi(optarg);
+        break;
+      case 'T':
+        fftw::maxthreads=max(atoi(optarg),1);
+        break;
+      case 'S':
+        stats=atoi(optarg);
+        break;
+      case 'r':
+        r=atoi(optarg);
+        break;
+      case 'h':
+      default:
+        usageFFT(2);
+        exit(0);
     }
   }
 
@@ -89,8 +89,7 @@ int main(int argc, char* argv[])
   
   if(N == 0) {
     N = N0 / mx / my;
-    if(N < 10)
-      N = 10;
+    N = max(N, 20);
   }
   cout << "N=" << N << endl;
   
@@ -109,8 +108,9 @@ int main(int argc, char* argv[])
       init(f);
       seconds();
       Forward3.fft(f);
-      Backward3.fftNormalized(f);
-      T[i] = seconds();
+      Backward3.fft(f);
+      T[i]=0.5*seconds();
+      Backward3.Normalize(f);
     }
     timings("fft3d, in-place", mx, T, N, stats);
   }
@@ -123,8 +123,9 @@ int main(int argc, char* argv[])
       init(f);
       seconds();
       Forward3.fft(f,g);
-      Backward3.fftNormalized(g,f);
-      T[i] = seconds();
+      Backward3.fft(g,f);
+      T[i]=0.5*seconds();
+      Backward3.Normalize(f);
     }
     timings("fft3d, out-of-place", mx, T, N, stats);
   }

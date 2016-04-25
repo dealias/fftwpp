@@ -1,4 +1,4 @@
-#!/usr/bin/python -u
+#!/usr/bin/python
 
 # Error comparison for a variety of implicit and explicit convolutions
 # as compared to a direct convolution.

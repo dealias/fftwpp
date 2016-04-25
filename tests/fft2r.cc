@@ -33,46 +33,46 @@ int main(int argc, char* argv[])
   
   fftw::maxthreads=get_max_threads();
  
-#ifdef __GNUC__	
+#ifdef __GNUC__ 
   optind=0;
-#endif	
+#endif  
   for (;;) {
     int c=getopt(argc,argv,"N:i:m:s:x:y:T:S:hq");
     if (c == -1) break;
     switch (c) {
-    case 0:
-      break;
-    case 'N':
-      N=atoi(optarg);
-      break;
-    case 'm':
-      nx=ny=atoi(optarg);
-      break;
-    case 'i':
-      inplace=atoi(optarg);
-      break;
-    case 'q':
-      quiet=true;
-      break;
-    case 's':
-      shift=atoi(optarg);
-      break;
-    case 'x':
-      nx=atoi(optarg);
-      break;
-    case 'y':
-      ny=atoi(optarg);
-      break;
-    case 'T':
-      fftw::maxthreads=max(atoi(optarg),1);
-      break;
-    case 'S':
-      stats=atoi(optarg);
-      break;
-    case 'h':
-    default:
-      usageInplace(2);
-      exit(0);
+      case 0:
+        break;
+      case 'N':
+        N=atoi(optarg);
+        break;
+      case 'm':
+        nx=ny=atoi(optarg);
+        break;
+      case 'i':
+        inplace=atoi(optarg);
+        break;
+      case 'q':
+        quiet=true;
+        break;
+      case 's':
+        shift=atoi(optarg);
+        break;
+      case 'x':
+        nx=atoi(optarg);
+        break;
+      case 'y':
+        ny=atoi(optarg);
+        break;
+      case 'T':
+        fftw::maxthreads=max(atoi(optarg),1);
+        break;
+      case 'S':
+        stats=atoi(optarg);
+        break;
+      case 'h':
+      default:
+        usageInplace(2);
+        exit(0);
     }
   }
 
@@ -108,9 +108,10 @@ int main(int argc, char* argv[])
     cout << endl << "output:" << endl << g << endl;
 
     if(shift)
-      Backward.fft0Normalized(g,f);
+      Backward.fft0(g,f);
     else
-      Backward.fftNormalized(g,f);
+      Backward.fft(g,f);
+    Backward.Normalize(f);
     cout << endl << "Back to input:" << endl;
     for(unsigned int i=0; i < nx; ++i) {
       for(unsigned int j=0; j < ny; ++j) {
@@ -127,13 +128,15 @@ int main(int argc, char* argv[])
     if(shift) {
       seconds();
       Forward.fft0(f,g);
-      Backward.fft0Normalized(g,f);
-      T[i]=seconds();
+      Backward.fft0(g,f);
+      T[i]=0.5*seconds();
+      Backward.Normalize(f);
     } else {
       seconds();
       Forward.fft(f,g);
-      Backward.fftNormalized(g,f);
-      T[i]=seconds();
+      Backward.fft(g,f);
+      T[i]=0.5*seconds();
+      Backward.Normalize(f);
     }
   }
 
