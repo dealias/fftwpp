@@ -80,6 +80,7 @@ typedef std::complex<double> Complex;
 #include "seconds.h"
 #include "statistics.h"
 #include "align.h"
+#include "localtranspose.h"
 
 namespace fftwpp {
 
