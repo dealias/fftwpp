@@ -41,6 +41,7 @@
 #include <mpi.h>
 #include <cstring>
 #include <typeinfo>
+#include <cfloat>
 #include "Complex.h"
 #include "seconds.h"
 #include "Array.h"
@@ -150,6 +151,9 @@ inline void Wait(int count, MPI_Request *request, int *sched=NULL)
   if(sched)
     MPI_Waitall(count,request,MPI_STATUSES_IGNORE);
 }
+inline void Wait(MPI_Request *request)
+{ 
+}
 #else
 inline void Wait(int count, MPI_Request *request, int *sched=NULL)
 { 
@@ -157,6 +161,10 @@ inline void Wait(int count, MPI_Request *request, int *sched=NULL)
     MPI_Waitall(count,request,MPI_STATUSES_IGNORE);
   else
     MPI_Wait(request,MPI_STATUS_IGNORE);
+}
+inline void Wait(MPI_Request *request)
+{ 
+  MPI_Wait(request,MPI_STATUS_IGNORE);
 }
 #endif
 
@@ -219,10 +227,11 @@ private:
   
   unsigned int n0,m0;
   unsigned int np,mp;
-  int mlast,nlast;
+  int mlast,nlast,last;
   unsigned int threads;
   unsigned int allocated;
   MPI_Request *request;
+  MPI_Request requestv;
   MPI_Request *Request;
   int size;
   int rank;
@@ -234,6 +243,7 @@ private:
   int *sched, *sched1, *sched2;
   MPI_Comm split;
   MPI_Comm split2;
+  MPI_Comm splitv;
   fftwpp::Transpose *Tin1,*Tin2,*Tin3;
   fftwpp::Transpose *Tout1,*Tout2,*Tout3;
   int a,b;
@@ -312,7 +322,8 @@ public:
     mlast=std::min((int) utils::ceilquotient(M,m0),size)-1;
     mp=localdimension(M,mlast,size).n;
     
-    compact=options.alltoall == 2;
+    compact=options.alltoall == 1;
+    compact=false; // Temporary
     
     Tin3=new fftwpp::Transpose(n,M,L,data,data,threads);
     Tout3=new fftwpp::Transpose(N,m,L,data,data,threads);
@@ -327,7 +338,7 @@ public:
     int Pbar=std::min(nlast+(n0 == np),mlast+(m0 == mp));
     size=std::max(nlast+1,mlast+1);
     MPI_Comm_split(Communicator,rank < size,0,&communicator);
-
+    
     int start=0,stop=1;
     if(options.alltoall >= 0)
       start=stop=options.alltoall;
@@ -365,11 +376,9 @@ public:
     
     if(compact) work=data;
     else {
-      // Eventually: work array only needed if options.alimit > 1 
-      // or options.alltoall=0;
       if(work == NULL) {
         allocated=std::max(N*m,n*M)*L;
-        Array::newAlign(this->work,allocated,sizeof(T));
+        Array::newAlign(work,allocated,sizeof(T));
       }
     }
     
@@ -417,6 +426,11 @@ public:
       options.alltoall=parm[1];
     }
     
+    if(options.alltoall == 1 && allocated) {
+//      delete work; // temporary
+      allocated=false;
+    }
+      
     a=options.a;
     b=a > 1 || uniform ? Pbar/a : Pbar+1; 
     if(b == 1) {b=a; a=1;}
@@ -505,6 +519,13 @@ public:
       }
     }
     
+    if(uniform)
+      splitv=communicator;
+    else {
+      last=std::min(nlast,mlast);
+      MPI_Comm_split(communicator,rank < last,0,&splitv);
+    }
+    
     if(a == 1) {
       split=split2=communicator;
       splitsize=split2size=size;
@@ -545,6 +566,7 @@ public:
     
       sched=new int[size];
       fill1_comm_sched(sched,rank,size);
+
     
       if(uniform || subblock) {
         sched2=new int[split2size];
@@ -554,9 +576,11 @@ public:
       } else
         sched1=sched2=sched;
     } else {
-      request=new MPI_Request[1];
+      request=new MPI_Request[100]; // Temporary
       Request=new MPI_Request[1];
-      sched=sched1=sched2=NULL;
+      sched=sched2=NULL;
+      sched1=new int[size];
+      fill1_comm_sched(sched1,rank,size);
     }
   }
   
@@ -568,7 +592,7 @@ public:
         delete [] sched2;
       }
       delete [] sched;
-    }
+    } else if(sched1) delete[] sched1;
     delete [] Request;
     delete [] request;
     if(a > 1) {
@@ -682,6 +706,35 @@ public:
            threads);
   }
 
+  void Ialltoall1(void* sendbuf, void *recvbuf, unsigned int threads) {
+    MPI_Request *srequest=request+size-1;
+    int S=sizeof(T)*L;
+    int nS=n*S;
+    int mS=m*S;
+    int nm0=nS*m0;
+    int mn0=mS*n0;
+    for(int p=0; p < size; ++p) {
+      int P=sched1[p];
+      if(P != rank) {
+        int index=P < rank ? P : P-1;
+        int count=nS*mi(P);
+        if(count > 0 && (rank >= last || P >= last))
+          MPI_Irecv((char *) recvbuf+nm0*P,nS*mi(P),MPI_BYTE,P,0,communicator,
+                    request+index);
+        else request[index]=MPI_REQUEST_NULL;
+        count=mS*ni(P);
+        if(count > 0 && (rank >= last || P >= last))
+          MPI_Isend((char *) sendbuf+mn0*P,mS*ni(P),MPI_BYTE,P,0,communicator,
+                    srequest+index);
+        else srequest[index]=MPI_REQUEST_NULL;
+      }
+    }
+
+    if(rank >= last)
+      copy((char *) sendbuf+mn0*rank,(char *) recvbuf+nm0*rank,mS*ni(rank),
+           threads);
+  }
+
 // inphase: N x m -> n x M
   void inphase0() {
     if(rank >= size) return;
@@ -698,9 +751,21 @@ public:
                 sched2,threads);
     if(!uniform) {
       if(sched) Ialltoallin(input,work,a > 1 ? a*b : 0,threads);
-      else MPI_Ialltoallv(input,recvcounts,recvdisplacements,MPI_BYTE,
-                          work,sendcounts,senddisplacements,MPI_BYTE,
-                          communicator,request);
+      else {
+
+/*
+  MPI_Ialltoallv(input,recvcounts,recvdisplacements,MPI_BYTE,
+  work,sendcounts,senddisplacements,MPI_BYTE,
+  communicator,request);
+*/
+
+        if(rank < last)
+          MPI_Ialltoall(input,recvcounts[0],MPI_BYTE,
+                        work,sendcounts[0],MPI_BYTE,
+                        splitv,&requestv);
+
+        Ialltoall1(input,work,threads);
+      }
     }
   }
   
@@ -708,8 +773,15 @@ public:
     if(size == 1 || rank >= size) return;
     if(uniform || subblock)
       Wait(2*(split2size-1),Request,sched2);
-    if(!uniform)
-      Wait(2*(size-(subblock ? a*b : 1)),request,sched);
+    if(!uniform) {
+      if(sched)
+        Wait(2*(size-(subblock ? a*b : 1)),request,sched);
+      else {
+        if(rank < last) 
+          Wait(&requestv);
+        Wait(2*(size-1),request,sched1);
+      }
+    }
   }
   
   void inphase1() {

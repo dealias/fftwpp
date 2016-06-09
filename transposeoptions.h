@@ -6,11 +6,11 @@ extern unsigned int defaultmpithreads;
 
 struct mpiOptions {
   int a; // Block divisor: -1=sqrt(size), 0=Tune
-  int alltoall; // -1=Tune, 0=Optimized, 1=MPI, 2=Compact
+  int alltoall; // -1=Tune, 0=Optimized, 1=MPI
   unsigned int threads;
   unsigned int verbose;
-  bool transposed; // Locally transpose output (input) of forward
-                   // (backward) FFT
+  bool transposed; // Output (input) of forward (backward) FFT is locally 
+                   // transposed
   mpiOptions(int a=0, int alltoall=-1,
              unsigned int threads=defaultmpithreads,
              unsigned int verbose=0, bool transposed=false) :
