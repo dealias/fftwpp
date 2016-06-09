@@ -137,15 +137,6 @@ inline int MPI_Ialltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype,
   return MPI_Alltoall(sendbuf,sendcount,sendtype,recvbuf,recvcount,recvtype,
                       comm);
 }
-inline int MPI_Ialltoallv(void *sendbuf, int *sendcounts,
-                          int *senddisplacements, MPI_Datatype sendtype,
-                          void *recvbuf, int *recvcounts,
-                          int *recvdisplacements, MPI_Datatype recvtype,
-                          MPI_Comm comm, MPI_Request *)
-{
-  return MPI_Alltoallv(sendbuf,sendcounts,senddisplacements,sendtype,
-                       recvbuf,recvcounts,recvdisplacements,recvtype,comm);
-}
 inline void Wait(int count, MPI_Request *request, bool schedule)
 { 
   if(schedule)
@@ -251,8 +242,6 @@ private:
   bool uniform;
   bool subblock;
   bool compact;
-  int *sendcounts,*senddisplacements;
-  int *recvcounts,*recvdisplacements;
   bool schedule;
 public:
 
@@ -549,19 +538,6 @@ public:
       }
     }
     
-    sendcounts=NULL;
-    if(options.alltoall) {
-      if(!uniform && a == 1) {
-        int Size=size;
-        sendcounts=new int[Size];
-        senddisplacements=new int[Size];
-        recvcounts=new int[Size];
-        recvdisplacements=new int[Size];
-        int S=sizeof(T)*L;
-        fillindices(S,Size);
-      }
-    }
-    
     schedule=!options.alltoall || (!uniform && a > 1);
     if(schedule) {
       Request=new MPI_Request[2*(std::max(splitsize,split2size)-1)];
@@ -612,13 +588,6 @@ public:
     if(Tin2) delete Tin2;
     if(Tin1) delete Tin1;
     if(Tout1) delete Tout1;
-
-    if(sendcounts) {
-      delete [] sendcounts;
-      delete [] senddisplacements;
-      delete [] recvcounts;
-      delete [] recvdisplacements;
-    }
   }
   
   ~mpitranspose() {
@@ -627,19 +596,6 @@ public:
     deallocate();
     if(allocated)
       Array::deleteAlign(work,allocated);
-  }
-  
-  void fillindices(int S, int size) {
-    int nS=n*S;
-    int mS=m*S;
-    int nm0=nS*m0;
-    int mn0=mS*n0;
-    for(int i=0; i < size; ++i) {
-      sendcounts[i]=i < mlast ? nm0 : (i == mlast ? nS*mp : 0);
-      recvcounts[i]=i < nlast ? mn0 : (i == nlast ? mS*np : 0);
-      senddisplacements[i]=nm0*i;
-      recvdisplacements[i]=mn0*i;
-    }
   }
   
   int ni(int P) {return P < nlast ? n0 : (P == nlast ? np : 0);}
@@ -729,10 +685,7 @@ public:
       if(schedule) Ialltoallin(input,work,a > 1 ? a*b : 0,threads);
       else {
         if(rank < last)
-          MPI_Ialltoall(input,recvcounts[0],MPI_BYTE,
-                        work,sendcounts[0],MPI_BYTE,
-                        splitv,&requestv);
-
+          Ialltoall(input,n*m*sizeof(T)*L,work,splitv,&requestv,NULL,threads);
         Ialltoallin(input,work,last,threads);        
       }
     }
@@ -911,13 +864,6 @@ public:
         if(rank < last)
           Ialltoall(work,n*m*sizeof(T)*L,output,splitv,&requestv,NULL,threads);
         Ialltoallout(work,output,last,threads);        
-      
-      
-        /*
-       MPI_Ialltoallv(work,sendcounts,senddisplacements,MPI_BYTE,
-                          output,recvcounts,recvdisplacements,MPI_BYTE,
-                          communicator,request);
-        */
       }
     }
     if(uniform || subblock)
