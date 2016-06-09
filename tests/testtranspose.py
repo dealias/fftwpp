@@ -33,23 +33,25 @@ for mx in xlist:
     for my in ylist:
         for mz in zlist:
             for t in tlist:
-                ntests += 1
-                command = ["./" + prog];
-                command.append("-x"+str(mx))
-                command.append("-y"+str(my))
-                command.append("-z"+str(mz))
-                command.append("-T"+str(t))
-                print " ".join(command),
-                p = Popen(command, stdout = PIPE, stderr = PIPE)
-                p.wait() # sets the return code
-                prc = p.returncode
-                out, err = p.communicate()
-                #print prc
-                if(prc == 0):
-                    print "\tpass"
-                else:
-                    nfailures += 1
-                    print "\tERROR!"
+                for inplace in [0,1]:
+                    ntests += 1
+                    command = ["./" + prog];
+                    command.append("-x"+str(mx))
+                    command.append("-y"+str(my))
+                    command.append("-z"+str(mz))
+                    command.append("-T"+str(t))
+                    command.append("-r"+str(inplace))
+                    print " ".join(command),
+                    p = Popen(command, stdout = PIPE, stderr = PIPE)
+                    p.wait() # sets the return code
+                    prc = p.returncode
+                    out, err = p.communicate()
+                    #print prc
+                    if(prc == 0):
+                        print "\tpass"
+                    else:
+                        nfailures += 1
+                        print "\tERROR!"
 print
 
 if(nfailures == 0):

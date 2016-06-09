@@ -67,6 +67,8 @@ int main(int argc, char* argv[])
 
   int stats=0; // Type of statistics used in timing test.
 
+  bool inplace = true;
+  
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
@@ -75,7 +77,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"hN:m:x:y:z:n:T:S:d");
+    int c = getopt(argc,argv,"hN:m:x:y:z:n:T:S:r:d");
     if (c == -1) break;
                 
     switch (c) {
@@ -105,23 +107,31 @@ int main(int argc, char* argv[])
       case 'S':
         stats=atoi(optarg);
         break;
+      case 'r':
+        inplace = (0 == atoi(optarg));
+        break;
       case 'h':
       default:
         usageCommon(2);
+	cout << "-r <0 or 1>:\tout-of-place (0) or in-place (1)." << endl;
         exit(0);
     }
   }
 
-  if(my == 0) my=mx;
+  if(my == 0)
+    my=mx;
 
   cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
   
   cout << "N=" << N << endl;
+
+  cout << "inplace: " << inplace << endl;
   
   size_t align=sizeof(Complex);
 
   array3<Complex> f(mx,my,mz,align);
-  array3<Complex> g(my,mx,mz,align);
+  Complex* pg = inplace ? f() : ComplexAlign(mx*my*mz);
+  array3<Complex> g(my,mx,mz,pg);
 
   Transpose transpose(mx,my,mz,f(),g());
 
@@ -173,6 +183,9 @@ int main(int argc, char* argv[])
     delete [] T;
   }  
 
+  if(!inplace)
+    delete pg;
+  
   return 0;
 }
 
