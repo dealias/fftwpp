@@ -579,7 +579,8 @@ public:
       sched1=sched2=NULL;
     }
     
-    request=new MPI_Request[2*(size-1)];
+//    request=new MPI_Request[2*(size-1)];
+    request=new MPI_Request[2*size];
     sched=new int[size];
     fill1_comm_sched(sched,rank,size);
   }
@@ -646,16 +647,18 @@ public:
   
   void Ialltoallout(void* sendbuf, void *recvbuf, int start,
                     unsigned int threads) {
-    MPI_Request *srequest=rank >= start ? request+size-1 : request+size-start;
+//    MPI_Request *srequest=rank >= start ? request+size-1 : request+size-start;
+    MPI_Request *srequest=request+size;
     int S=sizeof(T)*L;
     int nS=n*S;
     int mS=m*S;
     int nm0=nS*m0;
     int mn0=mS*n0;
     for(int p=0; p < size; ++p) {
+      int index=p;
       int P=sched[p];
       if(P != rank && (rank >= start || P >= start)) {
-        int index=rank >= start ? (P < rank ? P : P-1) : P-start;
+//        int index=rank >= start ? (P < rank ? P : P-1) : P-start;
         int count=mS*ni(P);
         if(count > 0)
           MPI_Irecv((char *) recvbuf+mn0*P,count,MPI_BYTE,P,0,communicator,
@@ -666,7 +669,7 @@ public:
           MPI_Isend((char *) sendbuf+nm0*P,count,MPI_BYTE,P,0,communicator,
                     srequest+index);
         else srequest[index]=MPI_REQUEST_NULL;
-      }
+      } else srequest[index]=request[index]=MPI_REQUEST_NULL;
     }
 
     if(rank >= start)
@@ -677,16 +680,18 @@ public:
   
   void Ialltoallin(void* sendbuf, void *recvbuf, int start,
                    unsigned int threads) {
-    MPI_Request *srequest=rank >= start ? request+size-1 : request+size-start;
+//    MPI_Request *srequest=rank >= start ? request+size-1 : request+size-start;
+    MPI_Request *srequest=request+size;
     int S=sizeof(T)*L;
     int nS=n*S;
     int mS=m*S;
     int nm0=nS*m0;
     int mn0=mS*n0;
     for(int p=0; p < size; ++p) {
+      int index=p;
       int P=sched[p];
       if(P != rank && (rank >= start || P >= start)) {
-        int index=rank >= start ? (P < rank ? P : P-1) : P-start;
+//        int index=p;//rank >= start ? (P < rank ? P : P-1) : P-start;
         int count=nS*mi(P);
         if(count > 0)
           MPI_Irecv((char *) recvbuf+nm0*P,nS*mi(P),MPI_BYTE,P,0,communicator,
@@ -697,8 +702,8 @@ public:
           MPI_Isend((char *) sendbuf+mn0*P,mS*ni(P),MPI_BYTE,P,0,communicator,
                     srequest+index);
         else srequest[index]=MPI_REQUEST_NULL;
+      } else srequest[index]=request[index]=MPI_REQUEST_NULL;
 
-      }
     }
 
     if(rank >= start)
@@ -739,11 +744,13 @@ public:
       Wait(2*(split2size-1),Request,schedule);
     if(!uniform) {
       if(schedule)
-        Wait(2*(size-(subblock ? a*b : 1)),request,schedule);
+//        Wait(2*(size-(subblock ? a*b : 1)),request,schedule);
+        Wait(2*size,request,schedule);
       else {
         if(rank < last) 
           Wait(&requestv);
-        Wait(2*(size-last),request,true);
+//        Wait(2*(size-last),request,true);
+        Wait(2*size,request,true);
       }
     }
   }
@@ -899,9 +906,19 @@ public:
     }
     if(!uniform) {
       if(schedule) Ialltoallout(work,output,a > 1 ? a*b : 0,threads);
-      else MPI_Ialltoallv(work,sendcounts,senddisplacements,MPI_BYTE,
+      else {
+      
+        if(rank < last)
+          Ialltoall(work,n*m*sizeof(T)*L,output,splitv,&requestv,NULL,threads);
+        Ialltoallout(work,output,last,threads);        
+      
+      
+        /*
+       MPI_Ialltoallv(work,sendcounts,senddisplacements,MPI_BYTE,
                           output,recvcounts,recvdisplacements,MPI_BYTE,
                           communicator,request);
+        */
+      }
     }
     if(uniform || subblock)
       Ialltoall(work,n*m*sizeof(T)*(a > 1 ? b : a)*L,output,split2,Request,
@@ -914,8 +931,16 @@ public:
   
   void outsync() {
     if(size == 1 || rank >= size) return;
-    if(!uniform)
-      Wait(2*(size-(subblock ? a*b : 1)),request,schedule);
+    if(!uniform) {
+//      Wait(2*(size-(subblock ? a*b : 1)),request,schedule);
+      if(schedule)
+      Wait(2*size,request,schedule);
+            else {
+        if(rank < last) 
+          Wait(&requestv);
+        Wait(2*size,request,true);
+            }
+        }
     if(uniform || subblock)
       Wait(2*(split2size-1),Request,schedule);
   }
