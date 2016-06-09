@@ -917,7 +917,7 @@ public:
     if(!uniform)
       Wait(2*(size-(subblock ? a*b : 1)),request,schedule);
     if(uniform || subblock)
-      Wait(2*(split2size-1),Request,sched2);
+      Wait(2*(split2size-1),Request,schedule);
   }
   
   void outsync1() {
