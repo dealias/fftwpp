@@ -487,6 +487,9 @@ public:
     return sum/N;
   }
 
+  // Return size of request array
+  int Size(int start) {return size-(rank >= start ? 1 : start);}
+  
   void init(T *data) {
     uniform=uniform && a*b == size;
     subblock=a > 1 && rank < a*b;
@@ -541,6 +544,8 @@ public:
     schedule=!options.alltoall || (!uniform && a > 1);
     if(schedule) {
       Request=new MPI_Request[2*(std::max(splitsize,split2size)-1)];
+      if(!uniform)
+        request=new MPI_Request[2*Size(a > 1 ? a*b : 0)];
     
       if(uniform || subblock) {
         sched2=new int[split2size];
@@ -552,9 +557,10 @@ public:
     } else {
       Request=new MPI_Request[1];
       sched1=sched2=NULL;
+      if(!uniform)
+        request=new MPI_Request[2*Size(last)];
     }
     
-    request=new MPI_Request[2*(size-1)];
     sched=new int[size];
     fill1_comm_sched(sched,rank,size);
   }
@@ -569,7 +575,8 @@ public:
     }
     delete [] sched;
     delete [] Request;
-    delete [] request;
+    if(!uniform)
+      delete [] request;
     if(a > 1) {
       int final;
       MPI_Finalized(&final);
@@ -598,9 +605,6 @@ public:
   
   int ni(int P) {return P < nlast ? n0 : (P == nlast ? np : 0);}
   int mi(int P) {return P < mlast ? m0 : (P == mlast ? mp : 0);}
-  
-  // Return size of request array
-  int Size(int start) {return size-(rank >= start ? 1 : start);}
   
   void Ialltoallout(void* sendbuf, void *recvbuf, int start,
                     unsigned int threads) {
@@ -872,13 +876,13 @@ public:
     if(size == 1 || rank >= size) return;
     if(!uniform) {
       if(schedule)
-      Wait(2*Size(a > 1 ? a*b : 0),request,schedule);
-            else {
+        Wait(2*Size(a > 1 ? a*b : 0),request,schedule);
+      else {
         if(rank < last) 
           Wait(&requestv);
         Wait(2*Size(last),request,true);
-            }
-        }
+      }
+    }
     if(uniform || subblock)
       Wait(2*(split2size-1),Request,schedule);
   }
