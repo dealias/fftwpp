@@ -146,18 +146,18 @@ inline int MPI_Ialltoallv(void *sendbuf, int *sendcounts,
   return MPI_Alltoallv(sendbuf,sendcounts,senddisplacements,sendtype,
                        recvbuf,recvcounts,recvdisplacements,recvtype,comm);
 }
-inline void Wait(int count, MPI_Request *request, int *sched=NULL)
+inline void Wait(int count, MPI_Request *request, bool schedule)
 { 
-  if(sched)
+  if(schedule)
     MPI_Waitall(count,request,MPI_STATUSES_IGNORE);
 }
 inline void Wait(MPI_Request *request)
 { 
 }
 #else
-inline void Wait(int count, MPI_Request *request, int *sched=NULL)
+inline void Wait(int count, MPI_Request *request, bool schedule)
 { 
-  if(sched)
+  if(schedule)
     MPI_Waitall(count,request,MPI_STATUSES_IGNORE);
   else
     MPI_Wait(request,MPI_STATUS_IGNORE);
@@ -253,6 +253,7 @@ private:
   bool compact;
   int *sendcounts,*senddisplacements;
   int *recvcounts,*recvdisplacements;
+  bool schedule;
 public:
 
   mpiOptions Options() {return options;}
@@ -560,13 +561,10 @@ public:
         fillindices(S,Size);
       }
     }
-    if(!options.alltoall || (!uniform && a > 1)) {
-      request=new MPI_Request[2*(size-1)];
-      Request=new MPI_Request[2*(std::max(splitsize,split2size)-1)];
     
-      sched=new int[size];
-      fill1_comm_sched(sched,rank,size);
-
+    schedule=!options.alltoall || (!uniform && a > 1);
+    if(schedule) {
+      Request=new MPI_Request[2*(std::max(splitsize,split2size)-1)];
     
       if(uniform || subblock) {
         sched2=new int[split2size];
@@ -576,23 +574,25 @@ public:
       } else
         sched1=sched2=sched;
     } else {
-      request=new MPI_Request[100]; // Temporary
+//      request=new MPI_Request[1]; // Temporary
       Request=new MPI_Request[1];
-      sched=sched2=NULL;
-      sched1=new int[size];
-      fill1_comm_sched(sched1,rank,size);
+      sched1=sched2=NULL;
     }
+    
+    request=new MPI_Request[2*(size-1)];
+    sched=new int[size];
+    fill1_comm_sched(sched,rank,size);
   }
   
   void deallocate() {
     if(size == 1) return;
-    if(sched) {
+    if(schedule) {
       if(uniform || subblock) {
         delete [] sched1;
         delete [] sched2;
       }
-      delete [] sched;
-    } else if(sched1) delete[] sched1;
+    }
+    delete [] sched;
     delete [] Request;
     delete [] request;
     if(a > 1) {
@@ -706,35 +706,6 @@ public:
            threads);
   }
 
-  void Ialltoall1(void* sendbuf, void *recvbuf, unsigned int threads) {
-    MPI_Request *srequest=request+size-1;
-    int S=sizeof(T)*L;
-    int nS=n*S;
-    int mS=m*S;
-    int nm0=nS*m0;
-    int mn0=mS*n0;
-    for(int p=0; p < size; ++p) {
-      int P=sched1[p];
-      if(P != rank) {
-        int index=P < rank ? P : P-1;
-        int count=nS*mi(P);
-        if(count > 0 && (rank >= last || P >= last))
-          MPI_Irecv((char *) recvbuf+nm0*P,nS*mi(P),MPI_BYTE,P,0,communicator,
-                    request+index);
-        else request[index]=MPI_REQUEST_NULL;
-        count=mS*ni(P);
-        if(count > 0 && (rank >= last || P >= last))
-          MPI_Isend((char *) sendbuf+mn0*P,mS*ni(P),MPI_BYTE,P,0,communicator,
-                    srequest+index);
-        else srequest[index]=MPI_REQUEST_NULL;
-      }
-    }
-
-    if(rank >= last)
-      copy((char *) sendbuf+mn0*rank,(char *) recvbuf+nm0*rank,mS*ni(rank),
-           threads);
-  }
-
 // inphase: N x m -> n x M
   void inphase0() {
     if(rank >= size) return;
@@ -750,21 +721,14 @@ public:
       Ialltoall(input,n*m*sizeof(T)*(a > 1 ? b : a)*L,work,split2,Request,
                 sched2,threads);
     if(!uniform) {
-      if(sched) Ialltoallin(input,work,a > 1 ? a*b : 0,threads);
+      if(schedule) Ialltoallin(input,work,a > 1 ? a*b : 0,threads);
       else {
-
-/*
-  MPI_Ialltoallv(input,recvcounts,recvdisplacements,MPI_BYTE,
-  work,sendcounts,senddisplacements,MPI_BYTE,
-  communicator,request);
-*/
-
         if(rank < last)
           MPI_Ialltoall(input,recvcounts[0],MPI_BYTE,
                         work,sendcounts[0],MPI_BYTE,
                         splitv,&requestv);
 
-        Ialltoall1(input,work,threads);
+        Ialltoallin(input,work,last,threads);        
       }
     }
   }
@@ -772,14 +736,14 @@ public:
   void insync0() {
     if(size == 1 || rank >= size) return;
     if(uniform || subblock)
-      Wait(2*(split2size-1),Request,sched2);
+      Wait(2*(split2size-1),Request,schedule);
     if(!uniform) {
-      if(sched)
-        Wait(2*(size-(subblock ? a*b : 1)),request,sched);
+      if(schedule)
+        Wait(2*(size-(subblock ? a*b : 1)),request,schedule);
       else {
         if(rank < last) 
           Wait(&requestv);
-        Wait(2*(size-1),request,sched1);
+        Wait(2*(size-last),request,true);
       }
     }
   }
@@ -798,7 +762,7 @@ public:
   void insync1() {
     if(rank >= size) return;
     if(subblock)
-      Wait(2*(splitsize-1),Request,sched1);
+      Wait(2*(splitsize-1),Request,schedule);
   }
 
   void inpost() {
@@ -920,7 +884,7 @@ public:
   void outsync0() {
     if(rank >= size) return;
     if(subblock)
-      Wait(2*(splitsize-1),Request,sched1);
+      Wait(2*(splitsize-1),Request,schedule);
     else outsync();
   }
   
@@ -934,7 +898,7 @@ public:
         localtranspose(output,work,n*b,a,m*L,threads);
     }
     if(!uniform) {
-      if(sched) Ialltoallout(work,output,a > 1 ? a*b : 0,threads);
+      if(schedule) Ialltoallout(work,output,a > 1 ? a*b : 0,threads);
       else MPI_Ialltoallv(work,sendcounts,senddisplacements,MPI_BYTE,
                           output,recvcounts,recvdisplacements,MPI_BYTE,
                           communicator,request);
@@ -951,7 +915,7 @@ public:
   void outsync() {
     if(size == 1 || rank >= size) return;
     if(!uniform)
-      Wait(2*(size-(subblock ? a*b : 1)),request,sched);
+      Wait(2*(size-(subblock ? a*b : 1)),request,schedule);
     if(uniform || subblock)
       Wait(2*(split2size-1),Request,sched2);
   }
