@@ -550,13 +550,11 @@ public:
       } else
         sched1=sched2=sched;
     } else {
-//      request=new MPI_Request[1]; // Temporary
       Request=new MPI_Request[1];
       sched1=sched2=NULL;
     }
     
-//    request=new MPI_Request[2*(size-1)];
-    request=new MPI_Request[2*size];
+    request=new MPI_Request[2*(size-1)];
     sched=new int[size];
     fill1_comm_sched(sched,rank,size);
   }
@@ -601,20 +599,21 @@ public:
   int ni(int P) {return P < nlast ? n0 : (P == nlast ? np : 0);}
   int mi(int P) {return P < mlast ? m0 : (P == mlast ? mp : 0);}
   
+  // Return size of request array
+  int Size(int start) {return size-(rank >= start ? 1 : start);}
+  
   void Ialltoallout(void* sendbuf, void *recvbuf, int start,
                     unsigned int threads) {
-//    MPI_Request *srequest=rank >= start ? request+size-1 : request+size-start;
-    MPI_Request *srequest=request+size;
+    MPI_Request *srequest=request+Size(start);
     int S=sizeof(T)*L;
     int nS=n*S;
     int mS=m*S;
     int nm0=nS*m0;
     int mn0=mS*n0;
     for(int p=0; p < size; ++p) {
-      int index=p;
       int P=sched[p];
       if(P != rank && (rank >= start || P >= start)) {
-//        int index=rank >= start ? (P < rank ? P : P-1) : P-start;
+        int index=rank >= start ? (P < rank ? P : P-1) : P-start;
         int count=mS*ni(P);
         if(count > 0)
           MPI_Irecv((char *) recvbuf+mn0*P,count,MPI_BYTE,P,0,communicator,
@@ -625,7 +624,7 @@ public:
           MPI_Isend((char *) sendbuf+nm0*P,count,MPI_BYTE,P,0,communicator,
                     srequest+index);
         else srequest[index]=MPI_REQUEST_NULL;
-      } else srequest[index]=request[index]=MPI_REQUEST_NULL;
+      }
     }
 
     if(rank >= start)
@@ -633,21 +632,18 @@ public:
            threads);
   }
 
-  
   void Ialltoallin(void* sendbuf, void *recvbuf, int start,
                    unsigned int threads) {
-//    MPI_Request *srequest=rank >= start ? request+size-1 : request+size-start;
-    MPI_Request *srequest=request+size;
+    MPI_Request *srequest=request+Size(start);
     int S=sizeof(T)*L;
     int nS=n*S;
     int mS=m*S;
     int nm0=nS*m0;
     int mn0=mS*n0;
     for(int p=0; p < size; ++p) {
-      int index=p;
       int P=sched[p];
       if(P != rank && (rank >= start || P >= start)) {
-//        int index=p;//rank >= start ? (P < rank ? P : P-1) : P-start;
+        int index=rank >= start ? (P < rank ? P : P-1) : P-start;
         int count=nS*mi(P);
         if(count > 0)
           MPI_Irecv((char *) recvbuf+nm0*P,nS*mi(P),MPI_BYTE,P,0,communicator,
@@ -658,8 +654,7 @@ public:
           MPI_Isend((char *) sendbuf+mn0*P,mS*ni(P),MPI_BYTE,P,0,communicator,
                     srequest+index);
         else srequest[index]=MPI_REQUEST_NULL;
-      } else srequest[index]=request[index]=MPI_REQUEST_NULL;
-
+      }
     }
 
     if(rank >= start)
@@ -697,13 +692,11 @@ public:
       Wait(2*(split2size-1),Request,schedule);
     if(!uniform) {
       if(schedule)
-//        Wait(2*(size-(subblock ? a*b : 1)),request,schedule);
-        Wait(2*size,request,schedule);
+        Wait(2*Size(a > 1 ? a*b : 0),request,schedule);
       else {
         if(rank < last) 
           Wait(&requestv);
-//        Wait(2*(size-last),request,true);
-        Wait(2*size,request,true);
+        Wait(2*Size(last),request,true);
       }
     }
   }
@@ -878,13 +871,12 @@ public:
   void outsync() {
     if(size == 1 || rank >= size) return;
     if(!uniform) {
-//      Wait(2*(size-(subblock ? a*b : 1)),request,schedule);
       if(schedule)
-      Wait(2*size,request,schedule);
+      Wait(2*Size(a > 1 ? a*b : 0),request,schedule);
             else {
         if(rank < last) 
           Wait(&requestv);
-        Wait(2*size,request,true);
+        Wait(2*Size(last),request,true);
             }
         }
     if(uniform || subblock)
