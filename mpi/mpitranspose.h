@@ -153,7 +153,6 @@ private:
   unsigned int threads;
   unsigned int allocated;
   MPI_Request *request;
-  MPI_Request requestv;
   MPI_Request *Request;
   int size;
   int rank;
@@ -330,7 +329,6 @@ public:
           }
         }
       }
-    
       int parm[]={options.a,Alltoall};
       MPI_Bcast(&parm,2,MPI_INT,0,global);
       options.a=parm[0];
@@ -346,6 +344,7 @@ public:
         options.alltoall << ", a=" << a << ", b=" << b << ":" << std::endl;
 
     init(data,Uniform);
+    transpose(data,true,false); // Initialize communication buffers
   }
   
   mpitranspose(){}
@@ -485,7 +484,7 @@ public:
       Request=new MPI_Request[1];
       sched1=sched2=NULL;
       if(!uniform)
-        request=new MPI_Request[2*Size(last)];
+        request=new MPI_Request[2*Size(last)+1];
     }
     
     sched=new int[size];
@@ -617,7 +616,7 @@ public:
       if(schedule) Ialltoallin(input,work,a > 1 ? a*b : 0,threads);
       else {
         if(rank < last)
-          Ialltoall(input,n*m*sizeof(T)*L,work,splitv,&requestv,NULL,threads);
+          Ialltoall(input,n*m*sizeof(T)*L,work,splitv,request+2*Size(last),NULL,threads);
         Ialltoallin(input,work,last,threads);        
       }
     }
@@ -630,11 +629,8 @@ public:
     if(!uniform) {
       if(schedule)
         Wait(2*Size(a > 1 ? a*b : 0),request,schedule);
-      else {
-        if(rank < last) 
-          Wait(&requestv);
-        Wait(2*Size(last),request,true);
-      }
+      else
+        Wait(2*Size(last)+(rank < last ? 1 : 0),request,true);
     }
   }
   
@@ -792,7 +788,7 @@ public:
       else {
       
         if(rank < last)
-          Ialltoall(work,n*m*sizeof(T)*L,output,splitv,&requestv,NULL,threads);
+          Ialltoall(work,n*m*sizeof(T)*L,output,splitv,request+2*Size(last),NULL,threads);
         Ialltoallout(work,output,last,threads);        
       }
     }
@@ -810,11 +806,8 @@ public:
     if(!uniform) {
       if(schedule)
         Wait(2*Size(a > 1 ? a*b : 0),request,schedule);
-      else {
-        if(rank < last) 
-          Wait(&requestv);
-        Wait(2*Size(last),request,true);
-      }
+      else
+        Wait(2*Size(last)+(rank < last ? 1 : 0),request,true);
     }
     if(uniform || subblock)
       Wait(2*(split2size-1),Request,schedule);
