@@ -344,7 +344,6 @@ public:
         options.alltoall << ", a=" << a << ", b=" << b << ":" << std::endl;
 
     init(data,Uniform);
-    transpose(data,true,false); // Initialize communication buffers
   }
   
   mpitranspose(){}
@@ -674,35 +673,47 @@ public:
 
         PARALLEL(
           for(unsigned int i=0; i < n; ++i) {
+            unsigned int ai=a*i;
+            T *src=work+ai*block;
+            T *dest=output+ai*ostride+i*extra;
             for(int j=0; j < a; ++j)
-              copytoblock(work+(a*i+j)*block,output+(a*i+j)*ostride+i*extra,b,
-                          block,istride);
+              copytoblock(src+j*block,dest+j*ostride,b,block,istride);
           });
         if(extra > 0) {
           unsigned int lastblock=mp*L;
           istride=n*block;
           ostride=mlast*block+lastblock;
 
+          int ab=a*b;
+          T *src=work+ab*istride;
+          T *dest=output+ab*block;
+          int count=mlast-ab;
+          if(count > 0) {
+            PARALLEL(
+              for(unsigned int j=0; j < n; ++j)
+                copytoblock(src+j*block,dest+j*ostride,count,block,istride);
+              );
+          }
+          T *src2=work+mlast*istride;
+          T *dest2=output+mlast*block;
           PARALLEL(
-            for(unsigned int j=0; j < n; ++j) {
-              T *dest=output+j*ostride;
-              if(mlast > a*b)
-                copytoblock(work+j*block+istride*a*b,dest+block*a*b,mlast-a*b,
-                            block,istride);
-              copy(work+j*lastblock+mlast*istride,dest+mlast*block,lastblock);
-            });
+            for(unsigned int j=0; j < n; ++j)
+              copy(src2+j*lastblock,dest2+j*ostride,lastblock);
+            );
         }
       } else {
         unsigned int lastblock=mp*L;
         unsigned int block=m0*L;
         unsigned int istride=n*block;
-        unsigned int ostride=mlast*block+lastblock;
+        unsigned int mlastblock=mlast*block;
+        unsigned int ostride=mlastblock+lastblock;
+        T *work2=work+mlast*istride;
 
         PARALLEL(
           for(unsigned int j=0; j < n; ++j) {
             T *dest=output+j*ostride;
             copytoblock(work+j*block,dest,mlast,block,istride);
-            copy(work+j*lastblock+mlast*istride,dest+mlast*block,lastblock);
+            copy(work2+j*lastblock,dest+mlastblock,lastblock);
           });
       }
     }
@@ -735,35 +746,48 @@ public:
 
         PARALLEL(
           for(unsigned int i=0; i < n; ++i) {
+            unsigned int ai=a*i;
+            T *src=input+ai*ostride+i*extra;
+            T *dest=work+ai*block;
             for(int j=0; j < a; ++j)
-              copyfromblock(input+(a*i+j)*ostride+i*extra,work+(a*i+j)*block,b,
-                            block,istride);
+              copyfromblock(src+j*ostride,dest+j*block,b,block,istride);
           });
         if(extra > 0) {
           unsigned int lastblock=mp*L;
           istride=n*block;
           ostride=mlast*block+lastblock;
+          int ab=a*b;
+          int count=mlast-ab;
+          T *src=input+ab*block;
+          T *dest=work+ab*istride;
 
+          if(count > 0) {
+            PARALLEL(
+              for(unsigned int j=0; j < n; ++j)
+                copyfromblock(src+j*ostride,dest+j*block,count,block,istride);
+              );
+          }
+          
+          T *src2=input+mlast*block;
+          T *dest2=work+mlast*istride;
           PARALLEL(
-            for(unsigned int j=0; j < n; ++j) {
-              T *src=input+j*ostride;
-              if(mlast > a*b)
-                copyfromblock(src+block*a*b,work+j*block+istride*a*b,mlast-a*b,
-                              block,istride);
-              copy(src+mlast*block,work+j*lastblock+mlast*istride,lastblock);
-            });
+            for(unsigned int j=0; j < n; ++j)
+              copy(src2+j*ostride,dest2+j*lastblock,lastblock);
+            );
         }
       } else {
         unsigned int lastblock=mp*L;
         unsigned int block=m0*L;
         unsigned int istride=n*block;
         unsigned int ostride=mlast*block+lastblock;
+        unsigned int mlastblock=mlast*block;
+        T *dest=work+mlast*istride;
 
         PARALLEL(
           for(unsigned int j=0; j < n; ++j) {
             T *src=input+j*ostride;
             copyfromblock(src,work+j*block,mlast,block,istride);
-            copy(src+mlast*block,work+j*lastblock+mlast*istride,lastblock);
+            copy(src+mlastblock,dest+j*lastblock,lastblock);
           });
       }
     }

@@ -174,6 +174,9 @@ int transpose(int N, int stats, int timepart)
 
 //      double* Tp=new double[N];
       
+      init(data,X,y,Z,0,y0);
+      T.transpose(data,true,false); // Initialize communication buffers
+      
       for(int k=0; k < N; ++k) {
         init(data,X,y,Z,0,y0);
     
@@ -181,6 +184,8 @@ int transpose(int N, int stats, int timepart)
         if(main) begin=totalseconds();
 
 //	seconds();
+
+        
         T.inphase0();
         if(main) Tinit0=totalseconds();
         T.insync0();
