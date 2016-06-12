@@ -487,8 +487,10 @@ public:
         request=new MPI_Request[2*Size(last)+1];
     }
     
-    sched=new int[size];
-    fill1_comm_sched(sched,rank,size);
+    if(!uniform) {
+      sched=new int[size];
+      fill1_comm_sched(sched,rank,size);
+    }
   }
   
   void deallocate() {
@@ -507,10 +509,13 @@ public:
         delete [] sched2;
       }
     }
-    delete [] sched;
+    
     delete [] Request;
-    if(!uniform)
+    if(!uniform) {
+      delete [] sched;
       delete [] request;
+    }
+    
     if(a > 1) {
       int final;
       MPI_Finalized(&final);
