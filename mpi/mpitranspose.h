@@ -241,7 +241,7 @@ private:
   bool inflag,outflag;
   bool uniform;
   bool subblock;
-  bool compact;
+  bool inplace;
   bool schedule;
 public:
 
@@ -312,14 +312,11 @@ public:
     mlast=std::min((int) utils::ceilquotient(M,m0),size)-1;
     mp=localdimension(M,mlast,size).n;
     
-    compact=options.alltoall == 1;
-    compact=false; // Temporary
-    
     Tin3=new fftwpp::Transpose(n,M,L,data,data,threads);
     Tout3=new fftwpp::Transpose(N,m,L,data,data,threads);
     
     allocated=0;
-    if(size == 1) { // TODO: CHECK placement
+    if(size == 1) {
       a=1;
       subblock=false;
       return;
@@ -328,6 +325,8 @@ public:
     int Pbar=std::min(nlast+(n0 == np),mlast+(m0 == mp));
     size=std::max(nlast+1,mlast+1);
     MPI_Comm_split(Communicator,rank < size,0,&communicator);
+    
+    uniform=divisible(size,M,N);
     
     int start=0,stop=1;
     if(options.alltoall >= 0)
@@ -364,16 +363,7 @@ public:
       MPI_Bcast(&options.a,1,MPI_INT,0,global);
     } else alimit=options.a+1;
     
-    if(compact) work=data;
-    else {
-      if(work == NULL) {
-        allocated=std::max(N*m,n*M)*L;
-        Array::newAlign(work,allocated,sizeof(T));
-      }
-    }
-    
     int astart=options.a;
-    uniform=divisible(size,M,N);
     if(alimit > astart+1 || stop-start >= 1) {
       if(globalrank == 0 && options.verbose)
         std::cout << std::endl << "Timing:" << std::endl;
@@ -416,11 +406,6 @@ public:
       options.alltoall=parm[1];
     }
     
-    if(options.alltoall == 1 && allocated) {
-//      delete work; // temporary
-      allocated=false;
-    }
-      
     a=options.a;
     b=a > 1 || uniform ? Pbar/a : Pbar+1; 
     if(b == 1) {b=a; a=1;}
@@ -491,6 +476,16 @@ public:
   int Size(int start) {return size-(rank >= start ? 1 : start);}
   
   void init(T *data) {
+    inplace=uniform && options.alltoall == 1;
+    
+    if(inplace) work=data;
+    else {
+      if(work == NULL) {
+        allocated=std::max(N*m,n*M)*L;
+        Array::newAlign(work,allocated,sizeof(T));
+      }
+    }
+    
     uniform=uniform && a*b == size;
     subblock=a > 1 && rank < a*b;
     
@@ -500,7 +495,7 @@ public:
     Tin2=NULL;
     Tout2=NULL;
     
-    if(compact) {
+    if(inplace) {
       if(uniform) {
         Tin1=new fftwpp::Transpose(b,n*a,m*L,data,data,threads);
         Tout1=new fftwpp::Transpose(n*a,b,m*L,data,data,threads);
@@ -566,6 +561,11 @@ public:
   }
   
   void deallocate() {
+    if(allocated) {
+      Array::deleteAlign(work,allocated);
+      allocated=false;
+    }
+      
     if(size == 1) return;
     if(schedule) {
       if(uniform || subblock) {
@@ -599,8 +599,6 @@ public:
     delete Tin3;
     delete Tout3;
     deallocate();
-    if(allocated)
-      Array::deleteAlign(work,allocated);
   }
   
   int ni(int P) {return P < nlast ? n0 : (P == nlast ? np : 0);}
@@ -676,7 +674,7 @@ public:
       }
       return;
     }
-    if(compact) work=output;
+    if(inplace) work=output;
     if(uniform || subblock)
       Ialltoall(input,n*m*sizeof(T)*(a > 1 ? b : a)*L,work,split2,Request,
                 sched2,threads);
@@ -784,7 +782,7 @@ public:
       }
       return;
     }
-    if(compact) work=output;
+    if(inplace) work=output;
     // Inner transpose a N/a x M/a matrices over each team of b processes
     if(uniform) {
       if(input == work)
