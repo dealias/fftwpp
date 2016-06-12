@@ -259,6 +259,7 @@ public:
     bool Uniform=divisible(size,M,N);
     
     int start=0,stop=1;
+    if(options.alltoall > 1) options.alltoall=1;
     if(options.alltoall >= 0)
       start=stop=options.alltoall;
     int Alltoall=1;
