@@ -40,6 +40,8 @@ int main(int argc, char* argv[])
   
   bool quiet=false;
   bool test=false;
+  bool transpose=false;
+  
   unsigned int stats=0; // Type of statistics used in timing test.
   
   int provided;
@@ -52,7 +54,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"hN:a:i:m:s:x:y:n:S:T:qt");
+    int c = getopt(argc,argv,"hL:N:a:i:m:s:x:y:n:S:T:qt");
     if (c == -1) break;
                 
     switch (c) {
@@ -78,6 +80,9 @@ int main(int argc, char* argv[])
         break;
       case 'y':
         ny=atoi(optarg);
+        break;
+      case 'L':
+        transpose=atoi(optarg);
         break;
       case 'n':
         N0=atoi(optarg);
@@ -136,7 +141,8 @@ int main(int argc, char* argv[])
     Complex *g=inplace ? f : ComplexAlign(d.n);
 
     // Create instance of FFT
-    fft2dMPI fft(d,f,g,mpiOptions(divisor,alltoall));
+    fft2dMPI fft(d,f,g,mpiOptions(divisor,alltoall,defaultmpithreads,0,
+                                  transpose));
 
     if(!quiet && group.rank == 0)
       cout << "Initialized after " << seconds() << " seconds." << endl;    
@@ -228,7 +234,7 @@ int main(int argc, char* argv[])
           fft.Normalize(f);
         }    
         if(!quiet && nx*ny < outlimit)
-	  show(f,d.x,d.y,group.active);
+	  show(f,d.X,d.y,group.active);
         if(main)
 	  timings("FFT timing:",nx,T,N,stats);
         delete [] T;

@@ -18,7 +18,7 @@
 #ifndef __Array_h__
 #define __Array_h__ 1
 
-#define __ARRAY_H_VERSION__ 1.49
+#define __ARRAY_H_VERSION__ 1.50
 
 // Defining NDEBUG improves optimization but disables argument checking.
 // Defining __NOARRAY2OPT inhibits special optimization of Array2[].
@@ -976,8 +976,8 @@ public:
   
   T& operator [] (int ix) const {__check(ix,this->size,ox,1,1); return voff[ix];}
   T& operator () (int i) const {__check(i,this->size,0,1,1); return this->v[i];}
-  T* operator () () const {return voff;}
-  operator T* () const {return voff;}
+  T* operator () () const {return this->v;}
+  operator T* () const {return this->v;}
         
   Array1<T> operator + (int i) const {return Array1<T>(this->size-i,this->v+i,ox);}
   void Set(T *a) {this->v=a; Offsets(); this->clear(this->allocated);}
@@ -1063,7 +1063,7 @@ public:
     __check(i,this->size,0,2,0);
     return this->v[i];
   }
-  T* operator () () const {return voff;}
+  T* operator () () const {return this->v;}
   void Set(T *a) {this->v=a; Offsets(); this->clear(this->allocated);}
         
   Array2<T>& operator = (T a) {this->Load(a); return *this;}
@@ -1149,7 +1149,7 @@ public:
     __check(i,this->size,0,3,0);
     return this->v[i];
   }
-  T* operator () () const {return voff;}
+  T* operator () () const {return this->v;}
   void Set(T *a) {this->v=a; Offsets(); this->clear(this->allocated);}
         
   Array3<T>& operator = (T a) {this->Load(a); return *this;}
@@ -1248,7 +1248,7 @@ public:
     __check(i,this->size,0,4,0);
     return this->v[i];
   }
-  T* operator () () const {return voff;}
+  T* operator () () const {return this->v;}
   void Set(T *a) {this->v=a; Offsets(); this->clear(this->allocated);}
         
   Array4<T>& operator = (T a) {this->Load(a); return *this;}
@@ -1360,7 +1360,7 @@ public:
     __check(i,this->size,0,5,0);
     return this->v[i];
   }
-  T* operator () () const {return voff;}
+  T* operator () () const {return this->v;}
   void Set(T *a) {this->v=a; Offsets(); this->clear(this->allocated);}
         
   Array5<T>& operator = (T a) {this->Load(a); return *this;}

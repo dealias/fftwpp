@@ -95,7 +95,10 @@ inline void usageTranspose()
 {
   std::cerr << "-a<int>\t\t block divisor: -1=sqrt(size), [0]=Tune"
             << std::endl;
-  std::cerr << "-s<int>\t\t alltoall: [-1]=Tune, 0=Optimized, 1=MPI"
+  std::cerr << "-s<int>\t\t alltoall: [-1]=Tune, 0=Optimized, 1=MPI, 2=compact"
+            << std::endl;
+  std::cerr << 
+    "-L\t\t Locally transpose output (input) of forward (backward) FFT"
             << std::endl;
   std::cerr << "-q\t\t quiet" << std::endl;
 }
@@ -133,15 +136,24 @@ inline void usageGather()
   std::cerr << "-q\t\t quiet" << std::endl;
 }
 
+inline unsigned int ceilpow2(unsigned int n)
+{
+  --n;
+  n |= n >> 1;
+  n |= n >> 2;
+  n |= n >> 4;
+  n |= n >> 8;
+  n |= n >> 16;
+  return ++n;
+}
+  
 inline unsigned int padding(unsigned int n)
 {
   std::cout << "min padded buffer=" << n << std::endl;
-  unsigned int log2n;
   // Choose next power of 2 for maximal efficiency.
-  for(log2n=0; n > ((unsigned int) 1 << log2n); log2n++);
-  return 1 << log2n;
+  return ceilpow2(n);
 }
-  
+
 inline unsigned int cpadding(unsigned int m)
 {
   return padding(2*m);

@@ -2,3 +2,5 @@ Possible future enhancements:
 consider FFTW_DESTROY_INPUT 
 Add shift=true option to 2D & 3D Hermitian convolutions via compact,shift
 structure hflags (bool compact=true, shift=true).
+
+Swap inphase and outphase names to agree with paper.

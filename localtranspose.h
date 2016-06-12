@@ -1,7 +1,6 @@
 #ifndef __localtranspose_h__
 #define __localtranspose_h__ 1
 
-
 #ifndef FFTWPP_SINGLE_THREAD
 #define PARALLEL(code)                                  \
   if(threads > 1) {                                     \
@@ -27,9 +26,34 @@ inline void copy(const T *from, T *to, unsigned int length,
     );
 }
 
+// Copy count blocks spaced stride apart to contiguous blocks in dest.
 template<class T>
-inline void localtranspose(const T *src, T *dest,
-                           unsigned int n, unsigned int m, unsigned int length,
+inline void copytoblock(const T *src, T *dest,
+                        unsigned int count, unsigned int length,
+                        unsigned int stride, unsigned int threads=1)
+{
+  PARALLEL(
+    for(unsigned int i=0; i < count; ++i)
+      copy(src+i*stride,dest+i*length,length);
+    );
+}
+
+// Copy count blocks spaced stride apart from contiguous blocks in src.
+template<class T>
+inline void copyfromblock(const T *src, T *dest,
+                          unsigned int count, unsigned int length,
+                          unsigned int stride, unsigned int threads=1)
+{
+  PARALLEL(
+    for(unsigned int i=0; i < count; ++i)
+      copy(src+i*length,dest+i*stride,length);
+    );
+}
+
+// Store multithreaded localtranspose of n x m matrix src in dest.
+template<class T>
+inline void localtranspose(const T *src, T *dest, unsigned int n,
+                           unsigned int m, unsigned int length,
                            unsigned int threads)
 {
   if(n > 1 && m > 1) {

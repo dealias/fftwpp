@@ -11,6 +11,8 @@ namespace fftwpp {
 // xY -> Xy distributed FFT.
 // Fourier transform an nx*ny array, distributed first over x.
 // The array must be allocated as split::n Complex words.
+// The sign argument (default -1) of the constructor specfies the sign
+// of the forward transform.
 //
 // Example:
 // MPIgroup group(MPI_COMM_WORLD,nx);
@@ -34,33 +36,46 @@ protected:
   mfft1d *xForward,*xBackward;
   mfft1d *yForward,*yBackward;
   utils::mpitranspose<Complex> *T;
+  Transpose *TXy,*TyX;
+  Transpose *TXyio;
+  bool transposed;
 public:
   void init(Complex *in, Complex *out, const utils::mpiOptions& options) {
+    transposed=options.transposed;
     d.Activate();
     out=CheckAlign(in,out);
     inplace=(in == out);
 
-    yForward=new mfft1d(d.Y,-1,d.x,1,d.Y,in,out,threads);
-    yBackward=new mfft1d(d.Y,1,d.x,1,d.Y,out,out,threads);
+    yForward=new mfft1d(d.Y,sign,d.x,1,d.Y,in,out,threads);
+    yBackward=new mfft1d(d.Y,-sign,d.x,1,d.Y,out,out,threads);
 
     T=new utils::mpitranspose<Complex>(d.X,d.y,d.x,d.Y,1,out,d.communicator,
                                        options);
     
-    xForward=new mfft1d(d.X,-1,d.y,d.y,1,out,out,threads);
-    xBackward=new mfft1d(d.X,1,d.y,d.y,1,in,out,threads);
+    TXy=new Transpose(d.X,d.y,1,out,out,threads);
+    TyX=new Transpose(d.y,d.X,1,out,out,threads);
+    
+    if(!transposed)
+      TXyio=new Transpose(d.X,d.y,1,in,out,threads);
+    
+    xForward=new mfft1d(d.X,sign,d.y,1,d.X,out,out,threads);
+    xBackward=new mfft1d(d.X,-sign,d.y,1,d.X,transposed ? in : out,out,
+                         threads);
     
     d.Deactivate();
   }
   
   fft2dMPI(const utils::split& d, Complex *in,
-           const utils::mpiOptions& options=utils::defaultmpiOptions) : 
-    fftw(2*d.x*d.Y,0,options.threads,d.X*d.Y), d(d) {
+           const utils::mpiOptions& options=utils::defaultmpiOptions,
+           int sign=-1) : 
+    fftw(2*d.x*d.Y,sign,options.threads,d.X*d.Y), d(d) {
     init(in,in,options);
   }
     
   fft2dMPI(const utils::split& d, Complex *in, Complex *out,
-           const utils::mpiOptions& options=utils::defaultmpiOptions) : 
-    fftw(2*d.x*d.Y,0,options.threads,d.X*d.Y), d(d) {
+           const utils::mpiOptions& options=utils::defaultmpiOptions,
+           int sign=-1) : 
+    fftw(2*d.x*d.Y,sign,options.threads,d.X*d.Y), d(d) {
     init(in,out,options);
   }
   
@@ -76,7 +91,9 @@ public:
   virtual void ForwardWait(Complex *out)
   {
     T->wait();
+    TXy->transpose(out);
     xForward->fft(out);
+    if(!transposed) TyX->transpose(out);
   }
   void Forward(Complex *in, Complex *out=NULL) {
     iForward(in,out);

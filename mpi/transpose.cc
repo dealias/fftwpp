@@ -13,9 +13,9 @@ unsigned int X=8, Y=8, Z=1;
 int a=0; // Test for best block divisor
 int alltoall=-1; // Test for best alltoall routine
 
-namespace utils {
-unsigned int defaultmpithreads=1;
-}
+//namespace utils {
+//unsigned int defaultmpithreads=1;
+//}
 
 const unsigned int showlimit=1024;
 unsigned int N0=1000000;
@@ -172,7 +172,7 @@ int transpose(int N, int stats, int timepart)
       if(main)
         cout << "\nSpeed test.\n" << endl;
 
-      double* Tp=new double[N];
+//      double* Tp=new double[N];
       
       for(int k=0; k < N; ++k) {
         init(data,X,y,Z,0,y0);
@@ -180,7 +180,7 @@ int transpose(int N, int stats, int timepart)
         double begin=0.0, Tinit0=0.0, Tinit=0.0, Twait0=0.0, Twait1=0.0;
         if(main) begin=totalseconds();
 
-	seconds();
+//	seconds();
         T.inphase0();
         if(main) Tinit0=totalseconds();
         T.insync0();
@@ -190,10 +190,7 @@ int transpose(int N, int stats, int timepart)
         T.insync1();
         if(main) Twait1=totalseconds();
         T.inpost();
-
-	// TODO: Tp should time different stages as determined by timepart.
-	Tp[k] = seconds();
-	
+        
         if(main) {
           Sin.add(totalseconds()-begin);
           Sininit.add(Tinit0-begin);
@@ -201,6 +198,9 @@ int transpose(int N, int stats, int timepart)
           Sinwait1.add(Twait1-Tinit);
         }
 
+	// TODO: Tp should time different stages as determined by timepart.
+//	Tp[k] = seconds();
+	
         if(showoutput) {
           if(main) cout << "Transpose:" << endl;
           show(data,x,Y*Z,communicator);
@@ -226,9 +226,9 @@ int transpose(int N, int stats, int timepart)
         }
       }
 
-      if(main)
-	timings("transpose",X,Tp,N,stats);
-      delete[] Tp;
+//      if(main)
+//	timings("transpose",X,Tp,N,stats);
+//      delete[] Tp;
       
       if(showoutput) {
         if(outtranspose) {
