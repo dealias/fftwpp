@@ -62,7 +62,7 @@ def main(argv):
                 for Z in Zlist:
                     for P in Plist:
                         for a in range(1,int(sqrt(P)+1.5)):
-                            for s in range(0,2):
+                            for s in range(0,3):
                                 ntest += 1
 
         Print("Running "+str(ntest)+" tests.")
