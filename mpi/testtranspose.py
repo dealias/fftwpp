@@ -71,7 +71,7 @@ def main(argv):
         failcases = ""
 
         # timeout cutoff in seconds (0 disables timeout)
-        timeout = 60 
+        timeout = 300 
         nfails = 0
 
         itest = 0

@@ -10,7 +10,7 @@ from testutils import *
 
 
 pname = "cconv2"
-timeout = 60 # cutoff time in seconds
+timeout = 300 # cutoff time in seconds
 
 def main(argv):
     print "MPI cconv2 unit test"

@@ -8,7 +8,7 @@ import sys
 
 from testutils import *
 
-timeout = 60
+timeout = 300
 
 def main(argv):
 

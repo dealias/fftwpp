@@ -8,7 +8,7 @@ import os.path
 from testutils import *
 
 pname = "fft2"
-timeout = 60 # cutoff time in seconds
+timeout = 300 # cutoff time in seconds
 
 def main(argv):
     print "MPI fft2 unit test"
@@ -58,17 +58,18 @@ def main(argv):
         for X in Xlist:
             for Y in Ylist:
                 for inplace in [0, 1]:
+                    for L in [0, 1]:
                         for T in Tlist:
                             args = []
                             args.append("-x" + str(X))
                             args.append("-y" + str(Y))
                             args.append("-i" + str(inplace))
+                            args.append("-L" + str(L))
                             args.append("-N1")
                             args.append("-s1")
                             args.append("-a1")
                             args.append("-T" + str(T))
-                            args.append("-t")
-                            args.append("-q")
+                            args.append("-tq")
                             testcases.append(args)
 
         tstart = time.time()

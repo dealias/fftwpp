@@ -59,7 +59,7 @@ def main(argv):
             Plist = [2,random.randint(4,8)]
             Tlist = [1,2]
             
-        timeout = 60
+        timeout = 300
 
         testcases = []
         for x in xlist:

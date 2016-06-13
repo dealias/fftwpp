@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
   
   bool quiet=false;
   bool test=false;
-  bool transpose=false;
+  bool transposed=false;
   
   unsigned int stats=0; // Type of statistics used in timing test.
   
@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
         ny=atoi(optarg);
         break;
       case 'L':
-        transpose=atoi(optarg);
+        transposed=atoi(optarg);
         break;
       case 'n':
         N0=atoi(optarg);
@@ -140,9 +140,12 @@ int main(int argc, char* argv[])
     Complex *f=ComplexAlign(d.n);
     Complex *g=inplace ? f : ComplexAlign(d.n);
 
+    Transpose T(d.y,d.X,1,g);
+    Transpose Tinv(d.X,d.y,1,g);
+    
     // Create instance of FFT
     fft2dMPI fft(d,f,g,mpiOptions(divisor,alltoall,defaultmpithreads,0,
-                                  transpose));
+                                  transposed));
 
     if(!quiet && group.rank == 0)
       cout << "Initialized after " << seconds() << " seconds." << endl;    
@@ -159,6 +162,7 @@ int main(int argc, char* argv[])
       array2<Complex> flocal(nx,ny,align);
       fft2d localForward(-1,flocal);
       fft2d localBackward(1,flocal);
+
       gatherx(f,flocal(),d,1,group.active);
 
       if(!quiet && main) {
@@ -173,8 +177,11 @@ int main(int argc, char* argv[])
       }
       
       array2<Complex> fgather(nx,ny,align);
+      
+      if(transposed) T.transpose(g);
       gathery(g,fgather(),d,1,group.active);
-
+      if(transposed) Tinv.transpose(g);
+      
       MPI_Barrier(group.active);
       if(main) {
         localForward.fft(flocal);

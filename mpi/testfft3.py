@@ -8,7 +8,7 @@ import os.path
 from testutils import *
 
 pname = "fft3"
-timeout = 60 # cutoff time in seconds
+timeout = 300 # cutoff time in seconds
 
 def main(argv):
     print "MPI fft3 unit test"
