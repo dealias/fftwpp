@@ -258,8 +258,8 @@ public:
     
     bool Uniform=divisible(size,M,N);
     
-    int start=0,stop=1;
-    if(options.alltoall > 1) options.alltoall=1;
+    int start=0,stop=Uniform ? 2 : 1;
+    if(options.alltoall > stop) options.alltoall=stop;
     if(options.alltoall >= 0)
       start=stop=options.alltoall;
     int Alltoall=1;
@@ -316,7 +316,9 @@ public:
           unsigned int ab=a*b;
           if(a > 1 && ab*(N/ab)*ab*(M/ab) < maxscore) continue;
           options.alltoall=alltoall;
-          init(data,Uniform);
+          uniform=Uniform && a*b == size;
+          if(start < 2 && alltoall == 2 && !Uniform) continue;
+          init(data);
           double t=time(data);
           deallocate();
           if(globalrank == 0) {
@@ -344,7 +346,8 @@ public:
       std::cout << std::endl << "Using alltoall=" << 
         options.alltoall << ", a=" << a << ", b=" << b << ":" << std::endl;
 
-    init(data,Uniform);
+    uniform=Uniform && a*b == size;
+    init(data);
   }
   
   mpitranspose(){}
@@ -406,9 +409,8 @@ public:
   // Return size of request array
   int Size(int start) {return size-(rank >= start ? 1 : start);}
   
-  void init(T *data, bool Uniform) {
-    uniform=Uniform && a*b == size;
-    inplace=uniform && options.alltoall == 1;
+  void init(T *data) {
+    inplace=uniform && options.alltoall == 2;
     
     if(inplace) work=data;
     else {
