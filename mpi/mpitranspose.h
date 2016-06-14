@@ -421,23 +421,23 @@ public:
     }
     
     subblock=a > 1 && rank < a*b;
+
     
-    Tin1=NULL;
-    Tout1=NULL;
     
-    Tin2=NULL;
-    Tout2=NULL;
+    if(uniform) {
+      Tin1=new fftwpp::Transpose(b,n*a,m*L,data,work,threads);
+      Tout1=new fftwpp::Transpose(n*a,b,m*L,data,work,threads);
+    } else {
+      Tin1=NULL;
+      Tout1=NULL;      
+    }
     
-    if(inplace) {
-      if(uniform) {
-        Tin1=new fftwpp::Transpose(b,n*a,m*L,data,data,threads);
-        Tout1=new fftwpp::Transpose(n*a,b,m*L,data,data,threads);
-      }
-    
-      if(subblock) {
-        Tin2=new fftwpp::Transpose(a,n*b,m*L,data,data,threads);
-        Tout2=new fftwpp::Transpose(n*b,a,m*L,data,data,threads);
-      }
+    if(subblock) {
+      Tin2=new fftwpp::Transpose(a,n*b,m*L,data,work,threads);
+      Tout2=new fftwpp::Transpose(n*b,a,m*L,data,work,threads);
+    } else {
+      Tin2=NULL;
+      Tout2=NULL;
     }
     
     if(uniform)
@@ -644,10 +644,7 @@ public:
   void inphase1() {
     if(rank >= size) return;
     if(subblock) {
-      if(work == output)
-        Tin2->transpose(work,output); // a x n*b x m*L
-      else
-        localtranspose(work,output,a,n*b,m*L,threads);
+      Tin2->transpose(work,output); // a x n*b x m*L
       Ialltoall(output,n*m*sizeof(T)*a*L,work,split,Request,sched1,threads);
     }
   }
@@ -660,12 +657,8 @@ public:
 
   void inpost() {
     if(size == 1 || rank >= size) return;
-    if(uniform) {
-      if(work == output) 
-        Tin1->transpose(work,output); // b x n*a x m*L
-      else
-        localtranspose(work,output,b,n*a,m*L,threads);
-    }
+    if(uniform)
+      Tin1->transpose(work,output); // b x n*a x m*L
     else {
       if(subblock) {
         unsigned int block=m0*L;
@@ -734,12 +727,9 @@ public:
     }
     if(inplace) work=output;
     // Inner transpose a N/a x M/a matrices over each team of b processes
-    if(uniform) {
-      if(input == work)
-        Tout1->transpose(input,work); // n*a x b x m*L
-      else
-        localtranspose(input,work,n*a,b,m*L,threads);
-    } else {
+    if(uniform)
+      Tout1->transpose(input,work); // n*a x b x m*L
+    else {
       if(subblock) {
         unsigned int block=m0*L;
         unsigned int cols=n*a;
@@ -809,18 +799,14 @@ public:
   void outphase() {
     if(size == 1 || rank >= size) return;
     // Outer transpose a x a matrix of N/a x M/a blocks over a processes
-    if(subblock) {
-      if(output == work)
-        Tout2->transpose(output,work); // n*b x a x m*L
-      else
-        localtranspose(output,work,n*b,a,m*L,threads);
-    }
+    if(subblock)
+      Tout2->transpose(output,work); // n*b x a x m*L
     if(!uniform) {
       if(schedule) Ialltoallout(work,output,a > 1 ? a*b : 0,threads);
       else {
-      
         if(rank < last)
-          Ialltoall(work,n*m*sizeof(T)*L,output,splitv,request+2*Size(last),NULL,threads);
+          Ialltoall(work,n*m*sizeof(T)*L,output,splitv,request+2*Size(last),
+                    NULL,threads);
         Ialltoallout(work,output,last,threads);        
       }
     }
