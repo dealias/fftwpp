@@ -78,13 +78,13 @@ int main(int argc, char* argv[])
       case 'S':
         stats=atoi(optarg);
         break;
-      case 'r':
-        inplace = (0 == atoi(optarg));
+      case 'i':
+        inplace = atoi(optarg);
         break;
       case 'h':
       default:
         usageCommon(2);
-	cout << "-r <0 or 1>:\tout-of-place (0) or in-place (1)." << endl;
+	cout << "-i <0 or 1>:\tout-of-place (0) or in-place (1)." << endl;
         exit(0);
     }
   }

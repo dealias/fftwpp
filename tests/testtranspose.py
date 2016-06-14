@@ -40,7 +40,7 @@ for mx in xlist:
                     command.append("-y"+str(my))
                     command.append("-z"+str(mz))
                     command.append("-T"+str(t))
-                    command.append("-r"+str(inplace))
+                    command.append("-i"+str(inplace))
                     print " ".join(command),
                     p = Popen(command, stdout = PIPE, stderr = PIPE)
                     p.wait() # sets the return code
