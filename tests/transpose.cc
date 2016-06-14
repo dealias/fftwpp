@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"hN:m:x:y:z:n:T:S:r:d");
+    int c = getopt(argc,argv,"hN:m:x:y:z:n:T:S:i:d");
     if (c == -1) break;
                 
     switch (c) {
@@ -83,9 +83,8 @@ int main(int argc, char* argv[])
         break;
       case 'h':
       default:
-        usageCommon(2);
-	cout << "-i <0 or 1>:\tout-of-place (0) or in-place (1)." << endl;
-        exit(0);
+        usageInplace(2);
+        exit(1);
     }
   }
 
