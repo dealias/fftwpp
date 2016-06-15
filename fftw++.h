@@ -526,7 +526,10 @@ public:
 
     if(!out) out=in;
     inplace=(out==in);
-    if(inplace) threads=1; // TODO: Generalize to inplace
+    if(inplace) {
+      fftw::planThreads(threads);
+      threads=1;
+    } else fftw::planThreads(1);
     
     fftw_iodim dims[3];
 
@@ -553,8 +556,6 @@ public:
     dims[2].n=length;
     dims[2].is=1;
     dims[2].os=1;
-
-    fftw::planThreads(1);
 
     // A plan with rank=0 is a transpose.
     plan=fftw_plan_guru_r2r(0,NULL,3,dims,(double *) in,(double *) out,
