@@ -172,7 +172,9 @@ int transpose(int N, int stats, int timepart)
       if(main)
         cout << "\nSpeed test.\n" << endl;
 
-//      double* Tp=new double[N];
+      bool detailed=main && stats == -1;
+      double *Tp=NULL;
+      if(detailed) Tp=new double[N];
       
       init(data,X,y,Z,0,y0);
       T.transpose(data,true,false); // Initialize communication buffers
@@ -183,9 +185,6 @@ int transpose(int N, int stats, int timepart)
         double begin=0.0, Tinit0=0.0, Tinit=0.0, Twait0=0.0, Twait1=0.0;
         if(main) begin=totalseconds();
 
-//	seconds();
-
-        
         T.inphase0();
         if(main) Tinit0=totalseconds();
         T.insync0();
@@ -196,16 +195,15 @@ int transpose(int N, int stats, int timepart)
         if(main) Twait1=totalseconds();
         T.inpost();
         
+        double tin=0.0;
         if(main) {
-          Sin.add(totalseconds()-begin);
+          tin=totalseconds()-begin;
+          Sin.add(tin);
           Sininit.add(Tinit0-begin);
           Sinwait0.add(Twait0-Tinit0);
           Sinwait1.add(Twait1-Tinit);
         }
 
-	// TODO: Tp should time different stages as determined by timepart.
-//	Tp[k] = seconds();
-	
         if(showoutput) {
           if(main) cout << "Transpose:" << endl;
           show(data,x,Y*Z,communicator);
@@ -224,16 +222,20 @@ int transpose(int N, int stats, int timepart)
         if(outtranspose) T.NmTranspose();
     
         if(main) {
-          Sout.add(totalseconds()-begin);
+          double tout=totalseconds()-begin;
+          if(detailed) Tp[k]=tout+tin;
+          
+          Sout.add(tout);
           Soutinit.add(Tinit0-begin);
           Soutwait0.add(Twait0-Tinit0);
           Soutwait1.add(Twait1-Tinit);
         }
       }
-
-//      if(main)
-//	timings("transpose",X,Tp,N,stats);
-//      delete[] Tp;
+	
+      if(detailed) {
+	timings("transpose",X,Tp,N,stats);
+        delete[] Tp;
+      }
       
       if(showoutput) {
         if(outtranspose) {
@@ -257,7 +259,6 @@ int transpose(int N, int stats, int timepart)
         Soutwait1.output("Toutwait1",X);
         Sout.output("Tout",X);
       }
-
     }
   
   return retval;
