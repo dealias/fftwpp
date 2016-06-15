@@ -71,19 +71,19 @@ int main(int argc, char **argv)
   const unsigned int N1 = m1;
   int provided;
   MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &provided);
-  int threads_ok = provided >= MPI_THREAD_FUNNELED;
+  int threads_ok=provided >= MPI_THREAD_FUNNELED;
   
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   if(threads_ok)
-    threads_ok = fftw_init_threads();
+    fftw_init_threads();
   fftw_mpi_init();
   
   if(threads_ok)
     fftw_plan_with_nthreads(nthreads);
   else 
-    if(rank ==0) cout << "threads not ok!" << endl;
+    if(nthreads > 1 && rank == 0) cout << "threads not ok!" << endl;
   
   /* get local data size and allocate */
   ptrdiff_t local_n0, local_0_start;
