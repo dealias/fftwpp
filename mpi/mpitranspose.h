@@ -47,7 +47,6 @@
 #include "Array.h"
 #include "utils.h"
 #include "align.h"
-#include "localtranspose.h"
 #include "transposeoptions.h"
 #include "fftw++.h"
 
@@ -57,6 +56,40 @@ extern double safetyfactor; // For conservative latency estimate.
 extern bool overlap; // Allow overlapped communication.
 extern double testseconds; // Limit for transpose timing tests
 extern mpiOptions defaultmpiOptions;
+
+template<class T>
+inline void copy(const T *from, T *to, unsigned int length,
+                 unsigned int threads=1)
+{
+  PARALLEL(
+    for(unsigned int i=0; i < length; ++i)
+      to[i]=from[i];
+    );
+}
+
+// Copy count blocks spaced stride apart to contiguous blocks in dest.
+template<class T>
+inline void copytoblock(const T *src, T *dest,
+                        unsigned int count, unsigned int length,
+                        unsigned int stride, unsigned int threads=1)
+{
+  PARALLEL(
+    for(unsigned int i=0; i < count; ++i)
+      copy(src+i*stride,dest+i*length,length);
+    );
+}
+
+// Copy count blocks spaced stride apart from contiguous blocks in src.
+template<class T>
+inline void copyfromblock(const T *src, T *dest,
+                          unsigned int count, unsigned int length,
+                          unsigned int stride, unsigned int threads=1)
+{
+  PARALLEL(
+    for(unsigned int i=0; i < count; ++i)
+      copy(src+i*length,dest+i*stride,length);
+    );
+}
 
 void fill1_comm_sched(int *sched, int which_pe, int npes);
 
@@ -421,8 +454,6 @@ public:
     }
     
     subblock=a > 1 && rank < a*b;
-
-    
     
     if(uniform) {
       Tin1=new fftwpp::Transpose(b,n*a,m*L,data,work,threads);
@@ -609,10 +640,8 @@ public:
   void inphase0() {
     if(rank >= size) return;
     if(size == 1) {
-      if(input != output) {
-        if(outflag) {NmTranspose(input,output); outflag=false;}
-        else copy(input,output,N*m*L,threads);
-      }
+      if(input != output)
+        copy(input,output,N*m*L,threads);
       return;
     }
     if(compact) work=output;
@@ -719,10 +748,8 @@ public:
   void outphase0() {
     if(rank >= size) return;
     if(size == 1) {
-      if(input != output) {
-        if(!outflag) {nMTranspose(input,output); outflag=true;}
-        else copy(input,output,n*M*L,threads);
-      }
+      if(input != output)
+        copy(input,output,n*M*L,threads);
       return;
     }
     if(compact) work=output;
@@ -835,20 +862,14 @@ public:
     if(subblock) outsync();
   }
 
-  void nMTranspose(T *in=0, T *out=0) {
+  void nMTranspose() {
     if(n == 0) return;
-    if(in == 0) in=output;
-    if(out == 0) out=in;
-    if(in == out) Tin3->transpose(in); // n X M x L
-    else localtranspose(in,out,n,M,L,threads);
+    Tin3->transpose(output); // n X M x L
   }
   
   void NmTranspose(T *in=0, T *out=0) {
     if(m == 0) return;
-    if(in == 0) in=output;
-    if(out == 0) out=in;
-    if(in == out) Tout3->transpose(in); // N x m x L
-    else localtranspose(in,out,N,m,L,threads);
+    Tout3->transpose(output); // N x m x L
   }
   
   void Wait0() {

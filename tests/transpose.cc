@@ -147,7 +147,6 @@ int main(int argc, char* argv[])
       init(f);
       seconds();
       transpose.transpose(f(),g());
-//      localtranspose(f(),g(),mx,my,mz,fftw::maxthreads);
       T[i]=seconds();
     }
 
