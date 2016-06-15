@@ -171,7 +171,7 @@ private:
   bool inflag,outflag;
   bool uniform;
   bool subblock;
-  bool inplace;
+  bool compact;
   bool schedule;
 public:
 
@@ -410,9 +410,9 @@ public:
   int Size(int start) {return size-(rank >= start ? 1 : start);}
   
   void init(T *data) {
-    inplace=uniform && options.alltoall == 2;
+    compact=uniform && options.alltoall == 2;
     
-    if(inplace) work=data;
+    if(compact) work=data;
     else {
       if(work == NULL) {
         allocated=std::max(N*m,n*M)*L;
@@ -498,7 +498,7 @@ public:
   void deallocate() {
     if(size == 1) return;
     
-    if(inplace) work=NULL;
+    if(compact) work=NULL;
     else if(allocated) {
       Array::deleteAlign(work,allocated);
       work=NULL;
@@ -615,7 +615,7 @@ public:
       }
       return;
     }
-    if(inplace) work=output;
+    if(compact) work=output;
     if(uniform || subblock)
       Ialltoall(input,n*m*sizeof(T)*(a > 1 ? b : a)*L,work,split2,Request,
                 sched2,threads);
@@ -725,7 +725,7 @@ public:
       }
       return;
     }
-    if(inplace) work=output;
+    if(compact) work=output;
     // Inner transpose a N/a x M/a matrices over each team of b processes
     if(uniform)
       Tout1->transpose(input,work); // n*a x b x m*L

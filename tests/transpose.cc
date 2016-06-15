@@ -95,12 +95,14 @@ int main(int argc, char* argv[])
   
   cout << "N=" << N << endl;
 
-  cout << "inplace: " << inplace << endl;
+  cout << "inplace=" << inplace << endl;
+  
+  cout << "threads=" << fftw::maxthreads << endl;
   
   size_t align=sizeof(Complex);
 
   array3<Complex> f(mx,my,mz,align);
-  Complex* pg = inplace ? f() : ComplexAlign(mx*my*mz);
+  Complex *pg=inplace ? f() : ComplexAlign(mx*my*mz);
   array3<Complex> g(my,mx,mz,pg);
 
   Transpose transpose(mx,my,mz,f(),g());
