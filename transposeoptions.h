@@ -10,7 +10,7 @@ struct mpiOptions {
   unsigned int threads;
   unsigned int verbose;
   bool transposed; // Output (input) of forward (backward) FFT is locally 
-                   // transposed
+                   // transposed: xY->yX or xyZ -> yzX
   mpiOptions(int a=0, int alltoall=-1,
              unsigned int threads=defaultmpithreads,
              unsigned int verbose=0, bool transposed=false) :
