@@ -97,9 +97,6 @@ inline void usageTranspose()
             << std::endl;
   std::cerr << "-s<int>\t\t alltoall: [-1]=Tune, 0=Optimized, 1=MPI, 2=compact"
             << std::endl;
-  std::cerr << 
-    "-L\t\t Locally transpose output (input) of forward (backward) FFT"
-            << std::endl;
   std::cerr << "-q\t\t quiet" << std::endl;
 }
 

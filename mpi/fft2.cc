@@ -40,7 +40,6 @@ int main(int argc, char* argv[])
   
   bool quiet=false;
   bool test=false;
-  bool transposed=false;
   
   unsigned int stats=0; // Type of statistics used in timing test.
   
@@ -80,9 +79,6 @@ int main(int argc, char* argv[])
         break;
       case 'y':
         ny=atoi(optarg);
-        break;
-      case 'L':
-        transposed=atoi(optarg);
         break;
       case 'n':
         N0=atoi(optarg);
@@ -144,8 +140,7 @@ int main(int argc, char* argv[])
     Transpose Tinv(d.X,d.y,1,g);
     
     // Create instance of FFT
-    fft2dMPI fft(d,f,g,mpiOptions(divisor,alltoall,defaultmpithreads,0,
-                                  transposed));
+    fft2dMPI fft(d,f,g,mpiOptions(divisor,alltoall,defaultmpithreads,0));
 
     if(!quiet && group.rank == 0)
       cout << "Initialized after " << seconds() << " seconds." << endl;    
@@ -178,9 +173,9 @@ int main(int argc, char* argv[])
       
       array2<Complex> fgather(nx,ny,align);
       
-      if(transposed) T.transpose(g);
+      T.transpose(g);
       gathery(g,fgather(),d,1,group.active);
-      if(transposed) Tinv.transpose(g);
+      Tinv.transpose(g);
       
       MPI_Barrier(group.active);
       if(main) {

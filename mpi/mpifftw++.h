@@ -8,7 +8,7 @@
 namespace fftwpp {
 
 // 2D OpenMP/MPI complex in-place and out-of-place 
-// xY -> Xy distributed FFT.
+// xY -> yX distributed FFT.
 // Fourier transform an nx*ny array, distributed first over x.
 // The array must be allocated as split::n Complex words.
 // The sign argument (default -1) of the constructor specfies the sign
@@ -37,11 +37,8 @@ protected:
   mfft1d *yForward,*yBackward;
   utils::mpitranspose<Complex> *T;
   Transpose *TXy,*TyX;
-  Transpose *TXyio;
-  bool transposed;
 public:
   void init(Complex *in, Complex *out, const utils::mpiOptions& options) {
-    transposed=options.transposed;
     d.Activate();
     out=CheckAlign(in,out);
     inplace=(in == out);
@@ -55,12 +52,8 @@ public:
     TXy=new Transpose(d.X,d.y,1,out,out,threads);
     TyX=new Transpose(d.y,d.X,1,out,out,threads);
     
-    if(!transposed)
-      TXyio=new Transpose(d.X,d.y,1,in,out,threads);
-    
     xForward=new mfft1d(d.X,sign,d.y,1,d.X,out,out,threads);
-    xBackward=new mfft1d(d.X,-sign,d.y,1,d.X,transposed ? in : out,out,
-                         threads);
+    xBackward=new mfft1d(d.X,-sign,d.y,1,d.X,in,out,threads);
     
     d.Deactivate();
   }
@@ -93,7 +86,6 @@ public:
     T->wait();
     TXy->transpose(out);
     xForward->fft(out);
-    if(!transposed) TyX->transpose(out);
   }
   void Forward(Complex *in, Complex *out=NULL) {
     iForward(in,out);

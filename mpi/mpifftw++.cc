@@ -115,12 +115,7 @@ void fft2dMPI::iForward(Complex *in, Complex *out)
 void fft2dMPI::iBackward(Complex *in, Complex *out)
 {
   out=Setout(in,out);
-  if(transposed)
-    xBackward->fft(in,out);
-  else {
-    TXyio->transpose(in,out);
-    xBackward->fft(out);
-  }
+  xBackward->fft(in,out);
   TyX->transpose(out);
   T->itranspose(out,false,true);
 }

@@ -42,29 +42,27 @@ def main(argv):
         print "Error: executable", pname, "not present!"
         retval += 1
     else:
-        Xlist = [1,2,3,4,5,random.randint(6,64)]
-        Ylist = [1,2,3,4,5,random.randint(6,64)]
-        Plist = [1,2,3,4,random.randint(6,10)]
-        Tlist = [1,2,random.randint(3,5)]
+        Xlist = [2,1,3,4,5,random.randint(6,64)]
+        Ylist = [2,1,3,4,5,random.randint(6,64)]
+        Plist = [2,1,3,4,random.randint(6,10)]
+        Tlist = [2,1,random.randint(3,5)]
 
         if(shortrun):
             print "Short run."
             Xlist = [2,3,random.randint(6,64)]
             Ylist = [2,3,random.randint(6,64)]
-            Plist = [1,2]
+            Plist = [2,1]
             Tlist = [1,2]
             
         testcases = []
         for X in Xlist:
             for Y in Ylist:
                 for inplace in [0, 1]:
-                    for L in [0, 1]:
                         for T in Tlist:
                             args = []
                             args.append("-x" + str(X))
                             args.append("-y" + str(Y))
                             args.append("-i" + str(inplace))
-                            args.append("-L" + str(L))
                             args.append("-N1")
                             args.append("-s1")
                             args.append("-a1")

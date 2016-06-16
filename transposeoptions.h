@@ -9,13 +9,10 @@ struct mpiOptions {
   int alltoall; // -1=Tune, 0=Optimized, 1=MPI, 2=Inplace
   unsigned int threads;
   unsigned int verbose;
-  bool transposed; // Output (input) of forward (backward) FFT is locally 
-                   // transposed: xY->yX or xyZ -> yzX
   mpiOptions(int a=0, int alltoall=-1,
              unsigned int threads=defaultmpithreads,
-             unsigned int verbose=0, bool transposed=false) :
-    a(a), alltoall(alltoall), threads(threads), verbose(verbose),
-    transposed(transposed) {}
+             unsigned int verbose=0) :
+    a(a), alltoall(alltoall), threads(threads), verbose(verbose) {}
 };
 
 }
