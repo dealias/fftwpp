@@ -91,10 +91,15 @@ public:
     iForward(in,out);
     ForwardWait(out);
   }
-  
+  void Xy(Complex *out) {
+    TyX->transpose(out);
+  }
+  void ForwardXy(Complex *in, Complex *out=NULL) {
+    Forward(in,out);
+    Xy(out);
+  }
   virtual void iBackward(Complex *in, Complex *out=NULL);
-  virtual void BackwardWait(Complex *out)
-  {
+  virtual void BackwardWait(Complex *out) {
     T->wait();
     yBackward->fft(out);
   }
@@ -102,6 +107,14 @@ public:
     iBackward(in,out);
     BackwardWait(out);
   }
+  void yX(Complex *in) {
+    TXy->transpose(in);
+  }
+  void BackwardXy(Complex *in, Complex *out=NULL) {
+    Xy(in);
+    Backward(in,out);
+  }
+  
 };
 
 // 3D OpenMP/MPI complex in-place and out-of-place 

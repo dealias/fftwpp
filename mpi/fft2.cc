@@ -136,9 +136,6 @@ int main(int argc, char* argv[])
     Complex *f=ComplexAlign(d.n);
     Complex *g=inplace ? f : ComplexAlign(d.n);
 
-    Transpose T(d.y,d.X,1,g);
-    Transpose Tinv(d.X,d.y,1,g);
-    
     // Create instance of FFT
     fft2dMPI fft(d,f,g,mpiOptions(divisor,alltoall,defaultmpithreads,0));
 
@@ -165,6 +162,7 @@ int main(int argc, char* argv[])
       }
 
       fft.Forward(f,g);
+      fft.Xy(g);
 
       if(!quiet && nx*ny < outlimit) {
         if(main) cout << "\nDistributed output:" << endl;
@@ -173,9 +171,7 @@ int main(int argc, char* argv[])
       
       array2<Complex> fgather(nx,ny,align);
       
-      T.transpose(g);
       gathery(g,fgather(),d,1,group.active);
-      Tinv.transpose(g);
       
       MPI_Barrier(group.active);
       if(main) {
@@ -197,6 +193,7 @@ int main(int argc, char* argv[])
         }
       }
 
+      fft.yX(g);
       fft.Backward(g,f);
       fft.Normalize(f);
 
