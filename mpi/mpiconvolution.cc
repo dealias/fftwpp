@@ -13,10 +13,10 @@ void ImplicitConvolution2MPI::convolve(Complex **F, multiplier *pmult,
     xfftpad->expand(f,u);
     xfftpad->Backwards->fft(f);
     if(a > 0) T->wait();
-    T->itranspose(f,false,true);
+    T->ilocalize1(f);
     xfftpad->Backwards->fft(u);
     if(a > 0) U->wait();
-    U->itranspose(u,false,true);
+    U->ilocalize1(u);
   }
       
   T->wait();
@@ -24,7 +24,7 @@ void ImplicitConvolution2MPI::convolve(Complex **F, multiplier *pmult,
   U->wait0();
   for(unsigned int b=0; b < B; ++b) {
     if(b > 0) T->wait();
-    T->itranspose(F[b]+offset,true,false);
+    T->ilocalize0(F[b]+offset);
   }
   U->wait1();
   subconvolution(U2,pmult,1,d.x,d.Y);
@@ -33,7 +33,7 @@ void ImplicitConvolution2MPI::convolve(Complex **F, multiplier *pmult,
   for(unsigned int b=0; b < B; ++b) {
     Complex *f=F[b]+offset;
     Complex *u=U2[b];
-    U->itranspose(u,true,false);
+    U->ilocalize0(u);
     xfftpad->Forwards->fft(f);
     U->wait();
     xfftpad->Forwards->fft(u);
@@ -60,10 +60,10 @@ void ImplicitHConvolution2MPI::convolve(Complex **F, realmultiplier *pmult,
     }
     xfftpad->Backwards1(f,u);
     if(a > 0) T->wait1();
-    T->itranspose(f,false,true);
+    T->ilocalize1(f);
     xfftpad->Backwards->fft(u);
     if(a > 0) U->wait1();
-    U->itranspose(u,false,true);
+    U->ilocalize1(u);
   }
   
       
@@ -72,7 +72,7 @@ void ImplicitHConvolution2MPI::convolve(Complex **F, realmultiplier *pmult,
   U->wait0();
   for(unsigned int b=0; b < B; ++b) {
     if(b > 0) T->wait();
-    T->itranspose(F[b]+offset,true,false);
+    T->ilocalize0(F[b]+offset);
   }
   U->wait1();
   subconvolution(U2,pmult,xfftpad->uindex,du.x,du.Y);
@@ -81,7 +81,7 @@ void ImplicitHConvolution2MPI::convolve(Complex **F, realmultiplier *pmult,
   for(unsigned int b=0; b < B; ++b) {
     Complex *f=F[b]+offset;
     Complex *u=U2[b];
-    U->itranspose(u,true,false);
+    U->ilocalize0(u);
     xfftpad->Forwards0(f);
     U->wait();
     xfftpad->Forwards1(f,u);
@@ -101,12 +101,12 @@ void ImplicitConvolution3MPI::convolve(Complex **F, multiplier *pmult,
     xfftpad->Backwards->fft(f);
     if(T) {
       if(a > 0) T->wait();
-      T->itranspose(f,false,true);
+      T->ilocalize1(f);
     }
     xfftpad->Backwards->fft(u);
     if(U) {
       if(a > 0) U->wait();
-      U->itranspose(u,false,true);
+      U->ilocalize1(u);
     }
   }
       
@@ -118,7 +118,7 @@ void ImplicitConvolution3MPI::convolve(Complex **F, multiplier *pmult,
     U->wait0();
     for(unsigned int b=0; b < B; ++b) {
       if(b > 0) T->wait();
-      T->itranspose(F[b]+offset,true,false);
+      T->ilocalize0(F[b]+offset);
     }
     U->wait1();
   }
@@ -129,7 +129,7 @@ void ImplicitConvolution3MPI::convolve(Complex **F, multiplier *pmult,
     Complex *f=F[b]+offset;
     Complex *u=U3[b];
     if(U)
-      U->itranspose(u,true,false);
+      U->ilocalize0(u);
     xfftpad->Forwards->fft(f);
     if(U)
       U->wait();
@@ -259,12 +259,12 @@ void ImplicitHConvolution3MPI::convolve(Complex **F, realmultiplier *pmult,
     xfftpad->Backwards1(f,u);
     if(T) {
       if(a > 0) T->wait1();
-      T->itranspose(f,false,true);
+      T->ilocalize1(f);
     }
     xfftpad->Backwards->fft(u);
     if(U) {
       if(a > 0) U->wait1();
-      U->itranspose(u,false,true);
+      U->ilocalize1(u);
     }
   }
 
@@ -274,7 +274,7 @@ void ImplicitHConvolution3MPI::convolve(Complex **F, realmultiplier *pmult,
     U->wait0();
     for(unsigned int b=0; b < B; ++b) {
       if(b > 0) T->wait();
-      T->itranspose(F[b]+offset,true,false);
+      T->ilocalize0(F[b]+offset);
     }
     U->wait1();
   }
@@ -285,7 +285,7 @@ void ImplicitHConvolution3MPI::convolve(Complex **F, realmultiplier *pmult,
     Complex *f=F[b]+offset;
     Complex *u=U3[b];
     if(U)
-      U->itranspose(u,true,false);
+      U->ilocalize0(u);
     xfftpad->Forwards0(f);
     if(U) 
       U->wait();

@@ -8,30 +8,23 @@
    Blocking in-place and out-of-place interfaces. Upper case letters denote
    global dimensions; lower case letters denote distributed dimensions: 
    
-   transpose(in);                 n x M -> m x N
-   transpose(in,true,true,out);   n x M -> m x N
-    
    To globally transpose without local transposition of output:
-   transpose(in,true,false);      n x M -> N x m
-   transpose(in,true,false,out);  n x M -> N x m
-     
+   localize0(in);      n x M -> N x m
+   localize0(in,out);  n x M -> N x m
+   
    To globally transpose without local transposition of input:
-   transpose(in,false,true);      N x m -> n x M
-   transpose(in,false,true,out);  N x m -> n x M
+   localize1(in);      N x m -> n x M
+   localize1(in,out);  N x m -> n x M
+     
+   Non-blocking interface for localize0 (and similarly for localize1):
     
-   To globally transpose without local transposition of input or output:
-   transpose(in,false,false);     N x m -> M x n
-   transpose(in,false,false,out); N x m -> M x n
-    
-   Non-blocking interface:
-    
-   itranspose(in);
+   ilocalize0(in);
    // User computation
    wait();
 
    Double non-blocking interface:
     
-   itranspose(in);
+   ilocalize0(in);
    // User computation 0 (typically longest)
    wait0();
    // User computation 1      
@@ -171,7 +164,7 @@ inline int Ialltoall(void *sendbuf, int count, void *recvbuf,
 template<class T>
 class mpitranspose {
 private:
-  unsigned int N,m,n,M;
+  unsigned int N,M,n,m;
   unsigned int L;
   T *input,*output,*work;
   MPI_Comm communicator;
@@ -198,10 +191,10 @@ private:
   MPI_Comm split;
   MPI_Comm split2;
   MPI_Comm splitv;
-  fftwpp::Transpose *Tin1,*Tin2,*Tin3;
-  fftwpp::Transpose *Tout1,*Tout2,*Tout3;
+  fftwpp::Transpose *Tin1,*Tin2;
+  fftwpp::Transpose *Tout1,*Tout2;
   int a,b;
-  bool inflag,outflag;
+  bool outflag;
   bool uniform;
   bool subblock;
   bool compact;
@@ -261,6 +254,9 @@ public:
   }
 
   void setup(T *data, MPI_Comm Communicator) {
+    if(N < n) Array::ArrayExit("N must be >= n");
+    if(M < m) Array::ArrayExit("M must be >= m");
+
     threads=options.threads;
     MPI_Comm_size(Communicator,&size);
     MPI_Comm_rank(Communicator,&rank);
@@ -274,9 +270,6 @@ public:
     m0=localdimension(M,0,size).n;
     mlast=std::min((int) utils::ceilquotient(M,m0),size)-1;
     mp=localdimension(M,mlast,size).n;
-    
-    Tin3=new fftwpp::Transpose(n,M,L,data,data,threads);
-    Tout3=new fftwpp::Transpose(N,m,L,data,data,threads);
     
     allocated=0;
     if(size == 1) {
@@ -385,34 +378,32 @@ public:
   
   mpitranspose(){}
 
-  // data and work are arrays of size max(N*m,n*M)*L.
-  mpitranspose(unsigned int N, unsigned int m, unsigned int n,
-               unsigned int M, unsigned int L,
-               T *data, T *work=NULL,
+  // data and work are arrays of size max(n*M,N*m)*L.
+  mpitranspose(unsigned int N, unsigned int M, unsigned int n, unsigned int m,
+               unsigned int L, T *data, T *work=NULL,
                MPI_Comm communicator=MPI_COMM_WORLD,
                const mpiOptions& options=defaultmpiOptions,
                MPI_Comm global=0) :
-    N(N), m(m), n(n), M(M), L(L), work(work),
+    N(N), M(M), n(n), m(m), L(L), work(work),
     options(options), global(global ? global : communicator), latency(-1) {
     setup(data,communicator);
   }
   
-  mpitranspose(unsigned int N, unsigned int m, unsigned int n,
-               unsigned int M, unsigned int L,
-               T *data, MPI_Comm communicator=MPI_COMM_WORLD,
+  mpitranspose(unsigned int N, unsigned int M, unsigned int n, unsigned int m,
+               unsigned int L, T *data, MPI_Comm communicator=MPI_COMM_WORLD,
                const mpiOptions& options=defaultmpiOptions,
                MPI_Comm global=0) :
-    N(N), m(m), n(n), M(M), L(L), work(NULL),
+    N(N), M(M), n(n), m(m), L(L), work(NULL),
     options(options), global(global ? global : communicator), latency(-1) {
     setup(data,communicator);
   }
     
-  mpitranspose(unsigned int N, unsigned int m, unsigned int n,
-               unsigned int M, T *data, T *work=NULL,
+  mpitranspose(unsigned int N, unsigned int M, unsigned int n,
+               unsigned int m, T *data, T *work=NULL,
                MPI_Comm communicator=MPI_COMM_WORLD,
                const mpiOptions& options=defaultmpiOptions,
                MPI_Comm global=0) :
-    N(N), m(m), n(n), M(M), L(1), work(work),
+    N(N), M(M), n(n), m(m), L(1), work(work),
     options(options), global(global ? global : communicator), latency(-1) {
     setup(data,communicator);
   }
@@ -420,12 +411,12 @@ public:
   double time(T *data) {
     double sum=0.0;
     unsigned int N=1;
-    transpose(data,true,false); // Initialize communication buffers
+    localize0(data); // Initialize communication buffers
     double stop=utils::totalseconds()+testseconds;
     for(;;++N) {
       int end;
       double start=rank == 0 ? utils::totalseconds() : 0.0;
-      transpose(data,true,false);
+      localize0(data);
       if(rank == 0) {
         double t=utils::totalseconds();
         double seconds=t-start;
@@ -448,7 +439,7 @@ public:
     if(compact) work=data;
     else {
       if(work == NULL) {
-        allocated=std::max(N*m,n*M)*L;
+        allocated=std::max(n*M,N*m)*L;
         Array::newAlign(work,allocated,sizeof(T));
       }
     }
@@ -568,8 +559,6 @@ public:
   }
   
   ~mpitranspose() {
-    delete Tin3;
-    delete Tout3;
     deallocate();
   }
   
@@ -862,18 +851,8 @@ public:
     if(subblock) outsync();
   }
 
-  void nMTranspose() {
-    if(n == 0) return;
-    Tin3->transpose(output); // n X M x L
-  }
-  
-  void NmTranspose(T *in=0, T *out=0) {
-    if(m == 0) return;
-    Tout3->transpose(output); // N x m x L
-  }
-  
   void Wait0() {
-    if(inflag) {
+    if(outflag) {
       outsync0();
       outphase1();
     } else {
@@ -883,13 +862,11 @@ public:
   }
   
   void Wait1() {
-    if(inflag) {
+    if(outflag)
       outsync1();
-      if(outflag) NmTranspose();
-    } else {
+    else {
       insync1();
       inpost();
-      if(!outflag) nMTranspose();
     }
   }
   
@@ -908,25 +885,37 @@ public:
     }
   }
   
-  void transpose(T *in, bool intranspose=true, bool outtranspose=true,
-                 T *out=0)
+  void localize0(T *in, T *out=0)
   {
-    itranspose(in,intranspose,outtranspose,out);
+    ilocalize0(in,out);
     wait();
   }
   
-  void itranspose(T *in, bool intranspose=true, bool outtranspose=true,
-                  T *out=0)
+  void localize1(T *in, T *out=0)
+  {
+    ilocalize1(in,out);
+    wait();
+  }
+  
+  void ilocalize0(T *in, T *out=0)
   {
     if(!out) out=in;
     input=in;
     output=out;
-    inflag=intranspose;
-    outflag=outtranspose;
-    if(inflag)
-      outphase0();
-    else
-      inphase0();
+    outphase0();
+    outflag=true;
+    if(!overlap) {
+      Wait0();
+      Wait1();
+    }
+  }
+  void ilocalize1(T *in, T *out=0)
+  {
+    if(!out) out=in;
+    input=in;
+    output=out;
+    inphase0();
+    outflag=false;
     if(!overlap) {
       Wait0();
       Wait1();

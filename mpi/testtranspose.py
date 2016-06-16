@@ -46,15 +46,15 @@ def main(argv):
         stop=40
         
         if(shortrun):
-            Xlist = [1,2,random.randint(start,stop)]
-            Ylist = [1,2,random.randint(start,stop)]
-            Zlist = [1,2,random.randint(start,stop)]
-            Plist = [1,2,3,4]
+            Xlist = [2,1,random.randint(start,stop)]
+            Ylist = [2,1,random.randint(start,stop)]
+            Zlist = [2,1,random.randint(start,stop)]
+            Plist = [2,1,3,4]
         else:
             Xlist = [10,9,8,7,6,5,4,3,2,1,random.randint(start,stop)]
             Ylist = [9,10,8,7,6,5,4,3,2,1,random.randint(start,stop)]
-            Zlist = [1,2,3,10,random.randint(start,stop)]
-            Plist = [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,1]
+            Zlist = [2,1,3,10,random.randint(start,stop)]
+            Plist = [2,1,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
 
         ntest = 0
         for X in Xlist:

@@ -20,7 +20,6 @@ int alltoall=-1; // Test for best alltoall routine
 const unsigned int showlimit=1024;
 unsigned int N0=1000000;
 int N=0;
-bool outtranspose=false;
 
 void init(Complex *data, unsigned int X, unsigned int y, unsigned int Z,
           int x0, int y0) {
@@ -90,14 +89,13 @@ int transpose(int N, int stats, int timepart)
 
     //    show(data,X,y*Z,communicator);
     
-    mpitranspose<Complex> T(X,y,x,Y,Z,data,NULL,communicator,
+    mpitranspose<Complex> T(X,Y,x,y,Z,data,NULL,communicator,
                             mpiOptions(a,alltoall,defaultmpithreads,!quiet));
     init(data,X,y,Z,0,y0);
-    T.transpose(data,false,true);
+    T.localize1(data);
   
     //    show(data,x,Y*Z,communicator);
     
-    T.NmTranspose();
     init(data,X,y,Z,0,y0);
     
     statistics Sininit,Sinwait0,Sinwait1,Sin;
@@ -135,9 +133,9 @@ int transpose(int N, int stats, int timepart)
         show(wholedata,X,Y,0,0,X,Y);
       }
 
-      T.transpose(data,false,true); // N x m -> n x M
-      T.transpose(data,true,false); // n x M -> N x m
-      T.transpose(data,false,true); // N x m -> n x M
+      T.localize1(data); // N x m -> n x M
+      T.localize0(data); // n x M -> N x m
+      T.localize1(data); // N x m -> n x M
 
       if(showoutput) {
         if(main)
@@ -177,7 +175,7 @@ int transpose(int N, int stats, int timepart)
       if(detailed) Tp=new double[N];
       
       init(data,X,y,Z,0,y0);
-      T.transpose(data,true,false); // Initialize communication buffers
+      T.localize0(data); // Initialize communication buffers
       
       for(int k=0; k < N; ++k) {
         init(data,X,y,Z,0,y0);
@@ -219,7 +217,6 @@ int transpose(int N, int stats, int timepart)
         if(main) Tinit=totalseconds();
         T.outsync1();
         if(main) Twait1=totalseconds();
-        if(outtranspose) T.NmTranspose();
     
         if(main) {
           double tout=totalseconds()-begin;
@@ -238,13 +235,8 @@ int transpose(int N, int stats, int timepart)
       }
       
       if(showoutput) {
-        if(outtranspose) {
-          if(main) cout << "\nOutput:" << endl;
-          show(data,y,X*Z,communicator);
-        } else {
-          if(main) cout << "\nOriginal:" << endl;
-          show(data,X,y*Z,communicator);
-        }
+        if(main) cout << "\nOriginal:" << endl;
+        show(data,X,y*Z,communicator);
       }
 
       if(main) {
@@ -279,7 +271,7 @@ int main(int argc, char **argv)
   optind=0;
 #endif  
   for (;;) {
-    int c=getopt(argc,argv,"hLN:A:a:m:n:p:s:T:S:x:y:z:qt");
+    int c=getopt(argc,argv,"hN:A:a:m:n:p:s:T:S:x:y:z:qt");
     if (c == -1) break;
                 
     switch (c) {
@@ -287,9 +279,6 @@ int main(int argc, char **argv)
         break;
       case 'N':
         N=atoi(optarg);
-        break;
-      case 'L':
-        outtranspose=true;
         break;
       case 's':
         alltoall=atoi(optarg);

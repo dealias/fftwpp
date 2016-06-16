@@ -109,7 +109,7 @@ void fft2dMPI::iForward(Complex *in, Complex *out)
 {
   out=Setout(in,out);
   yForward->fft(in,out);
-  T->itranspose(out,true,false);
+  T->ilocalize0(out);
 }
 
 void fft2dMPI::iBackward(Complex *in, Complex *out)
@@ -117,7 +117,7 @@ void fft2dMPI::iBackward(Complex *in, Complex *out)
   out=Setout(in,out);
   xBackward->fft(in,out);
   TyX->transpose(out);
-  T->itranspose(out,false,true);
+  T->ilocalize1(out);
 }
 
 void fft3dMPI::iForward(Complex *in, Complex *out)
@@ -125,7 +125,7 @@ void fft3dMPI::iForward(Complex *in, Complex *out)
   out=Setout(in,out);
   if(Tyz) {
     zForward->fft(in,out);
-    Tyz->itranspose(out,true,false);
+    Tyz->ilocalize0(out);
   } else {
     unsigned int stride=d.z*d.Y;
     unsigned int stop=d.x*stride;
@@ -134,7 +134,7 @@ void fft3dMPI::iForward(Complex *in, Complex *out)
         yzForward->fft(in+i,out+i);
       }
       );
-    Txy->itranspose(out,true,false);
+    Txy->ilocalize0(out);
   }
 }
 
@@ -148,7 +148,7 @@ void fft3dMPI::ForwardWait0(Complex *out)
       for(unsigned int i=0; i < stop; i += stride) 
         yForward->fft(out+i);
       );
-    Txy->itranspose(out,true,false);
+    Txy->ilocalize0(out);
   }
 }
 
@@ -156,7 +156,7 @@ void fft3dMPI::iBackward(Complex *in, Complex *out)
 {
   out=Setout(in,out);
   xBackward->fft(in,out);
-  Txy->itranspose(out,false,true);
+  Txy->ilocalize1(out);
 }
 
 void fft3dMPI::BackwardWait0(Complex *out)
@@ -170,7 +170,7 @@ void fft3dMPI::BackwardWait0(Complex *out)
       for(unsigned int i=0; i < stop; i += stride) 
         yBackward->fft(out+i);
       );
-    Tyz->itranspose(out,false,true);
+    Tyz->ilocalize1(out);
   } else {
     PARALLEL(
       for(unsigned int i=0; i < stop; i += stride) 
@@ -203,21 +203,21 @@ void rcfft2dMPI::iForward(double *in, Complex *out)
 {
   out=Setout((Complex *) in,out);
   yForward->fft(in,out);
-  T->itranspose(out,true,false);
+  T->ilocalize0(out);
 }
 
 void rcfft2dMPI::iBackward(Complex *in, double *out)
 {
   out=(double *) Setout(in,(Complex *) out);
   xBackward->fft(in);
-  T->itranspose(in,false,true);
+  T->ilocalize1(in);
 }
 
 void rcfft3dMPI::iForward(double *in, Complex *out)
 {
   out=Setout((Complex *) in,out);
   zForward->fft(in,out);
-  if(Tyz) Tyz->itranspose(out,true,false);
+  if(Tyz) Tyz->ilocalize0(out);
   else {
     const unsigned int stride=dc.z*dc.Y;
     const unsigned int stop=dc.x*stride;
@@ -225,7 +225,7 @@ void rcfft3dMPI::iForward(double *in, Complex *out)
       for(unsigned int i=0; i < stop; i += stride) 
         yForward->fft(out+i);
       )
-      Txy->itranspose(out,true,false);
+      Txy->ilocalize0(out);
   }
 }
 
@@ -239,14 +239,14 @@ void rcfft3dMPI::ForwardWait0(Complex *out)
       for(unsigned int i=0; i < stop; i += stride) 
         yForward->fft(out+i);
       )
-      Txy->itranspose(out,true,false);
+      Txy->ilocalize0(out);
   }
 }
 
 void rcfft3dMPI::iBackward(Complex *in, double *out)
 {
   xBackward->fft(in);
-  Txy->itranspose(in,false,true);
+  Txy->ilocalize1(in);
 }
 
 void rcfft3dMPI::BackwardWait0(Complex *in, double *out)
@@ -259,7 +259,7 @@ void rcfft3dMPI::BackwardWait0(Complex *in, double *out)
     for(unsigned int i=0; i < stop; i += stride) 
       yBackward->fft(in+i);
     );
-  if(Tyz) Tyz->itranspose(in,false,true);
+  if(Tyz) Tyz->ilocalize1(in);
 }
 
 void rcfft3dMPI::Shift(double *f)

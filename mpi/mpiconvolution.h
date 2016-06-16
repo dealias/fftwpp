@@ -19,9 +19,9 @@ public:
   void inittranspose(const utils::mpiOptions& mpioptions, Complex *work,
                      MPI_Comm& global) {
     global=global ? global : d.communicator;
-    T=new utils::mpitranspose<Complex>(d.X,d.y,d.x,d.Y,1,u2,work,
+    T=new utils::mpitranspose<Complex>(d.X,d.Y,d.x,d.y,1,u2,work,
                                        d.communicator,mpioptions,global);
-    U=new utils::mpitranspose<Complex>(d.X,d.y,d.x,d.Y,1,u2,work,
+    U=new utils::mpitranspose<Complex>(d.X,d.Y,d.x,d.y,1,u2,work,
                                        d.communicator,T->Options(),global);
     d.Deactivate();
   }
@@ -91,9 +91,9 @@ public:
   void inittranspose(Complex *f, const utils::mpiOptions& mpi, Complex *work,
                      MPI_Comm global) {
     global=global ? global : d.communicator;
-    T=new utils::mpitranspose<Complex>(d.X,d.y,d.x,d.Y,1,f,work,
+    T=new utils::mpitranspose<Complex>(d.X,d.Y,d.x,d.y,1,f,work,
                                        d.communicator,mpi,global);
-    U=new utils::mpitranspose<Complex>(du.X,du.y,du.x,du.Y,1,u2,work,
+    U=new utils::mpitranspose<Complex>(du.X,du.Y,du.x,du.y,1,u2,work,
                                        du.communicator,mpi,global);
     du.Deactivate();
   }    
@@ -197,9 +197,9 @@ public:
   void inittranspose(const utils::mpiOptions& mpi, Complex *work,
                      MPI_Comm global) {
     if(d.xy.y < d.Y) { 
-      T=new utils::mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,u3,work,
+      T=new utils::mpitranspose<Complex>(d.X,d.Y,d.x,d.xy.y,d.z,u3,work,
                                          d.xy.communicator,mpi,global);
-      U=new utils::mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,u3,work,
+      U=new utils::mpitranspose<Complex>(d.X,d.Y,d.x,d.xy.y,d.z,u3,work,
                                          d.xy.communicator,T->Options(),
                                          global);
     } else {
@@ -292,9 +292,9 @@ public:
   void inittranspose(Complex *f, const utils::mpiOptions& mpi, Complex *work,
                      MPI_Comm global) {
     if(d.xy.y < d.Y) {
-      T=new utils::mpitranspose<Complex>(d.X,d.xy.y,d.x,d.Y,d.z,f,work,
+      T=new utils::mpitranspose<Complex>(d.X,d.Y,d.x,d.xy.y,d.z,f,work,
                                          d.xy.communicator,mpi,global);
-      U=new utils::mpitranspose<Complex>(du.X,du.xy.y,du.x,du.Y,du.z,u3,work,
+      U=new utils::mpitranspose<Complex>(du.X,du.Y,du.x,du.xy.y,du.z,u3,work,
                                          du.xy.communicator,mpi,global);
     } else {T=U=NULL;}
     du.Deactivate();
@@ -392,12 +392,6 @@ public:
       delete U;
       delete T;
     }
-  }
-  
-  void transpose(utils::mpitranspose<Complex> *T, unsigned int A, Complex **F,
-                 bool inflag, bool outflag, unsigned int offset=0) {
-    for(unsigned int a=0; a < A; ++a)
-      T->transpose(F[a]+offset,inflag,outflag);
   }
   
   void HermitianSymmetrize(Complex *f, Complex *u) {

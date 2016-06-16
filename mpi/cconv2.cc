@@ -191,7 +191,7 @@ int main(int argc, char* argv[])
       Complex **Flocal=new Complex *[A];
       for(unsigned int a=0; a < A; ++a) {
         Flocal[a]=ComplexAlign(mx*my);
-        gathery(F[a], Flocal[a], d, 1, group.active);
+        gathery(F[a],Flocal[a],d,1,group.active);
         if(!quiet && main)  {
           cout << "\nGathered input " << a << ":" << endl;
           Array2<Complex> AFlocala(mx,my,Flocal[a]);
