@@ -220,7 +220,7 @@ int transpose(int N, int stats, int timepart)
     
         if(main) {
           double tout=totalseconds()-begin;
-          if(detailed) Tp[k]=tout+tin;
+          if(detailed) Tp[k]=0.5*(tout+tin);
           
           Sout.add(tout);
           Soutinit.add(Tinit0-begin);
