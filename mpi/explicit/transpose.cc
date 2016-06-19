@@ -8,6 +8,8 @@
 #include "exmpiutils.h"
 #include "../mpiutils.h"
 
+#include <fftw3-mpi.h>
+
 using namespace std;
 using namespace utils;
 
@@ -24,7 +26,7 @@ unsigned int defaultmpithreads=1;
 
 const unsigned int showlimit=1024;
 unsigned int N0=1000000;
-int N=0;
+unsigned int N=0;
 bool outtranspose=false;
 
 void init(Complex *data, unsigned int X, unsigned int y, unsigned int Z,
@@ -59,88 +61,6 @@ inline void usage()
   exit(1);
 }
 
-#include <fftw3-mpi.h>
-void fftwTranspose(int rank, int size, unsigned int N, int stats, int direction)
-{
-  Complex *data;
-  ptrdiff_t x,x0;
-  ptrdiff_t y,y0;
-  
-  fftw_mpi_init();
-  
-  /* get local data size and allocate */
-  ptrdiff_t NN[2]={Y,X};
-  unsigned int block=ceilquotient(Y,size);
-  ptrdiff_t alloc=
-    fftw_mpi_local_size_many_transposed(2,NN,Z,block,0,
-                                        MPI_COMM_WORLD,&y,
-                                        &y0,&x,&x0);
-  if(rank == 0) {
-    cout << "x=" << x << endl;
-    cout << "y=" << y << endl;
-    cout << "X=" << X << endl;
-    cout << "Y=" << Y << endl;
-    cout << "Z=" << Z << endl;
-    cout << "N=" << N << endl;
-  }
-  
-  data=ComplexAlign(alloc);
-  
-  fftw_plan inplan=fftw_mpi_plan_many_transpose(Y,X,2*Z,block,0,
-                                                (double*) data,(double*) data,
-                                                MPI_COMM_WORLD,
-                                                FFTW_MPI_TRANSPOSED_IN);
-  fftw_plan outplan=fftw_mpi_plan_many_transpose(X,Y,2*Z,0,block,
-                                                 (double*) data,(double*) data,
-                                                 MPI_COMM_WORLD,
-                                                 outtranspose ? 0 : \
-						 FFTW_MPI_TRANSPOSED_OUT);
-  
-  init(data,X,y,Z,0,y0);
-
-  bool showoutput=X*Y < showlimit && N == 1;
-  if(showoutput)
-    show(data,X,y*Z,MPI_COMM_WORLD);
-
-  double *Tin=new double[N];
-  double *Tout=new double[N];
-
-  for(unsigned int i=0; i < N; ++i) {
-    seconds();
-    fftw_execute(inplan);
-    Tin[i]=seconds();
-
-    seconds();
-    fftw_execute(outplan);
-    Tin[i]=seconds();
-    
-  }
-  if(rank == 0) {
-    if(direction == 0)
-      timings("in transpose",X,Tin,N,stats);
-  }
-  if(rank == 0) {
-    if(direction == 1)
-      timings("out transpose",X,Tout,N,stats);
-  }
-
-  delete[] Tout;
-  delete[] Tin;
-  
-  if(showoutput) {
-    if(outtranspose) {
-      if(rank == 0) cout << "\nOutput:\n" << endl;
-      show(data,y,X*Z,MPI_COMM_WORLD);
-    } else {
-      if(rank == 0) cout << "\nOriginal:\n" << endl;
-      show(data,X,y*Z,MPI_COMM_WORLD);
-    }
-  }
-
-  fftw_destroy_plan(inplan);
-  fftw_destroy_plan(outplan);
-}
-
 int main(int argc, char **argv)
 {
   int provided;
@@ -148,7 +68,7 @@ int main(int argc, char **argv)
 
   int stats = 0;
 
-  int direction = 0; // 0: in, 1: out
+  int direction = -1; // -1: both 0: in, 1: out
   
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
@@ -233,7 +153,102 @@ int main(int argc, char **argv)
 
   int retval=0;
 
-  fftwTranspose(rank,size,N,stats, direction);
+  //fftwTranspose(rank,size,N,stats, direction);
+
+  Complex *data;
+  ptrdiff_t x,x0;
+  ptrdiff_t y,y0;
+  
+  fftw_mpi_init();
+  
+  /* get local data size and allocate */
+  ptrdiff_t NN[2]={Y,X};
+  unsigned int block=ceilquotient(Y,size);
+  ptrdiff_t alloc=
+    fftw_mpi_local_size_many_transposed(2,NN,Z,block,0,
+                                        MPI_COMM_WORLD,&y,
+                                        &y0,&x,&x0);
+  if(rank == 0) {
+    cout << "x=" << x << endl;
+    cout << "y=" << y << endl;
+    cout << "X=" << X << endl;
+    cout << "Y=" << Y << endl;
+    cout << "Z=" << Z << endl;
+    cout << "N=" << N << endl;
+  }
+  
+  data=ComplexAlign(alloc);
+  
+  fftw_plan inplan=fftw_mpi_plan_many_transpose(Y,X,2*Z,block,0,
+                                                (double*) data,(double*) data,
+                                                MPI_COMM_WORLD,
+                                                FFTW_MPI_TRANSPOSED_IN);
+  fftw_plan outplan=fftw_mpi_plan_many_transpose(X,Y,2*Z,0,block,
+                                                 (double*) data,(double*) data,
+                                                 MPI_COMM_WORLD,
+                                                 outtranspose ? 0 : \
+						 FFTW_MPI_TRANSPOSED_OUT);
+
+  init(data,X,y,Z,0,y0);
+
+  bool showoutput=X*Y < showlimit && N == 1;
+  if(showoutput)
+    show(data,X,y*Z,MPI_COMM_WORLD);
+
+  double *Tin=new double[N];
+  double *Tout=new double[N];
+
+  for(unsigned int i=0; i < N; ++i) {
+    seconds();
+    fftw_execute(inplan);
+    Tin[i]=seconds();
+
+    seconds();
+    fftw_execute(outplan);
+    Tin[i]=seconds();
+    
+  }
+
+    if(rank == 0) {
+    switch(direction) {
+      case -1: {
+	double *T=new double[N];
+	for(unsigned int i=0; i < N; ++i)
+	  T[i] = 0.5*(Tin[i]+Tout[i]);
+	timings("full transpose",X,T,N,stats);
+	delete[] T;
+      }
+	break;
+      case 0:
+	timings("in transpose",X,Tin,N,stats);
+	break;
+      case 1:
+	timings("out transpose",X,Tout,N,stats);
+	break;
+      default:
+	cout << "invalid direciton choice." << endl;
+	exit(1);
+    }
+  }
+
+  delete[] Tout;
+  delete[] Tin;
+
+  
+  if(showoutput) {
+    if(outtranspose) {
+      if(rank == 0) cout << "\nOutput:\n" << endl;
+      show(data,y,X*Z,MPI_COMM_WORLD);
+    } else {
+      if(rank == 0) cout << "\nOriginal:\n" << endl;
+      show(data,X,y*Z,MPI_COMM_WORLD);
+    }
+  }
+
+  fftw_destroy_plan(inplan);
+  fftw_destroy_plan(outplan);
+
+  
   
   MPI_Finalize();
   return retval;

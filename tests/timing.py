@@ -99,6 +99,9 @@ def max_m(p, RAM, runtype):
     if p == "fft3r":
         return int(floor(log(RAM / 16) / log(2) / 3))
 
+    if p == "transpose":
+        return int(floor(log(RAM / 32) / log(2) / 2))
+
     print "Error! Failed to determine b."
     return 0
 
