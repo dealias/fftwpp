@@ -406,8 +406,10 @@ if(gtype == "time" || gtype == "performance") {
     }
 
     if(verbose) {
-      write("time:");
-      write(i[p]);
+      write(filenames[p]);
+      for(int q = 0; q < i[p].length; ++q) {
+	write(mi[p][q], i[p][q], li[p][q], hi[p][q]);
+      }
     }
     
     if(drawerrorbars && (gtype == "time" || datatype == "raw")) {

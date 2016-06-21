@@ -205,7 +205,7 @@ int main(int argc, char **argv)
 
     seconds();
     fftw_execute(outplan);
-    Tin[i]=seconds();
+    Tout[i]=seconds();
     
   }
 
