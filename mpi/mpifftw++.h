@@ -7,14 +7,19 @@
 
 namespace fftwpp {
 
+// In-place and out-of-place distributed FFTs. Upper case letters denote
+// global dimensions; lower case letters denote distributed dimensions: 
+
 // 2D OpenMP/MPI complex in-place and out-of-place 
-// xY -> yX distributed FFT.
+// xY -> yX (if transposed=true).
+//    -> Xy (if transposed=false)
 // Fourier transform an nx*ny array, distributed first over x.
 // The array must be allocated as split::n Complex words.
 // The sign argument (default -1) of the constructor specfies the sign
 // of the forward transform.
 //
 // Example:
+//
 // MPIgroup group(MPI_COMM_WORLD,nx);
 // split d(nx,ny,group.active);
 // Complex *f=ComplexAlign(d.n);
@@ -81,30 +86,25 @@ public:
   }
 
   virtual void iForward(Complex *in, Complex *out=NULL);
-  virtual void ForwardWait(Complex *out)
+  virtual void ForwardWait(Complex *out, bool transposed=true)
   {
     T->wait();
     TXy->transpose(out);
     xForward->fft(out);
+    if(!transposed) TyX->transpose(out);
   }
-  void Forward(Complex *in, Complex *out=NULL) {
+  void Forward(Complex *in, Complex *out=NULL, bool transposed=true) {
     iForward(in,out);
-    ForwardWait(out);
+    ForwardWait(out,transposed);
   }
-  void yXtoXy(Complex *out) {
-    TyX->transpose(out);
-  }
-  virtual void iBackward(Complex *in, Complex *out=NULL);
+  virtual void iBackward(Complex *in, Complex *out=NULL, bool transposed=true);
   virtual void BackwardWait(Complex *out) {
     T->wait();
     yBackward->fft(out);
   }
-  void Backward(Complex *in, Complex *out=NULL) {
-    iBackward(in,out);
+  void Backward(Complex *in, Complex *out=NULL, bool transposed=true) {
+    iBackward(in,out,transposed);
     BackwardWait(out);
-  }
-  void XytoyX(Complex *in) {
-    TXy->transpose(in);
   }
   
 };
@@ -115,6 +115,7 @@ public:
 // then over y. The array must be allocated as split3::n Complex words.
 //
 // Example:
+//
 // MPIgroup group(MPI_COMM_WORLD,nx,ny);
 // split3 d(nx,ny,nz,group);
 // Complex *f=ComplexAlign(d.n);
@@ -264,6 +265,7 @@ public:
 // Normalize(Complex *out);
 //
 // Example:
+//
 // MPIgroup group(MPI_COMM_WORLD,ny);
 // split df(nx,ny,nz,group.active);
 // split dg(nx,ny,nz/2+1,group.active);
@@ -389,6 +391,7 @@ public:
 // The arrays must be allocated as split3::n Complex words.
 //
 // Example:
+//
 // MPIgroup group(MPI_COMM_WORLD,nx,ny);
 // split3 df(nx,ny,nz,group);
 // split3 dg(nx,ny,nz/2+1,group);

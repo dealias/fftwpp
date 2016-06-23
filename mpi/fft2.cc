@@ -161,8 +161,7 @@ int main(int argc, char* argv[])
         cout << "\nGathered input:\n" << flocal << endl;
       }
 
-      fft.Forward(f,g);
-      fft.yXtoXy(g);
+      fft.Forward(f,g,false);
 
       if(!quiet && nx*ny < outlimit) {
         if(main) cout << "\nDistributed output:" << endl;
@@ -193,8 +192,7 @@ int main(int argc, char* argv[])
         }
       }
 
-      fft.XytoyX(g);
-      fft.Backward(g,f);
+      fft.Backward(g,f,false);
       fft.Normalize(f);
 
       if(!quiet && nx*ny < outlimit) {
