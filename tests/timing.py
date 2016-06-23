@@ -386,12 +386,42 @@ def main(argv):
 
             
         if not dryrun:
+            comment = "#"
+
+            # Add the base run command as a comment
+            comment += " " + " ".join(cmd)
+
+            # Add the run date as a comment
             import time
             date = time.strftime("%Y-%m-%d")
-
-            comment = ""
-            comment += "# " + " ".join(cmd)
             comment += "\t" + date
+
+            # If we can get the commit and commit date, add as a comment
+            vcmd = []
+            vcmd.append("git")
+            vcmd.append("log")
+            vcmd.append("-1")
+            vcmd.append("--format=%h")
+            vp = Popen(vcmd, stdout = PIPE, stderr = PIPE)
+            vp.wait()
+            prc = vp.returncode
+            if prc == 0:
+                out, err = vp.communicate()
+                comment += "\t" + out.rstrip()
+
+            vcmd = []
+            vcmd.append("git")
+            vcmd.append("log") 
+            vcmd.append("-1")
+            vcmd.append("--format=%ci")
+            vp = Popen(vcmd, stdout = PIPE, stderr = PIPE)
+            vp.wait()
+            prc = vp.returncode
+            if prc == 0:
+                out, err = vp.communicate()
+                out = out.rstrip()
+                comment += " (" + out[0:10] + ")"
+            
             comment += "\n"
             
             if(appendtofile):
