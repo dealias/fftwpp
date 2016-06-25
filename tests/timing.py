@@ -153,6 +153,7 @@ def main(argv):
     -N<int> Number of tests to perform
     -e<0 or 1>: append to the timing data already existent (skipping 
            already-done problem sizes).
+    -c<string>: extra commentary for output file.
     -v: verbose output
     '''
 
@@ -179,9 +180,10 @@ def main(argv):
     stats = 0
     path = "./"
     verbose = False
+    extracomment = ""
     
     try:
-        opts, args = getopt.getopt(argv,"hdp:T:a:b:A:B:E:e:r:R:S:o:P:D:g:N:v")
+        opts, args = getopt.getopt(argv,"hdp:T:a:b:c:A:B:E:e:r:R:S:o:P:D:g:N:v")
     except getopt.GetoptError:
         print "error in parsing arguments."
         print usage
@@ -197,6 +199,8 @@ def main(argv):
             N = int(arg)
         elif opt in ("-b"):
             b = int(arg)
+        elif opt in ("-c"):
+            extracomment = arg
         elif opt in ("-A"):
             A += [str(arg)]
         elif opt in ("-B"):
@@ -396,32 +400,35 @@ def main(argv):
             date = time.strftime("%Y-%m-%d")
             comment += "\t" + date
 
-            # If we can get the commit and commit date, add as a comment
-            vcmd = []
-            vcmd.append("git")
-            vcmd.append("log")
-            vcmd.append("-1")
-            vcmd.append("--format=%h")
-            vp = Popen(vcmd, stdout = PIPE, stderr = PIPE)
-            vp.wait()
-            prc = vp.returncode
-            if prc == 0:
-                out, err = vp.communicate()
-                comment += "\t" + out.rstrip()
+            if extracomment == "":
+                # If we can get the commit and commit date, add as a comment
+                vcmd = []
+                vcmd.append("git")
+                vcmd.append("log")
+                vcmd.append("-1")
+                vcmd.append("--format=%h")
+                vp = Popen(vcmd, stdout = PIPE, stderr = PIPE)
+                vp.wait()
+                prc = vp.returncode
+                if prc == 0:
+                    out, err = vp.communicate()
+                    comment += "\t" + out.rstrip()
 
-            vcmd = []
-            vcmd.append("git")
-            vcmd.append("log") 
-            vcmd.append("-1")
-            vcmd.append("--format=%ci")
-            vp = Popen(vcmd, stdout = PIPE, stderr = PIPE)
-            vp.wait()
-            prc = vp.returncode
-            if prc == 0:
-                out, err = vp.communicate()
-                out = out.rstrip()
-                comment += " (" + out[0:10] + ")"
-            
+                vcmd = []
+                vcmd.append("git")
+                vcmd.append("log") 
+                vcmd.append("-1")
+                vcmd.append("--format=%ci")
+                vp = Popen(vcmd, stdout = PIPE, stderr = PIPE)
+                vp.wait()
+                prc = vp.returncode
+                if prc == 0:
+                    out, err = vp.communicate()
+                    out = out.rstrip()
+                    comment += " (" + out[0:10] + ")"
+            else:
+                comment += "\t" + extracomment
+                    
             comment += "\n"
             
             if(appendtofile):
