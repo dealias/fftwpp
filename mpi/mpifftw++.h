@@ -11,7 +11,7 @@ namespace fftwpp {
 // global dimensions; lower case letters denote distributed dimensions: 
 
 // 2D OpenMP/MPI complex in-place and out-of-place 
-// xY -> yX (if transposed=true).
+// xY -> yX (if transposed=true: default, fastest)
 //    -> Xy (if transposed=false)
 // Fourier transform an nx*ny array, distributed first over x.
 // The array must be allocated as split::n Complex words.
@@ -110,9 +110,11 @@ public:
 };
 
 // 3D OpenMP/MPI complex in-place and out-of-place 
-// xyZ -> Xyz distributed FFT.
+// xyZ -> Xyz
 // Fourier transform an nx*ny*nz array, distributed first over x and
 // then over y. The array must be allocated as split3::n Complex words.
+// The sign argument (default -1) of the constructor specfies the sign
+// of the forward transform.
 //
 // Example:
 //
@@ -156,43 +158,45 @@ public:
     
     if(d.yz.x < d.Y) {
       unsigned int M=d.x*d.yz.x;
-      zForward=new mfft1d(d.Z,-1,M,1,d.Z,in,out,threads);
-      zBackward=new mfft1d(d.Z,1,M,1,d.Z,out,out,threads);
+      zForward=new mfft1d(d.Z,sign,M,1,d.Z,in,out,threads);
+      zBackward=new mfft1d(d.Z,-sign,M,1,d.Z,out,out,threads);
       Tyz=new utils::mpitranspose<Complex>(d.Y,d.Z,d.yz.x,d.z,1,out,
                                            d.yz.communicator,yz,
                                            d.communicator);
-      yForward=new mfft1d(d.Y,-1,d.z,d.z,1,out,out,innerthreads);
-      yBackward=new mfft1d(d.Y,1,d.z,d.z,1,out,out,innerthreads);
+      yForward=new mfft1d(d.Y,sign,d.z,d.z,1,out,out,innerthreads);
+      yBackward=new mfft1d(d.Y,-sign,d.z,d.z,1,out,out,innerthreads);
     } else {
-      yzForward=new fft2d(d.Y,d.Z,-1,in,out,innerthreads);
-      yzBackward=new fft2d(d.Y,d.Z,1,out,out,innerthreads);
+      yzForward=new fft2d(d.Y,d.Z,sign,in,out,innerthreads);
+      yzBackward=new fft2d(d.Y,d.Z,-sign,out,out,innerthreads);
       Tyz=NULL;
     }
     
     Txy=new utils::mpitranspose<Complex>(d.X,d.Y,d.x,d.xy.y,d.z,out,
                                          d.xy.communicator,xy,d.communicator);
     unsigned int M=d.xy.y*d.z;
-    xForward=new mfft1d(d.X,-1,M,M,1,out,out,threads);
-    xBackward=new mfft1d(d.X,1,M,M,1,in,out,threads);
+    xForward=new mfft1d(d.X,sign,M,M,1,out,out,threads);
+    xBackward=new mfft1d(d.X,-sign,M,M,1,in,out,threads);
     
     d.Deactivate();
   }
   
   fft3dMPI(const utils::split3& d, Complex *in, Complex *out,
-           const utils::mpiOptions& xy, const utils::mpiOptions& yz) :
-    fftw(2*d.x*d.y*d.Z,0,xy.threads,d.X*d.Y*d.Z), d(d) {init(in,out,xy,yz);}
+           const utils::mpiOptions& xy, const utils::mpiOptions& yz,
+           int sign=-1) :
+    fftw(2*d.x*d.y*d.Z,sign,xy.threads,d.X*d.Y*d.Z), d(d) {init(in,out,xy,yz);}
   
   fft3dMPI(const utils::split3& d, Complex *in, Complex *out,
-           const utils::mpiOptions& xy=utils::defaultmpiOptions) :
-    fftw(2*d.x*d.y*d.Z,0,xy.threads,d.X*d.Y*d.Z), d(d) {init(in,out,xy,xy);}
+           const utils::mpiOptions& xy=utils::defaultmpiOptions,
+           int sign=-1) :
+    fftw(2*d.x*d.y*d.Z,sign,xy.threads,d.X*d.Y*d.Z), d(d) {init(in,out,xy,xy);}
     
   fft3dMPI(const utils::split3& d, Complex *in, const utils::mpiOptions& xy,
-           const utils::mpiOptions& yz) :
-    fftw(2*d.x*d.y*d.Z,0,xy.threads,d.X*d.Y*d.Z), d(d) {init(in,in,xy,yz);}
+           const utils::mpiOptions& yz, int sign=-1) :
+    fftw(2*d.x*d.y*d.Z,sign,xy.threads,d.X*d.Y*d.Z), d(d) {init(in,in,xy,yz);}
   
   fft3dMPI(const utils::split3& d, Complex *in,
-           const utils::mpiOptions& xy=utils::defaultmpiOptions) :
-    fftw(2*d.x*d.y*d.Z,0,xy.threads,d.X*d.Y*d.Z), d(d) {init(in,in,xy,xy);}
+           const utils::mpiOptions& xy=utils::defaultmpiOptions, int sign=-1) :
+    fftw(2*d.x*d.y*d.Z,sign,xy.threads,d.X*d.Y*d.Z), d(d) {init(in,in,xy,xy);}
     
   virtual ~fft3dMPI() {
     if(Tyz) {
@@ -278,6 +282,8 @@ public:
 // deleteAlign(g);
 // deleteAlign(f);
 //
+// Non-blocking interface:
+//
 // fft.iForward(f,g);
 // User computation
 // fft.ForwardWait(f);
@@ -320,12 +326,12 @@ public:
   rcfft2dMPI(const utils::split& dr, const utils::split& dc, double *in,
              Complex *out,
              const utils::mpiOptions& options=utils::defaultmpiOptions) :
-    fftw(dr.x*realsize(dr.Y,in,out),0,options.threads,dr.X*dr.Y), dr(dr), dc(dc)
-  {init(in,out,options);}
+    fftw(dr.x*realsize(dr.Y,in,out),-1,options.threads,dr.X*dr.Y), dr(dr),
+    dc(dc) {init(in,out,options);}
     
   rcfft2dMPI(const utils::split& dr, const utils::split& dc, Complex *out,
              const utils::mpiOptions& options=utils::defaultmpiOptions) :
-    fftw(dr.x*2*(dr.Y/2+1),0,options.threads,dr.X*dr.Y), dr(dr), dc(dc)
+    fftw(dr.x*2*(dr.Y/2+1),-1,options.threads,dr.X*dr.Y), dr(dr), dc(dc)
   {init((double *) out,out,options);}
     
   virtual ~rcfft2dMPI() {
@@ -389,6 +395,17 @@ public:
 // The input has size nx*ny*nz, distributed in the x and y directions.
 // The output has size nx*ny*(nz/2+1), distributed in the y and z directions.
 // The arrays must be allocated as split3::n Complex words.
+//
+// Basic interface:
+// Forward(double *in, Complex *out=NULL);   // Fourier origin at (0,0)
+// Forward0(double *in, Complex *out=NULL);  // Fourier origin at (nx/2,ny/2,0)
+//                                              input destroyed.
+//
+// Backward(Complex *in, double *out=NULL);  // Fourier origin at (0,0)
+//                                              input destroyed.
+// Backward0(Complex *in, double *out=NULL); // Fourier origin at (nx/2,ny/2,0)
+//                                              input destroyed.
+// Normalize(Complex *out);
 //
 // Example:
 //
@@ -460,7 +477,7 @@ public:
   rcfft3dMPI(const utils::split3& dr, const utils::split3& dc, double *in,
              Complex *out, const utils::mpiOptions& xy,
              const utils::mpiOptions& yz) : 
-    fftw(dr.x*dr.yz.x*realsize(dr.Z,in,out),0,xy.threads,dr.X*dr.Y*dr.Z),
+    fftw(dr.x*dr.yz.x*realsize(dr.Z,in,out),-1,xy.threads,dr.X*dr.Y*dr.Z),
     dr(dr), dc(dc), rdist(realsize(dr.Z,in,out)) {
     init(in,out,xy,yz);
   }
@@ -468,21 +485,21 @@ public:
   rcfft3dMPI(const utils::split3& dr, const utils::split3& dc, double *in,
              Complex *out, 
              const utils::mpiOptions& xy=utils::defaultmpiOptions) : 
-    fftw(dr.x*dr.yz.x*realsize(dr.Z,in,out),0,xy.threads,dr.X*dr.Y*dr.Z),
+    fftw(dr.x*dr.yz.x*realsize(dr.Z,in,out),-1,xy.threads,dr.X*dr.Y*dr.Z),
     dr(dr), dc(dc), rdist(realsize(dr.Z,in,out)) {
     init(in,out,xy,xy);
   }
   
   rcfft3dMPI(const utils::split3& dr, const utils::split3& dc, Complex *out,
              const utils::mpiOptions& xy, const utils::mpiOptions& yz) : 
-    fftw(dr.x*dr.yz.x*2*(dr.Z/2+1),0,xy.threads,dr.X*dr.Y*dr.Z),
+    fftw(dr.x*dr.yz.x*2*(dr.Z/2+1),-1,xy.threads,dr.X*dr.Y*dr.Z),
     dr(dr), dc(dc), rdist(2*(dr.Z/2+1)) {
     init((double *) out,out,xy,yz);
   }
   
   rcfft3dMPI(const utils::split3& dr, const utils::split3& dc, Complex *out,
              const utils::mpiOptions& xy=utils::defaultmpiOptions) : 
-    fftw(dr.x*dr.yz.x*2*(dr.Z/2+1),0,xy.threads,dr.X*dr.Y*dr.Z),
+    fftw(dr.x*dr.yz.x*2*(dr.Z/2+1),-1,xy.threads,dr.X*dr.Y*dr.Z),
     dr(dr), dc(dc), rdist(2*(dr.Z/2+1)) {
     init((double *) out,out,xy,xy);
   }
