@@ -91,13 +91,13 @@ def max_m(p, RAM, runtype):
         return int(floor(log(RAM / 32) / log(2) / 2))
 
     if p == "fft2r":
-        return int(floor(log(RAM / 16) / log(2) / 2))
+        return int(floor(log(RAM / 32) / log(2) / 2))
 
     if p == "fft3":
         return int(floor(log(RAM / 32) / log(2) / 3))
 
     if p == "fft3r":
-        return int(floor(log(RAM / 16) / log(2) / 3))
+        return int(floor(log(RAM / 32) / log(2) / 3))
 
     if p == "transpose":
         return int(floor(log(RAM / 32) / log(2) / 2))
