@@ -56,34 +56,14 @@ def main(argv):
             Zlist = [2,1,3,10,random.randint(start,stop)]
             Plist = [2,1,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
 
-        ntest = 0
+
+        argslist = []
         for X in Xlist:
             for Y in Ylist:
                 for Z in Zlist:
                     for P in Plist:
                         for a in range(1,int(sqrt(P)+1.5)):
                             for s in range(0,3):
-                                ntest += 1
-
-        Print("Running "+str(ntest)+" tests.")
-        tstart = time.time()
-
-        failcases = ""
-
-        # timeout cutoff in seconds (0 disables timeout)
-        timeout = 300 
-        nfails = 0
-
-        itest = 0
-        
-        for X in Xlist:
-            for Y in Ylist:
-                for Z in Zlist:
-                    for P in Plist:
-                        for a in range(1,int(sqrt(P)+1.5)):
-                            for s in range(0,3):
-                                print "test", itest, "of", ntest, ":",
-                                itest += 1
                                 args = []
                                 args.append("-x" + str(X))
                                 args.append("-y" + str(Y))
@@ -92,21 +72,36 @@ def main(argv):
                                 args.append("-a" + str(a))
                                 args.append("-q")
                                 args.append("-t")
-                                #print "Test", ntest, "of", ntests
-                                rtest, cmd = runtest("transpose", P, args,\
-                                                logfile, timeout)
-                                if not rtest == 0:
-                                    nfails += 1
-                                    failcases += " ".join(cmd)
-                                    failcases += "\t(code " + str(rtest) + ")"
-                                    failcases += "\n"
+                                argslist.append(args)
+
+
+        Print("Running " + str(len(argslist)) + " tests:")
+        tstart = time.time()
+
+        failcases = ""
+
+        # timeout cutoff in seconds (0 disables timeout)
+        timeout = 300 
+        nfails = 0
+                                
+        itest = 0
+        for args in argslist:
+            print "test", itest, "of", len(argslist), ":",
+            itest += 1
+
+            rtest, cmd = runtest("transpose", P, args, logfile, timeout)
+            if not rtest == 0:
+                nfails += 1
+                failcases += " ".join(cmd)
+                failcases += "\t(code " + str(rtest) + ")"
+                failcases += "\n"
                                     
         try:                            
             if nfails > 0:
                 print "Failure cases:"
                 print failcases
                 retval += 1
-                print "\n", nfails, "failures out of", ntest, "tests." 
+                print "\n", nfails, "failures out of", len(argslist), "tests." 
 
                 tend = time.time()
                 print "\nElapsed time (s):", tend - tstart
