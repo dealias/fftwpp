@@ -425,7 +425,7 @@ if(gtype == "time" || gtype == "performance") {
     if(gtype=="performance") {
       if(true || floor(ymax) <= ceil(ymin)) {
 	//if(ymax-ymin > 1) {
-	yaxis("performance: $"+Nm+D+"\log_2 "+Nm+D+"$/time, (ns)${}^{-1}$",
+	yaxis("performance: $"+Nm+D+"\log_2 "+Nm+D+"$/time (ns)${}^{-1}$",
 	      LeftRight, RightTicks);
       } else {
 	// write the yticks as 10^{...} equally divided in log-space.
@@ -646,7 +646,7 @@ if(gtype == "scaling" || gtype == "peff") {
       if(gtype == "scaling")
 	speedup[c].push((runtime[c][0] / runtime[c][d]));
       if(gtype == "peff")
-	speedup[c].push((runtime[c][0] / runtime[c][d] / procs[c][d]));
+	speedup[c].push((runtime[c][0] / runtime[c][d] / (procs[c][d] /procs[c][0]) ));
     }
   }
   
