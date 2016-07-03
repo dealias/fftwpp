@@ -63,6 +63,10 @@ maxm1d = 64;
 maxm2d = 16;
 maxm3d = 10;
 
+# Run tests with one dimension
+# preprint: output text before result
+# cmdbase: array of command arguments
+# xlist: array of arguments to go with -m<int>
 def run1d(preprint, cmdbase, xlist):
     nfails = 0
     ntests = 0
@@ -80,6 +84,10 @@ def run1d(preprint, cmdbase, xlist):
             nfails += 1
     return ntests, nfails
 
+# Run tests with two dimensions
+# preprint: output text before result
+# cmdbase: array of command arguments
+# xlist, ylist: array of arguments to go with -x<int> -y<int>
 def run2d(preprint, cmdbase, xlist, ylist):
     nfails = 0
     ntests = 0
@@ -101,6 +109,10 @@ def run2d(preprint, cmdbase, xlist, ylist):
                 nfails += 1
     return ntests, nfails
 
+# Run tests with three dimensions
+# preprint: output text before result
+# cmdbase: array of command arguments
+# xlist, ylist, zlist: array of arguments to go with -x<int> -y<int> -z<int>
 def run3d(preprint, cmdbase, xlist, ylist, zlist):
     nfails = 0
     ntests = 0
@@ -129,6 +141,7 @@ def run3d(preprint, cmdbase, xlist, ylist, zlist):
                     nfails += 1
     return ntests, nfails
 
+# Run tests for autoconvolutions
 def check_auto(proglist):
     ntests = 0
     nfails = 0
@@ -154,6 +167,7 @@ def check_auto(proglist):
             fails += 1
     return ntests, nfails
 
+# Run tests for ternary convolutions
 def check_ternary(proglist):
     ntests = 0
     nfails = 0
@@ -186,7 +200,7 @@ def check_ternary(proglist):
                 fails += 1
     return ntests, nfails
 
-
+# Run tests for implicit convolutions 
 def check_conv(proglist):
     ntests = 0
     nfails = 0
@@ -225,7 +239,7 @@ def check_conv(proglist):
                 fails += 1
     return ntests, nfails
 
-
+# Run tests for compact/non-compact Hermitian-symmetric convolutions
 def check_compact(proglist):
     ntests = 0
     nfails = 0
@@ -282,7 +296,7 @@ def check_compact(proglist):
                 fails += 1
     return ntests, nfails
 
-
+# Run test for epliclty dealiased convolutions
 def check_explicit(proglist):
     ntests = 0
     nfails = 0
@@ -328,8 +342,8 @@ print "program\ttype\t\tA\tsize\terror:"
 print
 
 
-ntests=0
-nfails=0
+ntests = 0
+nfails = 0
 
 autolist = ["cconv"]
 atests, afails = check_auto(autolist)
