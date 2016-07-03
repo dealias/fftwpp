@@ -298,7 +298,9 @@ public:
     rc=new rcfft1d(m,U0);
     cr=new crfft1d(m,U0);
 
-    outofplace=A >= 2*B;
+//    outofplace=A >= 2*B;
+    outofplace=false; // Temporary bug workaround!
+
     if(outofplace) {
       Complex* U1=A == 1 ? utils::ComplexAlign(m) : U[1];
       rco=new rcfft1d(m,(double *) U0,U1);
