@@ -30,13 +30,14 @@ for prog in plist:
     if (os.path.isfile(prog)):
         # Explicit version: A=2, B=1 only:
         for mval in mlist:
-            cmd = []
-            cmd.append("./" + prog)
-            cmd.append("-N1")
-            cmd.append("-e")
-            cmd.append("-t")
-            cmd.append("-m" + str(mval))
-            cmds.append(cmd)
+            if not mval == 1:
+                cmd = []
+                cmd.append("./" + prog)
+                cmd.append("-N1")
+                cmd.append("-e")
+                cmd.append("-t")
+                cmd.append("-m" + str(mval))
+                cmds.append(cmd)
 
         # Implicit version:
         for mval in mlist:
