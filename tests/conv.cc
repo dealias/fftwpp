@@ -20,26 +20,21 @@ void multA(double **F, unsigned int m,
            const unsigned int* index,
            unsigned int r, unsigned int threads)
 {
-  for(unsigned int i=0; i < m; ++i) {
-    F[0][i] *= F[1][i];
-    for(unsigned int a=2; a < A; a += 2) 
-      F[0][i] += F[a][i]*F[a+1][i];
+  
+  switch(A) {
+    case 2: multbinary(F,m,indexsize,index,r,threads); break;
+    case 4: multbinary2(F,m,indexsize,index,r,threads); break;
+    default: //FIXME error message
+      cerr << "Error: A=" << A << " not implemented." << endl;
+      exit(1);
   }
-}
 
-// Pair-wise binary multiply for even A.
-// All of the B outputs are identical.
-// NB: example function, not optimised or threaded.
-void multB(double **F, unsigned int m,
-           const unsigned int indexsize,
-           const unsigned int *index,
-           unsigned int r, unsigned int threads)
-{
-  multA(F,m,indexsize,index,r,threads);
-  // copy output
-  for(unsigned int i=0; i < m; ++i)
-    for(unsigned int b=0; b < B; b++) 
-      F[b][i]=F[0][i];
+  for(unsigned int b=1; b<B; ++b) {
+    double factor=1.0+b;
+    for(unsigned int i=0; i < m; ++i) {
+      F[b][i]=factor*F[0][i] + 1.0;
+    }
+  }
 }
 
 inline void init(Complex **F, unsigned int m,  unsigned int A) 
@@ -86,8 +81,9 @@ inline void init(Complex **F, unsigned int m,  unsigned int A)
   }
 }
 
-void test(unsigned int m, unsigned int M, Complex *h0)
+void test(unsigned int m, Complex *h0, unsigned int B)
 {
+  
   Complex *h=ComplexAlign(m);
   double error=0.0;
   cout << endl;
@@ -102,15 +98,18 @@ void test(unsigned int m, unsigned int M, Complex *h0)
   for(long long k=0; k < mm; k++) {
     h[k]=F*G*(2*mm-1-k)*pow(E,k*I);
     //      h[k]=F*G*(4*m*m*m-6*(k+1)*m*m+(6*k+2)*m+3*k*k*k-3*k)/6.0;
-    error += abs2(h0[k]-h[k]);
-    norm += abs2(h[k]);
+    for(unsigned int b=0; b<1; ++b) {
+      double factor=1.0+b;
+      error += abs2(h0[k+b*m]-factor*h[k]);
+      norm += abs2(h[k]);
+    }
   }
   if(norm > 0) error=sqrt(error/norm);
   cout << "error=" << error << endl;
-  if (error > 1e-12)
+  if (error > 1e-12) {
     cerr << "Caution! error=" << error << endl;
+  }
   deleteAlign(h);
-
 }
 
 int main(int argc, char* argv[])
@@ -120,10 +119,7 @@ int main(int argc, char* argv[])
   unsigned int N=0; // Number of iterations.
   unsigned int N0=10000000; // Nominal number of iterations
   unsigned int m=11; // Problem size
-  unsigned int M=1;
   
-  unsigned int Bcheck=0; // Which output to check
-
   int stats=0; // Type of statistics used in timing test.
 
 
@@ -135,7 +131,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif  
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptA:B:b:N:m:n:T:S:X:");
+    int c = getopt(argc,argv,"hdeiptA:B:N:m:n:T:S:X:");
     if (c == -1) break;
                 
     switch (c) {
@@ -159,9 +155,6 @@ int main(int argc, char* argv[])
         break;
       case 'B':
         B=atoi(optarg);
-        break;
-      case 'b':
-        Bcheck=atoi(optarg);
         break;
       case 'N':
         N=atoi(optarg);
@@ -213,14 +206,13 @@ int main(int argc, char* argv[])
   if(!Implicit) 
     A=2;
   
-  if(B < 1) B=1;
+  if(B < 1)
+    B=1;
   if(B > A) {
     cerr << "B=" << B << " is not yet implemented for A=" << A << endl;
     exit(1);
   }
   
-  Bcheck=min(Bcheck,B-1);
-    
   unsigned int C=max(A,B);
   Complex *f=ComplexAlign(C*np);
   Complex **F=new Complex *[C];
@@ -228,7 +220,8 @@ int main(int argc, char* argv[])
     F[s]=f+s*np;
 
   Complex *h0=NULL;
-  if(Test || Direct) h0=ComplexAlign(m);
+  if(Test || Direct)
+    h0=ComplexAlign(m*B);
 
   double* T=new double[N];
 
@@ -241,7 +234,7 @@ int main(int argc, char* argv[])
       exit(1);
     }
     
-    realmultiplier *mult;
+    realmultiplier *mult=0;
     if(B == 1) {
       switch(A) {
         case 2: mult=multbinary; break;
@@ -249,7 +242,7 @@ int main(int argc, char* argv[])
         default: mult=multA;
       }
     } else
-      mult=multB;
+      mult=multA;
     
     for(unsigned int i=0; i < N; ++i) {
       init(F,m,A);
@@ -262,12 +255,19 @@ int main(int argc, char* argv[])
     timings("Implicit",m,T,N,stats);
 
     
-    if(m < 100) 
-      for(unsigned int i=0; i < m; i++) cout << F[Bcheck][i] << endl;
-    else cout << f[0] << endl;
+    if(m < 100) {
+      for(unsigned int b=0; b<B; ++b) {
+	for(unsigned int i=0; i < m; i++)
+	  cout << F[b][i] << endl;
+	cout << endl;
+      }
+    } else {
+      cout << f[0] << endl;
+    }
     if(Test || Direct)
-      for(unsigned int i=0; i < m; i++) h0[i]=F[Bcheck][i];
-    
+      for(unsigned int b=0; b<B; ++b)
+	for(unsigned int i=0; i < m; i++)
+	  h0[i+b*m]=F[b][i];
   }
   
   if(Explicit) {
@@ -283,10 +283,13 @@ int main(int argc, char* argv[])
     timings("Explicit",m,T,N,stats);
 
     if(m < 100) 
-      for(unsigned int i=0; i < m; i++) cout << f[i] << endl;
-    else cout << f[0] << endl;
+      for(unsigned int i=0; i < m; i++)
+	cout << f[i] << endl;
+    else
+      cout << f[0] << endl;
     if(Test || Direct) 
-      for(unsigned int i=0; i < m; i++) h0[i]=f[i];
+      for(unsigned int i=0; i < m; i++)
+	h0[i]=f[i];
   }
   
   if(Direct) {
@@ -301,29 +304,37 @@ int main(int argc, char* argv[])
     timings("Direct",m,T,1);
 
     if(m < 100) 
-      for(unsigned int i=0; i < m; i++) cout << h[i] << endl;
-    else cout << h[0] << endl;
+      for(unsigned int i=0; i < m; i++)
+	cout << h[i] << endl;
+    else
+      cout << h[0] << endl;
 
     { // compare implicit or explicit version with direct verion:
       double error=0.0;
       cout << endl;
       double norm=0.0;
-      for(unsigned long long k=0; k < m; k++) {
-        error += abs2(h0[k]-h[k]);
-        norm += abs2(h[k]);
+      for(unsigned int b=1; b<B; ++b) {
+	double factor=1.0+b;
+	for(unsigned long long k=0; k < m; k++) {
+	  error += abs2(h0[k+b*m]-factor*h[k]);
+	  norm += abs2(h[k]);
+	}
       }
-      if(norm > 0) error=sqrt(error/norm);
+      if(norm > 0)
+	error=sqrt(error/norm);
       cout << "error=" << error << endl;
-      if (error > 1e-12) cerr << "Caution! error=" << error << endl;
+      if (error > 1e-12)
+	cerr << "Caution! error=" << error << endl;
     }
 
     if(Test) 
-      for(unsigned int i=0; i < m; i++) h0[i]=h[i];
+      for(unsigned int i=0; i < m; i++)
+	h0[i]=h[i];
     deleteAlign(h);
   }
 
   if(Test) 
-    test(m,M,h0);
+    test(m,h0,B);
   
   delete [] T;
   deleteAlign(f);
