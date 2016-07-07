@@ -561,13 +561,13 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
       double *d0b=d0[b];
       double *d1b=d1[b];
 
+      // r=2:
+      rco->fft(d2b,c2b);
       // r=1:
       rco->fft(d1b,c2Bb);
       // r=0:
       ((Complex *) d0b)[start]=S[b]; // r=0, k=c-1 (c) for m=even (odd)
       rco->fft(d0b,c0b);
-      // r=2:
-      rco->fft(d2b,c2b);
 
       if(!compact) c0b[m]=0.0; // Zero Nyquist mode, for Hermitian symmetry.
       c0b[0]=(c0b[0].re+c2Bb[0].re+c2b[0].re)*ninv;

@@ -298,7 +298,7 @@ public:
     rc=new rcfft1d(m,U0);
     cr=new crfft1d(m,U0);
 
-//    outofplace=A >= 2*B;
+    //outofplace=A >= 2*B;
     outofplace=false; // Temporary bug workaround!
 
     if(outofplace) {
