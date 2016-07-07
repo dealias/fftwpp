@@ -319,9 +319,9 @@ void ImplicitHConvolution::premult(Complex ** F,
   }
 }
 
-// Out-of-place version (with f1 stored in a separate array c2B):
-void ImplicitHConvolution::postmultadd(Complex **c2, Complex **c0, 
-                                       Complex **c2B)
+// Out-of-place version.
+void ImplicitHConvolution::postmultadd(Complex **c0, Complex **c1, 
+                                       Complex **c2)
 {
   double ninv=1.0/(3.0*m);
   Vec Ninv=LOAD(ninv);
@@ -337,12 +337,12 @@ void ImplicitHConvolution::postmultadd(Complex **c2, Complex **c0,
       for(unsigned int b=0; b < B; ++b) {
         Complex *f0=c0[b];
         Complex *fm=f0+m;
+        Complex *f1=c1[b];
         Complex *ub=c2[b];
-        Complex *c2Bb=c2B[b];
         for(unsigned int k=max(1,K); k < stop; ++k) {
           Vec Zetak=ZMULT(X,Y,LOAD(ZetaL0+k));
           Vec F0=LOAD(f0+k)*Ninv;
-          Vec F1=ZMULTC(Zetak,LOAD(c2Bb+k));
+          Vec F1=ZMULTC(Zetak,LOAD(f1+k));
           Vec F2=ZMULT(Zetak,LOAD(ub+k));
           Vec S=F1+F2;
           STORE(f0+k,F0+S);
@@ -353,8 +353,8 @@ void ImplicitHConvolution::postmultadd(Complex **c2, Complex **c0,
     );
 }
 
-void ImplicitHConvolution::postmultadd0(Complex **c2, Complex **c0, 
-                                        Complex *f1c)
+void ImplicitHConvolution::postmultadd0(Complex **c0, Complex *f1c,
+                                        Complex **c2)
 {
   double ninv=1.0/(3.0*m);
   Vec Ninv=LOAD(ninv);
@@ -570,7 +570,7 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
       if(!compact) c0b[m]=0.0; // Zero Nyquist mode, for Hermitian symmetry.
       c0b[0]=(c0b[0].re+c2b[0].re+c2Bb[0].re)*ninv;
     }
-    postmultadd(c2B,c0,c2);
+    postmultadd(c0,c2,c2B);
 
   } else { // FFTs are all in-place.
     // Return to original space:
@@ -592,7 +592,7 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
       if(!compact) c0b[m]=0.0; // Zero Nyquist mode, for Hermitian symmetry.
       c0b[0]=(c0b[0].re+R+c2b[0].re)*ninv;
     }
-    postmultadd0(c2,c0,c1c);
+    postmultadd0(c0,c1c,c2);
   }
   delete[] S;
   deleteAlign(c1c);

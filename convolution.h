@@ -390,8 +390,8 @@ public:
                 unsigned int offset=0);
 
   void premult(Complex **F, unsigned int offset, Complex* f1c);
-  void postmultadd(Complex **c2, Complex **c0, Complex **Q);
-  void postmultadd0(Complex **c2, Complex **c0, Complex *f1c);
+  void postmultadd(Complex **c0, Complex **c1, Complex **c2);
+  void postmultadd0(Complex **c0, Complex *f1c, Complex **c2);
 
   // Binary convolution:
   void convolve(Complex *f, Complex *g) {
