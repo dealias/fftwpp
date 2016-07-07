@@ -40,9 +40,10 @@ protected:
   utils::split d;
   mfft1d *xForward,*xBackward;
   mfft1d *yForward,*yBackward;
-  utils::mpitranspose<Complex> *T;
   Transpose *TXy,*TyX;
 public:
+  utils::mpitranspose<Complex> *T;
+  
   void init(Complex *in, Complex *out, const utils::mpiOptions& options) {
     d.Activate();
     out=CheckAlign(in,out);
@@ -53,7 +54,6 @@ public:
 
     T=new utils::mpitranspose<Complex>(d.X,d.Y,d.x,d.y,1,out,d.communicator,
                                        options);
-    
     TXy=new Transpose(d.X,d.y,1,out,out,threads);
     TyX=new Transpose(d.y,d.X,1,out,out,threads);
     
@@ -110,7 +110,8 @@ public:
 };
 
 // 3D OpenMP/MPI complex in-place and out-of-place 
-// xyZ -> Xyz
+// xyZ -> yzX (if transposed=true: default, fastest)
+//     -> Xyz (if transposed=false)
 // Fourier transform an nx*ny*nz array, distributed first over x and
 // then over y. The array must be allocated as split3::n Complex words.
 // The sign argument (default -1) of the constructor specfies the sign
@@ -149,6 +150,7 @@ protected:
   fft2d *yzForward,*yzBackward;
 public:
   utils::mpitranspose<Complex> *Txy,*Tyz;
+  
   void init(Complex *in, Complex *out, const utils::mpiOptions& xy,
             const utils::mpiOptions &yz) {
     d.Activate();
@@ -294,10 +296,9 @@ protected:
   mfft1d *xForward,*xBackward;
   mrcfft1d *yForward;
   mcrfft1d *yBackward;
-  utils::mpitranspose<Complex> *T;
   unsigned int rdist;
 public:
-  
+  utils::mpitranspose<Complex> *T;
     
   void init(double *in, Complex *out, const utils::mpiOptions& options) {
     dc.Activate();
@@ -306,7 +307,6 @@ public:
     
     T=new utils::mpitranspose<Complex>(dc.X,dc.Y,dc.x,dc.y,1,out,
                                        dc.communicator,options);
-
     size_t cdist=dr.Y/2+1;
     rdist=inplace ? 2*cdist : realsize(dr.Y,in,out);
     {
@@ -441,9 +441,10 @@ protected:
   mfft1d *yForward,*yBackward;
   mrcfft1d *zForward;
   mcrfft1d *zBackward;
-  utils::mpitranspose<Complex> *Txy,*Tyz;
   unsigned int rdist;
 public:
+  utils::mpitranspose<Complex> *Txy,*Tyz;
+  
   void init(double *in, Complex *out, const utils::mpiOptions& xy,
             const utils::mpiOptions &yz) {
     dc.Activate();
@@ -458,7 +459,6 @@ public:
                   new utils::mpitranspose<Complex>(dc.Y,dc.Z,dc.yz.x,dc.z,1,
                                                    out,dc.yz.communicator,yz,
                                                    dc.communicator) : NULL;
-    
     unsigned int M=dr.x*dr.yz.x;
     size_t cdist=dr.Z/2+1;
     zForward=new mrcfft1d(dr.Z,M,1,1,rdist,cdist,in,out,threads);

@@ -21,7 +21,7 @@ Alist = [2, 4]
 Blist = [1, 2]
 
 # Implicit convolution tests.
-plist = ["cconv", "conv"]
+plist = ["conv", "cconv"]
 convtypes = ["implicit", "explicit"]
 
 # Create the list of commands to be run:

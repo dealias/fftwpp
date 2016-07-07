@@ -553,8 +553,6 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
       Complex *c0b=c0[b];
 
       double *d2b=d2[b];
-      // Put transformed d2 into the second half of c0, save for postmultadd:
-      c2[b]=c0[b+B];
       Complex *c2b=c2[b];
       Complex *c2Bb=c2B[b];
       
@@ -562,17 +560,17 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
       double *d1b=d1[b];
 
       // r=2:
-      rco->fft(d2b,c2b);
+      rco->fft(d2b,c2Bb);
       // r=1:
-      rco->fft(d1b,c2Bb);
+      rco->fft(d1b,c2b);
       // r=0:
       ((Complex *) d0b)[start]=S[b]; // r=0, k=c-1 (c) for m=even (odd)
       rco->fft(d0b,c0b);
 
       if(!compact) c0b[m]=0.0; // Zero Nyquist mode, for Hermitian symmetry.
-      c0b[0]=(c0b[0].re+c2Bb[0].re+c2b[0].re)*ninv;
+      c0b[0]=(c0b[0].re+c2b[0].re+c2Bb[0].re)*ninv;
     }
-    postmultadd(c2,c0,c2B);
+    postmultadd(c2B,c0,c2);
 
   } else { // FFTs are all in-place.
     // Return to original space:

@@ -57,8 +57,8 @@ int main(int argc, char* argv[])
   
   /*
     cout << "input after symmetrization (done automatically):" << endl;
-    HermitianSymmetrizeXY(mx,my,mz,f);
-    HermitianSymmetrizeXY(mx,my,mz,g);
+    HermitianSymmetrizeXY(mx,my,mz,mx-1,my-1,f);
+    HermitianSymmetrizeXY(mx,my,mz,mx-1,my-1,g);
     cout << "f:" << endl << f << endl;
     cout << "g:" << endl << g << endl;
   */
