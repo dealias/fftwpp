@@ -9,7 +9,7 @@ include graph;
 // Specify the filenames.
 
 // asy -u"gtype=\"time\""
-// produce a time, performance, scaling, peff, or speedup graph.
+// produce a time, performance, scaling, weak, peff, or speedup graph.
 
 // asy timing.asy -u "useN=true"
 // makes the legends use N instead of m.
@@ -99,11 +99,11 @@ if(gtype == "performance") {
   scale(Log,Linear);
   //size(300,400,IgnoreAspect);
 }
-if(gtype == "scaling") {
+if(gtype == "scaling" || gtype == "weak") {
   //scale(Linear,Linear);
   scale(Log,Log);
 }
-if(gtype == "peff") {
+if(gtype == "peff" || gtype == "weff") {
   scale(Log,Linear);
 }
 
@@ -578,33 +578,7 @@ if(gtype == "speedup") {
   yaxis("relative speed",LeftRight,RightTicks);
 }
 
-if(gtype == "scaling" || gtype == "peff") {
-   // Find all values of problem size
-  real[] thems;
-  bool found=false;
-  for(int a=0; a < mi.length; ++a) {
-    for(int b=0; b < mi[a].length; ++b) {
-      real m=mi[a][b];
-      if(m >= minm && m <= maxm) {
-	found=false;
-	for(int c=0; c < thems.length; ++c) {
-	  if(thems[c]==m)
-	    found=true;
-	}
-	if(!found)
-	  thems.push(m);
-      }
-    }
-  }
-
-  // if skipm is > 1, then we kick out some values.
-  if(skipm > 1) {
-    real[] newems;
-    for(int c = 0; c < thems.length; c += skipm)
-      newems.push(thems[c]);
-    thems = newems;
-  }
-  
+if(gtype == "weak" || gtype == "scaling" || gtype == "peff" || gtype == "weff"){
   // Get the number of cores for each file.
   real[] allprocs = new real[filenames.length];
 
@@ -621,6 +595,45 @@ if(gtype == "scaling" || gtype == "peff") {
     }
   }
 
+  if(gtype == "weak" || gtype == "weff") {
+    // dimension: d
+    for(int a = 0; a < mi.length; ++a) {
+      real factor = 1.0 / ((allprocs[a]/allprocs[0])^d);
+      for(int b=0; b < mi[a].length; ++b) {
+	mi[a][b] *= factor;
+	if(verbose) {
+	  write(allprocs[a], mi[a][b], i[a][b]);
+	}
+      }
+    }
+  }
+
+  // Find all values of problem size
+  real[] thems;
+  bool found=false;
+  for(int a=0; a < mi.length; ++a) {
+    for(int b=0; b < mi[a].length; ++b) {
+      real m=mi[a][b];
+      if(m >= minm && m <= maxm) {
+	found=false;
+	for(int c=0; c < thems.length; ++c) {
+	  if(thems[c]==m)
+	    found=true;
+	}
+	if(!found)
+	  thems.push(m);
+      }
+    }
+  }
+  
+  // if skipm is > 1, then we kick out some values.
+  if(skipm > 1) {
+    real[] newems;
+    for(int c = 0; c < thems.length; c += skipm)
+      newems.push(thems[c]);
+    thems = newems;
+  }
+  
   // Collect the runtime for each value of m:
   real[][] runtime;
   real[][] procs;
@@ -637,6 +650,8 @@ if(gtype == "scaling" || gtype == "peff") {
       }
     }
   }
+  if(verbose) 
+    write(runtime);
   
   // Compute the speedup relative to the first data point:
   real[][] speedup;
@@ -644,8 +659,10 @@ if(gtype == "scaling" || gtype == "peff") {
     speedup[c] = new real[];
     for(int d=0; d < runtime[c].length; ++d) {
       if(gtype == "scaling")
-	speedup[c].push((runtime[c][0] / runtime[c][d]));
-      if(gtype == "peff")
+	speedup[c].push(runtime[c][0] / runtime[c][d]);
+      if(gtype == "weak")
+	speedup[c].push(runtime[c][d] / runtime[c][0]);
+      if(gtype == "peff" || gtype == "weff")
 	speedup[c].push((runtime[c][0] / runtime[c][d] / (procs[c][d] /procs[c][0]) ));
     }
   }
@@ -654,12 +671,20 @@ if(gtype == "scaling" || gtype == "peff") {
   for(int c = 0; c < thems.length; ++c) {
     marker mark1 = marker(scale(0.6mm) * polygon(3 + c),
 			  Draw(linePen(c) + solid));
-    if(d == 1)
-      draw(graph(procs[c], speedup[c]), linePen(c),
-	   Label("$" + (string) thems[c] + "$"), mark1);
+    string labeltext = "$" + (string) thems[c];
+    if(d > 1)
+      labeltext += "^" + (string)d;
+    if(gtype == "weak")
+      labeltext += "/" +  (string) allprocs[0] + "$ procs";
     else
+      labeltext += "$";
+    if(d == 1) {
       draw(graph(procs[c], speedup[c]), linePen(c),
-	   Label("$" + (string) thems[c] + "^" + (string)d + "$"), mark1);
+	   Label(labeltext), mark1);
+    } else {
+      draw(graph(procs[c], speedup[c]), linePen(c),
+	   Label(labeltext), mark1);
+    }
     if(verbose) {
       write("m: ", thems[c]);
       write("P:      speedup / efficiency");
@@ -728,9 +753,11 @@ if(gtype == "scaling" || gtype == "peff") {
   for(int i = 1; i < allprocs.length; ++i) {
     procsup.push(allprocs[i] / allprocs[0]);
   }
+  if(gtype == "weak")
+    yaxis("weak scaling", LeftRight, LeftTicks(DefaultFormat, procsup));
   if(gtype == "scaling")
     yaxis("Speedup", LeftRight, LeftTicks(DefaultFormat, procsup));
-  if(gtype == "peff")
+  if(gtype == "peff" || gtype == "weff")
     yaxis("Efficiency", LeftRight, RightTicks);
 
   
