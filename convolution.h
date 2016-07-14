@@ -298,7 +298,7 @@ public:
     rc=new rcfft1d(m,U0);
     cr=new crfft1d(m,U0);
 
-    outofplace=A >= 2*B;
+    outofplace=A > B;
 
     if(outofplace) {
       Complex* U1=A == 1 ? utils::ComplexAlign(m) : U[1];
@@ -389,8 +389,7 @@ public:
                 unsigned int offset=0);
 
   void premult(Complex **F, unsigned int offset, Complex* f1c);
-  void postmultadd(Complex **c0, Complex **c1, Complex **c2);
-  void postmultadd0(Complex **c0, Complex *f1c, Complex **c2);
+  void postmultadd(Complex **F, Complex *f1c, Complex **U);
 
   // Binary convolution:
   void convolve(Complex *f, Complex *g) {
@@ -403,8 +402,6 @@ public:
 
   template<class T>
   void premult(Complex **F);
-  
-  void postmultadd(Complex *f, Complex *u);
 };
   
 
