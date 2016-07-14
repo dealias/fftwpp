@@ -15,7 +15,7 @@ print "Comparison of routine versus test case:"
 print
 
 # problem sizes used in test:
-mlist = [1, 2, 8, 9, 1024, random.randint(10, 2048)] 
+mlist = [1, 2, 12, 13, 14, 15, 17, 1024, random.randint(10, 2048)] 
 
 Alist = [2, 4]
 Blist = [1, 2]
