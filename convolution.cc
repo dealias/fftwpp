@@ -466,7 +466,7 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
   }
 
   bool even=m == 2*c;
-  Complex *c1c;
+  Complex *c1c=NULL;
   if(even) c1c=ComplexAlign(C);
 
   premult(F,offset,c1c);
