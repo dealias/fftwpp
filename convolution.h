@@ -598,9 +598,10 @@ public:
   void init(const convolveOptions& options) {
     toplevel=options.toplevel;
     xfftpad=new fftpad(mx,options.ny,options.ny,u2,threads);
+    unsigned int C=max(A,B);
     yconvolve=new ImplicitConvolution*[threads];
     for(unsigned int t=0; t < threads; ++t)
-      yconvolve[t]=new ImplicitConvolution(my,u1+t*my*A,A,B,innerthreads);
+      yconvolve[t]=new ImplicitConvolution(my,u1+t*my*C,A,B,innerthreads);
     initpointers2(U2,u2,options.stride2);
   }
   
@@ -612,10 +613,11 @@ public:
     }
   }
   
-  // u1 is a temporary array of size my*A*threads.
-  // u2 is a temporary array of size mx*my*A.
+  // u1 is a temporary array of size my*C*threads.
+  // u2 is a temporary array of size mx*my*C.
   // A is the number of inputs.
   // B is the number of outputs.
+  // Here C=max(A,B).
   ImplicitConvolution2(unsigned int mx, unsigned int my,
                        Complex *u1, Complex *u2,
                        unsigned int A=2, unsigned int B=1,
@@ -635,8 +637,9 @@ public:
     ThreadBase(threads), mx(mx), my(my), A(A), B(B), allocated(true) {
     set(options);
     multithread(options.nx);
-    u1=utils::ComplexAlign(my*A*threads);
-    u2=utils::ComplexAlign(options.stride2*A);
+    unsigned int C=max(A,B);
+    u1=utils::ComplexAlign(my*C*threads);
+    u2=utils::ComplexAlign(options.stride2*C);
     init(options);
   }
   
@@ -781,8 +784,9 @@ public:
 
   void initpointers2(Complex **&U2, Complex *u2, unsigned int stride) 
   {
-    U2=new Complex *[A];
-    for(unsigned int a=0; a < A; ++a)
+    unsigned int C=max(A,B);
+    U2=new Complex *[C];
+    for(unsigned int a=0; a < C; ++a)
       U2[a]=u2+a*stride;
     
     if(toplevel) allocateindex(1,new unsigned int[1]);
@@ -806,13 +810,14 @@ public:
   }
   
   void init(const convolveOptions& options) {
+    unsigned int C=max(A,B);
     toplevel=options.toplevel;
     xfftpad=xcompact ? new fft0pad(mx,options.ny,options.ny,u2) :
       new fft1pad(mx,options.ny,options.ny,u2);
     
     yconvolve=new ImplicitHConvolution*[threads];
     for(unsigned int t=0; t < threads; ++t)
-      yconvolve[t]=new ImplicitHConvolution(my,ycompact,u1+t*(my/2+1)*A,A,B,
+      yconvolve[t]=new ImplicitHConvolution(my,ycompact,u1+t*(my/2+1)*C,A,B,
                                             innerthreads);
     initpointers2(U2,u2,options.stride2);
   }
@@ -825,10 +830,11 @@ public:
     }
   }
   
-  // u1 is a temporary array of size (my/2+1)*A*threads.
-  // u2 is a temporary array of size (mx+xcompact)*(my+!ycompact)*A;
+  // u1 is a temporary array of size (my/2+1)*C*threads.
+  // u2 is a temporary array of size (mx+xcompact)*(my+!ycompact)*C;
   // A is the number of inputs.
   // B is the number of outputs.
+  // Here C=max(A,B).
   ImplicitHConvolution2(unsigned int mx, unsigned int my,
                         Complex *u1, Complex *u2,
                         unsigned int A=2, unsigned int B=1,
@@ -864,8 +870,9 @@ public:
     xcompact(xcompact), ycompact(ycompact), A(A), B(B), allocated(true) {
     set(options);
     multithread(options.nx);
-    u1=utils::ComplexAlign((my/2+1)*A*threads);
-    u2=utils::ComplexAlign(options.stride2*A);
+    unsigned int C=max(A,B);
+    u1=utils::ComplexAlign((my/2+1)*C*threads);
+    u2=utils::ComplexAlign(options.stride2*C);
     init(options);
   }
   
@@ -964,8 +971,9 @@ public:
   unsigned int *index;
 
   void initpointers3(Complex **&U3, Complex *u3, unsigned int stride) {
-    U3=new Complex *[A];
-    for(unsigned int a=0; a < A; ++a)
+    unsigned int C=max(A,B);
+    U3=new Complex *[C];
+    for(unsigned int a=0; a < C; ++a)
       U3[a]=u3+a*stride;
     
     if(toplevel) allocateindex(2,new unsigned int[2]);
@@ -994,10 +1002,11 @@ public:
     xfftpad=new fftpad(mx,nyz,nyz,u3,threads);
     
     if(options.nz == mz) {
+      unsigned int C=max(A,B);
       yzconvolve=new ImplicitConvolution2*[threads];
       for(unsigned int t=0; t < threads; ++t)
-        yzconvolve[t]=new ImplicitConvolution2(my,mz,u1+t*mz*A*innerthreads,
-                                               u2+t*options.stride2*A,A,B,
+        yzconvolve[t]=new ImplicitConvolution2(my,mz,u1+t*mz*C*innerthreads,
+                                               u2+t*options.stride2*C,A,B,
                                                innerthreads,false);
       initpointers3(U3,u3,options.stride3);
     } else yzconvolve=NULL;
@@ -1013,11 +1022,12 @@ public:
     }
   }
   
-  // u1 is a temporary array of size mz*A*threads.
-  // u2 is a temporary array of size my*mz*A*threads.
-  // u3 is a temporary array of size mx*my*mz*A.
+  // u1 is a temporary array of size mz*C*threads.
+  // u2 is a temporary array of size my*mz*C*threads.
+  // u3 is a temporary array of size mx*my*mz*C.
   // A is the number of inputs.
   // B is the number of outputs.
+  // Here C=max(A,B).
   ImplicitConvolution3(unsigned int mx, unsigned int my, unsigned int mz,
                        Complex *u1, Complex *u2, Complex *u3,
                        unsigned int A=2, unsigned int B=1, 
@@ -1038,9 +1048,10 @@ public:
     allocated(true) {
     set(options);
     multithread(mx);
-    u1=utils::ComplexAlign(mz*A*threads*innerthreads);
-    u2=utils::ComplexAlign(options.stride2*A*threads);
-    u3=utils::ComplexAlign(options.stride3*A);
+    unsigned int C=max(A,B);
+    u1=utils::ComplexAlign(mz*C*threads*innerthreads);
+    u2=utils::ComplexAlign(options.stride2*C*threads);
+    u3=utils::ComplexAlign(options.stride3*C);
     init(options);
   }
   
@@ -1153,8 +1164,9 @@ public:
   unsigned int *index;
   
   void initpointers3(Complex **&U3, Complex *u3, unsigned int stride) {
-    U3=new Complex *[A];
-    for(unsigned int a=0; a < A; ++a)
+    unsigned int C=max(A,B);
+    U3=new Complex *[C];
+    for(unsigned int a=0; a < C; ++a)
       U3[a]=u3+a*stride;
     
     if(toplevel) allocateindex(2,new unsigned int[2]);
@@ -1183,13 +1195,14 @@ public:
     xfftpad=xcompact ? new fft0pad(mx,nyz,nyz,u3) :
       new fft1pad(mx,nyz,nyz,u3);
 
-    if(options.nz == mz+!zcompact) {
+      if(options.nz == mz+!zcompact) {
+      unsigned int C=max(A,B);
       yzconvolve=new ImplicitHConvolution2*[threads];
       for(unsigned int t=0; t < threads; ++t)
         yzconvolve[t]=new ImplicitHConvolution2(my,mz,
                                                 ycompact,zcompact,
-                                                u1+t*(mz/2+1)*A*innerthreads,
-                                                u2+t*options.stride2*A,
+                                                u1+t*(mz/2+1)*C*innerthreads,
+                                                u2+t*options.stride2*C,
                                                 A,B,innerthreads,false);
       initpointers3(U3,u3,options.stride3);
     } else yzconvolve=NULL;
@@ -1204,12 +1217,13 @@ public:
     }
   }
   
-  // u1 is a temporary array of size (mz/2+1)*A*threads.
-  // u2 is a temporary array of size (my+ycompact)*(mz+!zcompact)*A*threads.
+  // u1 is a temporary array of size (mz/2+1)*C*threads.
+  // u2 is a temporary array of size (my+ycompact)*(mz+!zcompact)*C*threads.
   // u3 is a temporary array of size 
-  //                             (mx+xcompact)*(2my-ycompact)*(mz+!zcompact)*A.
+  //                             (mx+xcompact)*(2my-ycompact)*(mz+!zcompact)*C.
   // A is the number of inputs.
   // B is the number of outputs.
+  // Here C=max(A,B).
   ImplicitHConvolution3(unsigned int mx, unsigned int my, unsigned int mz,
                         Complex *u1, Complex *u2, Complex *u3,
                         unsigned int A=2, unsigned int B=1,
@@ -1249,9 +1263,10 @@ public:
     allocated(true) {
     set(options);
     multithread(mx);
-    u1=utils::ComplexAlign((mz/2+1)*A*threads*innerthreads);
-    u2=utils::ComplexAlign(options.stride2*A*threads);
-    u3=utils::ComplexAlign(options.stride3*A);
+    unsigned int C=max(A,B);
+    u1=utils::ComplexAlign((mz/2+1)*C*threads*innerthreads);
+    u2=utils::ComplexAlign(options.stride2*C*threads);
+    u3=utils::ComplexAlign(options.stride3*C);
     init(options);
   }
   

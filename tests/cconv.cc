@@ -357,7 +357,6 @@ int main(int argc, char* argv[])
     if(!testok) {
       cout << "ERROR: no test case for A="<<A<<endl;
       exit(1);
-      
     }      
 
     for(unsigned long long k=0; k < m; k++) {
