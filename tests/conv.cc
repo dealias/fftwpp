@@ -13,7 +13,7 @@ unsigned int A=2; // Number of inputs
 unsigned int B=1; // Number of outputs
 bool compact=false;
 
-// Pair-wise binary multiply for even A and B=1.
+// Pair-wise binary multiply for even A.
 // NB: example function, not optimised or threaded.
 void multA(double **F, unsigned int m,
            const unsigned int indexsize,
@@ -24,15 +24,15 @@ void multA(double **F, unsigned int m,
   switch(A) {
     case 2: multbinary(F,m,indexsize,index,r,threads); break;
     case 4: multbinary2(F,m,indexsize,index,r,threads); break;
-    default: //FIXME error message
-      cerr << "Error: A=" << A << " not implemented." << endl;
+    default:
+      cerr << "A=" << A << " is not yet implemented" << endl; 
       exit(1);
   }
 
-  for(unsigned int b=1; b<B; ++b) {
+  for(unsigned int b=1; b < B; ++b) {
     double factor=1.0+b;
     for(unsigned int i=0; i < m; ++i) {
-      F[b][i]=factor*F[0][i] + 1.0;
+      F[b][i]=factor*F[0][i]+1.0;
     }
   }
 }
@@ -98,11 +98,8 @@ void test(unsigned int m, Complex *h0, unsigned int B)
   for(long long k=0; k < mm; k++) {
     h[k]=F*G*(2*mm-1-k)*pow(E,k*I);
     //      h[k]=F*G*(4*m*m*m-6*(k+1)*m*m+(6*k+2)*m+3*k*k*k-3*k)/6.0;
-    for(unsigned int b=0; b<1; ++b) {
-      double factor=1.0+b;
-      error += abs2(h0[k+b*m]-factor*h[k]);
-      norm += abs2(h[k]);
-    }
+    error += abs2(h0[k]-h[k]);
+    norm += abs2(h[k]);
   }
   if(norm > 0) error=sqrt(error/norm);
   cout << "error=" << error << endl;
@@ -208,10 +205,6 @@ int main(int argc, char* argv[])
   
   if(B < 1)
     B=1;
-  if(B > A) {
-    cerr << "B=" << B << " is not yet implemented for A=" << A << endl;
-    exit(1);
-  }
   
   unsigned int C=max(A,B);
   Complex *f=ComplexAlign(C*np);
@@ -229,7 +222,7 @@ int main(int argc, char* argv[])
     ImplicitHConvolution C(m,compact,A,B);
     cout << "threads=" << C.Threads() << endl << endl;
 
-    if (A%2 != 0) {
+    if (A % 2 != 0) {
       cerr << "A=" << A << " is not yet implemented" << endl; 
       exit(1);
     }
@@ -256,7 +249,7 @@ int main(int argc, char* argv[])
 
     
     if(m < 100) {
-      for(unsigned int b=0; b<B; ++b) {
+      for(unsigned int b=0; b < B; ++b) {
 	for(unsigned int i=0; i < m; i++)
 	  cout << F[b][i] << endl;
 	cout << endl;
@@ -264,10 +257,14 @@ int main(int argc, char* argv[])
     } else {
       cout << f[0] << endl;
     }
-    if(Test || Direct)
-      for(unsigned int b=0; b<B; ++b)
-	for(unsigned int i=0; i < m; i++)
+    
+    if(Test || Direct) {
+      for(unsigned int b=0; b<B; ++b) {
+	for(unsigned int i=0; i < m; i++) {
 	  h0[i+b*m]=F[b][i];
+        }
+      }
+    }
   }
   
   if(Explicit) {
@@ -313,7 +310,7 @@ int main(int argc, char* argv[])
       double error=0.0;
       cout << endl;
       double norm=0.0;
-      for(unsigned int b=1; b<B; ++b) {
+      for(unsigned int b=1; b < B; ++b) {
 	double factor=1.0+b;
 	for(unsigned long long k=0; k < m; k++) {
 	  error += abs2(h0[k+b*m]-factor*h[k]);

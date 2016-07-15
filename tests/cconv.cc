@@ -15,6 +15,9 @@ const Complex iG(sqrt(5.0),sqrt(11.0));
 
 bool Test=false;
 
+unsigned int A=2; // number of inputs
+unsigned int B=1; // number of outputs
+
 inline void init(Complex **F, unsigned int m, unsigned int A) 
 {
   if(A % 2 == 0) { // binary case
@@ -49,7 +52,7 @@ inline void init(Complex **F, unsigned int m, unsigned int A)
   }
 }
 
-void multA2B2(Complex **F, unsigned int m,
+void multA2(Complex **F, unsigned int m,
 	    const unsigned int indexsize,
 	    const unsigned int *index,
 	    unsigned int r, unsigned int threads)
@@ -57,13 +60,18 @@ void multA2B2(Complex **F, unsigned int m,
   Complex* F0=F[0];
   Complex* F1=F[1];
   
-  for(unsigned int j=0; j < m; ++j) {
+  for(unsigned int j=0; j < m; ++j)
     F0[j] *= F1[j];
-    F1[j] = 2.0 * F0[j];
+  
+  for(unsigned int b=1; b < B; ++b) {
+    double factor=1.0+b;
+    for(unsigned int i=0; i < m; ++i) {
+      F[b][i]=factor*F0[i]+1.0;
+    }
   }
 }
 
-void multA4B2(Complex **F, unsigned int m,
+void multA4(Complex **F, unsigned int m,
 	    const unsigned int indexsize,
 	    const unsigned int *index,
 	    unsigned int r, unsigned int threads)
@@ -73,9 +81,14 @@ void multA4B2(Complex **F, unsigned int m,
   Complex* F2=F[2];
   Complex* F3=F[3];
   
-  for(unsigned int j=0; j < m; ++j) {
+  for(unsigned int j=0; j < m; ++j)
     F0[j]=F0[j]*F2[j]+F1[j]*F3[j];
-    F1[j]=2.0*F0[j];
+  
+  for(unsigned int b=1; b < B; ++b) {
+    double factor=1.0+b;
+    for(unsigned int i=0; i < m; ++i) {
+      F[b][i]=factor*F0[i]+1.0;
+    }
   }
 }
 
@@ -92,8 +105,6 @@ int main(int argc, char* argv[])
   unsigned int N=0;
   
   unsigned int m=11; // Problem size
-  unsigned int A=2; // number of inputs
-  unsigned int B=1; // number of outputs
   
   int stats=0; // Type of statistics used in timing test.
 
@@ -173,16 +184,13 @@ int main(int argc, char* argv[])
 
   if(B < 1)
     B=1;
-  if(B > A) {
-    cerr << "B=" << B << " is not yet implemented for A=" << A << endl;
-    exit(1);
-  }
   
   unsigned int np=Explicit ? n : m;
-  Complex *f=ComplexAlign(A*np);
+  unsigned int C=max(A,B);
+  Complex *f=ComplexAlign(C*np);
   
-  Complex **F=new Complex *[A];
-  for(unsigned int s=0; s < A; ++s)
+  Complex **F=new Complex *[C];
+  for(unsigned int s=0; s < C; ++s)
     F[s]=f+s*np;
   
   Complex *h0=NULL;
@@ -195,48 +203,35 @@ int main(int argc, char* argv[])
     ImplicitConvolution C(m,A,B);
     cout << "threads=" << C.Threads() << endl << endl;
 
-    multiplier *mult=0;
+    multiplier *mult=NULL;
     switch(B) {
       case 1:
 	switch(A) {
 	  case 1: mult=multautoconvolution; break;
 	  case 2: mult=multbinary; break;
 	  case 4: mult=multbinary2; break;
-	    //case 4: mult=multA4B2; break;
 	  case 6: mult=multbinary3; break;
 	  case 8: mult=multbinary4; break;
 	  case 16: mult=multbinary8; break;
 	  default:
-	    cerr << "B=" << B << ", A=" << A << " is not yet implemented"
+	    cerr << "A=" << A << ", B=" << B << " is not yet implemented"
 		 << endl;
 	    exit(1);
 	}
 	break;
-      case 2:
+      default:
 	switch(A) {
-	  case 2: mult=multA2B2; break;
-	  case 4: mult=multA4B2; break;
+	  case 2: mult=multA2; break;
+	  case 4: mult=multA4; break;
 	}
 	break;
     }
-    if(mult == 0) {
-      cerr << "B=" << B << ", A=" << A << " is not yet implemented" << endl;
+    if(!mult) {
+      cerr << "A=" << A << ", B=" << B << " is not yet implemented"
+           << endl;
       exit(1);
     }
 
-    init(F,m,A);
-    if(m < 100) {
-      for(unsigned int a=0; a<A; ++a) {
-	for(unsigned int i=0; i < m; i++)
-	  cout << F[a][i] << endl;
-	cout << endl;
-      }
-    }
-    else {
-      cout << f[0] << endl;
-    }
-
-    
     for(unsigned int i=0; i < N; ++i) {
       init(F,m,A);
       seconds();
@@ -248,7 +243,7 @@ int main(int argc, char* argv[])
     timings("Implicit",m,T,N,stats);
 
     if(m < 100) {
-      for(unsigned int b=0; b<B; ++b) {
+      for(unsigned int b=0; b < B; ++b) {
 	for(unsigned int i=0; i < m; i++)
 	  cout << F[b][i] << endl;
 	cout << endl;
@@ -259,7 +254,7 @@ int main(int argc, char* argv[])
     }
       
     if(Test || Direct) {
-      for(unsigned int b=0; b<B; ++b) {
+      for(unsigned int b=0; b < B; ++b) {
 	for(unsigned int i=0; i < m; i++) {
 	  h0[i+b*m]=F[b][i];
 	}
@@ -280,7 +275,8 @@ int main(int argc, char* argv[])
     timings("Explicit",m,T,N,stats);
 
     if(m < 100) 
-      for(unsigned int i=0; i < m; i++) cout << F[0][i] << endl;
+      for(unsigned int i=0; i < m; i++)
+        cout << F[0][i] << endl;
     else cout << F[0][0] << endl;
     cout << endl;
     if(Test || Direct)
@@ -314,9 +310,12 @@ int main(int argc, char* argv[])
       double error=0.0;
       cout << endl;
       double norm=0.0;
-      for(unsigned long long k=0; k < m; k++) {
-        error += abs2(h0[k]-h[k]);
-        norm += abs2(h[k]);
+      for(unsigned int b=1; b < B; ++b) {
+	double factor=1.0+b;
+        for(unsigned long long k=0; k < m; k++) {
+          error += abs2(h0[k+b*m]-factor*h[k]);
+          norm += abs2(h[k]);
+        }
       }
       if(norm > 0) error=sqrt(error/norm);
       cout << "error=" << error << endl;
@@ -340,7 +339,7 @@ int main(int argc, char* argv[])
     bool testok=false;
 
     // Exact solutions for test case.
-    if(A %2 == 0) {
+    if(A % 2 == 0) {
       testok=true;
       for(unsigned long long k=0; k < m; k++) {
         h[k]=iF*iG*(k+1)*pow(E,k*I);
@@ -361,14 +360,10 @@ int main(int argc, char* argv[])
       
     }      
 
-    for(unsigned int b=0; b < B; ++b) {
-      double factor=1.0+b;
-      for(unsigned long long k=0; k < m; k++) {
-	error += abs2(h0[k+b*m]-factor*h[k]);
-	norm += abs2(h[k]);
-      }
+    for(unsigned long long k=0; k < m; k++) {
+      error += abs2(h0[k]-h[k]);
+      norm += abs2(h[k]);
     }
-
     if(norm > 0) error=sqrt(error/norm);
     cout << "error=" << error << endl;
     if (error > 1e-12)

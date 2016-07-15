@@ -18,7 +18,7 @@ print
 mlist = [1, 2, 12, 13, 14, 15, 17, 1024, random.randint(10, 2048)] 
 
 Alist = [2, 4]
-Blist = [1, 2]
+Blist = [1, 2, 4]
 
 # Implicit convolution tests.
 plist = ["conv", "cconv"]

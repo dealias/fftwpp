@@ -55,7 +55,7 @@ void ImplicitConvolution::convolve(Complex **F, multiplier *pmult,
   
   unsigned int C=max(A,B);
   Complex *P[C];
-  for(unsigned int a=0; a < A; ++a)
+  for(unsigned int a=0; a < C; ++a)
     P[a]=F[a]+offset;
   
   // Backwards FFT (even indices):
@@ -440,13 +440,13 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
   // Set problem-size variables and pointers:
   unsigned int C=max(A,B);
 
-  Complex *C0[A], *C1[A]; // inputs to complex2real FFTs
+  Complex *C0[C], *C1[C]; // inputs to complex2real FFTs
   double  *D0[A], *D1[A]; // outputs of complex2real FFTs
   Complex **c0=C0, **c1=C1;
   double **d0=D0, **d1=D1;
 
   unsigned int start=m-1-c; // c-1 (c) for m=even (odd)
-  for(unsigned int a=0; a < A; ++a) {
+  for(unsigned int a=0; a < C; ++a) {
     Complex *f=F[a]+offset;
     c0[a]=f;
     c1[a]=f+start;
