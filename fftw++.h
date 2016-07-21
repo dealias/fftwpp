@@ -586,6 +586,7 @@ public:
   
   template<class T>
   void transpose(T *in, T *out=NULL) {
+    if(rows == 0 || cols == 0) return;
     if(!out) out=in;
     if(inplace ^ (out == in)) {
       std::cerr << "ERROR: Transpose " << inout << std::endl;
