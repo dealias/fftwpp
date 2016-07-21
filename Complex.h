@@ -314,7 +314,7 @@ inline bool isfinite(const Complex& z)
 #ifdef _WIN32
   return _finite(z.re) && _finite(z.im);
 #else  
-  return !(isinf(z.re) || isnan(z.re) || isinf(z.im) || isnan(z.im));
+  return !(std::isinf(z.re) || std::isnan(z.re) || std::isinf(z.im) || std::isnan(z.im));
 #endif  
 }
 
