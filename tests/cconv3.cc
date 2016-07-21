@@ -186,7 +186,7 @@ int main(int argc, char* argv[])
       case 4: mult=multbinary2; break;
       case 6: mult=multbinary3; break;
       case 8: mult=multbinary4; break;
-      case 10: mult=multbinary8; break;
+      case 16: mult=multbinary8; break;
       default: cout << "mult for A=" << A 
                     << " is not yet implemented" << endl; exit(1);
     }

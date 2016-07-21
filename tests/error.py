@@ -43,16 +43,15 @@ for prog in plist:
         for mval in mlist:
             for A in Alist:
                 for B in Blist:
-                    if B <= A:
-                        cmd = []
-                        cmd.append("./" + prog)
-                        cmd.append("-N1")
-                        cmd.append("-i")
-                        cmd.append("-t")
-                        cmd.append("-m" + str(mval))
-                        cmd.append("-A" + str(A))
-                        cmd.append("-B" + str(B))
-                        cmds.append(cmd)
+                    cmd = []
+                    cmd.append("./" + prog)
+                    cmd.append("-N1")
+                    cmd.append("-i")
+                    cmd.append("-t")
+                    cmd.append("-m" + str(mval))
+                    cmd.append("-A" + str(A))
+                    cmd.append("-B" + str(B))
+                    cmds.append(cmd)
     else:
         print(prog + " does not exist; please compile.")
         retval += 1

@@ -1413,7 +1413,7 @@ void multbinary2(double **F, unsigned int m,
 #endif
 }
 
-// F[0][j]=F[0][j]*F[1][j]+F[2][j]*F[3][j]+F[4][j]*F[5][j];
+// F[0][j]=F[0][j]*F[3][j]+F[1][j]*F[4][j]+F[2][j]*F[5][j];
 void multbinary3(Complex **F, unsigned int m,
                  const unsigned int indexsize,
                  const unsigned int *index,
@@ -1430,22 +1430,22 @@ void multbinary3(Complex **F, unsigned int m,
   PARALLEL(
     for(unsigned int j=0; j < m; ++j) {
       Complex *F0j=F0+j;
-      STORE(F0j,ZMULT(LOAD(F0j),LOAD(F1+j))
-            +ZMULT(LOAD(F2+j),LOAD(F3+j))
-            +ZMULT(LOAD(F4+j),LOAD(F5+j))
+      STORE(F0j,ZMULT(LOAD(F0j),LOAD(F3+j))
+            +ZMULT(LOAD(F1+j),LOAD(F4+j))
+            +ZMULT(LOAD(F2+j),LOAD(F5+j))
         );
     }
     );
 #else
   PARALLEL(
     for(unsigned int j=0; j < m; ++j)
-      F0[j]=F0[j]*F1[j]+F2[j]*F3[j]+F4[j]*F5[j];
+      F0[j]=F0[j]*F3[j]+F1[j]*F4[j]+F2[j]*F5[j];
     );
 
 #endif
 }
 
-// F[0][j]=F[0][j]*F[1][j]+F[2][j]*F[3][j]+F[4][j]*F[5][j]+F[6][j]*F[7][j];
+// F[0][j]=F[0][j]*F[4][j]+F[1][j]*F[5][j]+F[2][j]*F[6][j]+F[3][j]*F[7][j];
 void multbinary4(Complex **F, unsigned int m,
                  const unsigned int indexsize,           
                  const unsigned int *index,
@@ -1464,22 +1464,24 @@ void multbinary4(Complex **F, unsigned int m,
   PARALLEL(
     for(unsigned int j=0; j < m; ++j) {
       Complex *F0j=F0+j;
-      STORE(F0j,ZMULT(LOAD(F0j),LOAD(F1+j))
-            +ZMULT(LOAD(F2+j),LOAD(F3+j))
-            +ZMULT(LOAD(F4+j),LOAD(F5+j))
-            +ZMULT(LOAD(F6+j),LOAD(F7+j))
+      STORE(F0j,ZMULT(LOAD(F0j),LOAD(F4+j))
+            +ZMULT(LOAD(F1+j),LOAD(F5+j))
+            +ZMULT(LOAD(F2+j),LOAD(F6+j))
+            +ZMULT(LOAD(F3+j),LOAD(F7+j))
         );
     }
     );
 #else
   PARALLEL(
     for(unsigned int j=0; j < m; ++j)
-      F0[j]=F0[j]*F1[j]+F2[j]*F3[j]+F4[j]*F5[j]+F6[j]*F7[j];
+      F0[j]=F0[j]*F4[j]+F1[j]*F5[j]+F2[j]*F6[j]+F3[j]*F7[j];
     );
 
 #endif
 }
 
+// F[0][j]=F[0][j]*F[8][j]+F[1][j]*F[9][j]+F[2][j]*F[10][j]+F[3][j]*F[11][j]+
+//         F[4][j]*F[12][j]+F[5][j]*F[13][j]+F[6][j]*F[14][j]+F[7][j]*F[15][j];
 void multbinary8(Complex **F, unsigned int m,
                  const unsigned int indexsize,
                  const unsigned int *index,
@@ -1507,22 +1509,22 @@ void multbinary8(Complex **F, unsigned int m,
     for(unsigned int j=0; j < m; ++j) {
       Complex *F0j=F0+j;
       STORE(F0j,
-            ZMULT(LOAD(F0j),LOAD(F1+j))
-            +ZMULT(LOAD(F2+j),LOAD(F3+j))
-            +ZMULT(LOAD(F4+j),LOAD(F5+j))
-            +ZMULT(LOAD(F6+j),LOAD(F7+j))
-            +ZMULT(LOAD(F8+j),LOAD(F9+j))
-            +ZMULT(LOAD(F10+j),LOAD(F11+j))
-            +ZMULT(LOAD(F12+j),LOAD(F13+j))
-            +ZMULT(LOAD(F14+j),LOAD(F15+j))
+            ZMULT(LOAD(F0j),LOAD(F8+j))
+            +ZMULT(LOAD(F1+j),LOAD(F9+j))
+            +ZMULT(LOAD(F2+j),LOAD(F10+j))
+            +ZMULT(LOAD(F3+j),LOAD(F11+j))
+            +ZMULT(LOAD(F4+j),LOAD(F12+j))
+            +ZMULT(LOAD(F5+j),LOAD(F13+j))
+            +ZMULT(LOAD(F6+j),LOAD(F14+j))
+            +ZMULT(LOAD(F7+j),LOAD(F15+j))
         );
     }
     );
 #else
   PARALLEL(
     for(unsigned int j=0; j < m; ++j)
-      F0[j]=F0[j]*F1[j]+F2[j]*F3[j]+F4[j]*F5[j]+F6[j]*F7[j]
-        +F8[j]*F9[j]+F10[j]*F11[j]+F12[j]*F13[j]+F14[j]*F15[j];
+      F0[j]=F0[j]*F8[j]+F1[j]*F9[j]+F2[j]*F10[j]+F3[j]*F11[j]
+        +F4[j]*F12[j]+F5[j]*F13[j]+F6[j]*F14[j]+F7[j]*F15[j];
     );
 #endif
 }
