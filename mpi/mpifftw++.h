@@ -83,15 +83,15 @@ public:
   }
   
   virtual ~fft2dMPI() {
-    delete yBackward;
-    delete yForward;
-    delete T;
     delete xBackward;
     delete xForward;
     if(!strided) {
       delete TXy;
       delete TyX;
     }
+    delete T;
+    delete yBackward;
+    delete yForward;
   }
 
   virtual void iForward(Complex *in, Complex *out=NULL);
@@ -209,20 +209,20 @@ public:
     fftw(2*d.x*d.y*d.Z,sign,xy.threads,d.X*d.Y*d.Z), d(d) {init(in,in,xy,xy);}
     
   virtual ~fft3dMPI() {
+    delete xBackward;
+    delete xForward;
+    delete Txy;
+    
     if(Tyz) {
-      delete zBackward;
-      delete zForward;
       delete yBackward;
       delete yForward;
       delete Tyz;
+      delete zBackward;
+      delete zForward;
     } else {
       delete yzBackward;
       delete yzForward;
     }
-    
-    delete xBackward;
-    delete xForward;
-    delete Txy;
   }
 
   virtual void iForward(Complex *in, Complex *out=NULL);
@@ -521,7 +521,7 @@ public:
     delete zForward;
     
     if(Tyz) delete Tyz;
-    if(Txy) delete Txy;
+    delete Txy;
   }
 
   // Set Nyquist modes of even shifted transforms to zero.
@@ -550,10 +550,8 @@ public:
   virtual void iForward(double *in, Complex *out=NULL);
   virtual void ForwardWait0(Complex *out);
   virtual void ForwardWait1(Complex *out) {
-    if(Txy) {
-      Txy->wait();
-      xForward->fft(out);
-    }
+    Txy->wait();
+    xForward->fft(out);
   }
   void ForwardWait(Complex *out) {
     ForwardWait0(out);
