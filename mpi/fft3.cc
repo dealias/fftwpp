@@ -257,12 +257,12 @@ int main(int argc, char* argv[])
             FFT[m]->iForward(F[m],G[m]);
           for(unsigned int m=0; m < M; ++m) {
             FFT[m]->ForwardWait(G[m]);
-//            FFT[m]->iBackward(G[m],F[m]);
+            FFT[m]->iBackward(G[m],F[m]);
           }
-//          for(unsigned int m=0; m < M; ++m)
-//            FFT[m]->BackwardWait(F[m]);
+          for(unsigned int m=0; m < M; ++m)
+            FFT[m]->BackwardWait(F[m]);
           T[i]=0.5*seconds()/M;
-//          fft.Normalize(F[0]);
+          fft.Normalize(F[0]);
         }
         if(!quiet && nx*ny*nz < outlimit) show(G[0],d.x,d.y,d.Z,group.active);
         if(main) timings("FFT timing:",nx,T,N,stats);
