@@ -72,8 +72,7 @@ def main(argv):
                         args.append("-s1")
                         args.append("-a1")
                         args.append("-T" + str(T))
-                        args.append("-t")
-                        args.append("-q")
+                        args.append("-tq")
                         testcases.append(args)
 
         tstart = time.time()

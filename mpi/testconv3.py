@@ -82,8 +82,7 @@ def main(argv):
                                         args.append("-Z"+str(Z))
                                         args.append("-A"+str(A))
                                         args.append("-T" + str(T))
-                                        args.append("-t")
-                                        args.append("-q")
+                                        args.append("-tq")
                                         testcases.append(args)
 
         tstart = time.time()

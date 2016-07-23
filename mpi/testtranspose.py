@@ -70,8 +70,7 @@ def main(argv):
                                 args.append("-z" + str(Z))
                                 args.append("-s" + str(s))
                                 args.append("-a" + str(a))
-                                args.append("-q")
-                                args.append("-t")
+                                args.append("-tq")
                                 argslist.append(args)
 
 
