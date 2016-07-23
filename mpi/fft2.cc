@@ -225,8 +225,8 @@ int main(int argc, char* argv[])
         for(unsigned int i=0; i < N; ++i) {
           init(f,d);
           seconds();
-          fft.Forward(f,g,true);
-          fft.Backward(g,f,true);
+          fft.Forward(f,g);
+          fft.Backward(g,f);
           T[i]=0.5*seconds();
           fft.Normalize(f);
         }    

@@ -10,12 +10,12 @@ void fft2dMPI::iForward(Complex *in, Complex *out)
   T->ilocalize0(out);
 }
 
-void fft2dMPI::iBackward(Complex *in, Complex *out, bool transposed)
+void fft2dMPI::iBackward(Complex *in, Complex *out)
 {
   out=Setout(in,out);
-  if(!transposed) TXy->transpose(in);
+  if(!strided) TXy->transpose(in);
   xBackward->fft(in,out);
-  TyX->transpose(out);
+  if(!strided) TyX->transpose(out);
   T->ilocalize1(out);
 }
 

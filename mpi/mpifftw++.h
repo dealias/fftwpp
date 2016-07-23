@@ -11,8 +11,7 @@ namespace fftwpp {
 // global dimensions; lower case letters denote distributed dimensions: 
 
 // 2D OpenMP/MPI complex in-place and out-of-place 
-// xY -> Xy (if transposed=false: default)
-//    -> yX (if transposed=true: faster)
+// xY -> Xy
 // Fourier transform an nx*ny array, distributed first over x.
 // The array must be allocated as split::n Complex words.
 // The sign argument (default -1) of the constructor specfies the sign
@@ -41,6 +40,7 @@ protected:
   mfft1d *xForward,*xBackward;
   mfft1d *yForward,*yBackward;
   Transpose *TXy,*TyX;
+  bool strided;
 public:
   utils::mpitranspose<Complex> *T;
   
@@ -54,11 +54,16 @@ public:
 
     T=new utils::mpitranspose<Complex>(d.X,d.Y,d.x,d.y,1,out,d.communicator,
                                        options);
-    TXy=new Transpose(d.X,d.y,1,out,out,threads);
-    TyX=new Transpose(d.y,d.X,1,out,out,threads);
-    
-    xForward=new mfft1d(d.X,sign,d.y,1,d.X,out,out,threads);
-    xBackward=new mfft1d(d.X,-sign,d.y,1,d.X,in,out,threads);
+    strided=d.y & (d.y-1); // Always use strides except for powers of 2
+    if(strided) {
+      xForward=new mfft1d(d.X,sign,d.y,d.y,1,out,out,threads);
+      xBackward=new mfft1d(d.X,-sign,d.y,d.y,1,in,out,threads);
+    } else {
+      TXy=new Transpose(d.X,d.y,1,out,out,threads);
+      TyX=new Transpose(d.y,d.X,1,out,out,threads);
+      xForward=new mfft1d(d.X,sign,d.y,1,d.X,out,out,threads);
+      xBackward=new mfft1d(d.X,-sign,d.y,1,d.X,in,out,threads);
+    }
     
     d.Deactivate();
   }
@@ -83,28 +88,31 @@ public:
     delete T;
     delete xBackward;
     delete xForward;
+    if(!strided) {
+      delete TXy;
+      delete TyX;
+    }
   }
 
   virtual void iForward(Complex *in, Complex *out=NULL);
-  virtual void ForwardWait(Complex *out, bool transposed=false)
+  virtual void ForwardWait(Complex *out)
   {
     T->wait();
-    TXy->transpose(out);
+    if(!strided) TXy->transpose(out);
     xForward->fft(out);
-    if(!transposed) TyX->transpose(out);
+    if(!strided) TyX->transpose(out);
   }
-  void Forward(Complex *in, Complex *out=NULL, bool transposed=false) {
+  void Forward(Complex *in, Complex *out=NULL) {
     iForward(in,out);
-    ForwardWait(out,transposed);
+    ForwardWait(out);
   }
-  virtual void iBackward(Complex *in, Complex *out=NULL,
-                         bool transposed=false);
+  virtual void iBackward(Complex *in, Complex *out=NULL);
   virtual void BackwardWait(Complex *out) {
     T->wait();
     yBackward->fft(out);
   }
-  void Backward(Complex *in, Complex *out=NULL, bool transposed=false) {
-    iBackward(in,out,transposed);
+  void Backward(Complex *in, Complex *out=NULL) {
+    iBackward(in,out);
     BackwardWait(out);
   }
   
