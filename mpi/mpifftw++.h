@@ -11,8 +11,8 @@ namespace fftwpp {
 // global dimensions; lower case letters denote distributed dimensions: 
 
 // 2D OpenMP/MPI complex in-place and out-of-place 
-// xY -> yX (if transposed=true: default, fastest)
-//    -> Xy (if transposed=false)
+// xY -> Xy (if transposed=false: default)
+//    -> yX (if transposed=true: faster)
 // Fourier transform an nx*ny array, distributed first over x.
 // The array must be allocated as split::n Complex words.
 // The sign argument (default -1) of the constructor specfies the sign
@@ -86,23 +86,24 @@ public:
   }
 
   virtual void iForward(Complex *in, Complex *out=NULL);
-  virtual void ForwardWait(Complex *out, bool transposed=true)
+  virtual void ForwardWait(Complex *out, bool transposed=false)
   {
     T->wait();
     TXy->transpose(out);
     xForward->fft(out);
     if(!transposed) TyX->transpose(out);
   }
-  void Forward(Complex *in, Complex *out=NULL, bool transposed=true) {
+  void Forward(Complex *in, Complex *out=NULL, bool transposed=false) {
     iForward(in,out);
     ForwardWait(out,transposed);
   }
-  virtual void iBackward(Complex *in, Complex *out=NULL, bool transposed=true);
+  virtual void iBackward(Complex *in, Complex *out=NULL,
+                         bool transposed=false);
   virtual void BackwardWait(Complex *out) {
     T->wait();
     yBackward->fft(out);
   }
-  void Backward(Complex *in, Complex *out=NULL, bool transposed=true) {
+  void Backward(Complex *in, Complex *out=NULL, bool transposed=false) {
     iBackward(in,out,transposed);
     BackwardWait(out);
   }
@@ -110,8 +111,7 @@ public:
 };
 
 // 3D OpenMP/MPI complex in-place and out-of-place 
-// xyZ -> yzX (if transposed=true: default, fastest)
-//     -> Xyz (if transposed=false)
+// xyZ -> Xyz
 // Fourier transform an nx*ny*nz array, distributed first over x and
 // then over y. The array must be allocated as split3::n Complex words.
 // The sign argument (default -1) of the constructor specfies the sign
