@@ -43,10 +43,10 @@ def main(argv):
         retval += 1
     else:
 
-        Xlist = [1,2,3,4,5,random.randint(6,64)]
-        Ylist = [1,2,3,4,5,random.randint(6,64)]
-        Zlist = [1,2,3,4,5,random.randint(6,64)]
-        Plist = [4,8,3,2,random.randint(9,12),1]
+        Xlist = [2,1,3,4,5,random.randint(6,64)]
+        Ylist = [2,1,3,4,5,random.randint(6,64)]
+        Zlist = [2,1,3,4,5,random.randint(6,64)]
+        Plist = [4,1,8,3,2,random.randint(9,12),1]
         Tlist = [1,2,random.randint(3,5)]
 
         if(shortrun):
@@ -54,7 +54,7 @@ def main(argv):
             Xlist = [2,3,random.randint(6,64)]
             Ylist = [2,3,random.randint(6,64)]
             Zlist = [2,3,random.randint(6,64)]
-            Plist = [1,2]
+            Plist = [2,1]
             Tlist = [1,2]
 
         testcases = []
@@ -72,8 +72,7 @@ def main(argv):
                             args.append("-s1")
                             args.append("-a1")
                             args.append("-T" + str(T))
-                            args.append("-t")
-                            args.append("-q")
+                            args.append("-tq")
                             testcases.append(args)
 
         tstart = time.time()
