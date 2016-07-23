@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
   int divisor=0; // Test for best block divisor
   int alltoall=-1; // Test for best alltoall routine
 
-  bool inplace=false;
+  bool inplace=true;
   
   bool quiet=false;
   bool test=false;
