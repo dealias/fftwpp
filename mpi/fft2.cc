@@ -161,7 +161,7 @@ int main(int argc, char* argv[])
         cout << "\nGathered input:\n" << flocal << endl;
       }
 
-      fft.Forward(f,g,false);
+      fft.Forward(f,g);
 
       if(!quiet && nx*ny < outlimit) {
         if(main) cout << "\nDistributed output:" << endl;
@@ -192,7 +192,7 @@ int main(int argc, char* argv[])
         }
       }
 
-      fft.Backward(g,f,false);
+      fft.Backward(g,f);
       fft.Normalize(f);
 
       if(!quiet && nx*ny < outlimit) {
@@ -225,8 +225,8 @@ int main(int argc, char* argv[])
         for(unsigned int i=0; i < N; ++i) {
           init(f,d);
           seconds();
-          fft.Forward(f,g);
-          fft.Backward(g,f);
+          fft.Forward(f,g,true);
+          fft.Backward(g,f,true);
           T[i]=0.5*seconds();
           fft.Normalize(f);
         }    
