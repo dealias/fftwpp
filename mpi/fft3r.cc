@@ -141,7 +141,6 @@ int main(int argc, char* argv[])
       cout << "Using MPI VERSION " << MPI_VERSION << endl;
       cout << "nx=" << nx << ", ny=" << ny << ", nz=" << nz << ", nzp=" << nzp
            << endl;
-      cout << "size=" << group.size << endl;
     }
 
     split3 df(nx,ny,nz,group);
@@ -182,8 +181,8 @@ int main(int argc, char* argv[])
       else
         flocal.Allocate(nx,ny,nz,align);
       
-      rcfft3d localForward(nx,ny,nz,flocal(),glocal());
-      crfft3d localBackward(nx,ny,nz,glocal(),flocal());
+      rcfft3d localForward(nx,ny,nz,flocal,glocal);
+      crfft3d localBackward(nx,ny,nz,glocal,flocal);
 
       gatherxy(f(), flocal(), dfgather, group.active);
       gatherxy(f(), fgather(), dfgather, group.active);
