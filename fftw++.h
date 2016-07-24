@@ -215,16 +215,13 @@ public:
     unsigned int nyzp=ny*nzp;
     if(nx % 2 == 0 && ny % 2 == 0) {
       unsigned int pinc=2*nzp;
-      Complex *pstop=data;
-      Complex *p=data;
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif
-      for(unsigned i=0; i < nx; i++) {
-        if(i % 2) p -= nzp;
-        else p += nzp;
-        pstop += nyzp;
-        for(; p < pstop; p += pinc) {
+      for(unsigned int i=0; i < nx; i++) {
+        Complex *pstart=data+i*nyzp;
+        Complex *pstop=pstart+nyzp;
+        for(Complex *p=pstart+(1-(i % 2))*nzp; p < pstop; p += pinc) {
           for(unsigned int k=0; k < nzp; k++) p[k]=-p[k];
         }
       }
@@ -240,16 +237,13 @@ public:
     unsigned int nyz=ny*nz;
     if(nx % 2 == 0 && ny % 2 == 0) {
       unsigned int pinc=2*nz;
-      double *pstop=data;
-      double *p=data;
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif
-      for(unsigned i=0; i < nx; i++) {
-        if(i % 2) p -= nz;
-        else p += nz;
-        pstop += nyz;
-        for(; p < pstop; p += pinc) {
+      for(unsigned int i=0; i < nx; i++) {
+        double *pstart=data+i*nyz;
+        double *pstop=pstart+nyz;
+        for(double *p=pstart+(1-(i % 2))*nz; p < pstop; p += pinc) {
           for(unsigned int k=0; k < nz; k++) p[k]=-p[k];
         }
       }
