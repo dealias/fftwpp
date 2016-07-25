@@ -126,24 +126,16 @@ int main(int argc, char **argv)
   }
 
   int provided;
-  MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &provided);
-  int threads_ok=provided >= MPI_THREAD_FUNNELED;
+  MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
+  if(provided < MPI_THREAD_FUNNELED)
+    nthreads=1;
+  fftw_init_threads();
+  fftw_mpi_init();
+  fftw_plan_with_nthreads(nthreads);
   
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  int mpisize;
-  MPI_Comm_size(MPI_COMM_WORLD, &mpisize);
-
-  if(threads_ok)
-    fftw_init_threads();
-  fftw_mpi_init();
-  
-  if(threads_ok)
-    fftw_plan_with_nthreads(nthreads);
-  else 
-    if(nthreads > 1 && rank == 0) cout << "threads not ok!" << endl;
-  
   // local data sizes
   ptrdiff_t local_n0,local_0_start;
   ptrdiff_t local_n1,local_1_start;
@@ -152,16 +144,16 @@ int main(int argc, char **argv)
                                       &local_n0,&local_0_start,
                                       &local_n1,&local_1_start);
   
-  fftw_complex* F=fftw_alloc_complex(alloc_local);
+  fftw_complex *F=(fftw_complex *) ComplexAlign(alloc_local);
   double* f=(double *) F;
   
   fftw_plan rcplan=fftw_mpi_plan_dft_r2c_3d(N0,N1,N2,f,F,MPI_COMM_WORLD,
-					    FFTW_MEASURE
-					    | FFTW_MPI_TRANSPOSED_OUT);
+					    FFTW_MEASURE |
+					    FFTW_MPI_TRANSPOSED_OUT);
   
   fftw_plan crplan=fftw_mpi_plan_dft_c2r_3d(N0,N1,N2,F,f,MPI_COMM_WORLD,
-					    FFTW_MEASURE
-					    | FFTW_MPI_TRANSPOSED_IN);
+					    FFTW_MEASURE |
+					    FFTW_MPI_TRANSPOSED_IN);
 
   unsigned int outlimit=3000;
   
@@ -211,6 +203,8 @@ int main(int argc, char **argv)
       timings("FFT",m,T,N,stats);
     delete[] T;
   }
+  
+  deleteAlign(F);
   
   fftw_destroy_plan(rcplan);
   fftw_destroy_plan(crplan);

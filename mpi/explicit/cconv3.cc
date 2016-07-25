@@ -203,7 +203,6 @@ int main(int argc, char **argv)
 
     deleteAlign(g_nopad);
     deleteAlign(f_nopad);
-      
 }
   
   if(N > 0) {
