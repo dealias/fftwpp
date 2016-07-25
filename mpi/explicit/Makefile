@@ -52,7 +52,7 @@ vpath %.cc ../../
 
 
 FILES=fft2 fft3 fft2r fft3r cconv2 cconv3 transpose
-EXTRA=exmpiutils
+EXTRA=exmpiutils fftw++
 ALL=$(FILES) $(EXTRA)
 
 all: $(FILES)

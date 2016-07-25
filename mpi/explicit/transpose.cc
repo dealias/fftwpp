@@ -20,10 +20,6 @@ unsigned int X=8, Y=8, Z=1;
 int a=0; // Test for best block divisor
 int alltoall=-1; // Test for best alltoall routine
 
-namespace utils {
-unsigned int defaultmpithreads=1;
-}
-
 const unsigned int showlimit=1024;
 unsigned int N0=1000000;
 unsigned int N=0;

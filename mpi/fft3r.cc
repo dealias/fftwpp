@@ -14,7 +14,7 @@ inline void init(array3<double> f, split3 d)
     for(unsigned int j=0; j < d.y; j++) {
       unsigned int jj=d.y0+j;
       for(unsigned int k=0; k < d.Z; k++) {
-        f(i,j,k)=ii+jj+k +1;
+        f(i,j,k)=ii+jj+k+1;
       }
     }
   }
