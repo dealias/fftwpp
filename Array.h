@@ -18,7 +18,7 @@
 #ifndef __Array_h__
 #define __Array_h__ 1
 
-#define __ARRAY_H_VERSION__ 1.50
+#define __ARRAY_H_VERSION__ 1.51
 
 // Defining NDEBUG improves optimization but disables argument checking.
 // Defining __NOARRAY2OPT inhibits special optimization of Array2[].
@@ -1483,7 +1483,7 @@ inline void Dimension(array1<T>& A, unsigned int n, T *v)
 template<class T>
 inline void Dimension(Array1<T>& A, unsigned int n, T *v)
 {
-  A.Dimension(n,v);
+  A.Dimension(n,v,0);
 }
 
 template<class T>
