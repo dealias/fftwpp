@@ -128,6 +128,21 @@ public:
   }
 };
 
+inline unsigned int realsize(unsigned int n, Complex *in, Complex *out=NULL)
+{
+  return (!out || in == out) ? 2*(n/2+1) : n;
+}
+  
+inline unsigned int realsize(unsigned int n, Complex *in, double *out)
+{
+ return realsize(n,in,(Complex *) out);
+}
+  
+inline unsigned int realsize(unsigned int n, double *in, Complex *out)
+{
+ return realsize(n,(Complex *) in,out);
+}
+  
 // Base clase for fft routines
 //
 class fftw : public ThreadBase {
@@ -142,18 +157,6 @@ protected:
   
   unsigned int Dist(unsigned int n, size_t stride, size_t dist) {
     return dist ? dist : ((stride == 1) ? n : 1);
-  }
-  
-  unsigned int realsize(unsigned int n, Complex *in, Complex *out=NULL) {
-    return (!out || in == out) ? 2*(n/2+1) : n;
-  }
-  
-  unsigned int realsize(unsigned int n, Complex *in, double *out) {
-    return realsize(n,in,(Complex *) out);
-  }
-  
-  unsigned int realsize(unsigned int n, double *in, Complex *out) {
-    return realsize(n,(Complex *) in,out);
   }
   
   static const double twopi;
