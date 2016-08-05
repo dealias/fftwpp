@@ -133,7 +133,7 @@ int main(int argc, char **argv)
   if(test) N=1;
   else if(N == 0) {
     N=N0/((unsigned long long) X*Y*Z);
-    if(N < 10) N=10;
+    N=max(N,20);
   }
 
   int retval=0;
