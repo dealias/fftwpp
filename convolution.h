@@ -97,6 +97,7 @@ multiplier multbinary8;
 
 realmultiplier multbinary;
 realmultiplier multbinary2;
+realmultiplier multadvection2;
 
 struct general {};
 struct premult1 {};

@@ -1529,4 +1529,42 @@ void multbinary8(Complex **F, unsigned int m,
 #endif
 }
 
+  // This 2D version of the scheme of Basdevant, J. Comp. Phys, 50, 1983
+  // requires only 4 FFTs per stage.
+void multadvection2(double **F, unsigned int m,
+                    const unsigned int indexsize,
+                    const unsigned int *index,
+                    unsigned int r, unsigned int threads)
+{
+  double* F0=F[0];
+  double* F1=F[1];
+  
+#ifdef __SSE2__
+  unsigned int m1=m-1;
+  PARALLEL(
+    for(unsigned int j=0; j < m1; j += 2) {
+      double *F0j=F0+j;
+      double *F1j=F1+j;
+      Vec u=LOAD(F0j);
+      Vec v=LOAD(F1j);
+      STORE(F0j,v*v-u*u);
+      STORE(F1j,u*v);
+    }
+    );
+  if(m % 2) {
+    double u=F0[m1];
+    double v=F1[m1];
+    F0[m1]=v*v-u*u;
+    F1[m1]=u*v;
+  }
+#else
+  for(unsigned int j=0; j < m; ++j) {
+    double u=F0[j];
+    double v=F1[j];
+    F0[j]=v*v-u*u;
+    F1[j]=u*v;
+  }
+#endif  
+}
+
 } // namespace fftwpp
