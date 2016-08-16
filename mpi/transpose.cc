@@ -6,13 +6,6 @@
 using namespace std;
 using namespace utils;
 
-bool test=false;
-bool quiet=false;
-
-unsigned int X=8, Y=8, Z=1;
-int a=0; // Test for best block divisor
-int alltoall=-1; // Test for best alltoall routine
-
 //namespace utils {
 //unsigned int defaultmpithreads=1;
 //}
@@ -53,6 +46,14 @@ inline void usage()
 
 int main(int argc, char **argv)
 {
+  bool test=false;
+  bool quiet=false;
+
+ unsigned int X=8, Y=8, Z=1;
+ int a=0; // Test for best block divisor
+ int alltoall=-1; // Test for best alltoall routine
+
+  
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
 

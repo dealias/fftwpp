@@ -206,6 +206,8 @@ int main(int argc, char* argv[])
       cout << "mx=" << mx << ", my=" << my << endl;
       cout << "nx=" << nx << ", nyp=" << nyp << endl;
     }
+
+    bool showresult = nx*my < outlimit;
     
     ImplicitHConvolution2MPI C(mx,my,xcompact,ycompact,d,du,F[0],
                                mpiOptions(divisor,alltoall),A,B);
@@ -213,7 +215,7 @@ int main(int argc, char* argv[])
     if(test) {
       init(F,d,A,xcompact,ycompact);
 
-      if(!quiet) {
+      if(!quiet && showresult) {
         for(unsigned int a=0; a < A; ++a) {
           if(main) 
             cout << "\nDistributed input " << a  << ":"<< endl;
@@ -266,7 +268,7 @@ int main(int argc, char* argv[])
         timings("Implicit",mx,T,N,stats);
       delete [] T;
     
-      if(!quiet && nx*my < outlimit)
+      if(!quiet && showresult)
         show(F[0],d.X,d.y,group.active);
     }
     

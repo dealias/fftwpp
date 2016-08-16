@@ -56,8 +56,6 @@ void show(Complex *F, unsigned int X, unsigned int Y, unsigned int Z)
   }
 }
 
-unsigned int outlimit=3000;
-
 int main(int argc, char* argv[])
 {
 
@@ -75,7 +73,9 @@ int main(int argc, char* argv[])
   
   unsigned int A=2; // Number of independent inputs
   unsigned int B=1; // Number of outputs
-    
+
+  unsigned int outlimit=3000;
+  
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif  
@@ -204,6 +204,8 @@ int main(int argc, char* argv[])
       cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
     }
     split3 d(mx,my,mz,group,true);
+
+    bool showresult = mx*my*mz < outlimit;
     
     if(B != 1) {
       cerr << "Only B=1 is implemented" << endl;
@@ -219,10 +221,12 @@ int main(int argc, char* argv[])
 
     if(test) {
       init(F,d,A);
-      if(!quiet) {
-        if(main) cout << "Distributed input:" << endl;
+      if(!quiet && showresult) {
+        if(main)
+	  cout << "Distributed input:" << endl;
         for(unsigned int a=0; a < A; a++) {
-          if(main) cout << "a: " << a << endl;
+          if(main)
+	    cout << "a: " << a << endl;
           show(F[a],mx,d.y,d.z,group.active);
         }
       }
@@ -234,7 +238,7 @@ int main(int argc, char* argv[])
           F0[a]=ComplexAlign(mx*my*mz);
         }
         gatheryz(F[a],F0[a],d,group.active);
-        if(!quiet && main) {
+        if(!quiet && main && showresult) {
           cout << "a: " << a << endl;
           show(F0[a],mx,my,mz);
         }
@@ -242,14 +246,15 @@ int main(int argc, char* argv[])
 
       C.convolve(F,mult);
 
-      if(!quiet) {
-        if(main) cout << "Distributed output:" << endl;
+      if(!quiet && showresult) {
+        if(main)
+	  cout << "Distributed output:" << endl;
         show(F[0],mx,d.y,d.z,group.active);
       }
       
       Complex *FC0=ComplexAlign(mx*my*mz);
       gatheryz(F[0],FC0,d,group.active);
-      if(!quiet && main) {
+      if(!quiet && main && showresult) {
         cout << "Gathered output:" << endl;
         show(FC0,mx,my,mz);
       }
@@ -258,7 +263,7 @@ int main(int argc, char* argv[])
         unsigned int B=1; // TODO: generalize
         ImplicitConvolution3 C(mx,my,mz,A,B); 
         C.convolve(F0,mult);
-        if(!quiet) {
+        if(!quiet && showresult) {
           cout << "Local output:" << endl;
           show(F0[0],mx,my,mz);
         }
@@ -293,7 +298,7 @@ int main(int argc, char* argv[])
         timings("Implicit",mx,T,N,stats);
     
       delete[] T;
-      if(!quiet && mx*my*mz < outlimit) 
+      if(!quiet && showresult) 
         show(F[0],mx,d.y,d.z,group.active);
     }
   

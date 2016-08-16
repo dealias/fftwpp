@@ -6,8 +6,6 @@ using namespace utils;
 using namespace fftwpp;
 using namespace Array;
 
-unsigned int outlimit=3000;
-
 inline void init(Complex **F, const split3& d, unsigned int A=2,
                  bool xcompact=true, bool ycompact=true, bool zcompact=true)
 {
@@ -242,6 +240,10 @@ int main(int argc, char* argv[])
       cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
       cout << "nx=" << nx << ", ny=" << ny << ", nzp=" << nzp << endl;
     }
+
+    unsigned int outlimit=3000;
+    
+    bool showresult = nx*ny*mz < outlimit;
     
     ImplicitHConvolution3MPI C(mx,my,mz,xcompact,ycompact,zcompact,d,du,F[0],
                                mpiOptions(divisor,alltoall),A,B);
@@ -249,10 +251,12 @@ int main(int argc, char* argv[])
     if(test) {
       init(F,d,A,xcompact,ycompact,zcompact);
       
-      if(!quiet) {
-        if(main) cout << "Distributed input:" << endl;
+      if(!quiet && showresult) {
+        if(main)
+	  cout << "Distributed input:" << endl;
         for(unsigned int a=0; a < A; a++) {
-          if(main) cout << "a: " << a << endl;
+          if(main)
+	    cout << "a: " << a << endl;
           show(F[a],d.X,d.y,d.z,group.active);
         }
       }
@@ -264,7 +268,7 @@ int main(int argc, char* argv[])
           F0[a]=ComplexAlign(d.X*d.Y*d.Z);
         }
         gatheryz(F[a],F0[a],d,group.active);
-        if(!quiet && main) {
+        if(!quiet && main && showresult) {
           cout << "a: " << a << endl;
           show(F0[a],d.X,d.Y,d.Z,0,0,0,d.X,d.Y,d.Z);
         }
@@ -272,7 +276,7 @@ int main(int argc, char* argv[])
 
       C.convolve(F,mult);
 
-      if(!quiet && nx*ny*mz < outlimit) {
+      if(!quiet && showresult) {
         if(main) cout << "Distributed output: " << endl;
         show(F[0],d.X,d.y,d.z,group.active);
       }
@@ -284,7 +288,7 @@ int main(int argc, char* argv[])
       }
       for(unsigned int b=0; b < B; b++) {
         gatheryz(F[b],F0out[b],d,group.active);
-        if(!quiet && main) {
+        if(!quiet && main && showresult) {
           cout << "Gathered output:" << endl;
           cout << "b: " << b << endl;
           show(F0out[b],d.X,d.Y,d.Z,0,0,0,d.X,d.Y,d.Z);
@@ -297,7 +301,7 @@ int main(int argc, char* argv[])
         if(!quiet)
           cout << "Local output:" << endl;
         for(unsigned int b=0; b < B; b++) {
-          if(!quiet) {
+          if(!quiet && showresult) {
             cout << "b: " << b << endl;
             show(F0[b],d.X,d.Y,d.Z,0,0,0,d.X,d.Y,d.Z);
           }
@@ -331,7 +335,7 @@ int main(int argc, char* argv[])
         timings("Implicit",mx,T,N,stats);
       delete [] T;
       
-      if(!quiet && nx*ny*mz < outlimit) {
+      if(!quiet && showresult) {
         if(main) cout << "output: " << endl;
         show(F[0],d.X,d.y,d.z,group.active);
       }

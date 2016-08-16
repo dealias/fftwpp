@@ -6,13 +6,6 @@ using namespace utils;
 using namespace fftwpp;
 using namespace Array;
 
-// Number of iterations.
-unsigned int N0=1000000;
-unsigned int N=0;
-unsigned int mx=4;
-unsigned int my=4;
-int divisor=0; // Test for best block divisor
-int alltoall=-1; // Test for best alltoall routine
 
 inline void init(Complex **F, split d, unsigned int A) 
 {
@@ -36,10 +29,18 @@ inline void init(Complex **F, split d, unsigned int A)
 }
 
 
-unsigned int outlimit=100;
-
 int main(int argc, char* argv[])
 {
+  // Number of iterations.
+  unsigned int N0=1000000;
+  unsigned int N=0;
+  unsigned int mx=4;
+  unsigned int my=4;
+  int divisor=0; // Test for best block divisor
+  int alltoall=-1; // Test for best alltoall routine
+
+  unsigned int outlimit=100;
+    
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif
@@ -174,13 +175,15 @@ int main(int argc, char* argv[])
       cout << "A=" << A << endl;
       cout << "mx=" << mx << ", my=" << my << endl;
     }
+
+    bool showresult = mx*my < outlimit;
     
     ImplicitConvolution2MPI C(mx,my,d,mpiOptions(divisor,alltoall),A,B);
 
     if(test) {
       init(F,d,A);
 
-      if(!quiet) {
+      if(!quiet && showresult) {
         for(unsigned int a=0; a < A; ++a) {
           if(main) 
             cout << "\nDistributed input " << a  << ":"<< endl;
@@ -205,7 +208,7 @@ int main(int argc, char* argv[])
       Complex *Foutgather=ComplexAlign(mx*my);
       gathery(F[0],Foutgather,d,1,group.active);
 
-      if(!quiet) {
+      if(!quiet && showresult) {
         if(main)
           cout << "Distributed output:" << endl;
         show(F[0],mx,d.y,group.active);
@@ -249,7 +252,7 @@ int main(int argc, char* argv[])
       delete [] T;
     }   
 
-    if(!quiet && mx*my < outlimit)
+    if(!quiet && showresult)
       show(F[0],mx,d.y,group.active);
 
     for(unsigned int a=0; a < A; ++a)

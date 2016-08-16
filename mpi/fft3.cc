@@ -7,12 +7,6 @@ using namespace utils;
 using namespace fftwpp;
 using namespace Array;
 
-// Number of iterations.
-unsigned int N0=10000000;
-unsigned int N=0;
-int divisor=0; // Test for best block divisor
-int alltoall=-1; // Test for best alltoall routine
-
 void init(Complex *f,
           unsigned int X, unsigned int Y, unsigned int Z,
           unsigned int x0, unsigned int y0, unsigned int z0,
@@ -35,10 +29,19 @@ void init(Complex *f, split3 d)
   init(f,d.X,d.Y,d.Z,d.x0,d.y0,d.z0,d.x,d.y,d.z);
 }
 
-unsigned int outlimit=3000;
+
 
 int main(int argc, char* argv[])
 {
+
+  // Number of iterations.
+  unsigned int N0=10000000;
+  unsigned int N=0;
+  int divisor=0; // Test for best block divisor
+  int alltoall=-1; // Test for best alltoall routine
+
+  unsigned int outlimit=3000;
+ 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif
@@ -145,6 +148,8 @@ int main(int argc, char* argv[])
       cout << "nx=" << nx << ", ny=" << ny << ", nz=" << nz << endl;
     }
 
+    bool showresult = nx*ny*nz < outlimit;
+    
     split3 d(nx,ny,nz,group);
     
     Complex *f=ComplexAlign(d.n);
@@ -156,7 +161,7 @@ int main(int argc, char* argv[])
       if(main) std::cout << "Allocated " << d.n << " bytes." << endl;
       init(f,d);
 
-      if(!quiet && nx*ny*nz < outlimit) {
+      if(!quiet && showresult) {
         if(main) cout << "\ninput:" << endl;
         show(f,d.x,d.y,d.Z,group.active);
       }
@@ -182,7 +187,7 @@ int main(int argc, char* argv[])
       if(main)
         localForward.fft(flocal);
       
-      if(!quiet) {
+      if(!quiet && showresult) {
         if(main) cout << "Distributed output:" << endl;
         show(f,d.X,d.xy.y,d.z,group.active);
       }
@@ -201,7 +206,7 @@ int main(int argc, char* argv[])
 
       if(main)
         localBackward.fftNormalized(flocal);
-      if(!quiet) {
+      if(!quiet && showresult) {
         if(main) cout << "Distributed output:" << endl;
         show(f,d.x,d.y,d.Z,group.active);
       }
@@ -216,7 +221,7 @@ int main(int argc, char* argv[])
       if(main)
         retval += checkerror(flocal(),fgathered(),d.X*d.Y*d.Z);
       
-      if(!quiet) {
+      if(!quiet && showresult) {
         if(main) cout << "\nback to input:" << endl;
         show(f,d.x,d.y,d.Z,group.active);
       }
@@ -264,8 +269,10 @@ int main(int argc, char* argv[])
           T[i]=0.5*seconds()/M;
           fft.Normalize(F[0]);
         }
-        if(!quiet && nx*ny*nz < outlimit) show(G[0],d.x,d.y,d.Z,group.active);
-        if(main) timings("FFT timing:",nx,T,N,stats);
+        if(!quiet && showresult)
+	  show(G[0],d.x,d.y,d.Z,group.active);
+        if(main)
+	  timings("FFT timing:",nx,T,N,stats);
         
         for(unsigned int m=0; m < M; ++m) {
           delete FFT[m];

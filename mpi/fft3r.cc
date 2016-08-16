@@ -20,11 +20,11 @@ inline void init(array3<double> f, split3 d)
   }
 }
 
-unsigned int outlimit=3000;
 
 int main(int argc, char* argv[])
 {
-
+  unsigned int outlimit=3000;
+  
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif
@@ -143,6 +143,8 @@ int main(int argc, char* argv[])
            << endl;
     }
 
+    bool showresult = nx*ny < outlimit;
+    
     split3 df(nx,ny,nz,group);
     split3 dg(nx,ny,nzp,group,true);
 
@@ -165,8 +167,9 @@ int main(int argc, char* argv[])
     if(test) {
       init(f,df);
       
-      if(!quiet && nx*ny < outlimit) {
-        if(main) cout << "\nDistributed input:" << endl;
+      if(!quiet && showresult) {
+        if(main)
+	  cout << "\nDistributed input:" << endl;
         show(f(),dfgather.x,dfgather.y,dfgather.Z,group.active);
       }
 
@@ -202,11 +205,10 @@ int main(int argc, char* argv[])
         cout << endl;
       }
         
-      if(!quiet) {
+      if(!quiet && showresult) {
         if(main)
 	  cout << "Distributed output:" << endl;
-	if(!quiet && nx*ny < outlimit)
-	  show(g(),dg.X,dg.y,dg.z,group.active);
+	show(g(),dg.X,dg.y,dg.z,group.active);
       }
 
       gatheryz(g(),ggather(),dg,group.active); 
@@ -225,11 +227,10 @@ int main(int argc, char* argv[])
         rcfft.Backward(g,f);
       rcfft.Normalize(f);
 
-      if(!quiet) {
+      if(!quiet && showresult) {
         if(main)
 	  cout << "Distributed back to input:" << endl;
-	if(!quiet && nx*ny < outlimit) 
-	  show(f(),dfgather.x,dfgather.y,dfgather.Z,group.active);
+	show(f(),dfgather.x,dfgather.y,dfgather.Z,group.active);
       }
 
       gatherxy(f(),fgather(),dfgather,group.active);
@@ -277,7 +278,7 @@ int main(int argc, char* argv[])
           rcfft.Normalize(f);
         }
       }
-      if(!quiet && nx*ny < outlimit)
+      if(!quiet && showresult)
         show(f(),df.x,df.y,dfZ,0,0,0,df.x,df.y,df.Z,group.active);
         
       if(main) timings("FFT timing:",nx,T,N,stats);

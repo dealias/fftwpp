@@ -18,12 +18,13 @@ inline void init(Complex *f, split d)
   }
 }
 
-unsigned int outlimit=100;
 
 int main(int argc, char* argv[])
 {
   int retval = 0; // success!
 
+  unsigned int outlimit=100;
+  
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif
@@ -131,6 +132,8 @@ int main(int argc, char* argv[])
       cout << "nx=" << nx << ", ny=" << ny << endl;
     } 
 
+    bool showresult = nx*ny < outlimit;
+    
     split d(nx,ny,group.active);
   
     Complex *f=ComplexAlign(d.n);
@@ -145,7 +148,7 @@ int main(int argc, char* argv[])
     if(test) {
       init(f,d);
 
-      if(!quiet && nx*ny < outlimit) {
+      if(!quiet && showresult) {
         if(main) cout << "\nDistributed input:" << endl;
         show(f,d.x,ny,group.active);
       }
@@ -163,8 +166,9 @@ int main(int argc, char* argv[])
 
       fft.Forward(f,g);
 
-      if(!quiet && nx*ny < outlimit) {
-        if(main) cout << "\nDistributed output:" << endl;
+      if(!quiet && showresult) {
+        if(main)
+	  cout << "\nDistributed output:" << endl;
         show(f,nx,d.y,group.active);
       }
       
@@ -195,7 +199,7 @@ int main(int argc, char* argv[])
       fft.Backward(g,f);
       fft.Normalize(f);
 
-      if(!quiet && nx*ny < outlimit) {
+      if(!quiet && showresult) {
         if(main) cout << "\nDistributed inverse:" << endl;
         show(f,d.x,ny,group.active);
       }
@@ -230,7 +234,7 @@ int main(int argc, char* argv[])
           T[i]=0.5*seconds();
           fft.Normalize(f);
         }    
-        if(!quiet && nx*ny < outlimit)
+        if(!quiet && showresult)
 	  show(f,d.X,d.y,group.active);
         if(main)
 	  timings("FFT timing:",nx,T,N,stats);
