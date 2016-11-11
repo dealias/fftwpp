@@ -696,7 +696,7 @@ public:
 
   unsigned int Nx() const {return nx;}
   unsigned int Ny() const {return ny;}
-  unsigned int Nz() const {return ny;}
+  unsigned int Nz() const {return nz;}
   unsigned int N4() const {return nw;}
 
   array3<T> operator [] (int ix) const {

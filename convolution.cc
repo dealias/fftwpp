@@ -66,11 +66,11 @@ void ImplicitConvolution::convolve(Complex **F, multiplier *pmult,
   (*pmult)(U,m,indexsize,index,0,threads); // multiply even indices
 
   switch(A) {
-    case 1: premult<premult1>(P); break;
-    case 2: premult<premult2>(P); break;
-    case 3: premult<premult3>(P); break;
-    case 4: premult<premult4>(P); break;
-    default: premult<general>(P);
+    case 1: pretransform<pretransform1>(P); break;
+    case 2: pretransform<pretransform2>(P); break;
+    case 3: pretransform<pretransform3>(P); break;
+    case 4: pretransform<pretransform4>(P); break;
+    default: pretransform<general>(P);
   }
 
   if(outofplace) { // out-of-place FFTs: U[A-1] is free if A > B.
@@ -89,7 +89,7 @@ void ImplicitConvolution::convolve(Complex **F, multiplier *pmult,
       Complex *Pb=P[b];
       ForwardsO->fft(W[b],Pb);
       ForwardsO->fft(U[b],lastW);
-      postmultadd(Pb,lastW);
+      posttransform(Pb,lastW);
     }
     
   } else { 
@@ -100,7 +100,7 @@ void ImplicitConvolution::convolve(Complex **F, multiplier *pmult,
       Backwards->fft(P[a]);
     (*pmult)(P,m,indexsize,index,1,threads); //multiply odd indices
 
-    // TODO: after the first postmultadd, u[0] is free, which means
+    // TODO: after the first posttransform, u[0] is free, which means
     // that the remaining B-1 FFTs of u[i] could be done out-of-place.
     
     // Return to original space:
@@ -109,14 +109,14 @@ void ImplicitConvolution::convolve(Complex **F, multiplier *pmult,
       Complex *ub=U[b];
       Forwards->fft(fb);
       Forwards->fft(ub);
-      postmultadd(fb,ub);
+      posttransform(fb,ub);
     }
   }
 }
 
 template<class T>
 inline void ImplicitConvolution::
-premult(Complex **F, unsigned int k, Vec& Zetak)
+pretransform(Complex **F, unsigned int k, Vec& Zetak)
 {
   for(unsigned int a=0; a < A; ++a) {
     Complex *fka=F[a]+k;
@@ -126,7 +126,7 @@ premult(Complex **F, unsigned int k, Vec& Zetak)
 
 template<>
 inline void ImplicitConvolution::
-premult<premult1>(Complex **F, unsigned int k, Vec& Zetak)
+pretransform<pretransform1>(Complex **F, unsigned int k, Vec& Zetak)
 {
   Complex *fk0=F[0]+k;
   Vec Fk0=LOAD(fk0);
@@ -135,7 +135,7 @@ premult<premult1>(Complex **F, unsigned int k, Vec& Zetak)
 
 template<>
 inline void ImplicitConvolution::
-premult<premult2>(Complex **F, unsigned int k, Vec& Zetak)
+pretransform<pretransform2>(Complex **F, unsigned int k, Vec& Zetak)
 {
   Complex *fk0=F[0]+k;
   Complex *fk1=F[1]+k;
@@ -147,7 +147,7 @@ premult<premult2>(Complex **F, unsigned int k, Vec& Zetak)
 
 template<>
 inline void ImplicitConvolution::
-premult<premult3>(Complex **F, unsigned int k, Vec& Zetak)
+pretransform<pretransform3>(Complex **F, unsigned int k, Vec& Zetak)
 {
   Complex *fk0=F[0]+k;
   Complex *fk1=F[1]+k;
@@ -162,7 +162,7 @@ premult<premult3>(Complex **F, unsigned int k, Vec& Zetak)
 
 template<>
 inline void ImplicitConvolution::
-premult<premult4>(Complex **F, unsigned int k, Vec& Zetak)
+pretransform<pretransform4>(Complex **F, unsigned int k, Vec& Zetak)
 {
   Complex *fk0=F[0]+k;
   Complex *fk1=F[1]+k;
@@ -180,7 +180,7 @@ premult<premult4>(Complex **F, unsigned int k, Vec& Zetak)
 
 // multiply by root of unity to prepare for inverse FFT for odd modes
 template<class T>
-void ImplicitConvolution::premult(Complex **F)
+void ImplicitConvolution::pretransform(Complex **F)
 {  
   PARALLEL(
     for(unsigned int K=0; K < m; K += s) {
@@ -191,14 +191,14 @@ void ImplicitConvolution::premult(Complex **F)
       Vec Y=UNPACKH(CONJ(Zeta),Zeta);
       for(unsigned int k=K; k < stop; ++k) {
         Vec Zetak=ZMULT(X,Y,LOAD(ZetaL0+k));
-        premult<T>(F,k,Zetak);
+        pretransform<T>(F,k,Zetak);
       }
     }
     );
 }
 
 // multiply by root of unity to prepare and add for inverse FFT for odd modes
-void ImplicitConvolution::postmultadd(Complex *f, Complex *u)
+void ImplicitConvolution::posttransform(Complex *f, Complex *u)
 {
   double ninv=0.5/m;
   Vec Ninv=LOAD(ninv);
@@ -218,7 +218,7 @@ void ImplicitConvolution::postmultadd(Complex *f, Complex *u)
     );
 }
 
-void ImplicitHConvolution::premult(Complex ** F,
+void ImplicitHConvolution::pretransform(Complex ** F,
                                    unsigned int offset,
                                    Complex* f1c)
 {
@@ -319,7 +319,7 @@ void ImplicitHConvolution::premult(Complex ** F,
   }
 }
 
-void ImplicitHConvolution::postmultadd(Complex **F, Complex *f1c, Complex **U)
+void ImplicitHConvolution::posttransform(Complex **F, Complex *f1c, Complex **U)
 {
   double ninv=1.0/(3.0*m);
   Vec Ninv=LOAD(ninv);
@@ -469,7 +469,7 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
   Complex *c1c=NULL;
   if(even) c1c=ComplexAlign(C);
 
-  premult(F,offset,c1c);
+  pretransform(F,offset,c1c);
 
   // Complex-to-real FFTs and pmults:
   Complex *S=new Complex[B];
@@ -507,7 +507,7 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
 
   const double ninv=1.0/(3.0*m);
   
-  // Real-to-complex FFTs and postmultadd:
+  // Real-to-complex FFTs and posttransform:
   Complex *c2[B];
   for(unsigned int b=B; b-- > 0;) { // Loop from B-1 to 0
     c2[b]=U[b+outofplace];
@@ -528,7 +528,7 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
     if(!compact) c0b[m]=0.0; // Zero Nyquist mode, for Hermitian symmetry.
     c0b[0]=(c0b[0].re+R+c2[b][0].re)*ninv;
   }
-  postmultadd(c0,c1c,c2);
+  posttransform(c0,c1c,c2);
     
   delete[] S;
   if(even) deleteAlign(c1c);

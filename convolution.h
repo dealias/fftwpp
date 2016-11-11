@@ -100,10 +100,10 @@ realmultiplier multbinary2;
 realmultiplier multadvection2;
 
 struct general {};
-struct premult1 {};
-struct premult2 {};
-struct premult3 {};
-struct premult4 {};
+struct pretransform1 {};
+struct pretransform2 {};
+struct pretransform3 {};
+struct pretransform4 {};
 
 // In-place implicitly dealiased 1D complex convolution using
 // function pointers for multiplication
@@ -245,12 +245,12 @@ public:
   }
     
   template<class T>
-  inline void premult(Complex **F, unsigned int k, Vec& Zetak);
+  inline void pretransform(Complex **F, unsigned int k, Vec& Zetak);
 
   template<class T>
-  void premult(Complex **F);
+  void pretransform(Complex **F);
   
-  void postmultadd(Complex *f, Complex *u);
+  void posttransform(Complex *f, Complex *u);
 };
 
 // In-place implicitly dealiased 1D Hermitian convolution.
@@ -389,8 +389,8 @@ public:
   void convolve(Complex **F, realmultiplier *pmult, unsigned int i=0,         
                 unsigned int offset=0);
 
-  void premult(Complex **F, unsigned int offset, Complex* f1c);
-  void postmultadd(Complex **F, Complex *f1c, Complex **U);
+  void pretransform(Complex **F, unsigned int offset, Complex* f1c);
+  void posttransform(Complex **F, Complex *f1c, Complex **U);
 
   // Binary convolution:
   void convolve(Complex *f, Complex *g) {
@@ -399,10 +399,10 @@ public:
   }
   
   template<class T>
-  inline void premult(Complex **F, unsigned int k, Vec& Zetak);
+  inline void pretransform(Complex **F, unsigned int k, Vec& Zetak);
 
   template<class T>
-  void premult(Complex **F);
+  void pretransform(Complex **F);
 };
   
 
