@@ -221,7 +221,7 @@ int main(int argc, char **argv)
 	timings("out transpose",X,Tout,N,stats);
 	break;
       default:
-	cout << "invalid direciton choice." << endl;
+	cout << "invalid direction choice." << endl;
 	exit(1);
     }
   }
