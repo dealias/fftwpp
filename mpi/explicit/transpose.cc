@@ -143,7 +143,7 @@ int main(int argc, char **argv)
   
   if(test) N=1;
   else if(N == 0) {
-    N=N0/(X*Y*Z);
+    N=N0/((unsigned long long) X*Y*Z);
     if(N < 10) N=10;
   }
 
@@ -184,7 +184,6 @@ int main(int argc, char **argv)
                                                  MPI_COMM_WORLD,
                                                  outtranspose ? 0 : \
 						 FFTW_MPI_TRANSPOSED_OUT);
-
   init(data,X,y,Z,0,y0);
 
   bool showoutput=X*Y < showlimit && N == 1;
@@ -229,7 +228,6 @@ int main(int argc, char **argv)
 
   delete[] Tout;
   delete[] Tin;
-
   
   if(showoutput) {
     if(outtranspose) {
@@ -243,8 +241,6 @@ int main(int argc, char **argv)
 
   fftw_destroy_plan(inplan);
   fftw_destroy_plan(outplan);
-
-  
   
   MPI_Finalize();
   return retval;
