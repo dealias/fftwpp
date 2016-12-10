@@ -13,18 +13,6 @@
 using namespace std;
 using namespace utils;
 
-bool test=false;
-bool quiet=false;
-
-unsigned int X=8, Y=8, Z=1;
-int a=0; // Test for best block divisor
-int alltoall=-1; // Test for best alltoall routine
-
-const unsigned int showlimit=1024;
-unsigned int N0=1000000;
-unsigned int N=0;
-bool outtranspose=false;
-
 void init(Complex *data, unsigned int X, unsigned int y, unsigned int Z,
           int x0, int y0) {
   for(unsigned int i=0; i < X; ++i) { 
@@ -65,7 +53,17 @@ int main(int argc, char **argv)
   int stats = 0;
 
   int direction = -1; // -1: both 0: in, 1: out
-  
+
+  bool test=false;
+
+  unsigned int X=8, Y=8, Z=1;
+
+
+  const unsigned int showlimit=1024;
+  unsigned int N0=1000000;
+  unsigned int N=0;
+  bool outtranspose=false;
+
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
   if(rank != 0) opterr=0;
@@ -73,7 +71,7 @@ int main(int argc, char **argv)
   optind=0;
 #endif  
   for (;;) {
-    int c=getopt(argc,argv,"hLN:A:a:Im:n:Os:S:T:x:y:z:qt");
+    int c=getopt(argc,argv,"hLN:A:Im:n:OS:T:x:y:z:qt");
     if (c == -1) break;
                 
     switch (c) {
@@ -84,12 +82,6 @@ int main(int argc, char **argv)
         break;
       case 'L':
         outtranspose=true;
-        break;
-      case 's':
-        alltoall=atoi(optarg);
-        break;
-      case 'a':
-        a=atoi(optarg);
         break;
       case 'm':
         X=Y=atoi(optarg);
@@ -111,9 +103,6 @@ int main(int argc, char **argv)
         break;
       case 't':
         test=true;
-        break;
-      case 'q':
-        quiet=true;
         break;
       case 'n':
         N0=atoi(optarg);
@@ -144,12 +133,10 @@ int main(int argc, char **argv)
   if(test) N=1;
   else if(N == 0) {
     N=N0/((unsigned long long) X*Y*Z);
-    if(N < 10) N=10;
+    N=max(N,20);
   }
 
   int retval=0;
-
-  //fftwTranspose(rank,size,N,stats, direction);
 
   Complex *data;
   ptrdiff_t x,x0;
@@ -204,7 +191,7 @@ int main(int argc, char **argv)
     
   }
 
-    if(rank == 0) {
+  if(rank == 0) {
     switch(direction) {
       case -1: {
 	double *T=new double[N];
