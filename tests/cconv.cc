@@ -20,21 +20,18 @@ unsigned int B=1; // number of outputs
 
 inline void init(Complex **F, unsigned int m, unsigned int A) 
 {
-  if(A % 2 == 0) { // binary case
+  if(A % 2 == 0) {
     unsigned int M=A/2;
     double factor=1.0/sqrt((double) M);
     for(unsigned int s=0; s < M; ++s) {
       double ffactor=(1.0+s)*factor;
       double gfactor=1.0/(1.0+s)*factor;
-
       Complex *fs=F[s];
-      Complex *gs=F[M+s];
+      Complex *gs=F[s+M];
       if(Test) {
         for(unsigned int k=0; k < m; k++) {
 	  fs[k]=factor*iF*pow(E,k*I);
 	  gs[k]=factor*iG*pow(E,k*I);
-	  // fs[k]=factor*iF*k;
-	  // gs[k]=factor*iG*k;
 	}
       } else {
         for(unsigned int k=0; k < m; k++) {
@@ -52,42 +49,25 @@ inline void init(Complex **F, unsigned int m, unsigned int A)
   }
 }
 
-void multA2(Complex **F, unsigned int m,
-	    const unsigned int indexsize,
-	    const unsigned int *index,
-	    unsigned int r, unsigned int threads)
+// Pair-wise binary multiply for A=2 or A=4.
+// NB: example function, not optimised or threaded.
+void multA(Complex **F, unsigned int m,
+           const unsigned int indexsize,
+           const unsigned int *index,
+           unsigned int r, unsigned int threads)
 {
-  Complex* F0=F[0];
-  Complex* F1=F[1];
-  
-  for(unsigned int j=0; j < m; ++j)
-    F0[j] *= F1[j];
-  
-  for(unsigned int b=1; b < B; ++b) {
-    double factor=1.0+b;
-    for(unsigned int i=0; i < m; ++i) {
-      F[b][i]=factor*F0[i]+1.0;
-    }
+  switch(A) {
+    case 2: multbinary(F,m,indexsize,index,r,threads); break;
+    case 4: multbinary2(F,m,indexsize,index,r,threads); break;
+    default:
+      cerr << "A=" << A << " is not yet implemented" << endl; 
+      exit(1);
   }
-}
 
-void multA4(Complex **F, unsigned int m,
-	    const unsigned int indexsize,
-	    const unsigned int *index,
-	    unsigned int r, unsigned int threads)
-{
-  Complex* F0=F[0];
-  Complex* F1=F[1];
-  Complex* F2=F[2];
-  Complex* F3=F[3];
-  
-  for(unsigned int j=0; j < m; ++j)
-    F0[j]=F0[j]*F2[j]+F1[j]*F3[j];
-  
   for(unsigned int b=1; b < B; ++b) {
     double factor=1.0+b;
     for(unsigned int i=0; i < m; ++i) {
-      F[b][i]=factor*F0[i]+1.0;
+      F[b][i]=factor*F[0][i];
     }
   }
 }
@@ -220,10 +200,7 @@ int main(int argc, char* argv[])
 	}
 	break;
       default:
-	switch(A) {
-	  case 2: mult=multA2; break;
-	  case 4: mult=multA4; break;
-	}
+	  mult=multA;
 	break;
     }
     if(!mult) {
@@ -308,7 +285,6 @@ int main(int argc, char* argv[])
 
     { // compare implicit or explicit version with direct verion:
       double error=0.0;
-      cout << endl;
       double norm=0.0;
       for(unsigned int b=1; b < B; ++b) {
 	double factor=1.0+b;

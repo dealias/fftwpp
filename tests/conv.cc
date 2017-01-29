@@ -13,14 +13,13 @@ unsigned int A=2; // Number of inputs
 unsigned int B=1; // Number of outputs
 bool compact=false;
 
-// Pair-wise binary multiply for even A.
+// Pair-wise binary multiply for A=2 or A=4.
 // NB: example function, not optimised or threaded.
 void multA(double **F, unsigned int m,
            const unsigned int indexsize,
            const unsigned int* index,
            unsigned int r, unsigned int threads)
 {
-  
   switch(A) {
     case 2: multbinary(F,m,indexsize,index,r,threads); break;
     case 4: multbinary2(F,m,indexsize,index,r,threads); break;
@@ -32,7 +31,7 @@ void multA(double **F, unsigned int m,
   for(unsigned int b=1; b < B; ++b) {
     double factor=1.0+b;
     for(unsigned int i=0; i < m; ++i) {
-      F[b][i]=factor*F[0][i]+1.0;
+      F[b][i]=factor*F[0][i];
     }
   }
 }
@@ -44,7 +43,7 @@ inline void init(Complex **F, unsigned int m,  unsigned int A)
       F[i][m]=0.0;
                  
   const Complex I(0.0,1.0);
-  const double iE=exp(1.0);
+  const double E=exp(1.0);
   const double iF=sqrt(3.0);
   const double iG=sqrt(5.0);
   
@@ -55,7 +54,7 @@ inline void init(Complex **F, unsigned int m,  unsigned int A)
   if(A == 1) {
     Complex *f=F[0];
     for(unsigned int k=0; k < m; ++k) {
-      f[k]=iF*pow(iE,k*I);
+      f[k]=iF*pow(E,k*I);
     }
   }
   if(A % 2 == 0) {
@@ -67,10 +66,10 @@ inline void init(Complex **F, unsigned int m,  unsigned int A)
       Complex *fs=F[s];
       Complex *gs=F[s+M];
       if(Test) {
-        for(unsigned int k=0; k < m; k++) fs[k]=factor*iF*pow(iE,k*I);
-        for(unsigned int k=0; k < m; k++) gs[k]=factor*iG*pow(iE,k*I);
-        //    for(unsigned int k=0; k < m; k++) fs[k]=factor*iF*k;
-        //    for(unsigned int k=0; k < m; k++) gs[k]=factor*iG*k;
+        for(unsigned int k=0; k < m; k++) {
+          fs[k]=factor*iF*pow(E,k*I);
+          gs[k]=factor*iG*pow(E,k*I);
+        }
       } else {
         fs[0]=1.0*ffactor;
         for(unsigned int k=1; k < m; k++) fs[k]=ffactor*Complex(k,k+1);
