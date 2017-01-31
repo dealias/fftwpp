@@ -286,7 +286,7 @@ int main(int argc, char* argv[])
     { // compare implicit or explicit version with direct verion:
       double error=0.0;
       double norm=0.0;
-      for(unsigned int b=1; b < B; ++b) {
+      for(unsigned int b=0; b < B; ++b) {
 	double factor=1.0+b;
         for(unsigned long long k=0; k < m; k++) {
           error += abs2(h0[k+b*m]-factor*h[k]);
