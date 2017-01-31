@@ -63,7 +63,8 @@ void ImplicitConvolution::convolve(Complex **F, multiplier *pmult,
     BackwardsO->fft(P[a],U[a]);
   }
   
-  (*pmult)(U,m,indexsize,index,0,threads); // multiply even indices
+  if(A >= B)
+    (*pmult)(U,m,indexsize,index,0,threads); // multiply even indices
 
   switch(A) {
     case 1: pretransform<pretransform1>(P); break;
@@ -73,7 +74,7 @@ void ImplicitConvolution::convolve(Complex **F, multiplier *pmult,
     default: pretransform<general>(P);
   }
 
-  if(outofplace) { // out-of-place FFTs: U[A-1] is free if A > B.
+  if(A > B) { // U[A-1] is free
     Complex *W[A];
     W[A-1]=U[A-1];
     for(unsigned int a=1; a < A; ++a) 
@@ -81,6 +82,7 @@ void ImplicitConvolution::convolve(Complex **F, multiplier *pmult,
 
     for(unsigned int a=A; a-- > 0;) // Loop from A-1 to 0.
       BackwardsO->fft(P[a],W[a]);
+    
     (*pmult)(W,m,indexsize,index,1,threads); // multiply odd indices
     
     // Return to original space
@@ -92,24 +94,54 @@ void ImplicitConvolution::convolve(Complex **F, multiplier *pmult,
       posttransform(Pb,lastW);
     }
     
-  } else { 
-    // in-place FFTs: this could be optimised for B > A.
+  } else if (B > A) { // U[B-1] is free
+    Complex *W[B];
+    W[B-1]=U[B-1];
+    for(unsigned int b=1; b < B; ++b) 
+      W[b-1]=P[b];
 
+    for(unsigned int a=A; a-- > 0;) // Loop from A-1 to 0.
+      BackwardsO->fft(P[a],W[a]);
+    
+    (*pmult)(W,m,indexsize,index,1,threads); // multiply odd indices
+    
+    // Return to original space
+    for(unsigned int b=0; b < B; ++b)
+      ForwardsO->fft(W[b],P[b]);
+    
+    (*pmult)(U,m,indexsize,index,0,threads); // multiply even indices
+    
+    Complex *f0=P[0];
+    Complex *u0=U[0];
+    Forwards->fft(u0);
+    posttransform(f0,u0);
+    for(unsigned int b=1; b < B; ++b) {
+      Complex *fb=P[b];
+      Complex *ub=U[b];
+      Complex *u0=U[0];
+      ForwardsO->fft(ub,u0);
+      posttransform(fb,u0);
+    }
+    
+  } else { // A == B
     // Backwards FFT (odd indices):
     for(unsigned int a=0; a < A; ++a)
       Backwards->fft(P[a]);
     (*pmult)(P,m,indexsize,index,1,threads); //multiply odd indices
 
-    // TODO: after the first posttransform, u[0] is free, which means
-    // that the remaining B-1 FFTs of u[i] could be done out-of-place.
-    
     // Return to original space:
-    for(unsigned int b=0; b < B; ++b) {
+    Complex *f0=P[0];
+    Complex *u0=U[0];
+    Forwards->fft(f0);
+    Forwards->fft(u0);
+    posttransform(f0,u0);
+    for(unsigned int b=1; b < B; ++b) {
       Complex *fb=P[b];
       Complex *ub=U[b];
+      Complex *u0=U[0];
       Forwards->fft(fb);
-      Forwards->fft(ub);
-      posttransform(fb,ub);
+      ForwardsO->fft(ub,u0);
+      posttransform(fb,u0);
     }
   }
 }
@@ -453,7 +485,7 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
     U[a][0]=compact ? f->re : f->re-f[m].re; // Nyquist
   }
   
-  if(outofplace) { 
+  if(A > B) { 
     for(unsigned int a=0; a < A-1; ++a) {
       d0[a]=(double *) c0[a+1];
       d1[a]=(double *) c1[a+1];
@@ -509,8 +541,9 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
   
   // Real-to-complex FFTs and posttransform:
   Complex *c2[B];
+  unsigned int shift=A > B;
   for(unsigned int b=B; b-- > 0;) { // Loop from B-1 to 0
-    c2[b]=U[b+outofplace];
+    c2[b]=U[b+shift];
     rco->fft(U[b],c2[b]); // r=2
   }
   for(unsigned int b=0; b < B; ++b) {

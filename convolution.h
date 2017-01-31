@@ -120,7 +120,6 @@ private:
   fft1d *Backwards,*Forwards;
   bool pointers;
   bool allocated;
-  bool outofplace;
   unsigned int indexsize;
 public:
   unsigned int *index;
@@ -149,17 +148,17 @@ public:
     Complex* U1=A == 1 ? utils::ComplexAlign(m) : U[1];
     
     BackwardsO=new fft1d(m,1,U0,U1);
-    Backwards=new fft1d(m,1,U0);
-    Forwards=new fft1d(m,-1,U0);
+    ForwardsO=new fft1d(m,-1,U0,U1);
+    threads=std::min(threads,max(BackwardsO->Threads(),ForwardsO->Threads()));
     
-    outofplace=A > B;
-    if(outofplace) {
-      ForwardsO=new fft1d(m,-1,U0,U1);
-      threads=std::min(threads,
-                       std::max(BackwardsO->Threads(),ForwardsO->Threads()));
-    } else
-      threads=std::min(threads,
-                       std::max(Backwards->Threads(),Forwards->Threads()));
+    if(A == B) {
+      Backwards=new fft1d(m,1,U0);
+      threads=std::min(threads,Backwards->Threads());
+    }
+    if(A <= B) {
+      Forwards=new fft1d(m,-1,U0);
+      threads=std::min(threads,Forwards->Threads());
+    }
     
     if(A == 1) utils::deleteAlign(U1);
 
@@ -209,11 +208,12 @@ public:
     if(pointers) deletepointers(U);
     if(allocated) utils::deleteAlign(u);
     
-    if(outofplace)
-      delete ForwardsO;
+    if(A == B)
+      delete Backwards;
+    if(A <= B)
+      delete Forwards;
     
-    delete Forwards;
-    delete Backwards;
+    delete ForwardsO;
     delete BackwardsO;    
   }
 
@@ -270,7 +270,6 @@ protected:
   bool pointers;
   bool allocated;
   unsigned int indexsize;
-  bool outofplace;
 public:
   unsigned int *index;
 
@@ -299,9 +298,7 @@ public:
     rc=new rcfft1d(m,U0);
     cr=new crfft1d(m,U0);
 
-    outofplace=A > B;
-
-    if(outofplace) {
+    if(A > B) {
       Complex* U1=A == 1 ? utils::ComplexAlign(m) : U[1];
       rco=new rcfft1d(m,(double *) U0,U1);
       cro=new crfft1d(m,U1,(double *) U0);
@@ -375,7 +372,7 @@ public:
     if(pointers) deletepointers(U);
     if(allocated) utils::deleteAlign(u);
 
-    if(outofplace) {
+    if(A > B) {
       delete cro;
       delete rco;
     }
