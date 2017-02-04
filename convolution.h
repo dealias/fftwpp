@@ -298,7 +298,7 @@ public:
     rc=new rcfft1d(m,U0);
     cr=new crfft1d(m,U0);
 
-    if(A > B) {
+    if(A != B) {
       Complex* U1=A == 1 ? utils::ComplexAlign(m) : U[1];
       rco=new rcfft1d(m,(double *) U0,U1);
       cro=new crfft1d(m,U1,(double *) U0);
@@ -372,7 +372,7 @@ public:
     if(pointers) deletepointers(U);
     if(allocated) utils::deleteAlign(u);
 
-    if(A > B) {
+    if(A != B) {
       delete cro;
       delete rco;
     }
