@@ -256,14 +256,15 @@ void ImplicitHConvolution::pretransform(Complex ** F,
 {
   unsigned int C=max(A,B);
   Complex *P0[C];
-  Complex *S=0; // only used for even quantities
 
   Vec Mhalf=LOAD(-0.5);
   Vec HSqrt3=LOAD(hsqrt3);
   
   bool even=m == 2*c;
-  if(even)
-    S=new Complex[A];
+  
+  // used only for even case
+  double Re[A],Im[A];
+
   unsigned int m1=m-1;
   for(unsigned int a=0; a < A; ++a)
     P0[a]=F[a]+offset;
@@ -285,7 +286,8 @@ void ImplicitHConvolution::pretransform(Complex ** F,
       STORE(f1c+a,CONJ(A+B));
         
       double re=fa[c].re;
-      S[a]=Complex(2.0*re,re+sqrt3*fa[c].im);
+      Re[a]=2.0*re;
+      Im[a]=re+sqrt3*fa[c].im;
     }
   }
   
@@ -344,10 +346,9 @@ void ImplicitHConvolution::pretransform(Complex ** F,
     for(unsigned int a=0; a < A; ++a) {
       Complex *fa=P0[a];
       Complex *ua=U[a];
-      fa[c]=S[a].re;
-      ua[c]=S[a].im;
+      fa[c]=Re[a];
+      ua[c]=Im[a];
     }
-    delete[] S;
   }
 }
 
@@ -519,7 +520,8 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
   pretransform(F,offset,c1c);
 
   // Complex-to-real FFTs and pmults:
-  Complex *S=new Complex[B];
+  
+  double Re[B],Im[B];
 
   // r=-1 (backwards):
   if(A >= B) {
@@ -546,7 +548,9 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
     Complex *c0b=c0[b];
     rco->fft(d0[b],c0b); // r=0
     if(!compact) c0b[m]=0.0; // Zero Nyquist mode, for Hermitian symmetry.
-    S[b]=c0[b][start];   // r=0, k=start
+    Complex z=c0[b][start];   // r=0, k=start
+    Re[b]=z.re;
+    Im[b]=z.im;
   }
   
   if(even) {
@@ -592,13 +596,12 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
   for(unsigned int b=0; b < B; ++b) {
     Complex *c1b=c1[b];
     double R=c1b[0].re;
-    c0[b][start]=S[b]; // r=0, k=c-1 (c) for m=even (odd)
+    c0[b][start]=Complex(Re[b],Im[b]); // r=0, k=c-1 (c) for m=even (odd)
     c0[b][0]=(c0[b][0].re+R+c2[b][0].re)*ninv;
   }
   
   posttransform(c0,c1c,c2);
     
-  delete[] S;
   if(even) deleteAlign(c1c);
 }
 
