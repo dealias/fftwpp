@@ -204,39 +204,49 @@ def check_ternary(proglist):
 def check_conv(proglist):
     ntests = 0
     nfails = 0
-    xlist = [0,8,9,10]
-    ylist = [0,8,9,10]
-    zlist = [0,8,9,10]
+    xlist = [0,1,2,8,9,10,11,12]
+    ylist = [0,1,2,8,9,10,11,12]
+    zlist = [0,1,2,8,9,10,11,12]
     Alist = [2,4]
     typearg = "-i"
     for prog in proglist:
+        dimension = progdim(prog)
+        if(dimension == 1) :
+            Blist = [1,2,4]
+        else:
+            Blist = [1,2]
         for A in Alist:
-            preprint = prog + "\timplicit\tA=" + str(A)
-            command = []
-            command.append("./" + prog)
-            command.append("-N1")
-            command.append(typearg)
-            command.append("-d")
-            command.append("-A" + str(A))
-            command.append("-T1")
-            if os.path.isfile(prog):
-                dimension = progdim(prog)
-                if dimension == 1:
-                    ntests1, nfails1 = run1d(preprint, command, xlist)
-                    ntests += ntests1
-                    nfails += nfails1
-                if dimension == 2:
-                    ntests2, nfails2 = run2d(preprint, command, xlist, ylist)
-                    ntests += ntests2
-                    nfails += nfails2
-                if dimension == 3:
-                    ntests3, nfails3 = run3d(preprint, command, \
-                                             xlist, ylist, zlist)
-                    ntests += ntests3
-                    nfails += nfails3
-            else:
-                print(prog + " does not exist; please compile.")
-                fails += 1
+            for B in Blist:
+                preprint = prog + "\timplicit\tA=" + str(A) + "\tB=" + str(B)
+                command = []
+                command.append("./" + prog)
+                command.append("-N1")
+                command.append(typearg)
+                command.append("-d")
+                command.append("-A" + str(A))
+                command.append("-B" + str(B))
+                command.append("-T1")
+                if os.path.isfile(prog):
+                    if dimension == 1:
+                        ntests1, nfails1 = run1d(preprint, command, xlist)
+                        ntests += ntests1
+                        nfails += nfails1
+                    if dimension == 2:
+                        if B > A:
+                            continue
+                        ntests2, nfails2 = run2d(preprint, command, xlist, ylist)
+                        ntests += ntests2
+                        nfails += nfails2
+                    if dimension == 3:
+                        if B > A:
+                            continue
+                        ntests3, nfails3 = run3d(preprint, command, \
+                                                 xlist, ylist, zlist)
+                        ntests += ntests3
+                        nfails += nfails3
+                else:
+                    print(prog + " does not exist; please compile.")
+                    fails += 1
     return ntests, nfails
 
 # Run tests for compact/non-compact Hermitian-symmetric convolutions
@@ -247,53 +257,59 @@ def check_compact(proglist):
     ylist = [0,8,9,10]
     zlist = [0,8,9,10]
     Alist = [2,4]
+    Blist = [1,2,4]
     typearg = "-i"
     for prog in proglist:
         for A in Alist:
-            command = []
-            if os.path.isfile(prog):
-                dimension = progdim(prog)
-                if dimension == 2:
-                    for X in [0, 1]:
-                        for Y in [0, 1]:
-                            command.append("./" + prog)
-                            command.append("-N1")
-                            command.append(typearg)
-                            command.append("-d")
-                            command.append("-A" + str(A))
-                            command.append("-T1")
-                            command.append("-X" + str(X))
-                            command.append("-Y" + str(Y))
-                            preprint = prog + "\tXY="\
-                                           + str(X) + str(Y) \
-                                           + "\tA=" + str(A)
-                            ntests2, nfails2 = run2d(preprint, command, \
-                                                     xlist, ylist)
-                            ntests += ntests2
-                            nfails += nfails2
-                if dimension == 3:
-                    for X in [0, 1]:
-                        for Y in [0, 1]:
-                            for Z in [0, 1]:
+            for B in Blist:
+                if B > A:
+                    continue
+                command = []
+                if os.path.isfile(prog):
+                    dimension = progdim(prog)
+                    if dimension == 2:
+                        for X in [0, 1]:
+                            for Y in [0, 1]:
                                 command.append("./" + prog)
                                 command.append("-N1")
                                 command.append(typearg)
                                 command.append("-d")
                                 command.append("-A" + str(A))
+                                command.append("-B" + str(B))
                                 command.append("-T1")
                                 command.append("-X" + str(X))
                                 command.append("-Y" + str(Y))
-                                command.append("-Z" + str(Z))
-                                preprint = prog + "\tXYZ="\
-                                           + str(X) + str(Y) + str(Z) \
-                                           + "\tA=" + str(A)
-                                ntests3, nfails3 = run3d(preprint, command, \
-                                                         xlist, ylist, zlist)
-                    ntests += ntests3
-                    nfails += nfails3
-            else:
-                print(prog + " does not exist; please compile.")
-                fails += 1
+                                preprint = prog + "\tXY="\
+                                               + str(X) + str(Y) \
+                                               + "\tA=" + str(A)
+                                ntests2, nfails2 = run2d(preprint, command, \
+                                                         xlist, ylist)
+                                ntests += ntests2
+                                nfails += nfails2
+                    if dimension == 3:
+                        for X in [0, 1]:
+                            for Y in [0, 1]:
+                                for Z in [0, 1]:
+                                    command.append("./" + prog)
+                                    command.append("-N1")
+                                    command.append(typearg)
+                                    command.append("-d")
+                                    command.append("-A" + str(A))
+                                    command.append("-T1")
+                                    command.append("-X" + str(X))
+                                    command.append("-Y" + str(Y))
+                                    command.append("-Z" + str(Z))
+                                    preprint = prog + "\tXYZ="\
+                                               + str(X) + str(Y) + str(Z) \
+                                               + "\tA=" + str(A) \
+                                                        + "\tB=" + str(B)
+                                    ntests3, nfails3 = run3d(preprint, command, \
+                                                             xlist, ylist, zlist)
+                        ntests += ntests3
+                        nfails += nfails3
+                else:
+                    print(prog + " does not exist; please compile.")
+                    fails += 1
     return ntests, nfails
 
 # Run test for epliclty dealiased convolutions

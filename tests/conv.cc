@@ -80,7 +80,7 @@ inline void init(Complex **F, unsigned int m,  unsigned int A)
   }
 }
 
-void test(unsigned int m, Complex *h0, unsigned int B)
+void test(unsigned int m, Complex *h0)
 {
   
   Complex *h=ComplexAlign(m);
@@ -330,7 +330,7 @@ int main(int argc, char* argv[])
   }
 
   if(Test) 
-    test(m,h0,B);
+    test(m,h0);
   
   delete [] T;
   deleteAlign(f);
