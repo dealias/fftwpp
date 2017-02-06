@@ -416,21 +416,12 @@ void ImplicitHConvolution::posttransform(Complex *F, const Complex& f1c,
     Vec X=UNPACKL(Zeta,Zeta);
     Vec Y=UNPACKH(CONJ(Zeta),Zeta);
     Vec Zetak=ZMULT(X,Y,LOAD(ZetaL+d-s*a));
-    if(d == 1 && even) {
-      Vec F0=LOAD(F+d)*Ninv;
-      Vec F1=ZMULTC(Zetak,LOAD(&f1c));
-      Vec F2=ZMULT(Zetak,LOAD(U+d));
-      Vec S=F1+F2;
-      STORE(F+d,F0+S);
-      STORE(F+m-d,CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2));
-    } else {
-      Vec F0=LOAD(F+d)*Ninv;
-      Vec F1=ZMULTC(Zetak,LOAD(F+m-d));
-      Vec F2=ZMULT(Zetak,LOAD(U+d));
-      Vec S=F1+F2;
-      STORE(F+d,F0+S);
-      STORE(F+m-d,CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2));
-    }
+    Vec F0=LOAD(F+d)*Ninv;
+    Vec F1=ZMULTC(Zetak,LOAD(d == 1 && even ? &f1c : F+m-d));
+    Vec F2=ZMULT(Zetak,LOAD(U+d));
+    Vec S=F1+F2;
+    STORE(F+d,F0+S);
+    STORE(F+m-d,CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2));
   }
 }
 
