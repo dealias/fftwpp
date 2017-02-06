@@ -265,8 +265,8 @@ protected:
   Complex *u;
   unsigned int s;
   Complex *ZetaH,*ZetaL;
-  rcfft1d *rc,*rco;
-  crfft1d *cr,*cro;
+  rcfft1d *rc,*rco,*rcO;
+  crfft1d *cr,*cro,*crO;
   bool pointers;
   bool allocated;
   unsigned int indexsize;
@@ -298,14 +298,17 @@ public:
     rc=new rcfft1d(m,U0);
     cr=new crfft1d(m,U0);
 
+    Complex* U1=A == 1 ? utils::ComplexAlign(m) : U[1];
+    rco=new rcfft1d(m,(double *) U0,U1);
+    cro=new crfft1d(m,U1,(double *) U0);
+    if(A == 1) utils::deleteAlign(U1);
+    
     if(A != B) {
-      Complex* U1=A == 1 ? utils::ComplexAlign(m) : U[1];
-      rco=new rcfft1d(m,(double *) U0,U1);
-      cro=new crfft1d(m,U1,(double *) U0);
-      if(A == 1) utils::deleteAlign(U1);
+      rcO=rco;
+      crO=cro;
     } else {
-      rco=rc;
-      cro=cr;
+      rcO=rc;
+      crO=cr;
     }
     
     threads=std::min(threads,std::max(rco->Threads(),cro->Threads()));
@@ -386,20 +389,14 @@ public:
   void convolve(Complex **F, realmultiplier *pmult, unsigned int i=0,         
                 unsigned int offset=0);
 
-  void pretransform(Complex **F, unsigned int offset, Complex* f1c);
-  void posttransform(Complex **F, Complex *f1c, Complex **U);
+  void pretransform(Complex *F, Complex *f1c, Complex *U);
+  void posttransform(Complex *F, const Complex& f1c, Complex *U);
 
   // Binary convolution:
   void convolve(Complex *f, Complex *g) {
     Complex *F[]={f,g};
     convolve(F,multbinary);
   }
-  
-  template<class T>
-  inline void pretransform(Complex **F, unsigned int k, Vec& Zetak);
-
-  template<class T>
-  void pretransform(Complex **F);
 };
   
 

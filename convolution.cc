@@ -250,24 +250,18 @@ void ImplicitConvolution::posttransform(Complex *f, Complex *u)
     );
 }
 
-void ImplicitHConvolution::pretransform(Complex ** F,
-                                   unsigned int offset,
-                                   Complex* f1c)
+void ImplicitHConvolution::pretransform(Complex *F, Complex *f1c, Complex *U)
 {
-  unsigned int C=max(A,B);
-  Complex *P0[C];
-
   Vec Mhalf=LOAD(-0.5);
   Vec HSqrt3=LOAD(hsqrt3);
   
   bool even=m == 2*c;
   
-  // used only for even case
-  double Re[A],Im[A];
+  double Re,Im;
 
   unsigned int m1=m-1;
-  for(unsigned int a=0; a < A; ++a)
-    P0[a]=F[a]+offset;
+
+  U[0]=compact ? F->re : F->re-F[m].re; // Nyquist
 
   if(even) {
     unsigned int a=1/s;
@@ -275,20 +269,17 @@ void ImplicitHConvolution::pretransform(Complex ** F,
     Vec X=UNPACKL(Zeta,Zeta);
     Vec Y=UNPACKH(CONJ(Zeta),Zeta);
     Vec zeta1=ZMULT(X,Y,LOAD(ZetaL+1-s*a));
-    for(unsigned int a=0; a < A; ++a) {
-      Complex *fa=P0[a];
-      Vec Fa=LOAD(fa+1);
-      Vec Fb=LOAD(fa+m1);
-      Vec B=Fb*Mhalf+CONJ(Fa);
-      Fb *= HSqrt3;
-      Vec A=ZMULTC(zeta1,UNPACKL(B,Fb)); // Optimize?
-      B=ZMULTIC(zeta1,UNPACKH(B,Fb));
-      STORE(f1c+a,CONJ(A+B));
+    Vec Fa=LOAD(F+1);
+    Vec Fb=LOAD(F+m1);
+    Vec B=Fb*Mhalf+CONJ(Fa);
+    Fb *= HSqrt3;
+    Vec A=ZMULTC(zeta1,UNPACKL(B,Fb)); // Optimize?
+    B=ZMULTIC(zeta1,UNPACKH(B,Fb));
+    STORE(f1c,CONJ(A+B));
         
-      double re=fa[c].re;
-      Re[a]=2.0*re;
-      Im[a]=re+sqrt3*fa[c].im;
-    }
+    double re=F[c].re;
+    Re=2.0*re;
+    Im=re+sqrt3*F[c].im;
   }
   
   unsigned int c1=c+1;
@@ -305,54 +296,47 @@ void ImplicitHConvolution::pretransform(Complex ** F,
       Vec Zeta=LOAD(ZetaH+K/s);
       Vec X=UNPACKL(Zeta,Zeta);
       Vec Y=UNPACKH(CONJ(Zeta),Zeta);
-      for(unsigned int a=0; a < A; ++a) {
-        Complex *fa=P0[a];
-        Complex *fm=fa+m;
-        Complex *fpc1=fa+c1;
-        Complex *fmc1=fm-c1;
-        Complex *ua=U[a];
-        Complex *upc1=ua+c1;
-        for(unsigned int k=max(1,K); k < stop; ++k) {
-          Vec zetak=ZMULT(X,Y,LOAD(ZetaL0+k));
-          Vec Zetak=ZMULTC(zetak,Zetac1);
+      Complex *fm=F+m;
+      Complex *fpc1=F+c1;
+      Complex *fmc1=fm-c1;
+      Complex *upc1=U+c1;
+      for(unsigned int k=max(1,K); k < stop; ++k) {
+        Vec zetak=ZMULT(X,Y,LOAD(ZetaL0+k));
+        Vec Zetak=ZMULTC(zetak,Zetac1);
           
-          Vec Fa=LOAD(fa+k);
-          Vec FA=LOAD(fpc1-k);
-          Vec FB=LOAD(fmc1+k);
-          Vec Fb=LOAD(fm-k);
+        Vec Fa=LOAD(F+k);
+        Vec FA=LOAD(fpc1-k);
+        Vec FB=LOAD(fmc1+k);
+        Vec Fb=LOAD(fm-k);
           
-          Vec B=Fb*Mhalf+CONJ(Fa);
-          STORE(fa+k,Fa+CONJ(Fb));
-          Fb *= HSqrt3;
-          Vec A=ZMULTC(zetak,UNPACKL(B,Fb));
-          B=ZMULTIC(zetak,UNPACKH(B,Fb));
+        Vec B=Fb*Mhalf+CONJ(Fa);
+        STORE(F+k,Fa+CONJ(Fb));
+        Fb *= HSqrt3;
+        Vec A=ZMULTC(zetak,UNPACKL(B,Fb));
+        B=ZMULTIC(zetak,UNPACKH(B,Fb));
         
-          Vec D=FB*Mhalf+CONJ(FA);
-          STORE(fpc1-k,FA+CONJ(FB));
-          FB *= HSqrt3;
-          Vec C=ZMULTC(Zetak,UNPACKL(D,FB));
-          D=ZMULTIC(Zetak,UNPACKH(D,FB));
+        Vec D=FB*Mhalf+CONJ(FA);
+        STORE(fpc1-k,FA+CONJ(FB));
+        FB *= HSqrt3;
+        Vec C=ZMULTC(Zetak,UNPACKL(D,FB));
+        D=ZMULTIC(Zetak,UNPACKH(D,FB));
 
-          STORE(ua+k,A-B);
-          STORE(upc1-k,C-D);
-          STORE(fm-k,CONJ(C+D));
-          STORE(fmc1+k,CONJ(A+B));
-        }
+        STORE(U+k,A-B);
+        STORE(upc1-k,C-D);
+        STORE(fm-k,CONJ(C+D));
+        STORE(fmc1+k,CONJ(A+B));
       }
     }
     );
     
   if(even) {
-    for(unsigned int a=0; a < A; ++a) {
-      Complex *fa=P0[a];
-      Complex *ua=U[a];
-      fa[c]=Re[a];
-      ua[c]=Im[a];
-    }
+    F[c]=Re;
+    U[c]=Im;
   }
 }
 
-void ImplicitHConvolution::posttransform(Complex **F, Complex *f1c, Complex **U)
+void ImplicitHConvolution::posttransform(Complex *F, const Complex& f1c,
+                                         Complex *U)
 {
   double ninv=1.0/(3.0*m);
   Vec Ninv=LOAD(ninv);
@@ -377,22 +361,20 @@ void ImplicitHConvolution::posttransform(Complex **F, Complex *f1c, Complex **U)
     Vec Y=UNPACKH(CONJ(Zeta),Zeta);
     Vec zeta1=Ninv*ZMULT(X,Y,LOAD(ZetaL+1-s*a));
     Vec Zeta1=ZMULTC(zeta1,Zetac1);
-    for(unsigned int b=0; b < B; ++b) {
-      Complex *f0=F[b];
-      Vec F0=LOAD(f0+1)*Ninv;
-      Vec F1=ZMULTC(zeta1,LOAD(f1c+b));
-      Vec F2=ZMULT(zeta1,LOAD(U[b]+1));
-      Vec S=F1+F2;
-      F2=CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2);
-      STORE(f0+1,F0+S);
-      F0=LOAD(f0+c)*Ninv;
-      F1=ZMULTC(Zeta1,LOAD(f0+m1));
-      STORE(f0+m1,F2);
-      F2=ZMULT(Zeta1,LOAD(U[b]+c));
-      S=F1+F2;
-      STORE(f0+c,F0+S);
-      STORE(f0+m-c,CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2));
-    }
+    Complex *f0=F;
+    Vec F0=LOAD(f0+1)*Ninv;
+    Vec F1=ZMULTC(zeta1,LOAD(&f1c));
+    Vec F2=ZMULT(zeta1,LOAD(U+1));
+    Vec S=F1+F2;
+    F2=CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2);
+    STORE(f0+1,F0+S);
+    F0=LOAD(f0+c)*Ninv;
+    F1=ZMULTC(Zeta1,LOAD(f0+m1));
+    STORE(f0+m1,F2);
+    F2=ZMULT(Zeta1,LOAD(U+c));
+    S=F1+F2;
+    STORE(f0+c,F0+S);
+    STORE(f0+m-c,CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2));
   }
   
   unsigned int D=c-d;
@@ -403,34 +385,30 @@ void ImplicitHConvolution::posttransform(Complex **F, Complex *f1c, Complex **U)
       Vec Zeta=Ninv*LOAD(ZetaH+K/s);
       Vec X=UNPACKL(Zeta,Zeta);
       Vec Y=UNPACKH(CONJ(Zeta),Zeta);
-      for(unsigned int b=0; b < B; ++b) {
-        Complex *fb=F[b];
-        Complex *fm=fb+m;
-        Complex *fpc1=fb+c1;
-        Complex *fmc1=fm-c1;
-        Complex *ub=U[b];
-        Complex *upc1=ub+c1;
-        for(unsigned int k=max(even+1,K); k < stop; ++k) {
-          Vec zetak=ZMULT(X,Y,LOAD(ZetaL0+k));
-          Vec Zetak=ZMULTC(zetak,Zetac1);
+      Complex *fm=F+m;
+      Complex *fpc1=F+c1;
+      Complex *fmc1=fm-c1;
+      Complex *upc1=U+c1;
+      for(unsigned int k=max(even+1,K); k < stop; ++k) {
+        Vec zetak=ZMULT(X,Y,LOAD(ZetaL0+k));
+        Vec Zetak=ZMULTC(zetak,Zetac1);
           
-          Vec F0=LOAD(fb+k)*Ninv;
-          Vec F1=ZMULTC(zetak,LOAD(fmc1+k));
-          Vec F2=ZMULT(zetak,LOAD(U[b]+k));
-          Vec S=F1+F2;
-          F2=CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2);
+        Vec F0=LOAD(F+k)*Ninv;
+        Vec F1=ZMULTC(zetak,LOAD(fmc1+k));
+        Vec F2=ZMULT(zetak,LOAD(U+k));
+        Vec S=F1+F2;
+        F2=CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2);
             
-          Vec FA=LOAD(fpc1-k)*Ninv;
-          Vec FB=ZMULTC(Zetak,LOAD(fm-k));
-          Vec FC=ZMULT(Zetak,LOAD(upc1-k));
-          Vec T=FB+FC;
+        Vec FA=LOAD(fpc1-k)*Ninv;
+        Vec FB=ZMULTC(Zetak,LOAD(fm-k));
+        Vec FC=ZMULT(Zetak,LOAD(upc1-k));
+        Vec T=FB+FC;
             
-          STORE(fb+k,F0+S);
-          STORE(fpc1-k,FA+T);
-          STORE(fmc1+k,CONJ(FA+Mhalf*T)-HSqrt3*FLIP(FB-FC));
-          STORE(fm-k,F2);
-        }  
-      }
+        STORE(F+k,F0+S);
+        STORE(fpc1-k,FA+T);
+        STORE(fmc1+k,CONJ(FA+Mhalf*T)-HSqrt3*FLIP(FB-FC));
+        STORE(fm-k,F2);
+      }  
     }
     );
 
@@ -442,25 +420,19 @@ void ImplicitHConvolution::posttransform(Complex **F, Complex *f1c, Complex **U)
     Vec Y=UNPACKH(CONJ(Zeta),Zeta);
     Vec Zetak=ZMULT(X,Y,LOAD(ZetaL+d-s*a));
     if(d == 1 && even) {
-      for(unsigned int b=0; b < B; ++b) {
-        Complex *f0=F[b];
-        Vec F0=LOAD(f0+d)*Ninv;
-        Vec F1=ZMULTC(Zetak,LOAD(f1c+b));
-        Vec F2=ZMULT(Zetak,LOAD(U[b]+d));
-        Vec S=F1+F2;
-        STORE(f0+d,F0+S);
-        STORE(f0+m-d,CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2));
-      }
+      Vec F0=LOAD(F+d)*Ninv;
+      Vec F1=ZMULTC(Zetak,LOAD(&f1c));
+      Vec F2=ZMULT(Zetak,LOAD(U+d));
+      Vec S=F1+F2;
+      STORE(F+d,F0+S);
+      STORE(F+m-d,CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2));
     } else {
-      for(unsigned int b=0; b < B; ++b) {
-        Complex *f0=F[b];
-        Vec F0=LOAD(f0+d)*Ninv;
-        Vec F1=ZMULTC(Zetak,LOAD(f0+m-d));
-        Vec F2=ZMULT(Zetak,LOAD(U[b]+d));
-        Vec S=F1+F2;
-        STORE(f0+d,F0+S);
-        STORE(f0+m-d,CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2));
-      }
+      Vec F0=LOAD(F+d)*Ninv;
+      Vec F1=ZMULTC(Zetak,LOAD(F+m-d));
+      Vec F2=ZMULT(Zetak,LOAD(U+d));
+      Vec S=F1+F2;
+      STORE(F+d,F0+S);
+      STORE(F+m-d,CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2));
     }
   }
 }
@@ -483,9 +455,8 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
     Complex *f=F[a]+offset;
     c0[a]=f;
     c1[a]=f+start;
-    U[a][0]=compact ? f->re : f->re-f[m].re; // Nyquist
   }
-  
+    
   if(A != B) { 
     for(unsigned int a=0; a < C-1; ++a) {
       d0[a]=(double *) c0[a+1];
@@ -517,20 +488,28 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
   Complex *c1c=NULL;
   if(even) c1c=ComplexAlign(C);
 
-  pretransform(F,offset,c1c);
-
   // Complex-to-real FFTs and pmults:
   
   double Re[B],Im[B];
 
+  Complex f1c;
   // r=-1 (backwards):
   if(A >= B) {
-    for(unsigned int a=0; a < A; ++a)
-      cr->fft(U[a]);
+    for(unsigned int a=0; a < A-1; ++a) {
+      pretransform(c0[a],&f1c,U[A-1]);
+      if(even) c1c[a]=f1c;
+      cro->fft(U[A-1],U[a]);
+    }
+    pretransform(c0[A-1],&f1c,U[A-1]);
+    if(even) c1c[A-1]=f1c;
+    cr->fft(U[A-1]);
     (*pmult)((double **) U,m,indexsize,index,-1,threads);
   } else {
-    for(unsigned int a=A; a-- > 0;) // Loop from A-1 to 0.
+    for(unsigned int a=A; a-- > 0;) {// Loop from A-1 to 0.
+      pretransform(c0[a],&f1c,U[a]);
+      if(even) c1c[a]=f1c;
       cro->fft(U[a],d2[a]);
+    }
   }
 
   // r=0:
@@ -540,13 +519,13 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
     T[a]=c0a[0].re; // r=0, k=0
     if(!compact)
       c0a[0].re += 2.0*c0a[m].re; // Nyquist
-    cro->fft(c0a,d0[a]);
+    crO->fft(c0a,d0[a]);
   }
   (*pmult)(d0,m,indexsize,index,0,threads);
     
   for(unsigned int b=0; b < B; ++b) {
     Complex *c0b=c0[b];
-    rco->fft(d0[b],c0b); // r=0
+    rcO->fft(d0[b],c0b); // r=0
     if(!compact) c0b[m]=0.0; // Zero Nyquist mode, for Hermitian symmetry.
     Complex z=c0[b][start];   // r=0, k=start
     Re[b]=z.re;
@@ -566,13 +545,13 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
   for(unsigned int a=A; a-- > 0;) { // Loop from A-1 to 0.
     Complex *c1a=c1[a];
     c1a[0]=compact ? T[a] : T[a]-c1a[c+1].re; // r=1, k=0 with Nyquist
-    cro->fft(c1[a],d1[a]);
+    crO->fft(c1[a],d1[a]);
   }
   (*pmult)(d1,m,indexsize,index,1,threads);
 
   for(unsigned int b=0; b < B; ++b) {
     Complex *c1b=c1[b];
-    rco->fft(d1[b],c1b); // r=1
+    rcO->fft(d1[b],c1b); // r=1
     if(even) {
       Complex tmp=c1c[b];
       c1c[b]=c1b[1]; // r=1, k=1
@@ -580,28 +559,37 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
     }
   }
   
-  // r=-1 (forwards):
-  if(A >= B) {
-    for(unsigned int b=B; b-- > 0;) // Loop from B-1 to 0
-      rco->fft(d2[b],c2[b]);
-  } else {
-    (*pmult)(d2,m,indexsize,index,-1,threads);
-    for(unsigned int b=0; b < B; ++b)
-      rc->fft(c2[b]);
-  }
-
   const double ninv=1.0/(3.0*m);
   
-  // DC modes:
-  for(unsigned int b=0; b < B; ++b) {
-    Complex *c1b=c1[b];
-    double R=c1b[0].re;
-    c0[b][start]=Complex(Re[b],Im[b]); // r=0, k=c-1 (c) for m=even (odd)
-    c0[b][0]=(c0[b][0].re+R+c2[b][0].re)*ninv;
+  // r=-1 (forwards):
+  if(A > B) {
+    for(unsigned int b=0; b < B; ++b) {
+      rcO->fft(d2[b],U[A-1]);
+      double R=c1[b][0].re;
+      c0[b][start]=Complex(Re[b],Im[b]); // r=0, k=c-1 (c) for m=even (odd)
+      c0[b][0]=(c0[b][0].re+R+U[A-1][0].re)*ninv;
+      
+      posttransform(c0[b],even ? c1c[b] : 0.0,U[A-1]);
+    }
+  } else {
+    if(A < B)
+      (*pmult)(d2,m,indexsize,index,-1,threads);
+
+    rc->fft(c2[0]);
+    double R=c1[0][0].re;
+    c0[0][start]=Complex(Re[0],Im[0]); // r=0, k=c-1 (c) for m=even (odd)
+    c0[0][0]=(c0[0][0].re+R+c2[0][0].re)*ninv;
+    posttransform(c0[0],even ? c1c[0] : 0.0,c2[0]);
+
+    for(unsigned int b=1; b < B; ++b) {
+      rco->fft(d2[b],c2[0]);
+      double R=c1[b][0].re;
+      c0[b][start]=Complex(Re[b],Im[b]); // r=0, k=c-1 (c) for m=even (odd)
+      c0[b][0]=(c0[b][0].re+R+c2[0][0].re)*ninv;
+      posttransform(c0[b],even ? c1c[b] : 0.0,c2[0]);
+    }
   }
-  
-  posttransform(c0,c1c,c2);
-    
+
   if(even) deleteAlign(c1c);
 }
 
