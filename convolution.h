@@ -267,8 +267,10 @@ protected:
   Complex *ZetaH,*ZetaL;
   rcfft1d *rc,*rco,*rcO;
   crfft1d *cr,*cro,*crO;
+  Complex *c1c;
   bool pointers;
   bool allocated;
+  bool even;
   unsigned int indexsize;
 public:
   unsigned int *index;
@@ -292,6 +294,7 @@ public:
   }
   
   void init() {
+    even=m == 2*c;
     indexsize=0;
     Complex* U0=U[0];
     
@@ -313,6 +316,7 @@ public:
     
     threads=std::min(threads,std::max(rco->Threads(),cro->Threads()));
     s=BuildZeta(3*m,c+2,ZetaH,ZetaL,threads);
+    c1c=utils::ComplexAlign(max(A,B));
   }
   
   // m is the number of independent data values
@@ -369,6 +373,7 @@ public:
   }
 
   virtual ~ImplicitHConvolution() {
+    utils::deleteAlign(c1c);
     utils::deleteAlign(ZetaH);
     utils::deleteAlign(ZetaL);
     

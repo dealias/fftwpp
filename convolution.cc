@@ -255,9 +255,7 @@ void ImplicitHConvolution::pretransform(Complex *F, Complex *f1c, Complex *U)
   Vec Mhalf=LOAD(-0.5);
   Vec HSqrt3=LOAD(hsqrt3);
   
-  bool even=m == 2*c;
-  
-  double Re,Im;
+  double Re=0.0, Im=0.0;
 
   unsigned int m1=m-1;
 
@@ -340,7 +338,6 @@ void ImplicitHConvolution::posttransform(Complex *F, const Complex& f1c,
 {
   double ninv=1.0/(3.0*m);
   Vec Ninv=LOAD(ninv);
-  bool even=m == 2*c;
 
   Vec Mhalf=LOAD(-0.5);
   Vec HSqrt3=LOAD(hsqrt3);
@@ -484,30 +481,22 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
     d2=(double **) c2;
   }
 
-  bool even=m == 2*c;
-  Complex *c1c=NULL;
-  if(even) c1c=ComplexAlign(C);
-
   // Complex-to-real FFTs and pmults:
   
   double Re[B],Im[B];
 
-  Complex f1c;
   // r=-1 (backwards):
   if(A >= B) {
     for(unsigned int a=0; a < A-1; ++a) {
-      pretransform(c0[a],&f1c,U[A-1]);
-      if(even) c1c[a]=f1c;
+      pretransform(c0[a],c1c+a,U[A-1]);
       cro->fft(U[A-1],U[a]);
     }
-    pretransform(c0[A-1],&f1c,U[A-1]);
-    if(even) c1c[A-1]=f1c;
+    pretransform(c0[A-1],c1c+A-1,U[A-1]);
     cr->fft(U[A-1]);
     (*pmult)((double **) U,m,indexsize,index,-1,threads);
   } else {
     for(unsigned int a=A; a-- > 0;) {// Loop from A-1 to 0.
-      pretransform(c0[a],&f1c,U[a]);
-      if(even) c1c[a]=f1c;
+      pretransform(c0[a],c1c+a,U[a]);
       cro->fft(U[a],d2[a]);
     }
   }
@@ -525,19 +514,19 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
     
   for(unsigned int b=0; b < B; ++b) {
     Complex *c0b=c0[b];
-    rcO->fft(d0[b],c0b); // r=0
+    rcO->fft(d0[b],c0b);
     if(!compact) c0b[m]=0.0; // Zero Nyquist mode, for Hermitian symmetry.
-    Complex z=c0[b][start];   // r=0, k=start
+    Complex z=c0[b][start];  // r=0, k=start
     Re[b]=z.re;
     Im[b]=z.im;
   }
   
   if(even) {
-    for(unsigned int a=C; a-- > 0;) { // Loop from A-1 to 0.
+    for(unsigned int a=C; a-- > 0;) { // Loop from C-1 to 0.
       Complex *c1a=c1[a];
       Complex tmp=c1c[a];
-      c1c[a]=c1a[1];  // r=0, k=c
-      c1a[1]=tmp;     // r=1, k=1
+      c1c[a].re=c1a[1].re; // r=0, k=c
+      c1a[1]=tmp;          // r=1, k=1
     }
   }
   
@@ -553,7 +542,7 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
     Complex *c1b=c1[b];
     rcO->fft(d1[b],c1b); // r=1
     if(even) {
-      Complex tmp=c1c[b];
+      double tmp=c1c[b].re;
       c1c[b]=c1b[1]; // r=1, k=1
       c1b[1]=tmp;    // r=0, k=c
     }
@@ -564,12 +553,11 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
   // r=-1 (forwards):
   if(A > B) {
     for(unsigned int b=0; b < B; ++b) {
-      rcO->fft(d2[b],U[A-1]);
+      rco->fft(d2[b],U[A-1]);
       double R=c1[b][0].re;
       c0[b][start]=Complex(Re[b],Im[b]); // r=0, k=c-1 (c) for m=even (odd)
       c0[b][0]=(c0[b][0].re+R+U[A-1][0].re)*ninv;
-      
-      posttransform(c0[b],even ? c1c[b] : 0.0,U[A-1]);
+      posttransform(c0[b],c1c[b],U[A-1]);
     }
   } else {
     if(A < B)
@@ -579,18 +567,16 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
     double R=c1[0][0].re;
     c0[0][start]=Complex(Re[0],Im[0]); // r=0, k=c-1 (c) for m=even (odd)
     c0[0][0]=(c0[0][0].re+R+c2[0][0].re)*ninv;
-    posttransform(c0[0],even ? c1c[0] : 0.0,c2[0]);
+    posttransform(c0[0],c1c[0],c2[0]);
 
     for(unsigned int b=1; b < B; ++b) {
       rco->fft(d2[b],c2[0]);
       double R=c1[b][0].re;
       c0[b][start]=Complex(Re[b],Im[b]); // r=0, k=c-1 (c) for m=even (odd)
       c0[b][0]=(c0[b][0].re+R+c2[0][0].re)*ninv;
-      posttransform(c0[b],even ? c1c[b] : 0.0,c2[0]);
+      posttransform(c0[b],c1c[b],c2[0]);
     }
   }
-
-  if(even) deleteAlign(c1c);
 }
 
 void fftpad::expand(Complex *f, Complex *u)
@@ -1588,8 +1574,8 @@ void multbinary8(Complex **F, unsigned int m,
 #endif
 }
 
-  // This 2D version of the scheme of Basdevant, J. Comp. Phys, 50, 1983
-  // requires only 4 FFTs per stage.
+// This 2D version of the scheme of Basdevant, J. Comp. Phys, 50, 1983
+// requires only 4 FFTs per stage.
 void multadvection2(double **F, unsigned int m,
                     const unsigned int indexsize,
                     const unsigned int *index,
