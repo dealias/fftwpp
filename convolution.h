@@ -267,7 +267,7 @@ protected:
   Complex *ZetaH,*ZetaL;
   rcfft1d *rc,*rco,*rcO;
   crfft1d *cr,*cro,*crO;
-  Complex *c1c;
+  Complex *w; // Work array of size max(A,B) to hold f[c] in even case.
   bool pointers;
   bool allocated;
   bool even;
@@ -316,7 +316,7 @@ public:
     
     threads=std::min(threads,std::max(rco->Threads(),cro->Threads()));
     s=BuildZeta(3*m,c+2,ZetaH,ZetaL,threads);
-    c1c=even ? utils::ComplexAlign(max(A,B)) : u;
+    w=even ? utils::ComplexAlign(max(A,B)) : u;
   }
   
   // m is the number of independent data values
@@ -373,7 +373,7 @@ public:
   }
 
   virtual ~ImplicitHConvolution() {
-    if(even) utils::deleteAlign(c1c);
+    if(even) utils::deleteAlign(w);
     utils::deleteAlign(ZetaH);
     utils::deleteAlign(ZetaL);
     

@@ -333,7 +333,7 @@ void ImplicitHConvolution::pretransform(Complex *F, Complex *f1c, Complex *U)
   }
 }
 
-void ImplicitHConvolution::posttransform(Complex *F, const Complex& f1c,
+void ImplicitHConvolution::posttransform(Complex *F, const Complex& w,
                                          Complex *U)
 {
   double ninv=1.0/(3.0*m);
@@ -360,7 +360,7 @@ void ImplicitHConvolution::posttransform(Complex *F, const Complex& f1c,
     Vec Zeta1=ZMULTC(zeta1,Zetac1);
     Complex *f0=F;
     Vec F0=LOAD(f0+1)*Ninv;
-    Vec F1=ZMULTC(zeta1,LOAD(&f1c));
+    Vec F1=ZMULTC(zeta1,LOAD(&w));
     Vec F2=ZMULT(zeta1,LOAD(U+1));
     Vec S=F1+F2;
     F2=CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2);
@@ -417,7 +417,7 @@ void ImplicitHConvolution::posttransform(Complex *F, const Complex& f1c,
     Vec Y=UNPACKH(CONJ(Zeta),Zeta);
     Vec Zetak=ZMULT(X,Y,LOAD(ZetaL+d-s*a));
     Vec F0=LOAD(F+d)*Ninv;
-    Vec F1=ZMULTC(Zetak,LOAD(d == 1 && even ? &f1c : F+m-d));
+    Vec F1=ZMULTC(Zetak,LOAD(d == 1 && even ? &w : F+m-d));
     Vec F2=ZMULT(Zetak,LOAD(U+d));
     Vec S=F1+F2;
     STORE(F+d,F0+S);
@@ -479,15 +479,15 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
   // r=-1 (backwards):
   if(A >= B) {
     for(unsigned int a=0; a < A-1; ++a) {
-      pretransform(c0[a],c1c+a,U[A-1]);
+      pretransform(c0[a],w+a,U[A-1]);
       cro->fft(U[A-1],U[a]);
     }
-    pretransform(c0[A-1],c1c+A-1,U[A-1]);
+    pretransform(c0[A-1],w+A-1,U[A-1]);
     cr->fft(U[A-1]);
     (*pmult)((double **) U,m,indexsize,index,-1,threads);
   } else {
     for(unsigned int a=A; a-- > 0;) {// Loop from A-1 to 0.
-      pretransform(c0[a],c1c+a,U[a]);
+      pretransform(c0[a],w+a,U[a]);
       cro->fft(U[a],d2[a]);
     }
   }
@@ -515,8 +515,8 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
   if(even) {
     for(unsigned int a=C; a-- > 0;) { // Loop from C-1 to 0.
       Complex *c1a=c1[a];
-      Complex tmp=c1c[a];
-      c1c[a].re=c1a[1].re; // r=0, k=c
+      Complex tmp=w[a];
+      w[a].re=c1a[1].re; // r=0, k=c
       c1a[1]=tmp;          // r=1, k=1
     }
   }
@@ -533,8 +533,8 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
     Complex *c1b=c1[b];
     rcO->fft(d1[b],c1b); // r=1
     if(even) {
-      double tmp=c1c[b].re;
-      c1c[b]=c1b[1]; // r=1, k=1
+      double tmp=w[b].re;
+      w[b]=c1b[1]; // r=1, k=1
       c1b[1]=tmp;    // r=0, k=c
     }
   }
@@ -548,7 +548,7 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
       double R=c1[b][0].re;
       c0[b][start]=Complex(Re[b],Im[b]); // r=0, k=c-1 (c) for m=even (odd)
       c0[b][0]=(c0[b][0].re+R+U[A-1][0].re)*ninv;
-      posttransform(c0[b],c1c[b],U[A-1]);
+      posttransform(c0[b],w[b],U[A-1]);
     }
   } else {
     if(A < B)
@@ -558,14 +558,14 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
     double R=c1[0][0].re;
     c0[0][start]=Complex(Re[0],Im[0]); // r=0, k=c-1 (c) for m=even (odd)
     c0[0][0]=(c0[0][0].re+R+c2[0][0].re)*ninv;
-    posttransform(c0[0],c1c[0],c2[0]);
+    posttransform(c0[0],w[0],c2[0]);
 
     for(unsigned int b=1; b < B; ++b) {
       rco->fft(d2[b],c2[0]);
       double R=c1[b][0].re;
       c0[b][start]=Complex(Re[b],Im[b]); // r=0, k=c-1 (c) for m=even (odd)
       c0[b][0]=(c0[b][0].re+R+c2[0][0].re)*ninv;
-      posttransform(c0[b],c1c[b],c2[0]);
+      posttransform(c0[b],w[b],c2[0]);
     }
   }
 }

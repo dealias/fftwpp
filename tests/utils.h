@@ -133,6 +133,7 @@ inline void usageGather()
   std::cerr << "-q\t\t quiet" << std::endl;
 }
 
+// Return the smallest power of 2 greater than or equal to n.
 inline unsigned int ceilpow2(unsigned int n)
 {
   --n;
