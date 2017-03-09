@@ -164,7 +164,7 @@ def check_auto(proglist):
                 nfails += nfails1
         else:
             print(prog + " does not exist; please compile.")
-            fails += 1
+            nfails += 1
     return ntests, nfails
 
 # Run tests for ternary convolutions
@@ -197,7 +197,7 @@ def check_ternary(proglist):
                     nfails += nfails2
             else:
                 print(prog + " does not exist; please compile.")
-                fails += 1
+                nfails += 1
     return ntests, nfails
 
 # Run tests for implicit convolutions 
@@ -246,7 +246,7 @@ def check_conv(proglist):
                         nfails += nfails3
                 else:
                     print(prog + " does not exist; please compile.")
-                    fails += 1
+                    nfails += 1
     return ntests, nfails
 
 # Run tests for compact/non-compact Hermitian-symmetric convolutions
@@ -309,7 +309,7 @@ def check_compact(proglist):
                         nfails += nfails3
                 else:
                     print(prog + " does not exist; please compile.")
-                    fails += 1
+                    nfails += 1
     return ntests, nfails
 
 # Run test for epliclty dealiased convolutions
@@ -348,7 +348,7 @@ def check_explicit(proglist):
                     nfails += nfails3
             else:
                 print(prog + " does not exist; please compile.")
-                fails += 1
+                nfails += 1
     return ntests, nfails
 
 
