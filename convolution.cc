@@ -313,16 +313,17 @@ void ImplicitHConvolution::pretransform(Complex *F, Complex *f1c, Complex *U)
         Vec a=ZMULTC(zetak,UNPACKL(b,Fb));
         b=ZMULTIC(zetak,UNPACKH(b,Fb));
         
-        Vec B=FB*Mhalf+CONJ(FA);
+        STORE(fmc1+k,CONJ(a+b));
+        STORE(U+k,a-b);
+        
+        b=FB*Mhalf+CONJ(FA);
         STORE(fpc1-k,FA+CONJ(FB));
         FB *= HSqrt3;
-        Vec A=ZMULTC(Zetak,UNPACKL(B,FB));
-        B=ZMULTIC(Zetak,UNPACKH(B,FB));
+        a=ZMULTC(Zetak,UNPACKL(b,FB));
+        b=ZMULTIC(Zetak,UNPACKH(b,FB));
 
-        STORE(U+k,a-b);
-        STORE(upc1-k,A-B);
-        STORE(fm-k,CONJ(A+B));
-        STORE(fmc1+k,CONJ(a+b));
+        STORE(upc1-k,a-b);
+        STORE(fm-k,CONJ(a+B));
       }
     }
     );
