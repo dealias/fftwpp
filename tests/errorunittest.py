@@ -12,8 +12,10 @@ import os.path #for file-existence checking
 
 retval = 0
 
+DEVNULL = open(os.devnull, 'wb')
+
 print "Checking error vs direct routine..."
-p = Popen(['./directerror.py'], stdout=PIPE, stderr=PIPE)
+p = Popen(['./directerror.py'],stdout=DEVNULL,stderr=None)
 p.wait() # sets the return code
 out, err = p.communicate() # capture output
 print "...done."
@@ -27,7 +29,7 @@ if not (p.returncode == 0):
 
 
 print "Checking local transpose..."
-p = Popen(['./testtranspose.py'], stdout=PIPE, stderr=PIPE)
+p = Popen(['./testtranspose.py'],stdout=DEVNULL,stderr=None)
 p.wait() # sets the return code
 out, err = p.communicate() # capture output
 print "...done."
@@ -41,7 +43,7 @@ if not (p.returncode == 0):
 
 
 print "Checking error vs test case..."
-p=Popen(['./error.py'],stdout=PIPE,stderr=PIPE)
+p=Popen(['./error.py'],stdout=DEVNULL,stderr=None)
 p.wait() # sets the return code
 out, err = p.communicate() # capture output
 print "...done."
@@ -59,7 +61,7 @@ error1=["cconv","conv"]
 for prog in error1:
     if (os.path.isfile(prog)):
         print(prog+"... "),
-        p=Popen(['./error',prog,"6","15"],stdout=PIPE,stderr=PIPE)
+        p=Popen(['./error',prog,"6","15"],stdout=DEVNULL,stderr=None)
         p.wait() # sets the return code
         out, err = p.communicate() # capture output
         if not (p.returncode == 0):
@@ -77,7 +79,7 @@ print "...done."
 
 
 print "Checking error scaling:"
-p=Popen(['./checkerror.py'],stdout=PIPE,stderr=PIPE)
+p=Popen(['./checkerror.py'],stdout=DEVNULL,stderr=None)
 p.wait() # sets the return code
 out, err = p.communicate() # capture output
 if not (p.returncode == 0):
