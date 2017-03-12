@@ -370,9 +370,7 @@ void ImplicitHConvolution::posttransform(Complex *F, const Complex& w,
     F1=ZMULTC(Zeta1,LOAD(f0+m1));
     STORE(f0+m1,F2);
     F2=ZMULT(Zeta1,LOAD(U+c));
-    S=F1+F2;
-    STORE(f0+c,F0+S);
-    STORE(f0+m-c,CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2));
+    STORE(f0+c,F0+F1+F2);
   }
   
   unsigned int D=c-d;
