@@ -323,7 +323,7 @@ void ImplicitHConvolution::pretransform(Complex *F, Complex *f1c, Complex *U)
         b=ZMULTIC(Zetak,UNPACKH(b,FB));
 
         STORE(upc1-k,a-b);
-        STORE(fm-k,CONJ(a+B));
+        STORE(fm-k,CONJ(a+b));
       }
     }
     );
