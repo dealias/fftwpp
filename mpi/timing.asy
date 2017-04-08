@@ -519,8 +519,8 @@ if(gtype == "speedup") {
 	}
 	if(!found) {
 	  if((min(mi[basep]) < m) && (max(mi[basep]) > m)) {
-	    if(verbose)
-	      write("We can interpolate!");
+	    //if(verbose)
+	    //  write("We can interpolate!");
 	    int v = 0;
 	    while(mi[basep][v] < m)
 	      ++v;
@@ -529,8 +529,15 @@ if(gtype == "speedup") {
 	    real m1 = mi[basep][v + 1];
 	    real t0 = i[basep][v];
 	    real t1 = i[basep][v + 1];
-	    real t = t0 + (t1 - t0) * (m - m0) / (m1 - m0);
-	    if(verbose) {
+
+	    // linear interpolation:
+	    //real t = t0 + (t1 - t0) * (m - m0) / (m1 - m0);
+
+	    // linear interpolation on a log scale:
+	    real T = log(m / m0) / log(m1 / m0);
+	    real t = interp(t0, t1, T);
+
+	    if(false && verbose) {
 	      write("m: ", m);
 	      write("m0: ", m0);
 	      write("m1: ", m1);
@@ -550,12 +557,17 @@ if(gtype == "speedup") {
 
 	if(verbose) {
 	  write("m:", "      speedup:");
+	  real[] goodspeedups;
 	  for(int v = 0; v < speedups.length; ++v) {
-	    write(mi[p][v],speedups[v]);
+	    real m = mi[p][v];
+	    if(m >= minm) {
+	      write(mi[p][v], speedups[v]);
+	      goodspeedups.push(speedups[v]);
+	    }
 	  }
-	  write("mean: ", sum(speedups) / speedups.length);
-	  write("max: ", max(speedups));
-	  write("min: ", min(speedups));
+	  write("mean: ", sum(goodspeedups) / goodspeedups.length);
+	  write("max: ", max(goodspeedups));
+	  write("min: ", min(goodspeedups));
 	}
 
 	gmin = min(gmin,min(speedups));
