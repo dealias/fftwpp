@@ -1,6 +1,6 @@
      FFTW++: Fast Fourier Transform C++ Header/MPI Transpose for FFTW3 Library
  
-Copyright (C) 2004-16 John C. Bowman and Malcolm Roberts, University of Alberta
+Copyright (C) 2004-17 John C. Bowman and Malcolm Roberts, University of Alberta
                     http://fftwpp.sourceforge.net
 
 FFTW++ is a C++ header/MPI transpose for Version 3 of the highly optimized FFTW
@@ -16,11 +16,16 @@ arbitrary size are supported.
 Implicit dealiasing of standard and centered Hermitian convolutions is
 also implemented; in 2D and 3D implicit zero-padding substantially
 reduces memory usage and computation time.  For more information, see
-the manuscript "Efficient Dealiased Convolutions without Padding", by
-John C. Bowman and Malcolm Roberts, SIAM Journal on Scientific
-Computing, 33:1, 386-406 (2011):
 
+"Efficient Dealiased Convolutions without Padding," by
+John C. Bowman and Malcolm Roberts, SIAM Journal on Scientific
+Computing, 33:1, 386-406 (2011).
 http://www.math.ualberta.ca/~bowman/publications/dealias.pdf
+
+"Parallel Implicitly Dealiased Convolutions on Shared Memory Architectures,"
+by Malcolm Roberts and John C. Bowman, submitted to Journal of Scientific
+Computing, (2017).
+http://www.math.ualberta.ca/~bowman/publications/dealias2.pdf
 
 Convenient optional shift routines that place the Fourier origin in the logical
 center of the domain are provided for centered complex-to-real transforms
