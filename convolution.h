@@ -579,10 +579,12 @@ public:
   }
   
   void deletepointers2(Complex **&U2) {
-    if(toplevel) delete [] index;
+    if(toplevel) {
+      delete [] index;
       
-    for(unsigned int t=1; t < threads; ++t)
-      delete [] yconvolve[t]->index;
+      for(unsigned int t=1; t < threads; ++t)
+        delete [] yconvolve[t]->index;
+    }
 
     delete [] U2;
   }
@@ -793,10 +795,12 @@ public:
   }
   
   void deletepointers2(Complex **&U2) {
-    if(toplevel) delete [] index;
+    if(toplevel) {
+      delete [] index;
       
-    for(unsigned int t=1; t < threads; ++t)
-      delete [] yconvolve[t]->index;
+      for(unsigned int t=1; t < threads; ++t)
+        delete [] yconvolve[t]->index;
+    }
 
     delete [] U2;
   }
@@ -980,10 +984,12 @@ public:
   }
   
   void deletepointers3(Complex **&U3) {
-    if(toplevel) delete [] index;
+    if(toplevel) {
+      delete [] index;
       
-    for(unsigned int t=1; t < threads; ++t)
-      delete [] yzconvolve[t]->index;
+      for(unsigned int t=1; t < threads; ++t)
+        delete [] yzconvolve[t]->index;
+    }
       
     delete [] U3;
   }
@@ -1173,10 +1179,12 @@ public:
   }
   
   void deletepointers3(Complex **&U3) {
-    if(toplevel) delete [] index;
+    if(toplevel) {
+      delete [] index;
       
-    for(unsigned int t=1; t < threads; ++t)
-      delete [] yzconvolve[t]->index;
+      for(unsigned int t=1; t < threads; ++t)
+        delete [] yzconvolve[t]->index;
+    }
       
     delete [] U3;
   }
