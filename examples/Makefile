@@ -39,10 +39,11 @@ MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
 
 vpath %.cc ../
 
-FILES=example0 example0r example0m example0mr\
-	example1 example1r example2 example2r example3 example3r\
+FILES=example0 example0r example0m example0mr \
+	example1 example1r example2 example2r example3 example3r \
 	examplecconv exampleconv examplecconv2 exampleconv2 \
-	examplecconv3 exampleconv3 exampletranspose
+	examplecconv3 exampleconv3 exampletranspose \
+	examplecconvfull
 
 FFTW=fftw++
 EXTRA=$(FFTW) convolution
@@ -87,6 +88,9 @@ exampletranspose: exampletranspose.o $(FFTW:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 examplecconv: examplecconv.o $(EXTRA:=.o)
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
+examplecconvfull: examplecconvfull.o $(EXTRA:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 exampleconv: exampleconv.o $(EXTRA:=.o)
