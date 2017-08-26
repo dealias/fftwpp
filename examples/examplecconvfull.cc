@@ -9,10 +9,10 @@ using namespace std;
 using namespace utils;
 using namespace fftwpp;
 
+double f0[]={0,1,2,3,4};
 
 void init(Complex *f, Complex *g, unsigned int m) 
 {
-  double f0[]={0,1,2,3,4};
   for(unsigned int k=0; k < m; k++) {
     f[k]=f0[k];
     g[k]=f0[k];
@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
   fftw::maxthreads=get_max_threads();
 
   // size of problem
-  unsigned int m=5;
+  unsigned int m=sizeof(f0)/sizeof(double);
   
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
