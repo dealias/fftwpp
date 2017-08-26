@@ -19,9 +19,6 @@ void init(Complex *f, Complex *g, unsigned int m)
   }
 }
 
-// This multiplication routine is for binary convolutions and takes two inputs
-// of size m.
-// F[0][j] *= F[1][j];
 void multbinaryfull(Complex **F, unsigned int m,
                     const unsigned int indexsize,
                     const unsigned int *index,
@@ -71,7 +68,7 @@ int main(int argc, char* argv[])
 
   cout << "\noutput:" << endl;
   for(unsigned int i=0; i < m; i++) cout << f[i] << endl;
-  for(unsigned int i=0; i < m; i++) cout << g[i] << endl;
+  for(unsigned int i=0; i < m-1; i++) cout << g[i] << endl;
   
   deleteAlign(f);
 

@@ -43,7 +43,7 @@ FILES=example0 example0r example0m example0mr \
 	example1 example1r example2 example2r example3 example3r \
 	examplecconv exampleconv examplecconv2 exampleconv2 \
 	examplecconv3 exampleconv3 exampletranspose \
-	examplecconvfull
+	examplecconvfull examplecconvsame
 
 FFTW=fftw++
 EXTRA=$(FFTW) convolution
@@ -91,6 +91,9 @@ examplecconv: examplecconv.o $(EXTRA:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 examplecconvfull: examplecconvfull.o $(EXTRA:=.o)
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
+examplecconvsame: examplecconvsame.o $(EXTRA:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 exampleconv: exampleconv.o $(EXTRA:=.o)

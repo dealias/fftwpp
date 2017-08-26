@@ -18,16 +18,15 @@ const union uvec sse2_mm = {
 const double sqrt3=sqrt(3.0);
 const double hsqrt3=0.5*sqrt3;
 const Complex zeta3(-0.5,hsqrt3);
+const double twopi=2.0*M_PI;
 
 // Build zeta table, returning the floor of the square root of m.
-unsigned int BuildZeta(unsigned int n, unsigned int m,
+unsigned int BuildZeta(double arg, unsigned int m,
                        Complex *&ZetaH, Complex *&ZetaL, unsigned int threads)
 {
   unsigned int s=(int) sqrt((double) m);
   unsigned int t=m/s;
   if(s*t < m) ++t;
-  static const double twopi=2.0*M_PI;
-  double arg=twopi/n;
   ZetaH=ComplexAlign(t);
   
 #ifndef FFTWPP_SINGLE_THREAD
@@ -46,6 +45,12 @@ unsigned int BuildZeta(unsigned int n, unsigned int m,
     ZetaL[b]=Complex(cos(theta),sin(theta));
   }
   return s;
+}
+
+unsigned int BuildZeta(unsigned int n, unsigned int m,
+                       Complex *&ZetaH, Complex *&ZetaL, unsigned int threads)
+{
+  return BuildZeta(twopi/n,m,ZetaH,ZetaL,threads);
 }
 
 void ImplicitConvolution::convolve(Complex **F, multiplier *pmult,

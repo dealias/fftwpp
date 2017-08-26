@@ -32,6 +32,7 @@ extern const Complex hSqrt3;
 extern const Complex mhsqrt3;
 extern const Complex mhalf;
 extern const Complex zeta3;
+extern const double twopi;
 
 inline unsigned int min(unsigned int a, unsigned int b)
 {
@@ -44,6 +45,10 @@ inline unsigned int max(unsigned int a, unsigned int b)
 }
 
 // Build the factored zeta tables.
+unsigned int BuildZeta(double arg, unsigned int m,
+                       Complex *&ZetaH, Complex *&ZetaL,
+                       unsigned int threads=1);
+
 unsigned int BuildZeta(unsigned int n, unsigned int m,
                        Complex *&ZetaH, Complex *&ZetaL,
                        unsigned int threads=1);
