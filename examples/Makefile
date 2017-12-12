@@ -8,6 +8,14 @@ CXXFLAGS=-O3 -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
 #CXXFLAGS=-fopenmp -g -Wall -ansi -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse
 endif
 
+# clang compiler
+ifeq ($(shell $(CXX) -v 2>&1 | head -c 10),"Apple LLVM")
+CXXFLAGS=-O3 -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
+	-fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native
+#For valgrind:
+#CXXFLAGS=-fopenmp -g -Wall -ansi -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse
+endif
+
 #Intel compiler
 ifeq ($(shell $(CXX) -v 2>&1 | head -c 4),icpc)
 CXXFLAGS=-O3 -openmp -ansi-alias -malign-double -fp-model fast=2
