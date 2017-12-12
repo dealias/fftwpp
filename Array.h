@@ -18,7 +18,7 @@
 #ifndef __Array_h__
 #define __Array_h__ 1
 
-#define __ARRAY_H_VERSION__ 1.53
+#define __ARRAY_H_VERSION__ 1.54
 
 // Defining NDEBUG improves optimization but disables argument checking.
 // Defining __NOARRAY2OPT inhibits special optimization of Array2[].
@@ -288,7 +288,10 @@ public:
   array1<T>& operator = (T a) {Load(a); return *this;}
   array1<T>& operator = (const T *a) {Load(a); return *this;}
   array1<T>& operator = (const array1<T>& A) {
-    __checkEqual(size,A.Size(),1,1);
+    if(size != A.Size()) {
+      Deallocate();
+      Allocate(A.Size());
+    }
     Load(A());
     A.Purge();
     return *this;
