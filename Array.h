@@ -166,13 +166,7 @@ public:
     }
   }
   void CheckActivate(int dim, size_t align=0) {
-    if (test(allocated)) {
-      std::ostringstream buf;
-      buf << "Reallocation of Array" << dim
-          << " attempted (must Deallocate first)";
-      const std::string& s=buf.str();
-      ArrayExit(s.c_str());
-    }
+    Deallocate();
     Activate(align);
   }
   void Deallocate() const {
