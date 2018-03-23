@@ -18,7 +18,7 @@
 #ifndef __Array_h__
 #define __Array_h__ 1
 
-#define __ARRAY_H_VERSION__ 1.54
+#define __ARRAY_H_VERSION__ 1.55
 
 // Defining NDEBUG improves optimization but disables argument checking.
 // Defining __NOARRAY2OPT inhibits special optimization of Array2[].
@@ -198,7 +198,7 @@ public:
     Allocate(nx0,align);
   }
   
-  array1() : size(0), state(unallocated) {}
+  array1() : v(NULL), size(0), state(unallocated) {}
   array1(const void *) : size(0), state(unallocated) {}
   array1(unsigned int nx0, size_t align=0) : state(unallocated) {
     Allocate(nx0,align);
