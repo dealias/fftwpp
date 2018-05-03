@@ -171,7 +171,7 @@ public:
       state=unallocated;
     }
   }
-  virtual void Dimension(unsigned int nx0) {size=nx0;}
+  void Dimension(unsigned int nx0) {size=nx0;}
 
   void Dimension(unsigned int nx0, T *v0) {
     Dimension(nx0); v=v0; clear(allocated);
@@ -210,8 +210,8 @@ public:
   void Hold() {if(test(allocated)) {state=temporary;}}
   void Purge() const {if(test(temporary)) {Deallocate(); state=unallocated;}}
         
-  virtual void Check(int i, int n, unsigned int dim, unsigned int m,
-                     int o=0) const {
+  void Check(int i, int n, unsigned int dim, unsigned int m,
+             int o=0) const {
     if(i < 0 || i >= n) {
       std::ostringstream buf;
       buf << "Array" << dim << " index ";
