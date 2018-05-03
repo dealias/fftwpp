@@ -29,7 +29,7 @@
 #include <climits>
 #include <cstdlib>
 #include <cerrno>
-#if __cplusplus => 201103L
+#if __cplusplus >= 201103L
 #include <initializer_list>
 #endif
 
@@ -133,7 +133,7 @@ protected:
   mutable int state;
 public:
 
-#if __cplusplus => 201103L
+#if __cplusplus >= 201103L
   /**
    * @brief array1 initializing constructur using initializer list
    * @param il initializer list
@@ -559,70 +559,70 @@ private: // abstract iterator prototypes
 
         virtual inline const abstract_iterator
         operator+(const std::ptrdiff_t& n) const
-        #if __cplusplus == 201103L
+        #if __cplusplus >= 201103L
         final
         #endif
         { return abstract_iterator::operator-(n); }
 
         virtual inline abstract_iterator operator++()
-        #if __cplusplus == 201103L
+        #if __cplusplus >= 201103L
         final
         #endif
         { return abstract_iterator::operator--(); }
 
         virtual inline abstract_iterator operator++(int)
-        #if __cplusplus == 201103L
+        #if __cplusplus >= 201103L
         final
         #endif
         { return abstract_iterator::operator--(0); }
 
         virtual inline abstract_iterator
         operator-=(const std::ptrdiff_t& n)
-        #if __cplusplus == 201103L
+        #if __cplusplus >= 201103L
         final
         #endif
         { return abstract_iterator::operator +=(n); }
 
         virtual inline abstract_iterator operator--()
-        #if __cplusplus == 201103L
+        #if __cplusplus >= 201103L
         final
         #endif
         { return abstract_iterator::operator ++(); }
 
         virtual inline abstract_iterator operator--(int)
-        #if __cplusplus == 201103L
+        #if __cplusplus >= 201103L
         final
         #endif
         { return abstract_iterator::operator ++(0); }
 
         virtual inline const abstract_iterator
         operator-(const std::ptrdiff_t& n) const
-        #if __cplusplus == 201103L
+        #if __cplusplus >= 201103L
         final
         #endif
         { return abstract_iterator::operator+(n); }
 
     public: // comparission operators
         inline bool operator>(const abstract_iterator& other)
-        #if __cplusplus == 201103L
+        #if __cplusplus >= 201103L
         final
         #endif
         { return abstract_iterator::operator<(other); }
 
         inline bool operator<(const abstract_iterator& other)
-        #if __cplusplus == 201103L
+        #if __cplusplus >= 201103L
         final
         #endif
         { return abstract_iterator::operator>(other); }
 
         inline bool operator>=(const abstract_iterator& other)
-        #if __cplusplus == 201103L
+        #if __cplusplus >= 201103L
         final
         #endif
         { return abstract_iterator::operator<=(other); }
 
         inline bool operator<=(const abstract_iterator& other)
-        #if __cplusplus == 201103L
+        #if __cplusplus >= 201103L
         final
         #endif
         { return abstract_iterator::operator>=(other); }
@@ -717,42 +717,42 @@ public: // actual iterators
 
 public: // iterator geters
   iterator begin()
-  #if __cplusplus == 201103L
+  #if __cplusplus >= 201103L
   noexcept
   #endif
   { return iterator(array1<T>::v); }
 
   iterator end()
-  #if __cplusplus == 201103L
+  #if __cplusplus >= 201103L
   noexcept
   #endif
   { return iterator(array1<T>::v + array1<T>::_size); }
 
   reverse_iterator rbegin()
-  #if __cplusplus == 201103L
+  #if __cplusplus >= 201103L
   noexcept
   #endif
   { return reverse_iterator(array1<T>::v + array1<T>::_size); }
 
   reverse_iterator rend()
-  #if __cplusplus == 201103L
+  #if __cplusplus >= 201103L
   noexcept
   #endif
   { return reverse_iterator(array1<T>::v); }
 
   const_iterator begin() const
-  #if __cplusplus == 201103L
+  #if __cplusplus >= 201103L
   noexcept
   #endif
   { return const_iterator(array1<T>::v); }
 
   const_iterator end() const
-  #if __cplusplus == 201103L
+  #if __cplusplus >= 201103L
   noexcept
   #endif
   { return const_iterator(array1<T>::v + array1<T>::_size); }
 
-  #if __cplusplus == 201103L
+  #if __cplusplus >= 201103L
   const_iterator cbegin() const noexcept
   { return const_iterator(array1<T>::v); }
   
@@ -761,18 +761,18 @@ public: // iterator geters
   #endif
 
   const_reverse_iterator rbegin() const
-  #if __cplusplus == 201103L
+  #if __cplusplus >= 201103L
   noexcept
   #endif
   { return const_reverse_iterator(array1<T>::v + array1<T>::_size); }
 
   const_reverse_iterator rend() const
-  #if __cplusplus == 201103L
+  #if __cplusplus >= 201103L
   noexcept
   #endif
   { return const_reverse_iterator(array1<T>::v); }
 
-  #if __cplusplus == 201103L
+  #if __cplusplus >= 201103L
   const_reverse_iterator crbegin() const noexcept
   { return const_reverse_iterator(array1<T>::v + array1<T>::size); }
 
