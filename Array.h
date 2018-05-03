@@ -30,19 +30,8 @@
 #include <cstdlib>
 #include <cerrno>
 
-#ifdef NDEBUG
-#define __check(i,n,dim,m)
-#define __checkSize()
-#define __checkEqual(a,b,dim,m)
-#define __checkActivate(i,align) this->Activate(align)
-#else
-#define __check(i,n,dim,m) this->Check(i,n,dim,m)
-#define __checkSize() this->CheckSize()
-#define __checkEqual(a,b,dim,m) this->CheckEqual(a,b,dim,m)
-#define __checkActivate(i,align) this->CheckActivate(i,align)
-#ifndef __NOARRAY2OPT
+#if not defined NDEBUG and not defined __NOARRAY2OPT
 #define __NOARRAY2OPT
-#endif
 #endif
 
 #ifndef HAVE_POSIX_MEMALIGN
@@ -130,6 +119,9 @@ inline void deleteAlign(T *v, size_t len)
 
 #endif
 
+/**
+ * @brief array1 1D array class with forced memory alignment
+ */
 template<class T>
 class array1 {
 protected:
@@ -139,6 +131,8 @@ protected:
 public:
   enum alloc_state {unallocated=0, allocated=1, temporary=2, aligned=4};
   virtual unsigned int Size() const {return size;}
+
+
   void CheckSize() const {
     if(!test(allocated) && size == 0)
       ArrayExit("Operation attempted on unallocated array"); 
@@ -178,6 +172,7 @@ public:
     }
   }
   virtual void Dimension(unsigned int nx0) {size=nx0;}
+
   void Dimension(unsigned int nx0, T *v0) {
     Dimension(nx0); v=v0; clear(allocated);
   }
@@ -238,6 +233,7 @@ public:
 #ifdef NDEBUG
   typedef T *opt;
 #else
+  // This optimization might make iterators unavailable for some cases.
   typedef array1<T> opt;
 #endif
   
@@ -249,7 +245,7 @@ public:
   array1<T> operator + (int i) const {return array1<T>(size-i,v+i);}
         
   void Load(T a) const {
-    __checkSize();
+    array1<T>::__checkSize();
     for(unsigned int i=0; i < size; i++) v[i]=a;
   }
   void Load(const T *a) const {
@@ -370,6 +366,32 @@ public:
     return norm;
   }
 #endif
+protected:
+  inline void __check(int i, int n, unsigned int dim, unsigned int m) const {
+    #ifndef NDEBUG
+    Check(i,n,dim,m);
+    #endif
+  }
+
+  inline void __checkSize() const {
+    #ifndef NDEBUG
+    CheckSize();
+    #endif
+  }
+  inline void __checkEqual(int a, int b, unsigned int dim, unsigned int m) const {
+    #ifndef NDEBUG
+    CheckEqual(a,b,dim,m);
+    #endif
+  }
+  inline void __checkActivate(int i, size_t align) {
+    #ifdef NDEBUG
+    Activate(align);
+    #else
+    CheckActivate(i,align);
+    #endif
+  }
+
+
 private: // abstract iterator prototypes
   /**
    * @brief The NDarray1::abstract_iterator class serves
@@ -775,6 +797,9 @@ std::istream& operator >> (std::istream& s, const array1<T>& A)
   return A.Input(s);
 }
 
+/**
+ * @brief array2 2D array class with forced memory alignment
+ */
 template<class T>
 class array2 : public array1<T> {
 protected:
@@ -783,20 +808,21 @@ protected:
 public:
   using array1<T>::Dimension;
   
-  void Dimension(unsigned int nx0, unsigned int ny0) {
-    nx=nx0; ny=ny0;
-    this->size=nx*ny;
+  inline void Dimension(unsigned int nx0, unsigned int ny0) {
+    nx=nx0;
+    ny=ny0;
+    array1<T>::size=nx*ny;
   }
   void Dimension(unsigned int nx0, unsigned int ny0, T *v0) {
     Dimension(nx0,ny0);
-    this->v=v0;
-    this->clear(this->allocated);
-  }
+    array1<T>::v=v0;
+    array1<T>::clear(array1<T>::allocated);
+    }
   void Dimension(const array1<T> &A) {ArrayExit("Operation not implemented");} 
   
   void Allocate(unsigned int nx0, unsigned int ny0, size_t align=0) {
     Dimension(nx0,ny0);
-    __checkActivate(2,align);
+    array1<T>::__checkActivate(2,align);
   }
         
   array2() : nx(0), ny(0) {}
@@ -808,23 +834,24 @@ public:
   unsigned int Nx() const {return nx;}
   unsigned int Ny() const {return ny;}
 
-#ifndef __NOARRAY2OPT
-  T *operator [] (int ix) const {
-    return this->v+ix*ny;
+  // This optimization might make iterators unavailable for some cases.
+#ifdef __NOARRAY2OPT
+  array1<T> operator [] (const int ix) const {
+    array1<T>::__check(ix,nx,2,1);
+    return array1<T>(ny,this->v+ix*ny);
   }
 #else
-  array1<T> operator [] (int ix) const {
-    __check(ix,nx,2,1);
-    return array1<T>(ny,this->v+ix*ny);
+  T *operator [] (const int ix) const {
+    return this->v+ix*ny;
   }
 #endif
   T& operator () (int ix, int iy) const {
-    __check(ix,nx,2,1);
-    __check(iy,ny,2,2);
+    array1<T>::__check(ix,nx,2,1);
+    array1<T>::__check(iy,ny,2,2);
     return this->v[ix*ny+iy];
   }
   T& operator () (int i) const {
-    __check(i,this->size,2,0);
+    array1<T>::__check(i,this->size,2,0);
     return this->v[i];
   }
   T* operator () () const {return this->v;}
@@ -832,46 +859,46 @@ public:
   array2<T>& operator = (T a) {this->Load(a); return *this;}
   array2<T>& operator = (T *a) {this->Load(a); return *this;}
   array2<T>& operator = (const array2<T>& A) {
-    __checkEqual(nx,A.Nx(),2,1);
-    __checkEqual(ny,A.Ny(),2,2);
+    array1<T>::__checkEqual(nx,A.Nx(),2,1);
+    array1<T>::__checkEqual(ny,A.Ny(),2,2);
     this->Load(A());
     A.Purge();
     return *this;
   }
         
   array2<T>& operator += (const array2<T>& A) {
-    __checkSize();
+    array1<T>::__checkSize();
     for(unsigned int i=0; i < this->size; i++) this->v[i] += A(i);
     return *this;
   }
   array2<T>& operator -= (const array2<T>& A) {
-    __checkSize();
+    array1<T>::__checkSize();
     for(unsigned int i=0; i < this->size; i++) this->v[i] -= A(i);
     return *this;
   }
   array2<T>& operator *= (const array2<T>& A);
         
   array2<T>& operator += (T a) {
-    __checkSize();
+    array1<T>::__checkSize();
     unsigned int inc=ny+1;
     for(unsigned int i=0; i < this->size; i += inc) this->v[i] += a;
     return *this;
   }
   array2<T>& operator -= (T a) {
-    __checkSize();
+    array1<T>::__checkSize();
     unsigned int inc=ny+1;
     for(unsigned int i=0; i < this->size; i += inc) this->v[i] -= a;
     return *this;
   }
   array2<T>& operator *= (T a) {
-    __checkSize();
+    array1<T>::__checkSize();
     for(unsigned int i=0; i < this->size; i++) this->v[i] *= a;
     return *this;
   }
   
   void Identity() {
     this->Load((T) 0);
-    __checkSize();
+    array1<T>::__checkSize();
     unsigned int inc=ny+1;
     for(unsigned int i=0; i < this->size; i += inc) this->v[i]=(T) 1;
   }
@@ -897,6 +924,9 @@ std::istream& operator >> (std::istream& s, const array2<T>& A)
   return A.Input(s);
 }
 
+/**
+ * @brief array3 3D array class with forced memory alignment
+ */
 template<class T>
 class array3 : public array1<T> {
 protected:
@@ -920,7 +950,7 @@ public:
   void Allocate(unsigned int nx0, unsigned int ny0, unsigned int nz0,
                 size_t align=0) {
     Dimension(nx0,ny0,nz0);
-    __checkActivate(3,align);
+    array1<T>::__checkActivate(3,align);
   }
   
   array3() : nx(0), ny(0), nz(0), nyz(0) {}
@@ -937,17 +967,17 @@ public:
   unsigned int Nz() const {return nz;}
 
   array2<T> operator [] (int ix) const {
-    __check(ix,nx,3,1);
+    array1<T>::__check(ix,nx,3,1);
     return array2<T>(ny,nz,this->v+ix*nyz);
   }
   T& operator () (int ix, int iy, int iz) const {
-    __check(ix,nx,3,1);
-    __check(iy,ny,3,2);
-    __check(iz,nz,3,3);
+    array1<T>::__check(ix,nx,3,1);
+    array1<T>::__check(iy,ny,3,2);
+    array1<T>::__check(iz,nz,3,3);
     return this->v[ix*nyz+iy*nz+iz];
   }
   T& operator () (int i) const {
-    __check(i,this->size,3,0);
+    array1<T>::__check(i,this->size,3,0);
     return this->v[i];
   }
   T* operator () () const {return this->v;}
@@ -955,33 +985,33 @@ public:
   array3<T>& operator = (T a) {this->Load(a); return *this;}
   array3<T>& operator = (T *a) {this->Load(a); return *this;}
   array3<T>& operator = (const array3<T>& A) {
-    __checkEqual(nx,A.Nx(),3,1);
-    __checkEqual(ny,A.Ny(),3,2);
-    __checkEqual(nz,A.Nz(),3,3);
+    array1<T>::__checkEqual(nx,A.Nx(),3,1);
+    array1<T>::__checkEqual(ny,A.Ny(),3,2);
+    array1<T>::__checkEqual(nz,A.Nz(),3,3);
     this->Load(A());
     A.Purge(); 
     return *this;
   }
         
   array3<T>& operator += (array3<T>& A) {
-    __checkSize();
+    array1<T>::__checkSize();
     for(unsigned int i=0; i < this->size; i++) this->v[i] += A(i);
     return *this;
   }
   array3<T>& operator -= (array3<T>& A) {
-    __checkSize();
+    array1<T>::__checkSize();
     for(unsigned int i=0; i < this->size; i++) this->v[i] -= A(i);
     return *this;
   }
         
   array3<T>& operator += (T a) {
-    __checkSize();
+    array1<T>::__checkSize();
     unsigned int inc=nyz+nz+1;
     for(unsigned int i=0; i < this->size; i += inc) this->v[i] += a;
     return *this;
   }
   array3<T>& operator -= (T a) {
-    __checkSize();
+    array1<T>::__checkSize();
     unsigned int inc=nyz+nz+1;
     for(unsigned int i=0; i < this->size; i += inc) this->v[i] -= a;
     return *this;
@@ -1011,6 +1041,9 @@ std::istream& operator >> (std::istream& s, const array3<T>& A)
   return A.Input(s);
 }
 
+/**
+ * @brief array4 4D array class with forced memory alignment
+ */
 template<class T>
 class array4 : public array1<T> {
 protected:
@@ -1039,7 +1072,7 @@ public:
   void Allocate(unsigned int nx0, unsigned int ny0, unsigned int nz0,
                 unsigned int nw0, size_t align=0) {
     Dimension(nx0,ny0,nz0,nw0);
-    __checkActivate(4,align);
+    array1<T>::__checkActivate(4,align);
   }
   
   array4() : nx(0), ny(0), nz(0), nw(0), nyz(0), nzw(0), nyzw(0) {}
@@ -1056,18 +1089,18 @@ public:
   unsigned int N4() const {return nw;}
 
   array3<T> operator [] (int ix) const {
-    __check(ix,nx,3,1);
+    array1<T>::__check(ix,nx,3,1);
     return array3<T>(ny,nz,nw,this->v+ix*nyzw);
   }
   T& operator () (int ix, int iy, int iz, int iw) const {
-    __check(ix,nx,4,1);
-    __check(iy,ny,4,2);
-    __check(iz,nz,4,3);
-    __check(iw,nw,4,4);
+    array1<T>::__check(ix,nx,4,1);
+    array1<T>::__check(iy,ny,4,2);
+    array1<T>::__check(iz,nz,4,3);
+    array1<T>::__check(iw,nw,4,4);
     return this->v[ix*nyzw+iy*nzw+iz*nw+iw];
   }
   T& operator () (int i) const {
-    __check(i,this->size,4,0);
+    array1<T>::__check(i,this->size,4,0);
     return this->v[i];
   }
   T* operator () () const {return this->v;}
@@ -1075,34 +1108,34 @@ public:
   array4<T>& operator = (T a) {this->Load(a); return *this;}
   array4<T>& operator = (T *a) {this->Load(a); return *this;}
   array4<T>& operator = (const array4<T>& A) {
-    __checkEqual(nx,A.Nx(),4,1);
-    __checkEqual(ny,A.Ny(),4,2);
-    __checkEqual(nz,A.Nz(),4,3);
-    __checkEqual(nw,A.N4(),4,4);
+    array1<T>::__checkEqual(nx,A.Nx(),4,1);
+    array1<T>::__checkEqual(ny,A.Ny(),4,2);
+    array1<T>::__checkEqual(nz,A.Nz(),4,3);
+    array1<T>::__checkEqual(nw,A.N4(),4,4);
     this->Load(A());
     A.Purge();
     return *this;
   }
         
   array4<T>& operator += (array4<T>& A) {
-    __checkSize();
+    array1<T>::__checkSize();
     for(unsigned int i=0; i < this->size; i++) this->v[i] += A(i);
     return *this;
   }
   array4<T>& operator -= (array4<T>& A) {
-    __checkSize();
+    array1<T>::__checkSize();
     for(unsigned int i=0; i < this->size; i++) this->v[i] -= A(i);
     return *this;
   }
         
   array4<T>& operator += (T a) {
-    __checkSize();
+    array1<T>::__checkSize();
     unsigned int inc=nyzw+nzw+nw+1;
     for(unsigned int i=0; i < this->size; i += inc) this->v[i] += a;
     return *this;
   }
   array4<T>& operator -= (T a) {
-    __checkSize();
+    array1<T>::__checkSize();
     unsigned int inc=nyzw+nzw+nw+1;
     for(unsigned int i=0; i < this->size; i += inc) this->v[i] -= a;
     return *this;
@@ -1135,6 +1168,9 @@ std::istream& operator >> (std::istream& s, const array4<T>& A)
   return A.Input(s);
 }
 
+/**
+ * @brief array5 5D array class with forced memory alignment
+ */
 template<class T>
 class array5 : public array1<T> {
 protected:
@@ -1165,7 +1201,7 @@ public:
   void Allocate(unsigned int nx0, unsigned int ny0, unsigned int nz0,
                 unsigned int nw0, unsigned int nv0, size_t align=0) {
     Dimension(nx0,ny0,nz0,nw0,nv0);
-    __checkActivate(5,align);
+    array1<T>::__checkActivate(5,align);
   }
   
   array5() : nx(0), ny(0), nz(0), nw(0), nv(0), nwv(0), nzwv(0), nyzwv(0) {}
@@ -1185,19 +1221,19 @@ public:
   unsigned int N5() const {return nv;}
 
   array4<T> operator [] (int ix) const {
-    __check(ix,nx,4,1);
+    array1<T>::__check(ix,nx,4,1);
     return array4<T>(ny,nz,nw,nv,this->v+ix*nyzwv);
   }
   T& operator () (int ix, int iy, int iz, int iw, int iv) const {
-    __check(ix,nx,5,1);
-    __check(iy,ny,5,2);
-    __check(iz,nz,5,3);
-    __check(iw,nw,5,4);
-    __check(iv,nv,5,5);
+    array1<T>::__check(ix,nx,5,1);
+    array1<T>::__check(iy,ny,5,2);
+    array1<T>::__check(iz,nz,5,3);
+    array1<T>::__check(iw,nw,5,4);
+    array1<T>::__check(iv,nv,5,5);
     return this->v[ix*nyzwv+iy*nzwv+iz*nwv+iw*nv+iv];
   }
   T& operator () (int i) const {
-    __check(i,this->size,5,0);
+    array1<T>::__check(i,this->size,5,0);
     return this->v[i];
   }
   T* operator () () const {return this->v;}
@@ -1205,35 +1241,35 @@ public:
   array5<T>& operator = (T a) {this->Load(a); return *this;}
   array5<T>& operator = (T *a) {this->Load(a); return *this;}
   array5<T>& operator = (const array5<T>& A) {
-    __checkEqual(nx,A.Nx(),5,1);
-    __checkEqual(ny,A.Ny(),5,2);
-    __checkEqual(nz,A.Nz(),5,3);
-    __checkEqual(nw,A.N4(),5,4);
-    __checkEqual(nv,A.N5(),5,5);
+    array1<T>::__checkEqual(nx,A.Nx(),5,1);
+    array1<T>::__checkEqual(ny,A.Ny(),5,2);
+    array1<T>::__checkEqual(nz,A.Nz(),5,3);
+    array1<T>::__checkEqual(nw,A.N4(),5,4);
+    array1<T>::__checkEqual(nv,A.N5(),5,5);
     this->Load(A());
     A.Purge();
     return *this;
   }
         
   array5<T>& operator += (array5<T>& A) {
-    __checkSize();
+    array1<T>::__checkSize();
     for(unsigned int i=0; i < this->size; i++) this->v[i] += A(i);
     return *this;
   }
   array5<T>& operator -= (array5<T>& A) {
-    __checkSize();
+    array1<T>::__checkSize();
     for(unsigned int i=0; i < this->size; i++) this->v[i] -= A(i);
     return *this;
   }
         
   array5<T>& operator += (T a) {
-    __checkSize();
+    array1<T>::__checkSize();
     unsigned int inc=nyzwv+nzwv+nwv+nv+1;
     for(unsigned int i=0; i < this->size; i += inc) this->v[i] += a;
     return *this;
   }
   array5<T>& operator -= (T a) {
-    __checkSize();
+    array1<T>::__checkSize();
     unsigned int inc=nyzwv+nzwv+nwv+nv+1;
     for(unsigned int i=0; i < this->size; i += inc) this->v[i] -= a;
     return *this;
@@ -1269,14 +1305,9 @@ std::istream& operator >> (std::istream& s, const array5<T>& A)
   return A.Input(s);
 }
 
-#undef __check
-
-#ifdef NDEBUG
-#define __check(i,n,o,dim,m)
-#else
-#define __check(i,n,o,dim,m) this->Check(i-o,n,dim,m,o)
-#endif
-
+/**
+ * @brief Array1 1D array class with forced memory alignment and memory offset
+ */
 template<class T>
 class Array1 : public array1<T> {
 protected:
@@ -1304,7 +1335,7 @@ public:
 
   void Allocate(unsigned int nx0, int ox0=0, size_t align=0) {
     Dimension(nx0,ox0);
-    __checkActivate(1,align);
+    array1<T>::__checkActivate(1,align);
     Offsets();
   }
         
@@ -1341,23 +1372,34 @@ public:
   Array1<T>& operator = (T a) {this->Load(a); return *this;}
   Array1<T>& operator = (const T *a) {this->Load(a); return *this;}
   Array1<T>& operator = (const Array1<T>& A) {
-    __checkEqual(this->size,A.Size(),1,1);
-    __checkEqual(ox,A.Ox(),1,1);
+    array1<T>::__checkEqual(this->size,A.Size(),1,1);
+    array1<T>::__checkEqual(ox,A.Ox(),1,1);
     this->Load(A());
     A.Purge();
     return *this;
   }
   Array1<T>& operator = (const array1<T>& A) {
-    __checkEqual(this->size,A.Size(),1,1);
-    __checkEqual(ox,0,1,1);
+    array1<T>::__checkEqual(this->size,A.Size(),1,1);
+    array1<T>::__checkEqual(ox,0,1,1);
     this->Load(A());
     A.Purge();
     return *this;
   }
   
   int Ox() const {return ox;}
-};
 
+  private:
+  inline void __check(int i, int n, unsigned int o, unsigned int dim, int m) const
+  {
+    #ifndef NDEBUG
+    array1<T>::Check(i-o,n,dim,m,o);
+    #endif
+  }
+}; // Array1
+
+/**
+ * @brief Array2 2D array class with forced memory alignment and memory offset
+ */
 template<class T>
 class Array2 : public array2<T> {
 protected:
@@ -1386,7 +1428,7 @@ public:
   void Allocate(unsigned int nx0, unsigned int ny0, int ox0=0, int oy0=0,
                 size_t align=0) {
     Dimension(nx0,ny0,ox0,oy0);
-    __checkActivate(2,align);
+    array1<T>::__checkActivate(2,align);
     Offsets();
   }
 
@@ -1405,18 +1447,18 @@ public:
   }
 #else
   Array1<T> operator [] (int ix) const {
-    __check(ix,this->nx,ox,2,1);
+    Array1<T>::__check(ix,this->nx,ox,2,1);
     return Array1<T>(this->ny,vtemp+ix*(int) this->ny,oy);
   }
 #endif
   
   T& operator () (int ix, int iy) const {
-    __check(ix,this->nx,ox,2,1);
-    __check(iy,this->ny,oy,2,2);
+    Array1<T>::__check(ix,this->nx,ox,2,1);
+    Array1<T>::__check(iy,this->ny,oy,2,2);
     return voff[ix*(int) this->ny+iy];
   }
   T& operator () (int i) const {
-    __check(i,this->size,0,2,0);
+    Array1<T>::__check(i,this->size,0,2,0);
     return this->v[i];
   }
   T* operator () () const {return this->v;}
@@ -1425,19 +1467,19 @@ public:
   Array2<T>& operator = (T a) {this->Load(a); return *this;}
   Array2<T>& operator = (T *a) {this->Load(a); return *this;}
   Array2<T>& operator = (const Array2<T>& A) {
-    __checkEqual(this->nx,A.Nx(),2,1);
-    __checkEqual(this->ny,A.Ny(),2,2);
-    __checkEqual(ox,A.Ox(),2,1);
-    __checkEqual(oy,A.Oy(),2,2);
+    array1<T>::__checkEqual(this->nx,A.Nx(),2,1);
+    array1<T>::__checkEqual(this->ny,A.Ny(),2,2);
+    array1<T>::__checkEqual(ox,A.Ox(),2,1);
+    array1<T>::__checkEqual(oy,A.Oy(),2,2);
     this->Load(A());
     A.Purge();
     return *this;
   }
   Array2<T>& operator = (const array2<T>& A) {
-    __checkEqual(this->nx,A.Nx(),2,1);
-    __checkEqual(this->ny,A.Ny(),2,2);
-    __checkEqual(ox,0,2,1);
-    __checkEqual(oy,0,2,2);
+    array1<T>::__checkEqual(this->nx,A.Nx(),2,1);
+    array1<T>::__checkEqual(this->ny,A.Ny(),2,2);
+    array1<T>::__checkEqual(ox,0,2,1);
+    array1<T>::__checkEqual(oy,0,2,2);
     this->Load(A());
     A.Purge();
     return *this;
@@ -1448,6 +1490,9 @@ public:
   
 };
 
+/**
+ * @brief Array3 3D array class with forced memory alignment and memory offset
+ */
 template<class T>
 class Array3 : public array3<T> {
 protected:
@@ -1477,7 +1522,7 @@ public:
   void Allocate(unsigned int nx0, unsigned int ny0, unsigned int nz0,
                 int ox0=0, int oy0=0, int oz0=0, size_t align=0) {
     Dimension(nx0,ny0,nz0,ox0,oy0,oz0);
-    __checkActivate(3,align);
+    array1<T>::__checkActivate(3,align);
     Offsets();
   }
         
@@ -1492,17 +1537,17 @@ public:
   }
         
   Array2<T> operator [] (int ix) const {
-    __check(ix,this->nx,ox,3,1);
+    Array1<T>::__check(ix,this->nx,ox,3,1);
     return Array2<T>(this->ny,this->nz,vtemp+ix*(int) this->nyz,oy,oz);
   }
   T& operator () (int ix, int iy, int iz) const {
-    __check(ix,this->nx,ox,3,1);
-    __check(iy,this->ny,oy,3,2);
-    __check(iz,this->nz,oz,3,3);
+    Array1<T>::__check(ix,this->nx,ox,3,1);
+    Array1<T>::__check(iy,this->ny,oy,3,2);
+    Array1<T>::__check(iz,this->nz,oz,3,3);
     return voff[ix*(int) this->nyz+iy*(int) this->nz+iz];
   }
   T& operator () (int i) const {
-    __check(i,this->size,0,3,0);
+    Array1<T>::__check(i,this->size,0,3,0);
     return this->v[i];
   }
   T* operator () () const {return this->v;}
@@ -1511,23 +1556,23 @@ public:
   Array3<T>& operator = (T a) {this->Load(a); return *this;}
   Array3<T>& operator = (T *a) {this->Load(a); return *this;}
   Array3<T>& operator = (const Array3<T>& A) {
-    __checkEqual(this->nx,A.Nx(),3,1);
-    __checkEqual(this->ny,A.Ny(),3,2);
-    __checkEqual(this->nz,A.Nz(),3,3);
-    __checkEqual(ox,A.Ox(),3,1);
-    __checkEqual(oy,A.Oy(),3,2);
-    __checkEqual(oz,A.Oz(),3,3);
+    array1<T>::__checkEqual(this->nx,A.Nx(),3,1);
+    array1<T>::__checkEqual(this->ny,A.Ny(),3,2);
+    array1<T>::__checkEqual(this->nz,A.Nz(),3,3);
+    array1<T>::__checkEqual(ox,A.Ox(),3,1);
+    array1<T>::__checkEqual(oy,A.Oy(),3,2);
+    array1<T>::__checkEqual(oz,A.Oz(),3,3);
     this->Load(A());
     A.Purge(); 
     return *this;
   }
   Array3<T>& operator = (const array3<T>& A) {
-    __checkEqual(this->nx,A.Nx(),3,1);
-    __checkEqual(this->ny,A.Ny(),3,2);
-    __checkEqual(this->nz,A.Nz(),3,3);
-    __checkEqual(ox,0,3,1);
-    __checkEqual(oy,0,3,2);
-    __checkEqual(oz,0,3,3);
+    array1<T>::__checkEqual(this->nx,A.Nx(),3,1);
+    array1<T>::__checkEqual(this->ny,A.Ny(),3,2);
+    array1<T>::__checkEqual(this->nz,A.Nz(),3,3);
+    array1<T>::__checkEqual(ox,0,3,1);
+    array1<T>::__checkEqual(oy,0,3,2);
+    array1<T>::__checkEqual(oz,0,3,3);
     this->Load(A());
     A.Purge(); 
     return *this;
@@ -1539,6 +1584,9 @@ public:
 
 };
 
+/**
+ * @brief Array4 4D array class with forced memory alignment and memory offset
+ */
 template<class T>
 class Array4 : public array4<T> {
 protected:
@@ -1572,7 +1620,7 @@ public:
                 unsigned int nw0,
                 int ox0=0, int oy0=0, int oz0=0, int ow0=0, size_t align=0) {
     Dimension(nx0,ny0,nz0,nw0,ox0,oy0,oz0,ow0);
-    __checkActivate(4,align); 
+    array1<T>::__checkActivate(4,align);
     Offsets();
   }
         
@@ -1589,19 +1637,19 @@ public:
   }
 
   Array3<T> operator [] (int ix) const {
-    __check(ix,this->nx,ox,3,1);
+    Array1<T>::__check(ix,this->nx,ox,3,1);
     return Array3<T>(this->ny,this->nz,this->nw,vtemp+ix*(int) this->nyzw,
                      oy,oz,ow);
   }
   T& operator () (int ix, int iy, int iz, int iw) const {
-    __check(ix,this->nx,ox,4,1);
-    __check(iy,this->ny,oy,4,2);
-    __check(iz,this->nz,oz,4,3);
-    __check(iw,this->nw,ow,4,4);
+    Array1<T>::__check(ix,this->nx,ox,4,1);
+    Array1<T>::__check(iy,this->ny,oy,4,2);
+    Array1<T>::__check(iz,this->nz,oz,4,3);
+    Array1<T>::__check(iw,this->nw,ow,4,4);
     return voff[ix*(int) this->nyzw+iy*(int) this->nzw+iz*(int) this->nw+iw];
   }
   T& operator () (int i) const {
-    __check(i,this->size,0,4,0);
+    Array1<T>::__check(i,this->size,0,4,0);
     return this->v[i];
   }
   T* operator () () const {return this->v;}
@@ -1611,31 +1659,31 @@ public:
   Array4<T>& operator = (T *a) {this->Load(a); return *this;}
   
   Array4<T>& operator = (const Array4<T>& A) {
-    __checkEqual(this->nx,A.Nx(),4,1);
-    __checkEqual(this->ny,A.Ny(),4,2);
-    __checkEqual(this->nz,A.Nz(),4,3);
-    __checkEqual(this->nw,A.N4(),4,4);
-    __checkEqual(ox,A.Ox(),4,1);
-    __checkEqual(oy,A.Oy(),4,2);
-    __checkEqual(oz,A.Oz(),4,3);
-    __checkEqual(ow,A.O4(),4,4);
+    array1<T>::__checkEqual(this->nx,A.Nx(),4,1);
+    array1<T>::__checkEqual(this->ny,A.Ny(),4,2);
+    array1<T>::__checkEqual(this->nz,A.Nz(),4,3);
+    array1<T>::__checkEqual(this->nw,A.N4(),4,4);
+    array1<T>::__checkEqual(ox,A.Ox(),4,1);
+    array1<T>::__checkEqual(oy,A.Oy(),4,2);
+    array1<T>::__checkEqual(oz,A.Oz(),4,3);
+    array1<T>::__checkEqual(ow,A.O4(),4,4);
     this->Load(A());
     A.Purge();
     return *this;
   }
   Array4<T>& operator = (const array4<T>& A) {
-    __checkEqual(this->nx,A.Nx(),4,1);
-    __checkEqual(this->ny,A.Ny(),4,2);
-    __checkEqual(this->nz,A.Nz(),4,3);
-    __checkEqual(this->nw,A.N4(),4,4);
-    __checkEqual(this->nx,A.Nx(),4,1);
-    __checkEqual(this->ny,A.Nx(),4,2);
-    __checkEqual(this->nz,A.Nx(),4,3);
-    __checkEqual(this->nw,A.Nx(),4,4);
-    __checkEqual(ox,0,4,1);
-    __checkEqual(oy,0,4,2);
-    __checkEqual(oz,0,4,3);
-    __checkEqual(ow,0,4,4);
+    array1<T>::__checkEqual(this->nx,A.Nx(),4,1);
+    array1<T>::__checkEqual(this->ny,A.Ny(),4,2);
+    array1<T>::__checkEqual(this->nz,A.Nz(),4,3);
+    array1<T>::__checkEqual(this->nw,A.N4(),4,4);
+    array1<T>::__checkEqual(this->nx,A.Nx(),4,1);
+    array1<T>::__checkEqual(this->ny,A.Nx(),4,2);
+    array1<T>::__checkEqual(this->nz,A.Nx(),4,3);
+    array1<T>::__checkEqual(this->nw,A.Nx(),4,4);
+    array1<T>::__checkEqual(ox,0,4,1);
+    array1<T>::__checkEqual(oy,0,4,2);
+    array1<T>::__checkEqual(oz,0,4,3);
+    array1<T>::__checkEqual(ow,0,4,4);
     this->Load(A());
     A.Purge();
     return *this;
@@ -1647,6 +1695,9 @@ public:
   int O4() const {return ow;}
 };
 
+/**
+ * @brief Array5 5D array class with forced memory alignment and memory offset
+ */
 template<class T>
 class Array5 : public array5<T> {
 protected:
@@ -1682,7 +1733,7 @@ public:
                 int ox0=0, int oy0=0, int oz0=0, int ow0=0, int ov0=0,
                 size_t align=0) {
     Dimension(nx0,ny0,nz0,nw0,nv0,ox0,oy0,oz0,ow0,ov0);
-    __checkActivate(5,align); 
+    array1<T>::__checkActivate(5,align);
     Offsets();
   }
         
@@ -1699,21 +1750,21 @@ public:
   }
 
   Array4<T> operator [] (int ix) const {
-    __check(ix,this->nx,ox,4,1);
+    Array1<T>::__check(ix,this->nx,ox,4,1);
     return Array4<T>(this->ny,this->nz,this->nw,this->nv,
                      vtemp+ix*(int) this->nyzwv,oy,oz,ow,ov);
   }
   T& operator () (int ix, int iy, int iz, int iw, int iv) const {
-    __check(ix,this->nx,ox,5,1);
-    __check(iy,this->ny,oy,5,2);
-    __check(iz,this->nz,oz,5,3);
-    __check(iw,this->nw,ow,5,4);
-    __check(iv,this->nv,ov,5,5);
+    Array1<T>::__check(ix,this->nx,ox,5,1);
+    Array1<T>::__check(iy,this->ny,oy,5,2);
+    Array1<T>::__check(iz,this->nz,oz,5,3);
+    Array1<T>::__check(iw,this->nw,ow,5,4);
+    Array1<T>::__check(iv,this->nv,ov,5,5);
     return voff[ix*(int) this->nyzwv+iy*(int) this->nzwv+iz*(int) this->nwv
                 +iw*(int) this->nv+iv];
   }
   T& operator () (int i) const {
-    __check(i,this->size,0,5,0);
+    Array1<T>::__check(i,this->size,0,5,0);
     return this->v[i];
   }
   T* operator () () const {return this->v;}
@@ -1723,31 +1774,31 @@ public:
   Array5<T>& operator = (T *a) {this->Load(a); return *this;}
   
   Array5<T>& operator = (const Array5<T>& A) {
-    __checkEqual(this->nx,A.Nx(),5,1);
-    __checkEqual(this->ny,A.Ny(),5,2);
-    __checkEqual(this->nz,A.Nz(),5,3);
-    __checkEqual(this->nw,A.N4(),5,4);
-    __checkEqual(this->nv,A.N5(),5,5);
-    __checkEqual(ox,A.Ox(),5,1);
-    __checkEqual(oy,A.Oy(),5,2);
-    __checkEqual(oz,A.Oz(),5,3);
-    __checkEqual(ow,A.O4(),5,4);
-    __checkEqual(ov,A.O5(),5,5);
+    array1<T>::__checkEqual(this->nx,A.Nx(),5,1);
+    array1<T>::__checkEqual(this->ny,A.Ny(),5,2);
+    array1<T>::__checkEqual(this->nz,A.Nz(),5,3);
+    array1<T>::__checkEqual(this->nw,A.N4(),5,4);
+    array1<T>::__checkEqual(this->nv,A.N5(),5,5);
+    array1<T>::__checkEqual(ox,A.Ox(),5,1);
+    array1<T>::__checkEqual(oy,A.Oy(),5,2);
+    array1<T>::__checkEqual(oz,A.Oz(),5,3);
+    array1<T>::__checkEqual(ow,A.O4(),5,4);
+    array1<T>::__checkEqual(ov,A.O5(),5,5);
     this->Load(A());
     A.Purge();
     return *this;
   }
   Array5<T>& operator = (const array5<T>& A) {
-    __checkEqual(this->nx,A.Nx(),5,1);
-    __checkEqual(this->ny,A.Ny(),5,2);
-    __checkEqual(this->nz,A.Nz(),5,3);
-    __checkEqual(this->nw,A.N4(),5,4);
-    __checkEqual(this->nv,A.N5(),5,5);
-    __checkEqual(ox,0,5,1);
-    __checkEqual(oy,0,5,2);
-    __checkEqual(oz,0,5,3);
-    __checkEqual(ow,0,5,4);
-    __checkEqual(ov,0,5,5);
+    array1<T>::__checkEqual(this->nx,A.Nx(),5,1);
+    array1<T>::__checkEqual(this->ny,A.Ny(),5,2);
+    array1<T>::__checkEqual(this->nz,A.Nz(),5,3);
+    array1<T>::__checkEqual(this->nw,A.N4(),5,4);
+    array1<T>::__checkEqual(this->nv,A.N5(),5,5);
+    array1<T>::__checkEqual(ox,0,5,1);
+    array1<T>::__checkEqual(oy,0,5,2);
+    array1<T>::__checkEqual(oz,0,5,3);
+    array1<T>::__checkEqual(ow,0,5,4);
+    array1<T>::__checkEqual(ov,0,5,5);
     this->Load(A());
     A.Purge();
     return *this;
