@@ -757,7 +757,7 @@ public: // iterator geters
   { return const_iterator(array1<T>::v); }
   
   const_iterator cend() const noexcept
-  { return const_iterator(array1<T>::v + array1<T>::size); }
+  { return const_iterator(array1<T>::v + array1<T>::_size); }
   #endif
 
   const_reverse_iterator rbegin() const
@@ -774,7 +774,7 @@ public: // iterator geters
 
   #if __cplusplus >= 201103L
   const_reverse_iterator crbegin() const noexcept
-  { return const_reverse_iterator(array1<T>::v + array1<T>::size); }
+  { return const_reverse_iterator(array1<T>::v + array1<T>::_size); }
 
   const_reverse_iterator crend() const noexcept
   { return const_reverse_iterator(array1<T>::v); }
