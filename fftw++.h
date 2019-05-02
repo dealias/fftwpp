@@ -20,7 +20,7 @@
 #ifndef __fftwpp_h__
 #define __fftwpp_h__ 1
 
-#define __FFTWPP_H_VERSION__ 2.06
+#define __FFTWPP_H_VERSION__ 2.07
 
 #include <cstdlib>
 #include <fstream>
@@ -453,13 +453,13 @@ public:
     Normalize(out);
   }
   
-  void fftNormalized(Complex *in, double *out, bool shift=false) {
+  virtual void fftNormalized(Complex *in, double *out, bool shift=false) {
     out=(double *) Setout(in,(Complex *) out);
     Execute(in,(Complex *) out,shift);
     Normalize(out);
   }
   
-  void fftNormalized(double *in, Complex *out, bool shift=false) {
+  virtual void fftNormalized(double *in, Complex *out, bool shift=false) {
     fftNormalized((Complex *) in,out,shift);
   }
   
@@ -1063,7 +1063,7 @@ public:
     fftw::Normalize<Complex>(nx/2+1,M,ostride,odist,out);
   }
   
-  void fftNormalized(double *in, Complex *out=NULL) {
+  void fftNormalized(double *in, Complex *out=NULL, bool shift=false) {
     fftw::fftNormalized<double,Complex>(nx/2+1,M,ostride,odist,in,out,false);
   }
   
@@ -1119,7 +1119,7 @@ public:
     fftw::Normalize<double>(nx,M,ostride,odist,out);
   }
   
-  void fftNormalized(Complex *in, double *out=NULL) {
+  void fftNormalized(Complex *in, double *out=NULL, bool shift=false) {
     fftw::fftNormalized<Complex,double>(nx,M,ostride,odist,in,out,false);
   }
   
