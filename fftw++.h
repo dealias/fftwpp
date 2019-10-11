@@ -88,6 +88,9 @@ namespace fftwpp {
 #define FFTWdouble doubleAlign
 #define FFTWdelete deleteAlign
 
+// Return the memory alignment used by FFTW.
+size_t fftw_alignment();
+
 class fftw;
 
 extern "C" fftw_plan Planner(fftw *F, Complex *in, Complex *out);

@@ -28,6 +28,17 @@ mrcfft1d::Table mrcfft1d::threadtable;
 mcrfft1d::Table mcrfft1d::threadtable;
 fft2d::Table fft2d::threadtable;
 
+size_t fftw_alignment()
+{
+  size_t p=1;
+  for(int i=0; i < 32; ++i) {
+    if(fftw_alignment_of((double *) p) == 0)
+      return p;
+    p <<= 1;
+  }
+  return 0;
+}
+
 void LoadWisdom()
 {
   static bool Wise=false;
