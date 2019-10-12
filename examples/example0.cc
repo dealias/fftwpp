@@ -14,8 +14,8 @@ int main()
   cout << "1D complex to complex in-place FFT, not using the Array class" 
        << endl;
 
-  cout << endl << "FFTW requires memory alignment of " << fftw_alignment()
-       << "."  << endl;   
+//  cout << endl << "FFTW requires memory alignment of " << fftw_alignment()
+//       << "."  << endl;   
   
   unsigned int n=4; 
   Complex *f=ComplexAlign(n);
