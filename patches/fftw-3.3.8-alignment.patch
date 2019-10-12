@@ -1,0 +1,15 @@
+diff -ru fftw-3.3.8/kernel/kalloc.c fftw-3.3.8J/kernel/kalloc.c
+--- fftw-3.3.8/kernel/kalloc.c	2018-05-24 06:03:22.000000000 -0600
++++ fftw-3.3.8J/kernel/kalloc.c	2019-10-11 20:53:06.891038208 -0600
+@@ -138,6 +138,11 @@
+      return p;
+ }
+ 
++// Return the memory alignment used by FFTW.
++size_t fftw_alignment() {
++  return MIN_ALIGNMENT;
++}
++
+ void X(kernel_free)(void *p)
+ {
+      real_free(p);

@@ -89,7 +89,9 @@ namespace fftwpp {
 #define FFTWdelete deleteAlign
 
 // Return the memory alignment used by FFTW.
-size_t fftw_alignment();
+// Use of this function requires applying patches/fftw-3.3.8-alignment.patch
+// to the FFTW source, recompiling, and reinstalling the FFW library.
+extern "C" size_t fftw_alignment();
 
 class fftw;
 
