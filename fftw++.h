@@ -20,7 +20,7 @@
 #ifndef __fftwpp_h__
 #define __fftwpp_h__ 1
 
-#define __FFTWPP_H_VERSION__ 2.07
+#define __FFTWPP_H_VERSION__ 2.08
 
 #include <cstdlib>
 #include <fstream>
@@ -506,14 +506,13 @@ class Transpose {
   unsigned int nlength,mlength;
   unsigned int ilast,jlast;
   unsigned int rows,cols;
-  unsigned int threads;
   bool inplace;
   unsigned int size;
 public:
   template<class T>
   Transpose(unsigned int rows, unsigned int cols, unsigned int length,
             T *in, T *out=NULL, unsigned int threads=fftw::maxthreads) :
-    rows(rows), cols(cols), threads(threads) {
+    rows(rows), cols(cols) {
     size=sizeof(T);
     if(size % sizeof(double) != 0) {
       std::cerr << "ERROR: Transpose is not implemented for type of size " 
