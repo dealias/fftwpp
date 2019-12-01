@@ -106,7 +106,7 @@ inline const Complex& Complex::operator *= (double y)
 
 inline const Complex& Complex::operator /= (const Complex& y)
 {
-  register double t1,t2,t3;
+  double t1,t2,t3;
   t2=1.0/(y.re*y.re+y.im*y.im);
   t1=t2*y.re; t2 *= y.im; t3=re;
   re *= t1; re += im*t2;
@@ -205,7 +205,7 @@ inline Complex operator * (double x, const Complex& y)
 
 inline Complex operator / (const Complex& x, const Complex& y)
 {
-  register double t1,t2;
+  double t1,t2;
   t2=1.0/(y.re*y.re+y.im*y.im);
   t1=t2*y.re; t2 *= y.im;
   return Complex(x.im*t2+x.re*t1, x.im*t1-x.re*t2);
@@ -218,7 +218,7 @@ inline Complex operator / (const Complex& x, double y)
 
 inline Complex operator / (double x, const Complex& y)
 {
-  register double factor;
+  double factor;
   factor=1.0/(y.re*y.re+y.im*y.im);
   return Complex(x*y.re*factor,-x*y.im*factor);
 }
