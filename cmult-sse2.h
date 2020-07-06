@@ -102,6 +102,11 @@ static inline Vec LOAD(double x)
   return _mm_load1_pd(&x);
 }
 
+static inline Vec SQRT(const Vec& z)
+{
+  return _mm_sqrt_pd(z);
+}
+
 #else
 
 class Vec {
@@ -178,6 +183,11 @@ static inline Vec LOAD(double x)
   return Vec(x,x);
 }
 
+static inline Vec SQRT(const Vec& z)
+{
+  return Vec(sqrt(z.x),sqrt(z.y));
+}
+
 #endif
 
 static inline Vec LOAD(const Complex *z)
@@ -240,7 +250,6 @@ static inline Vec ZMULTI(const Vec& x, const Vec& y, const Vec& w)
   Vec z=CONJ(w);
   return x*FLIP(z)+y*z;
 }
-
 
 }
 
