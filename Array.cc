@@ -1,10 +1,11 @@
+#include <algorithm>
+#include <numeric>
 #include <math.h>
 
 // Turning off argument checking with -DNDEBUG improves optimization.
 
 #include "Array.h"
 using namespace Array;
-using namespace std;
 
 int n=2,m=3,p=4;
 
@@ -12,6 +13,7 @@ typedef array1<double>::opt vector;
 typedef Array1<double>::opt Vector;
 
 using std::cout;
+using std::endl;
 
 void f(double *x) {cout << x[0] << endl; return;}
 
@@ -87,5 +89,10 @@ int main()
 
   cout << D << endl;
   
+  Array2<double>::iterator result = std::max_element(A.begin(), A.end());
+  cout << *result << endl;
+
+  cout << std::accumulate(D.begin(),D.end(),0) << endl;
+
   return 0;
 }
