@@ -934,7 +934,7 @@ public:
   }
   
   // F is a pointer to A distinct data blocks each of size 
-  // (2mx-compact)*(my+!ycompact), shifted by offset (contents not preserved).
+  // (2mx-xcompact)*(my+!ycompact), shifted by offset (contents not preserved).
   virtual void convolve(Complex **F, realmultiplier *pmult,
                         bool symmetrize=true, unsigned int i=0,
                         unsigned int offset=0) {
