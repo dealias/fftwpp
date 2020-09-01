@@ -83,14 +83,14 @@ int main(int argc, char* argv[])
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif
-  
-#ifdef __GNUC__ 
+
+#ifdef __GNUC__
   optind=0;
-#endif  
+#endif
   for (;;) {
     int c = getopt(argc,argv,"hdeipA:B:N:m:x:y:n:T:S:X:Y:");
     if (c == -1) break;
-                
+
     switch (c) {
       case 0:
         break;
@@ -155,16 +155,16 @@ int main(int argc, char* argv[])
 
   nx=hpadding(mx);
   ny=hpadding(my);
-  
+
   cout << "nx=" << nx << ", ny=" << ny << endl;
   cout << "mx=" << mx << ", my=" << my << endl;
-  
+
   if(N == 0) {
     N=N0/nx/ny;
     N = max(N, 20);
   }
   cout << "N=" << N << endl;
-    
+
   size_t align=sizeof(Complex);
 
   array2<Complex> h0;
@@ -175,13 +175,13 @@ int main(int argc, char* argv[])
 
   cout << "nxp=" << nxp << ", nyp=" << nyp << endl;
 
-  
+
   if(B < 1) B=1;
   if(B > A) {
     cerr << "B=" << B << " is not yet implemented for A=" << A << endl;
     exit(1);
   }
-    
+
   Complex **F=new Complex *[A];
   for(unsigned int a=0; a < A; ++a)
     F[a]=ComplexAlign(nxp*nyp);
@@ -201,8 +201,8 @@ int main(int argc, char* argv[])
       case 4: mult=multbinary2; break;
       default: cerr << "A=" << A << " is not yet implemented" << endl; exit(1);
     }
-    
-    
+
+
     for(unsigned int i=0; i < N; ++i) {
       init(F,mx,my,nxp,nyp,A,xcompact,ycompact);
       seconds();
@@ -210,28 +210,28 @@ int main(int argc, char* argv[])
 //      C.convolve(f,g);
       T[i]=seconds();
     }
-    
+
     timings("Implicit",mx,T,N,stats);
 
     if(Direct) {
-      for(unsigned int i=0; i < mx; i++) 
+      for(unsigned int i=0; i < mx; i++)
         for(unsigned int j=0; j < my; j++)
           h0[i][j]=f[i+!xcompact][j];
     }
-    
+
     if(nxp*my < outlimit)
       for(unsigned int i=!xcompact; i < nxp; i++) {
         for(unsigned int j=0; j < my; j++)
           cout << f[i][j] << "\t";
         cout << endl;
       } else cout << f[!xcompact][0] << endl;
-    
+
   }
-  
+
   if(Explicit) {
     unsigned int M=A/2;
     ExplicitHConvolution2 C(nx,ny,mx,my,f,M,Pruned);
-    
+
     for(unsigned int i=0; i < N; ++i) {
       init(F,mx,my,nxp,nyp,A,true,true);
       seconds();
@@ -243,14 +243,14 @@ int main(int argc, char* argv[])
     timings(Pruned ? "Pruned" : "Explicit",mx,T,N,stats);
 
     unsigned int offset=nx/2-mx+1;
-    
+
     if(Direct) {
-      for(unsigned int i=0; i < mx; i++) 
+      for(unsigned int i=0; i < mx; i++)
         for(unsigned int j=0; j < my; j++)
           h0[i][j]=f[offset+i][j];
     }
 
-    if(2*(mx-1)*my < outlimit) { 
+    if(2*(mx-1)*my < outlimit) {
       for(unsigned int i=offset; i < offset+2*mx-1; i++) {
         for(unsigned int j=0; j < my; j++)
           cout << f[i][j] << "\t";
@@ -260,7 +260,7 @@ int main(int argc, char* argv[])
       cout << f[offset][0] << endl;
     }
   }
-  
+
   if(Direct) {
     unsigned int nxp=2*mx-1;
     array2<Complex> h(nxp,my,align);
@@ -269,7 +269,7 @@ int main(int argc, char* argv[])
     seconds();
     C.convolve(h,F[0],F[1]);
     T[0]=seconds();
-  
+
     cout << endl;
     timings("Direct",mx,T,1);
 
@@ -295,12 +295,12 @@ int main(int argc, char* argv[])
       if (error > 1e-12) cerr << "Caution! error=" << error << endl;
     }
   }
-  
+
   delete [] T;
   for(unsigned int a=0; a < A; ++a)
     deleteAlign(F[a]);
   delete [] F;
-  
-  
+
+
   return 0;
 }

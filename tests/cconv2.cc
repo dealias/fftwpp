@@ -19,7 +19,7 @@ unsigned int my=4;
 
 bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
-inline void init(Complex **F, unsigned int nxp, unsigned int nyp, unsigned int A) 
+inline void init(Complex **F, unsigned int nxp, unsigned int nyp, unsigned int A)
 {
   if(A%2 == 0) {
     unsigned int M=A/2;
@@ -43,10 +43,10 @@ inline void init(Complex **F, unsigned int nxp, unsigned int nyp, unsigned int A
     exit(1);
   }
 }
-  
+
 unsigned int outlimit=100;
 
-void add(Complex *f, Complex *F) 
+void add(Complex *f, Complex *F)
 {
   for(unsigned int i=0; i < mx; ++i) {
     unsigned int imy=i*my;
@@ -69,15 +69,15 @@ int main(int argc, char* argv[])
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
-#endif  
-  
-#ifdef __GNUC__ 
+#endif
+
+#ifdef __GNUC__
   optind=0;
-#endif  
+#endif
   for (;;) {
     int c = getopt(argc,argv,"hdeiptA:B:N:m:x:y:n:T:S:");
     if (c == -1) break;
-                
+
     switch (c) {
       case 0:
         break;
@@ -140,13 +140,13 @@ int main(int argc, char* argv[])
 
   cout << "nx=" << nx << ", ny=" << ny << endl;
   cout << "mx=" << mx << ", my=" << my << endl;
-  
+
   if(N == 0) {
     N=N0/nx/ny;
     N = max(N, 20);
   }
   cout << "N=" << N << endl;
-  
+
   size_t align=sizeof(Complex);
   array2<Complex> h0;
   if(Direct) h0.Allocate(mx,my,align);
@@ -161,7 +161,7 @@ int main(int argc, char* argv[])
     cerr << "B=" << B << " is not yet implemented for A=" << A << endl;
     exit(1);
   }
-  
+
   // Allocate input/ouput memory and set up pointers
   Complex **F=new Complex *[A];
   for(unsigned int a=0; a < A; ++a)
@@ -169,19 +169,19 @@ int main(int argc, char* argv[])
 
   // For easy access of first element
   array2<Complex> f(mx,my,F[0]);
-    
+
   double *T=new double[N];
-    
+
   if(Implicit) {
     multiplier *mult;
-  
+
     switch(A) {
       case 2: mult=multbinary; break;
       case 4: mult=multbinary2; break;
       case 6: mult=multbinary3; break;
       case 8: mult=multbinary4; break;
       case 16: mult=multbinary8; break;
-      default: cout << "Multiplication for A=" << A 
+      default: cout << "Multiplication for A=" << A
                     << " is not yet implemented" << endl; exit(1);
     }
 
@@ -195,7 +195,7 @@ int main(int argc, char* argv[])
 //      C.convolve(F[0],F[1]);
       T[i]=seconds();
     }
-    
+
     timings("Implicit",mx,T,N,stats);
 
     if(Direct) {
@@ -203,7 +203,7 @@ int main(int argc, char* argv[])
         for(unsigned int j=0; j < my; j++)
           h0[i][j]=f[i][j];
     }
-    
+
     if(mx*my < outlimit) {
       for(unsigned int i=0; i < mx; i++) {
         for(unsigned int j=0; j < my; j++)
@@ -214,7 +214,7 @@ int main(int argc, char* argv[])
       cout << f[0][0] << endl;
     }
   }
-  
+
   if(Explicit) {
     if(A != 2) {
       cerr << "Explicit convolutions for A=" << A << " are not yet implemented" << endl;
@@ -237,7 +237,7 @@ int main(int argc, char* argv[])
         for(unsigned int j=0; j < my; j++)
           h0[i][j]=F[0][nyp*i+j];
     }
-  
+
     if(mx*my < outlimit) {
       for(unsigned int i=0; i < mx; i++) {
         for(unsigned int j=0; j < my; j++) {
@@ -257,10 +257,10 @@ int main(int argc, char* argv[])
     seconds();
     C.convolve(h,F[0],F[1]);
     T[0]=seconds();
-  
+
     cout << endl;
     timings("Direct",mx,T,1);
-    
+
     if(mx*my < outlimit)
       for(unsigned int i=0; i < mx; i++) {
         for(unsigned int j=0; j < my; j++)
@@ -283,11 +283,11 @@ int main(int argc, char* argv[])
       if (error > 1e-12) cerr << "Caution! error=" << error << endl;
     }
   }
-  
+
   delete [] T;
   for(unsigned int a=0; a < A; ++a)
     deleteAlign(F[a]);
   delete [] F;
-  
+
   return 0;
 }

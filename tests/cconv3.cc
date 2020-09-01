@@ -22,9 +22,9 @@ unsigned int mz=4;
 bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
 
-inline void init(Complex **F, 
-                 unsigned int nxp, unsigned int nyp, unsigned int nzp, 
-                 unsigned int A) 
+inline void init(Complex **F,
+                 unsigned int nxp, unsigned int nyp, unsigned int nzp,
+                 unsigned int A)
 {
   if(A %2 == 0) {
     unsigned int M=A/2;
@@ -62,20 +62,20 @@ int main(int argc, char* argv[])
 
   unsigned int A=2; // Number of independent inputs
   unsigned int B=1; // Number of independent outputs
-  
+
   unsigned int stats=0; // Type of statistics used in timing test.
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
-#endif  
-  
-#ifdef __GNUC__ 
+#endif
+
+#ifdef __GNUC__
   optind=0;
-#endif  
+#endif
   for (;;) {
     int c = getopt(argc,argv,"hdeiptA:B:N:m:x:y:z:n:T:S:");
     if (c == -1) break;
-                
+
     switch (c) {
       case 0:
         break;
@@ -134,27 +134,27 @@ int main(int argc, char* argv[])
     }
   }
 
-  
+
   if(my == 0) my=mx;
 
   nx=cpadding(mx);
   ny=cpadding(my);
   nz=cpadding(mz);
-  
+
   cout << "nx=" << nx << ", ny=" << ny << ", nz=" << ny << endl;
   cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
-  
+
   if(N == 0) {
     N=N0/nx/ny/nz;
     N = max(N, 20);
   }
   cout << "N=" << N << endl;
-  
+
   size_t align=sizeof(Complex);
-  
+
   array3<Complex> h0;
   if(Direct) h0.Allocate(mx,my,mz,align);
-  
+
   int nxp=Explicit ? nx : mx;
   int nyp=Explicit ? ny : my;
   int nzp=Explicit ? nz : mz;
@@ -167,7 +167,7 @@ int main(int argc, char* argv[])
     cerr << "B=" << B << " is not yet implemented for A=" << A << endl;
     exit(1);
   }
-  
+
   // Allocate input/ouput memory and set up pointers
   Complex **F=new Complex *[A];
   for(unsigned int a=0; a < A; ++a)
@@ -177,17 +177,17 @@ int main(int argc, char* argv[])
   array3<Complex> f(mx,my,mz,F[0]);
 
   double *T=new double[N];
-  
+
   if(Implicit) {
     multiplier *mult;
-  
+
     switch(A) {
       case 2: mult=multbinary; break;
       case 4: mult=multbinary2; break;
       case 6: mult=multbinary3; break;
       case 8: mult=multbinary4; break;
       case 16: mult=multbinary8; break;
-      default: cout << "mult for A=" << A 
+      default: cout << "mult for A=" << A
                     << " is not yet implemented" << endl; exit(1);
     }
 
@@ -200,23 +200,23 @@ int main(int argc, char* argv[])
 //      C.convolve(F[0],F[1]);
       T[i]=seconds();
     }
-    
+
     cout << endl;
     timings("Implicit",mx,T,N,stats);
-    
+
     if(Direct)
-      for(unsigned int i=0; i < mx; i++) 
+      for(unsigned int i=0; i < mx; i++)
         for(unsigned int j=0; j < my; j++)
           for(unsigned int k=0; k < mz; k++)
             h0[i][j][k]=f[i][j][k];
 
     cout << endl;
-    if(mx*my*mz < outlimit) 
+    if(mx*my*mz < outlimit)
       cout << f;
-    else 
+    else
       cout << f[0][0][0] << endl;
   }
-  
+
   if(Explicit) {
     if(A != 2) {
       cerr << "Explicit convolutions for A=" << A
@@ -232,12 +232,12 @@ int main(int argc, char* argv[])
       C.convolve(F[0],F[1]);
       T[i]=seconds();
     }
-    
+
     cout << endl;
     timings(Pruned ? "Pruned" : "Explicit",mx,T,N,stats);
 
     if(Direct) {
-      for(unsigned int i=0; i < mx; i++) 
+      for(unsigned int i=0; i < mx; i++)
         for(unsigned int j=0; j < my; j++)
           for(unsigned int k=0; k < mz; k++)
             h0[i][j][k]=F[0][nyp*nzp*i+nzp*j+k];
@@ -252,7 +252,7 @@ int main(int argc, char* argv[])
         }
         cout << endl;
       }
-    } else { 
+    } else {
       cout << F[0][0] << endl;
     }
   }
@@ -264,7 +264,7 @@ int main(int argc, char* argv[])
     seconds();
     C.convolve(h,F[0],F[1]);
     T[0]=seconds();
-  
+
     timings("Direct",mx,T,1);
 
     if(mx*my*mz < outlimit) {
@@ -291,12 +291,12 @@ int main(int argc, char* argv[])
       }
       if(norm > 0) error=sqrt(error/norm);
       cout << "error=" << error << endl;
-      if (error > 1e-12) 
+      if (error > 1e-12)
         cerr << "Caution! error=" << error << endl;
     }
 
   }
-  
+
   delete [] T;
   for(unsigned int a=0; a < A; ++a)
     deleteAlign(F[a]);

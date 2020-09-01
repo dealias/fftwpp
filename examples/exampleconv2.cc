@@ -16,7 +16,7 @@ unsigned int m=8;
 unsigned int mx=4;
 unsigned int my=4;
 
-inline void init(array2<Complex>& f, array2<Complex>& g, unsigned int M=1) 
+inline void init(array2<Complex>& f, array2<Complex>& g, unsigned int M=1)
 {
   unsigned int stop=2*mx-1;
   unsigned int stopoffset=stop;
@@ -41,8 +41,8 @@ int main(int argc, char* argv[])
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
-#endif  
-  
+#endif
+
   cout << "2D centered Hermitian-symmetric convolution:" << endl;
 
   size_t align=sizeof(Complex);
@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
   cout << "\ninput:" << endl;
   cout << "f:" << endl << f;
   cout << "g:" << endl << g;
-  
+
   /*
     cout << "input after symmetrization (done automatically):" << endl;
     HermitianSymmetrizeX(mx,my,mx-1,f);
@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
     cout << "f:" << endl << f << endl;
     cout << "g:" << endl << g << endl;
   */
-  
+
   bool symmetrize=true;
   ImplicitHConvolution2 C(mx,my);
   C.convolve(f,g,symmetrize);

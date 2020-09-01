@@ -39,7 +39,7 @@ void DirectHConvolution::convolve(Complex *h, Complex *f, Complex *g)
     for(unsigned int j=1; j < m-i; ++j) sum += conj(f[j])*g[i+j];
     h[i]=sum;
   }
-}       
+}
 
 void DirectConvolution2::convolve(Complex *h, Complex *f, Complex *g)
 {
@@ -55,18 +55,18 @@ void DirectConvolution2::convolve(Complex *h, Complex *f, Complex *g)
       h[i*my+j]=sum;
     }
   }
-}       
+}
 
 void DirectHConvolution2::convolve(Complex *h, Complex *f, Complex *g,
                                    bool symmetrize)
 {
   unsigned int xorigin=mx-1;
-    
+
   if(symmetrize) {
     HermitianSymmetrizeX(mx,my,mx-1,f);
     HermitianSymmetrizeX(mx,my,mx-1,g);
   }
-    
+
   int xstart=-(int)xorigin;
   int ystart=1-(int) my;
   int xstop=mx;
@@ -83,9 +83,9 @@ void DirectHConvolution2::convolve(Complex *h, Complex *f, Complex *g,
           if(qx >= xstart && qx < xstop) {
             int qy=ky-py;
             if(qy >= ystart && qy < ystop) {
-              sum += ((py >= 0) ? f[(xorigin+px)*my+py] : 
+              sum += ((py >= 0) ? f[(xorigin+px)*my+py] :
                       conj(f[(xorigin-px)*my-py])) *
-                ((qy >= 0) ? g[(xorigin+qx)*my+qy] : 
+                ((qy >= 0) ? g[(xorigin+qx)*my+qy] :
                  conj(g[(xorigin-qx)*my-qy]));
             }
           }
@@ -93,7 +93,7 @@ void DirectHConvolution2::convolve(Complex *h, Complex *f, Complex *g,
         h[(xorigin+kx)*my+ky]=sum;
       }
     }
-  }     
+  }
 }
 
 void DirectConvolution3::convolve(Complex *h, Complex *f, Complex *g)
@@ -113,20 +113,20 @@ void DirectConvolution3::convolve(Complex *h, Complex *f, Complex *g)
       }
     }
   }
-}       
+}
 
-void DirectHConvolution3::convolve(Complex *h, Complex *f, Complex *g, 
+void DirectHConvolution3::convolve(Complex *h, Complex *f, Complex *g,
                                    bool symmetrize)
 {
   unsigned int xorigin=mx-1;
   unsigned int yorigin=my-1;
   unsigned int ny=2*my-1;
-  
+
   if(symmetrize) {
     HermitianSymmetrizeXY(mx,my,mz,mx-1,my-1,f);
     HermitianSymmetrizeXY(mx,my,mz,mx-1,my-1,g);
   }
-    
+
   int xstart=-(int) xorigin;
   int ystart=-(int) yorigin;
   int zstart=1-(int) mz;
@@ -149,10 +149,10 @@ void DirectHConvolution3::convolve(Complex *h, Complex *f, Complex *g,
                 if(qy >= ystart && qy < ystop) {
                   int qz=kz-pz;
                   if(qz >= zstart && qz < zstop) {
-                    sum += ((pz >= 0) ? 
-                            f[((xorigin+px)*ny+yorigin+py)*mz+pz] : 
+                    sum += ((pz >= 0) ?
+                            f[((xorigin+px)*ny+yorigin+py)*mz+pz] :
                             conj(f[((xorigin-px)*ny+yorigin-py)*mz-pz])) *
-                      ((qz >= 0) ? g[((xorigin+qx)*ny+yorigin+qy)*mz+qz] :    
+                      ((qz >= 0) ? g[((xorigin+qx)*ny+yorigin+qy)*mz+qz] :
                        conj(g[((xorigin-qx)*ny+yorigin-qy)*mz-qz]));
                   }
                 }
@@ -163,7 +163,7 @@ void DirectHConvolution3::convolve(Complex *h, Complex *f, Complex *g,
         h[((xorigin+kx)*ny+yorigin+ky)*mz+kz]=sum;
       }
     }
-  }     
+  }
 }
 
 void DirectHTConvolution::convolve(Complex *h, Complex *e, Complex *f,
@@ -198,7 +198,7 @@ void DirectHTConvolution2::convolve(Complex *h, Complex *e, Complex *f,
     HermitianSymmetrizeX(mx,my,mx-1,f);
     HermitianSymmetrizeX(mx,my,mx-1,g);
   }
-    
+
   unsigned int xorigin=mx-1;
   int xstart=-(int) xorigin;
   int xstop=mx;
@@ -212,7 +212,7 @@ void DirectHTConvolution2::convolve(Complex *h, Complex *e, Complex *f,
       Complex sum=0.0;
       for(int px=xstart; px < xstop; ++px) {
         for(int py=ystart; py < ystop; ++py) {
-          Complex E=(py >= 0) ? e[(xorigin+px)*my+py] : 
+          Complex E=(py >= 0) ? e[(xorigin+px)*my+py] :
             conj(e[(xorigin-px)*my-py]);
           for(int qx=xstart; qx < xstop; ++qx) {
             for(int qy=ystart; qy < ystop; ++qy) {
@@ -221,9 +221,9 @@ void DirectHTConvolution2::convolve(Complex *h, Complex *e, Complex *f,
                 int ry=ky-py-qy;
                 if(ry >= ystart && ry < ystop) {
                   sum += E *
-                    ((qy >= 0) ? f[(xorigin+qx)*my+qy] : 
+                    ((qy >= 0) ? f[(xorigin+qx)*my+qy] :
                      conj(f[(xorigin-qx)*my-qy])) *
-                    ((ry >= 0) ? g[(xorigin+rx)*my+ry] : 
+                    ((ry >= 0) ? g[(xorigin+rx)*my+ry] :
                      conj(g[(xorigin-rx)*my-ry]));
                 }
               }
@@ -233,7 +233,7 @@ void DirectHTConvolution2::convolve(Complex *h, Complex *e, Complex *f,
         h[(xorigin+kx)*my+ky]=sum;
       }
     }
-  }     
+  }
 }
 
 }

@@ -1,4 +1,4 @@
-/* 
+/*
    Copyright (C) 1988 Free Software Foundation
    written by Doug Lea (dl@rocky.oswego.edu)
 
@@ -43,65 +43,65 @@ public:
   Complex() {}
   Complex(double r, double i=0) : re(r), im(i) {}
   Complex(const Complex& y) : re(y.re), im(y.im) {}
-        
+
   ~Complex() {}
 
   double real() const {return re;}
   double imag() const {return im;}
 
   const Complex& operator = (const Complex& y);
-        
+
   const Complex& operator += (const Complex& y);
   const Complex& operator += (double y);
   const Complex& operator -= (const Complex& y);
   const Complex& operator -= (double y);
   const Complex& operator *= (const Complex& y);
   const Complex& operator *= (double y);
-  const Complex& operator /= (const Complex& y); 
-  const Complex& operator /= (double y); 
-        
+  const Complex& operator /= (const Complex& y);
+  const Complex& operator /= (double y);
+
   void error(char* msg) const;
 };
 
 // inline members
 
-inline const Complex& Complex::operator = (const Complex& y) 
+inline const Complex& Complex::operator = (const Complex& y)
 
-{ 
-  re = y.re; im = y.im; return *this; 
-} 
+{
+  re = y.re; im = y.im; return *this;
+}
 
 inline const Complex& Complex::operator += (const Complex& y)
-{ 
-  re += y.re;  im += y.im; return *this; 
+{
+  re += y.re;  im += y.im; return *this;
 }
 
 inline const Complex& Complex::operator += (double y)
-{ 
-  re += y; return *this; 
+{
+  re += y; return *this;
 }
 
 inline const Complex& Complex::operator -= (const Complex& y)
-{ 
-  re -= y.re;  im -= y.im; return *this; 
+{
+  re -= y.re;  im -= y.im; return *this;
 }
 
 inline const Complex& Complex::operator -= (double y)
-{ 
-  re -= y; return *this; 
+{
+  re -= y; return *this;
 }
 
 inline const Complex& Complex::operator *= (const Complex& y)
-{  
+{
   double r = re * y.re - im * y.im;
-  im = re * y.im + im * y.re; 
-  re = r; 
-  return *this; 
+  im = re * y.im + im * y.re;
+  re = r;
+  return *this;
 }
 
 inline const Complex& Complex::operator *= (double y)
-{  
-  re *= y; im *= y; return *this; 
+{
+  re *= y; im *= y; return *this;
 }
 
 inline const Complex& Complex::operator /= (const Complex& y)
@@ -313,9 +313,9 @@ inline bool isfinite(const Complex& z)
 {
 #ifdef _WIN32
   return _finite(z.re) && _finite(z.im);
-#else  
+#else
   return !(std::isinf(z.re) || std::isnan(z.re) || std::isinf(z.im) || std::isnan(z.im));
-#endif  
+#endif
 }
 
 #endif

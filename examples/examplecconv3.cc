@@ -15,7 +15,7 @@ unsigned int mx=4;
 unsigned int my=4;
 unsigned int mz=4;
 
-inline void init(array3<Complex>& f, array3<Complex>& g, unsigned int M=1) 
+inline void init(array3<Complex>& f, array3<Complex>& g, unsigned int M=1)
 {
   double factor=1.0/sqrt((double) M);
   for(unsigned int s=0; s < M; ++s) {
@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
-#endif  
+#endif
 
   cout << "3D non-centered complex convolution:" << endl;
 

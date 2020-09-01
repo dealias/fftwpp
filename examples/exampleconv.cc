@@ -10,7 +10,7 @@ using namespace utils;
 using namespace Array;
 using namespace fftwpp;
 
-inline void init(Complex *f, Complex *g, unsigned int m) 
+inline void init(Complex *f, Complex *g, unsigned int m)
 {
   for(unsigned int k=0; k < m; k++) {
     f[k]=Complex(k,k+1);
@@ -27,8 +27,8 @@ int main(int argc, char* argv[])
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
-#endif  
-  
+#endif
+
   // 1d centered Hermitian-symmetric complex convolution
   cout << "1D centered Hermitian-symmetric convolution:" << endl;
 
@@ -38,15 +38,15 @@ int main(int argc, char* argv[])
 
   init(f,g,m);
   cout << "\ninput:\nf\tg" << endl;
-  for(unsigned int i=0; i < m; i++) 
+  for(unsigned int i=0; i < m; i++)
     cout << f[i] << "\t" << g[i] << endl;
-  
+
   ImplicitHConvolution C(m);
   C.convolve(f,g);
-  
+
   cout << "\noutput:" << endl;
   for(unsigned int i=0; i < m; i++) cout << f[i] << endl;
-    
+
   deleteAlign(g);
   deleteAlign(f);
 

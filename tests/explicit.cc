@@ -15,22 +15,22 @@ void ExplicitConvolution::backwards(Complex *f)
 {
   Backwards->fft(f);
 }
-  
+
 void ExplicitConvolution::forwards(Complex *f)
 {
   Forwards->fft(f);
 }
-  
+
 void ExplicitConvolution::convolve(Complex *f, Complex *g)
 {
   pad(f);
   backwards(f);
-  
+
   pad(g);
   backwards(g);
-      
+
   double ninv=1.0/n;
-  
+
   Vec Ninv=LOAD(ninv);
   PARALLEL(
     for(unsigned int k=0; k < n; ++k)
@@ -46,12 +46,12 @@ void ExplicitHConvolution::pad(Complex *f)
     for(unsigned int i=m; i <= n2; ++i) f[i]=0.0;
     );
 }
-  
+
 void ExplicitHConvolution::backwards(Complex *f)
 {
   cr->fft(f);
 }
-  
+
 void ExplicitHConvolution::forwards(Complex *f)
 {
   rc->fft(f);
@@ -61,19 +61,19 @@ void ExplicitHConvolution::convolve(Complex *f, Complex *g)
 {
   pad(f);
   backwards(f);
-  
+
   pad(g);
   backwards(g);
-      
+
   double *F=(double *) f;
   double *G=(double *) g;
-    
+
   double ninv=1.0/n;
   PARALLEL(
     for(unsigned int k=0; k < n; ++k)
       F[k] *= G[k]*ninv;
     );
-  
+
   forwards(f);
 }
 
@@ -88,7 +88,7 @@ void ExplicitConvolution2::pad(Complex *f)
         f[j]=0.0;
     }
     );
-    
+
   // zero pad right-hand block
   const unsigned int start=mx*ny;
   const unsigned int stop=nx*ny;
@@ -106,7 +106,7 @@ void ExplicitConvolution2::backwards(Complex *f)
   } else
     Backwards->fft(f);
 }
-  
+
 void ExplicitConvolution2::forwards(Complex *f)
 {
   if(prune) {
@@ -115,15 +115,15 @@ void ExplicitConvolution2::forwards(Complex *f)
   } else
     Forwards->fft(f);
 }
-  
+
 void ExplicitConvolution2::convolve(Complex *f, Complex *g)
 {
   pad(f);
   backwards(f);
-  
+
   pad(g);
   backwards(g);
-      
+
   unsigned int n=nx*ny;
   Vec Ninv=LOAD(1.0/n);
   PARALLEL(
@@ -141,10 +141,10 @@ void ExplicitHConvolution2::pad(Complex *f)
   // zero pad left block
   unsigned int stop=(nx2-mx+1)*nyp;
   PARALLEL(
-    for(unsigned int i=0; i < stop; ++i) 
+    for(unsigned int i=0; i < stop; ++i)
       f[i]=0.0;
     );
-    
+
   // zero pad top-middle block
   unsigned int stop2=stop+2*mx*nyp;
   unsigned int diff=nyp-my;
@@ -154,11 +154,11 @@ void ExplicitHConvolution2::pad(Complex *f)
         f[j]=0.0;
     }
     );
-    
+
   // zero pad right block
   stop=nx*nyp;
   PARALLEL(
-    for(unsigned int i=(nx2+mx)*nyp; i < stop; ++i) 
+    for(unsigned int i=(nx2+mx)*nyp; i < stop; ++i)
       f[i]=0.0;
     );
 }
@@ -219,25 +219,25 @@ void ExplicitHConvolution2::convolve(Complex **F, Complex **G, bool symmetrize)
 {
   unsigned int xorigin=nx/2;
   unsigned int nyp=ny/2+1;
-    
+
   for(unsigned int s=0; s < M; ++s) {
     Complex *f=F[s];
     if(symmetrize) HermitianSymmetrizeX(mx,nyp,xorigin,f);
     pad(f);
     backwards(f,false);
-  
+
     Complex *g=G[s];
     if(symmetrize) HermitianSymmetrizeX(mx,nyp,xorigin,g);
     pad(g);
     backwards(g,false);
   }
-    
+
   double ninv=1.0/(nx*ny);
   unsigned int nyp2=2*nyp;
 
   double *f=(double *) F[0];
   double *g=(double *) G[0];
-  
+
   if(M == 1) {
     PARALLEL(
       for(unsigned int i=0; i < nx; ++i) {
@@ -272,7 +272,7 @@ void ExplicitHConvolution2::convolve(Complex **F, Complex **G, bool symmetrize)
       }
       );
   }
-        
+
   forwards(F[0]);
 }
 
@@ -289,7 +289,7 @@ void ExplicitConvolution3::pad(Complex *f)
       }
     }
     );
-    
+
   unsigned int nyz=ny*nz;
   PARALLEL(
     for(unsigned int i=mx; i < nx; ++i) {
@@ -302,7 +302,7 @@ void ExplicitConvolution3::pad(Complex *f)
       }
     }
     );
-    
+
   PARALLEL(
     for(unsigned int i=0; i < nx; ++i) {
       unsigned int nyzi=nyz*i;
@@ -328,7 +328,7 @@ void ExplicitConvolution3::backwards(Complex *f)
   } else
     Backwards->fft(f);
 }
-  
+
 void ExplicitConvolution3::forwards(Complex *f)
 {
   if(prune) {
@@ -346,10 +346,10 @@ void ExplicitConvolution3::convolve(Complex *f, Complex *g)
 {
   pad(f);
   backwards(f);
-  
+
   pad(g);
   backwards(g);
-    
+
   unsigned int n=nx*ny*nz;
   Vec Ninv=LOAD(1.0/n);
   PARALLEL(
@@ -382,23 +382,23 @@ void ExplicitHTConvolution::convolve(Complex *f, Complex *g, Complex *h)
 {
   pad(f);
   backwards(f);
-  
+
   pad(g);
   backwards(g);
-      
+
   pad(h);
   backwards(h);
-        
+
   double *F=(double *) f;
   double *G=(double *) g;
   double *H=(double *) h;
-    
+
   double ninv=1.0/n;
   PARALLEL(
     for(unsigned int k=0; k < n; ++k)
       F[k] *= G[k]*H[k]*ninv;
     );
-    
+
   forwards(f);
 }
 
@@ -415,7 +415,7 @@ void ExplicitHTConvolution2::pad(Complex *f)
         f[j]=0.0;
     }
     );
-    
+
   PARALLEL(
     for(unsigned int i=nx2+mx; i < nx; ++i) {
       unsigned int nypi=nyp*i;
@@ -424,7 +424,7 @@ void ExplicitHTConvolution2::pad(Complex *f)
         f[j]=0.0;
     }
     );
-    
+
   PARALLEL(
     for(unsigned int i=0; i < nx; ++i) {
       unsigned int nypi=nyp*i;
@@ -464,23 +464,23 @@ void ExplicitHTConvolution2::convolve(Complex *f, Complex *g, Complex *h,
 {
   unsigned int xorigin=nx/2;
   unsigned int nyp=ny/2+1;
-    
+
   if(symmetrize) HermitianSymmetrizeX(mx,nyp,xorigin,f);
   pad(f);
   backwards(f,false);
-  
+
   if(symmetrize) HermitianSymmetrizeX(mx,nyp,xorigin,g);
   pad(g);
   backwards(g,false);
-      
+
   if(symmetrize) HermitianSymmetrizeX(mx,nyp,xorigin,h);
   pad(h);
   backwards(h,false);
-        
+
   double *F=(double *) f;
   double *G=(double *) g;
   double *H=(double *) h;
-    
+
   double ninv=1.0/(nx*ny);
   unsigned int nyp2=2*nyp;
 
@@ -492,7 +492,7 @@ void ExplicitHTConvolution2::convolve(Complex *f, Complex *g, Complex *h,
         F[j] *= G[j]*H[j]*ninv;
     }
     );
-        
+
   forwards(f,false);
 }
 

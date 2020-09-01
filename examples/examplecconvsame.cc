@@ -13,7 +13,7 @@ using namespace fftwpp;
 
 double f0[]={0,1,2,3,4};
 
-void init(Complex *f, Complex *g, unsigned int m) 
+void init(Complex *f, Complex *g, unsigned int m)
 {
   for(unsigned int k=0; k < m; k++) {
     f[k]=f0[k];
@@ -31,7 +31,7 @@ public:
     s=BuildZeta(twopi*c/(2*m),2*m,ZetaH,ZetaL);
   }
 };
-  
+
 static void multbinarysame(Complex **F, unsigned int m,
                            const unsigned int indexsize,
                            const unsigned int *index,
@@ -42,7 +42,7 @@ static void multbinarysame(Complex **F, unsigned int m,
 
   Complex* F0=F[0];
   Complex* F1=F[1];
-  
+
   unsigned int c=m/2;
   if(2*c == m) {
     if(r == 0) {
@@ -65,7 +65,7 @@ static void multbinarysame(Complex **F, unsigned int m,
           sign=-sign;
         }
         );
-      
+
     }
   } else {
     if(m != lastm) {
@@ -77,11 +77,11 @@ static void multbinarysame(Complex **F, unsigned int m,
         list[m]=zeta;
       } else zeta=p->second;
     }
-  
+
     Complex *ZetaH=zeta.ZetaH;
     Complex *ZetaL=zeta.ZetaL;
     unsigned int s=zeta.s;
-  
+
     PARALLEL(
       for(unsigned int j=0; j < m; ++j) {
         Complex *F0j=F0+j;
@@ -103,29 +103,29 @@ int main(int argc, char* argv[])
 
   // size of problem
   unsigned int m=sizeof(f0)/sizeof(double);
-  
+
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
-#endif  
-  
+#endif
+
   // allocate arrays:
   Complex *F[2];
   Complex *f=F[0]=ComplexAlign(2*m);
   Complex *g=F[1]=f+m;
-  
+
   ImplicitConvolution C(m);
 
   cout << "1d non-centered complex convolution:" << endl;
   init(f,g,m);
   cout << "\ninput:\nf\tg" << endl;
-  for(unsigned int i=0; i < m; i++) 
+  for(unsigned int i=0; i < m; i++)
     cout << f[i] << "\t" << g[i] << endl;
-  
+
   C.convolve(F,multbinarysame);
 
   cout << "\noutput:" << endl;
   for(unsigned int i=0; i < m; i++) cout << f[i] << endl;
-  
+
   deleteAlign(f);
 
   return 0;

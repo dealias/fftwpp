@@ -15,7 +15,7 @@ unsigned int mx=4;
 unsigned int my=4;
 unsigned int mz=4;
 
-inline void init(array3<Complex>& f, array3<Complex>& g, unsigned int M=1) 
+inline void init(array3<Complex>& f, array3<Complex>& g, unsigned int M=1)
 {
   unsigned int xstop=2*mx-1;
   unsigned int ystop=2*my-1;
@@ -42,8 +42,8 @@ int main(int argc, char* argv[])
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
-#endif  
-  
+#endif
+
   cout << "3D centered Hermitian-symmetric convolution:" << endl;
 
   size_t align=sizeof(Complex);
@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
   cout << "\ninput:" << endl;
   cout << "f:" << endl << f;
   cout << "g:" << endl << g;
-  
+
   /*
     cout << "input after symmetrization (done automatically):" << endl;
     HermitianSymmetrizeXY(mx,my,mz,mx-1,my-1,f);
@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
     cout << "f:" << endl << f << endl;
     cout << "g:" << endl << g << endl;
   */
-  
+
   bool symmetrize=true;
   ImplicitHConvolution3 C(mx,my,mz);
   C.convolve(f,g,symmetrize);

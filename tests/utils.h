@@ -5,10 +5,10 @@
 #include "seconds.h"
 #include "timing.h"
 #include "Complex.h"
- 
+
 #ifdef _WIN32
 #include "getopt.h"
-inline double cbrt(double x) 
+inline double cbrt(double x)
 {
   if(x == 0.0) return 0.0;
   static double third=1.0/3.0;
@@ -25,7 +25,7 @@ inline T max(const T a, const S b)
 {
   return a > (T) b ? a : b;
 }
-  
+
 inline void usageCommon(int n)
 {
   std::cerr << "Options: " << std::endl;
@@ -33,9 +33,9 @@ inline void usageCommon(int n)
   std::cerr << "-T\t\t number of threads" << std::endl;
   std::cerr << "-N\t\t number of iterations" << std::endl;
   std::cerr << "-m\t\t size" << std::endl;
-  std::cerr << "-S<int>\t\t stats used in timing test: " 
+  std::cerr << "-S<int>\t\t stats used in timing test: "
             << "0=mean, 1=min, 2=max, 3=median, "
-            << "4=90th percentile, 5=80th percentile, 6=50th percentile" 
+            << "4=90th percentile, 5=80th percentile, 6=50th percentile"
             << std::endl;
   if(n > 1) {
     std::cerr << "-x\t\t x size" << std::endl;
@@ -43,7 +43,7 @@ inline void usageCommon(int n)
   }
   if(n > 2)
     std::cerr << "-z\t\t z size" << std::endl;
-} 
+}
 
 inline void usageDirect()
 {
@@ -56,20 +56,20 @@ inline void usage(int n)
   usageCommon(n);
   std::cerr << "-A\t\t number of data blocks in input" << std::endl;
   std::cerr << "-B\t\t number of data blocks in output" << std::endl;
-} 
+}
 
 inline void usageInplace(int n)
 {
   usageCommon(n);
   std::cerr << "-i\t\t 0=out-of-place, 1=in-place" << std::endl;
-} 
+}
 
-inline void usageTest() 
+inline void usageTest()
 {
   std::cerr << "-t\t\t accuracy test" << std::endl;
 }
-  
-inline void usageExplicit(unsigned int n) 
+
+inline void usageExplicit(unsigned int n)
 {
   usageDirect();
   std::cerr << "-e\t\t explicitly padded convolution" << std::endl;
@@ -144,7 +144,7 @@ inline unsigned int ceilpow2(unsigned int n)
   n |= n >> 16;
   return ++n;
 }
-  
+
 inline unsigned int padding(unsigned int n)
 {
   std::cout << "min padded buffer=" << n << std::endl;

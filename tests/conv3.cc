@@ -38,7 +38,7 @@ inline void init(Complex **F,
     unsigned int M=A/2;
     unsigned int nx=2*mx-1;
     unsigned int ny=2*my-1;
-    
+
     double factor=1.0/sqrt((double) M);
     for(unsigned int s=0; s < M; ++s) {
       double S=sqrt(1.0+s);
@@ -121,7 +121,7 @@ inline void init(array3<Complex>& f, array3<Complex>& g, unsigned int M=1,
 int main(int argc, char* argv[])
 {
   fftw::maxthreads=get_max_threads();
-  
+
   unsigned int A=2; // Number of independent inputs
   unsigned int B=1; // Number of outputs
 
@@ -129,15 +129,15 @@ int main(int argc, char* argv[])
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
-#endif  
-  
-#ifdef __GNUC__ 
+#endif
+
+#ifdef __GNUC__
   optind=0;
-#endif  
+#endif
   for (;;) {
     int c = getopt(argc,argv,"hdeipA:B:N:m:x:y:z:n:T:S:X:Y:Z:");
     if (c == -1) break;
-                
+
     switch (c) {
       case 0:
         break;
@@ -176,7 +176,7 @@ int main(int argc, char* argv[])
         break;
       case 'n':
         N0=atoi(optarg);
-        break;     
+        break;
       case 'T':
         fftw::maxthreads=max(atoi(optarg),1);
         break;
@@ -204,29 +204,29 @@ int main(int argc, char* argv[])
   nx=hpadding(mx);
   ny=hpadding(my);
   nz=hpadding(mz);
-  
+
   cout << "nx=" << nx << ", ny=" << ny << ", nz=" << ny << endl;
   cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
-  
+
   if(N == 0) {
     N=N0/nx/ny/nz;
     N = max(N, 20);
   }
   cout << "N=" << N << endl;
-    
+
   size_t align=sizeof(Complex);
   nxp=2*mx-xcompact;
   nyp=2*my-ycompact;
   nzp=mz+!zcompact;
 
   cout << "nxp=" << nxp << ", nyp" << nyp << ", nzp=" << nzp << endl;
-  
+
   if(B < 1) B=1;
   if(B > A) {
     cerr << "B=" << B << " is not yet implemented for A=" << A << endl;
     exit(1);
   }
-  
+
   Complex **F=new Complex *[A];
   for(unsigned int a=0; a < A; ++a)
     F[a]=ComplexAlign(nxp*nyp*nzp);
@@ -242,7 +242,7 @@ int main(int argc, char* argv[])
   if(Implicit) {
     ImplicitHConvolution3 C(mx,my,mz,xcompact,ycompact,zcompact,A,B);
     cout << "threads=" << C.Threads() << endl << endl;
-    
+
     realmultiplier *mult;
     switch(A) {
       case 2: mult=multbinary; break;
@@ -257,11 +257,11 @@ int main(int argc, char* argv[])
 //      C.convolve(f,g);
       T[i]=seconds();
     }
-    
+
     timings("Implicit",mx,T,N,stats);
 
     if(Direct) {
-      for(unsigned int i=0; i < mx; i++) 
+      for(unsigned int i=0; i < mx; i++)
         for(unsigned int j=0; j < my; j++)
           for(unsigned int k=0; k < mz; k++)
             h0[i][j][k]=f[i+!xcompact][j+!ycompact][k];
@@ -277,13 +277,13 @@ int main(int argc, char* argv[])
         cout << endl;
       }
     } else cout << f[!xcompact][!ycompact][0] << endl;
-    
+
   }
-  
+
   if(Direct) {
     unsigned int nxp=2*mx-1;
     unsigned int nyp=2*my-1;
-      
+
     array3<Complex> h(nxp,nyp,mz,align);
     array3<Complex> f(nxp,nyp,mz,align);
     array3<Complex> g(nxp,nyp,mz,align);
@@ -305,7 +305,7 @@ int main(int argc, char* argv[])
         cout << endl;
       }
     else cout << h[0][0][0] << endl;
-    
+
     if(Implicit) { // compare implicit version with direct verion:
       double error=0.0;
       double norm=0.0;
@@ -323,12 +323,12 @@ int main(int argc, char* argv[])
     }
 
   }
-  
+
   delete [] T;
   for(unsigned int a=0; a < A; ++a)
     deleteAlign(F[a]);
   delete [] F;
-  
+
 
   return 0;
 }

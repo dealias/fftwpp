@@ -27,7 +27,7 @@ bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 unsigned int outlimit=100;
 
 inline void init(Array2<Complex>& e, Array2<Complex>& f, Array2<Complex>& g,
-                 unsigned int M=1) 
+                 unsigned int M=1)
 {
   unsigned int offset=Explicit ? nx/2-mx+1 : 0;
   unsigned int stop=2*mx-1;
@@ -58,15 +58,15 @@ int main(int argc, char* argv[])
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
-#endif  
-  
-#ifdef __GNUC__ 
+#endif
+
+#ifdef __GNUC__
   optind=0;
-#endif  
+#endif
   for (;;) {
     int c = getopt(argc,argv,"hdeiptA:B:N:m:x:y:n:T:S:");
     if (c == -1) break;
-                
+
     switch (c) {
       case 0:
         break;
@@ -124,21 +124,21 @@ int main(int argc, char* argv[])
 
   nx=tpadding(mx);
   ny=tpadding(my);
-  
+
   cout << "nx=" << nx << ", ny=" << ny << endl;
   cout << "mx=" << mx << ", my=" << my << endl;
-  
+
   if(N == 0) {
     N=N0/nx/ny;
     N = max(N, 20);
   }
   cout << "N=" << N << endl;
-    
+
   if(B != 1) {
     cerr << "B=" << B << " is not yet implemented" << endl;
     exit(1);
   }
-    
+
   size_t align=sizeof(Complex);
   array2<Complex> h0;
   if(Direct) h0.Allocate(mx,my,align);
@@ -172,11 +172,11 @@ int main(int argc, char* argv[])
 //      C.convolve(e,f,g);
       T[i]=seconds();
     }
-    
+
     timings("Implicit",mx,T,N,stats);
-    
+
     if(Direct) {
-      for(unsigned int i=0; i < mx; i++) 
+      for(unsigned int i=0; i < mx; i++)
         for(unsigned int j=0; j < my; j++)
           h0[i][j]=e[i][j];
     }
@@ -188,12 +188,12 @@ int main(int argc, char* argv[])
         cout << endl;
       } else cout << e[1][0] << endl;
     cout << endl;
-    
+
     delete [] G;
     delete [] F;
     delete [] E;
   }
-  
+
   if(Explicit) {
     ExplicitHTConvolution2 C(nx,ny,mx,my,f,Pruned);
     for(unsigned int i=0; i < N; ++i) {
@@ -202,24 +202,24 @@ int main(int argc, char* argv[])
       C.convolve(e,f,g);
       T[i]=seconds();
     }
-    
+
     timings(Pruned ? "Pruned" : "Explicit",mx,T,N,stats);
 
     if(Direct) {
-      for(unsigned int i=0; i < mx; i++) 
+      for(unsigned int i=0; i < mx; i++)
         for(unsigned int j=0; j < my; j++)
           h0[i][j]=e[i][j];
     }
 
     unsigned int offset=nx/2-mx+1;
-    if(2*(mx-1)*my < outlimit) 
+    if(2*(mx-1)*my < outlimit)
       for(unsigned int i=offset; i < offset+2*mx-1; i++) {
         for(unsigned int j=0; j < my; j++)
           cout << e[i][j] << "\t";
         cout << endl;
       } else cout << e[offset][0] << endl;
   }
-  
+
   if(Direct) {
     Explicit=false;
     unsigned int nxp=2*mx-1;
@@ -232,7 +232,7 @@ int main(int argc, char* argv[])
     seconds();
     C.convolve(h,e,f,g);
     T[0]=seconds();
-  
+
     timings("Direct",mx,T,1);
 
     if(nxp*my < outlimit)
@@ -258,7 +258,7 @@ int main(int argc, char* argv[])
     }
 
   }
-  
+
   delete [] T;
 
   return 0;

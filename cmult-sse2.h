@@ -32,42 +32,42 @@ union uvec {
   unsigned u[4];
   Vec v;
 };
-  
+
 extern const union uvec sse2_pm;
 extern const union uvec sse2_mm;
 
 #if defined(__INTEL_COMPILER) || !defined(__GNUC__)
-static inline Vec operator -(const Vec& a) 
+static inline Vec operator -(const Vec& a)
 {
   return _mm_xor_pd(sse2_mm.v,a);
 }
 
-static inline Vec operator +(const Vec& a, const Vec& b) 
+static inline Vec operator +(const Vec& a, const Vec& b)
 {
   return _mm_add_pd(a,b);
 }
 
-static inline Vec operator -(const Vec& a, const Vec& b) 
+static inline Vec operator -(const Vec& a, const Vec& b)
 {
   return _mm_sub_pd(a,b);
 }
 
-static inline Vec operator *(const Vec& a, const Vec& b) 
+static inline Vec operator *(const Vec& a, const Vec& b)
 {
   return _mm_mul_pd(a,b);
 }
 
-static inline void operator +=(Vec& a, const Vec& b) 
+static inline void operator +=(Vec& a, const Vec& b)
 {
   a=_mm_add_pd(a,b);
 }
 
-static inline void operator -=(Vec& a, const Vec& b) 
+static inline void operator -=(Vec& a, const Vec& b)
 {
   a=_mm_sub_pd(a,b);
 }
 
-static inline void operator *=(Vec& a, const Vec& b) 
+static inline void operator *=(Vec& a, const Vec& b)
 {
   a=_mm_mul_pd(a,b);
 }
@@ -113,32 +113,32 @@ class Vec {
 public:
   double x;
   double y;
-  
+
   Vec() {};
   Vec(double x, double y) : x(x), y(y) {};
   Vec(const Vec &v) : x(v.x), y(v.y) {};
   Vec(const Complex &z) : x(z.re), y(z.im) {};
-  
+
   const Vec& operator += (const Vec& v) {
-    x += v.x; 
-    y += v.y; 
+    x += v.x;
+    y += v.y;
     return *this;
   }
-  
+
   const Vec& operator -= (const Vec& v) {
-    x -= v.x; 
-    y -= v.y; 
+    x -= v.x;
+    y -= v.y;
     return *this;
   }
-  
+
   const Vec& operator *= (const Vec& v) {
-    x *= v.x; 
-    y *= v.y; 
+    x *= v.x;
+    y *= v.y;
     return *this;
   }
 };
 
-static inline Vec operator -(const Vec& a) 
+static inline Vec operator -(const Vec& a)
 {
   return Vec(-a.x,-a.y);
 }

@@ -23,19 +23,19 @@ int main(int argc, char* argv[])
 
   unsigned int nx=4;
   unsigned int ny=5;
-    
+
   int N=1000;
   unsigned int stats=MEAN; // Type of statistics used in timing test.
 
   bool inplace=false;
   bool shift=false;
   bool quiet=false;
-  
+
   fftw::maxthreads=get_max_threads();
- 
-#ifdef __GNUC__ 
+
+#ifdef __GNUC__
   optind=0;
-#endif  
+#endif
   for (;;) {
     int c=getopt(argc,argv,"N:i:m:s:x:y:T:S:hq");
     if (c == -1) break;
@@ -79,15 +79,15 @@ int main(int argc, char* argv[])
   size_t align=sizeof(Complex);
 
   unsigned int nyp=ny/2+1;
-  
+
   array2<Complex> g(nx,nyp,align);
   array2<double> f;
-  
+
   if(inplace)
     f.Dimension(nx,2*nyp,(double *) g());
   else
     f.Allocate(nx,ny,align);
-  
+
   rcfft2d Forward(nx,ny,f,g);
   crfft2d Backward(nx,ny,g,f);
 
@@ -120,7 +120,7 @@ int main(int argc, char* argv[])
       cout << endl;
     }
   }
-  
+
   double *T= new double[N];
 
   for(int i=0; i < N; ++i) {
@@ -141,5 +141,5 @@ int main(int argc, char* argv[])
   }
 
   timings("fft2 out-of-place",nx,T,N,stats);
- 
+
 }

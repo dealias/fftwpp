@@ -17,14 +17,14 @@ unsigned int mz = 4;
 
 bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
-inline void init(array3<Complex>& f) 
+inline void init(array3<Complex>& f)
 {
   for(unsigned int i = 0; i < mx; ++i)
     for(unsigned int j = 0; j < my; j++)
-      for(unsigned int k = 0; k < mz; k++) 
+      for(unsigned int k = 0; k < mz; k++)
         f(i, j, k)=Complex(10 * k + i, j);
 }
-  
+
 unsigned int outlimit = 100;
 
 int main(int argc, char* argv[])
@@ -36,15 +36,15 @@ int main(int argc, char* argv[])
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
-#endif  
-  
-#ifdef __GNUC__ 
+#endif
+
+#ifdef __GNUC__
   optind=0;
-#endif  
+#endif
   for (;;) {
     int c = getopt(argc,argv,"hN:m:x:y:z:n:T:S:r:");
     if (c == -1) break;
-                
+
     switch (c) {
       case 0:
         break;
@@ -86,13 +86,13 @@ int main(int argc, char* argv[])
     my = mx;
 
   cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
-  
+
   if(N == 0) {
     N = N0 / mx / my;
     N = max(N, 20);
   }
   cout << "N=" << N << endl;
-  
+
   size_t align = sizeof(Complex);
 
   array3<Complex> f(mx, my, mz, align);
@@ -103,7 +103,7 @@ int main(int argc, char* argv[])
   if(r == -1 || r == 0) { // conventional FFT, in-place
     fft3d Forward3(-1, f);
     fft3d Backward3(1, f);
-    
+
     for(unsigned int i = 0; i < N; ++i) {
       init(f);
       seconds();
@@ -114,11 +114,11 @@ int main(int argc, char* argv[])
     }
     timings("fft3d, in-place", mx, T, N, stats);
   }
-  
+
   if(r == -1 || r == 1) { // conventional FFT, out-of-place
     fft3d Forward3(-1, f, g);
     fft3d Backward3(1, f, g);
-    
+
     for(unsigned int i = 0; i < N; ++i) {
       init(f);
       seconds();
@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
   }
 
   delete [] T;
-  
+
   return 0;
 }
 

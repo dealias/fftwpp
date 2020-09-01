@@ -14,10 +14,10 @@ unsigned int N=0;
 unsigned int m=12;
 unsigned int M=1;
 unsigned int B=1;
-  
+
 bool Direct=false, Implicit=true, Explicit=false;
 
-inline void init(Complex *e, Complex *f, Complex *g, unsigned int M=1) 
+inline void init(Complex *e, Complex *f, Complex *g, unsigned int M=1)
 {
   unsigned int m1=m+1;
   unsigned int Mm=M*m1;
@@ -47,15 +47,15 @@ int main(int argc, char* argv[])
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
-#endif  
-  
-#ifdef __GNUC__ 
+#endif
+
+#ifdef __GNUC__
   optind=0;
-#endif  
+#endif
   for (;;) {
     int c = getopt(argc,argv,"hdeipA:B:N:m:n:T:S:");
     if (c == -1) break;
-                
+
     switch (c) {
       case 0:
         break;
@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
         break;
       case 'T':
         fftw::maxthreads=max(atoi(optarg),1);
-        break;      
+        break;
       case 'S':
         stats=atoi(optarg);
         break;
@@ -105,25 +105,25 @@ int main(int argc, char* argv[])
 
   cout << "n=" << n << endl;
   cout << "m=" << m << endl;
-  
+
   if(N == 0) {
     N=N0/n;
     N = max(N, 20);
   }
   cout << "N=" << N << endl;
-  
+
   Complex *h0=NULL;
   if(Direct && ! Explicit) h0=ComplexAlign(m);
 
   unsigned int m1=m+1;
   unsigned int np=Explicit ? n/2+1 : m1;
   if(Implicit) np *= M;
-    
+
   if(B != 1) {
     cerr << "B=" << B << " is not yet implemented" << endl;
     exit(1);
   }
-    
+
   Complex *e=ComplexAlign(np);
   Complex *f=ComplexAlign(np);
   Complex *g=ComplexAlign(np);
@@ -149,20 +149,20 @@ int main(int argc, char* argv[])
 //      C.convolve(e,f,g);
       T[i]=seconds();
     }
-    
+
     timings("Implicit",m,T,N,stats);
 
     if(Direct) for(unsigned int i=0; i < m; i++) h0[i]=e[i];
 
-    if(m < 100) 
+    if(m < 100)
       for(unsigned int i=0; i < m; i++) cout << e[i] << endl;
     else cout << e[0] << endl;
-    
+
     delete [] G;
     delete [] F;
     delete [] E;
   }
-  
+
   if(Explicit) {
     ExplicitHTConvolution C(n,m,f);
     for(unsigned int i=0; i < N; ++i) {
@@ -171,14 +171,14 @@ int main(int argc, char* argv[])
       C.convolve(e,f,g);
       T[i]=seconds();
     }
-    
+
     timings("Explicit",m,T,N,stats);
 
-    if(m < 100) 
+    if(m < 100)
       for(unsigned int i=0; i < m; i++) cout << e[i] << endl;
     else cout << e[0] << endl;
   }
-  
+
   if(Direct) {
     DirectHTConvolution C(m);
     init(e,f,g);
@@ -186,10 +186,10 @@ int main(int argc, char* argv[])
     seconds();
     C.convolve(h,e,f,g);
     T[0]=seconds();
-    
+
     timings("Direct",m,T,1);
 
-    if(m < 100) 
+    if(m < 100)
       for(unsigned int i=0; i < m; i++) cout << h[i] << endl;
     else cout << h[0] << endl;
 
@@ -212,7 +212,7 @@ int main(int argc, char* argv[])
   deleteAlign(g);
   deleteAlign(f);
   deleteAlign(e);
-  
+
   delete [] T;
 
   return 0;

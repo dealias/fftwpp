@@ -10,9 +10,9 @@ using namespace fftwpp;
 
 void finit(array3<double> f, unsigned int nx, unsigned int ny, unsigned int nz)
 {
-  for(unsigned int i=0; i < nx; ++i) 
+  for(unsigned int i=0; i < nx; ++i)
     for(unsigned int j=0; j < ny; ++j)
-      for(unsigned int k=0; k < nz; ++k) 
+      for(unsigned int k=0; k < nz; ++k)
         f(i,j,k)=i+j+k;
 }
 
@@ -30,12 +30,12 @@ int main(int argc,char* argv[])
   bool inplace=false;
   bool shift=false;
   bool quiet=false;
-  
+
   fftw::maxthreads=get_max_threads();
- 
-#ifdef __GNUC__ 
+
+#ifdef __GNUC__
   optind=0;
-#endif  
+#endif
   for (;;) {
     int c=getopt(argc,argv,"N:i:m:qx:y:z:T:S:h");
     if (c == -1) break;
@@ -80,12 +80,12 @@ int main(int argc,char* argv[])
   }
 
   size_t align=sizeof(Complex);
-  
+
   unsigned int nzp=nz/2+1;
-  
+
   array3<Complex> g(nx,ny,nzp,align);
   array3<double> f;
-  
+
   if(inplace)
     f.Dimension(nx,ny,2*nzp,(double *) g());
   else
@@ -93,7 +93,7 @@ int main(int argc,char* argv[])
 
   rcfft3d Forward(nx,ny,nz,f,g);
   crfft3d Backward(nx,ny,nz,g,f);
-  
+
   if(!quiet) {
     finit(f,nx,ny,nz);
     cout << endl << "Input:" << endl;
@@ -127,7 +127,7 @@ int main(int argc,char* argv[])
   }
 
   double *T=new double[N];
-   
+
   for(int i=0; i < N; ++i) {
     finit(f,nx,ny,nz);
     if(shift) {
@@ -145,5 +145,5 @@ int main(int argc,char* argv[])
     }
   }
   timings("fft3 out-of-place",nx,T,N,stats);
-  
+
 }

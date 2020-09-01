@@ -8,8 +8,8 @@ class ExplicitConvolution : public ThreadBase {
 protected:
   unsigned int n,m;
   fft1d *Backwards,*Forwards;
-public:  
-  
+public:
+
   // u is a temporary array of size n.
   ExplicitConvolution(unsigned int n, unsigned int m, Complex *u) :
     n(n), m(m) {
@@ -18,17 +18,17 @@ public:
 
     threads=Forwards->Threads();
   }
-  
+
   ~ExplicitConvolution() {
     delete Forwards;
     delete Backwards;
-  }    
-  
+  }
+
   void pad(Complex *f);
   void backwards(Complex *f);
   void forwards(Complex *f);
-  
-  // Compute f (*) g. The distinct input arrays f and g are each of size n 
+
+  // Compute f (*) g. The distinct input arrays f and g are each of size n
   // (contents not preserved). The output is returned in f.
   void convolve(Complex *f, Complex *g);
 };
@@ -49,16 +49,16 @@ public:
 
     threads=cr->Threads();
   }
-  
+
   ~ExplicitHConvolution() {
     delete cr;
     delete rc;
   }
-    
+
   void pad(Complex *f);
   void backwards(Complex *f);
   void forwards(Complex *f);
-  
+
 // Compute f (*) g, where f and g contain the m non-negative Fourier
 // components of real functions. Dealiasing is internally implemented via
 // explicit zero-padding to size n >= 3*m.
@@ -95,7 +95,7 @@ public:
       threads=Forwards->Threads();
     }
   }
-  
+
   ~ExplicitConvolution2() {
     if(prune) {
       delete xForwards;
@@ -106,8 +106,8 @@ public:
       delete Forwards;
       delete Backwards;
     }
-  }    
-  
+  }
+
   void pad(Complex *f);
   void backwards(Complex *f);
   void forwards(Complex *f);
@@ -127,11 +127,11 @@ protected:
   mrcfft1d *yForwards;
   crfft2d *Backwards;
   rcfft2d *Forwards;
-  
+
   unsigned int s;
   Complex *ZetaH,*ZetaL;
-public:  
-  ExplicitHConvolution2(unsigned int nx, unsigned int ny, 
+public:
+  ExplicitHConvolution2(unsigned int nx, unsigned int ny,
                         unsigned int mx, unsigned int my,
                         Complex *f, unsigned int M=1,
                         bool pruned=false) :
@@ -156,13 +156,13 @@ public:
         yForwards=new mrcfft1d(ny,nx,1,1,rdist,cdist,(double*) f);
         yBackwards=new mcrfft1d(ny,nx,1,1,cdist,rdist,f);
       }
-      
+
     } else {
       Backwards=new crfft2d(nx,ny,f);
       Forwards=new rcfft2d(nx,ny,f);
     }
   }
-  
+
   ~ExplicitHConvolution2() {
     if(prune) {
       delete xForwards;
@@ -173,13 +173,13 @@ public:
       delete Forwards;
       delete Backwards;
     }
-  }    
-  
+  }
+
   void pad(Complex *f);
   void backwards(Complex *f, bool shift=true);
   void forwards(Complex *f);
   void convolve(Complex **F, Complex **G, bool symmetrize=true);
-  
+
   // Constructor for special case M=1:
   void convolve(Complex *f, Complex *g, bool symmetrize=true) {
     convolve(&f,&g,symmetrize);
@@ -217,7 +217,7 @@ public:
       Forwards=new fft3d(nx,ny,nz,-1,f);
     }
   }
-  
+
   ~ExplicitConvolution3() {
     if(prune) {
       delete xForwards;
@@ -230,8 +230,8 @@ public:
       delete Forwards;
       delete Backwards;
     }
-  }    
-  
+  }
+
   void pad(Complex *f);
   void backwards(Complex *f);
   void forwards(Complex *f);
@@ -255,16 +255,16 @@ public:
 
     threads=cr->Threads();
   }
-  
+
   ~ExplicitHTConvolution() {
     delete cr;
     delete rc;
   }
-    
+
   void pad(Complex *f);
   void backwards(Complex *f);
   void forwards(Complex *f);
-  
+
 // Compute the ternary convolution of f, and g, and h, where f, and g, and h
 // contain the m non-negative Fourier components of real
 // functions. Dealiasing is internally implemented via explicit
@@ -290,8 +290,8 @@ protected:
   Complex *ZetaH,*ZetaL;
   unsigned int threads;
 
-public:  
-  ExplicitHTConvolution2(unsigned int nx, unsigned int ny, 
+public:
+  ExplicitHTConvolution2(unsigned int nx, unsigned int ny,
                          unsigned int mx, unsigned int my, Complex *f,
                          bool pruned=false) :
     nx(nx), ny(ny), mx(mx), my(my), prune(pruned) {
@@ -303,7 +303,7 @@ public:
       prune=true;
       s=BuildZeta(2*nx,nx,ZetaH,ZetaL);
     }
-    
+
     if(prune) {
       xBackwards=new mfft1d(nx,1,My,nyp,1,f);
       xForwards=new mfft1d(nx,-1,My,nyp,1,f);
@@ -321,7 +321,7 @@ public:
       threads=Forwards->Threads();
     }
   }
-  
+
   ~ExplicitHTConvolution2() {
     if(prune) {
       delete xForwards;
@@ -332,8 +332,8 @@ public:
       delete Forwards;
       delete Backwards;
     }
-  }    
-  
+  }
+
   void pad(Complex *f);
   void backwards(Complex *f, bool shift=true);
   void forwards(Complex *f, bool shift=true);

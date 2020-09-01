@@ -9,13 +9,13 @@ using namespace Array;
 using namespace fftwpp;
 
 
-inline void init(array2<double>& f, unsigned int mx, unsigned int my) 
+inline void init(array2<double>& f, unsigned int mx, unsigned int my)
 {
   for(unsigned int i=0; i < mx; ++i)
     for(unsigned int j=0; j < my; j++)
       f[i][j] = 10 * i + j;
 }
-  
+
 unsigned int outlimit=100;
 
 int main(int argc, char* argv[])
@@ -35,11 +35,11 @@ int main(int argc, char* argv[])
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
-#endif  
-  
-#ifdef __GNUC__ 
+#endif
+
+#ifdef __GNUC__
   optind=0;
-#endif  
+#endif
   for (;;) {
     int c = getopt(argc,argv,"hN:m:x:y:n:T:S:");
     if (c == -1) break;
@@ -87,7 +87,7 @@ int main(int argc, char* argv[])
     if(N < 10) N=10;
   }
   cout << "N=" << N << endl;
-  
+
   size_t align=sizeof(Complex);
 
   array2<double> f(mx,my,align);
@@ -97,7 +97,7 @@ int main(int argc, char* argv[])
   size_t cstride=1;
   size_t rdist=mx;
   size_t cdist=np;
-  
+
   mrcfft1d Forward(mx, // length of transform
                    M,  // number of transforms
                    rstride,
@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
     }
     timings("mfft1r, in-place",mx,T,N,stats);
     delete [] T;
-  }  
+  }
 
   return 0;
 }

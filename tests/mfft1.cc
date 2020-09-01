@@ -13,13 +13,13 @@ unsigned int N0=10000000;
 
 bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
-inline void init(array2<Complex>& f, unsigned int mx, unsigned int my) 
+inline void init(array2<Complex>& f, unsigned int mx, unsigned int my)
 {
   for(unsigned int i=0; i < mx; ++i)
     for(unsigned int j=0; j < my; j++)
       f[i][j]=Complex(i,j);
 }
-  
+
 unsigned int outlimit=100;
 
 int main(int argc, char* argv[])
@@ -34,15 +34,15 @@ int main(int argc, char* argv[])
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
-#endif  
-  
-#ifdef __GNUC__ 
+#endif
+
+#ifdef __GNUC__
   optind=0;
-#endif  
+#endif
   for (;;) {
     int c = getopt(argc,argv,"hN:m:x:y:n:T:S:");
     if (c == -1) break;
-                
+
     switch (c) {
       case 0:
         break;
@@ -77,18 +77,18 @@ int main(int argc, char* argv[])
   if(my == 0) my=mx;
 
   cout << "mx=" << mx << ", my=" << my << endl;
-  
+
   if(N == 0) {
     N=N0/mx/my;
     N = max(N, 20);
   }
   cout << "N=" << N << endl;
-  
+
   size_t align=sizeof(Complex);
 
   array2<Complex> f(mx,my,align);
   array2<Complex> g(mx,my,align);
-  
+
   mfft1d Forward(my,-1,mx,1,my);
   mfft1d Backward(my,1,mx,1,my);
 
@@ -112,7 +112,7 @@ int main(int argc, char* argv[])
         cout << f[i][j] << "\t";
       cout << endl;
     }
-  } else { 
+  } else {
     cout << f[0][0] << endl;
   }
 
@@ -124,11 +124,11 @@ int main(int argc, char* argv[])
         cout << f[i][j] << "\t";
       cout << endl;
     }
-  } else { 
+  } else {
     cout << f[0][0] << endl;
   }
 
-  
+
   cout << endl;
   double *T=new double[N];
   for(unsigned int i=0; i < N; ++i) {
@@ -141,7 +141,7 @@ int main(int argc, char* argv[])
   }
   timings("mfft1, in-place",mx,T,N,stats);
   delete [] T;
-  
+
   return 0;
 }
 

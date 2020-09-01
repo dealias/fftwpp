@@ -25,10 +25,10 @@ int main(int argc, char* argv[])
 
   fftw::maxthreads=get_max_threads();
   int r=-1;
- 
-#ifdef __GNUC__ 
+
+#ifdef __GNUC__
   optind=0;
-#endif  
+#endif
   for (;;) {
     int c=getopt(argc,argv,"N:m:x:r:T:S:h");
     if (c == -1) break;
@@ -63,10 +63,10 @@ int main(int argc, char* argv[])
   size_t align=sizeof(Complex);
 
   unsigned int mp=m/2+1;
-  
+
   array1<double> f(m+2,align);
   array1<Complex> g(mp,align);
-  
+
   double *T=new double[N];
 
   if(r == -1 || r == 0) {

@@ -18,7 +18,7 @@ bool Test=false;
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
 
-inline void init(Complex **F, unsigned int m, unsigned int A) 
+inline void init(Complex **F, unsigned int m, unsigned int A)
 {
   if(A % 2 == 0) {
     unsigned int M=A/2;
@@ -30,14 +30,14 @@ inline void init(Complex **F, unsigned int m, unsigned int A)
       Complex *gs=F[s+M];
       if(Test) {
         for(unsigned int k=0; k < m; k++) {
-	  fs[k]=factor*iF*pow(E,k*I);
-	  gs[k]=factor*iG*pow(E,k*I);
-	}
+          fs[k]=factor*iF*pow(E,k*I);
+          gs[k]=factor*iG*pow(E,k*I);
+        }
       } else {
         for(unsigned int k=0; k < m; k++) {
-	  fs[k]=ffactor*Complex(k,k+1);
-	  gs[k]=gfactor*Complex(k,2*k+1);
-	}
+          fs[k]=ffactor*Complex(k,k+1);
+          gs[k]=gfactor*Complex(k,2*k+1);
+        }
       }
     }
   } else {
@@ -60,7 +60,7 @@ void multA(Complex **F, unsigned int m,
     case 2: multbinary(F,m,indexsize,index,r,threads); break;
     case 4: multbinary2(F,m,indexsize,index,r,threads); break;
     default:
-      cerr << "A=" << A << " is not yet implemented" << endl; 
+      cerr << "A=" << A << " is not yet implemented" << endl;
       exit(1);
   }
 
@@ -79,26 +79,26 @@ int main(int argc, char* argv[])
   bool Direct=false;
   bool Implicit=true;
   bool Explicit=false;
-  
+
   // Number of iterations.
   unsigned int N0=1000000000;
   unsigned int N=0;
-  
+
   unsigned int m=11; // Problem size
-  
+
   int stats=0; // Type of statistics used in timing test.
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
-#endif  
-  
-#ifdef __GNUC__ 
+#endif
+
+#ifdef __GNUC__
   optind=0;
-#endif  
+#endif
   for (;;) {
     int c = getopt(argc,argv,"hdeiptA:B::N:m:n:S:T:");
     if (c == -1) break;
-                
+
     switch (c) {
       case 0:
         break;
@@ -151,7 +151,7 @@ int main(int argc, char* argv[])
 
   cout << "n=" << n << endl;
   cout << "m=" << m << endl;
-  
+
   if(N == 0) {
     N=N0/n;
     N = max(N, 20);
@@ -164,21 +164,21 @@ int main(int argc, char* argv[])
 
   if(B < 1)
     B=1;
-  
+
   unsigned int np=Explicit ? n : m;
   unsigned int C=max(A,B);
   Complex *f=ComplexAlign(C*np);
-  
+
   Complex **F=new Complex *[C];
   for(unsigned int s=0; s < C; ++s)
     F[s]=f+s*np;
-  
+
   Complex *h0=NULL;
   if(Test || Direct)
     h0=ComplexAlign(m*B);
 
   double *T=new double[N];
-  
+
   if(Implicit) {
     ImplicitConvolution C(m,A,B);
     cout << "threads=" << C.Threads() << endl << endl;
@@ -186,22 +186,22 @@ int main(int argc, char* argv[])
     multiplier *mult=NULL;
     switch(B) {
       case 1:
-	switch(A) {
-	  case 1: mult=multautoconvolution; break;
-	  case 2: mult=multbinary; break;
-	  case 4: mult=multbinary2; break;
-	  case 6: mult=multbinary3; break;
-	  case 8: mult=multbinary4; break;
-	  case 16: mult=multbinary8; break;
-	  default:
-	    cerr << "A=" << A << ", B=" << B << " is not yet implemented"
-		 << endl;
-	    exit(1);
-	}
-	break;
+        switch(A) {
+          case 1: mult=multautoconvolution; break;
+          case 2: mult=multbinary; break;
+          case 4: mult=multbinary2; break;
+          case 6: mult=multbinary3; break;
+          case 8: mult=multbinary4; break;
+          case 16: mult=multbinary8; break;
+          default:
+            cerr << "A=" << A << ", B=" << B << " is not yet implemented"
+                 << endl;
+            exit(1);
+        }
+        break;
       default:
-	  mult=multA;
-	break;
+        mult=multA;
+        break;
     }
     if(!mult) {
       cerr << "A=" << A << ", B=" << B << " is not yet implemented"
@@ -221,24 +221,24 @@ int main(int argc, char* argv[])
 
     if(m < 100) {
       for(unsigned int b=0; b < B; ++b) {
-	for(unsigned int i=0; i < m; i++)
-	  cout << F[b][i] << endl;
-	cout << endl;
+        for(unsigned int i=0; i < m; i++)
+          cout << F[b][i] << endl;
+        cout << endl;
       }
     }
     else {
       cout << f[0] << endl;
     }
-      
+
     if(Test || Direct) {
       for(unsigned int b=0; b < B; ++b) {
-	for(unsigned int i=0; i < m; i++) {
-	  h0[i+b*m]=F[b][i];
-	}
+        for(unsigned int i=0; i < m; i++) {
+          h0[i+b*m]=F[b][i];
+        }
       }
     }
   }
-  
+
   if(Explicit) {
     ExplicitConvolution C(n,m,F[0]);
     for(unsigned int i=0; i < N; ++i) {
@@ -251,16 +251,16 @@ int main(int argc, char* argv[])
     cout << endl;
     timings("Explicit",m,T,N,stats);
 
-    if(m < 100) 
+    if(m < 100)
       for(unsigned int i=0; i < m; i++)
         cout << F[0][i] << endl;
     else cout << F[0][0] << endl;
     cout << endl;
     if(Test || Direct)
       for(unsigned int i=0; i < m; i++)
-	h0[i]=F[0][i];
+        h0[i]=F[0][i];
   }
-  
+
   if(Direct) {
     DirectConvolution C(m);
     if(A % 2 == 0 && A > 2)
@@ -273,13 +273,13 @@ int main(int argc, char* argv[])
     if(A == 1)
       C.autoconvolve(h,F[0]);
     T[0]=seconds();
-    
+
     cout << endl;
     timings("Direct",m,T,1);
 
     if(m < 100)
       for(unsigned int i=0; i < m; i++)
-	cout << h[i] << endl;
+        cout << h[i] << endl;
     else
       cout << h[0] << endl;
 
@@ -287,7 +287,7 @@ int main(int argc, char* argv[])
       double error=0.0;
       double norm=0.0;
       for(unsigned int b=0; b < B; ++b) {
-	double factor=1.0+b;
+        double factor=1.0+b;
         for(unsigned long long k=0; k < m; k++) {
           error += abs2(h0[k+b*m]-factor*h[k]);
           norm += abs2(h[k]);
@@ -296,15 +296,15 @@ int main(int argc, char* argv[])
       if(norm > 0) error=sqrt(error/norm);
       cout << "error=" << error << endl;
       if (error > 1e-12)
-	cerr << "Caution! error=" << error << endl;
+        cerr << "Caution! error=" << error << endl;
     }
-    
+
     if(Test)
       for(unsigned int i=0; i < m; i++)
-	h0[i]=h[i];
+        h0[i]=h[i];
     deleteAlign(h);
   }
-    
+
   if(Test) {
     Complex *h=ComplexAlign(n*B);
     // test accuracy of convolution methods:
@@ -329,11 +329,11 @@ int main(int argc, char* argv[])
       for(unsigned long long k=0; k < m; k++)
         h[k]=k*(0.5*k*(k+1)) - k*(k+1)*(2*k+1)/6.0;
     }
-    
+
     if(!testok) {
       cout << "ERROR: no test case for A="<<A<<endl;
       exit(1);
-    }      
+    }
 
     for(unsigned long long k=0; k < m; k++) {
       error += abs2(h0[k]-h[k]);
