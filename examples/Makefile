@@ -51,7 +51,7 @@ FILES=example0 example0r example0m example0mr \
 	example1 example1r example2 example2r example3 example3r \
 	examplecconv exampleconv examplecconv2 exampleconv2 \
 	examplecconv3 exampleconv3 exampletranspose \
-	examplecconvfull examplecconvsame
+	examplecconvfull examplecconvsame optimal
 
 FFTW=fftw++
 EXTRA=$(FFTW) convolution
@@ -117,6 +117,9 @@ examplecconv3: examplecconv3.o $(EXTRA:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 exampleconv3: exampleconv3.o $(EXTRA:=.o)
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
+optimal: optimal.o $(FFTW:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 clean:  FORCE
