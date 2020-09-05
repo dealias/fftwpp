@@ -306,21 +306,30 @@ public:
     plan=planT;
     fft(in,out);
     unsigned int N=1;
+    unsigned int ndoubles=doubles/2;
     for(;;) {
       double t0=utils::totalseconds();
       threads=1;
       plan=plan1;
-      for(unsigned int i=0; i < N; ++i)
+      for(unsigned int i=0; i < N; ++i) {
+        for(unsigned int i=0; i < ndoubles; ++i) out[i]=i;
         fft(in,out);
+      }
       double t1=utils::totalseconds();
       threads=Threads;
       plan=planT;
-      for(unsigned int i=0; i < N; ++i)
+      for(unsigned int i=0; i < N; ++i) {
+        for(unsigned int i=0; i < ndoubles; ++i) out[i]=i;
         fft(in,out);
+      }
       double t=utils::totalseconds();
       S.add(t1-t0);
       ST.add(t-t1);
-      if(S.mean() < 100.0/CLOCKS_PER_SEC) N *= 2;
+      if(S.mean() < 100.0/CLOCKS_PER_SEC) {
+        N *= 2;
+        S.clear();
+        ST.clear();
+      }
       if(S.count() >= 10) {
         double error=S.stdev();
         double diff=ST.mean()-S.mean();

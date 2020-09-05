@@ -22,7 +22,7 @@ for(int i=0; i < size.length; ++i) {
         m #= p;
       }
       frame f;
-      fill(f,scale(p^0.6)*unitcircle,Pen(p));
+      fill(f,scale(0.5*p^0.6)*unitcircle,Pen(p));
       add(currentpicture,f,z);
     }
   }

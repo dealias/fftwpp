@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
 
   unsigned int N;
 
-  cerr << "Determine optimal sizes for 1D complex to complex in-place FFTs";
+  cerr << "Determining optimal sizes for 1D complex to complex in-place FFTs...";
 
   if(argc == 1) {
     cerr << endl << endl << "Usage: " << argv[0] << " maxsize" << endl;
@@ -28,7 +28,6 @@ int main(int argc, char *argv[])
   cerr << " up to size " << N << endl;
 
   Complex *f=ComplexAlign(N);
-  for(unsigned int i=0; i < N; i++) f[i]=i;
 
   fout << "# length\tmean\tstdev" << endl;
 
@@ -36,14 +35,19 @@ int main(int argc, char *argv[])
     utils::statistics S;
     unsigned int K=1;
 
-    fft1d Forward(n,-1);
+    fft1d Forward(n,-1,f);
 
     for(;;) {
       double t0=utils::totalseconds();
       for(unsigned int i=0; i < K; ++i)
+        for(unsigned int i=0; i < n; ++i) f[i]=i;
+      double t1=utils::totalseconds();
+      for(unsigned int i=0; i < K; ++i) {
+        for(unsigned int i=0; i < n; ++i) f[i]=i;
         Forward.fft(f);
+      }
       double t=utils::totalseconds();
-      S.add((t-t0)/K);
+      S.add(((t-t1)-(t1-t0))/K);
       double mean=S.mean();
       if(K*mean < 100.0/CLOCKS_PER_SEC) {
         K *= 2;
