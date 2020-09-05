@@ -16,14 +16,17 @@ for(int i=0; i < size.length; ++i) {
   int m=(int) size[i];
   pair z=(m,mean[i]);
   for(int p : P) {
+    if(p >= 11 && (m % 121 == 0 || m % 143 == 0 || m % 169 == 0)) continue;
     if(m % p == 0) {
-      while(m % p == 0) m #= p;
+      while(m % p == 0) {
+        m #= p;
+      }
       frame f;
       fill(f,scale(p^0.6)*unitcircle,Pen(p));
       add(currentpicture,f,z);
     }
   }
-  if(m > P[0]) {
+  if(m > 1) {
     frame f;
     fill(f,unitcircle,black);
     add(currentpicture,f,z);
