@@ -7,7 +7,7 @@ using namespace std;
 using namespace utils;
 using namespace fftwpp;
 
-int main()
+int main(int argc, char *argv[])
 {
   fftw::maxthreads=get_max_threads();
 
@@ -15,13 +15,17 @@ int main()
 
   double eps=0.5;
 
-  unsigned int N=1024;
+  unsigned int N;
 
-  cout << "Determine optimal sizes for 1D complex to complex in-place FFTs."
-       << endl;
+  cerr << "Determine optimal sizes for 1D complex to complex in-place FFTs";
 
-  cout << "Maximium size [1024]? ";
-  cin >> N;
+  if(argc == 1) {
+    cerr << endl << endl << "Usage: " << argv[0] << " maxsize" << endl;
+    exit(0);
+  }
+
+  N=atoi(argv[1]);
+  cerr << " up to size " << N << endl;
 
   Complex *f=ComplexAlign(N);
   for(unsigned int i=0; i < N; i++) f[i]=i;
