@@ -31,31 +31,42 @@ int main(int argc, char *argv[])
 
   fout << "# length\tmean\tstdev" << endl;
 
-  for(unsigned int n=2; n < N; ++n) {
-    utils::statistics S;
-    unsigned int K=1;
+  unsigned int pow2=1;
+  for(unsigned int i=0; pow2 <= N; ++i, pow2 *= 2) {
+    unsigned int pow23=pow2;
+    for(unsigned int j=0; pow23 <= N; ++j, pow23 *= 3) {
+      unsigned int pow235=pow23;
+      for(unsigned int k=0; pow235 <= N; ++k, pow235 *= 5) {
+        unsigned int n=pow235;
+        for(unsigned int l=0; n <= N; ++l, n *= 7) {
 
-    fft1d Forward(n,-1,f);
+          utils::statistics S;
+          unsigned int K=1;
 
-    for(;;) {
-      double t0=utils::totalseconds();
-      for(unsigned int i=0; i < K; ++i)
-        for(unsigned int i=0; i < n; ++i) f[i]=i;
-      double t1=utils::totalseconds();
-      for(unsigned int i=0; i < K; ++i) {
-        for(unsigned int i=0; i < n; ++i) f[i]=i;
-        Forward.fft(f);
-      }
-      double t=utils::totalseconds();
-      S.add(((t-t1)-(t1-t0))/K);
-      double mean=S.mean();
-      if(K*mean < 100.0/CLOCKS_PER_SEC) {
-        K *= 2;
-        S.clear();
-      }
-      if(S.count() >= 2 && S.stdev() < eps*mean) {
-        fout << n << "\t" << S.mean() << "\t" << S.stdev() << endl ;
-        break;
+          fft1d Forward(n,-1,f);
+
+          for(;;) {
+            double t0=utils::totalseconds();
+            for(unsigned int i=0; i < K; ++i)
+              for(unsigned int i=0; i < n; ++i) f[i]=i;
+            double t1=utils::totalseconds();
+            for(unsigned int i=0; i < K; ++i) {
+              for(unsigned int i=0; i < n; ++i) f[i]=i;
+              Forward.fft(f);
+            }
+            double t=utils::totalseconds();
+            S.add(((t-t1)-(t1-t0))/K);
+            double mean=S.mean();
+            if(K*mean < 100.0/CLOCKS_PER_SEC) {
+              K *= 2;
+              S.clear();
+            }
+            if(S.count() >= 2 && S.stdev() < eps*mean) {
+              fout << n << "\t" << S.mean() << "\t" << S.stdev() << endl ;
+              break;
+            }
+          }
+        }
       }
     }
   }
