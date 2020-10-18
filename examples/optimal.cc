@@ -9,7 +9,7 @@ using namespace fftwpp;
 
 int main(int argc, char *argv[])
 {
-  fftw::maxthreads=get_max_threads();
+  fftw::maxthreads=1;//get_max_threads();
 
   ofstream fout("optimal.dat");
 
@@ -43,6 +43,8 @@ int main(int argc, char *argv[])
           utils::statistics S;
           unsigned int K=1;
 
+          if(n == 1) continue;
+
           fft1d Forward(n,-1,f);
 
           for(;;) {
@@ -57,11 +59,12 @@ int main(int argc, char *argv[])
             double t=utils::totalseconds();
             S.add(((t-t1)-(t1-t0))/K);
             double mean=S.mean();
-            if(K*mean < 100.0/CLOCKS_PER_SEC) {
+            if(K*mean < 1000.0/CLOCKS_PER_SEC) {
               K *= 2;
               S.clear();
             }
-            if(S.count() >= 2 && S.stdev() < eps*mean) {
+            if(S.count() >= 10 && S.stdev() < eps*mean) {
+// TODO: accrue in memory first
               fout << n << "\t" << S.mean() << "\t" << S.stdev() << endl ;
               break;
             }

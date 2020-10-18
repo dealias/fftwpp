@@ -7,7 +7,7 @@ real[][] a=in;
 a=sort(a);
 a=transpose(a);
 
-real[] size=a[0];
+int[] size=map(floor,a[0]);
 real[] mean=a[1];
 
 //int[] P={13,11,7,5,3,2};
@@ -29,7 +29,7 @@ int ceilpow2(int n)
 }
 
 for(int i=0; i < size.length; ++i) {
-  int m=(int) size[i];
+  int m=size[i];
   int M=m;
   real Mean=mean[i];
   pair z=(m,Mean);
@@ -53,6 +53,10 @@ for(int i=0; i < size.length; ++i) {
     ++count;
   }
 }
+
+real a=8e-11;
+draw(graph(new real(real x) {return a*5*x*log(x)/log(2);},1,size[size.length-1]),blue);
+
 
 xaxis("length",BottomTop,LeftTicks);
 yaxis("time (s)",LeftRight,RightTicks);
