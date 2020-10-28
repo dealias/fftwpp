@@ -1,3 +1,6 @@
+// TODO: vectorize and optimize Zeta computations
+// TODO: use out-of-place transforms
+
 #include <cassert>
 
 #include "convolution.h"
@@ -8,6 +11,8 @@
 using namespace std;
 using namespace utils;
 using namespace fftwpp;
+
+unsigned int K=10; // Number of tests ***TEMP***
 
 // Constants used for initialization and testing.
 const Complex I(0.0,1.0);
@@ -20,11 +25,12 @@ bool Test=false;
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
 
-unsigned int size[10];
-unsigned int nsize=10;
+const unsigned int Nsize=1000;
+unsigned int nsize=1000;
+unsigned int size[Nsize];
 
 Complex *buildZeta(unsigned int N) {return NULL;}
-unsigned int n0=25;
+unsigned int n0=1;//25;
 
 // Search a sorted ordered array a of n elements for key, returning the index i
 // if a[i] <= key < a[i+1], -1 if key is less than all elements of a, or
@@ -65,7 +71,7 @@ void decompose(unsigned int *D, unsigned int& n, unsigned int p,
   }
 }
 
-class Fftpad {
+class FFTpad {
 protected:
   unsigned int L;
   unsigned int M;
@@ -75,24 +81,40 @@ protected:
   unsigned int *D; // divisors of q
   unsigned int n; // number of elements in D
   int sign;
-  unsigned int count;
   fft1d *fftL;
   fft1d *fftm;
   fft1d **fft;
+  unsigned int S;
+  Complex *ZetaH, *ZetaL;
+  Complex *g,*h,*G,*e,*E; // Many, many work arrays!
 public:
 
-  // Compute an fft padded to N=q*m >= M >= L=f.length
-  Fftpad(Complex *f, unsigned int L, unsigned int M,
-         unsigned int m, unsigned int q, unsigned int *D=NULL,
-         unsigned int n=0, int sign=-1) :
-    L(L), M(M), m(m), q(q), D(D), n(n), sign(sign), count(0) {
+  void init(Complex *f) {
     fftL=new fft1d(L,sign,f);
     // Revisit memory allocation
     fftm=m < L ? new fft1d(m,sign,f) : new fft1d(m,sign);
     fft=new fft1d*[n];
     for(unsigned int i=0; i < n; ++i)
       fft[i]=q < L ? new fft1d(D[i],sign,f) : new fft1d(D[i],sign);
+    unsigned int N=q*m;
+    S=BuildZeta(N,N,ZetaH,ZetaL);//,threads);
+
+    g=ComplexAlign(m);
+    h=ComplexAlign(q);
+    G=ComplexAlign(N);
+    if(n > 0) {
+      unsigned int D0=D[0];
+      E=ComplexAlign(D0);
+      e=ComplexAlign(D0);
+    }
   }
+
+  // Compute an fft padded to N=q*m >= M >= L=f.length
+  FFTpad(Complex *f, unsigned int L, unsigned int M,
+         unsigned int m, unsigned int q, unsigned int *D=NULL,
+         unsigned int n=0, int sign=-1) :
+    L(L), M(M), m(m), p(ceilquotient(L,m)), q(q), D(D), n(n),
+    sign(sign) {init(f);}
 
   class Opt {
   public:
@@ -102,23 +124,31 @@ public:
     // Determine optimal m,q values for padding L data values to
     // size >= M
     // If fixed=true then an FFT of size M is enforced.
-    Opt(Complex *f, unsigned int L, unsigned int M, bool fixed=false) {
+    Opt(Complex *f, unsigned int L, unsigned int M, bool fixed=false)
+    {
       assert(L <= M);
       m=M;
       q=1;
-      for(unsigned int i=0; i < L; ++i)
-        f[i]=0.0;
+      m=L; q=2; // Temp
+      n=0;
       unsigned int stop;
       unsigned int start;
 
-      Fftpad fft(f,L,M,m,q);
+      FFTpad fft(f,L,M,m,q);
+      Complex *F=ComplexAlign(fft.length());
       seconds();
-      fft.forwards(f);
+      for(unsigned int i=0; i < K; ++i) {
+        for(unsigned int j=0; j < L; ++j)
+          f[j]=j;
+        fft.forwards(f,F);
+      }
       double T=seconds();
+      utils::deleteAlign(F);
       unsigned int i=0;
 
       while(true) {
         unsigned int m=size[i];
+        cout << "m=" << m << endl;
         if(fixed && M % m != 0) continue;
         if(m > L) break; // Assume size 2 FFT is in table
         unsigned int p=ceilquotient(L,m);
@@ -129,14 +159,22 @@ public:
           stop=p*ceilquotient(M,p*m);
 
         for(unsigned int q=ceilquotient(M,m); q <= stop; ++q) {
-          unsigned int D[p];
+          cout << "q=" << q << endl;
+          unsigned int D[p/(n0+1)];
           unsigned int n=0;
           decompose(D,n,p,q);
+          assert(n < p/(n0+1));
           if(n > 0 || q == start) {
-            Fftpad fft(f,L,M,m,q,D,n);
+            FFTpad fft(f,L,M,m,q,D,n);
+            Complex *F=ComplexAlign(fft.length());
             seconds();
-            fft.forwards(f);
+            for(unsigned int i=0; i < K; ++i) {
+              for(unsigned int j=0; j < L; ++j)
+                f[j]=j;
+              fft.forwards(f,F);
+            }
             double t=seconds();
+            utils::deleteAlign(F);
 
             if(t < T) {
               this->m=m;
@@ -148,79 +186,84 @@ public:
         }
         ++i;
       }
+      cout << "Optimal values:" << endl;
+      cout << "m=" << m << endl;
+      cout << "q=" << q << endl;
+      cout << "n=" << n << endl;
     }
   };
 
+  // Normal entry point.
   // Compute an fft of length L padded to at least M
   // (or exactly M if fixed=true)
-  Fftpad(Complex *f, unsigned int L, unsigned int M, int sign=-1,
+  FFTpad(Complex *f, unsigned int L, unsigned int M, int sign=-1,
          bool fixed=false) :
-    L(L), M(M) {
+    L(L), M(M), sign(sign) {
     Opt opt=Opt(f,L,M,fixed);
     m=opt.m;
-    q=opt.q;
-    n=opt.n;
-    D=new unsigned int[n];
     p=ceilquotient(L,m);
+    q=opt.q;
+    D=new unsigned int[opt.n];
     decompose(D,n,p,q);
-    Fftpad(f,L,M,m,q,D,n,sign);
+    init(f);
   }
 
-  void forwards(Complex *f) {
-    Complex *F;
+  void forwards(Complex *f, Complex *F) {
     unsigned int pm=p*m;
-    if(pm > L) {
-      F=new Complex(pm);
-      for(unsigned int i=0; i < L; ++i)
-        F[i]=f[i];
-      for(unsigned int i=L; i < pm; ++i)
-        F[i]=0.0;
-      count += p*m-L;
-    } else F=f;
+    for(unsigned int i=0; i < L; ++i)
+      F[i]=f[i];
+    for(unsigned int i=L; i < pm; ++i)
+      F[i]=0.0;
 
     if(p == q)
       return fftL->fft(F);
 
     unsigned int N=q*m;
-    Complex *Zeta=buildZeta(N);
-
-    Complex *G=new Complex[N];
     for(unsigned int i=0; i < N; ++i)
       G[i]=0.0;
 
     unsigned int nsum=0;
 
-    Complex *h=new Complex[q];
-
     for(unsigned int i=0; i < n; ++i) {
       unsigned int n=D[i];
       unsigned int Q=q/n;
       fft1d* ffti=fft[i];
-      Complex *g=new Complex[n];
       for(unsigned int s=0; s < m; ++s) {
-        Complex *f=new Complex[n];
         for(unsigned int t=0; t < n; ++t)
-          f[t]=F[(t+nsum)*m+s];
+          e[t]=F[(t+nsum)*m+s];
         for(unsigned int r=0; r < Q; ++r) {
-          for(unsigned int s=0; s < n; ++s)
-            g[s]=Zeta[m*sign*r*s % N]*F[s];
-          ffti->fft(g);
+          for(unsigned int t=0; t < n; ++t) {
+            unsigned int c=m*r*t;
+            unsigned int a=c/S;
+            Complex Zeta=ZetaH[a]*ZetaL[c-S*a];
+            if(sign < 0) Zeta=conj(Zeta);
+            E[t]=Zeta*e[t];
+          }
+          ffti->fft(E);
           for(unsigned int l=0; l < n; ++l)
-            h[l*Q+r]=g[l];
+            h[l*Q+r]=E[l];
         }
-        for(unsigned int r=0; r < q; ++r)
-          G[r*m+s] += h[r]*Zeta[sign*r*(s+m*nsum) % N];
+        for(unsigned int r=0; r < q; ++r) {
+          unsigned int c=r*(s+m*nsum) % N;
+          unsigned int a=c/S;
+          Complex Zeta=ZetaH[a]*ZetaL[c-S*a];
+          if(sign < 0) Zeta=conj(Zeta);
+          G[r*m+s] += Zeta*h[r];
+        }
       }
       nsum += n;
     }
 
-    Complex *g=new Complex[m];
-
     for(unsigned int r=0; r < q; ++r) {
       for(unsigned int s=0; s < m; ++s) {
         Complex sum=0.0;
-        for(unsigned int t=nsum; t < p; ++t)
-          sum += Zeta[sign*r*(t*m+s) % N]*F[t*m+s];
+        for(unsigned int t=nsum; t < p; ++t) {
+          unsigned int c=r*(t*m+s) % N;
+          unsigned a=c/S;
+          Complex Zeta=ZetaH[a]*ZetaL[c-S*a];
+          if(sign < 0) Zeta=conj(Zeta);
+          sum += Zeta*F[t*m+s];
+        }
         g[s]=G[r*m+s]+sum;
       }
       fftm->fft(g);
@@ -228,16 +271,16 @@ public:
         F[l*q+r]=g[l];
     }
 
-    return; // return F;
+    return;
+  }
+
+  unsigned int padding() {
+    return p*m-L;
+  }
+  unsigned int length() {
+    return m*q;
   }
 };
-
-
-
-
-
-
-
 
 
 
@@ -299,6 +342,7 @@ int main(int argc, char* argv[])
 {
   fftw::maxthreads=get_max_threads();
 
+  /*
   bool Direct=false;
   bool Implicit=true;
   bool Explicit=false;
@@ -369,7 +413,58 @@ int main(int argc, char* argv[])
         exit(1);
     }
   }
+  */
 
+  ifstream fin("optimalSorted.dat");
+  nsize=0;
+  while(true) {
+    unsigned int i;
+    double mean,stdev;
+    fin >> i >> mean >> stdev;
+    if(fin.eof()) break;
+    size[nsize]=i;
+    ++nsize;
+  }
+
+  unsigned L,M;
+//  L=683;
+//  M=1023;
+
+  L=512;
+  M=2*L;
+
+  /*
+  L=81;
+  M=649;
+  */
+
+  Complex *f=ComplexAlign(L); // Temp
+
+  FFTpad fft(f,L,M);
+
+  cout << "L=" << L << endl;
+  cout << "M=" << M << endl;
+
+  cout << "Padding:" << fft.padding() << endl;
+
+  for(unsigned int i=0; i < L; ++i)
+    f[i]=i;
+
+  Complex *F=ComplexAlign(fft.length());
+
+  seconds();
+  for(unsigned int i=0; i < K; ++i) {
+    for(unsigned int j=0; j < L; ++j)
+      f[j]=j;
+    fft.forwards(f,F);
+  }
+  cout << seconds() << endl;
+
+
+//  for(unsigned int i=0; i < M; ++i)
+//    cout << F[i] << endl;
+
+#if 0
   unsigned int n=cpadding(m);
 
   cout << "n=" << n << endl;
@@ -573,5 +668,6 @@ int main(int argc, char* argv[])
   delete [] F;
   deleteAlign(f);
 
+#endif
   return 0;
 }
