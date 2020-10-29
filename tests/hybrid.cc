@@ -6,6 +6,7 @@
 // use out-of-place transforms
 
 #include <cassert>
+#include <cfloat>
 
 #include "convolution.h"
 #include "explicit.h"
@@ -87,6 +88,7 @@ protected:
   fft1d *fftM;
   fft1d *fftm;
   fft1d **fft;
+  mfft1d *fftms;
   unsigned int S;
   Complex *ZetaH, *ZetaL;
   Complex *g,*h,*G,*e,*E,*H; // Many, many work arrays!
@@ -141,6 +143,7 @@ public:
       unsigned int stop;
       unsigned int start;
 
+      /*
       FFTpad fft(f,L,M,m,q);
       Complex *F=ComplexAlign(fft.length());
       seconds();
@@ -151,6 +154,8 @@ public:
       }
       double T=seconds()*100;
       utils::deleteAlign(F);
+      */
+      double T=DBL_MAX; // Temporary
       unsigned int i=0;
 
       while(true) {
@@ -387,11 +392,48 @@ void multA(Complex **F, unsigned int m,
   }
 }
 
+unsigned L,M;
+
+double test(FFTpad *fft, Complex *f, Complex *F)
+{
+  cout << endl;
+
+  unsigned int K=1000;
+  utils::statistics S;
+
+  double t0=utils::totalseconds();
+  for(unsigned int k=0; k < K; ++k)
+    for(unsigned int i=0; i < L; ++i) f[i]=i;
+  double t1=utils::totalseconds();
+  for(unsigned int k=0; k < K; ++k) {
+    for(unsigned int i=0; i < L; ++i) f[i]=i;
+    fft->forwards(f,F);
+  }
+
+  double t=utils::totalseconds();
+  S.add(((t-t1)-(t1-t0))/K);
+
+  double mean=S.mean();
+
+  cout << "mean=" << mean << endl;
+
+  if(M < 1)
+    for(unsigned int i=0; i < M; ++i)
+      cout << F[i] << endl;
+
+  return mean;
+}
+
 int main(int argc, char* argv[])
 {
   fftw::maxthreads=1;//get_max_threads();
 
-  ifstream fin("optimalSorted.dat");
+  const char *name="optimalSorted.dat";
+  ifstream fin(name);
+  if(!fin) {
+    cerr << name << " not found" << endl;
+    exit(-1);
+  }
   nsize=0;
   while(true) {
     unsigned int i;
@@ -402,12 +444,11 @@ int main(int argc, char* argv[])
     ++nsize;
   }
 
-  unsigned L,M;
 //  L=683;
 //  M=1023;
 
 //  L=512;
-  L=8;
+  L=1024;
   M=2*L;
 
   /*
@@ -426,25 +467,29 @@ int main(int argc, char* argv[])
 
   Complex *F=ComplexAlign(fft.length());
 
-  unsigned int K=1000;
-  utils::statistics S;
+  double mean1=test(&fft,f,F);
 
-  double t0=utils::totalseconds();
-  for(unsigned int k=0; k < K; ++k)
-    for(unsigned int i=0; i < L; ++i) f[i]=i;
-  double t1=utils::totalseconds();
-  for(unsigned int k=0; k < K; ++k)
-    for(unsigned int i=0; i < L; ++i) f[i]=i;
-  fft.forwards(f,F);
+  FFTpad fft0(f,L,M,M,1);
 
-  double t=utils::totalseconds();
-  S.add(((t-t1)-(t1-t0))/K);
-
-  cout << "mean=" << S.mean() << endl;
+  Complex *F2=ComplexAlign(fft.length());
+  double mean2=test(&fft0,f,F2);
 
   cout << endl;
-  for(unsigned int i=0; i < M; ++i)
-    cout << F[i] << endl;
+  if(mean2 > 0)
+    cout << "ratio=" << mean1/mean2 << endl;
+  cout << endl;
+
+  double error=0.0;
+  double norm=0.0;
+  for(unsigned int i=0; i < L; i++) {
+    error += abs2(F2[i]-F[i]);
+    norm += abs2(F[i]);
+  }
+
+  if(norm > 0) error=sqrt(error/norm);
+  cout << "error=" << error << endl;
+  if (error > 1e-12)
+    cerr << "Caution! error=" << error << endl;
 
   return 0;
 }
