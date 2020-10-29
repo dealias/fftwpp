@@ -89,7 +89,7 @@ protected:
   fft1d **fft;
   unsigned int S;
   Complex *ZetaH, *ZetaL;
-  Complex *g,*h,*G,*e,*E; // Many, many work arrays!
+  Complex *g,*h,*G,*e,*E,*H; // Many, many work arrays!
 public:
 
   void init(Complex *f) {
@@ -103,6 +103,7 @@ public:
 
       g=ComplexAlign(m);
       G=ComplexAlign(N); // Rewrite so only used for n > 0.
+      H=ComplexAlign(M);
       if(n > 0) {
         h=ComplexAlign(q);
         unsigned int D0=D[0];
@@ -136,7 +137,6 @@ public:
       assert(L <= M);
       m=M;
       q=1;
-//      m=L; q=ceilquotient(M,m); // Temp
       n=0;
       unsigned int stop;
       unsigned int start;
@@ -149,7 +149,7 @@ public:
           f[j]=j;
         fft.forwards(f,F);
       }
-      double T=seconds();
+      double T=seconds()*100;
       utils::deleteAlign(F);
       unsigned int i=0;
 
@@ -195,6 +195,7 @@ public:
       }
       cout << "Optimal values:" << endl;
       cout << "m=" << m << endl;
+      cout << "p=" << ceilquotient(L,m) << endl;
       cout << "q=" << q << endl;
       cout << "n=" << n << endl;
     }
@@ -217,15 +218,20 @@ public:
 
   void forwards(Complex *f, Complex *F) {
     unsigned int pm=p*m;
-    for(unsigned int i=0; i < L; ++i)
-      F[i]=f[i];
-    for(unsigned int i=L; i < pm; ++i)
-      F[i]=0.0;
-
-    if(p == q)
+    if(p == q) {
+      for(unsigned int i=0; i < L; ++i)
+        F[i]=f[i];
+      for(unsigned int i=L; i < pm; ++i)
+        F[i]=0.0;
       return fftM->fft(F);
+    }
+
     unsigned int nsum=0;
 
+    for(unsigned int i=0; i < L; ++i)
+      H[i]=f[i];
+    for(unsigned int i=L; i < pm; ++i)
+      H[i]=0.0;
 
     /*
     unsigned int N=q*m;
@@ -266,14 +272,17 @@ public:
     */
 
     if(p == 1) {
-      fftm->fft(F);
+      for(unsigned int s=0; s < m; ++s)
+//        g[s]=G[s]+H[s];
+        g[s]=H[s];
+      fftm->fft(g);
       for(unsigned int l=0; l < m; ++l)
         F[l*q]=g[l];
     } else {
       for(unsigned int s=0; s < m; ++s) {
         Complex sum=0.0;
         for(unsigned int t=nsum; t < p; ++t)
-          sum += F[t*m+s];
+          sum += H[t*m+s];
 //        g[s]=G[s]+sum;
         g[s]=sum;
       }
@@ -289,8 +298,8 @@ public:
 //          unsigned int a=c/S;
 //          Complex Zeta=ZetaH[a]*ZetaL[c-S*a];
           Complex Zeta=ZetaL[c];
-//          if(sign < 0) Zeta=conj(Zeta);
-          g[s]=Zeta*F[s];
+          if(sign < 0) Zeta=conj(Zeta);
+          g[s]=Zeta*H[s];
         } else {
           Complex sum=0.0;
           for(unsigned int t=nsum; t < p; ++t) {
@@ -299,8 +308,8 @@ public:
 //          unsigned int a=c/S;
 //          Complex Zeta=ZetaH[a]*ZetaL[c-S*a];
             Complex Zeta=ZetaL[c];
-//          if(sign < 0) Zeta=conj(Zeta);
-            sum += Zeta*F[j];
+          if(sign < 0) Zeta=conj(Zeta);
+            sum += Zeta*H[j];
           }
 //        g[s]=G[r*m+s]+sum;
           g[s]=sum;
@@ -382,79 +391,6 @@ int main(int argc, char* argv[])
 {
   fftw::maxthreads=1;//get_max_threads();
 
-  /*
-  bool Direct=false;
-  bool Implicit=true;
-  bool Explicit=false;
-
-  // Number of iterations.
-  unsigned int N0=1000000000;
-  unsigned int N=0;
-
-  unsigned int m=11; // Problem size
-
-  int stats=0; // Type of statistics used in timing test.
-
-#ifndef __SSE2__
-  fftw::effort |= FFTW_NO_SIMD;
-#endif
-
-#ifdef __GNUC__
-  optind=0;
-#endif
-  for (;;) {
-    int c = getopt(argc,argv,"hdeiptA:B::N:m:n:S:T:");
-    if (c == -1) break;
-
-    switch (c) {
-      case 0:
-        break;
-      case 'd':
-        Direct=true;
-        break;
-      case 'e':
-        Explicit=true;
-        Implicit=false;
-        break;
-      case 'i':
-        Implicit=true;
-        Explicit=false;
-        break;
-      case 'p':
-        break;
-      case 'A':
-        A=atoi(optarg);
-        break;
-      case 'B':
-        B=atoi(optarg);
-        break;
-      case 'N':
-        N=atoi(optarg);
-        break;
-      case 't':
-        Test=true;
-        break;
-      case 'm':
-        m=atoi(optarg);
-        break;
-      case 'n':
-        N0=atoi(optarg);
-        break;
-      case 'T':
-        fftw::maxthreads=max(atoi(optarg),1);
-        break;
-      case 'S':
-        stats=atoi(optarg);
-        break;
-      case 'h':
-      default:
-        usage(1);
-        usageTest();
-        exit(1);
-    }
-  }
-  */
-
   ifstream fin("optimalSorted.dat");
   nsize=0;
   while(true) {
@@ -471,7 +407,7 @@ int main(int argc, char* argv[])
 //  M=1023;
 
 //  L=512;
-  L=2048;
+  L=8;
   M=2*L;
 
   /*
@@ -479,7 +415,7 @@ int main(int argc, char* argv[])
   M=649;
   */
 
-  Complex *f=ComplexAlign(L); // Temp
+  Complex *f=ComplexAlign(L);
 
   FFTpad fft(f,L,M);
 
@@ -488,228 +424,27 @@ int main(int argc, char* argv[])
 
   cout << "Padding:" << fft.padding() << endl;
 
-  for(unsigned int i=0; i < L; ++i)
-    f[i]=i;
-
   Complex *F=ComplexAlign(fft.length());
 
   unsigned int K=1000;
-  seconds();
-  for(unsigned int i=0; i < K; ++i) {
-    for(unsigned int j=0; j < L; ++j)
-      f[j]=j;
-    fft.forwards(f,F);
-  }
-  cout << seconds() << endl;
+  utils::statistics S;
 
+  double t0=utils::totalseconds();
+  for(unsigned int k=0; k < K; ++k)
+    for(unsigned int i=0; i < L; ++i) f[i]=i;
+  double t1=utils::totalseconds();
+  for(unsigned int k=0; k < K; ++k)
+    for(unsigned int i=0; i < L; ++i) f[i]=i;
+  fft.forwards(f,F);
 
-//  for(unsigned int i=0; i < M; ++i)
-//    cout << F[i] << endl;
+  double t=utils::totalseconds();
+  S.add(((t-t1)-(t1-t0))/K);
 
-#if 0
-  unsigned int n=cpadding(m);
+  cout << "mean=" << S.mean() << endl;
 
-  cout << "n=" << n << endl;
-  cout << "m=" << m << endl;
+  cout << endl;
+  for(unsigned int i=0; i < M; ++i)
+    cout << F[i] << endl;
 
-  if(N == 0) {
-    N=N0/n;
-    N = max(N, 20);
-  }
-  cout << "N=" << N << endl;
-
-  // Explicit and direct methods are only implemented for binary convolutions.
-  if(!Implicit)
-    A=2;
-
-  if(B < 1)
-    B=1;
-
-  unsigned int np=Explicit ? n : m;
-  unsigned int C=max(A,B);
-  Complex *f=ComplexAlign(C*np);
-
-  Complex **F=new Complex *[C];
-  for(unsigned int s=0; s < C; ++s)
-    F[s]=f+s*np;
-
-  Complex *h0=NULL;
-  if(Test || Direct)
-    h0=ComplexAlign(m*B);
-
-  double *T=new double[N];
-
-  if(Implicit) {
-    ImplicitConvolution C(m,A,B);
-    cout << "threads=" << C.Threads() << endl << endl;
-
-    multiplier *mult=NULL;
-    switch(B) {
-      case 1:
-        switch(A) {
-          case 1: mult=multautoconvolution; break;
-          case 2: mult=multbinary; break;
-          case 4: mult=multbinary2; break;
-          case 6: mult=multbinary3; break;
-          case 8: mult=multbinary4; break;
-          case 16: mult=multbinary8; break;
-          default:
-            cerr << "A=" << A << ", B=" << B << " is not yet implemented"
-                 << endl;
-            exit(1);
-        }
-        break;
-      default:
-        mult=multA;
-        break;
-    }
-    if(!mult) {
-      cerr << "A=" << A << ", B=" << B << " is not yet implemented"
-           << endl;
-      exit(1);
-    }
-
-    for(unsigned int i=0; i < N; ++i) {
-      init(F,m,A);
-      seconds();
-      C.convolve(F,mult);
-      //C.convolve(F[0],F[1]);
-      T[i]=seconds();
-    }
-
-    timings("Implicit",m,T,N,stats);
-
-    if(m < 100) {
-      for(unsigned int b=0; b < B; ++b) {
-        for(unsigned int i=0; i < m; i++)
-          cout << F[b][i] << endl;
-        cout << endl;
-      }
-    }
-    else {
-      cout << f[0] << endl;
-    }
-
-    if(Test || Direct) {
-      for(unsigned int b=0; b < B; ++b) {
-        for(unsigned int i=0; i < m; i++) {
-          h0[i+b*m]=F[b][i];
-        }
-      }
-    }
-  }
-
-  if(Explicit) {
-    ExplicitConvolution C(n,m,F[0]);
-    for(unsigned int i=0; i < N; ++i) {
-      init(F,m,A);
-      seconds();
-      C.convolve(F[0],F[1]);
-      T[i]=seconds();
-    }
-
-    cout << endl;
-    timings("Explicit",m,T,N,stats);
-
-    if(m < 100)
-      for(unsigned int i=0; i < m; i++)
-        cout << F[0][i] << endl;
-    else cout << F[0][0] << endl;
-    cout << endl;
-    if(Test || Direct)
-      for(unsigned int i=0; i < m; i++)
-        h0[i]=F[0][i];
-  }
-
-  if(Direct) {
-    DirectConvolution C(m);
-    if(A % 2 == 0 && A > 2)
-      A=2;
-    init(F,m,A);
-    Complex *h=ComplexAlign(m);
-    seconds();
-    if(A % 2 == 0)
-      C.convolve(h,F[0],F[1]);
-    if(A == 1)
-      C.autoconvolve(h,F[0]);
-    T[0]=seconds();
-
-    cout << endl;
-    timings("Direct",m,T,1);
-
-    if(m < 100)
-      for(unsigned int i=0; i < m; i++)
-        cout << h[i] << endl;
-    else
-      cout << h[0] << endl;
-
-    { // compare implicit or explicit version with direct verion:
-      double error=0.0;
-      double norm=0.0;
-      for(unsigned int b=0; b < B; ++b) {
-        double factor=1.0+b;
-        for(unsigned long long k=0; k < m; k++) {
-          error += abs2(h0[k+b*m]-factor*h[k]);
-          norm += abs2(h[k]);
-        }
-      }
-      if(norm > 0) error=sqrt(error/norm);
-      cout << "error=" << error << endl;
-      if (error > 1e-12)
-        cerr << "Caution! error=" << error << endl;
-    }
-
-    if(Test)
-      for(unsigned int i=0; i < m; i++)
-        h0[i]=h[i];
-    deleteAlign(h);
-  }
-
-  if(Test) {
-    Complex *h=ComplexAlign(n*B);
-    // test accuracy of convolution methods:
-    double error=0.0;
-    cout << endl;
-    double norm=0.0;
-
-    bool testok=false;
-
-    // Exact solutions for test case.
-    if(A % 2 == 0) {
-      testok=true;
-      for(unsigned long long k=0; k < m; k++) {
-        h[k]=iF*iG*(k+1)*pow(E,k*I);
-        //  h[k]=iF*iG*(k*(k+1)/2.0*(k-(2*k+1)/3.0));
-      }
-    }
-
-    // autoconvolution of f[k]=k
-    if(A == 1) {
-      testok=true;
-      for(unsigned long long k=0; k < m; k++)
-        h[k]=k*(0.5*k*(k+1)) - k*(k+1)*(2*k+1)/6.0;
-    }
-
-    if(!testok) {
-      cout << "ERROR: no test case for A="<<A<<endl;
-      exit(1);
-    }
-
-    for(unsigned long long k=0; k < m; k++) {
-      error += abs2(h0[k]-h[k]);
-      norm += abs2(h[k]);
-    }
-    if(norm > 0) error=sqrt(error/norm);
-    cout << "error=" << error << endl;
-    if (error > 1e-12)
-      cerr << "Caution! error=" << error << endl;
-    deleteAlign(h);
-  }
-
-  delete [] T;
-  delete [] F;
-  deleteAlign(f);
-
-#endif
   return 0;
 }
