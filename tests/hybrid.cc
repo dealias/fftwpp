@@ -136,7 +136,7 @@ public:
       assert(L <= M);
       m=M;
       q=1;
-//      m=L; q=2; // Temp
+//      m=L; q=ceilquotient(M,m); // Temp
       n=0;
       unsigned int stop;
       unsigned int start;
@@ -284,18 +284,27 @@ public:
 
     for(unsigned int r=1; r < q; ++r) {
       for(unsigned int s=0; s < m; ++s) {
-        Complex sum=0.0;
-        for(unsigned int t=nsum; t < p; ++t) {
-          unsigned int j=t*m+s;
-          unsigned int c=r*j;// % N;
+        if(p == 1) {
+          unsigned int c=r*s;// % N;
 //          unsigned int a=c/S;
 //          Complex Zeta=ZetaH[a]*ZetaL[c-S*a];
           Complex Zeta=ZetaL[c];
 //          if(sign < 0) Zeta=conj(Zeta);
-          sum += Zeta*F[j];
-        }
+          g[s]=Zeta*F[s];
+        } else {
+          Complex sum=0.0;
+          for(unsigned int t=nsum; t < p; ++t) {
+            unsigned int j=t*m+s;
+            unsigned int c=r*j;// % N;
+//          unsigned int a=c/S;
+//          Complex Zeta=ZetaH[a]*ZetaL[c-S*a];
+            Complex Zeta=ZetaL[c];
+//          if(sign < 0) Zeta=conj(Zeta);
+            sum += Zeta*F[j];
+          }
 //        g[s]=G[r*m+s]+sum;
-        g[s]=sum;
+          g[s]=sum;
+        }
       }
       fftm->fft(g);
       for(unsigned int l=0; l < m; ++l)
@@ -461,8 +470,8 @@ int main(int argc, char* argv[])
 //  L=683;
 //  M=1023;
 
-  L=512;
-//  L=2048;
+//  L=512;
+  L=2048;
   M=2*L;
 
   /*
