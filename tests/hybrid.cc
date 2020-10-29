@@ -1,5 +1,9 @@
-// TODO: vectorize and optimize Zeta computations
-// TODO: use out-of-place transforms
+// TODO:
+// check results
+// optimize memory use
+// vectorize and optimize Zeta computations
+// use output strides
+// use out-of-place transforms
 
 #include <cassert>
 
@@ -12,7 +16,7 @@ using namespace std;
 using namespace utils;
 using namespace fftwpp;
 
-unsigned int K=10; // Number of tests ***TEMP***
+unsigned int K=100; // Number of tests ***TEMP***
 
 // Constants used for initialization and testing.
 const Complex I(0.0,1.0);
@@ -25,11 +29,10 @@ bool Test=false;
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
 
-const unsigned int Nsize=1000;
+const unsigned int Nsize=1000; // FIXME
 unsigned int nsize=1000;
 unsigned int size[Nsize];
 
-Complex *buildZeta(unsigned int N) {return NULL;}
 unsigned int n0=1;//25;
 
 // Search a sorted ordered array a of n elements for key, returning the index i
@@ -81,7 +84,7 @@ protected:
   unsigned int *D; // divisors of q
   unsigned int n; // number of elements in D
   int sign;
-  fft1d *fftL;
+  fft1d *fftM;
   fft1d *fftm;
   fft1d **fft;
   unsigned int S;
@@ -90,24 +93,28 @@ protected:
 public:
 
   void init(Complex *f) {
-    fftL=new fft1d(L,sign,f);
-    // Revisit memory allocation
-    fftm=m < L ? new fft1d(m,sign,f) : new fft1d(m,sign);
-    fft=new fft1d*[n];
-    for(unsigned int i=0; i < n; ++i)
-      fft[i]=q < L ? new fft1d(D[i],sign,f) : new fft1d(D[i],sign);
-    unsigned int N=q*m;
-    S=BuildZeta(N,N,ZetaH,ZetaL);//,threads);
+    if(p == q)
+      fftM=new fft1d(M,sign);
+    else {
+      // Revisit memory allocation
+      unsigned int N=q*m;
+      S=p*N;
+      BuildZeta(N,p*N,ZetaH,ZetaL,1,S);//,threads);
 
-    g=ComplexAlign(m);
-    h=ComplexAlign(q);
-    G=ComplexAlign(N);
-    if(n > 0) {
-      unsigned int D0=D[0];
-      E=ComplexAlign(D0);
-      e=ComplexAlign(D0);
+      g=ComplexAlign(m);
+      G=ComplexAlign(N); // Rewrite so only used for n > 0.
+      if(n > 0) {
+        h=ComplexAlign(q);
+        unsigned int D0=D[0];
+        E=ComplexAlign(D0);
+        e=ComplexAlign(D0);
+        fft=new fft1d*[n];
+        for(unsigned int i=0; i < n; ++i)
+          fft[i]=q < L ? new fft1d(D[i],sign,f) : new fft1d(D[i],sign);
+      }
+      fftm=m < L ? new fft1d(m,sign,f) : new fft1d(m,sign);
     }
-  }
+ }
 
   // Compute an fft padded to N=q*m >= M >= L=f.length
   FFTpad(Complex *f, unsigned int L, unsigned int M,
@@ -129,7 +136,7 @@ public:
       assert(L <= M);
       m=M;
       q=1;
-      m=L; q=2; // Temp
+//      m=L; q=2; // Temp
       n=0;
       unsigned int stop;
       unsigned int start;
@@ -216,13 +223,14 @@ public:
       F[i]=0.0;
 
     if(p == q)
-      return fftL->fft(F);
+      return fftM->fft(F);
+    unsigned int nsum=0;
 
+
+    /*
     unsigned int N=q*m;
     for(unsigned int i=0; i < N; ++i)
       G[i]=0.0;
-
-    unsigned int nsum=0;
 
     for(unsigned int i=0; i < n; ++i) {
       unsigned int n=D[i];
@@ -234,9 +242,10 @@ public:
         for(unsigned int r=0; r < Q; ++r) {
           for(unsigned int t=0; t < n; ++t) {
             unsigned int c=m*r*t;
-            unsigned int a=c/S;
-            Complex Zeta=ZetaH[a]*ZetaL[c-S*a];
-            if(sign < 0) Zeta=conj(Zeta);
+//            unsigned int a=c/S;
+//            Complex Zeta=ZetaH[a]*ZetaL[c-S*a];
+            Complex Zeta=ZetaL[c];
+//            if(sign < 0) Zeta=conj(Zeta);
             E[t]=Zeta*e[t];
           }
           ffti->fft(E);
@@ -244,27 +253,49 @@ public:
             h[l*Q+r]=E[l];
         }
         for(unsigned int r=0; r < q; ++r) {
-          unsigned int c=r*(s+m*nsum) % N;
-          unsigned int a=c/S;
-          Complex Zeta=ZetaH[a]*ZetaL[c-S*a];
-          if(sign < 0) Zeta=conj(Zeta);
+          unsigned int c=r*(s+m*nsum);
+//          unsigned int a=c/S;
+//          Complex Zeta=ZetaH[a]*ZetaL[c-S*a];
+          Complex Zeta=ZetaL[c];
+//          if(sign < 0) Zeta=conj(Zeta);
           G[r*m+s] += Zeta*h[r];
         }
       }
       nsum += n;
     }
+    */
 
-    for(unsigned int r=0; r < q; ++r) {
+    if(p == 1) {
+      fftm->fft(F);
+      for(unsigned int l=0; l < m; ++l)
+        F[l*q]=g[l];
+    } else {
+      for(unsigned int s=0; s < m; ++s) {
+        Complex sum=0.0;
+        for(unsigned int t=nsum; t < p; ++t)
+          sum += F[t*m+s];
+//        g[s]=G[s]+sum;
+        g[s]=sum;
+      }
+      fftm->fft(g);
+      for(unsigned int l=0; l < m; ++l)
+        F[l*q]=g[l];
+    }
+
+    for(unsigned int r=1; r < q; ++r) {
       for(unsigned int s=0; s < m; ++s) {
         Complex sum=0.0;
         for(unsigned int t=nsum; t < p; ++t) {
-          unsigned int c=r*(t*m+s) % N;
-          unsigned a=c/S;
-          Complex Zeta=ZetaH[a]*ZetaL[c-S*a];
-          if(sign < 0) Zeta=conj(Zeta);
-          sum += Zeta*F[t*m+s];
+          unsigned int j=t*m+s;
+          unsigned int c=r*j;// % N;
+//          unsigned int a=c/S;
+//          Complex Zeta=ZetaH[a]*ZetaL[c-S*a];
+          Complex Zeta=ZetaL[c];
+//          if(sign < 0) Zeta=conj(Zeta);
+          sum += Zeta*F[j];
         }
-        g[s]=G[r*m+s]+sum;
+//        g[s]=G[r*m+s]+sum;
+        g[s]=sum;
       }
       fftm->fft(g);
       for(unsigned int l=0; l < m; ++l)
@@ -340,7 +371,7 @@ void multA(Complex **F, unsigned int m,
 
 int main(int argc, char* argv[])
 {
-  fftw::maxthreads=get_max_threads();
+  fftw::maxthreads=1;//get_max_threads();
 
   /*
   bool Direct=false;
@@ -431,6 +462,7 @@ int main(int argc, char* argv[])
 //  M=1023;
 
   L=512;
+//  L=2048;
   M=2*L;
 
   /*
@@ -452,6 +484,7 @@ int main(int argc, char* argv[])
 
   Complex *F=ComplexAlign(fft.length());
 
+  unsigned int K=1000;
   seconds();
   for(unsigned int i=0; i < K; ++i) {
     for(unsigned int j=0; j < L; ++j)

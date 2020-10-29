@@ -47,11 +47,11 @@ inline unsigned int max(unsigned int a, unsigned int b)
 // Build the factored zeta tables.
 unsigned int BuildZeta(double arg, unsigned int m,
                        Complex *&ZetaH, Complex *&ZetaL,
-                       unsigned int threads=1);
+                       unsigned int threads=1, unsigned int s=0);
 
 unsigned int BuildZeta(unsigned int n, unsigned int m,
                        Complex *&ZetaH, Complex *&ZetaL,
-                       unsigned int threads=1);
+                       unsigned int threads=1, unsigned int s=0);
 
 struct convolveOptions {
   unsigned int nx,ny,nz;           // |

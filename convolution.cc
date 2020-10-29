@@ -22,9 +22,10 @@ const double twopi=2.0*M_PI;
 
 // Build zeta table, returning the floor of the square root of m.
 unsigned int BuildZeta(double arg, unsigned int m,
-                       Complex *&ZetaH, Complex *&ZetaL, unsigned int threads)
+                       Complex *&ZetaH, Complex *&ZetaL, unsigned int threads,
+                       unsigned int s)
 {
-  unsigned int s=(int) sqrt((double) m);
+  if(s == 0) s=(int) sqrt((double) m);
   unsigned int t=m/s;
   if(s*t < m) ++t;
   ZetaH=ComplexAlign(t);
@@ -48,9 +49,10 @@ unsigned int BuildZeta(double arg, unsigned int m,
 }
 
 unsigned int BuildZeta(unsigned int n, unsigned int m,
-                       Complex *&ZetaH, Complex *&ZetaL, unsigned int threads)
+                       Complex *&ZetaH, Complex *&ZetaL, unsigned int threads,
+                       unsigned int s)
 {
-  return BuildZeta(twopi/n,m,ZetaH,ZetaL,threads);
+  return BuildZeta(twopi/n,m,ZetaH,ZetaL,threads,s);
 }
 
 void ImplicitConvolution::convolve(Complex **F, multiplier *pmult,
