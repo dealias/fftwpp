@@ -84,7 +84,6 @@ protected:
   unsigned int q;
   unsigned int *D; // divisors of q
   unsigned int n; // number of elements in D
-  int sign;
   fft1d *fftN;
   fft1d *fftm;
   fft1d **fft;
@@ -97,7 +96,7 @@ public:
   void init(Complex *f) {
     unsigned int N=q*m;
     if(p == q)
-      fftN=new fft1d(N,sign);
+      fftN=new fft1d(N,1);
     else {
       // Revisit memory allocation
       S=p*N;
@@ -113,19 +112,20 @@ public:
         e=ComplexAlign(D0);
         fft=new fft1d*[n];
         for(unsigned int i=0; i < n; ++i)
-          fft[i]=q < L ? new fft1d(D[i],sign,f) : new fft1d(D[i],sign);
+          fft[i]=q < L ? new fft1d(D[i],1,f) : new fft1d(D[i],1);
       }
-      fftm=m < L ? new fft1d(m,sign,f) : new fft1d(m,sign);
-      fftmo=new mfft1d(m,sign,1,1,q,0,0,f,G);
+      fftm=m < L ? new fft1d(m,1,f) : new fft1d(m,1);
+      fftmo=new mfft1d(m,1,1,1,q,0,0,f,G);
     }
  }
 
   // Compute an fft padded to N=q*m >= M >= L=f.length
   FFTpad(Complex *f, unsigned int L, unsigned int M,
          unsigned int m, unsigned int q, unsigned int *D=NULL,
-         unsigned int n=0, int sign=-1) :
-    L(L), M(M), m(m), p(ceilquotient(L,m)), q(q), D(D), n(n),
-    sign(sign) {init(f);}
+         unsigned int n=0) :
+    L(L), M(M), m(m), p(ceilquotient(L,m)), q(q), D(D), n(n) {
+    init(f);
+  }
 
   class Opt {
   public:
@@ -210,9 +210,9 @@ public:
   // Normal entry point.
   // Compute an fft of length L padded to at least M
   // (or exactly M if fixed=true)
-  FFTpad(Complex *f, unsigned int L, unsigned int M, int sign=-1,
+  FFTpad(Complex *f, unsigned int L, unsigned int M, 
          bool fixed=false) :
-    L(L), M(M), sign(sign) {
+    L(L), M(M)  {
     Opt opt=Opt(f,L,M,fixed);
     m=opt.m;
     p=ceilquotient(L,m);
@@ -240,7 +240,6 @@ public:
     for(unsigned int i=L; i < pm; ++i)
       H[i]=0.0;
 
-    /*
     unsigned int N=q*m;
     for(unsigned int i=0; i < N; ++i)
       G[i]=0.0;
@@ -258,7 +257,6 @@ public:
 //            unsigned int a=c/S;
 //            Complex Zeta=ZetaH[a]*ZetaL[c-S*a];
             Complex Zeta=ZetaL[c];
-//            if(sign < 0) Zeta=conj(Zeta);
             E[t]=Zeta*e[t];
           }
           ffti->fft(E);
@@ -270,13 +268,11 @@ public:
 //          unsigned int a=c/S;
 //          Complex Zeta=ZetaH[a]*ZetaL[c-S*a];
           Complex Zeta=ZetaL[c];
-//          if(sign < 0) Zeta=conj(Zeta);
           G[r*m+s] += Zeta*h[r];
         }
       }
       nsum += n;
     }
-    */
 
     if(p == 1)
       fftmo->fft(H,F);
@@ -285,8 +281,8 @@ public:
         Complex sum=0.0;
         for(unsigned int t=nsum; t < p; ++t)
           sum += H[t*m+s];
-//        g[s]=G[s]+sum;
-        g[s]=sum;
+        g[s]=G[s]+sum;
+//        g[s]=sum;
       }
       fftmo->fft(g,F);
 //      for(unsigned int l=0; l < m; ++l)
@@ -300,7 +296,6 @@ public:
 //          unsigned int a=c/S;
 //          Complex Zeta=ZetaH[a]*ZetaL[c-S*a];
           Complex Zeta=ZetaL[c];
-          if(sign < 0) Zeta=conj(Zeta);
           g[s]=Zeta*H[s];
         } else {
           Complex sum=0.0;
@@ -310,11 +305,10 @@ public:
 //          unsigned int a=c/S;
 //          Complex Zeta=ZetaH[a]*ZetaL[c-S*a];
             Complex Zeta=ZetaL[c];
-          if(sign < 0) Zeta=conj(Zeta);
             sum += Zeta*H[j];
           }
-//        g[s]=G[r*m+s]+sum;
-          g[s]=sum;
+        g[s]=G[r*m+s]+sum;
+//          g[s]=sum;
         }
       }
       fftmo->fft(g,F+r);
@@ -443,13 +437,11 @@ int main(int argc, char* argv[])
 //  M=1023;
 
 //  L=512;
-  L=1025;
-  M=2*L;
+//  L=1024;
+//  M=2*L;
 
-  /*
   L=81;
-  M=649;
-  */
+  M=1649;
 
   Complex *f=ComplexAlign(L);
 
