@@ -522,10 +522,8 @@ public:
       exit(1);
     }
     plan=NULL;
-    
     if(!out) out=in;
     inplace=(out==in);
-    
     if(rows == 0 || cols == 0) return;
     size /= sizeof(double);
     length *= size;
