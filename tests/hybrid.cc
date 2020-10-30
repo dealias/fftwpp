@@ -287,9 +287,9 @@ public:
 //        g[s]=G[s]+sum;
         g[s]=sum;
       }
-      fftm->fft(g);
-      for(unsigned int l=0; l < m; ++l)
-        F[l*q]=g[l];
+      fftmo->fft(g,F);
+//      for(unsigned int l=0; l < m; ++l)
+//        F[l*q]=g[l];
     }
 
     for(unsigned int r=1; r < q; ++r) {
