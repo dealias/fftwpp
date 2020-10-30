@@ -59,11 +59,12 @@ int search(unsigned int *a, unsigned int n, unsigned int key)
 void decompose(unsigned int *D, unsigned int& n, unsigned int p,
                unsigned int q)
 {
-  unsigned int first=search(size,nsize,min(q/2,p));
-  unsigned int last=search(size,nsize,n0);
+  int first=search(size,nsize,min(q/2,p));
+  int last=search(size,nsize,n0);
 // Return the factors of q in reverse order.
   n=0;
-  for(unsigned int i=first; i > last; --i) {
+
+  for(int i=first; i > last; --i) {
     if(p <= n0) break;
     unsigned int f=size[i];
     if(f <= p && q % f == 0) {
@@ -210,8 +211,7 @@ public:
   // Normal entry point.
   // Compute an fft of length L padded to at least M
   // (or exactly M if fixed=true)
-  FFTpad(Complex *f, unsigned int L, unsigned int M, 
-         bool fixed=false) :
+  FFTpad(Complex *f, unsigned int L, unsigned int M, bool fixed=false) :
     L(L), M(M)  {
     Opt opt=Opt(f,L,M,fixed);
     m=opt.m;
@@ -250,7 +250,7 @@ public:
       fft1d* ffti=fft[i];
       for(unsigned int s=0; s < m; ++s) {
         for(unsigned int t=0; t < n; ++t)
-          e[t]=F[(t+nsum)*m+s];
+          e[t]=H[(t+nsum)*m+s];
         for(unsigned int r=0; r < Q; ++r) {
           for(unsigned int t=0; t < n; ++t) {
             unsigned int c=m*r*t;
@@ -285,8 +285,6 @@ public:
 //        g[s]=sum;
       }
       fftmo->fft(g,F);
-//      for(unsigned int l=0; l < m; ++l)
-//        F[l*q]=g[l];
     }
 
     for(unsigned int r=1; r < q; ++r) {
@@ -312,8 +310,6 @@ public:
         }
       }
       fftmo->fft(g,F+r);
-//      for(unsigned int l=0; l < m; ++l)
-//        F[l*q+r]=g[l];
     }
 
     return;
@@ -433,15 +429,19 @@ int main(int argc, char* argv[])
     ++nsize;
   }
 
-//  L=683;
-//  M=1023;
+  L=683;
+  M=1024;
 
-//  L=512;
-//  L=1024;
-//  M=2*L;
+  L=197;
+  M=4*L;
+
+  /*
+  L=8;
+  M=2*L;
+  */
 
   L=81;
-  M=1649;
+  M=649;
 
   Complex *f=ComplexAlign(L);
 
@@ -477,7 +477,7 @@ int main(int argc, char* argv[])
   if(norm > 0) error=sqrt(error/norm);
   cout << "error=" << error << endl;
   if (error > 1e-12)
-    cerr << "Caution! error=" << error << endl;
+    cerr << endl << "WARNING: error=" << error << endl;
 
   return 0;
 }
