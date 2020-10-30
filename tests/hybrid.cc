@@ -85,7 +85,7 @@ protected:
   unsigned int *D; // divisors of q
   unsigned int n; // number of elements in D
   int sign;
-  fft1d *fftM;
+  fft1d *fftN;
   fft1d *fftm;
   fft1d **fft;
   mfft1d *fftmo;
@@ -95,11 +95,11 @@ protected:
 public:
 
   void init(Complex *f) {
+    unsigned int N=q*m;
     if(p == q)
-      fftM=new fft1d(M,sign);
+      fftN=new fft1d(N,sign);
     else {
       // Revisit memory allocation
-      unsigned int N=q*m;
       S=p*N;
       BuildZeta(N,p*N,ZetaH,ZetaL,1,S);//,threads);
 
@@ -223,17 +223,18 @@ public:
   }
 
   void forwards(Complex *f, Complex *F) {
-    unsigned int pm=p*m;
     if(p == q) {
+      unsigned int N=q*m;
       for(unsigned int i=0; i < L; ++i)
         F[i]=f[i];
-      for(unsigned int i=L; i < pm; ++i)
+      for(unsigned int i=L; i < N; ++i)
         F[i]=0.0;
-      return fftM->fft(F);
+      return fftN->fft(F);
     }
 
     unsigned int nsum=0;
 
+    unsigned int pm=p*m;
     for(unsigned int i=0; i < L; ++i)
       H[i]=f[i];
     for(unsigned int i=L; i < pm; ++i)
@@ -409,9 +410,11 @@ double test(FFTpad *fft, Complex *f, Complex *F)
 
   cout << "mean=" << mean << " +/- " << S.stdev() << endl;
 
-  if(M < 1)
-    for(unsigned int i=0; i < M; ++i)
+  unsigned int N=fft->length();
+  if(N < 10) {
+    for(unsigned int i=0; i < N; ++i)
       cout << F[i] << endl;
+  }
 
   return mean;
 }
@@ -440,7 +443,7 @@ int main(int argc, char* argv[])
 //  M=1023;
 
 //  L=512;
-  L=1024;
+  L=1025;
   M=2*L;
 
   /*
@@ -457,11 +460,12 @@ int main(int argc, char* argv[])
 
   cout << "Padding:" << fft.padding() << endl;
 
-  Complex *F=ComplexAlign(fft.length());
+  unsigned int N=fft.length();
+  Complex *F=ComplexAlign(N);
 
   double mean1=test(&fft,f,F);
 
-  FFTpad fft0(f,L,M,M,1);
+  FFTpad fft0(f,L,M,N,1);
 
   Complex *F2=ComplexAlign(fft.length());
   double mean2=test(&fft0,f,F2);
