@@ -819,10 +819,15 @@ public:
 //   mfft1d Forward(n,-1,M,stride,dist,in,out);
 //   Forward.fft(in,out);
 //
+//   mfft1d Forward(n,-1,M,istride,ostride,idist,odist,in,out);
+//   Forward.fft(in,out);
+//
 // In-place usage:
 //
 //   mfft1d Forward(n,-1,M,stride,dist);
 //   Forward.fft(in);
+//
+//
 //
 // Notes:
 //   stride is the spacing between the elements of each Complex vector;
