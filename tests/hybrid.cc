@@ -15,7 +15,7 @@ using namespace std;
 using namespace utils;
 using namespace fftwpp;
 
-unsigned int K=1000; // Number of tests ***TEMP***
+unsigned int K=100; // Number of tests ***TEMP***
 
 // Constants used for initialization and testing.
 const Complex I(0.0,1.0);
@@ -322,15 +322,20 @@ public:
       fftmo->fft(g,F);
     }
 
-    for(unsigned int r=1; r < q; ++r) {
-      for(unsigned int s=0; s < m; ++s) {
-        if(p == 1) {
+    if(p == 1) {
+      for(unsigned int r=1; r < q; ++r) {
+        for(unsigned int s=0; s < m; ++s) {
           unsigned int c=r*s;// % N;
 //          unsigned int a=c/S;
 //          Complex Zeta=ZetaH[a]*ZetaL[c-S*a];
           Complex Zeta=ZetaL[c];
           g[s]=Zeta*H[s];
-        } else {
+        }
+        fftmo->fft(g,F+r);
+      }
+    } else {
+      for(unsigned int r=1; r < q; ++r) {
+        for(unsigned int s=0; s < m; ++s) {
           Complex sum=0.0;
           for(unsigned int t=nsum; t < p; ++t) {
             unsigned int j=t*m+s;
@@ -343,8 +348,8 @@ public:
 //        g[s]=G[r*m+s]+sum;
           g[s]=sum;
         }
+        fftmo->fft(g,F+r);
       }
-      fftmo->fft(g,F+r);
     }
 
     return;
@@ -420,7 +425,7 @@ double test(FFTpad *fft, Complex *f, Complex *F)
 {
   cout << endl;
 
-  unsigned int K=1000;
+  unsigned int K=10000;
   utils::statistics S;
 
   for(unsigned int j=0; j < L; ++j)
@@ -477,10 +482,8 @@ int main(int argc, char* argv[])
   M=7099;
   */
 
-  /*
-  L=8;
+  L=2048;
   M=2*L;
-  */
 
   /*
   L=1810;
