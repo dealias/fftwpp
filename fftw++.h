@@ -844,7 +844,7 @@ public:
 
   mfft1d(unsigned int nx, int sign, unsigned int M,
          size_t istride, size_t ostride, size_t idist, size_t odist,
-         Complex *in=NULL, Complex *out=NULL, unsigned int threads=maxthreads):
+         Complex *in, Complex *out, unsigned int threads=maxthreads):
     fftw(std::max(2*((nx-1)*istride+(M-1)*Dist(nx,istride,idist)+1),
                   2*((nx-1)*ostride+(M-1)*Dist(nx,ostride,odist)+1)),sign,
          threads, nx),

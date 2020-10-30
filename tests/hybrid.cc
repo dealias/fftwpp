@@ -88,7 +88,7 @@ protected:
   fft1d *fftM;
   fft1d *fftm;
   fft1d **fft;
-  mfft1d *fftms;
+  mfft1d *fftmo;
   unsigned int S;
   Complex *ZetaH, *ZetaL;
   Complex *g,*h,*G,*e,*E,*H; // Many, many work arrays!
@@ -116,6 +116,7 @@ public:
           fft[i]=q < L ? new fft1d(D[i],sign,f) : new fft1d(D[i],sign);
       }
       fftm=m < L ? new fft1d(m,sign,f) : new fft1d(m,sign);
+      fftmo=new mfft1d(m,sign,1,1,q,0,0,f,G);
     }
  }
 
@@ -276,14 +277,9 @@ public:
     }
     */
 
-    if(p == 1) {
-      for(unsigned int s=0; s < m; ++s)
-//        g[s]=G[s]+H[s];
-        g[s]=H[s];
-      fftm->fft(g);
-      for(unsigned int l=0; l < m; ++l)
-        F[l*q]=g[l];
-    } else {
+    if(p == 1)
+      fftmo->fft(H,F);
+    else {
       for(unsigned int s=0; s < m; ++s) {
         Complex sum=0.0;
         for(unsigned int t=nsum; t < p; ++t)
@@ -320,9 +316,9 @@ public:
           g[s]=sum;
         }
       }
-      fftm->fft(g);
-      for(unsigned int l=0; l < m; ++l)
-        F[l*q+r]=g[l];
+      fftmo->fft(g,F+r);
+//      for(unsigned int l=0; l < m; ++l)
+//        F[l*q+r]=g[l];
     }
 
     return;
@@ -398,24 +394,20 @@ double test(FFTpad *fft, Complex *f, Complex *F)
 {
   cout << endl;
 
-  unsigned int K=1000;
+  unsigned int K=100000;
   utils::statistics S;
 
-  double t0=utils::totalseconds();
-  for(unsigned int k=0; k < K; ++k)
-    for(unsigned int i=0; i < L; ++i) f[i]=i;
-  double t1=utils::totalseconds();
   for(unsigned int k=0; k < K; ++k) {
     for(unsigned int i=0; i < L; ++i) f[i]=i;
+    double t0=utils::totalseconds();
     fft->forwards(f,F);
+    double t=utils::totalseconds();
+    S.add(t-t0);
   }
-
-  double t=utils::totalseconds();
-  S.add(((t-t1)-(t1-t0))/K);
 
   double mean=S.mean();
 
-  cout << "mean=" << mean << endl;
+  cout << "mean=" << mean << " +/- " << S.stdev() << endl;
 
   if(M < 1)
     for(unsigned int i=0; i < M; ++i)
