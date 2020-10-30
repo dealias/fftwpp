@@ -15,7 +15,7 @@ using namespace std;
 using namespace utils;
 using namespace fftwpp;
 
-unsigned int K=1; // Number of tests ***TEMP***
+unsigned int K=1000; // Number of tests ***TEMP***
 
 // Constants used for initialization and testing.
 const Complex I(0.0,1.0);
@@ -199,7 +199,7 @@ public:
           cout << "q=" << q << endl;
           unsigned int D[p/(n0+1)];
           unsigned int n=0;
-          decompose(D,n,p,q);
+//          decompose(D,n,p,q);
           assert(n < p/(n0+1));
           if(n > 0 || q == start) {
             FFTpad fft(f,L,M,m,q,D,n);
@@ -273,6 +273,7 @@ public:
     for(unsigned int i=L; i < pm; ++i)
       H[i]=0.0;
 
+#if 0
     unsigned int N=q*m;
     for(unsigned int i=0; i < N; ++i)
       G[i]=0.0;
@@ -306,6 +307,7 @@ public:
       }
       nsum += n;
     }
+#endif
 
     if(p == 1)
       fftmo->fft(H,F);
@@ -314,8 +316,8 @@ public:
         Complex sum=0.0;
         for(unsigned int t=nsum; t < p; ++t)
           sum += H[t*m+s];
-        g[s]=G[s]+sum;
-//        g[s]=sum;
+//        g[s]=G[s]+sum;
+        g[s]=sum;
       }
       fftmo->fft(g,F);
     }
@@ -338,8 +340,8 @@ public:
             Complex Zeta=ZetaL[c];
             sum += Zeta*H[j];
           }
-        g[s]=G[r*m+s]+sum;
-//          g[s]=sum;
+//        g[s]=G[r*m+s]+sum;
+          g[s]=sum;
         }
       }
       fftmo->fft(g,F+r);
@@ -467,11 +469,13 @@ int main(int argc, char* argv[])
     ++nsize;
   }
 
-  L=683;
-  M=1024;
+  L=17;
+  M=482;
 
+  /*
   L=1000;
   M=7099;
+  */
 
   /*
   L=8;
@@ -479,7 +483,7 @@ int main(int argc, char* argv[])
   */
 
   /*
-  L=181;
+  L=1810;
   M=109090;
   */
 
