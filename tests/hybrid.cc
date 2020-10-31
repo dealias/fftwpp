@@ -8,8 +8,6 @@
 #include <cfloat>
 
 #include "convolution.h"
-#include "explicit.h"
-#include "direct.h"
 #include "utils.h"
 
 using namespace std;
@@ -33,8 +31,6 @@ const unsigned int Nsize=1000; // FIXME
 unsigned int nsize=1000;
 unsigned int size[Nsize];
 
-unsigned int n0=25;//25;
-
 class FFTpad {
 protected:
   unsigned int L;
@@ -44,10 +40,9 @@ protected:
   unsigned int q;
   fft1d *fftM;
   mfft1d *fftm;
-  unsigned int S;
   Complex *ZetaH,*ZetaL;
   Complex *g,*H,*G;
-  utils::statistics Stat;
+  utils::statistics S;
   FFTpad *inner;
   bool innerFFT;
 public:
@@ -58,19 +53,17 @@ public:
       fftM=new fft1d(M,1);
     else {
       unsigned int N=q*m;
-      S=N;
-      BuildZeta(N,N,ZetaH,ZetaL,1,S);//,threads);
+      BuildZeta(N,N,ZetaH,ZetaL,1,N);//,threads);
       unsigned int n=q/p;
+      G=ComplexAlign(N);
       innerFFT=p > 1 && n*p == q;
       if(innerFFT) {
 //                         L,M,m,q
         inner=new FFTpad(f,p,q,p,n);
-        G=ComplexAlign(N);
         fftm=new mfft1d(m,1,q,q,q,1,1,G,G);
       } else {
-        Complex *G0=ComplexAlign(N);
-        fftm=new mfft1d(m,1,1,1,q,0,0,f,G0);
-        deleteAlign(G0);
+        fftm=new mfft1d(m,1,1,1,q,0,0,f,G);
+        deleteAlign(G);
       }
 
       H=ComplexAlign(M);
@@ -253,7 +246,7 @@ public:
 
   double meantime(Complex *f, Complex *F, unsigned int K,
                   double *stdev=NULL) {
-    Stat.clear();
+    S.clear();
     for(unsigned int j=0; j < L; ++j)
       f[j]=j;
     forwards(f,F); // Create wisdom
@@ -264,10 +257,10 @@ public:
       double t0=utils::totalseconds();
       forwards(f,F);
       double t=utils::totalseconds();
-      Stat.add(t-t0);
+      S.add(t-t0);
     }
-    if(stdev) *stdev=Stat.stdev();
-    return Stat.mean();
+    if(stdev) *stdev=S.stdev();
+    return S.mean();
   }
 };
 
