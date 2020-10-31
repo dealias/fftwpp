@@ -38,12 +38,14 @@ protected:
   unsigned int m;
   unsigned int p;
   unsigned int q;
+  unsigned int n;
   fft1d *fftM;
   mfft1d *fftm;
+  mfft1d *fftp;
   Complex *ZetaH,*ZetaL;
+  Complex *ZetaHq,*ZetaLq;
   Complex *g,*H,*G;
   utils::statistics S;
-  FFTpad *inner;
   bool innerFFT;
 public:
 
@@ -54,20 +56,22 @@ public:
     else {
       unsigned int N=q*m;
       BuildZeta(N,N,ZetaH,ZetaL,1,N);//,threads);
-      unsigned int n=q/p;
+      n=q/p;
       G=ComplexAlign(N);
       innerFFT=p > 1 && n*p == q;
       if(innerFFT) {
-//                         L,M,m,q
-        inner=new FFTpad(f,p,q,p,n);
+        BuildZeta(q,q,ZetaHq,ZetaLq,1,q);//,threads);
+//      p->L, M->q, m->p, q->n
         fftm=new mfft1d(m,1,q,q,q,1,1,G,G);
+        fftp=new mfft1d(p,1,1,1,n,0,0,f,G);
+        g=ComplexAlign(p);
       } else {
         fftm=new mfft1d(m,1,1,1,q,0,0,f,G);
         deleteAlign(G);
+        g=ComplexAlign(m);
       }
 
       H=ComplexAlign(M);
-      g=ComplexAlign(m);
     }
   }
 
@@ -85,8 +89,11 @@ public:
       deleteAlign(ZetaL);
       deleteAlign(ZetaH);
       if(innerFFT) {
+        deleteAlign(ZetaLq);
+        deleteAlign(ZetaHq);
         deleteAlign(G);
-        delete inner;
+//        delete inner;
+        delete fftp;
       }
       deleteAlign(g);
       deleteAlign(H);
@@ -183,11 +190,17 @@ public:
       H[i]=0.0;
 
     if(innerFFT) {
+      unsigned int N=q*m;
       for(unsigned int s=0; s < m; ++s) {
+        Complex *Fsq=F+s*q;
         for(unsigned int t=0; t < p; ++t)
           G[t]=H[t*m+s];
-        Complex *Fsq=F+s*q;
-        inner->forwards(G,Fsq);
+        fftp->fft(G,Fsq);
+        for(unsigned int r=1; r < n; ++r) {
+          for(unsigned int t=0; t < p; ++t)
+            g[t]=ZetaLq[r*t]*G[t];
+          fftp->fft(g,Fsq+r);
+        }
         for(unsigned int r=0; r < q; ++r)
           Fsq[r] *= ZetaL[r*s];
       }
