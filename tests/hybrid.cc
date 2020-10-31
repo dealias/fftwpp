@@ -3,6 +3,8 @@
 // optimize memory use
 // use out-of-place transforms
 // vectorize and optimize Zeta computations
+// do hybrid padding for some L and M, compare to best explicit case.
+
 
 #include <cassert>
 #include <cfloat>
@@ -60,18 +62,22 @@ public:
       G=ComplexAlign(N);
       innerFFT=p > 1 && n*p == q;
       if(innerFFT) {
+        H=ComplexAlign(M);
         BuildZeta(q,q,ZetaHq,ZetaLq,1,q);//,threads);
 //      p->L, M->q, m->p, q->n
         fftm=new mfft1d(m,1,q,q,q,1,1,G,G);
-        fftp=new mfft1d(p,1,1,1,n,0,0,f,G);
-        g=ComplexAlign(p);
+        fftp=new mfft1d(p,1,m,m,n,1,q,H,G);
       } else {
-        fftm=new mfft1d(m,1,1,1,q,0,0,f,G);
-        deleteAlign(G);
-        g=ComplexAlign(m);
+        if(p == 1) {
+          H=ComplexAlign(N);
+          fftm=new mfft1d(m,1,q, 1,q, m,1,H,G);
+        } else {
+          H=ComplexAlign(M);
+          fftm=new mfft1d(m,1,1,1,q,0,0,f,G);
+          g=ComplexAlign(m);
+        }
       }
-
-      H=ComplexAlign(M);
+      deleteAlign(G);
     }
   }
 
@@ -91,11 +97,11 @@ public:
       if(innerFFT) {
         deleteAlign(ZetaLq);
         deleteAlign(ZetaHq);
-        deleteAlign(G);
-//        delete inner;
         delete fftp;
+      } else {
+        if(p > 1)
+          deleteAlign(g);
       }
-      deleteAlign(g);
       deleteAlign(H);
       delete fftm;
     }
@@ -183,50 +189,63 @@ public:
       return;
     }
 
-    for(unsigned int i=0; i < L; ++i)
-      H[i]=f[i];
-    unsigned int pm=p*m;
-    for(unsigned int i=L; i < pm; ++i)
-      H[i]=0.0;
-
     if(innerFFT) {
-      unsigned int N=q*m;
+      for(unsigned int i=0; i < L; ++i)
+        H[i]=f[i];
+      for(unsigned int i=L; i < M; ++i)
+        H[i]=0.0;
+      fftp->fft(H,F);
+      for(unsigned int r=1; r < n; ++r) {
+        for(unsigned int t=0; t < p; ++t) {
+          Complex Zeta=ZetaLq[r*t];
+          unsigned int mt=m*t;
+          Complex *fmt=f+mt;
+          Complex *Hmt=H+mt;
+          unsigned int s=0;
+          unsigned int stop=L-mt;
+          for(; s < stop; ++s)
+            Hmt[s]=fmt[s]*Zeta;
+          for(; s < m; ++s)
+            Hmt[s]=0.0;
+        }
+        fftp->fft(H,F+r);
+      }
       for(unsigned int s=0; s < m; ++s) {
         Complex *Fsq=F+s*q;
-        for(unsigned int t=0; t < p; ++t)
-          G[t]=H[t*m+s];
-        fftp->fft(G,Fsq);
-        for(unsigned int r=1; r < n; ++r) {
-          for(unsigned int t=0; t < p; ++t)
-            g[t]=ZetaLq[r*t]*G[t];
-          fftp->fft(g,Fsq+r);
-        }
-        for(unsigned int r=0; r < q; ++r)
+        for(unsigned int r=1; r < q; ++r)
           Fsq[r] *= ZetaL[r*s];
       }
       fftm->fft(F);
     } else {
+      // TODO: Optimize padding
+      for(unsigned int i=0; i < L; ++i)
+        H[i]=f[i];
+      unsigned int pm=p*m;
+      for(unsigned int i=L; i < pm; ++i)
+        H[i]=0.0;
+
       if(p == 1) {
-        fftm->fft(H,F);
         for(unsigned int r=1; r < q; ++r) {
+          Complex *Hmr=H+m*r;
           for(unsigned int s=0; s < m; ++s) {
             unsigned int c=r*s;
 //          unsigned int a=c/S;
 //          Complex Zeta=ZetaH[a]*ZetaL[c-S*a];
             Complex Zeta=ZetaL[c];
-            g[s]=Zeta*H[s];
+            Hmr[s]=Zeta*H[s];
           }
-          fftm->fft(g,F+r);
         }
+        fftm->fft(H,F);
       } else {
         for(unsigned int s=0; s < m; ++s) {
           Complex sum=0.0;
-          for(unsigned int t=0; t < p; ++t)
-            sum += H[t*m+s];
+          Complex *Hs=H+s;
+          unsigned int pm=p*m;
+          for(unsigned int t=0; t < pm; t += m)
+            sum += Hs[t];
           g[s]=sum;
         }
         fftm->fft(g,F);
-        
         unsigned int N=q*m;
         for(unsigned int r=1; r < q; ++r) {
           for(unsigned int s=0; s < m; ++s) {
@@ -337,7 +356,7 @@ double report(FFTpad &fft, Complex *f, Complex *F)
   double stdev;
   cout << endl;
 
-  unsigned int K=100000;
+  unsigned int K=10000;
   double mean=fft.meantime(f,F,K,&stdev);
 
   cout << "mean=" << mean << " +/- " << stdev << endl;
@@ -372,8 +391,10 @@ int main(int argc, char* argv[])
     ++nsize;
   }
 
+  /*
   L=3;
   M=200;
+  */
 
   /*
     L=1000;
@@ -384,26 +405,27 @@ int main(int argc, char* argv[])
     L=512;
     M=2*L;
   */
-
+    /*
   L=683;
   M=1025;
-
+    */
   /*
     L=1810;
     M=109090;
   */
 
-
   /*
     L=11111;//11;
     M=2*L;
-  */
+*/
 
-  /*
-    L=683;
-    M=1024;
-  */
+    L=512;
+    M=1025;
 
+    /*
+    L=8;
+    M=24;
+    */
   /*
     L=13;
     M=16;
