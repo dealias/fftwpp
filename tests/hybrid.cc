@@ -16,7 +16,7 @@ using namespace std;
 using namespace utils;
 using namespace fftwpp;
 
-unsigned int K=100; // Number of tests ***TEMP***
+unsigned int K=100; // Number of tests
 
 // Constants used for initialization and testing.
 const Complex I(0.0,1.0);
@@ -35,26 +35,6 @@ unsigned int size[Nsize];
 
 unsigned int n0=25;//25;
 
-// Search a sorted ordered array a of n elements for key, returning the index i
-// if a[i] <= key < a[i+1], -1 if key is less than all elements of a, or
-// n-1 if key is greater than or equal to the last element of a.
-
-int search(unsigned int *a, unsigned int n, unsigned int key)
-{
-  if(n == 0 || key < a[0]) return -1;
-  size_t u=n-1;
-  if(key >= a[u]) return u;
-  size_t l=0;
-
-  while (l < u) {
-    size_t i=(l+u)/2;
-    if(key < a[i]) u=i;
-    else if(key < a[i+1]) return i;
-    else l=i+1;
-  }
-  return 0;
-}
-
 class FFTpad {
 protected:
   unsigned int L;
@@ -66,9 +46,10 @@ protected:
   mfft1d *fftm;
   unsigned int S;
   Complex *ZetaH,*ZetaL;
-  Complex *g,*H,*h,*G;
+  Complex *g,*H,*G;
   utils::statistics Stat;
   FFTpad *inner;
+  bool innerFFT;
 public:
 
   void init(Complex *f) {
@@ -80,22 +61,22 @@ public:
       S=N;
       BuildZeta(N,N,ZetaH,ZetaL,1,S);//,threads);
       unsigned int n=q/p;
-      if(p > 1 && n*p == q) {
+      innerFFT=p > 1 && n*p == q;
+      if(innerFFT) {
 //                         L,M,m,q
         inner=new FFTpad(f,p,q,p,n);
-//        inner=new FFTpad(f,p,q,true);
-        h=ComplexAlign(q);
         G=ComplexAlign(N);
+        fftm=new mfft1d(m,1,q,q,q,1,1,G,G);
+      } else {
+        Complex *G0=ComplexAlign(N);
+        fftm=new mfft1d(m,1,1,1,q,0,0,f,G0);
+        deleteAlign(G0);
       }
 
-      Complex *G0=ComplexAlign(N);
-      fftm=new mfft1d(m,1,1,1,q,0,0,f,G0);
-      deleteAlign(G0);
-
-      g=ComplexAlign(m);
       H=ComplexAlign(M);
+      g=ComplexAlign(m);
     }
- }
+  }
 
   // Compute an fft padded to N=q*m >= M >= L=f.length
   FFTpad(Complex *f, unsigned int L, unsigned int M,
@@ -110,8 +91,7 @@ public:
     else {
       deleteAlign(ZetaL);
       deleteAlign(ZetaH);
-      unsigned int n=q/p;
-      if(p > 1 && n*p == q) {
+      if(innerFFT) {
         deleteAlign(G);
         delete inner;
       }
@@ -133,19 +113,7 @@ public:
       assert(L <= M);
       m=M;
       q=1;
-      /*
-      FFTpad fft(f,L,M,m,q);
-      Complex *F=ComplexAlign(fft.length());
-      seconds();
-      for(unsigned int i=0; i < K; ++i) {
-        for(unsigned int j=0; j < L; ++j)
-          f[j]=j;
-        fft.forwards(f,F);
-      }
-      double T=seconds()*100;
-      utils::deleteAlign(F);
-      */
-      double T=DBL_MAX; // Temporary
+      double T=DBL_MAX;
       unsigned int i=0;
 
       while(i < nsize) {
@@ -215,74 +183,65 @@ public:
       return;
     }
 
-    unsigned int pm=p*m;
     for(unsigned int i=0; i < L; ++i)
       H[i]=f[i];
+    unsigned int pm=p*m;
     for(unsigned int i=L; i < pm; ++i)
       H[i]=0.0;
 
-    unsigned int n=q/p;
-    if(p > 1 && n*p == q) {
+    if(innerFFT) {
       for(unsigned int s=0; s < m; ++s) {
         for(unsigned int t=0; t < p; ++t)
-          F[t]=H[t*m+s];
-        inner->forwards(F,h);
-        for(unsigned int r=0; r < q; ++r) {
-          unsigned int c=r*s;// % N;
-          G[s*q+r]=ZetaL[c]*h[r];
-        }
+          G[t]=H[t*m+s];
+        Complex *Fsq=F+s*q;
+        inner->forwards(G,Fsq);
+        for(unsigned int r=0; r < q; ++r)
+          Fsq[r] *= ZetaL[r*s];
       }
-      for(unsigned int r=0; r < q; ++r) {
-        for(unsigned int s=0; s < m; ++s)
-          g[s]=G[s*q+r];
-        fftm->fft(g,F+r);
-      }
-      return;
-    }
-
-    if(p == 1)
-      fftm->fft(H,F);
-    else {
-      for(unsigned int s=0; s < m; ++s) {
-        Complex sum=0.0;
-        for(unsigned int t=0; t < p; ++t)
-          sum += H[t*m+s];
-        g[s]=sum;
-      }
-      fftm->fft(g,F);
-    }
-
-    if(p == 1) {
-      for(unsigned int r=1; r < q; ++r) {
-        for(unsigned int s=0; s < m; ++s) {
-          unsigned int c=r*s;// % N;
-//          unsigned int a=c/S;
-//          Complex Zeta=ZetaH[a]*ZetaL[c-S*a];
-          Complex Zeta=ZetaL[c];
-          g[s]=Zeta*H[s];
-        }
-        fftm->fft(g,F+r);
-      }
+      fftm->fft(F);
     } else {
-      unsigned int N=q*m;
-      for(unsigned int r=1; r < q; ++r) {
+      if(p == 1)
+        fftm->fft(H,F);
+      else {
         for(unsigned int s=0; s < m; ++s) {
           Complex sum=0.0;
-          for(unsigned int t=0; t < p; ++t) {
-            unsigned int j=t*m+s;
-            unsigned int c=(r*j) % N;
+          for(unsigned int t=0; t < p; ++t)
+            sum += H[t*m+s];
+          g[s]=sum;
+        }
+        fftm->fft(g,F);
+      }
+
+      if(p == 1) {
+        for(unsigned int r=1; r < q; ++r) {
+          for(unsigned int s=0; s < m; ++s) {
+            unsigned int c=r*s;
 //          unsigned int a=c/S;
 //          Complex Zeta=ZetaH[a]*ZetaL[c-S*a];
             Complex Zeta=ZetaL[c];
-            sum += Zeta*H[j];
+            g[s]=Zeta*H[s];
           }
-        g[s]=sum;
+          fftm->fft(g,F+r);
         }
-        fftm->fft(g,F+r);
+      } else {
+        unsigned int N=q*m;
+        for(unsigned int r=1; r < q; ++r) {
+          for(unsigned int s=0; s < m; ++s) {
+            Complex sum=0.0;
+            for(unsigned int t=0; t < p; ++t) {
+              unsigned int j=t*m+s;
+              unsigned int c=(r*j) % N;
+//          unsigned int a=c/S;
+//          Complex Zeta=ZetaH[a]*ZetaL[c-S*a];
+              Complex Zeta=ZetaL[c];
+              sum += Zeta*H[j];
+            }
+            g[s]=sum;
+          }
+          fftm->fft(g,F+r);
+        }
       }
     }
-
-    return;
   }
 
   unsigned int padding() {
@@ -414,36 +373,41 @@ int main(int argc, char* argv[])
   M=200;
 
   /*
-  L=1000;
-  M=7099;
-  */
-
-  L=1023;
-  M=2*L;
-
-  /*
-L=683;
-M=1024;
+    L=1000;
+    M=7099;
   */
 
   /*
-  L=1810;
-  M=109090;
+    L=512;
+    M=2*L;
   */
 
-/*
+  L=683;
+  M=1025;
+
+  /*
+    L=1810;
+    M=109090;
+  */
+
+
+  /*
   L=11111;//11;
   M=2*L;
-*/
-  /*
-  L=683;
-  M=1024;
   */
 
   /*
-  L=13;
-  M=16;
+    L=683;
+    M=1024;
   */
+
+  /*
+    L=13;
+    M=16;
+  */
+
+  cout << "L=" << L << endl;
+  cout << "M=" << M << endl;
 
   Complex *f=ComplexAlign(L);
 
@@ -456,9 +420,6 @@ M=1024;
 
   // Hybrid padding
   FFTpad fft(f,L,M);
-
-  cout << "L=" << L << endl;
-  cout << "M=" << M << endl;
 
   cout << "Padding:" << fft.padding() << endl;
 
