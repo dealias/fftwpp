@@ -16,7 +16,7 @@ using namespace std;
 using namespace utils;
 using namespace fftwpp;
 
-unsigned int K=1; // Number of tests ***TEMP***
+unsigned int K=100; // Number of tests ***TEMP***
 
 // Constants used for initialization and testing.
 const Complex I(0.0,1.0);
@@ -83,6 +83,7 @@ public:
       if(p > 1 && n*p == q) {
 //                         L,M,m,q
         inner=new FFTpad(f,p,q,p,n);
+//        inner=new FFTpad(f,p,q,true);
         h=ComplexAlign(q);
         G=ComplexAlign(N);
       }
@@ -147,42 +148,41 @@ public:
       double T=DBL_MAX; // Temporary
       unsigned int i=0;
 
-      while(true) {
+      while(i < nsize) {
         unsigned int m=size[i];
 //        cout << "m=" << m << endl;
-        if(fixed && M % m != 0) continue;
-        if(m > L) break; // Assume size 2 FFT is in table
-        unsigned int p=ceilquotient(L,m);
-        unsigned int q=ceilquotient(M,m);
+        if(!fixed || M % m == 0) {
+          if(m > L) break; // Assume size 2 FFT is in table
+          unsigned int p=ceilquotient(L,m);
+          unsigned int q=ceilquotient(M,m);
 
-        Complex *F=NULL;
-        if(!fixed) {
-          unsigned int q2=p*ceilquotient(M,m*p);
-          if(q2 != q) {
-            FFTpad fft(f,L,M,m,q2);
-            Complex *F=ComplexAlign(fft.length());
-            double t=fft.meantime(f,F,K);
+          Complex *F=NULL;
+          if(!fixed) {
+            unsigned int q2=p*ceilquotient(M,m*p);
+            if(q2 != q) {
+              FFTpad fft(f,L,M,m,q2);
+              Complex *F=ComplexAlign(fft.length());
+              double t=fft.meantime(f,F,K);
 
-            if(t < T) {
-              this->m=m;
-              this->q=q2;
-              T=t;
+              if(t < T) {
+                this->m=m;
+                this->q=q2;
+                T=t;
+              }
             }
           }
+
+          FFTpad fft(f,L,M,m,q);
+          if(!F) F=ComplexAlign(fft.length());
+          double t=fft.meantime(f,F,K);
+          utils::deleteAlign(F);
+
+          if(t < T) {
+            this->m=m;
+            this->q=q;
+            T=t;
+          }
         }
-
-        FFTpad fft(f,L,M,m,q);
-        if(!F) F=ComplexAlign(fft.length());
-        double t=fft.meantime(f,F,K);
-        utils::deleteAlign(F);
-
-        if(t < T) {
-          this->m=m;
-          this->q=q;
-          T=t;
-        }
-
-
         ++i;
       }
 
@@ -375,7 +375,8 @@ double report(FFTpad &fft, Complex *f, Complex *F)
   double stdev;
   cout << endl;
 
-  double mean=fft.meantime(f,F,10000,&stdev);
+  unsigned int K=100000;
+  double mean=fft.meantime(f,F,K,&stdev);
 
   cout << "mean=" << mean << " +/- " << stdev << endl;
 
@@ -417,7 +418,7 @@ int main(int argc, char* argv[])
   M=7099;
   */
 
-  L=1025;
+  L=1023;
   M=2*L;
 
   /*
