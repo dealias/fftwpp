@@ -193,19 +193,8 @@ public:
       }
       fftm->fft(F);
     } else {
-      if(p == 1)
-        fftm->fft(H,F);
-      else {
-        for(unsigned int s=0; s < m; ++s) {
-          Complex sum=0.0;
-          for(unsigned int t=0; t < p; ++t)
-            sum += H[t*m+s];
-          g[s]=sum;
-        }
-        fftm->fft(g,F);
-      }
-
       if(p == 1) {
+        fftm->fft(H,F);
         for(unsigned int r=1; r < q; ++r) {
           for(unsigned int s=0; s < m; ++s) {
             unsigned int c=r*s;
@@ -217,6 +206,14 @@ public:
           fftm->fft(g,F+r);
         }
       } else {
+        for(unsigned int s=0; s < m; ++s) {
+          Complex sum=0.0;
+          for(unsigned int t=0; t < p; ++t)
+            sum += H[t*m+s];
+          g[s]=sum;
+        }
+        fftm->fft(g,F);
+        
         unsigned int N=q*m;
         for(unsigned int r=1; r < q; ++r) {
           for(unsigned int s=0; s < m; ++s) {
@@ -385,8 +382,8 @@ int main(int argc, char* argv[])
 
 
   /*
-  L=11111;//11;
-  M=2*L;
+    L=11111;//11;
+    M=2*L;
   */
 
   /*
