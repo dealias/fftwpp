@@ -71,7 +71,7 @@ protected:
 public:
 
   void init(Complex *f) {
-    cout << "m=" << m << endl;
+//    cout << "m=" << m << endl;
     if(p == q)
       fftM=new fft1d(M,1);
     else {
@@ -136,7 +136,7 @@ public:
 
       while(true) {
         unsigned int m=size[i];
-        cout << "m=" << m << endl;
+//        cout << "m=" << m << endl;
         if(fixed && M % m != 0) continue;
         if(m > L) break; // Assume size 2 FFT is in table
         unsigned int p=ceilquotient(L,m);
@@ -198,7 +198,8 @@ public:
         F[i]=f[i];
       for(unsigned int i=L; i < M; ++i)
         F[i]=0.0;
-      return fftM->fft(F);
+      fftM->fft(F);
+      return;
     }
 
     unsigned int pm=p*m;
@@ -256,7 +257,7 @@ public:
     return p*m-L;
   }
   unsigned int length() {
-    return m*q;
+    return p == q ? M : m*q;
   }
 
   double meantime(Complex *f, Complex *F, unsigned int K,
@@ -347,10 +348,12 @@ double report(FFTpad &fft, Complex *f, Complex *F)
   cout << "mean=" << mean << " +/- " << stdev << endl;
 
   unsigned int N=fft.length();
-  if(N < 10) {
+  if(N < 20) {
     for(unsigned int i=0; i < N; ++i)
       cout << F[i] << endl;
   }
+  cout << endl;
+
   return mean;
 }
 
@@ -393,6 +396,14 @@ int main(int argc, char* argv[])
   /*
   L=11111;//11;
   M=2*L;
+  */
+
+  L=683;
+  M=1024;
+
+  /*
+  L=13;
+  M=16;
   */
 
   Complex *f=ComplexAlign(L);
