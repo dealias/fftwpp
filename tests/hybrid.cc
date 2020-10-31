@@ -46,9 +46,9 @@ protected:
   mfft1d *fftp;
   Complex *ZetaH,*ZetaL;
   Complex *ZetaHq,*ZetaLq;
-  Complex *g,*H,*G;
   utils::statistics S;
   bool innerFFT;
+  Complex *H;
 public:
 
   void init(Complex *f) {
@@ -56,32 +56,24 @@ public:
     if(p == q)
       fftM=new fft1d(M,1);
     else {
-      unsigned int N=q*m;
+      unsigned int N=m*q;
       BuildZeta(N,N,ZetaH,ZetaL,1,N);//,threads);
       n=q/p;
-      G=ComplexAlign(N);
+      Complex *G=ComplexAlign(N);
       innerFFT=p > 1 && n*p == q;
       if(innerFFT) {
-        H=ComplexAlign(M);
+        H=ComplexAlign(N);
         BuildZeta(q,q,ZetaHq,ZetaLq,1,q);//,threads);
 //      p->L, M->q, m->p, q->n
         fftm=new mfft1d(m,1,q,q,q,1,1,G,G);
         fftp=new mfft1d(p,1,m,m,n,1,q,H,G);
-      } else {
-        if(p == 1) {
-          H=ComplexAlign(N);
-          fftm=new mfft1d(m,1,q, 1,q, m,1,H,G);
-        } else {
-          H=ComplexAlign(M);
-          fftm=new mfft1d(m,1,1,1,q,0,0,f,G);
-          g=ComplexAlign(m);
-        }
-      }
+      } else
+        fftm=new mfft1d(m,1,q,1,q,m,1,G,G);
       deleteAlign(G);
     }
   }
 
-  // Compute an fft padded to N=q*m >= M >= L=f.length
+  // Compute an fft padded to N=m*q >= M >= L=f.length
   FFTpad(Complex *f, unsigned int L, unsigned int M,
          unsigned int m, unsigned int q) :
     L(L), M(M), m(m), p(ceilquotient(L,m)), q(q) {
@@ -95,14 +87,11 @@ public:
       deleteAlign(ZetaL);
       deleteAlign(ZetaH);
       if(innerFFT) {
+        deleteAlign(H);
         deleteAlign(ZetaLq);
         deleteAlign(ZetaHq);
         delete fftp;
-      } else {
-        if(p > 1)
-          deleteAlign(g);
       }
-      deleteAlign(H);
       delete fftm;
     }
   }
@@ -137,7 +126,6 @@ public:
               FFTpad fft(f,L,M,m,q2);
               Complex *F=ComplexAlign(fft.length());
               double t=fft.meantime(f,F,K);
-
               if(t < T) {
                 this->m=m;
                 this->q=q2;
@@ -189,27 +177,28 @@ public:
       return;
     }
 
+    unsigned int mp=m*p;
+
     if(innerFFT) {
       for(unsigned int i=0; i < L; ++i)
         H[i]=f[i];
-      for(unsigned int i=L; i < M; ++i)
+      for(unsigned int i=L; i < mp; ++i)
         H[i]=0.0;
+
       fftp->fft(H,F);
       for(unsigned int r=1; r < n; ++r) {
-        for(unsigned int t=0; t < p; ++t) {
+        for(unsigned int t=0; t < p && m*t < L; ++t) {
           Complex Zeta=ZetaLq[r*t];
           unsigned int mt=m*t;
           Complex *fmt=f+mt;
           Complex *Hmt=H+mt;
-          unsigned int s=0;
           unsigned int stop=L-mt;
-          for(; s < stop; ++s)
+          for(unsigned int s=0; s < stop; ++s)
             Hmt[s]=fmt[s]*Zeta;
-          for(; s < m; ++s)
-            Hmt[s]=0.0;
         }
         fftp->fft(H,F+r);
       }
+
       for(unsigned int s=0; s < m; ++s) {
         Complex *Fsq=F+s*q;
         for(unsigned int r=1; r < q; ++r)
@@ -217,57 +206,48 @@ public:
       }
       fftm->fft(F);
     } else {
-      // TODO: Optimize padding
-      for(unsigned int i=0; i < L; ++i)
-        H[i]=f[i];
-      unsigned int pm=p*m;
-      for(unsigned int i=L; i < pm; ++i)
-        H[i]=0.0;
-
       if(p == 1) {
+        for(unsigned int i=0; i < L; ++i)
+          F[i]=f[i];
+        for(unsigned int i=L; i < mp; ++i)
+          F[i]=0.0;
         for(unsigned int r=1; r < q; ++r) {
-          Complex *Hmr=H+m*r;
+          Complex *Fmr=F+m*r;
           for(unsigned int s=0; s < m; ++s) {
-            unsigned int c=r*s;
-//          unsigned int a=c/S;
-//          Complex Zeta=ZetaH[a]*ZetaL[c-S*a];
-            Complex Zeta=ZetaL[c];
-            Hmr[s]=Zeta*H[s];
+            Complex Zeta=ZetaL[r*s];
+            Fmr[s]=Zeta*f[s];
           }
         }
-        fftm->fft(H,F);
+        fftm->fft(F);
       } else {
         for(unsigned int s=0; s < m; ++s) {
           Complex sum=0.0;
-          Complex *Hs=H+s;
-          unsigned int pm=p*m;
-          for(unsigned int t=0; t < pm; t += m)
-            sum += Hs[t];
-          g[s]=sum;
+          for(unsigned int t=s; t < L; t += m)
+            sum += f[t];
+          F[s]=sum;
         }
-        fftm->fft(g,F);
-        unsigned int N=q*m;
+        unsigned int N=m*q;
         for(unsigned int r=1; r < q; ++r) {
+          Complex *Fmr=F+m*r;
           for(unsigned int s=0; s < m; ++s) {
             Complex sum=0.0;
-            for(unsigned int t=0; t < p; ++t) {
-              unsigned int j=t*m+s;
-              unsigned int c=(r*j) % N;
+            for(unsigned int t=s; t < L; t += m) {
+              unsigned int c=(r*t) % N;
 //          unsigned int a=c/S;
 //          Complex Zeta=ZetaH[a]*ZetaL[c-S*a];
               Complex Zeta=ZetaL[c];
-              sum += Zeta*H[j];
+              sum += Zeta*f[t];
             }
-            g[s]=sum;
+            Fmr[s]=sum;
           }
-          fftm->fft(g,F+r);
         }
+        fftm->fft(F);
       }
     }
   }
 
   unsigned int padding() {
-    return p*m-L;
+    return m*p-L;
   }
   unsigned int length() {
     return p == q ? M : m*q;
@@ -391,41 +371,41 @@ int main(int argc, char* argv[])
     ++nsize;
   }
 
-  /*
-  L=3;
-  M=200;
-  */
+
+    L=3;
+    M=200;
 
   /*
-    L=1000;
-    M=7099;
+  L=1000;
+  M=7099;
   */
 
   /*
     L=512;
-    M=2*L;
+    M=3*L;
   */
-    /*
-  L=683;
-  M=1025;
-    */
+
+    L=683;
+    M=1025;
+
   /*
     L=1810;
     M=109090;
   */
 
   /*
-    L=11111;//11;
-    M=2*L;
-*/
+  L=11111;//11;
+  M=2*L;
+  */
 
+  /*
     L=512;
-    M=1025;
-
-    /*
+    M=1023;
+  */
+  /*
     L=8;
     M=24;
-    */
+  */
   /*
     L=13;
     M=16;
