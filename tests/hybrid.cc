@@ -345,15 +345,16 @@ void multA(Complex **F, unsigned int m,
   }
 }
 
-unsigned L,M;
+unsigned int L=683;
+unsigned int M=1025;
+unsigned int N=1000;
 
 double report(FFTpad &fft, Complex *f, Complex *F)
 {
   double stdev;
   cout << endl;
 
-  unsigned int K=10000;
-  double mean=fft.meantime(f,F,K,&stdev);
+  double mean=fft.meantime(f,F,N,&stdev);
 
   cout << "mean=" << mean << " +/- " << stdev << endl;
 
@@ -367,9 +368,57 @@ double report(FFTpad &fft, Complex *f, Complex *F)
   return mean;
 }
 
+void usage()
+{
+  std::cerr << "Options: " << std::endl;
+  std::cerr << "-h\t\t help" << std::endl;
+  std::cerr << "-K\t\t number of optimization tests" << std::endl;
+  std::cerr << "-L\t\t number of physical data values" << std::endl;
+  std::cerr << "-M\t\t number of padded data values" << std::endl;
+  std::cerr << "-N\t\t number of timing tests" << std::endl;
+  std::cerr << "-T\t\t number of threads" << std::endl;
+}
+
 int main(int argc, char* argv[])
 {
   fftw::maxthreads=1;//get_max_threads();
+
+  #ifndef __SSE2__
+  fftw::effort |= FFTW_NO_SIMD;
+#endif
+
+#ifdef __GNUC__
+  optind=0;
+#endif
+  for (;;) {
+    int c = getopt(argc,argv,"hK:L:M:N:T:");
+    if (c == -1) break;
+
+    switch (c) {
+      case 0:
+        break;
+      case 'K':
+        K=atoi(optarg);
+        break;
+      case 'L':
+        L=atoi(optarg);
+        break;
+      case 'M':
+        M=atoi(optarg);
+        break;
+      case 'N':
+        N=atoi(optarg);
+        break;
+      case 'T':
+        fftw::maxthreads=max(atoi(optarg),1);
+        break;
+      case 'h':
+      default:
+        usage();
+        exit(1);
+    }
+  }
+
 
   const char *name="optimalSorted.dat";
   ifstream fin(name);
@@ -387,54 +436,8 @@ int main(int argc, char* argv[])
     ++nsize;
   }
 
-
-  /*
-    L=63;
-    M=200;
-  */
-
-  /*
-  L=1000;
-  M=7099;
-  */
-
-    /*
-    L=512;
-    M=2*L;
-    */
-
-
-    L=683;
-    M=1025;
-
-
-  /*
-    L=1810;
-    M=109090;
-  */
-
-    /*
-  L=11111;//11;
-  M=2*L;
-    */
-
-  /*
-    L=512;
-    M=1024;
-    */
-
-  /*
-    L=8;
-    M=24;
-  */
-  /*
-    L=13;
-    M=16;
-  */
-
   cout << "L=" << L << endl;
   cout << "M=" << M << endl;
-  cout << endl;
 
   Complex *f=ComplexAlign(L);
 
