@@ -3,7 +3,6 @@
 // optimize memory use
 // use out-of-place transforms
 // vectorize and optimize Zeta computations
-// do hybrid padding for some L and M, compare to best explicit case.
 
 #include <cfloat>
 
@@ -50,6 +49,7 @@ protected:
 public:
 
   void init(Complex *f) {
+    if(m > M) M=m;
 //    cout << "m=" << m << endl;
     if(p == q)
       fftM=new fft1d(M,1);
@@ -75,6 +75,7 @@ public:
   FFTpad(Complex *f, unsigned int L, unsigned int M,
          unsigned int m, unsigned int q) :
     L(L), M(M), m(m), p(ceilquotient(L,m)), q(q) {
+
     init(f);
   }
 
@@ -101,10 +102,10 @@ public:
 
     void check(Complex *f, unsigned int L, unsigned int M,
                          unsigned int m, bool fixed=false) {
-//        cout << "m=" << m << endl;
+//      cout << "m=" << m << endl;
       unsigned int p=ceilquotient(L,m);
       unsigned int q=ceilquotient(M,m);
-//        cout << "q=" << q << endl;
+//      cout << "q=" << q << endl;
 
       Complex *F=NULL;
       if(!fixed) {
@@ -122,7 +123,6 @@ public:
         }
       }
 
-      if(m > M) M=m;
       FFTpad fft(f,L,M,m,q);
       if(!F) F=ComplexAlign(fft.length());
       double t=fft.meantime(f,F,K);
@@ -150,15 +150,15 @@ public:
       T=DBL_MAX;
       unsigned int i=0;
 
-      unsigned int stop;
-      if(Explicit) stop=ceilpow2(M);
+      unsigned int stop=ceilpow2(M);
 
       while(i < nsize) {
         unsigned int m=size[i];
         if(Explicit) {
           if(m > stop) break;
           if(m < M) {++i; continue;}
-        } else if(m > L) break; // Assume size 2 FFT is in table
+          M=m;
+        } else if(m > stop) break;
         if(!fixed || Explicit || M % m == 0)
           check(f,L,M,m,fixed || Explicit);
         ++i;
@@ -225,17 +225,20 @@ public:
       }
       fftm->fft(F);
     } else {
+      unsigned int stop=min(m,L);
       if(p == 1) {
         for(unsigned int i=0; i < L; ++i)
           F[i]=f[i];
-        for(unsigned int i=L; i < mp; ++i)
+        for(unsigned int i=L; i < m; ++i)
           F[i]=0.0;
         for(unsigned int r=1; r < q; ++r) {
           Complex *Fmr=F+m*r;
-          for(unsigned int s=0; s < m; ++s) {
+          for(unsigned int s=0; s < stop; ++s) {
             Complex Zeta=ZetaL[r*s];
             Fmr[s]=Zeta*f[s];
           }
+          for(unsigned int s=stop; s < m; ++s)
+            Fmr[s]=0.0;
         }
         fftm->fft(F);
       } else {
@@ -248,7 +251,7 @@ public:
         unsigned int N=m*q;
         for(unsigned int r=1; r < q; ++r) {
           Complex *Fmr=F+m*r;
-          for(unsigned int s=0; s < m; ++s) {
+          for(unsigned int s=0; s < stop; ++s) {
             Complex sum=0.0;
             for(unsigned int t=s; t < L; t += m) {
               unsigned int c=(r*t) % N;
@@ -259,6 +262,8 @@ public:
             }
             Fmr[s]=sum;
           }
+          for(unsigned int s=stop; s < m; ++s)
+            Fmr[s]=0.0;
         }
         fftm->fft(F);
       }
