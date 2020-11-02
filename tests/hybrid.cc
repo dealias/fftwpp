@@ -99,69 +99,88 @@ public:
   class Opt {
   public:
     unsigned int m,q;
+    double T;
+
+    void check(Complex *f, unsigned int L, unsigned int M,
+                         unsigned int m, bool fixed=false) {
+      if(!fixed || M % m == 0) {
+//        cout << "m=" << m << endl;
+        unsigned int p=ceilquotient(L,m);
+        unsigned int q=ceilquotient(M,m);
+//        cout << "q=" << q << endl;
+
+        Complex *F=NULL;
+        if(!fixed) {
+          unsigned int q2=p*ceilquotient(M,m*p);
+          if(q2 != q) {
+//            cout << "q2=" << q2 << endl;
+            FFTpad fft(f,L,M,m,q2);
+            Complex *F=ComplexAlign(fft.length());
+            double t=fft.meantime(f,F,K);
+            if(t < T) {
+              this->m=m;
+              this->q=q2;
+              T=t;
+            }
+          }
+        }
+
+        if(m > M) M=m;
+        FFTpad fft(f,L,M,m,q);
+        if(!F) F=ComplexAlign(fft.length());
+        double t=fft.meantime(f,F,K);
+        utils::deleteAlign(F);
+
+        if(t < T) {
+          this->m=m;
+          this->q=q;
+          T=t;
+        }
+      }
+    }
 
     // Determine optimal m,q values for padding L data values to
     // size >= M
     // If fixed=true then an FFT of size M is enforced.
-    Opt(Complex *f, unsigned int L, unsigned int M, bool fixed=false)
+    Opt(Complex *f, unsigned int L, unsigned int M,
+        bool fixed=false, bool Explicit=false)
     {
       assert(L <= M);
       m=M;
       q=1;
-      double T=DBL_MAX;
+      T=DBL_MAX;
       unsigned int i=0;
+
+      unsigned int stop;
+      if(Explicit) stop=ceilpow2(M);
 
       while(i < nsize) {
         unsigned int m=size[i];
-//        cout << "m=" << m << endl;
-        if(!fixed || M % m == 0) {
-          if(m > L) break; // Assume size 2 FFT is in table
-          unsigned int p=ceilquotient(L,m);
-          unsigned int q=ceilquotient(M,m);
-
-          Complex *F=NULL;
-          if(!fixed) {
-            unsigned int q2=p*ceilquotient(M,m*p);
-            if(q2 != q) {
-              FFTpad fft(f,L,M,m,q2);
-              Complex *F=ComplexAlign(fft.length());
-              double t=fft.meantime(f,F,K);
-              if(t < T) {
-                this->m=m;
-                this->q=q2;
-                T=t;
-              }
-            }
-          }
-
-          FFTpad fft(f,L,M,m,q);
-          if(!F) F=ComplexAlign(fft.length());
-          double t=fft.meantime(f,F,K);
-          utils::deleteAlign(F);
-
-          if(t < T) {
-            this->m=m;
-            this->q=q;
-            T=t;
-          }
-        }
+        if(Explicit) {
+          if(m > stop) break;
+          if(m < M) {++i; continue;}
+        } else if(m > L) break; // Assume size 2 FFT is in table
+        check(f,L,M,m,fixed);
         ++i;
       }
 
+      unsigned int p=ceilquotient(L,m);
       cout << "Optimal values:" << endl;
       cout << "m=" << m << endl;
-      cout << "p=" << ceilquotient(L,m) << endl;
+      cout << "p=" << p << endl;
       cout << "q=" << q << endl;
+      cout << "Padding:" << m*p-L << endl;
     }
   };
 
   // Normal entry point.
   // Compute an fft of length L padded to at least M
   // (or exactly M if fixed=true)
-  FFTpad(Complex *f, unsigned int L, unsigned int M, bool fixed=false) :
+  FFTpad(Complex *f, unsigned int L, unsigned int M, bool fixed=false, bool Explicit=false) :
     L(L), M(M) {
-    Opt opt=Opt(f,L,M,fixed);
+    Opt opt=Opt(f,L,M,fixed,Explicit);
     m=opt.m;
+    if(Explicit) this->M=M=m;
     p=ceilquotient(L,m);
     q=opt.q;
     init(f);
@@ -246,9 +265,6 @@ public:
     }
   }
 
-  unsigned int padding() {
-    return m*p-L;
-  }
   unsigned int length() {
     return p == q ? M : m*q;
   }
@@ -372,36 +388,41 @@ int main(int argc, char* argv[])
   }
 
 
-    L=3;
+  /*
+    L=63;
     M=200;
+  */
 
   /*
   L=1000;
   M=7099;
   */
 
-  /*
+    /*
     L=512;
-    M=3*L;
-  */
+    M=2*L;
+    */
+
 
     L=683;
     M=1025;
+
 
   /*
     L=1810;
     M=109090;
   */
 
-  /*
+    /*
   L=11111;//11;
   M=2*L;
-  */
+    */
 
   /*
     L=512;
-    M=1023;
-  */
+    M=1024;
+    */
+
   /*
     L=8;
     M=24;
@@ -413,42 +434,51 @@ int main(int argc, char* argv[])
 
   cout << "L=" << L << endl;
   cout << "M=" << M << endl;
+  cout << endl;
 
   Complex *f=ComplexAlign(L);
 
-  // Explicit padding
+  // Minimal explicit padding
   FFTpad fft0(f,L,M,M,1);
 
-  Complex *F0=ComplexAlign(M);
+  Complex *F0=ComplexAlign(fft0.length());
   double mean0=report(fft0,f,F0);
   deleteAlign(F0);
+
+  // Optimal explicit padding
+  FFTpad fft1(f,L,M,false,true);
+
+  Complex *F1=ComplexAlign(fft1.length());
+  double mean1=report(fft1,f,F1);
+  deleteAlign(F1);
 
   // Hybrid padding
   FFTpad fft(f,L,M);
 
-  cout << "Padding:" << fft.padding() << endl;
-
   unsigned int N=fft.length();
   Complex *F=ComplexAlign(N);
 
-  double mean1=report(fft,f,F);
+  double mean=report(fft,f,F);
 
-  cout << endl;
   if(mean0 > 0)
-    cout << "ratio=" << mean1/mean0 << endl;
+    cout << "minimal ratio=" << mean/mean0 << endl;
   cout << endl;
 
-  Complex *F1=ComplexAlign(N);
-  FFTpad fft1(f,L,N,N,1);
+  if(mean0 > 0)
+    cout << "optimal ratio=" << mean/mean1 << endl;
+  cout << endl;
+
+  Complex *F2=ComplexAlign(N);
+  FFTpad fft2(f,L,N,N,1);
   for(unsigned int j=0; j < L; ++j)
     f[j]=j;
-  fft1.forwards(f,F1);
+  fft2.forwards(f,F2);
 
   double error=0.0;
   double norm=0.0;
   for(unsigned int i=0; i < N; i++) {
-    error += abs2(F[i]-F1[i]);
-    norm += abs2(F1[i]);
+    error += abs2(F[i]-F2[i]);
+    norm += abs2(F2[i]);
   }
 
   if(norm > 0) error=sqrt(error/norm);
