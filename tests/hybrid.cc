@@ -5,8 +5,6 @@
 // vectorize and optimize Zeta computations
 // do hybrid padding for some L and M, compare to best explicit case.
 
-
-#include <cassert>
 #include <cfloat>
 
 #include "convolution.h"
@@ -103,39 +101,37 @@ public:
 
     void check(Complex *f, unsigned int L, unsigned int M,
                          unsigned int m, bool fixed=false) {
-      if(!fixed || M % m == 0) {
 //        cout << "m=" << m << endl;
-        unsigned int p=ceilquotient(L,m);
-        unsigned int q=ceilquotient(M,m);
+      unsigned int p=ceilquotient(L,m);
+      unsigned int q=ceilquotient(M,m);
 //        cout << "q=" << q << endl;
 
-        Complex *F=NULL;
-        if(!fixed) {
-          unsigned int q2=p*ceilquotient(M,m*p);
-          if(q2 != q) {
+      Complex *F=NULL;
+      if(!fixed) {
+        unsigned int q2=p*ceilquotient(M,m*p);
+        if(q2 != q) {
 //            cout << "q2=" << q2 << endl;
-            FFTpad fft(f,L,M,m,q2);
-            Complex *F=ComplexAlign(fft.length());
-            double t=fft.meantime(f,F,K);
-            if(t < T) {
-              this->m=m;
-              this->q=q2;
-              T=t;
-            }
+          FFTpad fft(f,L,M,m,q2);
+          Complex *F=ComplexAlign(fft.length());
+          double t=fft.meantime(f,F,K);
+          if(t < T) {
+            this->m=m;
+            this->q=q2;
+            T=t;
           }
         }
+      }
 
-        if(m > M) M=m;
-        FFTpad fft(f,L,M,m,q);
-        if(!F) F=ComplexAlign(fft.length());
-        double t=fft.meantime(f,F,K);
-        utils::deleteAlign(F);
+      if(m > M) M=m;
+      FFTpad fft(f,L,M,m,q);
+      if(!F) F=ComplexAlign(fft.length());
+      double t=fft.meantime(f,F,K);
+      utils::deleteAlign(F);
 
-        if(t < T) {
-          this->m=m;
-          this->q=q;
-          T=t;
-        }
+      if(t < T) {
+        this->m=m;
+        this->q=q;
+        T=t;
       }
     }
 
@@ -145,7 +141,10 @@ public:
     Opt(Complex *f, unsigned int L, unsigned int M,
         bool fixed=false, bool Explicit=false)
     {
-      assert(L <= M);
+      if(L > M) {
+        cerr << "L=" << L << " is greater than M=" << M << "." << endl;
+        exit(-1);
+      }
       m=M;
       q=1;
       T=DBL_MAX;
@@ -160,7 +159,8 @@ public:
           if(m > stop) break;
           if(m < M) {++i; continue;}
         } else if(m > L) break; // Assume size 2 FFT is in table
-        check(f,L,M,m,fixed);
+        if(!fixed || Explicit || M % m == 0)
+          check(f,L,M,m,fixed || Explicit);
         ++i;
       }
 
