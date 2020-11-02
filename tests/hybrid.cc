@@ -187,7 +187,7 @@ public:
 
       fftp->fft(H,F);
       for(unsigned int r=1; r < n; ++r) {
-        for(unsigned int t=0; t < p && m*t < L; ++t) {
+        for(unsigned int t=0; m*t < L; ++t) {
           Complex Zeta=ZetaLq[r*t];
           unsigned int mt=m*t;
           Complex *fmt=f+mt;
