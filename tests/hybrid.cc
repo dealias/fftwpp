@@ -374,7 +374,7 @@ void usage()
   std::cerr << "-h\t\t help" << std::endl;
   std::cerr << "-K\t\t number of optimization tests" << std::endl;
   std::cerr << "-L\t\t number of physical data values" << std::endl;
-  std::cerr << "-M\t\t number of padded data values" << std::endl;
+  std::cerr << "-M\t\t minimal number of padded data values" << std::endl;
   std::cerr << "-N\t\t number of timing tests" << std::endl;
   std::cerr << "-T\t\t number of threads" << std::endl;
 }
