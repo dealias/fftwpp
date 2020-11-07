@@ -1,3 +1,5 @@
+// hybrid -K1000 -N10000 -L683 -M1024
+
 // TODO:
 // decouple work memory were possible
 // optimize memory use
@@ -31,13 +33,14 @@ unsigned int nsize=1000;
 unsigned int size[Nsize];
 
 class FFTpad {
-protected:
+public:
   unsigned int L;
   unsigned int M;
   unsigned int m;
   unsigned int p;
   unsigned int q;
   unsigned int n;
+protected:
   fft1d *fftM;
   mfft1d *fftm;
   mfft1d *fftp;
@@ -46,13 +49,15 @@ protected:
   utils::statistics S;
   bool innerFFT;
   Complex *H;
+  bool modular;
 public:
 
   void init(Complex *f) {
+//    modular=false;
+    if(p != q) modular=true;
     if(m > M) M=m;
-//    cout << "m=" << m << endl;
-    if(p == q)
-      fftM=new fft1d(M,1);
+    if(!modular)
+      fftM=new fft1d(M,1); // Add work arrays?
     else {
       unsigned int N=m*q;
       BuildZeta(N,N,ZetaH,ZetaL,1,N);//,threads);
@@ -63,10 +68,12 @@ public:
         H=ComplexAlign(N);
         BuildZeta(q,q,ZetaHq,ZetaLq,1,q);//,threads);
 //      p->L, M->q, m->p, q->n
-        fftm=new mfft1d(m,1,q,q,q,1,1,G,G);
         fftp=new mfft1d(p,1,m,m,n,1,q,H,G);
+//          fftm=new mfft1d(m,1,q, q,q, 1,1, G,G);
+          fftm=new mfft1d(m,1,q, q,1, 1,m, G,G);
       } else
-        fftm=new mfft1d(m,1,q,1,q,m,1,G,G);
+//        fftm=new mfft1d(m,1,q, 1,q, m,1, G,G);
+          fftm=new mfft1d(m,1,q, 1,1, m,m, G,G);
       deleteAlign(G);
     }
   }
@@ -75,12 +82,11 @@ public:
   FFTpad(Complex *f, unsigned int L, unsigned int M,
          unsigned int m, unsigned int q) :
     L(L), M(M), m(m), p(ceilquotient(L,m)), q(q) {
-
     init(f);
   }
 
   ~FFTpad() {
-    if(p == q)
+    if(!modular)
       delete fftM;
     else {
       deleteAlign(ZetaL);
@@ -126,6 +132,7 @@ public:
       FFTpad fft(f,L,M,m,q);
       if(!F) F=ComplexAlign(fft.length());
       double t=fft.meantime(f,F,K);
+//      cout << m << " " << t << endl;
       utils::deleteAlign(F);
 
       if(t < T) {
@@ -159,6 +166,7 @@ public:
           if(m < M) {++i; continue;}
           M=m;
         } else if(m > stop) break;
+//        } else if(m > L) break;
         if(!fixed || Explicit || M % m == 0)
           check(f,L,M,m,fixed || Explicit);
         ++i;
@@ -176,8 +184,7 @@ public:
   // Normal entry point.
   // Compute an fft of length L padded to at least M
   // (or exactly M if fixed=true)
-  FFTpad(Complex *f, unsigned int L, unsigned int M, bool fixed=false, bool Explicit=false) :
-    L(L), M(M) {
+  FFTpad(Complex *f, unsigned int L, unsigned int M, bool fixed=false, bool Explicit=false) : L(L), M(M), modular(!Explicit) {
     Opt opt=Opt(f,L,M,fixed,Explicit);
     m=opt.m;
     if(Explicit) this->M=M=m;
@@ -187,9 +194,10 @@ public:
   }
 
   void forwards(Complex *f, Complex *F) {
-    if(p == q) {
-      for(unsigned int i=0; i < L; ++i)
-        F[i]=f[i];
+    if(!modular) {
+//      if(F != f)
+        for(unsigned int i=0; i < L; ++i)
+          F[i]=f[i];
       for(unsigned int i=L; i < M; ++i)
         F[i]=0.0;
       fftM->fft(F);
@@ -227,8 +235,9 @@ public:
     } else {
       unsigned int stop=min(m,L);
       if(p == 1) {
-        for(unsigned int i=0; i < L; ++i)
-          F[i]=f[i];
+//        if(F != f)
+          for(unsigned int i=0; i < L; ++i)
+            F[i]=f[i];
         for(unsigned int i=L; i < m; ++i)
           F[i]=0.0;
         for(unsigned int r=1; r < q; ++r) {
@@ -271,7 +280,7 @@ public:
   }
 
   unsigned int length() {
-    return p == q ? M : m*q;
+    return modular ? m*q : M;
   }
 
   double meantime(Complex *f, Complex *F, unsigned int K,
@@ -281,14 +290,14 @@ public:
       f[j]=j;
     forwards(f,F); // Create wisdom
 
+    double t0=utils::totalseconds();
     for(unsigned int i=0; i < K; ++i) {
       for(unsigned int j=0; j < L; ++j)
         f[j]=j;
-      double t0=utils::totalseconds();
       forwards(f,F);
-      double t=utils::totalseconds();
-      S.add(t-t0);
     }
+    double t=utils::totalseconds();
+    S.add(t-t0);
     if(stdev) *stdev=S.stdev();
     return S.mean();
   }
@@ -484,15 +493,22 @@ int main(int argc, char* argv[])
 
   double error=0.0;
   double norm=0.0;
-  for(unsigned int i=0; i < N; i++) {
-    error += abs2(F[i]-F2[i]);
-    norm += abs2(F2[i]);
+
+  unsigned int i=0;
+  unsigned int m=fft.m;
+  unsigned int q=fft.q;
+  for(unsigned int s=0; s < m; ++s) {
+    for(unsigned int r=0; r < q; ++r) {
+      error += abs2(F[r*m+s]-F2[i]);
+      norm += abs2(F2[i]);
+      ++i;
+    }
   }
 
   if(norm > 0) error=sqrt(error/norm);
+  if(error > 1e-12)
+    cerr << endl << "WARNING: " << endl;
   cout << "error=" << error << endl;
-  if (error > 1e-12)
-    cerr << endl << "WARNING: error=" << error << endl;
 
   return 0;
 }
