@@ -1,5 +1,3 @@
-// hybrid -K1000 -N10000 -L683 -M1024
-
 // TODO:
 // decouple work memory were possible
 // optimize memory use
@@ -7,6 +5,7 @@
 // vectorize and optimize Zeta computations
 
 #include <cfloat>
+#include <climits>
 
 #include "convolution.h"
 #include "utils.h"
@@ -14,8 +13,6 @@
 using namespace std;
 using namespace utils;
 using namespace fftwpp;
-
-unsigned int K=100; // Number of tests
 
 // Constants used for initialization and testing.
 const Complex I(0.0,1.0);
@@ -28,9 +25,41 @@ bool Test=false;
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
 
+unsigned int surplusFFTsizes=25;
+
 const unsigned int Nsize=1000; // FIXME
 unsigned int nsize=1000;
 unsigned int size[Nsize];
+
+template<class T>
+T pow(T x, unsigned int y)
+{
+  if(y == 0) return 1;
+  if(x == 0) return 0;
+
+  unsigned int r = 1;
+  while(true) {
+    if(y & 1) r *= x;
+    if((y >>= 1) == 0) return r;
+    x *= x;
+  }
+}
+
+unsigned int nextfftsize(unsigned int m)
+{
+  unsigned int N=-1;
+  unsigned int ni=1;
+  for(unsigned int i=0; ni < 7*m; ni=pow(7,i), ++i) {
+    unsigned int nj=ni;
+    for(unsigned int j=0; nj < 5*m; nj=ni*pow(5,j), ++j) {
+      unsigned int nk=nj;
+      for(unsigned int k=0; nk < 3*m; nk=nj*pow(3,k), ++k) {
+        N=min(N,nk*ceilpow2(ceilquotient(m,nk)));
+      }
+    }
+  }
+  return N;
+}
 
 class FFTpad {
 public:
@@ -53,7 +82,6 @@ protected:
 public:
 
   void init(Complex *f) {
-//    modular=false;
     if(p != q) modular=true;
     if(m > M) M=m;
     if(!modular)
@@ -69,7 +97,7 @@ public:
         BuildZeta(q,q,ZetaHq,ZetaLq,1,q);//,threads);
 //      p->L, M->q, m->p, q->n
         fftp=new mfft1d(p,1,m,m,n,1,q,H,G);
-//          fftm=new mfft1d(m,1,q, q,q, 1,1, G,G);
+//        fftm=new mfft1d(m,1,q, q,q, 1,1, G,G);
           fftm=new mfft1d(m,1,q, q,1, 1,m, G,G);
       } else
 //        fftm=new mfft1d(m,1,q, 1,q, m,1, G,G);
@@ -81,7 +109,7 @@ public:
   // Compute an fft padded to N=m*q >= M >= L=f.length
   FFTpad(Complex *f, unsigned int L, unsigned int M,
          unsigned int m, unsigned int q) :
-    L(L), M(M), m(m), p(ceilquotient(L,m)), q(q) {
+    L(L), M(M), m(m), p(ceilquotient(L,m)), q(q), modular(true) {
     init(f);
   }
 
@@ -120,7 +148,7 @@ public:
 //            cout << "q2=" << q2 << endl;
           FFTpad fft(f,L,M,m,q2);
           Complex *F=ComplexAlign(fft.length());
-          double t=fft.meantime(f,F,K);
+          double t=fft.meantime(f,F);
           if(t < T) {
             this->m=m;
             this->q=q2;
@@ -131,8 +159,7 @@ public:
 
       FFTpad fft(f,L,M,m,q);
       if(!F) F=ComplexAlign(fft.length());
-      double t=fft.meantime(f,F,K);
-//      cout << m << " " << t << endl;
+      double t=fft.meantime(f,F);
       utils::deleteAlign(F);
 
       if(t < T) {
@@ -152,23 +179,26 @@ public:
         cerr << "L=" << L << " is greater than M=" << M << "." << endl;
         exit(-1);
       }
-      m=M;
+      m=1;
       q=1;
       T=DBL_MAX;
       unsigned int i=0;
 
-      unsigned int stop=ceilpow2(M);
+      unsigned int stop=M-1;
+      for(unsigned int k=0; k < surplusFFTsizes; ++k)
+        stop=nextfftsize(stop+1);
 
-      while(i < nsize) {
-        unsigned int m=size[i];
+      unsigned int m0=1;
+      while(true) {
+        m0=nextfftsize(m0+1);
         if(Explicit) {
-          if(m > stop) break;
-          if(m < M) {++i; continue;}
-          M=m;
-        } else if(m > stop) break;
-//        } else if(m > L) break;
-        if(!fixed || Explicit || M % m == 0)
-          check(f,L,M,m,fixed || Explicit);
+          if(m0 > stop) break;
+          if(m0 < M) {++i; continue;}
+          M=m0;
+        } else if(m0 > stop) break;
+//        } else if(m0 > L) break;
+        if(!fixed || Explicit || M % m0 == 0)
+          check(f,L,M,m0,fixed || Explicit);
         ++i;
       }
 
@@ -283,23 +313,35 @@ public:
     return modular ? m*q : M;
   }
 
-  double meantime(Complex *f, Complex *F, unsigned int K,
-                  double *stdev=NULL) {
+  double meantime(Complex *f, Complex *F, double *Stdev=NULL) {
     S.clear();
+// Assume f != F (out-of-place)
     for(unsigned int j=0; j < L; ++j)
-      f[j]=j;
+      f[j]=0.0;
     forwards(f,F); // Create wisdom
+    unsigned int K=1;
 
-    double t0=utils::totalseconds();
-    for(unsigned int i=0; i < K; ++i) {
-      for(unsigned int j=0; j < L; ++j)
-        f[j]=j;
-      forwards(f,F);
+    double eps=0.1;
+
+    for(;;) {
+      double t0=utils::totalseconds();
+      for(unsigned int i=0; i < K; ++i)
+        forwards(f,F);
+      double t=utils::totalseconds();
+      S.add((t-t0)/K);
+      double mean=S.mean();
+      double stdev=S.stdev();
+      if(S.count() < 7) continue;
+      if(K*mean < 1000.0/CLOCKS_PER_SEC || stdev > eps*mean) {
+        K *= 2;
+        S.clear();
+      } else {
+        if(Stdev) *Stdev=stdev;
+        return mean;
+      }
     }
-    double t=utils::totalseconds();
-    S.add(t-t0);
-    if(stdev) *stdev=S.stdev();
-    return S.mean();
+    if(Stdev) *Stdev=0.0;
+    return 0.0;
   }
 };
 
@@ -361,14 +403,13 @@ void multA(Complex **F, unsigned int m,
 
 unsigned int L=683;
 unsigned int M=1025;
-unsigned int N=1000;
 
 double report(FFTpad &fft, Complex *f, Complex *F)
 {
   double stdev;
   cout << endl;
 
-  double mean=fft.meantime(f,F,N,&stdev);
+  double mean=fft.meantime(f,F,&stdev);
 
   cout << "mean=" << mean << " +/- " << stdev << endl;
 
@@ -386,10 +427,9 @@ void usage()
 {
   std::cerr << "Options: " << std::endl;
   std::cerr << "-h\t\t help" << std::endl;
-  std::cerr << "-K\t\t number of optimization tests" << std::endl;
+  std::cerr << "-S\t\t number of surplus FFT sizes" << std::endl;
   std::cerr << "-L\t\t number of physical data values" << std::endl;
   std::cerr << "-M\t\t minimal number of padded data values" << std::endl;
-  std::cerr << "-N\t\t number of timing tests" << std::endl;
   std::cerr << "-T\t\t number of threads" << std::endl;
 }
 
@@ -405,14 +445,11 @@ int main(int argc, char* argv[])
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hK:L:M:N:T:");
+    int c = getopt(argc,argv,"hL:M:S:T:");
     if (c == -1) break;
 
     switch (c) {
       case 0:
-        break;
-      case 'K':
-        K=atoi(optarg);
         break;
       case 'L':
         L=atoi(optarg);
@@ -420,8 +457,8 @@ int main(int argc, char* argv[])
       case 'M':
         M=atoi(optarg);
         break;
-      case 'N':
-        N=atoi(optarg);
+      case 'S':
+        surplusFFTsizes=atoi(optarg);
         break;
       case 'T':
         fftw::maxthreads=max(atoi(optarg),1);
@@ -431,23 +468,6 @@ int main(int argc, char* argv[])
         usage();
         exit(1);
     }
-  }
-
-
-  const char *name="optimalSorted.dat";
-  ifstream fin(name);
-  if(!fin) {
-    cerr << name << " not found" << endl;
-    exit(-1);
-  }
-  nsize=0;
-  while(true) {
-    unsigned int i;
-    double mean,stdev;
-    fin >> i >> mean >> stdev;
-    if(fin.eof()) break;
-    size[nsize]=i;
-    ++nsize;
   }
 
   cout << "L=" << L << endl;
@@ -484,6 +504,10 @@ int main(int argc, char* argv[])
   if(mean0 > 0)
     cout << "optimal ratio=" << mean/mean1 << endl;
   cout << endl;
+
+  for(unsigned int j=0; j < L; ++j)
+    f[j]=j;
+  fft.forwards(f,F);
 
   Complex *F2=ComplexAlign(N);
   FFTpad fft2(f,L,N,N,1);

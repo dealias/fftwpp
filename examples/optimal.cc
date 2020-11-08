@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
             }
             if(S.count() >= 10 && S.stdev() < eps*mean) {
 // TODO: accrue in memory first
-              fout << n << "\t" << S.mean() << "\t" << S.stdev() << endl ;
+              fout << n << "\t" << mean << "\t" << S.stdev() << endl ;
               break;
             }
           }
