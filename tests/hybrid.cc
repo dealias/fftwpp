@@ -72,6 +72,7 @@ public:
 protected:
   fft1d *fftM;
   mfft1d *fftm;
+  mfft1d *ifftm;
   mfft1d *fftp;
   Complex *ZetaH,*ZetaL;
   Complex *ZetaHq,*ZetaLq;
@@ -84,6 +85,7 @@ public:
   void init(Complex *f) {
     if(p != q) modular=true;
     if(m > M) M=m;
+    modular=true; // Temp
     if(!modular)
       fftM=new fft1d(M,1); // Add work arrays?
     else {
@@ -96,12 +98,12 @@ public:
         H=ComplexAlign(N);
         BuildZeta(q,q,ZetaHq,ZetaLq,1,q);//,threads);
 //      p->L, M->q, m->p, q->n
-        fftp=new mfft1d(p,1,m,m,n,1,q,H,G);
-//        fftm=new mfft1d(m,1,q, q,q, 1,1, G,G);
-          fftm=new mfft1d(m,1,q, q,1, 1,m, G,G);
+        fftp=new mfft1d(p,1,m, m,n, 1,q, H,G);
+        fftm=new mfft1d(m,1,q, q,1, 1,m, G,G);
       } else
-//        fftm=new mfft1d(m,1,q, 1,q, m,1, G,G);
-          fftm=new mfft1d(m,1,q, 1,1, m,m, G,G);
+        fftm=new mfft1d(m,1,q, 1,1, m,m, G,G);
+
+      ifftm=new mfft1d(m,-1,q, 1,1, m,m, G,G);
       deleteAlign(G);
     }
   }
@@ -127,6 +129,7 @@ public:
       }
       delete fftm;
     }
+    delete ifftm;
   }
 
   class Opt {
@@ -223,7 +226,7 @@ public:
     init(f);
   }
 
-  void forwards(Complex *f, Complex *F) {
+  void forward(Complex *f, Complex *F) {
     if(!modular) {
 //      if(F != f)
         for(unsigned int i=0; i < L; ++i)
@@ -309,6 +312,57 @@ public:
     }
   }
 
+// Compute an inverse fft of length N=q*m unpadded back
+// to size p*m >= L.
+  void backward(Complex *F, Complex *f) {
+    unsigned int pm=p*m;
+
+    Complex *H=ComplexAlign(m);
+
+    /*
+      if(n*p == q && p > 1) {
+      pair[] G=new pair[N];
+
+      for(unsigned int r=0; r < q; ++r) {
+      for(unsigned int l=0; l < m; ++l)
+      H[l]=F[q*l+r];
+
+      pair[] H=fft(H,sign);
+      for(unsigned int s=0; s < m; ++s)
+      G[m*r+s]=H[s];
+      }
+
+      Complex *g=ComplexAlign(q);
+      for(unsigned int s=0; s < m; ++s) {
+      for(unsigned int r=0; r < q; ++r)
+      g[r]=Zeta[sign*r*s % N]*G[m*r+s];
+      g=fftunpad(g,p,p,sign);
+      for(unsigned int t=0; t < p; ++t)
+      f[t*m+s]=g[t];
+      }
+      } else {
+    */
+    for(unsigned int k=0; k < pm; ++k)
+      f[k]=0.0;
+
+    unsigned int N=m*q;
+    // Direct sum:
+    for(unsigned int r=0; r < q; ++r) {
+      for(unsigned int l=0; l < m; ++l)
+        H[l]=F[q*l+r];
+
+      ifftm->fft(H);
+      for(unsigned int t=0; t < p; ++t) {
+        for(unsigned int s=0; s < m; ++s) {
+          unsigned int K=t*m+s;
+          unsigned int a=(r*K) % N;
+          f[K] += conj(ZetaL[a])*H[s];
+        }
+      }
+    }
+//  }
+  }
+
   unsigned int length() {
     return modular ? m*q : M;
   }
@@ -318,7 +372,7 @@ public:
 // Assume f != F (out-of-place)
     for(unsigned int j=0; j < L; ++j)
       f[j]=0.0;
-    forwards(f,F); // Create wisdom
+    forward(f,F); // Create wisdom
     unsigned int K=1;
 
     double eps=0.1;
@@ -326,7 +380,7 @@ public:
     for(;;) {
       double t0=utils::totalseconds();
       for(unsigned int i=0; i < K; ++i)
-        forwards(f,F);
+        forward(f,F);
       double t=utils::totalseconds();
       S.add((t-t0)/K);
       double mean=S.mean();
@@ -413,12 +467,14 @@ double report(FFTpad &fft, Complex *f, Complex *F)
 
   cout << "mean=" << mean << " +/- " << stdev << endl;
 
+#if 0
   unsigned int N=fft.length();
   if(N < 20) {
     for(unsigned int i=0; i < N; ++i)
       cout << F[i] << endl;
   }
   cout << endl;
+#endif
 
   return mean;
 }
@@ -507,13 +563,25 @@ int main(int argc, char* argv[])
 
   for(unsigned int j=0; j < L; ++j)
     f[j]=j;
-  fft.forwards(f,F);
+  fft.forward(f,F);
+
+  Complex *f0=ComplexAlign(fft.p*fft.m);
+  if(L >= fft.p*fft.m)
+    cout << "Help!" << endl;
+
+  fft.backward(F,f0);
+
+  cout << endl;
+  cout << "Inverse:" << endl;
+  for(unsigned int j=0; j < L; ++j)
+    cout << f0[j]/fft.length() << endl;
+  cout << endl;
 
   Complex *F2=ComplexAlign(N);
   FFTpad fft2(f,L,N,N,1);
   for(unsigned int j=0; j < L; ++j)
     f[j]=j;
-  fft2.forwards(f,F2);
+  fft2.forward(f,F2);
 
   double error=0.0;
   double norm=0.0;
