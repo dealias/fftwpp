@@ -96,13 +96,13 @@ public:
       Complex *G=ComplexAlign(N);
       innerFFT=p > 1 && n*p == q;
       if(innerFFT) {
-        H=ComplexAlign(N);// not needed for backward transform
+        H=ComplexAlign(N); // not needed for backward transform
         BuildZeta(q,q,ZetaHq,ZetaLq,1,q);//,threads);
 //      p->L, M->q, m->p, q->n
         fftp=new mfft1d(p,1,m, m,n, 1,q, H,G);
         fftm=new mfft1d(m,1,q, q,1, 1,m, G,G);
         ifftq=new mfft1d(p,-1,n, n,1, 1,p, G,G);
-        ifftm=new mfft1d(m,-1,q, 1,1, m,m, G,G);
+        ifftm=new mfft1d(m,-1,q, 1,q, m,1, G,G);
       } else {
         fftm=new mfft1d(m,1,q, 1,1, m,m, G,G);
         ifftm=new mfft1d(m,-1,q, 1,1, m,m, G,G);
@@ -168,6 +168,7 @@ public:
       utils::deleteAlign(F);
 
       if(t < T) {
+//      if(false) {
         this->m=m;
         this->q=q;
         T=t;
@@ -340,9 +341,9 @@ public:
         for(unsigned int r=0; r < q; ++r)
           Fqs[r] *= conj(ZetaL[r*s]);
 
-        ifftq->fft(F);
+        ifftq->fft(Fqs);
         for(unsigned int r=0; r < n; ++r) {
-          Complex *Fpr=F+p*r;
+          Complex *Fpr=Fqs+p*r;
           Complex *fs=f+s;
           for(unsigned int t=0; t < p; ++t)
             fs[m*t] += conj(ZetaLq[r*t])*Fpr[t];
