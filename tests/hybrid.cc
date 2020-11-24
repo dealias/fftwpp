@@ -184,7 +184,7 @@ public:
         exit(-1);
       }
       m=1;
-      q=1;
+      q=M;
       T=DBL_MAX;
       unsigned int i=0;
 
@@ -261,7 +261,7 @@ public:
       }
 
       for(unsigned int s=0; s < m; ++s) {
-        Complex *Fsq=F+s*q;
+        Complex *Fsq=F+q*s;
         for(unsigned int r=1; r < q; ++r)
           Fsq[r] *= ZetaL[r*s];
       }
@@ -336,15 +336,18 @@ public:
     if(innerFFT) {
       Complex *g=ComplexAlign(q);
       for(unsigned int s=0; s < m; ++s) {
+        Complex *Fs=F+s;
         for(unsigned int r=0; r < q; ++r) {
           unsigned int a=(r*s) % N;
-          g[r]=conj(ZetaL[a])*F[m*r+s];
+          g[r]=conj(ZetaL[a])*Fs[m*r];
         }
 
         ifftq->fft(g);
         for(unsigned int r=0; r < n; ++r) {
+          Complex *gpr=g+p*r;
+          Complex *fs=f+s;
           for(unsigned int t=0; t < p; ++t)
-            f[t*m+s] += conj(ZetaLq[r*t])*g[p*r+t];
+            fs[m*t] += conj(ZetaLq[r*t])*gpr[t];
         }
       }
     } else {
@@ -352,7 +355,7 @@ public:
       for(unsigned int r=0; r < q; ++r) {
         for(unsigned int t=0; t < p; ++t) {
           for(unsigned int s=0; s < m; ++s) {
-            unsigned int K=t*m+s;
+            unsigned int K=m*t+s;
             unsigned int a=(r*K) % N;
             f[K] += conj(ZetaL[a])*F[m*r+s];
           }
@@ -591,7 +594,7 @@ int main(int argc, char* argv[])
   unsigned int q=fft.q;
   for(unsigned int s=0; s < m; ++s) {
     for(unsigned int r=0; r < q; ++r) {
-      error += abs2(F[r*m+s]-F2[i]);
+      error += abs2(F[m*r+s]-F2[i]);
       norm += abs2(F2[i]);
       ++i;
     }
