@@ -96,16 +96,17 @@ public:
       Complex *G=ComplexAlign(N);
       innerFFT=p > 1 && n*p == q;
       if(innerFFT) {
-        H=ComplexAlign(N);
+        H=ComplexAlign(N);// not needed for backward transform
         BuildZeta(q,q,ZetaHq,ZetaLq,1,q);//,threads);
 //      p->L, M->q, m->p, q->n
         fftp=new mfft1d(p,1,m, m,n, 1,q, H,G);
         fftm=new mfft1d(m,1,q, q,1, 1,m, G,G);
         ifftq=new mfft1d(p,-1,n, n,1, 1,p, G,G);
-      } else
+        ifftm=new mfft1d(m,-1,q, 1,1, m,m, G,G);
+      } else {
         fftm=new mfft1d(m,1,q, 1,1, m,m, G,G);
-
-      ifftm=new mfft1d(m,-1,q, 1,1, m,m, G,G);
+        ifftm=new mfft1d(m,-1,q, 1,1, m,m, G,G);
+      }
     }
   }
 
@@ -334,30 +335,34 @@ public:
     ifftm->fft(F);
 
     if(innerFFT) {
-      Complex *g=ComplexAlign(q);
       for(unsigned int s=0; s < m; ++s) {
-        Complex *Fs=F+s;
-        for(unsigned int r=0; r < q; ++r) {
-          unsigned int a=(r*s) % N;
-          g[r]=conj(ZetaL[a])*Fs[m*r];
-        }
+        Complex *Fqs=F+q*s;
+        for(unsigned int r=0; r < q; ++r)
+          Fqs[r] *= conj(ZetaL[r*s]);
 
-        ifftq->fft(g);
+        ifftq->fft(F);
         for(unsigned int r=0; r < n; ++r) {
-          Complex *gpr=g+p*r;
+          Complex *Fpr=F+p*r;
           Complex *fs=f+s;
           for(unsigned int t=0; t < p; ++t)
-            fs[m*t] += conj(ZetaLq[r*t])*gpr[t];
+            fs[m*t] += conj(ZetaLq[r*t])*Fpr[t];
         }
       }
     } else {
       // Direct sum:
-      for(unsigned int r=0; r < q; ++r) {
-        for(unsigned int t=0; t < p; ++t) {
-          for(unsigned int s=0; s < m; ++s) {
-            unsigned int K=m*t+s;
-            unsigned int a=(r*K) % N;
-            f[K] += conj(ZetaL[a])*F[m*r+s];
+      if(p == 1) {
+        for(unsigned int r=0; r < q; ++r) {
+          for(unsigned int s=0; s < m; ++s)
+            f[s] += conj(ZetaL[r*s])*F[m*r+s];
+        }
+      } else {
+        for(unsigned int r=0; r < q; ++r) {
+          for(unsigned int t=0; t < p; ++t) {
+            for(unsigned int s=0; s < m; ++s) {
+              unsigned int K=m*t+s;
+              unsigned int a=(r*K) % N;
+              f[K] += conj(ZetaL[a])*F[m*r+s];
+            }
           }
         }
       }
