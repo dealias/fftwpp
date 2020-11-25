@@ -82,7 +82,7 @@ protected:
 public:
 
   void init() {
-//    modular=true;
+    modular=true;
     if(p != q) modular=true;
     if(m > M) M=m;
     if(!modular) {
@@ -165,8 +165,8 @@ public:
       FFTpad fft(L,M,m,q);
       double t=fft.meantime();
 
-      if(t < T) {
-//      if(false) {
+//      if(t < T) {
+      if(false) {
         this->m=m;
         this->q=q;
         T=t;
@@ -334,7 +334,14 @@ public:
         ifftq->fft(Fqs);
       }
 
-      for(unsigned int t=0; t < p; ++t) {
+      for(unsigned int s=0; s < m; ++s)
+        f[s]=F[q*s];
+      for(unsigned int r=1; r < n; ++r) {
+        Complex *Fr=F+r*p;
+        for(unsigned int s=0; s < m; ++s)
+          f[s] += Fr[q*s];
+      }
+      for(unsigned int t=1; t < p; ++t) {
         Complex *Ft=F+t;
         Complex *ft=f+m*t;
         for(unsigned int s=0; s < m; ++s)
@@ -362,10 +369,10 @@ public:
           f[s]=sum;
         }
       } else {
-        for(unsigned int t=0; t < p; ++t) {
-          unsigned int mt=m*t;
+        unsigned int mp=m*p;
+        for(unsigned int t=0; t < mp; t += m) {
           for(unsigned int s=0; s < m; ++s) {
-            unsigned int K=mt+s;
+            unsigned int K=t+s;
             Complex *Fs=F+s;
             Complex sum=Fs[0];
             for(unsigned int r=1; r < q; ++r) {
@@ -590,7 +597,7 @@ int main(int argc, char* argv[])
 
   fft.backward(F0,f0);
 
-  if(L < 30) {
+  if(L < 1000) {
     cout << endl;
     cout << "Inverse:" << endl;
     for(unsigned int j=0; j < L; ++j)
