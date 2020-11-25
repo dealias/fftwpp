@@ -82,12 +82,12 @@ protected:
   bool modular;
 public:
 
-  void init(Complex *f) {
+  void init() {
     if(p != q) modular=true;
     if(m > M) M=m;
     modular=true; // Temp
     if(!modular)
-      fftM=new fft1d(M,1); // Add work arrays?
+      fftM=new fft1d(M,1);
     else {
       unsigned int N=m*q;
       BuildZeta(N,N,ZetaH,ZetaL,1,N);//,threads);
@@ -112,10 +112,10 @@ public:
   }
 
   // Compute an fft padded to N=m*q >= M >= L=f.length
-  FFTpad(Complex *f, unsigned int L, unsigned int M,
+  FFTpad(unsigned int L, unsigned int M,
          unsigned int m, unsigned int q) :
     L(L), M(M), m(m), p(ceilquotient(L,m)), q(q), modular(true) {
-    init(f);
+    init();
   }
 
   ~FFTpad() {
@@ -139,21 +139,19 @@ public:
     unsigned int m,q;
     double T;
 
-    void check(Complex *f, unsigned int L, unsigned int M,
+    void check(unsigned int L, unsigned int M,
                unsigned int m, bool fixed=false) {
 //      cout << "m=" << m << endl;
       unsigned int p=ceilquotient(L,m);
       unsigned int q=ceilquotient(M,m);
 //      cout << "q=" << q << endl;
 
-      Complex *F=NULL;
       if(!fixed) {
         unsigned int q2=p*ceilquotient(M,m*p);
         if(q2 != q) {
 //            cout << "q2=" << q2 << endl;
-          FFTpad fft(f,L,M,m,q2);
-          Complex *F=ComplexAlign(fft.length());
-          double t=fft.meantime(f,F);
+          FFTpad fft(L,M,m,q2);
+          double t=fft.meantime();
           if(t < T) {
             this->m=m;
             this->q=q2;
@@ -162,10 +160,8 @@ public:
         }
       }
 
-      FFTpad fft(f,L,M,m,q);
-      if(!F) F=ComplexAlign(fft.length());
-      double t=fft.meantime(f,F);
-      utils::deleteAlign(F);
+      FFTpad fft(L,M,m,q);
+      double t=fft.meantime();
 
       if(t < T) {
 //      if(false) {
@@ -178,8 +174,7 @@ public:
     // Determine optimal m,q values for padding L data values to
     // size >= M
     // If fixed=true then an FFT of size M is enforced.
-    Opt(Complex *f, unsigned int L, unsigned int M,
-        bool fixed=false, bool Explicit=false)
+    Opt(unsigned int L, unsigned int M, bool fixed=false, bool Explicit=false)
     {
       if(L > M) {
         cerr << "L=" << L << " is greater than M=" << M << "." << endl;
@@ -204,11 +199,12 @@ public:
         } else if(m0 > stop) break;
 //        } else if(m0 > L) break;
         if(!fixed || Explicit || M % m0 == 0)
-          check(f,L,M,m0,fixed || Explicit);
+          check(L,M,m0,fixed || Explicit);
         ++i;
       }
 
       unsigned int p=ceilquotient(L,m);
+      cout << endl;
       cout << "Optimal values:" << endl;
       cout << "m=" << m << endl;
       cout << "p=" << p << endl;
@@ -220,13 +216,14 @@ public:
   // Normal entry point.
   // Compute an fft of length L padded to at least M
   // (or exactly M if fixed=true)
-  FFTpad(Complex *f, unsigned int L, unsigned int M, bool fixed=false, bool Explicit=false) : L(L), M(M), modular(!Explicit) {
-    Opt opt=Opt(f,L,M,fixed,Explicit);
+  FFTpad(unsigned int L, unsigned int M, bool fixed=false,
+         bool Explicit=false) : L(L), M(M), modular(!Explicit) {
+    Opt opt=Opt(L,M,fixed,Explicit);
     m=opt.m;
     if(Explicit) this->M=M=m;
     p=ceilquotient(L,m);
     q=opt.q;
-    init(f);
+    init();
   }
 
   // Arrays f and F must be distinct
@@ -317,9 +314,11 @@ public:
       cerr << "input and output arrays must be distinct"
            << endl;
     }
+    /*
     cout << "backward:" << endl;
     cout << "p=" << p << endl;
     cout << "q=" << q << endl;
+    */
 
     unsigned int N=m*q;
 
@@ -379,26 +378,37 @@ public:
     }
   }
 
+  unsigned int inverseLength() {
+    return m*p;
+  }
+
   unsigned int length() {
     return modular ? m*q : M;
   }
 
-  double meantime(Complex *f, Complex *F, double *Stdev=NULL) {
+  double meantime(double *Stdev=NULL) {
     S.clear();
+    Complex *F=ComplexAlign(length());
+    Complex *f=ComplexAlign(inverseLength());
+
 // Assume f != F (out-of-place)
     for(unsigned int j=0; j < L; ++j)
       f[j]=0.0;
     forward(f,F); // Create wisdom
+    backward(F,f); // Create wisdom
     unsigned int K=1;
 
     double eps=0.1;
 
     for(;;) {
-      double t0=utils::totalseconds();
-      for(unsigned int i=0; i < K; ++i)
+      double t0=totalseconds();
+      for(unsigned int i=0; i < K; ++i) {
         forward(f,F);
-      double t=utils::totalseconds();
+        backward(F,f);
+      }
+      double t=totalseconds();
       S.add((t-t0)/K);
+
       double mean=S.mean();
       double stdev=S.stdev();
       if(S.count() < 7) continue;
@@ -407,9 +417,15 @@ public:
         S.clear();
       } else {
         if(Stdev) *Stdev=stdev;
+        deleteAlign(F);
+        deleteAlign(f);
         return mean;
       }
     }
+
+    deleteAlign(F);
+    deleteAlign(f);
+
     if(Stdev) *Stdev=0.0;
     return 0.0;
   }
@@ -474,23 +490,14 @@ void multA(Complex **F, unsigned int m,
 unsigned int L=683;
 unsigned int M=1025;
 
-double report(FFTpad &fft, Complex *f, Complex *F)
+double report(FFTpad &fft)
 {
   double stdev;
   cout << endl;
 
-  double mean=fft.meantime(f,F,&stdev);
+  double mean=fft.meantime(&stdev);
 
   cout << "mean=" << mean << " +/- " << stdev << endl;
-
-#if 0
-  unsigned int N=fft.length();
-  if(N < 20) {
-    for(unsigned int i=0; i < N; ++i)
-      cout << F[i] << endl;
-  }
-  cout << endl;
-#endif
 
   return mean;
 }
@@ -545,45 +552,38 @@ int main(int argc, char* argv[])
   cout << "L=" << L << endl;
   cout << "M=" << M << endl;
 
-  Complex *f=ComplexAlign(L);
-
   // Minimal explicit padding
-  FFTpad fft0(f,L,M,M,1);
-
-  Complex *F0=ComplexAlign(fft0.length());
-  double mean0=report(fft0,f,F0);
-  deleteAlign(F0);
+  FFTpad fft0(L,M,M,1);
+  double mean0=report(fft0);
 
   // Optimal explicit padding
-  FFTpad fft1(f,L,M,false,true);
-
-  Complex *F1=ComplexAlign(fft1.length());
-  double mean1=report(fft1,f,F1);
-  deleteAlign(F1);
+  FFTpad fft1(L,M,false,true);
+  double mean1=report(fft1);
 
   // Hybrid padding
-  FFTpad fft(f,L,M);//,(unsigned int) 4, (unsigned int) 4);
-
-  unsigned int N=fft.length();
-  Complex *F=ComplexAlign(N);
-
-  double mean=report(fft,f,F);
+  FFTpad fft(L,M);
+  double mean=report(fft);
 
   if(mean0 > 0)
     cout << "minimal ratio=" << mean/mean0 << endl;
   cout << endl;
 
-  if(mean0 > 0)
+  if(mean1 > 0)
     cout << "optimal ratio=" << mean/mean1 << endl;
   cout << endl;
+
+  unsigned int N=fft.length();
+
+  Complex *f=ComplexAlign(L);
+  Complex *F=ComplexAlign(N);
 
   for(unsigned int j=0; j < L; ++j)
     f[j]=j;
   fft.forward(f,F);
 
-  Complex *f0=ComplexAlign(fft.p*fft.m);
+  Complex *f0=ComplexAlign(fft.inverseLength());
+  Complex *F0=ComplexAlign(N);
 
-  F0=ComplexAlign(fft.length());
   for(unsigned int j=0; j < fft.length(); ++j)
     F0[j]=F[j];
 
@@ -598,7 +598,7 @@ int main(int argc, char* argv[])
   }
 
   Complex *F2=ComplexAlign(N);
-  FFTpad fft2(f,L,N,N,1);
+  FFTpad fft2(L,N,N,1);
   for(unsigned int j=0; j < L; ++j)
     f[j]=j;
   fft2.forward(f,F2);
