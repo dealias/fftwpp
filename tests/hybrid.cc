@@ -3,6 +3,8 @@
 // optimize memory use
 // use out-of-place transforms
 // vectorize and optimize Zeta computations
+//          unsigned int a=c/S;
+//          Complex Zeta=ZetaH[a]*ZetaL[c-S*a];
 
 #include <cfloat>
 #include <climits>
@@ -257,7 +259,7 @@ public:
         }
         fftp->fft(Fr);
       }
-      for(unsigned int s=0; s < m; ++s) {
+      for(unsigned int s=1; s < m; ++s) {
         Complex *Fs=F+s;
         for(unsigned int r=1; r < q; ++r)
           Fs[m*r] *= ZetaL[r*s];
@@ -273,10 +275,9 @@ public:
           F[i]=0.0;
         for(unsigned int r=1; r < q; ++r) {
           Complex *Fmr=F+m*r;
-          for(unsigned int s=0; s < stop; ++s) {
-            Complex Zeta=ZetaL[r*s];
-            Fmr[s]=Zeta*f[s];
-          }
+          Fmr[0]=f[0];
+          for(unsigned int s=1; s < stop; ++s)
+            Fmr[s]=ZetaL[r*s]*f[s];
           for(unsigned int s=stop; s < m; ++s)
             Fmr[s]=0.0;
         }
@@ -295,10 +296,7 @@ public:
             Complex sum=0.0;
             for(unsigned int t=s; t < L; t += m) {
               unsigned int c=(r*t) % N;
-//          unsigned int a=c/S;
-//          Complex Zeta=ZetaH[a]*ZetaL[c-S*a];
-              Complex Zeta=ZetaL[c];
-              sum += Zeta*f[t];
+              sum += ZetaL[c]*f[t];
             }
             Fmr[s]=sum;
           }
@@ -583,7 +581,7 @@ int main(int argc, char* argv[])
   Complex *F=ComplexAlign(N);
 
   for(unsigned int j=0; j < L; ++j)
-    f[j]=j;
+    f[j]=j+1;
   fft.forward(f,F);
 
   Complex *f0=ComplexAlign(fft.inverseLength());
