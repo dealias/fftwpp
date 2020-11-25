@@ -71,6 +71,7 @@ public:
   unsigned int n;
 protected:
   fft1d *fftM;
+  fft1d *ifftM;
   mfft1d *fftm;
   mfft1d *ifftm;
   mfft1d *ifftq;
@@ -85,10 +86,10 @@ public:
   void init() {
     if(p != q) modular=true;
     if(m > M) M=m;
-    modular=true; // Temp
-    if(!modular)
+    if(!modular) {
       fftM=new fft1d(M,1);
-    else {
+      ifftM=new fft1d(M,-1);
+    } else {
       unsigned int N=m*q;
       BuildZeta(N,N,ZetaH,ZetaL,1,N);//,threads);
       n=q/p;
@@ -119,19 +120,21 @@ public:
   }
 
   ~FFTpad() {
-    if(!modular)
+    if(!modular) {
       delete fftM;
-    else {
+      delete ifftM;
+    } else {
       deleteAlign(ZetaL);
       deleteAlign(ZetaH);
       if(innerFFT) {
         deleteAlign(ZetaLq);
         deleteAlign(ZetaHq);
         delete fftp;
+        delete ifftq;
       }
       delete fftm;
+      delete ifftm;
     }
-    delete ifftm;
   }
 
   class Opt {
@@ -226,7 +229,7 @@ public:
     init();
   }
 
-  // Arrays f and F must be distinct
+  // TODO: Check for cases when arrays f and F must be distinct
   void forward(Complex *f, Complex *F) {
     if(!modular) {
       for(unsigned int i=0; i < L; ++i)
@@ -310,15 +313,17 @@ public:
 // to size p*m >= L.
   // Input F destroyed
   void backward(Complex *F, Complex *f) {
+    if(!modular) {
+      ifftM->fft(F);
+      for(unsigned int i=0; i < L; ++i)
+        f[i]=F[i];
+      return;
+    }
+
     if(F == f) {
       cerr << "input and output arrays must be distinct"
            << endl;
     }
-    /*
-    cout << "backward:" << endl;
-    cout << "p=" << p << endl;
-    cout << "q=" << q << endl;
-    */
 
     unsigned int N=m*q;
 
