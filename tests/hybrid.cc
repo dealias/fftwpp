@@ -82,7 +82,6 @@ protected:
 public:
 
   void init() {
-    modular=true;
     if(p != q) modular=true;
     if(m > M) M=m;
     if(!modular) {
