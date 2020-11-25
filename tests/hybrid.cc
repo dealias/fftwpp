@@ -29,10 +29,6 @@ unsigned int B=1; // number of outputs
 
 unsigned int surplusFFTsizes=25;
 
-const unsigned int Nsize=1000; // FIXME
-unsigned int nsize=1000;
-unsigned int size[Nsize];
-
 template<class T>
 T pow(T x, unsigned int y)
 {
