@@ -331,7 +331,8 @@ public:
     ifftm->fft(F);
 
     if(innerFFT) {
-      for(unsigned int s=0; s < m; ++s) {
+      ifftq->fft(F);
+      for(unsigned int s=1; s < m; ++s) {
         Complex *Fqs=F+q*s;
         for(unsigned int r=1; r < q; ++r)
           Fqs[r] *= conj(ZetaL[r*s]);
