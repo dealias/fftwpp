@@ -164,8 +164,7 @@ public:
       FFTpad fft(L,M,m,q);
       double t=fft.meantime();
 
-//      if(t < T) {
-      if(false) {
+      if(t < T) {
         this->m=m;
         this->q=q;
         T=t;
