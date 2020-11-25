@@ -603,7 +603,7 @@ int main(int argc, char* argv[])
   Complex *F2=ComplexAlign(N);
   FFTpad fft2(L,N,N,1);
   for(unsigned int j=0; j < L; ++j)
-    f[j]=j;
+    f[j]=j+1;
   fft2.forward(f,F2);
 
   double error=0.0;
