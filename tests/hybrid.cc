@@ -384,7 +384,7 @@ public:
   }
 
   unsigned int inverseLength() {
-    return m*p;
+    return modular ? m*p : L;
   }
 
   unsigned int length() {
