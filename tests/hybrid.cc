@@ -84,6 +84,7 @@ protected:
 public:
 
   void init() {
+//    modular=true;
     if(p != q) modular=true;
     if(m > M) M=m;
     if(!modular) {
@@ -336,21 +337,19 @@ public:
           Fqs[r] *= conj(ZetaL[r*s]);
 
         ifftq->fft(Fqs);
+      }
 
-        Complex *fs=f+s;
-        Complex *Fqst=Fqs;
-        Complex sum=Fqst[0];
-        for(unsigned int r=1; r < n; ++r)
-          sum += Fqst[p*r];
-        fs[0]=sum;
-        for(unsigned int t=1; t < p; ++t) {
-          Complex *Fqst=Fqs+t;
-          Complex sum=Fqst[0];
-          for(unsigned int r=1; r < n; ++r)
-            sum += conj(ZetaLq[r*t])*Fqst[p*r];
-          fs[m*t]=sum;
+      for(unsigned int t=0; t < p; ++t) {
+        Complex *Ft=F+t;
+        Complex *ft=f+m*t;
+        for(unsigned int r=0; r < n; ++r) {
+          Complex *Ftr=Ft+r*p;
+          Complex Zeta=conj(ZetaLq[r*t]);
+          for(unsigned int s=0; s < m; ++s)
+            ft[s] += Zeta*Ftr[q*s];
         }
       }
+
     } else {
       // Direct sum:
       if(p == 1) {
