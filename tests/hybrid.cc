@@ -326,44 +326,58 @@ public:
     cout << "backward:" << endl;
     cout << "p=" << p << endl;
     cout << "q=" << q << endl;
-    unsigned int pm=p*m;
 
     unsigned int N=m*q;
-
-    for(unsigned int k=0; k < pm; ++k)
-      f[k]=0.0;
 
     ifftm->fft(F);
 
     if(innerFFT) {
       for(unsigned int s=0; s < m; ++s) {
         Complex *Fqs=F+q*s;
-        for(unsigned int r=0; r < q; ++r)
+        for(unsigned int r=1; r < q; ++r)
           Fqs[r] *= conj(ZetaL[r*s]);
 
         ifftq->fft(Fqs);
-        for(unsigned int r=0; r < n; ++r) {
-          Complex *Fpr=Fqs+p*r;
-          Complex *fs=f+s;
-          for(unsigned int t=0; t < p; ++t)
-            fs[m*t] += conj(ZetaLq[r*t])*Fpr[t];
+
+        Complex *fs=f+s;
+        Complex *Fqst=Fqs;
+        Complex sum=Fqst[0];
+        for(unsigned int r=1; r < n; ++r)
+          sum += Fqst[p*r];
+        fs[0]=sum;
+        for(unsigned int t=1; t < p; ++t) {
+          Complex *Fqst=Fqs+t;
+          Complex sum=Fqst[0];
+          for(unsigned int r=1; r < n; ++r)
+            sum += conj(ZetaLq[r*t])*Fqst[p*r];
+          fs[m*t]=sum;
         }
       }
     } else {
       // Direct sum:
       if(p == 1) {
-        for(unsigned int r=0; r < q; ++r) {
-          for(unsigned int s=0; s < m; ++s)
-            f[s] += conj(ZetaL[r*s])*F[m*r+s];
+        Complex sum=F[0];
+        for(unsigned int r=1; r < q; ++r)
+          sum += F[m*r];
+        f[0]=sum;
+        for(unsigned int s=1; s < m; ++s) {
+          Complex *Fs=F+s;
+          Complex sum=Fs[0];
+          for(unsigned int r=1; r < q; ++r)
+            sum += conj(ZetaL[r*s])*Fs[m*r];
+          f[s]=sum;
         }
       } else {
-        for(unsigned int r=0; r < q; ++r) {
-          for(unsigned int t=0; t < p; ++t) {
-            for(unsigned int s=0; s < m; ++s) {
-              unsigned int K=m*t+s;
+        for(unsigned int t=0; t < p; ++t) {
+          for(unsigned int s=0; s < m; ++s) {
+            unsigned int K=m*t+s;
+            Complex *Fs=F+s;
+            Complex sum=Fs[0];
+            for(unsigned int r=1; r < q; ++r) {
               unsigned int a=(r*K) % N;
-              f[K] += conj(ZetaL[a])*F[m*r+s];
+              sum += conj(ZetaL[a])*Fs[m*r];
             }
+            f[K]=sum;
           }
         }
       }
