@@ -337,7 +337,9 @@ public:
       for(unsigned int t=0; t < p; ++t) {
         Complex *Ft=F+t;
         Complex *ft=f+m*t;
-        for(unsigned int r=0; r < n; ++r) {
+        for(unsigned int s=0; s < m; ++s)
+            ft[s]=Ft[q*s];
+        for(unsigned int r=1; r < n; ++r) {
           Complex *Ftr=Ft+r*p;
           Complex Zeta=conj(ZetaLq[r*t]);
           for(unsigned int s=0; s < m; ++s)
