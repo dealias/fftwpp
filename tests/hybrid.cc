@@ -79,7 +79,6 @@ protected:
   Complex *ZetaHq,*ZetaLq;
   utils::statistics S;
   bool innerFFT;
-  Complex *H;
   bool modular;
 public:
 
@@ -96,17 +95,19 @@ public:
       Complex *G=ComplexAlign(N);
       innerFFT=p > 1 && n*p == q;
       if(innerFFT) {
-        H=ComplexAlign(N); // not needed for backward transform
         BuildZeta(q,q,ZetaHq,ZetaLq,1,q);//,threads);
 //      p->L, M->q, m->p, q->n
-        fftp=new mfft1d(p,1,m, m,n, 1,q, H,G);
-        fftm=new mfft1d(m,1,q, q,1, 1,m, G,G);
+        unsigned int s=n*m;
+        fftp=new mfft1d(p,1,m, s,s, 1,1, G,G);
+        fftm=new mfft1d(m,1,q, 1,1, m,m, G,G);
+
         ifftq=new mfft1d(p,-1,n, n,1, 1,p, G,G);
         ifftm=new mfft1d(m,-1,q, 1,q, m,1, G,G);
       } else {
         fftm=new mfft1d(m,1,q, 1,1, m,m, G,G);
         ifftm=new mfft1d(m,-1,q, 1,1, m,m, G,G);
       }
+      deleteAlign(G);
     }
   }
 
@@ -124,7 +125,6 @@ public:
       deleteAlign(ZetaL);
       deleteAlign(ZetaH);
       if(innerFFT) {
-        deleteAlign(H);
         deleteAlign(ZetaLq);
         deleteAlign(ZetaHq);
         delete fftp;
@@ -229,9 +229,9 @@ public:
     init(f);
   }
 
+  // Arrays f and F must be distinct
   void forward(Complex *f, Complex *F) {
     if(!modular) {
-//      if(F != f)
       for(unsigned int i=0; i < L; ++i)
         F[i]=f[i];
       for(unsigned int i=L; i < M; ++i)
@@ -240,38 +240,32 @@ public:
       return;
     }
 
-    unsigned int mp=m*p;
-
     if(innerFFT) {
-      for(unsigned int i=0; i < L; ++i)
-        H[i]=f[i];
-      for(unsigned int i=L; i < mp; ++i)
-        H[i]=0.0;
-
-      fftp->fft(H,F);
-      for(unsigned int r=1; r < n; ++r) {
+      for(unsigned int r=0; r < n; ++r) {
+        Complex *Fr=F+m*r;
         for(unsigned int t=0; m*t < L; ++t) {
-          Complex Zeta=ZetaLq[r*t];
           unsigned int mt=m*t;
-          Complex *fmt=f+mt;
-          Complex *Hmt=H+mt;
-          unsigned int stop=L-mt;
+          Complex *Frt=Fr+n*mt;
+          Complex *ft=f+mt;
+          unsigned int stop=min(L-mt,m);
+          Complex Zeta=ZetaLq[r*t];
           for(unsigned int s=0; s < stop; ++s)
-            Hmt[s]=fmt[s]*Zeta;
+            Frt[s]=Zeta*ft[s];
+          for(unsigned int s=stop; s < m; ++s)
+            Frt[s]=0.0;
         }
-        fftp->fft(H,F+r);
+        fftp->fft(Fr);
+      }
+      for(unsigned int s=0; s < m; ++s) {
+        Complex *Fs=F+s;
+        for(unsigned int r=1; r < q; ++r)
+          Fs[m*r] *= ZetaL[r*s];
       }
 
-      for(unsigned int s=0; s < m; ++s) {
-        Complex *Fsq=F+q*s;
-        for(unsigned int r=1; r < q; ++r)
-          Fsq[r] *= ZetaL[r*s];
-      }
       fftm->fft(F);
     } else {
       unsigned int stop=min(m,L);
       if(p == 1) {
-//        if(F != f)
         for(unsigned int i=0; i < L; ++i)
           F[i]=f[i];
         for(unsigned int i=L; i < m; ++i)
@@ -369,8 +363,9 @@ public:
         }
       } else {
         for(unsigned int t=0; t < p; ++t) {
+          unsigned int mt=m*t;
           for(unsigned int s=0; s < m; ++s) {
-            unsigned int K=m*t+s;
+            unsigned int K=mt+s;
             Complex *Fs=F+s;
             Complex sum=Fs[0];
             for(unsigned int r=1; r < q; ++r) {
@@ -594,11 +589,13 @@ int main(int argc, char* argv[])
 
   fft.backward(F0,f0);
 
-  cout << endl;
-  cout << "Inverse:" << endl;
-  for(unsigned int j=0; j < L; ++j)
-    cout << f0[j]/fft.length() << endl;
-  cout << endl;
+  if(L < 30) {
+    cout << endl;
+    cout << "Inverse:" << endl;
+    for(unsigned int j=0; j < L; ++j)
+      cout << f0[j]/fft.length() << endl;
+    cout << endl;
+  }
 
   Complex *F2=ComplexAlign(N);
   FFTpad fft2(f,L,N,N,1);
