@@ -76,6 +76,7 @@ protected:
   mfft1d *fftp;
   Complex *ZetaH,*ZetaL;
   Complex *ZetaHq,*ZetaLq;
+  Complex *ZetaL2;
   utils::statistics S;
   bool innerFFT;
   bool modular;
@@ -103,6 +104,11 @@ public:
         ifftq=new mfft1d(p,-1,n, n,1, 1,p, G,G);
         ifftm=new mfft1d(m,-1,q, 1,q, m,1, G,G);
       } else {
+        ZetaL2=ComplexAlign(q*p);
+        for(unsigned int r=0; r < q; ++r)
+          for(unsigned int t=0; m*t < L; ++t)
+            ZetaL2[p*r+t]=ZetaL[(m*r*t) % N];
+
         fftm=new mfft1d(m,1,q, 1,1, m,m, G,G);
         ifftm=new mfft1d(m,-1,q, 1,1, m,m, G,G);
       }
@@ -129,7 +135,8 @@ public:
         deleteAlign(ZetaHq);
         delete fftp;
         delete ifftq;
-      }
+      } else
+        deleteAlign(ZetaL2);
       delete fftm;
       delete ifftm;
     }
@@ -283,16 +290,14 @@ public:
             sum += f[t];
           F[s]=sum;
         }
-        unsigned int N=m*q;
         for(unsigned int r=1; r < q; ++r) {
           Complex *Fmr=F+m*r;
+          Complex *ZetaLr=ZetaL2+p*r;
           for(unsigned int s=0; s < stop; ++s) {
             Complex sum=0.0;
-            for(unsigned int t=s; t < L; t += m) {
-              unsigned int c=(r*t) % N;
-              sum += ZetaL[c]*f[t];
-            }
-            Fmr[s]=sum;
+            for(unsigned int t=0; m*t < L-s; ++t)
+              sum += ZetaLr[t]*f[m*t+s];
+            Fmr[s]=sum*ZetaL[r*s];
           }
           for(unsigned int s=stop; s < m; ++s)
             Fmr[s]=0.0;
@@ -595,7 +600,7 @@ int main(int argc, char* argv[])
 
   fft.backward(F0,f0);
 
-  if(L < 1000) {
+  if(L < 30) {
     cout << endl;
     cout << "Inverse:" << endl;
     for(unsigned int j=0; j < L; ++j)
