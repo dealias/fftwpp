@@ -72,7 +72,7 @@ protected:
   fft1d *ifftM;
   mfft1d *fftm;
   mfft1d *ifftm;
-  mfft1d *ifftq;
+  mfft1d *ifftp;
   mfft1d *fftp;
   Complex *ZetaH,*ZetaL;
   Complex *ZetaHq,*ZetaLq;
@@ -102,7 +102,7 @@ public:
         fftp=new mfft1d(p,1,m, s,s, 1,1, G,G);
         fftm=new mfft1d(m,1,q, 1,1, m,m, G,G);
 
-        ifftq=new mfft1d(p,-1,n, n,1, 1,p, G,G);
+        ifftp=new mfft1d(p,-1,n, n,1, 1,p, G,G);
         ifftm=new mfft1d(m,-1,q, 1,q, m,1, G,G);
       } else {
         ZetaLqp=ComplexAlign((q-1)*(p-1));
@@ -141,7 +141,7 @@ public:
         deleteAlign(ZetaLq);
         deleteAlign(ZetaHq);
         delete fftp;
-        delete ifftq;
+        delete ifftp;
       } else
         deleteAlign(ZetaLqp);
       deleteAlign(ZetaLqm);
@@ -368,13 +368,13 @@ public:
     ifftm->fft(F);
 
     if(innerFFT) {
-      ifftq->fft(F);
+      ifftp->fft(F);
       for(unsigned int s=1; s < m; ++s) {
         Complex *Fqs=F+q*s;
         for(unsigned int r=1; r < q; ++r)
           Fqs[r] *= conj(ZetaL[r*s]);
 
-        ifftq->fft(Fqs);
+        ifftp->fft(Fqs);
       }
 
       for(unsigned int s=0; s < m; ++s)
@@ -396,7 +396,6 @@ public:
             ft[s] += Zeta*Ftr[q*s];
         }
       }
-
     } else {
       // Direct sum:
       if(p == 1) {
