@@ -260,9 +260,25 @@ public:
     }
 
     if(innerFFT) {
-      for(unsigned int r=0; r < n; ++r) {
+      for(unsigned int t=0; m*t < L; ++t) {
+        unsigned int mt=m*t;
+        Complex *Ft=F+n*mt;
+        Complex *ft=f+mt;
+        unsigned int stop=min(L-mt,m);
+        for(unsigned int s=0; s < stop; ++s)
+          Ft[s]=ft[s];
+        for(unsigned int s=stop; s < m; ++s)
+          Ft[s]=0.0;
+      }
+      fftp->fft(F);
+      for(unsigned int r=1; r < n; ++r) {
         Complex *Fr=F+m*r;
-        for(unsigned int t=0; m*t < L; ++t) {
+        unsigned int stop=min(L,m);
+        for(unsigned int s=0; s < stop; ++s)
+          Fr[s]=f[s];
+        for(unsigned int s=stop; s < m; ++s)
+          Fr[s]=0.0;
+        for(unsigned int t=1; m*t < L; ++t) {
           unsigned int mt=m*t;
           Complex *Frt=Fr+n*mt;
           Complex *ft=f+mt;
@@ -316,9 +332,11 @@ public:
             sum += ZetaLr[t]*f[m*t];
           Fmr[0]=sum;
           for(unsigned int s=1; s < stop; ++s) {
-            Complex sum=f[s];
-            for(unsigned int t=1; m*t < L-s; ++t)
-              sum += ZetaLr[t]*f[m*t+s];
+            Complex *fs=f+s;
+            Complex sum=fs[0];
+            unsigned stop=L-s;
+            for(unsigned int t=1; m*t < stop; ++t)
+              sum += ZetaLr[t]*fs[m*t];
             Fmr[s]=sum*ZetaLmr[s];
           }
           for(unsigned int s=stop; s < m; ++s)
