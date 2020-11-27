@@ -76,7 +76,8 @@ protected:
   mfft1d *fftp;
   Complex *ZetaH,*ZetaL;
   Complex *ZetaHq,*ZetaLq;
-  Complex *ZetaL2;
+  Complex *ZetaLqp;
+  Complex *ZetaLqm;
   utils::statistics S;
   bool innerFFT;
   bool modular;
@@ -104,14 +105,20 @@ public:
         ifftq=new mfft1d(p,-1,n, n,1, 1,p, G,G);
         ifftm=new mfft1d(m,-1,q, 1,q, m,1, G,G);
       } else {
-        ZetaL2=ComplexAlign(q*p);
-        for(unsigned int r=0; r < q; ++r)
-          for(unsigned int t=0; m*t < L; ++t)
-            ZetaL2[p*r+t]=ZetaL[(m*r*t) % N];
+        ZetaLqp=ComplexAlign((q-1)*(p-1));
+        for(unsigned int r=1; r < q; ++r)
+          for(unsigned int t=1; m*t < L; ++t)
+            ZetaLqp[(p-1)*(r-1)+(t-1)]=ZetaL[(m*r*t) % N];
 
         fftm=new mfft1d(m,1,q, 1,1, m,m, G,G);
         ifftm=new mfft1d(m,-1,q, 1,1, m,m, G,G);
       }
+
+      ZetaLqm=ComplexAlign((q-1)*(m-1));
+      for(unsigned int r=1; r < q; ++r)
+        for(unsigned int s=1; s < m; ++s)
+          ZetaLqm[(m-1)*(r-1)+s-1]=ZetaL[r*s];
+
       deleteAlign(G);
     }
   }
@@ -136,7 +143,8 @@ public:
         delete fftp;
         delete ifftq;
       } else
-        deleteAlign(ZetaL2);
+        deleteAlign(ZetaLqp);
+      deleteAlign(ZetaLqm);
       delete fftm;
       delete ifftm;
     }
@@ -197,6 +205,13 @@ public:
         stop=nextfftsize(stop+1);
 
       unsigned int m0=1;
+
+      /*
+// Temp
+      if(!Explicit)
+        check(L,M,L,fixed || Explicit);
+      else
+      */
       while(true) {
         m0=nextfftsize(m0+1);
         if(Explicit) {
@@ -260,10 +275,11 @@ public:
         }
         fftp->fft(Fr);
       }
-      for(unsigned int s=1; s < m; ++s) {
-        Complex *Fs=F+s;
-        for(unsigned int r=1; r < q; ++r)
-          Fs[m*r] *= ZetaL[r*s];
+      for(unsigned int r=1; r < q; ++r) {
+        Complex *Fr=F+m*r;
+        Complex *ZetaLr=ZetaLqm+(m-1)*(r-1)-1;
+        for(unsigned int s=1; s < m; ++s)
+          Fr[s] *= ZetaLr[s];
       }
 
       fftm->fft(F);
@@ -277,8 +293,9 @@ public:
         for(unsigned int r=1; r < q; ++r) {
           Complex *Fmr=F+m*r;
           Fmr[0]=f[0];
+          Complex *ZetaLr=ZetaLqm+(m-1)*(r-1)-1;
           for(unsigned int s=1; s < stop; ++s)
-            Fmr[s]=ZetaL[r*s]*f[s];
+            Fmr[s]=ZetaLr[s]*f[s];
           for(unsigned int s=stop; s < m; ++s)
             Fmr[s]=0.0;
         }
@@ -292,12 +309,17 @@ public:
         }
         for(unsigned int r=1; r < q; ++r) {
           Complex *Fmr=F+m*r;
-          Complex *ZetaLr=ZetaL2+p*r;
-          for(unsigned int s=0; s < stop; ++s) {
-            Complex sum=0.0;
-            for(unsigned int t=0; m*t < L-s; ++t)
+          Complex *ZetaLmr=ZetaLqm+(m-1)*(r-1)-1;
+          Complex *ZetaLr=ZetaLqp+(p-1)*(r-1)-1;
+          Complex sum=f[0];
+          for(unsigned int t=1; m*t < L; ++t)
+            sum += ZetaLr[t]*f[m*t];
+          Fmr[0]=sum;
+          for(unsigned int s=1; s < stop; ++s) {
+            Complex sum=f[s];
+            for(unsigned int t=1; m*t < L-s; ++t)
               sum += ZetaLr[t]*f[m*t+s];
-            Fmr[s]=sum*ZetaL[r*s];
+            Fmr[s]=sum*ZetaLmr[s];
           }
           for(unsigned int s=stop; s < m; ++s)
             Fmr[s]=0.0;
