@@ -24,6 +24,8 @@ const Complex iG(sqrt(5.0),sqrt(11.0));
 
 bool Test=false;
 
+unsigned int mOption=0;
+
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
 
@@ -102,8 +104,8 @@ public:
         fftp=new mfft1d(p,1,m, s,s, 1,1, G,G);
         fftm=new mfft1d(m,1,q, 1,1, m,m, G,G);
 
-        ifftp=new mfft1d(p,-1,n, n,1, 1,p, G,G);
         ifftm=new mfft1d(m,-1,q, 1,q, m,1, G,G);
+        ifftp=new mfft1d(p,-1,n, n,1, 1,p, G,G);
       } else {
         ZetaLqp=ComplexAlign((q-1)*(p-1));
         for(unsigned int r=1; r < q; ++r)
@@ -206,24 +208,21 @@ public:
 
       unsigned int m0=1;
 
-      /*
-// Temp
-      if(!Explicit)
-        check(L,M,L,fixed || Explicit);
+      if(mOption >= 1 && !Explicit)
+        check(L,M,mOption,fixed);
       else
-      */
-      while(true) {
-        m0=nextfftsize(m0+1);
-        if(Explicit) {
-          if(m0 > stop) break;
-          if(m0 < M) {++i; continue;}
-          M=m0;
-        } else if(m0 > stop) break;
+        while(true) {
+          m0=nextfftsize(m0+1);
+          if(Explicit) {
+            if(m0 > stop) break;
+            if(m0 < M) {++i; continue;}
+            M=m0;
+          } else if(m0 > stop) break;
 //        } else if(m0 > L) break;
-        if(!fixed || Explicit || M % m0 == 0)
-          check(L,M,m0,fixed || Explicit);
-        ++i;
-      }
+          if(!fixed || Explicit || M % m0 == 0)
+            check(L,M,m0,fixed || Explicit);
+          ++i;
+        }
 
       unsigned int p=ceilquotient(L,m);
       cout << endl;
@@ -334,7 +333,7 @@ public:
           for(unsigned int s=1; s < stop; ++s) {
             Complex *fs=f+s;
             Complex sum=fs[0];
-            unsigned stop=L-s;
+            unsigned int stop=L-s;
             for(unsigned int t=1; m*t < stop; ++t)
               sum += ZetaLr[t]*fs[m*t];
             Fmr[s]=sum*ZetaLmr[s];
@@ -556,6 +555,7 @@ void usage()
 {
   std::cerr << "Options: " << std::endl;
   std::cerr << "-h\t\t help" << std::endl;
+  std::cerr << "-m\t\t subtransform size" << std::endl;
   std::cerr << "-S\t\t number of surplus FFT sizes" << std::endl;
   std::cerr << "-L\t\t number of physical data values" << std::endl;
   std::cerr << "-M\t\t minimal number of padded data values" << std::endl;
@@ -574,7 +574,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hL:M:S:T:");
+    int c = getopt(argc,argv,"hL:M:S:T:m:");
     if (c == -1) break;
 
     switch (c) {
@@ -591,6 +591,9 @@ int main(int argc, char* argv[])
         break;
       case 'T':
         fftw::maxthreads=max(atoi(optarg),1);
+        break;
+      case 'm':
+        mOption=max(atoi(optarg),0);
         break;
       case 'h':
       default:
