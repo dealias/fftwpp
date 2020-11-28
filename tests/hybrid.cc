@@ -100,21 +100,25 @@ public:
         unsigned int s=n*m;
         fftp=new mfft1d(p,1,m, s,s, 1,1, G,G);
         ifftp=new mfft1d(p,-1,m, s,s, 1,1, G,G);
-      } else {
-        ZetaLqp=ComplexAlign((q-1)*(p-1));
-        for(unsigned int r=1; r < q; ++r)
-          for(unsigned int t=1; m*t < L; ++t)
-            ZetaLqp[(p-1)*(r-1)+(t-1)]=ZetaL[(m*r*t) % N];
 
+        ZetaLqp=ComplexAlign((n-1)*(p-1))-p;
+        for(unsigned int r=1; r < n; ++r)
+          for(unsigned int t=1; t < p; ++t)
+            ZetaLqp[p*r-r+t]=ZetaLq[r*t];
+      } else {
+        ZetaLqp=ComplexAlign((q-1)*(p-1))-p;
+        for(unsigned int r=1; r < q; ++r)
+          for(unsigned int t=1; t < p; ++t)
+            ZetaLqp[p*r-r+t]=ZetaL[(m*r*t) % N];
       }
 
       ifftm=new mfft1d(m,-1,q, 1,1, m,m, G,G);
       fftm=new mfft1d(m,1,q, 1,1, m,m, G,G);
 
-      ZetaLqm=ComplexAlign((q-1)*(m-1));
+      ZetaLqm=ComplexAlign((q-1)*(m-1))-m;
       for(unsigned int r=1; r < q; ++r)
         for(unsigned int s=1; s < m; ++s)
-          ZetaLqm[(m-1)*(r-1)+s-1]=ZetaL[r*s];
+          ZetaLqm[m*r-r+s]=ZetaL[r*s];
 
       deleteAlign(G);
     }
@@ -139,9 +143,9 @@ public:
         deleteAlign(ZetaHq);
         delete fftp;
         delete ifftp;
-      } else
-        deleteAlign(ZetaLqp);
-      deleteAlign(ZetaLqm);
+      }
+      deleteAlign(ZetaLqp+p);
+      deleteAlign(ZetaLqm+m);
       delete fftm;
       delete ifftm;
     }
@@ -273,12 +277,13 @@ public:
           Fr[s]=f[s];
         for(unsigned int s=stop; s < m; ++s)
           Fr[s]=0.0;
+        Complex *ZetaLqr=ZetaLqp+p*r-r;
         for(unsigned int t=1; m*t < L; ++t) {
           unsigned int mt=m*t;
           Complex *Frt=Fr+n*mt;
           Complex *ft=f+mt;
           unsigned int stop=min(L-mt,m);
-          Complex Zeta=ZetaLq[r*t];
+          Complex Zeta=ZetaLqr[t];
           for(unsigned int s=0; s < stop; ++s)
             Frt[s]=Zeta*ft[s];
           for(unsigned int s=stop; s < m; ++s)
@@ -289,7 +294,7 @@ public:
 
       for(unsigned int r=1; r < q; ++r) {
         Complex *Fr=F+m*r;
-        Complex *ZetaLr=ZetaLqm+(m-1)*(r-1)-1;
+        Complex *ZetaLr=ZetaLqm+m*r-r;
         for(unsigned int s=1; s < m; ++s)
           Fr[s] *= ZetaLr[s];
       }
@@ -304,7 +309,7 @@ public:
         for(unsigned int r=1; r < q; ++r) {
           Complex *Fmr=F+m*r;
           Fmr[0]=f[0];
-          Complex *ZetaLr=ZetaLqm+(m-1)*(r-1)-1;
+          Complex *ZetaLr=ZetaLqm+m*r-r;
           for(unsigned int s=1; s < stop; ++s)
             Fmr[s]=ZetaLr[s]*f[s];
           for(unsigned int s=stop; s < m; ++s)
@@ -319,8 +324,8 @@ public:
         }
         for(unsigned int r=1; r < q; ++r) {
           Complex *Fmr=F+m*r;
-          Complex *ZetaLmr=ZetaLqm+(m-1)*(r-1)-1;
-          Complex *ZetaLr=ZetaLqp+(p-1)*(r-1)-1;
+          Complex *ZetaLmr=ZetaLqm+m*r-r;
+          Complex *ZetaLr=ZetaLqp+p*r-r;
           Complex sum=f[0];
           for(unsigned int t=1; m*t < L; ++t)
             sum += ZetaLr[t]*f[m*t];
@@ -381,11 +386,12 @@ public:
         ifftp->fft(Fr);
         for(unsigned int s=0; s < m; ++s)
             f[s] += Fr[s];
+        Complex *ZetaLqr=ZetaLqp+p*r-r;
         for(unsigned int t=1; t < p; ++t) {
           unsigned int mt=m*t;
           Complex *Frt=Fr+n*mt;
           Complex *ft=f+mt;
-          Complex Zeta=conj(ZetaLq[r*t]);
+          Complex Zeta=conj(ZetaLqr[t]);
           for(unsigned int s=0; s < m; ++s)
             ft[s] += Zeta*Frt[s];
         }
@@ -398,7 +404,7 @@ public:
         for(unsigned int r=1; r < q; ++r) {
           Complex *Fr=F+m*r;
           f[0] += Fr[0];
-          Complex *ZetaLmr=ZetaLqm+m*r-m-r;
+          Complex *ZetaLmr=ZetaLqm+m*r-r;
           for(unsigned int s=1; s < m; ++s)
             f[s] += Fr[s]*conj(ZetaLmr[s]);
         }
@@ -413,8 +419,8 @@ public:
           Complex *Fr=F+m*r;
           Complex Fr0=Fr[0];
           f[0] += Fr0;
-          Complex *ZetaLmr=ZetaLqm+m*r-m-r;
-          Complex *ZetaLr=ZetaLqp+p*r-p-r;
+          Complex *ZetaLmr=ZetaLqm+m*r-r;
+          Complex *ZetaLr=ZetaLqp+p*r-r;
           for(unsigned int t=1; t < p; ++t)
             f[m*t] += conj(ZetaLr[t])*Fr0;
           for(unsigned int s=1; s < m; ++s) {
