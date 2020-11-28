@@ -645,8 +645,9 @@ int main(int argc, char* argv[])
   if(L < 30) {
     cout << endl;
     cout << "Inverse:" << endl;
+    unsigned int N=fft.length();
     for(unsigned int j=0; j < L; ++j)
-      cout << f0[j]/fft.length() << endl;
+      cout << f0[j]/N << endl;
     cout << endl;
   }
 
@@ -656,8 +657,8 @@ int main(int argc, char* argv[])
     f[j]=j+1;
   fft2.forward(f,F2);
 
-  double error=0.0;
-  double norm=0.0;
+  double error=0.0, norm=0.0;
+  double error2=0.0, norm2=0.0;
 
   unsigned int i=0;
   unsigned int m=fft.m;
@@ -670,10 +671,17 @@ int main(int argc, char* argv[])
     }
   }
 
+  for(unsigned int j=0; j < L; ++j) {
+    error2 += abs2(f0[j]/N-f[j]);
+    norm2 += abs2(f[j]);
+  }
+
   if(norm > 0) error=sqrt(error/norm);
-  if(error > 1e-12)
+  double eps=1e-12;
+  if(error > eps || error2 > eps)
     cerr << endl << "WARNING: " << endl;
-  cout << "error=" << error << endl;
+  cout << "forwards error=" << error << endl;
+  cout << "backwards error=" << error2 << endl;
 
   return 0;
 }
