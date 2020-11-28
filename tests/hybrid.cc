@@ -307,13 +307,13 @@ public:
         for(unsigned int i=L; i < m; ++i)
           F[i]=0.0;
         for(unsigned int r=1; r < q; ++r) {
-          Complex *Fmr=F+m*r;
-          Fmr[0]=f[0];
+          Complex *Fr=F+m*r;
+          Fr[0]=f[0];
           Complex *ZetaLr=ZetaLqm+m*r-r;
           for(unsigned int s=1; s < stop; ++s)
-            Fmr[s]=ZetaLr[s]*f[s];
+            Fr[s]=ZetaLr[s]*f[s];
           for(unsigned int s=stop; s < m; ++s)
-            Fmr[s]=0.0;
+            Fr[s]=0.0;
         }
       } else {
         for(unsigned int s=0; s < m; ++s) {
@@ -323,23 +323,23 @@ public:
           F[s]=sum;
         }
         for(unsigned int r=1; r < q; ++r) {
-          Complex *Fmr=F+m*r;
+          Complex *Fr=F+m*r;
           Complex *ZetaLmr=ZetaLqm+m*r-r;
           Complex *ZetaLr=ZetaLqp+p*r-r;
           Complex sum=f[0];
           for(unsigned int t=1; m*t < L; ++t)
             sum += ZetaLr[t]*f[m*t];
-          Fmr[0]=sum;
+          Fr[0]=sum;
           for(unsigned int s=1; s < stop; ++s) {
             Complex *fs=f+s;
             Complex sum=fs[0];
             unsigned int stop=L-s;
             for(unsigned int t=1; m*t < stop; ++t)
               sum += ZetaLr[t]*fs[m*t];
-            Fmr[s]=sum*ZetaLmr[s];
+            Fr[s]=sum*ZetaLmr[s];
           }
           for(unsigned int s=stop; s < m; ++s)
-            Fmr[s]=0.0;
+            Fr[s]=0.0;
         }
       }
     }
@@ -366,10 +366,11 @@ public:
     ifftm->fft(F);
 
     if(innerFFT) {
-      for(unsigned int r=0; r < q; ++r) {
+      for(unsigned int r=1; r < q; ++r) {
         Complex *Fr=F+m*r;
-        for(unsigned int s=0; s < m; ++s) {
-          Fr[s] *= conj(ZetaL[r*s]);
+        Complex *ZetaLr=ZetaLqm+m*r-r;
+        for(unsigned int s=1; s < m; ++s) {
+          Fr[s] *= conj(ZetaLr[s]);
         }
       }
 
