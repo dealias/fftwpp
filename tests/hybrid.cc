@@ -1,10 +1,8 @@
 // TODO:
-// decouple work memory were possible
-// optimize memory use
-// use out-of-place transforms
-// vectorize and optimize Zeta computations
-//          unsigned int a=c/S;
-//          Complex Zeta=ZetaH[a]*ZetaL[c-S*a];
+// Add remainder argument to forward and backwward.
+// Support out-of-place transforms?
+// Can user request allowing overlap of input and output arrays,
+// for possibly reduced performance?
 
 #include <cfloat>
 #include <climits>
