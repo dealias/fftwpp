@@ -29,6 +29,13 @@ unsigned int B=1; // number of outputs
 
 unsigned int surplusFFTsizes=25;
 
+#ifndef _GNU_SOURCE
+inline void sincos(const double x, double *sinx, double *cosx)
+{
+  *sinx=sin(x); *cosx=cos(x);
+}
+#endif
+
 inline Complex expi(double phase)
 {
   double cosy,siny;
