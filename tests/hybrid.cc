@@ -1,5 +1,5 @@
 // TODO:
-// Add remainder argument to forward and backwward.
+// Add remainder argument to forward and backward.
 // Support out-of-place transforms?
 // Can user request allowing overlap of input and output arrays,
 // for possibly reduced performance?
@@ -73,6 +73,27 @@ unsigned int nextfftsize(unsigned int m)
   return N;
 }
 
+// This multiplication routine is for binary convolutions and takes two inputs
+// of size m.
+// F0[j] *= F1[j];
+void multbinary(Complex *F0, Complex *F1,unsigned int m,
+                unsigned int threads=1)
+{
+#ifdef __SSE2__
+  PARALLEL(
+    for(unsigned int j=0; j < m; ++j) {
+      Complex *p=F0+j;
+      STORE(p,ZMULT(LOAD(p),LOAD(F1+j)));
+    }
+    );
+#else
+  PARALLEL(
+    for(unsigned int j=0; j < m; ++j)
+      F0[jg] *= F1[j];
+    );
+#endif
+}
+
 class FFTpad {
 public:
   unsigned int L;
@@ -104,6 +125,7 @@ public:
       double twopibyN=twopi/N;
       Complex *G=ComplexAlign(N);
       innerFFT=p > 1 && n*p == q;
+      innerFFT=false;
       if(innerFFT) {
 //      p->L, M->q, m->p, q->n
         unsigned int s=n*m;
@@ -122,8 +144,8 @@ public:
             Zetaqp[p*r-r+t]=expi((m*r*t % N)*twopibyN);
       }
 
-      ifftm=new mfft1d(m,-1,q, 1,1, m,m, G,G);
-      fftm=new mfft1d(m,1,q, 1,1, m,m, G,G);
+      ifftm=new mfft1d(m,-1,1, 1,1, m,m, G,G);
+      fftm=new mfft1d(m,1,1, 1,1, m,m, G,G);
 
       Zetaqm=ComplexAlign((q-1)*(m-1))-m;
       for(unsigned int r=1; r < q; ++r)
@@ -255,6 +277,24 @@ public:
   // TODO: Check for cases when arrays f and F must be distinct
   void forward(Complex *f, Complex *F) {
     if(!modular) {
+      forward(f,F,0);
+    } else {
+      for(unsigned int r=0; r < q; ++r)
+        forward(f,F+m*r,r);
+    }
+  }
+
+  void backward(Complex *F, Complex *f) {
+    if(!modular) {
+      backward(F,f,0);
+    } else {
+    for(unsigned int r=0; r < q; ++r)
+      backward(F+m*r,f,r);
+    }
+  }
+
+  void forward(Complex *f, Complex *F, unsigned int r) {
+    if(!modular) {
       for(unsigned int i=0; i < L; ++i)
         F[i]=f[i];
       for(unsigned int i=L; i < M; ++i)
@@ -308,12 +348,14 @@ public:
     } else {
       unsigned int stop=min(m,L);
       if(p == 1) {
+        if(r == 0) {
         for(unsigned int i=0; i < L; ++i)
           F[i]=f[i];
         for(unsigned int i=L; i < m; ++i)
           F[i]=0.0;
-        for(unsigned int r=1; r < q; ++r) {
-          Complex *Fr=F+m*r;
+        } else {
+//        for(unsigned int r=1; r < q; ++r) {
+          Complex *Fr=F;
           Fr[0]=f[0];
           Complex *Zetar=Zetaqm+m*r-r;
           for(unsigned int s=1; s < stop; ++s)
@@ -322,14 +364,16 @@ public:
             Fr[s]=0.0;
         }
       } else {
-        for(unsigned int s=0; s < m; ++s) {
-          Complex sum=0.0;
-          for(unsigned int t=s; t < L; t += m)
-            sum += f[t];
-          F[s]=sum;
-        }
-        for(unsigned int r=1; r < q; ++r) {
-          Complex *Fr=F+m*r;
+        if(r == 0) {
+          for(unsigned int s=0; s < m; ++s) {
+            Complex sum=0.0;
+            for(unsigned int t=s; t < L; t += m)
+              sum += f[t];
+            F[s]=sum;
+          }
+        } else {
+//        for(unsigned int r=1; r < q; ++r) {
+          Complex *Fr=F;
           Complex *Zetamr=Zetaqm+m*r-r;
           Complex *Zetar=Zetaqp+p*r-r;
           Complex sum=f[0];
@@ -356,7 +400,7 @@ public:
 // Compute an inverse fft of length N=q*m unpadded back
 // to size p*m >= L.
   // Input F destroyed
-  void backward(Complex *F, Complex *f) {
+  void backward(Complex *F, Complex *f, unsigned int r) {
     if(!modular) {
       ifftM->fft(F);
       for(unsigned int i=0; i < L; ++i)
@@ -406,24 +450,28 @@ public:
     } else {
       // Direct sum:
       if(p == 1) {
+        if(r == 0) {
         for(unsigned int s=0; s < m; ++s)
           f[s]=F[s];
-        for(unsigned int r=1; r < q; ++r) {
-          Complex *Fr=F+m*r;
+        } else {
+//        for(unsigned int r=1; r < q; ++r) {
+          Complex *Fr=F;
           f[0] += Fr[0];
           Complex *Zetamr=Zetaqm+m*r-r;
           for(unsigned int s=1; s < m; ++s)
             f[s] += Fr[s]*conj(Zetamr[s]);
         }
       } else {
-        for(unsigned int s=0; s < m; ++s) {
-          Complex Fs=F[s];
-          Complex *fs=f+s;
-          for(unsigned int t=0; t < p; ++t)
-            fs[m*t]=Fs;
-        }
-        for(unsigned int r=1; r < q; ++r) {
-          Complex *Fr=F+m*r;
+        if(r == 0) {
+          for(unsigned int s=0; s < m; ++s) {
+            Complex Fs=F[s];
+            Complex *fs=f+s;
+            for(unsigned int t=0; t < p; ++t)
+              fs[m*t]=Fs;
+          }
+        } else {
+//        for(unsigned int r=1; r < q; ++r) {
+          Complex *Fr=F;
           Complex Fr0=Fr[0];
           f[0] += Fr0;
           Complex *Zetamr=Zetaqm+m*r-r;
@@ -450,28 +498,80 @@ public:
     return modular ? m*q : M;
   }
 
+  unsigned int blocksize() {
+    return modular ? m*q : m;
+  }
+
   double meantime(double *Stdev=NULL) {
     S.clear();
-    Complex *F=ComplexAlign(length());
+    Complex *F=ComplexAlign(blocksize());
     Complex *f=ComplexAlign(inverseLength());
+    Complex *G=ComplexAlign(blocksize());
+    Complex *g=ComplexAlign(inverseLength());
+    Complex *h=ComplexAlign(inverseLength());
 
 // Assume f != F (out-of-place)
-    for(unsigned int j=0; j < L; ++j)
+    for(unsigned int j=0; j < L; ++j) {
       f[j]=0.0;
+      g[j]=0.0;
+    }
     forward(f,F); // Create wisdom
     backward(F,f); // Create wisdom
-    unsigned int K=1;
 
+    unsigned int K=1;
     double eps=0.1;
 
     for(;;) {
-      double t0=totalseconds();
-      for(unsigned int i=0; i < K; ++i) {
-        forward(f,F);
-        backward(F,f);
+      unsigned int N=m*q;
+      double scale=1.0/N;
+      if(!modular) {
+        double t0=totalseconds();
+        for(unsigned int i=0; i < K; ++i) {
+          /*
+    for(unsigned int j=0; j < L; ++j) {
+      f[j]=Complex(j,j+1);
+      g[j]=Complex(j,2*j+1);
+      }*/
+
+          forward(f,F,0);
+          forward(g,G,0);
+          /*
+          for(int i=0; i < N; ++i)
+            F[i] *= G[i];
+          */
+          multbinary(F,G,N);
+          backward(F,f,0);
+          for(unsigned int i=0; i < L; ++i)
+            f[i] *= scale;
+        }
+        double t=totalseconds();
+        S.add((t-t0)/K);
+      } else {
+        double t0=totalseconds();
+        for(unsigned int i=0; i < K; ++i) {
+          /*
+          for(unsigned int j=0; j < L; ++j) {
+            f[j]=Complex(j,j+1);
+            g[j]=Complex(j,2*j+1);
+          }
+          */
+
+          for(unsigned int r=0; r < q; ++r) {
+            forward(f,F,r);
+            forward(g,G,r);
+            multbinary(F,G,m);
+            /*
+            for(int i=0; i < m; ++i)
+              F[i] *= G[i];
+            */
+            backward(F,h,r);
+          }
+          for(unsigned int i=0; i < L; ++i)
+            f[i]=h[i]*scale;
+        }
+        double t=totalseconds();
+        S.add((t-t0)/K);
       }
-      double t=totalseconds();
-      S.add((t-t0)/K);
 
       double mean=S.mean();
       double stdev=S.stdev();
@@ -481,16 +581,14 @@ public:
         S.clear();
       } else {
         if(Stdev) *Stdev=stdev;
+//        for(int i=0; i < L; ++i)
+//          cout << f[i] << endl;
+
         deleteAlign(F);
         deleteAlign(f);
         return mean;
       }
     }
-
-    deleteAlign(F);
-    deleteAlign(f);
-
-    if(Stdev) *Stdev=0.0;
     return 0.0;
   }
 };
