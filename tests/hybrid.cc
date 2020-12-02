@@ -545,7 +545,7 @@ public:
             f[i] *= scale;
         }
         double t=totalseconds();
-        S.add((t-t0)/K);
+        S.add(t-t0);
       } else {
         double t0=totalseconds();
         for(unsigned int i=0; i < K; ++i) {
@@ -559,34 +559,37 @@ public:
           for(unsigned int r=0; r < q; ++r) {
             forward(f,F,r);
             forward(g,G,r);
-            multbinary(F,G,m);
-            /*
-            for(int i=0; i < m; ++i)
+//            multbinary(F,G,m);
+            for(unsigned int i=0; i < m; ++i)
               F[i] *= G[i];
-            */
             backward(F,h,r);
           }
           for(unsigned int i=0; i < L; ++i)
             f[i]=h[i]*scale;
         }
         double t=totalseconds();
-        S.add((t-t0)/K);
+        S.add(t-t0);
       }
 
       double mean=S.mean();
       double stdev=S.stdev();
       if(S.count() < 7) continue;
-      if(K*mean < 1000.0/CLOCKS_PER_SEC || stdev > eps*mean) {
-        K *= 2;
+      int threshold=1000;
+      double meanCLOCKS=mean*CLOCKS_PER_SEC;
+      if(meanCLOCKS < threshold) {
+        K *= threshold/meanCLOCKS;
+        S.clear();
+      } else if(eps*mean < stdev) {
+        K *= stdev/(eps*mean);
         S.clear();
       } else {
-        if(Stdev) *Stdev=stdev;
+        if(Stdev) *Stdev=stdev/K;
 //        for(int i=0; i < L; ++i)
 //          cout << f[i] << endl;
 
         deleteAlign(F);
         deleteAlign(f);
-        return mean;
+        return mean/K;
       }
     }
     return 0.0;
