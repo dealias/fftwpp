@@ -454,36 +454,52 @@ public:
     S.clear();
     Complex *F=ComplexAlign(length());
     Complex *f=ComplexAlign(inverseLength());
+    Complex *G=ComplexAlign(length());
+    Complex *g=ComplexAlign(inverseLength());
 
 // Assume f != F (out-of-place)
-    for(unsigned int j=0; j < L; ++j)
+    for(unsigned int j=0; j < L; ++j) {
       f[j]=0.0;
+      g[j]=0.0;
+    }
     forward(f,F); // Create wisdom
     backward(F,f); // Create wisdom
-    unsigned int K=1;
 
+    unsigned int K=1;
     double eps=0.1;
+    unsigned int N=m*q;
+    double scale=1.0/N;
 
     for(;;) {
       double t0=totalseconds();
       for(unsigned int i=0; i < K; ++i) {
         forward(f,F);
+        forward(g,G);
+        for(unsigned int i=0; i < N; ++i)
+          F[i] *= G[i];
         backward(F,f);
+        for(unsigned int i=0; i < L; ++i)
+          f[i] *= scale;
       }
       double t=totalseconds();
-      S.add((t-t0)/K);
+      S.add((t-t0));
 
       double mean=S.mean();
       double stdev=S.stdev();
       if(S.count() < 7) continue;
-      if(K*mean < 1000.0/CLOCKS_PER_SEC || stdev > eps*mean) {
-        K *= 2;
+      int threshold=1000;
+      double meanCLOCKS=mean*CLOCKS_PER_SEC;
+      if(meanCLOCKS < threshold) {
+        K *= threshold/meanCLOCKS;
+        S.clear();
+      } else if(eps*mean < stdev) {
+        K *= stdev/(eps*mean);
         S.clear();
       } else {
-        if(Stdev) *Stdev=stdev;
+        if(Stdev) *Stdev=stdev/K;
         deleteAlign(F);
         deleteAlign(f);
-        return mean;
+        return mean/K;
       }
     }
 
