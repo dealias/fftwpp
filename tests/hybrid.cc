@@ -520,10 +520,10 @@ public:
 
     unsigned int K=1;
     double eps=0.1;
+    unsigned int N=m*q;
+    double scale=1.0/N;
 
     for(;;) {
-      unsigned int N=m*q;
-      double scale=1.0/N;
       if(!modular) {
         double t0=totalseconds();
         for(unsigned int i=0; i < K; ++i) {
@@ -535,11 +535,9 @@ public:
 
           forward(f,F,0);
           forward(g,G,0);
-          /*
-          for(int i=0; i < N; ++i)
+          for(unsigned int i=0; i < N; ++i)
             F[i] *= G[i];
-          */
-          multbinary(F,G,N);
+//          multbinary(F,G,N);
           backward(F,f,0);
           for(unsigned int i=0; i < L; ++i)
             f[i] *= scale;
@@ -584,7 +582,7 @@ public:
         S.clear();
       } else {
         if(Stdev) *Stdev=stdev/K;
-//        for(int i=0; i < L; ++i)
+//        for(unsigned int i=0; i < L; ++i)
 //          cout << f[i] << endl;
 
         deleteAlign(F);
