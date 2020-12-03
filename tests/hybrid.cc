@@ -522,7 +522,7 @@ public:
     Complex *f=ComplexAlign(inverseLength());
     Complex *G=ComplexAlign(blocksize());
     Complex *g=ComplexAlign(inverseLength());
-    Complex *h=ComplexAlign(inverseLength());
+//    Complex *h=ComplexAlign(inverseLength());
 
 // Assume f != F (out-of-place)
     for(unsigned int j=0; j < L; ++j) {
@@ -582,10 +582,12 @@ public:
 //            multbinary(F,G,m);
             for(unsigned int i=0; i < mD; ++i)
               F[i] *= G[i];
-            backward(F,h,r);
+//            backward(F,h,r);
+            backward(F,f,r);
           }
           for(unsigned int i=0; i < L; ++i)
-            f[i]=h[i]*scale;
+//            f[i]=h[i]*scale;
+            f[i] *= scale;
         }
         t=totalseconds();
       }
@@ -611,7 +613,7 @@ public:
         deleteAlign(f);
         deleteAlign(G);
         deleteAlign(g);
-        deleteAlign(h);
+//        deleteAlign(h);
         return mean/K;
       }
     }
