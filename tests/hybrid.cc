@@ -150,7 +150,7 @@ public:
       }
 
       D=q % DOption == 0 ? DOption : 1;
-      if(D > 1) cout << "D=" << D << endl;
+//      if(D > 1) cout << "D=" << D << endl;
       ifftm=new mfft1d(m,-1,D, 1,1, m,m, G,G);
       fftm=new mfft1d(m,1,D, 1,1, m,m, G,G);
 
@@ -194,6 +194,7 @@ public:
     void check(unsigned int L, unsigned int M,
                unsigned int m, bool fixed=false) {
       unsigned int p=ceilquotient(L,m);
+//      if(p > 1) return;
       unsigned int q=ceilquotient(M,m);
 //      cout << "m=" << m << endl;
 //      cout << "q=" << q << endl;
@@ -528,6 +529,7 @@ public:
       f[j]=0.0;
       g[j]=0.0;
     }
+
      // Create wisdom
     if(!modular) {
       forward(f,F);
@@ -564,6 +566,7 @@ public:
         }
         t=totalseconds();
       } else {
+        unsigned int mD=m*D;
         t0=totalseconds();
         for(unsigned int i=0; i < K; ++i) {
           /*
@@ -577,7 +580,7 @@ public:
             forward(f,F,r);
             forward(g,G,r);
 //            multbinary(F,G,m);
-            for(unsigned int i=0; i < m*D; ++i)
+            for(unsigned int i=0; i < mD; ++i)
               F[i] *= G[i];
             backward(F,h,r);
           }
@@ -606,6 +609,9 @@ public:
 
         deleteAlign(F);
         deleteAlign(f);
+        deleteAlign(G);
+        deleteAlign(g);
+        deleteAlign(h);
         return mean/K;
       }
     }
