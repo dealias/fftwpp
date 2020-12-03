@@ -487,7 +487,7 @@ public:
       double mean=S.mean();
       double stdev=S.stdev();
       if(S.count() < 7) continue;
-      int threshold=1000;
+      int threshold=5000;
       double meanCLOCKS=mean*CLOCKS_PER_SEC;
       if(meanCLOCKS < threshold) {
         K *= 2.0*threshold/meanCLOCKS;
