@@ -3,6 +3,7 @@
 // Support out-of-place transforms?
 // Can user request allowing overlap of input and output arrays,
 // for possibly reduced performance?
+// Speed up optimization: only consider divisors p of q.
 
 #include <cfloat>
 #include <climits>
@@ -23,9 +24,11 @@ const Complex iG(sqrt(5.0),sqrt(11.0));
 bool Test=false;
 
 unsigned int mOption=0;
+unsigned int DOption=1;
 
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
+
 
 unsigned int surplusFFTsizes=25;
 
@@ -102,6 +105,7 @@ public:
   unsigned int p;
   unsigned int q;
   unsigned int n;
+  unsigned int D;
 protected:
   fft1d *fftM,*ifftM;
   mfft1d *fftm,*ifftm;
@@ -119,6 +123,7 @@ public:
     if(!modular) {
       fftM=new fft1d(M,1);
       ifftM=new fft1d(M,-1);
+      D=1;
     } else {
       unsigned int N=m*q;
       n=q/p;
@@ -144,8 +149,10 @@ public:
             Zetaqp[p*r-r+t]=expi((m*r*t % N)*twopibyN);
       }
 
-      ifftm=new mfft1d(m,-1,1, 1,1, m,m, G,G);
-      fftm=new mfft1d(m,1,1, 1,1, m,m, G,G);
+      D=q % DOption == 0 ? DOption : 1;
+      if(D > 1) cout << "D=" << D << endl;
+      ifftm=new mfft1d(m,-1,D, 1,1, m,m, G,G);
+      fftm=new mfft1d(m,1,D, 1,1, m,m, G,G);
 
       Zetaqm=ComplexAlign((q-1)*(m-1))-m;
       for(unsigned int r=1; r < q; ++r)
@@ -186,9 +193,9 @@ public:
 
     void check(unsigned int L, unsigned int M,
                unsigned int m, bool fixed=false) {
-//      cout << "m=" << m << endl;
       unsigned int p=ceilquotient(L,m);
       unsigned int q=ceilquotient(M,m);
+//      cout << "m=" << m << endl;
 //      cout << "q=" << q << endl;
 
       if(!fixed) {
@@ -279,7 +286,7 @@ public:
     if(!modular) {
       forward(f,F,0);
     } else {
-      for(unsigned int r=0; r < q; ++r)
+      for(unsigned int r=0; r < q; r += D)
         forward(f,F+m*r,r);
     }
   }
@@ -288,12 +295,12 @@ public:
     if(!modular) {
       backward(F,f,0);
     } else {
-    for(unsigned int r=0; r < q; ++r)
-      backward(F+m*r,f,r);
+      for(unsigned int r=0; r < q; r += D)
+        backward(F+m*r,f,r);
     }
   }
 
-  void forward(Complex *f, Complex *F, unsigned int r) {
+  void forward(Complex *f, Complex *F, unsigned int r0) {
     if(!modular) {
       for(unsigned int i=0; i < L; ++i)
         F[i]=f[i];
@@ -303,10 +310,14 @@ public:
       return;
     }
 
-    if(innerFFT) {
+    for(unsigned int d=0; d < D; ++d) {
+      Complex *F0=F+m*d;
+      unsigned int r=r0+d;
+
+        if(innerFFT) {
       for(unsigned int t=0; m*t < L; ++t) {
         unsigned int mt=m*t;
-        Complex *Ft=F+n*mt;
+        Complex *Ft=F0+n*mt;
         Complex *ft=f+mt;
         unsigned int stop=min(L-mt,m);
         for(unsigned int s=0; s < stop; ++s)
@@ -314,10 +325,10 @@ public:
         for(unsigned int s=stop; s < m; ++s)
           Ft[s]=0.0;
       }
-      fftp->fft(F);
+      fftp->fft(F0);
 
       for(unsigned int r=1; r < n; ++r) {
-        Complex *Fr=F+m*r;
+        Complex *Fr=F0+m*r;
         unsigned int stop=min(L,m);
         for(unsigned int s=0; s < stop; ++s)
           Fr[s]=f[s];
@@ -339,7 +350,7 @@ public:
       }
 
       for(unsigned int r=1; r < q; ++r) {
-        Complex *Fr=F+m*r;
+        Complex *Fr=F0+m*r;
         Complex *Zetar=Zetaqm+m*r-r;
         for(unsigned int s=1; s < m; ++s)
           Fr[s] *= Zetar[s];
@@ -354,8 +365,7 @@ public:
         for(unsigned int i=L; i < m; ++i)
           F[i]=0.0;
         } else {
-//        for(unsigned int r=1; r < q; ++r) {
-          Complex *Fr=F;
+          Complex *Fr=F0;
           Fr[0]=f[0];
           Complex *Zetar=Zetaqm+m*r-r;
           for(unsigned int s=1; s < stop; ++s)
@@ -372,8 +382,7 @@ public:
             F[s]=sum;
           }
         } else {
-//        for(unsigned int r=1; r < q; ++r) {
-          Complex *Fr=F;
+          Complex *Fr=F0;
           Complex *Zetamr=Zetaqm+m*r-r;
           Complex *Zetar=Zetaqp+p*r-r;
           Complex sum=f[0];
@@ -393,6 +402,7 @@ public:
         }
       }
     }
+    }
 
     fftm->fft(F);
   }
@@ -400,7 +410,7 @@ public:
 // Compute an inverse fft of length N=q*m unpadded back
 // to size p*m >= L.
   // Input F destroyed
-  void backward(Complex *F, Complex *f, unsigned int r) {
+  void backward(Complex *F, Complex *f, unsigned int r0) {
     if(!modular) {
       ifftM->fft(F);
       for(unsigned int i=0; i < L; ++i)
@@ -415,25 +425,29 @@ public:
 
     ifftm->fft(F);
 
+    for(unsigned int d=0; d < D; ++d) {
+      Complex *F0=F+m*d;
+      unsigned int r=r0+d;
+
     if(innerFFT) {
       for(unsigned int r=1; r < q; ++r) {
-        Complex *Fr=F+m*r;
+        Complex *Fr=F0+m*r;
         Complex *Zetar=Zetaqm+m*r-r;
         for(unsigned int s=1; s < m; ++s) {
           Fr[s] *= conj(Zetar[s]);
         }
       }
 
-      ifftp->fft(F);
+      ifftp->fft(F0);
       for(unsigned int t=0; t < p; ++t) {
         unsigned int mt=m*t;
-        Complex *Ft=F+n*mt;
+        Complex *Ft=F0+n*mt;
         Complex *ft=f+mt;
         for(unsigned int s=0; s < m; ++s)
           ft[s]=Ft[s];
       }
       for(unsigned int r=1; r < n; ++r) {
-        Complex *Fr=F+m*r;
+        Complex *Fr=F0+m*r;
         ifftp->fft(Fr);
         for(unsigned int s=0; s < m; ++s)
             f[s] += Fr[s];
@@ -454,8 +468,7 @@ public:
         for(unsigned int s=0; s < m; ++s)
           f[s]=F[s];
         } else {
-//        for(unsigned int r=1; r < q; ++r) {
-          Complex *Fr=F;
+          Complex *Fr=F0;
           f[0] += Fr[0];
           Complex *Zetamr=Zetaqm+m*r-r;
           for(unsigned int s=1; s < m; ++s)
@@ -470,8 +483,7 @@ public:
               fs[m*t]=Fs;
           }
         } else {
-//        for(unsigned int r=1; r < q; ++r) {
-          Complex *Fr=F;
+          Complex *Fr=F0;
           Complex Fr0=Fr[0];
           f[0] += Fr0;
           Complex *Zetamr=Zetaqm+m*r-r;
@@ -488,6 +500,7 @@ public:
         }
       }
     }
+    }
   }
 
   unsigned int inverseLength() {
@@ -499,7 +512,7 @@ public:
   }
 
   unsigned int blocksize() {
-    return modular ? m : m*q;
+    return modular ? m*D : m*q;
   }
 
   double meantime(double *Stdev=NULL) {
@@ -530,8 +543,9 @@ public:
     double scale=1.0/N;
 
     for(;;) {
+      double t0,t;
       if(!modular) {
-        double t0=totalseconds();
+        t0=totalseconds();
         for(unsigned int i=0; i < K; ++i) {
           /*
     for(unsigned int j=0; j < L; ++j) {
@@ -548,10 +562,9 @@ public:
           for(unsigned int i=0; i < L; ++i)
             f[i] *= scale;
         }
-        double t=totalseconds();
-        S.add(t-t0);
+        t=totalseconds();
       } else {
-        double t0=totalseconds();
+        t0=totalseconds();
         for(unsigned int i=0; i < K; ++i) {
           /*
           for(unsigned int j=0; j < L; ++j) {
@@ -560,31 +573,31 @@ public:
           }
           */
 
-          for(unsigned int r=0; r < q; ++r) {
+          for(unsigned int r=0; r < q; r += D) {
             forward(f,F,r);
             forward(g,G,r);
 //            multbinary(F,G,m);
-            for(unsigned int i=0; i < m; ++i)
+            for(unsigned int i=0; i < m*D; ++i)
               F[i] *= G[i];
             backward(F,h,r);
           }
           for(unsigned int i=0; i < L; ++i)
             f[i]=h[i]*scale;
         }
-        double t=totalseconds();
-        S.add(t-t0);
+        t=totalseconds();
       }
+      S.add(t-t0);
 
       double mean=S.mean();
       double stdev=S.stdev();
       if(S.count() < 7) continue;
-      int threshold=1000;
+      int threshold=5000;
       double meanCLOCKS=mean*CLOCKS_PER_SEC;
       if(meanCLOCKS < threshold) {
-        K *= threshold/meanCLOCKS;
-        S.clear();
+        K *= 2*threshold/meanCLOCKS;
+          S.clear();
       } else if(eps*mean < stdev) {
-        K *= stdev/(eps*mean);
+        K *= 2*stdev/(eps*mean);
         S.clear();
       } else {
         if(Stdev) *Stdev=stdev/K;
@@ -676,6 +689,7 @@ void usage()
   std::cerr << "Options: " << std::endl;
   std::cerr << "-h\t\t help" << std::endl;
   std::cerr << "-m\t\t subtransform size" << std::endl;
+  std::cerr << "-D\t\t number of blocks to process at a time" << std::endl;
   std::cerr << "-S\t\t number of surplus FFT sizes" << std::endl;
   std::cerr << "-L\t\t number of physical data values" << std::endl;
   std::cerr << "-M\t\t minimal number of padded data values" << std::endl;
@@ -694,11 +708,14 @@ int main(int argc, char* argv[])
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hL:M:S:T:m:");
+    int c = getopt(argc,argv,"hD:L:M:S:T:m:");
     if (c == -1) break;
 
     switch (c) {
       case 0:
+        break;
+      case 'D':
+        DOption=max(atoi(optarg),0);
         break;
       case 'L':
         L=atoi(optarg);
