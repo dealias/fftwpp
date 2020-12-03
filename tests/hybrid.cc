@@ -499,14 +499,11 @@ public:
         if(Stdev) *Stdev=stdev/K;
         deleteAlign(F);
         deleteAlign(f);
+        deleteAlign(G);
+        deleteAlign(g);
         return mean/K;
       }
     }
-
-    deleteAlign(F);
-    deleteAlign(f);
-
-    if(Stdev) *Stdev=0.0;
     return 0.0;
   }
 };
