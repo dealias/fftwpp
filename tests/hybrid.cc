@@ -499,7 +499,7 @@ public:
   }
 
   unsigned int blocksize() {
-    return modular ? m*q : m;
+    return modular ? m : m*q;
   }
 
   double meantime(double *Stdev=NULL) {
@@ -515,8 +515,14 @@ public:
       f[j]=0.0;
       g[j]=0.0;
     }
-    forward(f,F); // Create wisdom
-    backward(F,f); // Create wisdom
+     // Create wisdom
+    if(!modular) {
+      forward(f,F);
+      backward(F,f);
+    } else {
+      forward(f,F,0);
+      backward(F,f,0);
+    }
 
     unsigned int K=1;
     double eps=0.1;
