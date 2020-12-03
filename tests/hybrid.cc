@@ -599,10 +599,10 @@ public:
       int threshold=5000;
       double meanCLOCKS=mean*CLOCKS_PER_SEC;
       if(meanCLOCKS < threshold) {
-        K *= 2*threshold/meanCLOCKS;
+        K *= max(2,(int) ceil(threshold/meanCLOCKS));
           S.clear();
       } else if(eps*mean < stdev) {
-        K *= 2*stdev/(eps*mean);
+        K *= max(2,(int) ceil(stdev/(eps*mean)));
         S.clear();
       } else {
         if(Stdev) *Stdev=stdev/K;
