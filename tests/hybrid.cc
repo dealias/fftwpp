@@ -1,5 +1,4 @@
 // TODO:
-// Add remainder argument to forward and backward.
 // Support out-of-place transforms?
 // Can user request allowing overlap of input and output arrays,
 // for possibly reduced performance?
@@ -347,35 +346,35 @@ public:
               Frt[s] *= Zetar[s];
           }
         } else {
-          Complex *Fr=F;
           unsigned int stop=min(L,m);
           for(unsigned int s=0; s < stop; ++s)
-            Fr[s]=f[s];
+            F[s]=f[s];
           for(unsigned int s=stop; s < m; ++s)
-            Fr[s]=0.0;
+            F[s]=0.0;
           Complex *Zetaqr=Zetaqp+p*r-r;
           for(unsigned int t=1; m*t < L; ++t) {
             unsigned int mt=m*t;
-            Complex *Frt=Fr+mt;
+            Complex *Ft=F+mt;
             Complex *ft=f+mt;
             unsigned int stop=min(L-mt,m);
             Complex Zeta=Zetaqr[t];
             for(unsigned int s=0; s < stop; ++s)
-              Frt[s]=Zeta*ft[s];
+              Ft[s]=Zeta*ft[s];
             for(unsigned int s=stop; s < m; ++s)
-              Frt[s]=0.0;
+              Ft[s]=0.0;
           }
-          fftp->fft(Fr);
+          fftp->fft(F);
 
           for(unsigned int t=0; t < p; ++t) {
             unsigned int R=n*t+r;
-            Complex *Frt=Fr+m*t;
+            Complex *Ft=F+m*t;
             Complex *Zetar=Zetaqm+m*R-R;
             for(unsigned int s=1; s < m; ++s)
-              Frt[s] *= Zetar[s];
+              Ft[s] *= Zetar[s];
           }
         }
       } else {
+        // Direct sum:
         unsigned int stop=min(m,L);
         if(p == 1) {
           if(r == 0) {
@@ -384,13 +383,12 @@ public:
             for(unsigned int i=L; i < m; ++i)
               F[i]=0.0;
           } else {
-            Complex *Fr=F;
-            Fr[0]=f[0];
+            F[0]=f[0];
             Complex *Zetar=Zetaqm+m*r-r;
             for(unsigned int s=1; s < stop; ++s)
-              Fr[s]=Zetar[s]*f[s];
+              F[s]=Zetar[s]*f[s];
             for(unsigned int s=stop; s < m; ++s)
-              Fr[s]=0.0;
+              F[s]=0.0;
           }
         } else {
           if(r == 0) {
@@ -401,23 +399,22 @@ public:
               F[s]=sum;
             }
           } else {
-            Complex *Fr=F;
             Complex *Zetamr=Zetaqm+m*r-r;
             Complex *Zetar=Zetaqp+p*r-r;
             Complex sum=f[0];
             for(unsigned int t=1; m*t < L; ++t)
               sum += Zetar[t]*f[m*t];
-            Fr[0]=sum;
+            F[0]=sum;
             for(unsigned int s=1; s < stop; ++s) {
               Complex *fs=f+s;
               Complex sum=fs[0];
               unsigned int stop=L-s;
               for(unsigned int t=1; m*t < stop; ++t)
                 sum += Zetar[t]*fs[m*t];
-              Fr[s]=sum*Zetamr[s];
+              F[s]=sum*Zetamr[s];
             }
             for(unsigned int s=stop; s < m; ++s)
-              Fr[s]=0.0;
+              F[s]=0.0;
           }
         }
       }
@@ -453,64 +450,75 @@ public:
         if(r == 0) {
           for(unsigned int t=1; t < p; ++t) {
             unsigned int R=n*t;
-            Complex *Frt=F+m*t;
+            Complex *Ft=F+m*t;
             Complex *Zetar=Zetaqm+m*R-R;
             for(unsigned int s=1; s < m; ++s)
-              Frt[s] *= conj(Zetar[s]);
+              Ft[s] *= conj(Zetar[s]);
           }
           ifftp->fft(F);
           for(unsigned int t=0; t < p; ++t) {
             unsigned int mt=m*t;
-            Complex *Frt=F+mt;
+            Complex *Ft=F+mt;
             Complex *ft=f+mt;
             for(unsigned int s=0; s < m; ++s)
-              ft[s]=Frt[s];
+              ft[s]=Ft[s];
           }
         } else {
-          Complex *Fr=F;
           for(unsigned int t=0; t < p; ++t) {
             unsigned int R=n*t+r;
-            Complex *Frt=Fr+m*t;
+            Complex *Ft=F+m*t;
             Complex *Zetar=Zetaqm+m*R-R;
             for(unsigned int s=1; s < m; ++s)
-              Frt[s] *= conj(Zetar[s]);
+              Ft[s] *= conj(Zetar[s]);
           }
 
-          ifftp->fft(Fr);
+          ifftp->fft(F);
           for(unsigned int s=0; s < m; ++s)
-            f[s] += Fr[s];
+            f[s] += F[s];
           Complex *Zetaqr=Zetaqp+p*r-r;
           for(unsigned int t=1; t < p; ++t) {
             unsigned int mt=m*t;
-            Complex *Frt=Fr+mt;
+            Complex *Ft=F+mt;
             Complex *ft=f+mt;
             Complex Zeta=conj(Zetaqr[t]);
             for(unsigned int s=0; s < m; ++s)
-              ft[s] += Zeta*Frt[s];
+              ft[s] += Zeta*Ft[s];
           }
         }
       } else {
-        if(r == 0) {
-          for(unsigned int s=0; s < m; ++s) {
-            Complex Fs=F[s];
-            Complex *fs=f+s;
-            for(unsigned int t=0; t < p; ++t)
-              fs[m*t]=Fs;
+        // Direct sum:
+        if(p == 1) {
+          if(r == 0) {
+            for(unsigned int s=0; s < m; ++s)
+              f[s]=F[s];
+          } else {
+            f[0] += F[0];
+            Complex *Zetamr=Zetaqm+m*r-r;
+            for(unsigned int s=1; s < m; ++s)
+              f[s] += F[s]*conj(Zetamr[s]);
           }
         } else {
-          Complex *Fr=F;
-          Complex Fr0=Fr[0];
-          f[0] += Fr0;
-          Complex *Zetamr=Zetaqm+m*r-r;
-          Complex *Zetar=Zetaqp+p*r-r;
-          for(unsigned int t=1; t < p; ++t)
-            f[m*t] += conj(Zetar[t])*Fr0;
-          for(unsigned int s=1; s < m; ++s) {
-            Complex Frs=Fr[s]*conj(Zetamr[s]);
-            Complex *fs=f+s;
-            fs[0] += Frs;
+          if(r == 0) {
+            for(unsigned int s=0; s < m; ++s) {
+              Complex Fs=F[s];
+              Complex *fs=f+s;
+              for(unsigned int t=0; t < p; ++t)
+                fs[m*t]=Fs;
+            }
+          } else {
+            Complex F0=F[0];
+            f[0] += F0;
+            Complex *Zetamr=Zetaqm+m*r-r;
+            Complex *Zetar=Zetaqp+p*r-r;
             for(unsigned int t=1; t < p; ++t)
-              fs[m*t] += conj(Zetar[t])*Frs;
+              f[m*t] += conj(Zetar[t])*F0;
+            for(unsigned int s=1; s < m; ++s) {
+              Complex Fs=F[s]*conj(Zetamr[s]);
+              Complex *fs=f+s;
+              fs[0] += Fs;
+              for(unsigned int t=1; t < p; ++t)
+                fs[m*t] += conj(Zetar[t])*Fs;
+            }
           }
         }
       }
