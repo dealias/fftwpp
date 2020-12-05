@@ -104,9 +104,10 @@ public:
   unsigned int m;
   unsigned int p;
   unsigned int q;
-  unsigned int Q;
   unsigned int n;
+  unsigned int Q;
   unsigned int D;
+  unsigned int d;
 protected:
   fft1d *fftM,*ifftM;
   mfft1d *fftm,*ifftm;
@@ -143,21 +144,21 @@ public:
           for(unsigned int t=1; t < p; ++t)
             Zetaqp[p*r-r+t]=expi(r*t*twopibyq);
         Q=n;
-        D=p;
+        d=p;
       } else {
         Zetaqp=ComplexAlign((q-1)*(p-1))-p;
         for(unsigned int r=1; r < q; ++r)
           for(unsigned int t=1; t < p; ++t)
             Zetaqp[p*r-r+t]=expi((m*r*t % N)*twopibyN);
         Q=q;
-        D=1;
+        d=1;
       }
 
-//        D=Q % DOption == 0 ? DOption : 1;
-//      if(D > 1) cout << "D=" << D << endl;
-//        D=1;
-      ifftm=new mfft1d(m,-1,D, 1,1, m,m, G,G);
-      fftm=new mfft1d(m,1,D, 1,1, m,m, G,G);
+      D=Q % DOption == 0 ? DOption : 1;
+      if(D > 1) cout << "D=" << D << endl;
+      unsigned int h=d*D;
+      ifftm=new mfft1d(m,-1,h, 1,1, m,m, G,G);
+      fftm=new mfft1d(m,1,h, 1,1, m,m, G,G);
 
       Zetaqm=ComplexAlign((q-1)*(m-1))-m;
       for(unsigned int r=1; r < q; ++r)
@@ -292,12 +293,9 @@ public:
     if(!modular) {
       forward(f,F,0);
     } else {
-      if(innerFFT)
-        for(unsigned int r=0; r < n; ++r)
-          forward(f,F+m*p*r,r);
-      else
-        for(unsigned int r=0; r < Q; r += D)
-          forward(f,F+m*r,r);
+      unsigned int md=m*d;
+      for(unsigned int r=0; r < Q; r += D)
+        forward(f,F+md*r,r);
     }
   }
 
@@ -305,12 +303,9 @@ public:
     if(!modular) {
       backward(F,f,0);
     } else {
-      if(innerFFT)
-        for(unsigned int r=0; r < n; ++r)
-          backward(F+m*p*r,f,r);
-      else
-        for(unsigned int r=0; r < Q; r += D)
-          backward(F+m*r,f,r);
+      unsigned int md=m*d;
+      for(unsigned int r=0; r < Q; r += D)
+          backward(F+md*r,f,r);
     }
   }
 
@@ -324,9 +319,8 @@ public:
       return;
     }
 
-//    cout << D << " " << q <<  endl;
-    for(unsigned int d=0; d < 1; ++d) {
-      Complex *F=F0+m*d;
+    for(unsigned int d=0; d < D; ++d) {
+      Complex *F=F0+m*p*d;
       unsigned int r=r0+d;
       if(innerFFT) {
         if(r == 0) {
@@ -447,8 +441,8 @@ public:
 
     ifftm->fft(F0);
 
-    for(unsigned int d=0; d < 1; ++d) {
-      Complex *F=F0+m*d;
+    for(unsigned int d=0; d < D; ++d) {
+      Complex *F=F0+m*p*d;
       unsigned int r=r0+d;
 
       if(innerFFT) {
@@ -527,7 +521,7 @@ public:
   }
 
   unsigned int blocksize() {
-    return modular ? (innerFFT ? m*D : m*D) : m*q;
+    return modular ? m*d*D : m*q;
   }
 
   double meantime(double *Stdev=NULL) {
@@ -557,6 +551,7 @@ public:
     double eps=0.1;
     unsigned int N=m*q;
     double scale=1.0/N;
+    unsigned int b=blocksize();
 
     for(;;) {
       double t0,t;
@@ -581,7 +576,6 @@ public:
         t=totalseconds();
       } else {
         t0=totalseconds();
-        unsigned int b=blocksize();
         for(unsigned int i=0; i < K; ++i) {
           /*
           for(unsigned int j=0; j < L; ++j) {
@@ -613,10 +607,10 @@ public:
       int threshold=1000;
       double meanCLOCKS=mean*CLOCKS_PER_SEC;
       if(meanCLOCKS < threshold) {
-        K *= (int) ceil(threshold/meanCLOCKS);
+        K *= (int) (2*threshold/meanCLOCKS);
         S.clear();
       } else if(eps*mean < stdev) {
-        K *= (int) ceil(stdev/(eps*mean));
+        K *= (int) (2*stdev/(eps*mean));
         S.clear();
       } else {
         if(Stdev) *Stdev=stdev/K;
