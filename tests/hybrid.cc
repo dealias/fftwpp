@@ -107,7 +107,7 @@ public:
   unsigned int n;
   unsigned int Q;
   unsigned int D;
-  unsigned int d;
+  unsigned int b; // blocksize
 protected:
   fft1d *fftM,*ifftM;
   mfft1d *fftm,*ifftm;
@@ -133,6 +133,7 @@ public:
       Complex *G=ComplexAlign(N);
       innerFFT=p > 1 && n*p == q;
 
+      unsigned int d;
       if(innerFFT) {
 //      p->L, M->q, m->p, q->n
         fftp=new mfft1d(p,1,m, m,m, 1,1, G,G);
@@ -154,11 +155,14 @@ public:
         d=1;
       }
 
+      b=m*d;
+
       D=Q % DOption == 0 ? DOption : 1;
       if(D > 1) cout << "D=" << D << endl;
-      unsigned int h=d*D;
-      ifftm=new mfft1d(m,-1,h, 1,1, m,m, G,G);
-      fftm=new mfft1d(m,1,h, 1,1, m,m, G,G);
+      d *= D;
+
+      ifftm=new mfft1d(m,-1,d, 1,1, m,m, G,G);
+      fftm=new mfft1d(m,1,d, 1,1, m,m, G,G);
 
       Zetaqm=ComplexAlign((q-1)*(m-1))-m;
       for(unsigned int r=1; r < q; ++r)
@@ -293,9 +297,8 @@ public:
     if(!modular) {
       forward(f,F,0);
     } else {
-      unsigned int md=m*d;
       for(unsigned int r=0; r < Q; r += D)
-        forward(f,F+md*r,r);
+        forward(f,F+b*r,r);
     }
   }
 
@@ -303,9 +306,8 @@ public:
     if(!modular) {
       backward(F,f,0);
     } else {
-      unsigned int md=m*d;
       for(unsigned int r=0; r < Q; r += D)
-          backward(F+md*r,f,r);
+          backward(F+b*r,f,r);
     }
   }
 
@@ -319,8 +321,9 @@ public:
       return;
     }
 
+    unsigned int mp=m*p;
     for(unsigned int d=0; d < D; ++d) {
-      Complex *F=F0+m*p*d;
+      Complex *F=F0+mp*d;
       unsigned int r=r0+d;
       if(innerFFT) {
         if(r == 0) {
@@ -441,8 +444,9 @@ public:
 
     ifftm->fft(F0);
 
+    unsigned int mp=m*p;
     for(unsigned int d=0; d < D; ++d) {
-      Complex *F=F0+m*p*d;
+      Complex *F=F0+mp*d;
       unsigned int r=r0+d;
 
       if(innerFFT) {
@@ -521,7 +525,7 @@ public:
   }
 
   unsigned int blocksize() {
-    return modular ? m*d*D : m*q;
+    return modular ? b*D : m*q;
   }
 
   double meantime(double *Stdev=NULL) {
@@ -604,13 +608,9 @@ public:
       double mean=S.mean();
       double stdev=S.stdev();
       if(S.count() < 7) continue;
-      int threshold=1000;
-      double meanCLOCKS=mean*CLOCKS_PER_SEC;
-      if(meanCLOCKS < threshold) {
-        K *= (int) (2*threshold/meanCLOCKS);
-        S.clear();
-      } else if(eps*mean < stdev) {
-        K *= (int) (2*stdev/(eps*mean));
+      int threshold=5000;
+      if(mean*CLOCKS_PER_SEC < threshold || eps*mean < stdev) {
+        K *= 2;
         S.clear();
       } else {
         if(Stdev) *Stdev=stdev/K;
