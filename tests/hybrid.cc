@@ -2,7 +2,7 @@
 // Support out-of-place transforms?
 // Can user request allowing overlap of input and output arrays,
 // for possibly reduced performance?
-// Optimize over D.
+// Support arbitrary D?
 // Remove p > 1 direct sum code.
 
 #include <cfloat>
@@ -24,7 +24,7 @@ const Complex iG(sqrt(5.0),sqrt(11.0));
 bool Test=false;
 
 unsigned int mOption=0;
-unsigned int DOption=1;
+unsigned int DOption=0;
 
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
@@ -127,6 +127,7 @@ public:
       ifftM=new fft1d(M,-1);
     } else {
       unsigned int N=m*q;
+//      cout << m << " " << p << " " << q << endl;
       n=q/p;
       double twopibyN=twopi/N;
       Complex *G=ComplexAlign(N);
@@ -155,9 +156,7 @@ public:
       }
 
       b=m*d;
-
-      D=Q % DOption == 0 ? DOption : 1;
-//      if(D > 1) cout << "D=" << D << endl;
+      D=Q % D == 0 ? D : 1;
       d *= D;
 
       ifftm=new mfft1d(m,-1,d, 1,1, m,m, G,G);
@@ -174,8 +173,8 @@ public:
 
   // Compute an fft padded to N=m*q >= M >= L=f.length
   FFTpad(unsigned int L, unsigned int M,
-         unsigned int m, unsigned int q, bool Explicit=false) :
-    L(L), M(M), m(m), p(ceilquotient(L,m)), q(q), Explicit(Explicit) {
+         unsigned int m, unsigned int q, unsigned int D, bool Explicit=false) :
+    L(L), M(M), m(m), p(ceilquotient(L,m)), q(q), D(D), Explicit(Explicit) {
     init();
   }
 
@@ -197,7 +196,7 @@ public:
 
   class Opt {
   public:
-    unsigned int m,q;
+    unsigned int m,q,D;
     double T;
 
     void check(unsigned int L, unsigned int M,
@@ -207,44 +206,63 @@ public:
 
       if(q % p != 0) return;
 
-//      cout << "m=" << m << endl;
-//      cout << "q=" << q << endl;
-
       if(!fixed) {
-        unsigned int q2=p*ceilquotient(M,m*p);
+        unsigned int n=ceilquotient(M,m*p);
+        unsigned int q2=p*n;
         if(q2 != q) {
+          unsigned int start=DOption > 0 ? DOption : 1;
+          unsigned int stop=DOption > 0 ? DOption : n;
+          if(fixed) start=stop=1;
+          for(unsigned int D=start; D <= stop; ++D) {
 //            cout << "q2=" << q2 << endl;
-          FFTpad fft(L,M,m,q2);
-          double t=fft.meantime();
-          if(t < T) {
-            this->m=m;
-            this->q=q2;
-            T=t;
+            if(n % D != 0) continue;
+//            cout << "D=" << D << endl;
+
+            FFTpad fft(L,M,m,q2,D);
+            double t=fft.meantime();
+            if(t < T) {
+              this->m=m;
+              this->q=q2;
+              this->D=D;
+              T=t;
+            }
           }
         }
       }
 
-      FFTpad fft(L,M,m,q);
-      double t=fft.meantime();
+      unsigned int n=q/p;
+      bool innerFFT=p > 1 && n*p == q;
+      unsigned int Q=innerFFT ? n : q;
+      unsigned int start=DOption > 0 ? DOption : 1;
+      unsigned int stop=DOption > 0 ? DOption : Q;
+      if(fixed) start=stop=1;
+      for(unsigned int D=start; D <= stop; ++D) {
+        if(Q % D != 0) continue;
+//        cout << "D=" << D << " " << Q << endl;
+        FFTpad fft(L,M,m,q,D);
+        double t=fft.meantime();
 
-      if(t < T) {
-        this->m=m;
-        this->q=q;
-        T=t;
+        if(t < T) {
+          this->m=m;
+          this->q=q;
+          this->D=D;
+          T=t;
+        }
       }
     }
 
     // Determine optimal m,q values for padding L data values to
     // size >= M
     // If fixed=true then an FFT of size M is enforced.
-    Opt(unsigned int L, unsigned int M, bool fixed=false, bool Explicit=false)
+    Opt(unsigned int L, unsigned int M, bool Explicit=false, bool fixed=false)
     {
       if(L > M) {
         cerr << "L=" << L << " is greater than M=" << M << "." << endl;
         exit(-1);
       }
-      m=1;
-      q=M;
+      m=M;
+      q=1;
+      D=1;
       T=DBL_MAX;
       unsigned int i=0;
 
@@ -276,6 +294,7 @@ public:
       cout << "m=" << m << endl;
       cout << "p=" << p << endl;
       cout << "q=" << q << endl;
+      cout << "D=" << D << endl;
       cout << "Padding:" << m*p-L << endl;
     }
   };
@@ -285,11 +304,12 @@ public:
   // (or exactly M if fixed=true)
   FFTpad(unsigned int L, unsigned int M, bool Explicit=false, bool fixed=false) :
     L(L), M(M), Explicit(Explicit) {
-    Opt opt=Opt(L,M,fixed,Explicit);
+    Opt opt=Opt(L,M,Explicit,fixed);
     m=opt.m;
     if(Explicit) this->M=M=m;
     p=ceilquotient(L,m);
     q=opt.q;
+    D=opt.D;
     init();
   }
 
@@ -760,7 +780,7 @@ int main(int argc, char* argv[])
   cout << "M=" << M << endl;
 
   // Minimal explicit padding
-  FFTpad fft0(L,M,M,1,true);
+  FFTpad fft0(L,M,M,1,1,true);
   double mean0=report(fft0);
 
   // Optimal explicit padding
@@ -769,6 +789,7 @@ int main(int argc, char* argv[])
 
   // Hybrid padding
   FFTpad fft(L,M);
+  report(fft);
   double mean=report(fft);
 
   if(mean0 > 0)
@@ -806,7 +827,7 @@ int main(int argc, char* argv[])
   }
 
   Complex *F2=ComplexAlign(N);
-  FFTpad fft2(L,N,N,1);
+  FFTpad fft2(L,N,N,1,1);
   for(unsigned int j=0; j < L; ++j)
     f[j]=j+1;
   fft2.forward(f,F2);
