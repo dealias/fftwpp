@@ -570,7 +570,7 @@ public:
 
     unsigned int K=1;
     double eps=0.1;
-    unsigned int N=m*q;
+    unsigned int N=length();
     double scale=1.0/N;
     unsigned int b=blocksize();
 
