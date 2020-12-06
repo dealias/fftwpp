@@ -134,7 +134,7 @@ public:
 
       unsigned int d;
       if(innerFFT) {
-//      p->L, M->q, m->p, q->n
+//      L'=p, M'=q, m'=p, p'=1, q'=n
         fftp=new mfft1d(p,1,m, m,m, 1,1, G,G);
         ifftp=new mfft1d(p,-1,m, m,m, 1,1, G,G);
 
