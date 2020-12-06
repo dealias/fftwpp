@@ -116,19 +116,18 @@ protected:
   Complex *Zetaqm;
   utils::statistics S;
   bool innerFFT;
-  bool Explicit;
 public:
 
   void init() {
-    if(p != q) Explicit=false;
+    p=ceilquotient(L,m);
+    n=q/p;
     if(m > M) M=m;
-    if(Explicit) {
+    if(p == q) {
       fftM=new fft1d(M,1);
       ifftM=new fft1d(M,-1);
     } else {
       unsigned int N=m*q;
 //      cout << m << " " << p << " " << q << endl;
-      n=q/p;
       double twopibyN=twopi/N;
       Complex *G=ComplexAlign(N);
       innerFFT=p > 1 && n*p == q;
@@ -173,13 +172,13 @@ public:
 
   // Compute an fft padded to N=m*q >= M >= L=f.length
   FFTpad(unsigned int L, unsigned int M,
-         unsigned int m, unsigned int q, unsigned int D, bool Explicit=false) :
-    L(L), M(M), m(m), p(ceilquotient(L,m)), q(q), D(D), Explicit(Explicit) {
+         unsigned int m, unsigned int q, unsigned int D) :
+    L(L), M(M), m(m), p(ceilquotient(L,m)), q(q), D(D) {
     init();
   }
 
   ~FFTpad() {
-    if(Explicit) {
+    if(p == q) {
       delete fftM;
       delete ifftM;
     } else {
@@ -303,11 +302,11 @@ public:
   // Compute an fft of length L padded to at least M
   // (or exactly M if fixed=true)
   FFTpad(unsigned int L, unsigned int M, bool Explicit=false, bool fixed=false) :
-    L(L), M(M), Explicit(Explicit) {
+    L(L), M(M) {
     Opt opt=Opt(L,M,Explicit,fixed);
     m=opt.m;
     if(Explicit) this->M=M=m;
-    p=ceilquotient(L,m);
+    p=ceilquotient(L,M);
     q=opt.q;
     D=opt.D;
     init();
@@ -315,7 +314,7 @@ public:
 
   // TODO: Check for cases when arrays f and F must be distinct
   void forward(Complex *f, Complex *F) {
-    if(Explicit) {
+    if(p == q) {
       for(unsigned int i=0; i < L; ++i)
         F[i]=f[i];
       for(unsigned int i=L; i < M; ++i)
@@ -328,7 +327,7 @@ public:
   }
 
   void backward(Complex *F, Complex *f) {
-    if(Explicit) {
+    if(p == q) {
       ifftM->fft(F);
       for(unsigned int i=0; i < L; ++i)
         f[i]=F[i];
@@ -535,15 +534,15 @@ public:
   }
 
   unsigned int inverseLength() {
-    return Explicit ? L : m*p;
+    return p == q ? L : m*p;
   }
 
   unsigned int length() {
-    return Explicit ? M : m*q;
+    return p == q ? M : m*q;
   }
 
   unsigned int blocksize() {
-    return Explicit ? M : b*D;
+    return p == q ? M : b*D;
   }
 
   double meantime(double *Stdev=NULL) {
@@ -561,7 +560,7 @@ public:
     }
 
      // Create wisdom
-    if(Explicit) {
+    if(p == q) {
       forward(f,F);
       backward(F,f);
     } else {
@@ -577,7 +576,7 @@ public:
 
     for(;;) {
       double t0,t;
-      if(Explicit) {
+      if(p == q) {
         t0=totalseconds();
         for(unsigned int i=0; i < K; ++i) {
 
@@ -780,7 +779,7 @@ int main(int argc, char* argv[])
   cout << "M=" << M << endl;
 
   // Minimal explicit padding
-  FFTpad fft0(L,M,M,1,1,true);
+  FFTpad fft0(L,M,M,1);
   double mean0=report(fft0);
 
   // Optimal explicit padding
@@ -789,7 +788,6 @@ int main(int argc, char* argv[])
 
   // Hybrid padding
   FFTpad fft(L,M);
-  report(fft);
   double mean=report(fft);
 
   if(mean0 > 0)
@@ -838,13 +836,23 @@ int main(int argc, char* argv[])
   unsigned int i=0;
   unsigned int m=fft.m;
   unsigned int p=fft.p;
+  unsigned int q=fft.q;
   unsigned int n=fft.n;
-  for(unsigned int s=0; s < m; ++s) {
-    for(unsigned int t=0; t < p; ++t) {
-      for(unsigned int r=0; r < n; ++r) {
-        error += abs2(F[m*(p*r+t)+s]-F2[i]);
-        norm += abs2(F2[i]);
-        ++i;
+
+  if(p == q) {
+    for(unsigned int k=0; k < N; ++k) {
+      error += abs2(F[i]-F2[i]);
+      norm += abs2(F2[i]);
+      ++i;
+    }
+  } else {
+    for(unsigned int s=0; s < m; ++s) {
+      for(unsigned int t=0; t < p; ++t) {
+        for(unsigned int r=0; r < n; ++r) {
+          error += abs2(F[m*(p*r+t)+s]-F2[i]);
+          norm += abs2(F2[i]);
+          ++i;
+        }
       }
     }
   }
