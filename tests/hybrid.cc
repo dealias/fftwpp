@@ -157,7 +157,7 @@ public:
       b=m*d;
 
       D=Q % DOption == 0 ? DOption : 1;
-      if(D > 1) cout << "D=" << D << endl;
+//      if(D > 1) cout << "D=" << D << endl;
       d *= D;
 
       ifftm=new mfft1d(m,-1,d, 1,1, m,m, G,G);
@@ -320,9 +320,8 @@ public:
       return;
     }
 
-    unsigned int mp=m*p;
     for(unsigned int d=0; d < D; ++d) {
-      Complex *F=F0+mp*d;
+      Complex *F=F0+b*d;
       unsigned int r=r0+d;
       if(innerFFT) {
         if(r == 0) {
@@ -441,9 +440,8 @@ public:
 
     ifftm->fft(F0);
 
-    unsigned int mp=m*p;
     for(unsigned int d=0; d < D; ++d) {
-      Complex *F=F0+mp*d;
+      Complex *F=F0+b*d;
       unsigned int r=r0+d;
 
       if(innerFFT) {
