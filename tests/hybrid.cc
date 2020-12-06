@@ -2,7 +2,8 @@
 // Support out-of-place transforms?
 // Can user request allowing overlap of input and output arrays,
 // for possibly reduced performance?
-// Speed up optimization: only consider divisors p of q.
+// Optimize over D.
+// Remove p > 1 direct sum code.
 
 #include <cfloat>
 #include <climits>
@@ -202,8 +203,10 @@ public:
     void check(unsigned int L, unsigned int M,
                unsigned int m, bool fixed=false) {
       unsigned int p=ceilquotient(L,m);
-//      if(p > 1) return;
       unsigned int q=ceilquotient(M,m);
+
+      if(q % p != 0) return;
+
 //      cout << "m=" << m << endl;
 //      cout << "q=" << q << endl;
 
