@@ -115,16 +115,15 @@ protected:
   Complex *Zetaqm;
   utils::statistics S;
   bool innerFFT;
-  bool modular;
+  bool Explicit;
 public:
 
   void init() {
-    if(p != q) modular=true;
+    if(p != q) Explicit=false;
     if(m > M) M=m;
-    if(!modular) {
+    if(Explicit) {
       fftM=new fft1d(M,1);
       ifftM=new fft1d(M,-1);
-      D=1;
     } else {
       unsigned int N=m*q;
       n=q/p;
@@ -174,13 +173,13 @@ public:
 
   // Compute an fft padded to N=m*q >= M >= L=f.length
   FFTpad(unsigned int L, unsigned int M,
-         unsigned int m, unsigned int q) :
-    L(L), M(M), m(m), p(ceilquotient(L,m)), q(q), modular(true) {
+         unsigned int m, unsigned int q, bool Explicit=false) :
+    L(L), M(M), m(m), p(ceilquotient(L,m)), q(q), Explicit(Explicit) {
     init();
   }
 
   ~FFTpad() {
-    if(!modular) {
+    if(Explicit) {
       delete fftM;
       delete ifftM;
     } else {
@@ -281,8 +280,8 @@ public:
   // Normal entry point.
   // Compute an fft of length L padded to at least M
   // (or exactly M if fixed=true)
-  FFTpad(unsigned int L, unsigned int M, bool fixed=false,
-         bool Explicit=false) : L(L), M(M), modular(!Explicit) {
+  FFTpad(unsigned int L, unsigned int M, bool Explicit=false, bool fixed=false) :
+    L(L), M(M), Explicit(Explicit) {
     Opt opt=Opt(L,M,fixed,Explicit);
     m=opt.m;
     if(Explicit) this->M=M=m;
@@ -293,8 +292,12 @@ public:
 
   // TODO: Check for cases when arrays f and F must be distinct
   void forward(Complex *f, Complex *F) {
-    if(!modular) {
-      forward(f,F,0);
+    if(Explicit) {
+      for(unsigned int i=0; i < L; ++i)
+        F[i]=f[i];
+      for(unsigned int i=L; i < M; ++i)
+        F[i]=0.0;
+      fftM->fft(F);
     } else {
       for(unsigned int r=0; r < Q; r += D)
         forward(f,F+b*r,r);
@@ -302,24 +305,17 @@ public:
   }
 
   void backward(Complex *F, Complex *f) {
-    if(!modular) {
-      backward(F,f,0);
+    if(Explicit) {
+      ifftM->fft(F);
+      for(unsigned int i=0; i < L; ++i)
+        f[i]=F[i];
     } else {
       for(unsigned int r=0; r < Q; r += D)
-          backward(F+b*r,f,r);
+        backward(F+b*r,f,r);
     }
   }
 
   void forward(Complex *f, Complex *F0, unsigned int r0) {
-    if(!modular) {
-      for(unsigned int i=0; i < L; ++i)
-        F0[i]=f[i];
-      for(unsigned int i=L; i < M; ++i)
-        F0[i]=0.0;
-      fftM->fft(F0);
-      return;
-    }
-
     for(unsigned int d=0; d < D; ++d) {
       Complex *F=F0+b*d;
       unsigned int r=r0+d;
@@ -424,20 +420,12 @@ public:
 
 // Compute an inverse fft of length N=q*m unpadded back
 // to size p*m >= L.
+//    if(F0 == f) {
+//      cerr << "input and output arrays must be distinct"
+//           << endl;
+//    }
   // Input F destroyed
   void backward(Complex *F0, Complex *f, unsigned int r0) {
-    if(!modular) {
-      ifftM->fft(F0);
-      for(unsigned int i=0; i < L; ++i)
-        f[i]=F0[i];
-      return;
-    }
-
-    if(F0 == f) {
-      cerr << "input and output arrays must be distinct"
-           << endl;
-    }
-
     ifftm->fft(F0);
 
     for(unsigned int d=0; d < D; ++d) {
@@ -522,16 +510,17 @@ public:
       }
     }
   }
+
   unsigned int inverseLength() {
-    return modular ? m*p : L;
+    return Explicit ? L : m*p;
   }
 
   unsigned int length() {
-    return modular ? m*q : M;
+    return Explicit ? M : m*q;
   }
 
   unsigned int blocksize() {
-    return modular ? b*D : m*q;
+    return Explicit ? M : b*D;
   }
 
   double meantime(double *Stdev=NULL) {
@@ -549,7 +538,7 @@ public:
     }
 
      // Create wisdom
-    if(!modular) {
+    if(Explicit) {
       forward(f,F);
       backward(F,f);
     } else {
@@ -565,21 +554,22 @@ public:
 
     for(;;) {
       double t0,t;
-      if(!modular) {
+      if(Explicit) {
         t0=totalseconds();
         for(unsigned int i=0; i < K; ++i) {
-          /*
-    for(unsigned int j=0; j < L; ++j) {
-      f[j]=Complex(j,j+1);
-      g[j]=Complex(j,2*j+1);
-      }*/
 
-          forward(f,F,0);
-          forward(g,G,0);
+          /*
+          for(unsigned int j=0; j < L; ++j) {
+            f[j]=Complex(j,j+1);
+            g[j]=Complex(j,2*j+1);
+          }
+          */
+          forward(f,F);
+          forward(g,G);
           for(unsigned int i=0; i < N; ++i)
             F[i] *= G[i];
 //          multbinary(F,G,N);
-          backward(F,f,0);
+          backward(F,f);
           for(unsigned int i=0; i < L; ++i)
             f[i] *= scale;
         }
@@ -597,7 +587,7 @@ public:
           for(unsigned int r=0; r < Q; r += D) {
             forward(f,F,r);
             forward(g,G,r);
-//            multbinary(F,G,m);
+//            multbinary(F,G,b);
             for(unsigned int i=0; i < b; ++i)
               F[i] *= G[i];
 //            backward(F,h,r);
@@ -620,8 +610,10 @@ public:
         S.clear();
       } else {
         if(Stdev) *Stdev=stdev/K;
-//        for(unsigned int i=0; i < L; ++i)
-//          cout << f[i] << endl;
+        /*
+        for(unsigned int i=0; i < L; ++i)
+          cout << f[i] << endl;
+        */
 
         deleteAlign(F);
         deleteAlign(f);
@@ -765,11 +757,11 @@ int main(int argc, char* argv[])
   cout << "M=" << M << endl;
 
   // Minimal explicit padding
-  FFTpad fft0(L,M,M,1);
+  FFTpad fft0(L,M,M,1,true);
   double mean0=report(fft0);
 
   // Optimal explicit padding
-  FFTpad fft1(L,M,false,true);
+  FFTpad fft1(L,M,true,false);
   double mean1=report(fft1);
 
   // Hybrid padding
