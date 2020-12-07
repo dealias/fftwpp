@@ -1,5 +1,4 @@
 // TODO:
-// Support out-of-place transforms?
 // Can user request allowing overlap of input and output arrays,
 // for possibly reduced performance?
 // Support arbitrary D?
