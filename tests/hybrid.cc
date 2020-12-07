@@ -2,7 +2,6 @@
 // Can user request allowing overlap of input and output arrays,
 // for possibly reduced performance?
 // Support arbitrary D?
-// Remove p > 1 direct sum code.
 
 #include <cfloat>
 #include <climits>
@@ -400,48 +399,19 @@ public:
       for(unsigned int d=0; d < D; ++d) {
         Complex *F=W+b*d;
         unsigned int r=r0+d;
-        // Direct sum:
         unsigned int stop=min(m,L);
-        if(p == 1) {
-          if(r == 0) {
-            for(unsigned int i=0; i < L; ++i)
-              F[i]=f[i];
-            for(unsigned int i=L; i < m; ++i)
-              F[i]=0.0;
-          } else {
-            F[0]=f[0];
-            Complex *Zetar=Zetaqm+m*r-r;
-            for(unsigned int s=1; s < stop; ++s)
-              F[s]=Zetar[s]*f[s];
-            for(unsigned int s=stop; s < m; ++s)
-              F[s]=0.0;
-          }
+        if(r == 0) {
+          for(unsigned int i=0; i < L; ++i)
+            F[i]=f[i];
+          for(unsigned int i=L; i < m; ++i)
+            F[i]=0.0;
         } else {
-          if(r == 0) {
-            for(unsigned int s=0; s < m; ++s) {
-              Complex sum=0.0;
-              for(unsigned int t=s; t < L; t += m)
-                sum += f[t];
-              F[s]=sum;
-            }
-          } else {
-            Complex *Zetamr=Zetaqm+m*r-r;
-            Complex *Zetar=Zetaqp+p*r-r;
-            Complex sum=f[0];
-            for(unsigned int t=1; m*t < L; ++t)
-              sum += Zetar[t]*f[m*t];
-            F[0]=sum;
-            for(unsigned int s=1; s < stop; ++s) {
-              Complex *fs=f+s;
-              Complex sum=fs[0];
-              unsigned int stop=L-s;
-              for(unsigned int t=1; m*t < stop; ++t)
-                sum += Zetar[t]*fs[m*t];
-              F[s]=sum*Zetamr[s];
-            }
-            for(unsigned int s=stop; s < m; ++s)
-              F[s]=0.0;
-          }
+          F[0]=f[0];
+          Complex *Zetar=Zetaqm+m*r-r;
+          for(unsigned int s=1; s < stop; ++s)
+            F[s]=Zetar[s]*f[s];
+          for(unsigned int s=stop; s < m; ++s)
+            F[s]=0.0;
         }
       }
     }
@@ -504,7 +474,6 @@ public:
       for(unsigned int d=0; d < D; ++d) {
         Complex *F=W+b*d;
         unsigned int r=r0+d;
-        // Direct sum:
         if(p == 1) {
           if(r == 0) {
             for(unsigned int s=0; s < m; ++s)
@@ -514,29 +483,6 @@ public:
             Complex *Zetamr=Zetaqm+m*r-r;
             for(unsigned int s=1; s < m; ++s)
               f[s] += F[s]*conj(Zetamr[s]);
-          }
-        } else {
-          if(r == 0) {
-            for(unsigned int s=0; s < m; ++s) {
-              Complex Fs=F[s];
-              Complex *fs=f+s;
-              for(unsigned int t=0; t < p; ++t)
-                fs[m*t]=Fs;
-            }
-          } else {
-            Complex F0=F[0];
-            f[0] += F0;
-            Complex *Zetamr=Zetaqm+m*r-r;
-            Complex *Zetar=Zetaqp+p*r-r;
-            for(unsigned int t=1; t < p; ++t)
-              f[m*t] += conj(Zetar[t])*F0;
-            for(unsigned int s=1; s < m; ++s) {
-              Complex Fs=F[s]*conj(Zetamr[s]);
-              Complex *fs=f+s;
-              fs[0] += Fs;
-              for(unsigned int t=1; t < p; ++t)
-                fs[m*t] += conj(Zetar[t])*Fs;
-            }
           }
         }
       }
