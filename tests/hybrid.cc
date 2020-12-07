@@ -133,14 +133,6 @@ public:
       if(innerFFT) {
         d=p;
         Q=n;
-//      L'=p, M'=q, m'=p, p'=1, q'=n
-        Complex *G=ComplexAlign(m*p);
-
-        fftp=new mfft1d(p,1,m, m,m, 1,1, G,G);
-        ifftp=new mfft1d(p,-1,m, m,m, 1,1, G,G);
-
-        deleteAlign(G);
-
         Zetaqp=ComplexAlign((n-1)*(p-1))-p;
         double twopibyq=twopi/q;
         for(unsigned int r=1; r < n; ++r)
@@ -161,6 +153,11 @@ public:
 
       Complex *G=ComplexAlign(m*d);
       Complex *H=ComplexAlign(m*d);
+
+      if(innerFFT) {// L'=p, M'=q, m'=p, p'=1, q'=n
+        fftp=new mfft1d(p,1,m, m,m, 1,1, G,G);
+        ifftp=new mfft1d(p,-1,m, m,m, 1,1, G,G);
+      }
 
       ifftm=new mfft1d(m,-1,d, 1,1, m,m, G,H);
       fftm=new mfft1d(m,1,d, 1,1, m,m, G,H);
