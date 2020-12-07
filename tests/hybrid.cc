@@ -122,7 +122,7 @@ public:
     p=ceilquotient(L,m);
     n=q/p;
     if(m > M) M=m;
-    if(p == q) {
+    if(q == 1) {
       fftM=new fft1d(M,1);
       ifftM=new fft1d(M,-1);
     } else {
@@ -185,7 +185,7 @@ public:
   }
 
   ~FFTpad() {
-    if(p == q) {
+    if(q == 1) {
       delete fftM;
       delete ifftM;
     } else {
@@ -210,7 +210,7 @@ public:
       unsigned int p=ceilquotient(L,m);
       unsigned int q=ceilquotient(M,m);
 
-      if(q % p != 0) return;
+      if(q % p != 0 || (p == q && p > 1)) return;
 
       if(!fixed) {
         unsigned int n=ceilquotient(M,m*p);
@@ -321,7 +321,7 @@ public:
 
   // TODO: Check for cases when arrays f and F must be distinct
   void forward(Complex *f, Complex *F) {
-    if(p == q) {
+    if(q == 1) {
       for(unsigned int i=0; i < L; ++i)
         F[i]=f[i];
       for(unsigned int i=L; i < M; ++i)
@@ -334,7 +334,7 @@ public:
   }
 
   void backward(Complex *F, Complex *f) {
-    if(p == q) {
+    if(q == 1) {
       ifftM->fft(F);
       for(unsigned int i=0; i < L; ++i)
         f[i]=F[i];
@@ -544,15 +544,15 @@ public:
   }
 
   unsigned int inverseLength() {
-    return p == q ? L : m*p;
+    return q == 1 ? L : m*p;
   }
 
   unsigned int length() {
-    return p == q ? M : m*q;
+    return q == 1 ? M : m*q;
   }
 
   unsigned int blocksize() {
-    return p == q ? M : b*D;
+    return q == 1 ? M : b*D;
   }
 
   double meantime(double *Stdev=NULL) {
@@ -571,7 +571,7 @@ public:
     }
 
      // Create wisdom
-    if(p == q) {
+    if(q == 1) {
       forward(f,F);
       backward(F,f);
     } else {
@@ -587,7 +587,7 @@ public:
 
     for(;;) {
       double t0,t;
-      if(p == q) {
+      if(q == 1) {
         t0=totalseconds();
         for(unsigned int i=0; i < K; ++i) {
 
@@ -853,7 +853,7 @@ int main(int argc, char* argv[])
   unsigned int q=fft.q;
   unsigned int n=fft.n;
 
-  if(p == q) {
+  if(q == 1) {
     for(unsigned int k=0; k < N; ++k) {
       error += abs2(F[i]-F2[i]);
       norm += abs2(F2[i]);
