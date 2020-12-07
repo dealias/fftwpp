@@ -129,8 +129,6 @@ public:
     } else {
       unsigned int N=m*q;
       double twopibyN=twopi/N;
-      Complex *G=ComplexAlign(N); // Fix memory allocation
-      Complex *H=ComplexAlign(N);
       innerFFT=p > 1 && n*p == q;
 
       unsigned int d;
@@ -138,8 +136,12 @@ public:
         d=p;
         Q=n;
 //      L'=p, M'=q, m'=p, p'=1, q'=n
+        Complex *G=ComplexAlign(m*p);
+
         fftp=new mfft1d(p,1,m, m,m, 1,1, G,G);
         ifftp=new mfft1d(p,-1,m, m,m, 1,1, G,G);
+
+        deleteAlign(G);
 
         Zetaqp=ComplexAlign((n-1)*(p-1))-p;
         double twopibyq=twopi/q;
@@ -159,16 +161,20 @@ public:
       D=Q % D == 0 ? D : 1;
       d *= D;
 
+      Complex *G=ComplexAlign(m*d);
+      Complex *H=ComplexAlign(m*d);
+
       ifftm=new mfft1d(m,-1,d, 1,1, m,m, G,H);
       fftm=new mfft1d(m,1,d, 1,1, m,m, G,H);
+
+      deleteAlign(H);
+      deleteAlign(G);
 
       Zetaqm=ComplexAlign((q-1)*(m-1))-m;
       for(unsigned int r=1; r < q; ++r)
         for(unsigned int s=1; s < m; ++s)
           Zetaqm[m*r-r+s]=expi(r*s*twopibyN);
 
-      deleteAlign(H);
-      deleteAlign(G);
     }
   }
 
@@ -344,21 +350,21 @@ public:
       if(r0 == 0) {
         for(unsigned int t=0; m*t < L; ++t) {
           unsigned int mt=m*t;
-          Complex *Frt=W+mt;
+          Complex *Ft=W+mt;
           Complex *ft=f+mt;
           unsigned int stop=min(L-mt,m);
           for(unsigned int s=0; s < stop; ++s)
-            Frt[s]=ft[s];
+            Ft[s]=ft[s];
           for(unsigned int s=stop; s < m; ++s)
-            Frt[s]=0.0;
+            Ft[s]=0.0;
         }
         fftp->fft(W);
         for(unsigned int t=1; t < p; ++t) {
           unsigned int R=n*t;
-          Complex *Frt=W+m*t;
+          Complex *Ft=W+m*t;
           Complex *Zetar=Zetaqm+m*R-R;
           for(unsigned int s=1; s < m; ++s)
-            Frt[s] *= Zetar[s];
+            Ft[s] *= Zetar[s];
         }
       }
 
@@ -443,8 +449,8 @@ public:
     fftm->fft(W,F0);
   }
 
-// Compute an inverse fft of length N=q*m unpadded back
-// to size p*m >= L.
+// Compute an inverse fft of length N=m*q unpadded back
+// to size m*p >= L.
 //    if(F0 == f) {
 //      cerr << "input and output arrays must be distinct"
 //           << endl;
