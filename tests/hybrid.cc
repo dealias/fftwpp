@@ -1,8 +1,8 @@
 // TODO:
-// Add remainder argument to forward and backwward.
-// Support out-of-place transforms?
 // Can user request allowing overlap of input and output arrays,
 // for possibly reduced performance?
+// Support arbitrary D?
+// Remove p > 1 direct sum code.
 
 #include <cfloat>
 #include <climits>
@@ -23,9 +23,11 @@ const Complex iG(sqrt(5.0),sqrt(11.0));
 bool Test=false;
 
 unsigned int mOption=0;
+unsigned int DOption=0;
 
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
+
 
 unsigned int surplusFFTsizes=25;
 
@@ -73,6 +75,27 @@ unsigned int nextfftsize(unsigned int m)
   return N;
 }
 
+// This multiplication routine is for binary convolutions and takes two inputs
+// of size m.
+// F0[j] *= F1[j];
+void multbinary(Complex *F0, Complex *F1,unsigned int m,
+                unsigned int threads=1)
+{
+#ifdef __SSE2__
+  PARALLEL(
+    for(unsigned int j=0; j < m; ++j) {
+      Complex *p=F0+j;
+      STORE(p,ZMULT(LOAD(p),LOAD(F1+j)));
+    }
+    );
+#else
+  PARALLEL(
+    for(unsigned int j=0; j < m; ++j)
+      F0[jg] *= F1[j];
+    );
+#endif
+}
+
 class FFTpad {
 public:
   unsigned int L;
@@ -81,6 +104,10 @@ public:
   unsigned int p;
   unsigned int q;
   unsigned int n;
+  unsigned int Q;
+  unsigned int D;
+  unsigned int b; // blocksize
+  static Complex *W0;
 protected:
   fft1d *fftM,*ifftM;
   mfft1d *fftm,*ifftm;
@@ -89,26 +116,31 @@ protected:
   Complex *Zetaqm;
   utils::statistics S;
   bool innerFFT;
-  bool modular;
 public:
 
   void init() {
-    if(p != q) modular=true;
+    p=ceilquotient(L,m);
+    n=q/p;
     if(m > M) M=m;
-    if(!modular) {
+    if(q == 1) {
       fftM=new fft1d(M,1);
       ifftM=new fft1d(M,-1);
     } else {
       unsigned int N=m*q;
-      n=q/p;
       double twopibyN=twopi/N;
-      Complex *G=ComplexAlign(N);
       innerFFT=p > 1 && n*p == q;
+
+      unsigned int d;
       if(innerFFT) {
-//      p->L, M->q, m->p, q->n
-        unsigned int s=n*m;
-        fftp=new mfft1d(p,1,m, s,s, 1,1, G,G);
-        ifftp=new mfft1d(p,-1,m, s,s, 1,1, G,G);
+        d=p;
+        Q=n;
+//      L'=p, M'=q, m'=p, p'=1, q'=n
+        Complex *G=ComplexAlign(m*p);
+
+        fftp=new mfft1d(p,1,m, m,m, 1,1, G,G);
+        ifftp=new mfft1d(p,-1,m, m,m, 1,1, G,G);
+
+        deleteAlign(G);
 
         Zetaqp=ComplexAlign((n-1)*(p-1))-p;
         double twopibyq=twopi/q;
@@ -116,33 +148,44 @@ public:
           for(unsigned int t=1; t < p; ++t)
             Zetaqp[p*r-r+t]=expi(r*t*twopibyq);
       } else {
+        d=1;
+        Q=q;
         Zetaqp=ComplexAlign((q-1)*(p-1))-p;
         for(unsigned int r=1; r < q; ++r)
           for(unsigned int t=1; t < p; ++t)
             Zetaqp[p*r-r+t]=expi((m*r*t % N)*twopibyN);
       }
 
-      ifftm=new mfft1d(m,-1,q, 1,1, m,m, G,G);
-      fftm=new mfft1d(m,1,q, 1,1, m,m, G,G);
+      b=m*d;
+      D=Q % D == 0 ? D : 1;
+      d *= D;
+
+      Complex *G=ComplexAlign(m*d);
+      Complex *H=ComplexAlign(m*d);
+
+      ifftm=new mfft1d(m,-1,d, 1,1, m,m, G,H);
+      fftm=new mfft1d(m,1,d, 1,1, m,m, G,H);
+
+      deleteAlign(H);
+      deleteAlign(G);
 
       Zetaqm=ComplexAlign((q-1)*(m-1))-m;
       for(unsigned int r=1; r < q; ++r)
         for(unsigned int s=1; s < m; ++s)
           Zetaqm[m*r-r+s]=expi(r*s*twopibyN);
 
-      deleteAlign(G);
     }
   }
 
   // Compute an fft padded to N=m*q >= M >= L=f.length
   FFTpad(unsigned int L, unsigned int M,
-         unsigned int m, unsigned int q) :
-    L(L), M(M), m(m), p(ceilquotient(L,m)), q(q), modular(true) {
+         unsigned int m, unsigned int q, unsigned int D) :
+    L(L), M(M), m(m), p(ceilquotient(L,m)), q(q), D(D) {
     init();
   }
 
   ~FFTpad() {
-    if(!modular) {
+    if(q == 1) {
       delete fftM;
       delete ifftM;
     } else {
@@ -159,51 +202,73 @@ public:
 
   class Opt {
   public:
-    unsigned int m,q;
+    unsigned int m,q,D;
     double T;
 
     void check(unsigned int L, unsigned int M,
                unsigned int m, bool fixed=false) {
-//      cout << "m=" << m << endl;
       unsigned int p=ceilquotient(L,m);
       unsigned int q=ceilquotient(M,m);
-//      cout << "q=" << q << endl;
+
+      if(q % p != 0 || (p == q && p > 1)) return;
 
       if(!fixed) {
-        unsigned int q2=p*ceilquotient(M,m*p);
+        unsigned int n=ceilquotient(M,m*p);
+        unsigned int q2=p*n;
         if(q2 != q) {
+          unsigned int start=DOption > 0 ? DOption : 1;
+          unsigned int stop=DOption > 0 ? DOption : n;
+          if(fixed) start=stop=1;
+          for(unsigned int D=start; D <= stop; ++D) {
 //            cout << "q2=" << q2 << endl;
-          FFTpad fft(L,M,m,q2);
-          double t=fft.meantime();
-          if(t < T) {
-            this->m=m;
-            this->q=q2;
-            T=t;
+            if(n % D != 0) continue;
+//            cout << "D=" << D << endl;
+
+            FFTpad fft(L,M,m,q2,D);
+            double t=fft.meantime();
+            if(t < T) {
+              this->m=m;
+              this->q=q2;
+              this->D=D;
+              T=t;
+            }
           }
         }
       }
 
-      FFTpad fft(L,M,m,q);
-      double t=fft.meantime();
+      unsigned int n=q/p;
+      bool innerFFT=p > 1 && n*p == q;
+      unsigned int Q=innerFFT ? n : q;
+      unsigned int start=DOption > 0 ? DOption : 1;
+      unsigned int stop=DOption > 0 ? DOption : Q;
+      if(fixed) start=stop=1;
+      for(unsigned int D=start; D <= stop; ++D) {
+        if(Q % D != 0) continue;
+//        cout << "D=" << D << " " << Q << endl;
+        FFTpad fft(L,M,m,q,D);
+        double t=fft.meantime();
 
-      if(t < T) {
-        this->m=m;
-        this->q=q;
-        T=t;
+        if(t < T) {
+          this->m=m;
+          this->q=q;
+          this->D=D;
+          T=t;
+        }
       }
     }
 
     // Determine optimal m,q values for padding L data values to
     // size >= M
     // If fixed=true then an FFT of size M is enforced.
-    Opt(unsigned int L, unsigned int M, bool fixed=false, bool Explicit=false)
+    Opt(unsigned int L, unsigned int M, bool Explicit=false, bool fixed=false)
     {
       if(L > M) {
         cerr << "L=" << L << " is greater than M=" << M << "." << endl;
         exit(-1);
       }
-      m=1;
-      q=M;
+      m=M;
+      q=1;
+      D=1;
       T=DBL_MAX;
       unsigned int i=0;
 
@@ -235,6 +300,7 @@ public:
       cout << "m=" << m << endl;
       cout << "p=" << p << endl;
       cout << "q=" << q << endl;
+      cout << "D=" << D << endl;
       cout << "Padding:" << m*p-L << endl;
     }
   };
@@ -242,200 +308,235 @@ public:
   // Normal entry point.
   // Compute an fft of length L padded to at least M
   // (or exactly M if fixed=true)
-  FFTpad(unsigned int L, unsigned int M, bool fixed=false,
-         bool Explicit=false) : L(L), M(M), modular(!Explicit) {
-    Opt opt=Opt(L,M,fixed,Explicit);
+  FFTpad(unsigned int L, unsigned int M, bool Explicit=false, bool fixed=false) :
+    L(L), M(M) {
+    Opt opt=Opt(L,M,Explicit,fixed);
     m=opt.m;
     if(Explicit) this->M=M=m;
-    p=ceilquotient(L,m);
+    p=ceilquotient(L,M);
     q=opt.q;
+    D=opt.D;
     init();
   }
 
   // TODO: Check for cases when arrays f and F must be distinct
   void forward(Complex *f, Complex *F) {
-    if(!modular) {
+    if(q == 1) {
       for(unsigned int i=0; i < L; ++i)
         F[i]=f[i];
       for(unsigned int i=L; i < M; ++i)
         F[i]=0.0;
       fftM->fft(F);
-      return;
+    } else {
+      for(unsigned int r=0; r < Q; r += D)
+        forward(f,F+b*r,r);
     }
+  }
 
+  void backward(Complex *F, Complex *f) {
+    if(q == 1) {
+      ifftM->fft(F);
+      for(unsigned int i=0; i < L; ++i)
+        f[i]=F[i];
+    } else {
+      for(unsigned int r=0; r < Q; r += D)
+        backward(F+b*r,f,r);
+    }
+  }
+
+  void forward(Complex *f, Complex *F0, unsigned int r0, Complex *W=W0) {
     if(innerFFT) {
-      for(unsigned int t=0; m*t < L; ++t) {
-        unsigned int mt=m*t;
-        Complex *Ft=F+n*mt;
-        Complex *ft=f+mt;
-        unsigned int stop=min(L-mt,m);
-        for(unsigned int s=0; s < stop; ++s)
-          Ft[s]=ft[s];
-        for(unsigned int s=stop; s < m; ++s)
-          Ft[s]=0.0;
+      if(r0 == 0) {
+        for(unsigned int t=0; m*t < L; ++t) {
+          unsigned int mt=m*t;
+          Complex *Ft=W+mt;
+          Complex *ft=f+mt;
+          unsigned int stop=min(L-mt,m);
+          for(unsigned int s=0; s < stop; ++s)
+            Ft[s]=ft[s];
+          for(unsigned int s=stop; s < m; ++s)
+            Ft[s]=0.0;
+        }
+        fftp->fft(W);
+        for(unsigned int t=1; t < p; ++t) {
+          unsigned int R=n*t;
+          Complex *Ft=W+m*t;
+          Complex *Zetar=Zetaqm+m*R-R;
+          for(unsigned int s=1; s < m; ++s)
+            Ft[s] *= Zetar[s];
+        }
       }
-      fftp->fft(F);
 
-      for(unsigned int r=1; r < n; ++r) {
-        Complex *Fr=F+m*r;
+      for(unsigned int d=r0 == 0; d < D; ++d) {
+        Complex *F=W+b*d;
+        unsigned int r=r0+d;
         unsigned int stop=min(L,m);
         for(unsigned int s=0; s < stop; ++s)
-          Fr[s]=f[s];
+          F[s]=f[s];
         for(unsigned int s=stop; s < m; ++s)
-          Fr[s]=0.0;
+          F[s]=0.0;
         Complex *Zetaqr=Zetaqp+p*r-r;
         for(unsigned int t=1; m*t < L; ++t) {
           unsigned int mt=m*t;
-          Complex *Frt=Fr+n*mt;
+          Complex *Ft=F+mt;
           Complex *ft=f+mt;
           unsigned int stop=min(L-mt,m);
           Complex Zeta=Zetaqr[t];
           for(unsigned int s=0; s < stop; ++s)
-            Frt[s]=Zeta*ft[s];
+            Ft[s]=Zeta*ft[s];
           for(unsigned int s=stop; s < m; ++s)
-            Frt[s]=0.0;
+            Ft[s]=0.0;
         }
-        fftp->fft(Fr);
+        fftp->fft(F);
+        for(unsigned int t=0; t < p; ++t) {
+          unsigned int R=n*t+r;
+          Complex *Ft=F+m*t;
+          Complex *Zetar=Zetaqm+m*R-R;
+          for(unsigned int s=1; s < m; ++s)
+            Ft[s] *= Zetar[s];
+        }
       }
-
-      for(unsigned int r=1; r < q; ++r) {
-        Complex *Fr=F+m*r;
-        Complex *Zetar=Zetaqm+m*r-r;
-        for(unsigned int s=1; s < m; ++s)
-          Fr[s] *= Zetar[s];
-      }
-
     } else {
-      unsigned int stop=min(m,L);
-      if(p == 1) {
-        for(unsigned int i=0; i < L; ++i)
-          F[i]=f[i];
-        for(unsigned int i=L; i < m; ++i)
-          F[i]=0.0;
-        for(unsigned int r=1; r < q; ++r) {
-          Complex *Fr=F+m*r;
-          Fr[0]=f[0];
-          Complex *Zetar=Zetaqm+m*r-r;
-          for(unsigned int s=1; s < stop; ++s)
-            Fr[s]=Zetar[s]*f[s];
-          for(unsigned int s=stop; s < m; ++s)
-            Fr[s]=0.0;
-        }
-      } else {
-        for(unsigned int s=0; s < m; ++s) {
-          Complex sum=0.0;
-          for(unsigned int t=s; t < L; t += m)
-            sum += f[t];
-          F[s]=sum;
-        }
-        for(unsigned int r=1; r < q; ++r) {
-          Complex *Fr=F+m*r;
-          Complex *Zetamr=Zetaqm+m*r-r;
-          Complex *Zetar=Zetaqp+p*r-r;
-          Complex sum=f[0];
-          for(unsigned int t=1; m*t < L; ++t)
-            sum += Zetar[t]*f[m*t];
-          Fr[0]=sum;
-          for(unsigned int s=1; s < stop; ++s) {
-            Complex *fs=f+s;
-            Complex sum=fs[0];
-            unsigned int stop=L-s;
-            for(unsigned int t=1; m*t < stop; ++t)
-              sum += Zetar[t]*fs[m*t];
-            Fr[s]=sum*Zetamr[s];
+      for(unsigned int d=0; d < D; ++d) {
+        Complex *F=W+b*d;
+        unsigned int r=r0+d;
+        // Direct sum:
+        unsigned int stop=min(m,L);
+        if(p == 1) {
+          if(r == 0) {
+            for(unsigned int i=0; i < L; ++i)
+              F[i]=f[i];
+            for(unsigned int i=L; i < m; ++i)
+              F[i]=0.0;
+          } else {
+            F[0]=f[0];
+            Complex *Zetar=Zetaqm+m*r-r;
+            for(unsigned int s=1; s < stop; ++s)
+              F[s]=Zetar[s]*f[s];
+            for(unsigned int s=stop; s < m; ++s)
+              F[s]=0.0;
           }
-          for(unsigned int s=stop; s < m; ++s)
-            Fr[s]=0.0;
+        } else {
+          if(r == 0) {
+            for(unsigned int s=0; s < m; ++s) {
+              Complex sum=0.0;
+              for(unsigned int t=s; t < L; t += m)
+                sum += f[t];
+              F[s]=sum;
+            }
+          } else {
+            Complex *Zetamr=Zetaqm+m*r-r;
+            Complex *Zetar=Zetaqp+p*r-r;
+            Complex sum=f[0];
+            for(unsigned int t=1; m*t < L; ++t)
+              sum += Zetar[t]*f[m*t];
+            F[0]=sum;
+            for(unsigned int s=1; s < stop; ++s) {
+              Complex *fs=f+s;
+              Complex sum=fs[0];
+              unsigned int stop=L-s;
+              for(unsigned int t=1; m*t < stop; ++t)
+                sum += Zetar[t]*fs[m*t];
+              F[s]=sum*Zetamr[s];
+            }
+            for(unsigned int s=stop; s < m; ++s)
+              F[s]=0.0;
+          }
         }
       }
     }
-
-    fftm->fft(F);
+    fftm->fft(W,F0);
   }
 
-// Compute an inverse fft of length N=q*m unpadded back
-// to size p*m >= L.
+// Compute an inverse fft of length N=m*q unpadded back
+// to size m*p >= L.
+//    if(F0 == f) {
+//      cerr << "input and output arrays must be distinct"
+//           << endl;
+//    }
   // Input F destroyed
-  void backward(Complex *F, Complex *f) {
-    if(!modular) {
-      ifftM->fft(F);
-      for(unsigned int i=0; i < L; ++i)
-        f[i]=F[i];
-      return;
-    }
-
-    if(F == f) {
-      cerr << "input and output arrays must be distinct"
-           << endl;
-    }
-
-    ifftm->fft(F);
+  void backward(Complex *F0, Complex *f, unsigned int r0, Complex *W=W0) {
+    ifftm->fft(F0,W);
 
     if(innerFFT) {
-      for(unsigned int r=1; r < q; ++r) {
-        Complex *Fr=F+m*r;
-        Complex *Zetar=Zetaqm+m*r-r;
-        for(unsigned int s=1; s < m; ++s) {
-          Fr[s] *= conj(Zetar[s]);
+      if(r0 == 0) {
+        for(unsigned int t=1; t < p; ++t) {
+          unsigned int R=n*t;
+          Complex *Ft=W+m*t;
+          Complex *Zetar=Zetaqm+m*R-R;
+          for(unsigned int s=1; s < m; ++s)
+            Ft[s] *= conj(Zetar[s]);
+        }
+        ifftp->fft(W);
+        for(unsigned int t=0; t < p; ++t) {
+          unsigned int mt=m*t;
+          Complex *Ft=W+mt;
+          Complex *ft=f+mt;
+          for(unsigned int s=0; s < m; ++s)
+            ft[s]=Ft[s];
         }
       }
 
-      ifftp->fft(F);
-      for(unsigned int t=0; t < p; ++t) {
-        unsigned int mt=m*t;
-        Complex *Ft=F+n*mt;
-        Complex *ft=f+mt;
+      for(unsigned int d=r0 == 0; d < D; ++d) {
+        Complex *F=W+b*d;
+        unsigned int r=r0+d;
+        for(unsigned int t=0; t < p; ++t) {
+          unsigned int R=n*t+r;
+          Complex *Ft=F+m*t;
+          Complex *Zetar=Zetaqm+m*R-R;
+          for(unsigned int s=1; s < m; ++s)
+            Ft[s] *= conj(Zetar[s]);
+        }
+        ifftp->fft(F);
         for(unsigned int s=0; s < m; ++s)
-          ft[s]=Ft[s];
-      }
-      for(unsigned int r=1; r < n; ++r) {
-        Complex *Fr=F+m*r;
-        ifftp->fft(Fr);
-        for(unsigned int s=0; s < m; ++s)
-            f[s] += Fr[s];
+          f[s] += F[s];
         Complex *Zetaqr=Zetaqp+p*r-r;
         for(unsigned int t=1; t < p; ++t) {
           unsigned int mt=m*t;
-          Complex *Frt=Fr+n*mt;
+          Complex *Ft=F+mt;
           Complex *ft=f+mt;
           Complex Zeta=conj(Zetaqr[t]);
           for(unsigned int s=0; s < m; ++s)
-            ft[s] += Zeta*Frt[s];
+            ft[s] += Zeta*Ft[s];
         }
       }
     } else {
-      // Direct sum:
-      if(p == 1) {
-        for(unsigned int s=0; s < m; ++s)
-          f[s]=F[s];
-        for(unsigned int r=1; r < q; ++r) {
-          Complex *Fr=F+m*r;
-          f[0] += Fr[0];
-          Complex *Zetamr=Zetaqm+m*r-r;
-          for(unsigned int s=1; s < m; ++s)
-            f[s] += Fr[s]*conj(Zetamr[s]);
-        }
-      } else {
-        for(unsigned int s=0; s < m; ++s) {
-          Complex Fs=F[s];
-          Complex *fs=f+s;
-          for(unsigned int t=0; t < p; ++t)
-            fs[m*t]=Fs;
-        }
-        for(unsigned int r=1; r < q; ++r) {
-          Complex *Fr=F+m*r;
-          Complex Fr0=Fr[0];
-          f[0] += Fr0;
-          Complex *Zetamr=Zetaqm+m*r-r;
-          Complex *Zetar=Zetaqp+p*r-r;
-          for(unsigned int t=1; t < p; ++t)
-            f[m*t] += conj(Zetar[t])*Fr0;
-          for(unsigned int s=1; s < m; ++s) {
-            Complex Frs=Fr[s]*conj(Zetamr[s]);
-            Complex *fs=f+s;
-            fs[0] += Frs;
+      for(unsigned int d=0; d < D; ++d) {
+        Complex *F=W+b*d;
+        unsigned int r=r0+d;
+        // Direct sum:
+        if(p == 1) {
+          if(r == 0) {
+            for(unsigned int s=0; s < m; ++s)
+              f[s]=F[s];
+          } else {
+            f[0] += F[0];
+            Complex *Zetamr=Zetaqm+m*r-r;
+            for(unsigned int s=1; s < m; ++s)
+              f[s] += F[s]*conj(Zetamr[s]);
+          }
+        } else {
+          if(r == 0) {
+            for(unsigned int s=0; s < m; ++s) {
+              Complex Fs=F[s];
+              Complex *fs=f+s;
+              for(unsigned int t=0; t < p; ++t)
+                fs[m*t]=Fs;
+            }
+          } else {
+            Complex F0=F[0];
+            f[0] += F0;
+            Complex *Zetamr=Zetaqm+m*r-r;
+            Complex *Zetar=Zetaqp+p*r-r;
             for(unsigned int t=1; t < p; ++t)
-              fs[m*t] += conj(Zetar[t])*Frs;
+              f[m*t] += conj(Zetar[t])*F0;
+            for(unsigned int s=1; s < m; ++s) {
+              Complex Fs=F[s]*conj(Zetamr[s]);
+              Complex *fs=f+s;
+              fs[0] += Fs;
+              for(unsigned int t=1; t < p; ++t)
+                fs[m*t] += conj(Zetar[t])*Fs;
+            }
           }
         }
       }
@@ -443,64 +544,115 @@ public:
   }
 
   unsigned int inverseLength() {
-    return modular ? m*p : L;
+    return q == 1 ? L : m*p;
   }
 
   unsigned int length() {
-    return modular ? m*q : M;
+    return q == 1 ? M : m*q;
+  }
+
+  unsigned int blocksize() {
+    return q == 1 ? M : b*D;
   }
 
   double meantime(double *Stdev=NULL) {
     S.clear();
-    Complex *F=ComplexAlign(length());
+    Complex *F=ComplexAlign(blocksize());
     Complex *f=ComplexAlign(inverseLength());
-    Complex *G=ComplexAlign(length());
+    Complex *G=ComplexAlign(blocksize());
+    Complex *W=ComplexAlign(blocksize());
     Complex *g=ComplexAlign(inverseLength());
+//    Complex *h=ComplexAlign(inverseLength());
 
 // Assume f != F (out-of-place)
     for(unsigned int j=0; j < L; ++j) {
       f[j]=0.0;
       g[j]=0.0;
     }
-    forward(f,F); // Create wisdom
-    backward(F,f); // Create wisdom
+     // Create wisdom
+    if(q == 1) {
+      forward(f,F);
+      backward(F,f);
+    } else {
+      forward(f,F,0,W);
+      backward(F,f,0,W);
+    }
 
     unsigned int K=1;
     double eps=0.1;
-    unsigned int N=m*q;
+    unsigned int N=length();
     double scale=1.0/N;
+    unsigned int b=blocksize();
 
     for(;;) {
-      double t0=totalseconds();
-      for(unsigned int i=0; i < K; ++i) {
-        forward(f,F);
-        forward(g,G);
-        for(unsigned int i=0; i < N; ++i)
-          F[i] *= G[i];
-        backward(F,f);
-        for(unsigned int i=0; i < L; ++i)
-          f[i] *= scale;
+      double t0,t;
+      if(q == 1) {
+        t0=totalseconds();
+        for(unsigned int i=0; i < K; ++i) {
+
+          /*
+          for(unsigned int j=0; j < L; ++j) {
+            f[j]=Complex(j,j+1);
+            g[j]=Complex(j,2*j+1);
+          }
+          */
+          forward(f,F);
+          forward(g,G);
+          for(unsigned int i=0; i < N; ++i)
+            F[i] *= G[i];
+//          multbinary(F,G,N);
+          backward(F,f);
+          for(unsigned int i=0; i < L; ++i)
+            f[i] *= scale;
+        }
+        t=totalseconds();
+      } else {
+        t0=totalseconds();
+        for(unsigned int i=0; i < K; ++i) {
+          /*
+          for(unsigned int j=0; j < L; ++j) {
+            f[j]=Complex(j,j+1);
+            g[j]=Complex(j,2*j+1);
+          }
+          */
+
+          for(unsigned int r=0; r < Q; r += D) {
+            forward(f,F,r,W);
+            forward(g,G,r,W);
+//            multbinary(F,G,b);
+            for(unsigned int i=0; i < b; ++i)
+              F[i] *= G[i];
+//            backward(F,h,r,W);
+            backward(F,f,r,W);
+          }
+          for(unsigned int i=0; i < L; ++i)
+//            f[i]=h[i]*scale;
+            f[i] *= scale;
+        }
+        t=totalseconds();
       }
-      double t=totalseconds();
-      S.add((t-t0));
+      S.add(t-t0);
 
       double mean=S.mean();
       double stdev=S.stdev();
       if(S.count() < 7) continue;
       int threshold=5000;
-      double meanCLOCKS=mean*CLOCKS_PER_SEC;
-      if(meanCLOCKS < threshold) {
-        K *= 2.0*threshold/meanCLOCKS;
-        S.clear();
-      } else if(eps*mean < stdev) {
-        K *= 2.0*stdev/(eps*mean);
+      if(mean*CLOCKS_PER_SEC < threshold || eps*mean < stdev) {
+        K *= 2;
         S.clear();
       } else {
         if(Stdev) *Stdev=stdev/K;
+        /*
+        for(unsigned int i=0; i < L; ++i)
+          cout << f[i] << endl;
+        */
+
         deleteAlign(F);
         deleteAlign(f);
         deleteAlign(G);
         deleteAlign(g);
+        deleteAlign(W);
+//        deleteAlign(h);
         return mean/K;
       }
     }
@@ -508,6 +660,7 @@ public:
   }
 };
 
+Complex *FFTpad::W0;
 
 
 inline void init(Complex **F, unsigned int m, unsigned int A)
@@ -584,6 +737,7 @@ void usage()
   std::cerr << "Options: " << std::endl;
   std::cerr << "-h\t\t help" << std::endl;
   std::cerr << "-m\t\t subtransform size" << std::endl;
+  std::cerr << "-D\t\t number of blocks to process at a time" << std::endl;
   std::cerr << "-S\t\t number of surplus FFT sizes" << std::endl;
   std::cerr << "-L\t\t number of physical data values" << std::endl;
   std::cerr << "-M\t\t minimal number of padded data values" << std::endl;
@@ -602,11 +756,14 @@ int main(int argc, char* argv[])
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hL:M:S:T:m:");
+    int c = getopt(argc,argv,"hD:L:M:S:T:m:");
     if (c == -1) break;
 
     switch (c) {
       case 0:
+        break;
+      case 'D':
+        DOption=max(atoi(optarg),0);
         break;
       case 'L':
         L=atoi(optarg);
@@ -638,7 +795,7 @@ int main(int argc, char* argv[])
   double mean0=report(fft0);
 
   // Optimal explicit padding
-  FFTpad fft1(L,M,false,true);
+  FFTpad fft1(L,M,true,false);
   double mean1=report(fft1);
 
   // Hybrid padding
@@ -657,6 +814,7 @@ int main(int argc, char* argv[])
 
   Complex *f=ComplexAlign(L);
   Complex *F=ComplexAlign(N);
+  fft.W0=ComplexAlign(fft.blocksize());
 
   for(unsigned int j=0; j < L; ++j)
     f[j]=j+1;
@@ -680,7 +838,7 @@ int main(int argc, char* argv[])
   }
 
   Complex *F2=ComplexAlign(N);
-  FFTpad fft2(L,N,N,1);
+  FFTpad fft2(L,N,N,1,1);
   for(unsigned int j=0; j < L; ++j)
     f[j]=j+1;
   fft2.forward(f,F2);
@@ -690,12 +848,25 @@ int main(int argc, char* argv[])
 
   unsigned int i=0;
   unsigned int m=fft.m;
+  unsigned int p=fft.p;
   unsigned int q=fft.q;
-  for(unsigned int s=0; s < m; ++s) {
-    for(unsigned int r=0; r < q; ++r) {
-      error += abs2(F[m*r+s]-F2[i]);
+  unsigned int n=fft.n;
+
+  if(q == 1) {
+    for(unsigned int k=0; k < N; ++k) {
+      error += abs2(F[i]-F2[i]);
       norm += abs2(F2[i]);
       ++i;
+    }
+  } else {
+    for(unsigned int s=0; s < m; ++s) {
+      for(unsigned int t=0; t < p; ++t) {
+        for(unsigned int r=0; r < n; ++r) {
+          error += abs2(F[m*(p*r+t)+s]-F2[i]);
+          norm += abs2(F2[i]);
+          ++i;
+        }
+      }
     }
   }
 
