@@ -106,7 +106,7 @@ public:
   unsigned int Q;
   unsigned int D;
   unsigned int b; // blocksize
-  static Complex *W0;
+  Complex *W0; // Temporary work memory for testing accuracy
 protected:
   fft1d *fftM,*ifftM;
   mfft1d *fftm,*ifftm;
@@ -325,7 +325,7 @@ public:
       fftM->fft(F);
     } else {
       for(unsigned int r=0; r < Q; r += D)
-        forward(f,F+b*r,r);
+        forward(f,F+b*r,r,W0);
     }
   }
 
@@ -336,11 +336,11 @@ public:
         f[i]=F[i];
     } else {
       for(unsigned int r=0; r < Q; r += D)
-        backward(F+b*r,f,r);
+        backward(F+b*r,f,r,W0);
     }
   }
 
-  void forward(Complex *f, Complex *F0, unsigned int r0, Complex *W=W0) {
+  void forward(Complex *f, Complex *F0, unsigned int r0, Complex *W) {
     if(innerFFT) {
       if(r0 == 0) {
         for(unsigned int t=0; m*t < L; ++t) {
@@ -422,7 +422,7 @@ public:
 //           << endl;
 //    }
   // Input F destroyed
-  void backward(Complex *F0, Complex *f, unsigned int r0, Complex *W=W0) {
+  void backward(Complex *F0, Complex *f, unsigned int r0, Complex *W) {
     ifftm->fft(F0,W);
 
     if(innerFFT) {
@@ -602,9 +602,6 @@ public:
     return 0.0;
   }
 };
-
-Complex *FFTpad::W0;
-
 
 inline void init(Complex **F, unsigned int m, unsigned int A)
 {
