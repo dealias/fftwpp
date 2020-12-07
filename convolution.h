@@ -426,7 +426,6 @@ class fftpad {
   unsigned int m;
   unsigned int M;
   unsigned int stride;
-  unsigned int dist;
   unsigned int s;
   Complex *ZetaH, *ZetaL;
   unsigned int threads;

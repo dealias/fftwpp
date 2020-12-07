@@ -13,6 +13,13 @@ CXXFLAGS+=-msse2 -mfpmath=sse -march=native
 #CXXFLAGS=-fopenmp -g -Wall -ansi -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse
 endif
 
+#Clang compiler
+ifeq ($(shell $(CXX) -v 2>&1 | head -n 1 | head -c 5),clang)
+CXXFLAGS+=-Ofast -g -Wall -DNDEBUG
+CXXFLAGS+=-fomit-frame-pointer -fstrict-aliasing -ffast-math
+CXXFLAGS+=-msse2 -mfpmath=sse -march=native
+endif
+
 #Intel compiler
 ifeq ($(shell $(CXX) -v 2>&1 | head -c 4),icpc)
 CXXFLAGS=-O3 -openmp -ansi-alias -malign-double -fp-model fast=2
@@ -45,7 +52,7 @@ FILES=conv cconv conv2 cconv2 conv3 cconv3 tconv tconv2 \
 	hybrid
 
 FFTW=fftw++
-EXTRA=$(FFTW) convolution explicit direct
+EXTRA=$(FFTW) convolution explicit direct getopt
 ALL=$(FILES) $(EXTRA)
 
 all: $(FILES)
