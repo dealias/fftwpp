@@ -155,8 +155,7 @@ public:
       fftm=new mfft1d(m,1,h, 1,1, m,m, G,H);
       ifftm=new mfft1d(m,-1,h, 1,1, m,m, G,H);
 
-      unsigned int n=Q/D;
-      unsigned int extra=Q-n*D;
+      unsigned int extra=Q % D;
       if(extra > 0) {
         h=d*extra;
         fftm2=new mfft1d(m,1,h, 1,1, m,m, G,H);
@@ -199,8 +198,7 @@ public:
       deleteAlign(Zetaqm+m);
       delete fftm;
       delete ifftm;
-      unsigned int n=Q/D;
-      if(Q > n*D) {
+      if(Q % D > 0) {
         delete fftm2;
         delete ifftm2;
       }
@@ -214,6 +212,7 @@ public:
 
     void check(unsigned int L, unsigned int M,
                unsigned int m, bool fixed=false) {
+//      cout << "m=" << m << endl;
       unsigned int p=ceilquotient(L,m);
       unsigned int q=ceilquotient(M,m);
 
