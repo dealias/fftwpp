@@ -1,7 +1,6 @@
 // TODO:
 // Can user request allowing overlap of input and output arrays,
 // for possibly reduced performance?
-// Support arbitrary D?
 
 #include <cfloat>
 #include <climits>
@@ -110,6 +109,7 @@ public:
 protected:
   fft1d *fftM,*ifftM;
   mfft1d *fftm,*ifftm;
+  mfft1d *fftm2,*ifftm2;
   mfft1d *fftp,*ifftp;
   Complex *Zetaqp;
   Complex *Zetaqm;
@@ -148,19 +148,25 @@ public:
       }
 
       b=m*d;
-      D=Q % D == 0 ? D : 1;
-      d *= D;
+      unsigned int h=d*D;
+      Complex *G=ComplexAlign(m*h);
+      Complex *H=ComplexAlign(m*h);
 
-      Complex *G=ComplexAlign(m*d);
-      Complex *H=ComplexAlign(m*d);
+      fftm=new mfft1d(m,1,h, 1,1, m,m, G,H);
+      ifftm=new mfft1d(m,-1,h, 1,1, m,m, G,H);
+
+      unsigned int n=Q/D;
+      unsigned int extra=Q-n*D;
+      if(extra > 0) {
+        h=d*extra;
+        fftm2=new mfft1d(m,1,h, 1,1, m,m, G,H);
+        ifftm2=new mfft1d(m,-1,h, 1,1, m,m, G,H);
+      }
 
       if(innerFFT) {// L'=p, M'=q, m'=p, p'=1, q'=n
         fftp=new mfft1d(p,1,m, m,m, 1,1, G,G);
         ifftp=new mfft1d(p,-1,m, m,m, 1,1, G,G);
       }
-
-      ifftm=new mfft1d(m,-1,d, 1,1, m,m, G,H);
-      fftm=new mfft1d(m,1,d, 1,1, m,m, G,H);
 
       deleteAlign(H);
       deleteAlign(G);
@@ -193,6 +199,11 @@ public:
       deleteAlign(Zetaqm+m);
       delete fftm;
       delete ifftm;
+      unsigned int n=Q/D;
+      if(Q > n*D) {
+        delete fftm2;
+        delete ifftm2;
+      }
     }
   }
 
@@ -212,12 +223,12 @@ public:
         unsigned int n=ceilquotient(M,m*p);
         unsigned int q2=p*n;
         if(q2 != q) {
-          unsigned int start=DOption > 0 ? DOption : 1;
-          unsigned int stop=DOption > 0 ? DOption : n;
+          unsigned int start=DOption > 0 ? min(DOption,n) : 1;
+          unsigned int stop=DOption > 0 ? min(DOption,n) : n;
           if(fixed) start=stop=1;
-          for(unsigned int D=start; D <= stop; ++D) {
+          for(unsigned int D=start; D <= stop; D *= 2) {
+            if(2*D > stop) D=stop;
 //            cout << "q2=" << q2 << endl;
-            if(n % D != 0) continue;
 //            cout << "D=" << D << endl;
 
             FFTpad fft(L,M,m,q2,D);
@@ -232,15 +243,12 @@ public:
         }
       }
 
-      unsigned int n=q/p;
-      bool innerFFT=p > 1 && n*p == q;
-      unsigned int Q=innerFFT ? n : q;
-      unsigned int start=DOption > 0 ? DOption : 1;
-      unsigned int stop=DOption > 0 ? DOption : Q;
+      unsigned int start=DOption > 0 ? min(DOption,q) : 1;
+      unsigned int stop=DOption > 0 ? min(DOption,q) : q;
       if(fixed) start=stop=1;
-      for(unsigned int D=start; D <= stop; ++D) {
-        if(Q % D != 0) continue;
-//        cout << "D=" << D << " " << Q << endl;
+      for(unsigned int D=start; D <= stop; D *= 2) {
+        if(2*D > stop) D=stop;
+//        cout << "D=" << D << endl;
         FFTpad fft(L,M,m,q,D);
         double t=fft.meantime();
 
@@ -341,6 +349,7 @@ public:
   }
 
   void forward(Complex *f, Complex *F0, unsigned int r0, Complex *W) {
+    unsigned int D0=r0+D > Q ? Q-r0 : D;
     if(innerFFT) {
       if(r0 == 0) {
         for(unsigned int t=0; m*t < L; ++t) {
@@ -363,7 +372,7 @@ public:
         }
       }
 
-      for(unsigned int d=r0 == 0; d < D; ++d) {
+      for(unsigned int d=r0 == 0; d < D0; ++d) {
         Complex *F=W+b*d;
         unsigned int r=r0+d;
         unsigned int stop=min(L,m);
@@ -393,7 +402,7 @@ public:
         }
       }
     } else {
-      for(unsigned int d=0; d < D; ++d) {
+      for(unsigned int d=0; d < D0; ++d) {
         Complex *F=W+b*d;
         unsigned int r=r0+d;
         unsigned int stop=min(m,L);
@@ -412,7 +421,7 @@ public:
         }
       }
     }
-    fftm->fft(W,F0);
+    (D0 == D ? fftm : fftm2)->fft(W,F0);
   }
 
 // Compute an inverse fft of length N=m*q unpadded back
@@ -423,7 +432,8 @@ public:
 //    }
   // Input F destroyed
   void backward(Complex *F0, Complex *f, unsigned int r0, Complex *W) {
-    ifftm->fft(F0,W);
+    unsigned int D0=r0+D > Q ? Q-r0 : D;
+    (D0 == D ? ifftm : ifftm2)->fft(F0,W);
 
     if(innerFFT) {
       if(r0 == 0) {
@@ -444,7 +454,7 @@ public:
         }
       }
 
-      for(unsigned int d=r0 == 0; d < D; ++d) {
+      for(unsigned int d=r0 == 0; d < D0; ++d) {
         Complex *F=W+b*d;
         unsigned int r=r0+d;
         for(unsigned int t=0; t < p; ++t) {
@@ -468,7 +478,7 @@ public:
         }
       }
     } else {
-      for(unsigned int d=0; d < D; ++d) {
+      for(unsigned int d=0; d < D0; ++d) {
         Complex *F=W+b*d;
         unsigned int r=r0+d;
         if(p == 1) {
