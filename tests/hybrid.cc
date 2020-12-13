@@ -480,16 +480,14 @@ public:
       for(unsigned int d=0; d < D0; ++d) {
         Complex *F=W+b*d;
         unsigned int r=r0+d;
-        if(p == 1) {
-          if(r == 0) {
-            for(unsigned int s=0; s < m; ++s)
-              f[s]=F[s];
-          } else {
-            f[0] += F[0];
-            Complex *Zetamr=Zetaqm+m*r-r;
-            for(unsigned int s=1; s < m; ++s)
-              f[s] += F[s]*conj(Zetamr[s]);
-          }
+        if(r == 0) {
+          for(unsigned int s=0; s < m; ++s)
+            f[s]=F[s];
+        } else {
+          f[0] += F[0];
+          Complex *Zetamr=Zetaqm+m*r-r;
+          for(unsigned int s=1; s < m; ++s)
+            f[s] += F[s]*conj(Zetamr[s]);
         }
       }
     }
