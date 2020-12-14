@@ -216,7 +216,7 @@ public:
       unsigned int p=ceilquotient(L,m);
       unsigned int q=ceilquotient(M,m);
 
-      if(q % p != 0 || (p == q && p > 1)) return;
+      if(p == q && p > 1) return;
 
       if(!fixed) {
         unsigned int n=ceilquotient(M,m*p);
@@ -241,6 +241,8 @@ public:
           }
         }
       }
+
+      if(q % p != 0) return;
 
       unsigned int start=DOption > 0 ? min(DOption,q) : 1;
       unsigned int stop=DOption > 0 ? min(DOption,q) : q;
