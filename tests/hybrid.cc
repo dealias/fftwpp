@@ -106,7 +106,6 @@ public:
   unsigned int n;
   unsigned int Q;
   unsigned int D;
-  unsigned int b; // blocksize
   Complex *W0; // Temporary work memory for testing accuracy
 protected:
   fft1d *fftM,*ifftM;
@@ -116,7 +115,6 @@ protected:
   Complex *Zetaqp;
   Complex *Zetaqm;
   utils::statistics S;
-  bool innerFFT;
 public:
 
   void init() {
@@ -129,11 +127,8 @@ public:
     } else {
       unsigned int N=m*q;
       double twopibyN=twopi/N;
-      innerFFT=p > 1 && n*p == q;
 
-      unsigned int d;
-      if(innerFFT) {
-        d=p;
+      if(p > 1) {
         Q=n;
         Zetaqp=ComplexAlign((n-1)*(p-1))-p;
         double twopibyq=twopi/q;
@@ -141,7 +136,6 @@ public:
           for(unsigned int t=1; t < p; ++t)
             Zetaqp[p*r-r+t]=expi(r*t*twopibyq);
       } else {
-        d=1;
         Q=q;
         Zetaqp=ComplexAlign((q-1)*(p-1))-p;
         for(unsigned int r=1; r < q; ++r)
@@ -149,22 +143,21 @@ public:
             Zetaqp[p*r-r+t]=expi((m*r*t % N)*twopibyN);
       }
 
-      b=m*d;
-      unsigned int h=d*D;
-      Complex *G=ComplexAlign(m*h);
-      Complex *H=ComplexAlign(m*h);
+      unsigned int d=p*D;
+      Complex *G=ComplexAlign(m*d);
+      Complex *H=ComplexAlign(m*d);
 
-      fftm=new mfft1d(m,1,h, 1,1, m,m, G,H);
-      ifftm=new mfft1d(m,-1,h, 1,1, m,m, G,H);
+      fftm=new mfft1d(m,1,d, 1,1, m,m, G,H);
+      ifftm=new mfft1d(m,-1,d, 1,1, m,m, G,H);
 
       unsigned int extra=Q % D;
       if(extra > 0) {
-        h=d*extra;
-        fftm2=new mfft1d(m,1,h, 1,1, m,m, G,H);
-        ifftm2=new mfft1d(m,-1,h, 1,1, m,m, G,H);
+        d *= extra;
+        fftm2=new mfft1d(m,1,d, 1,1, m,m, G,H);
+        ifftm2=new mfft1d(m,-1,d, 1,1, m,m, G,H);
       }
 
-      if(innerFFT) {// L'=p, M'=q, m'=p, p'=1, q'=n
+      if(p > 1) {// L'=p, M'=q, m'=p, p'=1, q'=n
         fftp=new mfft1d(p,1,m, m,m, 1,1, G,G);
         ifftp=new mfft1d(p,-1,m, m,m, 1,1, G,G);
       }
@@ -192,7 +185,7 @@ public:
       delete fftM;
       delete ifftM;
     } else {
-      if(innerFFT) {
+      if(p > 1) {
         delete fftp;
         delete ifftp;
       }
@@ -335,6 +328,7 @@ public:
         F[i]=0.0;
       fftM->fft(F);
     } else {
+      unsigned int b=m*p;
       for(unsigned int r=0; r < Q; r += D)
         forward(f,F+b*r,r,W0);
     }
@@ -346,14 +340,16 @@ public:
       for(unsigned int i=0; i < L; ++i)
         f[i]=F[i];
     } else {
+      unsigned int b=m*p;
       for(unsigned int r=0; r < Q; r += D)
         backward(F+b*r,f,r,W0);
     }
   }
 
   void forward(Complex *f, Complex *F0, unsigned int r0, Complex *W) {
+    unsigned int b=m*p;
     unsigned int D0=r0+D > Q ? Q-r0 : D;
-    if(innerFFT) {
+    if(p > 1) {
       if(r0 == 0) {
         for(unsigned int t=0; m*t < L; ++t) {
           unsigned int mt=m*t;
@@ -435,10 +431,11 @@ public:
 //    }
   // Input F destroyed
   void backward(Complex *F0, Complex *f, unsigned int r0, Complex *W) {
+    unsigned int b=m*p;
     unsigned int D0=r0+D > Q ? Q-r0 : D;
     (D0 == D ? ifftm : ifftm2)->fft(F0,W);
 
-    if(innerFFT) {
+    if(p > 1) {
       if(r0 == 0) {
         for(unsigned int t=1; t < p; ++t) {
           unsigned int R=n*t;
@@ -506,7 +503,7 @@ public:
   }
 
   unsigned int blocksize() {
-    return q == 1 ? M : b*D;
+    return q == 1 ? M : m*p*D;
   }
 
   double meantime(double *Stdev=NULL) {
