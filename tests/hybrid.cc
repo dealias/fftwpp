@@ -349,8 +349,9 @@ public:
   void forward(Complex *f, Complex *F0, unsigned int r0, Complex *W) {
     unsigned int b=m*p;
     unsigned int D0=r0+D > Q ? Q-r0 : D;
+    unsigned int first=r0 == 0;
     if(p > 1) {
-      if(r0 == 0) {
+      if(first) {
         for(unsigned int t=0; m*t < L; ++t) {
           unsigned int mt=m*t;
           Complex *Ft=W+mt;
@@ -371,10 +372,10 @@ public:
         }
       }
 
-      for(unsigned int d=r0 == 0; d < D0; ++d) {
+      unsigned int stop=min(L,m);
+      for(unsigned int d=first; d < D0; ++d) {
         Complex *F=W+b*d;
         unsigned int r=r0+d;
-        unsigned int stop=min(L,m);
         for(unsigned int s=0; s < stop; ++s)
           F[s]=f[s];
         for(unsigned int s=stop; s < m; ++s)
@@ -401,23 +402,22 @@ public:
         }
       }
     } else {
-      for(unsigned int d=0; d < D0; ++d) {
+      unsigned int stop=min(m,L);
+      if(first) {
+        for(unsigned int i=0; i < L; ++i)
+          W[i]=f[i];
+        for(unsigned int i=L; i < m; ++i)
+          W[i]=0.0;
+      }       
+      for(unsigned int d=first; d < D0; ++d) {
         Complex *F=W+b*d;
         unsigned int r=r0+d;
-        unsigned int stop=min(m,L);
-        if(r == 0) {
-          for(unsigned int i=0; i < L; ++i)
-            F[i]=f[i];
-          for(unsigned int i=L; i < m; ++i)
-            F[i]=0.0;
-        } else {
-          F[0]=f[0];
-          Complex *Zetar=Zetaqm+m*r-r;
-          for(unsigned int s=1; s < stop; ++s)
-            F[s]=Zetar[s]*f[s];
-          for(unsigned int s=stop; s < m; ++s)
-            F[s]=0.0;
-        }
+        F[0]=f[0];
+        Complex *Zetar=Zetaqm+m*r-r;
+        for(unsigned int s=1; s < stop; ++s)
+          F[s]=Zetar[s]*f[s];
+        for(unsigned int s=stop; s < m; ++s)
+          F[s]=0.0;
       }
     }
     (D0 == D ? fftm : fftm2)->fft(W,F0);
@@ -434,9 +434,10 @@ public:
     unsigned int b=m*p;
     unsigned int D0=r0+D > Q ? Q-r0 : D;
     (D0 == D ? ifftm : ifftm2)->fft(F0,W);
+    unsigned int first=r0 == 0;
 
     if(p > 1) {
-      if(r0 == 0) {
+      if(first) {
         for(unsigned int t=1; t < p; ++t) {
           unsigned int R=n*t;
           Complex *Ft=W+m*t;
@@ -454,7 +455,7 @@ public:
         }
       }
 
-      for(unsigned int d=r0 == 0; d < D0; ++d) {
+      for(unsigned int d=first; d < D0; ++d) {
         Complex *F=W+b*d;
         unsigned int r=r0+d;
         for(unsigned int t=0; t < p; ++t) {
@@ -478,18 +479,17 @@ public:
         }
       }
     } else {
-      for(unsigned int d=0; d < D0; ++d) {
+      if(first) {
+        for(unsigned int s=0; s < m; ++s)
+          f[s]=W[s];
+      }
+      for(unsigned int d=first; d < D0; ++d) {
         Complex *F=W+b*d;
         unsigned int r=r0+d;
-        if(r == 0) {
-          for(unsigned int s=0; s < m; ++s)
-            f[s]=F[s];
-        } else {
-          f[0] += F[0];
-          Complex *Zetamr=Zetaqm+m*r-r;
-          for(unsigned int s=1; s < m; ++s)
-            f[s] += F[s]*conj(Zetamr[s]);
-        }
+        f[0] += F[0];
+        Complex *Zetamr=Zetaqm+m*r-r;
+        for(unsigned int s=1; s < m; ++s)
+          f[s] += F[s]*conj(Zetamr[s]);
       }
     }
   }
