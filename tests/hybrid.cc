@@ -1,4 +1,6 @@
 // TODO:
+// Add strides
+//
 // Can user request allowing overlap of input and output arrays,
 // for possibly reduced performance?
 
@@ -552,7 +554,6 @@ public:
           forward(g,G);
           for(unsigned int i=0; i < N; ++i)
             F[i] *= G[i];
-//          multbinary(F,G,N);
           backward(F,f);
           for(unsigned int i=0; i < L; ++i)
             f[i] *= scale;
@@ -569,13 +570,12 @@ public:
           */
 
           for(unsigned int r=0; r < Q; r += D) {
-            forward(f,F,r,W);
+            forward(f,F,r,G);
             forward(g,G,r,W);
-//            multbinary(F,G,b);
             for(unsigned int i=0; i < b; ++i)
               F[i] *= G[i];
 //            backward(F,h,r,W);
-            backward(F,f,r,W);
+            backward(F,f,r,G);
           }
           for(unsigned int i=0; i < L; ++i)
 //            f[i]=h[i]*scale;
