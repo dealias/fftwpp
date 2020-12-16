@@ -517,8 +517,8 @@ public:
     Complex *g=ComplexAlign(b);
     Complex *F=ComplexAlign(B);
     Complex *G=ComplexAlign(B);
-    Complex *W=b < B ? ComplexAlign(B) : f;
-//    Complex *h=ComplexAlign(b);
+    Complex *W=ComplexAlign(B);
+    Complex *h=ComplexAlign(b);
 
 // Assume f != F (out-of-place)
     for(unsigned int j=0; j < L; ++j) {
@@ -575,12 +575,10 @@ public:
             forward(g,G,r,W);
             for(unsigned int i=0; i < B; ++i)
               F[i] *= G[i];
-//            backward(F,h,r,W);
-            backward(F,f,r,G);
+            backward(F,h,r,G);
           }
           for(unsigned int i=0; i < L; ++i)
-//            f[i]=h[i]*scale;
-            f[i] *= scale;
+            h[i] *= scale;
         }
         t=totalseconds();
       }
@@ -604,8 +602,8 @@ public:
         deleteAlign(f);
         deleteAlign(G);
         deleteAlign(g);
-        if(b < B) deleteAlign(W);
-//        deleteAlign(h);
+        deleteAlign(W);
+        deleteAlign(h);
         return mean/K;
       }
     }
@@ -746,7 +744,7 @@ int main(int argc, char* argv[])
 
   // Optimal explicit padding
   FFTpad fft1(L,M,true,false);
-  double mean1=report(fft1);
+  double mean1=min(mean0,report(fft1));
 
   // Hybrid padding
   FFTpad fft(L,M);
