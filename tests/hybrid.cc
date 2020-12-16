@@ -511,12 +511,14 @@ public:
 
   double meantime(double *Stdev=NULL) {
     S.clear();
-    Complex *F=ComplexAlign(blocksize());
-    Complex *f=ComplexAlign(inverseLength());
-    Complex *G=ComplexAlign(blocksize());
-    Complex *W=ComplexAlign(blocksize());
-    Complex *g=ComplexAlign(inverseLength());
-//    Complex *h=ComplexAlign(inverseLength());
+    unsigned int b=inverseLength();
+    unsigned int B=blocksize();
+    Complex *f=ComplexAlign(b);
+    Complex *g=ComplexAlign(b);
+    Complex *F=ComplexAlign(B);
+    Complex *G=ComplexAlign(B);
+    Complex *W=b < B ? ComplexAlign(B) : f;
+//    Complex *h=ComplexAlign(b);
 
 // Assume f != F (out-of-place)
     for(unsigned int j=0; j < L; ++j) {
@@ -536,7 +538,6 @@ public:
     double eps=0.1;
     unsigned int N=length();
     double scale=1.0/N;
-    unsigned int b=blocksize();
 
     for(;;) {
       double t0,t;
@@ -572,7 +573,7 @@ public:
           for(unsigned int r=0; r < Q; r += D) {
             forward(f,F,r,G);
             forward(g,G,r,W);
-            for(unsigned int i=0; i < b; ++i)
+            for(unsigned int i=0; i < B; ++i)
               F[i] *= G[i];
 //            backward(F,h,r,W);
             backward(F,f,r,G);
@@ -603,7 +604,7 @@ public:
         deleteAlign(f);
         deleteAlign(G);
         deleteAlign(g);
-        deleteAlign(W);
+        if(b < B) deleteAlign(W);
 //        deleteAlign(h);
         return mean/K;
       }
