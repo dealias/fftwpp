@@ -152,7 +152,7 @@ public:
 
       unsigned int extra=Q % D;
       if(extra > 0) {
-        d *= extra;
+        d=p*extra;
         fftm2=new mfft1d(m,1,d, 1,1, m,m, G,H);
         ifftm2=new mfft1d(m,-1,d, 1,1, m,m, G,H);
       }
@@ -319,6 +319,27 @@ public:
     init();
   }
 
+  // Explicitly pad to m*p.
+  void pad(Complex *W) {
+    unsigned int b=m*p;
+    if(p > 1) {
+      for(unsigned int d=0; d < D; ++d) {
+        Complex *F=W+b*d;
+        for(unsigned int t=0; t < L; t += m) {
+          Complex *Ft=F+t;
+          for(unsigned int s=min(L-t,m); s < m; ++s)
+            Ft[s]=0.0;
+        }
+      }
+    } else {
+      for(unsigned int d=0; d < D; ++d) {
+        Complex *F=W+m*d;
+        for(unsigned int s=L; s < m; ++s)
+          F[s]=0.0;
+      }
+    }
+  }
+
   // TODO: Check for cases when arrays f and F must be distinct
   void forward(Complex *f, Complex *F) {
     if(q == 1) {
@@ -328,6 +349,7 @@ public:
         F[i]=0.0;
       fftM->fft(F);
     } else {
+      pad(W0);
       unsigned int b=m*p;
       for(unsigned int r=0; r < Q; r += D)
         forward(f,F+b*r,r,W0);
@@ -347,9 +369,9 @@ public:
   }
 
   void forward(Complex *f, Complex *F0, unsigned int r0, Complex *W) {
-    unsigned int b=m*p;
     unsigned int D0=r0+D > Q ? Q-r0 : D;
     unsigned int first=r0 == 0;
+    unsigned int stop=min(L,m);
     if(p > 1) {
       if(first) {
         for(unsigned int t=0; m*t < L; ++t) {
@@ -359,8 +381,6 @@ public:
           unsigned int stop=min(L-mt,m);
           for(unsigned int s=0; s < stop; ++s)
             Ft[s]=ft[s];
-          for(unsigned int s=stop; s < m; ++s)
-            Ft[s]=0.0;
         }
         fftp->fft(W);
         for(unsigned int t=1; t < p; ++t) {
@@ -372,14 +392,12 @@ public:
         }
       }
 
-      unsigned int stop=min(L,m);
+      unsigned int b=m*p;
       for(unsigned int d=first; d < D0; ++d) {
         Complex *F=W+b*d;
         unsigned int r=r0+d;
         for(unsigned int s=0; s < stop; ++s)
           F[s]=f[s];
-        for(unsigned int s=stop; s < m; ++s)
-          F[s]=0.0;
         Complex *Zetaqr=Zetaqp+p*r-r;
         for(unsigned int t=1; m*t < L; ++t) {
           unsigned int mt=m*t;
@@ -389,8 +407,6 @@ public:
           Complex Zeta=Zetaqr[t];
           for(unsigned int s=0; s < stop; ++s)
             Ft[s]=Zeta*ft[s];
-          for(unsigned int s=stop; s < m; ++s)
-            Ft[s]=0.0;
         }
         fftp->fft(F);
         for(unsigned int t=0; t < p; ++t) {
@@ -402,22 +418,17 @@ public:
         }
       }
     } else {
-      unsigned int stop=min(m,L);
       if(first) {
         for(unsigned int i=0; i < L; ++i)
           W[i]=f[i];
-        for(unsigned int i=L; i < m; ++i)
-          W[i]=0.0;
-      }       
+      }
       for(unsigned int d=first; d < D0; ++d) {
-        Complex *F=W+b*d;
+        Complex *F=W+m*d;
         unsigned int r=r0+d;
         F[0]=f[0];
         Complex *Zetar=Zetaqm+m*r-r;
         for(unsigned int s=1; s < stop; ++s)
           F[s]=Zetar[s]*f[s];
-        for(unsigned int s=stop; s < m; ++s)
-          F[s]=0.0;
       }
     }
     (D0 == D ? fftm : fftm2)->fft(W,F0);
@@ -431,7 +442,6 @@ public:
 //    }
   // Input F destroyed
   void backward(Complex *F0, Complex *f, unsigned int r0, Complex *W) {
-    unsigned int b=m*p;
     unsigned int D0=r0+D > Q ? Q-r0 : D;
     (D0 == D ? ifftm : ifftm2)->fft(F0,W);
     unsigned int first=r0 == 0;
@@ -455,6 +465,7 @@ public:
         }
       }
 
+      unsigned int b=m*p;
       for(unsigned int d=first; d < D0; ++d) {
         Complex *F=W+b*d;
         unsigned int r=r0+d;
@@ -484,7 +495,7 @@ public:
           f[s]=W[s];
       }
       for(unsigned int d=first; d < D0; ++d) {
-        Complex *F=W+b*d;
+        Complex *F=W+m*d;
         unsigned int r=r0+d;
         f[0] += F[0];
         Complex *Zetamr=Zetaqm+m*r-r;
@@ -510,25 +521,19 @@ public:
     S.clear();
     unsigned int b=inverseLength();
     unsigned int B=blocksize();
+
     Complex *f=ComplexAlign(b);
     Complex *g=ComplexAlign(b);
+    Complex *h=ComplexAlign(b);
+
     Complex *F=ComplexAlign(B);
     Complex *G=ComplexAlign(B);
     Complex *W=ComplexAlign(B);
-    Complex *h=ComplexAlign(b);
 
 // Assume f != F (out-of-place)
     for(unsigned int j=0; j < L; ++j) {
       f[j]=0.0;
       g[j]=0.0;
-    }
-     // Create wisdom
-    if(q == 1) {
-      forward(f,F);
-      backward(F,f);
-    } else {
-      forward(f,F,0,W);
-      backward(F,f,0,W);
     }
 
     unsigned int K=1;
@@ -567,8 +572,9 @@ public:
           }
           */
 
+          pad(W);
           for(unsigned int r=0; r < Q; r += D) {
-            forward(f,F,r,G);
+            forward(f,F,r,W);
             forward(g,G,r,W);
             for(unsigned int i=0; i < B; ++i)
               F[i] *= G[i];
