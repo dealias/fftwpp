@@ -587,6 +587,8 @@ public:
             for(unsigned int i=0; i < B; ++i)
               G[i] *= F[i];
             backward(G,f,1,W);
+            for(unsigned int i=0; i < L; ++i)
+              f[i] *= scale;
           } else {
             for(unsigned int r=0; r < Q; r += D) {
               forward(f,F,r,W);
