@@ -524,7 +524,8 @@ public:
 
     Complex *f=ComplexAlign(b);
     Complex *g=ComplexAlign(b);
-    Complex *h=ComplexAlign(b);
+    bool loop2=Q == 2 && D == 1;
+    Complex *h=D < Q && !loop2 ? ComplexAlign(b) : f;
 
     Complex *F=ComplexAlign(B);
     Complex *G=ComplexAlign(B);
@@ -572,16 +573,31 @@ public:
           }
           */
 
-          pad(W);
-          for(unsigned int r=0; r < Q; r += D) {
-            forward(f,F,r,W);
-            forward(g,G,r,W);
+          if(L < m*p)
+            pad(W);
+
+          if(loop2) {
+            forward(f,F,0,W);
+            forward(g,G,0,W);
             for(unsigned int i=0; i < B; ++i)
-              F[i] *= G[i];
-            backward(F,h,r,G);
+              G[i] *= F[i];
+            forward(f,F,1,W);
+            backward(G,f,0,W);
+            forward(g,G,1,W);
+            for(unsigned int i=0; i < B; ++i)
+              G[i] *= F[i];
+            backward(G,f,1,W);
+          } else {
+            for(unsigned int r=0; r < Q; r += D) {
+              forward(f,F,r,W);
+              forward(g,G,r,W);
+              for(unsigned int i=0; i < B; ++i)
+                F[i] *= G[i];
+              backward(F,h,r,G);
+            }
+            for(unsigned int i=0; i < L; ++i)
+              f[i]=h[i]*scale;
           }
-          for(unsigned int i=0; i < L; ++i)
-            h[i] *= scale;
         }
         t=totalseconds();
       }
@@ -606,7 +622,8 @@ public:
         deleteAlign(G);
         deleteAlign(g);
         deleteAlign(W);
-        deleteAlign(h);
+        if(D < Q && !loop2)
+          deleteAlign(h);
         return mean/K;
       }
     }
