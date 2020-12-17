@@ -319,24 +319,12 @@ public:
     init();
   }
 
-  // Explicitly pad to m*p.
+  // Explicitly pad to m.
   void pad(Complex *W) {
-    unsigned int b=m*p;
-    if(p > 1) {
-      for(unsigned int d=0; d < D; ++d) {
-        Complex *F=W+b*d;
-        for(unsigned int t=0; t < L; t += m) {
-          Complex *Ft=F+t;
-          for(unsigned int s=min(L-t,m); s < m; ++s)
-            Ft[s]=0.0;
-        }
-      }
-    } else {
-      for(unsigned int d=0; d < D; ++d) {
-        Complex *F=W+m*d;
-        for(unsigned int s=L; s < m; ++s)
-          F[s]=0.0;
-      }
+    for(unsigned int d=0; d < D; ++d) {
+      Complex *F=W+m*d;
+      for(unsigned int s=L; s < m; ++s)
+        F[s]=0.0;
     }
   }
 
@@ -349,7 +337,8 @@ public:
         F[i]=0.0;
       fftM->fft(F);
     } else {
-      pad(W0);
+      if(p == 1 && L < m)
+        pad(W0);
       unsigned int b=m*p;
       for(unsigned int r=0; r < Q; r += D)
         forward(f,F+b*r,r,W0);
@@ -381,6 +370,8 @@ public:
           unsigned int stop=min(L-mt,m);
           for(unsigned int s=0; s < stop; ++s)
             Ft[s]=ft[s];
+          for(unsigned int s=stop; s < m; ++s)
+            Ft[s]=0.0;
         }
         fftp->fft(W);
         for(unsigned int t=1; t < p; ++t) {
@@ -398,6 +389,8 @@ public:
         unsigned int r=r0+d;
         for(unsigned int s=0; s < stop; ++s)
           F[s]=f[s];
+        for(unsigned int s=stop; s < m; ++s)
+          F[s]=0.0;
         Complex *Zetaqr=Zetaqp+p*r-r;
         for(unsigned int t=1; m*t < L; ++t) {
           unsigned int mt=m*t;
@@ -407,6 +400,8 @@ public:
           Complex Zeta=Zetaqr[t];
           for(unsigned int s=0; s < stop; ++s)
             Ft[s]=Zeta*ft[s];
+          for(unsigned int s=stop; s < m; ++s)
+            Ft[s]=0.0;
         }
         fftp->fft(F);
         for(unsigned int t=0; t < p; ++t) {
@@ -548,12 +543,13 @@ public:
         t0=totalseconds();
         for(unsigned int i=0; i < K; ++i) {
 
-          /*
+#define OUTPUT 0
+#if OUTPUT
           for(unsigned int j=0; j < L; ++j) {
             f[j]=Complex(j,j+1);
             g[j]=Complex(j,2*j+1);
           }
-          */
+#endif
           forward(f,F);
           forward(g,G);
           for(unsigned int i=0; i < N; ++i)
@@ -566,14 +562,13 @@ public:
       } else {
         t0=totalseconds();
         for(unsigned int i=0; i < K; ++i) {
-          /*
+#if OUTPUT
           for(unsigned int j=0; j < L; ++j) {
             f[j]=Complex(j,j+1);
             g[j]=Complex(j,2*j+1);
           }
-          */
-
-          if(L < m*p)
+#endif
+          if(p == 1 && L < m)
             pad(W);
 
           if(loop2) {
@@ -583,10 +578,12 @@ public:
               G[i] *= F[i];
             forward(f,F,1,W);
             backward(G,f,0,W);
+            if(p == 1 && L < m)
+              pad(W);
             forward(g,G,1,W);
             for(unsigned int i=0; i < B; ++i)
               G[i] *= F[i];
-            backward(G,f,1,W);
+            backward(G,f,1,F);
             for(unsigned int i=0; i < L; ++i)
               f[i] *= scale;
           } else {
@@ -614,10 +611,10 @@ public:
         S.clear();
       } else {
         if(Stdev) *Stdev=stdev/K;
-        /*
+#if OUTPUT
         for(unsigned int i=0; i < L; ++i)
           cout << f[i] << endl;
-        */
+#endif
 
         deleteAlign(F);
         deleteAlign(f);
