@@ -560,6 +560,9 @@ public:
         }
         t=totalseconds();
       } else {
+        if(p == 1 && L < m)
+          pad(W);
+
         t0=totalseconds();
         for(unsigned int i=0; i < K; ++i) {
 #if OUTPUT
@@ -568,9 +571,6 @@ public:
             g[j]=Complex(j,2*j+1);
           }
 #endif
-          if(p == 1 && L < m)
-            pad(W);
-
           if(loop2) {
             forward(f,F,0,W);
             forward(g,G,0,W);
