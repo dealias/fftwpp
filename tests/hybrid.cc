@@ -523,8 +523,15 @@ public:
 
     Complex *f=ComplexAlign(b);
     Complex *g=ComplexAlign(b);
-    bool loop2=Q == 2 && D == 1;
-    Complex *h=D < Q && !loop2 ? ComplexAlign(b) : f;
+    Complex *h;
+    bool loop2;
+    if(D < Q) { // More than one loop
+      loop2=2*D >= Q; // Two loops
+      h=loop2 ? f : ComplexAlign(b);
+    } else { // One loop
+      loop2=false;
+      h=f;
+    }
 
     Complex *F=ComplexAlign(B);
     Complex *G=ComplexAlign(B);
