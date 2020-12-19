@@ -269,6 +269,10 @@ public:
       m=M;
       q=1;
       D=1;
+
+      if(Explicit && fixed)
+        return;
+
       T=DBL_MAX;
       unsigned int i=0;
 
@@ -757,8 +761,9 @@ int main(int argc, char* argv[])
   cout << "L=" << L << endl;
   cout << "M=" << M << endl;
 
+  cout << "Explicit:" << endl;
   // Minimal explicit padding
-  FFTpad fft0(L,M,M,1);
+  FFTpad fft0(L,M,true,true);
   double mean0=report(fft0);
 
   // Optimal explicit padding
