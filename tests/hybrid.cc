@@ -804,7 +804,7 @@ public:
   // fft->length()
   // H is an output array of B pointers to distinct data blocks each of size
   // fft->length(), which may coincide with F.
-  void convolve(Complex **F, multiplier *mult, Complex **H) {
+  void convolve(Complex **F, Complex **H, multiplier *mult) {
     if(fft->q == 1) {
       for(unsigned int a=0; a < A; ++a)
         fft->forwardExplicit(F[a],U[a]);
@@ -1034,7 +1034,6 @@ int main(int argc, char* argv[])
   unsigned int L0=fft.length();
   Complex *f=ComplexAlign(L0);
   Complex *g=ComplexAlign(L0);
-  Complex *h=ComplexAlign(L0);
 
   for(unsigned int j=0; j < L; ++j) {
 #if OUTPUT
@@ -1050,6 +1049,7 @@ int main(int argc, char* argv[])
   HybridConvolution C(fft);
 
   Complex *F[]={f,g};
+//  Complex *h=ComplexAlign(L0);
 //  Complex *H[]={h};
 #if OUTPUT
   unsigned int K=1;
@@ -1059,7 +1059,7 @@ int main(int argc, char* argv[])
   double t0=totalseconds();
 
   for(unsigned int i=0; i < K; ++i)
-    C.convolve(F,multbinary,F);
+    C.convolve(F,F,multbinary);
 
   double t=totalseconds();
   cout << (t-t0)/K << endl;
