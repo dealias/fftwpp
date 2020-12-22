@@ -222,8 +222,8 @@ public:
     delete BackwardsO;
   }
 
-  // F is an array of A pointers to distinct data blocks each of size m,
-  // shifted by offset (contents not preserved).
+  // F is an array of C pointers to distinct data blocks each of
+  // size m, shifted by offset (contents not preserved).
   void convolve(Complex **F, multiplier *pmult, unsigned int i=0,
                 unsigned int offset=0);
 

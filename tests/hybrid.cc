@@ -7,18 +7,20 @@
 #include <cfloat>
 #include <climits>
 
-#include "convolution.h"
+#include "Complex.h"
+#include "fftw++.h"
 #include "utils.h"
 
 using namespace std;
 using namespace utils;
 using namespace fftwpp;
 
+namespace fftwpp {
+
+extern const double twopi;
+
 // Constants used for initialization and testing.
 const Complex I(0.0,1.0);
-const double E=exp(1.0);
-const Complex iF(sqrt(3.0),sqrt(7.0));
-const Complex iG(sqrt(5.0),sqrt(11.0));
 
 bool Test=false;
 
@@ -75,27 +77,6 @@ unsigned int nextfftsize(unsigned int m)
   return N;
 }
 
-// This multiplication routine is for binary convolutions and takes two inputs
-// of size m.
-// F0[j] *= F1[j];
-void multbinary(Complex *F0, Complex *F1,unsigned int m,
-                unsigned int threads=1)
-{
-#ifdef __SSE2__
-  PARALLEL(
-    for(unsigned int j=0; j < m; ++j) {
-      Complex *p=F0+j;
-      STORE(p,ZMULT(LOAD(p),LOAD(F1+j)));
-    }
-    );
-#else
-  PARALLEL(
-    for(unsigned int j=0; j < m; ++j)
-      F0[jg] *= F1[j];
-    );
-#endif
-}
-
 class FFTpad {
 public:
   unsigned int L;
@@ -124,6 +105,7 @@ public:
     if(q == 1) {
       fftM=new fft1d(M,1);
       ifftM=new fft1d(M,-1);
+      Q=1;
     } else {
       unsigned int N=m*q;
       double twopibyN=twopi/N;
@@ -316,7 +298,8 @@ public:
     L(L), M(M) {
     Opt opt=Opt(L,M,Explicit,fixed);
     m=opt.m;
-    if(Explicit) this->M=M=m;
+    if(Explicit)
+      this->M=M=m;
     p=ceilquotient(L,M);
     q=opt.q;
     D=opt.D;
@@ -525,11 +508,11 @@ public:
     }
   }
 
-  unsigned int inverseLength() {
+  unsigned int length() {
     return q == 1 ? L : m*p;
   }
 
-  unsigned int length() {
+  unsigned int size() {
     return q == 1 ? M : m*q;
   }
 
@@ -537,26 +520,39 @@ public:
     return q == 1 ? M : m*p*D;
   }
 
+  unsigned int Worksize() {
+    return q == 1 ? 0 : length();
+  }
+
+  unsigned int worksize() {
+    return q == 1 ? 0 : blocksize();
+  }
+
+  unsigned int padding() {
+    return p == 1 && L < m;
+  }
+
   double meantime(double *Stdev=NULL) {
     S.clear();
-    unsigned int b=inverseLength();
-    unsigned int B=blocksize();
+    unsigned int L0=length();
 
-    Complex *f=ComplexAlign(b);
-    Complex *g=ComplexAlign(b);
+    Complex *f=ComplexAlign(L0);
+    Complex *g=ComplexAlign(L0);
     Complex *h;
     bool loop2;
     if(D < Q) { // More than one loop
       loop2=2*D >= Q; // Two loops
-      h=loop2 ? f : ComplexAlign(b);
+      h=loop2 ? f : ComplexAlign(L0);
     } else { // One loop
       loop2=false;
       h=f;
     }
 
-    Complex *F=ComplexAlign(B);
-    Complex *G=ComplexAlign(B);
-    Complex *W=ComplexAlign(B);
+    unsigned int c=blocksize();
+
+    Complex *F=ComplexAlign(c);
+    Complex *G=ComplexAlign(c);
+    Complex *W=ComplexAlign(c);
 
 // Assume f != F (out-of-place)
     for(unsigned int j=0; j < L; ++j) {
@@ -566,7 +562,7 @@ public:
 
     unsigned int K=1;
     double eps=0.1;
-    unsigned int N=length();
+    unsigned int N=size();
     double scale=1.0/N;
 
     for(;;) {
@@ -592,8 +588,8 @@ public:
         }
         t=totalseconds();
       } else {
-        bool padding=p == 1 && L < m;
-        if(padding)
+        bool Padding=padding();
+        if(Padding)
           pad(W);
         t0=totalseconds();
 
@@ -607,23 +603,23 @@ public:
           if(loop2) {
             forward(f,F,0,W);
             forward(g,G,0,W);
-            for(unsigned int i=0; i < B; ++i)
-              G[i] *= F[i];
-            forward(f,F,1,W);
-            backward(G,f,0,W);
-            if(padding)
+            for(unsigned int i=0; i < c; ++i)
+              F[i] *= G[i];
+            forward(f,G,1,W);
+            backward(F,f,0,W);
+            if(Padding)
               pad(W);
-            forward(g,G,1,W);
-            for(unsigned int i=0; i < B; ++i)
-              G[i] *= F[i];
-            backward(G,f,1,F);
+            forward(g,F,1,W);
+            for(unsigned int i=0; i < c; ++i)
+              F[i] *= G[i];
+            backward(F,f,1,G);
             for(unsigned int i=0; i < L; ++i)
               f[i] *= scale;
           } else {
             for(unsigned int r=0; r < Q; r += D) {
               forward(f,F,r,W);
               forward(g,G,r,W);
-              for(unsigned int i=0; i < B; ++i)
+              for(unsigned int i=0; i < c; ++i)
                 F[i] *= G[i];
               backward(F,h,r,G);
             }
@@ -663,59 +659,205 @@ public:
   }
 };
 
-inline void init(Complex **F, unsigned int m, unsigned int A)
+typedef void multiplier(Complex **, unsigned int m, unsigned int threads);
+
+// This multiplication routine is for binary convolutions and takes two inputs
+// of size c.
+// F0[j] *= F1[j];
+void multbinary(Complex **F, unsigned int c, unsigned int threads)
 {
-  if(A % 2 == 0) {
-    unsigned int M=A/2;
-    double factor=1.0/sqrt((double) M);
-    for(unsigned int s=0; s < M; ++s) {
-      double ffactor=(1.0+s)*factor;
-      double gfactor=1.0/(1.0+s)*factor;
-      Complex *fs=F[s];
-      Complex *gs=F[s+M];
-      if(Test) {
-        for(unsigned int k=0; k < m; k++) {
-          fs[k]=factor*iF*pow(E,k*I);
-          gs[k]=factor*iG*pow(E,k*I);
-        }
+  Complex *F0=F[0];
+  Complex *F1=F[1];
+
+  PARALLEL(
+    for(unsigned int j=0; j < c; ++j)
+      F0[j] *= F1[j];
+    );
+}
+
+// L is the number of unpadded Complex data values
+// M is the minimum number of padded Complex data values
+
+unsigned int threads=1;
+
+class HybridConvolution {
+private:
+  FFTpad *fft;
+  unsigned int L;
+  unsigned int A;
+  unsigned int B;
+  unsigned int Q;
+  unsigned int D;
+  unsigned int c;
+  Complex **U,**Up;
+  Complex **V;
+  Complex *W;
+  Complex *H;
+  Complex *W0;
+  double scale;
+  bool allocateU;
+  bool allocateV;
+  bool allocateW;
+  bool padding;
+  bool repad;
+  bool loop2;
+public:
+  // A is the number of inputs.
+  // B is the number of outputs.
+  // U is an optional work array of size max(A,B)*fft->blocksize(),
+  // V is an optional work array of size B*fft->Worksize() (for inplace usage)
+  // W is an optional work array of size fft->worksize();
+  //   if changed between calls to convolve(), be sure to call pad()
+  HybridConvolution(FFTpad &fft, unsigned int A=2, unsigned int B=1,
+                    Complex *U=NULL, Complex *V=NULL, Complex *W=NULL) :
+    fft(&fft), A(A), B(B), W(W), allocateU(false) {
+    L=fft.L;
+    unsigned int N=fft.size();
+    scale=1.0/N;
+    c=fft.blocksize();
+
+    unsigned int C=max(A,B);
+    this->U=new Complex*[C];
+    if(U) {
+      for(unsigned int i=0; i < C; ++i)
+        this->U[i]=U+i*c;
+    } else {
+      allocateU=true;
+      for(unsigned int i=0; i < C; ++i)
+        this->U[i]=ComplexAlign(c);
+    }
+
+    if(fft.q > 1) {
+      allocateV=false;
+      if(V) {
+        this->V=new Complex*[B];
+        unsigned int size=fft.length();
+        for(unsigned int i=0; i < B; ++i)
+          this->V[i]=V+i*size;
+      } else
+        this->V=NULL;
+
+      if(!this->W) {
+        allocateW=true;
+        this->W=ComplexAlign(c);
+        W0=A <= B ? this->W : this->U[B];
+      }
+
+      padding=fft.padding();
+      repad=padding && A <= B;
+      pad();
+    }
+
+    Q=fft.Q;
+    D=fft.D;
+
+    if(D < Q) { // More than one loop
+      loop2=2*D >= Q && A >= 2*B; // Two loops
+      if(loop2) {
+        Up=new Complex*[A];
+        for(unsigned int a=0; a < B; ++a)
+          Up[a]=this->U[a+B];
+        for(unsigned int a=B; a < A; ++a)
+          Up[a]=this->U[a-B];
+      }
+    }
+  }
+
+  void initV() {
+    allocateV=true;
+    this->V=new Complex*[B];
+    unsigned int size=fft->length();
+    for(unsigned int i=0; i < B; ++i)
+      this->V[i]=ComplexAlign(size);
+  }
+
+  void pad() {
+    if(padding)
+      fft->pad(W);
+  }
+
+  ~HybridConvolution() {
+    if(fft->q > 1) {
+      if(allocateW)
+        deleteAlign(W);
+
+      if(allocateV) {
+        for(unsigned int i=0; i < B; ++i)
+          deleteAlign(V[i]);
+      }
+      delete [] V;
+    }
+
+    if(allocateU) {
+      unsigned int C=max(A,B);
+      for(unsigned int i=0; i < C; ++i)
+        deleteAlign(U[i]);
+    }
+    delete [] U;
+  }
+
+  // F is an input array of A pointers to distinct data blocks each of size
+  // fft->length()
+  // H is an output array of B pointers to distinct data blocks each of size
+  // fft->length(), which may coincide with F.
+  void convolve(Complex **F, multiplier *mult, Complex **H) {
+    if(fft->q == 1) {
+      for(unsigned int a=0; a < A; ++a)
+        fft->forwardExplicit(F[a],U[a]);
+      (*mult)(U,fft->M,threads);
+      for(unsigned int b=0; b < B; ++b)
+        fft->backwardExplicit(U[b],H[b]);
+    } else {
+      if(loop2) {
+        for(unsigned int a=0; a < A; ++a)
+          fft->forward(F[a],U[a],0,W);
+        (*mult)(U,c,threads);
+        for(unsigned int a=0; a < B; ++a)
+          fft->forward(F[a],U[B+a],1,W);
+        for(unsigned int b=0; b < B; ++b)
+          fft->backward(U[b],H[b],0,W);
+        if(repad)
+          fft->pad(W);
+        for(unsigned int a=B; a < A; ++a)
+          fft->forward(F[a],U[a-B],1,W);
+        (*mult)(Up,c,threads);
+        Complex *U0=U[0];
+        for(unsigned int b=0; b < B; ++b)
+          fft->backward(Up[b],H[b],1,U0);
+
       } else {
-        for(unsigned int k=0; k < m; k++) {
-          fs[k]=ffactor*Complex(k,k+1);
-          gs[k]=gfactor*Complex(k,2*k+1);
+        if(H == F && D < Q) { // More than one loop
+          if(!V) initV();
+          H=V;
+        }
+        for(unsigned int r=0; r < Q; r += D) {
+          for(unsigned int a=0; a < A; ++a)
+            fft->forward(F[a],U[a],r,W);
+          (*mult)(U,c,threads);
+          for(unsigned int b=0; b < B; ++b)
+            fft->backward(U[b],H[b],r,W0);
+          if(repad)
+            fft->pad(W);
+        }
+        if(H == V) {
+          for(unsigned int b=0; b < B; ++b) {
+            Complex *h=H[b];
+            Complex *f=F[b];
+            for(unsigned int i=0; i < L; ++i)
+              f[i]=h[i]*scale;
+          }
+          return;
         }
       }
     }
-  } else {
-    for(unsigned int a=0; a < A; ++a) {
-      for(unsigned int k=0; k < m; ++k) {
-        F[a][k]=(a+1)*Complex(k,k+1);
-      }
+
+    for(unsigned int b=0; b < B; ++b) {
+      Complex *h=H[b];
+      for(unsigned int i=0; i < L; ++i)
+        h[i] *= scale;
     }
   }
-}
-
-// Pair-wise binary multiply for A=2 or A=4.
-// NB: example function, not optimised or threaded.
-void multA(Complex **F, unsigned int m,
-           const unsigned int indexsize,
-           const unsigned int *index,
-           unsigned int r, unsigned int threads)
-{
-  switch(A) {
-    case 2: multbinary(F,m,indexsize,index,r,threads); break;
-    case 4: multbinary2(F,m,indexsize,index,r,threads); break;
-    default:
-      cerr << "A=" << A << " is not yet implemented" << endl;
-      exit(1);
-  }
-
-  for(unsigned int b=1; b < B; ++b) {
-    double factor=1.0+b;
-    for(unsigned int i=0; i < m; ++i) {
-      F[b][i]=factor*F[0][i];
-    }
-  }
-}
+};
 
 unsigned int L=683;
 unsigned int M=1025;
@@ -742,6 +884,8 @@ void usage()
   std::cerr << "-L\t\t number of physical data values" << std::endl;
   std::cerr << "-M\t\t minimal number of padded data values" << std::endl;
   std::cerr << "-T\t\t number of threads" << std::endl;
+}
+
 }
 
 int main(int argc, char* argv[])
@@ -811,7 +955,7 @@ int main(int argc, char* argv[])
     cout << "optimal ratio=" << mean/mean1 << endl;
   cout << endl;
 
-  unsigned int N=fft.length();
+  unsigned int N=fft.size();
 
   Complex *f=ComplexAlign(L);
   Complex *F=ComplexAlign(N);
@@ -821,10 +965,10 @@ int main(int argc, char* argv[])
     f[j]=j+1;
   fft.forward(f,F);
 
-  Complex *f0=ComplexAlign(fft.inverseLength());
+  Complex *f0=ComplexAlign(fft.length());
   Complex *F0=ComplexAlign(N);
 
-  for(unsigned int j=0; j < fft.length(); ++j)
+  for(unsigned int j=0; j < fft.size(); ++j)
     F0[j]=F[j];
 
   fft.backward(F0,f0);
@@ -832,7 +976,7 @@ int main(int argc, char* argv[])
   if(L < 30) {
     cout << endl;
     cout << "Inverse:" << endl;
-    unsigned int N=fft.length();
+    unsigned int N=fft.size();
     for(unsigned int j=0; j < L; ++j)
       cout << f0[j]/N << endl;
     cout << endl;
@@ -882,6 +1026,45 @@ int main(int argc, char* argv[])
     cerr << endl << "WARNING: " << endl;
   cout << "forward error=" << error << endl;
   cout << "backward error=" << error2 << endl;
+
+  {
+  unsigned int L0=fft.length();
+  Complex *g=ComplexAlign(L0);
+  Complex *h=ComplexAlign(L0);
+
+  for(unsigned int j=0; j < L; ++j) {
+#if OUTPUT
+    f[j]=Complex(j,j+1);
+    g[j]=Complex(j,2*j+1);
+#else
+    f[j]=0.0;
+    g[j]=0.0;
+#endif
+  }
+
+//  FFTpad fft(L,M);
+  HybridConvolution C(fft);
+
+  Complex *F[]={f,g};
+//  Complex *H[]={h};
+#if OUTPUT
+  unsigned int K=1;
+#else
+  unsigned int K=10000;
+#endif
+  double t0=totalseconds();
+
+  for(unsigned int i=0; i < K; ++i)
+    C.convolve(F,multbinary,F);
+
+  double t=totalseconds();
+  cout << (t-t0)/K << endl;
+  cout << endl;
+#if OUTPUT
+  for(unsigned int j=0; j < L; ++j)
+    cout << F[0][j] << endl;
+#endif
+  }
 
   return 0;
 }
