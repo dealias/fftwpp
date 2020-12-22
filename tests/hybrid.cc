@@ -813,13 +813,13 @@ public:
           fft->forward(F[a],U[a],0,W);
         (*mult)(U,c,threads);
         for(unsigned int a=0; a < B; ++a)
-          fft->forward(F[a],U[B+a],1,W);
+          fft->forward(F[a],Up[a],1,W);
         for(unsigned int b=0; b < B; ++b)
           fft->backward(U[b],H[b],0,W);
         if(repad)
           fft->pad(W);
         for(unsigned int a=B; a < A; ++a)
-          fft->forward(F[a],U[a-B],1,W);
+          fft->forward(F[a],Up[a],1,W);
         (*mult)(Up,c,threads);
         Complex *U0=U[0];
         for(unsigned int b=0; b < B; ++b)
