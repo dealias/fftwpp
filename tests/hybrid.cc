@@ -740,26 +740,30 @@ public:
       if(!this->W) {
         allocateW=true;
         this->W=ComplexAlign(c);
-        W0=A <= B ? this->W : this->U[B];
       }
 
+
       padding=fft.padding();
-      repad=padding && A <= B;
+      if(A <= B) {
+        repad=padding;
+        W0=this->W;
+      } else {
+        repad=false;
+        W0=this->U[B];
+      }
       pad();
     }
 
     Q=fft.Q;
     D=fft.D;
 
-    if(D < Q) { // More than one loop
-      loop2=2*D >= Q && A >= 2*B; // Two loops
-      if(loop2) {
-        Up=new Complex*[A];
-        for(unsigned int a=0; a < B; ++a)
-          Up[a]=this->U[a+B];
-        for(unsigned int a=B; a < A; ++a)
-          Up[a]=this->U[a-B];
-      }
+    loop2=D < Q && 2*D >= Q && A >= 2*B; // Two loops
+    if(loop2) {
+      Up=new Complex*[A];
+      for(unsigned int a=0; a < B; ++a)
+        Up[a]=this->U[a+B];
+      for(unsigned int a=B; a < A; ++a)
+        Up[a]=this->U[a-B];
     }
   }
 
@@ -824,7 +828,6 @@ public:
         Complex *U0=U[0];
         for(unsigned int b=0; b < B; ++b)
           fft->backward(Up[b],H[b],1,U0);
-
       } else {
         if(H == F && D < Q) { // More than one loop
           if(!V) initV();
@@ -1029,6 +1032,7 @@ int main(int argc, char* argv[])
 
   {
   unsigned int L0=fft.length();
+  Complex *f=ComplexAlign(L0);
   Complex *g=ComplexAlign(L0);
   Complex *h=ComplexAlign(L0);
 
