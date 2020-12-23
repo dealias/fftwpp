@@ -516,16 +516,20 @@ public:
     return q == 1 ? M : m*q;
   }
 
-  unsigned int blocksize() {
+  unsigned int worksizeU() {
     return q == 1 ? M : m*p*D;
   }
 
-  unsigned int Worksize() {
-    return q == 1 ? 0 : length();
+  bool loop2() {
+    return D < Q && 2*D >= Q && A >= 2*B;
   }
 
-  unsigned int worksize() {
-    return q == 1 ? 0 : blocksize();
+  unsigned int worksizeV() {
+    return q == 1 || D >= Q || loop2() ? 0 : length();
+  }
+
+  unsigned int worksizeW() {
+    return q == 1 ? 0 : worksizeU();
   }
 
   unsigned int padding() {
@@ -548,7 +552,7 @@ public:
       h=f;
     }
 
-    unsigned int c=blocksize();
+    unsigned int c=worksizeU();
 
     Complex *F=ComplexAlign(c);
     Complex *G=ComplexAlign(c);
@@ -704,9 +708,9 @@ private:
 public:
   // A is the number of inputs.
   // B is the number of outputs.
-  // U is an optional work array of size max(A,B)*fft->blocksize(),
-  // V is an optional work array of size B*fft->Worksize() (for inplace usage)
-  // W is an optional work array of size fft->worksize();
+  // U is an optional work array of size max(A,B)*fft->worksizeU(),
+  // V is an optional work array of size B*fft->worksizeV() (for inplace usage)
+  // W is an optional work array of size fft->worksizeW();
   //   if changed between calls to convolve(), be sure to call pad()
   HybridConvolution(FFTpad &fft, unsigned int A=2, unsigned int B=1,
                     Complex *U=NULL, Complex *V=NULL, Complex *W=NULL) :
@@ -714,7 +718,7 @@ public:
     L=fft.L;
     unsigned int N=fft.size();
     scale=1.0/N;
-    c=fft.blocksize();
+    c=fft.worksizeU();
 
     unsigned int C=max(A,B);
     this->U=new Complex*[C];
@@ -742,29 +746,29 @@ public:
         this->W=ComplexAlign(c);
       }
 
-
       padding=fft.padding();
-      if(A <= B) {
-        repad=padding;
-        W0=this->W;
-      } else {
-        repad=false;
-        W0=this->U[B];
-      }
       pad();
+
+      loop2=fft.loop2(); // Two loops  TODO: A >= 2B  ==>  A > B
+      if(loop2) {
+        Up=new Complex*[A];
+        for(unsigned int a=0; a < B; ++a)
+          Up[a]=this->U[a+B];
+        for(unsigned int a=B; a < A; ++a)
+          Up[a]=this->U[a-B];
+      } else {
+        if(A <= B) {
+          repad=padding;
+          W0=this->W;
+        } else {
+          repad=false;
+          W0=this->U[B];
+        }
+      }
     }
 
     Q=fft.Q;
     D=fft.D;
-
-    loop2=D < Q && 2*D >= Q && A >= 2*B; // Two loops
-    if(loop2) {
-      Up=new Complex*[A];
-      for(unsigned int a=0; a < B; ++a)
-        Up[a]=this->U[a+B];
-      for(unsigned int a=B; a < A; ++a)
-        Up[a]=this->U[a-B];
-    }
   }
 
   void initV() {
@@ -820,7 +824,7 @@ public:
           fft->forward(F[a],Up[a],1,W);
         for(unsigned int b=0; b < B; ++b)
           fft->backward(U[b],H[b],0,W);
-        if(repad)
+        if(padding)
           fft->pad(W);
         for(unsigned int a=B; a < A; ++a)
           fft->forward(F[a],Up[a],1,W);
@@ -962,7 +966,7 @@ int main(int argc, char* argv[])
 
   Complex *f=ComplexAlign(L);
   Complex *F=ComplexAlign(N);
-  fft.W0=ComplexAlign(fft.blocksize());
+  fft.W0=ComplexAlign(fft.worksizeW());
 
   for(unsigned int j=0; j < L; ++j)
     f[j]=j+1;
