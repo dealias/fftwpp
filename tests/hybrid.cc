@@ -750,19 +750,22 @@ public:
       pad();
 
       loop2=fft.loop2(); // Two loops and A > B
+      int extra;
       if(loop2) {
         Up=new Complex*[A];
         Up[0]=this->U[A-1];
         for(unsigned int a=1; a < A; ++a)
           Up[a]=this->U[a-1];
+        extra=1;
+      } else
+        extra=0;
+
+      if(A > B+extra) {
+        repad=false;
+        W0=this->U[B];
       } else {
-        if(A <= B) {
-          repad=padding;
-          W0=this->W;
-        } else {
-          repad=false;
-          W0=this->U[B];
-        }
+        repad=padding;
+        W0=this->W;
       }
     }
 
@@ -822,16 +825,16 @@ public:
 
         for(unsigned int b=0; b < B; ++b) {
           fft->forward(F[b],Up[b],1,W);
-          fft->backward(U[b],H[b],0,W);
-          if(padding)
+          fft->backward(U[b],H[b],0,W0);
+          if(repad)
             fft->pad(W);
         }
         for(unsigned int a=B; a < A; ++a)
           fft->forward(F[a],Up[a],1,W);
         (*mult)(Up,c,threads);
-        Complex *U0=U[0];
+        Complex *UpB=Up[B];
         for(unsigned int b=0; b < B; ++b)
-          fft->backward(Up[b],H[b],1,U0);
+          fft->backward(Up[b],H[b],1,UpB);
       } else {
         if(H == F && D < Q) { // More than one loop
           if(!V) initV();
