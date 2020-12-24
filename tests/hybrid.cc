@@ -129,19 +129,19 @@ public:
       Complex *G=ComplexAlign(m*d);
       Complex *H=ComplexAlign(m*d);
 
-      fftm=new mfft1d(m,1,d, 1,1, m,m, G,H);
-      ifftm=new mfft1d(m,-1,d, 1,1, m,m, G,H);
+      fftm=new mfft1d(m,1,d,G,H);
+      ifftm=new mfft1d(m,-1,d,G,H);
 
       unsigned int extra=Q % D;
       if(extra > 0) {
         d=p*extra;
-        fftm2=new mfft1d(m,1,d, 1,1, m,m, G,H);
-        ifftm2=new mfft1d(m,-1,d, 1,1, m,m, G,H);
+        fftm2=new mfft1d(m,1,d,G,H);
+        ifftm2=new mfft1d(m,-1,d,G,H);
       }
 
       if(p > 1) {// L'=p, M'=q, m'=p, p'=1, q'=n
-        fftp=new mfft1d(p,1,m, m,m, 1,1, G,G);
-        ifftp=new mfft1d(p,-1,m, m,m, 1,1, G,G);
+        fftp=new mfft1d(p,1,m,m,1,G,G);
+        ifftp=new mfft1d(p,-1,m,m,1,G,G);
       }
 
       deleteAlign(H);

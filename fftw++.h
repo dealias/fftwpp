@@ -838,7 +838,14 @@ class mfft1d : public fftwblock<fftw_complex,fftw_complex>,
                public Threadtable<keytype3,keyless3> {
   static Table threadtable;
 public:
-  mfft1d(unsigned int nx, int sign, unsigned int M=1, size_t stride=1,
+  mfft1d(unsigned int nx, int sign, unsigned int M=1,
+         Complex *in=NULL, Complex *out=NULL,
+         unsigned int threads=maxthreads) :
+    fftw(2*((nx-1)+(M-1)*nx+1),sign,threads,nx),
+    fftwblock<fftw_complex,fftw_complex>
+    (nx,M,1,1,nx,nx,in,out,threads) {}
+
+  mfft1d(unsigned int nx, int sign, unsigned int M, size_t stride=1,
          size_t dist=0, Complex *in=NULL, Complex *out=NULL,
          unsigned int threads=maxthreads) :
     fftw(2*((nx-1)*stride+(M-1)*Dist(nx,stride,dist)+1),sign,threads,nx),
