@@ -609,14 +609,14 @@ public:
             forward(g,G,0,W);
             for(unsigned int i=0; i < c; ++i)
               F[i] *= G[i];
-            forward(f,G,1,W);
+            forward(f,G,D,W);
             backward(F,f,0,W);
             if(Padding)
               pad(W);
-            forward(g,F,1,W);
+            forward(g,F,D,W);
             for(unsigned int i=0; i < c; ++i)
               F[i] *= G[i];
-            backward(F,f,1,G);
+            backward(F,f,D,G);
             for(unsigned int i=0; i < L; ++i)
               f[i] *= scale;
           } else {
@@ -824,17 +824,17 @@ public:
         (*mult)(U,c,threads);
 
         for(unsigned int b=0; b < B; ++b) {
-          fft->forward(F[b],Up[b],1,W);
+          fft->forward(F[b],Up[b],D,W);
           fft->backward(U[b],H[b],0,W0);
           if(repad)
             fft->pad(W);
         }
         for(unsigned int a=B; a < A; ++a)
-          fft->forward(F[a],Up[a],1,W);
+          fft->forward(F[a],Up[a],D,W);
         (*mult)(Up,c,threads);
         Complex *UpB=Up[B];
         for(unsigned int b=0; b < B; ++b)
-          fft->backward(Up[b],H[b],1,UpB);
+          fft->backward(Up[b],H[b],D,UpB);
       } else {
         if(H == F && D < Q) { // More than one loop
           if(!V) initV();
