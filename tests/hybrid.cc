@@ -521,7 +521,7 @@ public:
   }
 
   bool loop2() {
-    return D < Q && 2*D >= Q && A >= 2*B;
+    return D < Q && 2*D >= Q && A > B;
   }
 
   unsigned int worksizeV() {
@@ -749,13 +749,12 @@ public:
       padding=fft.padding();
       pad();
 
-      loop2=fft.loop2(); // Two loops  TODO: A >= 2B  ==>  A > B
+      loop2=fft.loop2(); // Two loops and A > B
       if(loop2) {
         Up=new Complex*[A];
-        for(unsigned int a=0; a < B; ++a)
-          Up[a]=this->U[a+B];
-        for(unsigned int a=B; a < A; ++a)
-          Up[a]=this->U[a-B];
+        Up[0]=this->U[A-1];
+        for(unsigned int a=1; a < A; ++a)
+          Up[a]=this->U[a-1];
       } else {
         if(A <= B) {
           repad=padding;
@@ -820,12 +819,13 @@ public:
         for(unsigned int a=0; a < A; ++a)
           fft->forward(F[a],U[a],0,W);
         (*mult)(U,c,threads);
-        for(unsigned int a=0; a < B; ++a)
-          fft->forward(F[a],Up[a],1,W);
-        for(unsigned int b=0; b < B; ++b)
+
+        for(unsigned int b=0; b < B; ++b) {
+          fft->forward(F[b],Up[b],1,W);
           fft->backward(U[b],H[b],0,W);
-        if(padding)
-          fft->pad(W);
+          if(padding)
+            fft->pad(W);
+        }
         for(unsigned int a=B; a < A; ++a)
           fft->forward(F[a],Up[a],1,W);
         (*mult)(Up,c,threads);
