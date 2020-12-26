@@ -326,7 +326,6 @@ public:
   }
 
   void forwardExplicit(Complex *f, Complex *F) {
-    size_t strideL=stride*L;
     for(unsigned int i=0; i < strideL; i += stride)
       F[i]=f[i];
     size_t strideM=stride*M;
@@ -350,10 +349,10 @@ public:
 
   void backwardExplicit(Complex *F, Complex *f) {
     ifftM->fft(F);
-    size_t strideL=stride*L;
     for(unsigned int i=0; i < strideL; i += stride)
       f[i]=F[i];
   }
+
   void backward(Complex *F, Complex *f) {
     if(q == 1)
       backwardExplicit(F,f);
