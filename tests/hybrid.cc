@@ -371,13 +371,12 @@ public:
       for(unsigned int i=0; i < L; ++i)
         W[stride*i]=f[stride*i];
     }
-    unsigned int stop=min(L,m);
     for(unsigned int d=first; d < D0; ++d) {
       Complex *F=W+stridem*d;
       unsigned int r=r0+d;
       F[0]=f[0];
       Complex *Zetar=Zetaqm+m*r-r;
-      for(unsigned int s=1; s < stop; ++s)
+      for(unsigned int s=1; s < L; ++s)
         F[stride*s]=Zetar[s]*f[stride*s];
     }
     (D0 == D ? fftm : fftm2)->fft(W,F0);
@@ -471,13 +470,12 @@ public:
       for(unsigned int s=0; s < m; ++s)
         f[stride*s]=W[stride*s];
     }
-    unsigned int stop=min(L,m);
     for(unsigned int d=first; d < D0; ++d) {
       Complex *F=W+stridem*d;
       unsigned int r=r0+d;
       f[0] += F[0];
       Complex *Zetamr=Zetaqm+m*r-r;
-      for(unsigned int s=1; s < stop; ++s) {
+      for(unsigned int s=1; s < L; ++s) {
         f[stride*s] += conj(Zetamr[s])*F[stride*s];
       }
     }
