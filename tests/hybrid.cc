@@ -115,7 +115,7 @@ public:
       unsigned int N=m*q;
       double twopibyN=twopi/N;
 
-      if(p > 1) {
+      if(p > 1) { // Implies L > m
         Q=n;
         Zetaqp=ComplexAlign((n-1)*(p-1))-p;
         double twopibyq=twopi/q;
@@ -386,17 +386,25 @@ public:
   void forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W,
                     unsigned int D0) {
     unsigned int first=r0 == 0;
+    unsigned int pm1=p-1;
     if(first) {
-      for(unsigned int t=0; m*t < L; ++t) {
+      for(unsigned int t=0; t < pm1; ++t) {
         unsigned int stridemt=stridem*t;
         Complex *Ft=W+stridemt;
         Complex *ft=f+stridemt;
-        unsigned int stop=min(L-m*t,m);
-        for(unsigned int s=0; s < stop; ++s)
+        for(unsigned int s=0; s < m; ++s)
           Ft[stride*s]=ft[stride*s];
-        for(unsigned int s=stop; s < m; ++s)
-          Ft[stride*s]=0.0;
       }
+
+      unsigned int stridemt=stridem*pm1;
+      Complex *Ft=W+stridemt;
+      Complex *ft=f+stridemt;
+      unsigned stop=L-m*pm1;
+      for(unsigned int s=0; s < stop; ++s)
+        Ft[stride*s]=ft[stride*s];
+      for(unsigned int s=stop; s < m; ++s)
+        Ft[stride*s]=0.0;
+
       fftp->fft(W);
       for(unsigned int t=1; t < p; ++t) {
         unsigned int R=n*t;
@@ -408,26 +416,30 @@ public:
     }
 
     unsigned int b=stridem*p;
-    unsigned int stop=min(L,m);
     for(unsigned int d=first; d < D0; ++d) {
       Complex *F=W+b*d;
       unsigned int r=r0+d;
-      for(unsigned int s=0; s < stop; ++s)
+      for(unsigned int s=0; s < m; ++s)
         F[stride*s]=f[stride*s];
-      for(unsigned int s=stop; s < m; ++s)
-        F[stride*s]=0.0;
-      Complex *Zetaqr=Zetaqp+p*r-r;
-      for(unsigned int t=1; m*t < L; ++t) {
+      Complex *Zetaqr=Zetaqp+pm1*r;
+      for(unsigned int t=1; t < pm1; ++t) {
         unsigned int stridemt=stridem*t;
         Complex *Ft=F+stridemt;
         Complex *ft=f+stridemt;
         Complex Zeta=Zetaqr[t];
-        unsigned int stop=min(L-m*t,m);
-        for(unsigned int s=0; s < stop; ++s)
+        for(unsigned int s=0; s < m; ++s)
           Ft[stride*s]=Zeta*ft[stride*s];
-        for(unsigned int s=stop; s < m; ++s)
-          Ft[stride*s]=0.0;
       }
+      unsigned int stridemt=stridem*pm1;
+      Complex *Ft=F+stridemt;
+      Complex *ft=f+stridemt;
+      Complex Zeta=Zetaqr[pm1];
+      unsigned stop=L-m*pm1;
+      for(unsigned int s=0; s < stop; ++s)
+        Ft[stride*s]=Zeta*ft[stride*s];
+      for(unsigned int s=stop; s < m; ++s)
+        Ft[stride*s]=0.0;
+
       fftp->fft(F);
       for(unsigned int t=0; t < p; ++t) {
         unsigned int R=n*t+r;
@@ -474,6 +486,7 @@ public:
   void backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W,
                      unsigned int D0) {
     unsigned int first=r0 == 0;
+    unsigned int pm1=p-1;
 
     if(first) {
       for(unsigned int t=1; t < p; ++t) {
@@ -484,14 +497,19 @@ public:
           Ft[stride*s] *= conj(Zetar[s]);
       }
       ifftp->fft(W);
-      for(unsigned int t=0; m*t < L; ++t) {
+      for(unsigned int t=0; t < pm1; ++t) {
         unsigned int stridemt=stridem*t;
         Complex *Ft=W+stridemt;
         Complex *ft=f+stridemt;
-        unsigned int stop=min(L-m*t,m);
-        for(unsigned int s=0; s < stop; ++s)
+        for(unsigned int s=0; s < m; ++s)
           ft[stride*s]=Ft[stride*s];
       }
+      unsigned int stridemt=stridem*pm1;
+      Complex *Ft=W+stridemt;
+      Complex *ft=f+stridemt;
+      unsigned stop=L-m*pm1;
+      for(unsigned int s=0; s < stop; ++s)
+        ft[stride*s]=Ft[stride*s];
     }
 
     unsigned int b=stridem*p;
@@ -506,19 +524,24 @@ public:
           Ft[stride*s] *= conj(Zetar[s]);
       }
       ifftp->fft(F);
-      unsigned int stop=min(L,m);
-      for(unsigned int s=0; s < stop; ++s)
+      for(unsigned int s=0; s < m; ++s)
         f[stride*s] += F[stride*s];
-      Complex *Zetaqr=Zetaqp+p*r-r;
-      for(unsigned int t=1; m*t < L; ++t) {
+      Complex *Zetaqr=Zetaqp+pm1*r;
+      for(unsigned int t=1; t < pm1; ++t) {
         unsigned int stridemt=stridem*t;
         Complex *Ft=F+stridemt;
         Complex *ft=f+stridemt;
         Complex Zeta=conj(Zetaqr[t]);
-        unsigned int stop=min(L-m*t,m);
-        for(unsigned int s=0; s < stop; ++s)
+        for(unsigned int s=0; s < m; ++s)
           ft[stride*s] += Zeta*Ft[stride*s];
       }
+      unsigned int stridemt=stridem*pm1;
+      Complex *Ft=F+stridemt;
+      Complex *ft=f+stridemt;
+      Complex Zeta=conj(Zetaqr[pm1]);
+      unsigned int stop=L-m*pm1;
+      for(unsigned int s=0; s < stop; ++s)
+        ft[stride*s] += Zeta*Ft[stride*s];
     }
   }
 
