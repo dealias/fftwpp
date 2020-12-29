@@ -194,12 +194,13 @@ public:
     double T;
 
     void check(unsigned int L, unsigned int M,
-               unsigned int m, bool fixed=false) {
-//      cout << "m=" << m << endl;
+               unsigned int m, bool fixed=false,
+               bool mForced=false) {
+//    cout << "m=" << m << endl;
       unsigned int p=ceilquotient(L,m);
       unsigned int q=ceilquotient(M,m);
 
-      if(p == q && p > 1) return;
+      if(p == q && p > 1 && !mForced) return;
 
       if(!fixed) {
         unsigned int n=ceilquotient(M,m*p);
@@ -272,7 +273,7 @@ public:
       unsigned int m0=1;
 
       if(mOption >= 1 && !Explicit)
-        check(L,M,mOption,fixed);
+        check(L,M,mOption,fixed,true);
       else
         while(true) {
           m0=nextfftsize(m0+1);
