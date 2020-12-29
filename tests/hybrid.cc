@@ -108,12 +108,14 @@ public:
       cerr << "stride cannot be less than the number of padded FFTs"
            << endl;
       exit(-1);
-    } else if(C == 1) {
+    }
+
+    if(C == 1) {
       if(stride != 1) {
         cerr << "stride must be 1 for a single padded FFT" << endl;
         exit(-1);
-      } else D=1;
-    }
+      }
+    } else D=1;
 
     stridem=stride*m;
     p=ceilquotient(L,m);
@@ -218,6 +220,7 @@ public:
       unsigned int p=ceilquotient(L,m);
       unsigned int q=ceilquotient(M,m);
 
+      if(p > 1) return;
       if(p == q && p > 1 && !mForced) return;
 
       if(!fixed) {
@@ -230,9 +233,9 @@ public:
           for(unsigned int D=start; D <= stop; D *= 2) {
             if(2*D > stop) D=stop;
 //            cout << "q2=" << q2 << endl;
-//            cout << "D=" << D << endl;
+//            cout << "D2=" << D << endl;
 
-            FFTpad fft(L,M,m,q2,D,1,1);
+            FFTpad fft(L,M,m,q2,D,C,C);
             double t=fft.meantime();
             if(t < T) {
               this->m=m;
@@ -251,9 +254,7 @@ public:
       if(fixed || C > 1) start=stop=1;
       for(unsigned int D=start; D <= stop; D *= 2) {
         if(2*D > stop) D=stop;
-//        cout << "q=" << q << endl;
-//        cout << "D=" << D << endl;
-        FFTpad fft(L,M,m,q,D,1,1);
+        FFTpad fft(L,M,m,q,D,C,C);
         double t=fft.meantime();
 
         if(t < T) {
@@ -931,7 +932,6 @@ public:
     unsigned int K=1;
     double eps=0.1;
     unsigned int N=size();
-    unsigned int CN=C*N;
     double scale=1.0/N;
 
     for(;;) {
@@ -940,7 +940,7 @@ public:
         if(C == 1) {
           t0=totalseconds();
           for(unsigned int k=0; k < K; ++k) {
-#define OUTPUT 1
+#define OUTPUT 0
 #if OUTPUT
             initialize(f,g);
 #endif
@@ -960,12 +960,7 @@ public:
             initialize(f,g);
 #endif
             ForwardExplicit(f,F);
-            ForwardExplicit(g,G);
-            for(unsigned int i=0; i < CN; ++i)
-              F[i] *= G[i];
             BackwardExplicit(F,f);
-            for(unsigned int i=0; i < CL; ++i)
-              f[i] *= scale;
           }
           t=totalseconds();
         }
