@@ -133,28 +133,25 @@ public:
             Zetaqp[p*r-r+t]=expi((m*r*t % N)*twopibyN);
       }
 
-      unsigned int d=p*D*C;
+      unsigned int d=C == 1 ? p*D : C;
       Complex *G=ComplexAlign(m*d);
       Complex *H=ComplexAlign(m*d);
 
-      if(C == 1) {
-        fftm=new mfft1d(m,1,d,1,m,G,H);
-        ifftm=new mfft1d(m,-1,d,1,m,G,H);
-      } else {
-        fftm=new mfft1d(m,1,d,C,1,G,H);
-        ifftm=new mfft1d(m,-1,d,C,1,G,H);
-      }
+      unsigned int S=C == 1 ? m : 1;
+
+      fftm=new mfft1d(m,1,d, C,S, G,H);
+      ifftm=new mfft1d(m,-1,d, C,S, G,H);
 
       unsigned int extra=Q % D;
       if(extra > 0) {
         d=p*extra;
-        fftm2=new mfft1d(m,1,d,1,m,G,H);
-        ifftm2=new mfft1d(m,-1,d,1,m,G,H);
+        fftm2=new mfft1d(m,1,d, 1,m, G,H);
+        ifftm2=new mfft1d(m,-1,d, 1,m, G,H);
       }
 
       if(p > 1) {// L'=p, M'=q, m'=p, p'=1, q'=n
-        fftp=new mfft1d(p,1,Cm,Cm,1,G,G);
-        ifftp=new mfft1d(p,-1,Cm,Cm,1,G,G);
+        fftp=new mfft1d(p,1,Cm, Cm,1, G,G);
+        ifftp=new mfft1d(p,-1,Cm, Cm,1, G,G);
       }
 
       deleteAlign(H);
@@ -206,7 +203,7 @@ public:
       unsigned int p=ceilquotient(L,m);
       unsigned int q=ceilquotient(M,m);
 
-      if(C > 1 && p > 1) return;
+//      if(C > 1 && p > 1) return;
       if(p == q && p > 1 && !mForced) return;
 
       if(!fixed) {
@@ -381,8 +378,9 @@ public:
 
   void ForwardExplicit(Complex *f, Complex *F) {
     for(unsigned int s=0; s < L; ++s) {
-      Complex *Fs=F+C*s;
-      Complex *fs=f+C*s;
+      unsigned int Cs=C*s;
+      Complex *Fs=F+Cs;
+      Complex *fs=f+Cs;
       for(unsigned int c=0; c < C; ++c)
         Fs[c]=fs[c];
     }
@@ -403,8 +401,9 @@ public:
   void BackwardExplicit(Complex *F, Complex *f) {
     ifftM->fft(F);
     for(unsigned int s=0; s < L; ++s) {
-      Complex *fs=f+C*s;
-      Complex *Fs=F+C*s;
+      unsigned int Cs=C*s;
+      Complex *fs=f+Cs;
+      Complex *Fs=F+Cs;
       for(unsigned int c=0; c < C; ++c)
         fs[c]=Fs[c];
     }
@@ -437,8 +436,9 @@ public:
 
     if(r == 0) {
       for(unsigned int s=0; s < L; ++s) {
-        Complex *Ws=W+C*s;
-        Complex *fs=f+C*s;
+        unsigned int Cs=C*s;
+        Complex *Ws=W+Cs;
+        Complex *fs=f+Cs;
         for(unsigned int c=0; c < C; ++c)
           Ws[c]=fs[c];
       }
@@ -447,8 +447,9 @@ public:
         W[c]=f[c];
       Complex *Zetar=Zetaqm+m*r-r;
       for(unsigned int s=1; s < L; ++s) {
-        Complex *Ws=W+C*s;
-        Complex *fs=f+C*s;
+        unsigned int Cs=C*s;
+        Complex *Ws=W+Cs;
+        Complex *fs=f+Cs;
         Complex Zetars=Zetar[s];
         for(unsigned int c=0; c < C; ++c)
           Ws[c]=Zetars*fs[c];
@@ -536,8 +537,9 @@ public:
         Complex *Ft=W+Cmt;
         Complex *ft=f+Cmt;
         for(unsigned int s=0; s < m; ++s) {
-          Complex *Fts=Ft+C*s;
-          Complex *fts=ft+C*s;
+          unsigned int Cs=C*s;
+          Complex *Fts=Ft+Cs;
+          Complex *fts=ft+Cs;
           for(unsigned int c=0; c < C; ++c)
             Fts[c]=fts[c];
         }
@@ -586,8 +588,9 @@ public:
         Complex *ft=f+Cmt;
         Complex Zeta=Zetaqr[t];
         for(unsigned int s=0; s < m; ++s) {
-          Complex *Fts=Ft+C*s;
-          Complex *fts=ft+C*s;
+          unsigned int Cs=C*s;
+          Complex *Fts=Ft+Cs;
+          Complex *fts=ft+Cs;
           for(unsigned int c=0; c < C; ++c)
             Fts[c]=Zeta*fts[c];
         }
@@ -623,7 +626,10 @@ public:
         }
       }
     }
-    fftm->fft(W,F0);
+    for(unsigned int t=0; t < p; ++t) {
+      unsigned int Cmt=Cm*t;
+      fftm->fft(W+Cmt,F0+Cmt);
+    }
   }
 
 // Compute an inverse fft of length N=m*q unpadded back
@@ -654,14 +660,15 @@ public:
   }
 
   void Backward(Complex *F0, Complex *f, unsigned int r, Complex *W) {
-    ifftm->fft(F0,W);
-
     if(p > 1) return BackwardInner(F0,f,r,W);
+
+    ifftm->fft(F0,W);
 
     if(r == 0) {
       for(unsigned int s=0; s < m; ++s) {
-        Complex *fs=f+C*s;
-        Complex *Ws=W+C*s;
+        unsigned int Cs=C*s;
+        Complex *fs=f+Cs;
+        Complex *Ws=W+Cs;
         for(unsigned int c=0; c < C; ++c)
           fs[c]=Ws[c];
       }
@@ -670,8 +677,9 @@ public:
         f[c] += W[c];
       Complex *Zetamr=Zetaqm+m*r-r;
       for(unsigned int s=1; s < L; ++s) {
-        Complex *fs=f+C*s;
-        Complex *Ws=W+C*s;
+        unsigned int Cs=C*s;
+        Complex *fs=f+Cs;
+        Complex *Ws=W+Cs;
         Complex Zetamrs=Zetamr[s];
         for(unsigned int c=0; c < C; ++c)
           fs[c] += conj(Zetamrs)*Ws[c];
@@ -744,6 +752,10 @@ public:
   }
 
   void BackwardInner(Complex *F0, Complex *f, unsigned int r, Complex *W) {
+    for(unsigned int t=0; t < p; ++t) {
+      unsigned int Cmt=Cm*t;
+      ifftm->fft(F0+Cmt,W+Cmt);
+    }
     unsigned int pm1=p-1;
 
     if(r == 0) {
@@ -809,8 +821,9 @@ public:
         Complex *ft=f+Cmt;
         Complex Zeta=conj(Zetaqr[t]);
         for(unsigned int s=0; s < m; ++s) {
-          Complex *fts=ft+C*s;
-          Complex *Fts=Ft+C*s;
+          unsigned int Cs=C*s;
+          Complex *fts=ft+Cs;
+          Complex *Fts=Ft+Cs;
           for(unsigned int c=0; c < C; ++c)
             fts[c] += Zeta*Fts[c];
         }
@@ -1343,6 +1356,11 @@ int main(int argc, char* argv[])
   fft.backward(F0,f0);
 
   if(L < 30) {
+#if 0
+    for(unsigned int j=0; j < fft.size(); ++j)
+      for(unsigned int c=0; c < C; ++c)
+        cout << F[C*j+c] << endl;
+#endif
     cout << endl;
     cout << "Inverse:" << endl;
     unsigned int N=fft.size();
