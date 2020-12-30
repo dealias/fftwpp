@@ -133,14 +133,17 @@ public:
             Zetaqp[p*r-r+t]=expi((m*r*t % N)*twopibyN);
       }
 
-      unsigned int d=C == 1 ? p*D : C;
+      unsigned int d=p*D*C;
       Complex *G=ComplexAlign(m*d);
       Complex *H=ComplexAlign(m*d);
 
-      unsigned int S=C == 1 ? m : 1;
-
-      fftm=new mfft1d(m,1,d, C,S, G,H);
-      ifftm=new mfft1d(m,-1,d, C,S, G,H);
+      if(C == 1) {
+        fftm=new mfft1d(m,1,d, 1,m, G,H);
+        ifftm=new mfft1d(m,-1,d, 1,m, G,H);
+      } else {
+        fftm=new mfft1d(m,1,C, C,1, G,H);
+        ifftm=new mfft1d(m,-1,C, C,1, G,H);
+      }
 
       unsigned int extra=Q % D;
       if(extra > 0) {
