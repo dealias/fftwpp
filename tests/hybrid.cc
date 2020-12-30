@@ -542,7 +542,6 @@ public:
             Fts[c]=fts[c];
         }
       }
-
       unsigned int Cmt=Cm*pm1;
       Complex *Ft=W+Cmt;
       Complex *ft=f+Cmt;
@@ -980,8 +979,8 @@ public:
             initialize(f,g);
 #endif
             for(unsigned int r=0; r < Q; r += D) {
-              forward(f,F,r,W);
-              backward(F,h,r,G);
+              Forward(f,F,r,W);
+              Backward(F,h,r,G);
             }
           }
         t=totalseconds();
