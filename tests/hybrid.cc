@@ -109,9 +109,9 @@ public:
     n=q/p;
     if(m > M) M=m;
     if(q == 1) {
-      Complex *G=ComplexAlign(M*C);
-      fftM=new mfft1d(M,1,C,C,1,G);
-      ifftM=new mfft1d(M,-1,C,C,1,G);
+      Complex *G=ComplexAlign(C*M);
+      fftM=new mfft1d(M,1,C, C,1, G);
+      ifftM=new mfft1d(M,-1,C, C,1, G);
       deleteAlign(G);
       Q=1;
     } else {
@@ -896,6 +896,7 @@ public:
     Complex *g=ComplexAlign(L0);
     Complex *h;
     bool loop2=this->loop2(); // Two loops?
+    if(C > 1) loop2=false;
     if(loop2)
       h=f;
     else
@@ -994,7 +995,7 @@ public:
 #if OUTPUT
             initialize(f,g);
 #endif
-            for(unsigned int r=0; r < Q; r += D) {
+            for(unsigned int r=0; r < Q; ++r) {
               Forward(f,F,r,W);
               Backward(F,h,r,G);
             }
