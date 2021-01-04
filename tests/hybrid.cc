@@ -343,10 +343,10 @@ public:
     if(q == 1)
       C == 1 ? forwardExplicit(f,F) : ForwardExplicit(f,F);
     else {
-      if(p == 1 && L < m)
-        pad(W0);
       unsigned int b=Cm*p;
       if(C == 1) {
+        if(p == 1 && L < m)
+          pad(W0);
         for(unsigned int r=0; r < Q; r += D)
           forward(f,F+b*r,r,W0);
       } else {
@@ -440,10 +440,16 @@ public:
     if(r == 0) {
       for(unsigned int s=0; s < L; ++s) {
         unsigned int Cs=C*s;
-        Complex *Ws=F+Cs;
+        Complex *Fs=F+Cs;
         Complex *fs=f+Cs;
         for(unsigned int c=0; c < C; ++c)
-          Ws[c]=fs[c];
+          Fs[c]=fs[c];
+      }
+      for(unsigned int s=L; s < m; ++s) {
+        unsigned int Cs=C*s;
+        Complex *Fs=F+Cs;
+        for(unsigned int c=0; c < C; ++c)
+          Fs[c]=0;
       }
     } else {
       for(unsigned int c=0; c < C; ++c)
@@ -451,11 +457,17 @@ public:
       Complex *Zetar=Zetaqm+m*r-r;
       for(unsigned int s=1; s < L; ++s) {
         unsigned int Cs=C*s;
-        Complex *Ws=F+Cs;
+        Complex *Fs=F+Cs;
         Complex *fs=f+Cs;
         Complex Zetars=Zetar[s];
         for(unsigned int c=0; c < C; ++c)
-          Ws[c]=Zetars*fs[c];
+          Fs[c]=Zetars*fs[c];
+      }
+      for(unsigned int s=L; s < m; ++s) {
+        unsigned int Cs=C*s;
+        Complex *Fs=F+Cs;
+        for(unsigned int c=0; c < C; ++c)
+          Fs[c]=0.0;
       }
     }
     fftm->fft(F);
@@ -671,9 +683,9 @@ public:
       for(unsigned int s=0; s < m; ++s) {
         unsigned int Cs=C*s;
         Complex *fs=f+Cs;
-        Complex *Ws=F+Cs;
+        Complex *Fs=F+Cs;
         for(unsigned int c=0; c < C; ++c)
-          fs[c]=Ws[c];
+          fs[c]=Fs[c];
       }
     } else {
       for(unsigned int c=0; c < C; ++c)
@@ -682,10 +694,10 @@ public:
       for(unsigned int s=1; s < L; ++s) {
         unsigned int Cs=C*s;
         Complex *fs=f+Cs;
-        Complex *Ws=F+Cs;
+        Complex *Fs=F+Cs;
         Complex Zetamrs=Zetamr[s];
         for(unsigned int c=0; c < C; ++c)
-          fs[c] += conj(Zetamrs)*Ws[c];
+          fs[c] += conj(Zetamrs)*Fs[c];
       }
     }
   }
@@ -951,11 +963,11 @@ public:
           t=totalseconds();
         }
       } else {
-        bool Padding=padding();
-        if(Padding)
-          pad(W);
-
         if(C == 1) {
+          bool Padding=padding();
+          if(Padding)
+            pad(W);
+
           t0=totalseconds();
           for(unsigned int i=0; i < K; ++i) {
 #if OUTPUT
@@ -1316,6 +1328,7 @@ int main(int argc, char* argv[])
 
   cout << "L=" << L << endl;
   cout << "M=" << M << endl;
+  cout << "C=" << C << endl;
 
   cout << "Explicit:" << endl;
   // Minimal explicit padding
