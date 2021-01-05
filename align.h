@@ -96,6 +96,7 @@ inline unsigned int ceilquotient(unsigned int a, unsigned int b)
 
 inline Complex *ComplexAlign(size_t size)
 {
+  if(size == 0) return NULL;
   Complex *v;
   Array::newAlign(v,size,sizeof(Complex));
   return v;
