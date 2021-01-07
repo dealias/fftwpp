@@ -198,6 +198,14 @@ int main(int argc, char* argv[])
 
     timings("Implicit",mx,T,N,stats);
 
+    Complex sum=0.0;
+    for(unsigned int i=0; i < mx; i++) {
+      for(unsigned int j=0; j < my; j++) {
+          sum += f[i][j];
+      }
+    }
+    cout << "sum=" << sum << endl;        
+    
     if(Direct) {
       for(unsigned int i=0; i < mx; i++)
         for(unsigned int j=0; j < my; j++)
@@ -260,7 +268,7 @@ int main(int argc, char* argv[])
 
     cout << endl;
     timings("Direct",mx,T,1);
-
+     
     if(mx*my < outlimit)
       for(unsigned int i=0; i < mx; i++) {
         for(unsigned int j=0; j < my; j++)
@@ -278,6 +286,7 @@ int main(int argc, char* argv[])
           norm += abs2(h[i][j]);
         }
       }
+
       if(norm > 0) error=sqrt(error/norm);
       cout << "error=" << error << endl;
       if (error > 1e-12) cerr << "Caution! error=" << error << endl;
