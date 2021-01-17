@@ -83,6 +83,11 @@ unsigned int nextfftsize(unsigned int m)
   return N;
 }
 
+class FFTpad;
+
+typedef void (FFTpad::*FFTcall)(Complex *f, Complex *F, unsigned int r, Complex *W);
+typedef void (FFTpad::*FFTPad)(Complex *W);
+
 class FFTpad {
 public:
   unsigned int L;
@@ -96,10 +101,6 @@ public:
   unsigned int D;
   unsigned int Cm;
   Complex *W0; // Temporary work memory for testing accuracy
-
-  typedef void (FFTpad::*FFTcall)(Complex *f, Complex *F, unsigned int r, Complex *W);
-
-  typedef void (FFTpad::*FFTPad)(Complex *W);
 
   FFTcall Forward,Backward;
   FFTPad Pad;
@@ -1138,7 +1139,7 @@ private:
   bool allocateW;
   bool loop2;
 
-  typedef void (FFTpad::*FFTPad)(Complex *W);
+  FFTcall Forward,Backward;
   FFTPad Pad;
 
 public:
@@ -1152,6 +1153,9 @@ public:
   HybridConvolution(FFTpad &fft, unsigned int A=2, unsigned int B=1,
                     Complex *U=NULL, Complex *V=NULL, Complex *W=NULL) :
     fft(&fft), A(A), B(B), W(W), allocateU(false) {
+    Forward=fft.Forward;
+    Backward=fft.Backward;
+
     L=fft.L;
     unsigned int N=fft.size();
     scale=1.0/N;
@@ -1247,27 +1251,27 @@ public:
                  unsigned int offset=0) {
     if(fft->q == 1) {
       for(unsigned int a=0; a < A; ++a)
-        (fft->*fft->Forward)(F[a]+offset,U[a],0,NULL);
+        (fft->*Forward)(F[a]+offset,U[a],0,NULL);
       (*mult)(U,fft->M,threads);
       for(unsigned int b=0; b < B; ++b)
-        (fft->*fft->Backward)(U[b],H[b]+offset,0,NULL);
+        (fft->*Backward)(U[b],H[b]+offset,0,NULL);
     } else {
       if(loop2) {
         for(unsigned int a=0; a < A; ++a)
-          (fft->*fft->Forward)(F[a]+offset,U[a],0,W);
+          (fft->*Forward)(F[a]+offset,U[a],0,W);
         (*mult)(U,c,threads);
 
         for(unsigned int b=0; b < B; ++b) {
-          (fft->*fft->Forward)(F[b]+offset,Up[b],D,W);
-          (fft->*fft->Backward)(U[b],H[b]+offset,0,W0);
+          (fft->*Forward)(F[b]+offset,Up[b],D,W);
+          (fft->*Backward)(U[b],H[b]+offset,0,W0);
           (fft->*Pad)(W);
         }
         for(unsigned int a=B; a < A; ++a)
-          (fft->*fft->Forward)(F[a]+offset,Up[a],D,W);
+          (fft->*Forward)(F[a]+offset,Up[a],D,W);
         (*mult)(Up,c,threads);
         Complex *UpB=Up[B];
         for(unsigned int b=0; b < B; ++b)
-          (fft->*fft->Backward)(Up[b],H[b]+offset,D,UpB);
+          (fft->*Backward)(Up[b],H[b]+offset,D,UpB);
       } else {
         unsigned int Offset;
         bool useV=H == F && D < Q; // Inplace and more than one loop
@@ -1282,10 +1286,10 @@ public:
         }
         for(unsigned int r=0; r < Q; r += D) {
           for(unsigned int a=0; a < A; ++a)
-            (fft->*fft->Forward)(F[a]+offset,U[a],r,W);
+            (fft->*Forward)(F[a]+offset,U[a],r,W);
           (*mult)(U,c,threads);
           for(unsigned int b=0; b < B; ++b)
-            (fft->*fft->Backward)(U[b],H0[b]+Offset,r,W0);
+            (fft->*Backward)(U[b],H0[b]+Offset,r,W0);
           (fft->*Pad)(W);
         }
 
@@ -1330,11 +1334,16 @@ class HybridConvolution2 {
   bool allocateUx;
   double scale;
 
+  FFTcall Forward,Backward;
+
 public:
   // Ux is an optional work array of size max(A,B)*fftx->worksizeU(),
   HybridConvolution2(FFTpad &fftx,
                      HybridConvolution &convolvey, Complex *Ux=NULL) :
     fftx(&fftx), convolvey(&convolvey), allocateUx(false) {
+
+    Forward=fftx.Forward;
+    Backward=fftx.Backward;
 
     A=convolvey.A;
     B=convolvey.B;
@@ -1384,7 +1393,7 @@ public:
 
   void forward(Complex **F, Complex **U, unsigned int rx) {
     for(unsigned int a=0; a < A; ++a)
-      (fftx->*fftx->Forward)(F[a],U[a],rx,NULL); // C=Ly <= my py, Dx=1
+      (fftx->*Forward)(F[a],U[a],rx,NULL); // C=Ly <= my py, Dx=1
   }
 
   void subconvolution(Complex **F, multiplier *mult,
@@ -1397,7 +1406,7 @@ public:
   void backward(Complex **U, Complex **F, unsigned int rx) {
     // TODO: Support out-of-place
     for(unsigned int b=0; b < B; ++b)
-      (fftx->*fftx->Backward)(U[b],F[b],rx,NULL);
+      (fftx->*Backward)(U[b],F[b],rx,NULL);
   }
 
 // F is a pointer to A distinct data blocks each of size Lx*Ly,
