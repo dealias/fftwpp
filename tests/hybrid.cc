@@ -906,6 +906,7 @@ public:
   }
 
   bool loop2() {
+//    return false;
     return D < Q && 2*D >= Q && A > B;
   }
 
@@ -1080,7 +1081,7 @@ public:
 #endif
 
 #undef OUTPUT
-#define OUTPUT 1
+#define OUTPUT 0
 
         deleteAlign(F);
         deleteAlign(f);
@@ -1215,10 +1216,10 @@ public:
 
   void initV() {
     allocateV=true;
-    this->V=new Complex*[B];
+    V=new Complex*[B];
     unsigned int size=fft->worksizeV();
     for(unsigned int i=0; i < B; ++i)
-      this->V[i]=ComplexAlign(size);
+      V[i]=ComplexAlign(size);
   }
 
   ~HybridConvolution() {
@@ -1226,11 +1227,15 @@ public:
       if(allocateW)
         deleteAlign(W);
 
+      if(loop2)
+        delete[] Up;
+
       if(allocateV) {
         for(unsigned int i=0; i < B; ++i)
           deleteAlign(V[i]);
       }
-      delete [] V;
+      if(V)
+        delete [] V;
     }
 
     if(allocateU) {
@@ -1511,7 +1516,7 @@ int main(int argc, char* argv[])
   cout << "M=" << M << endl;
   cout << "C=" << C << endl;
 
-#if 1
+#if 0
   cout << "Explicit:" << endl;
   // Minimal explicit padding
   FFTpad fft0(L,M,C,true,true);
@@ -1618,7 +1623,7 @@ int main(int argc, char* argv[])
 #endif
   {
 
-#if 1
+#if 0
     {
       unsigned int Lx=L;
       unsigned int Ly=Lx;
@@ -1697,7 +1702,7 @@ int main(int argc, char* argv[])
     }
 #endif
 
-#if 0
+#if 1
     FFTpad fft(L,M);
 
     unsigned int L0=fft.length();
