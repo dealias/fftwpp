@@ -1,9 +1,12 @@
 // TODO:
-// Use power of two m values in certain cases
-// Generalize meantime to A and B; use A=B=1 and null mult when C > 1.
-//
-// Can user request allowing overlap of input and output arrays,
-// for possibly reduced performance?
+// Implement centered case
+// Implement centered Hermitian case
+// Implement 3D cases
+// Precompute best D and inline options for each m value
+// Pass application to optimizer
+// Only check m <= M/2 and m=M; how many surplus sizes to check?
+// Use experience or heuristics (sparse distribution?) to determine best m value
+// Use power of P values for m when L,M,M-L are powers of P?
 
 #include <cfloat>
 #include <climits>
@@ -906,7 +909,6 @@ public:
   }
 
   bool loop2() {
-//    return false;
     return D < Q && 2*D >= Q && A > B;
   }
 
@@ -1623,7 +1625,7 @@ int main(int argc, char* argv[])
 #endif
   {
 
-#if 0
+#if 1
     {
       unsigned int Lx=L;
       unsigned int Ly=Lx;
@@ -1702,7 +1704,7 @@ int main(int argc, char* argv[])
     }
 #endif
 
-#if 1
+#if 0
     FFTpad fft(L,M);
 
     unsigned int L0=fft.length();
