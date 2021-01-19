@@ -3,7 +3,6 @@
 // Implement centered Hermitian case
 // Implement 3D cases
 // Precompute best D and inline options for each m value
-// Pass application to optimizer
 // Only check m <= M/2 and m=M; how many surplus sizes to check?
 // Use experience or heuristics (sparse distribution?) to determine best m value
 // Use power of P values for m when L,M,M-L are powers of P?
@@ -90,6 +89,14 @@ class FFTpad;
 
 typedef void (FFTpad::*FFTcall)(Complex *f, Complex *F, unsigned int r, Complex *W);
 typedef void (FFTpad::*FFTPad)(Complex *W);
+
+class Application {
+public:
+  Application() {};
+  virtual void init(FFTpad &fft)=0;
+  virtual void clear()=0;
+  virtual double time(FFTpad &fft, unsigned int K)=0;
+};
 
 class FFTpad {
 public:
@@ -215,7 +222,7 @@ public:
 
   // Compute an fft padded to N=m*q >= M >= L
   FFTpad(unsigned int L, unsigned int M, unsigned int C,
-         unsigned int m, unsigned int q, unsigned int D) :
+         unsigned int m, unsigned int q,unsigned int D) :
     L(L), M(M), C(C), m(m), p(ceilquotient(L,m)), q(q), D(D) {
     init();
   }
@@ -245,13 +252,13 @@ public:
     unsigned int m,q,D;
     double T;
 
-    void check(unsigned int L, unsigned int M, unsigned int C,
-               unsigned int m, bool fixed=false, bool mForced=false) {
+    void check(unsigned int L, unsigned int M, Application& app,
+               unsigned int C, unsigned int m,
+               bool fixed=false, bool mForced=false) {
 //    cout << "m=" << m << endl;
       unsigned int p=ceilquotient(L,m);
       unsigned int q=ceilquotient(M,m);
 
-//      if(C > 1 && p > 1) return;
       if(p == q && p > 1 && !mForced) return;
 
       if(!fixed) {
@@ -266,7 +273,7 @@ public:
 //            cout << "q2=" << q2 << endl;
 //            cout << "D2=" << D << endl;
             FFTpad fft(L,M,C,m,q2,D);
-            double t=fft.meantime();
+            double t=fft.meantime(app);
             if(t < T) {
               this->m=m;
               this->q=q2;
@@ -287,7 +294,7 @@ public:
 //        cout << "q=" << q << endl;
 //        cout << "D=" << D << endl;
         FFTpad fft(L,M,C,m,q,D);
-        double t=fft.meantime();
+        double t=fft.meantime(app);
 
         if(t < T) {
           this->m=m;
@@ -301,8 +308,8 @@ public:
     // Determine optimal m,q values for padding L data values to
     // size >= M
     // If fixed=true then an FFT of size M is enforced.
-    Opt(unsigned int L, unsigned int M, unsigned int C,
-        bool Explicit=false, bool fixed=false)
+    Opt(unsigned int L, unsigned int M, Application& app,
+        unsigned int C, bool Explicit=false, bool fixed=false)
     {
       if(L > M) {
         cerr << "L=" << L << " is greater than M=" << M << "." << endl;
@@ -325,7 +332,7 @@ public:
       unsigned int m0=1;
 
       if(mOption >= 1 && !Explicit)
-        check(L,M,C,mOption,fixed,true);
+        check(L,M,app,C,mOption,fixed,true);
       else
         while(true) {
           m0=nextfftsize(m0+1);
@@ -336,7 +343,7 @@ public:
           } else if(m0 > stop) break;
 //        } else if(m0 > L) break;
           if(!fixed || Explicit || M % m0 == 0)
-            check(L,M,C,m0,fixed || Explicit);
+            check(L,M,app,C,m0,fixed || Explicit);
           ++i;
         }
 
@@ -354,10 +361,10 @@ public:
   // Normal entry point.
   // Compute C ffts of length L and distance 1 padded to at least M
   // (or exactly M if fixed=true)
-  FFTpad(unsigned int L, unsigned int M, unsigned int C=1,
-         bool Explicit=false, bool fixed=false) :
+  FFTpad(unsigned int L, unsigned int M, Application& app,
+         unsigned int C=1, bool Explicit=false, bool fixed=false) :
     L(L), M(M), C(C) {
-    Opt opt=Opt(L,M,C,Explicit,fixed);
+    Opt opt=Opt(L,M,app,C,Explicit,fixed);
     m=opt.m;
     if(Explicit)
       this->M=M=m;
@@ -938,133 +945,14 @@ public:
     }
   }
 
-  double meantime(double *Stdev=NULL) {
-    utils::statistics Stats;
-    unsigned int L0=C*length();
-
-    Complex *f=ComplexAlign(L0);
-    Complex *g=ComplexAlign(L0);
-    Complex *h;
-    bool loop2=this->loop2(); // Two loops?
-    if(C > 1) loop2=false;
-    if(loop2)
-      h=f;
-    else
-      h=D >= Q ? f : ComplexAlign(L0);
-
-    unsigned int e=worksizeU();
-
-    Complex *F=ComplexAlign(e);
-    Complex *G=ComplexAlign(e);
-    Complex *W=ComplexAlign(worksizeW());
-
-// Assume f != F (out-of-place)
-    for(unsigned int j=0; j < L; ++j) {
-      unsigned int Cj=C*j;
-      Complex *fj=f+Cj;
-      Complex *gj=g+Cj;
-      for(unsigned int c=0; c < C; ++c) {
-        fj[c]=0.0;
-        gj[c]=0.0;
-      }
-    }
-
+  double meantime(Application& app, double *Stdev=NULL) {
     unsigned int K=1;
     double eps=0.1;
-    unsigned int N=size();
-    double scale=1.0/N;
 
-#define OUTPUT 0
-    for(;;) {
-      double t0,t;
-      if(q == 1) {
-        t0=totalseconds();
-        if(C == 1) {
-          for(unsigned int k=0; k < K; ++k) {
-#if OUTPUT
-            initialize(f,g);
-#endif
-            (this->*Forward)(f,F,0,NULL);
-            (this->*Forward)(g,G,0,NULL);
-            for(unsigned int i=0; i < N; ++i)
-              F[i] *= G[i];
-            (this->*Backward)(F,f,0,NULL);
-          }
-          t=totalseconds();
-        } else {
-          for(unsigned int k=0; k < K; ++k) {
-#if OUTPUT
-            initialize(f,g);
-#endif
-            (this->*Forward)(f,F,0,NULL);
-            (this->*Forward)(g,G,0,NULL);
-            (this->*Backward)(F,f,0,NULL);
-          }
-          t=totalseconds();
-        }
-      } else {
-        (this->*Pad)(W);
-
-        if(C == 1) {
-          Complex *G0=inplace ? NULL : G;
-          if(loop2) {
-            t0=totalseconds();
-            for(unsigned int k=0; k < K; ++k) {
-#if OUTPUT
-              initialize(f,g);
-#endif
-              (this->*Forward)(f,F,0,W);
-              (this->*Forward)(g,G,0,W);
-              for(unsigned int i=0; i < e; ++i)
-                F[i] *= G[i];
-              (this->*Forward)(f,G,D,W);
-              (this->*Backward)(F,f,0,W);
-              (this->*Pad)(W);
-              (this->*Forward)(g,F,D,W);
-              for(unsigned int i=0; i < e; ++i)
-                F[i] *= G[i];
-              (this->*Backward)(F,f,D,G0);
-            }
-            t=totalseconds();
-          } else {
-            t0=totalseconds();
-            for(unsigned int k=0; k < K; ++k) {
-#if OUTPUT
-              initialize(f,g);
-#endif
-              for(unsigned int r=0; r < Q; r += D) {
-                (this->*Forward)(f,F,r,W);
-                (this->*Forward)(g,G,r,W);
-                for(unsigned int i=0; i < e; ++i)
-                  F[i] *= G[i];
-                (this->*Backward)(F,h,r,G0);
-              }
-            }
-            t=totalseconds();
-          }
-        } else {
-          t0=totalseconds();
-          for(unsigned int k=0; k < K; ++k) {
-#if OUTPUT
-            initialize(f,g);
-#endif
-            for(unsigned int r=0; r < Q; ++r) {
-              (this->*Forward)(f,F,r,W);
-              (this->*Forward)(g,G,r,W);
-              (this->*Backward)(F,h,r,W);
-            }
-          }
-          t=totalseconds();
-        }
-      }
-
-      for(unsigned int j=0; j < L; ++j) {
-        Complex *fj=f+C*j;
-        Complex *hj=h+C*j;
-        for(unsigned int c=0; c < C; ++c)
-          fj[c]=hj[c]*scale;
-      }
-      Stats.add(t-t0);
+    utils::statistics Stats;
+    app.init(*this);
+    while(true) {
+      Stats.add(app.time(*this,K));
       double mean=Stats.mean();
       double stdev=Stats.stdev();
       if(Stats.count() < 7) continue;
@@ -1074,29 +962,110 @@ public:
         Stats.clear();
       } else {
         if(Stdev) *Stdev=stdev/K;
-#if OUTPUT
-        for(unsigned int j=0; j < L; ++j) {
-          Complex *fj=f+C*j;
-          for(unsigned int c=0; c < C; ++c)
-            cout << fj[c] << endl;
-        }
-#endif
-
-#undef OUTPUT
-#define OUTPUT 0
-
-        deleteAlign(F);
-        deleteAlign(f);
-        deleteAlign(G);
-        deleteAlign(g);
-        if(W)
-          deleteAlign(W);
-        if(D < Q && !loop2)
-          deleteAlign(h);
+        app.clear();
         return mean/K;
       }
     }
     return 0.0;
+  }
+
+  double report(Application& app) {
+    double stdev;
+    cout << endl;
+
+    double mean=meantime(app,&stdev);
+
+    cout << "mean=" << mean << " +/- " << stdev << endl;
+
+    return mean;
+  }
+};
+
+class ForwardBackward : public Application {
+private:
+  unsigned int A;
+  unsigned int B;
+  FFTcall Forward;
+  FFTcall Backward;
+  unsigned int C;
+  unsigned int D;
+  unsigned int Q;
+  Complex **f;
+  Complex **F;
+  Complex **h;
+  Complex *W;
+
+public:
+  ForwardBackward(unsigned int A=2, unsigned int B=1) : A(A), B(B)
+  {};
+
+  void init(FFTpad &fft) {
+    Forward=fft.Forward;
+    Backward=fft.Backward;
+    C=fft.C;
+    D=fft.D;
+    Q=fft.Q;
+
+    unsigned int L=fft.L;
+    unsigned int Lf=C*fft.length();
+    unsigned int LF=fft.worksizeU();
+    unsigned int E=max(A,B);
+
+    f=new Complex*[E];
+    F=new Complex*[E];
+    h=new Complex*[B];
+
+    for(unsigned int a=0; a < A; ++a)
+      f[a]=ComplexAlign(Lf);
+
+    for(unsigned int e=0; e < E; ++e)
+      F[e]=ComplexAlign(LF);
+
+    for(unsigned int b=0; b < B; ++b)
+      h[b]=ComplexAlign(Lf);
+
+    W=ComplexAlign(fft.worksizeW());
+
+    for(unsigned int a=0; a < E; ++a) {
+      Complex *fa=f[a];
+      for(unsigned int j=0; j < L; ++j) {
+        unsigned int Cj=C*j;
+        Complex *faj=fa+Cj;
+        for(unsigned int c=0; c < C; ++c) {
+          faj[c]=0.0;
+        }
+      }
+    }
+  }
+
+  double time(FFTpad &fft, unsigned int K) {
+    double t0=totalseconds();
+    for(unsigned int k=0; k < K; ++k) {
+      for(unsigned int r=0; r < Q; r += D) {
+        for(unsigned int a=0; a < A; ++a)
+          (fft.*Forward)(f[a],F[a],r,W);
+        for(unsigned int b=0; b < B; ++b)
+          (fft.*Backward)(F[b],h[b],r,W);
+      }
+    }
+    double t=totalseconds();
+    return t-t0;
+  }
+
+  void clear() {
+    if(W)
+      deleteAlign(W);
+
+    unsigned int E=max(A,B);
+    for(unsigned int b=0; b < B; ++b)
+      deleteAlign(h[b]);
+    for(unsigned int e=0; e < E; ++e)
+      deleteAlign(F[e]);
+    for(unsigned int a=0; a < A; ++a)
+      deleteAlign(f[a]);
+    delete[] h;
+    delete[] F;
+    delete[] f;
   }
 };
 
@@ -1437,18 +1406,6 @@ public:
 unsigned int L=683;
 unsigned int M=1025;
 
-double report(FFTpad &fft)
-{
-  double stdev;
-  cout << endl;
-
-  double mean=fft.meantime(&stdev);
-
-  cout << "mean=" << mean << " +/- " << stdev << endl;
-
-  return mean;
-}
-
 void usage()
 {
   std::cerr << "Options: " << std::endl;
@@ -1518,20 +1475,24 @@ int main(int argc, char* argv[])
   cout << "M=" << M << endl;
   cout << "C=" << C << endl;
 
-#if 0
+  ForwardBackward FB;
+
+#if 1
   cout << "Explicit:" << endl;
   // Minimal explicit padding
-  FFTpad fft0(L,M,C,true,true);
-  double mean0=report(fft0);
+  FFTpad fft0(L,M,FB,C,true,true);
+  double mean0=fft0.report(FB);
 
   // Optimal explicit padding
-  FFTpad fft1(L,M,C,true,false);
-  double mean1=min(mean0,report(fft1));
+  FFTpad fft1(L,M,FB,C,true,false);
+  double mean1=min(mean0,fft1.report(FB));
 
   // Hybrid padding
-  FFTpad fft(L,M,C);
+  FFTpad fft(L,M,FB,C);
 
-  double mean=report(fft);
+  FB.init(fft);
+
+  double mean=fft.report(FB);
 
   if(mean0 > 0)
     cout << "minimal ratio=" << mean/mean0 << endl;
@@ -1637,10 +1598,10 @@ int main(int argc, char* argv[])
       cout << endl;
 
 //      FFTpad fftx(Lx,Mx,Ly,Lx,2,1);
-      FFTpad fftx(Lx,Mx,Ly);
+      FFTpad fftx(Lx,Mx,FB,Ly);
 
 //      FFTpad ffty(Ly,My,1,Ly,2,1);
-      FFTpad ffty(Ly,My,1);
+      FFTpad ffty(Ly,My,FB,1);
 
       HybridConvolution convolvey(ffty);
 
