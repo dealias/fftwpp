@@ -353,6 +353,7 @@ public:
       cout << "m=" << m << endl;
       cout << "p=" << p << endl;
       cout << "q=" << q << endl;
+      cout << "C=" << C << endl;
       cout << "D=" << D << endl;
       cout << "Padding:" << m*p-L << endl;
     }
@@ -911,7 +912,7 @@ public:
     return q == 1 ? M : m*q;
   }
 
-  unsigned int worksizeU() {
+  unsigned int worksizeF() {
     return C*(q == 1 ? M : m*p*D);
   }
 
@@ -924,7 +925,7 @@ public:
   }
 
   unsigned int worksizeW() {
-    return q == 1 || inplace ? 0 : worksizeU();
+    return q == 1 || inplace ? 0 : worksizeF();
   }
 
   unsigned int padding() {
@@ -1008,7 +1009,7 @@ public:
 
     unsigned int L=fft.L;
     unsigned int Lf=C*fft.length();
-    unsigned int LF=fft.worksizeU();
+    unsigned int LF=fft.worksizeF();
     unsigned int E=max(A,B);
 
     f=new Complex*[E];
@@ -1100,7 +1101,7 @@ private:
   unsigned int Q;
   unsigned int D;
   unsigned int c;
-  Complex **U,**Up;
+  Complex **F,**Fp;
   Complex **V;
   Complex *W;
   Complex *H;
@@ -1117,13 +1118,13 @@ private:
 public:
   // A is the number of inputs.
   // B is the number of outputs.
-  // U is an optional work array of size max(A,B)*fft->worksizeU(),
+  // F is an optional work array of size max(A,B)*fft->worksizeF(),
   // V is an optional work array of size B*fft->worksizeV() (for inplace usage)
   // W is an optional work array of size fft->worksizeW();
   //   if changed between calls to convolve(), be sure to call pad()
   // TODO: add inplace flag to avoid allocating W.
   HybridConvolution(FFTpad &fft, unsigned int A=2, unsigned int B=1,
-                    Complex *U=NULL, Complex *V=NULL, Complex *W=NULL) :
+                    Complex *F=NULL, Complex *V=NULL, Complex *W=NULL) :
     fft(&fft), A(A), B(B), W(W), allocateU(false) {
     Forward=fft.Forward;
     Backward=fft.Backward;
@@ -1131,17 +1132,17 @@ public:
     L=fft.L;
     unsigned int N=fft.size();
     scale=1.0/N;
-    c=fft.worksizeU();
+    c=fft.worksizeF();
 
     unsigned int K=max(A,B);
-    this->U=new Complex*[K];
-    if(U) {
+    this->F=new Complex*[K];
+    if(F) {
       for(unsigned int i=0; i < K; ++i)
-        this->U[i]=U+i*c;
+        this->F[i]=F+i*c;
     } else {
       allocateU=true;
       for(unsigned int i=0; i < K; ++i)
-        this->U[i]=ComplexAlign(c);
+        this->F[i]=ComplexAlign(c);
     }
 
     if(fft.q > 1) {
@@ -1165,16 +1166,16 @@ public:
       loop2=fft.loop2(); // Two loops and A > B
       int extra;
       if(loop2) {
-        Up=new Complex*[A];
-        Up[0]=this->U[A-1];
+        Fp=new Complex*[A];
+        Fp[0]=this->F[A-1];
         for(unsigned int a=1; a < A; ++a)
-          Up[a]=this->U[a-1];
+          Fp[a]=this->F[a-1];
         extra=1;
       } else
         extra=0;
 
       if(A > B+extra) {
-        W0=this->U[B];
+        W0=this->F[B];
         Pad=&FFTpad::padNone;
       } else {
         W0=this->W;
@@ -1199,7 +1200,7 @@ public:
         deleteAlign(W);
 
       if(loop2)
-        delete[] Up;
+        delete[] Fp;
 
       if(allocateV) {
         for(unsigned int i=0; i < B; ++i)
@@ -1212,83 +1213,83 @@ public:
     if(allocateU) {
       unsigned int K=max(A,B);
       for(unsigned int i=0; i < K; ++i)
-        deleteAlign(U[i]);
+        deleteAlign(F[i]);
     }
-    delete [] U;
+    delete [] F;
   }
 
-  // F is an input array of A pointers to distinct data blocks each of size
+  // f is an input array of A pointers to distinct data blocks each of size
   // fft->length()
-  // H is an output array of B pointers to distinct data blocks each of size
-  // fft->length(), which may coincide with F.
+  // h is an output array of B pointers to distinct data blocks each of size
+  // fft->length(), which may coincide with f.
   // offset is applied to each input and output component
 
-  void convolve0(Complex **F, Complex **H, multiplier *mult,
+  void convolve0(Complex **f, Complex **h, multiplier *mult,
                  unsigned int offset=0) {
     if(fft->q == 1) {
       for(unsigned int a=0; a < A; ++a)
-        (fft->*Forward)(F[a]+offset,U[a],0,NULL);
-      (*mult)(U,fft->M,threads);
+        (fft->*Forward)(f[a]+offset,F[a],0,NULL);
+      (*mult)(F,fft->M,threads);
       for(unsigned int b=0; b < B; ++b)
-        (fft->*Backward)(U[b],H[b]+offset,0,NULL);
+        (fft->*Backward)(F[b],h[b]+offset,0,NULL);
     } else {
       if(loop2) {
         for(unsigned int a=0; a < A; ++a)
-          (fft->*Forward)(F[a]+offset,U[a],0,W);
-        (*mult)(U,c,threads);
+          (fft->*Forward)(f[a]+offset,F[a],0,W);
+        (*mult)(F,c,threads);
 
         for(unsigned int b=0; b < B; ++b) {
-          (fft->*Forward)(F[b]+offset,Up[b],D,W);
-          (fft->*Backward)(U[b],H[b]+offset,0,W0);
+          (fft->*Forward)(f[b]+offset,Fp[b],D,W);
+          (fft->*Backward)(F[b],h[b]+offset,0,W0);
           (fft->*Pad)(W);
         }
         for(unsigned int a=B; a < A; ++a)
-          (fft->*Forward)(F[a]+offset,Up[a],D,W);
-        (*mult)(Up,c,threads);
-        Complex *UpB=Up[B];
+          (fft->*Forward)(f[a]+offset,Fp[a],D,W);
+        (*mult)(Fp,c,threads);
+        Complex *UpB=Fp[B];
         for(unsigned int b=0; b < B; ++b)
-          (fft->*Backward)(Up[b],H[b]+offset,D,UpB);
+          (fft->*Backward)(Fp[b],h[b]+offset,D,UpB);
       } else {
         unsigned int Offset;
-        bool useV=H == F && D < Q; // Inplace and more than one loop
-        Complex **H0;
+        bool useV=h == f && D < Q; // Inplace and more than one loop
+        Complex **h0;
         if(useV) {
           if(!V) initV();
-          H0=V;
+          h0=V;
           Offset=0;
         } else {
           Offset=offset;
-          H0=H;
+          h0=h;
         }
         for(unsigned int r=0; r < Q; r += D) {
           for(unsigned int a=0; a < A; ++a)
-            (fft->*Forward)(F[a]+offset,U[a],r,W);
-          (*mult)(U,c,threads);
+            (fft->*Forward)(f[a]+offset,F[a],r,W);
+          (*mult)(F,c,threads);
           for(unsigned int b=0; b < B; ++b)
-            (fft->*Backward)(U[b],H0[b]+Offset,r,W0);
+            (fft->*Backward)(F[b],h0[b]+Offset,r,W0);
           (fft->*Pad)(W);
         }
 
         if(useV) {
           for(unsigned int b=0; b < B; ++b) {
-            Complex *f=F[b]+offset;
-            Complex *h0=H0[b];
+            Complex *fb=f[b]+offset;
+            Complex *hb=h0[b];
             for(unsigned int i=0; i < L; ++i)
-              f[i]=h0[i];
+              fb[i]=hb[i];
           }
         }
       }
     }
   }
 
-  void convolve(Complex **F, Complex **H, multiplier *mult,
+  void convolve(Complex **f, Complex **h, multiplier *mult,
                 unsigned int offset=0) {
-    convolve0(F,H,mult,offset);
+    convolve0(f,h,mult,offset);
 
     for(unsigned int b=0; b < B; ++b) {
-      Complex *h=H[b]+offset;
+      Complex *hb=h[b]+offset;
       for(unsigned int i=0; i < L; ++i)
-        h[i] *= scale;
+        hb[i] *= scale;
     }
   }
 };
@@ -1303,8 +1304,8 @@ class HybridConvolution2 {
   unsigned int Q;
   unsigned int D;
   unsigned int qx,Qx;
-  Complex **Ux;
-  Complex *Uy;
+  Complex **Fx;
+  Complex *Fy;
   Complex *Vy;
   Complex *Wy;
   bool allocateUx;
@@ -1313,9 +1314,9 @@ class HybridConvolution2 {
   FFTcall Forward,Backward;
 
 public:
-  // Ux is an optional work array of size max(A,B)*fftx->worksizeU(),
+  // Fx is an optional work array of size max(A,B)*fftx->worksizeF(),
   HybridConvolution2(FFTpad &fftx,
-                     HybridConvolution &convolvey, Complex *Ux=NULL) :
+                     HybridConvolution &convolvey, Complex *Fx=NULL) :
     fftx(&fftx), convolvey(&convolvey), allocateUx(false) {
 
     Forward=fftx.Forward;
@@ -1329,16 +1330,16 @@ public:
     Sx=fftx.Length();
     scale=1.0/(fftx.size()*convolvey.fft->size());
 
-    unsigned int c=fftx.worksizeU();
+    unsigned int c=fftx.worksizeF();
     unsigned int K=max(A,B);
-    this->Ux=new Complex*[K];
-    if(Ux) {
+    this->Fx=new Complex*[K];
+    if(Fx) {
       for(unsigned int i=0; i < K; ++i)
-        this->Ux[i]=Ux+i*c;
+        this->Fx[i]=Fx+i*c;
     } else {
       allocateUx=true;
       for(unsigned int i=0; i < K; ++i)
-        this->Ux[i]=ComplexAlign(c);
+        this->Fx[i]=ComplexAlign(c);
     }
 
     Lx=fftx.L;
@@ -1347,58 +1348,58 @@ public:
 
   // A is the number of inputs.
   // B is the number of outputs.
-  // Uy is an optional work array of size max(A,B)*ffty->worksizeU(),
+  // Fy is an optional work array of size max(A,B)*ffty->worksizeF(),
   // Vy is an optional work array of size B*ffty->worksizeV() (inplace usage)
   // Wy is an optional work array of size ffty->worksizeW();
   //   if changed between calls to convolve(), be sure to call pad()
   /*
   HybridConvolution2(unsigned int Lx, unsigned int Ly,
                      unsigned int Mx, unsigned int My,
-                     unsigned int A, unsigned int B, Complex *Ux=NULL,
-                     Complex *Uy=NULL, Complex *Vy=NULL, Complex *Wy=NULL): Uy(Uy), Vy(Vy), Wy(Wy) {}
+                     unsigned int A, unsigned int B, Complex *Fx=NULL,
+                     Complex *Fy=NULL, Complex *Vy=NULL, Complex *Wy=NULL): Fy(Fy), Vy(Vy), Wy(Wy) {}
   */
 
   ~HybridConvolution2() {
     unsigned int K=max(A,B);
     if(allocateUx) {
       for(unsigned int i=0; i < K; ++i)
-        deleteAlign(Ux[i]);
+        deleteAlign(Fx[i]);
     }
-    delete [] Ux;
+    delete [] Fx;
   }
 
-  void forward(Complex **F, Complex **U, unsigned int rx) {
+  void forward(Complex **f, Complex **F, unsigned int rx) {
     for(unsigned int a=0; a < A; ++a)
-      (fftx->*Forward)(F[a],U[a],rx,NULL); // C=Ly <= my py, Dx=1
+      (fftx->*Forward)(f[a],F[a],rx,NULL); // C=Ly <= my py, Dx=1
   }
 
-  void subconvolution(Complex **F, multiplier *mult,
+  void subconvolution(Complex **f, multiplier *mult,
                       unsigned int C, unsigned int stride,
                       unsigned int offset=0) {
     for(unsigned int i=0; i < C; ++i)
-      convolvey->convolve0(F,F,mult,offset+i*stride);
+      convolvey->convolve0(f,f,mult,offset+i*stride);
   }
 
-  void backward(Complex **U, Complex **F, unsigned int rx) {
+  void backward(Complex **F, Complex **f, unsigned int rx) {
     // TODO: Support out-of-place
     for(unsigned int b=0; b < B; ++b)
-      (fftx->*Backward)(U[b],F[b],rx,NULL);
+      (fftx->*Backward)(F[b],f[b],rx,NULL);
   }
 
-// F is a pointer to A distinct data blocks each of size Lx*Ly,
+// f is a pointer to A distinct data blocks each of size Lx*Ly,
 // shifted by offset (contents not preserved).
-  virtual void convolve(Complex **F, Complex **H, multiplier *mult,
+  virtual void convolve(Complex **f, Complex **h, multiplier *mult,
                         unsigned int offset=0) {
     for(unsigned int rx=0; rx < Qx; ++rx) {
-      forward(F,Ux,rx);
-      subconvolution(Ux,mult,Sx,Ly,offset);
-      backward(Ux,H,rx);
+      forward(f,Fx,rx);
+      subconvolution(Fx,mult,Sx,Ly,offset);
+      backward(Fx,h,rx);
     }
     for(unsigned int b=0; b < B; ++b) {
-      Complex *Hb=H[b];
+      Complex *hb=h[b];
       for(unsigned int i=0; i < Lx; ++i)
         for(unsigned int j=0; j < Ly; ++j)
-          Hb[Ly*i+j] *= scale;
+          hb[Ly*i+j] *= scale;
     }
   }
 };
@@ -1605,27 +1606,27 @@ int main(int argc, char* argv[])
 
       HybridConvolution convolvey(ffty);
 
-      Complex **F=new Complex *[A];
-      Complex **H=new Complex *[B];
+      Complex **f=new Complex *[A];
+      Complex **h=new Complex *[B];
       for(unsigned int a=0; a < A; ++a)
-        F[a]=ComplexAlign(Lx*Ly);
+        f[a]=ComplexAlign(Lx*Ly);
       for(unsigned int b=0; b < B; ++b)
-        H[b]=ComplexAlign(Lx*Ly);
+        h[b]=ComplexAlign(Lx*Ly);
 
-      array2<Complex> f(Lx,Ly,F[0]);
-      array2<Complex> g(Lx,Ly,F[1]);
+      array2<Complex> f0(Lx,Ly,f[0]);
+      array2<Complex> f1(Lx,Ly,f[1]);
 
       for(unsigned int i=0; i < Lx; ++i) {
         for(unsigned int j=0; j < Ly; ++j) {
-          f[i][j]=Complex(i,j);
-          g[i][j]=Complex(2*i,j+1);
+          f0[i][j]=Complex(i,j);
+          f1[i][j]=Complex(2*i,j+1);
         }
       }
 
       if(Lx*Ly < 200) {
         for(unsigned int i=0; i < Lx; ++i) {
           for(unsigned int j=0; j < Ly; ++j) {
-            cout << f[i][j] << " ";
+            cout << f0[i][j] << " ";
           }
           cout << endl;
         }
@@ -1636,18 +1637,18 @@ int main(int argc, char* argv[])
       double t0=totalseconds();
 
       for(unsigned int k=0; k < K; ++k)
-        Convolve2.convolve(F,H,multbinary);
+        Convolve2.convolve(f,h,multbinary);
 
       double t=totalseconds();
       cout << (t-t0)/K << endl;
       cout << endl;
 
-      array2<Complex> h(Lx,Ly,H[0]);
+      array2<Complex> h0(Lx,Ly,h[0]);
 
       Complex sum=0.0;
       for(unsigned int i=0; i < Lx; ++i) {
         for(unsigned int j=0; j < Ly; ++j) {
-          sum += h[i][j];
+          sum += h0[i][j];
         }
       }
 
@@ -1657,7 +1658,7 @@ int main(int argc, char* argv[])
       if(Lx*Ly < 200) {
         for(unsigned int i=0; i < Lx; ++i) {
           for(unsigned int j=0; j < Ly; ++j) {
-            cout << h[i][j] << " ";
+            cout << h0[i][j] << " ";
           }
           cout << endl;
         }
