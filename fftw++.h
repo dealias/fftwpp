@@ -177,7 +177,7 @@ public:
 
   static const char *oddshift;
 
-  // Inplace shift of Fourier origin to (nx/2,0) for even nx.
+  // In-place shift of Fourier origin to (nx/2,0) for even nx.
   static void Shift(Complex *data, unsigned int nx, unsigned int ny,
                     unsigned int threads) {
     unsigned int nyp=ny/2+1;
@@ -216,7 +216,7 @@ public:
     }
   }
 
-  // Inplace shift of Fourier origin to (nx/2,ny/2,0) for even nx and ny.
+  // In-place shift of Fourier origin to (nx/2,ny/2,0) for even nx and ny.
   static void Shift(Complex *data, unsigned int nx, unsigned int ny,
                     unsigned int nz, unsigned int threads) {
     unsigned int nzp=nz/2+1;
