@@ -93,13 +93,15 @@ typedef void (FFTpad::*FFTPad)(Complex *W);
 class FFTtype {
 public:
   unsigned int type;
-  FFTtype(unsigned int type) : type(type) {}
+  unsigned int lambda; // p is a multiple of lambda
+  FFTtype(unsigned int type, unsigned int lambda) :
+    type(type), lambda(lambda) {}
 };
 
 static unsigned int type=0;
-FFTtype FFTStandard(type++);
-FFTtype FFTCentered(type++);
-FFTtype FFTHermitian(type++);
+FFTtype FFTStandard(type++,1);
+FFTtype FFTCentered(type++,2);
+FFTtype FFTHermitian(type++,2);
 
 class Application {
 public:
@@ -140,12 +142,13 @@ protected:
   bool inplace;
 public:
 
-  void init() {
+  void init(unsigned int lambda) {
     if(C > 1) D=1;
     inplace=IOption == -1 ? C > 1 : IOption;
 
     Cm=C*m;
-    p=ceilquotient(L,m);
+    if(q == 1) lambda=1;
+    p=lambda*ceilquotient(L,lambda*m);
     n=q/p;
     if(m > M) M=m;
     Pad=&FFTpad::padNone;
@@ -182,7 +185,11 @@ public:
       unsigned int N=m*q;
       double twopibyN=twopi/N;
 
-      if(p > 1) { // Implies L > m
+      unsigned int d=p*D*C;
+      Complex *G=ComplexAlign(m*d);
+      Complex *H=inplace ? G : ComplexAlign(m*d);
+
+      if(p > lambda) { // Implies L > m
         if(C == 1) {
           Forward=&FFTpad::forwardInner1;
           Backward=&FFTpad::backwardInner1;
@@ -196,7 +203,13 @@ public:
         for(unsigned int r=1; r < n; ++r)
           for(unsigned int t=1; t < p; ++t)
             Zetaqp[p*r-r+t]=expi(r*t*twopibyq);
+
+        // L'=p, M'=q, m'=p, p'=1, q'=n
+        fftp=new mfft1d(p,1,Cm, Cm,1, G);
+        ifftp=new mfft1d(p,-1,Cm, Cm,1, G);
       } else {
+        fftp=NULL;
+
         if(C == 1) {
           FFTcall Forward1[]={&FFTpad::forward1,
                               &FFTpad::forwardCentered1};
@@ -222,10 +235,6 @@ public:
             Zetaqp[p*r-r+t]=expi((m*r*t % N)*twopibyN);
       }
 
-      unsigned int d=p*D*C;
-      Complex *G=ComplexAlign(m*d);
-      Complex *H=inplace ? G : ComplexAlign(m*d);
-
       if(C == 1) {
         fftm=new mfft1d(m,1,d, 1,m, G,H);
         ifftm=new mfft1d(m,-1,d, 1,m, G,H);
@@ -239,11 +248,6 @@ public:
         d=p*extra;
         fftm2=new mfft1d(m,1,d, 1,m, G,H);
         ifftm2=new mfft1d(m,-1,d, 1,m, G,H);
-      }
-
-      if(p > 1) {// L'=p, M'=q, m'=p, p'=1, q'=n
-        fftp=new mfft1d(p,1,Cm, Cm,1, G);
-        ifftp=new mfft1d(p,-1,Cm, Cm,1, G);
       }
 
       if(!inplace)
@@ -264,14 +268,14 @@ public:
          unsigned int m, unsigned int q, unsigned int D) :
     type(type.type),
     L(L), M(M), C(C), m(m), p(ceilquotient(L,m)), q(q), D(D) {
-    init();
+    init(type.lambda);
   }
 
   FFTpad(unsigned int L, unsigned int M, unsigned int C,
          unsigned int m, unsigned int q,unsigned int D) :
     type(FFTStandard.type),
     L(L), M(M), C(C), m(m), p(ceilquotient(L,m)), q(q), D(D) {
-    init();
+    init(FFTStandard.lambda);
   }
 
   ~FFTpad() {
@@ -281,7 +285,7 @@ public:
       if(type == FFTCentered.type && M % 2 == 1)
         deleteAlign(ZetaHalf);
     } else {
-      if(p > 1) {
+      if(fftp) {
         delete fftp;
         delete ifftp;
       }
@@ -301,12 +305,15 @@ public:
     unsigned int m,q,D;
     double T;
 
-    void check(unsigned int type, unsigned int L, unsigned int M,
+    void check(const FFTtype &type, unsigned int L, unsigned int M,
                Application& app, unsigned int C, unsigned int m,
                bool fixed=false, bool mForced=false) {
 //    cout << "m=" << m << endl;
-      unsigned int p=ceilquotient(L,m);
       unsigned int q=ceilquotient(M,m);
+
+      unsigned int lambda=q == 1 ? 1 : type.lambda;
+      unsigned int p=lambda*ceilquotient(L,lambda*m);
+      if(type.type == FFTCentered.type && p > 2) return; // Temporary
 
       if(p == q && p > 1 && !mForced) return;
 
@@ -357,7 +364,7 @@ public:
     // Determine optimal m,q values for padding L data values to
     // size >= M
     // If fixed=true then an FFT of size M is enforced.
-    Opt(unsigned int type, unsigned int L, unsigned int M, Application& app,
+    Opt(const FFTtype &type, unsigned int L, unsigned int M, Application& app,
         unsigned int C, bool Explicit=false, bool fixed=false)
     {
       if(L > M) {
@@ -396,7 +403,8 @@ public:
           ++i;
         }
 
-      unsigned int p=ceilquotient(L,m);
+      unsigned int lambda=q == 1 ? 1 : type.lambda;
+      unsigned int p=lambda*ceilquotient(L,lambda*m);
       cout << endl;
       cout << "Optimal values:" << endl;
       cout << "m=" << m << endl;
@@ -408,15 +416,15 @@ public:
     }
   };
 
-  void initOpt(Application& app, bool Explicit, bool fixed) {
-    Opt opt=Opt(this->type,L,M,app,C,Explicit,fixed);
+  void initOpt(const FFTtype &type, Application& app, bool Explicit, bool fixed) {
+    this->type=type.type;
+    Opt opt=Opt(type,L,M,app,C,Explicit,fixed);
     m=opt.m;
     if(Explicit)
       M=m;
-    p=ceilquotient(L,M);
     q=opt.q;
     D=opt.D;
-    init();
+    init(type.lambda);
   }
 
   // Normal entry point.
@@ -424,14 +432,14 @@ public:
   // (or exactly M if fixed=true)
   FFTpad(const FFTtype &type, unsigned int L, unsigned int M, Application& app,
          unsigned int C=1, bool Explicit=false, bool fixed=false) :
-    type(type.type), L(L), M(M), C(C) {
-    initOpt(app,Explicit,fixed);
+    L(L), M(M), C(C) {
+    initOpt(type,app,Explicit,fixed);
   }
 
   FFTpad(unsigned int L, unsigned int M, Application& app,
          unsigned int C=1, bool Explicit=false, bool fixed=false) :
-    type(FFTStandard.type), L(L), M(M), C(C) {
-    initOpt(app,Explicit,fixed);
+   L(L), M(M), C(C) {
+    initOpt(FFTStandard,app,Explicit,fixed);
   }
 
   void padNone(Complex *W) {}
@@ -447,11 +455,11 @@ public:
 
   // Explicitly center pad to m.
   void padCentered1(Complex *W) {
-    unsigned int smaller=min(m,L);
+    unsigned int minLm=min(L,m);
     unsigned int H=L/2;
     for(unsigned int d=0; d < D; ++d) {
       Complex *F=W+m*d;
-      for(unsigned int s=smaller-H; s < m-H; ++s)
+      for(unsigned int s=minLm-H; s < m-H; ++s)
         F[s]=0.0;
     }
   }
@@ -589,38 +597,43 @@ public:
     if(D0 > D) D0=D;
 
     unsigned int H=L/2;
-    unsigned int smaller=min(m,L);
+    unsigned int minLm=min(L,m);
+    unsigned int s1=minLm-H;
+    unsigned int s2=m == H ? m+1 : m;
+    unsigned int s3=m+L-minLm-H; // max(L,m)-H
 
     if(W == F0) {
       for(unsigned int d=0; d < D0; ++d) {
       Complex *F=W+m*d;
-      for(unsigned int s=smaller-H; s < m-H; ++s)
+      for(unsigned int s=minLm-H; s < m-H; ++s)
         F[s]=0.0;
       }
     }
 
     unsigned int first=r0 == 0;
     if(first) {
-      for(unsigned int s=0; s < smaller-H; ++s)
+      for(unsigned int s=0; s < s1; ++s)
         W[s]=f[H+s];
 
-      for(unsigned int s=m-H; s < L-H; ++s)
-        W[s]=f[H+s]+f[H+s-m];
+      for(unsigned int s=m; s < L; ++s)
+        W[s-H]=f[s]+f[s-m];
 
-      for(unsigned int s=L-H; s < m; ++s)
+      for(unsigned int s=s3; s < m; ++s)
         W[s]=f[H+s-m];
     }
     for(unsigned int d=first; d < D0; ++d) {
       Complex *F=W+m*d;
       unsigned int r=r0+d;
       Complex *Zetar=Zetaqm+m*r;
-      for(unsigned int s=0; s < smaller-H; ++s)
+      for(unsigned int s=0; s < s1; ++s)
         F[s]=Zetar[s]*f[H+s];
 
-      for(unsigned int s=m-H; s < L-H; ++s)
-        F[s]=Zetar[s]*f[H+s]+conj(Zetar[m-s])*f[H+s-m];
+      if(m == H)
+        F[0]=f[m]+f[0];
+      for(unsigned int s=s2; s < L; ++s)
+        F[s-H]=Zetar[s-H]*f[s]+conj(Zetar[m-s+H])*f[s-m];
 
-      for(unsigned int s=L-H; s < m; ++s)
+      for(unsigned int s=s3; s < m; ++s)
         F[s]=conj(Zetar[m-s])*f[H+s-m];
     }
     (D0 == D ? fftm : fftm2)->fft(W,F0);
@@ -862,7 +875,6 @@ public:
     }
   }
 
-  // TODO...
   void backwardCentered1(Complex *F0, Complex *f, unsigned int r0, Complex *W=NULL) {
     if(W == NULL) W=F0;
 
@@ -871,18 +883,31 @@ public:
 
     (D0 == D ? ifftm : ifftm2)->fft(F0,W);
 
+    unsigned int P=(2*m-L)/2;
+    unsigned int H=L/2;
+    unsigned int s0=m-P;
+    unsigned int m0=P+H == m ? 0 : m-1;
+
     unsigned int first=r0 == 0;
     if(first) {
-      for(unsigned int s=0; s < L; ++s)
-        f[s]=W[s];
+      for(unsigned int s=0; s < s0; ++s)
+        f[s]=W[P+s];
+      for(unsigned int s=s0; s < L; ++s)
+        f[s]=W[s-s0];
     }
     for(unsigned int d=first; d < D0; ++d) {
       Complex *F=W+m*d;
       unsigned int r=r0+d;
-      f[0] += F[0];
       Complex *Zetamr=Zetaqm+m*r;
-      for(unsigned int s=1; s < L; ++s)
-        f[s] += conj(Zetamr[s])*F[s];
+
+      f[0] += H == m ? F[P] : Zetamr[H]*F[P];
+      for(unsigned int s=1; s < H; ++s)
+        f[s] += Zetamr[H-s]*F[P+s];
+
+      f[H] += F[m0];
+
+      for(unsigned int s=H+1; s < L; ++s)
+        f[s] += conj(Zetamr[s-H])*F[s-s0];
     }
   }
 
@@ -1172,8 +1197,13 @@ private:
   Complex *W;
 
 public:
-  ForwardBackward(unsigned int A=2, unsigned int B=1) : A(A), B(B)
-  {};
+  ForwardBackward(unsigned int A=2, unsigned int B=1) :
+    A(A), B(B), f(NULL), F(NULL), h(NULL), W(NULL) {
+  }
+
+  ~ForwardBackward() {
+    clear();
+  }
 
   void init(FFTpad &fft) {
     Forward=fft.Forward;
@@ -1201,6 +1231,7 @@ public:
       h[b]=ComplexAlign(Lf);
 
     W=ComplexAlign(fft.worksizeW());
+    (fft.*fft.Pad)(W);
 
     for(unsigned int a=0; a < E; ++a) {
       Complex *fa=f[a];
@@ -1233,15 +1264,24 @@ public:
       deleteAlign(W);
 
     unsigned int E=max(A,B);
-    for(unsigned int b=0; b < B; ++b)
-      deleteAlign(h[b]);
-    for(unsigned int e=0; e < E; ++e)
-      deleteAlign(F[e]);
-    for(unsigned int a=0; a < A; ++a)
-      deleteAlign(f[a]);
-    delete[] h;
-    delete[] F;
-    delete[] f;
+
+    if(h) {
+      for(unsigned int b=0; b < B; ++b)
+        deleteAlign(h[b]);
+      delete[] h;
+    }
+
+    if(F) {
+      for(unsigned int e=0; e < E; ++e)
+        deleteAlign(F[e]);
+      delete[] F;
+    }
+
+    if(f) {
+      for(unsigned int a=0; a < A; ++a)
+        deleteAlign(f[a]);
+      delete[] f;
+    }
   }
 };
 
@@ -1579,8 +1619,8 @@ public:
   }
 };
 
-unsigned int L=683;
-unsigned int M=1025;
+unsigned int L=512;
+unsigned int M=1024;
 
 void usage()
 {
@@ -1654,28 +1694,21 @@ int main(int argc, char* argv[])
   ForwardBackward FB;
 
 #if 1
+  FFTtype type=FFTStandard;
+//  FFTtype type=FFTCentered;
+
   cout << "Explicit:" << endl;
   // Minimal explicit padding
-  FFTpad fft0(L,M,FB,C,true,true);
+  FFTpad fft0(type,L,M,FB,C,true,true);
 
   double mean0=fft0.report(FB);
-  {
-    cout << "Centered:" << endl;
-    FFTpad fft0(FFTCentered,L,M,FB,C,true,true);
-    fft0.report(FB);
-  }
 
   // Optimal explicit padding
-  FFTpad fft1(L,M,FB,C,true,false);
+  FFTpad fft1(type,L,M,FB,C,true,false);
   double mean1=min(mean0,fft1.report(FB));
 
   // Hybrid padding
-//  FFTpad fft0(FFTCentered,L,M,FB,C);
-
-  // Hybrid padding
-  FFTpad fft(L,M,FB,C);
-
-  FB.init(fft);
+  FFTpad fft(type,L,M,FB,C);
 
   double mean=fft.report(FB);
 
@@ -1768,6 +1801,7 @@ int main(int argc, char* argv[])
     cerr << endl << "WARNING: " << endl;
   cout << "forward error=" << error << endl;
   cout << "backward error=" << error2 << endl;
+  exit(-1);
 #endif
   {
 
