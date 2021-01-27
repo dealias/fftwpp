@@ -1,5 +1,5 @@
 // TODO:
-// Implement centered case
+// Optimize shift when M=2L, etc.
 // Implement centered Hermitian case
 // Implement 3D cases
 // Precompute best D and inline options for each m value
@@ -175,13 +175,13 @@ public:
           ZetaHalf[j-1]=expi(-factor*j);
       }
       Complex *G=ComplexAlign(C*M);
-      if(type == FFTHermitian.type) {
+//      if(type == FFTHermitian.type) {
 //        crfftM=new mcrfft1d(M,C, C,C,1,1, G);
 //        rcfftM=new mrcfft1d(M,C, C,C,1,1, G);
-      } else {
+//      } else {
         fftM=new mfft1d(M,1,C, C,1, G);
         ifftM=new mfft1d(M,-1,C, C,1, G);
-      }
+//      }
       deleteAlign(G);
       Q=1;
     } else {
@@ -532,9 +532,12 @@ public:
       unsigned int r=r0+d;
       for(unsigned int t=0; t < p; ++t) {
         Complex *Zetar=ZetaShift+n*t+r;
-        Complex *Wt=W+m*t;
-        for(unsigned int s=0; s < m; ++s)
-          Wt[s] *= conj(Zetar[q*s]);
+        Complex *Wt=W+Cm*t;
+        for(unsigned int s=0; s < m; ++s) {
+          Complex Zeta=conj(Zetar[q*s]);
+          for(unsigned int c=0; c < C; ++c)
+            Wt[C*s+c] *= Zeta;
+        }
       }
     }
   }
@@ -548,36 +551,15 @@ public:
       unsigned int r=r0+d;
       for(unsigned int t=0; t < p; ++t) {
         Complex *Zetar=ZetaShift+n*t+r;
-        Complex *Wt=W+m*t;
-        for(unsigned int s=0; s < m; ++s)
-          Wt[s] *= Zetar[q*s];
+        Complex *Wt=W+Cm*t;
+        for(unsigned int s=0; s < m; ++s) {
+          Complex Zeta=Zetar[q*s];
+          for(unsigned int c=0; c < C; ++c)
+            Wt[C*s+c] *= Zeta;
+        }
       }
     }
   }
-
-  /*
-  void forwardExplicitCentered1(Complex *f, Complex *F, unsigned int, Complex *) {
-    forwardExplicit1(f,F,0,NULL);
-    ForwardShift(F,0);
-  }
-
-  void backwardExplicitCentered1(Complex *F, Complex *f, unsigned int, Complex *) {
-    BackwardShift(F,0);
-    backwardExplicit1(F,f,0,NULL);
-  }
-
-  void forwardCentered1(Complex *f, Complex *F, unsigned int r, Complex *W)
-  {
-    forward1(f,F,r,W);
-    ForwardShift(F,r);
-  }
-
-  void backwardCentered1(Complex *F, Complex *f, unsigned int r, Complex *W)
-  {
-    BackwardShift(F,r);
-    backward1(F,f,r,W);
-  }
-  */
 
   void ExplicitHermitian1Pad(Complex *f, Complex *F) {
     unsigned int P=(M-L)/2;
@@ -1867,7 +1849,7 @@ int main(int argc, char* argv[])
   fft.backward(F0,f0);
 
   if(L < 30) {
-#if 1
+#if 0
     for(unsigned int j=0; j < fft.size(); ++j)
       for(unsigned int c=0; c < C; ++c)
         cout << F[C*j+c] << endl;
@@ -1892,7 +1874,7 @@ int main(int argc, char* argv[])
   fft2.forward(f,F2);
   if(centered) fft2.forwardShift(F2);
 
-#if 1
+#if 0
   cout << endl;
   for(unsigned int j=0; j < fft.size(); ++j)
     for(unsigned int c=0; c < C; ++c)
