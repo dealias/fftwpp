@@ -1326,8 +1326,10 @@ public:
   }
 
   void clear() {
-    if(W)
+    if(W) {
       deleteAlign(W);
+      W=NULL;
+    }
 
     unsigned int E=max(A,B);
 
@@ -1335,18 +1337,21 @@ public:
       for(unsigned int b=0; b < B; ++b)
         deleteAlign(h[b]);
       delete[] h;
+      h=NULL;
     }
 
     if(F) {
       for(unsigned int e=0; e < E; ++e)
         deleteAlign(F[e]);
       delete[] F;
+      F=NULL;
     }
 
     if(f) {
       for(unsigned int a=0; a < A; ++a)
         deleteAlign(f[a]);
       delete[] f;
+      f=NULL;
     }
   }
 };
