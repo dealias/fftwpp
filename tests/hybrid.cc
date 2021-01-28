@@ -158,12 +158,12 @@ public:
 
     if(q == 1) {
       if(C == 1) {
-        FFTcall ForwardExplicit1[]={&FFTpad::forwardExplicit1,
-                                    &FFTpad::forwardExplicitHermitian1};
-        FFTcall BackwardExplicit1[]={&FFTpad::backwardExplicit1,
-                                     &FFTpad::backwardExplicitHermitian1};
-        Forward=ForwardExplicit1[type];
-        Backward=BackwardExplicit1[type];
+        FFTcall ForwardExplicit[]={&FFTpad::forwardExplicit,
+                                    &FFTpad::forwardExplicitHermitian};
+        FFTcall BackwardExplicit[]={&FFTpad::backwardExplicit,
+                                     &FFTpad::backwardExplicitHermitian};
+        Forward=ForwardExplicit[type];
+        Backward=BackwardExplicit[type];
       } else {
         Forward=&FFTpad::forwardExplicit;
         Backward=&FFTpad::backwardExplicit;
@@ -194,11 +194,11 @@ public:
 
       if(p > lambda) { // Implies L > m
         if(C == 1) {
-          Forward=&FFTpad::forwardInner1;
-          Backward=&FFTpad::backwardInner1;
-         } else {
           Forward=&FFTpad::forwardInner;
           Backward=&FFTpad::backwardInner;
+         } else {
+          Forward=&FFTpad::forwardInnerMany;
+          Backward=&FFTpad::backwardInnerMany;
         }
         Q=n;
         Zetaqp=ComplexAlign((n-1)*(p-1))-p;
@@ -214,22 +214,22 @@ public:
         fftp=NULL;
 
         if(C == 1) {
-          FFTcall Forward1[]={&FFTpad::forward1,
-                              &FFTpad::forwardHermitian1};
-          FFTcall Backward1[]={&FFTpad::backward1,
-                               &FFTpad::backwardHermitian1};
-          FFTPad PAD1[]={&FFTpad::pad1,
-                         &FFTpad::pad1}; // CHECK!
+          FFTcall Forward1[]={&FFTpad::forward,
+                              &FFTpad::forwardHermitian};
+          FFTcall Backward1[]={&FFTpad::backward,
+                               &FFTpad::backwardHermitian};
+          FFTPad PAD1[]={&FFTpad::padSingle,
+                         &FFTpad::padSingle}; // CHECK!
 
           Forward=Forward1[type];
           Backward=Backward1[type];
           if(padding())
             Pad=PAD1[type];
         } else {
-          Forward=&FFTpad::forward;
-          Backward=&FFTpad::backward;
+          Forward=&FFTpad::forwardMany;
+          Backward=&FFTpad::backwardMany;
           if(padding())
-            Pad=&FFTpad::padC;
+            Pad=&FFTpad::padMany;
         }
         Q=q;
         Zetaqp=ComplexAlign((q-1)*(p-1))-p;
@@ -450,7 +450,7 @@ public:
   void padNone(Complex *W) {}
 
   // Explicitly pad to m.
-  void pad1(Complex *W) {
+  void padSingle(Complex *W) {
     for(unsigned int d=0; d < D; ++d) {
       Complex *F=W+m*d;
       for(unsigned int s=L; s < m; ++s)
@@ -459,7 +459,7 @@ public:
   }
 
   // Explicitly center pad to m.
-  void padHermitian1(Complex *W) {
+  void padHermitianSingle(Complex *W) {
     unsigned int minLm=min(L,m);
     unsigned int H=L/2;
     for(unsigned int d=0; d < D; ++d) {
@@ -470,7 +470,7 @@ public:
   }
 
   // Explicitly pad C FFTs to m.
-  void padC(Complex *W) {
+  void padMany(Complex *W) {
     for(unsigned int s=L; s < m; ++s) {
       Complex *F=W+C*s;
       for(unsigned int c=0; c < C; ++c)
@@ -503,7 +503,7 @@ public:
       backwardShift(F+b*r,r);
   }
 
-  void forwardExplicit1(Complex *f, Complex *F, unsigned int, Complex *W=NULL)
+  void forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W=NULL)
   {
     for(unsigned int s=0; s < L; ++s)
       F[s]=f[s];
@@ -580,31 +580,31 @@ public:
         F[j] *= ZetaHalf[j-1];
   }
 
-  void forwardExplicitHermitian1(Complex *f, Complex *F, unsigned int, Complex *W) {
+  void forwardExplicitHermitian(Complex *f, Complex *F, unsigned int, Complex *W) {
     ExplicitHermitian1Pad(f,F);
     fftM->fft(F);
     ExplicitHermitian1Shift(F);
   }
 
-  void forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W) {
+  void forwardExplicitMany(Complex *f, Complex *F, unsigned int, Complex *W) {
     for(unsigned int s=0; s < L; ++s) {
       Complex *Fs=F+C*s;
       Complex *fs=f+C*s;
       for(unsigned int c=0; c < C; ++c)
         Fs[c]=fs[c];
     }
-    padC(F);
+    padMany(F);
     fftM->fft(F);
   }
 
-  void backwardExplicit1(Complex *F, Complex *f, unsigned int, Complex *W)
+  void backwardExplicit(Complex *F, Complex *f, unsigned int, Complex *W)
   {
     ifftM->fft(F);
     for(unsigned int s=0; s < L; ++s)
       f[s]=F[s];
   }
 
-  void backwardExplicitHermitian1(Complex *F, Complex *f, unsigned int,
+  void backwardExplicitHermitian(Complex *F, Complex *f, unsigned int,
                                  Complex *W)
   {
     ExplicitHermitian1Shift(F);
@@ -614,7 +614,7 @@ public:
       f[s]=F[P+s];
   }
 
-  void backwardExplicit(Complex *F, Complex *f, unsigned int,
+  void backwardExplicitMany(Complex *F, Complex *f, unsigned int,
                             Complex *W) {
     ifftM->fft(F);
     for(unsigned int s=0; s < L; ++s) {
@@ -625,7 +625,8 @@ public:
     }
   }
 
-  void forward1(Complex *f, Complex *F0, unsigned int r0, Complex *W) {
+  // p=1 && C=1
+  void forward(Complex *f, Complex *F0, unsigned int r0, Complex *W) {
     if(W == NULL) W=F0;
 
     unsigned int D0=Q-r0;
@@ -655,7 +656,7 @@ public:
     (D0 == D ? fftm : fftm2)->fft(W,F0);
   }
 
-  void forwardHermitian1(Complex *f, Complex *F0,
+  void forwardHermitian(Complex *f, Complex *F0,
                         unsigned int r0, Complex *W) {
     if(W == NULL) W=F0;
 
@@ -705,7 +706,7 @@ public:
     (D0 == D ? fftm : fftm2)->fft(W,F0);
   }
 
-  void forward(Complex *f, Complex *F, unsigned int r, Complex *W) {
+  void forwardMany(Complex *f, Complex *F, unsigned int r, Complex *W) {
     if(W == NULL) W=F;
 
     if(W == F) {
@@ -738,7 +739,7 @@ public:
     fftm->fft(W,F);
   }
 
-  void forwardInner1(Complex *f, Complex *F0, unsigned int r0, Complex *W) {
+  void forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W) {
     if(W == NULL) W=F0;
 
     unsigned int D0=Q-r0;
@@ -811,7 +812,7 @@ public:
     (D0 == D ? fftm : fftm2)->fft(W,F0);
   }
 
-  void forwardInner(Complex *f, Complex *F, unsigned int r, Complex *W) {
+  void forwardInnerMany(Complex *f, Complex *F, unsigned int r, Complex *W) {
     if(W == NULL) W=F;
 
     unsigned int pm1=p-1;
@@ -918,7 +919,7 @@ public:
 // to size m*p >= L.
 // input and output arrays must be distinct
 // Input F destroyed
-  void backward1(Complex *F0, Complex *f, unsigned int r0, Complex *W) {
+  void backward(Complex *F0, Complex *f, unsigned int r0, Complex *W) {
     if(W == NULL) W=F0;
 
     unsigned int D0=Q-r0;
@@ -941,7 +942,7 @@ public:
     }
   }
 
-  void backwardHermitian1(Complex *F0, Complex *f, unsigned int r0, Complex *W) {
+  void backwardHermitian(Complex *F0, Complex *f, unsigned int r0, Complex *W) {
     if(W == NULL) W=F0;
 
     unsigned int D0=Q-r0;
@@ -977,7 +978,7 @@ public:
     }
   }
 
-  void backward(Complex *F, Complex *f, unsigned int r, Complex *W) {
+  void backwardMany(Complex *F, Complex *f, unsigned int r, Complex *W) {
     if(W == NULL) W=F;
 
     ifftm->fft(F,W);
@@ -1005,7 +1006,7 @@ public:
     }
   }
 
-  void backwardInner1(Complex *F0, Complex *f, unsigned int r0, Complex *W) {
+  void backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W) {
     if(W == NULL) W=F0;
 
     unsigned int D0=Q-r0;
@@ -1072,7 +1073,7 @@ public:
     }
   }
 
-  void backwardInner(Complex *F, Complex *f, unsigned int r, Complex *W) {
+  void backwardInnerMany(Complex *F, Complex *f, unsigned int r, Complex *W) {
     if(W == NULL) W=F;
 
     for(unsigned int t=0; t < p; ++t) {
