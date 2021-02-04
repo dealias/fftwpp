@@ -16,7 +16,7 @@ void finit(array1<double> f, unsigned int m)
 
 int main(int argc, char* argv[])
 {
-  cout << "1D Complex to complex in-place FFT" << endl;
+  cout << "1D Complex to real in-place FFT" << endl;
 
   unsigned int m=11; // Problem size
 
