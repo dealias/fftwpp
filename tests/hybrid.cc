@@ -88,21 +88,21 @@ unsigned int nextfftsize(unsigned int m)
   return N;
 }
 
-class FFTpad;
+class FFTbase;
 
-typedef void (FFTpad::*FFTcall)(Complex *f, Complex *F, unsigned int r, Complex *W);
-typedef void (FFTpad::*FFTPad)(Complex *W);
-typedef void (FFTpad::*FFTshift)(Complex *F, unsigned int r0);
+typedef void (FFTbase::*FFTcall)(Complex *f, Complex *F, unsigned int r, Complex *W);
+typedef void (FFTbase::*FFTPad)(Complex *W);
+typedef void (FFTbase::*FFTshift)(Complex *F, unsigned int r0);
 
 class Application {
 public:
   Application() {};
-  virtual void init(FFTpad &fft)=0;
+  virtual void init(FFTbase &fft)=0;
   virtual void clear()=0;
-  virtual double time(FFTpad &fft, unsigned int K)=0;
+  virtual double time(FFTbase &fft, unsigned int K)=0;
 };
 
-class FFTpad {
+class FFTbase {
 public:
   unsigned int L;
   unsigned int M;
@@ -117,14 +117,11 @@ public:
   Complex *W0; // Temporary work memory for testing accuracy
 
   FFTcall Forward,Backward;
-  FFTPad Pad;
   FFTshift ForwardShift,BackwardShift;
+  FFTPad Pad;
 
 protected:
-  mfft1d *fftm,*fftm2;
-  mfft1d *ifftm,*ifftm2;
-  mfft1d *fftp;
-  mfft1d *ifftp;
+
   Complex *Zetaqp;
   Complex *Zetaq;
   Complex *Zetaqm;
@@ -143,7 +140,7 @@ public:
     p=ceilquotient(L,m);
     n=q/p;
     M=q*m;
-    Pad=&FFTpad::padNone;
+    Pad=&FFTbase::padNone;
   }
 
   void initZetaq () {
@@ -166,168 +163,6 @@ public:
     }
   }
 
-  void init() {
-    common();
-//    if(m > M) M=m;
-
-    initShift=centered;
-    if(centered) {
-      ForwardShift=&FFTpad::forwardShift;
-      BackwardShift=&FFTpad::backwardShift;
-    } else {
-      ForwardShift=&FFTpad::noShift;
-      BackwardShift=&FFTpad::noShift;
-    }
-
-    ZetaShift=NULL;
-
-    if(q == 1) {
-      if(C == 1) {
-        Forward=&FFTpad::forwardExplicit;
-        Backward=&FFTpad::backwardExplicit;
-      } else {
-        Forward=&FFTpad::forwardExplicitMany;
-        Backward=&FFTpad::backwardExplicitMany;
-      }
-      Complex *G;
-      G=ComplexAlign(Cm);
-      fftm=new mfft1d(m,1,C, C,1, G);
-      ifftm=new mfft1d(m,-1,C, C,1, G);
-      deleteAlign(G);
-      Q=1;
-    } else {
-      unsigned int N=m*q;
-      double twopibyN=twopi/N;
-      double twopibyq=twopi/q;
-
-      bool twop=p == 2 && 2*n != q;
-
-      if(twop)
-        initZetaq();
-      else Zetaq=NULL;
-
-      Complex *G,*H;
-
-      unsigned int d=p*D*C;
-      G=ComplexAlign(m*d);
-      H=inplace ? G : ComplexAlign(m*d);
-
-      if(twop) {
-        if(centered) {
-          if(C == 1) {
-            Forward=&FFTpad::forward2Shifted;
-            Backward=&FFTpad::backward2Shifted;
-          } else {
-            Forward=&FFTpad::forward2ShiftedMany;
-            Backward=&FFTpad::backward2ShiftedMany;
-          }
-          ForwardShift=&FFTpad::noShift;
-          BackwardShift=&FFTpad::noShift;
-          initShift=false;
-        } else {
-          unsigned Lm=L-m;
-          Zetaqm2=ComplexAlign((q-1)*Lm)-L;
-          for(unsigned int r=1; r < q; ++r) {
-            for(unsigned int s=m; s < L; ++s)
-              Zetaqm2[Lm*r+s]=expi(r*s*twopibyN);
-          }
-
-          if(C == 1) {
-            Forward=&FFTpad::forward2;
-            Backward=&FFTpad::backward2;
-          } else {
-            Forward=&FFTpad::forward2Many;
-            Backward=&FFTpad::backward2Many;
-          }
-        }
-      } else if(p > 1) { // Implies L > m
-        if(C == 1) {
-          Forward=&FFTpad::forwardInner;
-          Backward=&FFTpad::backwardInner;
-        } else {
-          Forward=&FFTpad::forwardInnerMany;
-          Backward=&FFTpad::backwardInnerMany;
-        }
-        Q=n;
-        Zetaqp=ComplexAlign((n-1)*(p-1))-p;
-        for(unsigned int r=1; r < n; ++r)
-          for(unsigned int t=1; t < p; ++t)
-            Zetaqp[p*r-r+t]=expi(r*t*twopibyq);
-
-        // L'=p, M'=q, m'=p, p'=1, q'=n
-        fftp=new mfft1d(p,1,Cm, Cm,1, G);
-        ifftp=new mfft1d(p,-1,Cm, Cm,1, G);
-      } else { // p == 1
-        if(C == 1) {
-          Forward=&FFTpad::forward;
-          Backward=&FFTpad::backward;
-          if(padding())
-            Pad=&FFTpad::padSingle;
-        } else {
-          Forward=&FFTpad::forwardMany;
-          Backward=&FFTpad::backwardMany;
-          if(padding())
-            Pad=&FFTpad::padMany;
-        }
-        Q=q;
-      }
-
-      if(C == 1) {
-        fftm=new mfft1d(m,1,d, 1,m, G,H);
-        ifftm=new mfft1d(m,-1,d, 1,m, G,H);
-      } else {
-        fftm=new mfft1d(m,1,C, C,1, G,H);
-        ifftm=new mfft1d(m,-1,C, C,1, G,H);
-      }
-
-      unsigned int extra=Q % D;
-      if(extra > 0) {
-        d=p*extra;
-        fftm2=new mfft1d(m,1,d, 1,m, G,H);
-        ifftm2=new mfft1d(m,-1,d, 1,m, G,H);
-      }
-
-      if(!inplace)
-        deleteAlign(H);
-      deleteAlign(G);
-
-      initZetaqm();
-    }
-  }
-
-  // Compute an fft padded to N=m*q >= M >= L
-  FFTpad(unsigned int L, unsigned int M, unsigned int C,
-         unsigned int m, unsigned int q,unsigned int D) :
-    L(L), M(M), C(C), m(m), p(ceilquotient(L,m)), q(q), D(D) {
-    init();
-  }
-
-  ~FFTpad() {
-    if(q == 1) { // Simplify
-      delete fftm;
-      delete ifftm;
-    } else {
-      if(Zetaq) {
-        deleteAlign(Zetaq);
-        if(!centered)
-          deleteAlign(Zetaqm2+L);
-      } else if(p > 1) {
-        deleteAlign(Zetaqp+p);
-        delete fftp;
-        delete ifftp;
-      }
-      deleteAlign(Zetaqm+m);
-      delete fftm;
-      delete ifftm;
-      if(Q % D > 0) {
-        delete fftm2;
-        delete ifftm2;
-      }
-      if(ZetaShift)
-        deleteAlign(ZetaShift);
-    }
-  }
-
   class Opt {
   public:
     unsigned int m,q,D;
@@ -335,12 +170,9 @@ public:
 
     virtual double time(unsigned int L, unsigned int M, unsigned int C,
                         unsigned int m, unsigned int q,unsigned int D,
-                        Application &app) {
-      FFTpad fft(L,M,C,m,q,D);
-      return fft.meantime(app);
-    }
+                        Application &app)=0;
 
-    void check(unsigned int L, unsigned int M,
+    virtual void check(unsigned int L, unsigned int M,
                Application& app, unsigned int C, unsigned int m,
                bool fixed=false, bool mForced=false) {
 //    cout << "m=" << m << endl;
@@ -394,12 +226,13 @@ public:
       }
     }
 
+    Opt() {}
+    
     // Determine optimal m,q values for padding L data values to
     // size >= M
     // If fixed=true then an FFT of size M is enforced.
-    Opt(unsigned int L, unsigned int M, Application& app,
-        unsigned int C, bool Explicit=false, bool fixed=false)
-    {
+    void init(unsigned int L, unsigned int M, Application& app,
+              unsigned int C, bool Explicit=false, bool fixed=false) {
       if(L > M) {
         cerr << "L=" << L << " is greater than M=" << M << "." << endl;
         exit(-1);
@@ -448,20 +281,13 @@ public:
     }
   };
 
-  // Normal entry point.
-  // Compute C ffts of length L and distance 1 padded to at least M
-  // (or exactly M if fixed=true)
-  FFTpad(unsigned int L, unsigned int M, Application& app,
+  FFTbase(unsigned int L, unsigned int M, unsigned int C,
+         unsigned int m, unsigned int q, unsigned int D) :
+    L(L), M(M), C(C), m(m), p(ceilquotient(L,m)), q(q), D(D) {}
+
+  FFTbase(unsigned int L, unsigned int M, Application& app,
          unsigned int C=1, bool Explicit=false, bool fixed=false) :
-    L(L), M(M), C(C) {
-    Opt opt=Opt(L,M,app,C,Explicit,fixed);
-    m=opt.m;
-    if(Explicit)
-      M=m;
-    q=opt.q;
-    D=opt.D;
-    init();
-  }
+    L(L), M(M), C(C) {}
 
   void padNone(Complex *W) {}
 
@@ -483,51 +309,6 @@ public:
       for(unsigned int c=0; c < C; ++c)
         F[c]=0.0;
     }
-  }
-
-  void forward(Complex *f, Complex *F) {
-    unsigned int b=Cm*p;
-    (this->*Pad)(W0);
-    for(unsigned int r=0; r < Q; r += D)
-      (this->*Forward)(f,F+b*r,r,W0);
-  }
-
-  void forwardShift(Complex *F) {
-    unsigned int b=Cm*p;
-    for(unsigned int r=0; r < Q; r += D)
-      (this->*ForwardShift)(F+b*r,r);
-  }
-
-  void backward(Complex *F, Complex *f) {
-    unsigned int b=Cm*p;
-    for(unsigned int r=0; r < Q; r += D)
-      (this->*Backward)(F+b*r,f,r,W0);
-  }
-
-  void backwardShift(Complex *F) {
-    unsigned int b=Cm*p;
-    for(unsigned int r=0; r < Q; r += D)
-      (this->*BackwardShift)(F+b*r,r);
-  }
-
-  virtual void forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W=NULL)
-  {
-    for(unsigned int s=0; s < L; ++s)
-      F[s]=f[s];
-    for(unsigned int s=L; s < M; ++s)
-      F[s]=0.0;
-    fftm->fft(F);
-  }
-
-  virtual void forwardExplicitMany(Complex *f, Complex *F, unsigned int, Complex *W) {
-    for(unsigned int s=0; s < L; ++s) {
-      Complex *Fs=F+C*s;
-      Complex *fs=f+C*s;
-      for(unsigned int c=0; c < C; ++c)
-        Fs[c]=fs[c];
-    }
-    padMany(F);
-    fftm->fft(F);
   }
 
   void initCentered() {
@@ -584,15 +365,387 @@ public:
     }
   }
 
-  virtual void backwardExplicit(Complex *F, Complex *f, unsigned int, Complex *W)
+  virtual void forward(Complex *f, Complex *F) {}
+  virtual void backward(Complex *F, Complex *f) {}
+  virtual void forwardShift(Complex *F) {}
+  virtual void backwardShift(Complex *F) {}
+
+  virtual void forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W=NULL) {}
+  virtual void forwardExplicitMany(Complex *f, Complex *F, unsigned int, Complex *W) {}
+
+  virtual void backwardExplicit(Complex *F, Complex *f, unsigned int, Complex *W) {}
+  virtual void backwardExplicitMany(Complex *F, Complex *f, unsigned int, Complex *W) {}
+
+  virtual void forward(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
+  virtual void forwardMany(Complex *f, Complex *F, unsigned int r, Complex *W) {}
+
+  virtual void forward2(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
+  virtual void forward2Many(Complex *f, Complex *F, unsigned int r, Complex *W) {}
+  virtual void forward2Shifted(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
+
+  virtual void forward2ShiftedMany(Complex *f, Complex *F, unsigned int r, Complex *W) {}
+
+  virtual void forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
+
+  virtual void forwardInnerMany(Complex *f, Complex *F, unsigned int r, Complex *W) {}
+
+  virtual void backward(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
+
+  virtual void backwardMany(Complex *F, Complex *f, unsigned int r, Complex *W) {}
+
+  virtual void backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
+
+  virtual void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W) {}
+
+  virtual void backward2Shifted(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
+
+  virtual void backward2ShiftedMany(Complex *F, Complex *f, unsigned int r, Complex *W) {}
+
+  virtual void backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
+  virtual void backwardInnerMany(Complex *F, Complex *f, unsigned int r, Complex *W) {}
+
+  // FFT input length
+  unsigned int length() {
+    return max(L,m*p);
+  }
+
+  // FFT output length
+  unsigned int Length() {
+    return q == 1 ? M : m*p;
+  }
+
+  unsigned int size() {
+    return q == 1 ? M : m*q; // TODO: m*q  Can we make M=m*q in all cases?
+  }
+
+  virtual unsigned int worksizeF() {
+    return C*(q == 1 ? M : m*p*D);
+  }
+
+  bool loop2() {
+    return D < Q && 2*D >= Q && A > B;
+  }
+
+  unsigned int worksizeV() {
+    return q == 1 || D >= Q || loop2() ? 0 : length();
+  }
+
+  virtual unsigned int worksizeW() {
+    return q == 1 || inplace ? 0 : worksizeF();
+  }
+
+  unsigned int padding() {
+    return !inplace && L < p*m;
+  }
+
+  void initialize(Complex *f, Complex *g) {
+    for(unsigned int j=0; j < L; ++j) {
+      Complex f0(j,j+1);
+      Complex g0(j,2*j+1);
+      unsigned int Cj=C*j;
+      Complex *fj=f+Cj;
+      Complex *gj=g+Cj;
+      for(unsigned int c=0; c < C; ++c) {
+        fj[c]=f0;
+        gj[c]=g0;
+      }
+    }
+  }
+
+  double meantime(Application& app, double *Stdev=NULL) {
+    unsigned int K=1;
+    double eps=0.1;
+
+    utils::statistics Stats;
+    app.init(*this);
+    while(true) {
+      Stats.add(app.time(*this,K));
+      double mean=Stats.mean();
+      double stdev=Stats.stdev();
+      if(Stats.count() < 7) continue;
+      int threshold=5000;
+      if(mean*CLOCKS_PER_SEC < threshold || eps*mean < stdev) {
+        K *= 2;
+        Stats.clear();
+      } else {
+        if(Stdev) *Stdev=stdev/K;
+        app.clear();
+        return mean/K;
+      }
+    }
+    return 0.0;
+  }
+
+  double report(Application& app) {
+    double stdev;
+    cout << endl;
+
+    double mean=meantime(app,&stdev);
+
+    cout << "mean=" << mean << " +/- " << stdev << endl;
+
+    return mean;
+  }
+};
+
+class FFTpad : public FFTbase {
+  mfft1d *fftm,*fftm2;
+  mfft1d *ifftm,*ifftm2;
+  mfft1d *fftp;
+  mfft1d *ifftp;
+public:
+  FFTcall Forward,Backward;
+  FFTshift ForwardShift,BackwardShift;
+
+  class OptStandard : public Opt {
+  public:
+    OptStandard(unsigned int L, unsigned int M, Application& app,
+                unsigned int C, bool Explicit=false, bool fixed=false) {
+      init(L,M,app,C,Explicit,fixed);
+    }
+    
+    double time(unsigned int L, unsigned int M, unsigned int C,
+                unsigned int m, unsigned int q,unsigned int D,
+                Application &app) {
+      FFTpad fft(L,M,C,m,q,D);
+      return fft.meantime(app);
+    }
+  };
+
+    // Compute an fft padded to N=m*q >= M >= L
+  FFTpad(unsigned int L, unsigned int M, unsigned int C,
+         unsigned int m, unsigned int q,unsigned int D) :
+    FFTbase(L,M,C,m,q,D) {
+    init();
+  }
+
+  // Normal entry point.
+  // Compute C ffts of length L and distance 1 padded to at least M
+  // (or exactly M if fixed=true)
+  FFTpad(unsigned int L, unsigned int M, Application& app,
+         unsigned int C=1, bool Explicit=false, bool fixed=false) :
+    FFTbase(L,M,app,C,Explicit,fixed) {
+    OptStandard opt=OptStandard(L,M,app,C,Explicit,fixed);
+    m=opt.m;
+    if(Explicit)
+      M=m;
+    q=opt.q;
+    D=opt.D;
+    init();
+  }
+
+  ~FFTpad() {
+    if(q == 1) { // Simplify
+      delete fftm;
+      delete ifftm;
+    } else {
+      if(Zetaq) {
+        deleteAlign(Zetaq);
+        if(!centered)
+          deleteAlign(Zetaqm2+L);
+      } else if(p > 1) {
+        deleteAlign(Zetaqp+p);
+        delete fftp;
+        delete ifftp;
+      }
+      deleteAlign(Zetaqm+m);
+      delete fftm;
+      delete ifftm;
+      if(Q % D > 0) {
+        delete fftm2;
+        delete ifftm2;
+      }
+      if(ZetaShift)
+        deleteAlign(ZetaShift);
+    }
+  }
+
+  void init() {
+    common();
+//    if(m > M) M=m;
+
+    initShift=centered;
+    if(centered) {
+      ForwardShift=&FFTbase::forwardShift;
+      BackwardShift=&FFTbase::backwardShift;
+    } else {
+      ForwardShift=&FFTbase::noShift;
+      BackwardShift=&FFTbase::noShift;
+    }
+
+    ZetaShift=NULL;
+
+    if(q == 1) {
+      if(C == 1) {
+        Forward=&FFTbase::forwardExplicit;
+        Backward=&FFTbase::backwardExplicit;
+      } else {
+        Forward=&FFTbase::forwardExplicitMany;
+        Backward=&FFTbase::backwardExplicitMany;
+      }
+      Complex *G;
+      G=ComplexAlign(Cm);
+      fftm=new mfft1d(m,1,C, C,1, G);
+      ifftm=new mfft1d(m,-1,C, C,1, G);
+      deleteAlign(G);
+      Q=1;
+    } else {
+      unsigned int N=m*q;
+      double twopibyN=twopi/N;
+      double twopibyq=twopi/q;
+
+      bool twop=p == 2 && 2*n != q;
+
+      if(twop)
+        initZetaq();
+      else Zetaq=NULL;
+
+      Complex *G,*H;
+
+      unsigned int d=p*D*C;
+      G=ComplexAlign(m*d);
+      H=inplace ? G : ComplexAlign(m*d);
+
+      if(twop) {
+        if(centered) {
+          if(C == 1) {
+            Forward=&FFTbase::forward2Shifted;
+            Backward=&FFTbase::backward2Shifted;
+          } else {
+            Forward=&FFTbase::forward2ShiftedMany;
+            Backward=&FFTbase::backward2ShiftedMany;
+          }
+          ForwardShift=&FFTbase::noShift;
+          BackwardShift=&FFTbase::noShift;
+          initShift=false;
+        } else {
+          unsigned Lm=L-m;
+          Zetaqm2=ComplexAlign((q-1)*Lm)-L;
+          for(unsigned int r=1; r < q; ++r) {
+            for(unsigned int s=m; s < L; ++s)
+              Zetaqm2[Lm*r+s]=expi(r*s*twopibyN);
+          }
+
+          if(C == 1) {
+            Forward=&FFTbase::forward2;
+            Backward=&FFTbase::backward2;
+          } else {
+            Forward=&FFTbase::forward2Many;
+            Backward=&FFTbase::backward2Many;
+          }
+        }
+      } else if(p > 1) { // Implies L > m
+        if(C == 1) {
+          Forward=&FFTbase::forwardInner;
+          Backward=&FFTbase::backwardInner;
+        } else {
+          Forward=&FFTbase::forwardInnerMany;
+          Backward=&FFTbase::backwardInnerMany;
+        }
+        Q=n;
+        Zetaqp=ComplexAlign((n-1)*(p-1))-p;
+        for(unsigned int r=1; r < n; ++r)
+          for(unsigned int t=1; t < p; ++t)
+            Zetaqp[p*r-r+t]=expi(r*t*twopibyq);
+
+        // L'=p, M'=q, m'=p, p'=1, q'=n
+        fftp=new mfft1d(p,1,Cm, Cm,1, G);
+        ifftp=new mfft1d(p,-1,Cm, Cm,1, G);
+      } else { // p == 1
+        if(C == 1) {
+          Forward=&FFTbase::forward;
+          Backward=&FFTbase::backward;
+          if(padding())
+            Pad=&FFTbase::padSingle;
+        } else {
+          Forward=&FFTbase::forwardMany;
+          Backward=&FFTbase::backwardMany;
+          if(padding())
+            Pad=&FFTbase::padMany;
+        }
+        Q=q;
+      }
+
+      if(C == 1) {
+        fftm=new mfft1d(m,1,d, 1,m, G,H);
+        ifftm=new mfft1d(m,-1,d, 1,m, G,H);
+      } else {
+        fftm=new mfft1d(m,1,C, C,1, G,H);
+        ifftm=new mfft1d(m,-1,C, C,1, G,H);
+      }
+
+      unsigned int extra=Q % D;
+      if(extra > 0) {
+        d=p*extra;
+        fftm2=new mfft1d(m,1,d, 1,m, G,H);
+        ifftm2=new mfft1d(m,-1,d, 1,m, G,H);
+      }
+
+      if(!inplace)
+        deleteAlign(H);
+      deleteAlign(G);
+
+      initZetaqm();
+    }
+    
+    FFTbase::Forward=Forward;
+    FFTbase::Backward=Backward;
+    FFTbase::ForwardShift=ForwardShift;
+    FFTbase::BackwardShift=BackwardShift;
+  }
+
+  void forward(Complex *f, Complex *F) {
+    unsigned int b=Cm*p;
+    (this->*Pad)(W0);
+    for(unsigned int r=0; r < Q; r += D)
+      (this->*Forward)(f,F+b*r,r,W0);
+  }
+
+  void backward(Complex *F, Complex *f) {
+    unsigned int b=Cm*p;
+    for(unsigned int r=0; r < Q; r += D)
+      (this->*Backward)(F+b*r,f,r,W0);
+  }
+
+  void forwardShift(Complex *F) {
+    unsigned int b=Cm*p;
+    for(unsigned int r=0; r < Q; r += D)
+      (this->*ForwardShift)(F+b*r,r);
+  }
+
+  void backwardShift(Complex *F) {
+    unsigned int b=Cm*p;
+    for(unsigned int r=0; r < Q; r += D)
+      (this->*BackwardShift)(F+b*r,r);
+  }
+
+  void forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W=NULL)
   {
+    for(unsigned int s=0; s < L; ++s)
+      F[s]=f[s];
+    for(unsigned int s=L; s < M; ++s)
+      F[s]=0.0;
+    fftm->fft(F);
+  }
+
+  void forwardExplicitMany(Complex *f, Complex *F, unsigned int, Complex *W) {
+    for(unsigned int s=0; s < L; ++s) {
+      Complex *Fs=F+C*s;
+      Complex *fs=f+C*s;
+      for(unsigned int c=0; c < C; ++c)
+        Fs[c]=fs[c];
+    }
+    padMany(F);
+    fftm->fft(F);
+  }
+
+  void backwardExplicit(Complex *F, Complex *f, unsigned int, Complex *W) {
     ifftm->fft(F);
     for(unsigned int s=0; s < L; ++s)
       f[s]=F[s];
   }
 
-  virtual void backwardExplicitMany(Complex *F, Complex *f, unsigned int,
-                                    Complex *W) {
+  void backwardExplicitMany(Complex *F, Complex *f, unsigned int, Complex *W) {
     ifftm->fft(F);
     for(unsigned int s=0; s < L; ++s) {
       Complex *fs=f+C*s;
@@ -602,7 +755,7 @@ public:
     }
   }
 
-  // p=1 && C=1
+    // p=1 && C=1
   void forward(Complex *f, Complex *F0, unsigned int r0, Complex *W) {
     if(W == NULL) W=F0;
 
@@ -629,71 +782,6 @@ public:
       Complex *Zetar=Zetaqm+m*r;
       for(unsigned int s=1; s < L; ++s)
         F[s]=Zetar[s]*f[s];
-    }
-    (D0 == D ? fftm : fftm2)->fft(W,F0);
-  }
-
-  // p=2 && q odd
-  virtual void forward2(Complex *f, Complex *F0, unsigned int r0, Complex *W) {
-    if(W == NULL) W=F0;
-
-    unsigned int D0=Q-r0;
-    if(D0 > D) D0=D;
-
-    unsigned Lm=L-m;
-    unsigned int first=r0 == 0;
-    if(first) {
-      for(unsigned int s=0; s < Lm; ++s)
-        W[s]=f[s]+f[m+s];
-      for(unsigned int s=Lm; s < m; ++s)
-        W[s]=f[s];
-    }
-    for(unsigned int d=first; d < D0; ++d) {
-      Complex *F=W+m*d;
-      unsigned int r=r0+d;
-      Complex Zetaqr=Zetaq[r];
-      F[0]=f[0]+Zetaqr*f[m];
-      Complex *Zetar=Zetaqm+m*r;
-      for(unsigned int s=1; s < Lm; ++s)
-        F[s]=Zetar[s]*(f[s]+Zetaqr*f[m+s]);
-      for(unsigned int s=Lm; s < m; ++s)
-        F[s]=Zetar[s]*f[s];
-    }
-    (D0 == D ? fftm : fftm2)->fft(W,F0);
-  }
-
-  // p=2 && q odd
-  void forward2Shifted(Complex *f, Complex *F0, unsigned int r0, Complex *W) {
-    if(W == NULL) W=F0;
-
-    unsigned int D0=Q-r0;
-    if(D0 > D) D0=D;
-
-    unsigned int H=L/2;
-    unsigned int mH=m-H;
-    unsigned int LH=L-H;
-    unsigned int first=r0 == 0;
-    Complex *fmH=f-mH;
-    Complex *fH=f+H;
-    if(first) {
-      for(unsigned int s=0; s < mH; ++s)
-        W[s]=fH[s];
-      for(unsigned int s=mH; s < LH; ++s)
-        W[s]=fmH[s]+fH[s];
-      for(unsigned int s=LH; s < m; ++s)
-        W[s]=fmH[s];
-    }
-    for(unsigned int d=first; d < D0; ++d) {
-      Complex *F=W+m*d;
-      unsigned int r=r0+d;
-      Complex Zetaqr=conj(Zetaq[r]);
-      Complex *Zetar=Zetaqm+m*r;
-      for(unsigned int s=0; s < mH; ++s)
-        F[s]=Zetar[s]*fH[s];
-      for(unsigned int s=mH; s < LH; ++s)
-        F[s]=Zetar[s]*(Zetaqr*fmH[s]+fH[s]);
-      for(unsigned int s=LH; s < m; ++s)
-        F[s]=Zetar[s]*Zetaqr*fmH[s];
     }
     (D0 == D ? fftm : fftm2)->fft(W,F0);
   }
@@ -733,7 +821,36 @@ public:
     fftm->fft(W,F);
   }
 
-  virtual void forward2Many(Complex *f, Complex *F, unsigned int r, Complex *W) {
+    // p=2 && q odd
+  void forward2(Complex *f, Complex *F0, unsigned int r0, Complex *W) {
+    if(W == NULL) W=F0;
+
+    unsigned int D0=Q-r0;
+    if(D0 > D) D0=D;
+
+    unsigned Lm=L-m;
+    unsigned int first=r0 == 0;
+    if(first) {
+      for(unsigned int s=0; s < Lm; ++s)
+        W[s]=f[s]+f[m+s];
+      for(unsigned int s=Lm; s < m; ++s)
+        W[s]=f[s];
+    }
+    for(unsigned int d=first; d < D0; ++d) {
+      Complex *F=W+m*d;
+      unsigned int r=r0+d;
+      Complex Zetaqr=Zetaq[r];
+      F[0]=f[0]+Zetaqr*f[m];
+      Complex *Zetar=Zetaqm+m*r;
+      for(unsigned int s=1; s < Lm; ++s)
+        F[s]=Zetar[s]*(f[s]+Zetaqr*f[m+s]);
+      for(unsigned int s=Lm; s < m; ++s)
+        F[s]=Zetar[s]*f[s];
+    }
+    (D0 == D ? fftm : fftm2)->fft(W,F0);
+  }
+
+  void forward2Many(Complex *f, Complex *F, unsigned int r, Complex *W) {
     if(W == NULL) W=F;
 
     unsigned Lm=L-m;
@@ -780,7 +897,44 @@ public:
     fftm->fft(W,F);
   }
 
-  void forward2ShiftedMany(Complex *f, Complex *F, unsigned int r, Complex *W) {
+  // p=2 && q odd
+  void forward2Shifted(Complex *f, Complex *F0, unsigned int r0, Complex *W) {
+    if(W == NULL) W=F0;
+
+    unsigned int D0=Q-r0;
+    if(D0 > D) D0=D;
+
+    unsigned int H=L/2;
+    unsigned int mH=m-H;
+    unsigned int LH=L-H;
+    unsigned int first=r0 == 0;
+    Complex *fmH=f-mH;
+    Complex *fH=f+H;
+    if(first) {
+      for(unsigned int s=0; s < mH; ++s)
+        W[s]=fH[s];
+      for(unsigned int s=mH; s < LH; ++s)
+        W[s]=fmH[s]+fH[s];
+      for(unsigned int s=LH; s < m; ++s)
+        W[s]=fmH[s];
+    }
+    for(unsigned int d=first; d < D0; ++d) {
+      Complex *F=W+m*d;
+      unsigned int r=r0+d;
+      Complex Zetaqr=conj(Zetaq[r]);
+      Complex *Zetar=Zetaqm+m*r;
+      for(unsigned int s=0; s < mH; ++s)
+        F[s]=Zetar[s]*fH[s];
+      for(unsigned int s=mH; s < LH; ++s)
+        F[s]=Zetar[s]*(Zetaqr*fmH[s]+fH[s]);
+      for(unsigned int s=LH; s < m; ++s)
+        F[s]=Zetar[s]*Zetaqr*fmH[s];
+    }
+    (D0 == D ? fftm : fftm2)->fft(W,F0);
+  }
+
+  void forward2ShiftedMany(Complex *f, Complex *F, unsigned int r, Complex *W)
+  {
     if(W == NULL) W=F;
 
     unsigned int H=L/2;
@@ -1048,7 +1202,35 @@ public:
     }
   }
 
-  virtual void backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W)
+  void backwardMany(Complex *F, Complex *f, unsigned int r, Complex *W) {
+    if(W == NULL) W=F;
+
+    ifftm->fft(F,W);
+
+    if(r == 0) {
+      for(unsigned int s=0; s < L; ++s) {
+        unsigned int Cs=C*s;
+        Complex *fs=f+Cs;
+        Complex *Fs=W+Cs;
+        for(unsigned int c=0; c < C; ++c)
+          fs[c]=Fs[c];
+      }
+    } else {
+      for(unsigned int c=0; c < C; ++c)
+        f[c] += W[c];
+      Complex *Zetamr=Zetaqm+m*r;
+      for(unsigned int s=1; s < L; ++s) {
+        unsigned int Cs=C*s;
+        Complex *fs=f+Cs;
+        Complex *Fs=W+Cs;
+        Complex Zetamrs=Zetamr[s];
+        for(unsigned int c=0; c < C; ++c)
+          fs[c] += conj(Zetamrs)*Fs[c];
+      }
+    }
+  }
+
+    void backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W)
   {
     if(W == NULL) W=F0;
 
@@ -1080,67 +1262,7 @@ public:
     }
   }
 
-  void backward2Shifted(Complex *F0, Complex *f, unsigned int r0, Complex *W){
-    if(W == NULL) W=F0;
-
-    unsigned int D0=Q-r0;
-    if(D0 > D) D0=D;
-
-    (D0 == D ? ifftm : ifftm2)->fft(F0,W);
-
-    unsigned int H=L/2;
-    unsigned int mH=m-H;
-    unsigned int LH=L-H;
-    unsigned int first=r0 == 0;
-    Complex *fmH=f-mH;
-    Complex *fH=f+H;
-    if(first) {
-      for(unsigned int s=mH; s < m; ++s)
-        fmH[s]=W[s];
-      for(unsigned int s=0; s < LH; ++s)
-        fH[s]=W[s];
-    }
-    for(unsigned int d=first; d < D0; ++d) {
-      Complex *F=W+m*d;
-      unsigned int r=r0+d;
-      Complex Zetaqr=Zetaq[r];
-      Complex *Zetamr=Zetaqm+m*r;
-      for(unsigned int s=mH; s < m; ++s)
-        fmH[s] += conj(Zetamr[s])*Zetaqr*F[s];
-      for(unsigned int s=0; s < LH; ++s)
-        fH[s] += conj(Zetamr[s])*F[s];
-    }
-  }
-
-  void backwardMany(Complex *F, Complex *f, unsigned int r, Complex *W) {
-    if(W == NULL) W=F;
-
-    ifftm->fft(F,W);
-
-    if(r == 0) {
-      for(unsigned int s=0; s < L; ++s) {
-        unsigned int Cs=C*s;
-        Complex *fs=f+Cs;
-        Complex *Fs=W+Cs;
-        for(unsigned int c=0; c < C; ++c)
-          fs[c]=Fs[c];
-      }
-    } else {
-      for(unsigned int c=0; c < C; ++c)
-        f[c] += W[c];
-      Complex *Zetamr=Zetaqm+m*r;
-      for(unsigned int s=1; s < L; ++s) {
-        unsigned int Cs=C*s;
-        Complex *fs=f+Cs;
-        Complex *Fs=W+Cs;
-        Complex Zetamrs=Zetamr[s];
-        for(unsigned int c=0; c < C; ++c)
-          fs[c] += conj(Zetamrs)*Fs[c];
-      }
-    }
-  }
-
-  virtual void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W) {
+  void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W) {
     if(W == NULL) W=F;
 
     ifftm->fft(F,W);
@@ -1184,6 +1306,38 @@ public:
         for(unsigned int c=0; c < C; ++c)
           fs[c] += Zetamrs2*Fs[c];
       }
+    }
+  }
+
+  void backward2Shifted(Complex *F0, Complex *f, unsigned int r0, Complex *W) {
+    if(W == NULL) W=F0;
+
+    unsigned int D0=Q-r0;
+    if(D0 > D) D0=D;
+
+    (D0 == D ? ifftm : ifftm2)->fft(F0,W);
+
+    unsigned int H=L/2;
+    unsigned int mH=m-H;
+    unsigned int LH=L-H;
+    unsigned int first=r0 == 0;
+    Complex *fmH=f-mH;
+    Complex *fH=f+H;
+    if(first) {
+      for(unsigned int s=mH; s < m; ++s)
+        fmH[s]=W[s];
+      for(unsigned int s=0; s < LH; ++s)
+        fH[s]=W[s];
+    }
+    for(unsigned int d=first; d < D0; ++d) {
+      Complex *F=W+m*d;
+      unsigned int r=r0+d;
+      Complex Zetaqr=Zetaq[r];
+      Complex *Zetamr=Zetaqm+m*r;
+      for(unsigned int s=mH; s < m; ++s)
+        fmH[s] += conj(Zetamr[s])*Zetaqr*F[s];
+      for(unsigned int s=0; s < LH; ++s)
+        fH[s] += conj(Zetamr[s])*F[s];
     }
   }
 
@@ -1392,92 +1546,9 @@ public:
       }
     }
   }
-
-  // FFT input length
-  unsigned int length() {
-    return max(L,m*p);
-  }
-
-  // FFT output length
-  unsigned int Length() {
-    return q == 1 ? M : m*p;
-  }
-
-  unsigned int size() {
-    return q == 1 ? M : m*q; // TODO: m*q  Can we make M=m*q in all cases?
-  }
-
-  virtual unsigned int worksizeF() {
-    return C*(q == 1 ? M : m*p*D);
-  }
-
-  bool loop2() {
-    return D < Q && 2*D >= Q && A > B;
-  }
-
-  unsigned int worksizeV() {
-    return q == 1 || D >= Q || loop2() ? 0 : length();
-  }
-
-  virtual unsigned int worksizeW() {
-    return q == 1 || inplace ? 0 : worksizeF();
-  }
-
-  unsigned int padding() {
-    return !inplace && L < p*m;
-  }
-
-  void initialize(Complex *f, Complex *g) {
-    for(unsigned int j=0; j < L; ++j) {
-      Complex f0(j,j+1);
-      Complex g0(j,2*j+1);
-      unsigned int Cj=C*j;
-      Complex *fj=f+Cj;
-      Complex *gj=g+Cj;
-      for(unsigned int c=0; c < C; ++c) {
-        fj[c]=f0;
-        gj[c]=g0;
-      }
-    }
-  }
-
-  double meantime(Application& app, double *Stdev=NULL) {
-    unsigned int K=1;
-    double eps=0.1;
-
-    utils::statistics Stats;
-    app.init(*this);
-    while(true) {
-      Stats.add(app.time(*this,K));
-      double mean=Stats.mean();
-      double stdev=Stats.stdev();
-      if(Stats.count() < 7) continue;
-      int threshold=5000;
-      if(mean*CLOCKS_PER_SEC < threshold || eps*mean < stdev) {
-        K *= 2;
-        Stats.clear();
-      } else {
-        if(Stdev) *Stdev=stdev/K;
-        app.clear();
-        return mean/K;
-      }
-    }
-    return 0.0;
-  }
-
-  double report(Application& app) {
-    double stdev;
-    cout << endl;
-
-    double mean=meantime(app,&stdev);
-
-    cout << "mean=" << mean << " +/- " << stdev << endl;
-
-    return mean;
-  }
 };
 
-class FFTpadHermitian : public FFTpad {
+class FFTpadHermitian : public FFTbase {
   unsigned int e;
   mcrfft1d *crfftm,*crfftm2;
   mrcfft1d *rcfftm,*rcfftm2;
@@ -1487,28 +1558,46 @@ public:
   class OptHermitian : public Opt {
   public:
     OptHermitian(unsigned int L, unsigned int M, Application& app,
-                 unsigned int C, bool Explicit=false, bool fixed=false) :
-      Opt(L,M,app,C,false,fixed) {
+                 unsigned int C, bool Explicit=false, bool fixed=false) {
+      init(L,M,app,C,Explicit,fixed);
     }
 
-    virtual double time(unsigned int L, unsigned int M, unsigned int C,
-                        unsigned int m, unsigned int q,unsigned int D,
-                        Application &app) {
+    double time(unsigned int L, unsigned int M, unsigned int C,
+                unsigned int m, unsigned int q,unsigned int D,
+                Application &app) {
       FFTpadHermitian fft(L,M,C,m,q,D);
       return fft.meantime(app);
     }
   };
+
+  FFTpadHermitian(unsigned int L, unsigned int M, unsigned int C,
+                  unsigned int m, unsigned int q, unsigned int D) :
+    FFTbase(L,M,C,m,q,D) {
+    init();
+  }
+
+  FFTpadHermitian(unsigned int L, unsigned int M, Application& app,
+                  unsigned int C=1, bool Explicit=false, bool fixed=false) :
+    FFTbase(L,M,app,C,Explicit,fixed) {
+    OptHermitian opt=OptHermitian(L,M,app,C,Explicit,fixed);
+    m=opt.m;
+    if(Explicit)
+      M=m;
+    q=opt.q;
+    D=opt.D;
+    init();
+  }
 
   void init() {
     common();
     e=m/2;
     if(q == 1) {
       if(C == 1) {
-        Forward=&FFTpad::forwardExplicit;
-        Backward=&FFTpad::backwardExplicit;
+        Forward=&FFTbase::forwardExplicit;
+        Backward=&FFTbase::backwardExplicit;
       } else {
-        Forward=&FFTpad::forwardExplicitMany;
-        Backward=&FFTpad::backwardExplicitMany;
+        Forward=&FFTbase::forwardExplicitMany;
+        Backward=&FFTbase::backwardExplicitMany;
       }
 
       Complex *G=ComplexAlign(C*(e+1));
@@ -1534,13 +1623,13 @@ public:
       if(C == 1) {
         crfftm=new mcrfft1d(m,D, 1,1, e+1,m, G,(double *) H);
         rcfftm=new mrcfft1d(m,D, 1,1, m,e+1, (double *) G,H);
-        Forward=&FFTpad::forward2;
-        Backward=&FFTpad::backward2;
+        Forward=&FFTbase::forward2;
+        Backward=&FFTbase::backward2;
       } else {
         crfftm=new mcrfft1d(m,C, C,C, 1,1, G,(double *) H);
         rcfftm=new mrcfft1d(m,C, C,C, 1,1, (double *) G,H);
-        Forward=&FFTpad::forward2Many;
-        Backward=&FFTpad::backward2Many;
+        Forward=&FFTbase::forward2Many;
+        Backward=&FFTbase::backward2Many;
       }
 
       unsigned int x=Q % D;
@@ -1555,24 +1644,9 @@ public:
 
       initZetaqm();
     }
-  }
-
-  FFTpadHermitian(unsigned int L, unsigned int M, unsigned int C,
-                  unsigned int m, unsigned int q, unsigned int D) :
-    FFTpad(L,M,C,m,q,D) {
-    init();
-  }
-
-  FFTpadHermitian(unsigned int L, unsigned int M, Application& app,
-                  unsigned int C=1, bool Explicit=false, bool fixed=false) :
-    FFTpad(L,M,app,C,Explicit,fixed) {
-    OptHermitian opt=OptHermitian(L,M,app,C,Explicit,fixed);
-    m=opt.m;
-    if(Explicit)
-      M=m;
-    q=opt.q;
-    D=opt.D;
-    init();
+    
+    FFTbase::Forward=Forward;
+    FFTbase::Backward=Backward;
   }
 
   ~FFTpadHermitian() {
@@ -1819,7 +1893,7 @@ public:
     clear();
   }
 
-  void init(FFTpad &fft) {
+  void init(FFTbase &fft) {
     Forward=fft.Forward;
     Backward=fft.Backward;
     ForwardShift=fft.ForwardShift;
@@ -1861,7 +1935,7 @@ public:
     }
   }
 
-  double time(FFTpad &fft, unsigned int K) {
+  double time(FFTbase &fft, unsigned int K) {
     double t0=totalseconds();
     for(unsigned int k=0; k < K; ++k) {
       for(unsigned int r=0; r < Q; r += D) {
@@ -1907,12 +1981,12 @@ public:
 };
 
 class ForwardBackwardCentered : public ForwardBackward {
-  void init(FFTpad &fft) {
+  void init(FFTbase &fft) {
     fft.initCentered();
     ForwardBackward::init(fft);
   }
 
-  double time(FFTpad &fft, unsigned int K) {
+  double time(FFTbase &fft, unsigned int K) {
     double t0=totalseconds();
     for(unsigned int k=0; k < K; ++k) {
       for(unsigned int r=0; r < Q; r += D) {
@@ -2037,7 +2111,7 @@ public:
 
       if(A > B+extra) {
         W0=this->F[B];
-        Pad=&FFTpad::padNone;
+        Pad=&FFTbase::padNone;
       } else {
         W0=this->W;
       }
