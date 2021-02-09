@@ -133,6 +133,20 @@ inline void usageGather()
   std::cerr << "-q\t\t quiet" << std::endl;
 }
 
+inline void usageHybrid()
+{
+  std::cerr << "Options: " << std::endl;
+  std::cerr << "-h\t\t help" << std::endl;
+  std::cerr << "-m\t\t subtransform size" << std::endl;
+  std::cerr << "-C\t\t number of padded FFTs to compute" << std::endl;
+  std::cerr << "-D\t\t number of blocks to process at a time" << std::endl;
+  std::cerr << "-I\t\t use in-place FFTs [by default only for C > 1]" << std::endl;
+  std::cerr << "-L\t\t number of physical data values" << std::endl;
+  std::cerr << "-M\t\t minimal number of padded data values" << std::endl;
+  std::cerr << "-S\t\t number of surplus FFT sizes" << std::endl;
+  std::cerr << "-T\t\t number of threads" << std::endl;
+}
+
 // Return the smallest power of 2 greater than or equal to n.
 inline unsigned int ceilpow2(unsigned int n)
 {

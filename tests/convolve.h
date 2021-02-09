@@ -51,9 +51,12 @@ extern unsigned int DOption;
 
 extern int IOption;
 
+// Temporary
 extern unsigned int A; // number of inputs
 extern unsigned int B; // number of outputs
 extern unsigned int C; // number of copies
+extern unsigned int L;
+extern unsigned int M;
 
 extern unsigned int surplusFFTsizes;
 
@@ -220,7 +223,7 @@ public:
   virtual void backwardInnerMany(Complex *F, Complex *f, unsigned int r, Complex *W) {}
 
   // FFT input length
-  unsigned int length() {
+  virtual unsigned int length() {
     return std::max(L,m*p);
   }
 
@@ -1600,6 +1603,11 @@ public:
     }
   }
 
+  // FFT input length
+//  unsigned int length() { // Only for p=2;
+//    return m/2+1;
+//  }
+
   unsigned int worksizeF() {
     return C*(q == 1 ? M : (e+1)*D);
   }
@@ -2030,6 +2038,8 @@ public:
     }
   }
 };
+
+extern void optionsHybrid(int argc, char* argv[]);
 
 } //end namespace fftwpp
 

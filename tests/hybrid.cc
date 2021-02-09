@@ -5,23 +5,6 @@ using namespace utils;
 using namespace Array;
 using namespace fftwpp;
 
-unsigned int L=512;
-unsigned int M=1024;
-
-void usage()
-{
-  std::cerr << "Options: " << std::endl;
-  std::cerr << "-h\t\t help" << std::endl;
-  std::cerr << "-m\t\t subtransform size" << std::endl;
-  std::cerr << "-C\t\t number of padded FFTs to compute" << std::endl;
-  std::cerr << "-D\t\t number of blocks to process at a time" << std::endl;
-  std::cerr << "-I\t\t use in-place FFTs [by default only for C > 1]" << std::endl;
-  std::cerr << "-L\t\t number of physical data values" << std::endl;
-  std::cerr << "-M\t\t minimal number of padded data values" << std::endl;
-  std::cerr << "-S\t\t number of surplus FFT sizes" << std::endl;
-  std::cerr << "-T\t\t number of threads" << std::endl;
-}
-
 int main(int argc, char* argv[])
 {
   fftw::maxthreads=1;//get_max_threads();
@@ -30,52 +13,10 @@ int main(int argc, char* argv[])
   fftw::effort |= FFTW_NO_SIMD;
 #endif
 
-#ifdef __GNUC__
-  optind=0;
-#endif
-  for (;;) {
-    int c = getopt(argc,argv,"hC:D:I:L:M:O:S:T:m:");
-    if (c == -1) break;
+  L=512;
+  M=1024;
 
-    switch (c) {
-      case 0:
-        break;
-      case 'C':
-        C=max(atoi(optarg),1);
-        break;
-      case 'D':
-        DOption=max(atoi(optarg),0);
-        break;
-      case 'L':
-        L=atoi(optarg);
-        break;
-      case 'I':
-        IOption=atoi(optarg) > 0;
-        break;
-      case 'M':
-        M=atoi(optarg);
-        break;
-      case 'S':
-        surplusFFTsizes=atoi(optarg);
-        break;
-      case 'T':
-        fftw::maxthreads=max(atoi(optarg),1);
-        break;
-      case 'm':
-        mOption=max(atoi(optarg),0);
-        break;
-      case 'h':
-      default:
-        usage();
-        exit(1);
-    }
-  }
-
-  cout << "L=" << L << endl;
-  cout << "M=" << M << endl;
-  cout << "C=" << C << endl;
-
-  cout << endl;
+  optionsHybrid(argc,argv);
 
   ForwardBackward FB;
   Application *app=&FB;
@@ -113,48 +54,19 @@ int main(int argc, char* argv[])
   Complex *F=ComplexAlign(fft.q*fft.worksizeF()/fft.D);// Improve
   fft.W0=ComplexAlign(fft.worksizeW());
 
-//  unsigned int Length=L;
-  unsigned int Length=L/2+1; // For Hermitian case
+  unsigned int Length=L;
 
-  for(unsigned int c=0; c < C; ++c)
-    f[c]=1;
-  for(unsigned int j=1; j < Length; ++j)
+  for(unsigned int j=0; j < Length; ++j)
     for(unsigned int c=0; c < C; ++c)
-      f[C*j+c]=Complex(j+1,j+1);
+      f[C*j+c]=Complex(j+1,j+2);
 
   fft.forward(f,F);
-
-  fftPadHermitian fftH(L,M,*app,C);
-  F=ComplexAlign(fftH.q*fftH.worksizeF()/fftH.D);// Improve
-//  (fftH.*fftH.Forward)(f,F,0,NULL);
-  fftH.W0=ComplexAlign(fftH.worksizeW());
-  fftH.forward(f,F);
-
-#if 0 // Hermitian case
-  double *Fr=(double *) F;
-  for(unsigned int j=0; j < C*fftH.size(); ++j)
-    cout << Fr[j] << endl;
-
-  fftH.backward(F,f);
-
-  cout << endl;
-  if(L < 30) {
-    cout << endl;
-    cout << "Inverse:" << endl;
-    unsigned int N=fftH.size();
-    for(unsigned int j=0; j < (L+1)/2*C; ++j)
-      cout << f[j]/N << endl;
-    cout << endl;
-  }
-#endif
 
 #if 0
   for(unsigned int j=0; j < fft.size(); ++j)
     for(unsigned int c=0; c < C; ++c)
       cout << F[C*j+c] << endl;
 #endif
-
-  exit(0);
 
   Complex *f0=ComplexAlign(C*fft.length());
   Complex *F0=ComplexAlign(C*N);
@@ -179,7 +91,7 @@ int main(int argc, char* argv[])
 
   for(unsigned int j=0; j < L; ++j)
     for(unsigned int c=0; c < C; ++c)
-      f[C*j+c]=Complex(j+1,0);
+      f[C*j+c]=Complex(j+1,j+2);
   fft2.forward(f,F2);
 
 #if 0

@@ -17,6 +17,8 @@ int IOption=-1;
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
 unsigned int C=1; // number of copies
+unsigned int L;
+unsigned int M;
 
 unsigned int surplusFFTsizes=25;
 
@@ -345,6 +347,55 @@ void fftPad::forward(Complex *f, Complex *F0, unsigned int r0, Complex *W)
       F[s]=Zetar[s]*f[s];
   }
   (D0 == D ? fftm : fftm2)->fft(W,F0);
+}
+
+void optionsHybrid(int argc, char* argv[])
+{
+  #ifdef __GNUC__
+  optind=0;
+#endif
+  for (;;) {
+    int c = getopt(argc,argv,"hC:D:I:L:M:O:S:T:m:");
+    if (c == -1) break;
+
+    switch (c) {
+      case 0:
+        break;
+      case 'C':
+        C=max(atoi(optarg),1);
+        break;
+      case 'D':
+        DOption=max(atoi(optarg),0);
+        break;
+      case 'L':
+        L=atoi(optarg);
+        break;
+      case 'I':
+        IOption=atoi(optarg) > 0;
+        break;
+      case 'M':
+        M=atoi(optarg);
+        break;
+      case 'S':
+        surplusFFTsizes=atoi(optarg);
+        break;
+      case 'T':
+        fftw::maxthreads=max(atoi(optarg),1);
+        break;
+      case 'm':
+        mOption=max(atoi(optarg),0);
+        break;
+      case 'h':
+      default:
+        usageHybrid();
+        exit(1);
+    }
+  }
+  cout << "L=" << L << endl;
+  cout << "M=" << M << endl;
+  cout << "C=" << C << endl;
+
+  cout << endl;
 }
 
 }
