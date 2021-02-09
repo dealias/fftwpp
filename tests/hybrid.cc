@@ -119,12 +119,10 @@ public:
   FFTPad Pad;
 
 protected:
-
   Complex *Zetaqp;
   Complex *Zetaq;
   Complex *Zetaqm;
   Complex *Zetaqm2;
-  Complex *ZetaHalf;
   bool inplace;
 public:
 
