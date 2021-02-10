@@ -1,4 +1,4 @@
-/* Implicitly dealiased convolution routines.
+/* General implicitly dealiased convolution routines.
    Copyright (C) 2021 John C. Bowman and Noel Murasko, Univ. of Alberta
 
    This program is free software; you can redistribute it and/or modify
@@ -201,7 +201,7 @@ public:
   virtual void forward(Complex *f, Complex *F)=0;
   virtual void backward(Complex *F, Complex *f)=0;
 
-  virtual void forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W=NULL)=0;
+  virtual void forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W)=0;
   virtual void forwardExplicitMany(Complex *f, Complex *F, unsigned int, Complex *W)=0;
 
   virtual void backwardExplicit(Complex *F, Complex *f, unsigned int, Complex *W)=0;
@@ -520,7 +520,7 @@ typedef void multiplier(Complex **, unsigned int e, unsigned int threads);
 // Multiplication routine for binary convolutions and taking two inputs of size e.
 void multbinary(Complex **F, unsigned int e, unsigned int threads);
 
-class HybridConvolution {
+class Convolution {
 public:
   fftPad *fft;
   unsigned int A;
@@ -552,68 +552,13 @@ public:
   // W is an optional work array of size fft->worksizeW();
   //   if changed between calls to convolve(), be sure to call pad()
   // TODO: add inplace flag to avoid allocating W.
-  HybridConvolution(fftPad &fft, unsigned int A=2, unsigned int B=1,
-                    Complex *F=NULL, Complex *V=NULL, Complex *W=NULL) :
+  Convolution(fftPad &fft, unsigned int A=2, unsigned int B=1,
+              Complex *F=NULL, Complex *V=NULL, Complex *W=NULL) :
     fft(&fft), A(A), B(B), W(W), allocateU(false) {
-    Forward=fft.Forward;
-    Backward=fft.Backward;
-
-    L=fft.L;
-    unsigned int N=fft.size();
-    scale=1.0/N;
-    c=fft.worksizeF();
-
-    unsigned int K=std::max(A,B);
-    this->F=new Complex*[K];
-    if(F) {
-      for(unsigned int i=0; i < K; ++i)
-        this->F[i]=F+i*c;
-    } else {
-      allocateU=true;
-      for(unsigned int i=0; i < K; ++i)
-        this->F[i]=utils::ComplexAlign(c);
-    }
-
-    if(fft.q > 1) {
-      allocateV=false;
-      if(V) {
-        this->V=new Complex*[B];
-        unsigned int size=fft.worksizeV();
-        for(unsigned int i=0; i < B; ++i)
-          this->V[i]=V+i*size;
-      } else
-        this->V=NULL;
-
-      if(!this->W) {
-        allocateW=true;
-        this->W=utils::ComplexAlign(c);
-      }
-
-      Pad=fft.Pad;
-      (fft.*Pad)(this->W);
-
-      loop2=fft.loop2(); // Two loops and A > B
-      int extra;
-      if(loop2) {
-        Fp=new Complex*[A];
-        Fp[0]=this->F[A-1];
-        for(unsigned int a=1; a < A; ++a)
-          Fp[a]=this->F[a-1];
-        extra=1;
-      } else
-        extra=0;
-
-      if(A > B+extra) {
-        W0=this->F[B];
-        Pad=&fftBase::padNone;
-      } else {
-        W0=this->W;
-      }
-    }
-
-    Q=fft.Q;
-    D=fft.D;
+    init(F,V);
   }
+
+  void init(Complex *F, Complex *V);
 
   void initV() {
     allocateV=true;
@@ -623,29 +568,7 @@ public:
       V[i]=utils::ComplexAlign(size);
   }
 
-  ~HybridConvolution() {
-    if(fft->q > 1) {
-      if(allocateW)
-        utils::deleteAlign(W);
-
-      if(loop2)
-        delete[] Fp;
-
-      if(allocateV) {
-        for(unsigned int i=0; i < B; ++i)
-          utils::deleteAlign(V[i]);
-      }
-      if(V)
-        delete [] V;
-    }
-
-    if(allocateU) {
-      unsigned int K=std::max(A,B);
-      for(unsigned int i=0; i < K; ++i)
-        utils::deleteAlign(F[i]);
-    }
-    delete [] F;
-  }
+  ~Convolution();
 
   // f is an input array of A pointers to distinct data blocks each of size
   // fft->length()
@@ -654,62 +577,7 @@ public:
   // offset is applied to each input and output component
 
   void convolve0(Complex **f, Complex **h, multiplier *mult,
-                 unsigned int offset=0) {
-    if(fft->q == 1) {
-      for(unsigned int a=0; a < A; ++a)
-        (fft->*Forward)(f[a]+offset,F[a],0,NULL);
-      (*mult)(F,fft->M,threads);
-      for(unsigned int b=0; b < B; ++b)
-        (fft->*Backward)(F[b],h[b]+offset,0,NULL);
-    } else {
-      if(loop2) {
-        for(unsigned int a=0; a < A; ++a)
-          (fft->*Forward)(f[a]+offset,F[a],0,W);
-        (*mult)(F,c,threads);
-
-        for(unsigned int b=0; b < B; ++b) {
-          (fft->*Forward)(f[b]+offset,Fp[b],D,W);
-          (fft->*Backward)(F[b],h[b]+offset,0,W0);
-          (fft->*Pad)(W);
-        }
-        for(unsigned int a=B; a < A; ++a)
-          (fft->*Forward)(f[a]+offset,Fp[a],D,W);
-        (*mult)(Fp,c,threads);
-        Complex *UpB=Fp[B];
-        for(unsigned int b=0; b < B; ++b)
-          (fft->*Backward)(Fp[b],h[b]+offset,D,UpB);
-      } else {
-        unsigned int Offset;
-        bool useV=h == f && D < Q; // Inplace and more than one loop
-        Complex **h0;
-        if(useV) {
-          if(!V) initV();
-          h0=V;
-          Offset=0;
-        } else {
-          Offset=offset;
-          h0=h;
-        }
-        for(unsigned int r=0; r < Q; r += D) {
-          for(unsigned int a=0; a < A; ++a)
-            (fft->*Forward)(f[a]+offset,F[a],r,W);
-          (*mult)(F,c,threads);
-          for(unsigned int b=0; b < B; ++b)
-            (fft->*Backward)(F[b],h0[b]+Offset,r,W0);
-          (fft->*Pad)(W);
-        }
-
-        if(useV) {
-          for(unsigned int b=0; b < B; ++b) {
-            Complex *fb=f[b]+offset;
-            Complex *hb=h0[b];
-            for(unsigned int i=0; i < L; ++i)
-              fb[i]=hb[i];
-          }
-        }
-      }
-    }
-  }
+                 unsigned int offset=0);
 
   void convolve(Complex **f, Complex **h, multiplier *mult,
                 unsigned int offset=0) {
@@ -723,9 +591,9 @@ public:
   }
 };
 
-class HybridConvolution2 {
+class Convolution2 {
   fftPad *fftx;
-  HybridConvolution *convolvey;
+  Convolution *convolvey;
   unsigned int Sx; // x dimension of Ux buffer
   unsigned int Lx,Ly; // x,y dimensions of input arrays
   unsigned int A;
@@ -744,8 +612,7 @@ class HybridConvolution2 {
 
 public:
   // Fx is an optional work array of size max(A,B)*fftx->worksizeF(),
-  HybridConvolution2(fftPad &fftx,
-                     HybridConvolution &convolvey, Complex *Fx=NULL) :
+  Convolution2(fftPad &fftx, Convolution &convolvey, Complex *Fx=NULL) :
     fftx(&fftx), convolvey(&convolvey), allocateUx(false) {
 
     Forward=fftx.Forward;
@@ -782,13 +649,13 @@ public:
   // Wy is an optional work array of size ffty->worksizeW();
   //   if changed between calls to convolve(), be sure to call pad()
   /*
-    HybridConvolution2(unsigned int Lx, unsigned int Ly,
+    Convolution2(unsigned int Lx, unsigned int Ly,
     unsigned int Mx, unsigned int My,
     unsigned int A, unsigned int B, Complex *Fx=NULL,
     Complex *Fy=NULL, Complex *Vy=NULL, Complex *Wy=NULL): Fy(Fy), Vy(Vy), Wy(Wy) {}
   */
 
-  ~HybridConvolution2() {
+  ~Convolution2() {
     unsigned int K=std::max(A,B);
     if(allocateUx) {
       for(unsigned int i=0; i < K; ++i)

@@ -326,23 +326,23 @@ void fftPad::init()
 }
 
 fftPad:: ~fftPad() {
-    if(q == 1) {
-      delete fftm;
-      delete ifftm;
-    } else {
-      if(p > 1) {
-        utils::deleteAlign(Zetaqp+p);
-        delete fftp;
-        delete ifftp;
-      }
-      delete fftm;
-      delete ifftm;
-      if(Q % D > 0) {
-        delete fftm2;
-        delete ifftm2;
-      }
+  if(q == 1) {
+    delete fftm;
+    delete ifftm;
+  } else {
+    if(p > 1) {
+      utils::deleteAlign(Zetaqp+p);
+      delete fftp;
+      delete ifftp;
+    }
+    delete fftm;
+    delete ifftm;
+    if(Q % D > 0) {
+      delete fftm2;
+      delete ifftm2;
     }
   }
+}
 
 void fftPad::padSingle(Complex *W)
 {
@@ -379,7 +379,7 @@ void fftPad::backward(Complex *F, Complex *f)
     (this->*Backward)(F+b*r,f,r,W0);
 }
 
-void fftPad::forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W=NULL)
+void fftPad::forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W)
 {
   for(unsigned int s=0; s < L; ++s)
     F[s]=f[s];
@@ -1586,6 +1586,151 @@ void fftPadHermitian::backward2Many(Complex *F, Complex *f, unsigned int r, Comp
 unsigned int fftPadHermitian::worksizeF()
 {
   return C*(q == 1 ? M : (e+1)*D);
+}
+
+void Convolution::init(Complex *F, Complex *V)
+{
+  Forward=fft->Forward;
+  Backward=fft->Backward;
+
+  L=fft->L;
+  unsigned int N=fft->size();
+  scale=1.0/N;
+  c=fft->worksizeF();
+
+  unsigned int K=std::max(A,B);
+  this->F=new Complex*[K];
+  if(F) {
+    for(unsigned int i=0; i < K; ++i)
+      this->F[i]=F+i*c;
+  } else {
+    allocateU=true;
+    for(unsigned int i=0; i < K; ++i)
+      this->F[i]=utils::ComplexAlign(c);
+  }
+
+  if(fft->q > 1) {
+    allocateV=false;
+    if(V) {
+      this->V=new Complex*[B];
+      unsigned int size=fft->worksizeV();
+      for(unsigned int i=0; i < B; ++i)
+        this->V[i]=V+i*size;
+    } else
+      this->V=NULL;
+
+    if(!this->W) {
+      allocateW=true;
+      this->W=utils::ComplexAlign(c);
+    }
+
+    Pad=fft->Pad;
+    (fft->*Pad)(this->W);
+
+    loop2=fft->loop2(); // Two loops and A > B
+    int extra;
+    if(loop2) {
+      Fp=new Complex*[A];
+      Fp[0]=this->F[A-1];
+      for(unsigned int a=1; a < A; ++a)
+        Fp[a]=this->F[a-1];
+      extra=1;
+    } else
+      extra=0;
+
+    if(A > B+extra) {
+      W0=this->F[B];
+      Pad=&fftBase::padNone;
+    } else {
+      W0=this->W;
+    }
+  }
+
+  Q=fft->Q;
+  D=fft->D;
+}
+
+Convolution::~Convolution() {
+  if(fft->q > 1) {
+    if(allocateW)
+      utils::deleteAlign(W);
+
+    if(loop2)
+      delete[] Fp;
+
+    if(allocateV) {
+      for(unsigned int i=0; i < B; ++i)
+        utils::deleteAlign(V[i]);
+    }
+    if(V)
+      delete [] V;
+  }
+
+  if(allocateU) {
+    unsigned int K=std::max(A,B);
+    for(unsigned int i=0; i < K; ++i)
+      utils::deleteAlign(F[i]);
+  }
+  delete [] F;
+}
+
+void Convolution::convolve0(Complex **f, Complex **h, multiplier *mult,
+                            unsigned int offset)
+{
+  if(fft->q == 1) {
+    for(unsigned int a=0; a < A; ++a)
+      (fft->*Forward)(f[a]+offset,F[a],0,NULL);
+    (*mult)(F,fft->M,threads);
+    for(unsigned int b=0; b < B; ++b)
+      (fft->*Backward)(F[b],h[b]+offset,0,NULL);
+  } else {
+    if(loop2) {
+      for(unsigned int a=0; a < A; ++a)
+        (fft->*Forward)(f[a]+offset,F[a],0,W);
+      (*mult)(F,c,threads);
+
+      for(unsigned int b=0; b < B; ++b) {
+        (fft->*Forward)(f[b]+offset,Fp[b],D,W);
+        (fft->*Backward)(F[b],h[b]+offset,0,W0);
+        (fft->*Pad)(W);
+      }
+      for(unsigned int a=B; a < A; ++a)
+        (fft->*Forward)(f[a]+offset,Fp[a],D,W);
+      (*mult)(Fp,c,threads);
+      Complex *UpB=Fp[B];
+      for(unsigned int b=0; b < B; ++b)
+        (fft->*Backward)(Fp[b],h[b]+offset,D,UpB);
+    } else {
+      unsigned int Offset;
+      bool useV=h == f && D < Q; // Inplace and more than one loop
+      Complex **h0;
+      if(useV) {
+        if(!V) initV();
+        h0=V;
+        Offset=0;
+      } else {
+        Offset=offset;
+        h0=h;
+      }
+      for(unsigned int r=0; r < Q; r += D) {
+        for(unsigned int a=0; a < A; ++a)
+          (fft->*Forward)(f[a]+offset,F[a],r,W);
+        (*mult)(F,c,threads);
+        for(unsigned int b=0; b < B; ++b)
+          (fft->*Backward)(F[b],h0[b]+Offset,r,W0);
+        (fft->*Pad)(W);
+      }
+
+      if(useV) {
+        for(unsigned int b=0; b < B; ++b) {
+          Complex *fb=f[b]+offset;
+          Complex *hb=h0[b];
+          for(unsigned int i=0; i < L; ++i)
+            fb[i]=hb[i];
+        }
+      }
+    }
+  }
 }
 
 void ForwardBackward::init(fftBase &fft)
