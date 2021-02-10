@@ -47,7 +47,7 @@ int main(int argc, char* argv[])
   Complex *f=ComplexAlign(C*fft.length());
 
   unsigned int length=L/2+1;
-  
+
   for(unsigned int c=0; c < C; ++c)
     f[c]=1;
   for(unsigned int j=1; j < length; ++j)

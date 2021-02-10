@@ -137,6 +137,7 @@ public:
     n=q/p;
     M=q*m;
     Pad=&fftBase::padNone;
+    Zetaq=NULL;
   }
 
   void initZetaq() {
@@ -180,12 +181,14 @@ public:
   };
 
   fftBase(unsigned int L, unsigned int M, unsigned int C,
-         unsigned int m, unsigned int q, unsigned int D) :
+          unsigned int m, unsigned int q, unsigned int D) :
     L(L), M(M), C(C), m(m), p(utils::ceilquotient(L,m)), q(q), D(D) {}
 
   fftBase(unsigned int L, unsigned int M, Application& app,
-         unsigned int C=1, bool Explicit=false, bool fixed=false) :
+          unsigned int C=1, bool Explicit=false, bool fixed=false) :
     L(L), M(M), C(C) {}
+
+  ~fftBase();
 
   void padNone(Complex *W) {}
 
@@ -274,7 +277,7 @@ public:
   class Opt : public OptBase {
   public:
     Opt(unsigned int L, unsigned int M, Application& app,
-                unsigned int C, bool Explicit=false, bool fixed=false) {
+        unsigned int C, bool Explicit=false, bool fixed=false) {
       scan(L,M,app,C,Explicit,fixed);
     }
 
@@ -286,7 +289,7 @@ public:
     }
   };
 
-    // Compute an fft padded to N=m*q >= M >= L
+  // Compute an fft padded to N=m*q >= M >= L
   fftPad(unsigned int L, unsigned int M, unsigned int C,
          unsigned int m, unsigned int q,unsigned int D) :
     fftBase(L,M,C,m,q,D) {
@@ -308,27 +311,7 @@ public:
     init();
   }
 
-  ~fftPad() {
-    if(q == 1) { // Simplify
-      delete fftm;
-      delete ifftm;
-    } else {
-      if(Zetaq) {
-        utils::deleteAlign(Zetaq);
-      } else if(p > 1) {
-        utils::deleteAlign(Zetaqp+p);
-        delete fftp;
-        delete ifftp;
-      }
-      utils::deleteAlign(Zetaqm+m);
-      delete fftm;
-      delete ifftm;
-      if(Q % D > 0) {
-        delete fftm2;
-        delete ifftm2;
-      }
-    }
-  }
+  ~fftPad();
 
   void init();
 
@@ -347,12 +330,12 @@ public:
   void backwardExplicit(Complex *F, Complex *f, unsigned int, Complex *W);
   void backwardExplicitMany(Complex *F, Complex *f, unsigned int, Complex *W);
 
-    // p=1 && C=1
+  // p=1 && C=1
   void forward(Complex *f, Complex *F0, unsigned int r0, Complex *W);
 
   void forwardMany(Complex *f, Complex *F, unsigned int r, Complex *W);
 
-    // p=2 && q odd
+  // p=2 && q odd
   void forward2(Complex *f, Complex *F0, unsigned int r0, Complex *W);
 
   void forward2Many(Complex *f, Complex *F, unsigned int r, Complex *W);
@@ -398,9 +381,9 @@ public:
     }
   };
 
-    // Compute an fft padded to N=m*q >= M >= L
+  // Compute an fft padded to N=m*q >= M >= L
   fftPadCentered(unsigned int L, unsigned int M, unsigned int C,
-         unsigned int m, unsigned int q,unsigned int D) :
+                 unsigned int m, unsigned int q,unsigned int D) :
     fftPad(L,M,C,m,q,D) {
     init();
   }
@@ -476,10 +459,7 @@ public:
     init();
   }
 
-  ~fftPadHermitian() {
-    delete crfftm;
-    delete rcfftm;
-  }
+  ~fftPadHermitian();
 
   void init();
 
@@ -528,7 +508,7 @@ public:
   }
 
   void init(fftBase &fft);
-  
+
   double time(fftBase &fft, unsigned int K);
 
   void clear();
