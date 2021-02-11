@@ -216,7 +216,7 @@ public:
 
   // input array length
   unsigned int bufferLength() {
-    return C*m*p;
+    return C*std::max(m*p,L);
   }
 
   // FFT input length
