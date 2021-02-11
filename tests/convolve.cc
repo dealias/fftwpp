@@ -60,7 +60,7 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
   unsigned int q=utils::ceilquotient(M,m);
   unsigned int p=utils::ceilquotient(L,m);
 
-  if(p > 2) return; // Temporary ***********************************
+//  if(p != 2) return; // Temporary ***********************************
 
   if(p == q && p > 1 && !mForced) return;
 
@@ -217,6 +217,19 @@ double fftBase::report(Application& app)
   return mean;
 }
 
+void fftBase::common()
+{
+  if(C > 1) D=1;
+  inplace=IOption == -1 ? C > 1 : IOption;
+
+  Cm=C*m;
+  p=utils::ceilquotient(L,m);
+  n=q/p;
+  M=m*q;
+  Pad=&fftBase::padNone;
+  Zetaq=NULL;
+}
+
 void fftPad::init()
 {
   common();
@@ -237,8 +250,7 @@ void fftPad::init()
     utils::deleteAlign(G);
     Q=1;
   } else {
-    unsigned int N=m*q;
-    double twopibyN=twopi/N;
+    double twopibyN=twopi/M;
     double twopibyq=twopi/q;
 
     bool twop=p == 2 && 2*n != q;
@@ -1319,6 +1331,7 @@ void fftPadHermitian::init()
     if(twop)
       initZetaq();
     else {
+      cout << p << endl;
       std::cerr << "Unimplemented!" << std::endl;
       exit(-1);
     }
@@ -1583,29 +1596,24 @@ void fftPadHermitian::backward2Many(Complex *F, Complex *f, unsigned int r, Comp
   }
 }
 
-unsigned int fftPadHermitian::worksizeF()
-{
-  return C*(q == 1 ? M : (e+1)*D);
-}
-
 void Convolution::init(Complex *F, Complex *V)
 {
   Forward=fft->Forward;
   Backward=fft->Backward;
 
   L=fft->L;
-  unsigned int N=fft->size();
-  scale=1.0/N;
+  unsigned int M=fft->size();
+  scale=1.0/M;
   c=fft->worksizeF();
 
-  unsigned int K=std::max(A,B);
-  this->F=new Complex*[K];
+  unsigned int N=std::max(A,B);
+  this->F=new Complex*[N];
   if(F) {
-    for(unsigned int i=0; i < K; ++i)
+    for(unsigned int i=0; i < N; ++i)
       this->F[i]=F+i*c;
   } else {
     allocateU=true;
-    for(unsigned int i=0; i < K; ++i)
+    for(unsigned int i=0; i < N; ++i)
       this->F[i]=utils::ComplexAlign(c);
   }
 
@@ -1650,7 +1658,8 @@ void Convolution::init(Complex *F, Complex *V)
   D=fft->D;
 }
 
-Convolution::~Convolution() {
+Convolution::~Convolution()
+{
   if(fft->q > 1) {
     if(allocateW)
       utils::deleteAlign(W);
@@ -1667,8 +1676,8 @@ Convolution::~Convolution() {
   }
 
   if(allocateU) {
-    unsigned int K=std::max(A,B);
-    for(unsigned int i=0; i < K; ++i)
+    unsigned int N=std::max(A,B);
+    for(unsigned int i=0; i < N; ++i)
       utils::deleteAlign(F[i]);
   }
   delete [] F;
@@ -1733,6 +1742,134 @@ void Convolution::convolve0(Complex **f, Complex **h, multiplier *mult,
   }
 }
 
+void HermitianConvolution::init(Complex *F, Complex *V)
+{
+  Forward=fft->Forward;
+  Backward=fft->Backward;
+
+  L=fft->L;
+  unsigned int M=fft->size();
+  scale=1.0/M;
+  c=fft->worksizeF();
+
+  unsigned int N=std::max(A,B);
+  this->F=new Complex*[N];
+  if(F) {
+    for(unsigned int i=0; i < N; ++i)
+      this->F[i]=F+i*c;
+  } else {
+    allocateU=true;
+    for(unsigned int i=0; i < N; ++i)
+      this->F[i]=utils::ComplexAlign(c);
+  }
+
+  if(fft->q > 1) {
+    allocateV=false;
+    if(V) {
+      this->V=new Complex*[B];
+      unsigned int size=fft->worksizeV();
+      for(unsigned int i=0; i < B; ++i)
+        this->V[i]=V+i*size;
+    } else
+      this->V=NULL;
+
+    if(!this->W) {
+      allocateW=true;
+      this->W=utils::ComplexAlign(c);
+    }
+
+    Pad=fft->Pad;
+    (fft->*Pad)(this->W);
+
+    loop2=fft->loop2(); // Two loops and A > B
+    int extra;
+    if(loop2) {
+      Fp=new Complex*[A];
+      Fp[0]=this->F[A-1];
+      for(unsigned int a=1; a < A; ++a)
+        Fp[a]=this->F[a-1];
+      extra=1;
+    } else
+      extra=0;
+
+    if(A > B+extra) {
+      W0=this->F[B];
+      Pad=&fftBase::padNone;
+    } else {
+      W0=this->W;
+    }
+  }
+
+  Q=fft->Q;
+  D=fft->D;
+}
+
+HermitianConvolution::~HermitianConvolution()
+{
+  if(fft->q > 1) {
+    if(allocateW)
+      utils::deleteAlign(W);
+
+    if(loop2)
+      delete[] Fp;
+
+    if(allocateV) {
+      for(unsigned int i=0; i < B; ++i)
+        utils::deleteAlign(V[i]);
+    }
+    if(V)
+      delete [] V;
+  }
+
+  if(allocateU) {
+    unsigned int N=std::max(A,B);
+    for(unsigned int i=0; i < N; ++i)
+      utils::deleteAlign(F[i]);
+  }
+  delete [] F;
+}
+
+void HermitianConvolution::convolve0(Complex **f, Complex **h,
+                                     multiplier *mult, unsigned int offset)
+{
+  if(fft->q == 1) {
+    for(unsigned int a=0; a < A; ++a)
+      (fft->*Forward)(f[a]+offset,F[a],0,NULL);
+    (*mult)(F,fft->M,threads);
+    for(unsigned int b=0; b < B; ++b)
+      (fft->*Backward)(F[b],h[b]+offset,0,NULL);
+  } else {
+      unsigned int Offset;
+      bool useV=h == f && D < Q; // Inplace and more than one loop
+      Complex **h0;
+      if(useV) {
+        if(!V) initV();
+        h0=V;
+        Offset=0;
+      } else {
+        Offset=offset;
+        h0=h;
+      }
+      for(unsigned int r=0; r < Q; r += D) {
+        for(unsigned int a=0; a < A; ++a)
+          (fft->*Forward)(f[a]+offset,F[a],r,W);
+        (*mult)(F,c,threads);
+        for(unsigned int b=0; b < B; ++b)
+          (fft->*Backward)(F[b],h0[b]+Offset,r,W0);
+      }
+
+      if(useV) {
+        unsigned int H=L/2;
+        for(unsigned int b=0; b < B; ++b) {
+          Complex *fb=f[b]+offset;
+          Complex *hb=h0[b];
+          for(unsigned int i=0; i <= H; ++i)
+            fb[i]=hb[i];
+      }
+    }
+  }
+}
+
 void ForwardBackward::init(fftBase &fft)
 {
   Forward=fft.Forward;
@@ -1741,20 +1878,19 @@ void ForwardBackward::init(fftBase &fft)
   D=fft.D;
   Q=fft.Q;
 
-  unsigned int L=fft.L;
-  unsigned int Lf=C*fft.length();
+  unsigned int Lf=fft.bufferLength();
   unsigned int LF=fft.worksizeF();
-  unsigned int E=std::max(A,B);
+  unsigned int N=std::max(A,B);
 
-  f=new Complex*[E];
-  F=new Complex*[E];
+  f=new Complex*[N];
+  F=new Complex*[N];
   h=new Complex*[B];
 
   for(unsigned int a=0; a < A; ++a)
     f[a]=utils::ComplexAlign(Lf);
 
-  for(unsigned int e=0; e < E; ++e)
-    F[e]=utils::ComplexAlign(LF);
+  for(unsigned int a=0; a < N; ++a)
+    F[a]=utils::ComplexAlign(LF);
 
   for(unsigned int b=0; b < B; ++b)
     h[b]=utils::ComplexAlign(Lf);
@@ -1762,15 +1898,11 @@ void ForwardBackward::init(fftBase &fft)
   W=utils::ComplexAlign(fft.worksizeW());
   (fft.*fft.Pad)(W);
 
-  for(unsigned int a=0; a < E; ++a) {
+  // Initialize entire array to 0 to avoid overflow when timing.
+  for(unsigned int a=0; a < N; ++a) {
     Complex *fa=f[a];
-    for(unsigned int j=0; j < L; ++j) {
-      unsigned int Cj=C*j;
-      Complex *faj=fa+Cj;
-      for(unsigned int c=0; c < C; ++c) {
-        faj[c]=0.0;
-      }
-    }
+    for(unsigned int j=0; j < Lf; ++j)
+        fa[j]=0.0;
   }
 }
 
@@ -1796,7 +1928,7 @@ void ForwardBackward::clear()
     W=NULL;
   }
 
-  unsigned int E=std::max(A,B);
+  unsigned int N=std::max(A,B);
 
   if(h) {
     for(unsigned int b=0; b < B; ++b)
@@ -1806,8 +1938,8 @@ void ForwardBackward::clear()
   }
 
   if(F) {
-    for(unsigned int e=0; e < E; ++e)
-      utils::deleteAlign(F[e]);
+    for(unsigned int a=0; a < N; ++a)
+      utils::deleteAlign(F[a]);
     delete[] F;
     F=NULL;
   }

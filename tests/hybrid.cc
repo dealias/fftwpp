@@ -47,7 +47,7 @@ int main(int argc, char* argv[])
     cout << "optimal ratio=" << mean/mean1 << endl;
   cout << endl;
 
-  unsigned int N=fft.size();
+  unsigned int M=fft.size();
 
   Complex *f=ComplexAlign(C*fft.length());
   // C*qm
@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
 #endif
 
   Complex *f0=ComplexAlign(C*fft.length());
-  Complex *F0=ComplexAlign(C*N);
+  Complex *F0=ComplexAlign(C*M);
 
   for(unsigned int j=0; j < fft.size(); ++j)
     for(unsigned int c=0; c < C; ++c)
@@ -80,14 +80,14 @@ int main(int argc, char* argv[])
   if(L < 30) {
     cout << endl;
     cout << "Inverse:" << endl;
-    unsigned int N=fft.size();
+    unsigned int M=fft.size();
     for(unsigned int j=0; j < C*L; ++j)
-      cout << f0[j]/N << endl;
+      cout << f0[j]/M << endl;
     cout << endl;
   }
 
-  Complex *F2=ComplexAlign(N*C);
-  fftPad fft2(L,N,C,N,1,1);
+  Complex *F2=ComplexAlign(M*C);
+  fftPad fft2(L,M,C,M,1,1);
 
   for(unsigned int j=0; j < L; ++j)
     for(unsigned int c=0; c < C; ++c)
@@ -122,7 +122,7 @@ int main(int argc, char* argv[])
   }
 
   for(unsigned int j=0; j < C*L; ++j) {
-    error2 += abs2(f0[j]/N-f[j]);
+    error2 += abs2(f0[j]/M-f[j]);
     norm2 += abs2(f[j]);
   }
 
