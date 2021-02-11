@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
       cout << endl;
     }
   }
-  
+
   Convolution2 Convolve2(fftx,convolvey);
 
   unsigned int K=1000;

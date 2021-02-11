@@ -23,7 +23,7 @@ int main(int argc, char* argv[])
 
   fftPad fft(L,M,*app);
 
-  unsigned int L0=fft.bufferLength();
+  unsigned int L0=fft.inputSize();
   Complex *f=ComplexAlign(L0);
   Complex *g=ComplexAlign(L0);
 

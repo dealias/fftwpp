@@ -115,6 +115,7 @@ public:
   unsigned int Q;
   unsigned int D;
   unsigned int Cm;
+  unsigned int b; // Block size
   Complex *W0; // Temporary work memory for testing accuracy
 
   FFTcall Forward,Backward;
@@ -131,7 +132,6 @@ public:
   void common();
 
   void initZetaq() {
-    p=1;
     Q=n=q;
     Zetaq=utils::ComplexAlign(q);
     double twopibyq=twopi/q;
@@ -215,43 +215,40 @@ public:
   virtual void backwardInnerMany(Complex *F, Complex *f, unsigned int r, Complex *W) {}
 
   // input array length
-  unsigned int bufferLength() {
-    return C*std::max(m*p,L);
+  virtual unsigned int inputSize() {
+    return std::max(b,C*L);
   }
 
-  // FFT input length
-  virtual unsigned int length() {
-    return m*p;
-  }
-
-  // FFT output length
-  unsigned int Length() {
-    return q == 1 ? M : m*p;
-  }
-
-  unsigned int size() {
+  unsigned int normalization() {
     return M;
-//    return q == 1 ? M : m*q; // TODO: m*q  Can we make M=m*q in all cases?
   }
 
-  virtual unsigned int worksizeF() {
-    return C*(q == 1 ? M : m*p*D);
+  virtual unsigned int outputSize() {
+    return b*D;
+  }
+
+  virtual unsigned int fullOutputSize() {
+    return b*Q;
+  }
+
+  virtual unsigned int outputs() {
+    return M;
   }
 
   bool loop2() {
     return D < Q && 2*D >= Q && A > B;
   }
 
-  unsigned int worksizeV() {
-    return q == 1 || D >= Q || loop2() ? 0 : length();
+  unsigned int workSizeV() {
+    return q == 1 || D >= Q || loop2() ? 0 : L;
   }
 
-  virtual unsigned int worksizeW() {
-    return q == 1 || inplace ? 0 : worksizeF();
+  virtual unsigned int workSizeW() {
+    return q == 1 || inplace ? 0 : outputSize();
   }
 
-  unsigned int padding() {
-    return !inplace && L < p*m;
+  unsigned int repad() {
+    return !inplace && L < m;
   }
 
   void initialize(Complex *f, Complex *g);
@@ -473,14 +470,27 @@ public:
   void backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W);
   void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W);
 
-  // FFT input length
-  unsigned int length() { // Only for p=2;
-    return e+1;
+  unsigned int inputSize() {
+    return b+C;
   }
 
-  unsigned int worksizeF() {
-    return C*(q == 1 ? M : (e+1)*D);
+  // Consolidate these two functions
+  unsigned int outputSize() {
+    return inputSize()*D;
   }
+
+  unsigned int fullOutputSize() {
+    return inputSize()*Q;
+  }
+
+  virtual unsigned int outputs() {
+    return 2*e*Q;
+  }
+
+  virtual unsigned int workSize() {
+    return q == 1 || inplace ? 0 : inputSize()*D;
+  }
+
 };
 
 class ForwardBackward : public Application {
@@ -546,9 +556,9 @@ private:
 public:
   // A is the number of inputs.
   // B is the number of outputs.
-  // F is an optional work array of size std::max(A,B)*fft->worksizeF(),
-  // V is an optional work array of size B*fft->worksizeV() (for inplace usage)
-  // W is an optional work array of size fft->worksizeW();
+  // F is an optional work array of size std::max(A,B)*fft->outputSize(),
+  // V is an optional work array of size B*fft->workSizeV() (for inplace usage)
+  // W is an optional work array of size fft->workSizeW();
   //   if changed between calls to convolve(), be sure to call pad()
   // TODO: add inplace flag to avoid allocating W.
   Convolution(fftPad &fft, unsigned int A=2, unsigned int B=1,
@@ -562,7 +572,7 @@ public:
   void initV() {
     allocateV=true;
     V=new Complex*[B];
-    unsigned int size=fft->worksizeV();
+    unsigned int size=fft->workSizeV();
     for(unsigned int i=0; i < B; ++i)
       V[i]=utils::ComplexAlign(size);
   }
@@ -619,9 +629,9 @@ private:
 public:
   // A is the number of inputs.
   // B is the number of outputs.
-  // F is an optional work array of size std::max(A,B)*fft->worksizeF(),
-  // V is an optional work array of size B*fft->worksizeV() (for inplace usage)
-  // W is an optional work array of size fft->worksizeW();
+  // F is an optional work array of size std::max(A,B)*fft->outputSize(),
+  // V is an optional work array of size B*fft->workSizeV() (for inplace usage)
+  // W is an optional work array of size fft->workSizeW();
   //   if changed between calls to convolve(), be sure to call pad()
   // TODO: add inplace flag to avoid allocating W.
   HermitianConvolution(fftPadHermitian &fft, unsigned int A=2,
@@ -636,7 +646,7 @@ public:
   void initV() {
     allocateV=true;
     V=new Complex*[B];
-    unsigned int size=fft->worksizeV();
+    unsigned int size=fft->workSizeV();
     for(unsigned int i=0; i < B; ++i)
       V[i]=utils::ComplexAlign(size);
   }
@@ -684,7 +694,7 @@ class Convolution2 {
   FFTcall Forward,Backward;
 
 public:
-  // Fx is an optional work array of size max(A,B)*fftx->worksizeF(),
+  // Fx is an optional work array of size max(A,B)*fftx->outputSize(),
   Convolution2(fftPad &fftx, Convolution &convolvey, Complex *Fx=NULL) :
     fftx(&fftx), convolvey(&convolvey), allocateUx(false) {
 
@@ -696,10 +706,10 @@ public:
 
     qx=fftx.q;
     Qx=fftx.Q;
-    Sx=fftx.Length();
-    scale=1.0/(fftx.size()*convolvey.fft->size());
+    Sx=fftx.m*fftx.p;
+    scale=1.0/(fftx.normalization()*convolvey.fft->normalization());
 
-    unsigned int c=fftx.worksizeF();
+    unsigned int c=fftx.outputSize();
     unsigned int N=std::max(A,B);
     this->Fx=new Complex*[N];
     if(Fx) {
@@ -717,9 +727,9 @@ public:
 
   // A is the number of inputs.
   // B is the number of outputs.
-  // Fy is an optional work array of size max(A,B)*ffty->worksizeF(),
-  // Vy is an optional work array of size B*ffty->worksizeV() (inplace usage)
-  // Wy is an optional work array of size ffty->worksizeW();
+  // Fy is an optional work array of size max(A,B)*ffty->outputSize(),
+  // Vy is an optional work array of size B*ffty->workSizeV() (inplace usage)
+  // Wy is an optional work array of size ffty->workSizeW();
   //   if changed between calls to convolve(), be sure to call pad()
   /*
     Convolution2(unsigned int Lx, unsigned int Ly,
