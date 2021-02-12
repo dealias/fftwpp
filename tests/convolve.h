@@ -471,26 +471,20 @@ public:
   void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W);
 
   unsigned int inputSize() {
-    return b+C;
+    return C*m;
   }
 
-  // Consolidate these two functions
   unsigned int outputSize() {
-    return inputSize()*D;
+    return C*(e+1)*D;
   }
 
   unsigned int fullOutputSize() {
-    return inputSize()*Q;
+    return C*(e+1)*Q;
   }
 
-  virtual unsigned int outputs() {
+  unsigned int outputs() {
     return 2*e*Q;
   }
-
-  virtual unsigned int workSize() {
-    return q == 1 || inplace ? 0 : inputSize()*D;
-  }
-
 };
 
 class ForwardBackward : public Application {
@@ -666,9 +660,10 @@ public:
                 unsigned int offset=0) {
     convolve0(f,h,mult,offset);
 
+    unsigned int stop=utils::ceilquotient(L,2);
     for(unsigned int b=0; b < B; ++b) {
       Complex *hb=h[b]+offset;
-      for(unsigned int i=0; i < L; ++i)
+      for(unsigned int i=0; i < stop; ++i)
         hb[i] *= scale;
     }
   }

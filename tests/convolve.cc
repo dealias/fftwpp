@@ -1340,7 +1340,7 @@ void fftPadHermitian::init()
       exit(-1);
     }
 
-    unsigned int size=(e+1)*D*C;
+    unsigned int size=outputSize();
     Complex *G=ComplexAlign(size);
     Complex *H=inplace ? G : ComplexAlign(size);
 
