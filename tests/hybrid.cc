@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
     cout << endl;
   }
 
-  fftPad fft2(L,M,C,M,1,1);
+  fftPad fft2(L,fft.M,C,fft.M,1,1);
   Complex *F2=ComplexAlign(fft2.fullOutputSize());
 
   for(unsigned int j=0; j < L; ++j)

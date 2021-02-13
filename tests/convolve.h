@@ -550,7 +550,7 @@ private:
 public:
   // A is the number of inputs.
   // B is the number of outputs.
-  // F is an optional work array of size std::max(A,B)*fft->outputSize(),
+  // F is an optional work array of size max(A,B)*fft->outputSize(),
   // V is an optional work array of size B*fft->workSizeV() (for inplace usage)
   // W is an optional work array of size fft->workSizeW();
   //   if changed between calls to convolve(), be sure to call pad()
@@ -623,7 +623,7 @@ private:
 public:
   // A is the number of inputs.
   // B is the number of outputs.
-  // F is an optional work array of size std::max(A,B)*fft->outputSize(),
+  // F is an optional work array of size max(A,B)*fft->outputSize(),
   // V is an optional work array of size B*fft->workSizeV() (for inplace usage)
   // W is an optional work array of size fft->workSizeW();
   //   if changed between calls to convolve(), be sure to call pad()
