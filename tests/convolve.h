@@ -586,10 +586,9 @@ public:
                 unsigned int offset=0) {
     convolve0(f,h,mult,offset);
 
-    unsigned int H=L/2;
     for(unsigned int b=0; b < B; ++b) {
       Complex *hb=h[b]+offset;
-      for(unsigned int i=0; i <= H; ++i)
+      for(unsigned int i=0; i < L; ++i)
         hb[i] *= scale;
     }
   }

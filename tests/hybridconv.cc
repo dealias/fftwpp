@@ -1,5 +1,7 @@
 #include "convolve.h"
 
+#define OUTPUT 1
+
 using namespace std;
 using namespace utils;
 using namespace Array;
