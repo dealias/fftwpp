@@ -1,6 +1,6 @@
 #include "convolve.h"
 
-#define OUTPUT 1
+#define OUTPUT 0
 
 using namespace std;
 using namespace utils;
@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
   double t0=totalseconds();
 
   for(unsigned int k=0; k < K; ++k)
-    Convolve.convolve(F,F,multbinary);
+    Convolve.convolve(F,F,realmultbinary);
 
   double t=totalseconds();
   cout << (t-t0)/K << endl;

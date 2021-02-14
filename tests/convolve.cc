@@ -21,8 +21,8 @@ unsigned int M;
 
 unsigned int surplusFFTsizes=25;
 
-// This multiplication routine is for binary convolutions and takes two inputs
-// of size e.
+// This multiplication routine is for binary convolutions and takes
+// two Complex inputs of size e.
 // F0[j] *= F1[j];
 void multbinary(Complex **F, unsigned int e, unsigned int threads)
 {
@@ -35,13 +35,13 @@ void multbinary(Complex **F, unsigned int e, unsigned int threads)
     );
 }
 
-// This multiplication routine is for binary convolutions and takes two inputs
-// of size e.
+// This multiplication routine is for binary convolutions and takes
+// two real inputs of size e.
 // F0[j] *= F1[j];
-void multbinary(double **F, unsigned int e, unsigned int threads)
+void realmultbinary(Complex **F, unsigned int e, unsigned int threads)
 {
-  double *F0=F[0];
-  double *F1=F[1];
+  double *F0=(double *) F[0];
+  double *F1=(double *) F[1];
 
   PARALLEL(
     for(unsigned int j=0; j < e; ++j)
@@ -1618,6 +1618,10 @@ void Convolution::init(Complex *F, Complex *V)
   Backward=fft->Backward;
 
   L=fft->L;
+  q=fft->q;
+  Q=fft->Q;
+  D=fft->D;
+
   unsigned int M=fft->normalization();
   scale=1.0/M;
   c=fft->outputSize();
@@ -1628,12 +1632,12 @@ void Convolution::init(Complex *F, Complex *V)
     for(unsigned int i=0; i < N; ++i)
       this->F[i]=F+i*c;
   } else {
-    allocateU=true;
+    allocate=true;
     for(unsigned int i=0; i < N; ++i)
       this->F[i]=ComplexAlign(c);
   }
 
-  if(fft->q > 1) {
+  if(q > 1) {
     allocateV=false;
     if(V) {
       this->V=new Complex*[B];
@@ -1669,14 +1673,11 @@ void Convolution::init(Complex *F, Complex *V)
       W0=this->W;
     }
   }
-
-  Q=fft->Q;
-  D=fft->D;
 }
 
 Convolution::~Convolution()
 {
-  if(fft->q > 1) {
+  if(q > 1) {
     if(allocateW)
       deleteAlign(W);
 
@@ -1691,7 +1692,7 @@ Convolution::~Convolution()
       delete [] V;
   }
 
-  if(allocateU) {
+  if(allocate) {
     unsigned int N=max(A,B);
     for(unsigned int i=0; i < N; ++i)
       deleteAlign(F[i]);
@@ -1699,20 +1700,26 @@ Convolution::~Convolution()
   delete [] F;
 }
 
+// f is an input array of A pointers to distinct data blocks each of size
+// fft->length()
+// h is an output array of B pointers to distinct data blocks each of size
+// fft->length(), which may coincide with f.
+// offset is applied to each input and output component
 void Convolution::convolve0(Complex **f, Complex **h, multiplier *mult,
                             unsigned int offset)
 {
-  if(fft->q == 1) {
+  unsigned int c0=fft->Cm;
+  if(q == 1) {
     for(unsigned int a=0; a < A; ++a)
       (fft->*Forward)(f[a]+offset,F[a],0,NULL);
-    (*mult)(F,fft->M,threads);
+    (*mult)(F,c0,threads);
     for(unsigned int b=0; b < B; ++b)
       (fft->*Backward)(F[b],h[b]+offset,0,NULL);
   } else {
     if(loop2) {
       for(unsigned int a=0; a < A; ++a)
         (fft->*Forward)(f[a]+offset,F[a],0,W);
-      (*mult)(F,c,threads);
+      (*mult)(F,c0,threads);
 
       for(unsigned int b=0; b < B; ++b) {
         (fft->*Forward)(f[b]+offset,Fp[b],D,W);
@@ -1721,154 +1728,7 @@ void Convolution::convolve0(Complex **f, Complex **h, multiplier *mult,
       }
       for(unsigned int a=B; a < A; ++a)
         (fft->*Forward)(f[a]+offset,Fp[a],D,W);
-      (*mult)(Fp,c,threads);
-      Complex *UpB=Fp[B];
-      for(unsigned int b=0; b < B; ++b)
-        (fft->*Backward)(Fp[b],h[b]+offset,D,UpB);
-    } else {
-      unsigned int Offset;
-      bool useV=h == f && D < Q; // Inplace and more than one loop
-      Complex **h0;
-      if(useV) {
-        if(!V) initV();
-        h0=V;
-        Offset=0;
-      } else {
-        Offset=offset;
-        h0=h;
-      }
-      for(unsigned int r=0; r < Q; r += D) {
-        for(unsigned int a=0; a < A; ++a)
-          (fft->*Forward)(f[a]+offset,F[a],r,W);
-        (*mult)(F,c,threads);
-        for(unsigned int b=0; b < B; ++b)
-          (fft->*Backward)(F[b],h0[b]+Offset,r,W0);
-        (fft->*Pad)(W);
-      }
-
-      if(useV) {
-        for(unsigned int b=0; b < B; ++b) {
-          Complex *fb=f[b]+offset;
-          Complex *hb=h0[b];
-          for(unsigned int i=0; i < L; ++i)
-            fb[i]=hb[i];
-        }
-      }
-    }
-  }
-}
-
-void HermitianConvolution::init(Complex *F, Complex *V)
-{
-  Forward=fft->Forward;
-  Backward=fft->Backward;
-
-  L=fft->L;
-  unsigned int M=fft->normalization();
-  scale=1.0/M;
-  c=fft->outputSize();
-
-  unsigned int N=max(A,B);
-  this->F=new Complex*[N];
-  if(F) {
-    for(unsigned int i=0; i < N; ++i)
-      this->F[i]=F+i*c;
-  } else {
-    allocateU=true;
-    for(unsigned int i=0; i < N; ++i)
-      this->F[i]=ComplexAlign(c);
-  }
-
-  if(fft->q > 1) {
-    allocateV=false;
-    if(V) {
-      this->V=new Complex*[B];
-      unsigned int size=fft->workSizeV();
-      for(unsigned int i=0; i < B; ++i)
-        this->V[i]=V+i*size;
-    } else
-      this->V=NULL;
-
-    if(!this->W) {
-      allocateW=true;
-      this->W=ComplexAlign(c);
-    }
-
-    Pad=fft->Pad;
-    (fft->*Pad)(this->W);
-
-    loop2=fft->loop2(); // Two loops and A > B
-    int extra;
-    if(loop2) {
-      Fp=new Complex*[A];
-      Fp[0]=this->F[A-1];
-      for(unsigned int a=1; a < A; ++a)
-        Fp[a]=this->F[a-1];
-      extra=1;
-    } else
-      extra=0;
-
-    if(A > B+extra) {
-      W0=this->F[B];
-      Pad=&fftBase::padNone;
-    } else {
-      W0=this->W;
-    }
-  }
-
-  Q=fft->Q;
-  D=fft->D;
-}
-
-HermitianConvolution::~HermitianConvolution()
-{
-  if(fft->q > 1) {
-    if(allocateW)
-      deleteAlign(W);
-
-    if(loop2)
-      delete[] Fp;
-
-    if(allocateV) {
-      for(unsigned int i=0; i < B; ++i)
-        deleteAlign(V[i]);
-    }
-    if(V)
-      delete [] V;
-  }
-
-  if(allocateU) {
-    unsigned int N=max(A,B);
-    for(unsigned int i=0; i < N; ++i)
-      deleteAlign(F[i]);
-  }
-  delete [] F;
-}
-
-void HermitianConvolution::convolve0(Complex **f, Complex **h,
-                                     realmultiplier *mult, unsigned int offset)
-{
-  unsigned int c0=fft->C*fft->m;
-  if(fft->q == 1) {
-    for(unsigned int a=0; a < A; ++a)
-      (fft->*Forward)(f[a]+offset,F[a],0,NULL);
-    (*mult)((double **) F,c0,threads);
-    for(unsigned int b=0; b < B; ++b)
-      (fft->*Backward)(F[b],h[b]+offset,0,NULL);
-  } else {
-    if(loop2) {
-      for(unsigned int a=0; a < A; ++a)
-        (fft->*Forward)(f[a]+offset,F[a],0,W);
-      (*mult)((double **) F,c0,threads);
-
-      for(unsigned int b=0; b < B; ++b) {
-        (fft->*Forward)(f[b]+offset,Fp[b],D,W);
-        (fft->*Backward)(F[b],h[b]+offset,0,W0);
-        (fft->*Pad)(W);
-      }
-      for(unsigned int a=B; a < A; ++a)
-        (fft->*Forward)(f[a]+offset,Fp[a],D,W);
-      (*mult)((double **)Fp,c0,threads);
+      (*mult)(Fp,c0,threads);
       Complex *UpB=Fp[B];
       for(unsigned int b=0; b < B; ++b)
         (fft->*Backward)(Fp[b],h[b]+offset,D,UpB);
@@ -1889,18 +1749,17 @@ void HermitianConvolution::convolve0(Complex **f, Complex **h,
         if(D0 > D) D0=D;
         for(unsigned int a=0; a < A; ++a)
           (fft->*Forward)(f[a]+offset,F[a],r,W);
-        (*mult)((double **) F,c0*D0,threads);
+        (*mult)(F,c0*D0,threads);
         for(unsigned int b=0; b < B; ++b)
           (fft->*Backward)(F[b],h0[b]+Offset,r,W0);
         (fft->*Pad)(W);
       }
 
       if(useV) {
-        unsigned int H0=ceilquotient(L,2);
         for(unsigned int b=0; b < B; ++b) {
           Complex *fb=f[b]+offset;
           Complex *hb=h0[b];
-          for(unsigned int i=0; i < H0; ++i)
+          for(unsigned int i=0; i < noutputs; ++i)
             fb[i]=hb[i];
         }
       }

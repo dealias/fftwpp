@@ -515,20 +515,19 @@ public:
 
 typedef void multiplier(Complex **, unsigned int e, unsigned int threads);
 
-typedef void realmultiplier(double **, unsigned int e, unsigned int threads);
-
 // Multiplication routine for binary convolutions and taking two inputs of size e.
 void multbinary(Complex **F, unsigned int e, unsigned int threads);
-void multbinary(double **F, unsigned int e, unsigned int threads);
+void realmultbinary(Complex **F, unsigned int e, unsigned int threads);
 
 
 class Convolution {
 public:
-  fftPad *fft;
+  fftBase *fft;
   unsigned int A;
   unsigned int B;
   unsigned int L;
-private:
+protected:
+  unsigned int q;
   unsigned int Q;
   unsigned int D;
   unsigned int c;
@@ -538,10 +537,11 @@ private:
   Complex *H;
   Complex *W0;
   double scale;
-  bool allocateU;
+  bool allocate;
   bool allocateV;
   bool allocateW;
   bool loop2;
+  unsigned int noutputs;
 
   FFTcall Forward,Backward;
   FFTPad Pad;
@@ -554,10 +554,16 @@ public:
   // W is an optional work array of size fft->workSizeW();
   //   if changed between calls to convolve(), be sure to call pad()
   // TODO: add inplace flag to avoid allocating W.
-  Convolution(fftPad &fft, unsigned int A=2, unsigned int B=1,
+  Convolution(unsigned int A=2, unsigned int B=1,
               Complex *F=NULL, Complex *V=NULL, Complex *W=NULL) :
-    fft(&fft), A(A), B(B), W(W), allocateU(false) {
+    A(A), B(B), W(W), allocate(false) {
+  }
+
+  Convolution(fftBase &fft, unsigned int A=2, unsigned int B=1,
+              Complex *F=NULL, Complex *V=NULL, Complex *W=NULL) :
+    fft(&fft), A(A), B(B), W(W), allocate(false) {
     init(F,V);
+    noutputs=L;
   }
 
   void init(Complex *F, Complex *V);
@@ -572,11 +578,13 @@ public:
 
   ~Convolution();
 
-  // f is an input array of A pointers to distinct data blocks each of size
-  // fft->length()
-  // h is an output array of B pointers to distinct data blocks each of size
-  // fft->length(), which may coincide with f.
-  // offset is applied to each input and output component
+  void normalize(Complex **h, unsigned int offset=0) {
+    for(unsigned int b=0; b < B; ++b) {
+      Complex *hb=h[b]+offset;
+      for(unsigned int i=0; i < noutputs; ++i)
+        hb[i] *= scale;
+    }
+  }
 
   void convolve0(Complex **f, Complex **h, multiplier *mult,
                  unsigned int offset=0);
@@ -584,40 +592,11 @@ public:
   void convolve(Complex **f, Complex **h, multiplier *mult,
                 unsigned int offset=0) {
     convolve0(f,h,mult,offset);
-
-    for(unsigned int b=0; b < B; ++b) {
-      Complex *hb=h[b]+offset;
-      for(unsigned int i=0; i < L; ++i)
-        hb[i] *= scale;
-    }
+    normalize(h,offset);
   }
 };
 
-// class HermitianConvolution : public Convolution {
-class HermitianConvolution {
-public:
-  fftPadHermitian *fft;
-  unsigned int A;
-  unsigned int B;
-  unsigned int L;
-private:
-  unsigned int Q;
-  unsigned int D;
-  unsigned int c;
-  Complex **F,**Fp;
-  Complex **V;
-  Complex *W;
-  Complex *H;
-  Complex *W0;
-  double scale;
-  bool allocateU;
-  bool allocateV;
-  bool allocateW;
-  bool loop2;
-
-  FFTcall Forward,Backward;
-  FFTPad Pad;
-
+class HermitianConvolution : public Convolution {
 public:
   // A is the number of inputs.
   // B is the number of outputs.
@@ -628,42 +607,10 @@ public:
   // TODO: add inplace flag to avoid allocating W.
   HermitianConvolution(fftPadHermitian &fft, unsigned int A=2,
                        unsigned int B=1, Complex *F=NULL, Complex *V=NULL,
-                       Complex *W=NULL) :
-    fft(&fft), A(A), B(B), W(W), allocateU(false) {
+                       Complex *W=NULL) : Convolution(A,B,F,V,W) {
+    this->fft=&fft;
     init(F,V);
-  }
-
-  void init(Complex *F, Complex *V);
-
-  void initV() {
-    allocateV=true;
-    V=new Complex*[B];
-    unsigned int size=fft->workSizeV();
-    for(unsigned int i=0; i < B; ++i)
-      V[i]=utils::ComplexAlign(size);
-  }
-
-  ~HermitianConvolution();
-
-  // f is an input array of A pointers to distinct data blocks each of size
-  // fft->length()
-  // h is an output array of B pointers to distinct data blocks each of size
-  // fft->length(), which may coincide with f.
-  // offset is applied to each input and output component
-
-  void convolve0(Complex **f, Complex **h, realmultiplier *mult,
-                 unsigned int offset=0);
-
-  void convolve(Complex **f, Complex **h, realmultiplier *mult,
-                unsigned int offset=0) {
-    convolve0(f,h,mult,offset);
-
-    unsigned int stop=utils::ceilquotient(L,2);
-    for(unsigned int b=0; b < B; ++b) {
-      Complex *hb=h[b]+offset;
-      for(unsigned int i=0; i < stop; ++i)
-        hb[i] *= scale;
-    }
+    noutputs=utils::ceilquotient(L,2);
   }
 };
 
@@ -681,7 +628,7 @@ class Convolution2 {
   Complex *Fy;
   Complex *Vy;
   Complex *Wy;
-  bool allocateUx;
+  bool allocate;
   double scale;
 
   FFTcall Forward,Backward;
@@ -689,7 +636,7 @@ class Convolution2 {
 public:
   // Fx is an optional work array of size max(A,B)*fftx->outputSize(),
   Convolution2(fftPad &fftx, Convolution &convolvey, Complex *Fx=NULL) :
-    fftx(&fftx), convolvey(&convolvey), allocateUx(false) {
+    fftx(&fftx), convolvey(&convolvey), allocate(false) {
 
     Forward=fftx.Forward;
     Backward=fftx.Backward;
@@ -709,7 +656,7 @@ public:
       for(unsigned int i=0; i < N; ++i)
         this->Fx[i]=Fx+i*c;
     } else {
-      allocateUx=true;
+      allocate=true;
       for(unsigned int i=0; i < N; ++i)
         this->Fx[i]=utils::ComplexAlign(c);
     }
@@ -733,7 +680,7 @@ public:
 
   ~Convolution2() {
     unsigned int N=std::max(A,B);
-    if(allocateUx) {
+    if(allocate) {
       for(unsigned int i=0; i < N; ++i)
         utils::deleteAlign(Fx[i]);
     }
