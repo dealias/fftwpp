@@ -1852,38 +1852,57 @@ void HermitianConvolution::convolve0(Complex **f, Complex **h,
   if(fft->q == 1) {
     for(unsigned int a=0; a < A; ++a)
       (fft->*Forward)(f[a]+offset,F[a],0,NULL);
-    (*mult)((double **) F,fft->outputs(),threads);
+    (*mult)((double **) F,c0,threads);
     for(unsigned int b=0; b < B; ++b)
       (fft->*Backward)(F[b],h[b]+offset,0,NULL);
   } else {
-    unsigned int Offset;
-    bool useV=h == f && D < Q; // Inplace and more than one loop
-    Complex **h0;
-    if(useV) {
-      if(!V) initV();
-      h0=V;
-      Offset=0;
-    } else {
-      Offset=offset;
-      h0=h;
-    }
-    for(unsigned int r=0; r < Q; r += D) {
-      unsigned int D0=Q-r;
-      if(D0 > D) D0=D;
+    if(loop2) {
       for(unsigned int a=0; a < A; ++a)
-        (fft->*Forward)(f[a]+offset,F[a],r,W);
-      (*mult)((double **) F,c0*D0,threads);
-      for(unsigned int b=0; b < B; ++b)
-        (fft->*Backward)(F[b],h0[b]+Offset,r,W0);
-    }
+        (fft->*Forward)(f[a]+offset,F[a],0,W);
+      (*mult)((double **) F,c0,threads);
 
-    if(useV) {
-      unsigned int H0=ceilquotient(L,2);
       for(unsigned int b=0; b < B; ++b) {
-        Complex *fb=f[b]+offset;
-        Complex *hb=h0[b];
-        for(unsigned int i=0; i < H0; ++i)
-          fb[i]=hb[i];
+        (fft->*Forward)(f[b]+offset,Fp[b],D,W);
+        (fft->*Backward)(F[b],h[b]+offset,0,W0);
+        (fft->*Pad)(W);
+      }
+      for(unsigned int a=B; a < A; ++a)
+        (fft->*Forward)(f[a]+offset,Fp[a],D,W);
+      (*mult)((double **)Fp,c0,threads);
+      Complex *UpB=Fp[B];
+      for(unsigned int b=0; b < B; ++b)
+        (fft->*Backward)(Fp[b],h[b]+offset,D,UpB);
+    } else {
+      unsigned int Offset;
+      bool useV=h == f && D < Q; // Inplace and more than one loop
+      Complex **h0;
+      if(useV) {
+        if(!V) initV();
+        h0=V;
+        Offset=0;
+      } else {
+        Offset=offset;
+        h0=h;
+      }
+      for(unsigned int r=0; r < Q; r += D) {
+        unsigned int D0=Q-r;
+        if(D0 > D) D0=D;
+        for(unsigned int a=0; a < A; ++a)
+          (fft->*Forward)(f[a]+offset,F[a],r,W);
+        (*mult)((double **) F,c0*D0,threads);
+        for(unsigned int b=0; b < B; ++b)
+          (fft->*Backward)(F[b],h0[b]+Offset,r,W0);
+        (fft->*Pad)(W);
+      }
+
+      if(useV) {
+        unsigned int H0=ceilquotient(L,2);
+        for(unsigned int b=0; b < B; ++b) {
+          Complex *fb=f[b]+offset;
+          Complex *hb=h0[b];
+          for(unsigned int i=0; i < H0; ++i)
+            fb[i]=hb[i];
+        }
       }
     }
   }
