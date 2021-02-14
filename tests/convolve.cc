@@ -1719,7 +1719,7 @@ void Convolution::convolve0(Complex **f, Complex **h, multiplier *mult,
     if(loop2) {
       for(unsigned int a=0; a < A; ++a)
         (fft->*Forward)(f[a]+offset,F[a],0,W);
-      (*mult)(F,c0,threads);
+      (*mult)(F,c0*D,threads);
 
       for(unsigned int b=0; b < B; ++b) {
         (fft->*Forward)(f[b]+offset,Fp[b],D,W);
@@ -1728,7 +1728,7 @@ void Convolution::convolve0(Complex **f, Complex **h, multiplier *mult,
       }
       for(unsigned int a=B; a < A; ++a)
         (fft->*Forward)(f[a]+offset,Fp[a],D,W);
-      (*mult)(Fp,c0,threads);
+      (*mult)(Fp,c0*D,threads);
       Complex *UpB=Fp[B];
       for(unsigned int b=0; b < B; ++b)
         (fft->*Backward)(Fp[b],h[b]+offset,D,UpB);
