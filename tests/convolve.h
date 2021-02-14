@@ -231,8 +231,8 @@ public:
     return b*Q;
   }
 
-  virtual unsigned int outputs() {
-    return M;
+  unsigned int outputs() {
+    return C*M;
   }
 
   bool loop2() {
@@ -480,10 +480,6 @@ public:
 
   unsigned int fullOutputSize() {
     return C*(e+1)*Q;
-  }
-
-  unsigned int outputs() {
-    return M;
   }
 };
 

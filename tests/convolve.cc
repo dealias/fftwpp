@@ -1407,10 +1407,10 @@ void fftPadHermitian::backward(Complex *F, Complex *f)
 
 void fftPadHermitian::forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W)
 {
-  unsigned int H=L/2;
-  for(unsigned int s=0; s <= H; ++s)
+  unsigned int H0=ceilquotient(L,2);
+  for(unsigned int s=0; s < H0; ++s)
     F[s]=f[s];
-  for(unsigned int s=H+1; s <= e; ++s)
+  for(unsigned int s=H0; s <= e; ++s)
     F[s]=0.0;
 
   crfftm->fft(F);
@@ -1418,14 +1418,14 @@ void fftPadHermitian::forwardExplicit(Complex *f, Complex *F, unsigned int, Comp
 
 void fftPadHermitian::forwardExplicitMany(Complex *f, Complex *F, unsigned int, Complex *W)
 {
-  unsigned int H=L/2;
-  for(unsigned int s=0; s <= H; ++s) {
+  unsigned int H0=ceilquotient(L,2);
+  for(unsigned int s=0; s < H0; ++s) {
     Complex *Fs=F+C*s;
     Complex *fs=f+C*s;
     for(unsigned int c=0; c < C; ++c)
       Fs[c]=fs[c];
   }
-  for(unsigned int s=H+1; s <= e; ++s) {
+  for(unsigned int s=H0; s <= e; ++s) {
     Complex *Fs=F+C*s;
     for(unsigned int c=0; c < C; ++c)
       Fs[c]=0.0;
@@ -1436,18 +1436,18 @@ void fftPadHermitian::forwardExplicitMany(Complex *f, Complex *F, unsigned int, 
 
 void fftPadHermitian::backwardExplicit(Complex *F, Complex *f, unsigned int, Complex *W)
 {
-  unsigned int H=L/2;
   rcfftm->fft(F);
-  for(unsigned int s=0; s <= H; ++s)
+  unsigned int H0=ceilquotient(L,2);
+  for(unsigned int s=0; s < H0; ++s)
     f[s]=F[s];
 }
 
 void fftPadHermitian::backwardExplicitMany(Complex *F, Complex *f,
                                            unsigned int, Complex *W)
 {
-  unsigned int H=L/2;
   rcfftm->fft(F);
-  for(unsigned int s=0; s <= H; ++s) {
+  unsigned int H0=ceilquotient(L,2);
+  for(unsigned int s=0; s < H0; ++s) {
     Complex *fs=f+C*s;
     Complex *Fs=F+C*s;
     for(unsigned int c=0; c < C; ++c)
@@ -1848,6 +1848,7 @@ HermitianConvolution::~HermitianConvolution()
 void HermitianConvolution::convolve0(Complex **f, Complex **h,
                                      realmultiplier *mult, unsigned int offset)
 {
+  unsigned int c0=fft->C*fft->m;
   if(fft->q == 1) {
     for(unsigned int a=0; a < A; ++a)
       (fft->*Forward)(f[a]+offset,F[a],0,NULL);
@@ -1867,19 +1868,21 @@ void HermitianConvolution::convolve0(Complex **f, Complex **h,
       h0=h;
     }
     for(unsigned int r=0; r < Q; r += D) {
+      unsigned int D0=Q-r;
+      if(D0 > D) D0=D;
       for(unsigned int a=0; a < A; ++a)
         (fft->*Forward)(f[a]+offset,F[a],r,W);
-      (*mult)((double **) F,fft->outputs(),threads);
+      (*mult)((double **) F,c0*D0,threads);
       for(unsigned int b=0; b < B; ++b)
         (fft->*Backward)(F[b],h0[b]+Offset,r,W0);
     }
 
     if(useV) {
-      unsigned int H=L/2;
+      unsigned int H0=ceilquotient(L,2);
       for(unsigned int b=0; b < B; ++b) {
         Complex *fb=f[b]+offset;
         Complex *hb=h0[b];
-        for(unsigned int i=0; i <= H; ++i)
+        for(unsigned int i=0; i < H0; ++i)
           fb[i]=hb[i];
       }
     }

@@ -93,8 +93,7 @@ int main(int argc, char* argv[])
 #if 0
   cout << endl;
   for(unsigned int j=0; j < fft.outputs(); ++j)
-    for(unsigned int c=0; c < C; ++c)
-      cout << F2[C*j+c] << endl;
+    cout << F2[j] << endl;
   cout << endl;
 #endif
 

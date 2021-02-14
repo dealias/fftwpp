@@ -1,6 +1,6 @@
 #include "convolve.h"
 
-#define OUTPUT 1
+#define OUTPUT 0
 
 using namespace std;
 using namespace utils;
@@ -31,17 +31,19 @@ int main(int argc, char* argv[])
 
   unsigned int length=ceilquotient(L,2);
   
+#if OUTPUT
   f[0]=1.0;
   g[0]=2.0;
   for(unsigned int j=1; j < length; ++j) {
-#if OUTPUT
     f[j]=Complex(j,j+1);
     g[j]=Complex(j,2*j+1);
+  }
 #else
+  for(unsigned int j=0; j < length; ++j) {
     f[j]=0.0;
     g[j]=0.0;
-#endif
   }
+#endif
 
   HermitianConvolution Convolve(fft);
 
