@@ -530,8 +530,9 @@ protected:
   unsigned int q;
   unsigned int Q;
   unsigned int D;
-  unsigned int c;
+  unsigned int b;
   Complex **F,**Fp;
+  Complex *FpB;
   Complex **V;
   Complex *W;
   Complex *H;
@@ -610,6 +611,7 @@ public:
                        Complex *W=NULL) : Convolution(A,B,F,V,W) {
     this->fft=&fft;
     init(F,V);
+    b=q > 1 ? fft.Cm*fft.p/2 : fft.Cm;
     noutputs=utils::ceilquotient(L,2);
   }
 };

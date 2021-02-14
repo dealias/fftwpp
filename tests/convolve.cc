@@ -1622,10 +1622,11 @@ void Convolution::init(Complex *F, Complex *V)
   q=fft->q;
   Q=fft->Q;
   D=fft->D;
+  b=fft->b;
 
   unsigned int M=fft->normalization();
   scale=1.0/M;
-  c=fft->outputSize();
+  unsigned int c=fft->outputSize();
 
   unsigned int N=max(A,B);
   this->F=new Complex*[N];
@@ -1661,6 +1662,7 @@ void Convolution::init(Complex *F, Complex *V)
       Fp[0]=this->F[A-1];
       for(unsigned int a=1; a < A; ++a)
         Fp[a]=this->F[a-1];
+      FpB=fft->inplace ? NULL : Fp[B];
       extra=1;
     } else
       extra=0;
@@ -1706,18 +1708,17 @@ Convolution::~Convolution()
 void Convolution::convolve0(Complex **f, Complex **h, multiplier *mult,
                             unsigned int offset)
 {
-  unsigned int c0=fft->Cm;
   if(q == 1) {
     for(unsigned int a=0; a < A; ++a)
       (fft->*Forward)(f[a]+offset,F[a],0,NULL);
-    (*mult)(F,c0,threads);
+    (*mult)(F,b,threads);
     for(unsigned int b=0; b < B; ++b)
       (fft->*Backward)(F[b],h[b]+offset,0,NULL);
   } else {
     if(loop2) {
       for(unsigned int a=0; a < A; ++a)
         (fft->*Forward)(f[a]+offset,F[a],0,W);
-      (*mult)(F,c0*D,threads);
+      (*mult)(F,b*D,threads);
 
       for(unsigned int b=0; b < B; ++b) {
         (fft->*Forward)(f[b]+offset,Fp[b],D,W);
@@ -1726,10 +1727,9 @@ void Convolution::convolve0(Complex **f, Complex **h, multiplier *mult,
       }
       for(unsigned int a=B; a < A; ++a)
         (fft->*Forward)(f[a]+offset,Fp[a],D,W);
-      (*mult)(Fp,c0*D,threads);
-      Complex *UpB=Fp[B];
+      (*mult)(Fp,b*D,threads);
       for(unsigned int b=0; b < B; ++b)
-        (fft->*Backward)(Fp[b],h[b]+offset,D,UpB);
+        (fft->*Backward)(Fp[b],h[b]+offset,D,FpB);
     } else {
       unsigned int Offset;
       bool useV=h == f && D < Q; // Inplace and more than one loop
@@ -1747,7 +1747,7 @@ void Convolution::convolve0(Complex **f, Complex **h, multiplier *mult,
         if(D0 > D) D0=D;
         for(unsigned int a=0; a < A; ++a)
           (fft->*Forward)(f[a]+offset,F[a],r,W);
-        (*mult)(F,c0*D0,threads);
+        (*mult)(F,b*D0,threads);
         for(unsigned int b=0; b < B; ++b)
           (fft->*Backward)(F[b],h0[b]+Offset,r,W0);
         (fft->*Pad)(W);
