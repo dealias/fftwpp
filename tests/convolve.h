@@ -117,6 +117,7 @@ public:
   unsigned int Cm;
   unsigned int b; // Block size
   Complex *W0; // Temporary work memory for testing accuracy
+  bool inplace;
 
   FFTcall Forward,Backward;
   FFTPad Pad;
@@ -126,7 +127,6 @@ protected:
   Complex *Zetaq;
   Complex *Zetaqm;
   Complex *Zetaqm2;
-  bool inplace;
 public:
 
   void common();

@@ -1339,9 +1339,10 @@ void fftPadHermitian::init()
     }
 
     Complex *G=ComplexAlign(C*(e+1));
+    double *H=(double *) G;
 
-    crfftm=new mcrfft1d(m,C, C,C,1,1, G);
-    rcfftm=new mrcfft1d(m,C, C,C,1,1, (double *) G);
+    crfftm=new mcrfft1d(m,C, C,C,1,1, G,H);
+    rcfftm=new mrcfft1d(m,C, C,C,1,1, H,G);
     deleteAlign(G);
     Q=1;
   } else {
@@ -1356,24 +1357,24 @@ void fftPadHermitian::init()
 
     unsigned int size=outputSize();
     Complex *G=ComplexAlign(size);
-    Complex *H=inplace ? G : ComplexAlign(size);
+    double *H=inplace ? (double *) G : doubleAlign(C*m);
 
     if(C == 1) {
-      crfftm=new mcrfft1d(m,D, 1,1, e+1,m, G,(double *) H);
-      rcfftm=new mrcfft1d(m,D, 1,1, m,e+1, (double *) G,H);
+      crfftm=new mcrfft1d(m,D, 1,1, e+1,m, G,H);
+      rcfftm=new mrcfft1d(m,D, 1,1, m,e+1, H,G);
       Forward=&fftBase::forward2;
       Backward=&fftBase::backward2;
     } else {
-      crfftm=new mcrfft1d(m,C, C,C, 1,1, G,(double *) H);
-      rcfftm=new mrcfft1d(m,C, C,C, 1,1, (double *) G,H);
+      crfftm=new mcrfft1d(m,C, C,C, 1,1, G,H);
+      rcfftm=new mrcfft1d(m,C, C,C, 1,1, H,G);
       Forward=&fftBase::forward2Many;
       Backward=&fftBase::backward2Many;
     }
 
     unsigned int x=Q % D;
     if(x > 0) {
-      crfftm2=new mcrfft1d(m,x, 1,1, e+1,m, G,(double *) H);
-      rcfftm2=new mrcfft1d(m,x, 1,1, m,e+1, (double *) G,H);
+      crfftm2=new mcrfft1d(m,x, 1,1, e+1,m, G,H);
+      rcfftm2=new mrcfft1d(m,x, 1,1, m,e+1, H,G);
     }
 
     if(!inplace)
@@ -1647,10 +1648,8 @@ void Convolution::init(Complex *F, Complex *V)
     } else
       this->V=NULL;
 
-    if(!this->W) {
-      allocateW=true;
-      this->W=ComplexAlign(c);
-    }
+    allocateW=!this->W && !fft->inplace;
+    this->W=allocateW ? ComplexAlign(c) : NULL;
 
     Pad=fft->Pad;
     (fft->*Pad)(this->W);
@@ -1666,12 +1665,11 @@ void Convolution::init(Complex *F, Complex *V)
     } else
       extra=0;
 
-    if(A > B+extra) {
+    if(A > B+extra && !fft->inplace) {
       W0=this->F[B];
       Pad=&fftBase::padNone;
-    } else {
+    } else
       W0=this->W;
-    }
   }
 }
 
