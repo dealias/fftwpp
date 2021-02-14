@@ -1,5 +1,7 @@
 #include "convolve.h"
 
+#define OUTPUT 1
+
 using namespace std;
 using namespace utils;
 using namespace Array;
@@ -29,7 +31,8 @@ int main(int argc, char* argv[])
 
   unsigned int length=ceilquotient(L,2);
   
-  f[0]=1;
+  f[0]=1.0;
+  g[0]=2.0;
   for(unsigned int j=1; j < length; ++j) {
 #if OUTPUT
     f[j]=Complex(j,j+1);

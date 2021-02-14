@@ -35,6 +35,20 @@ void multbinary(Complex **F, unsigned int e, unsigned int threads)
     );
 }
 
+// This multiplication routine is for binary convolutions and takes two inputs
+// of size e.
+// F0[j] *= F1[j];
+void multbinary(double **F, unsigned int e, unsigned int threads)
+{
+  double *F0=F[0];
+  double *F1=F[1];
+
+  PARALLEL(
+    for(unsigned int j=0; j < e; ++j)
+      F0[j] *= F1[j];
+    );
+}
+
 unsigned int nextfftsize(unsigned int m)
 {
   unsigned int N=-1;
@@ -1832,12 +1846,12 @@ HermitianConvolution::~HermitianConvolution()
 }
 
 void HermitianConvolution::convolve0(Complex **f, Complex **h,
-                                     multiplier *mult, unsigned int offset)
+                                     realmultiplier *mult, unsigned int offset)
 {
   if(fft->q == 1) {
     for(unsigned int a=0; a < A; ++a)
       (fft->*Forward)(f[a]+offset,F[a],0,NULL);
-    (*mult)(F,fft->M,threads);
+    (*mult)((double **) F,fft->outputs(),threads);
     for(unsigned int b=0; b < B; ++b)
       (fft->*Backward)(F[b],h[b]+offset,0,NULL);
   } else {
@@ -1855,7 +1869,7 @@ void HermitianConvolution::convolve0(Complex **f, Complex **h,
     for(unsigned int r=0; r < Q; r += D) {
       for(unsigned int a=0; a < A; ++a)
         (fft->*Forward)(f[a]+offset,F[a],r,W);
-      (*mult)(F,c,threads);
+      (*mult)((double **) F,fft->outputs(),threads);
       for(unsigned int b=0; b < B; ++b)
         (fft->*Backward)(F[b],h0[b]+Offset,r,W0);
     }

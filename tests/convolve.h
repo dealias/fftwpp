@@ -483,7 +483,7 @@ public:
   }
 
   unsigned int outputs() {
-    return 2*e*Q;
+    return M;
   }
 };
 
@@ -519,8 +519,11 @@ public:
 
 typedef void multiplier(Complex **, unsigned int e, unsigned int threads);
 
+typedef void realmultiplier(double **, unsigned int e, unsigned int threads);
+
 // Multiplication routine for binary convolutions and taking two inputs of size e.
 void multbinary(Complex **F, unsigned int e, unsigned int threads);
+void multbinary(double **F, unsigned int e, unsigned int threads);
 
 
 class Convolution {
@@ -652,10 +655,10 @@ public:
   // fft->length(), which may coincide with f.
   // offset is applied to each input and output component
 
-  void convolve0(Complex **f, Complex **h, multiplier *mult,
+  void convolve0(Complex **f, Complex **h, realmultiplier *mult,
                  unsigned int offset=0);
 
-  void convolve(Complex **f, Complex **h, multiplier *mult,
+  void convolve(Complex **f, Complex **h, realmultiplier *mult,
                 unsigned int offset=0) {
     convolve0(f,h,mult,offset);
 
