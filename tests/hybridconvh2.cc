@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
 #endif
 
   L=512;
-  M=1024;
+  M=768;
 
   optionsHybrid(argc,argv);
 
@@ -30,41 +30,53 @@ int main(int argc, char* argv[])
   cout << "Mx=" << Mx << endl;
   cout << endl;
 
-//      fftPad fftx(Lx,Mx,Ly,Lx,2,1);
-  fftPad fftx(Lx,Mx,*app,Ly);
+//      fftPadCentered fftx(Lx,Mx,Ly,Lx,2,1);
+  fftPadCentered fftx(Lx,Mx,*app,Ly);
 
-//      fftPad ffty(Ly,My,1,Ly,2,1);
-  fftPad ffty(Ly,My,FB,1);
+//      fftPadHermitian ffty(Ly,My,1,Ly,2,1);
+  fftPadHermitian ffty(Ly,My,FB,1);
 
-  Convolution convolvey(ffty);
+  ConvolutionHermitian convolvey(ffty);
 
   Complex **f=new Complex *[A];
   Complex **h=new Complex *[B];
+  
+  unsigned int Lx0=fftx.inputSize()/Ly;
+  unsigned int Ly0=ffty.inputSize();
+
+  cout << Lx0 << " " << Ly0 << endl;
+  
   for(unsigned int a=0; a < A; ++a)
-    f[a]=ComplexAlign(Lx*Ly);
+    f[a]=ComplexAlign(Lx0*Ly0);
   for(unsigned int b=0; b < B; ++b)
-    h[b]=ComplexAlign(Lx*Ly);
+    h[b]=ComplexAlign(Lx0*Ly0);
+
+  unsigned int ly=ceilquotient(Ly,2);
 
   array2<Complex> f0(Lx,Ly,f[0]);
   array2<Complex> f1(Lx,Ly,f[1]);
 
+  //TODO: Fix lx;
+  
   for(unsigned int i=0; i < Lx; ++i) {
-    for(unsigned int j=0; j < Ly; ++j) {
-      f0[i][j]=Complex(i,j);
-      f1[i][j]=Complex(2*i,j+1);
+    for(unsigned int j=0; j < ly; ++j) {
+      f0[i][j]=Complex(i,j*0);
+      f1[i][j]=Complex(2*i,(j+1)*0);
     }
   }
 
-  if(Lx*Ly < 200) {
+  // TODO: HermitianSymmetrize
+  
+  if(Lx*ly < 200) {
     for(unsigned int i=0; i < Lx; ++i) {
-      for(unsigned int j=0; j < Ly; ++j) {
+      for(unsigned int j=0; j < ly; ++j) {
         cout << f0[i][j] << " ";
       }
       cout << endl;
     }
   }
 
-  Convolution2 Convolve2(fftx,convolvey);
+  ConvolutionHermitian2 Convolve2(fftx,convolvey);
 
   unsigned int K=1000;
   double t0=totalseconds();
@@ -80,7 +92,7 @@ int main(int argc, char* argv[])
 
   Complex sum=0.0;
   for(unsigned int i=0; i < Lx; ++i) {
-    for(unsigned int j=0; j < Ly; ++j) {
+    for(unsigned int j=0; j < ly; ++j) {
       sum += h0[i][j];
     }
   }
@@ -90,7 +102,7 @@ int main(int argc, char* argv[])
 
   if(Lx*Ly < 200) {
     for(unsigned int i=0; i < Lx; ++i) {
-      for(unsigned int j=0; j < Ly; ++j) {
+      for(unsigned int j=0; j < ly; ++j) {
         cout << h0[i][j] << " ";
       }
       cout << endl;

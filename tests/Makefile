@@ -49,7 +49,7 @@ vpath %.cc ../
 
 FILES=conv cconv conv2 cconv2 conv3 cconv3 tconv tconv2 \
 	fft1 fft2 fft3 fft1r fft2r fft3r mfft1 mfft1r transpose \
-	hybrid hybridh hybridconv hybridhconv hybridconv2
+	hybrid hybridh hybridconv hybridconvh hybridconv2 hybridconvh2
 
 FFTW=fftw++
 EXTRA=$(FFTW) convolution explicit direct getopt convolve
@@ -75,10 +75,13 @@ hybridh: hybridh.o $(EXTRA:=.o)
 hybridconv: hybridconv.o $(EXTRA:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-hybridhconv: hybridhconv.o $(EXTRA:=.o)
+hybridconvh: hybridconvh.o $(EXTRA:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 hybridconv2: hybridconv2.o $(EXTRA:=.o)
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
+hybridconvh2: hybridconvh2.o $(EXTRA:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 conv2: conv2.o $(EXTRA:=.o)

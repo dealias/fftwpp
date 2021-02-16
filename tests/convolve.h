@@ -557,8 +557,7 @@ public:
   // TODO: add inplace flag to avoid allocating W.
   Convolution(unsigned int A=2, unsigned int B=1,
               Complex *F=NULL, Complex *V=NULL, Complex *W=NULL) :
-    A(A), B(B), W(W), allocate(false) {
-  }
+    A(A), B(B), W(W), allocate(false) {}
 
   Convolution(fftBase &fft, unsigned int A=2, unsigned int B=1,
               Complex *F=NULL, Complex *V=NULL, Complex *W=NULL) :
@@ -597,7 +596,7 @@ public:
   }
 };
 
-class HermitianConvolution : public Convolution {
+class ConvolutionHermitian : public Convolution {
 public:
   // A is the number of inputs.
   // B is the number of outputs.
@@ -606,7 +605,7 @@ public:
   // W is an optional work array of size fft->workSizeW();
   //   if changed between calls to convolve(), be sure to call pad()
   // TODO: add inplace flag to avoid allocating W.
-  HermitianConvolution(fftPadHermitian &fft, unsigned int A=2,
+  ConvolutionHermitian(fftPadHermitian &fft, unsigned int A=2,
                        unsigned int B=1, Complex *F=NULL, Complex *V=NULL,
                        Complex *W=NULL) : Convolution(A,B,F,V,W) {
     this->fft=&fft;
@@ -617,7 +616,8 @@ public:
 };
 
 class Convolution2 {
-  fftPad *fftx;
+protected:
+  fftBase *fftx;
   Convolution *convolvey;
   unsigned int Sx; // x dimension of Ux buffer
   unsigned int Lx,Ly; // x,y dimensions of input arrays
@@ -636,22 +636,27 @@ class Convolution2 {
   FFTcall Forward,Backward;
 
 public:
+  Convolution2() {}
+
   // Fx is an optional work array of size max(A,B)*fftx->outputSize(),
   Convolution2(fftPad &fftx, Convolution &convolvey, Complex *Fx=NULL) :
     fftx(&fftx), convolvey(&convolvey), allocate(false) {
+    init(Fx);
+  }
 
-    Forward=fftx.Forward;
-    Backward=fftx.Backward;
+  void init(Complex *Fx) {
+    Forward=fftx->Forward;
+    Backward=fftx->Backward;
 
-    A=convolvey.A;
-    B=convolvey.B;
+    A=convolvey->A;
+    B=convolvey->B;
 
-    qx=fftx.q;
-    Qx=fftx.Q;
-    Sx=fftx.m*fftx.p;
-    scale=1.0/(fftx.normalization()*convolvey.fft->normalization());
+    qx=fftx->q;
+    Qx=fftx->Q;
+    Sx=fftx->m*fftx->p; // fftx->b?
+    scale=1.0/(fftx->normalization()*convolvey->fft->normalization());
 
-    unsigned int c=fftx.outputSize();
+    unsigned int c=fftx->outputSize();
     unsigned int N=std::max(A,B);
     this->Fx=new Complex*[N];
     if(Fx) {
@@ -663,8 +668,8 @@ public:
         this->Fx[i]=utils::ComplexAlign(c);
     }
 
-    Lx=fftx.L;
-    Ly=convolvey.L;
+    Lx=fftx->L;
+    Ly=convolvey->L;
   }
 
   // A is the number of inputs.
@@ -694,9 +699,8 @@ public:
       (fftx->*Forward)(f[a],F[a],rx,NULL); // C=Ly <= my py, Dx=1
   }
 
-  void subconvolution(Complex **f, multiplier *mult,
-                      unsigned int C, unsigned int stride,
-                      unsigned int offset=0) {
+  void subconvolution(Complex **f, multiplier *mult, unsigned int C,
+                      unsigned int stride, unsigned int offset=0) {
     for(unsigned int i=0; i < C; ++i)
       convolvey->convolve0(f,f,mult,offset+i*stride);
   }
@@ -718,12 +722,32 @@ public:
     }
     for(unsigned int b=0; b < B; ++b) {
       Complex *hb=h[b];
-      for(unsigned int i=0; i < Lx; ++i)
+      for(unsigned int i=0; i < Lx; ++i) {
+        Complex *hbLy=hb+Ly*i;
         for(unsigned int j=0; j < Ly; ++j)
-          hb[Ly*i+j] *= scale;
+          hbLy[j] *= scale;
+      }
     }
   }
 };
+
+class ConvolutionHermitian2 : public Convolution2 {
+public:
+  // A is the number of inputs.
+  // B is the number of outputs.
+  // F is an optional work array of size max(A,B)*fft->outputSize(),
+  // V is an optional work array of size B*fft->workSizeV() (for inplace usage)
+  // W is an optional work array of size fft->workSizeW();
+  //   if changed between calls to convolve(), be sure to call pad()
+  // TODO: add inplace flag to avoid allocating W.
+  ConvolutionHermitian2(fftPadCentered &fftx, ConvolutionHermitian &convolvey,
+                        Complex *Fx=NULL) {
+    this->fftx=&fftx;
+    this->convolvey=&convolvey;
+    init(Fx);
+  }
+};
+
 
 extern void optionsHybrid(int argc, char* argv[]);
 

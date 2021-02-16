@@ -847,7 +847,7 @@ void fftPad::backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W)
     Complex *Zetamr2=Zetaqm2+Lm*r;
     Complex *Fm=F-m;
     for(unsigned int s=m; s < L; ++s)
-      f[s] += conj(Zetamr2[s])*Fm[s];  // Use a separate table for this case?
+      f[s] += conj(Zetamr2[s])*Fm[s];
   }
 }
 
@@ -1173,7 +1173,7 @@ void fftPadCentered::forward2(Complex *f, Complex *F0, unsigned int r0, Complex 
     for(unsigned int s=mH; s < LH; ++s)
       F[s]=Zetar[s]*(Zetaqr*fmH[s]+fH[s]);
     for(unsigned int s=LH; s < m; ++s)
-      F[s]=Zetar[s]*Zetaqr*fmH[s];
+      F[s]=Zetar[s]*Zetaqr*fmH[s]; // TODO: Can we use Zetaqm2 here?
   }
   (D0 == D ? fftm : fftm2)->fft(W,F0);
 }
@@ -1478,7 +1478,7 @@ void fftPadHermitian::forward2(Complex *f, Complex *F0, unsigned int r0, Complex
     Complex Zetaqr=Zetaq[r];
     Complex *Zetar=Zetaqm+m*r;
     for(unsigned int s=1; s <= e; ++s)
-      F[s]=Zetar[s]*(f[s]+conj(*(fm-s)*Zetaqr));
+      F[s]=Zetar[s]*(f[s]+conj(*(fm-s)*Zetaqr)); // Use Zetaqm2 here?
   }
   (D0 == D ? crfftm : crfftm2)->fft(W,F0);
 }
@@ -1532,23 +1532,34 @@ void fftPadHermitian::backward2(Complex *F0, Complex *f, unsigned int r0, Comple
 
   (D0 == D ? rcfftm : rcfftm2)->fft(F0,W);
 
+  Complex *fm=f+m;
   unsigned int first=r0 == 0;
+  bool even=m == 2*e;
   if(first) {
-    for(unsigned int s=0; s <= e; ++s)
-      f[s]=W[s];
-    for(unsigned int s=1; s < m-e; ++s)
-      f[m-s]=conj(W[s]);
+    f[0]=W[0];
+    for(unsigned int s=1; s < m-e; ++s) {
+      Complex A=W[s];
+      f[s]=A;
+      *(fm-s)=conj(A); // TODO: Optimize f+m lookup?
+    }
+    if(even)
+      f[e]=W[e];
   }
   unsigned int e1=e+1;
+
   for(unsigned int d=first; d < D0; ++d) {
     Complex *F=W+e1*d;
     unsigned int r=r0+d;
     Complex Zetaqr=Zetaq[r];
     Complex *Zetamr=Zetaqm+m*r;
-    for(unsigned int s=0; s <= e; ++s)
-      f[s] += conj(Zetamr[s])*F[s];
-    for(unsigned int s=1; s < m-e; ++s)
-      f[m-s] += Zetamr[s]*conj(Zetaqr*F[s]);
+    f[0] += F[0];
+    for(unsigned int s=1; s < m-e; ++s) {
+      Complex A=conj(Zetamr[s])*F[s];
+      f[s] += A;
+      *(fm-s) += conj(A*Zetaqr);
+    }
+    if(even)
+      f[e] += conj(Zetamr[e])*F[e];
   }
 
   if(W == F0) {
@@ -1570,40 +1581,51 @@ void fftPadHermitian::backward2Many(Complex *F, Complex *f, unsigned int r, Comp
   rcfftm->fft(F,W);
 
   Complex *fm=f+Cm;
-
   if(r == 0) {
-    for(unsigned int s=0; s <= e; ++s) {
-      unsigned int Cs=C*s;
-      Complex *fs=f+Cs;
-      Complex *Ws=W+Cs;
-      for(unsigned int c=0; c < C; ++c)
-        fs[c]=Ws[c];
-    }
+    for(unsigned int c=0; c < C; ++c)
+      f[c]=W[c];
     for(unsigned int s=1; s < m-e; ++s) {
       unsigned int Cs=C*s;
+      Complex *fs=f+Cs;
       Complex *fms=fm-Cs;
       Complex *Ws=W+Cs;
+      for(unsigned int c=0; c < C; ++c) {
+        Complex A=Ws[c];
+        fs[c]=A;
+        fms[c]=conj(A);
+      }
+    }
+    if(m == 2*e) {
+      unsigned int Ce=C*e;
+      Complex *fe=f+Ce;
+      Complex *We=W+Ce;
       for(unsigned int c=0; c < C; ++c)
-        fms[c]=conj(Ws[c]);
+        fe[c]=We[c];
     }
   } else {
-    Complex Zetaqr=conj(Zetaq[r]);
+    for(unsigned int c=0; c < C; ++c)
+      f[c] += W[c];
+    Complex Zetaqr=Zetaq[r];
     Complex *Zetamr=Zetaqm+m*r;
-    for(unsigned int s=0; s <= e; ++s) {
-      unsigned int Cs=C*s;
-      Complex *fs=f+Cs;
-      Complex *Ws=W+Cs;
-      Complex Zetamrs=conj(Zetamr[s]);
-      for(unsigned int c=0; c < C; ++c)
-        fs[c] += Zetamrs*Ws[c];
-    }
     for(unsigned int s=1; s < m-e; ++s) {
       unsigned int Cs=C*s;
+      Complex *fs=f+Cs;
       Complex *fms=fm-Cs;
       Complex *Ws=W+Cs;
-      Complex Zeta=Zetamr[s]*Zetaqr;
+      Complex Zetamrs=conj(Zetamr[s]);
+      for(unsigned int c=0; c < C; ++c) {
+        Complex A=Zetamrs*Ws[c];
+        fs[c] += A;
+        fms[c] += conj(A*Zetaqr);
+      }
+    }
+    if(m == 2*e) {
+      Complex Zetamre=conj(Zetamr[e]);
+      unsigned int Ce=C*e;
+      Complex *fe=f+Ce;
+      Complex *We=W+Ce;
       for(unsigned int c=0; c < C; ++c)
-        fms[c] += Zeta*conj(Ws[c]);
+        fe[c] += Zetamre*We[c];
     }
   }
 
