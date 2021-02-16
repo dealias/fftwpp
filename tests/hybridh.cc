@@ -44,13 +44,12 @@ int main(int argc, char* argv[])
     cout << "optimal ratio=" << mean/mean1 << endl;
   cout << endl;
 
-  Complex *f=ComplexAlign(fft.inputSize());
-
-  unsigned int length=ceilquotient(L,2);
+  unsigned H=ceilquotient(L,2);
+  Complex *f=ComplexAlign(C*H);
 
   for(unsigned int c=0; c < C; ++c)
     f[c]=1;
-  for(unsigned int j=1; j < length; ++j)
+  for(unsigned int j=1; j < H; ++j)
     for(unsigned int c=0; c < C; ++c)
       f[C*j+c]=Complex(j+1,j+1);
 
@@ -72,7 +71,7 @@ int main(int argc, char* argv[])
     cout << endl;
     cout << "Inverse:" << endl;
     double scale=1.0/fft.normalization();
-    for(unsigned int j=0; j < (L+1)/2*C; ++j)
+    for(unsigned int j=0; j < H*C; ++j)
       cout << f[j]*scale << endl;
     cout << endl;
   }

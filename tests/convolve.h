@@ -214,11 +214,6 @@ public:
   virtual void backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
   virtual void backwardInnerMany(Complex *F, Complex *f, unsigned int r, Complex *W) {}
 
-  // input array length
-  virtual unsigned int inputSize() {
-    return std::max(b,C*L);
-  }
-
   unsigned int normalization() {
     return M;
   }
@@ -469,10 +464,6 @@ public:
 
   void backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W);
   void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W);
-
-  unsigned int inputSize() {
-    return C*m;
-  }
 
   unsigned int outputSize() {
     return C*(e+1)*D;

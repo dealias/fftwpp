@@ -25,9 +25,8 @@ int main(int argc, char* argv[])
 
   fftPad fft(L,M,*app);
 
-  unsigned int L0=fft.inputSize();
-  Complex *f=ComplexAlign(L0);
-  Complex *g=ComplexAlign(L0);
+  Complex *f=ComplexAlign(L);
+  Complex *g=ComplexAlign(L);
 
   for(unsigned int j=0; j < L; ++j) {
 #if OUTPUT
@@ -42,7 +41,7 @@ int main(int argc, char* argv[])
   Convolution Convolve(fft);
 
   Complex *F[]={f,g};
-//  Complex *h=ComplexAlign(L0);
+//  Complex *h=ComplexAlign(L);
 //  Complex *H[]={h};
 #if OUTPUT
   unsigned int K=1;

@@ -1,6 +1,6 @@
 #include "convolve.h"
 
-#define OUTPUT 0
+#define OUTPUT 1
 
 using namespace std;
 using namespace utils;
@@ -25,21 +25,20 @@ int main(int argc, char* argv[])
 
   fftPadHermitian fft(L,M,*app);
 
-  unsigned int L0=fft.inputSize();
-  Complex *f=ComplexAlign(L0);
-  Complex *g=ComplexAlign(L0);
-
-  unsigned int l=ceilquotient(L,2);
+  unsigned int H=ceilquotient(L,2);
   
+  Complex *f=ComplexAlign(H);
+  Complex *g=ComplexAlign(H);
+
 #if OUTPUT
   f[0]=1.0;
   g[0]=2.0;
-  for(unsigned int j=1; j < l; ++j) {
+  for(unsigned int j=1; j < H; ++j) {
     f[j]=Complex(j,j+1);
     g[j]=Complex(j,2*j+1);
   }
 #else
-  for(unsigned int j=0; j < l; ++j) {
+  for(unsigned int j=0; j < H; ++j) {
     f[j]=0.0;
     g[j]=0.0;
   }
@@ -48,7 +47,7 @@ int main(int argc, char* argv[])
   ConvolutionHermitian Convolve(fft);
 
   Complex *F[]={f,g};
-//  Complex *h=ComplexAlign(L0);
+//  Complex *h=ComplexAlign(H);
 //  Complex *H[]={h};
 #if OUTPUT
   unsigned int K=1;
@@ -64,7 +63,7 @@ int main(int argc, char* argv[])
   cout << (t-t0)/K << endl;
   cout << endl;
 #if OUTPUT
-  for(unsigned int j=0; j < l; ++j)
+  for(unsigned int j=0; j < H; ++j)
     cout << F[0][j] << endl;
 #endif
 

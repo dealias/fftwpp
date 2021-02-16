@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
     cout << "optimal ratio=" << mean/mean1 << endl;
   cout << endl;
 
-  Complex *f=ComplexAlign(fft.inputSize());
+  Complex *f=ComplexAlign(C*L);
   Complex *F=ComplexAlign(fft.fullOutputSize());
   fft.W0=ComplexAlign(fft.workSizeW());
 
@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
       cout << F[C*j+c] << endl;
 #endif
 
-  Complex *f0=ComplexAlign(fft.inputSize());
+  Complex *f0=ComplexAlign(C*L);
   Complex *F0=ComplexAlign(fft.fullOutputSize());
 
   for(unsigned int j=0; j < fft.outputs(); ++j)

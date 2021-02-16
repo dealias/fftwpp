@@ -40,36 +40,29 @@ int main(int argc, char* argv[])
 
   Complex **f=new Complex *[A];
   Complex **h=new Complex *[B];
-  
-  unsigned int Lx0=fftx.inputSize()/Ly;
-  unsigned int Ly0=ffty.inputSize();
 
-  cout << Lx0 << " " << Ly0 << endl;
-  
+  unsigned int Hy=ceilquotient(Ly,2);
+
   for(unsigned int a=0; a < A; ++a)
-    f[a]=ComplexAlign(Lx0*Ly0);
+    f[a]=ComplexAlign(Lx*Hy);
   for(unsigned int b=0; b < B; ++b)
-    h[b]=ComplexAlign(Lx0*Ly0);
+    h[b]=ComplexAlign(Lx*Hy);
 
-  unsigned int ly=ceilquotient(Ly,2);
+  array2<Complex> f0(Lx,Hy,f[0]);
+  array2<Complex> f1(Lx,Hy,f[1]);
 
-  array2<Complex> f0(Lx,Ly,f[0]);
-  array2<Complex> f1(Lx,Ly,f[1]);
-
-  //TODO: Fix lx;
-  
   for(unsigned int i=0; i < Lx; ++i) {
-    for(unsigned int j=0; j < ly; ++j) {
+    for(unsigned int j=0; j < Hy; ++j) {
       f0[i][j]=Complex(i,j*0);
       f1[i][j]=Complex(2*i,(j+1)*0);
     }
   }
 
   // TODO: HermitianSymmetrize
-  
-  if(Lx*ly < 200) {
+
+  if(Lx*Hy < 200) {
     for(unsigned int i=0; i < Lx; ++i) {
-      for(unsigned int j=0; j < ly; ++j) {
+      for(unsigned int j=0; j < Hy; ++j) {
         cout << f0[i][j] << " ";
       }
       cout << endl;
@@ -82,17 +75,17 @@ int main(int argc, char* argv[])
   double t0=totalseconds();
 
   for(unsigned int k=0; k < K; ++k)
-    Convolve2.convolve(f,h,multbinary);
+    Convolve2.convolve(f,h,realmultbinary);
 
   double t=totalseconds();
   cout << (t-t0)/K << endl;
   cout << endl;
 
-  array2<Complex> h0(Lx,Ly,h[0]);
+  array2<Complex> h0(Lx,Hy,h[0]);
 
   Complex sum=0.0;
   for(unsigned int i=0; i < Lx; ++i) {
-    for(unsigned int j=0; j < ly; ++j) {
+    for(unsigned int j=0; j < Hy; ++j) {
       sum += h0[i][j];
     }
   }
@@ -102,7 +95,7 @@ int main(int argc, char* argv[])
 
   if(Lx*Ly < 200) {
     for(unsigned int i=0; i < Lx; ++i) {
-      for(unsigned int j=0; j < ly; ++j) {
+      for(unsigned int j=0; j < Hy; ++j) {
         cout << h0[i][j] << " ";
       }
       cout << endl;
