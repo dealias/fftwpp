@@ -1,3 +1,5 @@
+using namespace std; // Temporary
+
 /* General implicitly dealiased convolution routines.
    Copyright (C) 2021 John C. Bowman and Noel Murasko, Univ. of Alberta
 
@@ -601,7 +603,6 @@ public:
                        Complex *W=NULL) : Convolution(A,B,F,V,W) {
     this->fft=&fft;
     init(F,V);
-    std::cout << b << " " << fft.b << std::endl;
     b=q > 1 ? fft.Cm*fft.p/2 : fft.Cm;
     noutputs=utils::ceilquotient(L,2);
   }
@@ -611,7 +612,7 @@ class Convolution2 {
 protected:
   fftBase *fftx;
   Convolution *convolvey;
-  unsigned int Sx; // x dimension of Ux buffer
+  unsigned int Sx;    // x dimension of Fx buffer
   unsigned int Lx,Ly; // x,y dimensions of input arrays
   unsigned int A;
   unsigned int B;
@@ -643,12 +644,13 @@ public:
     A=convolvey->A;
     B=convolvey->B;
 
+    unsigned int c=fftx->outputSize();
+
     qx=fftx->q;
     Qx=fftx->Q;
-    Sx=fftx->m*fftx->p; // fftx->b?
+    Sx=c/fftx->C; // Improve
     scale=1.0/(fftx->normalization()*convolvey->fft->normalization());
 
-    unsigned int c=fftx->outputSize();
     unsigned int N=std::max(A,B);
     this->Fx=new Complex*[N];
     if(Fx) {
@@ -737,6 +739,7 @@ public:
     this->fftx=&fftx;
     this->convolvey=&convolvey;
     init(Fx);
+    Ly=utils::ceilquotient(convolvey.L,2);
   }
 };
 

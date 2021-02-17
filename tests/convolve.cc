@@ -1408,10 +1408,10 @@ void fftPadHermitian::backward(Complex *F, Complex *f)
 
 void fftPadHermitian::forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W)
 {
-  unsigned int H0=ceilquotient(L,2);
-  for(unsigned int s=0; s < H0; ++s)
+  unsigned int H=ceilquotient(L,2);
+  for(unsigned int s=0; s < H; ++s)
     F[s]=f[s];
-  for(unsigned int s=H0; s <= e; ++s)
+  for(unsigned int s=H; s <= e; ++s)
     F[s]=0.0;
 
   crfftm->fft(F);
@@ -1419,14 +1419,14 @@ void fftPadHermitian::forwardExplicit(Complex *f, Complex *F, unsigned int, Comp
 
 void fftPadHermitian::forwardExplicitMany(Complex *f, Complex *F, unsigned int, Complex *W)
 {
-  unsigned int H0=ceilquotient(L,2);
-  for(unsigned int s=0; s < H0; ++s) {
+  unsigned int H=ceilquotient(L,2);
+  for(unsigned int s=0; s < H; ++s) {
     Complex *Fs=F+C*s;
     Complex *fs=f+C*s;
     for(unsigned int c=0; c < C; ++c)
       Fs[c]=fs[c];
   }
-  for(unsigned int s=H0; s <= e; ++s) {
+  for(unsigned int s=H; s <= e; ++s) {
     Complex *Fs=F+C*s;
     for(unsigned int c=0; c < C; ++c)
       Fs[c]=0.0;
@@ -1438,8 +1438,8 @@ void fftPadHermitian::forwardExplicitMany(Complex *f, Complex *F, unsigned int, 
 void fftPadHermitian::backwardExplicit(Complex *F, Complex *f, unsigned int, Complex *W)
 {
   rcfftm->fft(F);
-  unsigned int H0=ceilquotient(L,2);
-  for(unsigned int s=0; s < H0; ++s)
+  unsigned int H=ceilquotient(L,2);
+  for(unsigned int s=0; s < H; ++s)
     f[s]=F[s];
 }
 
@@ -1447,8 +1447,8 @@ void fftPadHermitian::backwardExplicitMany(Complex *F, Complex *f,
                                            unsigned int, Complex *W)
 {
   rcfftm->fft(F);
-  unsigned int H0=ceilquotient(L,2);
-  for(unsigned int s=0; s < H0; ++s) {
+  unsigned int H=ceilquotient(L,2);
+  for(unsigned int s=0; s < H; ++s) {
     Complex *fs=f+C*s;
     Complex *Fs=F+C*s;
     for(unsigned int c=0; c < C; ++c)

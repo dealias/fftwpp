@@ -5,6 +5,16 @@ using namespace utils;
 using namespace Array;
 using namespace fftwpp;
 
+inline void HermitianSymmetrizeX(unsigned int mx, unsigned int my,
+                                 unsigned int xorigin, Complex *f)
+{
+  unsigned int offset=xorigin*my;
+  unsigned int stop=mx*my;
+  f[offset].im=0.0;
+  for(unsigned int i=my; i < stop; i += my)
+    f[offset-i]=conj(f[offset+i]);
+}
+
 int main(int argc, char* argv[])
 {
   fftw::maxthreads=1;//get_max_threads();
@@ -30,8 +40,11 @@ int main(int argc, char* argv[])
   cout << "Mx=" << Mx << endl;
   cout << endl;
 
+  unsigned int Hx=ceilquotient(Lx,2);
+  unsigned int Hy=ceilquotient(Ly,2);
+
 //      fftPadCentered fftx(Lx,Mx,Ly,Lx,2,1);
-  fftPadCentered fftx(Lx,Mx,*app,Ly);
+  fftPadCentered fftx(Lx,Mx,*app,Hy);
 
 //      fftPadHermitian ffty(Ly,My,1,Ly,2,1);
   fftPadHermitian ffty(Ly,My,FB,1);
@@ -40,8 +53,6 @@ int main(int argc, char* argv[])
 
   Complex **f=new Complex *[A];
   Complex **h=new Complex *[B];
-
-  unsigned int Hy=ceilquotient(Ly,2);
 
   for(unsigned int a=0; a < A; ++a)
     f[a]=ComplexAlign(Lx*Hy);
@@ -53,12 +64,13 @@ int main(int argc, char* argv[])
 
   for(unsigned int i=0; i < Lx; ++i) {
     for(unsigned int j=0; j < Hy; ++j) {
-      f0[i][j]=Complex(i,j*0);
-      f1[i][j]=Complex(2*i,(j+1)*0);
+      f0[i][j]=Complex(i,j);
+      f1[i][j]=Complex(2*i,(j+1));
     }
   }
 
-  // TODO: HermitianSymmetrize
+  HermitianSymmetrizeX(Hx,Hy,Lx/2,f0);
+  HermitianSymmetrizeX(Hx,Hy,Lx/2,f1);
 
   if(Lx*Hy < 200) {
     for(unsigned int i=0; i < Lx; ++i) {
@@ -93,7 +105,7 @@ int main(int argc, char* argv[])
   cout << "sum=" << sum << endl;
   cout << endl;
 
-  if(Lx*Ly < 200) {
+  if(Lx*Hy < 200) {
     for(unsigned int i=0; i < Lx; ++i) {
       for(unsigned int j=0; j < Hy; ++j) {
         cout << h0[i][j] << " ";
