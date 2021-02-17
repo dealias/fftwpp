@@ -59,16 +59,14 @@ int main(int argc, char* argv[])
 
 #if 0
   for(unsigned int j=0; j < fft.outputs(); ++j)
-    for(unsigned int c=0; c < C; ++c)
-      cout << F[C*j+c] << endl;
+    cout << F[j] << endl;
 #endif
 
   Complex *f0=ComplexAlign(C*L);
   Complex *F0=ComplexAlign(fft.fullOutputSize());
 
   for(unsigned int j=0; j < fft.outputs(); ++j)
-    for(unsigned int c=0; c < C; ++c)
-      F0[C*j+c]=F[C*j+c];
+    F0[j]=F[j];
 
   fft.backward(F0,f0);
 

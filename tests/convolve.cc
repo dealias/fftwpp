@@ -1802,14 +1802,16 @@ void ForwardBackward::init(fftBase &fft)
   F=new Complex*[N];
   h=new Complex*[B];
 
+  unsigned CL=C*L;
+
   for(unsigned int a=0; a < A; ++a)
-    f[a]=ComplexAlign(L);
+    f[a]=ComplexAlign(CL);
 
   for(unsigned int a=0; a < N; ++a)
     F[a]=ComplexAlign(L0);
 
   for(unsigned int b=0; b < B; ++b)
-    h[b]=ComplexAlign(L);
+    h[b]=ComplexAlign(CL);
 
   W=ComplexAlign(fft.workSizeW());
   (fft.*fft.Pad)(W);
@@ -1817,7 +1819,7 @@ void ForwardBackward::init(fftBase &fft)
   // Initialize entire array to 0 to avoid overflow when timing.
   for(unsigned int a=0; a < A; ++a) {
     Complex *fa=f[a];
-    for(unsigned int j=0; j < L; ++j)
+    for(unsigned int j=0; j < CL; ++j)
       fa[j]=0.0;
   }
 }
