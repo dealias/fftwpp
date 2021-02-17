@@ -1357,7 +1357,7 @@ void fftPadHermitian::init()
 
     unsigned int size=outputSize();
     Complex *G=ComplexAlign(size);
-    double *H=inplace ? (double *) G : doubleAlign(C*m);
+    double *H=inplace ? (double *) G : doubleAlign(size);
 
     if(C == 1) {
       crfftm=new mcrfft1d(m,D, 1,1, e+1,m, G,H);
