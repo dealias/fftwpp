@@ -341,11 +341,11 @@ void fftPad::init()
       ifftm=new mfft1d(m,-1,C, C,1, G,H);
     }
 
-    unsigned int extra=Q % D;
-    if(extra > 0) {
-      d=p*extra;
-      fftm2=new mfft1d(m,1,d, 1,m, G,H);
-      ifftm2=new mfft1d(m,-1,d, 1,m, G,H);
+    unsigned int x=Q % D;
+    if(x > 0) {
+      x *= p;
+      fftm2=new mfft1d(m,1,x, 1,m, G,H);
+      ifftm2=new mfft1d(m,-1,x, 1,m, G,H);
     }
 
     if(!inplace)
@@ -1330,7 +1330,7 @@ void fftPadHermitian::init()
 {
   common();
   e=m/2;
-  b=C*e;
+  b=C*(m-e);
   if(q == 1) {
     if(C == 1) {
       Forward=&fftBase::forwardExplicit;
@@ -1361,9 +1361,10 @@ void fftPadHermitian::init()
     Complex *G=ComplexAlign(size);
     double *H=inplace ? (double *) G : doubleAlign(Cm*D);
 
+    unsigned int m0=m+(m % 2);
     if(C == 1) {
-      crfftm=new mcrfft1d(m,D, 1,1, e+1,m, G,H);
-      rcfftm=new mrcfft1d(m,D, 1,1, m,e+1, H,G);
+      crfftm=new mcrfft1d(m,D, 1,1, e+1,m0, G,H);
+      rcfftm=new mrcfft1d(m,D, 1,1, m0,e+1, H,G);
       Forward=&fftBase::forward2;
       Backward=&fftBase::backward2;
     } else {
@@ -1375,8 +1376,8 @@ void fftPadHermitian::init()
 
     unsigned int x=Q % D;
     if(x > 0) {
-      crfftm2=new mcrfft1d(m,x, 1,1, e+1,m, G,H);
-      rcfftm2=new mrcfft1d(m,x, 1,1, m,e+1, H,G);
+      crfftm2=new mcrfft1d(m,x, 1,1, e+1,m0, G,H);
+      rcfftm2=new mrcfft1d(m,x, 1,1, m0,e+1, H,G);
     }
 
     if(!inplace)
@@ -1478,15 +1479,22 @@ void fftPadHermitian::forward2(Complex *f, Complex *F0, unsigned int r0, Complex
   unsigned int e1=e+1;
   for(unsigned int d=first; d < D0; ++d) {
     Complex *F=W+e1*d;
-    for(unsigned int s=0; s < mH1; ++s)
-      F[s]=f[s];
+    F[0]=f[0];
     unsigned int r=r0+d;
-    Complex Zetaqr=Zetaq[r];
     Complex *Zetar=Zetaqm+m*r;
+    for(unsigned int s=1; s < mH1; ++s)
+      F[s]=Zetar[s]*f[s];
+    Complex Zetaqr=Zetaq[r];
     for(unsigned int s=mH1; s <= e; ++s)
       F[s]=Zetar[s]*(f[s]+conj(*(fm-s)*Zetaqr)); // Use Zetaqm2 here?
   }
   (D0 == D ? crfftm : crfftm2)->fft(W,F0);
+  double *Fr=e1+e+(double *) F0;
+  if(m > 2*e) {
+    for(unsigned int d=0; d < D0; ++d) {
+      Fr[2*e1*d]=0.0;
+    }
+  }
 }
 
 void fftPadHermitian::forward2Many(Complex *f, Complex *F, unsigned int r, Complex *W)
@@ -1513,15 +1521,18 @@ void fftPadHermitian::forward2Many(Complex *f, Complex *F, unsigned int r, Compl
         Ws[c]=fs[c]+conj(fms[c]);
     }
   } else {
-    for(unsigned int s=0; s < mH1; ++s) {
+    for(unsigned int c=0; c < C; ++c)
+      W[c]=f[c];
+    Complex *Zetar=Zetaqm+m*r;
+    for(unsigned int s=1; s < mH1; ++s) {
       unsigned int Cs=C*s;
       Complex *Ws=W+Cs;
       Complex *fs=f+Cs;
+      Complex Zetars=Zetar[s];
       for(unsigned int c=0; c < C; ++c)
-        Ws[c]=fs[c];
+        Ws[c]=Zetars*fs[c];
     }
     Complex Zetaqr=Zetaq[r];
-    Complex *Zetar=Zetaqm+m*r;
     for(unsigned int s=mH1; s <= e; ++s) {
       unsigned int Cs=C*s;
       Complex *Ws=W+Cs;
@@ -1544,8 +1555,9 @@ void fftPadHermitian::backward2(Complex *F0, Complex *f, unsigned int r0, Comple
 
   Complex Nyquist[D0];
   if(W == F0) {
+    Complex *F0e=F0+D0*e;
     for(unsigned int d=0; d < D0; ++d)
-      Nyquist[d]=F0[D0*e+d]; // Save before being overwritten
+      Nyquist[d]=F0e[d]; // Save before being overwritten
   }
 
   (D0 == D ? rcfftm : rcfftm2)->fft(F0,W);
@@ -1573,8 +1585,9 @@ void fftPadHermitian::backward2(Complex *F0, Complex *f, unsigned int r0, Comple
     unsigned int r=r0+d;
     Complex Zetaqr=Zetaq[r];
     Complex *Zetamr=Zetaqm+m*r;
-    for(unsigned int s=0; s < mH1; ++s)
-      f[s] += F[s];
+    f[0] += F[0];
+    for(unsigned int s=1; s < mH1; ++s)
+      f[s] += conj(Zetamr[s])*F[s];
     for(unsigned int s=mH1; s < me; ++s) {
       Complex A=conj(Zetamr[s])*F[s];
       f[s] += A;
@@ -1585,8 +1598,9 @@ void fftPadHermitian::backward2(Complex *F0, Complex *f, unsigned int r0, Comple
   }
 
   if(W == F0) {
+    Complex *F0e=F0+D0*e;
     for(unsigned int d=0; d < D0; ++d)
-      F0[D0*e+d]=Nyquist[d]; // Restore initial input of next residue
+      F0e[d]=Nyquist[d]; // Restore initial input of next residue
   }
 }
 
@@ -1596,8 +1610,9 @@ void fftPadHermitian::backward2Many(Complex *F, Complex *f, unsigned int r, Comp
 
   Complex Nyquist[C];
   if(W == F) {
+    Complex *FCe=F+C*e;
     for(unsigned int c=0; c < C; ++c)
-      Nyquist[c]=F[b+c]; // Save before being overwritten
+      Nyquist[c]=FCe[c]; // Save before being overwritten
   }
 
   rcfftm->fft(F,W);
@@ -1633,15 +1648,18 @@ void fftPadHermitian::backward2Many(Complex *F, Complex *f, unsigned int r, Comp
         fe[c]=We[c];
     }
   } else {
-    for(unsigned int s=0; s < mH1; ++s) {
+    for(unsigned int c=0; c < C; ++c)
+      f[c] += W[c];
+    Complex *Zetamr=Zetaqm+m*r;
+    for(unsigned int s=1; s < mH1; ++s) {
       unsigned int Cs=C*s;
       Complex *fs=f+Cs;
       Complex *Ws=W+Cs;
+      Complex Zetamrs=conj(Zetamr[s]);
       for(unsigned int c=0; c < C; ++c)
-        fs[c] += Ws[c];
+        fs[c] += Zetamrs*Ws[c];
     }
     Complex Zetaqr=Zetaq[r];
-    Complex *Zetamr=Zetaqm+m*r;
     for(unsigned int s=mH1; s < me; ++s) {
       unsigned int Cs=C*s;
       Complex *fs=f+Cs;
@@ -1665,8 +1683,9 @@ void fftPadHermitian::backward2Many(Complex *F, Complex *f, unsigned int r, Comp
   }
 
   if(W == F) {
+    Complex *FCe=F+C*e;
     for(unsigned int c=0; c < C; ++c)
-      F[b+c]=Nyquist[c]; // Restore initial input of next residue
+      FCe[c]=Nyquist[c]; // Restore initial input of next residue
   }
 }
 
