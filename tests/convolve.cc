@@ -281,9 +281,10 @@ void fftPad::init()
     }
 
     Complex *G,*H;
+    unsigned int size=m*d;
 
-    G=ComplexAlign(m*d);
-    H=inplace ? G : ComplexAlign(m*d);
+    G=ComplexAlign(size);
+    H=inplace ? G : ComplexAlign(size);
 
     if(twop) {
       unsigned int Lm=L-m;
@@ -1466,19 +1467,23 @@ void fftPadHermitian::forward2(Complex *f, Complex *F0, unsigned int r0, Complex
 
   unsigned int first=r0 == 0;
   Complex *fm=f+m;
+  unsigned int H=ceilquotient(L,2);
+  unsigned int mH1=m-H+1;
   if(first) {
-    W[0]=f[0];
-    for(unsigned int s=1; s <= e; ++s)
+    for(unsigned int s=0; s < mH1; ++s)
+      W[s]=f[s];
+    for(unsigned int s=mH1; s <= e; ++s)
       W[s]=f[s]+conj(*(fm-s));
   }
   unsigned int e1=e+1;
   for(unsigned int d=first; d < D0; ++d) {
     Complex *F=W+e1*d;
-    F[0]=f[0];
+    for(unsigned int s=0; s < mH1; ++s)
+      F[s]=f[s];
     unsigned int r=r0+d;
     Complex Zetaqr=Zetaq[r];
     Complex *Zetar=Zetaqm+m*r;
-    for(unsigned int s=1; s <= e; ++s)
+    for(unsigned int s=mH1; s <= e; ++s)
       F[s]=Zetar[s]*(f[s]+conj(*(fm-s)*Zetaqr)); // Use Zetaqm2 here?
   }
   (D0 == D ? crfftm : crfftm2)->fft(W,F0);
@@ -1489,10 +1494,17 @@ void fftPadHermitian::forward2Many(Complex *f, Complex *F, unsigned int r, Compl
   if(W == NULL) W=F;
 
   Complex *fm=f+Cm;
+  unsigned int H=ceilquotient(L,2);
+  unsigned int mH1=m-H+1;
   if(r == 0) {
-    for(unsigned int c=0; c < C; ++c)
-      W[c]=f[c];
-    for(unsigned int s=1; s <= e; ++s) {
+    for(unsigned int s=0; s < mH1; ++s) {
+      unsigned int Cs=C*s;
+      Complex *Ws=W+Cs;
+      Complex *fs=f+Cs;
+      for(unsigned int c=0; c < C; ++c)
+        Ws[c]=fs[c];
+    }
+    for(unsigned int s=mH1; s <= e; ++s) {
       unsigned int Cs=C*s;
       Complex *Ws=W+Cs;
       Complex *fs=f+Cs;
@@ -1501,11 +1513,16 @@ void fftPadHermitian::forward2Many(Complex *f, Complex *F, unsigned int r, Compl
         Ws[c]=fs[c]+conj(fms[c]);
     }
   } else {
-    for(unsigned int c=0; c < C; ++c)
-      W[c]=f[c];
+    for(unsigned int s=0; s < mH1; ++s) {
+      unsigned int Cs=C*s;
+      Complex *Ws=W+Cs;
+      Complex *fs=f+Cs;
+      for(unsigned int c=0; c < C; ++c)
+        Ws[c]=fs[c];
+    }
     Complex Zetaqr=Zetaq[r];
     Complex *Zetar=Zetaqm+m*r;
-    for(unsigned int s=1; s <= e; ++s) {
+    for(unsigned int s=mH1; s <= e; ++s) {
       unsigned int Cs=C*s;
       Complex *Ws=W+Cs;
       Complex *fs=f+Cs;
@@ -1534,11 +1551,15 @@ void fftPadHermitian::backward2(Complex *F0, Complex *f, unsigned int r0, Comple
   (D0 == D ? rcfftm : rcfftm2)->fft(F0,W);
 
   Complex *fm=f+m;
-  unsigned int first=r0 == 0;
   bool even=m == 2*e;
+  unsigned int me=m-e;
+  unsigned int H=ceilquotient(L,2);
+  unsigned int mH1=m-H+1;
+  unsigned int first=r0 == 0;
   if(first) {
-    f[0]=W[0];
-    for(unsigned int s=1; s < m-e; ++s) {
+    for(unsigned int s=0; s < mH1; ++s)
+      f[s]=W[s];
+    for(unsigned int s=mH1; s < me; ++s) {
       Complex A=W[s];
       f[s]=A;
       *(fm-s)=conj(A); // TODO: Optimize f+m lookup?
@@ -1547,14 +1568,14 @@ void fftPadHermitian::backward2(Complex *F0, Complex *f, unsigned int r0, Comple
       f[e]=W[e];
   }
   unsigned int e1=e+1;
-
   for(unsigned int d=first; d < D0; ++d) {
     Complex *F=W+e1*d;
     unsigned int r=r0+d;
     Complex Zetaqr=Zetaq[r];
     Complex *Zetamr=Zetaqm+m*r;
-    f[0] += F[0];
-    for(unsigned int s=1; s < m-e; ++s) {
+    for(unsigned int s=0; s < mH1; ++s)
+      f[s] += F[s];
+    for(unsigned int s=mH1; s < me; ++s) {
       Complex A=conj(Zetamr[s])*F[s];
       f[s] += A;
       *(fm-s) += conj(A*Zetaqr);
@@ -1582,10 +1603,18 @@ void fftPadHermitian::backward2Many(Complex *F, Complex *f, unsigned int r, Comp
   rcfftm->fft(F,W);
 
   Complex *fm=f+Cm;
+  unsigned int me=m-e;
+  unsigned int H=ceilquotient(L,2);
+  unsigned int mH1=m-H+1;
   if(r == 0) {
-    for(unsigned int c=0; c < C; ++c)
-      f[c]=W[c];
-    for(unsigned int s=1; s < m-e; ++s) {
+    for(unsigned int s=0; s < mH1; ++s) {
+      unsigned int Cs=C*s;
+      Complex *fs=f+Cs;
+      Complex *Ws=W+Cs;
+      for(unsigned int c=0; c < C; ++c)
+        fs[c]=Ws[c];
+    }
+    for(unsigned int s=mH1; s < me; ++s) {
       unsigned int Cs=C*s;
       Complex *fs=f+Cs;
       Complex *fms=fm-Cs;
@@ -1604,11 +1633,16 @@ void fftPadHermitian::backward2Many(Complex *F, Complex *f, unsigned int r, Comp
         fe[c]=We[c];
     }
   } else {
-    for(unsigned int c=0; c < C; ++c)
-      f[c] += W[c];
+    for(unsigned int s=0; s < mH1; ++s) {
+      unsigned int Cs=C*s;
+      Complex *fs=f+Cs;
+      Complex *Ws=W+Cs;
+      for(unsigned int c=0; c < C; ++c)
+        fs[c] += Ws[c];
+    }
     Complex Zetaqr=Zetaq[r];
     Complex *Zetamr=Zetaqm+m*r;
-    for(unsigned int s=1; s < m-e; ++s) {
+    for(unsigned int s=mH1; s < me; ++s) {
       unsigned int Cs=C*s;
       Complex *fs=f+Cs;
       Complex *fms=fm-Cs;

@@ -21,6 +21,8 @@ using namespace std; // Temporary
 // Implement built-in shift for p > 2 centered case
 // Optimize shift when M=2L for p=1
 // Implement 3D convolutions
+// Abort timing when best time exceeded
+// Support out-of-place in fftPadCentered
 // Precompute best D and inline options for each m value
 // Only check m <= M/2 and m=M; how many surplus sizes to check?
 // Use experience or heuristics (sparse distribution?) to determine best m value
