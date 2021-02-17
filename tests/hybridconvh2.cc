@@ -46,8 +46,8 @@ int main(int argc, char* argv[])
 //      fftPadCentered fftx(Lx,Mx,Ly,Lx,2,1);
   fftPadCentered fftx(Lx,Mx,*app,Hy);
 
-//      fftPadHermitian ffty(Ly,My,1,Ly,2,1);
-  fftPadHermitian ffty(Ly,My,FB,1);
+  fftPadHermitian ffty(Ly,My,1,Hy,3,1);
+//  fftPadHermitian ffty(Ly,My,FB,1);
 
   ConvolutionHermitian convolvey(ffty);
 
@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
 
   ConvolutionHermitian2 Convolve2(fftx,convolvey);
 
-  unsigned int K=1000;
+  unsigned int K=10;
   double t0=totalseconds();
 
   for(unsigned int k=0; k < K; ++k)

@@ -219,6 +219,15 @@ int main(int argc, char* argv[])
           h0[i][j]=f[i+!xcompact][j];
     }
 
+    Complex sum=0.0;
+    for(unsigned int i=!xcompact; i < nxp; i++) {
+      for(unsigned int j=0; j < my; j++)
+          sum += f[i][j];
+    }
+    cout << endl;
+    cout << "sum=" << sum << endl;
+    cout << endl;
+
     if(nxp*my < outlimit)
       for(unsigned int i=!xcompact; i < nxp; i++) {
         for(unsigned int j=0; j < my; j++)

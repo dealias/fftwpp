@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
 
   Convolution2 Convolve2(fftx,convolvey);
 
-  unsigned int K=1000;
+  unsigned int K=10;
   double t0=totalseconds();
 
   for(unsigned int k=0; k < K; ++k)

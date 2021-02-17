@@ -1071,6 +1071,7 @@ void fftPadCentered::init()
     }
     fftBase::Forward=Forward;
     fftBase::Backward=Backward;
+    ZetaShift=NULL;
   } else {
     initShift();
     Forward=fftBase::Forward;
@@ -1357,7 +1358,7 @@ void fftPadHermitian::init()
 
     unsigned int size=outputSize();
     Complex *G=ComplexAlign(size);
-    double *H=inplace ? (double *) G : doubleAlign(size);
+    double *H=inplace ? (double *) G : doubleAlign(Cm*D);
 
     if(C == 1) {
       crfftm=new mcrfft1d(m,D, 1,1, e+1,m, G,H);
