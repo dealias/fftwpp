@@ -1330,8 +1330,9 @@ void fftPadHermitian::init()
 {
   common();
   e=m/2;
-  b=C*(m-e);
+
   if(q == 1) {
+    b=C*e;
     if(C == 1) {
       Forward=&fftBase::forwardExplicit;
       Backward=&fftBase::backwardExplicit;
@@ -1348,6 +1349,7 @@ void fftPadHermitian::init()
     deleteAlign(G);
     Q=1;
   } else {
+    b=C*(m-e);
     bool twop=p == 2;
     if(twop)
       initZetaq();
@@ -1489,8 +1491,9 @@ void fftPadHermitian::forward2(Complex *f, Complex *F0, unsigned int r0, Complex
       F[s]=Zetar[s]*(f[s]+conj(*(fm-s)*Zetaqr)); // Use Zetaqm2 here?
   }
   (D0 == D ? crfftm : crfftm2)->fft(W,F0);
-  double *Fr=e1+e+(double *) F0;
+
   if(m > 2*e) {
+    double *Fr=e1+e+(double *) F0;
     for(unsigned int d=0; d < D0; ++d) {
       Fr[2*e1*d]=0.0;
     }

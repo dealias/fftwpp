@@ -605,7 +605,7 @@ public:
                        Complex *W=NULL) : Convolution(A,B,F,V,W) {
     this->fft=&fft;
     init(F,V);
-    b=q > 1 ? fft.Cm*fft.p/2 : fft.Cm;
+    b=q == 1 ? fft.Cm : 2*fft.b;
     noutputs=utils::ceilquotient(L,2);
   }
 };
