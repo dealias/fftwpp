@@ -1,6 +1,6 @@
 #include "convolve.h"
 
-#define OUTPUT 0
+#define OUTPUT 1
 
 using namespace std;
 using namespace utils;
@@ -23,19 +23,21 @@ int main(int argc, char* argv[])
   ForwardBackward FB;
   Application *app=&FB;
 
-  fftPad fft(L,M,*app);
+  fftPad fft(L,M,*app,C);
 
-  Complex *f=ComplexAlign(L);
-  Complex *g=ComplexAlign(L);
+  Complex *f=ComplexAlign(C*L);
+  Complex *g=ComplexAlign(C*L);
 
   for(unsigned int j=0; j < L; ++j) {
+    for(unsigned int c=0; c < C; ++c) {
 #if OUTPUT
-    f[j]=Complex(j,j+1);
-    g[j]=Complex(j,2*j+1);
+      f[C*j+c]=Complex(j,j+1);
+      g[C*j+c]=Complex(j,2*j+1);
 #else
-    f[j]=0.0;
-    g[j]=0.0;
+      f[C*j+c]=0.0;
+      g[C*j+c]=0.0;
 #endif
+    }
   }
 
   Convolution Convolve(fft);
@@ -58,7 +60,8 @@ int main(int argc, char* argv[])
   cout << endl;
 #if OUTPUT
   for(unsigned int j=0; j < L; ++j)
-    cout << F[0][j] << endl;
+    for(unsigned int c=0; c < C; ++c)
+      cout << F[0][C*j+c] << endl;
 #endif
 
   return 0;

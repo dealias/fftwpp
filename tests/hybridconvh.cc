@@ -23,22 +23,26 @@ int main(int argc, char* argv[])
   ForwardBackward FB;
   Application *app=&FB;
 
-  fftPadHermitian fft(L,M,*app);
+  fftPadHermitian fft(L,M,*app,C);
 
   unsigned int H=ceilquotient(L,2);
   
-  Complex *f=ComplexAlign(H);
-  Complex *g=ComplexAlign(H);
+  Complex *f=ComplexAlign(C*H);
+  Complex *g=ComplexAlign(C*H);
 
 #if OUTPUT
-  f[0]=1.0;
-  g[0]=2.0;
+  for(unsigned int c=0; c < C; ++c) {
+    f[c]=1.0;
+    g[c]=2.0;
+  }
   for(unsigned int j=1; j < H; ++j) {
-    f[j]=Complex(j,j+1);
-    g[j]=Complex(j,2*j+1);
+    for(unsigned int c=0; c < C; ++c) {
+      f[C*j+c]=Complex(j,j+1);
+      g[C*j+c]=Complex(j,2*j+1);
+    }
   }
 #else
-  for(unsigned int j=0; j < H; ++j) {
+  for(unsigned int j=0; j < C*H; ++j) {
     f[j]=0.0;
     g[j]=0.0;
   }
@@ -64,7 +68,8 @@ int main(int argc, char* argv[])
   cout << endl;
 #if OUTPUT
   for(unsigned int j=0; j < H; ++j)
-    cout << F[0][j] << endl;
+    for(unsigned int c=0; c < C; ++c)
+      cout << F[0][C*j+c] << endl;
 #endif
 
   return 0;

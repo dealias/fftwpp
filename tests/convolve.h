@@ -239,7 +239,7 @@ public:
   }
 
   unsigned int workSizeV() {
-    return q == 1 || D >= Q || loop2() ? 0 : L;
+    return q == 1 || D >= Q || loop2() ? 0 : C*L;
   }
 
   virtual unsigned int workSizeW() {
@@ -558,7 +558,7 @@ public:
               Complex *F=NULL, Complex *V=NULL, Complex *W=NULL) :
     fft(&fft), A(A), B(B), W(W), allocate(false) {
     init(F,V);
-    noutputs=L;
+    noutputs=C*L;
   }
 
   void init(Complex *F, Complex *V);
@@ -606,7 +606,7 @@ public:
     this->fft=&fft;
     init(F,V);
     b=q == 1 ? fft.Cm : 2*fft.b;
-    noutputs=utils::ceilquotient(L,2);
+    noutputs=C*utils::ceilquotient(L,2);
   }
 };
 
