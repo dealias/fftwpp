@@ -99,7 +99,7 @@ int main(int argc, char* argv[])
   double error2=0.0, norm2=0.0;
 
   unsigned int m=fft.m;
-  unsigned int p=fft.p;
+  unsigned int p=fft.b/(C*m);
   unsigned int n=fft.n;
 
   for(unsigned int s=0; s < m; ++s) {
