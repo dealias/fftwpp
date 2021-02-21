@@ -143,7 +143,7 @@ public:
       Zetaq[r]=expi(r*twopibyq);
   }
 
-  void initZetaqm() {
+  void initZetaqm(unsigned int q) {
     double twopibyM=twopi/M;
     Zetaqm=utils::ComplexAlign((q-1)*m)-m;
     for(unsigned int r=1; r < q; ++r) {
@@ -248,6 +248,10 @@ public:
 
   unsigned int repad() {
     return !inplace && L < m;
+  }
+
+  virtual unsigned int conjugates(unsigned int r) {
+    return 1;
   }
 
   void initialize(Complex *f, Complex *g);
@@ -427,6 +431,8 @@ public:
     double time(unsigned int L, unsigned int M, unsigned int C,
                 unsigned int m, unsigned int q,unsigned int D,
                 Application &app) {
+      D=1; // D > 1 is not yet implemented
+      if(q != 1 && q != 3) return DBL_MAX;
       fftPadHermitian fft(L,M,C,m,q,D);
       return fft.meantime(app);
     }
@@ -470,12 +476,17 @@ public:
   void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W);
 
   unsigned int outputSize() {
-    return C*(e+1)*D;
+    return 2*C*(e+1)*D;
   }
 
   unsigned int fullOutputSize() {
-    return C*(e+1)*Q;
+    return C*(e+1)*Q+1;
   }
+
+  unsigned int conjugates(unsigned int r) {
+    return r == 0 ? 1 : 2;
+  }
+
 };
 
 class ForwardBackward : public Application {

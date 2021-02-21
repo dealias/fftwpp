@@ -170,7 +170,8 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   cout << "Padding:" << m*p-L << endl;
 }
 
-fftBase::~fftBase() {
+fftBase::~fftBase()
+{
   if(q > 1) {
     if(Zetaq)
       deleteAlign(Zetaq);
@@ -352,7 +353,7 @@ void fftPad::init()
       deleteAlign(H);
     deleteAlign(G);
 
-    initZetaqm();
+    initZetaqm(q);
   }
 
   fftBase::Forward=Forward;
@@ -1350,6 +1351,7 @@ void fftPadHermitian::init()
     Q=1;
   } else {
     b=C*(m-e);
+    D=1; // Temporary
     bool twop=p == 2;
     if(twop)
       initZetaq();
@@ -1359,8 +1361,9 @@ void fftPadHermitian::init()
       exit(-1);
     }
 
-    unsigned int size=outputSize();
-    Complex *G=ComplexAlign(size);
+    Q=ceilquotient(q,2);
+
+    Complex *G=ComplexAlign(C*(e+1)*D);
     double *H=inplace ? (double *) G : doubleAlign(Cm*D);
 
     unsigned int m0=m+(m % 2);
@@ -1386,7 +1389,7 @@ void fftPadHermitian::init()
       deleteAlign(H);
     deleteAlign(G);
 
-    initZetaqm();
+    initZetaqm(q/2+1);
   }
 
   fftBase::Forward=Forward;
@@ -1461,14 +1464,12 @@ void fftPadHermitian::backwardExplicitMany(Complex *F, Complex *f,
   }
 }
 
-void fftPadHermitian::forward2(Complex *f, Complex *F0, unsigned int r0, Complex *W)
+void fftPadHermitian::forward2(Complex *f, Complex *F, unsigned int r, Complex *W)
 {
-  if(W == NULL) W=F0;
+  if(W == NULL) W=F;
 
-  unsigned int D0=Q-r0;
-  if(D0 > D) D0=D;
-
-  unsigned int first=r0 == 0;
+  unsigned int e1=e+1;
+  unsigned int first=r == 0;
   Complex *fm=f+m;
   unsigned int H=ceilquotient(L,2);
   unsigned int mH1=m-H+1;
@@ -1477,25 +1478,51 @@ void fftPadHermitian::forward2(Complex *f, Complex *F0, unsigned int r0, Complex
       W[s]=f[s];
     for(unsigned int s=mH1; s <= e; ++s)
       W[s]=f[s]+conj(*(fm-s));
-  }
-  unsigned int e1=e+1;
-  for(unsigned int d=first; d < D0; ++d) {
-    Complex *F=W+e1*d;
-    F[0]=f[0];
-    unsigned int r=r0+d;
-    Complex *Zetar=Zetaqm+m*r;
-    for(unsigned int s=1; s < mH1; ++s)
-      F[s]=Zetar[s]*f[s];
-    Complex Zetaqr=Zetaq[r];
-    for(unsigned int s=mH1; s <= e; ++s)
-      F[s]=Zetar[s]*(f[s]+conj(*(fm-s)*Zetaqr)); // Use Zetaqm2 here?
-  }
-  (D0 == D ? crfftm : crfftm2)->fft(W,F0);
 
-  if(m > 2*e) {
-    double *Fr=e1+e+(double *) F0;
-    for(unsigned int d=0; d < D0; ++d) {
-      Fr[2*e1*d]=0.0;
+    crfftm->fft(W,F);
+
+    if(m > 2*e) {
+      unsigned int offset=e1+e;
+      double *Fr=(double *) F+offset;
+      *Fr=0.0;
+    }
+  } else {
+    Complex *G=F+b*(q-2*r);
+    Complex *V=W == F ? G : W+e1;
+    Complex *Zetar=Zetaqm+m*r;
+    for(unsigned int s=1; s < mH1; ++s) {
+      Complex Zeta=Zetar[s];
+      Complex fs=f[s];
+      Complex A=Zeta*fs.re;
+      Complex B=Zeta*fs.im;
+      W[s]=Complex(A.re-B.im,B.re+A.im);
+      V[s]=Complex(A.re+B.im,B.re-A.im);
+//      W[s]=Zetar[s]*f[s];
+//      V[s]=conj(Zetar[s])*f[s];
+    }
+    Complex Zetaqr=conj(Zetaq[r]);
+    for(unsigned int s=mH1; s <= e; ++s) {
+      Complex Zeta=Zetar[s];
+      Complex fs=f[s];
+      Complex fms=*(fm-s);
+      Complex A=Zeta*(fs.re+Zetaqr*fms.re);
+      Complex B=Zeta*(fs.im-Zetaqr*fms.im);
+      W[s]=Complex(A.re-B.im,B.re+A.im);
+      V[s]=Complex(A.re+B.im,B.re-A.im);
+//      W[s]=Zetar[s]*(f[s]+conj(*(fm-s)*Zetaqr));
+//      V[s]=conj(Zetar[s])*(f[s]+conj(*(fm-s))*Zetaqr);
+    }
+    W[0]=f[0];
+    crfftm->fft(W,F);
+
+    V[0]=f[0];
+    crfftm->fft(V,G);
+
+    if(m > 2*e) {
+      unsigned int offset=e1+e;
+      double *Fr=(double *) F+offset;
+      double *Gr=(double *) G+offset;
+      *Gr=*Fr=0.0;
     }
   }
 }
@@ -1549,61 +1576,75 @@ void fftPadHermitian::forward2Many(Complex *f, Complex *F, unsigned int r, Compl
   crfftm->fft(W,F);
 }
 
-void fftPadHermitian::backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W)
+void fftPadHermitian::backward2(Complex *F, Complex *f, unsigned int r, Complex *W)
 {
-  if(W == NULL) W=F0;
+  if(W == NULL) W=F;
 
-  unsigned int D0=Q-r0;
-  if(D0 > D) D0=D;
+  Complex Nyquist(0,0);
+  if(W == F)
+    Nyquist=F[e]; // Save before being overwritten
 
-  Complex Nyquist[D0];
-  if(W == F0) {
-    Complex *F0e=F0+D0*e;
-    for(unsigned int d=0; d < D0; ++d)
-      Nyquist[d]=F0e[d]; // Save before being overwritten
-  }
-
-  (D0 == D ? rcfftm : rcfftm2)->fft(F0,W);
+  rcfftm->fft(F,W);
 
   Complex *fm=f+m;
   bool even=m == 2*e;
   unsigned int me=m-e;
   unsigned int H=ceilquotient(L,2);
   unsigned int mH1=m-H+1;
-  unsigned int first=r0 == 0;
+  unsigned int first=r == 0;
   if(first) {
     for(unsigned int s=0; s < mH1; ++s)
       f[s]=W[s];
     for(unsigned int s=mH1; s < me; ++s) {
       Complex A=W[s];
       f[s]=A;
-      *(fm-s)=conj(A); // TODO: Optimize f+m lookup?
+      *(fm-s)=conj(A);
     }
     if(even)
       f[e]=W[e];
-  }
-  unsigned int e1=e+1;
-  for(unsigned int d=first; d < D0; ++d) {
-    Complex *F=W+e1*d;
-    unsigned int r=r0+d;
+
+    if(W == F)
+      F[e]=Nyquist; // Restore initial input of next residue
+  } else {
+    unsigned int e1=e+1;
+    Complex *G=F+b*(q-2*r);
+    Complex *V=W == F ? G : W+e1;
+
+    Complex V0;
+    if(W == F) {
+      V0=V[0];
+      V[0]=Nyquist; // Restore initial input of next residue
+      Nyquist=G[e];
+    }
+
+    rcfftm->fft(G,V);
+
+    f[0] += W[0]+V[0];
+
+    if(W == F)
+      V[0]=V0;
+
     Complex Zetaqr=Zetaq[r];
     Complex *Zetamr=Zetaqm+m*r;
-    f[0] += F[0];
-    for(unsigned int s=1; s < mH1; ++s)
-      f[s] += conj(Zetamr[s])*F[s];
+    for(unsigned int s=1; s < mH1; ++s) {
+      Complex Zeta=Zetamr[s];
+      f[s] += conj(Zeta)*W[s]+Zeta*V[s];
+    }
     for(unsigned int s=mH1; s < me; ++s) {
-      Complex A=conj(Zetamr[s])*F[s];
-      f[s] += A;
-      *(fm-s) += conj(A*Zetaqr);
+      Complex Zeta=Zetamr[s];
+      Complex A=conj(Zeta)*W[s];
+      Complex B=Zeta*V[s];
+      f[s] += A+B;
+      *(fm-s) += conj(A*Zetaqr)+conj(B)*Zetaqr;
+//      *(fm-s) += Zeta*conj(W[s])*conj(Zetaqr)+conj(Zeta*V[s])*Zetaqr;
+//      Complex A=conj(Zetamr[s])*W[s]+Zetamr[s]*V[s];
+//        conj(A*Zetaqr);
     }
     if(even)
-      f[e] += conj(Zetamr[e])*F[e];
-  }
+      f[e] += conj(Zetamr[e])*W[e]+Zetamr[e]*V[e];
 
-  if(W == F0) {
-    Complex *F0e=F0+D0*e;
-    for(unsigned int d=0; d < D0; ++d)
-      F0e[d]=Nyquist[d]; // Restore initial input of next residue
+    if(W == F)
+      G[e]=Nyquist; // Restore initial input of next residue
   }
 }
 
@@ -1806,7 +1847,7 @@ void Convolution::convolve0(Complex **f, Complex **h, multiplier *mult,
       }
       for(unsigned int a=B; a < A; ++a)
         (fft->*Forward)(f[a]+offset,Fp[a],D,W);
-      (*mult)(Fp,b*D,threads);
+      (*mult)(Fp,fft->conjugates(1)*b*D,threads);
       for(unsigned int b=0; b < B; ++b)
         (fft->*Backward)(Fp[b],h[b]+offset,D,FpB);
     } else {
@@ -1826,7 +1867,9 @@ void Convolution::convolve0(Complex **f, Complex **h, multiplier *mult,
         if(D0 > D) D0=D;
         for(unsigned int a=0; a < A; ++a)
           (fft->*Forward)(f[a]+offset,F[a],r,W);
-        (*mult)(F,b*D0,threads);
+        (*mult)(F,fft->conjugates(r)*b*D0,threads);
+//                (*mult)(F,r == 0 ? b*D0 : 2*b*D0,threads);
+
         for(unsigned int b=0; b < B; ++b)
           (fft->*Backward)(F[b],h0[b]+Offset,r,W0);
         (fft->*Pad)(W);

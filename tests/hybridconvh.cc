@@ -56,7 +56,7 @@ int main(int argc, char* argv[])
 #if OUTPUT
   unsigned int K=1;
 #else
-  unsigned int K=10000;
+  unsigned int K=1000000;
 #endif
   double t0=totalseconds();
 
