@@ -1353,9 +1353,7 @@ void fftPadHermitian::init()
     b=C*(m-e);
     D=1; // Temporary
     bool twop=p == 2;
-    if(twop)
-      initZetaq();
-    else {
+    if(!twop) {
       cout << "p=" << p << endl;
       cerr << "Unimplemented!" << endl;
       exit(-1);
@@ -1500,13 +1498,14 @@ void fftPadHermitian::forward2(Complex *f, Complex *F, unsigned int r, Complex *
 //      W[s]=Zetar[s]*f[s];
 //      V[s]=conj(Zetar[s])*f[s];
     }
-    Complex Zetaqr=conj(Zetaq[r]);
+    Complex *Zetarm=Zetaqm+m*r+m;
     for(unsigned int s=mH1; s <= e; ++s) {
       Complex Zeta=Zetar[s];
+      Complex Zetam=conj(*(Zetarm-s));
       Complex fs=f[s];
       Complex fms=*(fm-s);
-      Complex A=Zeta*(fs.re+Zetaqr*fms.re);
-      Complex B=Zeta*(fs.im-Zetaqr*fms.im);
+      Complex A=Zeta*fs.re+Zetam*fms.re;
+      Complex B=Zeta*fs.im-Zetam*fms.im;
       W[s]=Complex(A.re-B.im,B.re+A.im);
       V[s]=Complex(A.re+B.im,B.re-A.im);
 //      W[s]=Zetar[s]*(f[s]+conj(*(fm-s)*Zetaqr));
@@ -1624,21 +1623,19 @@ void fftPadHermitian::backward2(Complex *F, Complex *f, unsigned int r, Complex 
     if(W == F)
       V[0]=V0;
 
-    Complex Zetaqr=Zetaq[r];
     Complex *Zetamr=Zetaqm+m*r;
     for(unsigned int s=1; s < mH1; ++s) {
       Complex Zeta=Zetamr[s];
       f[s] += conj(Zeta)*W[s]+Zeta*V[s];
     }
+    Complex *Zetarm=Zetaqm+m*r+m;
     for(unsigned int s=mH1; s < me; ++s) {
       Complex Zeta=Zetamr[s];
-      Complex A=conj(Zeta)*W[s];
-      Complex B=Zeta*V[s];
-      f[s] += A+B;
-      *(fm-s) += conj(A*Zetaqr)+conj(B)*Zetaqr;
-//      *(fm-s) += Zeta*conj(W[s])*conj(Zetaqr)+conj(Zeta*V[s])*Zetaqr;
-//      Complex A=conj(Zetamr[s])*W[s]+Zetamr[s]*V[s];
-//        conj(A*Zetaqr);
+      Complex Zetam=*(Zetarm-s);
+      Complex Ws=W[s];
+      Complex Vs=V[s];
+      f[s] += conj(Zeta)*Ws+Zeta*Vs;
+      *(fm-s) += conj(Zetam*Ws)+Zetam*conj(Vs);
     }
     if(even)
       f[e] += conj(Zetamr[e])*W[e]+Zetamr[e]*V[e];
@@ -1868,8 +1865,6 @@ void Convolution::convolve0(Complex **f, Complex **h, multiplier *mult,
         for(unsigned int a=0; a < A; ++a)
           (fft->*Forward)(f[a]+offset,F[a],r,W);
         (*mult)(F,fft->conjugates(r)*b*D0,threads);
-//                (*mult)(F,r == 0 ? b*D0 : 2*b*D0,threads);
-
         for(unsigned int b=0; b < B; ++b)
           (fft->*Backward)(F[b],h0[b]+Offset,r,W0);
         (fft->*Pad)(W);
