@@ -432,7 +432,7 @@ public:
                 unsigned int m, unsigned int q,unsigned int D,
                 Application &app) {
       D=1; // D > 1 is not yet implemented
-      if(q != 1 && q != 3) return DBL_MAX;
+      if(q != 1 && q != 3) return DBL_MAX; // TEMPORARY
       fftPadHermitian fft(L,M,C,m,q,D);
       return fft.meantime(app);
     }
