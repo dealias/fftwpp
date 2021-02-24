@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
   fftPadHermitian fft(L,M,*app,C);
 
   unsigned int H=ceilquotient(L,2);
-  
+
   Complex *f=ComplexAlign(C*H);
   Complex *g=ComplexAlign(C*H);
 
