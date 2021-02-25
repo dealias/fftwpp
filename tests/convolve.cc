@@ -1924,7 +1924,7 @@ void Convolution::convolve0(Complex **f, Complex **h, multiplier *mult,
     if(loop2) {
       for(unsigned int a=0; a < A; ++a)
         (fft->*Forward)(f[a]+offset,F[a],0,W);
-      (*mult)(F,b*D,threads);
+      (*mult)(F,fft->conjugates(0)*b*D,threads);
 
       for(unsigned int b=0; b < B; ++b) {
         (fft->*Forward)(f[b]+offset,Fp[b],D,W);
