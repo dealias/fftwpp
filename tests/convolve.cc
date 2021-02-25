@@ -1491,10 +1491,14 @@ void fftPadHermitian::forward2(Complex *f, Complex *F, unsigned int r, Complex *
       Complex *G=F+b;
       Complex *V=W == F ? G : W+e1;
 
-      for(unsigned int s=1; s < mH1; ++s)
-        W[s]=V[s]=f[s];
-
       Complex *Zetar=Zetaqm+m*q2;
+
+      for(unsigned int s=1; s < mH1; ++s) {
+        Complex fs=f[s];
+        W[s]=fs;
+        V[s]=Zetar[s]*fs;
+      }
+
       for(unsigned int s=mH1; s <= e; ++s) {
         Complex fs=f[s];
         Complex fms=conj(*(fm-s));
@@ -1663,6 +1667,7 @@ void fftPadHermitian::backward2(Complex *F, Complex *f, unsigned int r, Complex 
         W[e]=We;
 
       Complex *Zetar=Zetaqm+m*q2;
+
       for(unsigned int s=1; s < mH1; ++s)
         f[s]=W[s]+conj(Zetar[s])*V[s];
 
