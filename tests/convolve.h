@@ -254,6 +254,10 @@ public:
     return 1;
   }
 
+  virtual unsigned int blockOffset(unsigned int r) {
+    return b*r;
+  }
+
   void initialize(Complex *f, Complex *g);
 
   double meantime(Application& app, double *Stdev=NULL);
@@ -432,7 +436,6 @@ public:
                 unsigned int m, unsigned int q,unsigned int D,
                 Application &app) {
       D=1; // D > 1 is not yet implemented
-      if(q != 1 && q != 3) return DBL_MAX; // TEMPORARY
       fftPadHermitian fft(L,M,C,m,q,D);
       return fft.meantime(app);
     }
@@ -480,11 +483,16 @@ public:
   }
 
   unsigned int fullOutputSize() {
-    return C*(e+1)*Q+1;
+    return C*(e+1)*q; // FIXME for inner
   }
 
   unsigned int conjugates(unsigned int r) {
-    return r == 0 ? 1 : 2;
+    return r == 0 ? (q % 2 ? 1 : 2) : 2;
+  }
+
+  unsigned int blockOffset(unsigned int r) {
+    return r == 0 ? 0 : b*(conjugates(0)+(r-1)*conjugates(1));
+//    return r == 0 ? 0 : b*(2*r-q % 2);
   }
 
 };
