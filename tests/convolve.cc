@@ -74,8 +74,6 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
   unsigned int q=ceilquotient(M,m);
   unsigned int p=ceilquotient(L,m);
 
-//  if(p != 2) return; // Temporary ***********************************
-
   if(p == q && p > 1 && !mForced) return;
 
   if(!fixed) {
@@ -100,7 +98,6 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
     }
   }
 
-//      if(p % 2 == 0) q=ceilquotient(2*M,p*m);
   if(p != 2 && q % p != 0) return;
 
   unsigned int start=DOption > 0 ? min(DOption,q) : 1;

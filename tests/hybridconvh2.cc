@@ -13,6 +13,13 @@ inline void HermitianSymmetrizeX(unsigned int mx, unsigned int my,
   f[offset].im=0.0;
   for(unsigned int i=my; i < stop; i += my)
     f[offset-i]=conj(f[offset+i]);
+
+  // Zero out Nyquist modes in noncompact case
+  if(xorigin == mx) {
+    unsigned int Nyquist=offset-stop;
+    for(unsigned int j=0; j < my; ++j)
+      f[Nyquist+j]=0.0;
+  }
 }
 
 int main(int argc, char* argv[])

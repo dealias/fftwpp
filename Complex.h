@@ -269,6 +269,25 @@ inline Complex polar(double r, double t)
 }
 
 // Complex exponentiation
+#ifndef _GNU_SOURCE
+inline void sincos(const double x, double *sinx, double *cosx)
+{
+  *sinx=sin(x); *cosx=cos(x);
+}
+#endif
+
+inline Complex expi(double phase)
+{
+  double cosy,siny;
+  sincos(phase,&siny,&cosy);
+  return Complex(cosy,siny);
+}
+
+inline Complex exp(const Complex& z)
+{
+  return exp(z.re)*expi(z.im);
+}
+
 inline Complex pow(const Complex& z, const Complex& w)
 {
   double u=w.re;

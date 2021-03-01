@@ -64,20 +64,6 @@ extern unsigned int M;
 
 extern unsigned int surplusFFTsizes;
 
-#ifndef _GNU_SOURCE
-inline void sincos(const double x, double *sinx, double *cosx)
-{
-  *sinx=sin(x); *cosx=cos(x);
-}
-#endif
-
-inline Complex expi(double phase)
-{
-  double cosy,siny;
-  sincos(phase,&siny,&cosy);
-  return Complex(cosy,siny);
-}
-
 template<class T>
 T pow(T x, unsigned int y)
 {
@@ -334,7 +320,6 @@ public:
 
   void forwardMany(Complex *f, Complex *F, unsigned int r, Complex *W);
 
-  // p=2 && q odd
   void forward2(Complex *f, Complex *F0, unsigned int r0, Complex *W);
 
   void forward2Many(Complex *f, Complex *F, unsigned int r, Complex *W);
@@ -410,7 +395,6 @@ public:
   void forwardShift(Complex *F, unsigned int r0);
   void backwardShift(Complex *F, unsigned int r0);
 
-  // p=2 && q odd
   void forward2(Complex *f, Complex *F0, unsigned int r0, Complex *W);
   void forward2Many(Complex *f, Complex *F, unsigned int r, Complex *W);
 

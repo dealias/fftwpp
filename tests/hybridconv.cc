@@ -1,6 +1,6 @@
 #include "convolve.h"
 
-#define OUTPUT 0
+#define OUTPUT 1
 
 using namespace std;
 using namespace utils;
@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
 #if OUTPUT
   unsigned int K=1;
 #else
-  unsigned int K=10000;
+  unsigned int K=100000;
 #endif
   double t0=totalseconds();
 
