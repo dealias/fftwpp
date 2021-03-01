@@ -625,26 +625,36 @@ protected:
   unsigned int D;
   unsigned int qx,Qx;
   Complex **Fx;
+  Complex *Wx;
   Complex *Fy;
   Complex *Vy;
   Complex *Wy;
   bool allocate;
+  bool allocateW;
   double scale;
 
   FFTcall Forward,Backward;
 
 public:
-  Convolution2() {}
+  Convolution2() : Wx(NULL), allocate(false), allocateW(false) {}
 
   // Fx is an optional work array of size max(A,B)*fftx->outputSize(),
-  Convolution2(fftPad &fftx, Convolution &convolvey, Complex *Fx=NULL) :
-    fftx(&fftx), convolvey(&convolvey), allocate(false) {
+  // Wx is an optional work array of size fftx->workSizeW(),
+  Convolution2(fftPad &fftx, Convolution &convolvey, Complex *Fx=NULL,
+    Complex *Wx=NULL) :
+    fftx(&fftx), convolvey(&convolvey), Wx(Wx), allocate(false),
+    allocateW(false) {
     init(Fx);
   }
 
   void init(Complex *Fx) {
     Forward=fftx->Forward;
     Backward=fftx->Backward;
+
+    if(!fftx->inplace && !Wx) {
+      allocateW=true;
+      Wx=utils::ComplexAlign(fftx->workSizeW());
+    }
 
     A=convolvey->A;
     B=convolvey->B;
@@ -685,6 +695,8 @@ public:
   */
 
   ~Convolution2() {
+    if(allocateW)
+      utils::deleteAlign(Wx);
     unsigned int N=std::max(A,B);
     if(allocate) {
       for(unsigned int i=0; i < N; ++i)
@@ -695,7 +707,7 @@ public:
 
   void forward(Complex **f, Complex **F, unsigned int rx) {
     for(unsigned int a=0; a < A; ++a)
-      (fftx->*Forward)(f[a],F[a],rx,NULL); // C=Ly <= my py, Dx=1
+      (fftx->*Forward)(f[a],F[a],rx,Wx); // C=Ly <= my py, Dx=1
   }
 
   void subconvolution(Complex **f, multiplier *mult, unsigned int C,
@@ -707,7 +719,7 @@ public:
   void backward(Complex **F, Complex **f, unsigned int rx) {
     // TODO: Support out-of-place
     for(unsigned int b=0; b < B; ++b)
-      (fftx->*Backward)(F[b],f[b],rx,NULL);
+      (fftx->*Backward)(F[b],f[b],rx,Wx);
   }
 
 // f is a pointer to A distinct data blocks each of size Lx*Ly,
