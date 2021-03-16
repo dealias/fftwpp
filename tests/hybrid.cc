@@ -1,5 +1,7 @@
 #include "convolve.h"
 
+#define OUTPUT 0
+
 using namespace std;
 using namespace utils;
 using namespace Array;
@@ -57,9 +59,11 @@ int main(int argc, char* argv[])
 
   fft.forward(f,F);
 
-#if 0
-  for(unsigned int j=0; j < fft.outputs(); ++j)
+#if OUTPUT
+  for(unsigned int j=0; j < fft.outputs(); ++j) {
+    if(j % fft.Cm == 0) cout << endl;
     cout << F[j] << endl;
+  }
 #endif
 
   Complex *f0=ComplexAlign(C*L);
@@ -81,6 +85,7 @@ int main(int argc, char* argv[])
   }
 
   fftPad fft2(L,fft.M,C,fft.M,1,1);
+//  fftPadCentered fft2(L,fft.M,C,fft.M,1,1);
   Complex *F2=ComplexAlign(fft2.fullOutputSize());
 
   for(unsigned int j=0; j < L; ++j)
@@ -99,14 +104,22 @@ int main(int argc, char* argv[])
   double error2=0.0, norm2=0.0;
 
   unsigned int m=fft.m;
-  unsigned int p=fft.b/(C*m);
+  unsigned int p=fft.b/(C*m); // effective value
   unsigned int n=fft.n;
+  unsigned int q=fft.q;
 
   for(unsigned int s=0; s < m; ++s) {
     for(unsigned int t=0; t < p; ++t) {
       for(unsigned int r=0; r < n; ++r) {
+        unsigned int R=r,S=s; // FIXME for inner loop.
+        if(fft.D > 1 && fft.p <= 2) {
+          R=fft.residue(r,q);
+          if(fft.p == 1 ? R > q/2 : R >= ceilquotient(q,2))
+            S=s > 0 ? s-1 : m-1;
+        }
+
         for(unsigned int c=0; c < C; ++c) {
-          unsigned int i=C*(n*(p*s+t)+r)+c;
+          unsigned int i=C*(n*(p*S+t)+R)+c;
           error += abs2(F[C*(m*(p*r+t)+s)+c]-F2[i]);
           norm += abs2(F2[i]);
         }

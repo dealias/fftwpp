@@ -17,19 +17,6 @@ using namespace std; // Temporary
    along with this program; if not, write to the Free Software
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA. */
 
-// TODO:
-// Implement built-in shift for p > 2 centered case
-// Optimize shift when M=2L for p=1
-// Implement 3D convolutions
-// Abort timing when best time exceeded
-// Support out-of-place in fftPadCentered
-// Precompute best D and inline options for each m value
-// Only check m <= M/2 and m=M; how many surplus sizes to check?
-// Use experience or heuristics (sparse distribution?) to determine best m value
-// Use power of P values for m when L,M,M-L are powers of P?
-// Multithread
-// Port to MPI
-
 #include <cfloat>
 #include <climits>
 
@@ -102,8 +89,11 @@ public:
   unsigned int p;
   unsigned int q;
   unsigned int n;
-  unsigned int Q;
+  unsigned int Q; // number of residues
+  unsigned int R; // number of residue blocks
+  unsigned int dr; // r increment
   unsigned int D;
+  unsigned int D0; // Remainder
   unsigned int Cm;
   unsigned int b; // Block size
   Complex *W0; // Temporary work memory for testing accuracy
@@ -114,30 +104,14 @@ public:
 
 protected:
   Complex *Zetaqp;
-  Complex *Zetaq;
   Complex *Zetaqm;
   Complex *Zetaqm2;
+  Complex *Zetaqm0;
 public:
 
   void common();
 
-  void initZetaq() {
-    Q=n=q;
-    Zetaq=utils::ComplexAlign(q);
-    double twopibyq=twopi/q;
-    for(unsigned int r=1; r < q; ++r)
-      Zetaq[r]=expi(r*twopibyq);
-  }
-
-  void initZetaqm(unsigned int q) {
-    double twopibyM=twopi/M;
-    Zetaqm=utils::ComplexAlign((q-1)*m)-m;
-    for(unsigned int r=1; r < q; ++r) {
-      Zetaqm[m*r]=1.0;
-      for(unsigned int s=1; s < m; ++s)
-        Zetaqm[m*r+s]=expi(r*s*twopibyM);
-    }
-  }
+  void initZetaqm(unsigned int q, unsigned int m);
 
   class OptBase {
   public:
@@ -147,6 +121,8 @@ public:
     virtual double time(unsigned int L, unsigned int M, unsigned int C,
                         unsigned int m, unsigned int q,unsigned int D,
                         Application &app)=0;
+
+    virtual bool validD(unsigned int D) {return true;}
 
     void check(unsigned int L, unsigned int M,
                Application& app, unsigned int C, unsigned int m,
@@ -177,8 +153,8 @@ public:
   virtual void forwardShifted(Complex *f, Complex *F, unsigned int r, Complex *W) {}
   virtual void backwardShifted(Complex *F, Complex *f, unsigned int r, Complex *W) {}
 
-  virtual void forward(Complex *f, Complex *F)=0;
-  virtual void backward(Complex *F, Complex *f)=0;
+  virtual void forward(Complex *f, Complex *F);
+  virtual void backward(Complex *F, Complex *f);
 
   virtual void forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W)=0;
   virtual void forwardExplicitMany(Complex *f, Complex *F, unsigned int, Complex *W)=0;
@@ -213,19 +189,38 @@ public:
   }
 
   virtual unsigned int fullOutputSize() {
-    return b*Q;
+    return b*D*Q; // Check!
   }
 
   unsigned int outputs() {
     return C*M;
   }
 
+  bool conjugates() {return D > 1 && p <= 2;}
+
+  unsigned int residueBlocks() {
+    return conjugates() ? utils::ceilquotient(Q,2) : Q;
+  }
+
+  unsigned int increment(unsigned int r) {
+    return r > 0 ? dr : (p <= 2 ? utils::ceilquotient(D0,2) : D0);
+  }
+
+  unsigned int blockOffset(unsigned int r) {
+    if(D == 1 || p > 2) return b*r;
+    return r > 0 ? b*(D0+2*(r-utils::ceilquotient(D0,2))) : 0;
+  }
+
+  unsigned int nloops() {
+    return utils::ceilquotient(R,dr);
+  }
+
   bool loop2() {
-    return D < Q && 2*D >= Q && A > B;
+    return nloops() == 2 && A > B;
   }
 
   unsigned int workSizeV() {
-    return q == 1 || D >= Q || loop2() ? 0 : C*L;
+    return q == 1 || nloops() == 1 || loop2() ? 0 : C*L;
   }
 
   virtual unsigned int workSizeW() {
@@ -236,26 +231,21 @@ public:
     return !inplace && L < m;
   }
 
-  virtual unsigned int conjugates(unsigned int r) {
-    return 1;
-  }
-
-  virtual unsigned int blockOffset(unsigned int r) {
-    return b*r;
-  }
-
   void initialize(Complex *f, Complex *g);
 
   double meantime(Application& app, double *Stdev=NULL);
   double report(Application& app);
+
+  unsigned int residue(unsigned int r, unsigned int q);
 };
 
 class fftPad : public fftBase {
 protected:
-  mfft1d *fftm,*fftm2;
-  mfft1d *ifftm,*ifftm2;
+  mfft1d *fftm0,*fftm,*fftm2;
+  mfft1d *ifftm0,*ifftm,*ifftm2;
   mfft1d *fftp;
   mfft1d *ifftp;
+  bool centered;
 public:
   FFTcall Forward,Backward;
 
@@ -269,15 +259,15 @@ public:
     double time(unsigned int L, unsigned int M, unsigned int C,
                 unsigned int m, unsigned int q,unsigned int D,
                 Application &app) {
-      fftPad fft(L,M,C,m,q,D);
+      fftPad fft(L,M,C,m,q,D,false);
       return fft.meantime(app);
     }
   };
 
   // Compute an fft padded to N=m*q >= M >= L
   fftPad(unsigned int L, unsigned int M, unsigned int C,
-         unsigned int m, unsigned int q,unsigned int D) :
-    fftBase(L,M,C,m,q,D) {
+         unsigned int m, unsigned int q,unsigned int D, bool centered=false) :
+    fftBase(L,M,C,m,q,D), centered(centered) {
     init();
   }
 
@@ -285,8 +275,9 @@ public:
   // Compute C ffts of length L and distance 1 padded to at least M
   // (or exactly M if fixed=true)
   fftPad(unsigned int L, unsigned int M, Application& app,
-         unsigned int C=1, bool Explicit=false, bool fixed=false) :
-    fftBase(L,M,app,C,Explicit,fixed) {
+         unsigned int C=1, bool Explicit=false, bool fixed=false,
+         bool centered=false) :
+    fftBase(L,M,app,C,Explicit,fixed), centered(centered) {
     Opt opt=Opt(L,M,app,C,Explicit,fixed);
     m=opt.m;
     if(Explicit)
@@ -306,8 +297,13 @@ public:
   // Explicitly pad C FFTs to m.
   void padMany(Complex *W);
 
-  void forward(Complex *f, Complex *F);
-  void backward(Complex *F, Complex *f);
+  void forward(Complex *f, Complex *F) {
+    fftBase::forward(f,F);
+  }
+
+  void backward(Complex *F, Complex *f) {
+    fftBase::backward(F,f);
+  }
 
   void forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W);
   void forwardExplicitMany(Complex *f, Complex *F, unsigned int, Complex *W);
@@ -360,7 +356,7 @@ public:
     double time(unsigned int L, unsigned int M, unsigned int C,
                 unsigned int m, unsigned int q,unsigned int D,
                 Application &app) {
-      fftPad fft(L,M,C,m,q,D);
+      fftPad fft(L,M,C,m,q,D,true);
       return fft.meantime(app);
     }
   };
@@ -368,7 +364,7 @@ public:
   // Compute an fft padded to N=m*q >= M >= L
   fftPadCentered(unsigned int L, unsigned int M, unsigned int C,
                  unsigned int m, unsigned int q,unsigned int D) :
-    fftPad(L,M,C,m,q,D) {
+    fftPad(L,M,C,m,q,D,true) {
     init();
   }
 
@@ -377,7 +373,7 @@ public:
   // (or exactly M if fixed=true)
   fftPadCentered(unsigned int L, unsigned int M, Application& app,
                  unsigned int C=1, bool Explicit=false, bool fixed=false) :
-    fftPad(L,M,app,C,Explicit,fixed) {
+    fftPad(L,M,app,C,Explicit,fixed,true) {
     init();
   }
 
@@ -404,25 +400,28 @@ public:
 
 class fftPadHermitian : public fftBase {
   unsigned int e;
-  mcrfft1d *crfftm,*crfftm2;
-  mrcfft1d *rcfftm,*rcfftm2;
+  mcrfft1d *crfftm;
+  mrcfft1d *rcfftm;
 public:
   FFTcall Forward,Backward;
 
   class Opt : public OptBase {
   public:
+    virtual bool validD(unsigned int D) {return D == 2;}
+
     Opt(unsigned int L, unsigned int M, Application& app,
         unsigned int C, bool Explicit=false, bool fixed=false) {
       scan(L,M,app,C,Explicit,fixed);
     }
 
     double time(unsigned int L, unsigned int M, unsigned int C,
-                unsigned int m, unsigned int q,unsigned int D,
+                unsigned int m, unsigned int q, unsigned int D,
                 Application &app) {
-      D=1; // D > 1 is not yet implemented
       fftPadHermitian fft(L,M,C,m,q,D);
       return fft.meantime(app);
     }
+
+
   };
 
   fftPadHermitian(unsigned int L, unsigned int M, unsigned int C,
@@ -447,8 +446,13 @@ public:
 
   void init();
 
-  void forward(Complex *f, Complex *F);
-  void backward(Complex *F, Complex *f);
+  void forward(Complex *f, Complex *F) {
+    fftBase::forward(f,F);
+  }
+
+  void backward(Complex *F, Complex *f) {
+    fftBase::backward(F,f);
+  }
 
   void forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W);
   void forwardExplicitMany(Complex *f, Complex *F, unsigned int, Complex *W);
@@ -463,22 +467,12 @@ public:
   void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W);
 
   unsigned int outputSize() {
-    return 2*C*(e+1)*D;
+    return C*(e+1)*D;
   }
 
   unsigned int fullOutputSize() {
     return C*(e+1)*q; // FIXME for inner
   }
-
-  unsigned int conjugates(unsigned int r) {
-    return r == 0 ? (q % 2 ? 1 : 2) : 2;
-  }
-
-  unsigned int blockOffset(unsigned int r) {
-    return r == 0 ? 0 : b*(conjugates(0)+(r-1)*conjugates(1));
-//    return r == 0 ? 0 : b*(2*r-q % 2);
-  }
-
 };
 
 class ForwardBackward : public Application {
@@ -488,6 +482,8 @@ protected:
   FFTcall Forward,Backward;
   unsigned int C;
   unsigned int D;
+  unsigned int D0;
+  unsigned int dr;
   unsigned int Q;
   Complex **f;
   Complex **F;
@@ -528,6 +524,9 @@ protected:
   unsigned int q;
   unsigned int Q;
   unsigned int D;
+  unsigned int R;
+  unsigned int D0;
+  unsigned int dr;
   unsigned int b;
   Complex **F,**Fp;
   Complex *FpB;
@@ -539,6 +538,7 @@ protected:
   bool allocate;
   bool allocateV;
   bool allocateW;
+  unsigned int nloops;
   bool loop2;
   unsigned int noutputs;
 
@@ -552,7 +552,6 @@ public:
   // V is an optional work array of size B*fft->workSizeV() (for inplace usage)
   // W is an optional work array of size fft->workSizeW();
   //   if changed between calls to convolve(), be sure to call pad()
-  // TODO: add inplace flag to avoid allocating W.
   Convolution(unsigned int A=2, unsigned int B=1,
               Complex *F=NULL, Complex *V=NULL, Complex *W=NULL) :
     A(A), B(B), W(W), allocate(false) {}
@@ -572,6 +571,10 @@ public:
     unsigned int size=fft->workSizeV();
     for(unsigned int i=0; i < B; ++i)
       V[i]=utils::ComplexAlign(size);
+  }
+
+  unsigned int increment(unsigned int r) {
+    return fft->increment(r);
   }
 
   ~Convolution();
@@ -602,7 +605,6 @@ public:
   // V is an optional work array of size B*fft->workSizeV() (for inplace usage)
   // W is an optional work array of size fft->workSizeW();
   //   if changed between calls to convolve(), be sure to call pad()
-  // TODO: add inplace flag to avoid allocating W.
   ConvolutionHermitian(fftPadHermitian &fft, unsigned int A=2,
                        unsigned int B=1, Complex *F=NULL, Complex *V=NULL,
                        Complex *W=NULL) : Convolution(A,B,F,V,W) {
@@ -623,7 +625,8 @@ protected:
   unsigned int B;
   unsigned int Q;
   unsigned int D;
-  unsigned int qx,Qx;
+  unsigned int qx;
+  unsigned int Qx; // number of residues
   Complex **Fx;
   Complex *Wx;
   Complex *Fy;
@@ -641,7 +644,7 @@ public:
   // Fx is an optional work array of size max(A,B)*fftx->outputSize(),
   // Wx is an optional work array of size fftx->workSizeW(),
   Convolution2(fftPad &fftx, Convolution &convolvey, Complex *Fx=NULL,
-    Complex *Wx=NULL) :
+               Complex *Wx=NULL) :
     fftx(&fftx), convolvey(&convolvey), Wx(Wx), allocate(false),
     allocateW(false) {
     init(Fx);
@@ -717,7 +720,6 @@ public:
   }
 
   void backward(Complex **F, Complex **f, unsigned int rx) {
-    // TODO: Support out-of-place
     for(unsigned int b=0; b < B; ++b)
       (fftx->*Backward)(F[b],f[b],rx,Wx);
   }
@@ -750,7 +752,6 @@ public:
   // V is an optional work array of size B*fft->workSizeV() (for inplace usage)
   // W is an optional work array of size fft->workSizeW();
   //   if changed between calls to convolve(), be sure to call pad()
-  // TODO: add inplace flag to avoid allocating W.
   ConvolutionHermitian2(fftPadCentered &fftx, ConvolutionHermitian &convolvey,
                         Complex *Fx=NULL) {
     this->fftx=&fftx;

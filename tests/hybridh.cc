@@ -1,5 +1,7 @@
 #include "convolve.h"
 
+#define OUTPUT 1
+
 using namespace std;
 using namespace utils;
 using namespace Array;
@@ -58,11 +60,15 @@ int main(int argc, char* argv[])
   fft.W0=ComplexAlign(fft.workSizeW());
   fft.forward(f,F);
 
+#if OUTPUT
   if(L < 30) {
     double *Fr=(double *) F;
-    for(unsigned int j=0; j < fft.outputs(); ++j)
+    for(unsigned int j=0; j < fft.outputs(); ++j) {
+      if(j % fft.Cm == 0) cout << endl;
       cout << Fr[j] << endl;
+    }
   }
+#endif
 
   fft.backward(F,f);
 
