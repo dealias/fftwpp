@@ -71,8 +71,9 @@ int main(int argc, char* argv[])
 
   for(unsigned int i=0; i < Lx; ++i) {
     for(unsigned int j=0; j < Hy; ++j) {
-      f0[i][j]=Complex(i,j);
-      f1[i][j]=Complex(2*i,(j+1));
+      int I=Lx % 2 ? i : -1+i;
+      f0[i][j]=Complex(I,j);
+      f1[i][j]=Complex(2*I,(j+1));
     }
   }
 

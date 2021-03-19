@@ -627,6 +627,7 @@ protected:
   unsigned int D;
   unsigned int qx;
   unsigned int Qx; // number of residues
+  unsigned int Rx; // number of residue blocks
   Complex **Fx;
   Complex *Wx;
   Complex *Fy;
@@ -666,6 +667,7 @@ public:
 
     qx=fftx->q;
     Qx=fftx->Q;
+    Rx=fftx->R;
     Sx=c/fftx->C; // Improve
     scale=1.0/(fftx->normalization()*convolvey->fft->normalization());
 
@@ -728,7 +730,7 @@ public:
 // shifted by offset (contents not preserved).
   virtual void convolve(Complex **f, Complex **h, multiplier *mult,
                         unsigned int offset=0) {
-    for(unsigned int rx=0; rx < Qx; ++rx) {
+    for(unsigned int rx=0; rx < Rx; rx += fftx->increment(rx)) {
       forward(f,Fx,rx);
       subconvolution(Fx,mult,Sx,Ly,offset);
       backward(Fx,h,rx);

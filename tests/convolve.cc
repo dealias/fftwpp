@@ -13,7 +13,6 @@
 // Use power of P values for m when L,M,M-L are powers of P?
 // Multithread
 // Port to MPI
-// Examine use of conjugate pairs for C > 1?
 
 using namespace std;
 using namespace utils;
