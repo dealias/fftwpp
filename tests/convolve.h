@@ -153,9 +153,6 @@ public:
   virtual void forwardShifted(Complex *f, Complex *F, unsigned int r, Complex *W) {}
   virtual void backwardShifted(Complex *F, Complex *f, unsigned int r, Complex *W) {}
 
-  virtual void forward(Complex *f, Complex *F);
-  virtual void backward(Complex *F, Complex *f);
-
   virtual void forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W)=0;
   virtual void forwardExplicitMany(Complex *f, Complex *F, unsigned int, Complex *W)=0;
 
@@ -298,11 +295,14 @@ public:
   void padMany(Complex *W);
 
   void forward(Complex *f, Complex *F) {
-    fftBase::forward(f,F);
+    (this->*Pad)(W0);
+    for(unsigned int r=0; r < R; r += increment(r))
+      (this->*Forward)(f,F+blockOffset(r),r,W0);
   }
 
   void backward(Complex *F, Complex *f) {
-    fftBase::backward(F,f);
+    for(unsigned int r=0; r < R; r += increment(r))
+      (this->*Backward)(F+blockOffset(r),f,r,W0);
   }
 
   void forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W);
@@ -447,11 +447,13 @@ public:
   void init();
 
   void forward(Complex *f, Complex *F) {
-    fftBase::forward(f,F);
+    for(unsigned int r=0; r < R; r += increment(r))
+      (this->*Forward)(f,F+blockOffset(r),r,W0);
   }
 
   void backward(Complex *F, Complex *f) {
-    fftBase::backward(F,f);
+    for(unsigned int r=0; r < R; r += increment(r))
+      (this->*Backward)(F+blockOffset(r),f,r,W0);
   }
 
   void forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W);

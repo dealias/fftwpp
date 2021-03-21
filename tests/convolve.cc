@@ -269,19 +269,6 @@ void fftBase::common()
   Zetaqp=NULL;
 }
 
-void fftBase::forward(Complex *f, Complex *F)
-{
-  (this->*Pad)(W0);
-  for(unsigned int r=0; r < R; r += increment(r))
-    (this->*Forward)(f,F+blockOffset(r),r,W0);
-}
-
-void fftBase::backward(Complex *F, Complex *f)
-{
-  for(unsigned int r=0; r < R; r += increment(r))
-    (this->*Backward)(F+blockOffset(r),f,r,W0);
-}
-
 unsigned int fftBase::residue(unsigned int r, unsigned int q)
 {
   if(r == 0) return 0;
