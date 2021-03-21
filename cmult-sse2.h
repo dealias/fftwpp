@@ -102,6 +102,11 @@ static inline Vec LOAD(double x)
   return _mm_load1_pd(&x);
 }
 
+static inline Vec LOADFLIP(const Complex *z)
+{
+  return _mm_loadr_pd((double *) z);
+}
+
 static inline Vec SQRT(const Vec& z)
 {
   return _mm_sqrt_pd(z);
@@ -183,6 +188,11 @@ static inline Vec LOAD(double x)
   return Vec(x,x);
 }
 
+static inline Vec LOADFLIP(const Complex *z)
+{
+  return Vec(z->y,z->x);
+}
+
 static inline Vec SQRT(const Vec& z)
 {
   return Vec(sqrt(z.x),sqrt(z.y));
@@ -219,38 +229,43 @@ static inline Vec ZMULTI(const Vec& z)
 // Return the complex product of z and w.
 static inline Vec ZMULT(const Vec& z, const Vec& w)
 {
-  return w*UNPACKL(z,z)+UNPACKH(z,z)*ZMULTI(w);
+  return UNPACKL(z,z)*w+UNPACKH(-z,z)*FLIP(w);
 }
 
 // Return the complex product of CONJ(z) and w.
 static inline Vec ZMULTC(const Vec& z, const Vec& w)
 {
-  return w*UNPACKL(z,z)-UNPACKH(z,z)*ZMULTI(w);
+  return UNPACKL(z,z)*w+UNPACKH(z,-z)*FLIP(w);
 }
 
 // Return the complex product of z and I*w.
 static inline Vec ZMULTI(const Vec& z, const Vec& w)
 {
-  return ZMULTI(w)*UNPACKL(z,z)-UNPACKH(z,z)*w;
+  return UNPACKL(-z,z)*FLIP(w)-UNPACKH(z,z)*w;
 }
 
 // Return the complex product of CONJ(z) and I*w.
 static inline Vec ZMULTIC(const Vec& z, const Vec& w)
 {
-  return ZMULTI(w)*UNPACKL(z,z)+UNPACKH(z,z)*w;
+  return UNPACKL(-z,z)*FLIP(w)+UNPACKH(z,z)*w;
 }
 
-// Return the complex product of z and w given x=(z.re,z.re), y=(-z.im,z.im).
+// Return ZMULTC(z,w)+ZMULT(z,v).
+static inline Vec ZMULT2(const Vec& z, const Vec& w, const Vec& v)
+{
+  return UNPACKL(z,z)*(w+v)+UNPACKH(z,-z)*FLIP(w-v);
+}
+
+// Return the complex product of z and w given x=(z.re,z.re), y=(z.im,-z.im).
 static inline Vec ZMULT(const Vec& x, const Vec& y, const Vec& w)
 {
-  return x*w+y*FLIP(w);
+  return x*w-y*FLIP(w);
 }
 
-// Return the complex product of z and I*w given x=(z.re,z.re), y=(-z.im,z.im).
+// Return the complex product of z and I*w given x=(z.re,-z.re), y=(z.im,z.im).
 static inline Vec ZMULTI(const Vec& x, const Vec& y, const Vec& w)
 {
-  Vec z=CONJ(w);
-  return x*FLIP(z)+y*z;
+  return FLIP(x*w)-y*w;
 }
 
 }
