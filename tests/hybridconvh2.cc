@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
 
   ConvolutionHermitian2 Convolve2(fftx,convolvey);
 
-  unsigned int K=10;
+  unsigned int K=500;
   double t0=totalseconds();
 
   for(unsigned int k=0; k < K; ++k)
