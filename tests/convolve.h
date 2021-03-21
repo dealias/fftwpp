@@ -343,9 +343,6 @@ public:
 class fftPadCentered : public fftPad {
   Complex *ZetaShift;
 public:
-  FFTcall Forward,Backward;
-  FFTcall ForwardShifted,BackwardShifted;
-
   class Opt : public OptBase {
   public:
     Opt(unsigned int L, unsigned int M, Application& app,
@@ -403,7 +400,6 @@ class fftPadHermitian : public fftBase {
   mcrfft1d *crfftm;
   mrcfft1d *rcfftm;
 public:
-  FFTcall Forward,Backward;
 
   class Opt : public OptBase {
   public:

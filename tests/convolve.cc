@@ -1328,11 +1328,8 @@ void fftPadCentered::init()
     ZetaShift=NULL;
   } else {
     initShift();
-    Forward=fftBase::Forward;
-    Backward=fftBase::Backward;
-
-    fftBase::Forward=&fftBase::forwardShifted;
-    fftBase::Backward=&fftBase::backwardShifted;
+    Forward=&fftBase::forwardShifted;
+    Backward=&fftBase::backwardShifted;
   }
 }
 
@@ -1350,14 +1347,14 @@ void fftPadCentered::initShift()
 
 void fftPadCentered::forwardShifted(Complex *f, Complex *F, unsigned int r, Complex *W)
 {
-  (this->*Forward)(f,F,r,W);
+  (this->*fftBase::Forward)(f,F,r,W);
   forwardShift(F,r);
 }
 
 void fftPadCentered::backwardShifted(Complex *F, Complex *f, unsigned int r, Complex *W)
 {
   backwardShift(F,r);
-  (this->*Backward)(F,f,r,W);
+  (this->*fftBase::Backward)(F,f,r,W);
 }
 
 void fftPadCentered::forwardShift(Complex *F, unsigned int r0) {
