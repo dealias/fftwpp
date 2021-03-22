@@ -617,7 +617,7 @@ class Convolution2 {
 protected:
   fftBase *fftx;
   Convolution *convolvey;
-  unsigned int Sx;    // x dimension of Fx buffer
+  unsigned int Nx;    // x dimension of Fx buffer
   unsigned int Lx,Ly; // x,y dimensions of input arrays
   unsigned int A;
   unsigned int B;
@@ -666,7 +666,7 @@ public:
     qx=fftx->q;
     Qx=fftx->Q;
     Rx=fftx->R;
-    Sx=c/fftx->C; // Improve
+    Nx=c/fftx->C; // Improve
     scale=1.0/(fftx->normalization()*convolvey->fft->normalization());
 
     unsigned int N=std::max(A,B);
@@ -730,7 +730,7 @@ public:
                         unsigned int offset=0) {
     for(unsigned int rx=0; rx < Rx; rx += fftx->increment(rx)) {
       forward(f,Fx,rx);
-      subconvolution(Fx,mult,Sx,Ly,offset);
+      subconvolution(Fx,mult,Nx,Ly,offset);
       backward(Fx,h,rx);
     }
     for(unsigned int b=0; b < B; ++b) {
