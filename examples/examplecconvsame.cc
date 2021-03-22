@@ -91,7 +91,7 @@ static void multbinarysame(Complex **F, unsigned int m,
         Vec Zeta=LOAD(ZetaH+a);
         Vec X=UNPACKL(Zeta,Zeta);
         Vec Y=UNPACKH(CONJ(Zeta),Zeta);
-        STORE(F0j,ZMULTC(ZMULT(X,Y,LOAD(ZetaL+index-s*a)),h));
+        STORE(F0j,ZCMULT(ZMULT(X,Y,LOAD(ZetaL+index-s*a)),h));
       }
       );
   }

@@ -104,9 +104,14 @@ static inline Vec REFL(const Vec& z)
   return _mm_xor_pd(sse2_mp.v,z);
 }
 
-static inline Vec LOAD(double x)
+static inline Vec LOAD2(double x)
 {
   return _mm_load1_pd(&x);
+}
+
+static inline Vec LOAD(double x)
+{
+  return _mm_load_sd(&x);
 }
 
 static inline Vec LOADFLIP(const Complex *z)
@@ -195,9 +200,14 @@ static inline Vec REFL(const Vec& z)
   return Vec(-z.x,z.y);
 }
 
-static inline Vec LOAD(double x)
+static inline Vec LOAD2(double x)
 {
   return Vec(x,x);
+}
+
+static inline Vec LOAD(double x)
+{
+  return Vec(x,0.0);
 }
 
 static inline Vec LOADFLIP(const Complex *z)
@@ -241,31 +251,31 @@ static inline Vec ZMULTI(const Vec& z)
 // Return the complex product of z and w.
 static inline Vec ZMULT(const Vec& z, const Vec& w)
 {
-  return UNPACKL(z,z)*w+UNPACKH(-z,z)*FLIP(w);
+  return UNPACKL(z,z)*w+REFL(UNPACKH(z,z))*FLIP(w);
 }
 
 // Return the complex product of CONJ(z) and w.
 static inline Vec ZCMULT(const Vec& z, const Vec& w)
 {
-  return UNPACKL(z,z)*w+UNPACKH(z,-z)*FLIP(w);
+  return UNPACKL(z,z)*w+CONJ(UNPACKH(z,z))*FLIP(w);
 }
 
 // Return the complex product of z and I*w.
 static inline Vec ZMULTI(const Vec& z, const Vec& w)
 {
-  return UNPACKL(-z,z)*FLIP(w)-UNPACKH(z,z)*w;
+  return REFL(UNPACKL(z,z))*FLIP(w)-UNPACKH(z,z)*w;
 }
 
 // Return the complex product of CONJ(z) and I*w.
 static inline Vec ZCMULTI(const Vec& z, const Vec& w)
 {
-  return UNPACKL(-z,z)*FLIP(w)+UNPACKH(z,z)*w;
+  return REFL(UNPACKL(z,z))*FLIP(w)+UNPACKH(z,z)*w;
 }
 
 // Return ZCMULT(z,w)+ZMULT(z,v).
 static inline Vec ZMULT2(const Vec& z, const Vec& w, const Vec& v)
 {
-  return UNPACKL(z,z)*(w+v)+UNPACKH(z,-z)*FLIP(w-v);
+  return UNPACKL(z,z)*(w+v)+CONJ(UNPACKH(z,z))*FLIP(w-v);
 }
 
 // Return the complex product of z and w given x=(z.re,z.re), y=(z.im,-z.im).

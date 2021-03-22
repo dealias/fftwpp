@@ -604,9 +604,11 @@ void fftPad::forwardMany(Complex *f, Complex *F, unsigned int r, Complex *W) {
       unsigned Cs=C*s;
       Complex *Fs=W+Cs;
       Complex *fs=f+Cs;
-      Complex Zetars=Zetar[s];
+      Vec Zeta=LOAD(Zetar+s);
+      Vec X=UNPACKL(Zeta,Zeta);
+      Vec Y=CONJ(UNPACKH(Zeta,Zeta));
       for(unsigned int c=0; c < C; ++c)
-        Fs[c]=Zetars*fs[c];
+        STORE(Fs+c,ZMULT(X,Y,LOAD(fs+c)));
     }
   }
   fftm->fft(W,F);
@@ -680,14 +682,16 @@ void fftPad::forward2(Complex *f, Complex *F0, unsigned int r0, Complex *W)
       Complex *F=W+2*m*d;
       Complex *G=F+m;
       unsigned int r=r0+d;
-      Complex *Zetar2=Zetaqm2+Lm*r+m;
-      Complex Zeta2=Zetar2[0];
-      Complex *fm=f+m;
-      Complex f0=f[0];
-      Complex fm0=fm[0];
-      F[0]=f0+Zeta2*fm0;
-      G[0]=f0+conj(Zeta2)*fm0;
       Complex *Zetar=Zetaqm+m*r;
+      Complex *Zetar2=Zetaqm2+Lm*r+m;
+      Complex *fm=f+m;
+      Vec fs=LOAD(f);
+      Vec fms=LOAD(fm);
+      Vec Zetam=LOAD(Zetar2);
+      Vec A=Zetam*UNPACKL(fms,fms);
+      Vec B=ZMULTI(Zetam*UNPACKH(fms,fms));
+      STORE(F,fs+A+B);
+      STORE(G,fs+CONJ(A-B));
       for(unsigned int s=1; s < Lm; ++s) {
 //        F[s]=Zetar[s]*fs+Zetar2[s]*fms;
 //        G[s]=conj(Zetar[s])*fs+conj(Zetar2[s])*fms;
