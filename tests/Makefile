@@ -52,10 +52,11 @@ FILES=conv cconv conv2 cconv2 conv3 cconv3 tconv tconv2 \
 	hybrid hybridh hybridconv hybridconvh hybridconv2 hybridconvh2
 
 FFTW=fftw++
-EXTRA=$(FFTW) convolution explicit direct getopt convolve
+EXTRA=$(FFTW) convolution explicit direct getopt
+HYBRID=$(FFTW) convolve getopt
 ALL=$(FILES) $(EXTRA)
 
-all: $(FILES) $(HYBRID)
+all: $(FILES)
 
 %.o : %.cc
 	$(CXX) $(CXXFLAGS) -o $@ -c $<
@@ -66,22 +67,22 @@ conv: conv.o $(EXTRA:=.o)
 cconv: cconv.o $(EXTRA:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-hybrid: hybrid.o $(EXTRA:=.o)
+hybrid: hybrid.o $(HYBRID:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-hybridh: hybridh.o $(EXTRA:=.o)
+hybridh: hybridh.o $(HYBRID:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-hybridconv: hybridconv.o $(EXTRA:=.o)
+hybridconv: hybridconv.o $(HYBRID:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-hybridconvh: hybridconvh.o $(EXTRA:=.o)
+hybridconvh: hybridconvh.o $(HYBRID:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-hybridconv2: hybridconv2.o $(EXTRA:=.o)
+hybridconv2: hybridconv2.o $(HYBRID:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-hybridconvh2: hybridconvh2.o $(EXTRA:=.o)
+hybridconvh2: hybridconvh2.o $(HYBRID:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 conv2: conv2.o $(EXTRA:=.o)
