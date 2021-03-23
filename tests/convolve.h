@@ -98,10 +98,8 @@ public:
   unsigned int b; // Block size
   Complex *W0; // Temporary work memory for testing accuracy
   bool inplace;
-
   FFTcall Forward,Backward;
   FFTPad Pad;
-
 protected:
   Complex *Zetaqp;
   Complex *Zetaqm;
@@ -244,7 +242,6 @@ protected:
   mfft1d *ifftp;
   bool centered;
 public:
-  FFTcall Forward,Backward;
 
   class Opt : public OptBase {
   public:
@@ -342,7 +339,9 @@ public:
 
 class fftPadCentered : public fftPad {
   Complex *ZetaShift;
+  FFTcall fftBaseForward,fftBaseBackward;
 public:
+
   class Opt : public OptBase {
   public:
     Opt(unsigned int L, unsigned int M, Application& app,
@@ -477,7 +476,6 @@ class ForwardBackward : public Application {
 protected:
   unsigned int A;
   unsigned int B;
-  FFTcall Forward,Backward;
   unsigned int C;
   unsigned int D;
   unsigned int D0;
@@ -487,7 +485,7 @@ protected:
   Complex **F;
   Complex **h;
   Complex *W;
-
+  FFTcall Forward,Backward;
 public:
   ForwardBackward(unsigned int A=2, unsigned int B=1) :
     A(A), B(B), f(NULL), F(NULL), h(NULL), W(NULL) {
@@ -539,10 +537,8 @@ protected:
   unsigned int nloops;
   bool loop2;
   unsigned int noutputs;
-
   FFTcall Forward,Backward;
   FFTPad Pad;
-
 public:
   // A is the number of inputs.
   // B is the number of outputs.
@@ -634,9 +630,7 @@ protected:
   bool allocate;
   bool allocateW;
   double scale;
-
   FFTcall Forward,Backward;
-
 public:
   Convolution2() : Wx(NULL), allocate(false), allocateW(false) {}
 

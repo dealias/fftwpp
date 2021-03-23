@@ -410,9 +410,6 @@ void fftPad::init()
 
     initZetaqm(q,centered && p == 2 ? m+1 : m);
   }
-
-  fftBase::Forward=Forward;
-  fftBase::Backward=Backward;
 }
 
 fftPad:: ~fftPad() {
@@ -1341,14 +1338,16 @@ void fftPadCentered::init()
       Forward=&fftBase::forward2Many;
       Backward=&fftBase::backward2Many;
     }
-    fftBase::Forward=Forward;
-    fftBase::Backward=Backward;
+    Forward=Forward;
+    Backward=Backward;
     ZetaShift=NULL;
   } else {
     initShift();
+    fftBaseForward=Forward;
+    fftBaseBackward=Backward;
     Forward=&fftBase::forwardShifted;
     Backward=&fftBase::backwardShifted;
-  }
+   }
 }
 
 void fftPadCentered::initShift()
@@ -1365,14 +1364,14 @@ void fftPadCentered::initShift()
 
 void fftPadCentered::forwardShifted(Complex *f, Complex *F, unsigned int r, Complex *W)
 {
-  (this->*fftBase::Forward)(f,F,r,W);
+  (this->*fftBaseForward)(f,F,r,W);
   forwardShift(F,r);
 }
 
 void fftPadCentered::backwardShifted(Complex *F, Complex *f, unsigned int r, Complex *W)
 {
   backwardShift(F,r);
-  (this->*fftBase::Backward)(F,f,r,W);
+  (this->*fftBaseBackward)(F,f,r,W);
 }
 
 void fftPadCentered::forwardShift(Complex *F, unsigned int r0) {
@@ -1829,9 +1828,6 @@ void fftPadHermitian::init()
 
     initZetaqm(q/2+1,m);
   }
-
-  fftBase::Forward=Forward;
-  fftBase::Backward=Backward;
 }
 
 fftPadHermitian::~fftPadHermitian()
