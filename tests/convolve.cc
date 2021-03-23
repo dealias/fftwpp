@@ -408,7 +408,7 @@ void fftPad::init()
       deleteAlign(H);
     deleteAlign(G);
 
-    initZetaqm(q,centered ? m+1 : m);
+    initZetaqm(q,centered && p == 2 ? m+1 : m);
   }
 
   fftBase::Forward=Forward;
@@ -1378,7 +1378,7 @@ void fftPadCentered::backwardShifted(Complex *F, Complex *f, unsigned int r, Com
 void fftPadCentered::forwardShift(Complex *F, unsigned int r0) {
   unsigned int dr0=r0 == 0 ? D0 : D;
   for(unsigned int d=0; d < dr0; ++d) {
-    Complex *W=F+m*d;
+    Complex *W=F+b*d;
     unsigned int r=r0+d;
     for(unsigned int t=0; t < p; ++t) {
       Complex *Zetar=ZetaShift+n*t+r;
@@ -1396,7 +1396,7 @@ void fftPadCentered::backwardShift(Complex *F, unsigned int r0)
 {
   unsigned int dr0=r0 == 0 ? D0 : D;
   for(unsigned int d=0; d < dr0; ++d) {
-    Complex *W=F+m*d;
+    Complex *W=F+b*d;
     unsigned int r=r0+d;
     for(unsigned int t=0; t < p; ++t) {
       Complex *Zetar=ZetaShift+n*t+r;
