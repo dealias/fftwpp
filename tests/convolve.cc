@@ -256,7 +256,6 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
         while(m0 > ub)
           m0=prevfftsize(m0-1,mixed);
         }
-      cout << m0 <<endl;
       if(Explicit) {
         if(m0 > stop) break;
         if(m0 < M) {++i; continue;}
