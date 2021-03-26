@@ -248,16 +248,15 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   else
     while(true){
       m0=prevfftsize(m0-1,mixed);
-      if(mixed == true){
-        if(m0 < L/2) mixed = false;
-        else if(m0 < lb){
-          lb=M/denom;
-          ub=Mmore/denom;
-          denom++;
-          while(m0 > ub)
-            m0=prevfftsize(m0-1);
-          }
+      if(mixed == true && m0 < L/2) mixed = false;
+      if(m0 < lb){
+        lb=M/denom;
+        ub=Mmore/denom;
+        denom++;
+        while(m0 > ub)
+          m0=prevfftsize(m0-1,mixed);
         }
+      cout << m0 <<endl;
       if(Explicit) {
         if(m0 > stop) break;
         if(m0 < M) {++i; continue;}
