@@ -34,7 +34,7 @@ unsigned int L;
 unsigned int M;
 
 //unsigned int surplusFFTsizes=25;
-unsigned int surplusFFTsizes=0; // TEMPORARY
+double epsilon=0.1; // TEMPORARY
 
 #ifdef __SSE2__
 const union uvec sse2_pm = {
@@ -92,6 +92,63 @@ unsigned int nextfftsize(unsigned int m)
     }
   }
   return N;
+}
+
+unsigned int prevfftsize(unsigned int M, int p)
+{
+  int i;
+  for(i=M; i > 10 ; --i) {
+    int m=i;
+    while(m % p == 0) {
+      m /= p;
+      }
+    if(m == 1) return i;
+  }
+  return i;
+}
+
+unsigned int prevfftsize(unsigned int M)
+{
+  int P[]={2,3,5,7};
+  int p;
+  int i;
+  int m;
+  for(i=M; i > 10 ; --i) {
+    m=i;
+    for(int j = 0; j < 4; j++) {
+      p=P[j];
+      while(m % p == 0) {
+        m/=p;
+      }
+    }
+    if(m == 1) return i;
+  }
+  return i;
+}
+
+unsigned int prevfftsizepure(unsigned int M)
+{
+  int P[]={2,3,5,7};
+  int i0=0;
+  int p;
+  int i;
+  int m;
+  for(int j = 0; j < 4; j++){
+    p=P[j];
+    for(i=M; i > 10 ; --i) {
+      m=i;
+      while(m % p == 0){
+        m/=p;
+        }
+      if(m == 1 && i > i0) i0=i;
+    }
+  }
+  return i0;
+}
+
+unsigned int prevfftsize(unsigned int M, bool mixed)
+{
+  return mixed ? prevfftsize(M) : prevfftsizepure(M);
 }
 
 void fftBase::initZetaqm(unsigned int q, unsigned int m)
@@ -177,22 +234,35 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   T=DBL_MAX;
   unsigned int i=0;
 
+  double sqrtM = sqrt(M);
+  unsigned int Mmore = M*(1+epsilon);
+  unsigned int ub=Mmore;
+  unsigned int lb=M;
   unsigned int stop=M-1;
-  for(unsigned int k=0; k < surplusFFTsizes; ++k)
-    stop=nextfftsize(stop+1);
-
-  unsigned int m0=1;
+  unsigned int m0=ub;
+  unsigned int denom=2;
+  bool mixed=true;
 
   if(mOption >= 1 && !Explicit)
     check(L,M,app,C,mOption,fixed,true);
   else
-    while(true) {
-      m0=nextfftsize(m0+1);
+    while(true){
+      m0=prevfftsize(m0-1,mixed);
+      if(mixed == true){
+        if(m0 < L/2) mixed = false;
+        else if(m0 < lb){
+          lb=M/denom;
+          ub=Mmore/denom;
+          denom++;
+          while(m0 > ub)
+            m0=prevfftsize(m0-1);
+          }
+        }
       if(Explicit) {
         if(m0 > stop) break;
         if(m0 < M) {++i; continue;}
         M=m0;
-      } else if(m0 > stop) break;
+      } else if(m0 <= sqrtM) break;
 //        } else if(m0 > L) break;
       if(!fixed || Explicit || M % m0 == 0)
         check(L,M,app,C,m0,fixed || Explicit);
@@ -2724,7 +2794,7 @@ void optionsHybrid(int argc, char* argv[])
         M=atoi(optarg);
         break;
       case 'S':
-        surplusFFTsizes=atoi(optarg);
+        epsilon=atoi(optarg);
         break;
       case 'T':
         fftw::maxthreads=max(atoi(optarg),1);
