@@ -235,7 +235,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   unsigned int i=0;
 
   double sqrtM = sqrt(M);
-  unsigned int Mmore = M*(1+epsilon);
+  unsigned int Mmore = M+max(M*epsilon,1);
   unsigned int ub=Mmore;
   unsigned int lb=M;
   unsigned int stop=M-1;
