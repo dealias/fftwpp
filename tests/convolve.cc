@@ -94,61 +94,38 @@ unsigned int nextfftsize(unsigned int m)
   return N;
 }
 
-unsigned int prevfftsize(unsigned int M, int p)
-{
-  int i;
-  for(i=M; i > 10 ; --i) {
-    int m=i;
-    while(m % p == 0) {
-      m /= p;
-      }
-    if(m == 1) return i;
-  }
-  return i;
-}
-
-unsigned int prevfftsize(unsigned int M)
-{
-  int P[]={2,3,5,7};
-  int p;
-  int i;
-  int m;
-  for(i=M; i > 10 ; --i) {
-    m=i;
-    for(int j = 0; j < 4; j++) {
-      p=P[j];
-      while(m % p == 0) {
-        m/=p;
-      }
-    }
-    if(m == 1) return i;
-  }
-  return i;
-}
-
-unsigned int prevfftsizepure(unsigned int M)
-{
-  int P[]={2,3,5,7};
-  int i0=0;
-  int p;
-  int i;
-  int m;
-  for(int j = 0; j < 4; j++){
-    p=P[j];
-    for(i=M; i > 10 ; --i) {
-      m=i;
-      while(m % p == 0){
-        m/=p;
-        }
-      if(m == 1 && i > i0) i0=i;
-    }
-  }
-  return i0;
-}
-
 unsigned int prevfftsize(unsigned int M, bool mixed)
 {
-  return mixed ? prevfftsize(M) : prevfftsizepure(M);
+  int P[]={2,3,5,7};
+  int p;
+  int i;
+  int m;
+  if(mixed){
+    for(i=M; i > 10 ; --i) {
+      m=i;
+      for(int j = 0; j < 4; j++) {
+        p=P[j];
+        while(m % p == 0) {
+          m/=p;
+        }
+      }
+      if(m == 1) return i;
+    }
+    return i;
+  } else{
+    int i0=0;
+    for(int j = 0; j < 4; j++){
+      p=P[j];
+      for(i=M; i > 10 ; --i) {
+        m=i;
+        while(m % p == 0){
+          m/=p;
+          }
+        if(m == 1 && i > i0) i0=i;
+      }
+    }
+    return i0;
+  }
 }
 
 void fftBase::initZetaqm(unsigned int q, unsigned int m)
