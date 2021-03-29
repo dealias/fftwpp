@@ -100,32 +100,24 @@ unsigned int prevfftsize(unsigned int M, bool mixed)
   int p;
   int i;
   int m;
-  if(mixed){
-    for(i=M; i > 10 ; --i) {
-      m=i;
-      for(int j = 0; j < 4; j++) {
-        p=P[j];
-        while(m % p == 0) {
-          m/=p;
+  for(i=M; i > 10 ; --i) {
+    m=i;
+    for(int j = 0; j < 4; j++) {
+      p=P[j];
+      while(m % p == 0) {
+        m/=p;
+      }
+      if(!mixed){
+        if(m != 1){
+          m=i;
+        } else{
+            return i;
+          }
         }
       }
-      if(m == 1) return i;
+    if(m == 1) return i;
     }
-    return i;
-  } else{
-    int i0=0;
-    for(int j = 0; j < 4; j++){
-      p=P[j];
-      for(i=M; i > 10 ; --i) {
-        m=i;
-        while(m % p == 0){
-          m/=p;
-          }
-        if(m == 1 && i > i0) i0=i;
-      }
-    }
-    return i0;
-  }
+  return i;
 }
 
 void fftBase::initZetaqm(unsigned int q, unsigned int m)
@@ -233,6 +225,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
         while(m0 > ub)
           m0=prevfftsize(m0-1,mixed);
         }
+      cout << m0 << endl;
       if(Explicit) {
         if(m0 > stop) break;
         if(m0 < M) {++i; continue;}
