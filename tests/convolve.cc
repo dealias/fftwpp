@@ -110,9 +110,9 @@ unsigned int prevfftsize(unsigned int M, bool mixed)
       if(!mixed){
         if(m != 1){
           m=i;
-        } else{
-            return i;
-          }
+        }else{
+          return i;
+         }
         }
       }
     if(m == 1) return i;
@@ -225,7 +225,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
         while(m0 > ub)
           m0=prevfftsize(m0-1,mixed);
         }
-      cout << m0 << endl;
+      //cout << m0 << endl;
       if(Explicit) {
         if(m0 > stop) break;
         if(m0 < M) {++i; continue;}
