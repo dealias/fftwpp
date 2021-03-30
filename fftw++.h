@@ -726,7 +726,8 @@ public:
           plan2=plan1;
         }
 
-        if(ST.mean > S1.mean-S1.stdev) { // Use FFTW's multi-threading
+        if(true) {
+            //if(ST.mean > S1.mean-S1.stdev) { // Use FFTW's multi-threading
           fftw_destroy_plan(plan);
           if(R > 0) {
             fftw_destroy_plan(plan2);
