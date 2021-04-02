@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
 //      fftPadCentered fftx(Lx,Mx,Ly,Lx,2,1);
   fftPadCentered fftx(Lx,Mx,*app,Hy);
 
-  fftPadHermitian ffty(Ly,My,1,Hy,3,1);
+  fftPadHermitian ffty(Ly,My,1,Hy,3,2);
 //  fftPadHermitian ffty(Ly,My,FB,1);
 
   ConvolutionHermitian convolvey(ffty);

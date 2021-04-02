@@ -2196,14 +2196,14 @@ void fftPadHermitian::backward2(Complex *F, Complex *f, unsigned int r, Complex 
 
   Complex Nyquist(0,0);
   bool inplace=W == F;
-  if(inplace)
+  bool even=m == 2*e;
+  bool overlap=even && inplace;
+  if(overlap)
     Nyquist=F[e]; // Save before being overwritten
 
   rcfftm->fft(F,W);
 
   Complex *fm=f+m;
-  bool even=m == 2*e;
-  bool overlap=even && inplace;
   unsigned int me=m-e;
   unsigned int H=ceilquotient(L,2);
   unsigned int mH1=m-H+1;
@@ -2219,7 +2219,7 @@ void fftPadHermitian::backward2(Complex *F, Complex *f, unsigned int r, Complex 
       }
       if(even) {
         f[e]=W[e];
-        if(inplace)
+        if(overlap)
           F[e]=Nyquist; // Restore initial input of next residue
       }
     } else { // q even
@@ -2255,7 +2255,7 @@ void fftPadHermitian::backward2(Complex *F, Complex *f, unsigned int r, Complex 
 
       if(even) {
         f[e]=W[e]-I*V[e];
-        if(inplace)
+        if(overlap)
           G[e]=Nyquist; // Restore initial input of next residue
       }
     }
@@ -2299,7 +2299,7 @@ void fftPadHermitian::backward2(Complex *F, Complex *f, unsigned int r, Complex 
 //      f[e] += conj(Zetar[e])*W[e]+Zetar[e]*V[e];
       Vec Zeta=LOAD(Zetar+e);
       STORE(f+e,LOAD(f+e)+ZCMULT(Zeta,LOAD(W+e))+ZMULT(Zeta,LOAD(V+e)));
-      if(inplace)
+      if(overlap)
         G[e]=Nyquist; // Restore initial input of next residue
     }
   }
@@ -2311,7 +2311,9 @@ void fftPadHermitian::backward2Many(Complex *F, Complex *f, unsigned int r, Comp
 
   Complex Nyquist[C];
   bool inplace=W == F;
-  if(inplace) {
+  bool even=m == 2*e;
+  bool overlap=even && inplace;
+  if(overlap) {
     Complex *FCe=F+C*e;
     for(unsigned int c=0; c < C; ++c)
       Nyquist[c]=FCe[c]; // Save before being overwritten
@@ -2320,8 +2322,6 @@ void fftPadHermitian::backward2Many(Complex *F, Complex *f, unsigned int r, Comp
   rcfftm->fft(F,W);
 
   Complex *fm=f+Cm;
-  bool even=m == 2*e;
-  bool overlap=even && inplace;
   unsigned int me=m-e;
   unsigned int H=ceilquotient(L,2);
   unsigned int mH1=m-H+1;
@@ -2352,7 +2352,7 @@ void fftPadHermitian::backward2Many(Complex *F, Complex *f, unsigned int r, Comp
         Complex *WCe=W+Ce;
         for(unsigned int c=0; c < C; ++c)
           fe[c]=WCe[c];
-        if(inplace) {
+        if(overlap) {
           Complex *Fe=F+Ce;
           for(unsigned int c=0; c < C; ++c)
             Fe[c]=Nyquist[c]; // Restore initial input of next residue
@@ -2418,7 +2418,7 @@ void fftPadHermitian::backward2Many(Complex *F, Complex *f, unsigned int r, Comp
         Complex *Ve=V+Ce;
         for(unsigned int c=0; c < C; ++c)
           fe[c]=We[c]-I*Ve[c];
-        if(inplace) {
+        if(overlap) {
           Complex *Ge=G+Ce;
           for(unsigned int c=0; c < C; ++c)
             Ge[c]=Nyquist[c]; // Restore initial input of next residue
@@ -2493,7 +2493,7 @@ void fftPadHermitian::backward2Many(Complex *F, Complex *f, unsigned int r, Comp
         STORE(fe+c,LOAD(fe+c)+ZCMULT(Zeta,LOAD(We+c))+ZMULT(Zeta,LOAD(Ve+c)));
 
     }
-    if(inplace) {
+    if(overlap) {
       Complex *GCe=G+Ce;
       for(unsigned int c=0; c < C; ++c)
         GCe[c]=Nyquist[c]; // Restore initial input of next residue
