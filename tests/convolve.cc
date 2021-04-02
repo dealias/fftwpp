@@ -460,12 +460,12 @@ fftPad:: ~fftPad() {
       delete fftp;
       delete ifftp;
     }
-    delete fftm;
-    delete ifftm;
     if(fftm2) {
       delete fftm2;
       delete ifftm2;
     }
+    delete fftm;
+    delete ifftm;
   }
 }
 
@@ -539,6 +539,8 @@ void fftPad::forward(Complex *f, Complex *F0, unsigned int r0, Complex *W)
     unsigned int residues;
     unsigned int q2=q/2;
     if(D == 1 || 2*q2 < q) { // q odd, r=0
+      if(!inplace && D == 1 && L >= m)
+        return fftm->fft(f,F0);
       residues=1;
       for(unsigned int s=0; s < L; ++s)
         W[s]=f[s];
@@ -624,6 +626,8 @@ void fftPad::forwardMany(Complex *f, Complex *F, unsigned int r, Complex *W) {
   }
 
   if(r == 0) {
+    if(!inplace && L >= m)
+      return fftm->fft(f,F);
     for(unsigned int s=0; s < L; ++s) {
       unsigned Cs=C*s;
       Complex *Fs=W+Cs;
@@ -1004,6 +1008,9 @@ void fftPad::backward(Complex *F0, Complex *f, unsigned int r0, Complex *W)
 {
   if(W == NULL) W=F0;
 
+  if(r0 == 0 && !inplace && D == 1 && L >= m)
+    return ifftm->fft(F0,f);
+
   (r0 > 0 || D0 == D ? ifftm : ifftm2)->fft(F0,W);
 
   unsigned int dr0=dr;
@@ -1055,6 +1062,9 @@ void fftPad::backward(Complex *F0, Complex *f, unsigned int r0, Complex *W)
 void fftPad::backwardMany(Complex *F, Complex *f, unsigned int r, Complex *W)
 {
   if(W == NULL) W=F;
+
+  if(r == 0 && !inplace && L >= m)
+    return ifftm->fft(F,f);
 
   ifftm->fft(F,W);
 
@@ -2501,7 +2511,6 @@ void Convolution::init(Complex *F, Complex *V)
   Q=fft->Q;
   D=fft->D;
   D0=fft->D0;
-  dr=fft->dr;
   b=fft->b;
   R=fft->residueBlocks();
 
@@ -2521,6 +2530,10 @@ void Convolution::init(Complex *F, Complex *V)
   }
 
   if(q > 1) {
+    G=new Complex*[N];
+    for(unsigned int i=0; i < N; ++i)
+      G[i]=this->F[i];
+
     allocateV=false;
     if(V) {
       this->V=new Complex*[B];
@@ -2540,6 +2553,7 @@ void Convolution::init(Complex *F, Complex *V)
     loop2=fft->loop2();
     int extra;
     if(loop2) {
+      r=fft->increment(0);
       Fp=new Complex*[A];
       Fp[0]=this->F[A-1];
       for(unsigned int a=1; a < A; ++a)
@@ -2572,6 +2586,7 @@ Convolution::~Convolution()
     }
     if(V)
       delete [] V;
+    delete [] G;
   }
 
   if(allocate) {
@@ -2598,7 +2613,6 @@ void Convolution::convolve0(Complex **f, Complex **h, multiplier *mult,
       (fft->*Backward)(F[b],h[b]+offset,0,NULL);
   } else {
     if(loop2) {
-      unsigned int r=ceilquotient(D0,2);
       for(unsigned int a=0; a < A; ++a)
         (fft->*Forward)(f[a]+offset,F[a],0,W);
       (*mult)(F,D0*b,threads);
@@ -2627,11 +2641,17 @@ void Convolution::convolve0(Complex **f, Complex **h, multiplier *mult,
       }
 
       for(unsigned int r=0; r < R; r += fft->increment(r)) {
-        for(unsigned int a=0; a < A; ++a)
-          (fft->*Forward)(f[a]+offset,F[a],r,W);
-        (*mult)(F,(r == 0 ? D0 : D)*b,threads);
+        bool overwrite=r+fft->increment(r) >= R && D0*b <= C*L;
+        for(unsigned int a=0; a < A; ++a) {
+          Complex *output;
+          if(overwrite)
+            G[a]=output=h[a]+offset;
+          else output=F[a];
+          (fft->*Forward)(f[a]+offset,output,r,W);
+        }
+        (*mult)(G,(r == 0 ? D0 : D)*b,threads);
         for(unsigned int b=0; b < B; ++b)
-          (fft->*Backward)(F[b],h0[b]+Offset,r,W0);
+          (fft->*Backward)(G[b],h0[b]+Offset,r,W0);
         (fft->*Pad)(W);
       }
 

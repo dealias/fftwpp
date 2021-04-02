@@ -522,10 +522,11 @@ protected:
   unsigned int D;
   unsigned int R;
   unsigned int D0;
-  unsigned int dr;
+  unsigned int r;
   unsigned int b;
   Complex **F,**Fp;
   Complex *FpB;
+  Complex **G; // For overwrite optimization
   Complex **V;
   Complex *W;
   Complex *H;
@@ -618,7 +619,6 @@ protected:
   unsigned int A;
   unsigned int B;
   unsigned int Q;
-  unsigned int D;
   unsigned int qx;
   unsigned int Qx; // number of residues
   unsigned int Rx; // number of residue blocks
