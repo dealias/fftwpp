@@ -660,7 +660,7 @@ public:
     qx=fftx->q;
     Qx=fftx->Q;
     Rx=fftx->R;
-    Nx=c/fftx->C; // Improve
+    Nx=fftx->b/fftx->C; // Improve
     scale=1.0/(fftx->normalization()*convolvey->fft->normalization());
 
     unsigned int N=std::max(A,B);
@@ -724,7 +724,7 @@ public:
                         unsigned int offset=0) {
     for(unsigned int rx=0; rx < Rx; rx += fftx->increment(rx)) {
       forward(f,Fx,rx);
-      subconvolution(Fx,mult,Nx,Ly,offset);
+      subconvolution(Fx,mult,(rx == 0 ? fftx->D0 : fftx->D)*Nx,Ly,offset);
       backward(Fx,h,rx);
     }
     for(unsigned int b=0; b < B; ++b) {
