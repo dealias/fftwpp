@@ -212,7 +212,7 @@ static inline Vec LOAD(double x)
 
 static inline Vec LOADFLIP(const Complex *z)
 {
-  return Vec(z->y,z->x);
+  return Vec(z->im,z->re);
 }
 
 static inline Vec SQRT(const Vec& z)
@@ -272,16 +272,23 @@ static inline Vec ZCMULTI(const Vec& z, const Vec& w)
   return REFL(UNPACKL(z,z))*FLIP(w)+UNPACKH(z,z)*w;
 }
 
-// Return ZCMULT(z,w)+ZMULT(z,v).
+// Return ZMULT(z,w)+ZCMULT(z,v).
 static inline Vec ZMULT2(const Vec& z, const Vec& w, const Vec& v)
 {
-  return UNPACKL(z,z)*(w+v)+CONJ(UNPACKH(z,z))*FLIP(w-v);
+  return UNPACKL(z,z)*(w+v)-CONJ(UNPACKH(z,z))*FLIP(w-v);
 }
 
 // Return the complex product of z and w given x=(z.re,z.re), y=(z.im,-z.im).
 static inline Vec ZMULT(const Vec& x, const Vec& y, const Vec& w)
 {
   return x*w-y*FLIP(w);
+}
+
+// Return ZMULT(z,w)+ZCMULT(z,v) given x=(z.re,z.re), y=(z.im,-z.im).
+static inline Vec ZMULT2(const Vec& x, const Vec& y, const Vec& w,
+                         const Vec& v)
+{
+  return x*(w+v)-y*FLIP(w-v);
 }
 
 // Return the complex product of z and I*w given x=(z.re,-z.re), y=(z.im,z.im).

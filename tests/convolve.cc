@@ -2292,8 +2292,8 @@ void fftPadHermitian::backward2(Complex *F, Complex *f, unsigned int r, Complex 
       Vec Zetam=LOAD(Zetarm-s);
       Vec Ws=LOAD(W+s);
       Vec Vs=LOAD(V+s);
-      STORE(f+s,LOAD(f+s)+ZMULT2(Zeta,Ws,Vs));
-      STORE(fm-s,LOAD(fm-s)+CONJ(ZMULT2(Zetam,Vs,Ws)));
+      STORE(f+s,LOAD(f+s)+ZMULT2(Zeta,Vs,Ws));
+      STORE(fm-s,LOAD(fm-s)+CONJ(ZMULT2(Zetam,Ws,Vs)));
     }
     if(even) {
 //      f[e] += conj(Zetar[e])*W[e]+Zetar[e]*V[e];

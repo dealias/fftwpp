@@ -702,6 +702,7 @@ public:
     delete [] Fx;
   }
 
+  // Missing offset?
   void forward(Complex **f, Complex **F, unsigned int rx) {
     for(unsigned int a=0; a < A; ++a)
       (fftx->*Forward)(f[a],F[a],rx,Wx); // C=Ly <= my py, Dx=1
@@ -713,6 +714,7 @@ public:
       convolvey->convolve0(f,f,mult,offset+i*stride);
   }
 
+  // Missing offset?
   void backward(Complex **F, Complex **f, unsigned int rx) {
     for(unsigned int b=0; b < B; ++b)
       (fftx->*Backward)(F[b],f[b],rx,Wx);
@@ -720,6 +722,7 @@ public:
 
 // f is a pointer to A distinct data blocks each of size Lx*Ly,
 // shifted by offset (contents not preserved).
+// TODO: Check that h != f
   virtual void convolve(Complex **f, Complex **h, multiplier *mult,
                         unsigned int offset=0) {
     for(unsigned int rx=0; rx < Rx; rx += fftx->increment(rx)) {
@@ -727,6 +730,7 @@ public:
       subconvolution(Fx,mult,(rx == 0 ? fftx->D0 : fftx->D)*Nx,Ly,offset);
       backward(Fx,h,rx);
     }
+
     for(unsigned int b=0; b < B; ++b) {
       Complex *hb=h[b];
       for(unsigned int i=0; i < Lx; ++i) {
