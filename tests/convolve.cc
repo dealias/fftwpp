@@ -2,6 +2,10 @@
 #include "cmult-sse2.h"
 
 // TODO:
+// Add inplace flag to convolutions: if true and D=q and h=f and L=pm,
+// then store as many residues as will fit into f.
+// Change *F to **F to allow decoupling work memory
+// Optimize over -I0 and -I1
 // Implement built-in shift for p > 2 centered case
 // Optimize shift when M=2L for p=1
 // Implement 3D convolutions
