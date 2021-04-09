@@ -2586,6 +2586,8 @@ Convolution::~Convolution()
 
     if(loop2)
       delete[] Fp;
+    else
+      delete [] G;
 
     if(allocateV) {
       for(unsigned int i=0; i < B; ++i)
@@ -2593,7 +2595,6 @@ Convolution::~Convolution()
     }
     if(V)
       delete [] V;
-    delete [] G;
   }
 
   if(allocate) {
