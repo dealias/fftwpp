@@ -2571,7 +2571,7 @@ void Convolution::init(Complex *F, Complex *V)
     } else
       W0=this->W;
   }
-  if(D*b <= C*L)
+  if(D*b <= fft->C*L)
     for(unsigned int r=0; r < R; r += fft->increment(r))
       overwrite=r; // Overwrite the last loop
   else
