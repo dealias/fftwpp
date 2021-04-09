@@ -214,8 +214,12 @@ public:
     return nloops() == 2 && A > B;
   }
 
+  virtual unsigned int ninputs() {
+    return C*L;
+  }
+
   unsigned int workSizeV() {
-    return q == 1 || nloops() == 1 || loop2() ? 0 : C*L;
+    return q == 1 || nloops() == 1 || loop2() ? 0 : ninputs();
   }
 
   virtual unsigned int workSizeW() {
@@ -467,6 +471,10 @@ public:
     return C*(e+1)*D;
   }
 
+  unsigned int ninputs() {
+    return C*utils::ceilquotient(L,2);
+  }
+
   unsigned int fullOutputSize() {
     return C*(e+1)*q; // FIXME for inner
   }
@@ -555,7 +563,7 @@ public:
               Complex *F=NULL, Complex *V=NULL, Complex *W=NULL) :
     fft(&fft), A(A), B(B), W(W), allocate(false) {
     init(F,V);
-    noutputs=C*L;
+    noutputs=fft.ninputs();
   }
 
   void init(Complex *F, Complex *V);
@@ -606,7 +614,6 @@ public:
     this->fft=&fft;
     init(F,V);
     b=q == 1 ? fft.Cm : 2*fft.b;
-    noutputs=C*utils::ceilquotient(L,2);
   }
 };
 
