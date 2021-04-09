@@ -2534,10 +2534,6 @@ void Convolution::init(Complex *F, Complex *V)
   }
 
   if(q > 1) {
-    G=new Complex*[N];
-    for(unsigned int i=0; i < N; ++i)
-      G[i]=this->F[i];
-
     allocateV=false;
     if(V) {
       this->V=new Complex*[B];
@@ -2564,8 +2560,10 @@ void Convolution::init(Complex *F, Complex *V)
         Fp[a]=this->F[a-1];
       FpB=fft->inplace ? NULL : Fp[B];
       extra=1;
-    } else
+    } else {
       extra=0;
+      G=new Complex*[N];
+    }
 
     if(A > B+extra && !fft->inplace) {
       W0=this->F[B];
@@ -2573,6 +2571,11 @@ void Convolution::init(Complex *F, Complex *V)
     } else
       W0=this->W;
   }
+  if(D*b <= C*L)
+    for(unsigned int r=0; r < R; r += fft->increment(r))
+      overwrite=r; // Overwrite the last loop
+  else
+    overwrite=R;
 }
 
 Convolution::~Convolution()
@@ -2645,12 +2648,9 @@ void Convolution::convolve0(Complex **f, Complex **h, multiplier *mult,
       }
 
       for(unsigned int r=0; r < R; r += fft->increment(r)) {
-        bool overwrite=r+fft->increment(r) >= R && D0*b <= C*L;
         for(unsigned int a=0; a < A; ++a) {
-          Complex *output;
-          if(overwrite)
-            G[a]=output=h[a]+offset;
-          else output=F[a];
+          Complex *output=r == overwrite ? h[a]+offset : F[a];
+          G[a]=output;
           (fft->*Forward)(f[a]+offset,output,r,W);
         }
         (*mult)(G,(r == 0 ? D0 : D)*b,threads);

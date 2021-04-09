@@ -545,6 +545,7 @@ protected:
   bool allocateW;
   unsigned int nloops;
   bool loop2;
+  unsigned int overwrite;
   unsigned int noutputs;
   FFTcall Forward,Backward;
   FFTPad Pad;
@@ -633,7 +634,6 @@ protected:
   Complex *Wx;
   Complex *Fy;
   Complex *Vy;
-  Complex *Wy;
   bool allocate;
   bool allocateW;
   double scale;
@@ -689,7 +689,6 @@ public:
   // B is the number of outputs.
   // Fy is an optional work array of size max(A,B)*ffty->outputSize(),
   // Vy is an optional work array of size B*ffty->workSizeV() (inplace usage)
-  // Wy is an optional work array of size ffty->workSizeW();
   //   if changed between calls to convolve(), be sure to call pad()
   /*
     Convolution2(unsigned int Lx, unsigned int Ly,
