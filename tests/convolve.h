@@ -98,6 +98,7 @@ public:
   unsigned int b; // Block size
   Complex *W0; // Temporary work memory for testing accuracy
   bool inplace;
+  bool overwrite;
   FFTcall Forward,Backward;
   FFTPad Pad;
 protected:
@@ -731,10 +732,17 @@ public:
 // TODO: Check that h != f
   virtual void convolve(Complex **f, Complex **h, multiplier *mult,
                         unsigned int offset=0) {
-    for(unsigned int rx=0; rx < Rx; rx += fftx->increment(rx)) {
-      forward(f,Fx,rx);
-      subconvolution(Fx,mult,(rx == 0 ? fftx->D0 : fftx->D)*Nx,Ly,offset);
-      backward(Fx,h,rx);
+    if(f == h && fftx->overwrite) {
+      forward(f,Fx,Rx);
+      subconvolution(f,mult,fftx->p*Nx,Ly,offset);
+      subconvolution(Fx,mult,Nx,Ly,offset);
+      backward(Fx,f,Rx);
+    } else {
+      for(unsigned int rx=0; rx < Rx; rx += fftx->increment(rx)) {
+        forward(f,Fx,rx);
+        subconvolution(Fx,mult,(rx == 0 ? fftx->D0 : fftx->D)*Nx,Ly,offset);
+        backward(Fx,h,rx);
+      }
     }
 
     for(unsigned int b=0; b < B; ++b) {

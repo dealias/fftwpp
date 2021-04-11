@@ -323,6 +323,7 @@ void fftBase::common()
   M=m*q;
   Pad=&fftBase::padNone;
   Zetaqp=NULL;
+  overwrite=false;
 }
 
 unsigned int fftBase::residue(unsigned int r, unsigned int q)
@@ -1389,6 +1390,7 @@ void fftPadCentered::init()
     } else {
       Forward=&fftBase::forward2Many;
       Backward=&fftBase::backward2Many;
+      overwrite=inplace && L == p*m && q == p+1;
     }
     Forward=Forward;
     Backward=Backward;
@@ -1580,6 +1582,40 @@ void fftPadCentered::forward2(Complex *f, Complex *F0, unsigned int r0, Complex 
 
 void fftPadCentered::forward2Many(Complex *f, Complex *F, unsigned int r, Complex *W)
 {
+  if(r == R) {
+    Complex *g=f+Cm;
+    Complex *Zetar=Zetaqm+(m+1);
+    Complex *Zetarm=Zetar+m;
+
+    for(unsigned int s=0; s < m; ++s) {
+      unsigned int Cs=C*s;
+      Complex *F0=f+Cs;
+      Complex *F1=g+Cs;
+      Complex *F2=F+Cs;
+      Vec Zeta=LOAD(Zetar+s);
+      Vec Zetam=CONJ(LOAD(Zetarm-s));
+      Vec X=UNPACKL(Zeta,Zeta);
+      Vec Y=CONJ(UNPACKH(Zeta,Zeta));
+      Vec Xm=UNPACKL(Zetam,Zetam);
+      Vec Ym=CONJ(UNPACKH(Zetam,Zetam));
+      for(unsigned int c=0; c < C; ++c) {
+//    Fs[c]=Zetarms*fmHs[c]+Zetars*fHs[c];
+//    Gs[c]=conj(Zetarms)*fmHs[c]+conj(Zetars)*fHs[c];
+        Vec F0s=LOAD(F0+c);
+        Vec F1s=LOAD(F1+c);
+        Vec A=Xm*F0s+X*F1s;
+        Vec B=FLIP(Ym*F0s+Y*F1s);
+        STORE(F0+c,F0s+F1s);
+        STORE(F1+c,A+B);
+        STORE(F2+c,A-B);
+      }
+    }
+    fftm->fft(f);
+    fftm->fft(g);
+    fftm->fft(F);
+    return;
+  }
+
   if(W == NULL) W=F;
 
   unsigned int H=L/2;
@@ -1723,6 +1759,39 @@ void fftPadCentered::backward2(Complex *F0, Complex *f, unsigned int r0, Complex
 
 void fftPadCentered::backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W)
 {
+  if(r == R) {
+    Complex *g=f+Cm;
+
+    ifftm->fft(f);
+    ifftm->fft(g);
+    ifftm->fft(F);
+
+    Complex *Zetar=Zetaqm+(m+1);
+    Complex *Zetarm=Zetar+m;
+    for(unsigned int s=0; s < m; ++s) {
+      unsigned int Cs=C*s;
+      Complex *F0=f+Cs;
+      Complex *F1=g+Cs;
+      Complex *F2=F+Cs;
+      Vec Zetam=LOAD(Zetarm-s);
+      Vec Zeta=LOAD(Zetar+s);
+      Vec Xm=UNPACKL(Zetam,Zetam);
+      Vec Ym=CONJ(UNPACKH(Zetam,Zetam));
+      Vec X=UNPACKL(Zeta,Zeta);
+      Vec Y=REFL(UNPACKH(Zeta,Zeta));
+      for(unsigned int c=0; c < C; ++c) {
+//    fmHs[c] += Zetarms*Fs[c]+conj(Zetarms)*Gs[c];
+//    fHs[c] += Zetars*Fs[c]+conj(Zetars)*Gs[c];
+        Vec F0c=LOAD(F0+c);
+        Vec F1c=LOAD(F1+c);
+        Vec F2c=LOAD(F2+c);
+        STORE(F0+c,F0c+ZMULT2(Xm,Ym,F1c,F2c));
+        STORE(F1+c,F0c+ZMULT2(X,Y,F1c,F2c));
+      }
+    }
+    return;
+  }
+
   if(W == NULL) W=F;
 
   ifftm->fft(F,W);

@@ -59,49 +59,58 @@ int main(int argc, char* argv[])
   ConvolutionHermitian convolvey(ffty);
 
   Complex **f=new Complex *[A];
-  Complex **h=new Complex *[B];
+  Complex **h=f;//=new Complex *[B];
 
   for(unsigned int a=0; a < A; ++a)
     f[a]=ComplexAlign(Lx*Hy);
-  for(unsigned int b=0; b < B; ++b)
-    h[b]=ComplexAlign(Lx*Hy);
+//  for(unsigned int b=0; b < B; ++b)
+//    h[b]=ComplexAlign(Lx*Hy);
+
 
   array2<Complex> f0(Lx,Hy,f[0]);
   array2<Complex> f1(Lx,Hy,f[1]);
 
-  for(unsigned int i=0; i < Lx; ++i) {
-    for(unsigned int j=0; j < Hy; ++j) {
-      int I=Lx % 2 ? i : -1+i;
-      f0[i][j]=Complex(I,j);
-      f1[i][j]=Complex(2*I,(j+1));
-    }
-  }
-
-  HermitianSymmetrizeX(Hx,Hy,Lx/2,f0);
-  HermitianSymmetrizeX(Hx,Hy,Lx/2,f1);
-
-  if(Lx*Hy < 200) {
-    for(unsigned int i=0; i < Lx; ++i) {
-      for(unsigned int j=0; j < Hy; ++j) {
-        cout << f0[i][j] << " ";
-      }
-      cout << endl;
-    }
-  }
+  array2<Complex> h0(Lx,Hy,h[0]);
 
   ConvolutionHermitian2 Convolve2(fftx,convolvey);
 
   unsigned int K=500;
-  double t0=totalseconds();
+//  double t0=totalseconds();
 
-  for(unsigned int k=0; k < K; ++k)
+  double T=0;
+
+  for(unsigned int k=0; k < K; ++k) {
+    for(unsigned int i=0; i < Lx; ++i) {
+      for(unsigned int j=0; j < Hy; ++j) {
+        int I=Lx % 2 ? i : -1+i;
+        f0[i][j]=Complex(I,j);
+        f1[i][j]=Complex(2*I,(j+1));
+      }
+    }
+
+    HermitianSymmetrizeX(Hx,Hy,Lx/2,f0);
+    HermitianSymmetrizeX(Hx,Hy,Lx/2,f1);
+
+    if(Lx*Hy < 200 && k == 0) {
+      for(unsigned int i=0; i < Lx; ++i) {
+        for(unsigned int j=0; j < Hy; ++j) {
+          cout << f0[i][j] << " ";
+        }
+        cout << endl;
+      }
+      cout << endl;
+    }
+
+    seconds();
     Convolve2.convolve(f,h,realmultbinary);
+    T += seconds();
+  }
 
-  double t=totalseconds();
-  cout << (t-t0)/K << endl;
-  cout << endl;
+  cout << "mean=" << T/K << endl;
 
-  array2<Complex> h0(Lx,Hy,h[0]);
+//  double t=totalseconds();
+//  cout << (t-t0)/K << endl;
+//  cout << endl;
 
   Complex sum=0.0;
   for(unsigned int i=0; i < Lx; ++i) {
