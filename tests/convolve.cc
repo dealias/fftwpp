@@ -2,9 +2,8 @@
 #include "cmult-sse2.h"
 
 // TODO:
-// Add inplace flag to convolutions: if true and D=q and h=f and L=pm,
-// then store as many residues as will fit into f.
-// Change *F to **F to allow decoupling work memory
+// Implement overwrite optimization in fftpad::forwardMany
+// Implement loop2 optimization in Convolution2
 // Optimize over -I0 and -I1
 // Implement built-in shift for p > 2 centered case
 // Optimize shift when M=2L for p=1
@@ -207,8 +206,8 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   T=DBL_MAX;
   unsigned int i=0;
 
-  double sqrtM = sqrt(M);
-  unsigned int Mmore = M+max(M*epsilon,1);
+  double sqrtM=sqrt(M);
+  unsigned int Mmore=M+max(M*epsilon,1);
   unsigned int ub=Mmore;
   unsigned int lb=M;
   unsigned int stop=M-1;
@@ -221,10 +220,11 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   else
     while(true){
       m0=prevfftsize(m0-1,mixed);
-      if(mixed == true && m0 < L/2) mixed = false;
+      if(mixed == true && m0 < L/2) mixed=false;
       if(m0 < lb){
-        lb=M/denom;
-        ub=Mmore/denom;
+        double factor=1.0/denom;
+        lb=M*factor;
+        ub=Mmore*factor;
         denom++;
         while(m0 > ub)
           m0=prevfftsize(m0-1,mixed);

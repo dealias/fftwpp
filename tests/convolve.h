@@ -222,7 +222,7 @@ public:
   }
 
   unsigned int workSizeV() {
-    return q == 1 || nloops() == 1 || loop2() ? 0 : ninputs();
+    return nloops() == 1 || loop2() ? 0 : ninputs();
   }
 
   virtual unsigned int workSizeW() {
@@ -559,15 +559,16 @@ public:
   // A is the number of inputs.
   // B is the number of outputs.
   // F is an optional work array of size max(A,B)*fft->outputSize(),
-  // V is an optional work array of size B*fft->workSizeV() (for inplace usage)
   // W is an optional work array of size fft->workSizeW();
-  //   if changed between calls to convolve(), be sure to call pad()
+  //    call pad() if changed between calls to convolve()
+  // V is an optional work array of size B*fft->workSizeV()
+  //   (only needed for inplace usage)
   Convolution(unsigned int A=2, unsigned int B=1,
-              Complex *F=NULL, Complex *V=NULL, Complex *W=NULL) :
+              Complex *F=NULL, Complex *W=NULL, Complex *V=NULL) :
     A(A), B(B), W(W), allocate(false) {}
 
   Convolution(fftBase &fft, unsigned int A=2, unsigned int B=1,
-              Complex *F=NULL, Complex *V=NULL, Complex *W=NULL) :
+              Complex *F=NULL, Complex *W=NULL, Complex *V=NULL) :
     fft(&fft), A(A), B(B), W(W), allocate(false) {
     init(F,V);
   }
@@ -611,12 +612,12 @@ public:
   // A is the number of inputs.
   // B is the number of outputs.
   // F is an optional work array of size max(A,B)*fft->outputSize(),
-  // V is an optional work array of size B*fft->workSizeV() (for inplace usage)
   // W is an optional work array of size fft->workSizeW();
+  // V is an optional work array of size B*fft->workSizeV() (for inplace usage)
   //   if changed between calls to convolve(), be sure to call pad()
   ConvolutionHermitian(fftPadHermitian &fft, unsigned int A=2,
-                       unsigned int B=1, Complex *F=NULL, Complex *V=NULL,
-                       Complex *W=NULL) : Convolution(A,B,F,V,W) {
+                       unsigned int B=1, Complex *F=NULL, Complex *W=NULL,
+                       Complex *V=NULL) : Convolution(A,B,F,W,V) {
     this->fft=&fft;
     init(F,V);
     b=q == 1 ? fft.Cm : 2*fft.b;
@@ -636,27 +637,33 @@ protected:
   unsigned int Qx; // number of residues
   unsigned int Rx; // number of residue blocks
   Complex **Fx;
+  Complex **Vx;
   Complex *Wx;
   Complex *Fy;
-  Complex *Vy;
   bool allocate;
+  bool allocateV;
   bool allocateW;
   double scale;
   FFTcall Forward;
   FFTCall Backward;
+  unsigned int nloops;
 public:
   Convolution2() : Wx(NULL), allocate(false), allocateW(false) {}
 
+  // TODO: implement loop2 optimization.
   // Fx is an optional work array of size max(A,B)*fftx->outputSize(),
   // Wx is an optional work array of size fftx->workSizeW(),
-  Convolution2(fftPad &fftx, Convolution &convolvey, Complex *Fx=NULL,
-               Complex *Wx=NULL) :
+  //    call fftx->pad() if changed between calls to convolve(),
+  // Vx is an optional work array of size B*fftx->workSizeV()
+  //    (only needed for inplace usage)
+  Convolution2(fftPad &fftx, Convolution &convolvey,
+               Complex *Fx=NULL, Complex *Wx=NULL, Complex *Vx=NULL) :
     fftx(&fftx), convolvey(&convolvey), Wx(Wx), allocate(false),
     allocateW(false) {
-    init(Fx);
+    init(Fx,Vx);
   }
 
-  void init(Complex *Fx) {
+  void init(Complex *Fx, Complex *Vx) {
     Forward=fftx->Forward;
     Backward=fftx->Backward;
 
@@ -689,13 +696,28 @@ public:
 
     Lx=fftx->L;
     Ly=convolvey->L;
+    nloops=fftx->nloops();
+    allocateV=false;
+
+    if(Vx) {
+      this->Vx=new Complex*[B];
+      unsigned int size=fftx->workSizeV();
+      for(unsigned int i=0; i < B; ++i)
+        this->Vx[i]=Vx+i*size;
+    } else
+      this->Vx=NULL;
+  }
+
+  void initV() {
+    allocateV=true;
+    Vx=new Complex*[B];
+    unsigned int size=fftx->workSizeV();
+    for(unsigned int i=0; i < B; ++i)
+      Vx[i]=utils::ComplexAlign(size);
   }
 
   // A is the number of inputs.
   // B is the number of outputs.
-  // Fy is an optional work array of size max(A,B)*ffty->outputSize(),
-  // Vy is an optional work array of size B*ffty->workSizeV() (inplace usage)
-  //   if changed between calls to convolve(), be sure to call pad()
   /*
     Convolution2(unsigned int Lx, unsigned int Ly,
     unsigned int Mx, unsigned int My,
@@ -712,12 +734,19 @@ public:
         utils::deleteAlign(Fx[i]);
     }
     delete [] Fx;
+
+    if(allocateV) {
+      for(unsigned int i=0; i < B; ++i)
+        utils::deleteAlign(Vx[i]);
+    }
+    if(Vx)
+      delete [] Vx;
   }
 
-  // Missing offset?
-  void forward(Complex **f, Complex **F, unsigned int rx) {
+  void forward(Complex **f, Complex **F, unsigned int rx,
+               unsigned int offset=0) {
     for(unsigned int a=0; a < A; ++a)
-      (fftx->*Forward)(f[a],F[a],rx,Wx); // C=Ly <= my py, Dx=1
+      (fftx->*Forward)(f[a]+offset,F[a],rx,Wx); // C=Ly <= my py, Dx=1
   }
 
   void subconvolution(Complex **f, multiplier *mult, unsigned int C,
@@ -726,54 +755,87 @@ public:
       convolvey->convolve0(f,f,mult,offset+i*stride);
   }
 
-  // Missing offset?
-  void backward(Complex **F, Complex **f, unsigned int rx) {
+  void backward(Complex **F, Complex **f, unsigned int rx,
+                unsigned int offset=0) {
     for(unsigned int b=0; b < B; ++b)
-      (fftx->*Backward)(F[b],f[b],rx,Wx,scale);
+      (fftx->*Backward)(F[b],f[b]+offset,rx,Wx,scale);
+  }
+
+  void normalize(Complex **h, unsigned int offset=0) {
+    for(unsigned int b=0; b < B; ++b) {
+      Complex *hb=h[b]+offset;
+      for(unsigned int i=0; i < Lx; ++i) {
+        Complex *hbi=hb+Ly*i;
+        for(unsigned int j=0; j < Ly; ++j)
+          hbi[j] *= scale;
+      }
+    }
   }
 
 // f is a pointer to A distinct data blocks each of size Lx*Ly,
 // shifted by offset (contents not preserved).
-// TODO: Check that h != f
-  virtual void convolve(Complex **f, Complex **h, multiplier *mult,
-                        unsigned int offset=0) {
-    if(f == h && fftx->overwrite) {
-      forward(f,Fx,Rx);
+  void convolve0(Complex **f, Complex **h, multiplier *mult,
+                 unsigned int offset=0) {
+    if(h == f && fftx->overwrite) {
+      forward(f,Fx,Rx,offset);
       subconvolution(f,mult,fftx->p*Nx,Ly,offset);
       subconvolution(Fx,mult,Nx,Ly,offset);
-      backward(Fx,f,Rx);
+      backward(Fx,f,Rx,offset);
     } else {
-      for(unsigned int rx=0; rx < Rx; rx += fftx->increment(rx)) {
-        forward(f,Fx,rx);
-        subconvolution(Fx,mult,(rx == 0 ? fftx->D0 : fftx->D)*Nx,Ly,offset);
-        backward(Fx,h,rx);
+      unsigned int Offset;
+      bool useV=h == f && nloops > 1;
+      Complex **h0;
+      if(useV) {
+        if(!Vx) initV();
+        h0=Vx;
+        Offset=0;
+      } else {
+        Offset=offset;
+        h0=h;
       }
 
-      for(unsigned int b=0; b < B; ++b) {
-        Complex *hb=h[b];
-        for(unsigned int i=0; i < Lx; ++i) {
-          Complex *hbLy=hb+Ly*i;
-          for(unsigned int j=0; j < Ly; ++j)
-            hbLy[j] *= scale;
+      for(unsigned int rx=0; rx < Rx; rx += fftx->increment(rx)) {
+        forward(f,Fx,rx,offset);
+        subconvolution(Fx,mult,(rx == 0 ? fftx->D0 : fftx->D)*Nx,Ly,offset);
+        backward(Fx,h0,rx,Offset);
+      }
+
+      if(useV) {
+        for(unsigned int b=0; b < B; ++b) {
+          Complex *fb=f[b]+offset;
+          Complex *hb=h0[b];
+          for(unsigned int i=0; i < Lx; ++i) {
+            unsigned int Lyi=Ly*i;
+            Complex *fbi=fb+Lyi;
+            Complex *hbi=hb+Lyi;
+            for(unsigned int j=0; j < Ly; ++j)
+              fbi[j]=hbi[j];
+          }
         }
       }
     }
+  }
+
+  void convolve(Complex **f, Complex **h, multiplier *mult,
+                unsigned int offset=0) {
+    convolve0(f,h,mult,offset);
+    if(f == h && fftx->overwrite) return;
+    normalize(h,offset);
   }
 };
 
 class ConvolutionHermitian2 : public Convolution2 {
 public:
-  // A is the number of inputs.
-  // B is the number of outputs.
-  // F is an optional work array of size max(A,B)*fft->outputSize(),
-  // V is an optional work array of size B*fft->workSizeV() (for inplace usage)
-  // W is an optional work array of size fft->workSizeW();
-  //   if changed between calls to convolve(), be sure to call pad()
+  // Fx is an optional work array of size max(A,B)*fftx->outputSize(),
+  // Wx is an optional work array of size fftx->workSizeW(),
+  //    call fftx->pad() if changed between calls to convolve()
+  // Vx is an optional work array of size B*fftx->workSizeV()
+  //    (only needed for inplace usage)
   ConvolutionHermitian2(fftPadCentered &fftx, ConvolutionHermitian &convolvey,
-                        Complex *Fx=NULL) {
+                        Complex *Fx=NULL, Complex *Wx=NULL, Complex *Vx=NULL) {
     this->fftx=&fftx;
     this->convolvey=&convolvey;
-    init(Fx);
+    init(Fx,Vx);
     Ly=utils::ceilquotient(convolvey.L,2);
   }
 };
