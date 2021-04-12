@@ -2590,6 +2590,7 @@ void Convolution::init(Complex *F, Complex *V)
   unsigned int M=fft->normalization();
   scale=1.0/M;
   unsigned int c=fft->outputSize();
+  noutputs=fft->ninputs();
 
   unsigned int N=max(A,B);
   this->F=new Complex*[N];
