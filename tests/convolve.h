@@ -70,6 +70,7 @@ unsigned int nextfftsize(unsigned int m);
 class fftBase;
 
 typedef void (fftBase::*FFTcall)(Complex *f, Complex *F, unsigned int r, Complex *W);
+typedef void (fftBase::*FFTCall)(Complex *f, Complex *F, unsigned int r, Complex *W, double scale);
 typedef void (fftBase::*FFTPad)(Complex *W);
 
 class Application {
@@ -99,7 +100,8 @@ public:
   Complex *W0; // Temporary work memory for testing accuracy
   bool inplace;
   bool overwrite;
-  FFTcall Forward,Backward;
+  FFTcall Forward;
+  FFTCall Backward;
   FFTPad Pad;
 protected:
   Complex *Zetaqp;
@@ -150,13 +152,13 @@ public:
   virtual void padMany(Complex *W) {}
 
   virtual void forwardShifted(Complex *f, Complex *F, unsigned int r, Complex *W) {}
-  virtual void backwardShifted(Complex *F, Complex *f, unsigned int r, Complex *W) {}
+  virtual void backwardShifted(Complex *F, Complex *f, unsigned int r, Complex *W, double scale) {}
 
   virtual void forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W)=0;
   virtual void forwardExplicitMany(Complex *f, Complex *F, unsigned int, Complex *W)=0;
 
-  virtual void backwardExplicit(Complex *F, Complex *f, unsigned int, Complex *W)=0;
-  virtual void backwardExplicitMany(Complex *F, Complex *f, unsigned int, Complex *W)=0;
+  virtual void backwardExplicit(Complex *F, Complex *f, unsigned int, Complex *W, double scale)=0;
+  virtual void backwardExplicitMany(Complex *F, Complex *f, unsigned int, Complex *W, double scale)=0;
 
   virtual void forward(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
   virtual void forwardMany(Complex *f, Complex *F, unsigned int r, Complex *W) {}
@@ -167,14 +169,14 @@ public:
   virtual void forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
   virtual void forwardInnerMany(Complex *f, Complex *F, unsigned int r, Complex *W) {}
 
-  virtual void backward(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
-  virtual void backwardMany(Complex *F, Complex *f, unsigned int r, Complex *W) {}
+  virtual void backward(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale) {}
+  virtual void backwardMany(Complex *F, Complex *f, unsigned int r, Complex *W, double scale) {}
 
-  virtual void backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
-  virtual void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W) {}
+  virtual void backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale) {}
+  virtual void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W, double scale) {}
 
-  virtual void backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
-  virtual void backwardInnerMany(Complex *F, Complex *f, unsigned int r, Complex *W) {}
+  virtual void backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale) {}
+  virtual void backwardInnerMany(Complex *F, Complex *f, unsigned int r, Complex *W, double scale) {}
 
   unsigned int normalization() {
     return M;
@@ -302,16 +304,16 @@ public:
       (this->*Forward)(f,F+blockOffset(r),r,W0);
   }
 
-  void backward(Complex *F, Complex *f) {
+  void backward(Complex *F, Complex *f, double scale=1.0) {
     for(unsigned int r=0; r < R; r += increment(r))
-      (this->*Backward)(F+blockOffset(r),f,r,W0);
+      (this->*Backward)(F+blockOffset(r),f,r,W0,scale);
   }
 
   void forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W);
   void forwardExplicitMany(Complex *f, Complex *F, unsigned int, Complex *W);
 
-  void backwardExplicit(Complex *F, Complex *f, unsigned int, Complex *W);
-  void backwardExplicitMany(Complex *F, Complex *f, unsigned int, Complex *W);
+  void backwardExplicit(Complex *F, Complex *f, unsigned int, Complex *W, double scale);
+  void backwardExplicitMany(Complex *F, Complex *f, unsigned int, Complex *W, double scale);
 
   // p=1 && C=1
   void forward(Complex *f, Complex *F0, unsigned int r0, Complex *W);
@@ -330,21 +332,22 @@ public:
 // to size m*p >= L.
 // input and output arrays must be distinct
 // Input F destroyed
-  void backward(Complex *F0, Complex *f, unsigned int r0, Complex *W);
+  void backward(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale);
 
-  void backwardMany(Complex *F, Complex *f, unsigned int r, Complex *W);
+  void backwardMany(Complex *F, Complex *f, unsigned int r, Complex *W, double scale);
 
-  void backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W);
+  void backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale);
 
-  void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W);
+  void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W, double scale);
 
-  void backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W);
-  void backwardInnerMany(Complex *F, Complex *f, unsigned int r, Complex *W);
+  void backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale);
+  void backwardInnerMany(Complex *F, Complex *f, unsigned int r, Complex *W, double scale);
 };
 
 class fftPadCentered : public fftPad {
   Complex *ZetaShift;
-  FFTcall fftBaseForward,fftBaseBackward;
+  FFTcall fftBaseForward;
+  FFTCall fftBaseBackward;
 public:
 
   class Opt : public OptBase {
@@ -387,7 +390,7 @@ public:
   void initShift();
 
   void forwardShifted(Complex *f, Complex *F, unsigned int r, Complex *W);
-  void backwardShifted(Complex *F, Complex *f, unsigned int r, Complex *W);
+  void backwardShifted(Complex *F, Complex *f, unsigned int r, Complex *W, double scale);
 
   void forwardShift(Complex *F, unsigned int r0);
   void backwardShift(Complex *F, unsigned int r0);
@@ -395,8 +398,8 @@ public:
   void forward2(Complex *f, Complex *F0, unsigned int r0, Complex *W);
   void forward2Many(Complex *f, Complex *F, unsigned int r, Complex *W);
 
-  void backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W);
-  void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W);
+  void backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale);
+  void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W, double scale);
 };
 
 class fftPadHermitian : public fftBase {
@@ -451,22 +454,22 @@ public:
       (this->*Forward)(f,F+blockOffset(r),r,W0);
   }
 
-  void backward(Complex *F, Complex *f) {
+  void backward(Complex *F, Complex *f, double scale=1.0) {
     for(unsigned int r=0; r < R; r += increment(r))
-      (this->*Backward)(F+blockOffset(r),f,r,W0);
+      (this->*Backward)(F+blockOffset(r),f,r,W0,scale);
   }
 
   void forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W);
   void forwardExplicitMany(Complex *f, Complex *F, unsigned int, Complex *W);
 
-  void backwardExplicit(Complex *F, Complex *f, unsigned int, Complex *W);
-  void backwardExplicitMany(Complex *F, Complex *f, unsigned int, Complex *W);
+  void backwardExplicit(Complex *F, Complex *f, unsigned int, Complex *W, double scale);
+  void backwardExplicitMany(Complex *F, Complex *f, unsigned int, Complex *W, double scale);
 
   void forward2(Complex *f, Complex *F0, unsigned int r0, Complex *W);
   void forward2Many(Complex *f, Complex *F, unsigned int r, Complex *W);
 
-  void backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W);
-  void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W);
+  void backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale);
+  void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W, double scale);
 
   unsigned int outputSize() {
     return C*(e+1)*D;
@@ -494,7 +497,8 @@ protected:
   Complex **F;
   Complex **h;
   Complex *W;
-  FFTcall Forward,Backward;
+  FFTcall Forward;
+  FFTCall Backward;
 public:
   ForwardBackward(unsigned int A=2, unsigned int B=1) :
     A(A), B(B), f(NULL), F(NULL), h(NULL), W(NULL) {
@@ -548,7 +552,8 @@ protected:
   bool loop2;
   unsigned int overwrite;
   unsigned int noutputs;
-  FFTcall Forward,Backward;
+  FFTcall Forward;
+  FFTCall Backward;
   FFTPad Pad;
 public:
   // A is the number of inputs.
@@ -637,7 +642,8 @@ protected:
   bool allocate;
   bool allocateW;
   double scale;
-  FFTcall Forward,Backward;
+  FFTcall Forward;
+  FFTCall Backward;
 public:
   Convolution2() : Wx(NULL), allocate(false), allocateW(false) {}
 
@@ -723,7 +729,7 @@ public:
   // Missing offset?
   void backward(Complex **F, Complex **f, unsigned int rx) {
     for(unsigned int b=0; b < B; ++b)
-      (fftx->*Backward)(F[b],f[b],rx,Wx);
+      (fftx->*Backward)(F[b],f[b],rx,Wx,scale);
   }
 
 // f is a pointer to A distinct data blocks each of size Lx*Ly,
@@ -742,14 +748,14 @@ public:
         subconvolution(Fx,mult,(rx == 0 ? fftx->D0 : fftx->D)*Nx,Ly,offset);
         backward(Fx,h,rx);
       }
-    }
 
-    for(unsigned int b=0; b < B; ++b) {
-      Complex *hb=h[b];
-      for(unsigned int i=0; i < Lx; ++i) {
-        Complex *hbLy=hb+Ly*i;
-        for(unsigned int j=0; j < Ly; ++j)
-          hbLy[j] *= scale;
+      for(unsigned int b=0; b < B; ++b) {
+        Complex *hb=h[b];
+        for(unsigned int i=0; i < Lx; ++i) {
+          Complex *hbLy=hb+Ly*i;
+          for(unsigned int j=0; j < Ly; ++j)
+            hbLy[j] *= scale;
+        }
       }
     }
   }
