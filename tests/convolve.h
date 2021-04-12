@@ -547,7 +547,6 @@ protected:
   unsigned int nloops;
   bool loop2;
   unsigned int overwrite;
-  unsigned int noutputs;
   FFTcall Forward,Backward;
   FFTPad Pad;
 public:
@@ -565,7 +564,6 @@ public:
               Complex *F=NULL, Complex *V=NULL, Complex *W=NULL) :
     fft(&fft), A(A), B(B), W(W), allocate(false) {
     init(F,V);
-    noutputs=fft.ninputs();
   }
 
   void init(Complex *F, Complex *V);
@@ -585,6 +583,7 @@ public:
   ~Convolution();
 
   void normalize(Complex **h, unsigned int offset=0) {
+    unsigned int noutputs=fft->ninputs();
     for(unsigned int b=0; b < B; ++b) {
       Complex *hb=h[b]+offset;
       for(unsigned int i=0; i < noutputs; ++i)
