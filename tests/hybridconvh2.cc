@@ -35,8 +35,7 @@ int main(int argc, char* argv[])
 
   optionsHybrid(argc,argv);
 
-  ForwardBackward FB;
-  Application *app=&FB;
+  ForwardBackward FB(A,B);
 
   unsigned int Lx=L;
   unsigned int Ly=L;
@@ -49,13 +48,6 @@ int main(int argc, char* argv[])
 
   unsigned int Hx=ceilquotient(Lx,2);
   unsigned int Hy=ceilquotient(Ly,2);
-
-//      fftPadCentered fftx(Lx,Mx,Ly,Lx,2,1);
-  fftPadCentered fftx(Lx,Mx,*app,Hy);
-  fftPadHermitian ffty(Ly,My,1,Hy,3,2);
-//  fftPadHermitian ffty(Ly,My,FB,1);
-
-  ConvolutionHermitian convolvey(ffty);
 
   Complex **f=new Complex *[A];
   Complex **h=f;//=new Complex *[B];
@@ -71,7 +63,15 @@ int main(int argc, char* argv[])
 
   array2<Complex> h0(Lx,Hy,h[0]);
 
-  ConvolutionHermitian2 Convolve2(fftx,convolvey);
+//  fftPadCentered fftx(Lx,Mx,Ly,Lx,2,1);
+//  fftPadHermitian ffty(Ly,My,FB,1);
+
+//  fftPadCentered fftx(Lx,Mx,FB,Hy);
+//  fftPadHermitian ffty(Ly,My,1,Hy,3,2);
+//  ConvolutionHermitian convolvey(ffty,A,B);
+//  ConvolutionHermitian2 Convolve2(fftx,convolvey,A,B);
+
+  ConvolutionHermitian2 Convolve2(Lx,Ly,Mx,My,A,B);
 
   unsigned int K=500;
 //  double t0=totalseconds();

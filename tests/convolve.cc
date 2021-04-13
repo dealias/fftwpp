@@ -312,6 +312,11 @@ double fftBase::report(Application& app)
 
 void fftBase::common()
 {
+  if(q*m < M) {
+    cerr << "Invalid parameters." << endl;
+    exit(-1);
+  }
+
   if(C > 1) D=1;
   p=ceilquotient(L,m);
   dr=conjugates() ? D/2 : D;

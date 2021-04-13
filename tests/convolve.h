@@ -500,7 +500,7 @@ protected:
   FFTcall Forward;
   FFTCall Backward;
 public:
-  ForwardBackward(unsigned int A=2, unsigned int B=1) :
+  ForwardBackward(unsigned int A, unsigned int B) :
     A(A), B(B), f(NULL), F(NULL), h(NULL), W(NULL) {
   }
 
@@ -567,7 +567,7 @@ public:
               Complex *F=NULL, Complex *W=NULL, Complex *V=NULL) :
     A(A), B(B), W(W), allocate(false) {}
 
-  Convolution(fftBase &fft, unsigned int A=2, unsigned int B=1,
+  Convolution(fftBase &fft, unsigned int A, unsigned int B,
               Complex *F=NULL, Complex *W=NULL, Complex *V=NULL) :
     fft(&fft), A(A), B(B), W(W), allocate(false) {
     init(F,V);
@@ -615,8 +615,8 @@ public:
   // W is an optional work array of size fft->workSizeW();
   // V is an optional work array of size B*fft->workSizeV() (for inplace usage)
   //   if changed between calls to convolve(), be sure to call pad()
-  ConvolutionHermitian(fftPadHermitian &fft, unsigned int A=2,
-                       unsigned int B=1, Complex *F=NULL, Complex *W=NULL,
+  ConvolutionHermitian(fftPadHermitian &fft, unsigned int A,
+                       unsigned int B, Complex *F=NULL, Complex *W=NULL,
                        Complex *V=NULL) : Convolution(A,B,F,W,V) {
     this->fft=&fft;
     init(F,V);
@@ -666,22 +666,20 @@ public:
 
   // Lx,Ly: x,y dimensions of input data
   // Mx,My: x,y dimensions of transformed data, including padding
-  // A: number of inputs.
-  // B: number of outputs.
+  // A: number of inputs
+  // B: number of outputs
   Convolution2(unsigned int Lx, unsigned int Ly,
                unsigned int Mx, unsigned int My,
-               unsigned int A, unsigned int B,
-               Complex *Fx=NULL, Complex *Wx=NULL, Complex *Vx=NULL,
-               Complex *Fy=NULL, Complex *Wy=NULL, Complex *Vy=NULL) :
-    Wx(Wx), allocate(false), allocateW(false) {
+               unsigned int A, unsigned int B) :
+    Wx(NULL), allocate(false), allocateW(false) {
     FB=new ForwardBackward(A,B);
     fftx=new fftPad(Lx,Mx,*FB,Ly);
     ffty=new fftPad(Ly,My,*FB);
-    convolvey=new Convolution(*ffty,A,B,Fy,Wy,Vy);
-    init(Fx,Vx);
+    convolvey=new Convolution(*ffty,A,B);
+    init();
   }
 
-  void init(Complex *Fx, Complex *Vx) {
+  void init(Complex *Fx=NULL, Complex *Vx=NULL) {
     Forward=fftx->Forward;
     Backward=fftx->Backward;
 
@@ -852,6 +850,20 @@ public:
     this->convolvey=&convolvey;
     init(Fx,Vx);
     Ly=utils::ceilquotient(convolvey.L,2);
+  }
+
+  ConvolutionHermitian2(unsigned int Lx, unsigned int Ly,
+                        unsigned int Mx, unsigned int My,
+                        unsigned int A, unsigned int B) {
+    unsigned int Hy=utils::ceilquotient(Ly,2);
+    FB=new ForwardBackward(A,B);
+    fftx=new fftPadCentered(Lx,Mx,*FB,Hy);
+    unsigned int q=utils::ceilquotient(My,Hy);
+    fftPadHermitian *ffty=new fftPadHermitian(Ly,My,1,Hy,q,2);
+    convolvey=new ConvolutionHermitian(*ffty,A,B);
+    this->ffty=ffty;
+    init();
+    this->Ly=Hy;
   }
 };
 

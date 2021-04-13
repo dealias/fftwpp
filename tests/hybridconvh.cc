@@ -20,10 +20,9 @@ int main(int argc, char* argv[])
 
   optionsHybrid(argc,argv);
 
-  ForwardBackward FB;
-  Application *app=&FB;
+  ForwardBackward FB(A,B);
 
-  fftPadHermitian fft(L,M,*app,C);
+  fftPadHermitian fft(L,M,FB,C);
 
   unsigned int H=ceilquotient(L,2);
 
@@ -48,7 +47,7 @@ int main(int argc, char* argv[])
   }
 #endif
 
-  ConvolutionHermitian Convolve(fft);
+  ConvolutionHermitian Convolve(fft,A,B);
 
   Complex *F[]={f,g};
 //  Complex *h=ComplexAlign(H);

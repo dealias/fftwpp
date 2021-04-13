@@ -18,7 +18,7 @@ int main(int argc, char* argv[])
 
   optionsHybrid(argc,argv);
 
-  ForwardBackward FB;
+  ForwardBackward FB(A,B);
 
   unsigned int Lx=L;
   unsigned int Ly=L;

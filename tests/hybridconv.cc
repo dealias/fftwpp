@@ -20,10 +20,8 @@ int main(int argc, char* argv[])
 
   optionsHybrid(argc,argv);
 
-  ForwardBackward FB;
-  Application *app=&FB;
-
-  fftPad fft(L,M,*app,C);
+  ForwardBackward FB(A,B);
+  fftPad fft(L,M,FB,C);
 
   Complex *f=ComplexAlign(C*L);
   Complex *g=ComplexAlign(C*L);
@@ -40,7 +38,7 @@ int main(int argc, char* argv[])
     }
   }
 
-  Convolution Convolve(fft);
+  Convolution Convolve(fft,A,B);
 
   Complex *F[]={f,g};
 //  Complex *h=ComplexAlign(L);

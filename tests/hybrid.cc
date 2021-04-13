@@ -20,24 +20,23 @@ int main(int argc, char* argv[])
 
   optionsHybrid(argc,argv);
 
-  ForwardBackward FB;
-  Application *app=&FB;
+  ForwardBackward FB(A,B);
 
   cout << "Explicit:" << endl;
   // Minimal explicit padding
-  fftPad fft0(L,M,*app,C,true,true);
+  fftPad fft0(L,M,FB,C,true,true);
 
-  double mean0=fft0.report(*app);
+  double mean0=fft0.report(FB);
 
   // Optimal explicit padding
-  fftPad fft1(L,M,*app,C,true,false);
-  double mean1=min(mean0,fft1.report(*app));
+  fftPad fft1(L,M,FB,C,true,false);
+  double mean1=min(mean0,fft1.report(FB));
 
   // Hybrid padding
-  fftPad fft(L,M,*app,C);
-//  fftPadCentered fft(L,M,*app,C);
+  fftPad fft(L,M,FB,C);
+//  fftPadCentered fft(L,M,FB,C);
 
-  double mean=fft.report(*app);
+  double mean=fft.report(FB);
 
   if(mean0 > 0)
     cout << "minimal ratio=" << mean/mean0 << endl;
