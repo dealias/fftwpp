@@ -130,10 +130,9 @@ mfft1r: mfft1r.o $(EXTRA:=.o)
 transpose: transpose.o $(EXTRA:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-
 .PHONY: clean
 clean:  FORCE
-	rm -rf $(ALL) $(ALL:=.o) $(ALL:=.d)
+	rm -rf $(ALL) $(EXTRA) $(HYBRID) $(ALL:=.o) $(ALL:=.d)
 
 .SUFFIXES: .c .cc .o .d
 

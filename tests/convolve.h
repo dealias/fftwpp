@@ -144,7 +144,7 @@ public:
           unsigned int C=1, bool Explicit=false, bool fixed=false) :
     L(L), M(M), C(C) {}
 
-  ~fftBase();
+  virtual ~fftBase();
 
   void padNone(Complex *W) {}
 
@@ -504,7 +504,7 @@ public:
     A(A), B(B), f(NULL), F(NULL), h(NULL), W(NULL) {
   }
 
-  ~ForwardBackward() {
+  virtual ~ForwardBackward() {
     clear();
   }
 
@@ -563,7 +563,7 @@ public:
   //    call pad() if changed between calls to convolve()
   // V is an optional work array of size B*fft->workSizeV()
   //   (only needed for inplace usage)
-  Convolution(unsigned int A=2, unsigned int B=1,
+  Convolution(unsigned int A, unsigned int B,
               Complex *F=NULL, Complex *W=NULL, Complex *V=NULL) :
     A(A), B(B), W(W), allocate(false) {}
 
@@ -627,9 +627,11 @@ public:
 class Convolution2 {
 protected:
   fftBase *fftx;
+  fftBase *ffty;
   Convolution *convolvey;
+  ForwardBackward *FB;
   unsigned int Nx;    // x dimension of Fx buffer
-  unsigned int Lx,Ly; // x,y dimensions of input arrays
+  unsigned int Lx,Ly; // x,y dimensions of input data
   unsigned int A;
   unsigned int B;
   unsigned int Q;
@@ -639,7 +641,6 @@ protected:
   Complex **Fx;
   Complex **Vx;
   Complex *Wx;
-  Complex *Fy;
   bool allocate;
   bool allocateV;
   bool allocateW;
@@ -658,8 +659,25 @@ public:
   //    (only needed for inplace usage)
   Convolution2(fftPad &fftx, Convolution &convolvey,
                Complex *Fx=NULL, Complex *Wx=NULL, Complex *Vx=NULL) :
-    fftx(&fftx), convolvey(&convolvey), Wx(Wx), allocate(false),
+    fftx(&fftx), ffty(NULL), convolvey(&convolvey), Wx(Wx), allocate(false),
     allocateW(false) {
+    init(Fx,Vx);
+  }
+
+  // Lx,Ly: x,y dimensions of input data
+  // Mx,My: x,y dimensions of transformed data, including padding
+  // A: number of inputs.
+  // B: number of outputs.
+  Convolution2(unsigned int Lx, unsigned int Ly,
+               unsigned int Mx, unsigned int My,
+               unsigned int A, unsigned int B,
+               Complex *Fx=NULL, Complex *Wx=NULL, Complex *Vx=NULL,
+               Complex *Fy=NULL, Complex *Wy=NULL, Complex *Vy=NULL) :
+    Wx(Wx), allocate(false), allocateW(false) {
+    FB=new ForwardBackward(A,B);
+    fftx=new fftPad(Lx,Mx,*FB,Ly);
+    ffty=new fftPad(Ly,My,*FB);
+    convolvey=new Convolution(*ffty,A,B,Fy,Wy,Vy);
     init(Fx,Vx);
   }
 
@@ -716,15 +734,6 @@ public:
       Vx[i]=utils::ComplexAlign(size);
   }
 
-  // A is the number of inputs.
-  // B is the number of outputs.
-  /*
-    Convolution2(unsigned int Lx, unsigned int Ly,
-    unsigned int Mx, unsigned int My,
-    unsigned int A, unsigned int B, Complex *Fx=NULL,
-    Complex *Fy=NULL, Complex *Vy=NULL, Complex *Wy=NULL): Fy(Fy), Vy(Vy), Wy(Wy) {}
-  */
-
   ~Convolution2() {
     if(allocateW)
       utils::deleteAlign(Wx);
@@ -741,6 +750,12 @@ public:
     }
     if(Vx)
       delete [] Vx;
+    if(ffty) {
+      delete convolvey;
+      delete FB;
+      delete ffty;
+      delete fftx;
+    }
   }
 
   void forward(Complex **f, Complex **F, unsigned int rx,

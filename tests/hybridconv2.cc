@@ -19,7 +19,6 @@ int main(int argc, char* argv[])
   optionsHybrid(argc,argv);
 
   ForwardBackward FB;
-  Application *app=&FB;
 
   unsigned int Lx=L;
   unsigned int Ly=L;
@@ -29,14 +28,6 @@ int main(int argc, char* argv[])
   cout << "Lx=" << Lx << endl;
   cout << "Mx=" << Mx << endl;
   cout << endl;
-
-//      fftPad fftx(Lx,Mx,Ly,Lx,2,1);
-  fftPad fftx(Lx,Mx,*app,Ly);
-
-//      fftPad ffty(Ly,My,1,Ly,2,1);
-  fftPad ffty(Ly,My,FB,1);
-
-  Convolution convolvey(ffty);
 
   Complex **f=new Complex *[A];
   Complex **h=new Complex *[B];
@@ -64,7 +55,15 @@ int main(int argc, char* argv[])
     }
   }
 
-  Convolution2 Convolve2(fftx,convolvey);
+//      fftPad fftx(Lx,Mx,Ly,Lx,2,1);
+//      fftPad ffty(Ly,My,1,Ly,2,1);
+
+//  fftPad fftx(Lx,Mx,FB,Ly);
+//  fftPad ffty(Ly,My,FB,1);
+//  Convolution convolvey(ffty,A,B);
+
+//  Convolution2 Convolve2(fftx,convolvey);
+  Convolution2 Convolve2(Lx,Ly,Mx,My,A,B);
 
   unsigned int K=10;
   double t0=totalseconds();
