@@ -93,7 +93,7 @@ public:
   unsigned int Q; // number of residues
   unsigned int R; // number of residue blocks
   unsigned int dr; // r increment
-  unsigned int D;
+  unsigned int D; // number of residues stored in F at a time
   unsigned int D0; // Remainder
   unsigned int Cm;
   unsigned int b; // Block size
