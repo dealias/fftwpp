@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
 //  fftPadCentered fftx(Lx,Mx,FB,Hy);
 //  fftPadHermitian ffty(Ly,My,1,Hy,3,2);
 //  ConvolutionHermitian convolvey(ffty,A,B);
-//  ConvolutionHermitian2 Convolve2(fftx,convolvey,A,B);
+//  ConvolutionHermitian2 Convolve2(fftx,convolvey);
 
   ConvolutionHermitian2 Convolve2(Lx,Ly,Mx,My,A,B);
 
