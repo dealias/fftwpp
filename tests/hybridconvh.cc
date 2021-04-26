@@ -7,6 +7,12 @@ using namespace utils;
 using namespace Array;
 using namespace fftwpp;
 
+unsigned int A=2; // number of inputs
+unsigned int B=1; // number of outputs
+unsigned int C=1; // number of copies
+unsigned int L=512; // input data length
+unsigned int M=768; // minimum padded length
+
 int main(int argc, char* argv[])
 {
   fftw::maxthreads=1;//get_max_threads();
@@ -14,9 +20,6 @@ int main(int argc, char* argv[])
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif
-
-  L=512;
-  M=768;
 
   optionsHybrid(argc,argv);
 
@@ -61,6 +64,7 @@ int main(int argc, char* argv[])
 
   for(unsigned int k=0; k < K; ++k)
     Convolve.convolve(F,F,realmultbinary);
+//    Convolve.convolve(F,F,multadvection2);
 
   double t=totalseconds();
   cout << (t-t0)/K << endl;

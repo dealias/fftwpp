@@ -30,12 +30,6 @@ unsigned int DOption=0;
 
 int IOption=-1;
 
-unsigned int A=2; // number of inputs
-unsigned int B=1; // number of outputs
-unsigned int C=1; // number of copies
-unsigned int L;
-unsigned int M;
-
 //unsigned int surplusFFTsizes=25;
 double epsilon=0.1; // TEMPORARY
 
@@ -54,29 +48,29 @@ const union uvec sse2_mm = {
 const double twopi=2.0*M_PI;
 
 // This multiplication routine is for binary convolutions and takes
-// two Complex inputs of size e.
+// two Complex inputs of size n.
 // F0[j] *= F1[j];
-void multbinary(Complex **F, unsigned int e, unsigned int threads)
+void multbinary(Complex **F, unsigned int n, unsigned int threads)
 {
   Complex *F0=F[0];
   Complex *F1=F[1];
 
   PARALLEL(
-    for(unsigned int j=0; j < e; ++j)
+    for(unsigned int j=0; j < n; ++j)
       F0[j] *= F1[j];
     );
 }
 
 // This multiplication routine is for binary convolutions and takes
-// two real inputs of size e.
+// two real inputs of size n.
 // F0[j] *= F1[j];
-void realmultbinary(Complex **F, unsigned int e, unsigned int threads)
+void realmultbinary(Complex **F, unsigned int n, unsigned int threads)
 {
   double *F0=(double *) F[0];
   double *F1=(double *) F[1];
 
   PARALLEL(
-    for(unsigned int j=0; j < e; ++j)
+    for(unsigned int j=0; j < n; ++j)
       F0[j] *= F1[j];
     );
 }
@@ -2613,7 +2607,7 @@ void Convolution::init(Complex *F, Complex *V)
     allocateV=false;
     if(V) {
       this->V=new Complex*[B];
-      unsigned int size=fft->workSizeV();
+      unsigned int size=fft->workSizeV(A,B);
       for(unsigned int i=0; i < B; ++i)
         this->V[i]=V+i*size;
     } else
@@ -2626,7 +2620,7 @@ void Convolution::init(Complex *F, Complex *V)
     (fft->*Pad)(this->W);
 
     nloops=fft->nloops();
-    loop2=fft->loop2();
+    loop2=fft->loop2(A,B);
     int extra;
     if(loop2) {
       r=fft->increment(0);
@@ -2647,9 +2641,10 @@ void Convolution::init(Complex *F, Complex *V)
     } else
       W0=this->W;
   }
-  if(D*b <= fft->C*L)
+
+  if(fft->outputSize() <= fft->C*L)
     for(unsigned int r=0; r < R; r += fft->increment(r))
-      overwrite=r; // Overwrite the last loop
+      overwrite=r; // Store F in h on the last loop
   else
     overwrite=R;
 }
@@ -2765,7 +2760,7 @@ void ForwardBackward::init(fftBase &fft)
   F=new Complex*[N];
   h=new Complex*[B];
 
-  unsigned CL=C*L;
+  unsigned CL=C*fft.L;
 
   for(unsigned int a=0; a < A; ++a)
     f[a]=ComplexAlign(CL);
@@ -2832,56 +2827,6 @@ void ForwardBackward::clear()
     delete[] f;
     f=NULL;
   }
-}
-
-void optionsHybrid(int argc, char* argv[])
-{
-#ifdef __GNUC__
-  optind=0;
-#endif
-  for (;;) {
-    int c = getopt(argc,argv,"hC:D:I:L:M:O:S:T:m:");
-    if (c == -1) break;
-
-    switch (c) {
-      case 0:
-        break;
-      case 'C':
-        C=max(atoi(optarg),1);
-        break;
-      case 'D':
-        DOption=max(atoi(optarg),0);
-        if(DOption > 1 && DOption % 2) ++DOption;
-        break;
-      case 'L':
-        L=atoi(optarg);
-        break;
-      case 'I':
-        IOption=atoi(optarg) > 0;
-        break;
-      case 'M':
-        M=atoi(optarg);
-        break;
-      case 'S':
-        epsilon=atoi(optarg);
-        break;
-      case 'T':
-        fftw::maxthreads=max(atoi(optarg),1);
-        break;
-      case 'm':
-        mOption=max(atoi(optarg),0);
-        break;
-      case 'h':
-      default:
-        usageHybrid();
-        exit(1);
-    }
-  }
-  cout << "L=" << L << endl;
-  cout << "M=" << M << endl;
-  cout << "C=" << C << endl;
-
-  cout << endl;
 }
 
 }

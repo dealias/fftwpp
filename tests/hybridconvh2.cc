@@ -5,22 +5,11 @@ using namespace utils;
 using namespace Array;
 using namespace fftwpp;
 
-inline void HermitianSymmetrizeX(unsigned int mx, unsigned int my,
-                                 unsigned int xorigin, Complex *f)
-{
-  unsigned int offset=xorigin*my;
-  unsigned int stop=mx*my;
-  f[offset].im=0.0;
-  for(unsigned int i=my; i < stop; i += my)
-    f[offset-i]=conj(f[offset+i]);
-
-  // Zero out Nyquist modes in noncompact case
-  if(xorigin == mx) {
-    unsigned int Nyquist=offset-stop;
-    for(unsigned int j=0; j < my; ++j)
-      f[Nyquist+j]=0.0;
-  }
-}
+unsigned int A=2; // number of inputs
+unsigned int B=1; // number of outputs
+unsigned int C=1; // number of copies
+unsigned int L=512; // input data length
+unsigned int M=768; // minimum padded length
 
 int main(int argc, char* argv[])
 {
@@ -29,9 +18,6 @@ int main(int argc, char* argv[])
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif
-
-  L=512;
-  M=768;
 
   optionsHybrid(argc,argv);
 
@@ -102,6 +88,7 @@ int main(int argc, char* argv[])
 
     seconds();
     Convolve2.convolve(f,h,realmultbinary);
+//    Convolve2.convolve(f,h,multadvection2);
     T += seconds();
   }
 

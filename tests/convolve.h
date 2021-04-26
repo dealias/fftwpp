@@ -25,29 +25,24 @@ using namespace std; // Temporary
 #include "utils.h"
 #include "Array.h"
 
-namespace fftwpp {
-
 #ifndef __convolve_h__
 #define __convolve_h__ 1
+
+namespace utils {
+extern void optionsHybrid(int argc, char* argv[]);
+}
+
+namespace fftwpp {
 
 extern const double twopi;
 
 // Constants used for initialization and testing.
 const Complex I(0.0,1.0);
 
-extern unsigned int threads;
-
 extern unsigned int mOption;
 extern unsigned int DOption;
 
 extern int IOption;
-
-// Temporary
-extern unsigned int A; // number of inputs
-extern unsigned int B; // number of outputs
-extern unsigned int C; // number of copies
-extern unsigned int L;
-extern unsigned int M;
 
 extern unsigned int surplusFFTsizes;
 
@@ -213,7 +208,7 @@ public:
     return utils::ceilquotient(R,dr);
   }
 
-  bool loop2() {
+  bool loop2(unsigned int A, unsigned int B) {
     return nloops() == 2 && A > B;
   }
 
@@ -221,8 +216,8 @@ public:
     return C*L;
   }
 
-  unsigned int workSizeV() {
-    return nloops() == 1 || loop2() ? 0 : ninputs();
+  unsigned int workSizeV(unsigned int A, unsigned int B) {
+    return nloops() == 1 || loop2(A,B) ? 0 : ninputs();
   }
 
   virtual unsigned int workSizeW() {
@@ -516,12 +511,11 @@ public:
 
 };
 
-typedef void multiplier(Complex **, unsigned int e, unsigned int threads);
+typedef void multiplier(Complex **, unsigned int n, unsigned int threads);
 
 // Multiplication routine for binary convolutions and taking two inputs of size e.
-void multbinary(Complex **F, unsigned int e, unsigned int threads);
-void realmultbinary(Complex **F, unsigned int e, unsigned int threads);
-
+void multbinary(Complex **F, unsigned int n, unsigned int threads);
+void realmultbinary(Complex **F, unsigned int n, unsigned int threads);
 
 class Convolution {
 public:
@@ -561,7 +555,7 @@ public:
   // F is an optional work array of size max(A,B)*fft->outputSize(),
   // W is an optional work array of size fft->workSizeW();
   //    call pad() if changed between calls to convolve()
-  // V is an optional work array of size B*fft->workSizeV()
+  // V is an optional work array of size B*fft->workSizeV(A,B)
   //   (only needed for inplace usage)
   Convolution(unsigned int A, unsigned int B,
               Complex *F=NULL, Complex *W=NULL, Complex *V=NULL) :
@@ -578,7 +572,7 @@ public:
   void initV() {
     allocateV=true;
     V=new Complex*[B];
-    unsigned int size=fft->workSizeV();
+    unsigned int size=fft->workSizeV(A,B);
     for(unsigned int i=0; i < B; ++i)
       V[i]=utils::ComplexAlign(size);
   }
@@ -613,8 +607,9 @@ public:
   // B is the number of outputs.
   // F is an optional work array of size max(A,B)*fft->outputSize(),
   // W is an optional work array of size fft->workSizeW();
-  // V is an optional work array of size B*fft->workSizeV() (for inplace usage)
   //   if changed between calls to convolve(), be sure to call pad()
+  // V is an optional work array of size B*fft->workSizeV(A,B)
+  //   (for inplace usage)
   ConvolutionHermitian(fftPadHermitian &fft, unsigned int A,
                        unsigned int B, Complex *F=NULL, Complex *W=NULL,
                        Complex *V=NULL) : Convolution(A,B,F,W,V) {
@@ -623,6 +618,23 @@ public:
     b=q == 1 ? fft.Cm : 2*fft.b;
   }
 };
+
+inline void HermitianSymmetrizeX(unsigned int mx, unsigned int my,
+                                 unsigned int xorigin, Complex *f)
+{
+  unsigned int offset=xorigin*my;
+  unsigned int stop=mx*my;
+  f[offset].im=0.0;
+  for(unsigned int i=my; i < stop; i += my)
+    f[offset-i]=conj(f[offset+i]);
+
+  // Zero out Nyquist modes in noncompact case
+  if(xorigin == mx) {
+    unsigned int Nyquist=offset-stop;
+    for(unsigned int j=0; j < my; ++j)
+      f[Nyquist+j]=0.0;
+  }
+}
 
 class Convolution2 {
 protected:
@@ -673,7 +685,7 @@ public:
   // F is an optional work array of size max(A,B)*fftx->outputSize(),
   // W is an optional work array of size fftx->workSizeW(),
   //   call fftx->pad() if changed between calls to convolve(),
-  // V is an optional work array of size B*fftx->workSizeV()
+  // V is an optional work array of size B*fftx->workSizeV(A,B)
   //    (only needed for inplace usage)
   Convolution2(fftPad &fftx, Convolution &convolvey,
                Complex *F=NULL, Complex *W=NULL, Complex *V=NULL) :
@@ -717,7 +729,7 @@ public:
     Ly=convolvey->L;
 
     nloops=fftx->nloops();
-    loop2=fftx->loop2();
+    loop2=fftx->loop2(A,B);
     int extra;
     if(loop2) {
       r=fftx->increment(0);
@@ -740,7 +752,7 @@ public:
 
     if(V) {
       this->V=new Complex*[B];
-      unsigned int size=fftx->workSizeV();
+      unsigned int size=fftx->workSizeV(A,B);
       for(unsigned int i=0; i < B; ++i)
         this->V[i]=V+i*size;
     } else
@@ -750,7 +762,7 @@ public:
   void initV() {
     allocateV=true;
     V=new Complex*[B];
-    unsigned int size=fftx->workSizeV();
+    unsigned int size=fftx->workSizeV(A,B);
     for(unsigned int i=0; i < B; ++i)
       V[i]=utils::ComplexAlign(size);
   }
@@ -881,7 +893,7 @@ public:
   // F is an optional work array of size max(A,B)*fftx->outputSize(),
   // W is an optional work array of size fftx->workSizeW(),
   //    call fftx->pad() if changed between calls to convolve()
-  // V is an optional work array of size B*fftx->workSizeV()
+  // V is an optional work array of size B*fftx->workSizeV(A,B)
   //    (only needed for inplace usage)
   ConvolutionHermitian2(fftPadCentered &fftx, ConvolutionHermitian &convolvey,
                         Complex *F=NULL, Complex *W=NULL, Complex *V=NULL) {
@@ -906,8 +918,6 @@ public:
   }
 };
 
-
-extern void optionsHybrid(int argc, char* argv[]);
 
 } //end namespace fftwpp
 
