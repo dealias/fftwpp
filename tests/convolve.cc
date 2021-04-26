@@ -2642,7 +2642,7 @@ void Convolution::init(Complex *F, Complex *V)
       W0=this->W;
   }
 
-  if(fft->outputSize() <= fft->C*L)
+  if(fft->outputSize() <= fft->C*L && false) // Doesn't work for Hermitian case
     for(unsigned int r=0; r < R; r += fft->increment(r))
       overwrite=r; // Store F in h on the last loop
   else
