@@ -28,11 +28,13 @@ int main(int argc, char* argv[])
   cout << "Explicit:" << endl;
   // Minimal explicit padding
   fftPad fft0(L,M,FB,C,true,true);
+//  fftPadCentered fft0(L,M,FB,C,true,true);
 
   double mean0=fft0.report(FB);
 
   // Optimal explicit padding
   fftPad fft1(L,M,FB,C,true,false);
+//  fftPadCentered fft1(L,M,FB,C,true,false);
   double mean1=min(mean0,fft1.report(FB));
 
   // Hybrid padding

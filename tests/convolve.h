@@ -131,6 +131,8 @@ public:
               unsigned int C, bool Explicit=false, bool fixed=false);
   };
 
+  fftBase(unsigned int L, unsigned int M, unsigned int C) : L(L), M(M), C(C) {}
+
   fftBase(unsigned int L, unsigned int M, unsigned int C,
           unsigned int m, unsigned int q, unsigned int D) :
     L(L), M(M), C(C), m(m), p(utils::ceilquotient(L,m)), q(q), D(D) {}
@@ -260,6 +262,9 @@ public:
     }
   };
 
+  fftPad(unsigned int L, unsigned int M, unsigned int C,
+         bool centered) : fftBase(L,M,C), centered(centered) {};
+
   // Compute an fft padded to N=m*q >= M >= L
   fftPad(unsigned int L, unsigned int M, unsigned int C,
          unsigned int m, unsigned int q,unsigned int D, bool centered=false) :
@@ -355,7 +360,7 @@ public:
     double time(unsigned int L, unsigned int M, unsigned int C,
                 unsigned int m, unsigned int q,unsigned int D,
                 Application &app) {
-      fftPad fft(L,M,C,m,q,D,true);
+      fftPadCentered fft(L,M,C,m,q,D);
       return fft.meantime(app);
     }
   };
@@ -372,7 +377,14 @@ public:
   // (or exactly M if fixed=true)
   fftPadCentered(unsigned int L, unsigned int M, Application& app,
                  unsigned int C=1, bool Explicit=false, bool fixed=false) :
-    fftPad(L,M,app,C,Explicit,fixed,true) {
+    fftPad(L,M,C,true) {
+    Opt opt=Opt(L,M,app,C,Explicit,fixed);
+    m=opt.m;
+    if(Explicit)
+      M=m;
+    q=opt.q;
+    D=opt.D;
+    fftPad::init();
     init();
   }
 
@@ -909,6 +921,8 @@ public:
     unsigned int Hy=utils::ceilquotient(Ly,2);
     FB=new ForwardBackward(A,B);
     fftx=new fftPadCentered(Lx,Mx,*FB,Hy);
+//    fftx=new fftPadCentered(Lx,Mx,Hy,Hx,utils::ceilquotient(Mx,Hx),1);
+//    cout << Lx << " " << Mx << " " << Hy << " " << Hx << endl;
     unsigned int q=utils::ceilquotient(My,Hy);
     fftPadHermitian *ffty=new fftPadHermitian(Ly,My,1,Hy,q,2);
     convolvey=new ConvolutionHermitian(*ffty,A,B);
