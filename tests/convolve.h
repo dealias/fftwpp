@@ -118,7 +118,7 @@ public:
                         unsigned int m, unsigned int q,unsigned int D,
                         Application &app)=0;
 
-    virtual bool validD(unsigned int D) {return true;}
+    virtual bool valid(unsigned int D, unsigned int p) {return true;}
 
     void check(unsigned int L, unsigned int M,
                Application& app, unsigned int C, unsigned int m,
@@ -355,6 +355,10 @@ public:
 
   class Opt : public OptBase {
   public:
+    virtual bool valid(unsigned int D, unsigned int p) {
+      return D == 2 || p == 2;
+    }
+
     Opt(unsigned int L, unsigned int M, Application& app,
         unsigned int C, bool Explicit=false, bool fixed=false) {
       scan(L,M,app,C,Explicit,fixed);
@@ -410,6 +414,10 @@ public:
 
   void backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale);
   void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W, double scale);
+  
+  void forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W);
+  void backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale);
+  
 };
 
 class fftPadHermitian : public fftBase {
@@ -420,7 +428,7 @@ public:
 
   class Opt : public OptBase {
   public:
-    virtual bool validD(unsigned int D) {return D == 2;}
+    virtual bool valid(unsigned int D, unsigned int p) {return D == 2;}
 
     Opt(unsigned int L, unsigned int M, Application& app,
         unsigned int C, bool Explicit=false, bool fixed=false) {

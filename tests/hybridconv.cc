@@ -1,6 +1,6 @@
 #include "convolve.h"
 
-#define OUTPUT 1
+#define OUTPUT 0
 
 using namespace std;
 using namespace utils;
@@ -24,8 +24,8 @@ int main(int argc, char* argv[])
   optionsHybrid(argc,argv);
 
   ForwardBackward FB(A,B);
-  fftPad fft(L,M,FB,C);
-//  fftPadCentered fft(L,M,FB,C);
+//  fftPad fft(L,M,FB,C);
+  fftPadCentered fft(L,M,FB,C);
 
   Complex **f=new Complex *[max(A,B)];
   for(unsigned int a=0; a < A; ++a)
