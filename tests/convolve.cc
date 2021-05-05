@@ -2675,29 +2675,31 @@ Convolution::~Convolution()
   delete [] F;
 }
 
-// f is an input array of A pointers to distinct data blocks each of size
-// fft->length()
-// h is an output array of B pointers to distinct data blocks each of size
-// fft->length(), which may coincide with f.
+// f is an array of max(A,B) pointers to distinct data blocks
+// each of size fft->length()
 // offset is applied to each input and output component
-void Convolution::convolve0(Complex **f, Complex **h, multiplier *mult,
-                            unsigned int offset)
+void Convolution::convolve0(Complex **f, multiplier *mult, unsigned int offset)
 {
   if(q == 1) {
     for(unsigned int a=0; a < A; ++a)
       (fft->*Forward)(f[a]+offset,F[a],0,NULL);
     (*mult)(F,b,threads);
     for(unsigned int b=0; b < B; ++b)
-      (fft->*Backward)(F[b],h[b]+offset,0,NULL,1.0);
+      (fft->*Backward)(F[b],f[b]+offset,0,NULL,1.0);
   } else {
-    /* TODO
-    if(h == f && fft->overwrite) {
-      forward(f,F,Rx,offset);
-      (*mult)(f,fft->p*b,offset,threads);
-      (*mult)(F,b,offset,threads);
-      backward(F,f,Rx,offset);
+    if(fft->overwrite) {
+      cout << "Untested!" << endl; // TODO: CHECK
+      unsigned int C=max(A,B); // Move to class
+      Complex *g[C];
+      for(unsigned int a=0; a < C; ++a)
+        g[a]=f[a]+offset;
+      for(unsigned int a=0; a < A; ++a)
+        (fft->*Forward)(f[a]+offset,F[a],R,NULL);
+      (*mult)(g,fft->p*b,threads);
+      (*mult)(F,b,threads);
+      for(unsigned int b=0; b < B; ++b)
+        (fft->*Backward)(F[b],f[b]+offset,R,NULL,1.0);
     } else {
-    */
       if(loop2) {
         for(unsigned int a=0; a < A; ++a)
           (fft->*Forward)(f[a]+offset,F[a],0,W);
@@ -2705,17 +2707,17 @@ void Convolution::convolve0(Complex **f, Complex **h, multiplier *mult,
 
         for(unsigned int b=0; b < B; ++b) {
           (fft->*Forward)(f[b]+offset,Fp[b],r,W);
-          (fft->*Backward)(F[b],h[b]+offset,0,W0,1.0);
+          (fft->*Backward)(F[b],f[b]+offset,0,W0,1.0);
           (fft->*Pad)(W);
         }
         for(unsigned int a=B; a < A; ++a)
           (fft->*Forward)(f[a]+offset,Fp[a],r,W);
         (*mult)(Fp,D*b,threads);
         for(unsigned int b=0; b < B; ++b)
-          (fft->*Backward)(Fp[b],h[b]+offset,r,FpB,1.0);
+          (fft->*Backward)(Fp[b],f[b]+offset,r,FpB,1.0);
       } else {
         unsigned int Offset;
-        bool useV=h == f && nloops > 1;
+        bool useV=nloops > 1;
         Complex **h0;
         if(useV) {
           if(!V) initV();
@@ -2723,12 +2725,12 @@ void Convolution::convolve0(Complex **f, Complex **h, multiplier *mult,
           Offset=0;
         } else {
           Offset=offset;
-          h0=h;
+          h0=f;
         }
 
         for(unsigned int r=0; r < R; r += fft->increment(r)) {
           for(unsigned int a=0; a < A; ++a) {
-            Complex *output=r == overwrite ? h[a]+offset : F[a];
+            Complex *output=r == overwrite ? f[a]+offset : F[a];
             G[a]=output;
             (fft->*Forward)(f[a]+offset,output,r,W);
           }
@@ -2748,7 +2750,7 @@ void Convolution::convolve0(Complex **f, Complex **h, multiplier *mult,
         }
       }
     }
-//  }
+  }
 }
 
 void ForwardBackward::init(fftBase &fft)
@@ -2793,20 +2795,21 @@ void ForwardBackward::init(fftBase &fft)
 double ForwardBackward::time(fftBase &fft, unsigned int K)
 {
   unsigned int R=fft.R;
+  unsigned int start,stop;
+  if(fft.overwrite) {
+    start=R;
+    stop=R+1;
+  } else {
+    start=0;
+    stop=R;
+  }
   double t0=totalseconds();
   for(unsigned int k=0; k < K; ++k) {
-    if(fft.overwrite) { // FIXME: Assumes h=f in actual application.
+    for(unsigned int r=start; r < stop; r += fft.increment(r)) {
       for(unsigned int a=0; a < A; ++a)
-        (fft.*Forward)(f[a],F[a],R,W);
+        (fft.*Forward)(f[a],F[a],r,W);
       for(unsigned int b=0; b < B; ++b)
-        (fft.*Backward)(F[b],h[b],R,W,1.0);
-    } else {
-      for(unsigned int r=0; r < R; r += fft.increment(r)) {
-        for(unsigned int a=0; a < A; ++a)
-          (fft.*Forward)(f[a],F[a],r,W);
-        for(unsigned int b=0; b < B; ++b)
-          (fft.*Backward)(F[b],h[b],r,W,1.0);
-      }
+        (fft.*Backward)(F[b],h[b],r,W,1.0);
     }
   }
   double t=totalseconds();

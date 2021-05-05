@@ -29,32 +29,27 @@ int main(int argc, char* argv[])
 
   unsigned int H=ceilquotient(L,2);
 
-  Complex *f=ComplexAlign(C*H);
-  Complex *g=ComplexAlign(C*H);
+  Complex **f=new Complex *[max(A,B)];
+  for(unsigned int a=0; a < A; ++a)
+    f[a]=ComplexAlign(C*H);
 
+  for(unsigned int a=0; a < A; ++a) {
+    Complex *fa=f[a];
 #if OUTPUT
-  for(unsigned int c=0; c < C; ++c) {
-    f[c]=1.0;
-    g[c]=2.0;
-  }
-  for(unsigned int j=1; j < H; ++j) {
-    for(unsigned int c=0; c < C; ++c) {
-      f[C*j+c]=Complex(j,j+1);
-      g[C*j+c]=Complex(j,2*j+1);
+    for(unsigned int c=0; c < C; ++c)
+      fa[c]=1.0+a;
+    for(unsigned int j=1; j < H; ++j) {
+      for(unsigned int c=0; c < C; ++c)
+        fa[C*j+c]=Complex(j,(1.0+a)*j+1);
     }
-  }
 #else
-  for(unsigned int j=0; j < C*H; ++j) {
-    f[j]=0.0;
-    g[j]=0.0;
-  }
+    for(unsigned int j=0; j < C*H; ++j)
+      fa[j]=0.0;
 #endif
+  }
 
   ConvolutionHermitian Convolve(fft,A,B);
 
-  Complex *F[]={f,g};
-//  Complex *h=ComplexAlign(H);
-//  Complex *H[]={h};
 #if OUTPUT
   unsigned int K=1;
 #else
@@ -63,16 +58,16 @@ int main(int argc, char* argv[])
   double t0=totalseconds();
 
   for(unsigned int k=0; k < K; ++k)
-    Convolve.convolve(F,F,realmultbinary);
-//    Convolve.convolve(F,F,multadvection2);
+    Convolve.convolve(f,realmultbinary);
 
   double t=totalseconds();
   cout << (t-t0)/K << endl;
   cout << endl;
 #if OUTPUT
-  for(unsigned int j=0; j < H; ++j)
-    for(unsigned int c=0; c < C; ++c)
-      cout << F[0][C*j+c] << endl;
+  for(unsigned int b=0; b < B; ++b)
+    for(unsigned int j=0; j < H; ++j)
+      for(unsigned int c=0; c < C; ++c)
+        cout << f[b][C*j+c] << endl;
 #endif
 
   return 0;

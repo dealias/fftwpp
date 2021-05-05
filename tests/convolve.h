@@ -595,21 +595,21 @@ public:
 
   ~Convolution();
 
-  void normalize(Complex **h, unsigned int offset=0) {
+  void normalize(Complex **f, unsigned int offset=0) {
     for(unsigned int b=0; b < B; ++b) {
-      Complex *hb=h[b]+offset;
+      Complex *fb=f[b]+offset;
       for(unsigned int i=0; i < noutputs; ++i)
-        hb[i] *= scale;
+        fb[i] *= scale;
     }
   }
 
-  void convolve0(Complex **f, Complex **h, multiplier *mult,
-                 unsigned int offset=0);
+  void convolve0(Complex **f, multiplier *mult, unsigned int offset=0);
 
-  void convolve(Complex **f, Complex **h, multiplier *mult,
-                unsigned int offset=0) {
-    convolve0(f,h,mult,offset);
-    normalize(h,offset);
+  void convolve(Complex **f, multiplier *mult, unsigned int offset=0) {
+    convolve0(f,mult,offset);
+    // TODO:
+    // if(fft->overwrite) return;
+    normalize(f,offset);
   }
 };
 
@@ -812,7 +812,7 @@ public:
   void subconvolution(Complex **f, multiplier *mult, unsigned int C,
                       unsigned int stride, unsigned int offset=0) {
     for(unsigned int i=0; i < C; ++i)
-      convolvey->convolve0(f,f,mult,offset+i*stride);
+      convolvey->convolve0(f,mult,offset+i*stride);
   }
 
   void backward(Complex **F, Complex **f, unsigned int rx,
@@ -833,10 +833,9 @@ public:
   }
 
 // f is a pointer to A distinct data blocks each of size Lx*Ly,
-// shifted by offset (contents not preserved).
-  void convolve0(Complex **f, Complex **h, multiplier *mult,
-                 unsigned int offset=0) {
-    if(h == f && fftx->overwrite) {
+// shifted by offset.
+  void convolve0(Complex **f, multiplier *mult, unsigned int offset=0) {
+    if(fftx->overwrite) {
       forward(f,F,Rx,offset);
       subconvolution(f,mult,fftx->p*Nx,Ly,offset);
       subconvolution(F,mult,Nx,Ly,offset);
@@ -849,16 +848,16 @@ public:
 
         for(unsigned int b=0; b < B; ++b) {
           (fftx->*Forward)(f[b]+offset,Fp[b],r,W);
-          (fftx->*Backward)(F[b],h[b]+offset,0,W0,1.0);
+          (fftx->*Backward)(F[b],f[b]+offset,0,W0,1.0);
         }
         for(unsigned int a=B; a < A; ++a)
           (fftx->*Forward)(f[a]+offset,Fp[a],r,W);
         subconvolution(Fp,mult,fftx->D*Nx,Ly,offset);
         for(unsigned int b=0; b < B; ++b)
-          (fftx->*Backward)(Fp[b],h[b]+offset,r,FpB,1.0);
+          (fftx->*Backward)(Fp[b],f[b]+offset,r,FpB,1.0);
       } else {
         unsigned int Offset;
-        bool useV=h == f && nloops > 1;
+        bool useV=nloops > 1;
         Complex **h0;
         if(useV) {
           if(!V) initV();
@@ -866,7 +865,7 @@ public:
           Offset=0;
         } else {
           Offset=offset;
-          h0=h;
+          h0=f;
         }
 
         for(unsigned int rx=0; rx < Rx; rx += fftx->increment(rx)) {
@@ -892,11 +891,10 @@ public:
     }
   }
 
-  void convolve(Complex **f, Complex **h, multiplier *mult,
-                unsigned int offset=0) {
-    convolve0(f,h,mult,offset);
-    if(f == h && fftx->overwrite) return;
-    normalize(h,offset);
+  void convolve(Complex **f, multiplier *mult, unsigned int offset=0) {
+    convolve0(f,mult,offset);
+    if(fftx->overwrite) return;
+    normalize(f,offset);
   }
 };
 
@@ -921,8 +919,6 @@ public:
     unsigned int Hy=utils::ceilquotient(Ly,2);
     FB=new ForwardBackward(A,B);
     fftx=new fftPadCentered(Lx,Mx,*FB,Hy);
-//    fftx=new fftPadCentered(Lx,Mx,Hy,Hx,utils::ceilquotient(Mx,Hx),1);
-//    cout << Lx << " " << Mx << " " << Hy << " " << Hx << endl;
     unsigned int q=utils::ceilquotient(My,Hy);
     fftPadHermitian *ffty=new fftPadHermitian(Ly,My,1,Hy,q,2);
     convolvey=new ConvolutionHermitian(*ffty,A,B);

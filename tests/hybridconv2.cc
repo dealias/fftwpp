@@ -32,31 +32,10 @@ int main(int argc, char* argv[])
   cout << "Mx=" << Mx << endl;
   cout << endl;
 
-  Complex **f=new Complex *[A];
-  Complex **h=new Complex *[B];
+  Complex **f=new Complex *[max(A,B)];
   for(unsigned int a=0; a < A; ++a)
     f[a]=ComplexAlign(Lx*Ly);
-  for(unsigned int b=0; b < B; ++b)
-    h[b]=ComplexAlign(Lx*Ly);
 
-  array2<Complex> f0(Lx,Ly,f[0]);
-  array2<Complex> f1(Lx,Ly,f[1]);
-
-  for(unsigned int i=0; i < Lx; ++i) {
-    for(unsigned int j=0; j < Ly; ++j) {
-      f0[i][j]=Complex(i,j);
-      f1[i][j]=Complex(2*i,j+1);
-    }
-  }
-
-  if(Lx*Ly < 200) {
-    for(unsigned int i=0; i < Lx; ++i) {
-      for(unsigned int j=0; j < Ly; ++j) {
-        cout << f0[i][j] << " ";
-      }
-      cout << endl;
-    }
-  }
 
 //      fftPad fftx(Lx,Mx,Ly,Lx,2,1);
 //      fftPad ffty(Ly,My,1,Ly,2,1);
@@ -69,21 +48,45 @@ int main(int argc, char* argv[])
   Convolution2 Convolve2(Lx,Ly,Mx,My,A,B);
 
   unsigned int K=10;
-  double t0=totalseconds();
+  double T=0;
 
-  for(unsigned int k=0; k < K; ++k)
-    Convolve2.convolve(f,h,multbinary);
+  for(unsigned int k=0; k < K; ++k) {
 
-  double t=totalseconds();
-  cout << (t-t0)/K << endl;
-  cout << endl;
+    for(unsigned int a=0; a < A; ++a) {
+      Complex *fa=f[a];
+      for(unsigned int i=0; i < Lx; ++i) {
+        for(unsigned int j=0; j < Ly; ++j) {
+          fa[Ly*i+j]=Complex((1.0+a)*i,j+a);
+        }
+      }
+    }
 
-  array2<Complex> h0(Lx,Ly,h[0]);
+    if(Lx*Ly < 200 && k == 0) {
+      for(unsigned int a=0; a < A; ++a) {
+        for(unsigned int i=0; i < Lx; ++i) {
+          for(unsigned int j=0; j < Ly; ++j) {
+            cout << f[a][Ly*i+j] << " ";
+          }
+          cout << endl;
+        }
+        cout << endl;
+      }
+    }
+
+    seconds();
+    Convolve2.convolve(f,multbinary);
+    T += seconds();
+  }
+
+  cout << "mean=" << T/K << endl;
 
   Complex sum=0.0;
-  for(unsigned int i=0; i < Lx; ++i) {
-    for(unsigned int j=0; j < Ly; ++j) {
-      sum += h0[i][j];
+  for(unsigned int b=0; b < B; ++b) {
+    Complex *fb=f[b];
+    for(unsigned int i=0; i < Lx; ++i) {
+      for(unsigned int j=0; j < Ly; ++j) {
+        sum += fb[Ly*i+j];
+      }
     }
   }
 
@@ -91,11 +94,13 @@ int main(int argc, char* argv[])
   cout << endl;
 
   if(Lx*Ly < 200) {
-    for(unsigned int i=0; i < Lx; ++i) {
-      for(unsigned int j=0; j < Ly; ++j) {
-        cout << h0[i][j] << " ";
+    for(unsigned int b=0; b < B; ++b) {
+      for(unsigned int i=0; i < Lx; ++i) {
+        for(unsigned int j=0; j < Ly; ++j) {
+          cout << f[b][Ly*i+j] << " ";
+        }
+        cout << endl;
       }
-      cout << endl;
     }
   }
   return 0;

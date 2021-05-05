@@ -25,27 +25,27 @@ int main(int argc, char* argv[])
 
   ForwardBackward FB(A,B);
   fftPad fft(L,M,FB,C);
+//  fftPadCentered fft(L,M,FB,C);
 
-  Complex *f=ComplexAlign(C*L);
-  Complex *g=ComplexAlign(C*L);
+  Complex **f=new Complex *[max(A,B)];
+  for(unsigned int a=0; a < A; ++a)
+    f[a]=ComplexAlign(C*L);
 
-  for(unsigned int j=0; j < L; ++j) {
-    for(unsigned int c=0; c < C; ++c) {
+  for(unsigned int a=0; a < A; ++a) {
+    Complex *fa=f[a];
+    for(unsigned int j=0; j < L; ++j) {
+      for(unsigned int c=0; c < C; ++c) {
 #if OUTPUT
-      f[C*j+c]=Complex(j,j+1);
-      g[C*j+c]=Complex(j,2*j+1);
+        fa[C*j+c]=Complex(j,(1.0+a)*j+1);
 #else
-      f[C*j+c]=0.0;
-      g[C*j+c]=0.0;
+        fa[C*j+c]=0.0;
 #endif
+      }
     }
   }
 
   Convolution Convolve(fft,A,B);
 
-  Complex *F[]={f,g};
-//  Complex *h=ComplexAlign(L);
-//  Complex *H[]={h};
 #if OUTPUT
   unsigned int K=1;
 #else
@@ -54,15 +54,16 @@ int main(int argc, char* argv[])
   double t0=totalseconds();
 
   for(unsigned int k=0; k < K; ++k)
-    Convolve.convolve(F,F,multbinary);
+    Convolve.convolve(f,multbinary);
 
   double t=totalseconds();
   cout << (t-t0)/K << endl;
   cout << endl;
 #if OUTPUT
-  for(unsigned int j=0; j < L; ++j)
-    for(unsigned int c=0; c < C; ++c)
-      cout << F[0][C*j+c] << endl;
+  for(unsigned int b=0; b < B; ++b)
+    for(unsigned int j=0; j < L; ++j)
+      for(unsigned int c=0; c < C; ++c)
+        cout << f[b][C*j+c] << endl;
 #endif
 
   return 0;
