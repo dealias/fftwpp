@@ -537,6 +537,7 @@ public:
   fftBase *fft;
   unsigned int A;
   unsigned int B;
+  unsigned int N; // max(A,B)
   unsigned int L;
 protected:
   unsigned int q;

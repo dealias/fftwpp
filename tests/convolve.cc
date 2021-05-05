@@ -2591,7 +2591,7 @@ void Convolution::init(Complex *F, Complex *V)
   unsigned int c=fft->outputSize();
   noutputs=fft->ninputs();
 
-  unsigned int N=max(A,B);
+  N=max(A,B);
   this->F=new Complex*[N];
   if(F) {
     for(unsigned int i=0; i < N; ++i)
@@ -2621,7 +2621,7 @@ void Convolution::init(Complex *F, Complex *V)
     nloops=fft->nloops();
     loop2=fft->loop2(A,B);
     int extra;
-    if(loop2) {
+    if(loop2 && !fft->overwrite) {
       r=fft->increment(0);
       Fp=new Complex*[A];
       Fp[0]=this->F[A-1];
@@ -2632,6 +2632,8 @@ void Convolution::init(Complex *F, Complex *V)
     } else {
       extra=0;
       G=new Complex*[N];
+      for(unsigned int b=0; b < B; ++b)
+        G[b]=this->F[b];
     }
 
     if(A > B+extra && !fft->inplace) {
@@ -2688,17 +2690,14 @@ void Convolution::convolve0(Complex **f, multiplier *mult, unsigned int offset)
       (fft->*Backward)(F[b],f[b]+offset,0,NULL,1.0);
   } else {
     if(fft->overwrite) {
-      cout << "Untested!" << endl; // TODO: CHECK
-      unsigned int C=max(A,B); // Move to class
-      Complex *g[C];
-      for(unsigned int a=0; a < C; ++a)
-        g[a]=f[a]+offset;
+      for(unsigned int a=0; a < N; ++a)
+        G[a]=f[a]+offset;
       for(unsigned int a=0; a < A; ++a)
-        (fft->*Forward)(f[a]+offset,F[a],R,NULL);
-      (*mult)(g,fft->p*b,threads);
+        (fft->*Forward)(G[a],F[a],R,NULL);
+      (*mult)(G,fft->p*b,threads);
       (*mult)(F,b,threads);
       for(unsigned int b=0; b < B; ++b)
-        (fft->*Backward)(F[b],f[b]+offset,R,NULL,1.0);
+        (fft->*Backward)(F[b],G[b],R,NULL,1.0);
     } else {
       if(loop2) {
         for(unsigned int a=0; a < A; ++a)
