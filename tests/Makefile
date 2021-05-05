@@ -54,7 +54,7 @@ FILES=conv cconv conv2 cconv2 conv3 cconv3 tconv tconv2 \
 FFTW=fftw++
 EXTRA=$(FFTW) convolution explicit direct getopt
 HYBRID=$(FFTW) convolve getopt options
-ALL=$(FILES) $(EXTRA)
+ALL=$(FILES) $(EXTRA) $(HYBRID)
 
 all: $(FILES)
 
@@ -135,8 +135,10 @@ clean:  FORCE
 	rm -rf $(ALL) $(EXTRA) $(HYBRID) $(ALL:=.o) $(ALL:=.d)
 
 .SUFFIXES: .c .cc .o .d
+%.o: %.cc
+	$(CXX) $(CXXFLAGS) -o $@ -c $<
 
-.cc.d:
+%.d: %.cc
 	@echo Creating $@; \
 	rm -f $@; \
 	${CXX} $(MAKEDEPEND) $(INCL) $< > $@.$$$$ 2>/dev/null && \
