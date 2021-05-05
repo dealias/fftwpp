@@ -76,6 +76,13 @@ int main(int argc, char* argv[])
   for(unsigned int j=0; j < fft.outputs(); ++j)
     F0[j]=F[j];
 
+#if 0
+  cout << endl;
+  for(unsigned int j=0; j < fft.outputs(); ++j)
+    cout << F0[j] << endl;
+  cout << endl;
+#endif
+
   fft.backward(F0,f0);
 
   double scale=1.0/fft.normalization();

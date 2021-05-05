@@ -207,7 +207,10 @@ public:
   }
 
   unsigned int nloops() {
-    return utils::ceilquotient(R,dr);
+    unsigned int count=0;
+    for(unsigned int r=0; r < R; r += increment(r))
+      ++count;
+    return count;
   }
 
   bool loop2(unsigned int A, unsigned int B) {
