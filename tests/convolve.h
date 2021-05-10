@@ -122,13 +122,14 @@ public:
 
     void check(unsigned int L, unsigned int M,
                Application& app, unsigned int C, unsigned int m,
-               bool fixed=false, bool mForced=false);
+               bool fixed=false, bool mForced=false, bool centered=false);
 
     // Determine optimal m,q values for padding L data values to
     // size >= M
     // If fixed=true then an FFT of size M is enforced.
     void scan(unsigned int L, unsigned int M, Application& app,
-              unsigned int C, bool Explicit=false, bool fixed=false);
+              unsigned int C, bool Explicit=false, bool fixed=false,
+              bool centered=false);
   };
 
   fftBase(unsigned int L, unsigned int M, unsigned int C) : L(L), M(M), C(C) {}
@@ -191,7 +192,7 @@ public:
     return C*M;
   }
 
-  bool conjugates() {return D > 1 && p <= 2;}
+  virtual bool conjugates() {return D > 1 && p <= 2;}
 
   unsigned int residueBlocks() {
     return conjugates() ? utils::ceilquotient(Q,2) : Q;
@@ -361,7 +362,7 @@ public:
 
     Opt(unsigned int L, unsigned int M, Application& app,
         unsigned int C, bool Explicit=false, bool fixed=false) {
-      scan(L,M,app,C,Explicit,fixed);
+      scan(L,M,app,C,Explicit,fixed,true);
     }
 
     double time(unsigned int L, unsigned int M, unsigned int C,
@@ -400,6 +401,8 @@ public:
       utils::deleteAlign(ZetaShift);
   }
 
+  bool conjugates() {return D > 1 && (p == 1 || p % 2 == 0);}
+
   void init();
   void initShift();
 
@@ -414,10 +417,10 @@ public:
 
   void backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale);
   void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W, double scale);
-  
+
   void forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W);
   void backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale);
-  
+
 };
 
 class fftPadHermitian : public fftBase {
