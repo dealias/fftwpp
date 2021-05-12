@@ -95,7 +95,7 @@ unsigned int prevfftsize(unsigned int M, bool mixed)
 {
   int P[]={2,3,5,7};
   int i;
-  for(i=M; i > 10 ; --i) {
+  for(i=M; i > 10; --i) {
     int m=i;
     for(int j=0; j < 4; j++) {
       int p=P[j];
@@ -116,12 +116,13 @@ unsigned int prevfftsize(unsigned int M, bool mixed)
 void fftBase::initZetaqm(unsigned int q, unsigned int m)
 {
   double twopibyM=twopi/M;
-  Zetaqm0=utils::ComplexAlign((q-1)*m);
+  Zetaqm0=ComplexAlign((q-1)*m);
   Zetaqm=Zetaqm0-m;
   for(unsigned int r=1; r < q; ++r) {
-    Zetaqm[m*r]=1.0;
+    unsigned int mr=m*r;
+    Zetaqm[mr]=1.0;
     for(unsigned int s=1; s < m; ++s)
-      Zetaqm[m*r+s]=expi(r*s*twopibyM);
+      Zetaqm[mr+s]=expi(r*s*twopibyM);
   }
 }
 
@@ -160,7 +161,7 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
     }
   }
 
-  if(p > 2 && q % p != 0) return;
+  if(p > 2 && q % P != 0) return;
 
   unsigned int start=DOption > 0 ? min(DOption,q) : 1;
   unsigned int stop=DOption > 0 ? min(DOption,q) : q;
@@ -208,7 +209,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   bool mixed=true;
 
   if(mOption >= 1 && !Explicit)
-    check(L,M,app,C,mOption,fixed,true);
+    check(L,M,app,C,mOption,fixed,true,centered);
   else
     while(true){
       m0=prevfftsize(m0-1,mixed);
@@ -229,7 +230,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
       } else if(m0 <= sqrtM) break;
 //        } else if(m0 > L) break;
       if(!fixed || Explicit || M % m0 == 0)
-        check(L,M,app,C,m0,fixed || Explicit);
+        check(L,M,app,C,m0,fixed || Explicit,centered);
       ++i;
     }
 
@@ -362,11 +363,17 @@ void fftPad::init()
 
     unsigned int P;
     unsigned int p2=p/2;
-    if(p == 2 || (centered && p == 2*p2)) {
-      Q=n=q;
+
+    if(centered && p == 2*p2) {
+      Q=n=q/p2;
       P=p/2;
+      D=2;
+    } else if(p == 2) {
+      Q=n=q;
+      P=1;
     } else
       P=p;
+
     b=Cm*P;
     d=C*D*P;
 
@@ -376,7 +383,25 @@ void fftPad::init()
     G=ComplexAlign(size);
     H=inplace ? G : ComplexAlign(size);
 
-    if(p == 2) {
+    if(p > 2) { // Implies L > 2m
+      if(C == 1) {
+        Forward=&fftBase::forwardInner;
+        Backward=&fftBase::backwardInner;
+      } else {
+        Forward=&fftBase::forwardInnerMany;
+        Backward=&fftBase::backwardInnerMany;
+      }
+      Q=n;
+      Zetaqp0=ComplexAlign((n-1)*(P-1));
+      Zetaqp=Zetaqp0-P;
+      for(unsigned int r=1; r < n; ++r)
+        for(unsigned int t=1; t < P; ++t)
+          Zetaqp[P*r-r+t]=expi(r*t*twopibyq);
+
+      // L'=p, M'=q, m'=p, p'=1, q'=n
+      fftp=new mfft1d(P,1,Cm, Cm,1, G);
+      ifftp=new mfft1d(P,-1,Cm, Cm,1, G);
+    } else if(p == 2) {
       if(!centered) {
         unsigned int Lm=L-m;
         Zetaqm2=ComplexAlign((q-1)*Lm)-L;
@@ -393,24 +418,6 @@ void fftPad::init()
         Forward=&fftBase::forward2Many;
         Backward=&fftBase::backward2Many;
       }
-    } else if(p > 2) { // Implies L > 2m
-      if(C == 1) {
-        Forward=&fftBase::forwardInner;
-        Backward=&fftBase::backwardInner;
-      } else {
-        Forward=&fftBase::forwardInnerMany;
-        Backward=&fftBase::backwardInnerMany;
-      }
-      Q=n;
-      unsigned int P=centered ? p/2 : p;
-      Zetaqp=ComplexAlign((n-1)*(P-1))-P;
-      for(unsigned int r=1; r < n; ++r)
-        for(unsigned int t=1; t < P; ++t)
-          Zetaqp[P*r-r+t]=expi(r*t*twopibyq);
-
-      // L'=p, M'=q, m'=p, p'=1, q'=n
-      fftp=new mfft1d(P,1,Cm, Cm,1, G);
-      ifftp=new mfft1d(P,-1,Cm, Cm,1, G);
     } else { // p == 1
       if(C == 1) {
         Forward=&fftBase::forward;
@@ -449,7 +456,7 @@ void fftPad::init()
       deleteAlign(H);
     deleteAlign(G);
 
-    initZetaqm(q,centered && p == 2 ? m+1 : m);
+    initZetaqm(q,centered && p % 2 == 0 ? m+1 : m);
   }
 }
 
@@ -459,7 +466,7 @@ fftPad:: ~fftPad() {
     delete ifftm;
   } else {
     if(Zetaqp) {
-      deleteAlign(Zetaqp+p);
+      deleteAlign(Zetaqp0);
       delete fftp;
       delete ifftp;
     }
@@ -547,7 +554,7 @@ void fftPad::forward(Complex *f, Complex *F0, unsigned int r0, Complex *W)
       residues=1;
       for(unsigned int s=0; s < L; ++s)
         W[s]=f[s];
-    } else { // q even, r=q/2
+    } else { // q even, r=0,q/2
       residues=2;
       Complex *V=W+m;
       V[0]=W[0]=f[0];
@@ -1025,7 +1032,7 @@ void fftPad::backward(Complex *F0, Complex *f, unsigned int r0, Complex *W, doub
       residues=1;
       for(unsigned int s=0; s < L; ++s)
         f[s]=W[s];
-    } else { // q even, r=q/2
+    } else { // q even, r=0,q/2
       residues=2;
       Complex *V=W+m;
       f[0]=W[0]+V[0];
@@ -1113,7 +1120,7 @@ void fftPad::backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W, dou
       Complex *Wm=W-m;
       for(unsigned int s=m; s < L; ++s)
         f[s]=Wm[s];
-    } else { // q even, r=q/2
+    } else { // q even, r=0,q/2
       residues=2;
       Complex *V=W+m;
       f[0]=W[0]+V[0];
@@ -1724,7 +1731,7 @@ void fftPadCentered::backward2(Complex *F0, Complex *f, unsigned int r0, Complex
         fmH[s]=W[s];
       for(unsigned int s=0; s < LH; ++s)
         fH[s]=W[s];
-    } else { // q even, r=q/2
+    } else { // q even, r=0,q/2
       residues=2;
       Complex *V=W+m;
       Complex *Zetar=Zetaqm+(m+1)*q2;
@@ -1900,10 +1907,11 @@ void fftPadCentered::forwardInner(Complex *f, Complex *F, unsigned int r, Comple
 {
   if(W == NULL) W=F;
 
+  unsigned int m1=m+1;
   unsigned int p2=p/2;
   unsigned int H=L/2;
-  unsigned int p2m1=p2-1;
-  unsigned int p2m1m=p2m1*m;
+  unsigned int p2s1=p2-1;
+  unsigned int p2s1m=p2s1*m;
   unsigned int p2m=p2*m;
   unsigned int mpH=p2m-H;
   unsigned int mmpH=m-mpH;
@@ -1912,13 +1920,11 @@ void fftPadCentered::forwardInner(Complex *f, Complex *F, unsigned int r, Comple
   if(r == 0) {
     unsigned int n2=n/2;
     if(2*n2 < n) { // n odd, r=0
-      for(unsigned int s=0; s < mpH; ++s) {
+      for(unsigned int s=0; s < mpH; ++s)
         W[s]=fH[s];
-      }
-      for(unsigned int s=mpH; s < m; ++s) {
+      for(unsigned int s=mpH; s < m; ++s)
         W[s]=fmpH[s]+fH[s];
-      }
-      Complex *Zetaqn2=Zetaqp+p2m1*n2;
+      Complex *Zetaqn2=Zetaqp+p2s1*n2;
       for(unsigned int t=1; t < p2-1; ++t) {
         unsigned int tm=t*m;
         Complex *Wt=W+tm;
@@ -1926,32 +1932,30 @@ void fftPadCentered::forwardInner(Complex *f, Complex *F, unsigned int r, Comple
         Complex *fHt=fH+tm;
         Complex Zeta=Zetaqn2[t];
         for(unsigned int s=0; s < m; ++s) {
-          Wt[s]=Zeta*fmpHt[s]+Zeta*fHt[s]; 
+          Wt[s]=Zeta*fmpHt[s]+Zeta*fHt[s];
         }
       }
-      Complex *Wt=W+p2m1m;
-      Complex *fmpHt=fmpH+p2m1m;
-      Complex *fHt=fH+p2m1m;
+      Complex *Wt=W+p2s1m;
+      Complex *fmpHt=fmpH+p2s1m;
+      Complex *fHt=fH+p2s1m;
       Complex Zeta=Zetaqn2[p2];
-      for(unsigned int s=0; s < mmpH; ++s) {
-        Wt[s]=Zeta*fmpHt[s]+Zeta*fHt[s]; 
-      }
-      for(unsigned int s=mmpH; s < m; ++s) {
-        Wt[s]=Zeta*fmpHt[s]; 
-      }
+      for(unsigned int s=0; s < mmpH; ++s)
+        Wt[s]=Zeta*fmpHt[s]+Zeta*fHt[s];
+      for(unsigned int s=mmpH; s < m; ++s)
+        Wt[s]=Zeta*fmpHt[s];
 
       fftp->fft(W);
 
-      for(unsigned int u=0; u < p2-1; ++u) {
+      for(unsigned int u=1; u < p2-1; ++u) {
         unsigned int um=u*m;
         unsigned int R0=n*u;
         Complex *Wu=W+um;
-        Complex *Zeta0=Zetaqm+m*R0;
+        Complex *Zeta0=Zetaqm+m1*R0;
         for(unsigned int s=1; s < m; ++s)
           Wu[s] *= Zeta0[s];
       }
-
-    } else {
+      fftm0=fftm2;
+    } else { // n even, r=0,n/2
       Complex *V=W+b;
       for(unsigned int s=0; s < mpH; ++s) {
         Complex fHs=fH[s];
@@ -1964,7 +1968,7 @@ void fftPadCentered::forwardInner(Complex *f, Complex *F, unsigned int r, Comple
         W[s]=fmpHs+fHs;
         V[s]=-fmpHs+fHs;
       }
-      Complex *Zetaqn2=Zetaqp+p2m1*n2;
+      Complex *Zetaqn2=Zetaqp+p2s1*n2;
       for(unsigned int t=1; t < p2-1; ++t) {
         unsigned int tm=t*m;
         Complex *Wt=W+tm;
@@ -1973,48 +1977,49 @@ void fftPadCentered::forwardInner(Complex *f, Complex *F, unsigned int r, Comple
         Complex *fHt=fH+tm;
         Complex Zeta=Zetaqn2[t];
         for(unsigned int s=0; s < m; ++s) {
-          Complex fmpHts=Zeta*fmpHt[s];//*zeta_q^{tn/2}
-          Complex fHts=Zeta*fHt[s];//*zeta_q^{tn/2}
-          Wt[s]=fmpHts+fHts; 
-          Vt[s]=-fmpHts+fHts; 
+          Complex fmpHts=Zeta*fmpHt[s]; //*zeta_q^{tn/2}
+          Complex fHts=Zeta*fHt[s]; //*zeta_q^{tn/2}
+          Wt[s]=fmpHts+fHts;
+          Vt[s]=-fmpHts+fHts;
         }
       }
-      Complex *Wt=W+p2m1m;
-      Complex *Vt=V+p2m1m;
-      Complex *fmpHt=fmpH+p2m1m;
-      Complex *fHt=fH+p2m1m;
+      Complex *Wt=W+p2s1m;
+      Complex *Vt=V+p2s1m;
+      Complex *fmpHt=fmpH+p2s1m;
+      Complex *fHt=fH+p2s1m;
       Complex Zeta=Zetaqn2[p2];
       for(unsigned int s=0; s < mmpH; ++s) {
-        Complex fmpHts=Zeta*fmpHt[s];//*zeta_q^{(p2-1)n/2}
-        Complex fHts=Zeta*fHt[s];//*zeta_q^{(p2-1)n/2}
-        Wt[s]=fmpHts+fHts; 
-        Vt[s]=-fmpHts+fHts; 
+        Complex fmpHts=Zeta*fmpHt[s]; //*zeta_q^{(p2-1)n/2}
+        Complex fHts=Zeta*fHt[s]; //*zeta_q^{(p2-1)n/2}
+        Wt[s]=fmpHts+fHts;
+        Vt[s]=-fmpHts+fHts;
       }
       for(unsigned int s=mmpH; s < m; ++s) {
-        Complex fmpHts=Zeta*fmpHt[s];//*zeta_q^{(p2-1)n/2}
-        Wt[s]=fmpHts; 
-        Vt[s]=-fmpHts; 
+        Complex fmpHts=Zeta*fmpHt[s]; //*zeta_q^{(p2-1)n/2}
+        Wt[s]=fmpHts;
+        Vt[s]=-fmpHts;
       }
-      //THIS SHOULD BE A SINGLE CALL!
       fftp->fft(W);
       fftp->fft(V);
 
-      for(unsigned int u=0; u < p2-1; ++u) {
+      unsigned int m1n=m1*n;
+      unsigned int m1n2=m1*n2;
+      Complex *Zetan2=Zetaqm+m1n2;
+      for(unsigned int s=1; s < m; ++s)
+        V[s] *= Zetan2[s];
+      for(unsigned int u=1; u < p2-1; ++u) {
         unsigned int um=u*m;
-        unsigned int R0=n*u;
-        unsigned int Rn2=n*u+n2;
         Complex *Wu=W+um;
         Complex *Vu=V+um;
-        Complex *Zeta0=Zetaqm+m*R0;
-        Complex *Zetan2=Zetaqm+m*Rn2;
+        Complex *Zeta0=Zetaqm+m1n*u;
+        Complex *Zetan2=Zeta0+m1n2;
         for(unsigned int s=1; s < m; ++s){
           Wu[s] *= Zeta0[s];
           Vu[s] *= Zetan2[s];
         }
       }
+      fftm0=fftm;
     }
-    fftm0=D0 == D ? fftm : fftm2;
-
   } else {
     Complex *V=W+b;
     for(unsigned int s=0; s < mpH; ++s) {
@@ -2025,7 +2030,7 @@ void fftPadCentered::forwardInner(Complex *f, Complex *F, unsigned int r, Comple
       W[s]=fmpH[s];
       V[s]=fH[s];
     }
-    Complex *Zetaqr=Zetaqp+p2m1*r;
+    Complex *Zetaqr=Zetaqp+p2s1*r;
     for(unsigned int t=1; t < p2-1; ++t) {
       unsigned int tm=t*m;
       Complex *Wt=W+tm;
@@ -2038,10 +2043,10 @@ void fftPadCentered::forwardInner(Complex *f, Complex *F, unsigned int r, Comple
         Vt[s]=Zeta*fHt[s]; //*zeta_q^{tr}
       }
     }
-    Complex *Wt=W+p2m1m;
-    Complex *Vt=V+p2m1m;
-    Complex *fmpHt=fmpH+p2m1m;
-    Complex *fHt=fH+p2m1m;
+    Complex *Wt=W+p2s1m;
+    Complex *Vt=V+p2s1m;
+    Complex *fmpHt=fmpH+p2s1m;
+    Complex *fHt=fH+p2s1m;
     Complex Zeta=Zetaqr[p2];
     for(unsigned int s=0; s < mmpH; ++s) {
       Wt[s]=Zeta*fmpHt[s]; //*zeta_q^{(p2-1)r}
@@ -2053,13 +2058,15 @@ void fftPadCentered::forwardInner(Complex *f, Complex *F, unsigned int r, Comple
     }
     fftp->fft(W);
     fftp->fft(V);
+    unsigned int p2m1=p2*m1;
     for(unsigned int u=0; u < p2; ++u) {
-      Complex *Zetar=Zetaqm+(m+1)*(u*n+r);
-      Complex *Zetarm=Zetar+p2*m;
+      Complex *Zetar=Zetaqm+m1*(u*n+r);
+      Complex *Zetarm=Zetar+p2m1;
       unsigned int um=u*m;
       Complex *Wu=W+um;
       Complex *Vu=V+um;
-      for(unsigned int s=0; s < m; ++s) {
+      Wu[0]=Vu[0]=Wu[0]+Vu[0];
+      for(unsigned int s=1; s < m; ++s) {
         Vec Zeta=LOAD(Zetar+s);
         Vec Zetam=CONJ(LOAD(Zetarm-s));
         Vec Wus=LOAD(Wu+s);
@@ -2072,19 +2079,21 @@ void fftPadCentered::forwardInner(Complex *f, Complex *F, unsigned int r, Comple
     }
     fftm0=fftm;
   }
-  fftm0->fft(W0,F); // Check major index
+
+  fftm0->fft(W,F); // Check major index
 }
 
 void fftPadCentered::backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W, double)
 {
+  exit(0); // FIXME
   if(W == NULL) W=F0;
 
   (r0 > 0 || D0 == D ? ifftm : ifftm2)->fft(F0,W); //FIX ME
 
   unsigned int p2=p/2;
   unsigned int H=L/2;
-  unsigned int p2m1=p2-1;
-  unsigned int p2m1m=p2m1*m;
+  unsigned int p2s1=p2-1;
+  unsigned int p2s1m=p2s1*m;
   unsigned int p2m=p2*m;
   unsigned int mpH=p2m-H;
   unsigned int mmpH=m-mpH;
@@ -2110,23 +2119,23 @@ void fftPadCentered::backwardInner(Complex *F0, Complex *f, unsigned int r0, Com
         fmpH[s]=Ws;
         fH[s]=Ws;
       }
-      Complex *Zetaqr=Zetaqp+p2m1*r0;
+      Complex *Zetaqr=Zetaqp+p2s1*r0;
       for(unsigned int t=1; t < p2-1; ++t) {
         unsigned int tm=t*m;
         Complex *Wt=W+tm;
         Complex *fmpHt=fmpH+tm;
         Complex *fHt=fH+tm;
-        Complex Zeta=Zetaqr[t];//FIX ME
+        Complex Zeta=Zetaqr[t]; //FIX ME
         for(unsigned int s=0; s < m; ++s) {
           Complex Wts=Wt[s];
           fmpHt[s]=Wts;
           fHt[s]=Wts;
         }
       }
-      Complex *Wt=W+p2m1m;
-      Complex *fmpHt=fmpH+p2m1m;
-      Complex *fHt=fH+p2m1m;
-      Complex Zeta=Zetaqr[p2];//FIX ME
+      Complex *Wt=W+p2s1m;
+      Complex *fmpHt=fmpH+p2s1m;
+      Complex *fHt=fH+p2s1m;
+      Complex Zeta=Zetaqr[p2]; //FIX ME
       for(unsigned int s=0; s < mmpH; ++s) {
         Complex Wts=Wt[s];
         fmpHt[s]=Wts;
@@ -2142,7 +2151,7 @@ void fftPadCentered::backwardInner(Complex *F0, Complex *f, unsigned int r0, Com
         Complex *Wu=W+um;
         Complex *Vu=V+um;
         Complex Zeta0=1;
-        Complex Zetan2=1;//DEFINE Zeta0 and Zetan2
+        Complex Zetan2=1; //DEFINE Zeta0 and Zetan2
         for(unsigned int s=0; s < m; ++s) {
           Wu[s] *= Zeta0;
           Vu[s] *= Zetan2;
@@ -2158,14 +2167,14 @@ void fftPadCentered::backwardInner(Complex *F0, Complex *f, unsigned int r0, Com
         fmpH[s]=Ws-Vs;
         fH[s]=Ws+Vs;
       }
-      Complex *Zetaqr=Zetaqp+p2m1*r0;//FIX ME
+      Complex *Zetaqr=Zetaqp+p2s1*r0; //FIX ME
       for(unsigned int t=1; t < p2-1; ++t) {
         unsigned int tm=t*m;
         Complex *Wt=W+tm;
         Complex *Vt=V+tm;
         Complex *fmpHt=fmpH+tm;
         Complex *fHt=fH+tm;
-        Complex Zeta=Zetaqr[t];//FIX ME
+        Complex Zeta=Zetaqr[t]; //FIX ME
         for(unsigned int s=0; s < m; ++s) {
           Complex Wts=Wt[s];
           Complex Vts=Zeta*Vt[s];
@@ -2173,10 +2182,10 @@ void fftPadCentered::backwardInner(Complex *F0, Complex *f, unsigned int r0, Com
           fHt[s]=Wts+Vts;
         }
       }
-      Complex *Wt=W+p2m1m;
-      Complex *Vt=V+p2m1m;
-      Complex *fmpHt=fmpH+p2m1m;
-      Complex *fHt=fH+p2m1m;
+      Complex *Wt=W+p2s1m;
+      Complex *Vt=V+p2s1m;
+      Complex *fmpHt=fmpH+p2s1m;
+      Complex *fHt=fH+p2s1m;
       Complex Zeta=Zetaqr[p2];
       for(unsigned int s=0; s < mmpH; ++s) {
         Complex Wts=Wt[s];
@@ -2195,7 +2204,7 @@ void fftPadCentered::backwardInner(Complex *F0, Complex *f, unsigned int r0, Com
       Complex *Wu=W+um;
       Complex *Vu=V+um;
       Complex Zeta0=1;
-      Complex Zetan2=1;//DEFINE Zeta0 and Zetan2
+      Complex Zetan2=1; //DEFINE Zeta0 and Zetan2
       for(unsigned int s=0; s < m; ++s) {
         Wu[s] *= Zeta0;
         Vu[s] *= Zetan2;
@@ -2211,14 +2220,14 @@ void fftPadCentered::backwardInner(Complex *F0, Complex *f, unsigned int r0, Com
       fmpH[s]=Ws-Vs;
       fH[s]=Ws+Vs;
     }
-    Complex *Zetaqr=Zetaqp+p2m1*r0;//FIX ME
+    Complex *Zetaqr=Zetaqp+p2s1*r0; //FIX ME
     for(unsigned int t=1; t < p2-1; ++t) {
       unsigned int tm=t*m;
       Complex *Wt=W+tm;
       Complex *Vt=V+tm;
       Complex *fmpHt=fmpH+tm;
       Complex *fHt=fH+tm;
-      Complex Zeta=Zetaqr[t];//FIX ME
+      Complex Zeta=Zetaqr[t]; //FIX ME
       for(unsigned int s=0; s < m; ++s) {
         Complex Wts=Wt[s];
         Complex Vts=Zeta*Vt[s];
@@ -2226,10 +2235,10 @@ void fftPadCentered::backwardInner(Complex *F0, Complex *f, unsigned int r0, Com
         fHt[s]=Wts+Vts;
       }
     }
-    Complex *Wt=W+p2m1m;
-    Complex *Vt=V+p2m1m;
-    Complex *fmpHt=fmpH+p2m1m;
-    Complex *fHt=fH+p2m1m;
+    Complex *Wt=W+p2s1m;
+    Complex *Vt=V+p2s1m;
+    Complex *fmpHt=fmpH+p2s1m;
+    Complex *fHt=fH+p2s1m;
     Complex Zeta=Zetaqr[p2];
     for(unsigned int s=0; s < mmpH; ++s) {
       Complex Wts=Wt[s];
@@ -2242,7 +2251,7 @@ void fftPadCentered::backwardInner(Complex *F0, Complex *f, unsigned int r0, Com
     }
   }
 }
-  
+
 
 
 void fftPadHermitian::init()
@@ -2375,7 +2384,7 @@ void fftPadHermitian::forward2(Complex *f, Complex *F, unsigned int r, Complex *
 
   if(r == 0) {
     unsigned int q2=q/2;
-    if(2*q2 < q) { // q odd
+    if(2*q2 < q) { // q odd, r=0
       for(unsigned int s=0; s < mH1; ++s)
         W[s]=f[s];
       for(unsigned int s=mH1; s <= e; ++s)
@@ -2388,7 +2397,7 @@ void fftPadHermitian::forward2(Complex *f, Complex *F, unsigned int r, Complex *
         double *Fr=(double *) F+offset;
         *Fr=0.0;
       }
-    } else { // q even
+    } else { // q even, r=0,q/2
       Complex *G=F+b;
       Complex *V=W == F ? G : W+e1;
 
@@ -2501,7 +2510,7 @@ void fftPadHermitian::forward2Many(Complex *f, Complex *F, unsigned int r, Compl
         for(unsigned int c=0; c < C; ++c)
           Fr[c]=0.0;
       }
-    } else { // q even
+    } else { // q even, r=0,q/2
       Complex *G=F+b;
       Complex *V=W == F ? G : W+C*e1;
 
@@ -2639,7 +2648,7 @@ void fftPadHermitian::backward2(Complex *F, Complex *f, unsigned int r, Complex 
   unsigned int mH1=m-H+1;
   if(r == 0) {
     unsigned int q2=q/2;
-    if(2*q2 < q) { // q odd
+    if(2*q2 < q) { // q odd, r=0
       for(unsigned int s=0; s < mH1; ++s)
         f[s]=W[s];
       for(unsigned int s=mH1; s < me; ++s) {
@@ -2652,7 +2661,7 @@ void fftPadHermitian::backward2(Complex *F, Complex *f, unsigned int r, Complex 
         if(overlap)
           F[e]=Nyquist; // Restore initial input of next residue
       }
-    } else { // q even
+    } else { // q even, r=0,q/2
       unsigned int e1=e+1;
       Complex *G=F+b;
       Complex *V=inplace ? G : W+e1;
@@ -2758,7 +2767,7 @@ void fftPadHermitian::backward2Many(Complex *F, Complex *f, unsigned int r, Comp
   unsigned int Ce=C*e;
   if(r == 0) {
     unsigned int q2=q/2;
-    if(2*q2 < q) { // q odd
+    if(2*q2 < q) { // q odd, r=0
       for(unsigned int s=0; s < mH1; ++s) {
         unsigned int Cs=C*s;
         Complex *fs=f+Cs;
@@ -2788,7 +2797,7 @@ void fftPadHermitian::backward2Many(Complex *F, Complex *f, unsigned int r, Comp
             Fe[c]=Nyquist[c]; // Restore initial input of next residue
         }
       }
-    } else { // q even
+    } else { // q even, r=0,q/2
       unsigned int e1=e+1;
       Complex *G=F+b;
       Complex *V=inplace ? G : W+C*e1;

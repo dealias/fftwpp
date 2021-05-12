@@ -100,6 +100,7 @@ public:
   FFTPad Pad;
 protected:
   Complex *Zetaqp;
+  Complex *Zetaqp0;
   Complex *Zetaqm;
   Complex *Zetaqm2;
   Complex *Zetaqm0;
