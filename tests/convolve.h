@@ -102,8 +102,9 @@ protected:
   Complex *Zetaqp;
   Complex *Zetaqp0;
   Complex *Zetaqm;
-  Complex *Zetaqm2;
+  Complex *ZetaqmS;
   Complex *Zetaqm0;
+  Complex *ZetaqmS0;
 public:
 
   void common();

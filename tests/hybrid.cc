@@ -1,6 +1,6 @@
 #include "convolve.h"
 
-#define OUTPUT 0
+#define OUTPUT 1
 #define CENTERED 1
 
 using namespace std;
