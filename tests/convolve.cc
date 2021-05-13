@@ -1450,7 +1450,7 @@ void fftPadCentered::forwardShift(Complex *F, unsigned int r0) {
     for(unsigned int t=0; t < p; ++t) {
       Complex *Zetar=ZetaShift+n*t+r;
       Complex *Wt=W+Cm*t;
-      for(unsigned int s=0; s < m; ++s) {
+      for(unsigned int s=1; s < m; ++s) {
         Complex Zeta=conj(Zetar[q*s]);
         for(unsigned int c=0; c < C; ++c)
           Wt[C*s+c] *= Zeta;
@@ -1468,7 +1468,7 @@ void fftPadCentered::backwardShift(Complex *F, unsigned int r0)
     for(unsigned int t=0; t < p; ++t) {
       Complex *Zetar=ZetaShift+n*t+r;
       Complex *Wt=W+Cm*t;
-      for(unsigned int s=0; s < m; ++s) {
+      for(unsigned int s=1; s < m; ++s) {
         Complex Zeta=Zetar[q*s];
         for(unsigned int c=0; c < C; ++c)
           Wt[C*s+c] *= Zeta;
