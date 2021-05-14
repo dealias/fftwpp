@@ -1929,6 +1929,7 @@ void fftPadCentered::forwardInner(Complex *f, Complex *F, unsigned int r, Comple
   unsigned int p2m=p2*m;
   unsigned int mpH=p2m-H;
   unsigned int mmpH=m-mpH;
+  unsigned int mmpH2=mmpH+L%2;//mmpH+[ceil(L/2)-floor(L/2)]
   Complex *fmpH=f-mpH;
   Complex *fH=f+H;
   if(r == 0) {
@@ -1950,9 +1951,9 @@ void fftPadCentered::forwardInner(Complex *f, Complex *F, unsigned int r, Comple
       Complex *Wt=W+p2s1m;
       Complex *fmpHt=fmpH+p2s1m;
       Complex *fHt=fH+p2s1m;
-      for(unsigned int s=0; s < mmpH; ++s)
+      for(unsigned int s=0; s < mmpH2; ++s)
         Wt[s]=fmpHt[s]+fHt[s];
-      for(unsigned int s=mmpH; s < m; ++s)
+      for(unsigned int s=mmpH2; s < m; ++s)
         Wt[s]=fmpHt[s];
 
       fftp->fft(W);
@@ -1999,13 +2000,13 @@ void fftPadCentered::forwardInner(Complex *f, Complex *F, unsigned int r, Comple
       Complex *fmpHt=fmpH+p2s1m;
       Complex *fHt=fH+p2s1m;
       Complex Zeta=Zetaqn2[p2];
-      for(unsigned int s=0; s < mmpH; ++s) {
+      for(unsigned int s=0; s < mmpH2; ++s) {
         Complex fmpHts=fmpHt[s];
         Complex fHts=fHt[s];
         Wt[s]=fmpHts+fHts;
         Vt[s]=-Zeta*fmpHts+Zeta*fHts; //*zeta_q^{tn/2}
       }
-      for(unsigned int s=mmpH; s < m; ++s) {
+      for(unsigned int s=mmpH2; s < m; ++s) {
         Complex fmpHts=fmpHt[s];
         Complex fHts=fHt[s];
         Wt[s]=fmpHts;
@@ -2060,11 +2061,11 @@ void fftPadCentered::forwardInner(Complex *f, Complex *F, unsigned int r, Comple
     Complex *fmpHt=fmpH+p2s1m;
     Complex *fHt=fH+p2s1m;
     Complex Zeta=Zetaqr[p2];
-    for(unsigned int s=0; s < mmpH; ++s) {
+    for(unsigned int s=0; s < mmpH2; ++s) {
       Wt[s]=Zeta*fmpHt[s]; //*zeta_q^{(p2-1)r}
       Vt[s]=Zeta*fHt[s]; //*zeta_q^{(p2-1)r}
     }
-    for(unsigned int s=mmpH; s < m; ++s) {
+    for(unsigned int s=mmpH2; s < m; ++s) {
       Wt[s]=Zeta*fmpHt[s]; //*zeta_q^{(p2-1)r}
       Vt[s]=0.0;
     }
@@ -2095,8 +2096,7 @@ void fftPadCentered::forwardInner(Complex *f, Complex *F, unsigned int r, Comple
     }
     fftm0=fftm;
   }
-
-  fftm0->fft(W,F); // Check major index
+  fftm0->fft(W,F); 
 }
 
 void fftPadCentered::backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W, double)
