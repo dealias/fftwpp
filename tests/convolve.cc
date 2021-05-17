@@ -402,7 +402,7 @@ void fftPad::init()
         ZetaqmS=ZetaqmS0-m;
         for(unsigned int r=1; r < q; ++r) {
           for(unsigned int s=0; s < m; ++s)
-            ZetaqmS[m*r+s]=expi(r*(s-mp2)*twopibyN);
+            ZetaqmS[m*r+s]=conj(expi(r*(mp2-s)*twopibyN));
         }
       }
 
@@ -1998,7 +1998,7 @@ void fftPadCentered::forwardInner(Complex *f, Complex *F, unsigned int r, Comple
       Complex *Vt=V+p2s1m;
       Complex *fmpHt=fmpH+p2s1m;
       Complex *fHt=fH+p2s1m;
-      Complex Zeta=Zetaqn2[p2];
+      Complex Zeta=Zetaqn2[p2s1];
       for(unsigned int s=0; s < mmpH2; ++s) {
         Complex fmpHts=fmpHt[s];
         Complex fHts=fHt[s];
@@ -2152,7 +2152,7 @@ void fftPadCentered::backwardInner(Complex *F0, Complex *f, unsigned int r0, Com
       Complex *Wt=W+p2s1m;
       Complex *fmpHt=fmpH+p2s1m;
       Complex *fHt=fH+p2s1m;
-      Complex Zeta=Zetaqr[p2]; //FIX ME
+      Complex Zeta=Zetaqr[p2s1]; //FIX ME
       for(unsigned int s=0; s < mmpH; ++s) {
         Complex Wts=Wt[s];
         fmpHt[s]=Wts;
@@ -2203,7 +2203,7 @@ void fftPadCentered::backwardInner(Complex *F0, Complex *f, unsigned int r0, Com
       Complex *Vt=V+p2s1m;
       Complex *fmpHt=fmpH+p2s1m;
       Complex *fHt=fH+p2s1m;
-      Complex Zeta=Zetaqr[p2];
+      Complex Zeta=Zetaqr[p2s1];
       for(unsigned int s=0; s < mmpH; ++s) {
         Complex Wts=Wt[s];
         Complex Vts=Zeta*Vt[s];
@@ -2256,7 +2256,7 @@ void fftPadCentered::backwardInner(Complex *F0, Complex *f, unsigned int r0, Com
     Complex *Vt=V+p2s1m;
     Complex *fmpHt=fmpH+p2s1m;
     Complex *fHt=fH+p2s1m;
-    Complex Zeta=Zetaqr[p2];
+    Complex Zeta=Zetaqr[p2s1];
     for(unsigned int s=0; s < mmpH; ++s) {
       Complex Wts=Wt[s];
       Complex Vts=Zeta*Vt[s];
