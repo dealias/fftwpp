@@ -93,6 +93,7 @@ public:
   unsigned int Cm;
   unsigned int b; // Block size
   Complex *W0; // Temporary work memory for testing accuracy
+  bool centered;
   bool inplace;
   bool overwrite;
   FFTcall Forward;
@@ -134,15 +135,20 @@ public:
               bool centered=false);
   };
 
-  fftBase(unsigned int L, unsigned int M, unsigned int C) : L(L), M(M), C(C) {}
+  fftBase(unsigned int L, unsigned int M, unsigned int C,
+          bool centered=false) :
+    L(L), M(M), C(C), centered(centered) {}
 
   fftBase(unsigned int L, unsigned int M, unsigned int C,
-          unsigned int m, unsigned int q, unsigned int D) :
-    L(L), M(M), C(C), m(m), p(utils::ceilquotient(L,m)), q(q), D(D) {}
+          unsigned int m, unsigned int q, unsigned int D,
+          bool centered=false) :
+    L(L), M(M), C(C), m(m), p(utils::ceilquotient(L,m)), q(q), D(D),
+    centered(centered) {}
 
   fftBase(unsigned int L, unsigned int M, Application& app,
-          unsigned int C=1, bool Explicit=false, bool fixed=false) :
-    L(L), M(M), C(C) {}
+          unsigned int C=1, bool Explicit=false, bool fixed=false,
+          bool centered=false) :
+    L(L), M(M), C(C), centered(centered) {}
 
   virtual ~fftBase();
 
@@ -194,7 +200,9 @@ public:
     return C*M;
   }
 
-  virtual bool conjugates() {return D > 1 && p <= 2;}
+  virtual bool conjugates() {
+    return D > 1 && (p <= 2 || (centered && p % 2 == 0));
+  }
 
   unsigned int residueBlocks() {
     return conjugates() ? utils::ceilquotient(Q,2) : Q;
@@ -203,12 +211,13 @@ public:
   unsigned int Dr() {return conjugates() ? D/2 : D;}
 
   unsigned int increment(unsigned int r) {
-    return r > 0 ? dr : (p <= 2 ? utils::ceilquotient(D0,2) : D0);
+    return r > 0 ? dr : (conjugates() ? utils::ceilquotient(D0,2) : D0);
   }
 
   unsigned int blockOffset(unsigned int r) {
-    if(D == 1 || p > 2) return b*r;
-    return r > 0 ? b*(D0+2*(r-utils::ceilquotient(D0,2))) : 0;
+    if(conjugates())
+      return r > 0 ? b*(D0+2*(r-utils::ceilquotient(D0,2))) : 0;
+    else return b*r;
   }
 
   unsigned int nloops() {
@@ -252,7 +261,6 @@ protected:
   mfft1d *ifftm0,*ifftm,*ifftm2;
   mfft1d *fftp;
   mfft1d *ifftp;
-  bool centered;
 public:
 
   class Opt : public OptBase {
@@ -271,12 +279,12 @@ public:
   };
 
   fftPad(unsigned int L, unsigned int M, unsigned int C,
-         bool centered) : fftBase(L,M,C), centered(centered) {};
+         bool centered) : fftBase(L,M,C,centered) {};
 
   // Compute an fft padded to N=m*q >= M >= L
   fftPad(unsigned int L, unsigned int M, unsigned int C,
          unsigned int m, unsigned int q,unsigned int D, bool centered=false) :
-    fftBase(L,M,C,m,q,D), centered(centered) {
+    fftBase(L,M,C,m,q,D,centered) {
     init();
   }
 
@@ -286,7 +294,7 @@ public:
   fftPad(unsigned int L, unsigned int M, Application& app,
          unsigned int C=1, bool Explicit=false, bool fixed=false,
          bool centered=false) :
-    fftBase(L,M,app,C,Explicit,fixed), centered(centered) {
+    fftBase(L,M,app,C,Explicit,fixed,centered) {
     Opt opt=Opt(L,M,app,C,Explicit,fixed);
     m=opt.m;
     if(Explicit)
