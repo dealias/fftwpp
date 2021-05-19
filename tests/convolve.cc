@@ -314,7 +314,6 @@ void fftBase::common()
 
   if(C > 1) D=1;
   p=ceilquotient(L,m);
-  dr=conjugates() ? D/2 : D;
 
   inplace=IOption == -1 ? C > 1 : IOption;
 
@@ -356,7 +355,7 @@ void fftPad::init()
     fftm=new mfft1d(m,1,C, C,1, G);
     ifftm=new mfft1d(m,-1,C, C,1, G);
     deleteAlign(G);
-    D0=R=Q=1;
+    dr=D0=R=Q=1;
     b=C*M;
   } else {
     double twopibyN=twopi/M;
@@ -367,16 +366,19 @@ void fftPad::init()
     unsigned int P,P1;
     unsigned int p2=p/2;
 
-    if(centered && p == 2*p2) {
+    if(p == 2) {
+      Q=n=q;
+      P1=P=1;
+    } else if (centered && p == 2*p2) {
       Q=n=q/p2;
       P=p2;
       P1=P+1;
       D=2;
-    } else if(p == 2) {
-      Q=n=q;
-      P1=P=1;
+      dr=1;
     } else
       P1=P=p;
+
+    dr=Dr();
 
     b=Cm*P;
     d=C*D*P;
@@ -2296,10 +2298,10 @@ void fftPadHermitian::init()
     crfftm=new mcrfft1d(m,C, C,C,1,1, G,H);
     rcfftm=new mrcfft1d(m,C, C,C,1,1, H,G);
     deleteAlign(G);
-    D0=R=Q=1;
+    dr=D0=R=Q=1;
   } else {
     D=2;
-    dr=1;
+    dr=Dr();
 
     b=C*(m-e);
     bool twop=p == 2;

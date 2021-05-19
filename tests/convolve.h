@@ -200,6 +200,8 @@ public:
     return conjugates() ? utils::ceilquotient(Q,2) : Q;
   }
 
+  unsigned int Dr() {return conjugates() ? D/2 : D;}
+
   unsigned int increment(unsigned int r) {
     return r > 0 ? dr : (p <= 2 ? utils::ceilquotient(D0,2) : D0);
   }
