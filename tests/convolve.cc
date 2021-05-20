@@ -2161,6 +2161,11 @@ void fftPadCentered::backwardInnerC(Complex *F, Complex *f, unsigned int r, Comp
       ifftm->fft(F,W);
       unsigned int mn=m*n;
       unsigned int mn2=m*n2;
+
+      Complex *Zetan2=Zetaqm+mn2;
+      for(unsigned int s=1; s < m; ++s) 
+        V[s] *= conj(Zetan2[s]);
+
       for(unsigned int u=1; u < p2; ++u) {
         unsigned int mu=m*u;
         Complex *Wu=W+mu;
