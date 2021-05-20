@@ -376,7 +376,7 @@ public:
 
   class Opt : public OptBase {
   public:
-    virtual bool valid(unsigned int D, unsigned int p) {
+    virtual bool valid(unsigned int D, unsigned int p) { // FIXME: REMOVE
       return D == 2 || p == 2;
     }
 
