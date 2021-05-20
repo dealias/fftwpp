@@ -171,18 +171,26 @@ public:
 
   virtual void forward2(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
   virtual void forward2Many(Complex *f, Complex *F, unsigned int r, Complex *W) {}
+  virtual void forward2C(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
+  virtual void forward2CMany(Complex *f, Complex *F, unsigned int r, Complex *W) {}
 
   virtual void forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
   virtual void forwardInnerMany(Complex *f, Complex *F, unsigned int r, Complex *W) {}
+  virtual void forwardInnerC(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
+//  virtual void forwardInnerCMany(Complex *f, Complex *F, unsigned int r, Complex *W) {}
 
   virtual void backward(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale) {}
   virtual void backwardMany(Complex *F, Complex *f, unsigned int r, Complex *W, double scale) {}
 
   virtual void backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale) {}
   virtual void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W, double scale) {}
+  virtual void backward2C(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale) {}
+  virtual void backward2CMany(Complex *F, Complex *f, unsigned int r, Complex *W, double scale) {}
 
   virtual void backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale) {}
   virtual void backwardInnerMany(Complex *F, Complex *f, unsigned int r, Complex *W, double scale) {}
+  virtual void backwardInnerC(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale) {}
+//  virtual void backwardInnerCMany(Complex *F, Complex *f, unsigned int r, Complex *W, double scale) {}
 
   unsigned int normalization() {
     return M;
@@ -424,15 +432,14 @@ public:
   void forwardShift(Complex *F, unsigned int r0);
   void backwardShift(Complex *F, unsigned int r0);
 
-  void forward2(Complex *f, Complex *F0, unsigned int r0, Complex *W);
-  void forward2Many(Complex *f, Complex *F, unsigned int r, Complex *W);
+  void forward2C(Complex *f, Complex *F0, unsigned int r0, Complex *W);
+  void forward2CMany(Complex *f, Complex *F, unsigned int r, Complex *W);
 
-  void backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale);
-  void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W, double scale);
+  void backward2C(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale);
+  void backward2CMany(Complex *F, Complex *f, unsigned int r, Complex *W, double scale);
 
-  void forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W);
-  void backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale);
-
+  void forwardInnerC(Complex *f, Complex *F0, unsigned int r0, Complex *W);
+  void backwardInnerC(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale);
 };
 
 class fftPadHermitian : public fftBase {
