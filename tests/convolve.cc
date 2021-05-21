@@ -138,8 +138,9 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
 
   if(p == q && p > 1 && !mForced) return;
 
+  unsigned int n=ceilquotient(M,m*P);
+
   if(p > 2 && !fixed) {
-    unsigned int n=ceilquotient(M,m*P);
     unsigned int q2=P*n;
     if(q2 != q) {
       unsigned int start=DOption > 0 ? min(DOption,n) : 1;
@@ -163,8 +164,8 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
 
   if(p > 2 && q % P != 0) return;
 
-  unsigned int start=DOption > 0 ? min(DOption,q) : 1;
-  unsigned int stop=DOption > 0 ? min(DOption,q) : q;
+  unsigned int start=DOption > 0 ? min(DOption,n) : 1;
+  unsigned int stop=DOption > 0 ? min(DOption,n) : n;
   if(fixed || C > 1) start=stop=1;
   for(unsigned int D=start; D <= stop; D *= 2) {
     if(2*D > stop) D=stop;
@@ -373,12 +374,8 @@ void fftPad::init()
       Q=n=q/p2;
       P=p2;
       P1=P+1;
-      D=2;
-      dr=1;
     } else
       P1=P=p;
-
-    dr=Dr();
 
     b=Cm*P;
     d=C*D*P;
@@ -441,6 +438,7 @@ void fftPad::init()
       Q=q;
     }
 
+    dr=Dr();
     R=residueBlocks();
     D0=Q % D;
     if(D0 == 0) D0=D;
@@ -1912,9 +1910,13 @@ void fftPadCentered::backward2CMany(Complex *F, Complex *f, unsigned int r, Comp
   }
 }
 
-void fftPadCentered::forwardInnerC(Complex *f, Complex *F, unsigned int r, Complex *W)
+void fftPadCentered::forwardInnerC(Complex *f, Complex *F0, unsigned int r0, Complex *W)
 {
-  if(W == NULL) W=F;
+  if(W == NULL) W=F0;
+
+  Complex *W0=W;
+  unsigned int dr0=dr;
+  mfft1d *fftm0;
 
   unsigned int p2=p/2;
   unsigned int H=L/2;
@@ -1925,9 +1927,11 @@ void fftPadCentered::forwardInnerC(Complex *f, Complex *F, unsigned int r, Compl
   unsigned int m1=m-m0+L%2;
   Complex *fm0=f-m0;
   Complex *fH=f+H;
-  if(r == 0) {
+  if(r0 == 0) {
+    unsigned int residues;
     unsigned int n2=n/2;
     if(2*n2 < n) { // n odd, r=0
+      residues=1;
       for(unsigned int s=0; s < m0; ++s)
         W[s]=fH[s];
       for(unsigned int s=m0; s < m; ++s)
@@ -1958,8 +1962,8 @@ void fftPadCentered::forwardInnerC(Complex *f, Complex *F, unsigned int r, Compl
         for(unsigned int s=1; s < m; ++s)
           Wu[s] *= Zeta0[s];
       }
-      fftm0=fftm2;
     } else { // n even, r=0,n/2
+      residues=2;
       Complex *V=W+b;
       for(unsigned int s=0; s < m0; ++s)
         V[s]=W[s]=fH[s];
@@ -2020,27 +2024,35 @@ void fftPadCentered::forwardInnerC(Complex *f, Complex *F, unsigned int r, Compl
         for(unsigned int s=1; s < m; ++s)
           Vu[s] *= Zetan2[s];
       }
-      fftm0=fftm;
     }
-  } else {
+    W += residues*b;
+    r0=1;
+    dr0=(D0-residues)/2;
+    fftm0=D0 == D ? fftm : fftm2;
+  } else
+    fftm0=fftm;
+
+  for(unsigned int d=0; d < dr0; ++d) {
+    Complex *F=W+2*b*d;
+    unsigned int r=r0+d;
     Vec Zetanr=CONJ(LOAD(Zetaqp+p2*r+p2)); // zeta_n^-r
-    Complex *V=W+b;
+    Complex *G=F+b;
 
     for(unsigned int s=0; s < m0; ++s)
-      V[s]=W[s]=fH[s];
+      G[s]=F[s]=fH[s];
     for(unsigned int s=m0; s < m; ++s) {
       Vec fm0ts=LOAD(fm0+s);
       Vec fHts=LOAD(fH+s);
       Vec A=Zetanr*UNPACKL(fm0ts,fm0ts);
       Vec B=ZMULTI(Zetanr*UNPACKH(fm0ts,fm0ts));
-      STORE(W+s,A+B+fHts);
-      STORE(V+s,CONJ(A-B)+fHts);
+      STORE(F+s,A+B+fHts);
+      STORE(G+s,CONJ(A-B)+fHts);
     }
     Complex *Zetaqr=Zetaqp+p2*r;
     for(unsigned int t=1; t < p2s1; ++t) {
       unsigned int tm=t*m;
-      Complex *Wt=W+tm;
-      Complex *Vt=V+tm;
+      Complex *Ft=F+tm;
+      Complex *Gt=G+tm;
       Complex *fm0t=fm0+tm;
       Complex *fHt=fH+tm;
       Vec Zeta=LOAD(Zetaqr+t); // zeta_q^{tr}
@@ -2050,64 +2062,66 @@ void fftPadCentered::forwardInnerC(Complex *f, Complex *F, unsigned int r, Compl
         Vec fHts=LOAD(fHt+s);
         Vec A=Zetam*UNPACKL(fm0ts,fm0ts)+Zeta*UNPACKL(fHts,fHts);
         Vec B=ZMULTI(Zetam*UNPACKH(fm0ts,fm0ts)+Zeta*UNPACKH(fHts,fHts));
-        STORE(Wt+s,A+B);
-        STORE(Vt+s,CONJ(A-B));
+        STORE(Ft+s,A+B);
+        STORE(Gt+s,CONJ(A-B));
       }
     }
-    Complex *Wt=W+p2s1m;
-    Complex *Vt=V+p2s1m;
+    Complex *Ft=F+p2s1m;
+    Complex *Gt=G+p2s1m;
     Complex *fm0t=fm0+p2s1m;
     Complex *fHt=fH+p2s1m;
     Vec Zeta=LOAD(Zetaqr+p2s1);
     Vec Zetam=ZMULT(Zeta,Zetanr);
     for(unsigned int s=0; s < m1; ++s) {
-        Vec fm0ts=LOAD(fm0t+s);
-        Vec fHts=LOAD(fHt+s);
-        Vec A=Zetam*UNPACKL(fm0ts,fm0ts)+Zeta*UNPACKL(fHts,fHts);
-        Vec B=ZMULTI(Zetam*UNPACKH(fm0ts,fm0ts)+Zeta*UNPACKH(fHts,fHts));
-        STORE(Wt+s,A+B);
-        STORE(Vt+s,CONJ(A-B));
+      Vec fm0ts=LOAD(fm0t+s);
+      Vec fHts=LOAD(fHt+s);
+      Vec A=Zetam*UNPACKL(fm0ts,fm0ts)+Zeta*UNPACKL(fHts,fHts);
+      Vec B=ZMULTI(Zetam*UNPACKH(fm0ts,fm0ts)+Zeta*UNPACKH(fHts,fHts));
+      STORE(Ft+s,A+B);
+      STORE(Gt+s,CONJ(A-B));
     }
     for(unsigned int s=m1; s < m; ++s) {
       Vec fm0ts=LOAD(fm0t+s);
       Vec A=Zetam*UNPACKL(fm0ts,fm0ts);
       Vec B=ZMULTI(Zetam*UNPACKH(fm0ts,fm0ts));
-      STORE(Wt+s,A+B);
-      STORE(Vt+s,CONJ(A-B));
+      STORE(Ft+s,A+B);
+      STORE(Gt+s,CONJ(A-B));
     }
 
-    fftp->fft(W);
-    fftp->fft(V);
+    fftp->fft(F);
+    fftp->fft(G);
 
     unsigned int mr=m*r;
     Complex *Zetar=Zetaqm+mr;
     for(unsigned int s=1; s < m; ++s) {
       Complex Zeta=Zetar[s];
-      W[s] *= Zeta;
-      V[s] *= conj(Zeta);
+      F[s] *= Zeta;
+      G[s] *= conj(Zeta);
     }
     for(unsigned int u=1; u < p2; ++u) {
       unsigned int mu=m*u;
       Complex *Zetar0=Zetaqm+n*mu;
       Complex *Zetar=Zetar0+mr;
-      Complex *Wu=W+mu;
+      Complex *Wu=F+mu;
       for(unsigned int s=1; s < m; ++s)
         Wu[s] *= Zetar[s];
       Complex *Zetar2=Zetar0-mr;
-      Complex *Vu=V+mu;
+      Complex *Vu=G+mu;
       for(unsigned int s=1; s < m; ++s)
         Vu[s] *= Zetar2[s];
     }
-    fftm0=fftm;
   }
-  fftm0->fft(W,F);
+
+  fftm0->fft(W0,F0);
 }
 
-void fftPadCentered::backwardInnerC(Complex *F, Complex *f, unsigned int r, Complex *W, double)
+void fftPadCentered::backwardInnerC(Complex *F0, Complex *f, unsigned int r0, Complex *W, double)
 {
-  if(W == NULL) W=F;
+  if(W == NULL) W=F0;
 
- // (r0 > 0 || D0 == D ? ifftm : ifftm2)->fft(F0,W); //FIX ME
+  (r0 > 0 || D0 == D ? ifftm : ifftm2)->fft(F0,W);
+
+  unsigned int dr0=dr;
 
   unsigned int p2=p/2;
   unsigned int H=L/2;
@@ -2118,10 +2132,12 @@ void fftPadCentered::backwardInnerC(Complex *F, Complex *f, unsigned int r, Comp
   unsigned int m1=m-m0+L%2;
   Complex *fm0=f-m0;
   Complex *fH=f+H;
-  if(r == 0) {
+
+  if(r0 == 0) {
+    unsigned int residues;
     unsigned int n2=n/2;
     if(2*n2 < n) { // n odd, r=0
-      ifftm2->fft(F,W);
+      residues=1;
       for(unsigned int u=1; u < p2; ++u) {
         unsigned int mu=m*u;
         Complex *Wu=W+mu;
@@ -2156,8 +2172,8 @@ void fftPadCentered::backwardInnerC(Complex *F, Complex *f, unsigned int r, Comp
         fm0t[s]=Wt[s];
 
     } else { // n even, r=0,n/2
+      residues=2;
       Complex *V=W+b;
-      ifftm->fft(F,W);
       unsigned int mn=m*n;
       unsigned int mn2=m*n2;
 
@@ -2216,50 +2232,56 @@ void fftPadCentered::backwardInnerC(Complex *F, Complex *f, unsigned int r, Comp
       for(unsigned int s=m1; s < m; ++s)
         fm0t[s]=Wt[s]-Zeta*Vt[s];
     }
-  } else { // r > 0
-    Complex *V=W+b;
-    ifftm->fft(F,W);
+    W += residues*b;
+    r0=1;
+    dr0=(D0-residues)/2;
+  }
+
+  for(unsigned int d=0; d < dr0; ++d) {
+    Complex *F=W+2*b*d;
+    unsigned int r=r0+d;
     Vec Zetanr=LOAD(Zetaqp+p2*r+p2); // zeta_n^r
+    Complex *G=F+b;
 
     unsigned int mr=m*r;
     Complex *Zetar=Zetaqm+mr;
     for(unsigned int s=1; s < m; ++s) {
       Complex Zeta=Zetar[s];
-      W[s] *= conj(Zeta);
-      V[s] *= Zeta;
+      F[s] *= conj(Zeta);
+      G[s] *= Zeta;
     }
     for(unsigned int u=1; u < p2; ++u) {
       unsigned int mu=m*u;
       Complex *Zetar0=Zetaqm+n*mu;
       Complex *Zetar=Zetar0+mr;
-      Complex *Wu=W+mu;
+      Complex *Wu=F+mu;
       for(unsigned int s=1; s < m; ++s)
         Wu[s] *= conj(Zetar[s]);
       Complex *Zetar2=Zetar0-mr;
-      Complex *Vu=V+mu;
+      Complex *Vu=G+mu;
       for(unsigned int s=1; s < m; ++s)
         Vu[s] *= conj(Zetar2[s]);
     }
 
-    ifftp->fft(W);
-    ifftp->fft(V);
+    ifftp->fft(F);
+    ifftp->fft(G);
 
     for(unsigned int s=0; s < m0; ++s)
-      fH[s] += W[s]+V[s];
+      fH[s] += F[s]+G[s];
 
     Vec Xm=UNPACKL(Zetanr,Zetanr);
     Vec Ym=CONJ(UNPACKH(Zetanr,Zetanr));
     for(unsigned int s=m0; s < m; ++s) {
-      Vec Wts=LOAD(W+s);
-      Vec Vts=LOAD(V+s);
-      STORE(fm0+s,LOAD(fm0+s)+ZMULT2(Xm,Ym,Wts,Vts));
-      STORE(fH+s,LOAD(fH+s)+Wts+Vts);
+      Vec Fts=LOAD(F+s);
+      Vec Gts=LOAD(G+s);
+      STORE(fm0+s,LOAD(fm0+s)+ZMULT2(Xm,Ym,Fts,Gts));
+      STORE(fH+s,LOAD(fH+s)+Fts+Gts);
     }
     Complex *Zetaqr=Zetaqp+p2*r;
     for(unsigned int t=1; t < p2s1; ++t) {
       unsigned int tm=t*m;
-      Complex *Wt=W+tm;
-      Complex *Vt=V+tm;
+      Complex *Ft=F+tm;
+      Complex *Gt=G+tm;
       Complex *fm0t=fm0+tm;
       Complex *fHt=fH+tm;
       Vec Zeta=LOAD(Zetaqr+t);
@@ -2269,14 +2291,14 @@ void fftPadCentered::backwardInnerC(Complex *F, Complex *f, unsigned int r, Comp
       Vec Xm=UNPACKL(Zeta2,Zeta2);
       Vec Ym=CONJ(UNPACKH(Zeta2,Zeta2));
       for(unsigned int s=0; s < m; ++s) {
-        Vec Wts=LOAD(Wt+s);
-        Vec Vts=LOAD(Vt+s);
-        STORE(fm0t+s,LOAD(fm0t+s)+ZMULT2(Xm,Ym,Wts,Vts));
-        STORE(fHt+s,LOAD(fHt+s)+ZMULT2(X,Y,Vts,Wts));
+        Vec Fts=LOAD(Ft+s);
+        Vec Gts=LOAD(Gt+s);
+        STORE(fm0t+s,LOAD(fm0t+s)+ZMULT2(Xm,Ym,Fts,Gts));
+        STORE(fHt+s,LOAD(fHt+s)+ZMULT2(X,Y,Gts,Fts));
       }
     }
-    Complex *Wt=W+p2s1m;
-    Complex *Vt=V+p2s1m;
+    Complex *Ft=F+p2s1m;
+    Complex *Gt=G+p2s1m;
     Complex *fm0t=fm0+p2s1m;
     Complex *fHt=fH+p2s1m;
     Vec Zeta=LOAD(Zetaqr+p2s1);
@@ -2286,13 +2308,13 @@ void fftPadCentered::backwardInnerC(Complex *F, Complex *f, unsigned int r, Comp
     Xm=UNPACKL(Zeta2,Zeta2);
     Ym=CONJ(UNPACKH(Zeta2,Zeta2));
     for(unsigned int s=0; s < m1; ++s) {
-      Vec Wts=LOAD(Wt+s);
-      Vec Vts=LOAD(Vt+s);
-      STORE(fm0t+s,LOAD(fm0t+s)+ZMULT2(Xm,Ym,Wts,Vts));
-      STORE(fHt+s,LOAD(fHt+s)+ZMULT2(X,Y,Vts,Wts));
+      Vec Fts=LOAD(Ft+s);
+      Vec Gts=LOAD(Gt+s);
+      STORE(fm0t+s,LOAD(fm0t+s)+ZMULT2(Xm,Ym,Fts,Gts));
+      STORE(fHt+s,LOAD(fHt+s)+ZMULT2(X,Y,Gts,Fts));
     }
     for(unsigned int s=m1; s < m; ++s)
-      STORE(fm0t+s,LOAD(fm0t+s)+ZMULT2(Xm,Ym,LOAD(Wt+s),LOAD(Vt+s)));
+      STORE(fm0t+s,LOAD(fm0t+s)+ZMULT2(Xm,Ym,LOAD(Ft+s),LOAD(Gt+s)));
   }
 }
 

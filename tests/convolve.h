@@ -265,8 +265,8 @@ public:
 
 class fftPad : public fftBase {
 protected:
-  mfft1d *fftm0,*fftm,*fftm2;
-  mfft1d *ifftm0,*ifftm,*ifftm2;
+  mfft1d *fftm,*fftm2;
+  mfft1d *ifftm,*ifftm2;
   mfft1d *fftp;
   mfft1d *ifftp;
 public:
@@ -376,8 +376,8 @@ public:
 
   class Opt : public OptBase {
   public:
-    virtual bool valid(unsigned int D, unsigned int p) { // FIXME: REMOVE
-      return D == 2 || p == 2;
+    virtual bool valid(unsigned int D, unsigned int p) {
+      return D > 1 || p == 2;
     }
 
     Opt(unsigned int L, unsigned int M, Application& app,
