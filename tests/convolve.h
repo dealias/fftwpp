@@ -511,6 +511,9 @@ public:
   void backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale);
   void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W, double scale);
 
+  void forwardInnerC(Complex *f, Complex *F0, unsigned int r0, Complex *W);
+  void backwardInnerC(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale);
+
   unsigned int outputSize() {
     return C*(e+1)*D;
   }
