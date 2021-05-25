@@ -377,7 +377,7 @@ public:
   class Opt : public OptBase {
   public:
     virtual bool valid(unsigned int D, unsigned int p) {
-      return D > 1 || p == 2;
+      return !(D == 1 && p % 2 == 0 && p > 2);
     }
 
     Opt(unsigned int L, unsigned int M, Application& app,
@@ -446,11 +446,15 @@ class fftPadHermitian : public fftBase {
   unsigned int e;
   mcrfft1d *crfftm;
   mrcfft1d *rcfftm;
+  mfft1d *fftp;
+  mfft1d *ifftp;
 public:
 
   class Opt : public OptBase {
   public:
-    virtual bool valid(unsigned int D, unsigned int p) {return D == 2;}
+    virtual bool valid(unsigned int D, unsigned int p) {
+      return D == 2 && p%2 == 0;
+    }
 
     Opt(unsigned int L, unsigned int M, Application& app,
         unsigned int C, bool Explicit=false, bool fixed=false) {
@@ -515,7 +519,7 @@ public:
   void backwardInnerC(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale);
 
   unsigned int outputSize() {
-    return C*(e+1)*D;
+    return C*(e+1)*D*(q == 1 ? 1 : p/2);
   }
 
   unsigned int ninputs() {
@@ -523,7 +527,7 @@ public:
   }
 
   unsigned int fullOutputSize() {
-    return C*(e+1)*q; // FIXME for inner
+    return C*(e+1)*q;
   }
 };
 
