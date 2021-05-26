@@ -2345,14 +2345,15 @@ void fftPadHermitian::init()
     dr=Dr();
 
     double twopibyq=twopi/q;
+    unsigned int p2=p/2;
 
     unsigned int e1=e+1;
     unsigned int Ce1=C*e1;
-    Complex *G=ComplexAlign(Ce1);
-    double *H=inplace ? (double *) G : doubleAlign(Cm);
+    Complex *G=ComplexAlign(max(Ce1,C*p2));
+    double *H=inplace ? (double *) G : doubleAlign(Cm*p2);
 
-    if(p > 2) {
-      unsigned int p2=p/2;
+    if(p > 2) { // p must be even
+
       if(C == 1) {
         Forward=&fftBase::forwardInnerC;
         Backward=&fftBase::backwardInnerC;
@@ -2390,11 +2391,12 @@ void fftPadHermitian::init()
 
     unsigned int m0=m+(m % 2);
     if(C == 1) {
-      crfftm=new mcrfft1d(m,1, 1,1, e+1,m0, G,H);
-      rcfftm=new mrcfft1d(m,1, 1,1, m0,e+1, H,G);
+      crfftm=new mcrfft1d(m,p2, 1,1, e+1,m0, G,H);
+      rcfftm=new mrcfft1d(m,p2, 1,1, m0,e+1, H,G);
     } else {
-      crfftm=new mcrfft1d(m,C, C,C, 1,1, G,H);
-      rcfftm=new mrcfft1d(m,C, C,C, 1,1, H,G);
+      unsigned int d=C*p2;
+      crfftm=new mcrfft1d(m,d, C,C, 1,1, G,H);
+      rcfftm=new mrcfft1d(m,d, C,C, 1,1, H,G);
     }
 
     if(!inplace)
