@@ -458,7 +458,7 @@ public:
 
     Opt(unsigned int L, unsigned int M, Application& app,
         unsigned int C, bool Explicit=false, bool fixed=false) {
-      scan(L,M,app,C,Explicit,fixed);
+      scan(L,M,app,C,Explicit,fixed,true);
     }
 
     double time(unsigned int L, unsigned int M, unsigned int C,
@@ -473,13 +473,13 @@ public:
 
   fftPadHermitian(unsigned int L, unsigned int M, unsigned int C,
                   unsigned int m, unsigned int q, unsigned int D) :
-    fftBase(L,M,C,m,q,D) {
+    fftBase(L,M,C,m,q,D,true) {
     init();
   }
 
   fftPadHermitian(unsigned int L, unsigned int M, Application& app,
                   unsigned int C=1, bool Explicit=false, bool fixed=false) :
-    fftBase(L,M,app,C,Explicit,fixed) {
+    fftBase(L,M,app,C,Explicit,fixed,true) {
     Opt opt=Opt(L,M,app,C,Explicit,fixed);
     m=opt.m;
     if(Explicit)

@@ -2360,7 +2360,7 @@ void fftPadHermitian::init()
 //        Forward=&fftBase::forwardInnerMany;
 //        Backward=&fftBase::backwardInnerMany;
       }
-      Q=n;
+      Q=n=q/p2;
 
       Zetaqp0=ComplexAlign((n-1)*p2); // CHECK
       Zetaqp=Zetaqp0-p2-1;
