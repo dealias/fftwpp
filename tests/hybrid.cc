@@ -1,7 +1,7 @@
 #include "convolve.h"
 
-#define OUTPUT 0
-#define CENTERED 1
+#define OUTPUT 1
+#define CENTERED 0
 
 using namespace std;
 using namespace utils;
@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
   fft.forward(f,F);
 
 #if OUTPUT
-  for(unsigned int j=0; j < fft.outputs(); ++j) {
+  for(unsigned int j=0; j < fft.fullOutputSize(); ++j) {
     if(j % fft.Cm == 0) cout << endl;
     cout << F[j] << endl;
   }
@@ -83,12 +83,12 @@ int main(int argc, char* argv[])
   Complex *f0=ComplexAlign(C*L);
   Complex *F0=ComplexAlign(fft.fullOutputSize());
 
-  for(unsigned int j=0; j < fft.outputs(); ++j)
+  for(unsigned int j=0; j < fft.fullOutputSize(); ++j)
     F0[j]=F[j];
 
 #if 0
   cout << endl;
-  for(unsigned int j=0; j < fft.outputs(); ++j)
+  for(unsigned int j=0; j < fft.fullOutputSize(); ++j)
     cout << F0[j] << endl;
   cout << endl;
 #endif
@@ -120,7 +120,7 @@ int main(int argc, char* argv[])
 
 #if 0
   cout << endl;
-  for(unsigned int j=0; j < fft.outputs(); ++j)
+  for(unsigned int j=0; j < fft.fullOutputSize(); ++j)
     cout << F2[j] << endl;
   cout << endl;
 #endif

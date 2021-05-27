@@ -201,10 +201,6 @@ public:
   }
 
   virtual unsigned int fullOutputSize() {
-    return b*D*Q; // Check!
-  }
-
-  unsigned int outputs() {
     return C*M;
   }
 
@@ -444,6 +440,7 @@ public:
 
 class fftPadHermitian : public fftBase {
   unsigned int e;
+  unsigned int B; // Work block size
   mcrfft1d *crfftm;
   mrcfft1d *rcfftm;
   mfft1d *fftp;
@@ -518,16 +515,17 @@ public:
   void forwardInnerC(Complex *f, Complex *F0, unsigned int r0, Complex *W);
   void backwardInnerC(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale);
 
-  unsigned int outputSize() {
-    return C*(e+1)*D*(q == 1 ? 1 : p/2);
+//  unsigned int outputSize() {
+//    return C*(e+1)*D*(q == 1 ? 1 : p/2);
+//    return b*D;
+//  }
+
+  virtual unsigned int workSizeW() {
+    return q == 1 || inplace ? 0 : B*D;
   }
 
   unsigned int ninputs() {
     return C*utils::ceilquotient(L,2);
-  }
-
-  unsigned int fullOutputSize() {
-    return C*(e+1)*q;
   }
 };
 

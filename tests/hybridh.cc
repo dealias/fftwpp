@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
 #if OUTPUT
   if(L < 30) {
     double *Fr=(double *) F;
-    for(unsigned int j=0; j < fft.outputs(); ++j) {
+    for(unsigned int j=0; j < fft.fullOutputSize(); ++j) {
       if(j % fft.Cm == 0) cout << endl;
       cout << Fr[j] << endl;
     }
