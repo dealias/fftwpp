@@ -1924,7 +1924,7 @@ void fftPadCentered::forwardInnerC(Complex *f, Complex *F0, unsigned int r0, Com
   unsigned int p2s1m=p2s1*m;
   unsigned int p2m=p2*m;
   unsigned int m0=p2m-H;
-  unsigned int m1=m-m0+L%2;
+  unsigned int m1=L-H-p2s1m;
   Complex *fm0=f-m0;
   Complex *fH=f+H;
   if(r0 == 0) {
@@ -2129,7 +2129,7 @@ void fftPadCentered::backwardInnerC(Complex *F0, Complex *f, unsigned int r0, Co
   unsigned int p2s1m=p2s1*m;
   unsigned int p2m=p2*m;
   unsigned int m0=p2m-H;
-  unsigned int m1=m-m0+L%2;
+  unsigned int m1=L-H-p2s1m;
   Complex *fm0=f-m0;
   Complex *fH=f+H;
 
@@ -3044,34 +3044,33 @@ void fftPadHermitian::forwardInnerC(Complex *f, Complex *F, unsigned int r, Comp
   unsigned int p2s1m=p2s1*m;
   unsigned int p2s1e1=p2s1*e1;
   unsigned int p2m=p2*m;
-  unsigned int p2mH=p2m-H;
-  unsigned int m0=max(min(p2mH,e1),1);
-  unsigned int m1=min(m-p2mH+L%2,e1);
+  unsigned int p2mH=p2m+H-L;
+  unsigned int m0=max(min(p2mH+1,e1),1);
+  unsigned int m1=min(m-p2mH,e1);
   Complex *fm=f+p2m;
   if(r == 0) {
     unsigned int n2=n/2;
     if(2*n2 < n) { // n odd, r=0
       for(unsigned int s=0; s < m0; ++s)
         W[s]=f[s];
-      Complex *fm0=fm-m;
       for(unsigned int s=m0; s < e1; ++s)
-        W[s]=conj(fm0[m-s])+f[s];
+        W[s]=conj(*(fm-s))+f[s];
       for(unsigned int t=1; t < p2s1; ++t) {
         unsigned int tm=t*m;
         unsigned int te1=t*e1;
-        Complex *fmt=fm-tm-m;
+        Complex *fmt=fm-tm;
         Complex *ft=f+tm;
         Complex *Wt=W+te1;
-        for(unsigned int s=0; s < e1; ++s) {
-          Wt[s]=conj(fmt[m-s])+ft[s];
-        }
+        for(unsigned int s=0; s < e1; ++s)
+          Wt[s]=conj(*(fmt-s))+ft[s];
       }
       Complex *Wt=W+p2s1e1;
       Complex *ft=f+p2s1m;
+      Complex *fmt=f+m;
       for(unsigned int s=0; s < m1; ++s)
-        Wt[s]=conj(f[m-s])+ft[s];
+        Wt[s]=conj(*(fmt-s))+ft[s];
       for(unsigned int s=m1; s < e1; ++s)
-        Wt[s]=conj(f[m-s]);
+        Wt[s]=conj(*(fmt-s));
 
       fftp->fft(W);
 
@@ -3087,9 +3086,8 @@ void fftPadHermitian::forwardInnerC(Complex *f, Complex *F, unsigned int r, Comp
       Complex *V=W+B;
       for(unsigned int s=0; s < m0; ++s)
         V[s]=W[s]=f[s];
-      Complex *fmt=fm-m;
       for(unsigned int s=m0; s < e1; ++s) {
-        Complex fms=conj(fm[m-s]);
+        Complex fms=conj(*(fm-s));
         Complex fs=f[s];
         W[s]=fms+fs;
         V[s]=-fms+fs;
@@ -3100,11 +3098,11 @@ void fftPadHermitian::forwardInnerC(Complex *f, Complex *F, unsigned int r, Comp
         unsigned int te1=t*e1;
         Complex *Wt=W+te1;
         Complex *Vt=V+te1;
-        Complex *fmt=fm-tm-m;
+        Complex *fmt=fm-tm;
         Complex *ft=f+tm;
         Complex Zeta=Zetaqn2[t]; //*zeta_q^{tn/2}
         for(unsigned int s=0; s < e1; ++s) {
-          Complex fmts=conj(fmt[m-s]);
+          Complex fmts=conj(*(fmt-s));
           Complex fts=ft[s];
           Wt[s]=fmts+fts;
           Vt[s]=Zeta*(fts-fmts);
@@ -3114,15 +3112,16 @@ void fftPadHermitian::forwardInnerC(Complex *f, Complex *F, unsigned int r, Comp
       Complex *Vt=V+p2s1e1;
       Complex *ft=f+p2s1m;
       Complex Zeta=Zetaqn2[p2s1];
+      Complex *fmt=f+m;
       for(unsigned int s=0; s < m1; ++s) {
-        Complex fmts=conj(f[m-s]);
+        Complex fmts=conj(*(fmt-s));
         Complex fts=ft[s];
         Wt[s]=fmts+fts;
         Vt[s]=Zeta*(fts-fmts);
       }
       Complex mZeta=-Zeta;
       for(unsigned int s=m1; s < e1; ++s) {
-        Complex fmts=conj(fmt[m-s]);
+        Complex fmts=conj(*(fmt-s));
         Wt[s]=fmts;
         Vt[s]=mZeta*fmts;
       }
