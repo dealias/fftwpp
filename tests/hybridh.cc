@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
   fft.forward(f,F);
 
 #if OUTPUT
-  if(L < 30) {
+  if(L < 50) {
     double *Fr=(double *) F;
     for(unsigned int j=0; j < fft.fullOutputSize(); ++j) {
       if(j % fft.Cm == 0) cout << endl;

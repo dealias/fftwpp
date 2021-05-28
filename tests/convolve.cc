@@ -3044,9 +3044,9 @@ void fftPadHermitian::forwardInnerC(Complex *f, Complex *F, unsigned int r, Comp
   unsigned int p2s1m=p2s1*m;
   unsigned int p2s1e1=p2s1*e1;
   unsigned int p2m=p2*m;
-  unsigned int m0=min(p2m-H,e1);
-  if(m0 == 0) m0+=1;
-  unsigned int m1=min(m-m0+L%2,e1);
+  unsigned int p2mH=p2m-H;
+  unsigned int m0=max(min(p2mH,e1),1);
+  unsigned int m1=min(m-p2mH+L%2,e1);
   Complex *fm=f+p2m;
   if(r == 0) {
     unsigned int n2=n/2;
@@ -3055,7 +3055,7 @@ void fftPadHermitian::forwardInnerC(Complex *f, Complex *F, unsigned int r, Comp
         W[s]=f[s];
       Complex *fm0=fm-m;
       for(unsigned int s=m0; s < e1; ++s)
-        W[s]=conj(fm0[m-s])+f[s]; // problem when m0=0
+        W[s]=conj(fm0[m-s])+f[s];
       for(unsigned int t=1; t < p2s1; ++t) {
         unsigned int tm=t*m;
         unsigned int te1=t*e1;
@@ -3089,7 +3089,7 @@ void fftPadHermitian::forwardInnerC(Complex *f, Complex *F, unsigned int r, Comp
         V[s]=W[s]=f[s];
       Complex *fmt=fm-m;
       for(unsigned int s=m0; s < e1; ++s) {
-        Complex fms=conj(fm[m-s]); //problem when m0=0
+        Complex fms=conj(fm[m-s]);
         Complex fs=f[s];
         W[s]=fms+fs;
         V[s]=-fms+fs;
