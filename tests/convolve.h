@@ -67,6 +67,7 @@ class fftBase;
 typedef void (fftBase::*FFTcall)(Complex *f, Complex *F, unsigned int r, Complex *W);
 typedef void (fftBase::*FFTCall)(Complex *f, Complex *F, unsigned int r, Complex *W, double scale);
 typedef void (fftBase::*FFTPad)(Complex *W);
+typedef unsigned int (fftBase::*FFTindex)(unsigned int r, unsigned int i);
 
 class Application {
 public:
@@ -92,12 +93,12 @@ public:
   unsigned int D0; // Remainder
   unsigned int Cm;
   unsigned int b; // Block size
-  Complex *W0; // Temporary work memory for testing accuracy
   bool centered;
   bool inplace;
   bool overwrite;
   FFTcall Forward;
   FFTCall Backward;
+  FFTindex Index;
   FFTPad Pad;
 protected:
   Complex *Zetaqp;
@@ -157,30 +158,55 @@ public:
   virtual void padSingle(Complex *W) {}
   virtual void padMany(Complex *W) {}
 
+  void pad(Complex *W=NULL) {
+    if(W)
+      (this->*Pad)(W);
+  }
+
+  void forward(Complex *f, Complex *F, unsigned int r=0, Complex *W=NULL) {
+    (this->*Forward)(f,F,r,W);
+  }
+
+  void backward(Complex *f, Complex *F, unsigned int r=0, Complex *W=NULL) {
+    (this->*Backward)(f,F,r,W,1.0);
+  }
+
+  // Return spatial index for residue r at position i
+  unsigned int index(unsigned int r, unsigned i) {
+    return (this->*Index)(r,i);
+  }
+
   virtual void forwardShifted(Complex *f, Complex *F, unsigned int r, Complex *W) {}
   virtual void backwardShifted(Complex *F, Complex *f, unsigned int r, Complex *W, double scale) {}
 
   virtual void forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W)=0;
   virtual void forwardExplicitMany(Complex *f, Complex *F, unsigned int, Complex *W)=0;
+  virtual unsigned int indexExplicit(unsigned int r, unsigned int i) {
+    return i;
+  }
 
   virtual void backwardExplicit(Complex *F, Complex *f, unsigned int, Complex *W, double scale)=0;
   virtual void backwardExplicitMany(Complex *F, Complex *f, unsigned int, Complex *W, double scale)=0;
 
-  virtual void forward(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
-  virtual void forwardMany(Complex *f, Complex *F, unsigned int r, Complex *W) {}
+  virtual unsigned int index1(unsigned int r, unsigned int i) {return i;}
+  virtual void forward1(Complex *f, Complex *F0, unsigned int r0, Complex *W) {
+  }
+
+  virtual void forward1Many(Complex *f, Complex *F, unsigned int r, Complex *W) {}
 
   virtual void forward2(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
   virtual void forward2Many(Complex *f, Complex *F, unsigned int r, Complex *W) {}
   virtual void forward2C(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
   virtual void forward2CMany(Complex *f, Complex *F, unsigned int r, Complex *W) {}
 
+  virtual unsigned int indexInner(unsigned int r, unsigned int i) {return i;}
   virtual void forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
   virtual void forwardInnerMany(Complex *f, Complex *F, unsigned int r, Complex *W) {}
   virtual void forwardInnerC(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
 //  virtual void forwardInnerCMany(Complex *f, Complex *F, unsigned int r, Complex *W) {}
 
-  virtual void backward(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale) {}
-  virtual void backwardMany(Complex *F, Complex *f, unsigned int r, Complex *W, double scale) {}
+  virtual void backward1(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale) {}
+  virtual void backward1Many(Complex *F, Complex *f, unsigned int r, Complex *W, double scale) {}
 
   virtual void backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale) {}
   virtual void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W, double scale) {}
@@ -237,6 +263,10 @@ public:
 
   virtual unsigned int ninputs() {
     return C*L;
+  }
+
+  virtual unsigned int noutputs() {
+    return outputSize();
   }
 
   unsigned int workSizeV(unsigned int A, unsigned int B) {
@@ -318,32 +348,29 @@ public:
   // Explicitly pad C FFTs to m.
   void padMany(Complex *W);
 
-  void forward(Complex *f, Complex *F) {
-    (this->*Pad)(W0);
-    for(unsigned int r=0; r < R; r += increment(r))
-      (this->*Forward)(f,F+blockOffset(r),r,W0);
-  }
-
-  void backward(Complex *F, Complex *f, double scale=1.0) {
-    for(unsigned int r=0; r < R; r += increment(r))
-      (this->*Backward)(F+blockOffset(r),f,r,W0,scale);
-  }
-
   void forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W);
   void forwardExplicitMany(Complex *f, Complex *F, unsigned int, Complex *W);
 
   void backwardExplicit(Complex *F, Complex *f, unsigned int, Complex *W, double scale);
   void backwardExplicitMany(Complex *F, Complex *f, unsigned int, Complex *W, double scale);
 
-  // p=1 && C=1
-  void forward(Complex *f, Complex *F0, unsigned int r0, Complex *W);
+  // i=C*(i/C)+i % C
+  unsigned int index1(unsigned int r, unsigned int i) {
+    return C*(q*(i/C)+r)+i%C;
+  }
 
-  void forwardMany(Complex *f, Complex *F, unsigned int r, Complex *W);
+  // p=1 && C=1
+  void forward1(Complex *f, Complex *F0, unsigned int r0, Complex *W);
+
+  void forward1Many(Complex *f, Complex *F, unsigned int r, Complex *W);
 
   void forward2(Complex *f, Complex *F0, unsigned int r0, Complex *W);
 
   void forward2Many(Complex *f, Complex *F, unsigned int r, Complex *W);
 
+  unsigned int indexInner(unsigned int r, unsigned int i) {
+    return C*(q*((i/C)%m)+n*((i/C)/m)+r)+i%C;
+  }
   void forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W);
 
   void forwardInnerMany(Complex *f, Complex *F, unsigned int r, Complex *W);
@@ -352,9 +379,9 @@ public:
 // to size m*p >= L.
 // input and output arrays must be distinct
 // Input F destroyed
-  void backward(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale);
+  void backward1(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale);
 
-  void backwardMany(Complex *F, Complex *f, unsigned int r, Complex *W, double scale);
+  void backward1Many(Complex *F, Complex *f, unsigned int r, Complex *W, double scale);
 
   void backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale);
 
@@ -490,16 +517,6 @@ public:
 
   void init();
 
-  void forward(Complex *f, Complex *F) {
-    for(unsigned int r=0; r < R; r += increment(r))
-      (this->*Forward)(f,F+blockOffset(r),r,W0);
-  }
-
-  void backward(Complex *F, Complex *f, double scale=1.0) {
-    for(unsigned int r=0; r < R; r += increment(r))
-      (this->*Backward)(F+blockOffset(r),f,r,W0,scale);
-  }
-
   void forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W);
   void forwardExplicitMany(Complex *f, Complex *F, unsigned int, Complex *W);
 
@@ -520,7 +537,17 @@ public:
 //    return b*D;
 //  }
 
-  virtual unsigned int workSizeW() {
+  // Number of real values
+  unsigned int noutputs() {
+    return p*C*e;
+  }
+
+  // Number of real values
+  unsigned int fullOutputSize() {
+    return 2*b*q;
+  }
+
+  unsigned int workSizeW() {
     return q == 1 || inplace ? 0 : B*D;
   }
 

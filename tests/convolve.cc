@@ -325,6 +325,7 @@ void fftBase::common()
   Zetaqp=NULL;
   ZetaqmS=NULL;
   overwrite=false;
+  Index=&fftBase::indexExplicit;
 }
 
 unsigned int fftBase::residue(unsigned int r, unsigned int q)
@@ -387,6 +388,7 @@ void fftPad::init()
     H=inplace ? G : ComplexAlign(size);
 
     if(p > 2) { // Implies L > 2m
+      Index=&fftBase::indexInner;
       if(C == 1) {
         Forward=&fftBase::forwardInner;
         Backward=&fftBase::backwardInner;
@@ -405,37 +407,40 @@ void fftPad::init()
       // L'=p, M'=q, m'=p, p'=1, q'=n
       fftp=new mfft1d(P,1,Cm, Cm,1, G);
       ifftp=new mfft1d(P,-1,Cm, Cm,1, G);
-    } else if(p == 2) {
-      if(!centered) {
-        unsigned int Lm=L-m;
-        ZetaqmS0=ComplexAlign((q-1)*Lm);
-        ZetaqmS=ZetaqmS0-L;
-        for(unsigned int r=1; r < q; ++r) {
-          for(unsigned int s=m; s < L; ++s)
-            ZetaqmS[Lm*r+s]=expi(r*s*twopibyN);
+    } else {
+      Index=&fftBase::index1;
+      if(p == 2) {
+        if(!centered) {
+          unsigned int Lm=L-m;
+          ZetaqmS0=ComplexAlign((q-1)*Lm);
+          ZetaqmS=ZetaqmS0-L;
+          for(unsigned int r=1; r < q; ++r) {
+            for(unsigned int s=m; s < L; ++s)
+              ZetaqmS[Lm*r+s]=expi(r*s*twopibyN);
+          }
         }
-      }
 
-      if(C == 1) {
-        Forward=&fftBase::forward2;
-        Backward=&fftBase::backward2;
-      } else {
-        Forward=&fftBase::forward2Many;
-        Backward=&fftBase::backward2Many;
+        if(C == 1) {
+          Forward=&fftBase::forward2;
+          Backward=&fftBase::backward2;
+        } else {
+          Forward=&fftBase::forward2Many;
+          Backward=&fftBase::backward2Many;
+        }
+      } else { // p == 1
+        if(C == 1) {
+          Forward=&fftBase::forward1;
+          Backward=&fftBase::backward1;
+          if(repad())
+            Pad=&fftBase::padSingle;
+        } else {
+          Forward=&fftBase::forward1Many;
+          Backward=&fftBase::backward1Many;
+          if(repad())
+            Pad=&fftBase::padMany;
+        }
+        Q=q;
       }
-    } else { // p == 1
-      if(C == 1) {
-        Forward=&fftBase::forward;
-        Backward=&fftBase::backward;
-        if(repad())
-          Pad=&fftBase::padSingle;
-      } else {
-        Forward=&fftBase::forwardMany;
-        Backward=&fftBase::backwardMany;
-        if(repad())
-          Pad=&fftBase::padMany;
-      }
-      Q=q;
     }
 
     dr=Dr();
@@ -541,7 +546,7 @@ void fftPad::backwardExplicitMany(Complex *F, Complex *f, unsigned int, Complex 
   }
 }
 
-void fftPad::forward(Complex *f, Complex *F0, unsigned int r0, Complex *W)
+void fftPad::forward1(Complex *f, Complex *F0, unsigned int r0, Complex *W)
 {
   if(W == NULL) W=F0;
 
@@ -630,7 +635,7 @@ void fftPad::forward(Complex *f, Complex *F0, unsigned int r0, Complex *W)
   fftm0->fft(W0,F0);
 }
 
-void fftPad::forwardMany(Complex *f, Complex *F, unsigned int r, Complex *W) {
+void fftPad::forward1Many(Complex *f, Complex *F, unsigned int r, Complex *W) {
   if(W == NULL) W=F;
 
   if(W == F) {
@@ -1020,7 +1025,7 @@ void fftPad::forwardInnerMany(Complex *f, Complex *F, unsigned int r, Complex *W
   }
 }
 
-void fftPad::backward(Complex *F0, Complex *f, unsigned int r0, Complex *W, double)
+void fftPad::backward1(Complex *F0, Complex *f, unsigned int r0, Complex *W, double)
 {
   if(W == NULL) W=F0;
 
@@ -1075,7 +1080,7 @@ void fftPad::backward(Complex *F0, Complex *f, unsigned int r0, Complex *W, doub
   }
 }
 
-void fftPad::backwardMany(Complex *F, Complex *f, unsigned int r, Complex *W, double)
+void fftPad::backward1Many(Complex *F, Complex *f, unsigned int r, Complex *W, double)
 {
   if(W == NULL) W=F;
 
@@ -2382,17 +2387,19 @@ void fftPadHermitian::init()
       }
     }
 
-    b=p2*C*(m-e); // Output block size
+//    b=p2*C*(m-e); // Output block size
+    b=p2*C*e+m%2; // Output block size
     B=p2*Ce1; // Work block size
+//    if(inplace) b=B; // TEMP
 
     R=residueBlocks();
     D0=Q % D;
     if(D0 == 0) D0=D;
 
-    unsigned int m0=m+(m % 2);
+    unsigned int m0=m;//+(m % 2);
     if(C == 1) {
-      crfftm=new mcrfft1d(m,p2, 1,1, e+1,m0, G,H);
-      rcfftm=new mrcfft1d(m,p2, 1,1, m0,e+1, H,G);
+      crfftm=new mcrfft1d(m,p2, 1,1, e1,m0, G,H);
+      rcfftm=new mrcfft1d(m,p2, 1,1, m0,e1, H,G);
     } else {
       unsigned int d=C*p2;
       crfftm=new mcrfft1d(m,d, C,C, 1,1, G,H);

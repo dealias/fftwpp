@@ -58,8 +58,6 @@ int main(int argc, char* argv[])
       f[C*j+c]=Complex(j+1,j+1);
 
   Complex *F=ComplexAlign(fft.fullOutputSize());
-//  (fft.*fft.Forward)(f,F,0,NULL);
-  fft.W0=ComplexAlign(fft.workSizeW());
   fft.forward(f,F);
 
 #if OUTPUT

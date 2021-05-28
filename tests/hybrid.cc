@@ -1,7 +1,7 @@
 #include "convolve.h"
 
 #define OUTPUT 1
-#define CENTERED 1
+#define CENTERED 0
 
 using namespace std;
 using namespace utils;
@@ -59,51 +59,17 @@ int main(int argc, char* argv[])
 
   if(mean1 > 0)
     cout << "optimal ratio=" << mean/mean1 << endl;
-  cout << endl;
 
   Complex *f=ComplexAlign(C*L);
+  Complex *h=ComplexAlign(C*L);
   Complex *F=ComplexAlign(fft.fullOutputSize());
-  fft.W0=ComplexAlign(fft.workSizeW());
+  Complex *W0=ComplexAlign(fft.workSizeW());
 
   unsigned int Length=L;
 
   for(unsigned int j=0; j < Length; ++j)
     for(unsigned int c=0; c < C; ++c)
-      f[C*j+c]=Complex(j+1,j+2);
-
-  fft.forward(f,F);
-
-#if OUTPUT
-  for(unsigned int j=0; j < fft.fullOutputSize(); ++j) {
-    if(j % fft.Cm == 0) cout << endl;
-    cout << F[j] << endl;
-  }
-#endif
-
-  Complex *f0=ComplexAlign(C*L);
-  Complex *F0=ComplexAlign(fft.fullOutputSize());
-
-  for(unsigned int j=0; j < fft.fullOutputSize(); ++j)
-    F0[j]=F[j];
-
-#if 0
-  cout << endl;
-  for(unsigned int j=0; j < fft.fullOutputSize(); ++j)
-    cout << F0[j] << endl;
-  cout << endl;
-#endif
-
-  fft.backward(F0,f0);
-
-  double scale=1.0/fft.normalization();
-
-  if(L < 30) {
-    cout << endl;
-    cout << "Inverse:" << endl;
-    for(unsigned int j=0; j < C*L; ++j)
-      cout << f0[j]*scale << endl;
-    cout << endl;
-  }
+      f[C*j+c]=Complex(j+1+c,j+2+c);
 
 #if CENTERED
   fftPadCentered fft2(L,fft.M,C,fft.M,1,1);
@@ -111,23 +77,67 @@ int main(int argc, char* argv[])
   fftPad fft2(L,fft.M,C,fft.M,1,1);
 #endif
 
-  Complex *F2=ComplexAlign(fft2.fullOutputSize());
+  Complex *F2=ComplexAlign(fft2.noutputs());
 
-  for(unsigned int j=0; j < L; ++j)
-    for(unsigned int c=0; c < C; ++c)
-      f[C*j+c]=Complex(j+1,j+2);
   fft2.forward(f,F2);
 
-#if 0
-  cout << endl;
-  for(unsigned int j=0; j < fft.fullOutputSize(); ++j)
-    cout << F2[j] << endl;
-  cout << endl;
+  fft.pad(W0);
+  double error=0.0, error2=0.0;
+  double norm=0.0, norm2=0.0;
+  for(unsigned int r=0; r < fft.R; r += fft.increment(r)) {
+    fft.forward(f,F,r,W0);
+#if OUTPUT
+//    cout << endl << "r=" << r << endl;
+    for(unsigned int k=0; k < fft.noutputs(); ++k) {
+      if(k % fft.Cm == 0) cout << endl;
+//      cout << "index=" << fft.index(r,k) << endl;
+      unsigned int i=fft.index(r,k);
+      error += abs2(F[k]-F2[i]);
+      norm += abs2(F2[i]);
+      cout << F[k] << endl;
+    }
 #endif
+    fft.backward(F,h,r,W0);
+  }
 
-  double error=0.0, norm=0.0;
-  double error2=0.0, norm2=0.0;
+  cout << endl;
+  for(unsigned int j=0; j < fft2.noutputs(); ++j)
+    cout << F2[j] << endl;
 
+  double scale=1.0/fft.normalization();
+
+  if(L < 30) {
+    cout << endl;
+    cout << "Inverse:" << endl;
+    for(unsigned int j=0; j < fft.ninputs(); ++j)
+      cout << h[j]*scale << endl;
+    cout << endl;
+  }
+
+  for(unsigned int j=0; j < fft2.noutputs(); ++j)
+    F[j]=F2[j];
+
+  for(unsigned int r=0; r < fft.R; r += fft.increment(r)) {
+    for(unsigned int k=0; k < fft.noutputs(); ++k)
+      F[k]=F2[fft.index(r,k)];
+    fft.backward(F,h,r,W0);
+  }
+
+  for(unsigned int j=0; j < fft.ninputs(); ++j) {
+    error2 += abs2(h[j]*scale-f[j]);
+    norm2 += abs2(f[j]);
+  }
+
+  if(norm > 0) error=sqrt(error/norm);
+  if(norm2 > 0) error2=sqrt(error2/norm2);
+
+  double eps=1e-12;
+  if(error > eps || error2 > eps)
+    cerr << endl << "WARNING: " << endl;
+  cout << "forward error=" << error << endl;
+  cout << "backward error=" << error2 << endl;
+
+#if 0
   unsigned int m=fft.m;
   unsigned int p=fft.b/(C*m); // effective value
   unsigned int n=fft.n;
@@ -150,19 +160,7 @@ int main(int argc, char* argv[])
         }
       }
     }
-  }
-
-  for(unsigned int j=0; j < C*L; ++j) {
-    error2 += abs2(f0[j]*scale-f[j]);
-    norm2 += abs2(f[j]);
-  }
-
-  if(norm > 0) error=sqrt(error/norm);
-  double eps=1e-12;
-  if(error > eps || error2 > eps)
-    cerr << endl << "WARNING: " << endl;
-  cout << "forward error=" << error << endl;
-  cout << "backward error=" << error2 << endl;
+#endif
 
   return 0;
 }
