@@ -134,7 +134,7 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
   unsigned int q=ceilquotient(M,m);
   unsigned int p=ceilquotient(L,m);
   unsigned int p2=p/2;
-  unsigned int P=centered && p == 2*p2 ? p2 : p;
+  unsigned int P=(centered && p == 2*p2) || p == 2 ? p2 : p;
 
   if(p == q && p > 1 && !mForced) return;
 

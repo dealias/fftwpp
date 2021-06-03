@@ -87,10 +87,10 @@ int main(int argc, char* argv[])
   for(unsigned int r=0; r < fft.R; r += fft.increment(r)) {
     fft.forward(f,F,r,W0);
 #if OUTPUT
-//    cout << endl << "r=" << r << endl;
-    for(unsigned int k=0; k < fft.noutputs(); ++k) {
+    cout << endl << "r=" << r << endl;
+    for(unsigned int k=0; k < fft.noutputs(r); ++k) {
       if(k % fft.Cm == 0) cout << endl;
-//      cout << "index=" << fft.index(r,k) << endl;
+      cout << "i=" << k << " index=" << fft.index(r,k) << endl;
       unsigned int i=fft.index(r,k);
       error += abs2(F[k]-F2[i]);
       norm += abs2(F2[i]);
@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
     F[j]=F2[j];
 
   for(unsigned int r=0; r < fft.R; r += fft.increment(r)) {
-    for(unsigned int k=0; k < fft.noutputs(); ++k)
+    for(unsigned int k=0; k < fft.noutputs(r); ++k)
       F[k]=F2[fft.index(r,k)];
     fft.backward(F,h,r,W0);
   }

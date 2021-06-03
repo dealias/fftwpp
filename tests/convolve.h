@@ -244,11 +244,13 @@ public:
     return r > 0 ? dr : (conjugates() ? utils::ceilquotient(D0,2) : D0);
   }
 
+  /*
   unsigned int blockOffset(unsigned int r) {
     if(conjugates())
       return r > 0 ? b*(D0+2*(r-utils::ceilquotient(D0,2))) : 0;
     else return b*r;
   }
+  */
 
   unsigned int nloops() {
     unsigned int count=0;
@@ -265,8 +267,8 @@ public:
     return C*L;
   }
 
-  virtual unsigned int noutputs() {
-    return outputSize();
+  virtual unsigned int noutputs(unsigned int r=1) {
+    return b*(r == 0 ? D0 : D);
   }
 
   unsigned int workSizeV(unsigned int A, unsigned int B) {
@@ -354,9 +356,22 @@ public:
   void backwardExplicit(Complex *F, Complex *f, unsigned int, Complex *W, double scale);
   void backwardExplicitMany(Complex *F, Complex *f, unsigned int, Complex *W, double scale);
 
-  // i=C*(i/C)+i % C
-  unsigned int index1(unsigned int r, unsigned int i) {
-    return C*(q*(i/C)+r)+i%C;
+  // i=C*(i/C)+i%C
+  unsigned int index1(unsigned int r, unsigned int I) {
+    unsigned int i=I/C;
+    unsigned int s=i%m;
+    unsigned int d=i/m;
+
+    if(p == 2 && D > 1) {
+      unsigned int offset=r == 0 && i >= m && D0 % 2 == 1 ? 1 : 0;
+      double incr=(i+m*offset)/(2*m);
+      r += incr; d -= 2*incr-offset;
+      if(d % 2 == 1) {
+        r=r == 0 ? n/2-1-r : n-1-r;
+        s=s > 0 ? s-1 : m-1;
+      }
+    }
+    return C*(q*s+r+d)+I-C*i;
   }
 
   // p=1 && C=1
@@ -368,8 +383,11 @@ public:
 
   void forward2Many(Complex *f, Complex *F, unsigned int r, Complex *W);
 
-  unsigned int indexInner(unsigned int r, unsigned int i) {
-    return C*(q*((i/C)%m)+n*((i/C)/m)+r)+i%C;
+  unsigned int indexInner(unsigned int r, unsigned int I) {
+    unsigned int i=I/C;
+    unsigned int s=i%m;
+    unsigned int d=i/m;
+    return C*(q*s+n*(d%p)+i/(p*m)+r)+I-C*i;
   }
   void forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W);
 
@@ -538,7 +556,7 @@ public:
 //  }
 
   // Number of real values
-  unsigned int noutputs() {
+  unsigned int noutputs(unsigned int r=1) { // For D=2
     return p*C*e;
   }
 
