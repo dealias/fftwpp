@@ -60,9 +60,9 @@ int main(int argc, char* argv[])
   if(mean1 > 0)
     cout << "optimal ratio=" << mean/mean1 << endl;
 
-  Complex *f=ComplexAlign(C*L);
-  Complex *h=ComplexAlign(C*L);
-  Complex *F=ComplexAlign(fft.fullOutputSize());
+  Complex *f=ComplexAlign(fft.ninputs());
+  Complex *h=ComplexAlign(fft.ninputs());
+  Complex *F=ComplexAlign(fft.noutputs());
   Complex *W0=ComplexAlign(fft.workSizeW());
 
   unsigned int Length=L;
@@ -87,10 +87,10 @@ int main(int argc, char* argv[])
   for(unsigned int r=0; r < fft.R; r += fft.increment(r)) {
     fft.forward(f,F,r,W0);
 #if OUTPUT
-    cout << endl << "r=" << r << endl;
+//    cout << endl << "r=" << r << endl;
     for(unsigned int k=0; k < fft.noutputs(r); ++k) {
       if(k % fft.Cm == 0) cout << endl;
-      cout << "i=" << k << " index=" << fft.index(r,k) << endl;
+//      cout << "i=" << k << " index=" << fft.index(r,k) << endl;
       unsigned int i=fft.index(r,k);
       error += abs2(F[k]-F2[i]);
       norm += abs2(F2[i]);
@@ -114,9 +114,6 @@ int main(int argc, char* argv[])
     cout << endl;
   }
 
-  for(unsigned int j=0; j < fft2.noutputs(); ++j)
-    F[j]=F2[j];
-
   for(unsigned int r=0; r < fft.R; r += fft.increment(r)) {
     for(unsigned int k=0; k < fft.noutputs(r); ++k)
       F[k]=F2[fft.index(r,k)];
@@ -136,31 +133,6 @@ int main(int argc, char* argv[])
     cerr << endl << "WARNING: " << endl;
   cout << "forward error=" << error << endl;
   cout << "backward error=" << error2 << endl;
-
-#if 0
-  unsigned int m=fft.m;
-  unsigned int p=fft.b/(C*m); // effective value
-  unsigned int n=fft.n;
-  unsigned int q=fft.q;
-
-  for(unsigned int s=0; s < m; ++s) {
-    for(unsigned int t=0; t < p; ++t) {
-      for(unsigned int r=0; r < n; ++r) {
-        unsigned int R=r,S=s; // FIXME for inner loop.
-        if(fft.D > 1 && fft.p <= 2) {
-          R=fft.residue(r,q);
-          if(fft.p == 1 ? R > q/2 : R >= ceilquotient(q,2))
-            S=s > 0 ? s-1 : m-1;
-        }
-
-        for(unsigned int c=0; c < C; ++c) {
-          unsigned int i=C*(n*(p*S+t)+R)+c;
-          error += abs2(F[C*(m*(p*r+t)+s)+c]-F2[i]);
-          norm += abs2(F2[i]);
-        }
-      }
-    }
-#endif
 
   return 0;
 }

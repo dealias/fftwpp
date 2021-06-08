@@ -49,38 +49,79 @@ int main(int argc, char* argv[])
   cout << endl;
 
   unsigned H=ceilquotient(L,2);
-  Complex *f=ComplexAlign(C*H);
+  Complex *f=ComplexAlign(fft.ninputs());
+  Complex *h=ComplexAlign(fft.ninputs());
+  Complex *F=ComplexAlign(fft.noutputs());
+  Complex *W0=ComplexAlign(fft.workSizeW());
 
   for(unsigned int c=0; c < C; ++c)
-    f[c]=1;
+    f[c]=1+c;
   for(unsigned int j=1; j < H; ++j)
     for(unsigned int c=0; c < C; ++c)
-      f[C*j+c]=Complex(j+1,j+1);
+      f[C*j+c]=Complex(j+1+c,j+2+c);
 
-  Complex *F=ComplexAlign(fft.fullOutputSize());
+  fftPadHermitian fft2(L,fft.M,C,fft.M,1,1);
+
+  Complex *F2=ComplexAlign(fft2.noutputs());
+
+  fft2.forward(f,F2);
+
   fft.forward(f,F);
 
+  fft.pad(W0);
+  double error=0.0, error2=0.0;
+  double norm=0.0, norm2=0.0;
+  for(unsigned int r=0; r < fft.R; r += fft.increment(r)) {
+    fft.forward(f,F,r,W0);
 #if OUTPUT
-  if(L < 50) {
-    double *Fr=(double *) F;
-    for(unsigned int j=0; j < fft.fullOutputSize(); ++j) {
-      if(j % fft.Cm == 0) cout << endl;
-      cout << Fr[j] << endl;
+    for(unsigned int k=0; k < fft.noutputs(r); ++k) {
+      if(k % fft.Cm == 0) cout << endl;
+      unsigned int i=fft.index(r,k);
+      error += abs2(F[k]-F2[i]);
+      norm += abs2(F2[i]);
+      Complex Fk=F[k];
+      cout << Fk.re << endl;
+      cout << Fk.im << endl;
     }
-  }
 #endif
-
-  fft.backward(F,f);
+    fft.backward(F,h,r,W0);
+  }
 
   cout << endl;
+  for(unsigned int k=0; k < fft2.noutputs(); ++k) {
+    Complex Fk=F2[k];
+    cout << Fk.re << endl;
+    cout << Fk.im << endl;
+  }
+  double scale=1.0/fft.normalization();
+
   if(L < 30) {
     cout << endl;
     cout << "Inverse:" << endl;
-    double scale=1.0/fft.normalization();
-    for(unsigned int j=0; j < H*C; ++j)
-      cout << f[j]*scale << endl;
+    for(unsigned int j=0; j < fft.ninputs(); ++j)
+      cout << h[j]*scale << endl;
     cout << endl;
   }
+
+  for(unsigned int r=0; r < fft.R; r += fft.increment(r)) {
+    for(unsigned int k=0; k < fft.noutputs(r); ++k)
+      F[k]=F2[fft.index(r,k)];
+    fft.backward(F,h,r,W0);
+  }
+
+  for(unsigned int j=0; j < fft.ninputs(); ++j) {
+    error2 += abs2(h[j]*scale-f[j]);
+    norm2 += abs2(f[j]);
+  }
+
+  if(norm > 0) error=sqrt(error/norm);
+  if(norm2 > 0) error2=sqrt(error2/norm2);
+
+  double eps=1e-12;
+  if(error > eps || error2 > eps)
+    cerr << endl << "WARNING: " << endl;
+  cout << "forward error=" << error << endl;
+  cout << "backward error=" << error2 << endl;
 
   return 0;
 }

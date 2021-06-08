@@ -226,10 +226,6 @@ public:
     return b*D;
   }
 
-  virtual unsigned int fullOutputSize() {
-    return C*M;
-  }
-
   virtual bool conjugates() {
     return D > 1 && (p <= 2 || (centered && p % 2 == 0));
   }
@@ -243,14 +239,6 @@ public:
   unsigned int increment(unsigned int r) {
     return r > 0 ? dr : (conjugates() ? utils::ceilquotient(D0,2) : D0);
   }
-
-  /*
-  unsigned int blockOffset(unsigned int r) {
-    if(conjugates())
-      return r > 0 ? b*(D0+2*(r-utils::ceilquotient(D0,2))) : 0;
-    else return b*r;
-  }
-  */
 
   unsigned int nloops() {
     unsigned int count=0;
@@ -558,11 +546,6 @@ public:
   // Number of real values
   unsigned int noutputs(unsigned int r=1) { // For D=2
     return p*C*e;
-  }
-
-  // Number of real values
-  unsigned int fullOutputSize() {
-    return 2*b*q;
   }
 
   unsigned int workSizeW() {
