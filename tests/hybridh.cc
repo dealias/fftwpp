@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
   unsigned H=ceilquotient(L,2);
   Complex *f=ComplexAlign(fft.ninputs());
   Complex *h=ComplexAlign(fft.ninputs());
-  Complex *F=ComplexAlign(fft.noutputs());
+  Complex *F=ComplexAlign(ceilquotient(fft.noutputs(),2));
   Complex *W0=ComplexAlign(fft.workSizeW());
 
   for(unsigned int c=0; c < C; ++c)
@@ -63,10 +63,10 @@ int main(int argc, char* argv[])
   fftPadHermitian fft2(L,fft.M,C,fft.M,1,1);
 
   Complex *F2=ComplexAlign(fft2.noutputs());
+  double *Fr=(double *) F;
+  double *F2r=(double *) F2;
 
   fft2.forward(f,F2);
-
-  fft.forward(f,F);
 
   fft.pad(W0);
   double error=0.0, error2=0.0;
@@ -77,22 +77,18 @@ int main(int argc, char* argv[])
     for(unsigned int k=0; k < fft.noutputs(r); ++k) {
       if(k % fft.Cm == 0) cout << endl;
       unsigned int i=fft.index(r,k);
-      error += abs2(F[k]-F2[i]);
-      norm += abs2(F2[i]);
-      Complex Fk=F[k];
-      cout << Fk.re << endl;
-      cout << Fk.im << endl;
+      error += abs2(Fr[k]-F2r[i]);
+      norm += abs2(F2r[i]);
+      cout << Fr[k] << endl;
     }
 #endif
     fft.backward(F,h,r,W0);
   }
 
   cout << endl;
-  for(unsigned int k=0; k < fft2.noutputs(); ++k) {
-    Complex Fk=F2[k];
-    cout << Fk.re << endl;
-    cout << Fk.im << endl;
-  }
+  for(unsigned int k=0; k < fft2.noutputs(); ++k)
+    cout << F2r[k] << endl;
+
   double scale=1.0/fft.normalization();
 
   if(L < 30) {
@@ -105,7 +101,7 @@ int main(int argc, char* argv[])
 
   for(unsigned int r=0; r < fft.R; r += fft.increment(r)) {
     for(unsigned int k=0; k < fft.noutputs(r); ++k)
-      F[k]=F2[fft.index(r,k)];
+      Fr[k]=F2r[fft.index(r,k)];
     fft.backward(F,h,r,W0);
   }
 

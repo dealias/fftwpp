@@ -545,7 +545,7 @@ public:
 
   // Number of real values
   unsigned int noutputs(unsigned int r=1) { // For D=2
-    return p*C*e;
+    return C*m*(q == 1 ? 1 : p/2)*(r == 0 ? D0 : D);
   }
 
   unsigned int workSizeW() {
