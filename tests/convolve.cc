@@ -3255,7 +3255,7 @@ void fftPadHermitian::backwardInnerC(Complex *F, Complex *f, unsigned int r, Com
   unsigned int p2m=p2*m;
   unsigned int p2mH=p2m+H-L;
   unsigned int S=m-e;
-  unsigned int m0=max(min(p2mH+1,e1),1);
+  unsigned int m0=min(p2mH+1,e1);
   unsigned int m1=min(m-p2mH,S);
   unsigned int T= m1 < e ? p2s1 : p2;
   Complex *fm=f+p2m;
@@ -3293,7 +3293,7 @@ void fftPadHermitian::backwardInnerC(Complex *F, Complex *f, unsigned int r, Com
         Complex *fmt=fm-tm;
         for(unsigned int s=1; s < S; ++s) {
           ft[s]=Wt[s];
-          *(fmt-s)=conj(W[s]);
+          *(fmt-s)=conj(Wt[s]);
         }
       }
 
@@ -3305,17 +3305,18 @@ void fftPadHermitian::backwardInnerC(Complex *F, Complex *f, unsigned int r, Com
 
       Complex *fmt=fm-p2s1m;
       for(unsigned int s=1; s < m1; ++s) {
-        *(fmt-s)=conj(W[s]);
+        ft[s]=Wt[s];
+        *(fmt-s)=conj(Wt[s]);
       }
       for(unsigned int s=m1; s < S; ++s)
-        *(fmt-s)=conj(W[s]);
+        *(fmt-s)=conj(Wt[s]);
 
       if(S < e1) {
         f[e]=W[e];
         for(unsigned int t=1; t < T; ++t)
           f[t*m+e]=W[t*e1+e];
       }
-
+      
     } else { // n even, r=0,n/2
       Complex *V=W+B;
       Complex *G=F+b;
@@ -3434,7 +3435,7 @@ void fftPadHermitian::backwardInnerC(Complex *F, Complex *f, unsigned int r, Com
     for(unsigned int s=m0; s < S; ++s) {
       Vec Wts=LOAD(W+s);
       Vec Vts=LOAD(V+s);
-      STORE(fm-s,LOAD(fm-s)+ZMULT2(Xm,Ym,CONJ(Vts),CONJ(Wts)));
+      STORE(fm-s,LOAD(fm-s)+CONJ(ZMULT2(Xm,Ym,Wts,Vts)));
       STORE(f+s,LOAD(f+s)+Wts+Vts);
     }
     
@@ -3456,7 +3457,7 @@ void fftPadHermitian::backwardInnerC(Complex *F, Complex *f, unsigned int r, Com
       for(unsigned int s=1; s < S; ++s) {
         Vec Wts=LOAD(Wt+s);
         Vec Vts=LOAD(Vt+s);
-        STORE(fmt-s,LOAD(fmt-s)+ZMULT2(Xm,Ym,CONJ(Vts),CONJ(Wts))); 
+        STORE(fmt-s,LOAD(fmt-s)+CONJ(ZMULT2(Xm,Ym,Wts,Vts))); 
         STORE(ft+s,LOAD(ft+s)+ZMULT2(X,Y,Vts,Wts));
       }
     }
@@ -3475,14 +3476,13 @@ void fftPadHermitian::backwardInnerC(Complex *F, Complex *f, unsigned int r, Com
     Xm=UNPACKL(Zeta2,Zeta2);
     Ym=CONJ(UNPACKH(Zeta2,Zeta2));
     for(unsigned int s=1; s < m1; ++s) {
-      cout<<"m-s="<<m-s<<", p2s1m+s="<<p2s1m+s<<endl;
       Vec Wts=LOAD(Wt+s);
       Vec Vts=LOAD(Vt+s);
-      STORE(fmt-s,LOAD(fmt-s)+ZMULT2(Xm,Ym,CONJ(Vts),CONJ(Wts)));
+      STORE(fmt-s,LOAD(fmt-s)+CONJ(ZMULT2(Xm,Ym,Wts,Vts)));
       STORE(ft+s,LOAD(ft+s)+ZMULT2(X,Y,Vts,Wts));
     }
     for(unsigned int s=m1; s < S; ++s)
-      STORE(fmt-s,LOAD(fmt-s)+ZMULT2(Xm,Ym,CONJ(LOAD(Vt+s)),CONJ(LOAD(Wt+s))));
+      STORE(fmt-s,LOAD(fmt-s)+CONJ(ZMULT2(Xm,Ym,LOAD(Wt+s),LOAD(Vt+s))));
     
     if(S < e1) {
       f[e]+=W[e]+V[e];

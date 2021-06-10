@@ -1,6 +1,6 @@
 #include "convolve.h"
 
-#define OUTPUT 1
+#define OUTPUT 0
 
 using namespace std;
 using namespace utils;
@@ -86,8 +86,8 @@ int main(int argc, char* argv[])
   }
 
   cout << endl;
-  for(unsigned int k=0; k < fft2.noutputs(); ++k)
-    cout << F2r[k] << endl;
+  //for(unsigned int k=0; k < fft2.noutputs(); ++k)
+  //  cout << <<F2r[k] << endl;
 
   double scale=1.0/fft.normalization();
 
