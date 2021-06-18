@@ -146,8 +146,9 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
       unsigned int start=DOption > 0 ? min(DOption,n) : 1;
       unsigned int stop=DOption > 0 ? min(DOption,n) : n;
       if(fixed || C > 1) start=stop=1;
-      for(unsigned int D=start; D <= stop; D *= 2) {
-        if(2*D > stop) D=stop;
+      unsigned int stop2=2*stop;
+      for(unsigned int D=start; D < stop2; D *= 2) {
+        if(D > stop) D=stop;
         if(!valid(D,p)) continue;
 //            cout << "q2=" << q2 << endl;
 //            cout << "D2=" << D << endl;
@@ -167,8 +168,9 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
   unsigned int start=DOption > 0 ? min(DOption,n) : 1;
   unsigned int stop=DOption > 0 ? min(DOption,n) : n;
   if(fixed || C > 1) start=stop=1;
-  for(unsigned int D=start; D <= stop; D *= 2) {
-    if(2*D > stop) D=stop;
+  unsigned int stop2=2*stop;
+  for(unsigned int D=start; D < stop2; D *= 2) {
+    if(D > stop) D=stop;
     if(!valid(D,p)) continue;
 //        cout << "q=" << q << endl;
 //        cout << "D=" << D << endl;
