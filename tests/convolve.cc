@@ -3230,12 +3230,12 @@ void fftPadHermitian::forwardInnerC(Complex *f, Complex *F, unsigned int r, Comp
     Vec Zeta=LOAD(Zetaqr+p2s1);
     Vec Zetam=ZMULT(Zeta,Zetanr);
     for(unsigned int s=0; s < m1; ++s) {
-        Vec fmts=CONJ(LOAD(fmt-s));
-        Vec fts=LOAD(ft+s);
-        Vec A=Zetam*UNPACKL(fmts,fmts)+Zeta*UNPACKL(fts,fts);
-        Vec B=ZMULTI(Zetam*UNPACKH(fmts,fmts)+Zeta*UNPACKH(fts,fts));
-        STORE(Wt+s,A+B);
-        STORE(Vt+s,CONJ(A-B));
+      Vec fmts=CONJ(LOAD(fmt-s));
+      Vec fts=LOAD(ft+s);
+      Vec A=Zetam*UNPACKL(fmts,fmts)+Zeta*UNPACKL(fts,fts);
+      Vec B=ZMULTI(Zetam*UNPACKH(fmts,fmts)+Zeta*UNPACKH(fts,fts));
+      STORE(Wt+s,A+B);
+      STORE(Vt+s,CONJ(A-B));
     }
     for(unsigned int s=m1; s < e1; ++s) {
       Vec fmts=CONJ(LOAD(fmt-s));
@@ -3764,8 +3764,8 @@ double ForwardBackward::time(fftBase &fft, unsigned int K)
     for(unsigned int r=start; r < stop; r += fft.increment(r)) {
       for(unsigned int a=0; a < A; ++a)
         (fft.*Forward)(f[a],F[a],r,W);
-   //   for(unsigned int b=0; b < B; ++b)
-   //    (fft.*Backward)(F[b],h[b],r,W,1.0);
+      //   for(unsigned int b=0; b < B; ++b)
+      //    (fft.*Backward)(F[b],h[b],r,W,1.0);
     }
   }
   double t=totalseconds();
