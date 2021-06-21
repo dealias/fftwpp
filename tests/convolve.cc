@@ -1463,7 +1463,7 @@ void fftPadCentered::forwardShiftedExplicit(Complex *f, Complex *F, unsigned int
   }
 }
 
-void fftPadCentered::backwardShiftedExplicit(Complex *f, Complex *F, unsigned int, Complex *, double)
+void fftPadCentered::backwardShiftedExplicit(Complex *F, Complex *f, unsigned int, Complex *, double)
 {
   for(unsigned int s=1; s < m; s += 2) {
     for(unsigned int c=0; c < C; ++c) {
