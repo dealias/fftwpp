@@ -85,9 +85,11 @@ int main(int argc, char* argv[])
     fft.backward(F,h,r,W0);
   }
 
+#if OUTPUT
   cout << endl;
-  //for(unsigned int k=0; k < fft2.noutputs(); ++k)
-  //  cout << <<F2r[k] << endl;
+  for(unsigned int j=0; j < fft2.noutputs(); ++j)
+    cout << F2r[j] << endl;
+#endif
 
   double scale=1.0/fft.normalization();
 
