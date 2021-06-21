@@ -3764,8 +3764,8 @@ double ForwardBackward::time(fftBase &fft, unsigned int K)
     for(unsigned int r=start; r < stop; r += fft.increment(r)) {
       for(unsigned int a=0; a < A; ++a)
         (fft.*Forward)(f[a],F[a],r,W);
-      //   for(unsigned int b=0; b < B; ++b)
-      //    (fft.*Backward)(F[b],h[b],r,W,1.0);
+      for(unsigned int b=0; b < B; ++b)
+        (fft.*Backward)(F[b],h[b],r,W,1.0);
     }
   }
   double t=totalseconds();
