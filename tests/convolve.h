@@ -176,6 +176,8 @@ public:
     return (this->*Index)(r,i);
   }
 
+  virtual void forwardShiftedExplicit(Complex *f, Complex *F, unsigned int r, Complex *W) {}
+  virtual void backwardShiftedExplicit(Complex *F, Complex *f, unsigned int r, Complex *W, double scale) {}
   virtual void forwardShifted(Complex *f, Complex *F, unsigned int r, Complex *W) {}
   virtual void backwardShifted(Complex *F, Complex *f, unsigned int r, Complex *W, double scale) {}
 
@@ -285,6 +287,7 @@ protected:
   mfft1d *ifftm,*ifftm2;
   mfft1d *fftp;
   mfft1d *ifftp;
+  bool fast;
 public:
 
   class Opt : public OptBase {
@@ -303,12 +306,12 @@ public:
   };
 
   fftPad(unsigned int L, unsigned int M, unsigned int C,
-         bool centered) : fftBase(L,M,C,centered) {};
+         bool centered) : fftBase(L,M,C,centered), fast(true) {};
 
   // Compute an fft padded to N=m*q >= M >= L
   fftPad(unsigned int L, unsigned int M, unsigned int C,
          unsigned int m, unsigned int q,unsigned int D, bool centered=false) :
-    fftBase(L,M,C,m,q,D,centered) {
+    fftBase(L,M,C,m,q,D,centered), fast(false) {
     init();
   }
 
@@ -318,7 +321,7 @@ public:
   fftPad(unsigned int L, unsigned int M, Application& app,
          unsigned int C=1, bool Explicit=false, bool fixed=false,
          bool centered=false) :
-    fftBase(L,M,app,C,Explicit,fixed,centered) {
+    fftBase(L,M,app,C,Explicit,fixed,centered), fast(true) {
     Opt opt=Opt(L,M,app,C,Explicit,fixed);
     m=opt.m;
     if(Explicit)
@@ -457,6 +460,9 @@ public:
 
   void forwardShifted(Complex *f, Complex *F, unsigned int r, Complex *W);
   void backwardShifted(Complex *F, Complex *f, unsigned int r, Complex *W, double scale);
+
+  void forwardShiftedExplicit(Complex *f, Complex *F, unsigned int r, Complex *W);
+  void backwardShiftedExplicit(Complex *F, Complex *f, unsigned int r, Complex *W, double scale);
 
   void forwardShift(Complex *F, unsigned int r0);
   void backwardShift(Complex *F, unsigned int r0);

@@ -1,7 +1,7 @@
 #include "convolve.h"
 
-#define OUTPUT 1
-#define CENTERED 0
+#define OUTPUT 0
+#define CENTERED 1
 
 using namespace std;
 using namespace utils;
@@ -100,9 +100,11 @@ int main(int argc, char* argv[])
     fft.backward(F,h,r,W0);
   }
 
+#if OUTPUT
   cout << endl;
   for(unsigned int j=0; j < fft2.noutputs(); ++j)
     cout << F2[j] << endl;
+#endif
 
   double scale=1.0/fft.normalization();
 
