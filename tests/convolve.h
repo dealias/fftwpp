@@ -358,8 +358,9 @@ public:
       double incr=(i+m*offset)/(2*m);
       r += incr; d -= 2*incr-offset;
       if(d % 2 == 1) {
-        r=r == 0 ? n/2-1-r : n-1-r;
-        s=s > 0 ? s-1 : m-1;
+        if(!centered || r > 0 || i < m)
+          s=s > 0 ? s-1 : m-1;
+        r=r == 0 ? n/2-1 : n-1-r;
       }
     }
     return C*(q*s+r+d)+I-C*i;
