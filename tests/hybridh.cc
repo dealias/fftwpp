@@ -73,15 +73,15 @@ int main(int argc, char* argv[])
   double norm=0.0, norm2=0.0;
   for(unsigned int r=0; r < fft.R; r += fft.increment(r)) {
     fft.forward(f,F,r,W0);
-#if OUTPUT
     for(unsigned int k=0; k < fft.noutputs(r); ++k) {
-      if(k % fft.Cm == 0) cout << endl;
       unsigned int i=fft.index(r,k);
       error += abs2(Fr[k]-F2r[i]);
       norm += abs2(F2r[i]);
+#if OUTPUT
+      if(k % fft.Cm == 0) cout << endl;
       cout << Fr[k] << endl;
-    }
 #endif
+    }
     fft.backward(F,h,r,W0);
   }
 
