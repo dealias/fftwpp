@@ -379,6 +379,16 @@ public:
     unsigned int i=I/C;
     unsigned int s=i%m;
     unsigned int d=i/m;
+    if(p%2 == 0 && D > 1 && centered) {
+      unsigned int offset=r == 0 && i >= p*m/2 && D0 % 2 == 1 ? 1 : 0;
+      double incr=(i+m*offset)/(2*m);
+      r += incr; d -= 2*incr-offset;
+      if(d % 2 == 1) {
+        //if(r > 0 || i < m)
+        //  s=s > 0 ? s-1 : m-1;
+        r=r == 0 ? n/2-1 : n-1-r;
+      }
+    }
     return C*(q*s+n*(d%p)+i/(p*m)+r)+I-C*i;
   }
   void forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W);
