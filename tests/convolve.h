@@ -287,7 +287,6 @@ protected:
   mfft1d *ifftm,*ifftm2;
   mfft1d *fftp;
   mfft1d *ifftp;
-  bool fast;
 public:
 
   class Opt : public OptBase {
@@ -306,12 +305,12 @@ public:
   };
 
   fftPad(unsigned int L, unsigned int M, unsigned int C,
-         bool centered) : fftBase(L,M,C,centered), fast(true) {};
+         bool centered) : fftBase(L,M,C,centered) {};
 
   // Compute an fft padded to N=m*q >= M >= L
   fftPad(unsigned int L, unsigned int M, unsigned int C,
          unsigned int m, unsigned int q,unsigned int D, bool centered=false) :
-    fftBase(L,M,C,m,q,D,centered), fast(false) {
+    fftBase(L,M,C,m,q,D,centered) {
     init();
   }
 
@@ -321,7 +320,7 @@ public:
   fftPad(unsigned int L, unsigned int M, Application& app,
          unsigned int C=1, bool Explicit=false, bool fixed=false,
          bool centered=false) :
-    fftBase(L,M,app,C,Explicit,fixed,centered), fast(true) {
+    fftBase(L,M,app,C,Explicit,fixed,centered) {
     Opt opt=Opt(L,M,app,C,Explicit,fixed);
     m=opt.m;
     if(Explicit)
@@ -438,16 +437,18 @@ public:
 
   // Compute an fft padded to N=m*q >= M >= L
   fftPadCentered(unsigned int L, unsigned int M, unsigned int C,
-                 unsigned int m, unsigned int q,unsigned int D) :
+                 unsigned int m, unsigned int q,unsigned int D,
+                 bool fast=true) :
     fftPad(L,M,C,m,q,D,true) {
-    init();
+    init(fast);
   }
 
   // Normal entry point.
   // Compute C ffts of length L and distance 1 padded to at least M
   // (or exactly M if fixed=true)
   fftPadCentered(unsigned int L, unsigned int M, Application& app,
-                 unsigned int C=1, bool Explicit=false, bool fixed=false) :
+                 unsigned int C=1, bool Explicit=false, bool fixed=false,
+                 bool fast=true) :
     fftPad(L,M,C,true) {
     Opt opt=Opt(L,M,app,C,Explicit,fixed);
     m=opt.m;
@@ -456,7 +457,7 @@ public:
     q=opt.q;
     D=opt.D;
     fftPad::init();
-    init();
+    init(fast);
   }
 
   ~fftPadCentered() {
@@ -466,7 +467,7 @@ public:
 
   bool conjugates() {return D > 1 && (p == 1 || p % 2 == 0);}
 
-  void init();
+  void init(bool fast);
   void initShift();
 
   void forwardShifted(Complex *f, Complex *F, unsigned int r, Complex *W);

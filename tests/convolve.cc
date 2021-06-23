@@ -1400,7 +1400,7 @@ void fftPad::backwardInnerMany(Complex *F, Complex *f, unsigned int r, Complex *
   }
 }
 
-void fftPadCentered::init()
+void fftPadCentered::init(bool fast)
 {
   if(q == 1 && fast) {
     ZetaShift=NULL;

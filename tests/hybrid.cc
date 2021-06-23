@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
       f[C*j+c]=Complex(j+1+c,j+2+c);
 
 #if CENTERED
-  fftPadCentered fft2(L,fft.M,C,fft.M,1,1);
+  fftPadCentered fft2(L,fft.M,C,fft.M,1,1,fft.q == 1);
 #else
   fftPad fft2(L,fft.M,C,fft.M,1,1);
 #endif
