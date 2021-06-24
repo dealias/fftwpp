@@ -355,11 +355,8 @@ public:
     if(p == 2 && D > 1) {
       unsigned int offset=r == 0 && i >= m && D0 % 2 == 1 ? 1 : 0;
       double incr=(i+m*offset)/(2*m);
-      //cout<<endl<<"offset="<<offset<<endl;
-      //cout<<"incr="<<incr<<endl;
-      r += incr; d -= 2*incr-offset;
-      //cout<<d<<endl;
-      //r += incr; d -= 2*incr-offset;
+      r += incr;
+      d -= 2*incr-offset;
       if(d % 2 == 1) {
         if(!centered || r > 0 || i < m)
           s=s > 0 ? s-1 : m-1;
@@ -382,30 +379,28 @@ public:
     unsigned int i=I/C;
     unsigned int s=i%m;
     unsigned int d=i/m;
-    unsigned int P;
     unsigned int u;
     if(p%2 == 0 && D > 1 && centered) {
-      P=p/2;
-      u=d%P;
-      unsigned int e=i/(P*m);
-      unsigned int offset=r == 0 && i >= P*m && D0 % 2 == 1 ? 1 : 0;
-      double incr=(i+P*m*offset)/(p*m);
-      r += incr; d -= p*incr-P*offset; e -= 2*incr-offset;
+      unsigned int p2=p/2;
+      u=d%p2;
+      unsigned int e=i/(p2*m);
+      unsigned int offset=r == 0 && i >= p2*m && D0 % 2 == 1 ? 1 : 0;
+      double incr=(i+p2*m*offset)/(p*m);
+      r += incr;
+      d -= p*incr-p2*offset;
+      e -= 2*incr-offset;
       if(e%2 == 1) {
         if(r > 0 && u == 0)
           s=s > 0 ? s-1 : m-1;
-        if(r != 0) u=u > 0 ? u-1 : P-1;
+        if(r != 0) u=u > 0 ? u-1 : p2-1;
         r=r == 0 ? n/2 : n-r;
       }
     }
     else {
-      P=p;
       u=d%p;
-      r+=i/(p*m);
+      r += i/(p*m);
     }
     return C*(q*s+n*u+r)+I-C*i;
-    //return C*(q*s+n*u+i/(p*m)+r)+I-C*i;
-    //return C*(q*s+n*(d%p)+i/(p*m)+r)+I-C*i;
   }
   void forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W);
 
