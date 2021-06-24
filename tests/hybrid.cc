@@ -1,7 +1,7 @@
 #include "convolve.h"
 
 #define OUTPUT 1
-#define CENTERED 1
+#define CENTERED 0
 
 using namespace std;
 using namespace utils;
@@ -86,15 +86,13 @@ int main(int argc, char* argv[])
   double norm=0.0, norm2=0.0;
   for(unsigned int r=0; r < fft.R; r += fft.increment(r)) {
     fft.forward(f,F,r,W0);
-    cout << endl << "r=" << r << endl;
     for(unsigned int k=0; k < fft.noutputs(r); ++k) {
       unsigned int i=fft.index(r,k);
       error += abs2(F[k]-F2[i]);
       norm += abs2(F2[i]);
 #if OUTPUT
       if(k%fft.Cm == 0) cout << endl;
-      cout << "i=" << k << " index=" << fft.index(r,k) << endl;
-      cout << F[k] << endl;
+      cout << fft.index(r,k) << ": " << F[k] << endl;
 #endif
     }
     fft.backward(F,h,r,W0);
@@ -103,7 +101,6 @@ int main(int argc, char* argv[])
 #if OUTPUT
   cout << endl;
   for(unsigned int j=0; j < fft2.noutputs(); ++j)
-    //cout << F2[j] << endl;
     cout << j << ": " << F2[j] << endl;
 #endif
 
