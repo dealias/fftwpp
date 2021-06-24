@@ -327,7 +327,6 @@ void fftBase::common()
   Zetaqp=NULL;
   ZetaqmS=NULL;
   overwrite=false;
-  Index=&fftBase::indexExplicit;
 }
 
 unsigned int fftBase::residue(unsigned int r, unsigned int q)
@@ -390,7 +389,6 @@ void fftPad::init()
     H=inplace ? G : ComplexAlign(size);
 
     if(p > 2) { // Implies L > 2m
-      Index=&fftBase::indexInner;
       if(C == 1) {
         Forward=&fftBase::forwardInner;
         Backward=&fftBase::backwardInner;
@@ -410,7 +408,6 @@ void fftPad::init()
       fftp=new mfft1d(P,1,Cm, Cm,1, G);
       ifftp=new mfft1d(P,-1,Cm, Cm,1, G);
     } else {
-      Index=&fftBase::index1;
       if(p == 2) {
         if(!centered) {
           unsigned int Lm=L-m;
@@ -2407,9 +2404,8 @@ void fftPadHermitian::init()
 
       fftp=new mfft1d(p2,1,Ce1, Ce1,1, G);
       ifftp=new mfft1d(p2,-1,Ce1, Ce1,1, G);
-    } else {
-      Q=q;
-
+    } else { // p=2
+      Q=n=q;
       if(C == 1) {
         Forward=&fftBase::forward2;
         Backward=&fftBase::backward2;

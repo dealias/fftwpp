@@ -67,7 +67,6 @@ class fftBase;
 typedef void (fftBase::*FFTcall)(Complex *f, Complex *F, unsigned int r, Complex *W);
 typedef void (fftBase::*FFTCall)(Complex *f, Complex *F, unsigned int r, Complex *W, double scale);
 typedef void (fftBase::*FFTPad)(Complex *W);
-typedef unsigned int (fftBase::*FFTindex)(unsigned int r, unsigned int i);
 
 class Application {
 public:
@@ -98,7 +97,6 @@ public:
   bool overwrite;
   FFTcall Forward;
   FFTCall Backward;
-  FFTindex Index;
   FFTPad Pad;
 protected:
   Complex *Zetaqp;
@@ -171,11 +169,6 @@ public:
     (this->*Backward)(f,F,r,W,1.0);
   }
 
-  // Return spatial index for residue r at position i
-  unsigned int index(unsigned int r, unsigned i) {
-    return (this->*Index)(r,i);
-  }
-
   virtual void forwardShiftedExplicit(Complex *f, Complex *F, unsigned int r, Complex *W) {}
   virtual void backwardShiftedExplicit(Complex *F, Complex *f, unsigned int r, Complex *W, double scale) {}
   virtual void forwardShifted(Complex *f, Complex *F, unsigned int r, Complex *W) {}
@@ -190,7 +183,33 @@ public:
   virtual void backwardExplicit(Complex *F, Complex *f, unsigned int, Complex *W, double scale)=0;
   virtual void backwardExplicitMany(Complex *F, Complex *f, unsigned int, Complex *W, double scale)=0;
 
-  virtual unsigned int index1(unsigned int r, unsigned int i) {return i;}
+  // i=C*(i/C)+i%C
+  // Return spatial index for residue r at position i
+  unsigned int index(unsigned int r, unsigned int I) {
+    if(q == 1) return I;
+    unsigned int i=I/C;
+    unsigned int s=i%m;
+    unsigned int u;
+    if(D > 1 && ((centered && p % 2 == 0) || p == 2)) {
+      unsigned int p2=p/2;
+      u=(i/m)%p2;
+      unsigned int offset=r == 0 && i >= p2*m && D0 % 2 == 1 ? 1 : 0;
+      double incr=(i+p2*m*offset)/(p*m);
+      r += incr;
+      if(i/(p2*m)-2*incr+offset == 1) {
+        if(!centered || (r > 0 && u == 0))
+          s=s > 0 ? s-1 : m-1;
+        if(r != 0)
+          u=u > 0 ? u-1 : p2-1;
+        r=r == 0 ? n/2 : n-r;
+      }
+    } else {
+      u=(i/m)%p;
+      r += i/(p*m);
+    }
+    return C*(q*s+n*u+r)+I-C*i;
+  }
+
   virtual void forward1(Complex *f, Complex *F0, unsigned int r0, Complex *W) {
   }
 
@@ -201,7 +220,6 @@ public:
   virtual void forward2C(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
   virtual void forward2CMany(Complex *f, Complex *F, unsigned int r, Complex *W) {}
 
-  virtual unsigned int indexInner(unsigned int r, unsigned int i) {return i;}
   virtual void forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
   virtual void forwardInnerMany(Complex *f, Complex *F, unsigned int r, Complex *W) {}
   virtual void forwardInnerC(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
@@ -346,26 +364,6 @@ public:
   void backwardExplicit(Complex *F, Complex *f, unsigned int, Complex *W, double scale);
   void backwardExplicitMany(Complex *F, Complex *f, unsigned int, Complex *W, double scale);
 
-  // i=C*(i/C)+i%C
-  unsigned int index1(unsigned int r, unsigned int I) {
-    unsigned int i=I/C;
-    unsigned int s=i%m;
-    unsigned int d=i/m;
-
-    if(p == 2 && D > 1) {
-      unsigned int offset=r == 0 && i >= m && D0 % 2 == 1 ? 1 : 0;
-      double incr=(i+m*offset)/(2*m);
-      r += incr;
-      d -= 2*incr-offset;
-      if(d % 2 == 1) {
-        if(!centered || r > 0 || i < m)
-          s=s > 0 ? s-1 : m-1;
-        r=r == 0 ? n/2-1 : n-1-r;
-      }
-    }
-    return C*(q*s+r+d)+I-C*i;
-  }
-
   // p=1 && C=1
   void forward1(Complex *f, Complex *F0, unsigned int r0, Complex *W);
 
@@ -375,33 +373,6 @@ public:
 
   void forward2Many(Complex *f, Complex *F, unsigned int r, Complex *W);
 
-  unsigned int indexInner(unsigned int r, unsigned int I) {
-    unsigned int i=I/C;
-    unsigned int s=i%m;
-    unsigned int d=i/m;
-    unsigned int u;
-    if(p%2 == 0 && D > 1 && centered) {
-      unsigned int p2=p/2;
-      u=d%p2;
-      unsigned int e=i/(p2*m);
-      unsigned int offset=r == 0 && i >= p2*m && D0 % 2 == 1 ? 1 : 0;
-      double incr=(i+p2*m*offset)/(p*m);
-      r += incr;
-      d -= p*incr-p2*offset;
-      e -= 2*incr-offset;
-      if(e%2 == 1) {
-        if(r > 0 && u == 0)
-          s=s > 0 ? s-1 : m-1;
-        if(r != 0) u=u > 0 ? u-1 : p2-1;
-        r=r == 0 ? n/2 : n-r;
-      }
-    }
-    else {
-      u=d%p;
-      r += i/(p*m);
-    }
-    return C*(q*s+n*u+r)+I-C*i;
-  }
   void forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W);
 
   void forwardInnerMany(Complex *f, Complex *F, unsigned int r, Complex *W);
