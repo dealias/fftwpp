@@ -392,10 +392,9 @@ public:
       double incr=(i+P*m*offset)/(p*m);
       r += incr; d -= p*incr-P*offset; e -= 2*incr-offset;
       if(e%2 == 1) {
-        if(r > 0 && d%2 == 0)
-          s=s >0 ? s-1 : m-1;
-        //u=u > 0 ? u-1 : P-1;
-        if(r != 0) u=u == 0 ? P-1 : P-1-u;
+        if(r > 0 && u == 0)
+          s=s > 0 ? s-1 : m-1;
+        if(r != 0) u=u > 0 ? u-1 : P-1;
         r=r == 0 ? n/2 : n-r;
       }
     }
