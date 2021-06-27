@@ -254,19 +254,19 @@ static inline Vec ZMULT(const Vec& z, const Vec& w)
   return UNPACKL(z,z)*w+REFL(UNPACKH(z,z))*FLIP(w);
 }
 
-// Return the complex product of CONJ(z) and w.
+// Return the ZMULT(CONJ(z),w).
 static inline Vec ZCMULT(const Vec& z, const Vec& w)
 {
   return UNPACKL(z,z)*w+CONJ(UNPACKH(z,z))*FLIP(w);
 }
 
-// Return the complex product of z and I*w.
+// Return the ZMULT(z,I*w).
 static inline Vec ZMULTI(const Vec& z, const Vec& w)
 {
   return REFL(UNPACKL(z,z))*FLIP(w)-UNPACKH(z,z)*w;
 }
 
-// Return the complex product of CONJ(z) and I*w.
+// Return the ZMULT(CONJ(z),I*w).
 static inline Vec ZCMULTI(const Vec& z, const Vec& w)
 {
   return REFL(UNPACKL(z,z))*FLIP(w)+UNPACKH(z,z)*w;
@@ -278,7 +278,7 @@ static inline Vec ZMULT2(const Vec& z, const Vec& w, const Vec& v)
   return UNPACKL(z,z)*(w+v)-CONJ(UNPACKH(z,z))*FLIP(w-v);
 }
 
-// Return the complex product of z and w given x=(z.re,z.re), y=(z.im,-z.im).
+// Return the ZMULT(z,w) given x=(z.re,z.re), y=(z.im,-z.im).
 static inline Vec ZMULT(const Vec& x, const Vec& y, const Vec& w)
 {
   return x*w-y*FLIP(w);
@@ -291,7 +291,7 @@ static inline Vec ZMULT2(const Vec& x, const Vec& y, const Vec& w,
   return x*(w+v)-y*FLIP(w-v);
 }
 
-// Return the complex product of z and I*w given x=(z.re,-z.re), y=(z.im,z.im).
+// Return the ZMULT(z,I*w) given x=(z.re,-z.re), y=(z.im,z.im).
 static inline Vec ZMULTI(const Vec& x, const Vec& y, const Vec& w)
 {
   return FLIP(x*w)-y*w;

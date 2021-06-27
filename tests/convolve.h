@@ -401,10 +401,6 @@ public:
 
   class Opt : public OptBase {
   public:
-    virtual bool valid(unsigned int D, unsigned int p) {
-      return !(D == 1 && p % 2 == 0 && p > 2);
-    }
-
     Opt(unsigned int L, unsigned int M, Application& app,
         unsigned int C, bool Explicit=false, bool fixed=false) {
       scan(L,M,app,C,Explicit,fixed,true);
