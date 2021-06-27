@@ -2070,17 +2070,13 @@ void fftPadCentered::forwardInnerC(Complex *f, Complex *F0, unsigned int r0, Com
     if(dr0 > 0) {
       Complex *F=W;
       unsigned int r=r0;
-      Vec Zetanr=CONJ(LOAD(Zetaqp+p2*r+p2)); // zeta_n^-r
+      Complex Zetanr0=conj(Zetaqp[p2*r+p2]);
+      Vec Zetanr=LOAD(&Zetanr0); // zeta_n^-r
 
       for(unsigned int s=0; s < m0; ++s)
         F[s]=fH[s];
-      for(unsigned int s=m0; s < m; ++s) {
-        Vec fm0ts=LOAD(fm0+s);
-        Vec fHts=LOAD(fH+s);
-        Vec A=Zetanr*UNPACKL(fm0ts,fm0ts);
-        Vec B=ZMULTI(Zetanr*UNPACKH(fm0ts,fm0ts));
-        STORE(F+s,A+B+fHts);
-      }
+      for(unsigned int s=m0; s < m; ++s)
+        F[s]=fH[s]+Zetanr0*fm0[s];
       Complex *Zetaqr=Zetaqp+p2*r;
       for(unsigned int t=1; t < p2s1; ++t) {
         unsigned int tm=t*m;
@@ -2092,9 +2088,7 @@ void fftPadCentered::forwardInnerC(Complex *f, Complex *F0, unsigned int r0, Com
         for(unsigned int s=0; s < m; ++s) {
           Vec fm0ts=LOAD(fm0t+s);
           Vec fHts=LOAD(fHt+s);
-          Vec A=Zetam*UNPACKL(fm0ts,fm0ts)+Zeta*UNPACKL(fHts,fHts);
-          Vec B=ZMULTI(Zetam*UNPACKH(fm0ts,fm0ts)+Zeta*UNPACKH(fHts,fHts));
-          STORE(Ft+s,A+B);
+          STORE(Ft+s,ZMULT(Zetam,fm0ts)+ZMULT(Zeta,fHts));
         }
       }
       Complex *Ft=F+p2s1m;
@@ -2105,16 +2099,12 @@ void fftPadCentered::forwardInnerC(Complex *f, Complex *F0, unsigned int r0, Com
       for(unsigned int s=0; s < m1; ++s) {
         Vec fm0ts=LOAD(fm0t+s);
         Vec fHts=LOAD(fHt+s);
-        Vec A=Zetam*UNPACKL(fm0ts,fm0ts)+Zeta*UNPACKL(fHts,fHts);
-        Vec B=ZMULTI(Zetam*UNPACKH(fm0ts,fm0ts)+Zeta*UNPACKH(fHts,fHts));
-        STORE(Ft+s,A+B);
+        STORE(Ft+s,ZMULT(Zetam,fm0ts)+ZMULT(Zeta,fHts));
       }
-      for(unsigned int s=m1; s < m; ++s) {
-        Vec fm0ts=LOAD(fm0t+s);
-        Vec A=Zetam*UNPACKL(fm0ts,fm0ts);
-        Vec B=ZMULTI(Zetam*UNPACKH(fm0ts,fm0ts));
-        STORE(Ft+s,A+B);
-      }
+      Complex Zetam0;
+      STORE(&Zetam0,Zetam);
+      for(unsigned int s=m1; s < m; ++s)
+        Ft[s]=Zetam0*fm0t[s];
 
       fftp->fft(F);
 
