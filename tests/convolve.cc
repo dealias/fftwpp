@@ -2540,8 +2540,9 @@ void fftPadHermitian::init()
       }
     }
 
-//    b=p2*C*(m-e); // Output block size
-    b=p2*C*e+m%2; // Output block size
+//    b=p2*C*(m-e);
+//    b=p2*C*e+m%2;
+    b=ceilquotient(p2*C*m,2); // Output block size
     B=p2*Ce1; // Work block size
 //    if(inplace) b=B; // TEMP
 
@@ -2549,10 +2550,9 @@ void fftPadHermitian::init()
     D0=Q % D;
     if(D0 == 0) D0=D;
 
-    unsigned int m0=m;//+(m % 2);
     if(C == 1) {
-      crfftm=new mcrfft1d(m,p2, 1,1, e1,m0, G,H);
-      rcfftm=new mrcfft1d(m,p2, 1,1, m0,e1, H,G);
+      crfftm=new mcrfft1d(m,p2, 1,1, e1,m, G,H);
+      rcfftm=new mrcfft1d(m,p2, 1,1, m,e1, H,G);
     } else {
       unsigned int d=C*p2;
       crfftm=new mcrfft1d(m,d, C,C, 1,1, G,H);
