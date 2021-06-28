@@ -3262,30 +3262,36 @@ void fftPadHermitian::forwardInnerC(Complex *f, Complex *F, unsigned int r, Comp
         Complex *Vt=V+te1;
         Complex *fmt=fm-tm;
         Complex *ft=f+tm;
-        Complex Zeta=Zetaqn2[t]; //*zeta_q^{tn/2}
+        Vec Zeta=LOAD(Zetaqn2+t); //*zeta_q^{tn/2}
+        Vec X=UNPACKL(Zeta,Zeta);
+        Vec Y=CONJ(UNPACKH(Zeta,Zeta));
         for(unsigned int s=0; s < e1; ++s) {
-          Complex fmts=conj(*(fmt-s));
-          Complex fts=ft[s];
-          Wt[s]=fmts+fts;
-          Vt[s]=Zeta*(fts-fmts);
+          Vec fmts=CONJ(LOAD(fmt-s));
+          Vec fts=LOAD(ft+s);
+          STORE(Wt+s,fmts+fts);
+          STORE(Vt+s,ZMULT(X,Y,fts-fmts));
         }
       }
       Complex *Wt=W+p2s1e1;
       Complex *Vt=V+p2s1e1;
       Complex *ft=f+p2s1m;
-      Complex Zeta=Zetaqn2[p2s1];
+      Vec Zeta=LOAD(Zetaqn2+p2s1);
+      Vec X=UNPACKL(Zeta,Zeta);
+      Vec Y=CONJ(UNPACKH(Zeta,Zeta));
       Complex *fmt=f+m;
       for(unsigned int s=0; s < m1; ++s) {
-        Complex fmts=conj(*(fmt-s));
-        Complex fts=ft[s];
-        Wt[s]=fmts+fts;
-        Vt[s]=Zeta*(fts-fmts);
+        Vec fmts=CONJ(LOAD(fmt-s));
+        Vec fts=LOAD(ft+s);
+        STORE(Wt+s,fmts+fts);
+        STORE(Vt+s,ZMULT(X,Y,fts-fmts));
       }
-      Complex mZeta=-Zeta;
+      X=-X;
+      Y=-Y;
+      // TODO: Does this every happen?
       for(unsigned int s=m1; s < e1; ++s) {
-        Complex fmts=conj(*(fmt-s));
-        Wt[s]=fmts;
-        Vt[s]=mZeta*fmts;
+        Vec fmts=CONJ(LOAD(fmt-s));
+        STORE(Wt+s,fmts);
+        STORE(Vt+s,ZMULT(X,Y,fmts));
       }
       fftp->fft(W);
       fftp->fft(V);
@@ -3514,27 +3520,31 @@ void fftPadHermitian::backwardInnerC(Complex *F, Complex *f, unsigned int r, Com
         Complex *Wt=W+te1;
         Complex *Vt=V+te1;
         Complex *ft=f+tm;
-        Complex Zeta=conj(Zetaqn2[t]);
-        ft[0]=Wt[0]+Zeta*Vt[0];
+        Vec Zeta=LOAD(Zetaqn2+t);
+        Vec X=UNPACKL(Zeta,Zeta);
+        Vec Y=REFL(UNPACKH(Zeta,Zeta));
+        STORE(ft,LOAD(Wt)+ZMULT(X,Y,LOAD(Vt)));
         Complex *fmt=fm-tm;
         for(unsigned int s=1; s < S; ++s) {
-          Complex Wts=Wt[s];
-          Complex Vts=Zeta*Vt[s];
-          *(fmt-s)=conj(Wts-Vts);
-          ft[s]=Wts+Vts;
+          Vec Wts=LOAD(Wt+s);
+          Vec Vts=ZMULT(X,Y,LOAD(Vt+s));
+          STORE(fmt-s,CONJ(Wts-Vts));
+          STORE(ft+s,Wts+Vts);
         }
       }
       Complex *Wt=W+p2s1e1;
       Complex *Vt=V+p2s1e1;
       Complex *ft=f+p2s1m;
-      Complex Zeta=conj(Zetaqn2[p2s1]);
-      ft[0]=Wt[0]+Zeta*Vt[0];
+      Vec Zeta=LOAD(Zetaqn2+p2s1);
+      Vec X=UNPACKL(Zeta,Zeta);
+      Vec Y=REFL(UNPACKH(Zeta,Zeta));
+      STORE(ft,LOAD(Wt)+ZMULT(X,Y,LOAD(Vt)));
       Complex *fmt=fm-p2s1m;
       for(unsigned int s=1; s < m1; ++s) {
-        Complex Wts=Wt[s];
-        Complex Vts=Zeta*Vt[s];
-        *(fmt-s)=conj(Wts-Vts);
-        ft[s]=Wts+Vts;
+        Vec Wts=LOAD(Wt+s);
+        Vec Vts=ZMULT(X,Y,LOAD(Vt+s));
+        STORE(fmt-s,CONJ(Wts-Vts));
+        STORE(ft+s,Wts+Vts);
       }
       for(unsigned int s=m1; s < S; ++s)
         *(fmt-s)=conj(Wt[s]-Vt[s]);
@@ -3542,8 +3552,8 @@ void fftPadHermitian::backwardInnerC(Complex *F, Complex *f, unsigned int r, Com
       if(S < e1) {
         f[e]=W[e]+V[e];
         for(unsigned int t=1; t < T; ++t) {
-          unsigned int te1ae=t*e1+e;
-          f[t*m+e]=W[te1ae]+conj(Zetaqn2[t])*V[te1ae];
+          unsigned int te1e=t*e1+e;
+          f[t*m+e]=W[te1e]+conj(Zetaqn2[t])*V[te1e];
         }
       }
     }
@@ -3640,12 +3650,12 @@ void fftPadHermitian::backwardInnerC(Complex *F, Complex *f, unsigned int r, Com
     if(S < e1) {
       f[e]+=W[e]+V[e];
       for(unsigned int t=1; t < T; ++t) {
-        unsigned int te1ae=t*e1+e;
-        unsigned int tmae=t*m+e;
+        unsigned int te1e=t*e1+e;
+        unsigned int tme=t*m+e;
         Vec Zeta=LOAD(Zetaqr+t);
         Vec X=UNPACKL(Zeta,Zeta);
         Vec Y=CONJ(UNPACKH(Zeta,Zeta));
-        STORE(f+tmae,LOAD(f+tmae)+ZMULT2(X,Y,LOAD(V+te1ae),LOAD(W+te1ae)));
+        STORE(f+tme,LOAD(f+tme)+ZMULT2(X,Y,LOAD(V+te1e),LOAD(W+te1e)));
       }
     }
   }
