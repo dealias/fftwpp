@@ -60,9 +60,9 @@ int main(int argc, char* argv[])
   if(mean1 > 0)
     cout << "optimal ratio=" << mean/mean1 << endl;
 
-  Complex *f=ComplexAlign(fft.ninputs());
-  Complex *h=ComplexAlign(fft.ninputs());
-  Complex *F=ComplexAlign(fft.noutputs());
+  Complex *f=ComplexAlign(fft.inputSize());
+  Complex *h=ComplexAlign(fft.inputSize());
+  Complex *F=ComplexAlign(fft.outputSize());
   Complex *W0=ComplexAlign(fft.workSizeW());
 
   unsigned int Length=L;
@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
   fftPad fft2(L,fft.M,C,fft.M,1,1);
 #endif
 
-  Complex *F2=ComplexAlign(fft2.noutputs());
+  Complex *F2=ComplexAlign(fft2.outputSize());
 
   fft2.forward(f,F2);
 
@@ -109,7 +109,7 @@ int main(int argc, char* argv[])
   if(L < 30) {
     cout << endl;
     cout << "Inverse:" << endl;
-    for(unsigned int j=0; j < fft.ninputs(); ++j)
+    for(unsigned int j=0; j < fft.inputSize(); ++j)
       cout << h[j]*scale << endl;
     cout << endl;
   }
@@ -120,7 +120,7 @@ int main(int argc, char* argv[])
     fft.backward(F,h,r,W0);
   }
 
-  for(unsigned int j=0; j < fft.ninputs(); ++j) {
+  for(unsigned int j=0; j < fft.inputSize(); ++j) {
     error2 += abs2(h[j]*scale-f[j]);
     norm2 += abs2(f[j]);
   }

@@ -271,7 +271,7 @@ public:
     return nloops() == 2 && A > B;
   }
 
-  virtual unsigned int ninputs() {
+  virtual unsigned int inputSize() {
     return C*L;
   }
 
@@ -280,7 +280,7 @@ public:
   }
 
   unsigned int workSizeV(unsigned int A, unsigned int B) {
-    return nloops() == 1 || loop2(A,B) ? 0 : ninputs();
+    return nloops() == 1 || loop2(A,B) ? 0 : inputSize();
   }
 
   virtual unsigned int workSizeW() {
@@ -535,13 +535,8 @@ public:
   void forwardInnerC(Complex *f, Complex *F0, unsigned int r0, Complex *W);
   void backwardInnerC(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale);
 
-//  unsigned int outputSize() {
-//    return C*(e+1)*D*(q == 1 ? 1 : p/2);
-//    return b*D;
-//  }
-
   // Number of real values
-  unsigned int noutputs(unsigned int r=1) { // For D=2
+  unsigned int noutputs(unsigned int r=1) {
     return C*m*(q == 1 ? 1 : p/2)*(r == 0 ? D0 : D);
   }
 
@@ -549,7 +544,7 @@ public:
     return q == 1 || inplace ? 0 : B*D;
   }
 
-  unsigned int ninputs() {
+  unsigned int inputSize() {
     return C*utils::ceilquotient(L,2);
   }
 };

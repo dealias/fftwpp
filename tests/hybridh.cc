@@ -1,6 +1,6 @@
 #include "convolve.h"
 
-#define OUTPUT 0
+#define OUTPUT 1
 
 using namespace std;
 using namespace utils;
@@ -49,9 +49,9 @@ int main(int argc, char* argv[])
   cout << endl;
 
   unsigned H=ceilquotient(L,2);
-  Complex *f=ComplexAlign(fft.ninputs());
-  Complex *h=ComplexAlign(fft.ninputs());
-  Complex *F=ComplexAlign(ceilquotient(fft.noutputs(),2));
+  Complex *f=ComplexAlign(fft.inputSize());
+  Complex *h=ComplexAlign(fft.inputSize());
+  Complex *F=ComplexAlign(fft.outputSize());
   Complex *W0=ComplexAlign(fft.workSizeW());
 
   for(unsigned int c=0; c < C; ++c)
@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
   if(L < 30) {
     cout << endl;
     cout << "Inverse:" << endl;
-    for(unsigned int j=0; j < fft.ninputs(); ++j)
+    for(unsigned int j=0; j < fft.inputSize(); ++j)
       cout << h[j]*scale << endl;
     cout << endl;
   }
@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
     fft.backward(F,h,r,W0);
   }
 
-  for(unsigned int j=0; j < fft.ninputs(); ++j) {
+  for(unsigned int j=0; j < fft.inputSize(); ++j) {
     error2 += abs2(h[j]*scale-f[j]);
     norm2 += abs2(f[j]);
   }
