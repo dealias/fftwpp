@@ -3206,7 +3206,7 @@ void fftPadHermitian::forwardInnerC(Complex *f, Complex *F, unsigned int r, Comp
   unsigned int p2m=p2*m;
   unsigned int p2mH=p2m+H-L;
   unsigned int m0=min(p2mH+1,e1);
-  unsigned int m1=min(m-p2mH,e1);
+  //unsigned int m1=min(m-p2mH,e1); e1 <= m-p2mH for all m and L
   Complex *fm=f+p2m;
   if(r == 0) {
     unsigned int n2=n/2;
@@ -3228,10 +3228,8 @@ void fftPadHermitian::forwardInnerC(Complex *f, Complex *F, unsigned int r, Comp
       Complex *Wt=W+p2s1e1;
       Complex *ft=f+p2s1m;
       Complex *fmt=f+m;
-      for(unsigned int s=0; s < m1; ++s)
+      for(unsigned int s=0; s < e1; ++s)
         Wt[s]=conj(*(fmt-s))+ft[s];
-      for(unsigned int s=m1; s < e1; ++s)
-        Wt[s]=conj(*(fmt-s));
 
       fftp->fft(W);
 
@@ -3279,7 +3277,7 @@ void fftPadHermitian::forwardInnerC(Complex *f, Complex *F, unsigned int r, Comp
       Vec X=UNPACKL(Zeta,Zeta);
       Vec Y=CONJ(UNPACKH(Zeta,Zeta));
       Complex *fmt=f+m;
-      for(unsigned int s=0; s < m1; ++s) {
+      for(unsigned int s=0; s < e1; ++s) {
         Vec fmts=CONJ(LOAD(fmt-s));
         Vec fts=LOAD(ft+s);
         STORE(Wt+s,fmts+fts);
@@ -3287,12 +3285,7 @@ void fftPadHermitian::forwardInnerC(Complex *f, Complex *F, unsigned int r, Comp
       }
       X=-X;
       Y=-Y;
-      // TODO: Does this every happen?
-      for(unsigned int s=m1; s < e1; ++s) {
-        Vec fmts=CONJ(LOAD(fmt-s));
-        STORE(Wt+s,fmts);
-        STORE(Vt+s,ZMULT(X,Y,fmts));
-      }
+
       fftp->fft(W);
       fftp->fft(V);
 
@@ -3356,18 +3349,11 @@ void fftPadHermitian::forwardInnerC(Complex *f, Complex *F, unsigned int r, Comp
     Complex *ft=f+p2s1m;
     Vec Zeta=LOAD(Zetaqr+p2s1);
     Vec Zetam=ZMULT(Zeta,Zetanr);
-    for(unsigned int s=0; s < m1; ++s) {
+    for(unsigned int s=0; s < e1; ++s) {
       Vec fmts=CONJ(LOAD(fmt-s));
       Vec fts=LOAD(ft+s);
       Vec A=Zetam*UNPACKL(fmts,fmts)+Zeta*UNPACKL(fts,fts);
       Vec B=ZMULTI(Zetam*UNPACKH(fmts,fmts)+Zeta*UNPACKH(fts,fts));
-      STORE(Wt+s,A+B);
-      STORE(Vt+s,CONJ(A-B));
-    }
-    for(unsigned int s=m1; s < e1; ++s) {
-      Vec fmts=CONJ(LOAD(fmt-s));
-      Vec A=Zetam*UNPACKL(fmts,fmts);
-      Vec B=ZMULTI(Zetam*UNPACKH(fmts,fmts));
       STORE(Wt+s,A+B);
       STORE(Vt+s,CONJ(A-B));
     }
