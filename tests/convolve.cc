@@ -3200,13 +3200,9 @@ void fftPadHermitian::forwardInnerC(Complex *f, Complex *F, unsigned int r, Comp
   unsigned int p2=p/2;
   unsigned int H=L/2;
   unsigned int e1=e+1;
-  unsigned int p2s1=p2-1;
-  unsigned int p2s1m=p2s1*m;
-  unsigned int p2s1e1=p2s1*e1;
   unsigned int p2m=p2*m;
   unsigned int p2mH=p2m+H-L;
   unsigned int m0=min(p2mH+1,e1);
-  //unsigned int m1=min(m-p2mH,e1); e1 <= m-p2mH for all m and L
   Complex *fm=f+p2m;
   if(r == 0) {
     unsigned int n2=n/2;
@@ -3216,7 +3212,7 @@ void fftPadHermitian::forwardInnerC(Complex *f, Complex *F, unsigned int r, Comp
         W[s]=f[s];
       for(unsigned int s=m0; s < e1; ++s)
         W[s]=conj(*(fm-s))+f[s];
-      for(unsigned int t=1; t < p2s1; ++t) {
+      for(unsigned int t=1; t < p2; ++t) {
         unsigned int tm=t*m;
         unsigned int te1=t*e1;
         Complex *fmt=fm-tm;
@@ -3225,11 +3221,6 @@ void fftPadHermitian::forwardInnerC(Complex *f, Complex *F, unsigned int r, Comp
         for(unsigned int s=0; s < e1; ++s)
           Wt[s]=conj(*(fmt-s))+ft[s];
       }
-      Complex *Wt=W+p2s1e1;
-      Complex *ft=f+p2s1m;
-      Complex *fmt=f+m;
-      for(unsigned int s=0; s < e1; ++s)
-        Wt[s]=conj(*(fmt-s))+ft[s];
 
       fftp->fft(W);
 
@@ -3253,7 +3244,7 @@ void fftPadHermitian::forwardInnerC(Complex *f, Complex *F, unsigned int r, Comp
         V[s]=-fms+fs;
       }
       Complex *Zetaqn2=Zetaqp+p2*n2;
-      for(unsigned int t=1; t < p2s1; ++t) {
+      for(unsigned int t=1; t < p2; ++t) {
         unsigned int tm=t*m;
         unsigned int te1=t*e1;
         Complex *Wt=W+te1;
@@ -3270,21 +3261,6 @@ void fftPadHermitian::forwardInnerC(Complex *f, Complex *F, unsigned int r, Comp
           STORE(Vt+s,ZMULT(X,Y,fts-fmts));
         }
       }
-      Complex *Wt=W+p2s1e1;
-      Complex *Vt=V+p2s1e1;
-      Complex *ft=f+p2s1m;
-      Vec Zeta=LOAD(Zetaqn2+p2s1);
-      Vec X=UNPACKL(Zeta,Zeta);
-      Vec Y=CONJ(UNPACKH(Zeta,Zeta));
-      Complex *fmt=f+m;
-      for(unsigned int s=0; s < e1; ++s) {
-        Vec fmts=CONJ(LOAD(fmt-s));
-        Vec fts=LOAD(ft+s);
-        STORE(Wt+s,fmts+fts);
-        STORE(Vt+s,ZMULT(X,Y,fts-fmts));
-      }
-      X=-X;
-      Y=-Y;
 
       fftp->fft(W);
       fftp->fft(V);
@@ -3325,7 +3301,7 @@ void fftPadHermitian::forwardInnerC(Complex *f, Complex *F, unsigned int r, Comp
       STORE(V+s,CONJ(A-B)+fs);
     }
     Complex *Zetaqr=Zetaqp+p2*r;
-    for(unsigned int t=1; t < p2s1; ++t) {
+    for(unsigned int t=1; t < p2; ++t) {
       unsigned int tm=t*m;
       unsigned int te1=t*e1;
       Complex *Wt=W+te1;
@@ -3342,20 +3318,6 @@ void fftPadHermitian::forwardInnerC(Complex *f, Complex *F, unsigned int r, Comp
         STORE(Wt+s,A+B);
         STORE(Vt+s,CONJ(A-B));
       }
-    }
-    Complex *Wt=W+p2s1e1;
-    Complex *Vt=V+p2s1e1;
-    Complex *fmt=fm-p2s1m;
-    Complex *ft=f+p2s1m;
-    Vec Zeta=LOAD(Zetaqr+p2s1);
-    Vec Zetam=ZMULT(Zeta,Zetanr);
-    for(unsigned int s=0; s < e1; ++s) {
-      Vec fmts=CONJ(LOAD(fmt-s));
-      Vec fts=LOAD(ft+s);
-      Vec A=Zetam*UNPACKL(fmts,fmts)+Zeta*UNPACKL(fts,fts);
-      Vec B=ZMULTI(Zetam*UNPACKH(fmts,fmts)+Zeta*UNPACKH(fts,fts));
-      STORE(Wt+s,A+B);
-      STORE(Vt+s,CONJ(A-B));
     }
 
     fftp->fft(W);
