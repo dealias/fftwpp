@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
       norm += abs2(F2[i]);
 #if OUTPUT
       if(k%fft.Cm == 0) cout << endl;
-      cout << fft.index(r,k) << ": " << F[k] << endl;
+      cout << i << ": " << F[k] << endl;
 #endif
     }
     fft.backward(F,h,r,W0);

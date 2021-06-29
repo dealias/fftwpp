@@ -275,7 +275,13 @@ public:
     return C*L;
   }
 
-  virtual unsigned int noutputs(unsigned int r=1) {
+  // Number of complex values per residue
+  virtual unsigned int noutputs() {
+    return b;
+  }
+
+  // Number of complex values per iteration
+  virtual unsigned int noutputs(unsigned int r) {
     return b*(r == 0 ? D0 : D);
   }
 
@@ -535,9 +541,14 @@ public:
   void forwardInnerC(Complex *f, Complex *F0, unsigned int r0, Complex *W);
   void backwardInnerC(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale);
 
-  // Number of real values
-  unsigned int noutputs(unsigned int r=1) {
-    return C*m*(q == 1 ? 1 : p/2)*(r == 0 ? D0 : D);
+  // Number of real values per residue
+  unsigned int noutputs() {
+    return C*m*(q == 1 ? 1 : p/2);
+  }
+
+  unsigned int noutputs(unsigned int r) {
+    cerr << "For Hermitian transforms, use noutputs() instead of noutputs(unsigned int r)." << endl;
+    exit(-1);
   }
 
   unsigned int workSizeW() {

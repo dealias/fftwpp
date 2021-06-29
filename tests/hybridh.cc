@@ -62,8 +62,7 @@ int main(int argc, char* argv[])
 
   fftPadHermitian fft2(L,fft.M,C,fft.M,1,1);
 
-  Complex *F2=ComplexAlign(fft2.noutputs());
-  double *Fr=(double *) F;
+  Complex *F2=ComplexAlign(fft2.outputSize());
   double *F2r=(double *) F2;
 
   fft2.forward(f,F2);
@@ -73,14 +72,21 @@ int main(int argc, char* argv[])
   double norm=0.0, norm2=0.0;
   for(unsigned int r=0; r < fft.R; r += fft.increment(r)) {
     fft.forward(f,F,r,W0);
-    for(unsigned int k=0; k < fft.noutputs(r); ++k) {
-      unsigned int i=fft.index(r,k);
-      error += abs2(Fr[k]-F2r[i]);
-      norm += abs2(F2r[i]);
+    unsigned int D1=r == 0 ? fft.D0 : fft.D;
+    for(unsigned int d=0; d < D1; ++d) {
+      double *Fr=(double *) (F+fft.b*d);
+      unsigned int offset=fft.noutputs()*d;
+      for(unsigned int k=0; k < fft.noutputs(); ++k) {
+        unsigned int K=k+offset;
+        unsigned int i=fft.index(r,K);
+        error += abs2(Fr[k]-F2r[i]);
+        norm += abs2(F2r[i]);
 #if OUTPUT
-      if(k%fft.Cm == 0) cout << endl;
-      cout << fft.index(r,k) << ": " << Fr[k] << endl;
+        if(k%fft.Cm == 0) cout << endl;
+        cout << "k=" << k << endl;
+        cout << i << ": " << Fr[k] << endl;
 #endif
+      }
     }
     fft.backward(F,h,r,W0);
   }
@@ -102,8 +108,15 @@ int main(int argc, char* argv[])
   }
 
   for(unsigned int r=0; r < fft.R; r += fft.increment(r)) {
-    for(unsigned int k=0; k < fft.noutputs(r); ++k)
-      Fr[k]=F2r[fft.index(r,k)];
+    unsigned int D1=r == 0 ? fft.D0 : fft.D;
+    for(unsigned int d=0; d < D1; ++d) {
+      double *Fr=(double *) (F+fft.b*d);
+      unsigned int offset=fft.noutputs()*d;
+      for(unsigned int k=0; k < fft.noutputs(); ++k) {
+        unsigned int K=k+offset;
+        Fr[k]=F2r[fft.index(r,K)];
+      }
+    }
     fft.backward(F,h,r,W0);
   }
 
