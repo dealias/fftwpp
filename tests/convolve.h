@@ -612,7 +612,7 @@ protected:
   unsigned int R;
   unsigned int D0;
   unsigned int r;
-  unsigned int b;
+  unsigned int blocksize;
   Complex **F,**Fp;
   Complex *FpB;
   Complex **G; // For overwrite optimization
@@ -646,10 +646,80 @@ public:
   Convolution(fftBase &fft, unsigned int A, unsigned int B,
               Complex *F=NULL, Complex *W=NULL, Complex *V=NULL) :
     fft(&fft), A(A), B(B), W(W), allocate(false) {
-    init(F,V);
-  }
+    Forward=fft.Forward;
+    Backward=fft.Backward;
 
-  void init(Complex *F, Complex *V);
+    L=fft.L;
+    q=fft.q;
+    Q=fft.Q;
+    D=fft.D;
+    D0=fft.D0;
+    blocksize=fft.noutputs();
+    R=fft.residueBlocks();
+
+    unsigned int M=fft.normalization();
+    scale=1.0/M;
+    unsigned int outputSize=fft.outputSize();
+    unsigned int workSizeW=fft.workSizeW();
+    noutputs=fft.inputSize();
+
+    N=max(A,B);
+    this->F=new Complex*[N];
+    if(F) {
+      for(unsigned int i=0; i < N; ++i)
+        this->F[i]=F+i*outputSize;
+    } else {
+      allocate=true;
+      for(unsigned int i=0; i < N; ++i)
+        this->F[i]=utils::ComplexAlign(outputSize);
+    }
+
+    if(q > 1) {
+      allocateV=false;
+      if(V) {
+        this->V=new Complex*[B];
+        unsigned int size=fft.workSizeV(A,B);
+        for(unsigned int i=0; i < B; ++i)
+          this->V[i]=V+i*size;
+      } else
+        this->V=NULL;
+
+      allocateW=!this->W && !fft.inplace;
+      this->W=allocateW ? utils::ComplexAlign(workSizeW) : NULL;
+
+      Pad=fft.Pad;
+      (fft.*Pad)(this->W);
+
+      nloops=fft.nloops();
+      loop2=fft.loop2(A,B);
+      int extra;
+      if(loop2 && !fft.overwrite) {
+        r=fft.increment(0);
+        Fp=new Complex*[A];
+        Fp[0]=this->F[A-1];
+        for(unsigned int a=1; a < A; ++a)
+          Fp[a]=this->F[a-1];
+        extra=1;
+      } else {
+        extra=0;
+        G=new Complex*[N];
+        for(unsigned int b=0; b < B; ++b)
+          G[b]=this->F[b];
+      }
+
+      if(A > B+extra && !fft.inplace && workSizeW <= outputSize) {
+        W0=this->F[B];
+        Pad=&fftBase::padNone;
+      } else
+        W0=this->W;
+    }
+
+    if(fft.outputSize() <= fft.C*L && false) // Doesn't work for Hermitian case
+      for(unsigned int r=0; r < R; r += fft.increment(r))
+        overwrite=r; // Store F in h on the last loop
+    else
+      overwrite=R;
+  }
 
   void initV() {
     allocateV=true;
@@ -694,11 +764,7 @@ public:
   //   (for inplace usage)
   ConvolutionHermitian(fftPadHermitian &fft, unsigned int A,
                        unsigned int B, Complex *F=NULL, Complex *W=NULL,
-                       Complex *V=NULL) : Convolution(A,B,F,W,V) {
-    this->fft=&fft;
-    init(F,V);
-    b=q == 1 ? fft.Cm : 2*fft.b;
-  }
+                       Complex *V=NULL) : Convolution(fft,A,B,F,W,V) {}
 };
 
 inline void HermitianSymmetrizeX(unsigned int mx, unsigned int my,
@@ -734,7 +800,6 @@ protected:
   unsigned int Rx; // number of residue blocks
   unsigned int r;
   Complex **F,**Fp;
-  Complex *FpB;
   Complex **V;
   Complex *W;
   Complex *W0;
@@ -819,13 +884,12 @@ public:
       Fp[0]=this->F[A-1];
       for(unsigned int a=1; a < A; ++a)
         Fp[a]=this->F[a-1];
-      FpB=fftx->inplace ? NULL : Fp[B];
       extra=1;
-    } else {
+    } else
       extra=0;
-    }
 
-    if(A > B+extra && !fftx->inplace) {
+    if(A > B+extra && !fftx->inplace &&
+       fftx->workSizeW() <= fftx->outputSize()) {
       W0=this->F[B];
     } else
       W0=this->W;
@@ -924,7 +988,7 @@ public:
           (fftx->*Forward)(f[a]+offset,Fp[a],r,W);
         subconvolution(Fp,mult,fftx->D*Nx,Ly,offset);
         for(unsigned int b=0; b < B; ++b)
-          (fftx->*Backward)(Fp[b],f[b]+offset,r,FpB,1.0);
+          (fftx->*Backward)(Fp[b],f[b]+offset,r,W0,1.0);
       } else {
         unsigned int Offset;
         bool useV=nloops > 1;

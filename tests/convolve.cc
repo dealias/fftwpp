@@ -3609,83 +3609,6 @@ void fftPadHermitian::backwardInnerC(Complex *F, Complex *f, unsigned int r, Com
   }
 }
 
-void Convolution::init(Complex *F, Complex *V)
-{
-  Forward=fft->Forward;
-  Backward=fft->Backward;
-
-  L=fft->L;
-  q=fft->q;
-  Q=fft->Q;
-  D=fft->D;
-  D0=fft->D0;
-  b=fft->b;
-  R=fft->residueBlocks();
-
-  unsigned int M=fft->normalization();
-  scale=1.0/M;
-  unsigned int c=fft->outputSize();
-  noutputs=fft->inputSize();
-
-  N=max(A,B);
-  this->F=new Complex*[N];
-  if(F) {
-    for(unsigned int i=0; i < N; ++i)
-      this->F[i]=F+i*c;
-  } else {
-    allocate=true;
-    for(unsigned int i=0; i < N; ++i)
-      this->F[i]=ComplexAlign(c);
-  }
-
-  if(q > 1) {
-    allocateV=false;
-    if(V) {
-      this->V=new Complex*[B];
-      unsigned int size=fft->workSizeV(A,B);
-      for(unsigned int i=0; i < B; ++i)
-        this->V[i]=V+i*size;
-    } else
-      this->V=NULL;
-
-    allocateW=!this->W && !fft->inplace;
-    this->W=allocateW ? ComplexAlign(c) : NULL;
-
-    Pad=fft->Pad;
-    (fft->*Pad)(this->W);
-
-    nloops=fft->nloops();
-    loop2=fft->loop2(A,B);
-    int extra;
-    if(loop2 && !fft->overwrite) {
-      r=fft->increment(0);
-      Fp=new Complex*[A];
-      Fp[0]=this->F[A-1];
-      for(unsigned int a=1; a < A; ++a)
-        Fp[a]=this->F[a-1];
-      FpB=fft->inplace ? NULL : Fp[B];
-      extra=1;
-    } else {
-      extra=0;
-      G=new Complex*[N];
-      for(unsigned int b=0; b < B; ++b)
-        G[b]=this->F[b];
-    }
-
-    if(A > B+extra && !fft->inplace) {
-      W0=this->F[B];
-      Pad=&fftBase::padNone;
-    } else
-      W0=this->W;
-  }
-
-  if(fft->outputSize() <= fft->C*L && false) // Doesn't work for Hermitian case
-    for(unsigned int r=0; r < R; r += fft->increment(r))
-      overwrite=r; // Store F in h on the last loop
-  else
-    overwrite=R;
-}
-
 Convolution::~Convolution()
 {
   if(q > 1) {
@@ -3721,7 +3644,7 @@ void Convolution::convolve0(Complex **f, multiplier *mult, unsigned int offset)
   if(q == 1) {
     for(unsigned int a=0; a < A; ++a)
       (fft->*Forward)(f[a]+offset,F[a],0,NULL);
-    (*mult)(F,b,threads);
+    (*mult)(F,blocksize,threads);
     for(unsigned int b=0; b < B; ++b)
       (fft->*Backward)(F[b],f[b]+offset,0,NULL,1.0);
   } else {
@@ -3730,15 +3653,15 @@ void Convolution::convolve0(Complex **f, multiplier *mult, unsigned int offset)
         G[a]=f[a]+offset;
       for(unsigned int a=0; a < A; ++a)
         (fft->*Forward)(G[a],F[a],R,NULL);
-      (*mult)(G,fft->p*b,threads);
-      (*mult)(F,b,threads);
+      (*mult)(G,fft->p*blocksize,threads);
+      (*mult)(F,blocksize,threads);
       for(unsigned int b=0; b < B; ++b)
         (fft->*Backward)(F[b],G[b],R,NULL,1.0);
     } else {
       if(loop2) {
         for(unsigned int a=0; a < A; ++a)
           (fft->*Forward)(f[a]+offset,F[a],0,W);
-        (*mult)(F,D0*b,threads);
+        (*mult)(F,D0*blocksize,threads);
 
         for(unsigned int b=0; b < B; ++b) {
           (fft->*Forward)(f[b]+offset,Fp[b],r,W);
@@ -3747,9 +3670,10 @@ void Convolution::convolve0(Complex **f, multiplier *mult, unsigned int offset)
         }
         for(unsigned int a=B; a < A; ++a)
           (fft->*Forward)(f[a]+offset,Fp[a],r,W);
-        (*mult)(Fp,D*b,threads);
+        (*mult)(Fp,D*blocksize,threads);
         for(unsigned int b=0; b < B; ++b)
-          (fft->*Backward)(Fp[b],f[b]+offset,r,FpB,1.0);
+          (fft->*Backward)(Fp[b],f[b]+offset,r,W0,1.0);
+        (fft->*Pad)(W);
       } else {
         unsigned int Offset;
         bool useV=nloops > 1;
@@ -3769,7 +3693,7 @@ void Convolution::convolve0(Complex **f, multiplier *mult, unsigned int offset)
             G[a]=output;
             (fft->*Forward)(f[a]+offset,output,r,W);
           }
-          (*mult)(G,(r == 0 ? D0 : D)*b,threads);
+          (*mult)(G,(r == 0 ? D0 : D)*blocksize,threads);
           for(unsigned int b=0; b < B; ++b)
             (fft->*Backward)(G[b],h0[b]+Offset,r,W0,1.0);
           (fft->*Pad)(W);
@@ -3798,23 +3722,22 @@ void ForwardBackward::init(fftBase &fft)
   D0=fft.D0;
   dr=fft.dr;
 
-  unsigned int L0=fft.outputSize();
+  unsigned int inputSize=fft.inputSize();
+  unsigned int outputSize=fft.outputSize();
   unsigned int N=max(A,B);
 
   f=new Complex*[N];
   F=new Complex*[N];
   h=new Complex*[B];
 
-  unsigned CL=C*fft.L;
-
   for(unsigned int a=0; a < A; ++a)
-    f[a]=ComplexAlign(CL);
+    f[a]=ComplexAlign(inputSize);
 
   for(unsigned int a=0; a < N; ++a)
-    F[a]=ComplexAlign(L0);
+    F[a]=ComplexAlign(outputSize);
 
   for(unsigned int b=0; b < B; ++b)
-    h[b]=ComplexAlign(CL);
+    h[b]=ComplexAlign(inputSize);
 
   W=ComplexAlign(fft.workSizeW());
   (fft.*fft.Pad)(W);
@@ -3822,7 +3745,7 @@ void ForwardBackward::init(fftBase &fft)
   // Initialize entire array to 0 to avoid overflow when timing.
   for(unsigned int a=0; a < A; ++a) {
     Complex *fa=f[a];
-    for(unsigned int j=0; j < CL; ++j)
+    for(unsigned int j=0; j < inputSize; ++j)
       fa[j]=0.0;
   }
 }

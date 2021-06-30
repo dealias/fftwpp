@@ -1,6 +1,6 @@
 #include "convolve.h"
 
-#define OUTPUT 1
+#define OUTPUT 0
 
 using namespace std;
 using namespace utils;
@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
 
   Complex **f=new Complex *[max(A,B)];
   for(unsigned int a=0; a < A; ++a)
-    f[a]=ComplexAlign(C*H);
+    f[a]=ComplexAlign(fft.inputSize());
 
   for(unsigned int a=0; a < A; ++a) {
     Complex *fa=f[a];

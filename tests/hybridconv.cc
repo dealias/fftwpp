@@ -2,6 +2,8 @@
 
 #define OUTPUT 0
 
+#define CENTERED 1
+
 using namespace std;
 using namespace utils;
 using namespace Array;
@@ -24,12 +26,15 @@ int main(int argc, char* argv[])
   optionsHybrid(argc,argv);
 
   ForwardBackward FB(A,B);
-//  fftPad fft(L,M,FB,C);
+#ifdef CENTERED
   fftPadCentered fft(L,M,FB,C);
+#else
+  fftPad fft(L,M,FB,C);
+#endif
 
   Complex **f=new Complex *[max(A,B)];
   for(unsigned int a=0; a < A; ++a)
-    f[a]=ComplexAlign(C*L);
+    f[a]=ComplexAlign(fft.inputSize());
 
   for(unsigned int a=0; a < A; ++a) {
     Complex *fa=f[a];
