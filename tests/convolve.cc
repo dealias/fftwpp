@@ -134,7 +134,8 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
   unsigned int q=ceilquotient(M,m);
   unsigned int p=ceilquotient(L,m);
   unsigned int p2=p/2;
-  unsigned int P=(centered && p == 2*p2) || p == 2 ? p2 : p;
+//  unsigned int P=(centered && p == 2*p2) || p == 2 ? p2 : p; // Eventually
+  unsigned int P=(centered && p == 2*p2 && (p == 2 || C == 1)) || p == 2 ? p2 : p; // Temporary
 
   if(p == q && p > 1 && !mForced) return;
 
@@ -372,7 +373,8 @@ void fftPad::init()
     if(p == 2) {
       Q=n=q;
       P1=P=1;
-    } else if (centered && p == 2*p2) {
+//    } else if (centered && p == 2*p2) { // Eventually
+    } else if (centered && p == 2*p2 && (p == 2 || C == 1)) {  // Temporary
       Q=n=q/p2;
       P=p2;
       P1=P+1;
