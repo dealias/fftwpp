@@ -2542,11 +2542,9 @@ void fftPadHermitian::init()
       }
     }
 
-//    b=p2*C*(m-e);
-//    b=p2*C*e+m%2;
     b=ceilquotient(p2*C*m,2); // Output block size
     B=p2*Ce1; // Work block size
-//    if(inplace) b=B; // TEMP
+    if(inplace) b=B;
 
     R=residueBlocks();
     D0=Q % D;
