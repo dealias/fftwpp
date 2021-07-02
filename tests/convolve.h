@@ -592,11 +592,12 @@ public:
 
 };
 
-typedef void multiplier(Complex **, unsigned int n, unsigned int threads);
+typedef void multiplier(Complex **, unsigned int offset, unsigned int n,
+                        unsigned int threads);
 
 // Multiplication routine for binary convolutions and taking two inputs of size e.
-void multbinary(Complex **F, unsigned int n, unsigned int threads);
-void realmultbinary(Complex **F, unsigned int n, unsigned int threads);
+void multbinary(Complex **F, unsigned int n, unsigned int offset, unsigned int threads);
+void realmultbinary(Complex **F, unsigned int n, unsigned int offset, unsigned int threads);
 
 class Convolution {
 public:
@@ -608,9 +609,7 @@ public:
 protected:
   unsigned int q;
   unsigned int Q;
-  unsigned int D;
   unsigned int R;
-  unsigned int D0;
   unsigned int r;
   unsigned int blocksize;
   Complex **F,**Fp;
@@ -652,8 +651,6 @@ public:
     L=fft.L;
     q=fft.q;
     Q=fft.Q;
-    D=fft.D;
-    D0=fft.D0;
     blocksize=fft.noutputs();
     R=fft.residueBlocks();
 

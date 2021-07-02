@@ -50,10 +50,11 @@ const double twopi=2.0*M_PI;
 // This multiplication routine is for binary convolutions and takes
 // two Complex inputs of size n.
 // F0[j] *= F1[j];
-void multbinary(Complex **F, unsigned int n, unsigned int threads)
+void multbinary(Complex **F, unsigned int offset, unsigned int n,
+                unsigned int threads)
 {
-  Complex *F0=F[0];
-  Complex *F1=F[1];
+  Complex *F0=F[0]+offset;
+  Complex *F1=F[1]+offset;
 
   PARALLEL(
     for(unsigned int j=0; j < n; ++j)
@@ -64,10 +65,11 @@ void multbinary(Complex **F, unsigned int n, unsigned int threads)
 // This multiplication routine is for binary convolutions and takes
 // two real inputs of size n.
 // F0[j] *= F1[j];
-void realmultbinary(Complex **F, unsigned int n, unsigned int threads)
+void realmultbinary(Complex **F, unsigned int offset, unsigned int n,
+                    unsigned int threads)
 {
-  double *F0=(double *) F[0];
-  double *F1=(double *) F[1];
+  double *F0=(double *) (F[0]+offset);
+  double *F1=(double *) (F[1]+offset);
 
   PARALLEL(
     for(unsigned int j=0; j < n; ++j)
@@ -3644,24 +3646,29 @@ void Convolution::convolve0(Complex **f, multiplier *mult, unsigned int offset)
   if(q == 1) {
     for(unsigned int a=0; a < A; ++a)
       (fft->*Forward)(f[a]+offset,F[a],0,NULL);
-    (*mult)(F,blocksize,threads);
+    (*mult)(F,0,blocksize,threads);
     for(unsigned int b=0; b < B; ++b)
       (fft->*Backward)(F[b],f[b]+offset,0,NULL,1.0);
   } else {
+    unsigned int incr=fft->b;
+    unsigned int Dincr=fft->D*incr;
+    unsigned int D0incr=fft->D0*incr;
+
     if(fft->overwrite) {
       for(unsigned int a=0; a < N; ++a)
         G[a]=f[a]+offset;
       for(unsigned int a=0; a < A; ++a)
         (fft->*Forward)(G[a],F[a],R,NULL);
-      (*mult)(G,fft->p*blocksize,threads);
-      (*mult)(F,blocksize,threads);
+      (*mult)(G,0,fft->p*blocksize,threads);
+      (*mult)(F,0,blocksize,threads);
       for(unsigned int b=0; b < B; ++b)
         (fft->*Backward)(F[b],G[b],R,NULL,1.0);
     } else {
       if(loop2) {
         for(unsigned int a=0; a < A; ++a)
           (fft->*Forward)(f[a]+offset,F[a],0,W);
-        (*mult)(F,D0*blocksize,threads);
+        for(unsigned int d=0; d < D0incr; d += incr)
+        (*mult)(F,d,blocksize,threads);
 
         for(unsigned int b=0; b < B; ++b) {
           (fft->*Forward)(f[b]+offset,Fp[b],r,W);
@@ -3670,7 +3677,8 @@ void Convolution::convolve0(Complex **f, multiplier *mult, unsigned int offset)
         }
         for(unsigned int a=B; a < A; ++a)
           (fft->*Forward)(f[a]+offset,Fp[a],r,W);
-        (*mult)(Fp,D*blocksize,threads);
+        for(unsigned int d=0; d < Dincr; d += incr)
+          (*mult)(Fp,d,blocksize,threads);
         for(unsigned int b=0; b < B; ++b)
           (fft->*Backward)(Fp[b],f[b]+offset,r,W0,1.0);
         (fft->*Pad)(W);
@@ -3689,11 +3697,14 @@ void Convolution::convolve0(Complex **f, multiplier *mult, unsigned int offset)
 
         for(unsigned int r=0; r < R; r += fft->increment(r)) {
           for(unsigned int a=0; a < A; ++a) {
-            Complex *output=r == overwrite ? f[a]+offset : F[a];
+            Complex *input=f[a]+offset;
+            Complex *output=r == overwrite ? input : F[a];
             G[a]=output;
-            (fft->*Forward)(f[a]+offset,output,r,W);
+            (fft->*Forward)(input,output,r,W);
           }
-          (*mult)(G,(r == 0 ? D0 : D)*blocksize,threads);
+          unsigned int D1incr=r == 0 ? D0incr : Dincr;
+          for(unsigned int d=0; d < D1incr; d += incr)
+            (*mult)(G,d,blocksize,threads);
           for(unsigned int b=0; b < B; ++b)
             (fft->*Backward)(G[b],h0[b]+Offset,r,W0,1.0);
           (fft->*Pad)(W);
