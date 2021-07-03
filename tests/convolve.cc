@@ -3605,8 +3605,6 @@ Convolution::~Convolution()
 
     if(loop2)
       delete[] Fp;
-    else
-      delete [] G;
 
     if(allocateV) {
       for(unsigned int i=0; i < B; ++i)
@@ -3640,15 +3638,13 @@ void Convolution::convolve0(Complex **f, multiplier *mult, unsigned int offset)
     unsigned int Dincr=fft->D*incr;
     unsigned int D0incr=fft->D0*incr;
 
-    if(fft->overwrite) {
-      for(unsigned int a=0; a < N; ++a)
-        G[a]=f[a]+offset;
+    if(fft->overwrite && A >= B) {
       for(unsigned int a=0; a < A; ++a)
-        (fft->*Forward)(G[a],F[a],R,NULL);
-      (*mult)(G,0,fft->p*blocksize,threads);
+        (fft->*Forward)(f[a]+offset,F[a],R,NULL);
+      (*mult)(f,offset,fft->p*blocksize,threads);
       (*mult)(F,0,blocksize,threads);
       for(unsigned int b=0; b < B; ++b)
-        (fft->*Backward)(F[b],G[b],R,NULL,1.0);
+        (fft->*Backward)(F[b],f[b]+offset,R,NULL,1.0);
     } else {
       if(loop2) {
         for(unsigned int a=0; a < A; ++a)
@@ -3682,17 +3678,13 @@ void Convolution::convolve0(Complex **f, multiplier *mult, unsigned int offset)
         }
 
         for(unsigned int r=0; r < R; r += fft->increment(r)) {
-          for(unsigned int a=0; a < A; ++a) {
-            Complex *input=f[a]+offset;
-            Complex *output=r == overwrite ? input : F[a];
-            G[a]=output;
-            (fft->*Forward)(input,output,r,W);
-          }
+          for(unsigned int a=0; a < A; ++a)
+            (fft->*Forward)(f[a]+offset,F[a],r,W);
           unsigned int D1incr=r == 0 ? D0incr : Dincr;
           for(unsigned int d=0; d < D1incr; d += incr)
-            (*mult)(G,d,blocksize,threads);
+            (*mult)(F,d,blocksize,threads);
           for(unsigned int b=0; b < B; ++b)
-            (fft->*Backward)(G[b],h0[b]+Offset,r,W0,1.0);
+            (fft->*Backward)(F[b],h0[b]+Offset,r,W0,1.0);
           (fft->*Pad)(W);
         }
 

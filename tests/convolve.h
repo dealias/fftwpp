@@ -616,7 +616,6 @@ protected:
   unsigned int blocksize;
   Complex **F,**Fp;
   Complex *FpB;
-  Complex **G; // For overwrite optimization
   Complex **V;
   Complex *W;
   Complex *H;
@@ -627,7 +626,6 @@ protected:
   bool allocateW;
   unsigned int nloops;
   bool loop2;
-  unsigned int overwrite;
   unsigned int inputSize;
   FFTcall Forward;
   FFTCall Backward;
@@ -699,12 +697,8 @@ public:
         for(unsigned int a=1; a < A; ++a)
           Fp[a]=this->F[a-1];
         extra=1;
-      } else {
+      } else
         extra=0;
-        G=new Complex*[N];
-        for(unsigned int b=0; b < B; ++b)
-          G[b]=this->F[b];
-      }
 
       if(A > B+extra && !fft.inplace && workSizeW <= outputSize) {
         W0=this->F[B];
@@ -712,12 +706,6 @@ public:
       } else
         W0=this->W;
     }
-
-    if(outputSize <= inputSize)
-      for(unsigned int r=0; r < R; r += fft.increment(r))
-        overwrite=r; // Store F in f on the last loop
-    else
-      overwrite=R;
   }
 
   void initV() {
