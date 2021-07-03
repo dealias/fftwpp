@@ -711,7 +711,7 @@ public:
         W0=this->W;
     }
 
-    if(outputSize <= inputSize)
+    if(outputSize <= inputSize && false)
       for(unsigned int r=0; r < R; r += fft.increment(r))
         overwrite=r; // Store F in h on the last loop
     else
