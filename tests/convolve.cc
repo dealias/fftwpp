@@ -3714,7 +3714,7 @@ void Convolution::convolve0(Complex **f, multiplier *mult, unsigned int offset)
           for(unsigned int b=0; b < B; ++b) {
             Complex *fb=f[b]+offset;
             Complex *hb=h0[b];
-            for(unsigned int i=0; i < noutputs; ++i)
+            for(unsigned int i=0; i < inputSize; ++i)
               fb[i]=hb[i];
           }
         }

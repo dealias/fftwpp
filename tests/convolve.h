@@ -626,7 +626,7 @@ protected:
   unsigned int nloops;
   bool loop2;
   unsigned int overwrite;
-  unsigned int noutputs;
+  unsigned int inputSize;
   FFTcall Forward;
   FFTCall Backward;
   FFTPad Pad;
@@ -658,7 +658,7 @@ public:
     scale=1.0/M;
     unsigned int outputSize=fft.outputSize();
     unsigned int workSizeW=fft.workSizeW();
-    noutputs=fft.inputSize();
+    inputSize=fft.inputSize();
 
     N=max(A,B);
     this->F=new Complex*[N];
@@ -711,7 +711,7 @@ public:
         W0=this->W;
     }
 
-    if(fft.outputSize() <= fft.C*L && false) // Doesn't work for Hermitian case
+    if(outputSize <= inputSize)
       for(unsigned int r=0; r < R; r += fft.increment(r))
         overwrite=r; // Store F in h on the last loop
     else
@@ -735,7 +735,7 @@ public:
   void normalize(Complex **f, unsigned int offset=0) {
     for(unsigned int b=0; b < B; ++b) {
       Complex *fb=f[b]+offset;
-      for(unsigned int i=0; i < noutputs; ++i)
+      for(unsigned int i=0; i < inputSize; ++i)
         fb[i] *= scale;
     }
   }
