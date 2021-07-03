@@ -148,11 +148,10 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
     if(q2 != q) {
       unsigned int start=DOption > 0 ? min(DOption,n) : 1;
       unsigned int stop=DOption > 0 ? min(DOption,n) : n;
-      if(fixed || C > 1) start=stop=1;
       unsigned int stop2=2*stop;
       for(unsigned int D=start; D < stop2; D *= 2) {
         if(D > stop) D=stop;
-        if(!valid(D,p)) continue;
+        if(!valid(D,p,C)) continue;
 //            cout << "q2=" << q2 << endl;
 //            cout << "D2=" << D << endl;
         double t=time(L,M,C,m,q2,D,app);
@@ -170,11 +169,10 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
 
   unsigned int start=DOption > 0 ? min(DOption,n) : 1;
   unsigned int stop=DOption > 0 ? min(DOption,n) : n;
-  if(fixed || C > 1) start=stop=1;
   unsigned int stop2=2*stop;
   for(unsigned int D=start; D < stop2; D *= 2) {
     if(D > stop) D=stop;
-    if(!valid(D,p)) continue;
+    if(!valid(D,p,C)) continue;
 //        cout << "q=" << q << endl;
 //        cout << "D=" << D << endl;
     double t=time(L,M,C,m,q,D,app);
@@ -318,7 +316,6 @@ void fftBase::common()
     exit(-1);
   }
 
-  if(C > 1) D=1;
   p=ceilquotient(L,m);
 
   inplace=IOption == -1 ? C > 1 : IOption;
@@ -347,6 +344,8 @@ unsigned int fftBase::residue(unsigned int r, unsigned int q)
 void fftPad::init()
 {
   common();
+  if(C > 1) D=1;
+
 //    if(m >  M) M=m;
 
   if(q == 1) {
@@ -361,7 +360,7 @@ void fftPad::init()
     fftm=new mfft1d(m,1,C, C,1, G);
     ifftm=new mfft1d(m,-1,C, C,1, G);
     deleteAlign(G);
-    dr=D0=R=Q=1;
+    dr=D=D0=R=Q=1;
     b=C*M;
   } else {
     double twopibyN=twopi/M;
@@ -2573,8 +2572,10 @@ fftPadHermitian::~fftPadHermitian()
 {
   delete crfftm;
   delete rcfftm;
-  // delete fftp;
-  // delete ifftp;
+  if(p > 2) {
+    delete fftp;
+    delete ifftp;
+  }
 }
 
 void fftPadHermitian::forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *)
@@ -2631,7 +2632,6 @@ void fftPadHermitian::forward2(Complex *f, Complex *F, unsigned int r, Complex *
 {
   if(W == NULL) W=F;
 
-  unsigned int e1=e+1;
   Complex *fm=f+m;
   unsigned int H=ceilquotient(L,2);
   unsigned int mH1=m-H+1;
@@ -2647,15 +2647,17 @@ void fftPadHermitian::forward2(Complex *f, Complex *F, unsigned int r, Complex *
       crfftm->fft(W,F);
 
       if(m > 2*e) {
-        unsigned int offset=e1+e;
+        unsigned int offset=B+e;
         double *Fr=(double *) F+offset;
         *Fr=0.0;
       }
     } else { // q even, r=0,q/2
       Complex *G=F+b;
-      Complex *V=W == F ? G : W+e1;
+      Complex *V=W == F ? G : W+B;
 
       Complex *Zetar=Zetaqm+m*q2;
+
+      V[0]=W[0]=f[0];
 
       for(unsigned int s=1; s < mH1; ++s) {
         Complex fs=f[s];
@@ -2670,14 +2672,11 @@ void fftPadHermitian::forward2(Complex *f, Complex *F, unsigned int r, Complex *
         V[s]=Zetar[s]*(fs-fms);
       }
 
-      W[0]=f[0];
       crfftm->fft(W,F);
-
-      V[0]=f[0];
       crfftm->fft(V,G);
 
       if(m > 2*e) {
-        unsigned int offset=e1+e;
+        unsigned int offset=B+e;
         double *Fr=(double *) F+offset;
         double *Gr=(double *) G+offset;
         *Gr=*Fr=0.0;
@@ -2685,7 +2684,8 @@ void fftPadHermitian::forward2(Complex *f, Complex *F, unsigned int r, Complex *
     }
   } else {
     Complex *G=F+b;
-    Complex *V=W == F ? G : W+e1;
+    Complex *V=W == F ? G : W+B;
+    V[0]=W[0]=f[0];
     Complex *Zetar=Zetaqm+m*r;
     for(unsigned int s=1; s < mH1; ++s) {
 //      W[s]=Zetar[s]*f[s];
@@ -2714,17 +2714,15 @@ void fftPadHermitian::forward2(Complex *f, Complex *F, unsigned int r, Complex *
       STORE(W+s,A+B);
       STORE(V+s,CONJ(A-B));
     }
-    W[0]=f[0];
-    crfftm->fft(W,F);
 
-    V[0]=f[0];
+    crfftm->fft(W,F);
     crfftm->fft(V,G);
 
     if(m > 2*e) {
-      unsigned int offset=e1+e;
+      unsigned int offset=B+e;
       double *Fr=(double *) F+offset;
       double *Gr=(double *) G+offset;
-      *Gr=*Fr=0.0;
+      *Gr=*Fr=0.0; // REMOVE?
     }
   }
 }
@@ -2733,7 +2731,6 @@ void fftPadHermitian::forward2Many(Complex *f, Complex *F, unsigned int r, Compl
 {
   if(W == NULL) W=F;
 
-  unsigned int e1=e+1;
   Complex *fm=f+Cm;
   unsigned int H=ceilquotient(L,2);
   unsigned int mH1=m-H+1;
@@ -2759,16 +2756,19 @@ void fftPadHermitian::forward2Many(Complex *f, Complex *F, unsigned int r, Compl
       crfftm->fft(W,F);
 
       if(m > 2*e) {
-        unsigned int offset=C*(e1+e);
+        unsigned int offset=B+C*e;
         double *Fr=(double *) F+offset;
-        for(unsigned int c=0; c < C; ++c)
+        for(unsigned int c=0; c < C; ++c) // REMOVE?
           Fr[c]=0.0;
       }
     } else { // q even, r=0,q/2
       Complex *G=F+b;
-      Complex *V=W == F ? G : W+C*e1;
+      Complex *V=W == F ? G : W+B;
 
       Complex *Zetar=Zetaqm+m*q2;
+
+      for(unsigned int c=0; c < C; ++c)
+        V[c]=W[c]=f[c];
 
       for(unsigned int s=1; s < mH1; ++s) {
         unsigned int Cs=C*s;
@@ -2798,19 +2798,14 @@ void fftPadHermitian::forward2Many(Complex *f, Complex *F, unsigned int r, Compl
         }
       }
 
-      for(unsigned int c=0; c < C; ++c)
-        W[c]=f[c];
       crfftm->fft(W,F);
-
-      for(unsigned int c=0; c < C; ++c)
-        V[c]=f[c];
       crfftm->fft(V,G);
 
       if(m > 2*e) {
-        unsigned int offset=C*(e1+e);
+        unsigned int offset=B+C*e;
         double *Fr=(double *) F+offset;
         double *Gr=(double *) G+offset;
-        for(unsigned int c=0; c < C; ++c)
+        for(unsigned int c=0; c < C; ++c) // REMOVE?
           Fr[c]=0.0;
         for(unsigned int c=0; c < C; ++c)
           Gr[c]=0.0;
@@ -2818,9 +2813,11 @@ void fftPadHermitian::forward2Many(Complex *f, Complex *F, unsigned int r, Compl
     }
   } else {
     Complex *G=F+b;
-    Complex *V=W == F ? G : W+C*e1;
+    Complex *V=W == F ? G : W+B;
     Complex *Zetar=Zetaqm+m*r;
-//    cout << r << " " << Zetar[1] << endl;
+
+    for(unsigned int c=0; c < C; ++c)
+      V[c]=W[c]=f[c];
 
     for(unsigned int s=1; s < mH1; ++s) {
       unsigned int Cs=C*s;
@@ -2861,21 +2858,14 @@ void fftPadHermitian::forward2Many(Complex *f, Complex *F, unsigned int r, Compl
       }
     }
 
-    for(unsigned int c=0; c < C; ++c)
-      W[c]=f[c];
-
     crfftm->fft(W,F);
-
-    for(unsigned int c=0; c < C; ++c)
-      V[c]=f[c];
-
     crfftm->fft(V,G);
 
     if(m > 2*e) {
-      unsigned int offset=C*(e1+e);
+      unsigned int offset=B+C*e;
       double *Fr=(double *) F+offset;
       double *Gr=(double *) G+offset;
-      for(unsigned int c=0; c < C; ++c)
+      for(unsigned int c=0; c < C; ++c) // REMOVE?
         Fr[c]=0.0;
       for(unsigned int c=0; c < C; ++c)
         Gr[c]=0.0;
@@ -2917,9 +2907,8 @@ void fftPadHermitian::backward2(Complex *F, Complex *f, unsigned int r, Complex 
       }
 
     } else { // q even, r=0,q/2
-      unsigned int e1=e+1;
       Complex *G=F+b;
-      Complex *V=inplace ? G : W+e1;
+      Complex *V=inplace ? G : W+B;
 
       Complex We(0,0);
       if(overlap) {
@@ -2954,9 +2943,8 @@ void fftPadHermitian::backward2(Complex *F, Complex *f, unsigned int r, Complex 
       }
     }
   } else {
-    unsigned int e1=e+1;
     Complex *G=F+b;
-    Complex *V=inplace ? G : W+e1;
+    Complex *V=inplace ? G : W+B;
 
     Complex We(0,0);
     if(overlap) {
@@ -3053,9 +3041,8 @@ void fftPadHermitian::backward2Many(Complex *F, Complex *f, unsigned int r, Comp
         }
       }
     } else { // q even, r=0,q/2
-      unsigned int e1=e+1;
       Complex *G=F+b;
-      Complex *V=inplace ? G : W+C*e1;
+      Complex *V=inplace ? G : W+B;
 
       Complex We[C];
       if(overlap) {
@@ -3120,9 +3107,8 @@ void fftPadHermitian::backward2Many(Complex *F, Complex *f, unsigned int r, Comp
       }
     }
   } else {
-    unsigned int e1=e+1;
     Complex *G=F+b;
-    Complex *V=inplace ? G : W+C*e1;
+    Complex *V=inplace ? G : W+B;
 
     Complex We[C];
     if(overlap) {
@@ -3668,7 +3654,7 @@ void Convolution::convolve0(Complex **f, multiplier *mult, unsigned int offset)
         for(unsigned int a=0; a < A; ++a)
           (fft->*Forward)(f[a]+offset,F[a],0,W);
         for(unsigned int d=0; d < D0incr; d += incr)
-        (*mult)(F,d,blocksize,threads);
+          (*mult)(F,d,blocksize,threads);
 
         for(unsigned int b=0; b < B; ++b) {
           (fft->*Forward)(f[b]+offset,Fp[b],r,W);

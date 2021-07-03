@@ -120,7 +120,9 @@ public:
                         unsigned int m, unsigned int q,unsigned int D,
                         Application &app)=0;
 
-    virtual bool valid(unsigned int D, unsigned int p) {return true;}
+    virtual bool valid(unsigned int D, unsigned int p, unsigned int C) {
+      return D == 1 || C == 1;
+    }
 
     void check(unsigned int L, unsigned int M,
                Application& app, unsigned int C, unsigned int m,
@@ -485,7 +487,7 @@ public:
 
   class Opt : public OptBase {
   public:
-    virtual bool valid(unsigned int D, unsigned int p) {
+    virtual bool valid(unsigned int D, unsigned int p, unsigned int C) {
       return D == 2 && p%2 == 0;
     }
 
@@ -711,9 +713,9 @@ public:
         W0=this->W;
     }
 
-    if(outputSize <= inputSize && false)
+    if(outputSize <= inputSize)
       for(unsigned int r=0; r < R; r += fft.increment(r))
-        overwrite=r; // Store F in h on the last loop
+        overwrite=r; // Store F in f on the last loop
     else
       overwrite=R;
   }
