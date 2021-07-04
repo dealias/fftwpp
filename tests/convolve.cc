@@ -646,7 +646,8 @@ void fftPad::forward1Many(Complex *f, Complex *F, unsigned int r, Complex *W) {
       for(unsigned int c=0; c < C; ++c)
         Fs[c]=0.0;
     }
-  }
+    inplace=true;
+  } else inplace=false;
 
   if(r == 0) {
     if(!inplace && L >= m)
@@ -1031,6 +1032,8 @@ void fftPad::backward1(Complex *F0, Complex *f, unsigned int r0, Complex *W, dou
 {
   if(W == NULL) W=F0;
 
+  bool inplace=W == F0;
+
   if(r0 == 0 && !inplace && D == 1 && L >= m)
     return ifftm->fft(F0,f);
 
@@ -1085,6 +1088,8 @@ void fftPad::backward1(Complex *F0, Complex *f, unsigned int r0, Complex *W, dou
 void fftPad::backward1Many(Complex *F, Complex *f, unsigned int r, Complex *W, double)
 {
   if(W == NULL) W=F;
+
+  bool inplace=W == F;
 
   if(r == 0 && !inplace && L >= m)
     return ifftm->fft(F,f);
@@ -2645,12 +2650,6 @@ void fftPadHermitian::forward2(Complex *f, Complex *F, unsigned int r, Complex *
         W[s]=f[s]+conj(*(fm-s));
 
       crfftm->fft(W,F);
-
-      if(m > 2*e) {
-        unsigned int offset=B+e;
-        double *Fr=(double *) F+offset;
-        *Fr=0.0;
-      }
     } else { // q even, r=0,q/2
       Complex *G=F+b;
       Complex *V=W == F ? G : W+B;
@@ -2674,13 +2673,6 @@ void fftPadHermitian::forward2(Complex *f, Complex *F, unsigned int r, Complex *
 
       crfftm->fft(W,F);
       crfftm->fft(V,G);
-
-      if(m > 2*e) {
-        unsigned int offset=B+e;
-        double *Fr=(double *) F+offset;
-        double *Gr=(double *) G+offset;
-        *Gr=*Fr=0.0;
-      }
     }
   } else {
     Complex *G=F+b;
@@ -2717,13 +2709,6 @@ void fftPadHermitian::forward2(Complex *f, Complex *F, unsigned int r, Complex *
 
     crfftm->fft(W,F);
     crfftm->fft(V,G);
-
-    if(m > 2*e) {
-      unsigned int offset=B+e;
-      double *Fr=(double *) F+offset;
-      double *Gr=(double *) G+offset;
-      *Gr=*Fr=0.0; // REMOVE?
-    }
   }
 }
 
@@ -2754,13 +2739,6 @@ void fftPadHermitian::forward2Many(Complex *f, Complex *F, unsigned int r, Compl
       }
 
       crfftm->fft(W,F);
-
-      if(m > 2*e) {
-        unsigned int offset=B+C*e;
-        double *Fr=(double *) F+offset;
-        for(unsigned int c=0; c < C; ++c) // REMOVE?
-          Fr[c]=0.0;
-      }
     } else { // q even, r=0,q/2
       Complex *G=F+b;
       Complex *V=W == F ? G : W+B;
@@ -2800,16 +2778,6 @@ void fftPadHermitian::forward2Many(Complex *f, Complex *F, unsigned int r, Compl
 
       crfftm->fft(W,F);
       crfftm->fft(V,G);
-
-      if(m > 2*e) {
-        unsigned int offset=B+C*e;
-        double *Fr=(double *) F+offset;
-        double *Gr=(double *) G+offset;
-        for(unsigned int c=0; c < C; ++c) // REMOVE?
-          Fr[c]=0.0;
-        for(unsigned int c=0; c < C; ++c)
-          Gr[c]=0.0;
-      }
     }
   } else {
     Complex *G=F+b;
@@ -2860,16 +2828,6 @@ void fftPadHermitian::forward2Many(Complex *f, Complex *F, unsigned int r, Compl
 
     crfftm->fft(W,F);
     crfftm->fft(V,G);
-
-    if(m > 2*e) {
-      unsigned int offset=B+C*e;
-      double *Fr=(double *) F+offset;
-      double *Gr=(double *) G+offset;
-      for(unsigned int c=0; c < C; ++c) // REMOVE?
-        Fr[c]=0.0;
-      for(unsigned int c=0; c < C; ++c)
-        Gr[c]=0.0;
-    }
   }
 }
 
@@ -2877,12 +2835,7 @@ void fftPadHermitian::backward2(Complex *F, Complex *f, unsigned int r, Complex 
 {
   if(W == NULL) W=F;
 
-  Complex Nyquist(0,0);
-  bool inplace=W == F;
   bool even=m == 2*e;
-  bool overlap=even && inplace;
-  if(overlap)
-    Nyquist=F[e]; // Save before being overwritten
 
   rcfftm->fft(F,W);
 
@@ -2900,29 +2853,16 @@ void fftPadHermitian::backward2(Complex *F, Complex *f, unsigned int r, Complex 
         f[s]=A;
         *(fm-s)=conj(A);
       }
-      if(even) {
+      if(even)
         f[e]=W[e];
-        if(overlap)
-          F[e]=Nyquist; // Restore initial input of next residue
-      }
 
     } else { // q even, r=0,q/2
       Complex *G=F+b;
-      Complex *V=inplace ? G : W+B;
-
-      Complex We(0,0);
-      if(overlap) {
-        We=W[e];
-        W[e]=Nyquist; // Restore initial input of next residue
-        Nyquist=G[e];
-      }
+      Complex *V=W == F ? G : W+B;
 
       rcfftm->fft(G,V);
 
       f[0]=W[0]+V[0];
-
-      if(overlap)
-        W[e]=We;
 
       Complex *Zetar=Zetaqm+m*q2;
 
@@ -2936,29 +2876,16 @@ void fftPadHermitian::backward2(Complex *F, Complex *f, unsigned int r, Complex 
         *(fm-s)=conj(A-B);
       }
 
-      if(even) {
+      if(even)
         f[e]=W[e]-I*V[e];
-        if(overlap)
-          G[e]=Nyquist; // Restore initial input of next residue
-      }
     }
   } else {
     Complex *G=F+b;
-    Complex *V=inplace ? G : W+B;
-
-    Complex We(0,0);
-    if(overlap) {
-      We=W[e];
-      W[e]=Nyquist; // Restore initial input of next residue
-      Nyquist=G[e];
-    }
+    Complex *V=W == F ? G : W+B;
 
     rcfftm->fft(G,V);
 
     f[0] += W[0]+V[0];
-
-    if(overlap)
-      W[e]=We;
 
     Complex *Zetar=Zetaqm+m*r;
     for(unsigned int s=1; s < mH1; ++s) {
@@ -2981,8 +2908,6 @@ void fftPadHermitian::backward2(Complex *F, Complex *f, unsigned int r, Complex 
 //      f[e] += conj(Zetar[e])*W[e]+Zetar[e]*V[e];
       Vec Zeta=LOAD(Zetar+e);
       STORE(f+e,LOAD(f+e)+ZCMULT(Zeta,LOAD(W+e))+ZMULT(Zeta,LOAD(V+e)));
-      if(overlap)
-        G[e]=Nyquist; // Restore initial input of next residue
     }
   }
 }
@@ -2991,15 +2916,7 @@ void fftPadHermitian::backward2Many(Complex *F, Complex *f, unsigned int r, Comp
 {
   if(W == NULL) W=F;
 
-  Complex Nyquist[C];
-  bool inplace=W == F;
   bool even=m == 2*e;
-  bool overlap=even && inplace;
-  if(overlap) {
-    Complex *FCe=F+C*e;
-    for(unsigned int c=0; c < C; ++c)
-      Nyquist[c]=FCe[c]; // Save before being overwritten
-  }
 
   rcfftm->fft(F,W);
 
@@ -3034,37 +2951,15 @@ void fftPadHermitian::backward2Many(Complex *F, Complex *f, unsigned int r, Comp
         Complex *WCe=W+Ce;
         for(unsigned int c=0; c < C; ++c)
           fe[c]=WCe[c];
-        if(overlap) {
-          Complex *Fe=F+Ce;
-          for(unsigned int c=0; c < C; ++c)
-            Fe[c]=Nyquist[c]; // Restore initial input of next residue
-        }
       }
     } else { // q even, r=0,q/2
       Complex *G=F+b;
-      Complex *V=inplace ? G : W+B;
-
-      Complex We[C];
-      if(overlap) {
-        Complex *WCe=W+Ce;
-        Complex *Ge=G+Ce;
-        for(unsigned int c=0; c < C; ++c) {
-          We[c]=WCe[c];
-          WCe[c]=Nyquist[c]; // Restore initial input of next residue
-          Nyquist[c]=Ge[c];
-        }
-      }
+      Complex *V=W == F ? G : W+B;
 
       rcfftm->fft(G,V);
 
       for(unsigned int c=0; c < C; ++c)
         f[c]=W[c]+V[c];
-
-      if(overlap) {
-        Complex *WCe=W+Ce;
-        for(unsigned int c=0; c < C; ++c)
-          WCe[c]=We[c];
-      }
 
       Complex *Zetar=Zetaqm+m*q2;
 
@@ -3099,39 +2994,18 @@ void fftPadHermitian::backward2Many(Complex *F, Complex *f, unsigned int r, Comp
         Complex *Ve=V+Ce;
         for(unsigned int c=0; c < C; ++c)
           fe[c]=We[c]-I*Ve[c];
-        if(overlap) {
-          Complex *Ge=G+Ce;
-          for(unsigned int c=0; c < C; ++c)
-            Ge[c]=Nyquist[c]; // Restore initial input of next residue
-        }
       }
     }
   } else {
     Complex *G=F+b;
-    Complex *V=inplace ? G : W+B;
+    Complex *V=W == F ? G : W+B;
 
     Complex We[C];
-    if(overlap) {
-      Complex *WCe=W+Ce;
-      for(unsigned int c=0; c < C; ++c)
-        We[c]=WCe[c];
-      for(unsigned int c=0; c < C; ++c)
-        WCe[c]=Nyquist[c]; // Restore initial input of next residue
-      Complex *Ge=G+Ce;
-      for(unsigned int c=0; c < C; ++c)
-        Nyquist[c]=Ge[c];
-    }
 
     rcfftm->fft(G,V);
 
     for(unsigned int c=0; c < C; ++c)
       f[c] += W[c]+V[c];
-
-    if(overlap) {
-      Complex *WCe=W+Ce;
-      for(unsigned int c=0; c < C; ++c)
-        WCe[c]=We[c];
-    }
 
     Complex *Zetar=Zetaqm+m*r;
     for(unsigned int s=1; s < mH1; ++s) {
@@ -3172,11 +3046,6 @@ void fftPadHermitian::backward2Many(Complex *F, Complex *f, unsigned int r, Comp
 //        fe[c] += conj(Zetare)*We[c]+Zetare*Ve[c];
         STORE(fe+c,LOAD(fe+c)+ZCMULT(Zeta,LOAD(We+c))+ZMULT(Zeta,LOAD(Ve+c)));
 
-    }
-    if(overlap) {
-      Complex *GCe=G+Ce;
-      for(unsigned int c=0; c < C; ++c)
-        GCe[c]=Nyquist[c]; // Restore initial input of next residue
     }
   }
 }
@@ -3276,7 +3145,7 @@ void fftPadHermitian::forwardInnerC(Complex *f, Complex *F, unsigned int r, Comp
   } else {
     Vec Zetanr=CONJ(LOAD(Zetaqp+p2*r+p2)); // zeta_n^-r
     Complex *G=F+b;
-    Complex *V=inplace ? G : W+B;
+    Complex *V=W == F ? G : W+B;
     V[0]=W[0]=f[0];
     for(unsigned int s=1; s < m0; ++s)
       V[s]=W[s]=f[s];

@@ -1,6 +1,6 @@
 #include "convolve.h"
 
-#define OUTPUT 1
+#define OUTPUT 0
 
 using namespace std;
 using namespace utils;
@@ -83,7 +83,6 @@ int main(int argc, char* argv[])
         norm += abs2(F2r[i]);
 #if OUTPUT
         if(k%fft.Cm == 0) cout << endl;
-        cout << "k=" << k << endl;
         cout << i << ": " << Fr[k] << endl;
 #endif
       }
