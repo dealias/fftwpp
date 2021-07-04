@@ -3213,13 +3213,10 @@ void fftPadHermitian::backwardInnerC(Complex *F, Complex *f, unsigned int r, Com
   unsigned int p2=p/2;
   unsigned int H=L/2;
   unsigned int e1=e+1;
-  unsigned int p2s1=p2-1;
   unsigned int p2m=p2*m;
   unsigned int p2mH=p2m+H-L;
-  unsigned int S=m-e;
+  unsigned int S=m-e; 
   unsigned int m0=min(p2mH+1,e1);
-  unsigned int m1=min(m-p2mH,S); 
-  unsigned int T= m1 < e ? p2s1 : p2;
   Complex *fm=f+p2m;
 
   if(r == 0) {
@@ -3261,7 +3258,7 @@ void fftPadHermitian::backwardInnerC(Complex *F, Complex *f, unsigned int r, Com
 
       if(S < e1) {
         f[e]=W[e];
-        for(unsigned int t=1; t < T; ++t)
+        for(unsigned int t=1; t < p2; ++t)
           f[t*m+e]=W[t*e1+e];
       }
 
@@ -3324,7 +3321,7 @@ void fftPadHermitian::backwardInnerC(Complex *F, Complex *f, unsigned int r, Com
 
       if(S < e1) {
         f[e]=W[e]+V[e];
-        for(unsigned int t=1; t < T; ++t) {
+        for(unsigned int t=1; t < p2; ++t) {
           unsigned int te1e=t*e1+e;
           f[t*m+e]=W[te1e]+conj(Zetaqn2[t])*V[te1e];
         }
@@ -3400,7 +3397,7 @@ void fftPadHermitian::backwardInnerC(Complex *F, Complex *f, unsigned int r, Com
     
     if(S < e1) {
       f[e]+=W[e]+V[e];
-      for(unsigned int t=1; t < T; ++t) {
+      for(unsigned int t=1; t < p2; ++t) {
         unsigned int te1e=t*e1+e;
         unsigned int tme=t*m+e;
         Vec Zeta=LOAD(Zetaqr+t);
