@@ -309,8 +309,8 @@ public:
 
 class fftPad : public fftBase {
 protected:
-  mfft1d *fftm,*fftm2;
-  mfft1d *ifftm,*ifftm2;
+  mfft1d *fftm,*fftm0;
+  mfft1d *ifftm,*ifftm0;
   mfft1d *fftp;
   mfft1d *ifftp;
 public:

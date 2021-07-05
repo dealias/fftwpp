@@ -460,10 +460,10 @@ void fftPad::init()
 
     if(D0 != D) {
       unsigned int x=D0*P;
-      fftm2=new mfft1d(m,1,x, 1,m, G,H);
-      ifftm2=new mfft1d(m,-1,x, 1,m, G,H);
+      fftm0=new mfft1d(m,1,x, 1,m, G,H);
+      ifftm0=new mfft1d(m,-1,x, 1,m, G,H);
     } else
-      fftm2=NULL;
+      fftm0=NULL;
 
     if(!inplace)
       deleteAlign(H);
@@ -483,9 +483,9 @@ fftPad:: ~fftPad() {
       delete fftp;
       delete ifftp;
     }
-    if(fftm2) {
-      delete fftm2;
-      delete ifftm2;
+    if(fftm0) {
+      delete fftm0;
+      delete ifftm0;
     }
     delete fftm;
     delete ifftm;
@@ -556,7 +556,7 @@ void fftPad::forward1(Complex *f, Complex *F0, unsigned int r0, Complex *W)
 
   Complex *W0=W;
   unsigned int dr0=dr;
-  mfft1d *fftm0;
+  mfft1d *fftm1;
 
   if(r0 == 0) {
     unsigned int residues;
@@ -589,9 +589,9 @@ void fftPad::forward1(Complex *f, Complex *F0, unsigned int r0, Complex *W)
     W += residues*m;
     r0=1;
     dr0=(D0-residues)/2;
-    fftm0=D0 == D ? fftm : fftm2;
+    fftm1=D0 == D ? fftm : fftm0;
   } else
-    fftm0=fftm;
+    fftm1=fftm;
 
   if(D == 1) {
     if(dr0 > 0) {
@@ -634,7 +634,7 @@ void fftPad::forward1(Complex *f, Complex *F0, unsigned int r0, Complex *W)
     }
   }
 
-  fftm0->fft(W0,F0);
+  fftm1->fft(W0,F0);
 }
 
 void fftPad::forward1Many(Complex *f, Complex *F, unsigned int r, Complex *W) {
@@ -683,7 +683,7 @@ void fftPad::forward2(Complex *f, Complex *F0, unsigned int r0, Complex *W)
 
   Complex *W0=W;
   unsigned int dr0=dr;
-  mfft1d *fftm0;
+  mfft1d *fftm1;
 
   unsigned int Lm=L-m;
   if(r0 == 0) {
@@ -719,9 +719,9 @@ void fftPad::forward2(Complex *f, Complex *F0, unsigned int r0, Complex *W)
     W += residues*m;
     r0=1;
     dr0=(D0-residues)/2;
-    fftm0=D0 == D ? fftm : fftm2;
+    fftm1=D0 == D ? fftm : fftm0;
   } else
-    fftm0=fftm;
+    fftm1=fftm;
 
   if(D == 1) {
     if(dr0 > 0) {
@@ -790,7 +790,7 @@ void fftPad::forward2(Complex *f, Complex *F0, unsigned int r0, Complex *W)
     }
   }
 
-  fftm0->fft(W0,F0);
+  fftm1->fft(W0,F0);
 }
 
 void fftPad::forward2Many(Complex *f, Complex *F, unsigned int r, Complex *W)
@@ -849,7 +849,7 @@ void fftPad::forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W)
 
   Complex *W0=W;
   unsigned int dr0=dr;
-  mfft1d *fftm0;
+  mfft1d *fftm1;
 
   unsigned int pm1=p-1;
   unsigned int stop=L-m*pm1;
@@ -883,9 +883,9 @@ void fftPad::forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W)
     W += b;
     r0=1;
     dr0=D0-1;
-    fftm0=D0 == D ? fftm : fftm2;
+    fftm1=D0 == D ? fftm : fftm0;
   } else
-    fftm0=fftm;
+    fftm1=fftm;
 
   for(unsigned int d=0; d < dr0; ++d) {
     Complex *F=W+b*d;
@@ -920,7 +920,7 @@ void fftPad::forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W)
     }
   }
 
-  fftm0->fft(W0,F0);
+  fftm1->fft(W0,F0);
 }
 
 void fftPad::forwardInnerMany(Complex *f, Complex *F, unsigned int r, Complex *W)
@@ -1037,7 +1037,7 @@ void fftPad::backward1(Complex *F0, Complex *f, unsigned int r0, Complex *W, dou
   if(r0 == 0 && !inplace && D == 1 && L >= m)
     return ifftm->fft(F0,f);
 
-  (r0 > 0 || D0 == D ? ifftm : ifftm2)->fft(F0,W);
+  (r0 > 0 || D0 == D ? ifftm : ifftm0)->fft(F0,W);
 
   unsigned int dr0=dr;
 
@@ -1123,7 +1123,7 @@ void fftPad::backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W, dou
 {
   if(W == NULL) W=F0;
 
-  (r0 > 0 || D0 == D ? ifftm : ifftm2)->fft(F0,W);
+  (r0 > 0 || D0 == D ? ifftm : ifftm0)->fft(F0,W);
 
   unsigned int dr0=dr;
   unsigned int Lm=L-m;
@@ -1247,7 +1247,7 @@ void fftPad::backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W,
 {
   if(W == NULL) W=F0;
 
-  (r0 > 0 || D0 == D ? ifftm : ifftm2)->fft(F0,W);
+  (r0 > 0 || D0 == D ? ifftm : ifftm0)->fft(F0,W);
 
   unsigned int dr0=dr;
 
@@ -1532,7 +1532,7 @@ void fftPadCentered::forward2C(Complex *f, Complex *F0, unsigned int r0, Complex
 
   Complex *W0=W;
   unsigned int dr0=dr;
-  mfft1d *fftm0;
+  mfft1d *fftm1;
 
   unsigned int H=L/2;
   unsigned int mH=m-H;
@@ -1577,9 +1577,9 @@ void fftPadCentered::forward2C(Complex *f, Complex *F0, unsigned int r0, Complex
     W += residues*m;
     r0=1;
     dr0=(D0-residues)/2;
-    fftm0=D0 == D ? fftm : fftm2;
+    fftm1=D0 == D ? fftm : fftm0;
   } else
-    fftm0=fftm;
+    fftm1=fftm;
 
   if(D == 1) {
     if(dr0 > 0) {
@@ -1640,7 +1640,7 @@ void fftPadCentered::forward2C(Complex *f, Complex *F0, unsigned int r0, Complex
     }
   }
 
-  fftm0->fft(W0,F0);
+  fftm1->fft(W0,F0);
 }
 
 void fftPadCentered::forward2CMany(Complex *f, Complex *F, unsigned int r, Complex *W)
@@ -1762,7 +1762,7 @@ void fftPadCentered::backward2C(Complex *F0, Complex *f, unsigned int r0, Comple
 {
   if(W == NULL) W=F0;
 
-  (r0 > 0 || D0 == D ? ifftm : ifftm2)->fft(F0,W);
+  (r0 > 0 || D0 == D ? ifftm : ifftm0)->fft(F0,W);
 
   unsigned int dr0=dr;
 
@@ -1958,7 +1958,7 @@ void fftPadCentered::forwardInnerC(Complex *f, Complex *F0, unsigned int r0, Com
 
   Complex *W0=W;
   unsigned int dr0=dr;
-  mfft1d *fftm0;
+  mfft1d *fftm1;
 
   unsigned int p2=p/2;
   unsigned int H=L/2;
@@ -2070,9 +2070,9 @@ void fftPadCentered::forwardInnerC(Complex *f, Complex *F0, unsigned int r0, Com
     W += residues*b;
     r0=1;
     dr0=(D0-residues)/2;
-    fftm0=D0 == D ? fftm : fftm2;
+    fftm1=D0 == D ? fftm : fftm0;
   } else
-    fftm0=fftm;
+    fftm1=fftm;
 
   if(D == 1) {
     if(dr0 > 0) {
@@ -2214,14 +2214,14 @@ void fftPadCentered::forwardInnerC(Complex *f, Complex *F0, unsigned int r0, Com
     }
   }
 
-  fftm0->fft(W0,F0);
+  fftm1->fft(W0,F0);
 }
 
 void fftPadCentered::backwardInnerC(Complex *F0, Complex *f, unsigned int r0, Complex *W, double)
 {
   if(W == NULL) W=F0;
 
-  (r0 > 0 || D0 == D ? ifftm : ifftm2)->fft(F0,W);
+  (r0 > 0 || D0 == D ? ifftm : ifftm0)->fft(F0,W);
 
   unsigned int dr0=dr;
 
