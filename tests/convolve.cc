@@ -2521,11 +2521,11 @@ void fftPadHermitian::init()
 
     if(p > 2) { // p must be even
       if(C == 1) {
-        Forward=&fftBase::forwardInnerC;
-        Backward=&fftBase::backwardInnerC;
+        Forward=&fftBase::forwardInner;
+        Backward=&fftBase::backwardInner;
       } else {
-//        Forward=&fftBase::forwardInnerCMany;
-//        Backward=&fftBase::backwardInnerCMany;
+//        Forward=&fftBase::forwardInnerMany;
+//        Backward=&fftBase::backwardInnerMany;
       }
       Q=n=q/p2;
 
@@ -3050,7 +3050,7 @@ void fftPadHermitian::backward2Many(Complex *F, Complex *f, unsigned int r, Comp
   }
 }
 
-void fftPadHermitian::forwardInnerC(Complex *f, Complex *F, unsigned int r, Complex *W)
+void fftPadHermitian::forwardInner(Complex *f, Complex *F, unsigned int r, Complex *W)
 {
   if(W == NULL) W=F;
 
@@ -3206,7 +3206,7 @@ void fftPadHermitian::forwardInnerC(Complex *f, Complex *F, unsigned int r, Comp
   }
 }
 
-void fftPadHermitian::backwardInnerC(Complex *F, Complex *f, unsigned int r, Complex *W, double)
+void fftPadHermitian::backwardInner(Complex *F, Complex *f, unsigned int r, Complex *W, double)
 {
   if(W == NULL) W=F;
 
@@ -3215,7 +3215,7 @@ void fftPadHermitian::backwardInnerC(Complex *F, Complex *f, unsigned int r, Com
   unsigned int e1=e+1;
   unsigned int p2m=p2*m;
   unsigned int p2mH=p2m+H-L;
-  unsigned int S=m-e; 
+  unsigned int S=m-e;
   unsigned int m0=min(p2mH+1,e1);
   Complex *fm=f+p2m;
 
@@ -3394,7 +3394,7 @@ void fftPadHermitian::backwardInnerC(Complex *F, Complex *f, unsigned int r, Com
         STORE(ft+s,LOAD(ft+s)+ZMULT2(X,Y,Vts,Wts));
       }
     }
-    
+
     if(S < e1) {
       f[e]+=W[e]+V[e];
       for(unsigned int t=1; t < p2; ++t) {

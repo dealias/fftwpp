@@ -540,8 +540,8 @@ public:
   void backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale);
   void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W, double scale);
 
-  void forwardInnerC(Complex *f, Complex *F0, unsigned int r0, Complex *W);
-  void backwardInnerC(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale);
+  void forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W);
+  void backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale);
 
   // Number of real values per residue
   unsigned int noutputs() {
