@@ -192,17 +192,18 @@ public:
     unsigned int i=I/C;
     unsigned int s=i%m;
     unsigned int u;
-    if(D > 1 && ((centered && p % 2 == 0) || p == 2)) {
-      unsigned int p2=p/2;
-      u=(i/m)%p2;
-      unsigned int offset=r == 0 && i >= p2*m && D0 % 2 == 1 ? 1 : 0;
-      double incr=(i+p2*m*offset)/(p*m);
+    unsigned int P;
+    if(D > 1 && ((centered && p % 2 == 0) || p <= 2)) {
+      P = p == 1 ? 1 : p/2;
+      u=(i/m)%P;
+      unsigned int offset=r == 0 && i >= P*m && D0 % 2 == 1 ? 1 : 0;
+      double incr=(i+P*m*offset)/(2*P*m);
       r += incr;
-      if(i/(p2*m)-2*incr+offset == 1) {
-        if(!centered || (r > 0 && u == 0))
+      if(i/(P*m)-2*incr+offset == 1) {
+        if((!centered || u == 0 ) && (r > 0))
           s=s > 0 ? s-1 : m-1;
         if(r != 0)
-          u=u > 0 ? u-1 : p2-1;
+          u=u > 0 ? u-1 : P-1;
         r=r == 0 ? n/2 : n-r;
       }
     } else {
