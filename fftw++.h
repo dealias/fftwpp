@@ -84,6 +84,7 @@ typedef std::complex<double> Complex;
 namespace fftwpp {
 
 // Obsolete names:
+using namespace utils; // defined in align.h
 #define FFTWComplex ComplexAlign
 #define FFTWdouble doubleAlign
 #define FFTWdelete deleteAlign
