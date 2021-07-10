@@ -34,7 +34,6 @@ union uvec {
 };
 
 extern const union uvec sse2_pm;
-extern const union uvec sse2_mp;
 extern const union uvec sse2_mm;
 
 #if defined(__INTEL_COMPILER) || !defined(__GNUC__)
@@ -92,18 +91,6 @@ static inline Vec FLIP(const Vec& z)
   return _mm_shuffle_pd(z,z,1);
 }
 
-// Return (z.x,-z.y)
-static inline Vec CONJ(const Vec& z)
-{
-  return _mm_xor_pd(sse2_pm.v,z);
-}
-
-// Return (-z.x,z.y)
-static inline Vec REFL(const Vec& z)
-{
-  return _mm_xor_pd(sse2_mp.v,z);
-}
-
 static inline Vec LOAD2(double x)
 {
   return _mm_load1_pd(&x);
@@ -117,6 +104,18 @@ static inline Vec LOAD(double x)
 static inline Vec LOADFLIP(const Complex *z)
 {
   return _mm_loadr_pd((double *) z);
+}
+
+// Return (z.x,-z.y)
+static inline Vec CONJ(const Vec& z)
+{
+  return _mm_xor_pd(sse2_pm.v,z);
+}
+
+// Return I*z.
+static inline Vec ZMULTI(const Vec& z)
+{
+  return _mm_shuffle_pd(-z,z,1);
 }
 
 static inline Vec SQRT(const Vec& z)
@@ -215,6 +214,12 @@ static inline Vec LOADFLIP(const Complex *z)
   return Vec(z->im,z->re);
 }
 
+// Return I*z.
+static inline Vec ZMULTI(const Vec& z)
+{
+  return Vec(-z.y,z.x);
+}
+
 static inline Vec SQRT(const Vec& z)
 {
   return Vec(sqrt(z.x),sqrt(z.y));
@@ -242,40 +247,34 @@ static inline void STORE(double *z, const Vec& v)
   *(Vec *) z = v;
 }
 
-// Return I*z.
-static inline Vec ZMULTI(const Vec& z)
-{
-  return FLIP(CONJ(z));
-}
-
 // Return the complex product of z and w.
 static inline Vec ZMULT(const Vec& z, const Vec& w)
 {
-  return UNPACKL(z,z)*w+REFL(UNPACKH(z,z))*FLIP(w);
+  return UNPACKL(z,z)*w+UNPACKH(-z,z)*FLIP(w);
 }
 
 // Return the ZMULT(CONJ(z),w).
 static inline Vec ZCMULT(const Vec& z, const Vec& w)
 {
-  return UNPACKL(z,z)*w+CONJ(UNPACKH(z,z))*FLIP(w);
+  return UNPACKL(z,z)*w+UNPACKH(z,-z)*FLIP(w);
 }
 
 // Return the ZMULT(z,I*w).
 static inline Vec ZMULTI(const Vec& z, const Vec& w)
 {
-  return REFL(UNPACKL(z,z))*FLIP(w)-UNPACKH(z,z)*w;
+  return UNPACKL(-z,z)*FLIP(w)-UNPACKH(z,z)*w;
 }
 
 // Return the ZMULT(CONJ(z),I*w).
 static inline Vec ZCMULTI(const Vec& z, const Vec& w)
 {
-  return REFL(UNPACKL(z,z))*FLIP(w)+UNPACKH(z,z)*w;
+  return UNPACKL(-z,z)*FLIP(w)+UNPACKH(z,z)*w;
 }
 
 // Return ZMULT(z,w)+ZCMULT(z,v).
 static inline Vec ZMULT2(const Vec& z, const Vec& w, const Vec& v)
 {
-  return UNPACKL(z,z)*(w+v)-CONJ(UNPACKH(z,z))*FLIP(w-v);
+  return UNPACKL(z,z)*(w+v)-UNPACKH(z,-z)*FLIP(w-v);
 }
 
 // Return the ZMULT(z,w) given x=(z.re,z.re), y=(z.im,-z.im).
