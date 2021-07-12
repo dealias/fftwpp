@@ -1077,7 +1077,7 @@ void fftPad::backward1(Complex *F0, Complex *f, unsigned int r0, Complex *W, dou
         Vec Zeta=LOAD(Zetar+s);
         Vec Us=LOAD(U+s);
         Vec Vs=LOAD(V+s);
-        STORE(f+s,LOAD(f+s)+ZCMULT(Zeta,Us)+ZMULT(Zeta,Vs));
+        STORE(f+s,LOAD(f+s)+ZMULT2(Zeta,Vs,Us));
       }
     }
   }
@@ -1171,24 +1171,15 @@ void fftPad::backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W, dou
       unsigned int r=r0+d;
       f[0] += U[0]+V[0];
       Complex *Zetar=Zetaqm+m*r;
-      for(unsigned int s=1; s < m; ++s) {
+      for(unsigned int s=1; s < m; ++s)
 //      f[s] += conj(Zetar[s])*U[s]+Zetar[s]*V[s];
-        Vec Zeta=LOAD(Zetar+s);
-        Vec Us=LOAD(U+s);
-        Vec Vs=LOAD(V+s);
-//        STORE(f+s,LOAD(f+s)+ZCMULT(Zeta,Us)+ZMULT(Zeta,Vs));
-        STORE(f+s,LOAD(f+s)+ZMULT2(Zeta,Vs,Us)); // CHECK
-      }
+        STORE(f+s,LOAD(f+s)+ZMULT2(LOAD(Zetar+s),LOAD(V+s),LOAD(U+s)));
       Complex *Zetar2=ZetaqmS+Lm*r;
       Complex *Um=U-m;
       Complex *Vm=V-m;
-      for(unsigned int s=m; s < L; ++s) {
+      for(unsigned int s=m; s < L; ++s)
 //      f[s] += conj(Zetar2[s])*Um[s]+Zetar2[s]*Vm[s];
-        Vec Zeta=LOAD(Zetar2+s);
-        Vec Ums=LOAD(Um+s);
-        Vec Vms=LOAD(Vm+s);
-        STORE(f+s,LOAD(f+s)+ZCMULT(Zeta,Ums)+ZMULT(Zeta,Vms));
-      }
+        STORE(f+s,LOAD(f+s)+ZMULT2(LOAD(Zetar2+s),LOAD(Vm+s),LOAD(Um+s)));
     }
   }
 }
@@ -1737,7 +1728,6 @@ void fftPadCentered::forward2CMany(Complex *f, Complex *F, unsigned int r, Compl
       Vec Ym=UNPACKH(-Zetam,Zetam);
       for(unsigned int c=0; c < C; ++c)
 //        Fs[c]=Zetarms*fmHs[c]+Zetars*fHs[c];
-//        STORE(Fs+c,ZMULT(Xm,Ym,LOAD(fmHs+c))+ZMULT(X,Y,LOAD(fHs+c)));
         STORE(Fs+c,ZMULT(Xm,Ym,LOAD(fmHs+c))+ZMULT(X,Y,LOAD(fHs+c)));
     }
     for(unsigned int s=LH; s < m; ++s) {
@@ -2889,7 +2879,6 @@ void fftPadHermitian::backward2(Complex *F, Complex *f, unsigned int r, Complex 
     for(unsigned int s=1; s < mH1; ++s)
 //      f[s] += conj(Zeta)*W[s]+Zeta*V[s];
 //      Vec Zeta=LOAD(Zetar+s);
-//      STORE(f+s,LOAD(f+s)+ZCMULT(Zeta,LOAD(W+s))+ZMULT(Zeta,LOAD(V+s)));
       STORE(f+s,LOAD(f+s)+ZMULT2(LOAD(Zetar+s),LOAD(V+s),LOAD(W+s)));
 
     Complex *Zetarm=Zetar+m;
@@ -3014,7 +3003,7 @@ void fftPadHermitian::backward2Many(Complex *F, Complex *f, unsigned int r, Comp
       Vec Zeta=LOAD(Zetar+s);
       for(unsigned int c=0; c < C; ++c)
 //        fs[c] += conj(Zetars)*Ws[c]+Zetars*Vs[c];
-        STORE(fs+c,LOAD(fs+c)+ZCMULT(Zeta,LOAD(Ws+c))+ZMULT(Zeta,LOAD(Vs+c)));
+        STORE(fs+c,LOAD(fs+c)+ZMULT2(Zeta,LOAD(Vs+c),LOAD(Ws+c)));
     }
 
     Complex *Zetarm=Zetar+m;
@@ -3025,14 +3014,18 @@ void fftPadHermitian::backward2Many(Complex *F, Complex *f, unsigned int r, Comp
       Complex *Ws=W+Cs;
       Complex *Vs=V+Cs;
       Vec Zeta=LOAD(Zetar+s);
+      Vec X=UNPACKL(Zeta,Zeta);
+      Vec Y=UNPACKH(Zeta,-Zeta);
       Vec Zetam=LOAD(Zetarm-s);
+      Vec Xm=UNPACKL(Zetam,-Zetam);
+      Vec Ym=UNPACKH(Zetam,Zetam);
       for(unsigned int c=0; c < C; ++c) {
 //        fs[c] += conj(Zeta)*Ws[c]+Zeta*Vs[c];
 //        fms[c] += conj(Zetam*Ws[c])+Zetam*conj(Vs[c]);
         Vec Wsc=LOAD(Ws+c);
         Vec Vsc=LOAD(Vs+c);
-        STORE(fs+c,LOAD(fs+c)+ZCMULT(Zeta,Wsc)+ZMULT(Zeta,Vsc));
-        STORE(fms+c,LOAD(fms+c)+CONJ(ZMULT(Zetam,Wsc))+ZCMULT(Vsc,Zetam));
+        STORE(fs+c,LOAD(fs+c)+ZMULT2(X,Y,Vsc,Wsc));
+        STORE(fms+c,LOAD(fms+c)+ZMULT2(Xm,Ym,Wsc,Vsc));
       }
     }
     if(even) {
@@ -3040,9 +3033,11 @@ void fftPadHermitian::backward2Many(Complex *F, Complex *f, unsigned int r, Comp
       Complex *We=W+Ce;
       Complex *Ve=V+Ce;
       Vec Zeta=LOAD(Zetar+e);
+      Vec X=UNPACKL(Zeta,Zeta);
+      Vec Y=UNPACKH(Zeta,-Zeta);
       for(unsigned int c=0; c < C; ++c)
 //        fe[c] += conj(Zetare)*We[c]+Zetare*Ve[c];
-        STORE(fe+c,LOAD(fe+c)+ZCMULT(Zeta,LOAD(We+c))+ZMULT(Zeta,LOAD(Ve+c)));
+        STORE(fe+c,LOAD(fe+c)+ZMULT2(X,Y,LOAD(Ve+c),LOAD(We+c)));
 
     }
   }
