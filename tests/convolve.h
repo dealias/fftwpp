@@ -200,7 +200,8 @@ public:
       double incr=(i+P*m*offset)/(2*P*m);
       r += incr;
       if(i/(P*m)-2*incr+offset == 1) {
-        if((!centered || u == 0 ) && (r > 0))
+        if(!centered || (r > 0 && u == 0))
+//        if((!centered || u == 0 ) && (r > 0))
           s=s > 0 ? s-1 : m-1;
         if(r != 0)
           u=u > 0 ? u-1 : P-1;
