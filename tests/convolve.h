@@ -424,6 +424,11 @@ public:
       fftPadCentered fft(L,M,C,m,q,D);
       return fft.meantime(app);
     }
+
+    virtual bool valid(unsigned int D, unsigned int p, unsigned int C) {
+      return p%2 == 0 && (D == 1 || C == 1); // Eventually
+//      return p%2 == 0 && (p == 2 || C == 1) && (D == 1 || C == 1); // Temporary
+    }
   };
 
   // Compute an fft padded to N=m*q >= M >= L

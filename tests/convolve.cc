@@ -1404,8 +1404,7 @@ void fftPadCentered::init(bool fast)
     Backward=&fftBase::backwardShiftedExplicit;
   } else {
     ZetaShift=NULL;
-//  if(q > 1 && p % 2 == 0) { // Eventually
-    if(q > 1 && p % 2 == 0 && (p == 2 || C == 1)) { // Temporary
+    if(q > 1) {
       if(p == 2) {
         if(C == 1) {
           Forward=&fftBase::forward2C;
