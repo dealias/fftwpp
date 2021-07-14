@@ -194,7 +194,7 @@ public:
     unsigned int u;
     unsigned int P;
     if(D > 1 && ((centered && p % 2 == 0) || p <= 2)) {
-      P = p == 1 ? 1 : p/2;
+      P=utils::ceilquotient(p,2);
       u=(i/m)%P;
       unsigned int offset=r == 0 && i >= P*m && D0 % 2 == 1 ? 1 : 0;
       double incr=(i+P*m*offset)/(2*P*m);
@@ -202,9 +202,12 @@ public:
       if(i/(P*m)-2*incr+offset == 1) {
         if((!centered && p == 2) || (r > 0 && u == 0))
           s=s > 0 ? s-1 : m-1;
-        if(r != 0)
+        if(r == 0)
+          r=n/2;
+        else {
+          r=n-r;
           u=u > 0 ? u-1 : P-1;
-        r=r == 0 ? n/2 : n-r;
+        }
       }
     } else {
       u=(i/m)%p;
