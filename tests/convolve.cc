@@ -231,7 +231,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
       } else if(m0 <= sqrtM) break;
 //        } else if(m0 > L) break;
       if(!fixed || Explicit || M % m0 == 0)
-        check(L,M,app,C,m0,fixed || Explicit,centered);
+        check(L,M,app,C,m0,fixed || Explicit,false,centered);
       ++i;
     }
 
