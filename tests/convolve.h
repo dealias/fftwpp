@@ -136,6 +136,12 @@ public:
               bool centered=false);
   };
 
+  void invalid () {
+    cerr << "Invalid parameters: " << endl
+         << " D=" << D << " p=" << p << " C=" << C << endl;
+    exit(-1);
+  }
+
   fftBase(unsigned int L, unsigned int M, unsigned int C,
           bool centered=false) :
     L(L), M(M), C(C), centered(centered) {}
@@ -321,6 +327,8 @@ public:
 
   class Opt : public OptBase {
   public:
+    Opt() {}
+
     Opt(unsigned int L, unsigned int M, Application& app,
         unsigned int C, bool Explicit=false, bool fixed=false) {
       scan(L,M,app,C,Explicit,fixed);
@@ -341,6 +349,8 @@ public:
   fftPad(unsigned int L, unsigned int M, unsigned int C,
          unsigned int m, unsigned int q,unsigned int D, bool centered=false) :
     fftBase(L,M,C,m,q,D,centered) {
+    Opt opt;
+    if(q > 1 && !opt.valid(D,p,C)) invalid();
     init();
   }
 
@@ -413,9 +423,15 @@ public:
 
   class Opt : public OptBase {
   public:
+    Opt() {}
+
     Opt(unsigned int L, unsigned int M, Application& app,
         unsigned int C, bool Explicit=false, bool fixed=false) {
       scan(L,M,app,C,Explicit,fixed,true);
+    }
+
+    bool valid(unsigned int D, unsigned int p, unsigned int C) {
+      return p%2 == 0 && (D == 1 || C == 1);
     }
 
     double time(unsigned int L, unsigned int M, unsigned int C,
@@ -424,11 +440,6 @@ public:
       fftPadCentered fft(L,M,C,m,q,D);
       return fft.meantime(app);
     }
-
-    virtual bool valid(unsigned int D, unsigned int p, unsigned int C) {
-//      return p%2 == 0 && (D == 1 || C == 1); // Eventually
-      return p%2 == 0 && (p == 2 || C == 1) && (D == 1 || C == 1); // Temporary
-    }
   };
 
   // Compute an fft padded to N=m*q >= M >= L
@@ -436,6 +447,8 @@ public:
                  unsigned int m, unsigned int q,unsigned int D,
                  bool fast=true) :
     fftPad(L,M,C,m,q,D,true) {
+    Opt opt;
+    if(q > 1 && !opt.valid(D,p,C)) invalid();
     init(fast);
   }
 
@@ -498,13 +511,15 @@ public:
 
   class Opt : public OptBase {
   public:
-    virtual bool valid(unsigned int D, unsigned int p, unsigned int C) {
-      return D == 2 && p%2 == 0 && (p == 2 || C == 1);
-    }
+    Opt() {}
 
     Opt(unsigned int L, unsigned int M, Application& app,
         unsigned int C, bool Explicit=false, bool fixed=false) {
       scan(L,M,app,C,Explicit,fixed,true);
+    }
+
+    bool valid(unsigned int D, unsigned int p, unsigned int C) {
+      return D == 2 && p%2 == 0 && (p == 2 || C == 1);
     }
 
     double time(unsigned int L, unsigned int M, unsigned int C,
@@ -520,6 +535,8 @@ public:
   fftPadHermitian(unsigned int L, unsigned int M, unsigned int C,
                   unsigned int m, unsigned int q, unsigned int D) :
     fftBase(L,M,C,m,q,D,true) {
+    Opt opt;
+    if(q > 1 && !opt.valid(D,p,C)) invalid();
     init();
   }
 
