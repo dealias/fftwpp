@@ -229,7 +229,7 @@ public:
   virtual void forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
   virtual void forwardInnerMany(Complex *f, Complex *F, unsigned int r, Complex *W) {}
   virtual void forwardInnerC(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
-//  virtual void forwardInnerCMany(Complex *f, Complex *F, unsigned int r, Complex *W) {}
+  virtual void forwardInnerCMany(Complex *f, Complex *F, unsigned int r, Complex *W) {}
 
   virtual void backward1(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale) {}
   virtual void backward1Many(Complex *F, Complex *f, unsigned int r, Complex *W, double scale) {}
@@ -242,7 +242,7 @@ public:
   virtual void backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale) {}
   virtual void backwardInnerMany(Complex *F, Complex *f, unsigned int r, Complex *W, double scale) {}
   virtual void backwardInnerC(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale) {}
-//  virtual void backwardInnerCMany(Complex *F, Complex *f, unsigned int r, Complex *W, double scale) {}
+  virtual void backwardInnerCMany(Complex *F, Complex *f, unsigned int r, Complex *W, double scale) {}
 
   unsigned int normalization() {
     return M;
@@ -426,8 +426,8 @@ public:
     }
 
     virtual bool valid(unsigned int D, unsigned int p, unsigned int C) {
-      return p%2 == 0 && (D == 1 || C == 1); // Eventually
-//      return p%2 == 0 && (p == 2 || C == 1) && (D == 1 || C == 1); // Temporary
+//      return p%2 == 0 && (D == 1 || C == 1); // Eventually
+      return p%2 == 0 && (p == 2 || C == 1) && (D == 1 || C == 1); // Temporary
     }
   };
 
@@ -482,7 +482,9 @@ public:
   void backward2CMany(Complex *F, Complex *f, unsigned int r, Complex *W, double scale);
 
   void forwardInnerC(Complex *f, Complex *F0, unsigned int r0, Complex *W);
+  void forwardInnerCMany(Complex *f, Complex *F0, unsigned int r0, Complex *W);
   void backwardInnerC(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale);
+  void backwardInnerCMany(Complex *F0, Complex *f, unsigned int r0, Complex *W, double scale);
 };
 
 class fftPadHermitian : public fftBase {
