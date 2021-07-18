@@ -497,7 +497,7 @@ public:
   class Opt : public OptBase {
   public:
     virtual bool valid(unsigned int D, unsigned int p, unsigned int C) {
-      return D == 2 && p%2 == 0;
+      return D == 2 && p%2 == 0 && (p == 2 || C == 1);
     }
 
     Opt(unsigned int L, unsigned int M, Application& app,
