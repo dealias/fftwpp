@@ -546,8 +546,6 @@ void fftPad::forward1(Complex *f, Complex *F0, unsigned int r0, Complex *W)
 {
   if(W == NULL) W=F0;
 
-  bool inplace=W == F0;
-
   Complex *W0=W;
   unsigned int dr0=dr;
   mfft1d *fftm1;
@@ -634,14 +632,13 @@ void fftPad::forward1(Complex *f, Complex *F0, unsigned int r0, Complex *W)
 void fftPad::forward1Many(Complex *f, Complex *F, unsigned int r, Complex *W) {
   if(W == NULL) W=F;
 
-  if(W == F) {
+  if(inplace) {
     for(unsigned int s=L; s < m; ++s) {
       Complex *Fs=W+C*s;
       for(unsigned int c=0; c < C; ++c)
         Fs[c]=0.0;
     }
-    inplace=true;
-  } else inplace=false;
+  }
 
   if(r == 0) {
     if(!inplace && L >= m)
@@ -1030,8 +1027,6 @@ void fftPad::backward1(Complex *F0, Complex *f, unsigned int r0, Complex *W, dou
 {
   if(W == NULL) W=F0;
 
-  bool inplace=W == F0;
-
   if(r0 == 0 && !inplace && D == 1 && L >= m)
     return ifftm->fft(F0,f);
 
@@ -1086,8 +1081,6 @@ void fftPad::backward1(Complex *F0, Complex *f, unsigned int r0, Complex *W, dou
 void fftPad::backward1Many(Complex *F, Complex *f, unsigned int r, Complex *W, double)
 {
   if(W == NULL) W=F;
-
-  bool inplace=W == F;
 
   if(r == 0 && !inplace && L >= m)
     return ifftm->fft(F,f);
