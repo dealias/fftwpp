@@ -1068,8 +1068,7 @@ public:
     unsigned int Hy=utils::ceilquotient(Ly,2);
     FB=new ForwardBackward(A,B);
     fftx=new fftPadCentered(Lx,Mx,*FB,Hy);
-    unsigned int q=utils::ceilquotient(My,Hy);
-    fftPadHermitian *ffty=new fftPadHermitian(Ly,My,1,Hy,q,2);
+    fftPadHermitian *ffty=new fftPadHermitian(Ly,My,*FB);
     convolvey=new ConvolutionHermitian(*ffty,A,B);
     this->ffty=ffty;
     init();
