@@ -2,7 +2,7 @@
 #include "cmult-sse2.h"
 
 // TODO:
-// Implement overwrite optimization in fftpad::forwardMany
+// Implement overwrite optimization in fftpad::forwardMany (and single cases)
 // Implement loop2 optimization in Convolution2
 // Optimize over -I0 and -I1
 // Implement built-in shift for p > 2 centered case
@@ -1637,11 +1637,11 @@ void fftPadCentered::forward2CMany(Complex *f, Complex *F, unsigned int r, Compl
       Complex *F1=g+Cs;
       Complex *F2=F+Cs;
       Vec Zeta=LOAD(Zetar+s);
-      Vec Zetam=CONJ(LOAD(Zetarm-s));
+      Vec Zetam=LOAD(Zetarm-s);
       Vec X=UNPACKL(Zeta,Zeta);
       Vec Y=UNPACKH(Zeta,-Zeta);
       Vec Xm=UNPACKL(Zetam,Zetam);
-      Vec Ym=UNPACKH(Zetam,-Zetam);
+      Vec Ym=UNPACKH(-Zetam,Zetam);
       for(unsigned int c=0; c < C; ++c) {
 //    Fs[c]=Zetarms*fmHs[c]+Zetars*fHs[c];
 //    Gs[c]=conj(Zetarms)*fmHs[c]+conj(Zetars)*fHs[c];
