@@ -3,7 +3,6 @@
 
 // TODO:
 // Implement overwrite optimization in fftpad::forwardMany (and single cases)
-// Implement loop2 optimization in Convolution2
 // Optimize over -I0 and -I1
 // Implement built-in shift for p > 2 centered case
 // Optimize shift when M=2L for p=1
@@ -515,7 +514,7 @@ void fftPad::forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W)
   fftm->fft(F);
 }
 
-void fftPad::backwardExplicit(Complex *F, Complex *f, unsigned int, Complex *W, double) {
+void fftPad::backwardExplicit(Complex *F, Complex *f, unsigned int, Complex *W) {
   ifftm->fft(F);
   for(unsigned int s=0; s < L; ++s)
     f[s]=F[s];
@@ -532,7 +531,7 @@ void fftPad::forwardExplicitMany(Complex *f, Complex *F, unsigned int, Complex *
   fftm->fft(F);
 }
 
-void fftPad::backwardExplicitMany(Complex *F, Complex *f, unsigned int, Complex *W, double) {
+void fftPad::backwardExplicitMany(Complex *F, Complex *f, unsigned int, Complex *W) {
   ifftm->fft(F);
   for(unsigned int s=0; s < L; ++s) {
     Complex *fs=f+C*s;
@@ -1023,7 +1022,7 @@ void fftPad::forwardInnerMany(Complex *f, Complex *F, unsigned int r, Complex *W
   }
 }
 
-void fftPad::backward1(Complex *F0, Complex *f, unsigned int r0, Complex *W, double)
+void fftPad::backward1(Complex *F0, Complex *f, unsigned int r0, Complex *W)
 {
   if(W == NULL) W=F0;
 
@@ -1078,7 +1077,7 @@ void fftPad::backward1(Complex *F0, Complex *f, unsigned int r0, Complex *W, dou
   }
 }
 
-void fftPad::backward1Many(Complex *F, Complex *f, unsigned int r, Complex *W, double)
+void fftPad::backward1Many(Complex *F, Complex *f, unsigned int r, Complex *W)
 {
   if(W == NULL) W=F;
 
@@ -1110,7 +1109,7 @@ void fftPad::backward1Many(Complex *F, Complex *f, unsigned int r, Complex *W, d
   }
 }
 
-void fftPad::backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W, double)
+void fftPad::backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W)
 {
   if(W == NULL) W=F0;
 
@@ -1177,7 +1176,7 @@ void fftPad::backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W, dou
   }
 }
 
-void fftPad::backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W, double)
+void fftPad::backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W)
 {
   if(W == NULL) W=F;
 
@@ -1225,7 +1224,7 @@ void fftPad::backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W, d
   }
 }
 
-void fftPad::backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W, double)
+void fftPad::backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W)
 {
   if(W == NULL) W=F0;
 
@@ -1294,7 +1293,7 @@ void fftPad::backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W,
   }
 }
 
-void fftPad::backwardInnerMany(Complex *F, Complex *f, unsigned int r, Complex *W, double)
+void fftPad::backwardInnerMany(Complex *F, Complex *f, unsigned int r, Complex *W)
 {
   if(W == NULL) W=F;
 
@@ -1449,14 +1448,14 @@ void fftPadCentered::forwardShiftedExplicit(Complex *f, Complex *F, unsigned int
   }
 }
 
-void fftPadCentered::backwardShiftedExplicit(Complex *F, Complex *f, unsigned int, Complex *, double)
+void fftPadCentered::backwardShiftedExplicit(Complex *F, Complex *f, unsigned int, Complex *)
 {
   for(unsigned int s=1; s < m; s += 2) {
     for(unsigned int c=0; c < C; ++c) {
       F[C*s+c] *= -1;
     }
   }
-  (this->*fftBaseBackward)(F,f,0,NULL,1.0);
+  (this->*fftBaseBackward)(F,f,0,NULL);
 }
 
 void fftPadCentered::forwardShifted(Complex *f, Complex *F, unsigned int r, Complex *W)
@@ -1465,10 +1464,10 @@ void fftPadCentered::forwardShifted(Complex *f, Complex *F, unsigned int r, Comp
   forwardShift(F,r);
 }
 
-void fftPadCentered::backwardShifted(Complex *F, Complex *f, unsigned int r, Complex *W, double)
+void fftPadCentered::backwardShifted(Complex *F, Complex *f, unsigned int r, Complex *W)
 {
   backwardShift(F,r);
-  (this->*fftBaseBackward)(F,f,r,W,1.0);
+  (this->*fftBaseBackward)(F,f,r,W);
 }
 
 void fftPadCentered::forwardShift(Complex *F, unsigned int r0)
@@ -1738,7 +1737,7 @@ void fftPadCentered::forward2CMany(Complex *f, Complex *F, unsigned int r, Compl
   fftm->fft(W,F);
 }
 
-void fftPadCentered::backward2C(Complex *F0, Complex *f, unsigned int r0, Complex *W, double)
+void fftPadCentered::backward2C(Complex *F0, Complex *f, unsigned int r0, Complex *W)
 {
   if(W == NULL) W=F0;
 
@@ -1800,7 +1799,7 @@ void fftPadCentered::backward2C(Complex *F0, Complex *f, unsigned int r0, Comple
   }
 }
 
-void fftPadCentered::backward2CMany(Complex *F, Complex *f, unsigned int r, Complex *W, double scale)
+void fftPadCentered::backward2CMany(Complex *F, Complex *f, unsigned int r, Complex *W)
 {
   if(r == R) {
     Complex *g=f+Cm;
@@ -1811,14 +1810,13 @@ void fftPadCentered::backward2CMany(Complex *F, Complex *f, unsigned int r, Comp
 
     Complex *Zetar=Zetaqm+(m+1);
     Complex *Zetarm=Zetar+m;
-    Vec Scale=LOAD2(scale);
     for(unsigned int s=0; s < m; ++s) {
       unsigned int Cs=C*s;
       Complex *F0=f+Cs;
       Complex *F1=g+Cs;
       Complex *F2=F+Cs;
-      Vec Zetam=Scale*LOAD(Zetarm-s);
-      Vec Zeta=Scale*LOAD(Zetar+s);
+      Vec Zetam=LOAD(Zetarm-s);
+      Vec Zeta=LOAD(Zetar+s);
       Vec Xm=UNPACKL(Zetam,Zetam);
       Vec Ym=UNPACKH(Zetam,-Zetam);
       Vec X=UNPACKL(Zeta,Zeta);
@@ -1826,7 +1824,7 @@ void fftPadCentered::backward2CMany(Complex *F, Complex *f, unsigned int r, Comp
       for(unsigned int c=0; c < C; ++c) {
 //    fmHs[c] += Zetarms*Fs[c]+conj(Zetarms)*Gs[c];
 //    fHs[c] += Zetars*Fs[c]+conj(Zetars)*Gs[c];
-        Vec F0c=Scale*LOAD(F0+c);
+        Vec F0c=LOAD(F0+c);
         Vec F1c=LOAD(F1+c);
         Vec F2c=LOAD(F2+c);
         STORE(F0+c,F0c+ZMULT2(Xm,Ym,F1c,F2c));
@@ -2365,7 +2363,7 @@ void fftPadCentered::forwardInnerCMany(Complex *f, Complex *F, unsigned int r, C
   }
 }
 
-void fftPadCentered::backwardInnerC(Complex *F0, Complex *f, unsigned int r0, Complex *W, double)
+void fftPadCentered::backwardInnerC(Complex *F0, Complex *f, unsigned int r0, Complex *W)
 {
   if(W == NULL) W=F0;
 
@@ -2632,7 +2630,7 @@ void fftPadCentered::backwardInnerC(Complex *F0, Complex *f, unsigned int r0, Co
   }
 }
 
-void fftPadCentered::backwardInnerCMany(Complex *F, Complex *f, unsigned int r, Complex *W, double)
+void fftPadCentered::backwardInnerCMany(Complex *F, Complex *f, unsigned int r, Complex *W)
 {
   if(W == NULL) W=F;
 
@@ -2942,7 +2940,7 @@ void fftPadHermitian::forwardExplicitMany(Complex *f, Complex *F, unsigned int, 
   crfftm->fft(F);
 }
 
-void fftPadHermitian::backwardExplicit(Complex *F, Complex *f, unsigned int, Complex *W, double)
+void fftPadHermitian::backwardExplicit(Complex *F, Complex *f, unsigned int, Complex *W)
 {
   rcfftm->fft(F);
   unsigned int H=ceilquotient(L,2);
@@ -2951,7 +2949,7 @@ void fftPadHermitian::backwardExplicit(Complex *F, Complex *f, unsigned int, Com
 }
 
 void fftPadHermitian::backwardExplicitMany(Complex *F, Complex *f,
-                                           unsigned int, Complex *, double)
+                                           unsigned int, Complex *)
 {
   rcfftm->fft(F);
   unsigned int H=ceilquotient(L,2);
@@ -3161,7 +3159,7 @@ void fftPadHermitian::forward2Many(Complex *f, Complex *F, unsigned int r, Compl
   }
 }
 
-void fftPadHermitian::backward2(Complex *F, Complex *f, unsigned int r, Complex *W, double)
+void fftPadHermitian::backward2(Complex *F, Complex *f, unsigned int r, Complex *W)
 {
   if(W == NULL) W=F;
 
@@ -3241,7 +3239,7 @@ void fftPadHermitian::backward2(Complex *F, Complex *f, unsigned int r, Complex 
   }
 }
 
-void fftPadHermitian::backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W, double)
+void fftPadHermitian::backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W)
 {
   if(W == NULL) W=F;
 
@@ -3541,7 +3539,7 @@ void fftPadHermitian::forwardInner(Complex *f, Complex *F, unsigned int r, Compl
   }
 }
 
-void fftPadHermitian::backwardInner(Complex *F, Complex *f, unsigned int r, Complex *W, double)
+void fftPadHermitian::backwardInner(Complex *F, Complex *f, unsigned int r, Complex *W)
 {
   if(W == NULL) W=F;
 
@@ -3772,26 +3770,26 @@ Convolution::~Convolution()
 // f is an array of max(A,B) pointers to distinct data blocks
 // each of size fft->length()
 // offset is applied to each input and output component
-void Convolution::convolve0(Complex **f, multiplier *mult, unsigned int offset)
+void Convolution::convolveRaw(Complex **f, multiplier *mult, unsigned int offset)
 {
   if(q == 1) {
     for(unsigned int a=0; a < A; ++a)
       (fft->*Forward)(f[a]+offset,F[a],0,NULL);
     (*mult)(F,0,blocksize,threads);
     for(unsigned int b=0; b < B; ++b)
-      (fft->*Backward)(F[b],f[b]+offset,0,NULL,1.0);
+      (fft->*Backward)(F[b],f[b]+offset,0,NULL);
   } else {
     unsigned int incr=fft->b;
     unsigned int Dincr=fft->D*incr;
     unsigned int D0incr=fft->D0*incr;
 
-    if(fft->overwrite && A >= B) {
+    if(overwrite()) {
       for(unsigned int a=0; a < A; ++a)
         (fft->*Forward)(f[a]+offset,F[a],R,NULL);
       (*mult)(f,offset,fft->p*blocksize,threads);
       (*mult)(F,0,blocksize,threads);
       for(unsigned int b=0; b < B; ++b)
-        (fft->*Backward)(F[b],f[b]+offset,R,NULL,1.0);
+        (fft->*Backward)(F[b],f[b]+offset,R,NULL);
     } else {
       if(loop2) {
         for(unsigned int a=0; a < A; ++a)
@@ -3801,7 +3799,7 @@ void Convolution::convolve0(Complex **f, multiplier *mult, unsigned int offset)
 
         for(unsigned int b=0; b < B; ++b) {
           (fft->*Forward)(f[b]+offset,Fp[b],r,W);
-          (fft->*Backward)(F[b],f[b]+offset,0,W0,1.0);
+          (fft->*Backward)(F[b],f[b]+offset,0,W0);
           (fft->*Pad)(W);
         }
         for(unsigned int a=B; a < A; ++a)
@@ -3809,7 +3807,7 @@ void Convolution::convolve0(Complex **f, multiplier *mult, unsigned int offset)
         for(unsigned int d=0; d < Dincr; d += incr)
           (*mult)(Fp,d,blocksize,threads);
         for(unsigned int b=0; b < B; ++b)
-          (fft->*Backward)(Fp[b],f[b]+offset,r,W0,1.0);
+          (fft->*Backward)(Fp[b],f[b]+offset,r,W0);
         (fft->*Pad)(W);
       } else {
         unsigned int Offset;
@@ -3831,7 +3829,7 @@ void Convolution::convolve0(Complex **f, multiplier *mult, unsigned int offset)
           for(unsigned int d=0; d < D1incr; d += incr)
             (*mult)(F,d,blocksize,threads);
           for(unsigned int b=0; b < B; ++b)
-            (fft->*Backward)(F[b],h0[b]+Offset,r,W0,1.0);
+            (fft->*Backward)(F[b],h0[b]+Offset,r,W0);
           (fft->*Pad)(W);
         }
 
@@ -3903,7 +3901,7 @@ double ForwardBackward::time(fftBase &fft, unsigned int K)
       for(unsigned int a=0; a < A; ++a)
         (fft.*Forward)(f[a],F[a],r,W);
       for(unsigned int b=0; b < B; ++b)
-        (fft.*Backward)(F[b],h[b],r,W,1.0);
+        (fft.*Backward)(F[b],h[b],r,W);
     }
   }
   double t=totalseconds();
