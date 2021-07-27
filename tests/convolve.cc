@@ -198,36 +198,40 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
 
   T=DBL_MAX;
   unsigned int i=0;
-
-  double sqrtM=sqrt(M);
+  double endOpt=max(sqrt(M),3); // Here we use 3 because 2 is the smallest value of m0 we allow.
   unsigned int Mmore=M+max(M*epsilon,1);
   unsigned int ub=Mmore;
   unsigned int lb=M;
   unsigned int stop=M-1;
   unsigned int m0=ub;
-  unsigned int denom=2;
+  unsigned int denom=ceilquotient(M,centered ? ceilquotient(L,2) : L);
+  unsigned int mixedLimit=L/4; // For m0<mixedLimit, we only consider pure powers.
+
   bool mixed=true;
 
   if(mOption >= 1 && !Explicit)
     check(L,M,app,C,mOption,fixed,true,centered);
   else
     while(true){
+      //cout<<"m0="<<m0<<endl;
       m0=prevfftsize(m0-1,mixed);
-      if(mixed == true && m0 < L/2) mixed=false;
+      if(mixed == true && m0 < mixedLimit) mixed=false; 
       if(m0 < lb){
         double factor=1.0/denom;
         lb=M*factor;
         ub=Mmore*factor;
         denom++;
-        while(m0 > ub)
+        unsigned int p=ceilquotient(L,m0);
+        while(m0 > ub || (centered && p%2 != 0)) {
           m0=prevfftsize(m0-1,mixed);
+          p=ceilquotient(L,m0);
+        }
       }
-      //cout << m0 << endl;
       if(Explicit) {
         if(m0 > stop) break;
         if(m0 < M) {++i; continue;}
         M=m0;
-      } else if(m0 <= sqrtM) break;
+      } else if(m0 < endOpt) break;
 //        } else if(m0 > L) break;
       if(!fixed || Explicit || M % m0 == 0)
         check(L,M,app,C,m0,fixed || Explicit,false,centered);
