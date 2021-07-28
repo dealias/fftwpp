@@ -1,7 +1,7 @@
 #include "convolve.h"
 
 #define OUTPUT 0
-#define CENTERED 1
+#define CENTERED 0
 
 using namespace std;
 using namespace utils;
@@ -131,6 +131,7 @@ int main(int argc, char* argv[])
   double eps=1e-12;
   if(error > eps || error2 > eps)
     cerr << endl << "WARNING: " << endl;
+  cout << endl;
   cout << "forward error=" << error << endl;
   cout << "backward error=" << error2 << endl;
 
