@@ -1,6 +1,8 @@
 #ifndef __explicit_h__
 #define __explicit_h__ 1
 
+#include "timing.h"
+
 namespace fftwpp {
 
 class ExplicitPad : public ThreadBase {
