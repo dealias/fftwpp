@@ -1,7 +1,7 @@
 #include "convolve.h"
 
-#define OUTPUT 0
-#define CENTERED 1
+#define OUTPUT 1
+#define CENTERED 0
 
 using namespace std;
 using namespace utils;

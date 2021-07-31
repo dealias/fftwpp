@@ -307,8 +307,6 @@ public:
     return !inplace && L < m;
   }
 
-  void initialize(Complex *f, Complex *g);
-
   double meantime(Application& app, double *Stdev=NULL);
   double report(Application& app);
 
