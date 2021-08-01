@@ -45,14 +45,6 @@ int main(int argc, char* argv[])
 
   array2<Complex> h0(Lx,Hy,f[0]);
 
-//  fftPadCentered fftx(Lx,Mx,Ly,Lx,2,1);
-//  fftPadHermitian ffty(Ly,My,FB,1);
-
-//  fftPadCentered fftx(Lx,Mx,FB,Hy);
-//  fftPadHermitian ffty(Ly,My,1,Hy,3,2);
-//  ConvolutionHermitian convolvey(ffty,A,B);
-//  ConvolutionHermitian2 Convolve2(fftx,convolvey);
-
   ConvolutionHermitian2 Convolve2(Lx,Ly,Mx,My,A,B);
 
   unsigned int K=500;

@@ -36,15 +36,6 @@ int main(int argc, char* argv[])
   for(unsigned int a=0; a < A; ++a)
     f[a]=ComplexAlign(Lx*Ly);
 
-
-//      fftPad fftx(Lx,Mx,Ly,Lx,2,1);
-//      fftPad ffty(Ly,My,1,Ly,2,1);
-
-//  fftPad fftx(Lx,Mx,FB,Ly);
-//  fftPad ffty(Ly,My,FB,1);
-//  Convolution convolvey(ffty,A,B);
-
-//  Convolution2 Convolve2(fftx,convolvey);
   Convolution2 Convolve2(Lx,Ly,Mx,My,A,B);
 
   unsigned int K=10;

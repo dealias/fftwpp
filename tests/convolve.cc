@@ -1495,10 +1495,8 @@ void fftPad::backwardInnerMany(Complex *F, Complex *f, unsigned int r, Complex *
 
 void fftPadCentered::init(bool fast)
 {
-  if(q == 1 && fast) {
+  if(q == 1 && M % 2 == 0 && fast) {
     ZetaShift=NULL;
-    fftBaseForward=Forward;
-    fftBaseBackward=Backward;
     Forward=&fftBase::forwardShiftedExplicit;
     Backward=&fftBase::backwardShiftedExplicit;
   } else {
@@ -1532,22 +1530,34 @@ void fftPadCentered::init(bool fast)
   }
 }
 
-void fftPadCentered::initShift()
-{
-  ZetaShift=ComplexAlign(M);
-  double factor=L/2*twopi/M;
-  for(unsigned int r=0; r < q; ++r) {
-    Complex *Zetar=ZetaShift+r;
-    PARALLEL(
-      for(unsigned int s=0; s < m; ++s)
-        Zetar[q*s]=expi(factor*(q*s+r));
-      );
-  }
-}
-
 void fftPadCentered::forwardShiftedExplicit(Complex *f, Complex *F, unsigned int, Complex *)
 {
-  (this->*fftBaseForward)(f,F,0,NULL);
+  unsigned int H=ceilquotient(M-L,2);
+  Complex *FH=F+C*H;
+  PARALLEL(
+    for(unsigned int s=0; s < H; ++s) {
+      unsigned int Cs=C*s;
+      Complex *Fs=F+Cs;
+      for(unsigned int c=0; c < C; ++c)
+        Fs[c]=0.0;
+    });
+  PARALLEL(
+    for(unsigned int s=0; s < L; ++s) {
+      unsigned int Cs=C*s;
+      Complex *fs=f+Cs;
+      Complex *FHs=FH+Cs;
+      for(unsigned int c=0; c < C; ++c)
+        FHs[c]=fs[c];
+    });
+  PARALLEL(
+    for(unsigned int s=H+L; s < M; ++s) {
+      unsigned int Cs=C*s;
+      Complex *Fs=F+Cs;
+      for(unsigned int c=0; c < C; ++c)
+        Fs[c]=0.0;
+    });
+
+  fftm->fft(F);
 
   PARALLEL(
     for(unsigned int s=1; s < m; s += 2) {
@@ -1565,19 +1575,32 @@ void fftPadCentered::backwardShiftedExplicit(Complex *F, Complex *f, unsigned in
         F[C*s+c] *= -1;
       }
     });
-  (this->*fftBaseBackward)(F,f,0,NULL);
+
+  ifftm->fft(F);
+
+  unsigned int H=ceilquotient(M-L,2);
+  Complex *FH=F+C*H;
+  PARALLEL(
+    for(unsigned int s=0; s < L; ++s) {
+      unsigned int Cs=C*s;
+      Complex *fs=f+Cs;
+      Complex *FHs=FH+Cs;
+      for(unsigned int c=0; c < C; ++c)
+        fs[c]=FHs[c];
+    });
 }
 
-void fftPadCentered::forwardShifted(Complex *f, Complex *F, unsigned int r, Complex *W)
+void fftPadCentered::initShift()
 {
-  (this->*fftBaseForward)(f,F,r,W);
-  forwardShift(F,r);
-}
-
-void fftPadCentered::backwardShifted(Complex *F, Complex *f, unsigned int r, Complex *W)
-{
-  backwardShift(F,r);
-  (this->*fftBaseBackward)(F,f,r,W);
+  ZetaShift=ComplexAlign(M);
+  double factor=L/2*twopi/M;
+  for(unsigned int r=0; r < q; ++r) {
+    Complex *Zetar=ZetaShift+r;
+    PARALLEL(
+      for(unsigned int s=0; s < m; ++s)
+        Zetar[q*s]=expi(factor*(q*s+r));
+      );
+  }
 }
 
 void fftPadCentered::forwardShift(Complex *F, unsigned int r0)
@@ -1616,6 +1639,18 @@ void fftPadCentered::backwardShift(Complex *F, unsigned int r0)
         });
     }
   }
+}
+
+void fftPadCentered::forwardShifted(Complex *f, Complex *F, unsigned int r, Complex *W)
+{
+  (this->*fftBaseForward)(f,F,r,W);
+  forwardShift(F,r);
+}
+
+void fftPadCentered::backwardShifted(Complex *F, Complex *f, unsigned int r, Complex *W)
+{
+  backwardShift(F,r);
+  (this->*fftBaseBackward)(F,f,r,W);
 }
 
 void fftPadCentered::forward2C(Complex *f, Complex *F0, unsigned int r0, Complex *W)

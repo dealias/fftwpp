@@ -475,16 +475,17 @@ public:
   bool conjugates() {return D > 1 && (p == 1 || p % 2 == 0);}
 
   void init(bool fast);
-  void initShift();
-
-  void forwardShifted(Complex *f, Complex *F, unsigned int r, Complex *W);
-  void backwardShifted(Complex *F, Complex *f, unsigned int r, Complex *W);
 
   void forwardShiftedExplicit(Complex *f, Complex *F, unsigned int r, Complex *W);
   void backwardShiftedExplicit(Complex *F, Complex *f, unsigned int r, Complex *W);
 
+  void initShift();
+
   void forwardShift(Complex *F, unsigned int r0);
   void backwardShift(Complex *F, unsigned int r0);
+
+  void forwardShifted(Complex *f, Complex *F, unsigned int r, Complex *W);
+  void backwardShifted(Complex *F, Complex *f, unsigned int r, Complex *W);
 
   void forward2C(Complex *f, Complex *F0, unsigned int r0, Complex *W);
   void forward2CMany(Complex *f, Complex *F, unsigned int r, Complex *W);
