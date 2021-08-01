@@ -1,6 +1,6 @@
 #include "convolve.h"
 
-#define OUTPUT 1
+#define OUTPUT 0
 #define CENTERED 0
 
 using namespace std;
@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
   optionsHybrid(argc,argv);
 
   ForwardBackward FB(A,B);
-#ifdef CENTERED
+#if CENTERED
   fftPadCentered fft(L,M,FB,C);
 #else
   fftPad fft(L,M,FB,C);
