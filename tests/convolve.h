@@ -999,7 +999,7 @@ public:
   void convolveRaw(Complex **f, multiplier *mult, unsigned int offset=0) {
     if(fftx->overwrite) {
       forward(f,F,Rx,offset);
-      subconvolution(f,mult,fftx->p*Nx,Ly,offset);
+      subconvolution(f,mult,2*Nx,Ly,offset);
       subconvolution(F,mult,Nx,Ly,offset);
       backward(F,f,Rx,offset);
     } else {

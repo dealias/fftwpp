@@ -1518,6 +1518,7 @@ void fftPadCentered::init(bool fast)
         } else {
           Forward=&fftBase::forwardInnerCMany;
           Backward=&fftBase::backwardInnerCMany;
+          overwrite=inplace && L == p*m && n == 3;
         }
       }
     } else {
