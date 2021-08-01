@@ -207,7 +207,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   unsigned int stop=M-1;
   unsigned int m0=ub;
   unsigned int denom=ceilquotient(M,centered ? ceilquotient(L,2) : L);
-  unsigned int mixedLimit=L/4; // For m0<mixedLimit, we only consider pure powers.
+  unsigned int mixedLimit=L/2; // For m0<mixedLimit, we only consider pure powers.
 
   bool mixed=true;
 
