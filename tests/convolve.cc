@@ -317,18 +317,6 @@ void fftBase::common()
   overwrite=false;
 }
 
-unsigned int fftBase::residue(unsigned int r, unsigned int q)
-{
-  if(r == 0) return 0;
-  unsigned int q2=q/2;
-  if(2*q2 == q) {
-    if(r == 1) return q2;
-    --r;
-  }
-  unsigned int h=ceilquotient(r,2);
-  return r % 2 == 0 ? q-h : h;
-}
-
 void fftPad::init()
 {
   common();
@@ -4163,10 +4151,6 @@ void Convolution::convolveRaw(Complex **f, multiplier *mult, unsigned int offset
     for(unsigned int b=0; b < B; ++b)
       (fft->*Backward)(F[b],f[b]+offset,0,NULL);
   } else {
-    unsigned int incr=fft->b;
-    unsigned int Dincr=fft->D*incr;
-    unsigned int D0incr=fft->D0*incr;
-
     if(overwrite()) {
       for(unsigned int a=0; a < A; ++a)
         (fft->*Forward)(f[a]+offset,F[a],R,NULL);
@@ -4175,10 +4159,12 @@ void Convolution::convolveRaw(Complex **f, multiplier *mult, unsigned int offset
       for(unsigned int b=0; b < B; ++b)
         (fft->*Backward)(F[b],f[b]+offset,R,NULL);
     } else {
+      unsigned int incr=fft->b;
       if(loop2) {
         for(unsigned int a=0; a < A; ++a)
           (fft->*Forward)(f[a]+offset,F[a],0,W);
-        for(unsigned int d=0; d < D0incr; d += incr)
+        unsigned int stop0=incr*fft->D0;
+        for(unsigned int d=0; d < stop0; d += incr)
           (*mult)(F,d,blocksize,threads);
 
         for(unsigned int b=0; b < B; ++b) {
@@ -4188,7 +4174,8 @@ void Convolution::convolveRaw(Complex **f, multiplier *mult, unsigned int offset
         }
         for(unsigned int a=B; a < A; ++a)
           (fft->*Forward)(f[a]+offset,Fp[a],r,W);
-        for(unsigned int d=0; d < Dincr; d += incr)
+        unsigned int stop1=incr*fft->D;
+        for(unsigned int d=0; d < stop1; d += incr)
           (*mult)(Fp,d,blocksize,threads);
         for(unsigned int b=0; b < B; ++b)
           (fft->*Backward)(Fp[b],f[b]+offset,r,W0);
@@ -4209,8 +4196,8 @@ void Convolution::convolveRaw(Complex **f, multiplier *mult, unsigned int offset
         for(unsigned int r=0; r < R; r += fft->increment(r)) {
           for(unsigned int a=0; a < A; ++a)
             (fft->*Forward)(f[a]+offset,F[a],r,W);
-          unsigned int D1incr=r == 0 ? D0incr : Dincr;
-          for(unsigned int d=0; d < D1incr; d += incr)
+          unsigned int stop=fft->complexOutputs(r);
+          for(unsigned int d=0; d < stop; d += incr)
             (*mult)(F,d,blocksize,threads);
           for(unsigned int b=0; b < B; ++b)
             (fft->*Backward)(F[b],h0[b]+Offset,r,W0);

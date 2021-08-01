@@ -285,14 +285,19 @@ public:
     return C*L;
   }
 
-  // Number of complex values per residue
+  // Number of complex outputs per residue
   virtual unsigned int noutputs() {
     return b;
   }
 
-  // Number of complex values per iteration
-  virtual unsigned int noutputs(unsigned int r) {
+  // Number of complex outputs per iteration
+  unsigned int complexOutputs(unsigned int r) {
     return b*(r == 0 ? D0 : D);
+  }
+
+  // Number of outputs per iteration
+  virtual unsigned int noutputs(unsigned int r) {
+    return complexOutputs(r);
   }
 
   unsigned int workSizeV(unsigned int A, unsigned int B) {
@@ -309,8 +314,6 @@ public:
 
   double meantime(Application& app, double *Stdev=NULL);
   double report(Application& app);
-
-  unsigned int residue(unsigned int r, unsigned int q);
 };
 
 class fftPad : public fftBase {
@@ -566,7 +569,7 @@ public:
   void forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W);
   void backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W);
 
-  // Number of real values per residue
+  // Number of real outputs per residue
   unsigned int noutputs() {
     return C*m*(q == 1 ? 1 : p/2);
   }
