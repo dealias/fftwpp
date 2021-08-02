@@ -735,8 +735,10 @@ public:
         for(unsigned int a=1; a < A; ++a)
           Fp[a]=this->F[a-1];
         extra=1;
-      } else
+      } else {
+        Fp=NULL;
         extra=0;
+      }
 
       if(A > B+extra && !fft->inplace && workSizeW <= outputSize) {
         W0=this->F[B];

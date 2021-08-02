@@ -416,6 +416,7 @@ void fftPad::init()
           if(repad())
             Pad=&fftBase::padMany;
         }
+        overwrite=inplace && L == p*m && n == 2 && D == 1;
         Q=q;
       }
     }
@@ -536,6 +537,17 @@ void fftPad::backwardExplicitMany(Complex *F, Complex *f, unsigned int, Complex 
 
 void fftPad::forward1(Complex *f, Complex *F0, unsigned int r0, Complex *W)
 {
+  if(r0 == R) {
+    Complex *Zetar=Zetaqm+m;
+    PARALLEL(
+      for(unsigned int s=0; s < m; ++s)
+        F0[s]=Zetar[s]*f[s];
+      );
+    fftm->fft(f);
+    fftm->fft(F0);
+    return;
+  }
+
   if(W == NULL) W=F0;
 
   Complex *W0=W;
@@ -638,6 +650,22 @@ void fftPad::forward1(Complex *f, Complex *F0, unsigned int r0, Complex *W)
 }
 
 void fftPad::forward1Many(Complex *f, Complex *F, unsigned int r, Complex *W) {
+  if(r == R) {
+    Complex *Zetar=Zetaqm+m;
+    PARALLEL(
+      for(unsigned int s=0; s < m; ++s) {
+        unsigned int Cs=C*s;
+        Complex *fs=f+Cs;
+        Complex *Fs=F+Cs;
+        Complex Zeta=Zetar[s];
+        for(unsigned int c=0; c < C; ++c)
+          Fs[c]=Zeta*fs[c];
+      });
+    fftm->fft(f);
+    fftm->fft(F);
+    return;
+  }
+
   if(W == NULL) W=F;
 
   if(inplace) {
@@ -654,7 +682,7 @@ void fftPad::forward1Many(Complex *f, Complex *F, unsigned int r, Complex *W) {
       return fftm->fft(f,F);
     PARALLEL(
       for(unsigned int s=0; s < L; ++s) {
-        unsigned Cs=C*s;
+        unsigned int Cs=C*s;
         Complex *Fs=W+Cs;
         Complex *fs=f+Cs;
         for(unsigned int c=0; c < C; ++c)
@@ -668,7 +696,7 @@ void fftPad::forward1Many(Complex *f, Complex *F, unsigned int r, Complex *W) {
     Complex *Zetar=Zetaqm+m*r;
     PARALLEL(
       for(unsigned int s=1; s < L; ++s) {
-        unsigned Cs=C*s;
+        unsigned int Cs=C*s;
         Complex *Fs=W+Cs;
         Complex *fs=f+Cs;
         Vec Zeta=LOAD(Zetar+s);
@@ -1080,6 +1108,18 @@ void fftPad::forwardInnerMany(Complex *f, Complex *F, unsigned int r, Complex *W
 
 void fftPad::backward1(Complex *F0, Complex *f, unsigned int r0, Complex *W)
 {
+  if(r0 == R) {
+    ifftm->fft(f);
+    ifftm->fft(F0);
+
+    Complex *Zetar=Zetaqm+m;
+    PARALLEL(
+      for(unsigned int s=0; s < m; ++s)
+        f[s] += conj(Zetar[s])*F0[s];
+      );
+    return;
+  }
+
   if(W == NULL) W=F0;
 
   if(r0 == 0 && !inplace && D == 1 && L >= m)
@@ -1142,6 +1182,23 @@ void fftPad::backward1(Complex *F0, Complex *f, unsigned int r0, Complex *W)
 
 void fftPad::backward1Many(Complex *F, Complex *f, unsigned int r, Complex *W)
 {
+  if(r == R) {
+    ifftm->fft(f);
+    ifftm->fft(F);
+
+    Complex *Zetar=Zetaqm+m;
+    PARALLEL(
+      for(unsigned int s=0; s < m; ++s) {
+        unsigned int Cs=C*s;
+        Complex *fs=f+Cs;
+        Complex *Fs=F+Cs;
+        Complex Zeta=conj(Zetar[s]);
+        for(unsigned int c=0; c < C; ++c)
+          fs[c] += Zeta*Fs[c];
+      });
+    return;
+  }
+
   if(W == NULL) W=F;
 
   if(r == 0 && !inplace && L >= m)
@@ -4222,7 +4279,7 @@ Convolution::~Convolution()
     if(allocateW)
       deleteAlign(W);
 
-    if(loop2)
+    if(Fp)
       delete[] Fp;
 
     if(allocateV) {
