@@ -1877,8 +1877,6 @@ void fftPadCentered::backwardShifted(Complex *F, Complex *f, unsigned int r, Com
 
 void fftPadCentered::forward2C(Complex *f, Complex *F0, unsigned int r0, Complex *W)
 {
-  if(W == NULL) W=F0;
-
   if(r0 == R) {
     Complex *g=f+m;
     Complex *Zetar=Zetaqm+(m+1);
@@ -1911,6 +1909,8 @@ void fftPadCentered::forward2C(Complex *f, Complex *F0, unsigned int r0, Complex
     fftm->fft(F0);
     return;
   }
+
+  if(W == NULL) W=F0;
 
   Complex *W0=W;
   unsigned int dr0=dr;
