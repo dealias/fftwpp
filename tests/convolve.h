@@ -95,6 +95,7 @@ public:
   bool inplace;
   bool overwrite;
   FFTcall Forward,Backward;
+  FFTcall ForwardAll,BackwardAll;
   FFTPad Pad;
 protected:
   Complex *Zetaqp;
@@ -222,27 +223,34 @@ public:
 
   virtual void forward1(Complex *f, Complex *F0, unsigned int r0, Complex *W) {
   }
-
+  virtual void forward1All(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
   virtual void forward1Many(Complex *f, Complex *F, unsigned int r, Complex *W) {}
-
+  virtual void forward1ManyAll(Complex *f, Complex *F, unsigned int r, Complex *W) {}
   virtual void forward2(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
+  virtual void forward2All(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
   virtual void forward2Many(Complex *f, Complex *F, unsigned int r, Complex *W) {}
+  virtual void forward2ManyAll(Complex *f, Complex *F, unsigned int r, Complex *W) {}
   virtual void forward2C(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
+  virtual void forward2CAll(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
   virtual void forward2CMany(Complex *f, Complex *F, unsigned int r, Complex *W) {}
-
+  virtual void forward2CManyAll(Complex *f, Complex *F, unsigned int r, Complex *W) {}
   virtual void forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
   virtual void forwardInnerMany(Complex *f, Complex *F, unsigned int r, Complex *W) {}
   virtual void forwardInnerC(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
   virtual void forwardInnerCMany(Complex *f, Complex *F, unsigned int r, Complex *W) {}
 
   virtual void backward1(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
+  virtual void backward1All(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
   virtual void backward1Many(Complex *F, Complex *f, unsigned int r, Complex *W) {}
-
+  virtual void backward1ManyAll(Complex *F, Complex *f, unsigned int r, Complex *W) {}
   virtual void backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
+  virtual void backward2All(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
   virtual void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W) {}
+  virtual void backward2ManyAll(Complex *F, Complex *f, unsigned int r, Complex *W) {}
   virtual void backward2C(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
+  virtual void backward2CAll(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
   virtual void backward2CMany(Complex *F, Complex *f, unsigned int r, Complex *W) {}
-
+  virtual void backward2CManyAll(Complex *F, Complex *f, unsigned int r, Complex *W) {}
   virtual void backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
   virtual void backwardInnerMany(Complex *F, Complex *f, unsigned int r, Complex *W) {}
   virtual void backwardInnerC(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
@@ -310,6 +318,10 @@ public:
 
   unsigned int repad() {
     return !inplace && L < m;
+  }
+
+  bool Overwrite(unsigned int A, unsigned int B) {
+    return overwrite && A >= B;
   }
 
   double meantime(Application& app, double *Stdev=NULL);
@@ -387,15 +399,14 @@ public:
 
   // p=1 && C=1
   void forward1(Complex *f, Complex *F0, unsigned int r0, Complex *W);
-
+  void forward1All(Complex *f, Complex *F0, unsigned int r0, Complex *W);
   void forward1Many(Complex *f, Complex *F, unsigned int r, Complex *W);
-
+  void forward1ManyAll(Complex *f, Complex *F, unsigned int r, Complex *W);
   void forward2(Complex *f, Complex *F0, unsigned int r0, Complex *W);
-
+  void forward2All(Complex *f, Complex *F0, unsigned int r0, Complex *W);
   void forward2Many(Complex *f, Complex *F, unsigned int r, Complex *W);
-
+  void forward2ManyAll(Complex *f, Complex *F, unsigned int r, Complex *W);
   void forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W);
-
   void forwardInnerMany(Complex *f, Complex *F, unsigned int r, Complex *W);
 
 // Compute an inverse fft of length N=m*q unpadded back
@@ -403,13 +414,13 @@ public:
 // input and output arrays must be distinct
 // Input F destroyed
   void backward1(Complex *F0, Complex *f, unsigned int r0, Complex *W);
-
+  void backward1All(Complex *F0, Complex *f, unsigned int r0, Complex *W);
   void backward1Many(Complex *F, Complex *f, unsigned int r, Complex *W);
-
+  void backward1ManyAll(Complex *F, Complex *f, unsigned int r, Complex *W);
   void backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W);
-
+  void backward2All(Complex *F0, Complex *f, unsigned int r0, Complex *W);
   void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W);
-
+  void backward2ManyAll(Complex *F, Complex *f, unsigned int r, Complex *W);
   void backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W);
   void backwardInnerMany(Complex *F, Complex *f, unsigned int r, Complex *W);
 };
@@ -488,10 +499,14 @@ public:
   void backwardShifted(Complex *F, Complex *f, unsigned int r, Complex *W);
 
   void forward2C(Complex *f, Complex *F0, unsigned int r0, Complex *W);
+  void forward2CAll(Complex *f, Complex *F0, unsigned int r0, Complex *W);
   void forward2CMany(Complex *f, Complex *F, unsigned int r, Complex *W);
+  void forward2CManyAll(Complex *f, Complex *F, unsigned int r, Complex *W);
 
   void backward2C(Complex *F0, Complex *f, unsigned int r0, Complex *W);
+  void backward2CAll(Complex *F0, Complex *f, unsigned int r0, Complex *W);
   void backward2CMany(Complex *F, Complex *f, unsigned int r, Complex *W);
+  void backward2CManyAll(Complex *F, Complex *f, unsigned int r, Complex *W);
 
   void forwardInnerC(Complex *f, Complex *F0, unsigned int r0, Complex *W);
   void forwardInnerCMany(Complex *f, Complex *F0, unsigned int r0, Complex *W);
@@ -593,11 +608,7 @@ class ForwardBackward : public Application {
 protected:
   unsigned int A;
   unsigned int B;
-  unsigned int C;
-  unsigned int D;
-  unsigned int D0;
-  unsigned int dr;
-  unsigned int Q;
+  unsigned int R;
   Complex **f;
   Complex **F;
   Complex **h;
@@ -684,8 +695,13 @@ public:
   }
 
   void init(Complex *F=NULL, Complex *V=NULL) {
-    Forward=fft->Forward;
-    Backward=fft->Backward;
+    if(fft->Overwrite(A,B)) {
+      Forward=fft->ForwardAll;
+      Backward=fft->BackwardAll;
+    } else {
+      Forward=fft->Forward;
+      Backward=fft->Backward;
+    }
 
     L=fft->L;
     q=fft->q;
@@ -746,10 +762,6 @@ public:
       } else
         W0=this->W;
     }
-  }
-
-  bool overwrite() {
-    return fft->overwrite && A >= B;
   }
 
   void initV() {
@@ -999,11 +1011,11 @@ public:
 // f is a pointer to A distinct data blocks each of size Lx*Ly,
 // shifted by offset.
   void convolveRaw(Complex **f, multiplier *mult, unsigned int offset=0) {
-    if(fftx->overwrite) {
-      forward(f,F,Rx,offset);
+    if(fftx->Overwrite(A,B)) {
+      forward(f,F,0,offset);
       subconvolution(f,mult,2*Nx,Ly,offset);
       subconvolution(F,mult,Nx,Ly,offset);
-      backward(F,f,Rx,offset);
+      backward(F,f,0,offset);
     } else {
       if(loop2) {
         for(unsigned int a=0; a < A; ++a)
