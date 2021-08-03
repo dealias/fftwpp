@@ -237,6 +237,7 @@ public:
   virtual void forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
   virtual void forwardInnerMany(Complex *f, Complex *F, unsigned int r, Complex *W) {}
   virtual void forwardInnerC(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
+  virtual void forwardInnerCAll(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
   virtual void forwardInnerCMany(Complex *f, Complex *F, unsigned int r, Complex *W) {}
 
   virtual void backward1(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
@@ -254,6 +255,7 @@ public:
   virtual void backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
   virtual void backwardInnerMany(Complex *F, Complex *f, unsigned int r, Complex *W) {}
   virtual void backwardInnerC(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
+  virtual void backwardInnerCAll(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
   virtual void backwardInnerCMany(Complex *F, Complex *f, unsigned int r, Complex *W) {}
 
   unsigned int normalization() {
@@ -509,8 +511,10 @@ public:
   void backward2CManyAll(Complex *F, Complex *f, unsigned int r, Complex *W);
 
   void forwardInnerC(Complex *f, Complex *F0, unsigned int r0, Complex *W);
+  void forwardInnerCAll(Complex *f, Complex *F0, unsigned int r0, Complex *W);
   void forwardInnerCMany(Complex *f, Complex *F0, unsigned int r0, Complex *W);
   void backwardInnerC(Complex *F0, Complex *f, unsigned int r0, Complex *W);
+  void backwardInnerCAll(Complex *F0, Complex *f, unsigned int r0, Complex *W);
   void backwardInnerCMany(Complex *F0, Complex *f, unsigned int r0, Complex *W);
 };
 
