@@ -201,7 +201,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
 
   T=DBL_MAX;
   unsigned int i=0;
-  double endOpt=max(sqrt(M),3); // Here we use 3 because 2 is the smallest value of m0 we allow.
+  unsigned int endOpt=(unsigned int)(sqrt(M));
   unsigned int Mmore=M+max(M*epsilon,1);
   unsigned int ub=Mmore;
   unsigned int lb=M;
