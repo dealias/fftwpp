@@ -883,7 +883,6 @@ public:
   // W is an optional work array of size fftx->workSizeW(),
   //   call fftx->pad() if changed between calls to convolve(),
   // V is an optional work array of size B*fftx->workSizeV(A,B)
-  //    (only needed for inplace usage)
   Convolution2(fftPad &fftx, Convolution &convolvey,
                Complex *F=NULL, Complex *W=NULL, Complex *V=NULL) :
     fftx(&fftx), ffty(NULL), convolvey(&convolvey), W(W),
@@ -1046,9 +1045,8 @@ public:
           (fftx->*Backward)(Fp[b],f[b]+offset,r,W0);
       } else {
         unsigned int Offset;
-        bool useV=nloops > 1;
         Complex **h0;
-        if(useV) {
+        if(nloops > 1) {
           if(!V) initV();
           h0=V;
           Offset=0;
@@ -1063,7 +1061,7 @@ public:
           backward(F,h0,rx,Offset);
         }
 
-        if(useV) {
+        if(nloops > 1) {
           for(unsigned int b=0; b < B; ++b) {
             Complex *fb=f[b]+offset;
             Complex *hb=h0[b];
@@ -1092,7 +1090,6 @@ public:
   // W is an optional work array of size fftx->workSizeW(),
   //    call fftx->pad() if changed between calls to convolve()
   // V is an optional work array of size B*fftx->workSizeV(A,B)
-  //    (only needed for inplace usage)
   ConvolutionHermitian2(fftPadCentered &fftx, ConvolutionHermitian &convolvey,
                         Complex *F=NULL, Complex *W=NULL, Complex *V=NULL) {
     this->fftx=&fftx;

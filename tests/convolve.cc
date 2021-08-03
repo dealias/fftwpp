@@ -208,7 +208,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   unsigned int stop=M-1;
   unsigned int m0=ub;
   unsigned int denom=ceilquotient(M,centered ? ceilquotient(L,2) : L);
-  unsigned int mixedLimit=L/2; // For m0<mixedLimit, we only consider pure powers.
+  unsigned int mixedLimit=L; // For m0 < mixedLimit, we only consider pure powers.
 
   bool mixed=true;
 
@@ -216,7 +216,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
     check(L,M,app,C,mOption,fixed,true,centered);
   else
     while(true){
-      //cout<<"m0="<<m0<<endl;
+//      cout << "m0=" << m0 << endl;
       m0=prevfftsize(m0-1,mixed);
       if(mixed == true && m0 < mixedLimit) mixed=false;
       if(m0 < lb){
@@ -4938,9 +4938,8 @@ void Convolution::convolveRaw(Complex **f, multiplier *mult, unsigned int offset
         (fft->*Pad)(W);
       } else {
         unsigned int Offset;
-        bool useV=nloops > 1;
         Complex **h0;
-        if(useV) {
+        if(nloops > 1) {
           if(!V) initV();
           h0=V;
           Offset=0;
@@ -4960,7 +4959,7 @@ void Convolution::convolveRaw(Complex **f, multiplier *mult, unsigned int offset
           (fft->*Pad)(W);
         }
 
-        if(useV) {
+        if(nloops > 1) {
           for(unsigned int b=0; b < B; ++b) {
             Complex *fb=f[b]+offset;
             Complex *hb=h0[b];
