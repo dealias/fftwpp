@@ -239,6 +239,7 @@ public:
   virtual void forwardInnerC(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
   virtual void forwardInnerCAll(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
   virtual void forwardInnerCMany(Complex *f, Complex *F, unsigned int r, Complex *W) {}
+  virtual void forwardInnerCManyAll(Complex *f, Complex *F, unsigned int r, Complex *W) {}
 
   virtual void backward1(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
   virtual void backward1All(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
@@ -257,6 +258,7 @@ public:
   virtual void backwardInnerC(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
   virtual void backwardInnerCAll(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
   virtual void backwardInnerCMany(Complex *F, Complex *f, unsigned int r, Complex *W) {}
+  virtual void backwardInnerCManyAll(Complex *F, Complex *f, unsigned int r, Complex *W) {}
 
   unsigned int normalization() {
     return M;
@@ -513,9 +515,11 @@ public:
   void forwardInnerC(Complex *f, Complex *F0, unsigned int r0, Complex *W);
   void forwardInnerCAll(Complex *f, Complex *F0, unsigned int r0, Complex *W);
   void forwardInnerCMany(Complex *f, Complex *F0, unsigned int r0, Complex *W);
+  void forwardInnerCManyAll(Complex *f, Complex *F0, unsigned int r0, Complex *W);
   void backwardInnerC(Complex *F0, Complex *f, unsigned int r0, Complex *W);
   void backwardInnerCAll(Complex *F0, Complex *f, unsigned int r0, Complex *W);
   void backwardInnerCMany(Complex *F0, Complex *f, unsigned int r0, Complex *W);
+  void backwardInnerCManyAll(Complex *F0, Complex *f, unsigned int r0, Complex *W);
 };
 
 class fftPadHermitian : public fftBase {

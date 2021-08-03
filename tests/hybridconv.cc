@@ -1,6 +1,6 @@
 #include "convolve.h"
 
-#define OUTPUT 1
+#define OUTPUT 0
 #define CENTERED 0
 
 using namespace std;
@@ -16,7 +16,7 @@ unsigned int M=1024; // minimum padded length
 
 int main(int argc, char* argv[])
 {
-  fftw::maxthreads=1;//get_max_threads();
+  fftw::maxthreads=get_max_threads();
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
 #if OUTPUT
   unsigned int K=1;
 #else
-  unsigned int K=100000;
+  unsigned int K=100;
 #endif
   double t0=totalseconds();
 
