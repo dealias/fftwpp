@@ -546,8 +546,8 @@ void fftPad::backwardExplicitMany(Complex *F, Complex *f, unsigned int, Complex 
 
 void fftPad::forward1All(Complex *f, Complex *F0, unsigned int, Complex *W)
 {
-  Complex *Zetar=Zetaqm+m;
   F0[0]=f[0];
+  Complex *Zetar=Zetaqm+m;
   PARALLEL(
     for(unsigned int s=1; s < m; ++s)
       F0[s]=Zetar[s]*f[s];
@@ -1202,8 +1202,8 @@ void fftPad::backward1All(Complex *F0, Complex *f, unsigned int, Complex *)
   ifftm->fft(f);
   ifftm->fft(F0);
 
-  Complex *Zetar=Zetaqm+m;
   f[0] += F0[0];
+  Complex *Zetar=Zetaqm+m;
   PARALLEL(
     for(unsigned int s=1; s < m; ++s)
       f[s] += conj(Zetar[s])*F0[s];

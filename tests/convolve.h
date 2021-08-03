@@ -892,16 +892,21 @@ public:
   }
 
   void init(Complex *F=NULL, Complex *V=NULL) {
-    Forward=fftx->Forward;
-    Backward=fftx->Backward;
+    A=convolvey->A;
+    B=convolvey->B;
+
+    if(fftx->Overwrite(A,B)) {
+      Forward=fftx->ForwardAll;
+      Backward=fftx->BackwardAll;
+    } else {
+      Forward=fftx->Forward;
+      Backward=fftx->Backward;
+    }
 
     if(!fftx->inplace && !W) {
       allocateW=true;
       W=utils::ComplexAlign(fftx->workSizeW());
     }
-
-    A=convolvey->A;
-    B=convolvey->B;
 
     unsigned int c=fftx->outputSize();
 
@@ -1021,7 +1026,7 @@ public:
   void convolveRaw(Complex **f, multiplier *mult, unsigned int offset=0) {
     if(fftx->Overwrite(A,B)) {
       forward(f,F,0,offset);
-      subconvolution(f,mult,2*Nx,Ly,offset);
+      subconvolution(f,mult,(fftx->n-1)*Nx,Ly,offset);
       subconvolution(F,mult,Nx,Ly,offset);
       backward(F,f,0,offset);
     } else {
