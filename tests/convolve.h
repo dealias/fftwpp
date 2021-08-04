@@ -67,15 +67,18 @@ class fftBase;
 typedef void (fftBase::*FFTcall)(Complex *f, Complex *F, unsigned int r, Complex *W);
 typedef void (fftBase::*FFTPad)(Complex *W);
 
-class Application {
+class Application : public ThreadBase
+{
 public:
-  Application() {};
+  Application(unsigned int threads=fftw::maxthreads) : ThreadBase(threads) {
+    cout << "Using " << threads << " threads." << endl << endl;
+  };
   virtual void init(fftBase &fft)=0;
   virtual void clear()=0;
   virtual double time(fftBase &fft, unsigned int K)=0;
 };
 
-class fftBase {
+class fftBase : public ThreadBase {
 public:
   unsigned int L; // number of unpadded Complex data values
   unsigned int M; // minimum number of padded Complex data values
@@ -142,19 +145,19 @@ public:
   }
 
   fftBase(unsigned int L, unsigned int M, unsigned int C,
-          bool centered=false) :
-    L(L), M(M), C(C), centered(centered) {}
+          unsigned int threads=fftw::maxthreads, bool centered=false) :
+    ThreadBase(threads), L(L), M(M), C(C), centered(centered) {}
 
   fftBase(unsigned int L, unsigned int M, unsigned int C,
           unsigned int m, unsigned int q, unsigned int D,
-          bool centered=false) :
-    L(L), M(M), C(C), m(m), p(utils::ceilquotient(L,m)), q(q), D(D),
-    centered(centered) {}
+          unsigned int threads=fftw::maxthreads, bool centered=false) :
+    ThreadBase(threads), L(L), M(M), C(C), m(m),
+    p(utils::ceilquotient(L,m)), q(q), D(D), centered(centered) {}
 
   fftBase(unsigned int L, unsigned int M, Application& app,
           unsigned int C=1, bool Explicit=false, bool fixed=false,
           bool centered=false) :
-    L(L), M(M), C(C), centered(centered) {}
+    ThreadBase(app.Threads()), L(L), M(M), C(C), centered(centered) {}
 
   virtual ~fftBase();
 
@@ -352,18 +355,20 @@ public:
     double time(unsigned int L, unsigned int M, unsigned int C,
                 unsigned int m, unsigned int q,unsigned int D,
                 Application &app) {
-      fftPad fft(L,M,C,m,q,D,false);
+      fftPad fft(L,M,C,m,q,D,app.Threads(),false);
       return fft.meantime(app);
     }
   };
 
   fftPad(unsigned int L, unsigned int M, unsigned int C,
-         bool centered) : fftBase(L,M,C,centered) {};
+         unsigned int threads=fftw::maxthreads, bool centered=false) :
+    fftBase(L,M,C,threads,centered) {};
 
   // Compute an fft padded to N=m*q >= M >= L
   fftPad(unsigned int L, unsigned int M, unsigned int C,
-         unsigned int m, unsigned int q,unsigned int D, bool centered=false) :
-    fftBase(L,M,C,m,q,D,centered) {
+         unsigned int m, unsigned int q, unsigned int D,
+         unsigned int threads=fftw::maxthreads, bool centered=false) :
+    fftBase(L,M,C,m,q,D,threads,centered) {
     Opt opt;
     if(q > 1 && !opt.valid(D,p,C)) invalid();
     init();
@@ -448,18 +453,18 @@ public:
     }
 
     double time(unsigned int L, unsigned int M, unsigned int C,
-                unsigned int m, unsigned int q,unsigned int D,
+                unsigned int m, unsigned int q, unsigned int D,
                 Application &app) {
-      fftPadCentered fft(L,M,C,m,q,D);
+      fftPadCentered fft(L,M,C,m,q,D,app.Threads());
       return fft.meantime(app);
     }
   };
 
   // Compute an fft padded to N=m*q >= M >= L
   fftPadCentered(unsigned int L, unsigned int M, unsigned int C,
-                 unsigned int m, unsigned int q,unsigned int D,
-                 bool fast=true) :
-    fftPad(L,M,C,m,q,D,true) {
+                 unsigned int m, unsigned int q, unsigned int D,
+                 unsigned int threads=fftw::maxthreads, bool fast=true) :
+    fftPad(L,M,C,m,q,D,threads,true) {
     Opt opt;
     if(q > 1 && !opt.valid(D,p,C)) invalid();
     init(fast);
@@ -471,7 +476,7 @@ public:
   fftPadCentered(unsigned int L, unsigned int M, Application& app,
                  unsigned int C=1, bool Explicit=false, bool fixed=false,
                  bool fast=true) :
-    fftPad(L,M,C,true) {
+    fftPad(L,M,C,app.Threads(),true) {
     Opt opt=Opt(L,M,app,C,Explicit,fixed);
     m=opt.m;
     if(Explicit)
@@ -547,16 +552,15 @@ public:
     double time(unsigned int L, unsigned int M, unsigned int C,
                 unsigned int m, unsigned int q, unsigned int D,
                 Application &app) {
-      fftPadHermitian fft(L,M,C,m,q,D);
+      fftPadHermitian fft(L,M,C,m,q,D,app.Threads());
       return fft.meantime(app);
     }
-
-
   };
 
   fftPadHermitian(unsigned int L, unsigned int M, unsigned int C,
-                  unsigned int m, unsigned int q, unsigned int D) :
-    fftBase(L,M,C,m,q,D,true) {
+                  unsigned int m, unsigned int q, unsigned int D,
+                  unsigned int threads=fftw::maxthreads) :
+    fftBase(L,M,C,m,q,D,threads,true) {
     Opt opt;
     if(q > 1 && !opt.valid(D,p,C)) invalid();
     init();
@@ -623,8 +627,9 @@ protected:
   Complex *W;
   FFTcall Forward,Backward;
 public:
-  ForwardBackward(unsigned int A, unsigned int B) :
-    A(A), B(B), f(NULL), F(NULL), h(NULL), W(NULL) {
+  ForwardBackward(unsigned int A, unsigned int B,
+                  unsigned int threads=fftw::maxthreads) :
+    Application(threads), A(A), B(B), f(NULL), F(NULL), h(NULL), W(NULL) {
   }
 
   virtual ~ForwardBackward() {
@@ -680,9 +685,10 @@ public:
   // A is the number of inputs.
   // B is the number of outputs.
   Convolution(unsigned int L, unsigned int M,
-              unsigned int A, unsigned int B) :
+              unsigned int A, unsigned int B,
+              unsigned int threads=fftw::maxthreads) :
     A(A), B(B), W(NULL), allocate(false) {
-    ForwardBackward FB(A,B);
+    ForwardBackward FB(A,B,threads);
     fft=new fftPad(L,M,FB);
     init();
   }
@@ -811,6 +817,11 @@ public:
   //   if changed between calls to convolve(), be sure to call pad()
   // V is an optional work array of size B*fft->workSizeV(A,B)
   //   (for inplace usage)
+  ConvolutionHermitian(unsigned int L, unsigned int M,
+                       unsigned int A, unsigned int B,
+                       unsigned int threads=fftw::maxthreads) :
+    Convolution(L,M,A,B,threads) {}
+
   ConvolutionHermitian(fftPadHermitian &fft,
                        unsigned int A, unsigned int B,
                        Complex *F=NULL, Complex *W=NULL, Complex *V=NULL) :
@@ -834,7 +845,7 @@ inline void HermitianSymmetrizeX(unsigned int mx, unsigned int my,
   }
 }
 
-class Convolution2 {
+class Convolution2 : public ThreadBase {
 public:
   fftBase *fftx;
   fftBase *ffty;
@@ -862,7 +873,8 @@ protected:
   FFTcall Forward,Backward;
   unsigned int nloops;
 public:
-  Convolution2() : W(NULL), allocate(false), allocateW(false) {}
+  Convolution2(unsigned int threads=fftw::maxthreads) :
+    ThreadBase(threads), W(NULL), allocate(false), allocateW(false) {}
 
   // Lx,Ly: x,y dimensions of input data
   // Mx,My: x,y dimensions of transformed data, including padding
@@ -870,9 +882,10 @@ public:
   // B: number of outputs
   Convolution2(unsigned int Lx, unsigned int Ly,
                unsigned int Mx, unsigned int My,
-               unsigned int A, unsigned int B) :
-    W(NULL), allocate(false), allocateW(false) {
-    FB=new ForwardBackward(A,B);
+               unsigned int A, unsigned int B,
+               unsigned int threads=fftw::maxthreads) :
+    ThreadBase(threads), W(NULL), allocate(false), allocateW(false) {
+    FB=new ForwardBackward(A,B,threads);
     fftx=new fftPad(Lx,Mx,*FB,Ly);
     ffty=new fftPad(Ly,My,*FB);
     convolvey=new Convolution(*ffty,A,B);
@@ -884,8 +897,9 @@ public:
   //   call fftx->pad() if changed between calls to convolve(),
   // V is an optional work array of size B*fftx->workSizeV(A,B)
   Convolution2(fftPad &fftx, Convolution &convolvey,
+               unsigned int threads=fftw::maxthreads,
                Complex *F=NULL, Complex *W=NULL, Complex *V=NULL) :
-    fftx(&fftx), ffty(NULL), convolvey(&convolvey), W(W),
+    ThreadBase(threads), fftx(&fftx), ffty(NULL), convolvey(&convolvey), W(W),
     allocate(false), allocateW(false) {
     init(F,V);
   }
@@ -1086,29 +1100,30 @@ public:
 
 class ConvolutionHermitian2 : public Convolution2 {
 public:
-  // F is an optional work array of size max(A,B)*fftx->outputSize(),
-  // W is an optional work array of size fftx->workSizeW(),
-  //    call fftx->pad() if changed between calls to convolve()
-  // V is an optional work array of size B*fftx->workSizeV(A,B)
-  ConvolutionHermitian2(fftPadCentered &fftx, ConvolutionHermitian &convolvey,
-                        Complex *F=NULL, Complex *W=NULL, Complex *V=NULL) {
-    this->fftx=&fftx;
-    this->convolvey=&convolvey;
-    init(F,V);
-    Ly=utils::ceilquotient(convolvey.L,2);
-  }
-
   ConvolutionHermitian2(unsigned int Lx, unsigned int Ly,
                         unsigned int Mx, unsigned int My,
-                        unsigned int A, unsigned int B) {
+                        unsigned int A, unsigned int B,
+                        unsigned int threads=fftw::maxthreads) :
+    Convolution2(threads) {
     unsigned int Hy=utils::ceilquotient(Ly,2);
-    FB=new ForwardBackward(A,B);
+    FB=new ForwardBackward(A,B,threads);
     fftx=new fftPadCentered(Lx,Mx,*FB,Hy);
     fftPadHermitian *ffty=new fftPadHermitian(Ly,My,*FB);
     convolvey=new ConvolutionHermitian(*ffty,A,B);
     this->ffty=ffty;
     init();
     this->Ly=Hy;
+  }
+
+  // F is an optional work array of size max(A,B)*fftx->outputSize(),
+  // W is an optional work array of size fftx->workSizeW(),
+  //    call fftx->pad() if changed between calls to convolve()
+  // V is an optional work array of size B*fftx->workSizeV(A,B)
+  ConvolutionHermitian2(fftPadCentered &fftx, ConvolutionHermitian &convolvey,
+                        unsigned int threads=fftw::maxthreads,
+                        Complex *F=NULL, Complex *W=NULL, Complex *V=NULL) :
+    Convolution2(fftx,convolvey,threads,F,W,V) {
+    Ly=utils::ceilquotient(convolvey.L,2);
   }
 };
 
