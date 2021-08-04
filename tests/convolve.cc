@@ -3892,7 +3892,7 @@ void fftPadHermitian::init()
       }
       Q=n=q/p2;
 
-      Zetaqp0=ComplexAlign((n-1)*p2); // CHECK
+      Zetaqp0=ComplexAlign((n-1)*p2);
       Zetaqp=Zetaqp0-p2-1;
       for(unsigned int r=1; r < n; ++r)
         for(unsigned int t=1; t <= p2; ++t)
@@ -3943,6 +3943,7 @@ fftPadHermitian::~fftPadHermitian()
   if(p > 2) {
     delete fftp;
     delete ifftp;
+    deleteAlign(Zetaqp0);
   }
 }
 
