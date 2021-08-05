@@ -180,9 +180,14 @@ public:
   }
 
   virtual void forwardShiftedExplicit(Complex *f, Complex *F, unsigned int r, Complex *W) {}
+  virtual void forwardShiftedExplicitMany(Complex *f, Complex *F, unsigned int r, Complex *W) {}
   virtual void backwardShiftedExplicit(Complex *F, Complex *f, unsigned int r, Complex *W) {}
-  virtual void forwardShifted(Complex *f, Complex *F, unsigned int r, Complex *W) {}
-  virtual void backwardShifted(Complex *F, Complex *f, unsigned int r, Complex *W) {}
+  virtual void backwardShiftedExplicitMany(Complex *F, Complex *f, unsigned int r, Complex *W) {}
+
+  virtual void forwardShiftedExplicitSlow(Complex *f, Complex *F, unsigned int r, Complex *W) {}
+  virtual void forwardShiftedExplicitManySlow(Complex *f, Complex *F, unsigned int r, Complex *W) {}
+  virtual void backwardShiftedExplicitSlow(Complex *F, Complex *f, unsigned int r, Complex *W) {}
+  virtual void backwardShiftedExplicitManySlow(Complex *F, Complex *f, unsigned int r, Complex *W) {}
 
   virtual void forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W)=0;
   virtual void forwardExplicitMany(Complex *f, Complex *F, unsigned int, Complex *W)=0;
@@ -497,15 +502,15 @@ public:
   void init(bool fast);
 
   void forwardShiftedExplicit(Complex *f, Complex *F, unsigned int r, Complex *W);
+  void forwardShiftedExplicitMany(Complex *f, Complex *F, unsigned int r, Complex *W);
   void backwardShiftedExplicit(Complex *F, Complex *f, unsigned int r, Complex *W);
+  void backwardShiftedExplicitMany(Complex *F, Complex *f, unsigned int r, Complex *W);
 
   void initShift();
-
-  void forwardShift(Complex *F, unsigned int r0);
-  void backwardShift(Complex *F, unsigned int r0);
-
-  void forwardShifted(Complex *f, Complex *F, unsigned int r, Complex *W);
-  void backwardShifted(Complex *F, Complex *f, unsigned int r, Complex *W);
+  void forwardShiftedExplicitSlow(Complex *f, Complex *F, unsigned int r, Complex *W);
+  void forwardShiftedExplicitManySlow(Complex *f, Complex *F, unsigned int r, Complex *W);
+  void backwardShiftedExplicitSlow(Complex *F, Complex *f, unsigned int r, Complex *W);
+  void backwardShiftedExplicitManySlow(Complex *F, Complex *f, unsigned int r, Complex *W);
 
   void forward2C(Complex *f, Complex *F0, unsigned int r0, Complex *W);
   void forward2CAll(Complex *f, Complex *F0, unsigned int r0, Complex *W);
