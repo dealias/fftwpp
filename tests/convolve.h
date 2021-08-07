@@ -647,6 +647,7 @@ public:
   unsigned int L;
   unsigned int A;
   unsigned int B;
+  unsigned int threads;
   double scale;
 protected:
   unsigned int N; // max(A,B)
@@ -670,6 +671,8 @@ protected:
   FFTcall Forward,Backward;
   FFTPad Pad;
 public:
+  Convolution(unsigned int threads=fftw::maxthreads) :
+    threads(threads), W(NULL), allocate(false) {}
   // L, dimension of input data
   // M, dimension of transformed data, including padding
   // A is the number of inputs.
@@ -810,7 +813,15 @@ public:
   ConvolutionHermitian(unsigned int L, unsigned int M,
                        unsigned int A, unsigned int B,
                        unsigned int threads=fftw::maxthreads) :
-    Convolution(L,M,A,B,threads) {}
+    Convolution(threads) {
+    this->L=L;
+    this->A=A;
+    this->B=B;
+
+    ForwardBackward FB(A,B,threads);
+    fft=new fftPadHermitian(L,M,FB);
+    init();
+  }
 
   ConvolutionHermitian(fftPadHermitian &fft,
                        unsigned int A, unsigned int B,
