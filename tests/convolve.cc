@@ -11,7 +11,6 @@
 // Abort timing when best time exceeded
 // Exploit zeta -> -conj(zeta) symmetry for even q
 // Precompute best D and inline options for each m value
-// Only check m <= M/2 and m=M; how many surplus sizes to check?
 // Use experience or heuristics (sparse distribution?) to determine best m value
 // Use power of P values for m when L,M,M-L are powers of P?
 // Multithread
@@ -30,8 +29,7 @@ unsigned int DOption=0;
 
 int IOption=-1;
 
-//unsigned int surplusFFTsizes=25;
-double epsilon=0.1; // TEMPORARY
+double epsilon=0.1;
 
 #ifdef __SSE2__
 const union uvec sse2_pm = {
@@ -1849,9 +1847,10 @@ void fftPadCentered::forwardShiftedExplicitMany(Complex *f, Complex *F, unsigned
 
   PARALLEL(
     for(unsigned int s=1; s < m; s += 2) {
-      for(unsigned int c=0; c < C; ++c) {
-        F[C*s+c] *= -1;
-      }
+      unsigned int Cs=C*s;
+      Complex *Fs=F+Cs;
+      for(unsigned int c=0; c < C; ++c)
+        Fs[c] *= -1;
     });
 }
 
@@ -1859,9 +1858,10 @@ void fftPadCentered::backwardShiftedExplicitMany(Complex *F, Complex *f, unsigne
 {
   PARALLEL(
     for(unsigned int s=1; s < m; s += 2) {
-      for(unsigned int c=0; c < C; ++c) {
-        F[C*s+c] *= -1;
-      }
+      unsigned int Cs=C*s;
+      Complex *Fs=F+Cs;
+      for(unsigned int c=0; c < C; ++c)
+        Fs[c] *= -1;
     });
 
   ifftm->fft(F);
