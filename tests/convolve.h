@@ -672,7 +672,7 @@ protected:
   FFTPad Pad;
 public:
   Convolution(unsigned int threads=fftw::maxthreads) :
-    ThreadBase(threads), W(NULL), allocate(false), allocateF(false) {}
+    ThreadBase(threads), W(NULL), allocate(false) {}
   // L, dimension of input data
   // M, dimension of transformed data, including padding
   // A is the number of inputs.
@@ -680,8 +680,7 @@ public:
   Convolution(unsigned int L, unsigned int M,
               unsigned int A, unsigned int B,
               unsigned int threads=fftw::maxthreads) :
-    ThreadBase(threads), A(A), B(B), W(NULL), allocate(true),
-    allocateF(false) {
+    ThreadBase(threads), A(A), B(B), W(NULL), allocate(true) {
     ForwardBackward FB(A,B,threads);
     fft=new fftPad(L,M,FB);
     init();
@@ -699,8 +698,7 @@ public:
   Convolution(fftBase &fft, unsigned int A, unsigned int B,
               unsigned int threads=fftw::maxthreads,
               Complex *F=NULL, Complex *W=NULL, Complex *V=NULL) :
-    ThreadBase(threads), fft(&fft), A(A), B(B), W(W), allocate(false),
-    allocateF(false) {
+    ThreadBase(threads), fft(&fft), A(A), B(B), W(W), allocate(false) {
     init(F,V);
   }
 
@@ -727,11 +725,12 @@ public:
     N=max(A,B);
     this->F=new Complex*[N];
     if(F) {
+      allocateF=false;
       for(unsigned int i=0; i < N; ++i)
         this->F[i]=F+i*outputSize;
     } else {
       allocateF=true;
-      for(unsigned int i=0; i < N; ++i)
+      for(unsigned int i=0; i < N; ++i) // CHECK performance vs. single block
         this->F[i]=utils::ComplexAlign(outputSize);
     }
 
