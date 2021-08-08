@@ -4929,12 +4929,14 @@ Convolution::~Convolution()
       delete [] V;
   }
 
-  if(allocate) {
+  if(allocateF) {
     unsigned int N=max(A,B);
     for(unsigned int i=0; i < N; ++i)
       deleteAlign(F[i]);
   }
   delete [] F;
+  if(allocate)
+    delete fft;
 }
 
 // f is an array of max(A,B) pointers to distinct data blocks
