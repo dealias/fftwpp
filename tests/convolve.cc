@@ -23,13 +23,12 @@ using namespace Array;
 namespace fftwpp {
 
 unsigned int threads=1;
-
+unsigned int epsilon;
 unsigned int mOption=0;
 unsigned int DOption=0;
 
 int IOption=-1;
 
-double epsilon=0.1;
 
 #ifdef __SSE2__
 const union uvec sse2_pm = {
@@ -88,6 +87,7 @@ unsigned int nextfftsize(unsigned int m)
   }
   return N;
 }
+
 
 unsigned int prevfftsize(unsigned int M, bool mixed)
 {
@@ -198,47 +198,71 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
     return;
 
   T=DBL_MAX;
-  unsigned int i=0;
+
+  bool mixed=true;
   unsigned int endOpt=(unsigned int)(sqrt(M));
+  double epsilon=0.1;
+  unsigned int counterStop=3; //TODO: Change counterStop from command line.
   unsigned int Mmore=M+max(M*epsilon,1);
   unsigned int ub=Mmore;
   unsigned int lb=M;
-  unsigned int stop=M-1;
-  bool mixed=true;
-  unsigned int m0=prevfftsize(ub, mixed)+1;
-  if(m0 < M+1) m0=nextfftsize(M)+1;
-
-  unsigned int denom=ceilquotient(M,centered ? ceilquotient(L,2) : L);
-  unsigned int mixedLimit=L; // For m0 < mixedLimit, we only consider pure powers.
+  unsigned int stop=M;
+  unsigned int m0=M-1;
+  unsigned int denom=ceilquotient(M,centered ? L/2 : L);
+  unsigned int mixedLimit=L/2; // For m0 < mixedLimit, we only consider pure powers.
 
   if(mOption >= 1 && !Explicit)
     check(L,M,app,C,mOption,fixed,true,centered);
-  else
+  else {
+    unsigned int i=0;
     while(true){
-      m0=prevfftsize(m0-1,mixed);
       if(mixed == true && m0 < mixedLimit) mixed=false;
-      if(m0 < lb){
-        double factor=1.0/denom;
-        lb=M*factor;
-        ub=Mmore*factor;
-        denom++;
-        unsigned int p=ceilquotient(L,m0);
-        while(m0 > ub || (centered && p%2 != 0)) {
-          m0=prevfftsize(m0-1,mixed);
-          p=ceilquotient(L,m0);
+      if(mixed) {
+        unsigned int prevm0=m0;
+        m0=nextfftsize(m0+1);
+        if(m0 > ub || i >= counterStop){
+          double factor=1.0/denom;
+          lb=M*factor;
+          ub=Mmore*factor;
+          denom++;
+          m0=nextfftsize(lb);
+          if(m0 < mixedLimit) continue;
+          i=0;
+          unsigned int p=ceilquotient(L,m0);
+          while(m0 == prevm0 || m0 > ub || (centered && p%2 != 0)) {
+            // This code is only used if mixedLimit is set to a low value.
+            double factor=1.0/denom;
+            lb=M*factor;
+            ub=Mmore*factor;
+            denom++;
+            m0=nextfftsize(lb);
+            if(m0 < mixedLimit) break;
+            p=ceilquotient(L,m0);
+          }
+        }
+      } else {
+        m0=prevfftsize(m0-1,mixed);
+        if(m0 < lb){
+          double factor=1.0/denom;
+          lb=M*factor;
+          ub=Mmore*factor;
+          denom++;
+          unsigned int p=ceilquotient(L,m0);
+          while(m0 > ub || (centered && p%2 != 0)) {
+            m0=prevfftsize(m0-1,mixed);
+            p=ceilquotient(L,m0);
+          }
         }
       }
-      //cout << "m0=" << m0 << endl;
       if(Explicit) {
-        if(m0 > stop) break;
-        if(m0 < M) {++i; continue;}
+        if(m0 < stop) break;
         M=m0;
       } else if(m0 < endOpt) break;
-//        } else if(m0 > L) break;
-      if(!fixed || Explicit || M % m0 == 0)
-        check(L,M,app,C,m0,fixed || Explicit,false,centered);
+      //cout<<"m0="<<m0<<endl;
+      check(L,M,app,C,m0,fixed || Explicit,false,centered);
       ++i;
     }
+  }
 
   unsigned int p=ceilquotient(L,m);
   cout << endl;
