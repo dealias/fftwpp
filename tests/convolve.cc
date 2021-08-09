@@ -204,17 +204,17 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   unsigned int ub=Mmore;
   unsigned int lb=M;
   unsigned int stop=M-1;
-  unsigned int m0=ub;
+  bool mixed=true;
+  unsigned int m0=prevfftsize(ub, mixed)+1;
+  if(m0 < M+1) m0=nextfftsize(M)+1;
+
   unsigned int denom=ceilquotient(M,centered ? ceilquotient(L,2) : L);
   unsigned int mixedLimit=L; // For m0 < mixedLimit, we only consider pure powers.
-
-  bool mixed=true;
 
   if(mOption >= 1 && !Explicit)
     check(L,M,app,C,mOption,fixed,true,centered);
   else
     while(true){
-//      cout << "m0=" << m0 << endl;
       m0=prevfftsize(m0-1,mixed);
       if(mixed == true && m0 < mixedLimit) mixed=false;
       if(m0 < lb){
@@ -228,6 +228,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
           p=ceilquotient(L,m0);
         }
       }
+      //cout << "m0=" << m0 << endl;
       if(Explicit) {
         if(m0 > stop) break;
         if(m0 < M) {++i; continue;}
