@@ -193,7 +193,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
                             unsigned int C, bool Explicit, bool fixed,
                             bool centered)
 {
-  double t0=totalseconds();
+  //double t0=totalseconds();
   if(L > M) {
     cerr << "L=" << L << " is greater than M=" << M << "." << endl;
     exit(-1);
@@ -281,8 +281,9 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   cout << "C=" << C << endl;
   cout << "D=" << D << endl;
   cout << "Padding:" << m*p-L << endl;
-  double t=totalseconds();
-  cout<<"Opt Time: "<<t-t0<<endl;
+  
+  //double t=totalseconds();
+  //cout<<"Opt Time: "<<t-t0<<endl;
 }
 
 fftBase::~fftBase()
