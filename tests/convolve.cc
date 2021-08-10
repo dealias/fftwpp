@@ -72,6 +72,12 @@ void realmultbinary(Complex **F, unsigned int offset, unsigned int n,
     );
 }
 
+bool isPow2(unsigned int m)
+{
+  double M=log2(m);
+  return floor(M) == M;
+}
+
 unsigned int nextfftsize(unsigned int m)
 {
   unsigned int N=-1;
@@ -187,6 +193,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
                             unsigned int C, bool Explicit, bool fixed,
                             bool centered)
 {
+  double t0=totalseconds();
   if(L > M) {
     cerr << "L=" << L << " is greater than M=" << M << "." << endl;
     exit(-1);
@@ -194,7 +201,6 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   m=M;
   q=1;
   D=1;
-
   if(Explicit && fixed)
     return;
 
@@ -202,8 +208,8 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
 
   bool mixed=true;
   unsigned int endOpt=(unsigned int)(sqrt(M));
-  double epsilon=0.1;
-  unsigned int counterStop=3; //TODO: Change counterStop from command line.
+  double epsilon=M > 2500 ? 0.05 : 0.1;
+  unsigned int counterStop=2; //TODO: Change counterStop from command line.
   unsigned int Mmore=M+max(M*epsilon,1);
   unsigned int ub=Mmore;
   unsigned int lb=M;
@@ -230,7 +236,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
           if(m0 < mixedLimit) continue;
           i=0;
           unsigned int p=ceilquotient(L,m0);
-          while(m0 == prevm0 || m0 > ub || (centered && p%2 != 0)) {
+          while(m0 == prevm0 || m0 > ub || (centered && (p%2 != 0 || !isPow2(p)))) {
             // This code is only used if mixedLimit is set to a low value.
             double factor=1.0/denom;
             lb=M*factor;
@@ -243,13 +249,14 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
         }
       } else {
         m0=prevfftsize(m0-1,mixed);
-        if(m0 < lb){
+        unsigned int p=ceilquotient(L,m0);
+        if(m0 < lb || (centered && (p%2 != 0 || !isPow2(p)))){
           double factor=1.0/denom;
           lb=M*factor;
           ub=Mmore*factor;
           denom++;
-          unsigned int p=ceilquotient(L,m0);
-          while(m0 > ub || (centered && p%2 != 0)) {
+          p=ceilquotient(L,m0);
+          while(m0 > ub || (centered && (p%2 != 0 || !isPow2(p)))) {
             m0=prevfftsize(m0-1,mixed);
             p=ceilquotient(L,m0);
           }
@@ -274,6 +281,8 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   cout << "C=" << C << endl;
   cout << "D=" << D << endl;
   cout << "Padding:" << m*p-L << endl;
+  double t=totalseconds();
+  cout<<"Opt Time: "<<t-t0<<endl;
 }
 
 fftBase::~fftBase()
