@@ -148,7 +148,7 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
       unsigned int stop2=2*stop;
       for(unsigned int D=start; D < stop2; D *= 2) {
         if(D > stop) D=stop;
-        if(!valid(D,p,q2,C)) continue;
+        if(!valid(D,p,C)) continue;
 //            cout << "q2=" << q2 << endl;
 //            cout << "D2=" << D << endl;
         double t=time(L,M,C,m,q2,D,app);
@@ -169,10 +169,11 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
   unsigned int stop2=2*stop;
   for(unsigned int D=start; D < stop2; D *= 2) {
     if(D > stop) D=stop;
-    if(!valid(D,p,q,C)) continue;
+    if(q > 1 && !valid(D,p,C)) continue;
 //        cout << "q=" << q << endl;
 //        cout << "D=" << D << endl;
     double t=time(L,M,C,m,q,D,app);
+    //cout<<"t="<<t<<endl;
     if(t < T) {
       this->m=m;
       this->q=q;
