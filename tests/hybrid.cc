@@ -1,7 +1,7 @@
 #include "convolve.h"
 
 #define OUTPUT 0
-#define CENTERED 1
+#define CENTERED 0
 
 using namespace std;
 using namespace utils;
@@ -29,18 +29,18 @@ int main(int argc, char* argv[])
   cout << "Explicit:" << endl;
   // Minimal explicit padding
 #if CENTERED
-  fftPadCentered fft0(L,M,FB,C,true,true);
+  fftPadCentered fft0(L,M,FB,C,C,true,true);
 #else
-  fftPad fft0(L,M,FB,C,true,true);
+  fftPad fft0(L,M,FB,C,C,true,true);
 #endif
 
   double mean0=fft0.report(FB);
 
   // Optimal explicit padding
 #if CENTERED
-  fftPadCentered fft1(L,M,FB,C,true,false);
+  fftPadCentered fft1(L,M,FB,C,C,true,false);
 #else
-  fftPad fft1(L,M,FB,C,true,false);
+  fftPad fft1(L,M,FB,C,C,true,false);
 #endif
   double mean1=min(mean0,fft1.report(FB));
 
@@ -72,9 +72,9 @@ int main(int argc, char* argv[])
       f[C*j+c]=Complex(j+1+c,j+2+c);
 
 #if CENTERED
-  fftPadCentered fft2(L,fft.M,C,fft.M,1,1,fftw::maxthreads,fft.q == 1);
+  fftPadCentered fft2(L,fft.M,C,C,fft.M,1,1,fftw::maxthreads,fft.q == 1);
 #else
-  fftPad fft2(L,fft.M,C,fft.M,1,1);
+  fftPad fft2(L,fft.M,C,C,fft.M,1,1);
 #endif
 
   Complex *F2=ComplexAlign(fft2.outputSize());

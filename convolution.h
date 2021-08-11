@@ -733,14 +733,15 @@ public:
   }
 };
 
-inline void HermitianSymmetrizeX(unsigned int mx, unsigned int my,
+inline void HermitianSymmetrizeX(unsigned int mx, unsigned int stride,
                                  unsigned int xorigin, Complex *f)
 {
-  unsigned int offset=xorigin*my;
-  unsigned int stop=mx*my;
-  f[offset].im=0.0;
-  for(unsigned int i=my; i < stop; i += my)
-    f[offset-i]=conj(f[offset+i]);
+  Complex *F=f+xorigin*stride;
+  F[0].im=0.0;
+  for(unsigned int i=1; i < mx; ++i) {
+    unsigned int istride=i*stride;
+    *(F-istride)=conj(F[istride]);
+  }
 }
 
 // Enforce 3D Hermiticity using specified (x,y > 0,z=0) and (x >= 0,y=0,z=0)

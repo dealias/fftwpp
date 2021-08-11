@@ -27,12 +27,12 @@ int main(int argc, char* argv[])
 
   cout << "Explicit:" << endl;
   // Minimal explicit padding
-  fftPadHermitian fft0(L,M,FB,C,true,true);
+  fftPadHermitian fft0(L,M,FB,C,C,true,true);
 
   double mean0=fft0.report(FB);
 
   // Optimal explicit padding
-  fftPadHermitian fft1(L,M,FB,C,true,false);
+  fftPadHermitian fft1(L,M,FB,C,C,true,false);
   double mean1=min(mean0,fft1.report(FB));
 
   // Hybrid padding
@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
     for(unsigned int c=0; c < C; ++c)
       f[C*j+c]=Complex(j+1+c,j+2+c);
 
-  fftPadHermitian fft2(L,fft.M,C,fft.M,1,1);
+  fftPadHermitian fft2(L,fft.M,C,C,fft.M,1,1);
 
   Complex *F2=ComplexAlign(fft2.outputSize());
   double *F2r=(double *) F2;
