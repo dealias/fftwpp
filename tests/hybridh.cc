@@ -10,6 +10,7 @@ using namespace fftwpp;
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
 unsigned int C=1; // number of copies
+unsigned int S=0; // stride between copies (0 means C)
 unsigned int L=512; // input data length
 unsigned int M=768; // minimum padded length
 
@@ -27,16 +28,16 @@ int main(int argc, char* argv[])
 
   cout << "Explicit:" << endl;
   // Minimal explicit padding
-  fftPadHermitian fft0(L,M,FB,C,C,true,true);
+  fftPadHermitian fft0(L,M,FB,C,S,true,true);
 
   double mean0=fft0.report(FB);
 
   // Optimal explicit padding
-  fftPadHermitian fft1(L,M,FB,C,C,true,false);
+  fftPadHermitian fft1(L,M,FB,C,S,true,false);
   double mean1=min(mean0,fft1.report(FB));
 
   // Hybrid padding
-  fftPadHermitian fft(L,M,FB,C);
+  fftPadHermitian fft(L,M,FB,C,S);
 
   double mean=fft.report(FB);
 
@@ -58,9 +59,9 @@ int main(int argc, char* argv[])
     f[c]=1+c;
   for(unsigned int j=1; j < H; ++j)
     for(unsigned int c=0; c < C; ++c)
-      f[C*j+c]=Complex(j+1+c,j+2+c);
+      f[S*j+c]=Complex(j+1+c,j+2+c);
 
-  fftPadHermitian fft2(L,fft.M,C,C,fft.M,1,1);
+  fftPadHermitian fft2(L,fft.M,C,S,fft.M,1,1);
 
   Complex *F2=ComplexAlign(fft2.outputSize());
   double *F2r=(double *) F2;

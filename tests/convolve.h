@@ -95,7 +95,8 @@ public:
   unsigned int D; // number of residues stored in F at a time
   unsigned int D0; // Remainder
   unsigned int Cm,Sm;
-  unsigned int b; // Block size
+  unsigned int b; // Total block size, including stride
+  unsigned int z; // Block size of a single copy
   bool centered;
   bool inplace;
   bool overwrite;
@@ -293,14 +294,14 @@ public:
     return S*L;
   }
 
-  // Number of complex outputs per residue
+  // Number of complex outputs per residue per copy
   virtual unsigned int noutputs() {
-    return b;
+    return z;
   }
 
-  // Number of complex outputs per iteration
+  // Number of complex outputs per copy per iteration
   unsigned int complexOutputs(unsigned int r) {
-    return b*(r == 0 ? D0 : D);
+    return z*(r == 0 ? D0 : D);
   }
 
   // Number of outputs per iteration
@@ -591,7 +592,7 @@ public:
 
   // Number of real outputs per residue
   unsigned int noutputs() {
-    return S*m*(q == 1 ? 1 : p/2);
+    return m*(q == 1 ? 1 : p/2);
   }
 
   unsigned int noutputs(unsigned int r) {

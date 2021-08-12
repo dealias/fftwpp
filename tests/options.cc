@@ -3,13 +3,10 @@
 using namespace std;
 using namespace fftwpp;
 
-namespace fftwpp {
-extern double epsilon;
-}
-
 extern unsigned int L;
 extern unsigned int M;
 extern unsigned int C;
+extern unsigned int S;
 
 namespace utils {
 
@@ -42,7 +39,7 @@ void optionsHybrid(int argc, char* argv[])
         M=atoi(optarg);
         break;
       case 'S':
-        epsilon=atoi(optarg);
+        S=atoi(optarg);
         break;
       case 'T':
         fftw::maxthreads=max(atoi(optarg),1);
@@ -56,9 +53,13 @@ void optionsHybrid(int argc, char* argv[])
         exit(1);
     }
   }
+
+  if(S == 0) S=C;
+
   cout << "L=" << L << endl;
   cout << "M=" << M << endl;
   cout << "C=" << C << endl;
+  cout << "S=" << S << endl;
 
   cout << endl;
 }

@@ -8,6 +8,7 @@ using namespace fftwpp;
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
 unsigned int C=1; // number of copies
+unsigned int S=0; // stride between copies (0 means C)
 unsigned int L=512; // input data length
 unsigned int M=1024; // minimum padded length
 

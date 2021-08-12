@@ -1,6 +1,6 @@
 #include "convolve.h"
 
-#define OUTPUT 0
+#define OUTPUT 1
 #define CENTERED 0
 
 using namespace std;
@@ -11,6 +11,7 @@ using namespace fftwpp;
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
 unsigned int C=1; // number of copies
+unsigned int S=0; // stride between copies (0 means C)
 unsigned int L=512; // input data length
 unsigned int M=1024; // minimum padded length
 
@@ -29,26 +30,26 @@ int main(int argc, char* argv[])
   cout << "Explicit:" << endl;
   // Minimal explicit padding
 #if CENTERED
-  fftPadCentered fft0(L,M,FB,C,C,true,true);
+  fftPadCentered fft0(L,M,FB,C,S,true,true);
 #else
-  fftPad fft0(L,M,FB,C,C,true,true);
+  fftPad fft0(L,M,FB,C,S,true,true);
 #endif
 
   double mean0=fft0.report(FB);
 
   // Optimal explicit padding
 #if CENTERED
-  fftPadCentered fft1(L,M,FB,C,C,true,false);
+  fftPadCentered fft1(L,M,FB,C,S,true,false);
 #else
-  fftPad fft1(L,M,FB,C,C,true,false);
+  fftPad fft1(L,M,FB,C,S,true,false);
 #endif
   double mean1=min(mean0,fft1.report(FB));
 
   // Hybrid padding
 #if CENTERED
-  fftPadCentered fft(L,M,FB,C);
+  fftPadCentered fft(L,M,FB,C,S);
 #else
-  fftPad fft(L,M,FB,C);
+  fftPad fft(L,M,FB,C,S);
 #endif
 
   double mean=fft.report(FB);
@@ -65,16 +66,14 @@ int main(int argc, char* argv[])
   Complex *F=ComplexAlign(fft.outputSize());
   Complex *W0=ComplexAlign(fft.workSizeW());
 
-  unsigned int Length=L;
-
-  for(unsigned int j=0; j < Length; ++j)
+  for(unsigned int j=0; j < L; ++j)
     for(unsigned int c=0; c < C; ++c)
-      f[C*j+c]=Complex(j+1+c,j+2+c);
+      f[S*j+c]=Complex(j+1+c,j+2+c);
 
 #if CENTERED
-  fftPadCentered fft2(L,fft.M,C,C,fft.M,1,1,fftw::maxthreads,fft.q == 1);
+  fftPadCentered fft2(L,fft.M,C,S,fft.M,1,1,fftw::maxthreads,fft.q == 1);
 #else
-  fftPad fft2(L,fft.M,C,C,fft.M,1,1);
+  fftPad fft2(L,fft.M,C,S,fft.M,1,1);
 #endif
 
   Complex *F2=ComplexAlign(fft2.outputSize());
@@ -87,13 +86,16 @@ int main(int argc, char* argv[])
   for(unsigned int r=0; r < fft.R; r += fft.increment(r)) {
     fft.forward(f,F,r,W0);
     for(unsigned int k=0; k < fft.noutputs(r); ++k) {
-      unsigned int i=fft.index(r,k);
-      error += abs2(F[k]-F2[i]);
-      norm += abs2(F2[i]);
 #if OUTPUT
-      if(k%fft.Cm == 0) cout << endl;
-      cout << i << ": " << F[k] << endl;
+      if(k%fft.m == 0) cout << endl;
 #endif
+      for(unsigned int c=0; c < C; ++c) {
+        unsigned int K=S*k+c;
+        unsigned int i=fft.index(r,K);
+        error += abs2(F[K]-F2[i]);
+        norm += abs2(F2[i]);
+        cout << i << ": " << F[K] << endl;
+      }
     }
     fft.backward(F,h,r,W0);
   }
@@ -101,7 +103,10 @@ int main(int argc, char* argv[])
 #if OUTPUT
   cout << endl;
   for(unsigned int j=0; j < fft2.noutputs(); ++j)
-    cout << j << ": " << F2[j] << endl;
+    for(unsigned int c=0; c < C; ++c) {
+      unsigned int J=S*j+c;
+      cout << J << ": " << F2[J] << endl;
+    }
 #endif
 
   double scale=1.0/fft.normalization();
@@ -109,20 +114,31 @@ int main(int argc, char* argv[])
   if(L < 30) {
     cout << endl;
     cout << "Inverse:" << endl;
-    for(unsigned int j=0; j < fft.inputSize(); ++j)
-      cout << h[j]*scale << endl;
+    for(unsigned int j=0; j < L; ++j) {
+      for(unsigned int c=0; c < C; ++c) {
+        unsigned int J=S*j+c;
+        cout << h[J]*scale << endl;
+      }
+    }
     cout << endl;
   }
 
   for(unsigned int r=0; r < fft.R; r += fft.increment(r)) {
-    for(unsigned int k=0; k < fft.noutputs(r); ++k)
-      F[k]=F2[fft.index(r,k)];
+    for(unsigned int k=0; k < fft.noutputs(r); ++k) {
+      for(unsigned int c=0; c < C; ++c) {
+        unsigned int K=S*k+c;
+        F[K]=F2[fft.index(r,K)];
+      }
+    }
     fft.backward(F,h,r,W0);
   }
 
-  for(unsigned int j=0; j < fft.inputSize(); ++j) {
-    error2 += abs2(h[j]*scale-f[j]);
-    norm2 += abs2(f[j]);
+  for(unsigned int j=0; j < L; ++j) {
+    for(unsigned int c=0; c < C; ++c) {
+      unsigned int J=S*j+c;
+      error2 += abs2(h[J]*scale-f[J]);
+      norm2 += abs2(f[J]);
+    }
   }
 
   if(norm > 0) error=sqrt(error/norm);
