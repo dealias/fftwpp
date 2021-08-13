@@ -125,8 +125,8 @@ public:
                         unsigned int m, unsigned int q,unsigned int D,
                         Application &app)=0;
 
-    virtual bool valid(unsigned int D, unsigned int p, unsigned int C) {
-      return D == 1 || C == 1;
+    virtual bool valid(unsigned int D, unsigned int p, unsigned int S) {
+      return D == 1 || S == 1;
     }
 
     void check(unsigned int L, unsigned int M,
@@ -287,6 +287,7 @@ public:
   }
 
   bool loop2(unsigned int A, unsigned int B) {
+    return false;
     return nloops() == 2 && A > B;
   }
 
@@ -366,7 +367,7 @@ public:
          unsigned int threads=fftw::maxthreads, bool centered=false) :
     fftBase(L,M,C,S,m,q,D,threads,centered) {
     Opt opt;
-    if(q > 1 && !opt.valid(D,p,C)) invalid();
+    if(q > 1 && !opt.valid(D,p,S)) invalid();
     init();
   }
 
@@ -444,8 +445,8 @@ public:
       scan(L,M,app,C,S,Explicit,fixed,true);
     }
 
-    bool valid(unsigned int D, unsigned int p, unsigned int C) {
-      return p%2 == 0 && (D == 1 || C == 1);
+    bool valid(unsigned int D, unsigned int p, unsigned int S) {
+      return p%2 == 0 && (D == 1 || S == 1);
     }
 
     double time(unsigned int L, unsigned int M, unsigned int C, unsigned int S,
@@ -462,7 +463,7 @@ public:
                  unsigned int threads=fftw::maxthreads, bool fast=true) :
     fftPad(L,M,C,S,m,q,D,threads,true) {
     Opt opt;
-    if(q > 1 && !opt.valid(D,p,C)) invalid();
+    if(q > 1 && !opt.valid(D,p,S)) invalid();
     init(fast);
   }
 
@@ -541,8 +542,8 @@ public:
       scan(L,M,app,C,S,Explicit,fixed,true);
     }
 
-    bool valid(unsigned int D, unsigned int p, unsigned int C) {
-      return D == 2 && p%2 == 0 && (p == 2 || C == 1);
+    bool valid(unsigned int D, unsigned int p, unsigned int S) {
+      return D == 2 && p%2 == 0 && (p == 2 || S == 1);
     }
 
     double time(unsigned int L, unsigned int M, unsigned int C, unsigned int S,
@@ -558,7 +559,7 @@ public:
                   unsigned int D, unsigned int threads=fftw::maxthreads) :
     fftBase(L,M,C,S,m,q,D,threads,true) {
     Opt opt;
-    if(q > 1 && !opt.valid(D,p,C)) invalid();
+    if(q > 1 && !opt.valid(D,p,S)) invalid();
     init();
   }
 

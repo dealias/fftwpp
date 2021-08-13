@@ -4016,8 +4016,8 @@ void fftPadHermitian::init()
         Forward=&fftBase::forwardInner;
         Backward=&fftBase::backwardInner;
       } else {
-        Forward=&fftBase::forwardInnerMany;
-        Backward=&fftBase::backwardInnerMany;
+//        Forward=&fftBase::forwardInnerMany;
+//        Backward=&fftBase::backwardInnerMany;
       }
       Q=n=q/p2;
 

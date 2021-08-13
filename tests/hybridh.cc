@@ -1,6 +1,6 @@
 #include "convolve.h"
 
-#define OUTPUT 0
+#define OUTPUT 1
 
 using namespace std;
 using namespace utils;
@@ -73,22 +73,26 @@ int main(int argc, char* argv[])
   fft.pad(W0);
   double error=0.0, error2=0.0;
   double norm=0.0, norm2=0.0;
+  unsigned int noutputs=fft.noutputs();
+  unsigned int Snoutputs=S*noutputs;
   for(unsigned int r=0; r < fft.R; r += fft.increment(r)) {
     fft.forward(f,F,r,W0);
     unsigned int D1=r == 0 ? fft.D0 : fft.D;
     for(unsigned int d=0; d < D1; ++d) {
       double *Fr=(double *) (F+fft.b*d);
-      unsigned int offset=S*fft.noutputs()*d;
-      for(unsigned int k=0; k < fft.noutputs(); ++k) {
+      unsigned int offset=Snoutputs*d;
+      for(unsigned int k=0; k < noutputs; ++k) {
 #if OUTPUT
-        if(k%fft.Cm == 0) cout << endl;
+        if(k%fft.m == 0) cout << endl;
 #endif
         for(unsigned int c=0; c < C; ++c) {
           unsigned int K=S*k+c;
           unsigned int i=fft.index(r,K+offset);
-          error += abs2(Fr[k]-F2r[i]);
+          error += abs2(Fr[K]-F2r[i]);
           norm += abs2(F2r[i]);
-          cout << i << ": " << Fr[k] << endl;
+#if OUTPUT
+          cout << i << ": " << Fr[K] << endl;
+#endif
         }
       }
     }
@@ -97,9 +101,9 @@ int main(int argc, char* argv[])
 
 #if OUTPUT
   cout << endl;
-  for(unsigned int j=0; j < fft2.noutputs(); ++j)
+  for(unsigned int j=0; j < Snoutputs; j += S)
     for(unsigned int c=0; c < C; ++c) {
-      unsigned int J=S*j+c;
+      unsigned int J=j+c;
       cout << J << ": " << F2r[J] << endl;
     }
 #endif
@@ -121,11 +125,11 @@ int main(int argc, char* argv[])
     unsigned int D1=r == 0 ? fft.D0 : fft.D;
     for(unsigned int d=0; d < D1; ++d) {
       double *Fr=(double *) (F+fft.b*d);
-      unsigned int offset=fft.noutputs()*d;
-      for(unsigned int k=0; k < fft.noutputs(); ++k) {
+      unsigned int offset=Snoutputs*d;
+      for(unsigned int k=0; k < Snoutputs; k += S) {
         for(unsigned int c=0; c < C; ++c) {
-          unsigned int K=S*k+c;
-          Fr[k]=F2r[fft.index(r,K+offset)];
+          unsigned int K=k+c;
+          Fr[K]=F2r[fft.index(r,K+offset)];
         }
       }
     }

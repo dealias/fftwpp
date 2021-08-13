@@ -96,7 +96,9 @@ int main(int argc, char* argv[])
         unsigned int i=fft.index(r,K);
         error += abs2(F[K]-F2[i]);
         norm += abs2(F2[i]);
+#if OUTPUT
         cout << i << ": " << F[K] << endl;
+#endif
       }
     }
     fft.backward(F,h,r,W0);
