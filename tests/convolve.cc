@@ -471,8 +471,8 @@ void fftPad::init()
         }
         Q=q;
       }
-      if(!centered)
-        overwrite=inplace && L == p*m && n == p+1 && D == 1;
+//      if(!centered)
+//        overwrite=inplace && L == p*m && n == p+1 && D == 1;
     }
 
     dr=Dr();
@@ -1841,7 +1841,7 @@ void fftPadCentered::init(bool fast)
         BackwardAll=&fftBase::backwardInnerManyAll;
       }
     }
-    overwrite=inplace && L == p*m && n == 3 && D == 1;
+//    overwrite=inplace && L == p*m && n == 3 && D == 1;
   }
 }
 
@@ -3979,6 +3979,11 @@ void fftPadCentered::backwardInnerMany(Complex *F, Complex *f, unsigned int r, C
 void fftPadHermitian::init()
 {
   common();
+  if(S != C) {
+    cerr << "stride S for Hermitian convolutions must equal C" << endl;
+    exit(-1);
+  }
+
   e=m/2;
   unsigned int e1=e+1;
   unsigned int Ce1=C*e1;

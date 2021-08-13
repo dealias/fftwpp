@@ -10,7 +10,7 @@ using namespace fftwpp;
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
 unsigned int C=1; // number of copies
-unsigned int S=0; // stride between copies (0 means ceilquotient(L,2))
+unsigned int S=0; // stride between copies (0 means C)
 unsigned int L=512; // input data length
 unsigned int M=768; // minimum padded length
 
@@ -24,9 +24,8 @@ int main(int argc, char* argv[])
 
   optionsHybrid(argc,argv);
 
-  unsigned int H=ceilquotient(L,2);
-  if(S == 0) S=H;
-
+  if(S == 0) S=C;
+  
   ForwardBackward FB(A,B);
 
   cout << "Explicit:" << endl;
@@ -56,6 +55,8 @@ int main(int argc, char* argv[])
   Complex *h=ComplexAlign(fft.inputSize());
   Complex *F=ComplexAlign(fft.outputSize());
   Complex *W0=ComplexAlign(fft.workSizeW());
+
+  unsigned int H=ceilquotient(L,2);
 
   for(unsigned int c=0; c < C; ++c)
     f[c]=1+c;

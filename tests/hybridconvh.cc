@@ -10,7 +10,7 @@ using namespace fftwpp;
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
 unsigned int C=1; // number of copies
-unsigned int S=0; // stride between copies (0 means ceilquotient(L,2))
+unsigned int S=0; // stride between copies (0 means C)
 unsigned int L=512; // input data length
 unsigned int M=768; // minimum padded length
 
@@ -28,9 +28,9 @@ int main(int argc, char* argv[])
 
   fftPadHermitian fft(L,M,FB,C,S);
 
-  unsigned int H=ceilquotient(L,2);
+  if(S == 0) S=C;
 
-  if(S == 0) S=H;
+  unsigned int H=ceilquotient(L,2);
 
   Complex **f=new Complex *[max(A,B)];
   for(unsigned int a=0; a < A; ++a)
@@ -46,8 +46,9 @@ int main(int argc, char* argv[])
         fa[S*j+c]=Complex(j,(1.0+a)*j+1);
     }
 #else
-    for(unsigned int j=0; j < S*H; ++j)
-      fa[j]=0.0;
+    for(unsigned int j=0; j < H; ++j) {
+      for(unsigned int c=0; c < C; ++c)
+        fa[S*j+c]=0.0;
 #endif
   }
 
