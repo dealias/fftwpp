@@ -1,6 +1,6 @@
 #include "convolve.h"
 
-#define OUTPUT 1
+#define OUTPUT 0
 #define CENTERED 0
 
 using namespace std;
@@ -24,6 +24,8 @@ int main(int argc, char* argv[])
 #endif
 
   optionsHybrid(argc,argv);
+
+  if(S == 0) S=C;
 
   ForwardBackward FB(A,B);
 

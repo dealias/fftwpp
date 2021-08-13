@@ -8,7 +8,7 @@ using namespace fftwpp;
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
 unsigned int C=1; // number of copies
-unsigned int S=0; // stride between copies (0 means C)
+unsigned int S=0; // stride between copies (0 means L)
 unsigned int L=512; // input data length
 unsigned int M=1024; // minimum padded length
 
@@ -28,16 +28,21 @@ int main(int argc, char* argv[])
   unsigned int Ly=L;
   unsigned int Mx=M;
   unsigned int My=M;
+  unsigned int Sy=S;
 
   cout << "Lx=" << Lx << endl;
+  cout << "Ly=" << Ly << endl;
   cout << "Mx=" << Mx << endl;
+  cout << "My=" << My << endl;
   cout << endl;
+
+  if(Sy == 0) Sy=Ly;
 
   Complex **f=new Complex *[max(A,B)];
   for(unsigned int a=0; a < A; ++a)
-    f[a]=ComplexAlign(Lx*Ly);
+    f[a]=ComplexAlign(Lx*Sy);
 
-  Convolution2 Convolve2(Lx,Ly,Mx,My,A,B);
+  Convolution2 Convolve2(Lx,Ly,Mx,My,A,B,Sy);
 
   unsigned int K=10;
   double T=0;
@@ -48,7 +53,7 @@ int main(int argc, char* argv[])
       Complex *fa=f[a];
       for(unsigned int i=0; i < Lx; ++i) {
         for(unsigned int j=0; j < Ly; ++j) {
-          fa[Ly*i+j]=Complex((1.0+a)*i,j+a);
+          fa[Sy*i+j]=Complex((1.0+a)*i,j+a);
         }
       }
     }
@@ -57,7 +62,7 @@ int main(int argc, char* argv[])
       for(unsigned int a=0; a < A; ++a) {
         for(unsigned int i=0; i < Lx; ++i) {
           for(unsigned int j=0; j < Ly; ++j) {
-            cout << f[a][Ly*i+j] << " ";
+            cout << f[a][Sy*i+j] << " ";
           }
           cout << endl;
         }
@@ -77,7 +82,7 @@ int main(int argc, char* argv[])
     Complex *fb=f[b];
     for(unsigned int i=0; i < Lx; ++i) {
       for(unsigned int j=0; j < Ly; ++j) {
-        sum += fb[Ly*i+j];
+        sum += fb[Sy*i+j];
       }
     }
   }
@@ -89,7 +94,7 @@ int main(int argc, char* argv[])
     for(unsigned int b=0; b < B; ++b) {
       for(unsigned int i=0; i < Lx; ++i) {
         for(unsigned int j=0; j < Ly; ++j) {
-          cout << f[b][Ly*i+j] << " ";
+          cout << f[b][Sy*i+j] << " ";
         }
         cout << endl;
       }

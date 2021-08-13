@@ -3,7 +3,6 @@
 
 // TODO:
 // Apply const to arguments that should be read-only
-// Implement overwrite optimization for inner routines
 // Optimize over -I0 and -I1
 // Optimize over threads
 // Implement built-in shift for p > 2 centered case
@@ -4028,8 +4027,13 @@ void fftPadHermitian::init()
         for(unsigned int t=1; t <= p2; ++t)
           Zetaqp[p2*r+t]=expi(r*t*twopibyq);
 
-      fftp=new mfft1d(p2,1,Ce1, Se1,1, G);
-      ifftp=new mfft1d(p2,-1,Ce1, Se1,1, G);
+      if(S == C) {
+        fftp=new mfft1d(p2,1,Ce1, Ce1,1, G);
+        ifftp=new mfft1d(p2,-1,Ce1, Ce1,1, G);
+      } else {
+        fftp=new mfft1d(p2,1,C, Se1,1, G);
+        ifftp=new mfft1d(p2,-1,C, Se1,1, G);
+      }
     } else { // p=2
       Q=n=q;
       if(C == 1 && S == 1) {
@@ -5041,11 +5045,16 @@ void Convolution::convolveRaw(Complex **f, multiplier *mult, unsigned int offset
 {
   unsigned int C=fft->C;
   unsigned int S=fft->S;
-  unsigned int Blocksize=C*blocksize;
+  unsigned int Cblocksize=C*blocksize;
+  unsigned int Sblocksize=S*blocksize;
   if(q == 1) {
     for(unsigned int a=0; a < A; ++a)
       (fft->*Forward)(f[a]+offset,F[a],0,NULL);
-    (*mult)(F,0,blocksize,threads);
+    if(S == C)
+      (*mult)(F,0,Cblocksize,threads);
+    else
+      for(unsigned int s=0; s < Sblocksize; s += S)
+        (*mult)(F,s,C,threads);
     for(unsigned int b=0; b < B; ++b)
       (fft->*Backward)(F[b],f[b]+offset,0,NULL);
   } else {
@@ -5053,14 +5062,13 @@ void Convolution::convolveRaw(Complex **f, multiplier *mult, unsigned int offset
       for(unsigned int a=0; a < A; ++a)
         (fft->*Forward)(f[a]+offset,F[a],0,NULL);
       if(S == C) {
-        (*mult)(f,offset,(fft->n-1)*Blocksize,threads);
-        (*mult)(F,0,Blocksize,threads);
+        (*mult)(f,offset,(fft->n-1)*Cblocksize,threads);
+        (*mult)(F,0,Cblocksize,threads);
       } else {
-       unsigned int stop=(fft->n-1)*blocksize;
-       for(unsigned int s=0; s < stop; ++s) {
-         unsigned int Ss=S*s;
-          (*mult)(f,Ss+offset,C,threads);
-          (*mult)(F,Ss,C,threads);
+       unsigned int stop=(fft->n-1)*Sblocksize;
+       for(unsigned int s=0; s < stop; s += S) {
+          (*mult)(f,s+offset,C,threads);
+          (*mult)(F,s,C,threads);
         }
       }
       for(unsigned int b=0; b < B; ++b)
@@ -5073,10 +5081,10 @@ void Convolution::convolveRaw(Complex **f, multiplier *mult, unsigned int offset
         if(S == C) {
           unsigned int stop=incr*fft->D0;
           for(unsigned int d=0; d < stop; d += incr)
-            (*mult)(F,d,Blocksize,threads);
+            (*mult)(F,d,Cblocksize,threads);
         } else {
-          for(unsigned int s=0; s < blocksize; ++s)
-            (*mult)(F,S*s,C,threads);
+          for(unsigned int s=0; s < Sblocksize; s += S)
+            (*mult)(F,s,C,threads);
         }
         for(unsigned int b=0; b < B; ++b) {
           (fft->*Forward)(f[b]+offset,Fp[b],r,W);
@@ -5088,10 +5096,10 @@ void Convolution::convolveRaw(Complex **f, multiplier *mult, unsigned int offset
         if(S == C) {
           unsigned int stop=incr*fft->D;
           for(unsigned int d=0; d < stop; d += incr)
-            (*mult)(Fp,d,Blocksize,threads);
+            (*mult)(Fp,d,Cblocksize,threads);
         } else {
-          for(unsigned int s=0; s < blocksize; ++s)
-            (*mult)(Fp,S*s,C,threads);
+          for(unsigned int s=0; s < Sblocksize; s += S)
+            (*mult)(Fp,s,C,threads);
         }
         for(unsigned int b=0; b < B; ++b)
           (fft->*Backward)(Fp[b],f[b]+offset,r,W0);
@@ -5114,10 +5122,10 @@ void Convolution::convolveRaw(Complex **f, multiplier *mult, unsigned int offset
           if(S == C) {
             unsigned int stop=C*fft->complexOutputs(r);
             for(unsigned int d=0; d < stop; d += incr)
-              (*mult)(F,d,Blocksize,threads);
+              (*mult)(F,d,Cblocksize,threads);
           } else {
-            for(unsigned int s=0; s < blocksize; ++s)
-              (*mult)(F,S*s,C,threads);
+            for(unsigned int s=0; s < Sblocksize; s += S)
+              (*mult)(F,s,C,threads);
           }
           for(unsigned int b=0; b < B; ++b)
             (fft->*Backward)(F[b],h0[b]+Offset,r,W0);

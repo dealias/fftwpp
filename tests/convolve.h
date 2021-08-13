@@ -376,7 +376,7 @@ public:
   fftPad(unsigned int L, unsigned int M, Application& app,
          unsigned int C=1, unsigned int S=0, bool Explicit=false,
          bool fixed=false, bool centered=false) :
-    fftBase(L,M,app,C,S == 0 ? C : S, Explicit,fixed,centered) {
+    fftBase(L,M,app,C,S,Explicit,fixed,centered) {
     Opt opt=Opt(L,M,app,C,this->S,Explicit,fixed);
     m=opt.m;
     if(Explicit)
@@ -472,7 +472,7 @@ public:
   fftPadCentered(unsigned int L, unsigned int M, Application& app,
                  unsigned int C=1, unsigned int S=0, bool Explicit=false, bool fixed=false,
                  bool fast=true) :
-    fftPad(L,M,C,S == 0 ? C : S,app.Threads(),true) {
+    fftPad(L,M,C,S,app.Threads(),true) {
     Opt opt=Opt(L,M,app,C,this->S,Explicit,fixed);
     m=opt.m;
     if(Explicit)
@@ -564,7 +564,7 @@ public:
 
   fftPadHermitian(unsigned int L, unsigned int M, Application& app,
                   unsigned int C=1, unsigned int S=0, bool Explicit=false, bool fixed=false) :
-    fftBase(L,M,app,C,S == 0 ? C : S,Explicit,fixed,true) {
+    fftBase(L,M,app,C,S,Explicit,fixed,true) {
     Opt opt=Opt(L,M,app,C,this->S,Explicit,fixed);
     m=opt.m;
     if(Explicit)
@@ -862,7 +862,7 @@ public:
   double scale;
 protected:
   ForwardBackward *FB;
-  unsigned int Nx;    // x dimension of Fx buffer
+  unsigned int zx;    // x dimension of Fx buffer
   unsigned int Q;
   unsigned int qx;
   unsigned int Qx; // number of residues
@@ -936,7 +936,7 @@ public:
     qx=fftx->q;
     Qx=fftx->Q;
     Rx=fftx->R;
-    Nx=fftx->b/fftx->C; // Improve
+    zx=fftx->z;
     scale=1.0/(fftx->normalization()*convolvey->fft->normalization());
 
     unsigned int N=std::max(A,B);
@@ -1048,14 +1048,14 @@ public:
   void convolveRaw(Complex **f, multiplier *mult, unsigned int offset=0) {
     if(fftx->Overwrite(A,B)) {
       forward(f,F,0,offset);
-      subconvolution(f,mult,(fftx->n-1)*Nx,Sy,offset);
-      subconvolution(F,mult,Nx,Sy,offset);
+      subconvolution(f,mult,(fftx->n-1)*zx,Sy,offset);
+      subconvolution(F,mult,zx,Sy,offset);
       backward(F,f,0,offset);
     } else {
       if(loop2) {
         for(unsigned int a=0; a < A; ++a)
           (fftx->*Forward)(f[a]+offset,F[a],0,W);
-        subconvolution(F,mult,fftx->D0*Nx,Sy,offset);
+        subconvolution(F,mult,fftx->D0*zx,Sy,offset);
 
         for(unsigned int b=0; b < B; ++b) {
           (fftx->*Forward)(f[b]+offset,Fp[b],r,W);
@@ -1063,7 +1063,7 @@ public:
         }
         for(unsigned int a=B; a < A; ++a)
           (fftx->*Forward)(f[a]+offset,Fp[a],r,W);
-        subconvolution(Fp,mult,fftx->D*Nx,Sy,offset);
+        subconvolution(Fp,mult,fftx->D*zx,Sy,offset);
         for(unsigned int b=0; b < B; ++b)
           (fftx->*Backward)(Fp[b],f[b]+offset,r,W0);
       } else {
@@ -1080,7 +1080,7 @@ public:
 
         for(unsigned int rx=0; rx < Rx; rx += fftx->increment(rx)) {
           forward(f,F,rx,offset);
-          subconvolution(F,mult,(rx == 0 ? fftx->D0 : fftx->D)*Nx,Sy,offset);
+          subconvolution(F,mult,(rx == 0 ? fftx->D0 : fftx->D)*zx,Sy,offset);
           backward(F,h0,rx,Offset);
         }
 

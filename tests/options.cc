@@ -54,12 +54,9 @@ void optionsHybrid(int argc, char* argv[])
     }
   }
 
-  if(S == 0) S=C;
-
   cout << "L=" << L << endl;
   cout << "M=" << M << endl;
   cout << "C=" << C << endl;
-  cout << "S=" << S << endl;
 
   cout << endl;
 }
