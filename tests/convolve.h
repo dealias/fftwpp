@@ -300,14 +300,14 @@ public:
     return z;
   }
 
-  // Number of complex outputs per copy per iteration
-  unsigned int complexOutputs(unsigned int r) {
+  // Number of outputs per iteration per copy
+  virtual unsigned int noutputs(unsigned int r) {
     return z*(r == 0 ? D0 : D);
   }
 
-  // Number of outputs per iteration
-  virtual unsigned int noutputs(unsigned int r) {
-    return complexOutputs(r);
+  // Number of complex outputs per iteration
+  unsigned int complexOutputs(unsigned int r) {
+    return b*(r == 0 ? D0 : D);
   }
 
   unsigned int workSizeV(unsigned int A, unsigned int B) {
@@ -538,35 +538,35 @@ public:
     Opt() {}
 
     Opt(unsigned int L, unsigned int M, Application& app,
-        unsigned int C, unsigned int S, bool Explicit=false, bool fixed=false) {
-      scan(L,M,app,C,S,Explicit,fixed,true);
+        unsigned int C, unsigned int, bool Explicit=false, bool fixed=false) {
+      scan(L,M,app,C,C,Explicit,fixed,true);
     }
 
-    bool valid(unsigned int D, unsigned int p, unsigned int S) {
-      return D == 2 && p%2 == 0 && (p == 2 || S == 1);
+    bool valid(unsigned int D, unsigned int p, unsigned int C) {
+      return D == 2 && p%2 == 0 && (p == 2 || C == 1);
     }
 
-    double time(unsigned int L, unsigned int M, unsigned int C, unsigned int S,
+    double time(unsigned int L, unsigned int M, unsigned int C, unsigned int,
                 unsigned int m, unsigned int q, unsigned int D,
                 Application &app) {
-      fftPadHermitian fft(L,M,C,S,m,q,D,app.Threads());
+      fftPadHermitian fft(L,M,C,m,q,D,app.Threads());
       return fft.meantime(app);
     }
   };
 
   fftPadHermitian(unsigned int L, unsigned int M, unsigned int C,
-                  unsigned int S, unsigned int m, unsigned int q,
-                  unsigned int D, unsigned int threads=fftw::maxthreads) :
-    fftBase(L,M,C,S,m,q,D,threads,true) {
+                  unsigned int m, unsigned int q, unsigned int D,
+                  unsigned int threads=fftw::maxthreads) :
+    fftBase(L,M,C,C,m,q,D,threads,true) {
     Opt opt;
-    if(q > 1 && !opt.valid(D,p,S)) invalid();
+    if(q > 1 && !opt.valid(D,p,C)) invalid();
     init();
   }
 
   fftPadHermitian(unsigned int L, unsigned int M, Application& app,
-                  unsigned int C=1, unsigned int S=0, bool Explicit=false, bool fixed=false) :
-    fftBase(L,M,app,C,S,Explicit,fixed,true) {
-    Opt opt=Opt(L,M,app,C,this->S,Explicit,fixed);
+                  unsigned int C=1, bool Explicit=false, bool fixed=false) :
+    fftBase(L,M,app,C,C,Explicit,fixed,true) {
+    Opt opt=Opt(L,M,app,C,C,Explicit,fixed);
     m=opt.m;
     if(Explicit)
       M=m;
@@ -591,7 +591,7 @@ public:
   void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W);
   void backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W);
 
-  // Number of real outputs per residue
+  // Number of real outputs per residue per copy
   unsigned int noutputs() {
     return m*(q == 1 ? 1 : p/2);
   }
@@ -606,7 +606,7 @@ public:
   }
 
   unsigned int inputSize() {
-    return S*utils::ceilquotient(L,2);
+    return C*utils::ceilquotient(L,2);
   }
 };
 
@@ -1120,8 +1120,8 @@ public:
     if(Sy == 0) Sy=Hy;
     ForwardBackward FB(A,B,threads);
     fftx=new fftPadCentered(Lx,Mx,FB,Hy,Sy);
-   fftPadHermitian *ffty=new fftPadHermitian(Ly,My,FB);
-   convolvey=new ConvolutionHermitian(*ffty,A,B);
+    fftPadHermitian *ffty=new fftPadHermitian(Ly,My,FB);
+    convolvey=new ConvolutionHermitian(*ffty,A,B);
     init();
   }
 
