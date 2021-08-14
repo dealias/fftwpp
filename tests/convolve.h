@@ -287,7 +287,6 @@ public:
   }
 
   bool loop2(unsigned int A, unsigned int B) {
-    return false;
     return nloops() == 2 && A > B;
   }
 

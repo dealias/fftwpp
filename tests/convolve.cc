@@ -471,8 +471,8 @@ void fftPad::init()
         }
         Q=q;
       }
-//      if(!centered)
-//        overwrite=inplace && L == p*m && n == p+1 && D == 1;
+      if(!centered)
+        overwrite=inplace && L == p*m && n == p+1 && D == 1;
     }
 
     dr=Dr();
@@ -1841,7 +1841,7 @@ void fftPadCentered::init(bool fast)
         BackwardAll=&fftBase::backwardInnerManyAll;
       }
     }
-//    overwrite=inplace && L == p*m && n == 3 && D == 1;
+    overwrite=inplace && L == p*m && n == 3 && D == 1;
   }
 }
 
