@@ -3018,9 +3018,18 @@ void fftPadCentered::forwardInnerManyAll(Complex *f, Complex *F, unsigned int , 
       });
   }
 
-  fftp->fft(f);
-  fftp->fft(g);
-  fftp->fft(F);
+  if(S == C) {
+    fftp->fft(f);
+    fftp->fft(g);
+    fftp->fft(F);
+  } else {
+    for(unsigned int s=0; s < m; ++s) {
+      unsigned int Ss=S*s;
+      fftp->fft(f+Ss);
+      fftp->fft(g+Ss);
+      fftp->fft(F+Ss);
+    }
+  }
 
   Complex *Zetar=Zetaqm+m;
   PARALLEL(
@@ -3719,9 +3728,18 @@ void fftPadCentered::backwardInnerManyAll(Complex *F, Complex *f, unsigned int, 
       });
   }
 
-  ifftp->fft(f);
-  ifftp->fft(g);
-  ifftp->fft(F);
+  if(S == C) {
+    ifftp->fft(f);
+    ifftp->fft(g);
+    ifftp->fft(F);
+  } else {
+    for(unsigned int s=0; s < m; ++s) {
+      unsigned int Ss=S*s;
+      ifftp->fft(f+Ss);
+      ifftp->fft(g+Ss);
+      ifftp->fft(F+Ss);
+    }
+  }
 
   Vec Xm=UNPACKL(Zetanr,Zetanr);
   Vec Ym=UNPACKH(Zetanr,-Zetanr);
@@ -5051,11 +5069,11 @@ void Convolution::convolveRaw(Complex **f, multiplier *mult, unsigned int offset
         (*mult)(f,offset,(fft->n-1)*Cblocksize,threads);
         (*mult)(F,0,Cblocksize,threads);
       } else {
-       unsigned int stop=(fft->n-1)*Sblocksize;
-       for(unsigned int s=0; s < stop; s += S) {
+        unsigned int stop=(fft->n-1)*Sblocksize;
+        for(unsigned int s=0; s < stop; s += S)
           (*mult)(f,s+offset,C,threads);
+        for(unsigned int s=0; s < Sblocksize; s += S)
           (*mult)(F,s,C,threads);
-        }
       }
       for(unsigned int b=0; b < B; ++b)
         (fft->*Backward)(F[b],f[b]+offset,0,NULL);
