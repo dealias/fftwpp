@@ -5011,12 +5011,10 @@ Convolution::~Convolution()
       delete [] V;
   }
 
-  if(allocateF) {
-    unsigned int N=max(A,B);
-    for(unsigned int i=0; i < N; ++i)
-      deleteAlign(F[i]);
-  }
+  if(F0)
+    utils::deleteAlign(F0);
   delete [] F;
+
   if(allocate)
     delete fft;
 }

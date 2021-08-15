@@ -652,7 +652,6 @@ public:
   unsigned int B;
   double scale;
 protected:
-  unsigned int N; // max(A,B)
   unsigned int q;
   unsigned int Q;
   unsigned int R;
@@ -665,7 +664,7 @@ protected:
   Complex *H;
   Complex *W0;
   bool allocate;
-  bool allocateF;
+  Complex *F0;
   bool allocateV;
   bool allocateW;
   unsigned int nloops;
@@ -725,17 +724,13 @@ public:
     unsigned int workSizeW=fft->workSizeW();
     inputSize=fft->inputSize();
 
-    N=max(A,B);
+    unsigned int N=max(A,B);
+    F0=F;
+    if(!F0)
+      F0=utils::ComplexAlign(N*outputSize);
     this->F=new Complex*[N];
-    if(F) {
-      allocateF=false;
-      for(unsigned int i=0; i < N; ++i)
-        this->F[i]=F+i*outputSize;
-    } else {
-      allocateF=true;
-      for(unsigned int i=0; i < N; ++i) // CHECK performance vs. single block
-        this->F[i]=utils::ComplexAlign(outputSize);
-    }
+    for(unsigned int i=0; i < N; ++i)
+      this->F[i]=F0+i*outputSize;
 
     if(q > 1) {
       allocateV=false;
@@ -872,8 +867,8 @@ protected:
   Complex **V;
   Complex *W;
   Complex *W0;
+  Complex *F0;
   bool allocate;
-  bool allocateF;
   bool allocateV;
   bool allocateW;
   bool loop2;
@@ -881,8 +876,7 @@ protected:
   unsigned int nloops;
 public:
   Convolution2(unsigned int threads=fftw::maxthreads) :
-    ThreadBase(threads), W(NULL), allocate(false), allocateF(false),
-    allocateW(false) {}
+    ThreadBase(threads), W(NULL), allocate(false), allocateW(false) {}
 
   // Lx,Ly: x,y dimensions of input data
   // Mx,My: x,y dimensions of transformed data, including padding
@@ -892,8 +886,7 @@ public:
                unsigned int Mx, unsigned int My,
                unsigned int A, unsigned int B, unsigned int Sy=0,
                unsigned int threads=fftw::maxthreads) :
-    ThreadBase(threads), W(NULL), allocate(true), allocateF(false),
-    allocateW(false) {
+    ThreadBase(threads), W(NULL), allocate(true), allocateW(false) {
     if(Sy == 0) Sy=Ly;
     ForwardBackward FB(A,B,threads);
     fftx=new fftPad(Lx,Mx,FB,Ly,Sy);
@@ -910,7 +903,7 @@ public:
                unsigned int threads=fftw::maxthreads,
                Complex *F=NULL, Complex *W=NULL, Complex *V=NULL) :
     ThreadBase(threads), fftx(&fftx), convolvey(&convolvey), W(W),
-    allocate(false), allocateF(false), allocateW(false) {
+    allocate(false), allocateW(false) {
     init(F,V);
   }
 
@@ -931,7 +924,7 @@ public:
       W=utils::ComplexAlign(fftx->workSizeW());
     }
 
-    unsigned int c=fftx->outputSize();
+    unsigned int outputSize=fftx->outputSize();
 
     qx=fftx->q;
     Qx=fftx->Q;
@@ -940,15 +933,12 @@ public:
     scale=1.0/(fftx->normalization()*convolvey->fft->normalization());
 
     unsigned int N=std::max(A,B);
+    F0=F;
+    if(!F0)
+      F0=utils::ComplexAlign(N*outputSize);
     this->F=new Complex*[N];
-    if(F) {
-      for(unsigned int i=0; i < N; ++i)
-        this->F[i]=F+i*c;
-    } else {
-      allocateF=true;
-      for(unsigned int i=0; i < N; ++i)
-        this->F[i]=utils::ComplexAlign(c);
-    }
+    for(unsigned int i=0; i < N; ++i)
+      this->F[i]=F0+i*outputSize;
 
     Lx=fftx->L;
     Ly=fftx->C;
@@ -995,11 +985,8 @@ public:
   ~Convolution2() {
     if(allocateW)
       utils::deleteAlign(W);
-    unsigned int N=std::max(A,B);
-    if(allocateF) {
-      for(unsigned int i=0; i < N; ++i)
-        utils::deleteAlign(F[i]);
-    }
+    if(F0)
+      utils::deleteAlign(F0);
     delete [] F;
 
     if(allocateV) {
