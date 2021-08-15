@@ -205,7 +205,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   T=DBL_MAX;
 
   bool mixed=true;
-  unsigned int endOpt=(unsigned int)(sqrt(M));
+  unsigned int endOpt=32; // (unsigned int)(sqrt(M));
   double epsilon=M > 2500 ? 0.05 : 0.1;
   unsigned int counterStop=2; //TODO: Change counterStop from command line.
   unsigned int Mmore=M+max(M*epsilon,1);
