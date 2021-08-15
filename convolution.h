@@ -487,6 +487,7 @@ public:
   fft0pad(unsigned int m, unsigned int M, unsigned int stride, Complex *u=NULL,
           unsigned int Threads=fftw::maxthreads)
     : m(m), M(M), stride(stride), threads(Threads) {
+    std::cout << m << " " << M << " " << stride << std::endl;
     Backwards=new mfft1d(m,1,M,stride,1,u,NULL,threads);
     Forwards=new mfft1d(m,-1,M,stride,1,u,NULL,threads);
 
@@ -950,8 +951,8 @@ public:
     }
     unsigned stride=my+!ycompact;
     backwards(F,U2,stride,symmetrize,offset);
-    subconvolution(F,pmult,xfftpad->findex,2*mx-xcompact,stride,offset);
-    subconvolution(U2,pmult,xfftpad->uindex,mx+xcompact,stride);
+//    subconvolution(F,pmult,xfftpad->findex,2*mx-xcompact,stride,offset);
+//    subconvolution(U2,pmult,xfftpad->uindex,mx+xcompact,stride);
     forwards(F,U2,offset);
   }
 
