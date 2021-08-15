@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
   for(unsigned int a=0; a < A; ++a)
     f[a]=ComplexAlign(Lx*Sy);
 
-  Convolution2 Convolve2(Lx,Ly,Mx,My,A,B,Sy);
+  Convolution2 Convolve2(Lx,Ly,Mx,My,A,B,Sy,Sy);
 
   unsigned int K=10;
   double T=0;

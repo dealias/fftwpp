@@ -882,14 +882,18 @@ public:
   // Mx,My: x,y dimensions of transformed data, including padding
   // A: number of inputs
   // B: number of outputs
+  // Cy: fftx copies (Cy=Sy may give better performance)
+  // Sy: fftx stride
   Convolution2(unsigned int Lx, unsigned int Ly,
                unsigned int Mx, unsigned int My,
-               unsigned int A, unsigned int B, unsigned int Sy=0,
+               unsigned int A, unsigned int B,
+               unsigned int Cy=0, unsigned int Sy=0,
                unsigned int threads=fftw::maxthreads) :
     ThreadBase(threads), W(NULL), allocate(true), allocateW(false) {
+    if(Cy == 0) Cy=Ly;
     if(Sy == 0) Sy=Ly;
     ForwardBackward FB(A,B,threads);
-    fftx=new fftPad(Lx,Mx,FB,Ly,Sy);
+    fftx=new fftPad(Lx,Mx,FB,Cy,Sy);
     fftPad *ffty=new fftPad(Ly,My,FB);
     convolvey=new Convolution(*ffty,A,B);
     init();
@@ -1098,14 +1102,16 @@ class ConvolutionHermitian2 : public Convolution2 {
 public:
   ConvolutionHermitian2(unsigned int Lx, unsigned int Ly,
                         unsigned int Mx, unsigned int My,
-                        unsigned int A, unsigned int B, unsigned int Sy=0,
+                        unsigned int A, unsigned int B,
+                        unsigned int Cy=0, unsigned int Sy=0,
                         unsigned int threads=fftw::maxthreads) :
     Convolution2(threads) {
     allocate=true;
     unsigned int Hy=utils::ceilquotient(Ly,2);
+    if(Cy == 0) Cy=Hy;
     if(Sy == 0) Sy=Hy;
     ForwardBackward FB(A,B,threads);
-    fftx=new fftPadCentered(Lx,Mx,FB,Hy,Sy);
+    fftx=new fftPadCentered(Lx,Mx,FB,Cy,Sy);
     fftPadHermitian *ffty=new fftPadHermitian(Ly,My,FB);
     convolvey=new ConvolutionHermitian(*ffty,A,B);
     init();

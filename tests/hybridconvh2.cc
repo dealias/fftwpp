@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
 
   array2<Complex> h0(Lx,Sy,f[0]);
 
-  ConvolutionHermitian2 Convolve2(Lx,Ly,Mx,My,A,B,Sy);
+  ConvolutionHermitian2 Convolve2(Lx,Ly,Mx,My,A,B,Sy,Sy);
 
   unsigned int K=500;
   double T=0;
