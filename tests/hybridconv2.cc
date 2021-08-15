@@ -22,8 +22,6 @@ int main(int argc, char* argv[])
 
   optionsHybrid(argc,argv);
 
-  ForwardBackward FB(A,B);
-
   unsigned int Lx=L;
   unsigned int Ly=L;
   unsigned int Mx=M;
@@ -42,7 +40,10 @@ int main(int argc, char* argv[])
   for(unsigned int a=0; a < A; ++a)
     f[a]=ComplexAlign(Lx*Sy);
 
-  Convolution2 Convolve2(Lx,Ly,Mx,My,A,B,Sy,Sy);
+  ForwardBackward FB(A,B);
+  fftPad fftx(Lx,Mx,FB,Sy,Sy);
+  Convolution convolvey(Ly,My,FB);
+  Convolution2 Convolve2(&fftx,&convolvey);
 
   unsigned int K=10;
   double T=0;

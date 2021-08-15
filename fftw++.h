@@ -20,7 +20,7 @@
 #ifndef __fftwpp_h__
 #define __fftwpp_h__ 1
 
-#define __FFTWPP_H_VERSION__ 2.08
+#define __FFTWPP_H_VERSION__ 2.09
 
 #include <cstdlib>
 #include <fstream>
@@ -114,10 +114,10 @@ class fftw;
 
 class ThreadBase
 {
-protected:
+public:
   unsigned int threads;
   unsigned int innerthreads;
-public:
+
   ThreadBase();
   ThreadBase(unsigned int threads) : threads(threads) {}
   void Threads(unsigned int nthreads) {threads=nthreads;}

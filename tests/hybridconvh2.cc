@@ -22,8 +22,6 @@ int main(int argc, char* argv[])
 
   optionsHybrid(argc,argv);
 
-  ForwardBackward FB(A,B);
-
   unsigned int Lx=L;
   unsigned int Ly=L;
   unsigned int Mx=M;
@@ -49,7 +47,10 @@ int main(int argc, char* argv[])
 
   array2<Complex> h0(Lx,Sy,f[0]);
 
-  ConvolutionHermitian2 Convolve2(Lx,Ly,Mx,My,A,B,Sy,Sy);
+  ForwardBackward FB(A,B);
+  fftPadCentered fftx(Lx,Mx,FB,Sy,Sy);
+  ConvolutionHermitian convolvey(Ly,My,FB);
+  Convolution2 Convolve2(&fftx,&convolvey);
 
   unsigned int K=500;
   double T=0;

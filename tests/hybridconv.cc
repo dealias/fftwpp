@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
     }
   }
 
-  Convolution Convolve(fft,A,B);
+  Convolution Convolve(&fft,A,B);
 
 #if OUTPUT
   unsigned int K=1;

@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
 #endif
   }
 
-  ConvolutionHermitian Convolve(fft,A,B);
+  ConvolutionHermitian Convolve(&fft,A,B);
 
 #if OUTPUT
   unsigned int K=1;
