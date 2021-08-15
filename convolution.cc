@@ -688,10 +688,10 @@ void fft0pad::Backwards1(Complex *f, Complex *u)
 
 void fft0pad::backwards(Complex *f, Complex *u)
 {
-//  expand(f,u);
-//  Backwards->fft(f);
-//  Backwards1(f,u);
-//  Backwards->fft(u);
+  expand(f,u);
+  Backwards->fft(f);
+  Backwards1(f,u);
+  Backwards->fft(u);
 }
 
 void fft0pad::reduce(Complex *f, Complex *u)
@@ -864,7 +864,7 @@ void fft1pad::forwards(Complex *f, Complex *u)
   Forwards->fft(f);
   Forwards->fft(f+m*stride);
   Forwards->fft(u);
-//  reduce(f,u);
+  reduce(f,u);
 }
 
 // a[0][k]=sum_i a[i][k]*b[i][k]*c[i][k]
