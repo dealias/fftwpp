@@ -2,18 +2,18 @@
 #include "cmult-sse2.h"
 
 // TODO:
+// Multithread 2D convolutions
+// Replace optimization tests with actual problem
+// Optimize on the fly
 // Apply const to arguments that should be read-only
 // Optimize over -I0 and -I1
 // Optimize over threads
-// Implement built-in shift for p > 2 centered case
-// Optimize shift when M=2L for p=1
+//
+// Implement fftPad::forwardInnerAll
 // Implement 3D convolutions
-// Abort timing when best time exceeded
 // Exploit zeta -> -conj(zeta) symmetry for even q
 // Precompute best D and inline options for each m value
-// Use experience or heuristics (sparse distribution?) to determine best m value
 // Use power of P values for m when L,M,M-L are powers of P?
-// Multithread
 // Port to MPI
 
 using namespace std;
