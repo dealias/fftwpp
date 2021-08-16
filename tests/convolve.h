@@ -680,7 +680,7 @@ public:
     ThreadBase(), W(NULL), allocate(false) {}
 
   Convolution(Application &app) :
-    ThreadBase(app.threads), A(app.A), B(app.B), W(NULL), allocate(false) {}
+    ThreadBase(app.Threads()), A(app.A), B(app.B), W(NULL), allocate(false) {}
 
   Convolution(unsigned int L, unsigned int M, Application &app) :
     A(app.A), B(app.B), allocate(true) {
@@ -712,7 +712,7 @@ public:
 
   Convolution(fftBase *fft, unsigned int A, unsigned int B,
               Complex *F=NULL, Complex *W=NULL,
-              Complex *V=NULL) : ThreadBase(fft->threads), fft(fft),
+              Complex *V=NULL) : ThreadBase(fft->Threads()), fft(fft),
                                  A(A), B(B), W(W), allocate(false) {
     init(F,V);
   }
@@ -819,7 +819,7 @@ class ConvolutionHermitian : public Convolution {
 public:
   ConvolutionHermitian(unsigned int L, unsigned int M, Application &app) :
     Convolution() {
-    threads=app.threads;
+    threads=app.Threads();
     A=app.A;
     B=app.B;
     fft=new fftPadHermitian(L,M,app);
@@ -921,7 +921,7 @@ public:
   // V is an optional work array of size B*fftx->workSizeV(A,B)
   Convolution2(fftPad *fftx, Convolution *convolvey,
                Complex *F=NULL, Complex *W=NULL, Complex *V=NULL) :
-    ThreadBase(convolvey->threads), fftx(fftx), ffty(NULL),
+    ThreadBase(convolvey->Threads()), fftx(fftx), ffty(NULL),
     convolvey(convolvey), W(W), allocateW(false) {
     init(F,V);
   }
