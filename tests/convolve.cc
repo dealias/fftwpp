@@ -4004,8 +4004,14 @@ void fftPadHermitian::init()
     double twopibyq=twopi/q;
     unsigned int p2=p/2;
 
-    Complex *G=ComplexAlign(Ce1*p2);
-    double *H=inplace ? (double *) G : doubleAlign(Cm*p2);
+    b=ceilquotient(p2*Cm,2); // Output block size
+    B=p2*Ce1; // Work block size
+
+    if(inplace) b=B;
+
+    Complex *G=ComplexAlign(B);
+    double *H=inplace ? (double *) G :
+      doubleAlign(C == 1 ? 2*B : Cm*p2);
 
     if(p > 2) { // p must be even, only C=1 implemented
       Forward=&fftBase::forwardInner;
@@ -4030,11 +4036,6 @@ void fftPadHermitian::init()
         Backward=&fftBase::backward2Many;
       }
     }
-
-    b=ceilquotient(p2*Cm,2); // Output block size
-    B=p2*Ce1; // Work block size
-
-    if(inplace) b=B;
 
     R=residueBlocks();
     D0=Q % D;
