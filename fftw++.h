@@ -20,7 +20,7 @@
 #ifndef __fftwpp_h__
 #define __fftwpp_h__ 1
 
-#define __FFTWPP_H_VERSION__ 2.08
+#define __FFTWPP_H_VERSION__ 2.09
 
 #include <cstdlib>
 #include <fstream>
@@ -691,6 +691,19 @@ public:
 };
 
 template<class I, class O>
+inline bool Hermitian(I in, O out) {
+  return false;
+}
+
+inline bool Hermitian(double in, fftw_complex out) {
+  return true;
+}
+
+inline bool Hermitian(fftw_complex in, double out) {
+  return true;
+}
+
+template<class I, class O>
 class fftwblock : public virtual fftw {
 public:
   int nx;
@@ -711,8 +724,12 @@ public:
 
     threaddata S1=Setup(in,out);
     fftw_plan planT1=plan;
+    threads=S1.threads;
+    I input;
+    O output;
+    bool hermitian=Hermitian(input,output);
 
-    if(fftw::maxthreads > 1) {
+    if(fftw::maxthreads > 1 && (!hermitian || ostride*(nx/2+1) < idist)) {
       if(Threads > 1) {
         T=std::min(M,Threads);
         Q=T > 0 ? M/T : 0;
@@ -736,7 +753,6 @@ public:
           Q=M;
           R=0;
           plan=planT1;
-          threads=S1.threads;
         } else {                         // Do the multi-threading ourselves
           fftw_destroy_plan(planT1);
           threads=ST.threads;
