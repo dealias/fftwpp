@@ -374,7 +374,10 @@ public:
 
     threaddata data;
     unsigned int Threads=threads;
+
     if(threads > 1) data=lookup(inplace,threads);
+    else data=threaddata(1,0.0,0.0);
+
     threads=data.threads > 0 ? data.threads : 1;
     planThreads(threads);
     plan=(*planner)(this,in,out);
