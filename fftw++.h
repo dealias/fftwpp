@@ -28,6 +28,7 @@
 #include <fftw3.h>
 #include <cerrno>
 #include <map>
+#include <typeinfo>
 
 #ifndef _OPENMP
 #ifndef FFTWPP_SINGLE_THREAD
@@ -697,19 +698,6 @@ public:
 };
 
 template<class I, class O>
-inline bool Hermitian(I in, O out) {
-  return false;
-}
-
-inline bool Hermitian(double in, fftw_complex out) {
-  return true;
-}
-
-inline bool Hermitian(fftw_complex in, double out) {
-  return true;
-}
-
-template<class I, class O>
 class fftwblock : public virtual fftw {
 public:
   int nx;
@@ -731,9 +719,7 @@ public:
     threaddata S1=Setup(in,out);
     fftw_plan planT1=plan;
     threads=S1.threads;
-    I input;
-    O output;
-    bool hermitian=Hermitian(input,output);
+    bool hermitian=typeid(I) == typeid(double) || typeid(O) == typeid(double);
 
     if(fftw::maxthreads > 1 && (!hermitian || ostride*(nx/2+1) < idist)) {
       if(Threads > 1) {
