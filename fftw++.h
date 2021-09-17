@@ -122,9 +122,10 @@ public:
   ThreadBase(unsigned int threads) : threads(threads) {}
   void Threads(unsigned int nthreads) {threads=nthreads;}
   unsigned int Threads() {return threads;}
+  unsigned int Innerthreads() {return innerthreads;}
 
-  void multithread(unsigned int nx) {
-    if(nx >= threads) {
+  void multithread(unsigned int n) {
+    if(n >= threads) {
       innerthreads=1;
     } else {
       innerthreads=threads;
@@ -398,6 +399,8 @@ public:
     }
 
     if(alloc) Array::deleteAlign(in,(doubles+1)/2);
+    if(threads > 1)
+      std::cout << "Using " << threads << " threads." << std::endl;
     return data;
   }
 

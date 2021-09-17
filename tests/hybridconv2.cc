@@ -40,9 +40,10 @@ int main(int argc, char* argv[])
   for(unsigned int a=0; a < A; ++a)
     f[a]=ComplexAlign(Lx*Sy);
 
-  ForwardBackward FB(A,B);
-  fftPad fftx(Lx,Mx,FB,Sy,Sy);
-  Convolution convolvey(Ly,My,FB);
+  ForwardBackward FBx(A,B);
+  fftPad fftx(Lx,Mx,FBx,Sy,Sy,fftw::maxthreads);
+  ForwardBackward FBy(A,B,fftw::maxthreads,fftx.z);
+  Convolution convolvey(Ly,My,FBy);
   Convolution2 Convolve2(&fftx,&convolvey);
 
   unsigned int K=10;
