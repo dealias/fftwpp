@@ -400,8 +400,10 @@ public:
     }
 
     if(alloc) Array::deleteAlign(in,(doubles+1)/2);
+#ifdef FFTWPP_VERBOSE
     if(threads > 1)
       std::cout << "Using " << threads << " threads." << std::endl;
+#endif
     return data;
   }
 

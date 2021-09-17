@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
   ForwardBackward FB(A,B);
   fftPadCentered fftx(Lx,Mx,FB,Sy);
   ConvolutionHermitian convolvey(Ly,My,FB);
-  Convolution2 Convolve2(&fftx,&convolvey);
+  ConvolutionHermitian2 Convolve2(&fftx,&convolvey);
 
   unsigned int K=500;
   double T=0;

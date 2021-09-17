@@ -376,7 +376,7 @@ public:
          unsigned int threads=fftw::maxthreads, bool centered=false) :
     fftBase(L,M,C,S,m,q,D,threads,centered) {
     Opt opt;
-    if(q > 1 && !opt.valid(D,p,S)) invalid();
+    if(q > 1 && !opt.valid(D,p,this->S)) invalid();
     init();
   }
 
@@ -472,7 +472,7 @@ public:
                  unsigned int threads=fftw::maxthreads, bool fast=true) :
     fftPad(L,M,C,S,m,q,D,threads,true) {
     Opt opt;
-    if(q > 1 && !opt.valid(D,p,S)) invalid();
+    if(q > 1 && !opt.valid(D,p,this->S)) invalid();
     init(fast);
   }
 
@@ -1169,13 +1169,14 @@ public:
                         ConvolutionHermitian *convolvey,
                         Complex *F=NULL, Complex *W=NULL, Complex *V=NULL) :
     Convolution2(fftx->Threads()) {
-    this->W=W;
+    this->fftx=fftx;
     multithread(fftx->z);
     this->convolvey=new Convolution*[threads];
     this->convolvey[0]=convolvey;
     for(unsigned int t=1; t < threads; ++t)
       this->convolvey[t]=new ConvolutionHermitian(convolvey->fft,
                                                   convolvey->A,convolvey->B);
+    this->W=W;
     init(F,V);
   }
   // F is an optional work array of size max(A,B)*fftx->outputSize(),
@@ -1186,8 +1187,9 @@ public:
                         ConvolutionHermitian **convolvey,
                         Complex *F=NULL, Complex *W=NULL, Complex *V=NULL) :
     Convolution2(convolvey[0]->Threads()) {
-    this->W=W;
+    this->fftx=fftx;
     this->convolvey=(Convolution **) convolvey;
+    this->W=W;
     init(F,V);
   }
 
