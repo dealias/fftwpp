@@ -158,12 +158,13 @@ public:
 
   fftBase(unsigned int L, unsigned int M, unsigned int C, unsigned int S,
           unsigned int threads=fftw::maxthreads, bool centered=false) :
-    ThreadBase(threads), L(L), M(M), C(C), S(S), centered(centered) {}
+    ThreadBase(threads), L(L), M(M), C(C),  S(S == 0 ? C : S),
+    centered(centered) {}
 
   fftBase(unsigned int L, unsigned int M, unsigned int C, unsigned int S,
           unsigned int m, unsigned int q, unsigned int D,
           unsigned int threads=fftw::maxthreads, bool centered=false) :
-    ThreadBase(threads), L(L), M(M), C(C), S(S), m(m),
+    ThreadBase(threads), L(L), M(M), C(C),  S(S == 0 ? C : S), m(m),
     p(utils::ceilquotient(L,m)), q(q), D(D), centered(centered) {}
 
   fftBase(unsigned int L, unsigned int M, Application& app,

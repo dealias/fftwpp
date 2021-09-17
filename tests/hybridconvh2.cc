@@ -47,10 +47,9 @@ int main(int argc, char* argv[])
 
   array2<Complex> h0(Lx,Sy,f[0]);
 
-  ForwardBackward FBx(A,B);
-  fftPadCentered fftx(Lx,Mx,FBx,Sy,Sy);
-  ForwardBackward FBy(A,B,fftw::maxthreads,fftx.z);
-  ConvolutionHermitian convolvey(Ly,My,FBy);
+  ForwardBackward FB(A,B);
+  fftPadCentered fftx(Lx,Mx,FB,Sy);
+  ConvolutionHermitian convolvey(Ly,My,FB);
   Convolution2 Convolve2(&fftx,&convolvey);
 
   unsigned int K=500;
