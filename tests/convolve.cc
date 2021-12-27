@@ -2,12 +2,10 @@
 #include "cmult-sse2.h"
 
 // TODO:
-// Multithread 2D convolutions
 // Replace optimization tests with actual problem
 // Optimize on the fly
 // Apply const to arguments that should be read-only
 // Optimize over -I0 and -I1
-// Optimize over threads
 //
 // Implement fftPad::forwardInnerAll
 // Implement 3D convolutions
