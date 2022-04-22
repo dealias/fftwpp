@@ -51,8 +51,8 @@ FILES=conv cconv conv2 cconv2 conv3 cconv3 tconv tconv2 \
 	fft1 fft2 fft3 fft1r fft2r fft3r mfft1 mfft1r transpose \
 	hybrid hybridh hybridconv hybridconvh hybridconv2 hybridconvh2
 
-FFTW=fftw++
-EXTRA=$(FFTW) convolution explicit direct getopt convolve
+FFTWPP=fftw++
+EXTRA=$(FFTWPP) convolution explicit direct getopt convolve
 ALL=$(FILES) $(EXTRA)
 
 all: $(FILES) $(HYBRID)

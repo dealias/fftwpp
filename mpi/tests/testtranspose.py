@@ -1,4 +1,4 @@
-#!/usr/bin/python -u
+#!/usr/bin/env python3 
 
 import sys # so that we can return a value at the end.
 import random # for randum number generators
@@ -11,7 +11,7 @@ from math import sqrt
 def main(argv):
     retval = 0
     
-    Print("MPI transpose unit test")
+    print("MPI transpose unit test")
     usage = "Usage:\n"\
             "./testtranspose.py\n"\
             "\t-s\t\tSpecify a short run\n"\
@@ -21,24 +21,24 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv,"sh")
     except getopt.GetoptError:
-        print "Error in arguments"
-        print usage
+        print("Error in arguments")
+        print(usage)
         sys.exit(2)
     for opt, arg in opts:
         if opt in ("-s"):
             shortrun = True
         if opt in ("-h"):
-            print usage
+            print(usage)
             sys.exit(0)
 
     
     if not os.path.isfile("transpose"):
-        print "Error: transpose executable not present!"
+        print("Error: transpose executable not present!")
         retval += 1
     else:
         
         logfile = 'testtranspose.log' 
-        Print("Log in " + logfile + "\n")
+        print("Log in " + logfile + "\n")
         log = open(logfile, 'w')
         log.close()
 
@@ -74,7 +74,7 @@ def main(argv):
                                 argslist.append(args)
 
 
-        Print("Running " + str(len(argslist)) + " tests:")
+        print("Running " + str(len(argslist)) + " tests:")
         tstart = time.time()
 
         failcases = ""
@@ -85,7 +85,7 @@ def main(argv):
                                 
         itest = 0
         for args in argslist:
-            print "test", itest, "of", len(argslist), ":",
+            print("test", itest, "of", len(argslist), ":",)
             itest += 1
 
             rtest, cmd = runtest("transpose", P, args, logfile, timeout)
@@ -97,13 +97,13 @@ def main(argv):
                                     
         try:                            
             if nfails > 0:
-                print "Failure cases:"
-                print failcases
+                print("Failure cases:")
+                print(failcases)
                 retval += 1
-                print "\n", nfails, "failures out of", len(argslist), "tests." 
+                print("\n", nfails, "failures out of", len(argslist), "tests.")
 
                 tend = time.time()
-                print "\nElapsed time (s):", tend - tstart
+                print("\nElapsed time (s):", tend - tstart)
         except:
             pass
     
