@@ -133,6 +133,10 @@ public:
       threads=1;
     }
   }
+
+  int get_thread_num0() {
+    return threads > 1 ? ::get_thread_num() : 0;
+  }
 };
 
 inline unsigned int realsize(unsigned int n, Complex *in, Complex *out=NULL)

@@ -8,7 +8,7 @@
 // Optimize over -I0 and -I1
 //
 // Implement fftPad::forwardInnerAll
-// Implement 3D convolutions
+// Implement 3D Hermitian convolution
 // Exploit zeta -> -conj(zeta) symmetry for even q
 // Precompute best D and inline options for each m value
 // Use power of P values for m when L,M,M-L are powers of P?
@@ -371,8 +371,8 @@ void fftPad::init()
     ifftm=new mfft1d(m,-1,C, S,1, G);
     deleteAlign(G);
     dr=D=D0=R=Q=1;
-    z=M;
-    b=S*z;
+    l=M;
+    b=S*l;
   } else {
     double twopibyN=twopi/M;
     double twopibyq=twopi/q;
@@ -392,8 +392,8 @@ void fftPad::init()
     } else
       P1=P=p;
 
-    z=m*P;
-    b=S*z;
+    l=m*P;
+    b=S*l;
     d=C*D*P;
 
     Complex *G,*H;

@@ -6,8 +6,8 @@ CXXFLAGS+=-Ofast -g -Wall -ansi -DNDEBUG
 CXXFLAGS+=-fopenmp
 CXXFLAGS+=-fomit-frame-pointer -fstrict-aliasing -ffast-math
 CXXFLAGS+=-msse2 -mfpmath=sse -march=native
-#CXXFLAGS+= -flto 
-#CXXFLAGS+= -fprofile-generate 
+#CXXFLAGS+= -flto
+#CXXFLAGS+= -fprofile-generate
 #CXXFLAGS+= -fprofile-use -fprofile-dir=.
 #For valgrind:
 #CXXFLAGS=-fopenmp -g -Wall -ansi -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse
@@ -49,7 +49,8 @@ vpath %.cc ../
 
 FILES=conv cconv conv2 cconv2 conv3 cconv3 tconv tconv2 \
 	fft1 fft2 fft3 fft1r fft2r fft3r mfft1 mfft1r transpose \
-	hybrid hybridh hybridconv hybridconvh hybridconv2 hybridconvh2
+	hybrid hybridh hybridconv hybridconvh hybridconv2 hybridconvh2 \
+	hybridconv3
 
 FFTW=fftw++
 EXTRA=$(FFTW) convolution explicit direct getopt
@@ -83,6 +84,9 @@ hybridconv2: hybridconv2.o $(HYBRID:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 hybridconvh2: hybridconvh2.o $(HYBRID:=.o)
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
+hybridconv3: hybridconv3.o $(HYBRID:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 conv2: conv2.o $(EXTRA:=.o)

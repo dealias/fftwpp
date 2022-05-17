@@ -204,8 +204,8 @@ int main(int argc, char* argv[])
           sum += f[i][j];
       }
     }
-    cout << "sum=" << sum << endl;        
-    
+    cout << "sum=" << sum << endl;
+
     if(Direct) {
       for(unsigned int i=0; i < mx; i++)
         for(unsigned int j=0; j < my; j++)
@@ -230,6 +230,8 @@ int main(int argc, char* argv[])
     }
 
     ExplicitConvolution2 C(nx,ny,mx,my,F[0],Pruned);
+    cout << "threads=" << C.Threads() << endl << endl;;
+
     for(unsigned int i=0; i < N; ++i) {
       init(F,nxp,nyp,A);
       seconds();
@@ -268,7 +270,7 @@ int main(int argc, char* argv[])
 
     cout << endl;
     timings("Direct",mx,T,1);
-     
+
     if(mx*my < outlimit)
       for(unsigned int i=0; i < mx; i++) {
         for(unsigned int j=0; j < my; j++)

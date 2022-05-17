@@ -24,49 +24,64 @@ int main(int argc, char* argv[])
 
   unsigned int Lx=L;
   unsigned int Ly=L;
+  unsigned int Lz=L;
   unsigned int Mx=M;
   unsigned int My=M;
+  unsigned int Mz=M;
   unsigned int Sx=S;
+  unsigned int Sy=S;
 
   cout << "Lx=" << Lx << endl;
   cout << "Ly=" << Ly << endl;
+  cout << "Lz=" << Lz << endl;
   cout << "Mx=" << Mx << endl;
   cout << "My=" << My << endl;
+  cout << "Mz=" << Mz << endl;
   cout << endl;
 
-  if(Sx == 0) Sx=Ly;
+  if(Sx == 0) Sx=Ly*Lz;
+  if(Sy == 0) Sy=Lz;
 
   Complex **f=new Complex *[max(A,B)];
   for(unsigned int a=0; a < A; ++a)
     f[a]=ComplexAlign(Lx*Sx);
 
+  /*
   ForwardBackward FBx(A,B);
-  fftPad fftx(Lx,Mx,FBx,Ly,Sx);
+  fftPad fftx(Lx,Mx,FBx,Ly*Lz,Sx);
   ForwardBackward FBy(A,B,FBx.Threads(),fftx.l);
-  Convolution convolvey(Ly,My,FBy);
-  Convolution2 Convolve2(&fftx,&convolvey);
+  fftPad ffty(Ly,My,FBy,Lz,Sy);
+  ForwardBackward FBz(A,B,FBy.Threads(),ffty.l);
+  Convolution convolvez(Lz,Mz,FBz);
+  Convolution2 convolveyz(&ffty,&convolvez);
+  Convolution3 Convolve3(&fftx,&convolveyz);
+  */
 
-//  Convolution2 Convolve2(Lx,Mx,Ly,My,A,B);
+  Convolution3 Convolve3(Lx,Mx,Ly,My,Lz,Mz,A,B);
 
-  unsigned int K=20;
   double T=0;
 
-  for(unsigned int k=0; k < K; ++k) {
+  for(unsigned int c=0; c < C; ++c) {
 
     for(unsigned int a=0; a < A; ++a) {
       Complex *fa=f[a];
       for(unsigned int i=0; i < Lx; ++i) {
         for(unsigned int j=0; j < Ly; ++j) {
-          fa[Sx*i+j]=Complex((1.0+a)*i,j+a);
+          for(unsigned int k=0; k < Lz; ++k) {
+            fa[Sx*i+Sy*j+k]=Complex((1.0+a)*i+k,j+k+a);
+          }
         }
       }
     }
 
-    if(Lx*Ly < 200 && k == 0) {
+    if(Lx*Ly*Lz < 200 && c == 0) {
       for(unsigned int a=0; a < A; ++a) {
         for(unsigned int i=0; i < Lx; ++i) {
           for(unsigned int j=0; j < Ly; ++j) {
-            cout << f[a][Sx*i+j] << " ";
+            for(unsigned int k=0; k < Lz; ++k) {
+              cout << f[a][Sx*i+Sy*j+k] << " ";
+            }
+            cout << endl;
           }
           cout << endl;
         }
@@ -75,18 +90,20 @@ int main(int argc, char* argv[])
     }
 
     seconds();
-    Convolve2.convolve(f,multbinary);
+    Convolve3.convolve(f,multbinary);
     T += seconds();
   }
 
-  cout << "mean=" << T/K << endl;
+  cout << "mean=" << T/C << endl;
 
   Complex sum=0.0;
   for(unsigned int b=0; b < B; ++b) {
     Complex *fb=f[b];
     for(unsigned int i=0; i < Lx; ++i) {
       for(unsigned int j=0; j < Ly; ++j) {
-        sum += fb[Sx*i+j];
+        for(unsigned int k=0; k < Lz; ++k) {
+          sum += fb[Sx*i+Sy*j+k];
+        }
       }
     }
   }
@@ -96,12 +113,17 @@ int main(int argc, char* argv[])
 
   if(Lx*Ly < 200) {
     for(unsigned int b=0; b < B; ++b) {
+      Complex *fb=f[b];
       for(unsigned int i=0; i < Lx; ++i) {
         for(unsigned int j=0; j < Ly; ++j) {
-          cout << f[b][Sx*i+j] << " ";
+          for(unsigned int k=0; k < Lz; ++k) {
+            cout << fb[Sx*i+Sy*j+k] << " ";
+          }
+          cout << endl;
         }
         cout << endl;
       }
+      cout << endl;
     }
   }
   return 0;

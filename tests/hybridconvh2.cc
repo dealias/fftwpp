@@ -9,8 +9,8 @@ unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
 unsigned int C=1; // number of copies
 unsigned int S=0; // stride between copies (0 means ceilquotient(L,2))
-unsigned int L=512; // input data length
-unsigned int M=768; // minimum padded length
+unsigned int L=7; // input data length
+unsigned int M=12; // minimum padded length
 
 int main(int argc, char* argv[])
 {
@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
   unsigned int Ly=L;
   unsigned int Mx=M;
   unsigned int My=M;
-  unsigned int Sy=S;
+  unsigned int Sx=S;
 
   cout << "Lx=" << Lx << endl;
   cout << "Mx=" << Mx << endl;
@@ -35,20 +35,20 @@ int main(int argc, char* argv[])
   unsigned int Hx=ceilquotient(Lx,2);
   unsigned int Hy=ceilquotient(Ly,2);
 
-  if(Sy == 0) Sy=Hy;
+  if(Sx == 0) Sx=Hy;
 
   Complex **f=new Complex *[A];
 
   for(unsigned int a=0; a < A; ++a)
-    f[a]=ComplexAlign(Lx*Sy);
+    f[a]=ComplexAlign(Lx*Sx);
 
-  array2<Complex> f0(Lx,Sy,f[0]);
-  array2<Complex> f1(Lx,Sy,f[1]);
+  array2<Complex> f0(Lx,Sx,f[0]);
+  array2<Complex> f1(Lx,Sx,f[1]);
 
-  array2<Complex> h0(Lx,Sy,f[0]);
+  array2<Complex> h0(Lx,Sx,f[0]);
 
   ForwardBackward FB(A,B);
-  fftPadCentered fftx(Lx,Mx,FB,Sy);
+  fftPadCentered fftx(Lx,Mx,FB,Hy,Sx);
   ConvolutionHermitian convolvey(Ly,My,FB);
   ConvolutionHermitian2 Convolve2(&fftx,&convolvey);
 
@@ -65,8 +65,8 @@ int main(int argc, char* argv[])
       }
     }
 
-    HermitianSymmetrizeX(Hx,Sy,Lx/2,f0);
-    HermitianSymmetrizeX(Hx,Sy,Lx/2,f1);
+    HermitianSymmetrizeX(Hx,Sx,Lx/2,f0);
+    HermitianSymmetrizeX(Hx,Sx,Lx/2,f1);
 
     if(Lx*Hy < 200 && k == 0) {
       for(unsigned int i=0; i < Lx; ++i) {
