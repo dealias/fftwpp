@@ -965,7 +965,7 @@ public:
     A=convolvey[0]->A;
     B=convolvey[0]->B;
 
-//    if(fftx->Overwrite(A,B) && false) {
+//    if(fftx->Overwrite(A,B) && false) { // FIXME
     if(fftx->Overwrite(A,B)) {
       Forward=fftx->ForwardAll;
       Backward=fftx->BackwardAll;
@@ -1094,7 +1094,8 @@ public:
 // f is a pointer to A distinct data blocks each of size Lx*Sx,
 // shifted by offset.
   void convolveRaw(Complex **f, multiplier *mult, unsigned int offset=0) {
-    if(fftx->Overwrite(A,B) && false) {
+//    if(fftx->Overwrite(A,B) && false) {// FIXME
+    if(fftx->Overwrite(A,B)) {
       forward(f,F,0,offset);
       subconvolution(f,mult,(fftx->n-1)*lx,Sx);
       subconvolution(F,mult,lx,Sx);
