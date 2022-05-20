@@ -300,7 +300,7 @@ public:
   }
 
   bool loop2(unsigned int A, unsigned int B) {
-    return nloops() == 2 && A > B;
+    return nloops() == 2 && A > B && !Overwrite(A,B);
   }
 
   virtual unsigned int inputSize() {
@@ -777,17 +777,15 @@ public:
       nloops=fft->nloops();
       loop2=fft->loop2(A,B);
       int extra;
-      if(loop2 && !fft->overwrite) {
+      if(loop2) {
         r=fft->increment(0);
         Fp=new Complex*[A];
         Fp[0]=this->F[A-1];
         for(unsigned int a=1; a < A; ++a)
           Fp[a]=this->F[a-1];
         extra=1;
-      } else {
-        Fp=NULL;
+      } else
         extra=0;
-      }
 
       if(A > B+extra && !fft->inplace && workSizeW <= outputSize) {
         W0=this->F[B];
@@ -1049,6 +1047,10 @@ public:
       for(unsigned int i=0; i < B; ++i)
         utils::deleteAlign(V[i]);
     }
+
+    if(loop2)
+      delete [] Fp;
+
     if(V)
       delete [] V;
     if(ffty) {
@@ -1388,6 +1390,10 @@ public:
     }
     if(V)
       delete [] V;
+
+    if(loop2)
+      delete [] Fp;
+
     if(fftz) {
       for(unsigned int t=0; t < threads; ++t)
         delete convolveyz[t];

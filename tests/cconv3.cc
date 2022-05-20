@@ -210,11 +210,15 @@ int main(int argc, char* argv[])
           for(unsigned int k=0; k < mz; k++)
             h0[i][j][k]=f[i][j][k];
 
+    Complex sum=0.0;
+      for(unsigned int i=0; i < mx; i++)
+        for(unsigned int j=0; j < my; j++)
+          for(unsigned int k=0; k < mz; k++)
+            sum += f[i][j][k];
     cout << endl;
     if(mx*my*mz < outlimit)
       cout << f;
-    else
-      cout << f[0][0][0] << endl;
+    cout << endl << "sum=" << sum << endl;
   }
 
   if(Explicit) {

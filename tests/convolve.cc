@@ -4999,7 +4999,7 @@ Convolution::~Convolution()
     if(allocateW)
       deleteAlign(W);
 
-    if(Fp)
+    if(loop2)
       delete[] Fp;
 
     if(allocateV) {
