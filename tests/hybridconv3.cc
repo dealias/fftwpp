@@ -46,7 +46,6 @@ int main(int argc, char* argv[])
   for(unsigned int a=0; a < A; ++a)
     f[a]=ComplexAlign(Lx*Sx);
 
-  /*
   ForwardBackward FBx(A,B);
   fftPad fftx(Lx,Mx,FBx,Ly*Lz,Sx);
   ForwardBackward FBy(A,B,FBx.Threads(),fftx.l);
@@ -55,9 +54,8 @@ int main(int argc, char* argv[])
   Convolution convolvez(Lz,Mz,FBz);
   Convolution2 convolveyz(&ffty,&convolvez);
   Convolution3 Convolve3(&fftx,&convolveyz);
-  */
 
-  Convolution3 Convolve3(Lx,Mx,Ly,My,Lz,Mz,A,B);
+//  Convolution3 Convolve3(Lx,Mx,Ly,My,Lz,Mz,A,B);
 
   double T=0;
 

@@ -335,6 +335,7 @@ public:
   }
 
   bool Overwrite(unsigned int A, unsigned int B) {
+    return false; //FIXME
     return overwrite && A >= B;
   }
 
@@ -685,7 +686,7 @@ protected:
   FFTPad Pad;
 public:
   Convolution() :
-    ThreadBase(), W(NULL), allocate(false) {}
+    ThreadBase(), W(NULL), allocate(false), loop2(false) {}
 
   Convolution(Application &app) :
     ThreadBase(app.Threads()), A(app.A), B(app.B), W(NULL), allocate(false) {}
@@ -906,7 +907,7 @@ protected:
   unsigned int nloops;
 public:
   Convolution2(unsigned int threads=fftw::maxthreads) :
-    ThreadBase(threads), ffty(NULL), W(NULL), allocateW(false) {}
+    ThreadBase(threads), ffty(NULL), W(NULL), allocateW(false), loop2(false) {}
 
   // Lx,Ly: x,y dimensions of input data
   // Mx,My: x,y dimensions of transformed data, including padding
@@ -941,17 +942,6 @@ public:
     for(unsigned int t=1; t < threads; ++t)
       this->convolvey[t]=new Convolution(convolvey->fft,
                                          convolvey->A,convolvey->B);
-    init(F,V);
-  }
-
-  // F: optional work array of size max(A,B)*fftx->outputSize()
-  // W: optional work array of size fftx->workSizeW();
-  //    call fftx->pad() if W changed between calls to convolve()
-  // V: optional work array of size B*fftx->workSizeV(A,B)
-  Convolution2(fftBase *fftx, Convolution **convolvey,
-               Complex *F=NULL, Complex *W=NULL, Complex *V=NULL) :
-    ThreadBase(convolvey[0]->Threads()), fftx(fftx), ffty(NULL),
-    convolvey(convolvey), W(W), allocateW(false) {
     init(F,V);
   }
 
@@ -1238,7 +1228,8 @@ protected:
   unsigned int nloops;
 public:
   Convolution3(unsigned int threads=fftw::maxthreads) :
-    ThreadBase(threads), ffty(NULL), W(NULL), allocateW(false) {}
+    ThreadBase(threads), fftz(NULL), convolvez(NULL), convolveyz(NULL),
+    W(NULL), allocateW(false), loop2(false) {}
 
   // Lx,Ly,Lz: x,y,z dimensions of input data
   // Mx,My,Mz: x,y,z dimensions of transformed data, including padding
@@ -1274,24 +1265,19 @@ public:
     ThreadBase(fftx->Threads()), fftx(fftx), fftz(NULL), W(W),
     allocateW(false) {
     multithread(fftx->l);
+
+    fftBase *fftz=convolveyz->convolvey[0]->fft;
+    convolvez=new Convolution*[threads];
+    convolvez[0]=convolveyz->convolvey[0];
+    for(unsigned int t=1; t < threads; ++t)
+      convolvez[t]=new Convolution(fftz,convolveyz->A,convolveyz->B);
+
     ffty=convolveyz->fftx;
     this->convolveyz=new Convolution2*[threads];
     this->convolveyz[0]=convolveyz;
     for(unsigned int t=1; t < threads; ++t)
-      this->convolveyz[t]=new Convolution2(convolveyz->fftx,
-                                           convolveyz->convolvey);
-    init(F,V);
-  }
+      this->convolveyz[t]=new Convolution2(ffty,convolvez[t]);
 
-  // F: optional work array of size max(A,B)*fftx->outputSize()
-  // W: optional work array of size fftx->workSizeW();
-  //    call fftx->pad() if W changed between calls to convolve()
-  // V: optional work array of size B*fftx->workSizeV(A,B)
-  Convolution3(fftPad *fftx, Convolution2 **convolveyz,
-               Complex *F=NULL, Complex *W=NULL, Complex *V=NULL) :
-    ThreadBase(convolveyz[0]->Threads()), fftx(fftx),
-    ffty(convolveyz[0]->fftx), fftz(NULL), convolveyz(convolveyz), W(W),
-    allocateW(false) {
     init(F,V);
   }
 
@@ -1395,16 +1381,25 @@ public:
       delete [] Fp;
 
     if(fftz) {
-      for(unsigned int t=0; t < threads; ++t)
-        delete convolveyz[t];
-      delete [] convolveyz;
-      for(unsigned int t=0; t < threads; ++t)
-        delete convolvez[t];
-      delete [] convolvez;
+      delete convolveyz[0];
+      delete convolvez[0];
       delete fftz;
       delete ffty;
       delete fftx;
     }
+
+    if(convolveyz) {
+      for(unsigned int t=1; t < threads; ++t)
+        delete convolveyz[t];
+      delete [] convolveyz;
+    }
+
+    if(convolvez) {
+      for(unsigned int t=1; t < threads; ++t)
+        delete convolvez[t];
+      delete [] convolvez;
+    }
+
   }
 
   void forward(Complex **f, Complex **F, unsigned int rx,
