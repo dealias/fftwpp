@@ -1261,7 +1261,7 @@ public:
       convolvez[t]=new Convolution(fftz,A,B);
     convolveyz=new Convolution2*[threads];
     for(unsigned int t=0; t < threads; ++t)
-      convolveyz[t]=new Convolution2(ffty,convolvez);
+      convolveyz[t]=new Convolution2(ffty,convolvez[t]);
     init();
   }
 
