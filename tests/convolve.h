@@ -934,8 +934,8 @@ public:
   // V: optional work array of size B*fftx->workSizeV(A,B)
   Convolution2(fftBase *fftx, Convolution *convolvey,
                Complex *F=NULL, Complex *W=NULL, Complex *V=NULL) :
-    ThreadBase(fftx->Threads()), fftx(fftx), ffty(NULL), W(W),
-    allocateW(false) {
+    ThreadBase(fftx->Threads()), fftx(fftx), ffty(NULL), convolvey(NULL),
+    W(W), allocateW(false) {
     multithread(fftx->l);
     this->convolvey=new Convolution*[threads];
     this->convolvey[0]=convolvey;
@@ -1038,17 +1038,22 @@ public:
         utils::deleteAlign(V[i]);
     }
 
+    if(V)
+      delete [] V;
+
     if(loop2)
       delete [] Fp;
 
-    if(V)
-      delete [] V;
     if(ffty) {
-      for(unsigned int t=0; t < threads; ++t)
-        delete convolvey[t];
-      delete [] convolvey;
+      delete convolvey[0];
       delete ffty;
       delete fftx;
+    }
+
+    if(convolvey) {
+      for(unsigned int t=1; t < threads; ++t)
+        delete convolvey[t];
+      delete [] convolvey;
     }
   }
 
@@ -1374,6 +1379,7 @@ public:
       for(unsigned int i=0; i < B; ++i)
         utils::deleteAlign(V[i]);
     }
+
     if(V)
       delete [] V;
 
@@ -1399,7 +1405,6 @@ public:
         delete convolvez[t];
       delete [] convolvez;
     }
-
   }
 
   void forward(Complex **f, Complex **F, unsigned int rx,
