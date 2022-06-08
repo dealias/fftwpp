@@ -335,7 +335,6 @@ public:
   }
 
   bool Overwrite(unsigned int A, unsigned int B) {
-    return false; //FIXME
     return overwrite && A >= B;
   }
 
@@ -681,6 +680,7 @@ protected:
   bool allocateW;
   unsigned int nloops;
   bool loop2;
+  bool overwrite;
   unsigned int inputSize;
   FFTcall Forward,Backward;
   FFTPad Pad;
@@ -735,7 +735,8 @@ public:
     q=fft->q;
     Q=fft->Q;
 
-    if(fft->Overwrite(A,B)) {
+    overwrite=fft->Overwrite(A,B);
+    if(overwrite) {
       Forward=fft->ForwardAll;
       Backward=fft->BackwardAll;
     } else {
@@ -905,6 +906,7 @@ protected:
   bool loop2;
   FFTcall Forward,Backward;
   unsigned int nloops;
+  bool overwrite;
 public:
   Convolution2(unsigned int threads=fftw::maxthreads) :
     ThreadBase(threads), ffty(NULL), W(NULL), allocateW(false), loop2(false) {}
@@ -953,8 +955,8 @@ public:
     A=convolvey[0]->A;
     B=convolvey[0]->B;
 
-//    if(fftx->Overwrite(A,B) && false) { // FIXME
-    if(fftx->Overwrite(A,B)) {
+    overwrite=fftx->Overwrite(A,B) && false;
+    if(overwrite) {
       Forward=fftx->ForwardAll;
       Backward=fftx->BackwardAll;
     } else {
@@ -1091,8 +1093,7 @@ public:
 // f is a pointer to A distinct data blocks each of size Lx*Sx,
 // shifted by offset.
   void convolveRaw(Complex **f, multiplier *mult, unsigned int offset=0) {
-//    if(fftx->Overwrite(A,B) && false) {// FIXME
-    if(fftx->Overwrite(A,B)) {
+    if(overwrite) {
       forward(f,F,0,offset);
       subconvolution(f,mult,(fftx->n-1)*lx,Sx);
       subconvolution(F,mult,lx,Sx);
@@ -1189,19 +1190,6 @@ public:
     this->W=W;
     init(F,V);
   }
-  // F is an optional work array of size max(A,B)*fftx->outputSize(),
-  // W is an optional work array of size fftx->workSizeW(),
-  //    call fftx->pad() if changed between calls to convolve()
-  // V is an optional work array of size B*fftx->workSizeV(A,B)
-  ConvolutionHermitian2(fftPadCentered *fftx,
-                        ConvolutionHermitian **convolvey,
-                        Complex *F=NULL, Complex *W=NULL, Complex *V=NULL) :
-    Convolution2(convolvey[0]->Threads()) {
-    this->fftx=fftx;
-    this->convolvey=(Convolution **) convolvey;
-    this->W=W;
-    init(F,V);
-  }
 };
 
 class Convolution3 : public ThreadBase {
@@ -1231,6 +1219,7 @@ protected:
   bool loop2;
   FFTcall Forward,Backward;
   unsigned int nloops;
+  bool overwrite;
 public:
   Convolution3(unsigned int threads=fftw::maxthreads) :
     ThreadBase(threads), fftz(NULL), convolvez(NULL), convolveyz(NULL),
@@ -1294,7 +1283,8 @@ public:
     A=convolveyz[0]->A;
     B=convolveyz[0]->B;
 
-    if(fftx->Overwrite(A,B)) {
+    overwrite=fftx->Overwrite(A,B);
+    if(overwrite) {
       Forward=fftx->ForwardAll;
       Backward=fftx->BackwardAll;
     } else {
@@ -1408,9 +1398,20 @@ public:
   }
 
   void forward(Complex **f, Complex **F, unsigned int rx,
+               unsigned int start, unsigned int stop,
                unsigned int offset=0) {
-    for(unsigned int a=0; a < A; ++a)
-      (fftx->*Forward)(f[a]+offset,F[a],rx,W);
+    for(unsigned int a=start; a < stop; ++a) {
+      if(Sx == fftx->C)
+        (fftx->*Forward)(f[a]+offset,F[a],rx,W);
+      else {
+        Complex *fa=f[a]+offset;
+        Complex *Fa=F[a];
+        for(unsigned int j=0; j < Ly; ++j) {
+          unsigned int Syj=Sy*j;
+          (fftx->*Forward)(fa+Syj,Fa+Syj,rx,W);
+        }
+      }
+    }
   }
 
   void subconvolution(Complex **F, multiplier *mult, unsigned int C,
@@ -1422,9 +1423,19 @@ public:
   }
 
   void backward(Complex **F, Complex **f, unsigned int rx,
-                unsigned int offset=0) {
-    for(unsigned int b=0; b < B; ++b)
-      (fftx->*Backward)(F[b],f[b]+offset,rx,W);
+                Complex *W, unsigned int offset=0) {
+    for(unsigned int b=0; b < B; ++b) {
+      if(Sx == fftx->C)
+        (fftx->*Backward)(F[b],f[b]+offset,rx,W);
+      else {
+        Complex *Fb=F[b];
+        Complex *fb=f[b]+offset;
+        for(unsigned int j=0; j < Ly; ++j) {
+          unsigned int Syj=Sy*j;
+          (fftx->*Backward)(Fb+Syj,fb+Syj,rx,W);
+        }
+      }
+    }
   }
 
   void normalize(Complex **h, unsigned int offset=0) {
@@ -1444,26 +1455,20 @@ public:
 // f is a pointer to A distinct data blocks each of size Lx*Sx,
 // shifted by offset.
   void convolveRaw(Complex **f, multiplier *mult, unsigned int offset=0) {
-    if(fftx->Overwrite(A,B)) {
-      forward(f,F,0,offset);
+    if(overwrite) {
+      forward(f,F,0,0,A,offset);
       subconvolution(f,mult,(fftx->n-1)*lx,Sx);
       subconvolution(F,mult,lx,Sx);
-      backward(F,f,0,offset);
+      backward(F,f,0,W,offset);
     } else {
       if(loop2) {
-        for(unsigned int a=0; a < A; ++a)
-          (fftx->*Forward)(f[a]+offset,F[a],0,W);
+        forward(f,F,0,0,A,offset);
         subconvolution(F,mult,fftx->D0*lx,Sx);
-
-        for(unsigned int b=0; b < B; ++b) {
-          (fftx->*Forward)(f[b]+offset,Fp[b],r,W);
-          (fftx->*Backward)(F[b],f[b]+offset,0,W0);
-        }
-        for(unsigned int a=B; a < A; ++a)
-          (fftx->*Forward)(f[a]+offset,Fp[a],r,W);
+        forward(f,Fp,r,0,B,offset);
+        backward(F,f,0,W0,offset);
+        forward(f,Fp,r,B,A,offset);
         subconvolution(Fp,mult,fftx->D*lx,Sx);
-        for(unsigned int b=0; b < B; ++b)
-          (fftx->*Backward)(Fp[b],f[b]+offset,r,W0);
+        backward(Fp,f,r,W0,offset);
       } else {
         unsigned int Offset;
         Complex **h0;
@@ -1477,9 +1482,9 @@ public:
         }
 
         for(unsigned int rx=0; rx < Rx; rx += fftx->increment(rx)) {
-          forward(f,F,rx,offset);
+          forward(f,F,rx,0,A,offset);
           subconvolution(F,mult,(rx == 0 ? fftx->D0 : fftx->D)*lx,Sx);
-          backward(F,h0,rx,Offset);
+          backward(F,h0,rx,W,Offset);
         }
 
         if(nloops > 1) {

@@ -275,6 +275,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   cout << "p=" << p << endl;
   cout << "q=" << q << endl;
   cout << "C=" << C << endl;
+  cout << "S=" << S << endl;
   cout << "D=" << D << endl;
   cout << "Padding:" << m*p-L << endl;
 
@@ -5038,7 +5039,7 @@ void Convolution::convolveRaw(Complex **f, multiplier *mult, unsigned int offset
     for(unsigned int b=0; b < B; ++b)
       (fft->*Backward)(F[b],f[b]+offset,0,NULL);
   } else {
-    if(fft->Overwrite(A,B)) {
+    if(overwrite) {
       for(unsigned int a=0; a < A; ++a)
         (fft->*Forward)(f[a]+offset,F[a],0,NULL);
       if(S == C) {

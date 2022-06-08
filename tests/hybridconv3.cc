@@ -39,15 +39,16 @@ int main(int argc, char* argv[])
   cout << "Mz=" << Mz << endl;
   cout << endl;
 
-  if(Sx == 0) Sx=Ly*Lz;
+  Sy=Lz+1;
   if(Sy == 0) Sy=Lz;
+  if(Sx == 0) Sx=Ly*Sy;
 
   Complex **f=new Complex *[max(A,B)];
   for(unsigned int a=0; a < A; ++a)
     f[a]=ComplexAlign(Lx*Sx);
 
   ForwardBackward FBx(A,B);
-  fftPad fftx(Lx,Mx,FBx,Ly*Lz,Sx);
+  fftPad fftx(Lx,Mx,FBx,Sx == Ly*Lz ? Sx : Lz,Sx);
   ForwardBackward FBy(A,B,FBx.Threads(),fftx.l);
   fftPad ffty(Ly,My,FBy,Lz,Sy);
   ForwardBackward FBz(A,B,FBy.Threads(),ffty.l);
@@ -99,9 +100,8 @@ int main(int argc, char* argv[])
     Complex *fb=f[b];
     for(unsigned int i=0; i < Lx; ++i) {
       for(unsigned int j=0; j < Ly; ++j) {
-        for(unsigned int k=0; k < Lz; ++k) {
+        for(unsigned int k=0; k < Lz; ++k)
           sum += fb[Sx*i+Sy*j+k];
-        }
       }
     }
   }
