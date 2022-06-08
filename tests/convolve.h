@@ -1320,6 +1320,11 @@ public:
     Sx=fftx->S;
     Sy=ffty->S;
 
+    if(fftx->C != (Sy == Lz ? Ly*Lz : Lz)) {
+      cout << "fftx->C is invalid" << endl;
+      exit(-1);
+    }
+
     nloops=fftx->nloops();
     loop2=fftx->loop2(A,B);
     int extra;
@@ -1401,7 +1406,7 @@ public:
                unsigned int start, unsigned int stop,
                unsigned int offset=0) {
     for(unsigned int a=start; a < stop; ++a) {
-      if(Sx == fftx->C)
+      if(Sy == Lz)
         (fftx->*Forward)(f[a]+offset,F[a],rx,W);
       else {
         Complex *fa=f[a]+offset;
