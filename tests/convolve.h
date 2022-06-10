@@ -1060,8 +1060,9 @@ public:
   }
 
   void forward(Complex **f, Complex **F, unsigned int rx,
+               unsigned int start, unsigned int stop,
                unsigned int offset=0) {
-    for(unsigned int a=0; a < A; ++a)
+    for(unsigned int a=start; a < stop; ++a)
       (fftx->*Forward)(f[a]+offset,F[a],rx,W);
   }
 
@@ -1074,7 +1075,7 @@ public:
   }
 
   void backward(Complex **F, Complex **f, unsigned int rx,
-                unsigned int offset=0) {
+                Complex *W, unsigned int offset=0) {
     for(unsigned int b=0; b < B; ++b)
       (fftx->*Backward)(F[b],f[b]+offset,rx,W);
   }
@@ -1094,25 +1095,19 @@ public:
 // shifted by offset.
   void convolveRaw(Complex **f, multiplier *mult, unsigned int offset=0) {
     if(overwrite) {
-      forward(f,F,0,offset);
+      forward(f,F,0,0,A,offset);
       subconvolution(f,mult,(fftx->n-1)*lx,Sx);
       subconvolution(F,mult,lx,Sx);
-      backward(F,f,0,offset);
+      backward(F,f,0,W,offset);
     } else {
       if(loop2) {
-        for(unsigned int a=0; a < A; ++a)
-          (fftx->*Forward)(f[a]+offset,F[a],0,W);
+        forward(f,F,0,0,A,offset);
         subconvolution(F,mult,fftx->D0*lx,Sx);
-
-        for(unsigned int b=0; b < B; ++b) {
-          (fftx->*Forward)(f[b]+offset,Fp[b],r,W);
-          (fftx->*Backward)(F[b],f[b]+offset,0,W0);
-        }
-        for(unsigned int a=B; a < A; ++a)
-          (fftx->*Forward)(f[a]+offset,Fp[a],r,W);
+        forward(f,Fp,r,0,B,offset);
+        backward(F,f,0,W0,offset);
+        forward(f,Fp,r,B,A,offset);
         subconvolution(Fp,mult,fftx->D*lx,Sx);
-        for(unsigned int b=0; b < B; ++b)
-          (fftx->*Backward)(Fp[b],f[b]+offset,r,W0);
+        backward(Fp,f,r,W0,offset);
       } else {
         unsigned int Offset;
         Complex **h0;
@@ -1126,9 +1121,9 @@ public:
         }
 
         for(unsigned int rx=0; rx < Rx; rx += fftx->increment(rx)) {
-          forward(f,F,rx,offset);
+          forward(f,F,rx,0,A,offset);
           subconvolution(F,mult,(rx == 0 ? fftx->D0 : fftx->D)*lx,Sx);
-          backward(F,h0,rx,Offset);
+          backward(F,h0,rx,W,Offset);
         }
 
         if(nloops > 1) {
