@@ -40,7 +40,7 @@ const union uvec sse2_mm = {
 const double twopi=2.0*M_PI;
 
 // This multiplication routine is for binary convolutions and takes
-// two Complex inputs of size n.
+// two Complex inputs of size n and outputs one Complex value.
 // F0[j] *= F1[j];
 void multbinary(Complex **F, unsigned int offset, unsigned int n,
                 unsigned int threads)
@@ -5029,19 +5029,16 @@ void Convolution::convolveRaw(Complex **f, multiplier *mult, unsigned int offset
   unsigned int Cblocksize=C*blocksize;
   unsigned int Sblocksize=S*blocksize;
   if(q == 1) {
-    for(unsigned int a=0; a < A; ++a)
-      (fft->*Forward)(f[a]+offset,F[a],0,NULL);
+    forward(f,F,0,0,A,offset);
     if(S == C)
       (*mult)(F,0,Cblocksize,threads);
     else
       for(unsigned int s=0; s < Sblocksize; s += S)
         (*mult)(F,s,C,threads);
-    for(unsigned int b=0; b < B; ++b)
-      (fft->*Backward)(F[b],f[b]+offset,0,NULL);
+    backward(F,f,0,offset);
   } else {
-    if(overwrite) {
-      for(unsigned int a=0; a < A; ++a)
-        (fft->*Forward)(f[a]+offset,F[a],0,NULL);
+   if(overwrite) {
+      forward(f,F,0,0,A,offset);
       if(S == C) {
         (*mult)(f,offset,(fft->n-1)*Cblocksize,threads);
         (*mult)(F,0,Cblocksize,threads);
@@ -5052,39 +5049,16 @@ void Convolution::convolveRaw(Complex **f, multiplier *mult, unsigned int offset
         for(unsigned int s=0; s < Sblocksize; s += S)
           (*mult)(F,s,C,threads);
       }
-      for(unsigned int b=0; b < B; ++b)
-        (fft->*Backward)(F[b],f[b]+offset,0,NULL);
+      backward(F,f,0,offset);
     } else {
-      unsigned int incr=fft->b;
       if(loop2) {
-        for(unsigned int a=0; a < A; ++a)
-          (fft->*Forward)(f[a]+offset,F[a],0,W);
-        if(S == C) {
-          unsigned int stop=incr*fft->D0;
-          for(unsigned int d=0; d < stop; d += incr)
-            (*mult)(F,d,Cblocksize,threads);
-        } else {
-          for(unsigned int s=0; s < Sblocksize; s += S)
-            (*mult)(F,s,C,threads);
-        }
-        for(unsigned int b=0; b < B; ++b) {
-          (fft->*Forward)(f[b]+offset,Fp[b],r,W);
-          (fft->*Backward)(F[b],f[b]+offset,0,W0);
-          (fft->*Pad)(W);
-        }
-        for(unsigned int a=B; a < A; ++a)
-          (fft->*Forward)(f[a]+offset,Fp[a],r,W);
-        if(S == C) {
-          unsigned int stop=incr*fft->D;
-          for(unsigned int d=0; d < stop; d += incr)
-            (*mult)(Fp,d,Cblocksize,threads);
-        } else {
-          for(unsigned int s=0; s < Sblocksize; s += S)
-            (*mult)(Fp,s,C,threads);
-        }
-        for(unsigned int b=0; b < B; ++b)
-          (fft->*Backward)(Fp[b],f[b]+offset,r,W0);
-        (fft->*Pad)(W);
+        forward(f,F,0,0,A,offset);
+        operate(F,mult,0,C,S);
+        forward(f,Fp,r,0,B,offset);
+        backward(F,f,0,offset,W0);
+        forward(f,Fp,r,B,A,offset);
+        operate(Fp,mult,r,C,S);
+        backward(Fp,f,r,offset,W0);
       } else {
         unsigned int Offset;
         Complex **h0;
@@ -5098,19 +5072,9 @@ void Convolution::convolveRaw(Complex **f, multiplier *mult, unsigned int offset
         }
 
         for(unsigned int r=0; r < R; r += fft->increment(r)) {
-          for(unsigned int a=0; a < A; ++a)
-            (fft->*Forward)(f[a]+offset,F[a],r,W);
-          if(S == C) {
-            unsigned int stop=fft->complexOutputs(r);
-            for(unsigned int d=0; d < stop; d += incr)
-              (*mult)(F,d,Cblocksize,threads);
-          } else {
-            for(unsigned int s=0; s < Sblocksize; s += S)
-              (*mult)(F,s,C,threads);
-          }
-          for(unsigned int b=0; b < B; ++b)
-            (fft->*Backward)(F[b],h0[b]+Offset,r,W0);
-          (fft->*Pad)(W);
+          forward(f,F,r,0,A,offset);
+          operate(F,mult,r,C,S);
+          backward(F,h0,r,Offset,W0);
         }
 
         if(nloops > 1) {

@@ -819,12 +819,42 @@ public:
     }
   }
 
+  void forward(Complex **f, Complex **F, unsigned int r,
+               unsigned int start, unsigned int stop,
+               unsigned int offset=0) {
+    for(unsigned int a=start; a < stop; ++a)
+      (fft->*Forward)(f[a]+offset,F[a],r,W);
+  }
+
+  void operate(Complex **F, multiplier *mult, unsigned int r,
+               unsigned int C, unsigned int S) {
+    if(S == C) {
+      unsigned int incr=fft->b;
+      unsigned int stop=fft->complexOutputs(r);
+      unsigned int Cblocksize=C*blocksize;
+      for(unsigned int d=0; d < stop; d += incr)
+        (*mult)(F,d,Cblocksize,threads);
+    } else {
+      unsigned int Sblocksize=S*blocksize;
+      for(unsigned int s=0; s < Sblocksize; s += S)
+        (*mult)(F,s,C,threads);
+    }
+  }
+
+  void backward(Complex **F, Complex **f, unsigned int r,
+                unsigned int offset=0, Complex *W0=NULL) {
+    for(unsigned int b=0; b < B; ++b)
+      (fft->*Backward)(F[b],f[b]+offset,r,W0);
+    if(W && W == W0) (fft->*Pad)(W0);
+  }
+
   void convolveRaw(Complex **f, multiplier *mult, unsigned int offset=0);
 
   void convolve(Complex **f, multiplier *mult, unsigned int offset=0) {
     convolveRaw(f,mult,offset);
     normalize(f,offset);
   }
+
 };
 
 class ConvolutionHermitian : public Convolution {
@@ -1075,7 +1105,7 @@ public:
   }
 
   void backward(Complex **F, Complex **f, unsigned int rx,
-                Complex *W, unsigned int offset=0) {
+                unsigned int offset=0, Complex *W=NULL) {
     for(unsigned int b=0; b < B; ++b)
       (fftx->*Backward)(F[b],f[b]+offset,rx,W);
   }
@@ -1098,16 +1128,16 @@ public:
       forward(f,F,0,0,A,offset);
       subconvolution(f,mult,(fftx->n-1)*lx,Sx);
       subconvolution(F,mult,lx,Sx);
-      backward(F,f,0,W,offset);
+      backward(F,f,0,offset,W);
     } else {
       if(loop2) {
         forward(f,F,0,0,A,offset);
         subconvolution(F,mult,fftx->D0*lx,Sx);
         forward(f,Fp,r,0,B,offset);
-        backward(F,f,0,W0,offset);
+        backward(F,f,0,offset,W0);
         forward(f,Fp,r,B,A,offset);
         subconvolution(Fp,mult,fftx->D*lx,Sx);
-        backward(Fp,f,r,W0,offset);
+        backward(Fp,f,r,offset,W0);
       } else {
         unsigned int Offset;
         Complex **h0;
@@ -1123,7 +1153,7 @@ public:
         for(unsigned int rx=0; rx < Rx; rx += fftx->increment(rx)) {
           forward(f,F,rx,0,A,offset);
           subconvolution(F,mult,(rx == 0 ? fftx->D0 : fftx->D)*lx,Sx);
-          backward(F,h0,rx,W,Offset);
+          backward(F,h0,rx,Offset,W);
         }
 
         if(nloops > 1) {
@@ -1423,7 +1453,7 @@ public:
   }
 
   void backward(Complex **F, Complex **f, unsigned int rx,
-                Complex *W, unsigned int offset=0) {
+                unsigned int offset=0, Complex *W=NULL) {
     for(unsigned int b=0; b < B; ++b) {
       if(Sx == fftx->C)
         (fftx->*Backward)(F[b],f[b]+offset,rx,W);
@@ -1459,16 +1489,16 @@ public:
       forward(f,F,0,0,A,offset);
       subconvolution(f,mult,(fftx->n-1)*lx,Sx);
       subconvolution(F,mult,lx,Sx);
-      backward(F,f,0,W,offset);
+      backward(F,f,0,offset,W);
     } else {
       if(loop2) {
         forward(f,F,0,0,A,offset);
         subconvolution(F,mult,fftx->D0*lx,Sx);
         forward(f,Fp,r,0,B,offset);
-        backward(F,f,0,W0,offset);
+        backward(F,f,0,offset,W0);
         forward(f,Fp,r,B,A,offset);
         subconvolution(Fp,mult,fftx->D*lx,Sx);
-        backward(Fp,f,r,W0,offset);
+        backward(Fp,f,r,offset,W0);
       } else {
         unsigned int Offset;
         Complex **h0;
@@ -1484,7 +1514,7 @@ public:
         for(unsigned int rx=0; rx < Rx; rx += fftx->increment(rx)) {
           forward(f,F,rx,0,A,offset);
           subconvolution(F,mult,(rx == 0 ? fftx->D0 : fftx->D)*lx,Sx);
-          backward(F,h0,rx,W,Offset);
+          backward(F,h0,rx,Offset,W);
         }
 
         if(nloops > 1) {
