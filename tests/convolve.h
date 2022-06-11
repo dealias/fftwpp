@@ -182,7 +182,7 @@ public:
   virtual void padSingle(Complex *W) {}
   virtual void padMany(Complex *W) {}
 
-  void pad(Complex *W=NULL) {
+  void pad(Complex *W) {
     if(W)
       (this->*Pad)(W);
   }
