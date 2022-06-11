@@ -39,7 +39,6 @@ int main(int argc, char* argv[])
   cout << "Mz=" << Mz << endl;
   cout << endl;
 
-  Sy=Lz+1;
   if(Sy == 0) Sy=Lz;
   if(Sx == 0) Sx=Ly*Sy;
 

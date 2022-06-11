@@ -985,7 +985,7 @@ public:
     A=convolvey[0]->A;
     B=convolvey[0]->B;
 
-    overwrite=fftx->Overwrite(A,B) && false;
+    overwrite=fftx->Overwrite(A,B);
     if(overwrite) {
       Forward=fftx->ForwardAll;
       Backward=fftx->BackwardAll;
@@ -1097,10 +1097,11 @@ public:
   }
 
   void subconvolution(Complex **F, multiplier *mult, unsigned int C,
-                      unsigned int stride) {
+                      unsigned int stride, unsigned int offset=0) {
     PARALLEL(
       for(unsigned int i=0; i < C; ++i)
-        convolvey[ThreadBase::get_thread_num0()]->convolveRaw(F,mult,i*stride);
+        convolvey[ThreadBase::get_thread_num0()]->
+          convolveRaw(F,mult,offset+i*stride);
       );
   }
 
@@ -1126,7 +1127,7 @@ public:
   void convolveRaw(Complex **f, multiplier *mult, unsigned int offset=0) {
     if(overwrite) {
       forward(f,F,0,0,A,offset);
-      subconvolution(f,mult,(fftx->n-1)*lx,Sx);
+      subconvolution(f,mult,(fftx->n-1)*lx,Sx,offset);
       subconvolution(F,mult,lx,Sx);
       backward(F,f,0,offset,W);
     } else {
@@ -1445,10 +1446,11 @@ public:
   }
 
   void subconvolution(Complex **F, multiplier *mult, unsigned int C,
-                      unsigned int stride) {
+                      unsigned int stride, unsigned int offset=0) {
     PARALLEL(
       for(unsigned int i=0; i < C; ++i)
-        convolveyz[ThreadBase::get_thread_num0()]->convolveRaw(F,mult,i*stride);
+        convolveyz[ThreadBase::get_thread_num0()]->
+          convolveRaw(F,mult,offset+i*stride);
       );
   }
 
@@ -1487,7 +1489,7 @@ public:
   void convolveRaw(Complex **f, multiplier *mult, unsigned int offset=0) {
     if(overwrite) {
       forward(f,F,0,0,A,offset);
-      subconvolution(f,mult,(fftx->n-1)*lx,Sx);
+      subconvolution(f,mult,(fftx->n-1)*lx,Sx,offset);
       subconvolution(F,mult,lx,Sx);
       backward(F,f,0,offset,W);
     } else {
