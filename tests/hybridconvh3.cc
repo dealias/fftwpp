@@ -8,9 +8,9 @@ using namespace fftwpp;
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
 unsigned int C=1; // number of copies
-unsigned int S=0; // stride between copies (0 means L)
-unsigned int L=512; // input data length
-unsigned int M=1024; // minimum padded length
+unsigned int S=0; // stride between copies (0 means ceilquotient(L,2))
+unsigned int L=7; // input data length
+unsigned int M=12; // minimum padded length
 
 int main(int argc, char* argv[])
 {
@@ -39,46 +39,53 @@ int main(int argc, char* argv[])
   cout << "Mz=" << Mz << endl;
   cout << endl;
 
-  if(Sy == 0) Sy=Lz;
+  unsigned int Hx=ceilquotient(Lx,2);
+  unsigned int Hy=ceilquotient(Ly,2);
+  unsigned int Hz=ceilquotient(Lz,2);
+
+  if(Sy == 0) Sy=Hz;
   if(Sx == 0) Sx=Ly*Sy;
 
   Complex **f=new Complex *[max(A,B)];
   for(unsigned int a=0; a < A; ++a)
     f[a]=ComplexAlign(Lx*Sx);
 
-  ForwardBackward FBx(A,B);
-  fftPad fftx(Lx,Mx,FBx,Sx == Ly*Lz ? Sx : Lz,Sx);
-  ForwardBackward FBy(A,B,FBx.Threads(),fftx.l);
-  fftPad ffty(Ly,My,FBy,Lz,Sy);
-  ForwardBackward FBz(A,B,FBy.Threads(),ffty.l);
-  Convolution convolvez(Lz,Mz,FBz);
-  Convolution2 convolveyz(&ffty,&convolvez);
-  Convolution3 Convolve3(&fftx,&convolveyz);
+  array2<Complex> f0(Lx,Sx,f[0]);
+  array2<Complex> f1(Lx,Sx,f[1]);
 
-//  Convolution3 Convolve3(Lx,Mx,Ly,My,Lz,Mz,A,B);
+  /*
+  ForwardBackward FB(A,B);
+  fftPadCentered fftx(Lx,Mx,FB,Hy,Sx);
+  ConvolutionHermitian convolvey(Ly,My,FB);
+  ConvolutionHermitian2 Convolve2(&fftx,&convolvey);
+  */
+
+  ConvolutionHermitian3 Convolve3(Lx,Mx,Ly,My,Lz,Mz,A,B);
 
   double T=0;
 
   for(unsigned int c=0; c < C; ++c) {
 
-    for(unsigned int a=0; a < A; ++a) {
-      Complex *fa=f[a];
-      for(unsigned int i=0; i < Lx; ++i) {
-        for(unsigned int j=0; j < Ly; ++j) {
-          for(unsigned int k=0; k < Lz; ++k) {
-            fa[Sx*i+Sy*j+k]=Complex((1.0+a)*i+k,j+k+a);
-          }
+    for(unsigned int i=0; i < Lx; ++i) {
+      for(unsigned int j=0; j < Ly; ++j) {
+        for(unsigned int k=0; k < Hz; ++k) {
+          int I=Lx % 2 ? i : -1+i;
+          int J=Ly % 2 ? j : -1+j;
+          f[0][Sx*i+Sy*j+k]=Complex(I+(int) k,J+k);
+          f[1][Sx*i+Sy*j+k]=Complex(2*I+(int) k,(J+1+k));
         }
       }
     }
 
-    if(Lx*Ly*Lz < 200 && c == 0) {
+    HermitianSymmetrizeXY(Hx,Hy,Hz,Sx,Sy,Lx/2,Ly/2,f0);
+    HermitianSymmetrizeXY(Hx,Hy,Hz,Sx,Sy,Lx/2,Ly/2,f1);
+
+    if(Lx*Ly*Hz < 200 && c == 0) {
       for(unsigned int a=0; a < A; ++a) {
         for(unsigned int i=0; i < Lx; ++i) {
           for(unsigned int j=0; j < Ly; ++j) {
-            for(unsigned int k=0; k < Lz; ++k) {
+            for(unsigned int k=0; k < Hz; ++k)
               cout << f[a][Sx*i+Sy*j+k] << " ";
-            }
             cout << endl;
           }
           cout << endl;
@@ -88,7 +95,7 @@ int main(int argc, char* argv[])
     }
 
     seconds();
-    Convolve3.convolve(f,multbinary);
+    Convolve3.convolve(f,realmultbinary);
     T += seconds();
   }
 
@@ -99,7 +106,7 @@ int main(int argc, char* argv[])
     Complex *fb=f[b];
     for(unsigned int i=0; i < Lx; ++i) {
       for(unsigned int j=0; j < Ly; ++j) {
-        for(unsigned int k=0; k < Lz; ++k)
+        for(unsigned int k=0; k < Hz; ++k)
           sum += fb[Sx*i+Sy*j+k];
       }
     }
@@ -108,14 +115,13 @@ int main(int argc, char* argv[])
   cout << "sum=" << sum << endl;
   cout << endl;
 
-  if(Lx*Ly*Lz < 200) {
+  if(Lx*Ly*Hz < 200) {
     for(unsigned int b=0; b < B; ++b) {
       Complex *fb=f[b];
       for(unsigned int i=0; i < Lx; ++i) {
         for(unsigned int j=0; j < Ly; ++j) {
-          for(unsigned int k=0; k < Lz; ++k) {
+          for(unsigned int k=0; k < Hz; ++k)
             cout << fb[Sx*i+Sy*j+k] << " ";
-          }
           cout << endl;
         }
         cout << endl;

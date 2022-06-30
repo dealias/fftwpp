@@ -892,22 +892,72 @@ public:
     Convolution(fft,A,B,F,W,V) {}
 };
 
-inline void HermitianSymmetrizeX(unsigned int mx, unsigned int stride,
-                                 unsigned int xorigin, Complex *f)
+// Enforce 2D Hermiticity using specified (x >= 0,y=0) data.
+inline void HermitianSymmetrizeX(unsigned int Hx, unsigned int Hy,
+                                 unsigned int Sx,
+                                 unsigned int x0, Complex *f)
 {
-  Complex *F=f+xorigin*stride;
+  Complex *F=f+x0*Sx;
+  unsigned int stop=Hx*Sx;
+  for(unsigned int i=Sx; i < stop; i += Sx)
+    *(F-i)=conj(F[i]);
+
   F[0].im=0.0;
-  for(unsigned int i=1; i < mx; ++i) {
-    unsigned int istride=i*stride;
-    *(F-istride)=conj(F[istride]);
-  }
 
   // Zero out Nyquist modes in noncompact case
-  if(xorigin == mx) {
-    Complex *F=f+(xorigin-mx)*stride;
-    for(unsigned int j=0; j < stride; ++j)
-      F[j]=0.0;
+  if(x0 == Hx) {
+    for(unsigned int j=0; j < Hy; ++j)
+      f[j]=0.0;
   }
+}
+
+// Enforce 3D Hermiticity using specified (x >= 0,y=0,z=0) and (x,y > 0,z=0).
+// data.
+inline void HermitianSymmetrizeXY(unsigned int Hx, unsigned int Hy,
+                                  unsigned int Hz,
+                                  unsigned int Sx, unsigned int Sy,
+                                  unsigned int x0, unsigned int y0,
+                                  Complex *f,
+                                  unsigned int threads=fftw::maxthreads)
+{
+  unsigned int origin=x0*Sx+y0*Sy;
+  Complex *F=f+origin;
+  unsigned int stop=Hx*Sx;
+  for(unsigned int i=Sx; i < stop; i += Sx)
+    *(F-i)=conj(F[i]);
+
+  F[0].im=0.0;
+
+  PARALLEL(
+    for(int i=(-Hx+1)*Sx; i < (int) stop; i += Sx) {
+      unsigned int m=origin-i;
+      unsigned int p=origin+i;
+      unsigned int Stop=Sy*Hy;
+      for(unsigned int j=Sy; j < Stop; j += Sy) {
+        f[m-j]=conj(f[p+j]);
+      }
+    }
+    )
+
+  // Zero out Nyquist modes in noncompact case
+    if(x0 == Hx) {
+      unsigned int Ly=y0+Hy;
+      for(unsigned int j=0; j < Ly; ++j) {
+        for(unsigned int k=0; k < Hz; ++k) {
+          f[Sy*j+k]=0.0;
+        }
+      }
+    }
+
+    if(y0 == Hy) {
+      unsigned int Lx=x0+Hx;
+      for(unsigned int i=0; i < Lx; ++i) {
+        for(unsigned int k=0; k < Hz; ++k) {
+          f[Sx*i+k]=0.0;
+        }
+      }
+    }
+
 }
 
 class Convolution2 : public ThreadBase {
@@ -1216,6 +1266,10 @@ public:
     this->W=W;
     init(F,V);
   }
+
+  ConvolutionHermitian2(fftBase *fftx,  Convolution *convolvey,
+                        Complex *F=NULL, Complex *W=NULL, Complex *V=NULL) :
+    Convolution2(fftx,convolvey,F,W,V) {}
 };
 
 class Convolution3 : public ThreadBase {
@@ -1280,7 +1334,7 @@ public:
   // W: optional work array of size fftx->workSizeW();
   //    call fftx->pad() if W changed between calls to convolve()
   // V: optional work array of size B*fftx->workSizeV(A,B)
-  Convolution3(fftPad *fftx, Convolution2 *convolveyz,
+  Convolution3(fftBase *fftx, Convolution2 *convolveyz,
                Complex *F=NULL, Complex *W=NULL, Complex *V=NULL) :
     ThreadBase(fftx->Threads()), fftx(fftx), fftz(NULL), W(W),
     allocateW(false) {
@@ -1545,6 +1599,63 @@ public:
     convolveRaw(f,mult,offset);
     normalize(f,offset);
   }
+};
+
+class ConvolutionHermitian3 : public Convolution3 {
+public:
+  ConvolutionHermitian3(unsigned int Lx, unsigned int Mx,
+                        unsigned int Ly, unsigned int My,
+                        unsigned int Lz, unsigned int Mz,
+                        unsigned int A, unsigned int B,
+                        unsigned int threads=fftw::maxthreads) :
+    Convolution3(threads) {
+    unsigned int Hz=utils::ceilquotient(Lz,2);
+
+    ForwardBackward FBx(A,B,threads);
+    fftx=new fftPadCentered(Lx,Mx,FBx,Ly*Hz);
+    ForwardBackward FBy(A,B,FBx.Threads(),fftx->l);
+    ffty=new fftPadCentered(Ly,My,FBy,Hz);
+    ForwardBackward FBz(A,B,FBy.Threads(),ffty->l);
+    fftz=new fftPadHermitian(Lz,Mz,FBz);
+    convolvez=new Convolution*[threads];
+    for(unsigned int t=0; t < threads; ++t)
+      convolvez[t]=new ConvolutionHermitian(fftz,A,B);
+    convolveyz=new Convolution2*[threads];
+    for(unsigned int t=0; t < threads; ++t)
+      convolveyz[t]=new ConvolutionHermitian2(ffty,convolvez[t]);
+    init();
+  }
+
+  // F is an optional work array of size max(A,B)*fftx->outputSize(),
+  // W is an optional work array of size fftx->workSizeW(),
+  //    call fftx->pad() if changed between calls to convolve()
+  // V is an optional work array of size B*fftx->workSizeV(A,B)
+  ConvolutionHermitian3(fftPadCentered *fftx,
+                        ConvolutionHermitian2 *convolveyz,
+                        Complex *F=NULL, Complex *W=NULL, Complex *V=NULL) :
+    Convolution3(fftx->Threads()) {
+    this->fftx=fftx;
+    multithread(fftx->l);
+
+    fftBase *fftz=convolveyz->convolvey[0]->fft;
+    convolvez=new Convolution*[threads];
+    convolvez[0]=convolveyz->convolvey[0];
+    for(unsigned int t=1; t < threads; ++t)
+      convolvez[t]=new ConvolutionHermitian(fftz,convolveyz->A,convolveyz->B);
+
+    ffty=convolveyz->fftx;
+    this->convolveyz=new Convolution2*[threads];
+    this->convolveyz[0]=convolveyz;
+    for(unsigned int t=1; t < threads; ++t)
+        this->convolveyz[t]=new ConvolutionHermitian2(convolveyz->fftx,
+                                                      convolvez[t]);
+    this->W=W;
+    init(F,V);
+  }
+
+  ConvolutionHermitian3(fftBase *fftx, Convolution2 *convolveyz,
+                        Complex *F=NULL, Complex *W=NULL, Complex *V=NULL) :
+    Convolution3(fftx,convolveyz,F,W,V) {}
 };
 
 } //end namespace fftwpp
