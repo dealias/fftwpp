@@ -53,14 +53,16 @@ int main(int argc, char* argv[])
   array2<Complex> f0(Lx,Sx,f[0]);
   array2<Complex> f1(Lx,Sx,f[1]);
 
-  /*
-  ForwardBackward FB(A,B);
-  fftPadCentered fftx(Lx,Mx,FB,Hy,Sx);
-  ConvolutionHermitian convolvey(Ly,My,FB);
-  ConvolutionHermitian2 Convolve2(&fftx,&convolvey);
-  */
+  ForwardBackward FBx(A,B);
+  fftPadCentered fftx(Lx,Mx,FBx,Sx == Ly*Hz ? Sx : Hz,Sx);
+  ForwardBackward FBy(A,B,FBx.Threads(),fftx.l);
+  fftPadCentered ffty(Ly,My,FBy,Hz,Sy);
+  ForwardBackward FBz(A,B,FBy.Threads(),ffty.l);
+  ConvolutionHermitian convolvez(Lz,Mz,FBz);
+  ConvolutionHermitian2 convolveyz(&ffty,&convolvez);
+  ConvolutionHermitian3 Convolve3(&fftx,&convolveyz);
 
-  ConvolutionHermitian3 Convolve3(Lx,Mx,Ly,My,Lz,Mz,A,B);
+//  ConvolutionHermitian3 Convolve3(Lx,Mx,Ly,My,Lz,Mz,A,B);
 
   double T=0;
 
