@@ -278,6 +278,16 @@ int main(int argc, char* argv[])
       }
     } else cout << f[!xcompact][!ycompact][0] << endl;
 
+    Complex sum=0.0;
+    for(unsigned int i=!xcompact; i < nxp; ++i) {
+      for(unsigned int j=!ycompact; j < nyp; ++j) {
+        for(unsigned int k=0; k < mz; ++k)
+          sum += f[i][j][k];
+      }
+    }
+    cout << endl;
+    cout << "sum=" << sum << endl;
+    cout << endl;
   }
 
   if(Direct) {
