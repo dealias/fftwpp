@@ -9,17 +9,27 @@ currentprojection=
                zoom=0.957038988760488,
                viewportshift=(-0.0290361296390249,0.00635035245667115));
 
-int X=3;
-int Y=3;
-int Z=3;
+int x=3;
+int y=3;
+int z=3;
+
+
+int X=5;
+int Y=5;
+int Z=5;
+
 real f=1+1/X;
 
 int c=0;
-for(int k=0; k <= Z; ++k) {
-  for(int j=k == 0 ? 0 : -Y; j <= Y; ++j) {
-    for(int i=k == 0 && j == 0 ? 0 : -X; i <= X; ++i) {
+for(int k=0; k < Z; ++k) {
+  for(int j=-Y+1; j < Y; ++j) {
+    for(int i=-X+1; i < X; ++i) {
       transform3 t=shift((i,j,k)*f-(0.5,0.5,0.5));
-      draw(t*unitcube,green+opacity(0.7));
+      if(abs(i) < x && abs(j) < y && abs(k) < z) {
+        if (k > 0 || k == 0 && j > 0 || k == 0 && j == 0 && i > 0)
+          draw(t*unitcube,green+opacity(0.7));
+      } else
+        draw(t*unitcube,red+opacity(0.1));
       ++c;
     }
   }

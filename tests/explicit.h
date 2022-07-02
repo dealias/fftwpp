@@ -179,6 +179,20 @@ public:
   }
 };
 
+class ExplicitHPad3 : public ThreadBase {
+protected:
+  unsigned int nx,ny,nz; // Number of modes including padding in each direction
+  unsigned int mx,my,mz; // Number of dealiased modes in each direction
+public:
+  ExplicitHPad3(unsigned int nx, unsigned int ny, unsigned int nz,
+               unsigned int mx, unsigned int my, unsigned int mz) :
+    nx(nx), ny(ny), nz(nz), mx(mx), my(my), mz(mz) {}
+
+  void pad(Complex *f) {
+    // Not yet implemented
+  }
+};
+
 // In-place explicitly dealiased 1D complex convolution.
 class ExplicitConvolution : public ExplicitPad {
 protected:
@@ -502,4 +516,3 @@ public:
 }
 
 #endif
-
