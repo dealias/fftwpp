@@ -79,8 +79,8 @@ int main(int argc, char* argv[])
       }
     }
 
-    HermitianSymmetrizeXY(Hx,Hy,Hz,Sx,Sy,Lx/2,Ly/2,f0);
-    HermitianSymmetrizeXY(Hx,Hy,Hz,Sx,Sy,Lx/2,Ly/2,f1);
+    HermitianSymmetrizeXY(Hx,Hy,Hz,Lx/2,Ly/2,f0,Sx,Sy);
+    HermitianSymmetrizeXY(Hx,Hy,Hz,Lx/2,Ly/2,f1,Sx,Sy);
 
     if(Lx*Ly*Hz < 200 && c == 0) {
       for(unsigned int a=0; a < A; ++a) {

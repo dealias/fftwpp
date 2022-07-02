@@ -894,8 +894,8 @@ public:
 
 // Enforce 2D Hermiticity using specified (x >= 0,y=0) data.
 inline void HermitianSymmetrizeX(unsigned int Hx, unsigned int Hy,
-                                 unsigned int Sx,
-                                 unsigned int x0, Complex *f)
+                                 unsigned int x0, Complex *f,
+                                 unsigned int Sx)
 {
   Complex *F=f+x0*Sx;
   unsigned int stop=Hx*Sx;
@@ -911,13 +911,19 @@ inline void HermitianSymmetrizeX(unsigned int Hx, unsigned int Hy,
   }
 }
 
+inline void HermitianSymmetrizeX(unsigned int Hx, unsigned int Hy,
+                                 unsigned int x0, Complex *f)
+{
+  HermitianSymmetrizeX(Hx,Hy,x0,f,Hy);
+}
+
 // Enforce 3D Hermiticity using specified (x >= 0,y=0,z=0) and (x,y > 0,z=0).
 // data.
 inline void HermitianSymmetrizeXY(unsigned int Hx, unsigned int Hy,
                                   unsigned int Hz,
-                                  unsigned int Sx, unsigned int Sy,
                                   unsigned int x0, unsigned int y0,
                                   Complex *f,
+                                  unsigned int Sx, unsigned int Sy,
                                   unsigned int threads=fftw::maxthreads)
 {
   unsigned int origin=x0*Sx+y0*Sy;
@@ -957,7 +963,16 @@ inline void HermitianSymmetrizeXY(unsigned int Hx, unsigned int Hy,
         }
       }
     }
+}
 
+inline void HermitianSymmetrizeXY(unsigned int Hx, unsigned int Hy,
+                                  unsigned int Hz,
+                                  unsigned int x0, unsigned int y0,
+                                  Complex *f,
+                                  unsigned int threads=fftw::maxthreads)
+{
+  unsigned int Ly=y0+Hy;
+  HermitianSymmetrizeXY(Hx,Hy,Hz,x0,y0,f,Hz,Ly*Hz,threads);
 }
 
 class Convolution2 : public ThreadBase {

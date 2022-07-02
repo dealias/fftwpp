@@ -65,8 +65,8 @@ int main(int argc, char* argv[])
       }
     }
 
-    HermitianSymmetrizeX(Hx,Hy,Sx,Lx/2,f0);
-    HermitianSymmetrizeX(Hx,Hy,Sx,Lx/2,f1);
+    HermitianSymmetrizeX(Hx,Hy,Lx/2,f0,Sx);
+    HermitianSymmetrizeX(Hx,Hy,Lx/2,f1,Sx);
 
     if(Lx*Hy < 200 && k == 0) {
       for(unsigned int i=0; i < Lx; ++i) {
