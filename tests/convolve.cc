@@ -252,7 +252,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
           ub=Mmore*factor;
           denom++;
           p=ceilquotient(L,m0);
-          while(m0 > ub || (centered && p%2 != 0) || notPow2(p)) {
+          while((m0 > ub || (centered && p%2 != 0) || notPow2(p)) && m0>1) {
             m0=prevfftsize(m0-1,mixed);
             p=ceilquotient(L,m0);
           }
