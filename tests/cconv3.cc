@@ -257,7 +257,12 @@ int main(int argc, char* argv[])
         cout << endl;
       }
     } else {
-      cout << F[0][0] << endl;
+      Complex sum=0.0;
+      for(unsigned int i=0; i < mx; i++)
+        for(unsigned int j=0; j < my; j++)
+          for(unsigned int k=0; k < mz; k++)
+            sum += F[0][nyp*nzp*i+nzp*j+k];
+      cout << endl << "sum=" << sum << endl;
     }
   }
 
