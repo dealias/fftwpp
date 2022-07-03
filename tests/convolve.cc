@@ -137,7 +137,7 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
   unsigned int p2=p/2;
   unsigned int P=(centered && p == 2*p2) || p == 2 ? p2 : p;
 
-  if(p == q && p > 1 && !mForced) return;
+  if(p == q && p > 2 && !mForced) return;
 
   unsigned int n=ceilquotient(M,m*P);
 
@@ -210,7 +210,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   unsigned int lb=M;
   unsigned int stop=M;
   unsigned int m0=M-1;
-  unsigned int denom=ceilquotient(M,centered ? L/2 : L);
+  unsigned int denom=ceilquotient(M,L);
   unsigned int mixedLimit=L/2; // For m0 < mixedLimit, we only consider pure powers.
 
   if(mOption >= 1 && !Explicit)
@@ -262,8 +262,9 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
         if(m0 < stop) break;
         M=m0;
       } else if(m0 < endOpt) break;
-      //cout<<"m0="<<m0<<endl;
       check(L,M,app,C,S,m0,fixed || Explicit,false,centered);
+      //This line prints the sizes being timed (for testing).
+      //cout<<"m0="<<m0<<endl; 
       ++i;
     }
   }
