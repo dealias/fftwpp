@@ -5,7 +5,7 @@ using namespace fftwpp;
 
 unsigned int K=1; // number of iterations
 unsigned int C=1;
-unsigned int S=1;
+unsigned int S=0;
 
 extern unsigned int L;
 extern unsigned int M;
