@@ -49,6 +49,7 @@ int main(int argc, char* argv[])
     for(unsigned int j=0; j < H; ++j) {
       for(unsigned int c=0; c < C; ++c)
         fa[S*j+c]=0.0;
+    }
 #endif
   }
 
