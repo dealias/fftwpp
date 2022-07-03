@@ -26,7 +26,7 @@ for(int k=0; k < Z; ++k) {
     for(int i=-X+1; i < X; ++i) {
       transform3 t=shift((i,j,k)*f-(0.5,0.5,0.5));
       if(abs(i) < x && abs(j) < y && abs(k) < z) {
-        if (k > 0 || k == 0 && j > 0 || k == 0 && j == 0 && i > 0)
+        if (k > 0 || k == 0 && j > 0 || k == 0 && j == 0 && i >= 0)
           draw(t*unitcube,green+opacity(0.7));
       } else
         draw(t*unitcube,red+opacity(0.1));
