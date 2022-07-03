@@ -8,7 +8,6 @@
 // Optimize over -I0 and -I1
 //
 // Implement fftPad::forwardInnerAll
-// Implement 3D Hermitian convolution
 // Exploit zeta -> -conj(zeta) symmetry for even q
 // Precompute best D and inline options for each m value
 // Use power of P values for m when L,M,M-L are powers of P?
