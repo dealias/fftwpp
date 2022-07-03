@@ -7,8 +7,6 @@ using namespace fftwpp;
 
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
-unsigned int C=1; // unused
-unsigned int S=0; // x stride (0 means L)
 unsigned int L=512; // input data length
 unsigned int M=1024; // minimum padded length
 
@@ -26,7 +24,8 @@ int main(int argc, char* argv[])
   unsigned int Ly=L;
   unsigned int Mx=M;
   unsigned int My=M;
-  unsigned int Sx=S;
+
+  unsigned int Sx=0; // x stride (0 means Ly)
 
   cout << "Lx=" << Lx << endl;
   cout << "Ly=" << Ly << endl;

@@ -9,11 +9,8 @@ using namespace fftwpp;
 
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
-unsigned int C=1; // number of copies
 unsigned int L=512; // input data length
 unsigned int M=768; // minimum padded length
-
-unsigned int S=0; // strides not implemented for Hermitian convolutions
 
 int main(int argc, char* argv[])
 {

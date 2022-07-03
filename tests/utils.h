@@ -6,6 +6,8 @@
 #include "Complex.h"
 
 extern unsigned int K; // number of iterations
+extern unsigned int C; // number of padded FFTs to compute
+extern unsigned int S; // stride between padded FFTs
 
 #ifdef _WIN32
 #include "getopt.h"
@@ -139,14 +141,14 @@ inline void usageHybrid()
   std::cerr << "Options: " << std::endl;
   std::cerr << "-h\t\t help" << std::endl;
   std::cerr << "-m\t\t subtransform size" << std::endl;
-  std::cerr << "-C\t\t number of padded FFTs or 1D convolutions to compute"
+  std::cerr << "-C\t\t number of padded FFTs to compute"
             << std::endl;
   std::cerr << "-D\t\t number of blocks to process at a time" << std::endl;
   std::cerr << "-I\t\t use in-place FFTs [by default only for C > 1]" << std::endl;
   std::cerr << "-K\t\t number of iterations" << std::endl;
   std::cerr << "-L\t\t number of physical data values" << std::endl;
   std::cerr << "-M\t\t minimal number of padded data values" << std::endl;
-  std::cerr << "-S\t\t stride between copies" << std::endl;
+  std::cerr << "-S\t\t stride between padded FFTs (defaults to C)" << std::endl;
   std::cerr << "-T\t\t number of threads" << std::endl;
 }
 

@@ -4,11 +4,11 @@ using namespace std;
 using namespace fftwpp;
 
 unsigned int K=1; // number of iterations
+unsigned int C=1;
+unsigned int S=1;
 
 extern unsigned int L;
 extern unsigned int M;
-extern unsigned int C;
-extern unsigned int S;
 
 namespace utils {
 

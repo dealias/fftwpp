@@ -10,8 +10,6 @@ using namespace fftwpp;
 
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
-unsigned int C=1; // number of copies
-unsigned int S=0; // stride between copies (0 means C)
 unsigned int L=512; // input data length
 unsigned int M=1024; // minimum padded length
 
@@ -25,13 +23,11 @@ int main(int argc, char* argv[])
 
   optionsHybrid(argc,argv);
 
-  if(S == 0) S=C;
-
   ForwardBackward FB(A,B);
 #if CENTERED
-  fftPadCentered fft(L,M,FB,C,S);
+  fftPadCentered fft(L,M,FB);
 #else
-  fftPad fft(L,M,FB,C,S);
+  fftPad fft(L,M,FB);
 #endif
 
   Complex **f=new Complex *[max(A,B)];
@@ -41,13 +37,11 @@ int main(int argc, char* argv[])
   for(unsigned int a=0; a < A; ++a) {
     Complex *fa=f[a];
     for(unsigned int j=0; j < L; ++j) {
-      for(unsigned int c=0; c < C; ++c) {
 #if OUTPUT
-        fa[S*j+c]=Complex(j,(1.0+a)*j+1);
+        fa[j]=Complex(j,(1.0+a)*j+1);
 #else
-        fa[S*j+c]=0.0;
+        fa[j]=0.0;
 #endif
-      }
     }
   }
 
@@ -67,8 +61,7 @@ int main(int argc, char* argv[])
 #if OUTPUT
   for(unsigned int b=0; b < B; ++b)
     for(unsigned int j=0; j < L; ++j)
-      for(unsigned int c=0; c < C; ++c)
-        cout << f[b][S*j+c] << endl;
+        cout << f[b][j] << endl;
 #endif
 
   return 0;

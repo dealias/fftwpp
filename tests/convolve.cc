@@ -5024,40 +5024,24 @@ Convolution::~Convolution()
 // offset is applied to each input and output component
 void Convolution::convolveRaw(Complex **f, multiplier *mult, unsigned int offset)
 {
-  unsigned int C=fft->C;
-  unsigned int S=fft->S;
-  unsigned int Cblocksize=C*blocksize;
-  unsigned int Sblocksize=S*blocksize;
   if(q == 1) {
     forward(f,F,0,0,A,offset);
-    if(S == C)
-      (*mult)(F,0,Cblocksize,threads);
-    else
-      for(unsigned int s=0; s < Sblocksize; s += S)
-        (*mult)(F,s,C,threads);
+    (*mult)(F,0,blocksize,threads);
     backward(F,f,0,offset);
   } else {
    if(overwrite) {
       forward(f,F,0,0,A,offset);
-      if(S == C) {
-        (*mult)(f,offset,(fft->n-1)*Cblocksize,threads);
-        (*mult)(F,0,Cblocksize,threads);
-      } else {
-        unsigned int stop=(fft->n-1)*Sblocksize;
-        for(unsigned int s=0; s < stop; s += S)
-          (*mult)(f,s+offset,C,threads);
-        for(unsigned int s=0; s < Sblocksize; s += S)
-          (*mult)(F,s,C,threads);
-      }
+      (*mult)(f,offset,(fft->n-1)*blocksize,threads);
+      (*mult)(F,0,blocksize,threads);
       backward(F,f,0,offset);
     } else {
       if(loop2) {
         forward(f,F,0,0,A,offset);
-        operate(F,mult,0,C,S);
+        operate(F,mult,0);
         forward(f,Fp,r,0,B,offset);
         backward(F,f,0,offset,W0);
         forward(f,Fp,r,B,A,offset);
-        operate(Fp,mult,r,C,S);
+        operate(Fp,mult,r);
         backward(Fp,f,r,offset,W0);
       } else {
         unsigned int Offset;
@@ -5073,7 +5057,7 @@ void Convolution::convolveRaw(Complex **f, multiplier *mult, unsigned int offset
 
         for(unsigned int r=0; r < R; r += fft->increment(r)) {
           forward(f,F,r,0,A,offset);
-          operate(F,mult,r,C,S);
+          operate(F,mult,r);
           backward(F,h0,r,Offset,W0);
         }
 

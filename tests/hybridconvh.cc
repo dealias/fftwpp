@@ -1,6 +1,6 @@
 #include "convolve.h"
 
-#define OUTPUT 1
+#define OUTPUT 0
 
 using namespace std;
 using namespace utils;
@@ -9,8 +9,6 @@ using namespace fftwpp;
 
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
-unsigned int C=1; // number of copies
-unsigned int S=0; // strides not implemented for Hermitian convolutions
 unsigned int L=512; // input data length
 unsigned int M=768; // minimum padded length
 
@@ -26,9 +24,7 @@ int main(int argc, char* argv[])
 
   ForwardBackward FB(A,B);
 
-  fftPadHermitian fft(L,M,FB,C,S);
-
-  if(S == 0) S=C;
+  fftPadHermitian fft(L,M,FB);
 
   unsigned int H=ceilquotient(L,2);
 
@@ -39,17 +35,13 @@ int main(int argc, char* argv[])
   for(unsigned int a=0; a < A; ++a) {
     Complex *fa=f[a];
 #if OUTPUT
-    for(unsigned int c=0; c < C; ++c)
-      fa[c]=1.0+a;
+    fa[0]=1.0+a;
     for(unsigned int j=1; j < H; ++j) {
-      for(unsigned int c=0; c < C; ++c)
-        fa[S*j+c]=Complex(j,(1.0+a)*j+1);
+      fa[j]=Complex(j,(1.0+a)*j+1);
     }
 #else
-    for(unsigned int j=0; j < H; ++j) {
-      for(unsigned int c=0; c < C; ++c)
-        fa[S*j+c]=0.0;
-    }
+    for(unsigned int j=0; j < H; ++j)
+        fa[j]=0.0;
 #endif
   }
 
@@ -69,8 +61,7 @@ int main(int argc, char* argv[])
 #if OUTPUT
   for(unsigned int b=0; b < B; ++b)
     for(unsigned int j=0; j < H; ++j)
-      for(unsigned int c=0; c < C; ++c)
-        cout << f[b][S*j+c] << endl;
+      cout << f[b][j] << endl;
 #endif
 
   return 0;

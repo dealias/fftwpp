@@ -824,19 +824,11 @@ public:
       (fft->*Forward)(f[a]+offset,F[a],r,W);
   }
 
-  void operate(Complex **F, multiplier *mult, unsigned int r,
-               unsigned int C, unsigned int S) {
-    if(S == C) {
+  void operate(Complex **F, multiplier *mult, unsigned int r) {
       unsigned int incr=fft->b;
       unsigned int stop=fft->complexOutputs(r);
-      unsigned int Cblocksize=C*blocksize;
       for(unsigned int d=0; d < stop; d += incr)
-        (*mult)(F,d,Cblocksize,threads);
-    } else {
-      unsigned int Sblocksize=S*blocksize;
-      for(unsigned int s=0; s < Sblocksize; s += S)
-        (*mult)(F,s,C,threads);
-    }
+        (*mult)(F,d,blocksize,threads);
   }
 
   void backward(Complex **F, Complex **f, unsigned int r,

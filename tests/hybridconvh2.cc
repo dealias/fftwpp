@@ -7,7 +7,6 @@ using namespace fftwpp;
 
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
-unsigned int C,S; // unused
 unsigned int L=7; // input data length
 unsigned int M=12; // minimum padded length
 
@@ -25,7 +24,8 @@ int main(int argc, char* argv[])
   unsigned int Ly=L;
   unsigned int Mx=M;
   unsigned int My=M;
-  unsigned int Sx=S;
+
+  unsigned int Sx=0; // x stride (0 means ceilquotient(Ly,2))
 
   cout << "Lx=" << Lx << endl;
   cout << "Mx=" << Mx << endl;
