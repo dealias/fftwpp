@@ -7,8 +7,7 @@ using namespace fftwpp;
 
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
-unsigned int C=1; // number of copies
-unsigned int S=0; // stride between copies (0 means ceilquotient(L,2))
+unsigned int C,S; // unused
 unsigned int L=7; // input data length
 unsigned int M=12; // minimum padded length
 
@@ -28,8 +27,9 @@ int main(int argc, char* argv[])
   unsigned int Mx=M;
   unsigned int My=M;
   unsigned int Mz=M;
-  unsigned int Sx=S;
-  unsigned int Sy=S;
+
+  unsigned int Sx=0; // x-stride (0 means L*Y)
+  unsigned int Sy=0; // y-stride (0 means ceilquotient(L,2))
 
   cout << "Lx=" << Lx << endl;
   cout << "Ly=" << Ly << endl;
@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
 
   double T=0;
 
-  for(unsigned int c=0; c < C; ++c) {
+  for(unsigned int c=0; c < K; ++c) {
 
     for(unsigned int i=0; i < Lx; ++i) {
       for(unsigned int j=0; j < Ly; ++j) {
@@ -101,7 +101,7 @@ int main(int argc, char* argv[])
     T += seconds();
   }
 
-  cout << "mean=" << T/C << endl;
+  cout << "mean=" << T/K << endl;
 
   Complex sum=0.0;
   for(unsigned int b=0; b < B; ++b) {

@@ -7,8 +7,8 @@ using namespace fftwpp;
 
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
-unsigned int C=1; // number of copies
-unsigned int S=0; // stride between copies (0 means L)
+unsigned int C=1; // unused
+unsigned int S=0; // x stride (0 means L)
 unsigned int L=512; // input data length
 unsigned int M=1024; // minimum padded length
 
@@ -48,10 +48,9 @@ int main(int argc, char* argv[])
 
 //  Convolution2 Convolve2(Lx,Mx,Ly,My,A,B);
 
-  unsigned int K=20;
   double T=0;
 
-  for(unsigned int k=0; k < K; ++k) {
+  for(unsigned int c=0; c < K; ++c) {
 
     for(unsigned int a=0; a < A; ++a) {
       Complex *fa=f[a];
@@ -62,7 +61,7 @@ int main(int argc, char* argv[])
       }
     }
 
-    if(Lx*Ly < 200 && k == 0) {
+    if(Lx*Ly < 200 && c == 0) {
       for(unsigned int a=0; a < A; ++a) {
         for(unsigned int i=0; i < Lx; ++i) {
           for(unsigned int j=0; j < Ly; ++j) {

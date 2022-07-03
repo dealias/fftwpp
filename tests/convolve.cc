@@ -223,7 +223,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
       if(mixed) {
         unsigned int prevm0=m0;
         m0=nextfftsize(m0+1);
-        if(m0 > ub || i >= counterStop){
+        if(m0 > ub || i >= counterStop) {
           double factor=1.0/denom;
           lb=M*factor;
           ub=Mmore*factor;
@@ -232,7 +232,8 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
           if(m0 < mixedLimit) continue;
           i=0;
           unsigned int p=ceilquotient(L,m0);
-          while(m0 == prevm0 || m0 > ub || (centered && p%2 != 0) || notPow2(p)) {
+          while(m0 == prevm0 || m0 > ub || (centered && p%2 != 0)
+                || notPow2(p)) {
             // This code is only used if mixedLimit is set to a low value.
             double factor=1.0/denom;
             lb=M*factor;
@@ -252,7 +253,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
           ub=Mmore*factor;
           denom++;
           p=ceilquotient(L,m0);
-          while((m0 > ub || (centered && p%2 != 0) || notPow2(p)) && m0>1) {
+          while((m0 > ub || (centered && p%2 != 0) || notPow2(p)) && m0 > 1) {
             m0=prevfftsize(m0-1,mixed);
             p=ceilquotient(L,m0);
           }

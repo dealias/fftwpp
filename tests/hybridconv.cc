@@ -54,9 +54,7 @@ int main(int argc, char* argv[])
   Convolution Convolve(&fft,A,B);
 
 #if OUTPUT
-  unsigned int K=1;
-#else
-  unsigned int K=100;
+  K=1;
 #endif
   double t0=totalseconds();
 

@@ -3,6 +3,8 @@
 using namespace std;
 using namespace fftwpp;
 
+unsigned int K=1; // number of iterations
+
 extern unsigned int L;
 extern unsigned int M;
 extern unsigned int C;
@@ -16,7 +18,7 @@ void optionsHybrid(int argc, char* argv[])
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hC:D:I:L:M:O:S:T:m:");
+    int c = getopt(argc,argv,"hC:D:I:K:L:M:O:S:T:m:");
     if (c == -1) break;
 
     switch (c) {
@@ -28,6 +30,9 @@ void optionsHybrid(int argc, char* argv[])
       case 'D':
         DOption=max(atoi(optarg),0);
         if(DOption > 1 && DOption % 2) ++DOption;
+        break;
+      case 'K':
+        K=atoi(optarg);
         break;
       case 'L':
         L=atoi(optarg);
@@ -44,6 +49,9 @@ void optionsHybrid(int argc, char* argv[])
       case 'T':
         fftw::maxthreads=max(atoi(optarg),1);
         break;
+//      case 'X':
+//        Mx=atoi(optarg);
+//        break;
       case 'm':
         mOption=max(atoi(optarg),0);
         break;

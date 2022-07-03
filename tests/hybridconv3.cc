@@ -7,8 +7,7 @@ using namespace fftwpp;
 
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
-unsigned int C=1; // number of copies
-unsigned int S=0; // stride between copies (0 means L)
+unsigned int C,S; // unused
 unsigned int L=512; // input data length
 unsigned int M=1024; // minimum padded length
 
@@ -22,14 +21,15 @@ int main(int argc, char* argv[])
 
   optionsHybrid(argc,argv);
 
-  unsigned int Lx=L;
+  unsigned int Lx=L; // TODO: x
   unsigned int Ly=L;
   unsigned int Lz=L;
-  unsigned int Mx=M;
+  unsigned int Mx=M; // TODO: X
   unsigned int My=M;
   unsigned int Mz=M;
-  unsigned int Sx=S;
-  unsigned int Sy=S;
+
+  unsigned int Sx=0; // x-stride (0 means L*Y)
+  unsigned int Sy=0; // y-stride (0 means L)
 
   cout << "Lx=" << Lx << endl;
   cout << "Ly=" << Ly << endl;
@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
 
   double T=0;
 
-  for(unsigned int c=0; c < C; ++c) {
+  for(unsigned int c=0; c < K; ++c) {
 
     for(unsigned int a=0; a < A; ++a) {
       Complex *fa=f[a];
@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
     T += seconds();
   }
 
-  cout << "mean=" << T/C << endl;
+  cout << "mean=" << T/K << endl;
 
   Complex sum=0.0;
   for(unsigned int b=0; b < B; ++b) {

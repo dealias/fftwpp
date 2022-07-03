@@ -7,8 +7,7 @@ using namespace fftwpp;
 
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
-unsigned int C=1; // number of copies
-unsigned int S=0; // stride between copies (0 means ceilquotient(L,2))
+unsigned int C,S; // unused
 unsigned int L=7; // input data length
 unsigned int M=12; // minimum padded length
 
@@ -52,10 +51,9 @@ int main(int argc, char* argv[])
   ConvolutionHermitian convolvey(Ly,My,FB);
   ConvolutionHermitian2 Convolve2(&fftx,&convolvey);
 
-  unsigned int K=500;
   double T=0;
 
-  for(unsigned int k=0; k < K; ++k) {
+  for(unsigned int c=0; c < K; ++c) {
 
     for(unsigned int i=0; i < Lx; ++i) {
       for(unsigned int j=0; j < Hy; ++j) {
@@ -68,7 +66,7 @@ int main(int argc, char* argv[])
     HermitianSymmetrizeX(Hx,Hy,Lx/2,f0,Sx);
     HermitianSymmetrizeX(Hx,Hy,Lx/2,f1,Sx);
 
-    if(Lx*Hy < 200 && k == 0) {
+    if(Lx*Hy < 200 && c == 0) {
       for(unsigned int i=0; i < Lx; ++i) {
         for(unsigned int j=0; j < Hy; ++j) {
           cout << f0[i][j] << " ";

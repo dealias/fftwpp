@@ -10,10 +10,9 @@ using namespace fftwpp;
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
 unsigned int C=1; // number of copies
+unsigned int S=0; // strides not implemented for Hermitian convolutions
 unsigned int L=512; // input data length
 unsigned int M=768; // minimum padded length
-
-unsigned int S=0; // strides not implemented for Hermitian convolutions
 
 int main(int argc, char* argv[])
 {
@@ -56,9 +55,7 @@ int main(int argc, char* argv[])
   ConvolutionHermitian Convolve(&fft,A,B);
 
 #if OUTPUT
-  unsigned int K=1;
-#else
-  unsigned int K=1000000;
+  K=1;
 #endif
   double t0=totalseconds();
 

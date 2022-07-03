@@ -44,8 +44,6 @@ extern unsigned int DOption;
 
 extern int IOption;
 
-extern unsigned int surplusFFTsizes;
-
 template<class T>
 T pow(T x, unsigned int y)
 {
@@ -904,7 +902,7 @@ inline void HermitianSymmetrizeX(unsigned int Hx, unsigned int Hy,
 
   F[0].im=0.0;
 
-  // Zero out Nyquist modes in noncompact case
+  // Zero out Nyquist modes
   if(x0 == Hx) {
     for(unsigned int j=0; j < Hy; ++j)
       f[j]=0.0;
@@ -945,7 +943,7 @@ inline void HermitianSymmetrizeXY(unsigned int Hx, unsigned int Hy,
     }
     )
 
-  // Zero out Nyquist modes in noncompact case
+  // Zero out Nyquist modes
     if(x0 == Hx) {
       unsigned int Ly=y0+Hy;
       for(unsigned int j=0; j < Ly; ++j) {
