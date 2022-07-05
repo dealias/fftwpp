@@ -75,6 +75,8 @@ bool notPow2(unsigned int m)
 
 unsigned int nextfftsize(unsigned int m)
 {
+  if(m == ceilpow2(m))
+    return m;
   unsigned int N=-1;
   unsigned int ni=1;
   for(unsigned int i=0; ni < 7*m; ni=pow(7,i), ++i) {
@@ -84,6 +86,8 @@ unsigned int nextfftsize(unsigned int m)
       for(unsigned int k=0; nk < 3*m; nk=nj*pow(3,k), ++k) {
         N=min(N,nk*ceilpow2(ceilquotient(m,nk)));
       }
+      if(N == m)
+        return N;
     }
   }
   return N;
@@ -252,7 +256,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
           ub=Mmore*factor;
           denom++;
           p=ceilquotient(L,m0);
-          while((m0 > ub || (centered && p%2 != 0) || notPow2(p)) && m0 > 1) {
+          while((m0 > ub || (centered && p%2 != 0) || notPow2(p)) && m0 > endOpt) {
             m0=prevfftsize(m0-1,mixed);
             p=ceilquotient(L,m0);
           }
