@@ -30,18 +30,18 @@ int main(int argc, char* argv[])
   cout << "Explicit:" << endl;
   // Minimal explicit padding
 #if CENTERED
-  fftPadCentered fft0(L,M,FB,C,S,true,true);
+  fftPadCentered fft0(L,M,C,S,M,1,1);
 #else
-  fftPad fft0(L,M,FB,C,S,true,true);
+  fftPad fft0(L,M,C,S,M,1,1);
 #endif
 
   double mean0=fft0.report(FB);
 
   // Optimal explicit padding
 #if CENTERED
-  fftPadCentered fft1(L,M,FB,C,S,true,false);
+  fftPadCentered fft1(L,M,FB,C,S,true);
 #else
-  fftPad fft1(L,M,FB,C,S,true,false);
+  fftPad fft1(L,M,FB,C,S,true);
 #endif
   double mean1=min(mean0,fft1.report(FB));
 

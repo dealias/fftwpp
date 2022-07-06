@@ -189,7 +189,7 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
 }
 
 void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
-                            unsigned int C, unsigned int S, bool Explicit, bool fixed,
+                            unsigned int C, unsigned int S, bool Explicit,
                             bool centered)
 {
   //double t0=totalseconds();
@@ -200,8 +200,6 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   m=M;
   q=1;
   D=1;
-  if(Explicit && fixed)
-    return;
 
   T=DBL_MAX;
 
@@ -218,7 +216,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   unsigned int mixedLimit=L/2; // For m0 < mixedLimit, we only consider pure powers.
 
   if(mOption >= 1 && !Explicit)
-    check(L,M,app,C,S,mOption,fixed,true,centered);
+    check(L,M,app,C,S,mOption,false,true,centered);
   else {
     unsigned int i=0;
     while(true){
@@ -266,9 +264,9 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
         if(m0 < stop) break;
         M=m0;
       } else if(m0 < endOpt) break;
-      check(L,M,app,C,S,m0,fixed || Explicit,false,centered);
+      check(L,M,app,C,S,m0,Explicit,false,centered);
       //This line prints the sizes being timed (for testing).
-      //cout<<"m0="<<m0<<endl; 
+      //cout<<"m0="<<m0<<endl;
       ++i;
     }
   }

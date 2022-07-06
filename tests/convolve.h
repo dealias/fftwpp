@@ -147,7 +147,7 @@ public:
     // size >= M
     // If fixed=true then an FFT of size M is enforced.
     void scan(unsigned int L, unsigned int M, Application& app,
-              unsigned int C, unsigned int S, bool Explicit=false, bool fixed=false,
+              unsigned int C, unsigned int S, bool Explicit=false,
               bool centered=false);
   };
 
@@ -169,7 +169,7 @@ public:
     p(utils::ceilquotient(L,m)), q(q), D(D), centered(centered) {}
 
   fftBase(unsigned int L, unsigned int M, Application& app,
-          unsigned int C=1, unsigned int S=0, bool Explicit=false, bool fixed=false,
+          unsigned int C=1, unsigned int S=0, bool Explicit=false,
           bool centered=false) :
     ThreadBase(app.Threads()), L(L), M(M), C(C), S(S == 0 ? C : S), centered(centered) {}
 
@@ -353,8 +353,8 @@ public:
     Opt() {}
 
     Opt(unsigned int L, unsigned int M, Application& app,
-        unsigned int C, unsigned int S, bool Explicit=false, bool fixed=false) {
-      scan(L,M,app,C,S,Explicit,fixed);
+        unsigned int C, unsigned int S, bool Explicit=false) {
+      scan(L,M,app,C,S,Explicit);
     }
 
     double time(unsigned int L, unsigned int M, unsigned int C, unsigned int S,
@@ -383,12 +383,12 @@ public:
 
   // Normal entry point.
   // Compute C ffts of length L with stride S >= C and distance 1
-  // padded to at least M (or exactly M if fixed=true)
+  // padded to at least M
   fftPad(unsigned int L, unsigned int M, Application& app,
          unsigned int C=1, unsigned int S=0, bool Explicit=false,
-         bool fixed=false, bool centered=false) :
-    fftBase(L,M,app,C,S,Explicit,fixed,centered) {
-    Opt opt=Opt(L,M,app,C,this->S,Explicit,fixed);
+         bool centered=false) :
+    fftBase(L,M,app,C,S,Explicit,centered) {
+    Opt opt=Opt(L,M,app,C,this->S,Explicit);
     m=opt.m;
     if(Explicit)
       M=m;
@@ -451,8 +451,8 @@ public:
     Opt() {}
 
     Opt(unsigned int L, unsigned int M, Application& app,
-        unsigned int C, unsigned int S, bool Explicit=false, bool fixed=false) {
-      scan(L,M,app,C,S,Explicit,fixed,true);
+        unsigned int C, unsigned int S, bool Explicit=false) {
+      scan(L,M,app,C,S,Explicit,true);
     }
 
     bool valid(unsigned int D, unsigned int p, unsigned int S) {
@@ -479,12 +479,11 @@ public:
 
   // Normal entry point.
   // Compute C ffts of length L and distance 1 padded to at least M
-  // (or exactly M if fixed=true)
   fftPadCentered(unsigned int L, unsigned int M, Application& app,
-                 unsigned int C=1, unsigned int S=0, bool Explicit=false, bool fixed=false,
+                 unsigned int C=1, unsigned int S=0, bool Explicit=false,
                  bool fast=true) :
     fftPad(L,M,C,S,app.Threads(),true) {
-    Opt opt=Opt(L,M,app,C,this->S,Explicit,fixed);
+    Opt opt=Opt(L,M,app,C,this->S,Explicit);
     m=opt.m;
     if(Explicit)
       M=m;
@@ -548,8 +547,8 @@ public:
     Opt() {}
 
     Opt(unsigned int L, unsigned int M, Application& app,
-        unsigned int C, unsigned int, bool Explicit=false, bool fixed=false) {
-      scan(L,M,app,C,C,Explicit,fixed,true);
+        unsigned int C, unsigned int, bool Explicit=false) {
+      scan(L,M,app,C,C,Explicit,true);
     }
 
     bool valid(unsigned int D, unsigned int p, unsigned int C) {
@@ -574,9 +573,9 @@ public:
   }
 
   fftPadHermitian(unsigned int L, unsigned int M, Application& app,
-                  unsigned int C=1, bool Explicit=false, bool fixed=false) :
-    fftBase(L,M,app,C,C,Explicit,fixed,true) {
-    Opt opt=Opt(L,M,app,C,C,Explicit,fixed);
+                  unsigned int C=1, bool Explicit=false) :
+    fftBase(L,M,app,C,C,Explicit,true) {
+    Opt opt=Opt(L,M,app,C,C,Explicit);
     m=opt.m;
     if(Explicit)
       M=m;

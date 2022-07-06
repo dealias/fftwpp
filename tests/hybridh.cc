@@ -26,12 +26,12 @@ int main(int argc, char* argv[])
 
   cout << "Explicit:" << endl;
   // Minimal explicit padding
-  fftPadHermitian fft0(L,M,FB,C,true,true);
+  fftPadHermitian fft0(L,M,C,M,1,1);
 
   double mean0=fft0.report(FB);
 
   // Optimal explicit padding
-  fftPadHermitian fft1(L,M,FB,C,true,false);
+  fftPadHermitian fft1(L,M,FB,C,true);
   double mean1=min(mean0,fft1.report(FB));
 
   // Hybrid padding
