@@ -141,7 +141,7 @@ public:
 
     void check(unsigned int L, unsigned int M,
                Application& app, unsigned int C, unsigned int S, unsigned int m,
-               bool fixed=false, bool mForced=false, bool centered=false);
+               bool mForced=false, bool centered=false);
 
     // Determine optimal m,q values for padding L data values to
     // size >= M

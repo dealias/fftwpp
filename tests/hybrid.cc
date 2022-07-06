@@ -45,6 +45,9 @@ int main(int argc, char* argv[])
 #endif
   double mean1=min(mean0,fft1.report(FB));
 
+  cout << endl;
+  cout << "Hybrid:" << endl;
+
   // Hybrid padding
 #if CENTERED
   fftPadCentered fft(L,M,FB,C,S);

@@ -34,6 +34,9 @@ int main(int argc, char* argv[])
   fftPadHermitian fft1(L,M,FB,C,true);
   double mean1=min(mean0,fft1.report(FB));
 
+  cout << endl;
+  cout << "Hybrid:" << endl;
+
   // Hybrid padding
   fftPadHermitian fft(L,M,FB,C);
 

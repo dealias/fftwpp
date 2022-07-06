@@ -133,7 +133,7 @@ void fftBase::initZetaqm(unsigned int q, unsigned int m)
 
 void fftBase::OptBase::check(unsigned int L, unsigned int M,
                              Application& app, unsigned int C, unsigned int S, unsigned int m,
-                             bool fixed, bool mForced, bool centered)
+                             bool mForced, bool centered)
 {
 //    cout << "m=" << m << endl;
   unsigned int q=ceilquotient(M,m);
@@ -145,7 +145,7 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
 
   unsigned int n=ceilquotient(M,m*P);
 
-  if(p > 2 && !fixed) {
+  if(p > 2) {
     unsigned int q2=P*n;
     if(q2 != q) {
       unsigned int start=DOption > 0 ? min(DOption,n) : 1;
@@ -216,7 +216,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   unsigned int mixedLimit=L/2; // For m0 < mixedLimit, we only consider pure powers.
 
   if(mOption >= 1 && !Explicit)
-    check(L,M,app,C,S,mOption,false,true,centered);
+    check(L,M,app,C,S,mOption,true,centered);
   else {
     unsigned int i=0;
     while(true){
@@ -264,7 +264,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
         if(m0 < stop) break;
         M=m0;
       } else if(m0 < endOpt) break;
-      check(L,M,app,C,S,m0,Explicit,false,centered);
+      check(L,M,app,C,S,m0,false,centered);
       //This line prints the sizes being timed (for testing).
       //cout<<"m0="<<m0<<endl;
       ++i;
