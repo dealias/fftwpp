@@ -73,6 +73,8 @@ bool notPow2(unsigned int m)
   return m != ceilpow2(m);
 }
 
+// Returns the smallest integer greater than ore equal to m that is of the form
+// (2**a)*(3**b)*(5**c)*(7**d) for some nonnegative integers a, b, c, and d.
 unsigned int nextfftsize(unsigned int m)
 {
   if(m == ceilpow2(m))
@@ -92,8 +94,6 @@ unsigned int nextfftsize(unsigned int m)
   }
   return N;
 }
-
-
 unsigned int prevfftsize(unsigned int M, bool mixed)
 {
   int P[]={2,3,5,7};
@@ -131,20 +131,101 @@ void fftBase::initZetaqm(unsigned int q, unsigned int m)
   }
 }
 
-void fftBase::OptBase::check(unsigned int L, unsigned int M,
-                             Application& app, unsigned int C, unsigned int S, unsigned int m,
-                             bool mForced, bool centered)
+// Returns the smallest integer greater than ore equal to m that is a pure
+// power of either 2, 3, 5, or 7.
+unsigned int nextpuresize(unsigned int m)
 {
-//    cout << "m=" << m << endl;
+  unsigned int M=ceilpow2(m);
+  if(m == M)
+    return m;
+  M=min(M,ceilpow3(m));
+  if(m == M)
+    return m;
+  M=min(M,ceilpow5(m));
+  if(m == M)
+    return m;
+  return min(M,ceilpow7(m));
+}
+
+// Returns true if m is a pure power of either 2, 3, 5, or 7 and
+// false otherwise.
+bool ispure(unsigned int m)
+{
+  if(m == ceilpow2(m))
+    return true;
+  if(m == ceilpow2(m))
+    return true;
+  if(m == ceilpow2(m))
+    return true;
+  if(m == ceilpow2(m))
+    return true;
+  return false;
+}
+
+void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L, 
+                                    unsigned int M, Application& app, 
+                                      unsigned int C, unsigned int S,
+                                        bool centered, unsigned int itmax)
+{ 
+  unsigned int i=0;
+  while(i < itmax){
+    if(ispure(m0)){
+      check(L, M, app, C, S, m0, centered);
+      m0=nextfftsize(m0+1);
+      break;
+    }
+    check(L, M, app, C, S, m0, centered);
+    m0=nextfftsize(m0+1);
+    i+=1;
+  }
+}
+
+void fftBase::OptBase::defopt(unsigned int L, unsigned int M, Application& app,
+                                unsigned int C, unsigned int S, bool Explicit,
+                                  bool centered, unsigned int minsize, 
+                                    unsigned int itmax)
+{
+  if(!Explicit){
+    unsigned int Ld2=L/2;
+    unsigned int m0=minsize;
+    unsigned int p;
+    while(m0 < Ld2){
+      p=ceilquotient(L,m0);
+      // p must be power of 2.
+      // p must be even in the centered case.
+      // The opimizer does not use the inner loop for explicit transforms.
+      if(notPow2(p) || (centered && p%2 != 0) || (p == q && p > 2)){
+        m0=nextpuresize(m0+1);
+      } else{
+        check(L, M, app, C, S, m0, centered);
+        m0=nextpuresize(m0+1);
+      }
+    }
+    m0=nextfftsize(Ld2);
+    defoptloop(m0, L, M, app, C, S, centered, itmax);
+
+    m0=nextfftsize(max(L,m0));
+    defoptloop(m0, L, M, app, C, S, centered, itmax);
+
+    m0=nextfftsize(max(M,m0));
+    defoptloop(m0, L, M, app, C, S, centered, itmax);
+  } else{
+    unsigned int m0=nextfftsize(M);
+    defoptloop(m0, L, m0, app, C, S, centered, itmax);
+  }
+}
+
+void fftBase::OptBase::check(unsigned int L, unsigned int M, Application& app,
+                              unsigned int C, unsigned int S, unsigned int m,
+                                bool centered)
+{
+  //cout<<"m="<<m<<endl;
   unsigned int q=ceilquotient(M,m);
   unsigned int p=ceilquotient(L,m);
   unsigned int p2=p/2;
   unsigned int P=(centered && p == 2*p2) || p == 2 ? p2 : p;
 
-  if(p == q && p > 2 && !mForced) return;
-
   unsigned int n=ceilquotient(M,m*P);
-
   if(p > 2) {
     unsigned int q2=P*n;
     if(q2 != q) {
@@ -154,8 +235,6 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
       for(unsigned int D=start; D < stop2; D *= 2) {
         if(D > stop) D=stop;
         if(!valid(D,p,S)) continue;
-//            cout << "q2=" << q2 << endl;
-//            cout << "D2=" << D << endl;
         double t=time(L,M,C,S,m,q2,D,app);
         if(t < T) {
           this->m=m;
@@ -166,7 +245,6 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
       }
     }
   }
-
   if(p > 2 && q % P != 0) return;
 
   unsigned int start=DOption > 0 ? min(DOption,n) : 1;
@@ -175,10 +253,7 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
   for(unsigned int D=start; D < stop2; D *= 2) {
     if(D > stop) D=stop;
     if(q > 1 && !valid(D,p,S)) continue;
-//        cout << "q=" << q << endl;
-//        cout << "D=" << D << endl;
     double t=time(L,M,C,S,m,q,D,app);
-    //cout<<"t="<<t<<endl;
     if(t < T) {
       this->m=m;
       this->q=q;
@@ -189,101 +264,39 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
 }
 
 void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
-                            unsigned int C, unsigned int S, bool Explicit,
-                            bool centered)
-{
-  //double t0=totalseconds();
-  if(L > M) {
-    cerr << "L=" << L << " is greater than M=" << M << "." << endl;
-    exit(-1);
-  }
+                              unsigned int C, unsigned int S, bool Explicit,
+                                bool centered)
+{ 
   m=M;
   q=1;
   D=1;
-
   T=DBL_MAX;
-
-  bool mixed=true;
-  unsigned int endOpt=32; // (unsigned int)(sqrt(M));
-  double epsilon=M > 2500 ? 0.05 : 0.1;
-  unsigned int counterStop=2; //TODO: Change counterStop from command line.
-  unsigned int Mmore=M+max(M*epsilon,1);
-  unsigned int ub=Mmore;
-  unsigned int lb=M;
-  unsigned int stop=M;
-  unsigned int m0=M-1;
-  unsigned int denom=ceilquotient(M,L);
-  unsigned int mixedLimit=L/2; // For m0 < mixedLimit, we only consider pure powers.
-
-  if(mOption >= 1 && !Explicit)
-    check(L,M,app,C,S,mOption,true,centered);
-  else {
-    unsigned int i=0;
-    while(true){
-      if(mixed == true && m0 < mixedLimit) mixed=false;
-      if(mixed) {
-        unsigned int prevm0=m0;
-        m0=nextfftsize(m0+1);
-        if(m0 > ub || i >= counterStop) {
-          double factor=1.0/denom;
-          lb=M*factor;
-          ub=Mmore*factor;
-          denom++;
-          m0=nextfftsize(lb);
-          if(m0 < mixedLimit) continue;
-          i=0;
-          unsigned int p=ceilquotient(L,m0);
-          while(m0 == prevm0 || m0 > ub || (centered && p%2 != 0)
-                || notPow2(p)) {
-            // This code is only used if mixedLimit is set to a low value.
-            double factor=1.0/denom;
-            lb=M*factor;
-            ub=Mmore*factor;
-            denom++;
-            m0=nextfftsize(lb);
-            if(m0 < mixedLimit) break;
-            p=ceilquotient(L,m0);
-          }
-        }
-      } else {
-        m0=prevfftsize(m0-1,mixed);
-        unsigned int p=ceilquotient(L,m0);
-        if(m0 < lb || (centered && p%2 != 0) || notPow2(p)) {
-          double factor=1.0/denom;
-          lb=M*factor;
-          ub=Mmore*factor;
-          denom++;
-          p=ceilquotient(L,m0);
-          while((m0 > ub || (centered && p%2 != 0) || notPow2(p)) && m0 > endOpt) {
-            m0=prevfftsize(m0-1,mixed);
-            p=ceilquotient(L,m0);
-          }
-        }
-      }
-      if(Explicit) {
-        if(m0 < stop) break;
-        M=m0;
-      } else if(m0 < endOpt) break;
-      check(L,M,app,C,S,m0,false,centered);
-      //This line prints the sizes being timed (for testing).
-      //cout<<"m0="<<m0<<endl;
-      ++i;
-    }
+  
+  if(L > M) {
+    cerr << "L=" << L << " is greater than M=" << M << "." << endl;
+    exit(-1);
+  } else if(mOption >= 1 && !Explicit){
+    //The Explicit flag cannot be overridden by mOption.
+    check(L,M,app,C,S,mOption,centered);
+  } else{
+    defopt(L, M, app, C, S, Explicit, centered);
   }
-
   unsigned int p=ceilquotient(L,m);
-  cout << endl;
-  cout << "Optimal values:" << endl;
+  unsigned int mpL=m*p-L;
+  cout << endl <<"Optimal Padding: ";
+  if(p == q)
+    cout<<"Explicit"<<endl;
+  else if(mpL > 0)
+    cout<<"Hybrid"<<endl;
+  else
+    cout<<"Implicit"<<endl;
   cout << "m=" << m << endl;
   cout << "p=" << p << endl;
   cout << "q=" << q << endl;
   cout << "C=" << C << endl;
   cout << "S=" << S << endl;
   cout << "D=" << D << endl;
-  cout << "Padding:" << m*p-L << endl;
-
-  //double t=totalseconds();
-  //cout<<"Opt Time: "<<t-t0<<endl;
+  cout << "Padding:" << mpL << endl;
 }
 
 fftBase::~fftBase()

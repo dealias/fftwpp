@@ -139,16 +139,35 @@ public:
       return D == 1 || S == 1;
     }
 
+    // Called by the optimizer to record the time to complete an application
+    // for a given value of m. 
+    // mForced is obsolete
+    // centered must be true for all centered and Hermitian routines.
     void check(unsigned int L, unsigned int M,
-               Application& app, unsigned int C, unsigned int S, unsigned int m,
-               bool mForced=false, bool centered=false);
+                Application& app, unsigned int C, unsigned int S,
+                  unsigned int m, bool centered=false);
 
-    // Determine optimal m,q values for padding L data values to
-    // size >= M
-    // If fixed=true then an FFT of size M is enforced.
+    // Determine the optimal m value for padding L data values to
+    // size >= M for an application app.
+    // If Explicit=true, we only consider m >= M. 
+    // centered must be true for all centered and Hermitian routines.
     void scan(unsigned int L, unsigned int M, Application& app,
-              unsigned int C, unsigned int S, bool Explicit=false,
-              bool centered=false);
+                unsigned int C, unsigned int S, bool Explicit=false,
+                  bool centered=false);
+
+    // A function used inside defopt to iterate over sizes when p <= 2.
+    void defoptloop(unsigned int& m0, unsigned int L, unsigned int M,
+                      Application& app, unsigned int C, unsigned int S,
+                        bool centered, unsigned int itmax);
+
+    // The default optimizer routine. Used by scan to iterate and check
+    // different m values for a given geometry and application.
+    // minInner is the minimum size of FFT we consider for the inner routines.
+    // itmax is maximum number of iterations done by defoptloop.
+    void defopt(unsigned int L, unsigned int M, Application& app,
+                  unsigned int C, unsigned int S, bool Explicit=false,
+                      bool centered=false, unsigned int minInner=32, 
+                        unsigned int itmax=3);
   };
 
   void invalid () {

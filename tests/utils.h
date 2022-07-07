@@ -152,7 +152,14 @@ inline void usageHybrid()
   std::cerr << "-T\t\t number of threads" << std::endl;
 }
 
-// Return the smallest power of 2 greater than or equal to n.
+// logM returns the logarithm of base M.
+inline float log3(float n) {return log(n)/log(3);}
+
+inline float log5(float n) {return log(n)/log(5);}
+
+inline float log7(float n) {return log(n)/log(7);}
+
+// ceilpowM(n) returns the smallest power of M greater than or equal to n.
 inline unsigned int ceilpow2(unsigned int n)
 {
   --n;
@@ -163,6 +170,14 @@ inline unsigned int ceilpow2(unsigned int n)
   n |= n >> 16;
   return ++n;
 }
+
+// Return the smallest power of 2 greater than or equal to n.
+inline unsigned int ceilpow3(unsigned int n) {return pow(3,ceil(log3(n)));}
+
+inline unsigned int ceilpow5(unsigned int n) {return pow(5,ceil(log5(n)));}
+
+inline unsigned int ceilpow7(unsigned int n) {return pow(7,ceil(log7(n)));}
+
 
 inline unsigned int padding(unsigned int n)
 {
