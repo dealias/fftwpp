@@ -94,27 +94,6 @@ unsigned int nextfftsize(unsigned int m)
   }
   return N;
 }
-unsigned int prevfftsize(unsigned int M, bool mixed)
-{
-  int P[]={2,3,5,7};
-  int i;
-  for(i=M; i > 10; --i) {
-    int m=i;
-    for(int j=0; j < 4; j++) {
-      int p=P[j];
-      while(m % p == 0)
-        m /= p;
-      if(!mixed) {
-        if(m != 1)
-          m=i;
-        else
-          return i;
-      }
-    }
-    if(m == 1) return i;
-  }
-  return i;
-}
 
 void fftBase::initZetaqm(unsigned int q, unsigned int m)
 {
@@ -5175,5 +5154,4 @@ void ForwardBackward::clear()
     f=NULL;
   }
 }
-
 }
