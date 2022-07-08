@@ -59,7 +59,6 @@ T pow(T x, unsigned int y)
 }
 
 unsigned int nextfftsize(unsigned int m);
-unsigned int prevfftsize(unsigned int M, bool mixed);
 
 class fftBase;
 
