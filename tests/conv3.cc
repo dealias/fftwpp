@@ -25,7 +25,7 @@ bool xcompact=true;
 bool ycompact=true;
 bool zcompact=true;
 
-bool Direct=false, Implicit=true;
+bool Direct=false, Implicit=true, Explicit=false;
 
 unsigned int outlimit=300;
 
@@ -145,13 +145,12 @@ int main(int argc, char* argv[])
         Direct=true;
         break;
       case 'e':
+        Explicit=true;
         Implicit=false;
         break;
       case 'i':
         Implicit=true;
-        break;
-      case 'p':
-        Implicit=false;
+        Explicit=false;
         break;
       case 'A':
         A=atoi(optarg);
@@ -195,7 +194,7 @@ int main(int argc, char* argv[])
       case 'h':
       default:
         usage(3);
-        usageDirect();
+        usageExplicit(3);
         usageCompact(3);
         exit(1);
     }
@@ -210,14 +209,14 @@ int main(int argc, char* argv[])
 
   if(N == 0) {
     N=N0/nx/ny/nz;
-    N = max(N, 20);
+    N=max(N,20);
   }
   cout << "N=" << N << endl;
 
   size_t align=sizeof(Complex);
-  nxp=2*mx-xcompact;
-  nyp=2*my-ycompact;
-  nzp=mz+!zcompact;
+  nxp=Explicit ? nx : 2*mx-xcompact;
+  nyp=Explicit ? ny : 2*my-ycompact;
+  nzp=Explicit ? nz/2+1 : mz+!zcompact;
 
   cout << "nxp=" << nxp << ", nyp=" << nyp << ", nzp=" << nzp << endl;
 
@@ -288,6 +287,46 @@ int main(int argc, char* argv[])
     cout << endl;
     cout << "sum=" << sum << endl;
     cout << endl;
+  }
+
+  if(Explicit) {
+    unsigned int M=A/2;
+    ExplicitHConvolution3 C(nx,ny,nz,mx,my,mz,f,M);
+
+    array3<Complex> g(nxp,nyp,nzp,F[1]);
+
+    for(unsigned int i=0; i < N; ++i) {
+      f=0.0;
+      g=0.0;
+      init(F,mx,my,mz,nxp,nyp,nzp,A,true,true,true);
+      seconds();
+      C.convolve(F,F+M);
+      T[i]=seconds();
+    }
+
+    cout << endl;
+    timings("Explicit",mx,T,N,stats);
+
+    unsigned int xoffset=nx/2-mx+1;
+    unsigned int yoffset=ny/2-my+1;
+
+    if(Direct) {
+      for(unsigned int i=0; i < mx; i++)
+        for(unsigned int j=0; j < my; j++)
+          for(unsigned int k=0; k < mz; ++k)
+            h0[i][j][k]=f[xoffset+i][yoffset+j][k];
+    }
+
+    if(2*(mx-1)*2*(my-1)*mz < outlimit) {
+      for(unsigned int i=xoffset; i < xoffset+2*mx-1; i++) {
+        for(unsigned int j=yoffset; j < yoffset+2*my-1; j++)
+          for(unsigned int k=0; k < mz; ++k)
+          cout << f[i][j][k] << "\t";
+        cout << endl;
+      }
+    } else {
+      cout << f[xoffset][yoffset][0] << endl;
+    }
   }
 
   if(Direct) {

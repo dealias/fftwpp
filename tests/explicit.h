@@ -315,8 +315,7 @@ protected:
 public:
   ExplicitHConvolution2(unsigned int nx, unsigned int ny,
                         unsigned int mx, unsigned int my,
-                        Complex *f, unsigned int M=1,
-                        bool pruned=false) :
+                        Complex *f, unsigned int M=1, bool pruned=false) :
     ExplicitHPad2(nx,ny,mx,my), M(M), prune(pruned) {
     threads=fftw::maxthreads;
     unsigned int nyp=ny/2+1;
@@ -414,6 +413,43 @@ public:
   void backwards(Complex *f);
   void forwards(Complex *f);
   void convolve(Complex *f, Complex *g);
+};
+
+// In-place explicitly dealiased 3D Hermitian convolution.
+class ExplicitHConvolution3 : public ExplicitHPad3 {
+protected:
+  unsigned int M;
+  crfft3d *Backwards;
+  rcfft3d *Forwards;
+
+  unsigned int s;
+  Complex *ZetaH,*ZetaL;
+public:
+  ExplicitHConvolution3(unsigned int nx, unsigned int ny, unsigned int nz,
+                        unsigned int mx, unsigned int my, unsigned int mz,
+                        Complex *f, unsigned int M=1) :
+    ExplicitHPad3(nx,ny,nz,mx,my,mz), M(M) {
+    threads=fftw::maxthreads;
+    if(nx % 2 || ny % 2)
+      std::cout << "nx and ny must be even" << std::endl;
+
+    Backwards=new crfft3d(nx,ny,nz,f);
+    Forwards=new rcfft3d(nx,ny,nz,f);
+  }
+
+  ~ExplicitHConvolution3() {
+    delete Forwards;
+    delete Backwards;
+  }
+
+  void backwards(Complex *f);
+  void forwards(Complex *f);
+  void convolve(Complex **F, Complex **G, bool symmetrize=true);
+
+  // Constructor for special case M=1:
+  void convolve(Complex *f, Complex *g, bool symmetrize=true) {
+    convolve(&f,&g,symmetrize);
+  }
 };
 
 // In-place explicitly dealiased Hermitian ternary convolution.

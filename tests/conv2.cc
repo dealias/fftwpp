@@ -161,7 +161,7 @@ int main(int argc, char* argv[])
 
   if(N == 0) {
     N=N0/nx/ny;
-    N = max(N, 20);
+    N=max(N,20);
   }
   cout << "N=" << N << endl;
 
@@ -234,7 +234,6 @@ int main(int argc, char* argv[])
           cout << f[i][j] << "\t";
         cout << endl;
       } else cout << f[!xcompact][0] << endl;
-
   }
 
   if(Explicit) {

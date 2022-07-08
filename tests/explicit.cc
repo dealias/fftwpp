@@ -253,6 +253,57 @@ void ExplicitConvolution3::convolve(Complex *f, Complex *g)
   forwards(f);
 }
 
+void ExplicitHConvolution3::backwards(Complex *f)
+{
+  Backwards->fft(f);
+}
+
+void ExplicitHConvolution3::forwards(Complex *f)
+{
+  Forwards->fft0(f);
+}
+
+void ExplicitHConvolution3::convolve(Complex **F, Complex **G, bool symmetrize)
+{
+  unsigned int xorigin=nx/2;
+  unsigned int yorigin=ny/2;
+  unsigned int nzp=nz/2+1;
+
+  for(unsigned int s=0; s < M; ++s) {
+    Complex *f=F[s];
+    if(symmetrize) HermitianSymmetrizeXY(mx,my,nzp,xorigin,yorigin,f);
+    pad(f);
+    backwards(f);
+
+    Complex *g=G[s];
+    if(symmetrize) HermitianSymmetrizeXY(mx,my,nzp,xorigin,yorigin,g);
+    pad(g);
+    backwards(g);
+  }
+
+  double ninv=1.0/(nx*ny*nz);
+  unsigned int nzp2=2*nzp;
+
+  double *f=(double *) F[0];
+  double *g=(double *) G[0];
+
+  if(M == 1) {
+    PARALLEL(
+      for(unsigned int i=0; i < nx; ++i) {
+        unsigned int nzp2i=nzp2*ny*i;
+        for(unsigned int j=0; j < ny; ++j) {
+          unsigned int nzp2ij=nzp2i+nzp2*j;
+          unsigned int stop=nzp2ij+nz;
+          for(unsigned int j=nzp2ij; j < stop; ++j)
+            f[j] *= g[j]*ninv;
+        }
+      }
+      );
+  }
+
+  forwards(F[0]);
+}
+
 void ExplicitHTConvolution::backwards(Complex *f)
 {
   cr->fft(f);
