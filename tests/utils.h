@@ -171,11 +171,13 @@ inline unsigned int ceilpow2(unsigned int n)
   return ++n;
 }
 
-// Return the smallest power of 2 greater than or equal to n.
+// Return the smallest power of 3 greater than or equal to n.
 inline unsigned int ceilpow3(unsigned int n) {return pow(3,ceil(log3(n)));}
 
+// Return the smallest power of 5 greater than or equal to n.
 inline unsigned int ceilpow5(unsigned int n) {return pow(5,ceil(log5(n)));}
 
+// Return the smallest power of 7 greater than or equal to n.
 inline unsigned int ceilpow7(unsigned int n) {return pow(7,ceil(log7(n)));}
 
 
