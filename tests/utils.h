@@ -159,7 +159,7 @@ inline float log5(float n) {return log(n)/log(5);}
 
 inline float log7(float n) {return log(n)/log(7);}
 
-// ceilpowM(n) returns the smallest power of M greater than or equal to n.
+// ceilpow2(n) returns the smallest power of 2 greater than or equal to n.
 inline unsigned int ceilpow2(unsigned int n)
 {
   --n;

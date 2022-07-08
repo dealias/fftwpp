@@ -27,12 +27,12 @@ int IOption=-1;
 
 
 #ifdef __SSE2__
-const union uvec sse2_pm = {
-  { 0x00000000,0x00000000,0x00000000,0x80000000 }
+const union uvec sse2_pm={
+  {0x00000000,0x00000000,0x00000000,0x80000000}
 };
 
-const union uvec sse2_mm = {
-  { 0x00000000,0x80000000,0x00000000,0x80000000 }
+const union uvec sse2_mm={
+  {0x00000000,0x80000000,0x00000000,0x80000000}
 };
 #endif
 
@@ -73,19 +73,19 @@ bool notPow2(unsigned int m)
   return m != ceilpow2(m);
 }
 
-// Returns the smallest integer greater than ore equal to m that is of the form
-// (2**a)*(3**b)*(5**c)*(7**d) for some nonnegative integers a, b, c, and d.
+// Returns the smallest natural number greater than m of the form
+// 2^a 3^b 5^c 7^d for some nonnegative integers a, b, c, and d.
 unsigned int nextfftsize(unsigned int m)
 {
   if(m == ceilpow2(m))
     return m;
   unsigned int N=-1;
   unsigned int ni=1;
-  for(unsigned int i=0; ni < 7*m; ni=pow(7,i), ++i) {
+  for(unsigned int i=0; ni < 7*m; ni=pow(7,i),++i) {
     unsigned int nj=ni;
-    for(unsigned int j=0; nj < 5*m; nj=ni*pow(5,j), ++j) {
+    for(unsigned int j=0; nj < 5*m; nj=ni*pow(5,j),++j) {
       unsigned int nk=nj;
-      for(unsigned int k=0; nk < 3*m; nk=nj*pow(3,k), ++k) {
+      for(unsigned int k=0; nk < 3*m; nk=nj*pow(3,k),++k) {
         N=min(N,nk*ceilpow2(ceilquotient(m,nk)));
       }
       if(N == m)
@@ -110,8 +110,8 @@ void fftBase::initZetaqm(unsigned int q, unsigned int m)
   }
 }
 
-// Returns the smallest integer greater than ore equal to m that is a pure
-// power of either 2, 3, 5, or 7.
+// Returns the smallest natural number greater than m that is a
+// power of 2, 3, 5, or 7.
 unsigned int nextpuresize(unsigned int m)
 {
   unsigned int M=ceilpow2(m);
@@ -126,77 +126,76 @@ unsigned int nextpuresize(unsigned int m)
   return min(M,ceilpow7(m));
 }
 
-// Returns true if m is a pure power of either 2, 3, 5, or 7 and
-// false otherwise.
+// Returns true iff m is a power of 2, 3, 5, or 7.
 bool ispure(unsigned int m)
 {
   if(m == ceilpow2(m))
     return true;
-  if(m == ceilpow2(m))
+  if(m == ceilpow3(m))
     return true;
-  if(m == ceilpow2(m))
+  if(m == ceilpow5(m))
     return true;
-  if(m == ceilpow2(m))
+  if(m == ceilpow7(m))
     return true;
   return false;
 }
 
-void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L, 
-                                    unsigned int M, Application& app, 
-                                      unsigned int C, unsigned int S,
-                                        bool centered, unsigned int itmax)
-{ 
+void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
+                                  unsigned int M, Application& app,
+                                  unsigned int C, unsigned int S,
+                                  bool centered, unsigned int itmax)
+{
   unsigned int i=0;
-  while(i < itmax){
-    if(ispure(m0)){
-      check(L, M, app, C, S, m0, centered);
+  while(i < itmax) {
+    if(ispure(m0)) {
+      check(L,M,app,C,S,m0,centered);
       m0=nextfftsize(m0+1);
       break;
     }
-    check(L, M, app, C, S, m0, centered);
+    check(L,M,app,C,S,m0,centered);
     m0=nextfftsize(m0+1);
-    i+=1;
+    i += 1;
   }
 }
 
 void fftBase::OptBase::defopt(unsigned int L, unsigned int M, Application& app,
-                                unsigned int C, unsigned int S, bool Explicit,
-                                  bool centered, unsigned int minsize, 
-                                    unsigned int itmax)
+                              unsigned int C, unsigned int S, bool Explicit,
+                              bool centered, unsigned int minsize,
+                              unsigned int itmax)
 {
-  if(!Explicit){
+  if(!Explicit) {
     unsigned int Ld2=L/2;
     unsigned int m0=minsize;
     unsigned int p;
-    while(m0 < Ld2){
+    while(m0 < Ld2) {
       p=ceilquotient(L,m0);
       // p must be power of 2.
       // p must be even in the centered case.
       // The opimizer does not use the inner loop for explicit transforms.
-      if(notPow2(p) || (centered && p%2 != 0) || (p == q && p > 2)){
+      if(notPow2(p) || (centered && p%2 != 0) || (p == q && p > 2)) {
         m0=nextpuresize(m0+1);
-      } else{
-        check(L, M, app, C, S, m0, centered);
+      } else {
+        check(L,M,app,C,S,m0,centered);
         m0=nextpuresize(m0+1);
       }
     }
     m0=nextfftsize(Ld2);
-    defoptloop(m0, L, M, app, C, S, centered, itmax);
+    defoptloop(m0,L,M,app,C,S,centered,itmax);
 
     m0=nextfftsize(max(L,m0));
-    defoptloop(m0, L, M, app, C, S, centered, itmax);
+    defoptloop(m0,L,M,app,C,S,centered,itmax);
 
     m0=nextfftsize(max(M,m0));
-    defoptloop(m0, L, M, app, C, S, centered, itmax);
-  } else{
+    defoptloop(m0,L,M,app,C,S,centered,itmax);
+  } else {
     unsigned int m0=nextfftsize(M);
-    defoptloop(m0, L, m0, app, C, S, centered, itmax);
+    defoptloop(m0,L,m0,app,C,S,centered,itmax);
   }
 }
 
 void fftBase::OptBase::check(unsigned int L, unsigned int M, Application& app,
-                              unsigned int C, unsigned int S, unsigned int m,
-                                bool centered)
+                             unsigned int C, unsigned int S, unsigned int m,
+                             bool centered)
 {
   //cout<<"m="<<m<<endl;
   unsigned int q=ceilquotient(M,m);
@@ -243,30 +242,29 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M, Application& app,
 }
 
 void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
-                              unsigned int C, unsigned int S, bool Explicit,
-                                bool centered)
-{ 
+                            unsigned int C, unsigned int S, bool Explicit,
+                            bool centered)
+{
   m=M;
   q=1;
   D=1;
   T=DBL_MAX;
-  
+
   if(L > M) {
     cerr << "L=" << L << " is greater than M=" << M << "." << endl;
     exit(-1);
-  } else if(mOption >= 1 && !Explicit){
-    //The Explicit flag cannot be overridden by mOption.
+  } else if(mOption >= 1 && !Explicit) // Explicit overrides mOption.
     check(L,M,app,C,S,mOption,centered);
-  } else{
-    defopt(L, M, app, C, S, Explicit, centered);
-  }
+  else
+    defopt(L,M,app,C,S,Explicit,centered);
+
   unsigned int p=ceilquotient(L,m);
   unsigned int mpL=m*p-L;
-  cout << endl <<"Optimal Padding: ";
+  cout << endl << "Optimal Padding: ";
   if(p == q)
-    cout<<"Explicit"<<endl;
+    cout << "Explicit" << endl;
   else if(mpL > 0)
-    cout<<"Hybrid"<<endl;
+    cout << "Hybrid" << endl;
   else
     cout<<"Implicit"<<endl;
   cout << "m=" << m << endl;
@@ -275,7 +273,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   cout << "C=" << C << endl;
   cout << "S=" << S << endl;
   cout << "D=" << D << endl;
-  cout << "Padding:" << mpL << endl;
+  cout << "Padding: " << mpL << endl;
 }
 
 fftBase::~fftBase()
@@ -381,7 +379,7 @@ void fftPad::init()
     if(p == 2) {
       Q=n=q;
       P1=P=1;
-    } else if (centered && p == 2*p2) {
+    } else if(centered && p == 2*p2) {
       Q=n=q/p2;
       P=p2;
       P1=P+1;
@@ -503,7 +501,7 @@ void fftPad::init()
   }
 }
 
-fftPad:: ~fftPad() {
+fftPad::~fftPad() {
   if(q == 1) {
     delete fftm;
     delete ifftm;
@@ -4963,7 +4961,7 @@ void fftPadHermitian::backwardInner(Complex *F, Complex *f, unsigned int r, Comp
       Vec Y=UNPACKH(Zeta,-Zeta);
       STORE(ft,LOAD(ft)+ZMULT2(X,Y,LOAD(Vt),LOAD(Wt)));
       Complex *fmt=fm-tm;
-      Vec Zeta2=ZMULT(X,-Y,Zetanr); //=zeta_q^(-rt)z_n^r
+      Vec Zeta2=ZMULT(X,-Y,Zetanr); // zeta_q^(-rt)z_n^r
       Vec Xm=UNPACKL(Zeta2,Zeta2);
       Vec Ym=UNPACKH(Zeta2,-Zeta2);
       PARALLEL(
@@ -5024,7 +5022,7 @@ void Convolution::convolveRaw(Complex **f, multiplier *mult, unsigned int offset
     (*mult)(F,0,blocksize,threads);
     backward(F,f,0,offset);
   } else {
-   if(overwrite) {
+    if(overwrite) {
       forward(f,F,0,0,A,offset);
       (*mult)(f,offset,(fft->n-1)*blocksize,threads);
       (*mult)(F,0,blocksize,threads);
@@ -5154,4 +5152,5 @@ void ForwardBackward::clear()
     f=NULL;
   }
 }
+
 }
