@@ -153,11 +153,11 @@ inline void usageHybrid()
 }
 
 // logM returns the logarithm of base M.
-inline float log3(float n) {return log(n)/log(3);}
+inline double log3(double n) {return log(n)/log(3.0);}
 
-inline float log5(float n) {return log(n)/log(5);}
+inline double log5(double n) {return log(n)/log(5.0);}
 
-inline float log7(float n) {return log(n)/log(7);}
+inline double log7(double n) {return log(n)/log(7.0);}
 
 // ceilpow2(n) returns the smallest power of 2 greater than or equal to n.
 inline unsigned int ceilpow2(unsigned int n)
@@ -171,15 +171,41 @@ inline unsigned int ceilpow2(unsigned int n)
   return ++n;
 }
 
-// Return the smallest power of 3 greater than or equal to n.
-inline unsigned int ceilpow3(unsigned int n) {return pow(3,ceil(log3(n)));}
+inline unsigned int pow(unsigned int x, unsigned int p)
+{
+  if(p == 0) return 1;
+  if(x == 0) return 0;
 
-// Return the smallest power of 5 greater than or equal to n.
-inline unsigned int ceilpow5(unsigned int n) {return pow(5,ceil(log5(n)));}
+  unsigned int r = 1;
+  for(;;) {
+    if(p & 1) r *= x;
+    if((p >>= 1) == 0)	return r;
+    x *= x;
+  }
+}
 
-// Return the smallest power of 7 greater than or equal to n.
-inline unsigned int ceilpow7(unsigned int n) {return pow(7,ceil(log7(n)));}
+// Return the smallest power of p greater than or equal to n.
+inline unsigned int ceilpow(unsigned int p, unsigned int n)
+{
+  unsigned int x=p;
+  unsigned int u=1;
+  unsigned int l=0;
+  while(n > x) {
+    x *= x;
+    l=u;
+    u *= 2;
+  }
+  if(n == x) return n;
 
+  while (l < u) {
+    unsigned int i=(l+u) >> 1;
+    if(n > pow(p,i))
+      l=i+1;
+    else
+      u=i;
+  }
+  return pow(p,u);
+}
 
 inline unsigned int padding(unsigned int n)
 {
