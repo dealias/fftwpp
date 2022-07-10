@@ -19,6 +19,8 @@ using namespace Array;
 
 namespace fftwpp {
 
+using utils::pow;
+
 unsigned int threads=1;
 unsigned int mOption=0;
 unsigned int DOption=0;
@@ -81,11 +83,11 @@ unsigned int nextfftsize(unsigned int m)
     return m;
   unsigned int N=-1;
   unsigned int ni=1;
-  for(unsigned int i=0; ni < 7*m; ni=pow(7,i),++i) {
+  for(unsigned int i=0; ni < 7*m; ni=pow(7u,i),++i) {
     unsigned int nj=ni;
-    for(unsigned int j=0; nj < 5*m; nj=ni*pow(5,j),++j) {
+    for(unsigned int j=0; nj < 5*m; nj=ni*pow(5u,j),++j) {
       unsigned int nk=nj;
-      for(unsigned int k=0; nk < 3*m; nk=nj*pow(3,k),++k) {
+      for(unsigned int k=0; nk < 3*m; nk=nj*pow(3u,k),++k) {
         N=min(N,nk*ceilpow2(ceilquotient(m,nk)));
       }
       if(N == m)
@@ -117,13 +119,13 @@ unsigned int nextpuresize(unsigned int m)
   unsigned int M=ceilpow2(m);
   if(m == M)
     return m;
-  M=min(M,ceilpow3(m));
+  M=min(M,ceilpow(3,m));
   if(m == M)
     return m;
-  M=min(M,ceilpow5(m));
+  M=min(M,ceilpow(5,m));
   if(m == M)
     return m;
-  return min(M,ceilpow7(m));
+  return min(M,ceilpow(7,m));
 }
 
 // Returns true iff m is a power of 2, 3, 5, or 7.
@@ -131,11 +133,11 @@ bool ispure(unsigned int m)
 {
   if(m == ceilpow2(m))
     return true;
-  if(m == ceilpow3(m))
+  if(m == ceilpow(3,m))
     return true;
-  if(m == ceilpow5(m))
+  if(m == ceilpow(5,m))
     return true;
-  if(m == ceilpow7(m))
+  if(m == ceilpow(7,m))
     return true;
   return false;
 }
@@ -154,7 +156,7 @@ void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
     }
     check(L,M,app,C,S,m0,centered);
     m0=nextfftsize(m0+1);
-    i += 1;
+    ++i;
   }
 }
 
@@ -169,9 +171,9 @@ void fftBase::OptBase::defopt(unsigned int L, unsigned int M, Application& app,
     unsigned int p;
     while(m0 < Ld2) {
       p=ceilquotient(L,m0);
-      // p must be power of 2.
+      // p must be a power of 2.
       // p must be even in the centered case.
-      // The opimizer does not use the inner loop for explicit transforms.
+      // The optimizer does not use the inner loop for explicit transforms.
       if(notPow2(p) || (centered && p%2 != 0) || (p == q && p > 2)) {
         m0=nextpuresize(m0+1);
       } else {
@@ -182,9 +184,16 @@ void fftBase::OptBase::defopt(unsigned int L, unsigned int M, Application& app,
     m0=nextfftsize(Ld2);
     defoptloop(m0,L,M,app,C,S,centered,itmax);
 
-    m0=nextfftsize(max(L,m0));
-    defoptloop(m0,L,M,app,C,S,centered,itmax);
+    if(L > M/2){
+      m0=nextfftsize(max(M/2,m0));
+      defoptloop(m0,L,M,app,C,S,centered,itmax);
 
+      m0=nextfftsize(max(L,m0));
+      defoptloop(m0,L,M,app,C,S,centered,itmax);
+    } else{ 
+      m0=nextfftsize(max(L <= M/2 ? L : M/2,m0));
+      defoptloop(m0,L,M,app,C,S,centered,itmax);
+    }
     m0=nextfftsize(max(M,m0));
     defoptloop(m0,L,M,app,C,S,centered,itmax);
   } else {
@@ -197,7 +206,7 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M, Application& app,
                              unsigned int C, unsigned int S, unsigned int m,
                              bool centered)
 {
-  //cout<<"m="<<m<<endl;
+  //cout << "m=" << m << endl;
   unsigned int q=ceilquotient(M,m);
   unsigned int p=ceilquotient(L,m);
   unsigned int p2=p/2;
@@ -266,7 +275,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   else if(mpL > 0)
     cout << "Hybrid" << endl;
   else
-    cout<<"Implicit"<<endl;
+    cout << "Implicit" << endl;
   cout << "m=" << m << endl;
   cout << "p=" << p << endl;
   cout << "q=" << q << endl;
