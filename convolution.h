@@ -744,31 +744,62 @@ inline void HermitianSymmetrizeX(unsigned int mx, unsigned int stride,
   }
 }
 
-// Enforce 3D Hermiticity using specified (x,y > 0,z=0) and (x >= 0,y=0,z=0)
+// Enforce 3D Hermiticity using specified (x >= 0,y=0,z=0) and (x,y > 0,z=0).
 // data.
-inline void HermitianSymmetrizeXY(unsigned int mx, unsigned int my,
-                                  unsigned int mz, unsigned int xorigin,
-                                  unsigned int yorigin, Complex *f,
+inline void HermitianSymmetrizeXY(unsigned int Hx, unsigned int Hy,
+                                  unsigned int Hz,
+                                  unsigned int x0, unsigned int y0,
+                                  Complex *f,
+                                  unsigned int Sx, unsigned int Sy,
                                   unsigned int threads=fftw::maxthreads)
 {
-  int stride=(yorigin+my)*mz;
-  int mxstride=mx*stride;
-  unsigned int myz=my*mz;
-  unsigned int origin=xorigin*stride+yorigin*mz;
+  unsigned int origin=x0*Sx+y0*Sy;
+  Complex *F=f+origin;
+  unsigned int stop=Hx*Sx;
+  for(unsigned int i=Sx; i < stop; i += Sx)
+    *(F-i)=conj(F[i]);
 
-  f[origin].im=0.0;
-
-  for(int i=stride; i < mxstride; i += stride)
-    f[origin-i]=conj(f[origin+i]);
+  F[0].im=0.0;
 
   PARALLEL(
-    for(int i=stride-mxstride; i < mxstride; i += stride) {
-      int stop=i+myz;
-      for(int j=i+mz; j < stop; j += mz) {
-        f[origin-j]=conj(f[origin+j]);
+    for(int i=(-Hx+1)*Sx; i < (int) stop; i += Sx) {
+      unsigned int m=origin-i;
+      unsigned int p=origin+i;
+      unsigned int Stop=Sy*Hy;
+      for(unsigned int j=Sy; j < Stop; j += Sy) {
+        f[m-j]=conj(f[p+j]);
       }
     }
-    );
+    )
+
+  // Zero out Nyquist modes
+    if(x0 == Hx) {
+      unsigned int Ly=y0+Hy;
+      for(unsigned int j=0; j < Ly; ++j) {
+        for(unsigned int k=0; k < Hz; ++k) {
+          f[Sy*j+k]=0.0;
+        }
+      }
+    }
+
+    if(y0 == Hy) {
+      unsigned int Lx=x0+Hx;
+      for(unsigned int i=0; i < Lx; ++i) {
+        for(unsigned int k=0; k < Hz; ++k) {
+          f[Sx*i+k]=0.0;
+        }
+      }
+    }
+}
+
+inline void HermitianSymmetrizeXY(unsigned int Hx, unsigned int Hy,
+                                  unsigned int Hz,
+                                  unsigned int x0, unsigned int y0,
+                                  Complex *f,
+                                  unsigned int threads=fftw::maxthreads)
+{
+  unsigned int Ly=y0+Hy;
+  HermitianSymmetrizeXY(Hx,Hy,Hz,x0,y0,f,Ly*Hz,Hz,threads);
 }
 
 typedef unsigned int IndexFunction(unsigned int, unsigned int m);

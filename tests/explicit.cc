@@ -271,12 +271,15 @@ void ExplicitHConvolution3::convolve(Complex **F, Complex **G, bool symmetrize)
 
   for(unsigned int s=0; s < M; ++s) {
     Complex *f=F[s];
-    if(symmetrize) HermitianSymmetrizeXY(mx,my,nzp,xorigin,yorigin,f);
+
+    if(symmetrize) HermitianSymmetrizeXY(mx,my,mz,xorigin,yorigin,f,ny*nzp,
+                                         nzp);
     pad(f);
     backwards(f);
 
     Complex *g=G[s];
-    if(symmetrize) HermitianSymmetrizeXY(mx,my,nzp,xorigin,yorigin,g);
+    if(symmetrize) HermitianSymmetrizeXY(mx,my,mz,xorigin,yorigin,g,ny*nzp,
+                                         nzp);
     pad(g);
     backwards(g);
   }

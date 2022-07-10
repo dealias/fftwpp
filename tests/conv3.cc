@@ -36,6 +36,8 @@ inline void init(Complex **F,
 {
   if(A % 2 == 0) {
     unsigned int M=A/2;
+    unsigned int xoffset=Explicit ? nxp/2-mx+1 : !xcompact;
+    unsigned int yoffset=Explicit ? nyp/2-my+1 : !ycompact;
     unsigned int nx=2*mx-1;
     unsigned int ny=2*my-1;
 
@@ -76,9 +78,9 @@ inline void init(Complex **F,
 
 #pragma omp parallel for
       for(unsigned int i=0; i < nx; ++i) {
-        unsigned int I=i+!xcompact;
+        unsigned int I=i+xoffset;
         for(unsigned int j=0; j < ny; ++j) {
-          unsigned int J=j+!ycompact;
+          unsigned int J=j+yoffset;
           for(unsigned int k=0; k < mz; ++k) {
             f[I][J][k]=ffactor*Complex(i+k,j+k);
             g[I][J][k]=gfactor*Complex(2*i+k,j+1+k);
@@ -296,12 +298,14 @@ int main(int argc, char* argv[])
     array3<Complex> g(nxp,nyp,nzp,F[1]);
 
     for(unsigned int i=0; i < N; ++i) {
+      seconds();
       f=0.0;
       g=0.0;
+      T[i]=seconds();
       init(F,mx,my,mz,nxp,nyp,nzp,A,true,true,true);
       seconds();
       C.convolve(F,F+M);
-      T[i]=seconds();
+      T[i] += seconds();
     }
 
     cout << endl;
@@ -317,16 +321,23 @@ int main(int argc, char* argv[])
             h0[i][j][k]=f[xoffset+i][yoffset+j][k];
     }
 
-    if(2*(mx-1)*2*(my-1)*mz < outlimit) {
-      for(unsigned int i=xoffset; i < xoffset+2*mx-1; i++) {
-        for(unsigned int j=yoffset; j < yoffset+2*my-1; j++)
-          for(unsigned int k=0; k < mz; ++k)
-          cout << f[i][j][k] << "\t";
-        cout << endl;
+    bool output=2*(mx-1)*2*(my-1)*mz < outlimit;
+    Complex sum=0.0;
+    for(unsigned int i=xoffset; i < xoffset+2*mx-1; i++) {
+      for(unsigned int j=yoffset; j < yoffset+2*my-1; j++) {
+        for(unsigned int k=0; k < mz; ++k) {
+          Complex v=f[i][j][k];
+          sum += v;
+          if(output)
+            cout << v << "\t";
+        }
+        if(output)
+          cout << endl;
       }
-    } else {
-      cout << f[xoffset][yoffset][0] << endl;
+      if(output)
+        cout << endl;
     }
+    cout << "sum=" << sum << endl;
   }
 
   if(Direct) {

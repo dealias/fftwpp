@@ -139,7 +139,7 @@ public:
     }
 
     // Called by the optimizer to record the time to complete an application
-    // for a given value of m. 
+    // for a given value of m.
     // centered must be true for all centered and Hermitian routines.
     void check(unsigned int L, unsigned int M,
                Application& app, unsigned int C, unsigned int S,
@@ -147,7 +147,7 @@ public:
 
     // Determine the optimal m value for padding L data values to
     // size >= M for an application app.
-    // If Explicit=true, we only consider m >= M. 
+    // If Explicit=true, we only consider m >= M.
     // centered must be true for all centered and Hermitian routines.
     void scan(unsigned int L, unsigned int M, Application& app,
               unsigned int C, unsigned int S, bool Explicit=false,
@@ -164,7 +164,7 @@ public:
     // itmax is maximum number of iterations done by defoptloop.
     void defopt(unsigned int L, unsigned int M, Application& app,
                 unsigned int C, unsigned int S, bool Explicit=false,
-                bool centered=false, unsigned int minInner=32, 
+                bool centered=false, unsigned int minInner=32,
                 unsigned int itmax=3);
   };
 
@@ -978,7 +978,7 @@ inline void HermitianSymmetrizeXY(unsigned int Hx, unsigned int Hy,
                                   unsigned int threads=fftw::maxthreads)
 {
   unsigned int Ly=y0+Hy;
-  HermitianSymmetrizeXY(Hx,Hy,Hz,x0,y0,f,Hz,Ly*Hz,threads);
+  HermitianSymmetrizeXY(Hx,Hy,Hz,x0,y0,f,Ly*Hz,Hz,threads);
 }
 
 class Convolution2 : public ThreadBase {

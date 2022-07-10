@@ -34,8 +34,7 @@ inline void init(Complex **F,
   if(A % 2 == 0) {
     unsigned int M=A/2;
 
-    unsigned int coffset=xcompact ? 0 : 1;
-    unsigned int offset=Explicit ? nxp/2-mx+1 : coffset;
+    unsigned int xoffset=Explicit ? nxp/2-mx+1 : !xcompact;
     unsigned int nx=2*mx-1;
     double factor=1.0/sqrt((double) M);
     for(unsigned int s=0; s < M; ++s) {
@@ -58,7 +57,7 @@ inline void init(Complex **F,
       }
 #pragma omp parallel for
       for(unsigned int i=0; i < nx; ++i) {
-        unsigned int I=i+offset;
+        unsigned int I=i+xoffset;
         for(unsigned int j=0; j < my; j++) {
           f[I][j]=ffactor*Complex(i,j);
           g[I][j]=gfactor*Complex(2*i,j+1);
