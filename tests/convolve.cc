@@ -184,9 +184,16 @@ void fftBase::OptBase::defopt(unsigned int L, unsigned int M, Application& app,
     m0=nextfftsize(Ld2);
     defoptloop(m0,L,M,app,C,S,centered,itmax);
 
-    m0=nextfftsize(max(L,m0));
-    defoptloop(m0,L,M,app,C,S,centered,itmax);
+    if(L > M/2){
+      m0=nextfftsize(max(M/2,m0));
+      defoptloop(m0,L,M,app,C,S,centered,itmax);
 
+      m0=nextfftsize(max(L,m0));
+      defoptloop(m0,L,M,app,C,S,centered,itmax);
+    } else{ 
+      m0=nextfftsize(max(L <= M/2 ? L : M/2,m0));
+      defoptloop(m0,L,M,app,C,S,centered,itmax);
+    }
     m0=nextfftsize(max(M,m0));
     defoptloop(m0,L,M,app,C,S,centered,itmax);
   } else {
@@ -199,7 +206,7 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M, Application& app,
                              unsigned int C, unsigned int S, unsigned int m,
                              bool centered)
 {
-//  cout << "m=" << m << endl;
+  //cout << "m=" << m << endl;
   unsigned int q=ceilquotient(M,m);
   unsigned int p=ceilquotient(L,m);
   unsigned int p2=p/2;
