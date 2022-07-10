@@ -25,6 +25,8 @@ bool xcompact=true;
 bool ycompact=true;
 bool zcompact=true;
 
+unsigned int threads;
+
 bool Direct=false, Implicit=true, Explicit=false;
 
 unsigned int outlimit=300;
@@ -32,7 +34,8 @@ unsigned int outlimit=300;
 inline void init(Complex **F,
                  unsigned int mx, unsigned int my, unsigned int mz,
                  unsigned int nxp, unsigned int nyp, unsigned int nzp,
-                 unsigned int A, bool xcompact, bool ycompact, bool zcompact)
+                 unsigned int A, bool xcompact, bool ycompact, bool zcompact,
+                 bool init=true)
 {
   if(A % 2 == 0) {
     unsigned int M=A/2;
@@ -76,16 +79,32 @@ inline void init(Complex **F,
         }
       }
 
-#pragma omp parallel for
-      for(unsigned int i=0; i < nx; ++i) {
-        unsigned int I=i+xoffset;
-        for(unsigned int j=0; j < ny; ++j) {
-          unsigned int J=j+yoffset;
-          for(unsigned int k=0; k < mz; ++k) {
-            f[I][J][k]=ffactor*Complex(i+k,j+k);
-            g[I][J][k]=gfactor*Complex(2*i+k,j+1+k);
+      if(init) {
+        PARALLEL(
+        for(unsigned int i=0; i < nx; ++i) {
+          unsigned int I=i+xoffset;
+          for(unsigned int j=0; j < ny; ++j) {
+            unsigned int J=j+yoffset;
+            for(unsigned int k=0; k < mz; ++k) {
+              f[I][J][k]=ffactor*Complex(i+k,j+k);
+              g[I][J][k]=gfactor*Complex(2*i+k,j+1+k);
+            }
           }
         }
+          )
+      } else {
+        PARALLEL(
+        for(unsigned int i=0; i < nx; ++i) {
+          unsigned int I=i+xoffset;
+          for(unsigned int j=0; j < ny; ++j) {
+            unsigned int J=j+yoffset;
+            for(unsigned int k=0; k < mz; ++k) {
+              f[I][J][k]=0.0;
+              g[I][J][k]=0.0;
+            }
+          }
+        }
+          )
       }
     }
   } else {
@@ -94,35 +113,9 @@ inline void init(Complex **F,
   }
 }
 
-
-inline void init(array3<Complex>& f, array3<Complex>& g, unsigned int M=1,
-                 bool xcompact=true, bool ycompact=true)
-{
-  unsigned int nx=2*mx-1;
-  unsigned int ny=2*my-1;
-  unsigned int nxoffset=nx+!xcompact;
-  double factor=1.0/sqrt((double) M);
-  for(unsigned int s=0; s < M; ++s) {
-    double S=sqrt(1.0+s);
-    double ffactor=S*factor;
-    double gfactor=1.0/S*factor;
-    for(unsigned int i=0; i < nx; ++i) {
-      unsigned int I=s*nxoffset+i+!xcompact;
-      for(unsigned int j=0; j < ny; ++j) {
-        unsigned int J=j+!ycompact;
-        for(unsigned int k=0; k < mz; ++k) {
-          f[I][J][k]=ffactor*Complex(i+k,j+k);
-          g[I][J][k]=gfactor*Complex(2*i+k,j+1+k);
-        }
-      }
-    }
-  }
-}
-
-
 int main(int argc, char* argv[])
 {
-  fftw::maxthreads=get_max_threads();
+  threads=fftw::maxthreads=get_max_threads();
 
   unsigned int A=2; // Number of independent inputs
   unsigned int B=1; // Number of outputs
@@ -179,7 +172,7 @@ int main(int argc, char* argv[])
         N0=atoi(optarg);
         break;
       case 'T':
-        fftw::maxthreads=max(atoi(optarg),1);
+        threads=fftw::maxthreads=max(atoi(optarg),1);
         break;
       case 'S':
         stats=atoi(optarg);
@@ -236,7 +229,7 @@ int main(int argc, char* argv[])
   array3<Complex> f(nxp,nyp,nzp,F[0]);
 
   array3<Complex> h0;
-  if(Direct && Implicit) h0.Allocate(mx,my,mz,align);
+  if(Direct) h0.Allocate(mx,my,mz,align);
 
   double *T=new double[N];
 
@@ -260,6 +253,7 @@ int main(int argc, char* argv[])
     }
 
     timings("Implicit",mx,T,N,stats);
+    cout << endl;
 
     if(Direct) {
       for(unsigned int i=0; i < mx; i++)
@@ -268,25 +262,22 @@ int main(int argc, char* argv[])
             h0[i][j][k]=f[i+!xcompact][j+!ycompact][k];
     }
 
-    if(nxp*nyp*mz < outlimit) {
-      for(unsigned int i=!xcompact; i < nxp; ++i) {
-        for(unsigned int j=!ycompact; j < nyp; ++j) {
-          for(unsigned int k=0; k < mz; ++k)
-            cout << f[i][j][k] << "\t";
-          cout << endl;
-        }
-        cout << endl;
-      }
-    } else cout << f[!xcompact][!ycompact][0] << endl;
-
+    bool output=nxp*nyp*mz < outlimit;
     Complex sum=0.0;
     for(unsigned int i=!xcompact; i < nxp; ++i) {
       for(unsigned int j=!ycompact; j < nyp; ++j) {
-        for(unsigned int k=0; k < mz; ++k)
-          sum += f[i][j][k];
+        for(unsigned int k=0; k < mz; ++k) {
+          Complex v=f[i][j][k];
+          sum += v;
+          if(output)
+            cout << v << "\t";
+        }
+        if(output)
+          cout << endl;
       }
+      if(output)
+        cout << endl;
     }
-    cout << endl;
     cout << "sum=" << sum << endl;
     cout << endl;
   }
@@ -294,6 +285,7 @@ int main(int argc, char* argv[])
   if(Explicit) {
     unsigned int M=A/2;
     ExplicitHConvolution3 C(nx,ny,nz,mx,my,mz,f,M);
+    cout << "threads=" << C.Threads() << endl << endl;
 
     array3<Complex> g(nxp,nyp,nzp,F[1]);
 
@@ -302,14 +294,16 @@ int main(int argc, char* argv[])
       f=0.0;
       g=0.0;
       T[i]=seconds();
+      init(F,mx,my,mz,nxp,nyp,nzp,A,true,true,true,false);
+      T[i] -= seconds();
       init(F,mx,my,mz,nxp,nyp,nzp,A,true,true,true);
       seconds();
       C.convolve(F,F+M);
       T[i] += seconds();
     }
 
-    cout << endl;
     timings("Explicit",mx,T,N,stats);
+    cout << endl;
 
     unsigned int xoffset=nx/2-mx+1;
     unsigned int yoffset=ny/2-my+1;
@@ -338,6 +332,7 @@ int main(int argc, char* argv[])
         cout << endl;
     }
     cout << "sum=" << sum << endl;
+    cout << endl;
   }
 
   if(Direct) {
@@ -345,15 +340,15 @@ int main(int argc, char* argv[])
     unsigned int nyp=2*my-1;
 
     array3<Complex> h(nxp,nyp,mz,align);
-    array3<Complex> f(nxp,nyp,mz,align);
-    array3<Complex> g(nxp,nyp,mz,align);
+
     DirectHConvolution3 C(mx,my,mz);
-    init(f,g);
+    init(F,mx,my,mz,nxp,nyp,mz,A,true,true,true);
     seconds();
-    C.convolve(h,f,g);
+    C.convolve(h,F[0],F[1]);
     T[0]=seconds();
 
     timings("Direct",mx,T,1);
+    cout << endl;
 
     if(nxp*nyp*mz < outlimit)
       for(unsigned int i=0; i < nxp; ++i) {
@@ -364,9 +359,8 @@ int main(int argc, char* argv[])
         }
         cout << endl;
       }
-    else cout << h[0][0][0] << endl;
 
-    if(Implicit) { // compare implicit version with direct verion:
+    { // compare implicit or explicit version with direct verion:
       double error=0.0;
       double norm=0.0;
       for(unsigned int i=0; i < mx; i++) {

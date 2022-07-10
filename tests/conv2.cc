@@ -201,7 +201,6 @@ int main(int argc, char* argv[])
       default: cerr << "A=" << A << " is not yet implemented" << endl; exit(1);
     }
 
-
     for(unsigned int i=0; i < N; ++i) {
       init(F,mx,my,nxp,nyp,A,xcompact,ycompact);
       seconds();
@@ -211,6 +210,7 @@ int main(int argc, char* argv[])
     }
 
     timings("Implicit",mx,T,N,stats);
+    cout << endl;
 
     if(Direct) {
       for(unsigned int i=0; i < mx; i++)
@@ -218,26 +218,26 @@ int main(int argc, char* argv[])
           h0[i][j]=f[i+!xcompact][j];
     }
 
+    bool output=nxp*my < outlimit;
     Complex sum=0.0;
     for(unsigned int i=!xcompact; i < nxp; i++) {
-      for(unsigned int j=0; j < my; j++)
-          sum += f[i][j];
+      for(unsigned int j=0; j < my; j++) {
+        Complex v=f[i][j];
+        sum += v;
+        if(output)
+          cout << v << "\t";
+      }
+      if(output)
+        cout << endl;
     }
-    cout << endl;
     cout << "sum=" << sum << endl;
     cout << endl;
-
-    if(nxp*my < outlimit)
-      for(unsigned int i=!xcompact; i < nxp; i++) {
-        for(unsigned int j=0; j < my; j++)
-          cout << f[i][j] << "\t";
-        cout << endl;
-      } else cout << f[!xcompact][0] << endl;
   }
 
   if(Explicit) {
     unsigned int M=A/2;
     ExplicitHConvolution2 C(nx,ny,mx,my,f,M,Pruned);
+    cout << "threads=" << C.Threads() << endl << endl;
 
     for(unsigned int i=0; i < N; ++i) {
       init(F,mx,my,nxp,nyp,A,true,true);
@@ -246,8 +246,8 @@ int main(int argc, char* argv[])
       T[i]=seconds();
     }
 
-    cout << endl;
     timings(Pruned ? "Pruned" : "Explicit",mx,T,N,stats);
+    cout << endl;
 
     unsigned int offset=nx/2-mx+1;
 
@@ -257,15 +257,20 @@ int main(int argc, char* argv[])
           h0[i][j]=f[offset+i][j];
     }
 
-    if(2*(mx-1)*my < outlimit) {
-      for(unsigned int i=offset; i < offset+2*mx-1; i++) {
-        for(unsigned int j=0; j < my; j++)
-          cout << f[i][j] << "\t";
-        cout << endl;
+    bool output=2*(mx-1)*my < outlimit;
+    Complex sum=0.0;
+    for(unsigned int i=offset; i < offset+2*mx-1; i++) {
+      for(unsigned int j=0; j < my; j++) {
+        Complex v=f[i][j];
+        sum += v;
+        if(output)
+          cout << v << "\t";
       }
-    } else {
-      cout << f[offset][0] << endl;
+      if(output)
+        cout << endl;
     }
+    cout << "sum=" << sum << endl;
+    cout << endl;
   }
 
   if(Direct) {
@@ -277,8 +282,8 @@ int main(int argc, char* argv[])
     C.convolve(h,F[0],F[1]);
     T[0]=seconds();
 
-    cout << endl;
     timings("Direct",mx,T,1);
+    cout << endl;
 
     if(nxp*my < outlimit)
       for(unsigned int i=0; i < nxp; i++) {
