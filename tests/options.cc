@@ -12,16 +12,16 @@ extern unsigned int M;
 
 namespace utils {
 
-void optionsHybrid(int argc, char* argv[])
+void optionsHybrid(int argc, char* argv[], bool fft)
 {
 #ifdef __GNUC__
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hC:D:I:K:L:M:O:S:T:m:");
+    int c=getopt(argc,argv,"hC:D:I:K:L:M:O:S:T:m:");
     if (c == -1) break;
 
-    switch (c) {
+    switch(c) {
       case 0:
         break;
       case 'C':
@@ -57,14 +57,17 @@ void optionsHybrid(int argc, char* argv[])
         break;
       case 'h':
       default:
-        usageHybrid();
+        usageHybrid(fft);
         exit(1);
     }
   }
 
   cout << "L=" << L << endl;
   cout << "M=" << M << endl;
-  cout << "C=" << C << endl;
+  if(fft)
+    cout << "C=" << C << endl;
+  else
+    cout << "K=" << K << endl;
 
   cout << endl;
 }

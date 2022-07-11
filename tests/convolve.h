@@ -28,10 +28,6 @@ using namespace std; // Temporary
 #ifndef __convolve_h__
 #define __convolve_h__ 1
 
-namespace utils {
-extern void optionsHybrid(int argc, char* argv[]);
-}
-
 namespace fftwpp {
 
 extern const double twopi;

@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
   fftw::effort |= FFTW_NO_SIMD;
 #endif
 
-  optionsHybrid(argc,argv);
+  optionsHybrid(argc,argv,true);
 
   ForwardBackward FB(A,B);
 
