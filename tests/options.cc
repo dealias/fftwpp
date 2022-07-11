@@ -66,8 +66,7 @@ void optionsHybrid(int argc, char* argv[], bool fft)
   cout << "M=" << M << endl;
   if(fft)
     cout << "C=" << C << endl;
-  else
-    cout << "K=" << K << endl;
+  cout << "K=" << K << endl;
 
   cout << endl;
 }
