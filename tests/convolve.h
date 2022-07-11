@@ -44,7 +44,8 @@ unsigned int nextfftsize(unsigned int m);
 
 class fftBase;
 
-typedef void (fftBase::*FFTcall)(Complex *f, Complex *F, unsigned int r, Complex *W);
+typedef void (fftBase::*FFTcall)(Complex *f, Complex *F, unsigned int r,
+                                 Complex *W);
 typedef void (fftBase::*FFTPad)(Complex *W);
 
 class Application : public ThreadBase
@@ -112,9 +113,9 @@ public:
     unsigned int m,q,D;
     double T;
 
-    virtual double time(unsigned int L, unsigned int M, unsigned int C, unsigned int S,
-                        unsigned int m, unsigned int q,unsigned int D,
-                        Application &app)=0;
+    virtual double time(unsigned int L, unsigned int M, unsigned int C,
+                        unsigned int S, unsigned int m, unsigned int q,
+                        unsigned int D, Application &app)=0;
 
     virtual bool valid(unsigned int D, unsigned int p, unsigned int S) {
       return D == 1 || S == 1;
@@ -170,7 +171,8 @@ public:
   fftBase(unsigned int L, unsigned int M, Application& app,
           unsigned int C=1, unsigned int S=0, bool Explicit=false,
           bool centered=false) :
-    ThreadBase(app.Threads()), L(L), M(M), C(C), S(S == 0 ? C : S), centered(centered) {}
+    ThreadBase(app.Threads()), L(L), M(M), C(C), S(S == 0 ? C : S),
+    centered(centered) {}
 
   virtual ~fftBase();
 
@@ -192,19 +194,31 @@ public:
     (this->*Backward)(f,F,r,W);
   }
 
-  virtual void forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W)=0;
-  virtual void forwardExplicitMany(Complex *f, Complex *F, unsigned int, Complex *W)=0;
-  virtual void forwardExplicitFast(Complex *f, Complex *F, unsigned int, Complex *W) {}
-  virtual void forwardExplicitManyFast(Complex *f, Complex *F, unsigned int, Complex *W) {}
-  virtual void forwardExplicitSlow(Complex *f, Complex *F, unsigned int r, Complex *W) {}
-  virtual void forwardExplicitManySlow(Complex *f, Complex *F, unsigned int r, Complex *W) {}
+  virtual void forwardExplicit(Complex *f, Complex *F, unsigned int,
+                               Complex *W)=0;
+  virtual void forwardExplicitMany(Complex *f, Complex *F, unsigned int,
+                                   Complex *W)=0;
+  virtual void forwardExplicitFast(Complex *f, Complex *F, unsigned int,
+                                   Complex *W) {}
+  virtual void forwardExplicitManyFast(Complex *f, Complex *F, unsigned int,
+                                       Complex *W) {}
+  virtual void forwardExplicitSlow(Complex *f, Complex *F, unsigned int r,
+                                   Complex *W) {}
+  virtual void forwardExplicitManySlow(Complex *f, Complex *F, unsigned int r,
+                                       Complex *W) {}
 
-  virtual void backwardExplicit(Complex *F, Complex *f, unsigned int, Complex *W)=0;
-  virtual void backwardExplicitMany(Complex *F, Complex *f, unsigned int, Complex *W)=0;
-  virtual void backwardExplicitFast(Complex *F, Complex *f, unsigned int, Complex *W) {}
-  virtual void backwardExplicitManyFast(Complex *F, Complex *f, unsigned int, Complex *W) {}
-  virtual void backwardExplicitSlow(Complex *F, Complex *f, unsigned int r, Complex *W) {}
-  virtual void backwardExplicitManySlow(Complex *F, Complex *f, unsigned int r, Complex *W) {}
+  virtual void backwardExplicit(Complex *F, Complex *f, unsigned int,
+                                Complex *W)=0;
+  virtual void backwardExplicitMany(Complex *F, Complex *f, unsigned int,
+                                    Complex *W)=0;
+  virtual void backwardExplicitFast(Complex *F, Complex *f, unsigned int,
+                                    Complex *W) {}
+  virtual void backwardExplicitManyFast(Complex *F, Complex *f, unsigned int,
+                                        Complex *W) {}
+  virtual void backwardExplicitSlow(Complex *F, Complex *f, unsigned int r,
+                                    Complex *W) {}
+  virtual void backwardExplicitManySlow(Complex *F, Complex *f, unsigned int r,
+                                        Complex *W) {}
 
   virtual unsigned int indexExplicit(unsigned int r, unsigned int i) {
     return i;
@@ -240,32 +254,55 @@ public:
     return S*(q*s+n*u+r-i)+I;
   }
 
-  virtual void forward1(Complex *f, Complex *F0, unsigned int r0, Complex *W) {
-  }
-  virtual void forward1All(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
-  virtual void forward1Many(Complex *f, Complex *F, unsigned int r, Complex *W) {}
-  virtual void forward1ManyAll(Complex *f, Complex *F, unsigned int r, Complex *W) {}
-  virtual void forward2(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
-  virtual void forward2All(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
-  virtual void forward2Many(Complex *f, Complex *F, unsigned int r, Complex *W) {}
-  virtual void forward2ManyAll(Complex *f, Complex *F, unsigned int r, Complex *W) {}
-  virtual void forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
-  virtual void forwardInnerAll(Complex *f, Complex *F0, unsigned int r0, Complex *W) {}
-  virtual void forwardInnerMany(Complex *f, Complex *F, unsigned int r, Complex *W) {}
-  virtual void forwardInnerManyAll(Complex *f, Complex *F, unsigned int r, Complex *W) {}
+  virtual void forward1(Complex *f, Complex *F0, unsigned int r0, Complex *W)
+  {}
+  virtual void forward1All(Complex *f, Complex *F0, unsigned int r0,
+                           Complex *W) {}
+  virtual void forward1Many(Complex *f, Complex *F, unsigned int r,
+                            Complex *W) {}
+  virtual void forward1ManyAll(Complex *f, Complex *F, unsigned int r,
+                               Complex *W) {}
+  virtual void forward2(Complex *f, Complex *F0, unsigned int r0, Complex *W)
+  {}
+  virtual void forward2All(Complex *f, Complex *F0, unsigned int r0,
+                           Complex *W) {}
+  virtual void forward2Many(Complex *f, Complex *F, unsigned int r,
+                            Complex *W) {}
+  virtual void forward2ManyAll(Complex *f, Complex *F, unsigned int r,
+                               Complex *W) {}
+  virtual void forwardInner(Complex *f, Complex *F0, unsigned int r0,
+                            Complex *W) {}
+  virtual void forwardInnerAll(Complex *f, Complex *F0, unsigned int r0,
+                               Complex *W) {}
+  virtual void forwardInnerMany(Complex *f, Complex *F, unsigned int r,
+                                Complex *W) {}
+  virtual void forwardInnerManyAll(Complex *f, Complex *F, unsigned int r,
+                                   Complex *W) {}
 
-  virtual void backward1(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
-  virtual void backward1All(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
-  virtual void backward1Many(Complex *F, Complex *f, unsigned int r, Complex *W) {}
-  virtual void backward1ManyAll(Complex *F, Complex *f, unsigned int r, Complex *W) {}
-  virtual void backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
-  virtual void backward2All(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
-  virtual void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W) {}
-  virtual void backward2ManyAll(Complex *F, Complex *f, unsigned int r, Complex *W) {}
-  virtual void backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
-  virtual void backwardInnerAll(Complex *F0, Complex *f, unsigned int r0, Complex *W) {}
-  virtual void backwardInnerMany(Complex *F, Complex *f, unsigned int r, Complex *W) {}
-  virtual void backwardInnerManyAll(Complex *F, Complex *f, unsigned int r, Complex *W) {}
+  virtual void backward1(Complex *F0, Complex *f, unsigned int r0, Complex *W)
+  {}
+  virtual void backward1All(Complex *F0, Complex *f, unsigned int r0,
+                            Complex *W) {}
+  virtual void backward1Many(Complex *F, Complex *f, unsigned int r,
+                             Complex *W) {}
+  virtual void backward1ManyAll(Complex *F, Complex *f, unsigned int r,
+                                Complex *W) {}
+  virtual void backward2(Complex *F0, Complex *f, unsigned int r0,
+                         Complex *W) {}
+  virtual void backward2All(Complex *F0, Complex *f, unsigned int r0,
+                            Complex *W) {}
+  virtual void backward2Many(Complex *F, Complex *f, unsigned int r,
+                             Complex *W) {}
+  virtual void backward2ManyAll(Complex *F, Complex *f, unsigned int r,
+                                Complex *W) {}
+  virtual void backwardInner(Complex *F0, Complex *f, unsigned int r0,
+                             Complex *W) {}
+  virtual void backwardInnerAll(Complex *F0, Complex *f, unsigned int r0,
+                                Complex *W) {}
+  virtual void backwardInnerMany(Complex *F, Complex *f, unsigned int r,
+                                 Complex *W) {}
+  virtual void backwardInnerManyAll(Complex *F, Complex *f, unsigned int r,
+                                    Complex *W) {}
 
   unsigned int normalization() {
     return M;
@@ -467,9 +504,10 @@ public:
   };
 
   // Compute an fft padded to N=m*q >= M >= L
-  fftPadCentered(unsigned int L, unsigned int M, unsigned int C, unsigned int S,
-                 unsigned int m, unsigned int q, unsigned int D,
-                 unsigned int threads=fftw::maxthreads, bool fast=true) :
+  fftPadCentered(unsigned int L, unsigned int M, unsigned int C,
+                 unsigned int S, unsigned int m, unsigned int q,
+                 unsigned int D, unsigned int threads=fftw::maxthreads,
+                 bool fast=true) :
     fftPad(L,M,C,S,m,q,D,threads,true) {
     Opt opt;
     if(q > 1 && !opt.valid(D,p,this->S)) invalid();
@@ -502,14 +540,20 @@ public:
   void init(bool fast);
 
   void forwardExplicitFast(Complex *f, Complex *F, unsigned int r, Complex *W);
-  void forwardExplicitManyFast(Complex *f, Complex *F, unsigned int r, Complex *W);
+  void forwardExplicitManyFast(Complex *f, Complex *F, unsigned int r,
+                               Complex *W);
   void forwardExplicitSlow(Complex *f, Complex *F, unsigned int r, Complex *W);
-  void forwardExplicitManySlow(Complex *f, Complex *F, unsigned int r, Complex *W);
+  void forwardExplicitManySlow(Complex *f, Complex *F, unsigned int r,
+                               Complex *W);
 
-  void backwardExplicitFast(Complex *F, Complex *f, unsigned int r, Complex *W);
-  void backwardExplicitManyFast(Complex *F, Complex *f, unsigned int r, Complex *W);
-  void backwardExplicitSlow(Complex *F, Complex *f, unsigned int r, Complex *W);
-  void backwardExplicitManySlow(Complex *F, Complex *f, unsigned int r, Complex *W);
+  void backwardExplicitFast(Complex *F, Complex *f, unsigned int r,
+                            Complex *W);
+  void backwardExplicitManyFast(Complex *F, Complex *f, unsigned int r,
+                                Complex *W);
+  void backwardExplicitSlow(Complex *F, Complex *f, unsigned int r,
+                            Complex *W);
+  void backwardExplicitManySlow(Complex *F, Complex *f, unsigned int r,
+                                Complex *W);
 
   void initShift();
 
@@ -520,7 +564,8 @@ public:
   void forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W);
   void forwardInnerAll(Complex *f, Complex *F0, unsigned int r0, Complex *W);
   void forwardInnerMany(Complex *f, Complex *F0, unsigned int r0, Complex *W);
-  void forwardInnerManyAll(Complex *f, Complex *F0, unsigned int r0, Complex *W);
+  void forwardInnerManyAll(Complex *f, Complex *F0, unsigned int r0,
+                           Complex *W);
 
   void backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W);
   void backward2All(Complex *F0, Complex *f, unsigned int r0, Complex *W);
@@ -529,7 +574,8 @@ public:
   void backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W);
   void backwardInnerAll(Complex *F0, Complex *f, unsigned int r0, Complex *W);
   void backwardInnerMany(Complex *F0, Complex *f, unsigned int r0, Complex *W);
-  void backwardInnerManyAll(Complex *F0, Complex *f, unsigned int r0, Complex *W);
+  void backwardInnerManyAll(Complex *F0, Complex *f, unsigned int r0,
+                            Complex *W);
 };
 
 class fftPadHermitian : public fftBase {
@@ -647,9 +693,12 @@ public:
 typedef void multiplier(Complex **, unsigned int offset, unsigned int n,
                         unsigned int threads);
 
-// Multiplication routine for binary convolutions and taking two inputs of size e.
-void multbinary(Complex **F, unsigned int n, unsigned int offset, unsigned int threads);
-void realmultbinary(Complex **F, unsigned int n, unsigned int offset, unsigned int threads);
+// Multiplication routine for binary convolutions and taking two inputs of
+// size e.
+void multbinary(Complex **F, unsigned int n, unsigned int offset,
+                unsigned int threads);
+void realmultbinary(Complex **F, unsigned int n, unsigned int offset,
+                    unsigned int threads);
 
 class Convolution : public ThreadBase {
 public:
