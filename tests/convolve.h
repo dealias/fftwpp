@@ -40,20 +40,6 @@ extern unsigned int DOption;
 
 extern int IOption;
 
-template<class T>
-T pow(T x, unsigned int y)
-{
-  if(y == 0) return 1;
-  if(x == 0) return 0;
-
-  unsigned int r = 1;
-  while(true) {
-    if(y & 1) r *= x;
-    if((y >>= 1) == 0) return r;
-    x *= x;
-  }
-}
-
 unsigned int nextfftsize(unsigned int m);
 
 class fftBase;

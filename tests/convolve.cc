@@ -19,8 +19,6 @@ using namespace Array;
 
 namespace fftwpp {
 
-using utils::pow;
-
 unsigned int threads=1;
 unsigned int mOption=0;
 unsigned int DOption=0;
@@ -83,11 +81,11 @@ unsigned int nextfftsize(unsigned int m)
     return m;
   unsigned int N=-1;
   unsigned int ni=1;
-  for(unsigned int i=0; ni < 7*m; ni=pow(7u,i),++i) {
+  for(unsigned int i=0; ni < 7*m; ni=pow(7,i),++i) {
     unsigned int nj=ni;
-    for(unsigned int j=0; nj < 5*m; nj=ni*pow(5u,j),++j) {
+    for(unsigned int j=0; nj < 5*m; nj=ni*pow(5,j),++j) {
       unsigned int nk=nj;
-      for(unsigned int k=0; nk < 3*m; nk=nj*pow(3u,k),++k) {
+      for(unsigned int k=0; nk < 3*m; nk=nj*pow(3,k),++k) {
         N=min(N,nk*ceilpow2(ceilquotient(m,nk)));
       }
       if(N == m)
@@ -190,7 +188,7 @@ void fftBase::OptBase::defopt(unsigned int L, unsigned int M, Application& app,
 
       m0=nextfftsize(max(L,m0));
       defoptloop(m0,L,M,app,C,S,centered,itmax);
-    } else{ 
+    } else{
       m0=nextfftsize(max(L <= M/2 ? L : M/2,m0));
       defoptloop(m0,L,M,app,C,S,centered,itmax);
     }

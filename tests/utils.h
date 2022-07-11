@@ -29,6 +29,20 @@ inline T max(const T a, const S b)
   return a > (T) b ? a : b;
 }
 
+template<class T>
+inline T pow(T x, unsigned int y)
+{
+  if(y == 0) return 1;
+  if(x == 0) return 0;
+
+  unsigned int r = 1;
+  while(true) {
+    if(y & 1) r *= x;
+    if((y >>= 1) == 0) return r;
+    x *= x;
+  }
+}
+
 extern void optionsHybrid(int argc, char* argv[], bool fft=false);
 
 inline void usageCommon(int n)
@@ -173,19 +187,6 @@ inline unsigned int ceilpow2(unsigned int n)
   n |= n >> 8;
   n |= n >> 16;
   return ++n;
-}
-
-inline unsigned int pow(unsigned int x, unsigned int p)
-{
-  if(p == 0) return 1;
-  if(x == 0) return 0;
-
-  unsigned int r = 1;
-  for(;;) {
-    if(p & 1) r *= x;
-    if((p >>= 1) == 0)	return r;
-    x *= x;
-  }
 }
 
 // Return the smallest power of p greater than or equal to n.
