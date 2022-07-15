@@ -21,7 +21,7 @@ const char *inout=
   "constructor and call must be both in place or both out of place";
 
 fft1d::Table fft1d::threadtable;
-mfft1d::Table mfft1d::threadtable;
+Mfft1d::Table Mfft1d::threadtable;
 rcfft1d::Table rcfft1d::threadtable;
 crfft1d::Table crfft1d::threadtable;
 mrcfft1d::Table mrcfft1d::threadtable;

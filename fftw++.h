@@ -712,6 +712,9 @@ public:
   size_t idist,odist;
   fftw_plan plan1,plan2;
   unsigned int T,Q,R;
+  fftwblock() : plan2(NULL) {
+  }
+
   fftwblock(unsigned int nx, unsigned int M,
             size_t istride, size_t ostride, size_t idist, size_t odist,
             Complex *in, Complex *out, unsigned int Threads)
@@ -848,25 +851,25 @@ public:
 //   dist is the spacing between the first elements of the vectors.
 //
 //
-class mfft1d : public fftwblock<fftw_complex,fftw_complex>,
+class Mfft1d : public fftwblock<fftw_complex,fftw_complex>,
                public Threadtable<keytype3,keyless3> {
   static Table threadtable;
 public:
-  mfft1d(unsigned int nx, int sign, unsigned int M=1,
+  Mfft1d(unsigned int nx, int sign, unsigned int M=1,
          Complex *in=NULL, Complex *out=NULL,
          unsigned int threads=maxthreads) :
     fftw(2*((nx-1)+(M-1)*nx+1),sign,threads,nx),
     fftwblock<fftw_complex,fftw_complex>
     (nx,M,1,1,nx,nx,in,out,threads) {}
 
-  mfft1d(unsigned int nx, int sign, unsigned int M, size_t stride=1,
+  Mfft1d(unsigned int nx, int sign, unsigned int M, size_t stride=1,
          size_t dist=0, Complex *in=NULL, Complex *out=NULL,
          unsigned int threads=maxthreads) :
     fftw(2*((nx-1)*stride+(M-1)*Dist(nx,stride,dist)+1),sign,threads,nx),
     fftwblock<fftw_complex,fftw_complex>
     (nx,M,stride,stride,dist,dist,in,out,threads) {}
 
-  mfft1d(unsigned int nx, int sign, unsigned int M,
+  Mfft1d(unsigned int nx, int sign, unsigned int M,
          size_t istride, size_t ostride, size_t idist, size_t odist,
          Complex *in, Complex *out, unsigned int threads=maxthreads):
     fftw(std::max(2*((nx-1)*istride+(M-1)*Dist(nx,istride,idist)+1),
@@ -880,6 +883,71 @@ public:
   }
   void store(bool inplace, const threaddata& data) {
     Store(threadtable,keytype3(nx,Q,R,data.threads,inplace),data);
+  }
+};
+
+class mfft1d {
+  unsigned int M;
+  fft1d *fft1;
+  Mfft1d *fftm;
+public:
+  mfft1d(unsigned int nx, int sign, unsigned int M=1,
+         Complex *in=NULL, Complex *out=NULL,
+         unsigned int threads=fftw::maxthreads) : M(M) {
+    if(M == 1)
+      fft1=new fft1d(nx,sign,in,out,threads);
+    else
+      fftm=new Mfft1d(nx,sign,M,in,out,threads);
+  }
+
+  mfft1d(unsigned int nx, int sign, unsigned int M, size_t stride=1,
+         size_t dist=0, Complex *in=NULL, Complex *out=NULL,
+         unsigned int threads=fftw::maxthreads) : M(M) {
+    if(M == 1)
+      fft1=new fft1d(nx,sign,in,out,threads);
+    else
+      fftm=new Mfft1d(nx,sign,M,stride,dist,in,out,threads);
+  }
+
+  mfft1d(unsigned int nx, int sign, unsigned int M,
+         size_t istride, size_t ostride, size_t idist, size_t odist,
+         Complex *in, Complex *out, unsigned int threads=fftw::maxthreads) :
+    M(M) {
+    if(M == 1)
+      fft1=new fft1d(nx,sign,in,out,threads);
+    else
+      fftm=new Mfft1d(nx,sign,M,istride,ostride,idist,odist,in,out,threads);
+  }
+
+  unsigned int Threads() {
+    return M == 1 ? fft1->Threads() : fftm->Threads();
+  }
+
+  template<class I>
+  void fft(I in) {
+    M == 1 ? fft1->fft(in) : fftm->fft(in);
+  }
+
+  template<class I, class O>
+  void fft(I in, O out) {
+    M == 1 ? fft1->fft(in,out) : fftm->fft(in,out);
+  }
+
+  template<class I>
+  void fftNormalized(I in) {
+    M == 1 ? fft1->fftNormalized(in) : fftm->fftNormalized(in);
+  }
+
+  template<class I, class O>
+  void fftNormalized(I in, O out) {
+    M == 1 ? fft1->fftNormalized(in,out) : fftm->fftNormalized(in,out);
+  }
+
+  ~mfft1d() {
+    if(M == 1)
+      delete fft1;
+    else
+      delete fftm;
   }
 };
 
