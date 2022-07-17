@@ -494,26 +494,42 @@ public:
     for(unsigned int i=0; i < doubles; i++) out[i] *= norm;
   }
 
-  virtual void fftNormalized(Complex *in, Complex *out=NULL, bool shift=false)
+  void fftNormalized(Complex *in, Complex *out=NULL)
   {
     out=Setout(in,out);
-    Execute(in,out,shift);
+    Execute(in,out);
     Normalize(out);
   }
 
-  virtual void fftNormalized(Complex *in, double *out, bool shift=false) {
+  void fftNormalized(Complex *in, double *out) {
     out=(double *) Setout(in,(Complex *) out);
-    Execute(in,(Complex *) out,shift);
+    Execute(in,(Complex *) out);
     Normalize(out);
   }
 
-  virtual void fftNormalized(double *in, Complex *out, bool shift=false) {
-    fftNormalized((Complex *) in,out,shift);
+  void fftNormalized(double *in, Complex *out) {
+    out=Setout((Complex *) in,out);
+    Execute((Complex *) in,out);
+    Normalize(out);
   }
 
-  template<class I, class O>
-  void fft0Normalized(I in, O out) {
-    fftNormalized(in,out,true);
+  void fft0Normalized(Complex *in, Complex *out=NULL)
+  {
+    out=Setout(in,out);
+    Execute(in,out,true);
+    Normalize(out);
+  }
+
+  void fft0Normalized(Complex *in, double *out) {
+    out=(double *) Setout(in,(Complex *) out);
+    Execute(in,(Complex *) out,true);
+    Normalize(out);
+  }
+
+  void fft0Normalized(double *in, Complex *out) {
+    out=Setout((Complex *) in,out);
+    Execute((Complex *) in,out,true);
+    Normalize(out);
   }
 
   template<class O>
@@ -534,9 +550,9 @@ public:
 
   template<class I, class O>
   void fftNormalized(unsigned int nx, unsigned int M, size_t ostride,
-                     size_t odist, I *in, O *out=NULL, bool shift=false) {
+                     size_t odist, I *in, O *out) {
     out=(O *) Setout((Complex *) in,(Complex *) out);
-    Execute((Complex *) in,(Complex *) out,shift);
+    Execute((Complex *) in,(Complex *) out);
     Normalize(nx,M,ostride,odist,out);
   }
 
@@ -859,31 +875,6 @@ public:
   }
 };
 
-// Compute the complex Fourier transform of M complex vectors, each of
-// length n.
-// Before calling fft(), the arrays in and out (which may coincide) must be
-// allocated as Complex[M*n].
-//
-// Out-of-place usage:
-//
-//   mfft1d Forward(n,-1,M,stride,dist,in,out);
-//   Forward.fft(in,out);
-//
-//   mfft1d Forward(n,-1,M,istride,ostride,idist,odist,in,out);
-//   Forward.fft(in,out);
-//
-// In-place usage:
-//
-//   mfft1d Forward(n,-1,M,stride,dist);
-//   Forward.fft(in);
-//
-//
-//
-// Notes:
-//   stride is the spacing between the elements of each Complex vector;
-//   dist is the spacing between the first elements of the vectors.
-//
-//
 class Mfft1d : public fftwblock<fftw_complex,fftw_complex>,
                public Threadtable<keytype3,keyless3> {
   static Table threadtable;
@@ -919,6 +910,31 @@ public:
   }
 };
 
+// Compute the complex Fourier transform of M complex vectors, each of
+// length n.
+// Before calling fft(), the arrays in and out (which may coincide) must be
+// allocated as Complex[M*n].
+//
+// Out-of-place usage:
+//
+//   mfft1d Forward(n,-1,M,stride,dist,in,out);
+//   Forward.fft(in,out);
+//
+//   mfft1d Forward(n,-1,M,istride,ostride,idist,odist,in,out);
+//   Forward.fft(in,out);
+//
+// In-place usage:
+//
+//   mfft1d Forward(n,-1,M,stride,dist);
+//   Forward.fft(in);
+//
+//
+//
+// Notes:
+//   stride is the spacing between the elements of each Complex vector;
+//   dist is the spacing between the first elements of the vectors.
+//
+//
 class mfft1d {
   unsigned int M;
   fft1d *fft1;
@@ -1083,6 +1099,35 @@ public:
   }
 };
 
+class Mrcfft1d : public fftwblock<double,fftw_complex>,
+                 public Threadtable<keytype3,keyless3> {
+  static Table threadtable;
+public:
+  Mrcfft1d(unsigned int nx, unsigned int M, size_t istride, size_t ostride,
+           size_t idist, size_t odist, double *in=NULL, Complex *out=NULL,
+           unsigned int threads=maxthreads)
+    : fftw(Doubles(nx,M,istride,ostride,idist,odist,Inplace(in,out)).csize,
+           -1,threads,nx),
+      fftwblock<double,fftw_complex>
+    (nx,M,istride,ostride,idist,odist,(Complex *) in,out,threads) {}
+
+  threaddata lookup(bool inplace, unsigned int threads) {
+    return Lookup(threadtable,keytype3(nx,Q,R,threads,inplace));
+  }
+
+  void store(bool inplace, const threaddata& data) {
+    Store(threadtable,keytype3(nx,Q,R,data.threads,inplace),data);
+  }
+
+  void Normalize(Complex *out) {
+    fftw::Normalize<Complex>(nx/2+1,M,ostride,odist,out);
+  }
+
+  void fftNormalized(double *in, Complex *out=NULL) {
+    fftw::fftNormalized<double,Complex>(nx/2+1,M,ostride,odist,in,out);
+  }
+};
+
 // Compute the real Fourier transform of M real vectors, each of length n,
 // using phase sign -1. Before calling fft(), the array in must be
 // allocated as double[M*n] and the array out must be allocated as
@@ -1107,17 +1152,67 @@ public:
 //   in contains the n real values stored as a Complex array;
 //   out contains the first n/2+1 Complex Fourier values.
 //
-class mrcfft1d : public fftwblock<double,fftw_complex>,
-                 public Threadtable<keytype3,keyless3> {
-  static Table threadtable;
+class mrcfft1d {
+  unsigned int M;
+  rcfft1d *fft1;
+  Mrcfft1d *fftm;
 public:
   mrcfft1d(unsigned int nx, unsigned int M, size_t istride, size_t ostride,
            size_t idist, size_t odist, double *in=NULL, Complex *out=NULL,
+           unsigned int threads=fftw::maxthreads) : M(M) {
+    if(M == 1)
+      fft1=new rcfft1d(nx,in,out,threads);
+    else
+      fftm=new Mrcfft1d(nx,M,istride,ostride,idist,odist,in,out,threads);
+  }
+
+  unsigned int Threads() {
+    return M == 1 ? fft1->Threads() : fftm->Threads();
+  }
+
+  template<class I>
+  void fft(I in) {
+    M == 1 ? fft1->fft(in) : fftm->fft(in);
+  }
+
+  template<class I, class O>
+  void fft(I in, O out) {
+    M == 1 ? fft1->fft(in,out) : fftm->fft(in,out);
+  }
+
+  void Normalize(Complex *out) {
+    M == 1 ? fft1->Normalize(out) : fftm->Normalize(out);
+  }
+
+  template<class I>
+  void fftNormalized(I in) {
+    M == 1 ? fft1->fftNormalized(in) : fftm->fftNormalized(in);
+  }
+
+  template<class I, class O>
+  void fftNormalized(I in, O out=NULL) {
+    M == 1 ? fft1->fftNormalized(in,out) : fftm->fftNormalized(in,out);
+  }
+
+  ~mrcfft1d() {
+    if(M == 1)
+      delete fft1;
+    else
+      delete fftm;
+  }
+};
+
+class Mcrfft1d : public fftwblock<fftw_complex,double>,
+                 public Threadtable<keytype3,keyless3> {
+  static Table threadtable;
+public:
+  Mcrfft1d(unsigned int nx, unsigned int M, size_t istride, size_t ostride,
+           size_t idist, size_t odist, Complex *in=NULL, double *out=NULL,
            unsigned int threads=maxthreads)
-    : fftw(Doubles(nx,M,istride,ostride,idist,odist,Inplace(in,out)).csize,
-           -1,threads,nx),
-      fftwblock<double,fftw_complex>
-    (nx,M,istride,ostride,idist,odist,(Complex *) in,out,threads) {}
+    : fftw(Doubles(nx,M,ostride,istride,odist,idist,Inplace(in,out)).rsize,
+           1,threads,nx),
+      fftwblock<fftw_complex,double>
+    (nx,M,istride,ostride,idist,odist,in,(Complex *) out,threads) {}
 
   threaddata lookup(bool inplace, unsigned int threads) {
     return Lookup(threadtable,keytype3(nx,Q,R,threads,inplace));
@@ -1127,16 +1222,12 @@ public:
     Store(threadtable,keytype3(nx,Q,R,data.threads,inplace),data);
   }
 
-  void Normalize(Complex *out) {
-    fftw::Normalize<Complex>(nx/2+1,M,ostride,odist,out);
+  void Normalize(double *out) {
+    fftw::Normalize<double>(nx,M,ostride,odist,out);
   }
 
-  void fftNormalized(double *in, Complex *out=NULL, bool shift=false) {
-    fftw::fftNormalized<double,Complex>(nx/2+1,M,ostride,odist,in,out,false);
-  }
-
-  void fft0Normalized(double *in, Complex *out=NULL) {
-    fftw::fftNormalized<double,Complex>(nx/2+1,M,ostride,odist,in,out,true);
+  void fftNormalized(Complex *in, double *out=NULL) {
+    fftw::fftNormalized<Complex,double>(nx,M,ostride,odist,in,out);
   }
 };
 
@@ -1163,36 +1254,53 @@ public:
 //   in contains the first n/2+1 Complex Fourier values;
 //   out contains the n real values stored as a Complex array.
 //
-class mcrfft1d : public fftwblock<fftw_complex,double>,
-                 public Threadtable<keytype3,keyless3> {
-  static Table threadtable;
+class mcrfft1d {
+  unsigned int M;
+  crfft1d *fft1;
+  Mcrfft1d *fftm;
 public:
   mcrfft1d(unsigned int nx, unsigned int M, size_t istride, size_t ostride,
            size_t idist, size_t odist, Complex *in=NULL, double *out=NULL,
-           unsigned int threads=maxthreads)
-    : fftw(Doubles(nx,M,ostride,istride,odist,idist,Inplace(in,out)).rsize,
-           1,threads,nx),
-      fftwblock<fftw_complex,double>
-    (nx,M,istride,ostride,idist,odist,in,(Complex *) out,threads) {}
-
-  threaddata lookup(bool inplace, unsigned int threads) {
-    return Lookup(threadtable,keytype3(nx,Q,R,threads,inplace));
+           unsigned int threads=fftw::maxthreads) : M(M) {
+    if(M == 1)
+      fft1=new crfft1d(nx,in,out,threads);
+    else
+      fftm=new Mcrfft1d(nx,M,istride,ostride,idist,odist,in,out,threads);
   }
 
-  void store(bool inplace, const threaddata& data) {
-    Store(threadtable,keytype3(nx,Q,R,data.threads,inplace),data);
+  unsigned int Threads() {
+    return M == 1 ? fft1->Threads() : fftm->Threads();
+  }
+
+  template<class I>
+  void fft(I in) {
+    M == 1 ? fft1->fft(in) : fftm->fft(in);
+  }
+
+  template<class I, class O>
+  void fft(I in, O out) {
+    M == 1 ? fft1->fft(in,out) : fftm->fft(in,out);
   }
 
   void Normalize(double *out) {
-    fftw::Normalize<double>(nx,M,ostride,odist,out);
+    M == 1 ? fft1->Normalize(out) : fftm->Normalize(out);
   }
 
-  void fftNormalized(Complex *in, double *out=NULL, bool shift=false) {
-    fftw::fftNormalized<Complex,double>(nx,M,ostride,odist,in,out,false);
+  template<class I>
+  void fftNormalized(I in) {
+    M == 1 ? fft1->fftNormalized(in) : fftm->fftNormalized(in);
   }
 
-  void fft0Normalized(Complex *in, double *out=NULL) {
-    fftw::fftNormalized<Complex,double>(nx,M,ostride,odist,in,out,true);
+  template<class I, class O>
+  void fftNormalized(I in, O out=NULL) {
+    M == 1 ? fft1->fftNormalized(in,out) : fftm->fftNormalized(in,out);
+  }
+
+  ~mcrfft1d() {
+    if(M == 1)
+      delete fft1;
+    else
+      delete fftm;
   }
 };
 

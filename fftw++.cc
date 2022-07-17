@@ -24,8 +24,8 @@ fft1d::Table fft1d::threadtable;
 Mfft1d::Table Mfft1d::threadtable;
 rcfft1d::Table rcfft1d::threadtable;
 crfft1d::Table crfft1d::threadtable;
-mrcfft1d::Table mrcfft1d::threadtable;
-mcrfft1d::Table mcrfft1d::threadtable;
+Mrcfft1d::Table Mrcfft1d::threadtable;
+Mcrfft1d::Table Mcrfft1d::threadtable;
 fft2d::Table fft2d::threadtable;
 
 void LoadWisdom()
