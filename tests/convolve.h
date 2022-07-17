@@ -401,8 +401,6 @@ public:
     }
   };
 
-
-
   fftPad(unsigned int L, unsigned int M, unsigned int C, unsigned int S,
          unsigned int threads=fftw::maxthreads, bool centered=false) :
     fftBase(L,M,C,S,threads,centered) {}

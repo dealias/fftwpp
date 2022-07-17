@@ -18,8 +18,18 @@ int main()
 
   cout << "Out-of-place transforms:" << endl;
 
-  array2<double> f(nx,ny,align);
   array2<Complex> g(nx,nyp,align);
+
+#define INPLACE 1
+
+#if INPLACE
+  double *F=(double *) g();
+  double *f=F;
+#else
+  array2<double> F(nx,ny,align);
+  double *f=(double *) F();
+#endif
+
   size_t rstride=1;
   size_t cstride=1;
   size_t rdist=ny;
@@ -32,7 +42,7 @@ int main()
                    cstride,
                    rdist,
                    cdist,
-                   f,  // input array
+                   F,  // input array
                    g); // output array
   mcrfft1d Backward(ny, // length of transform
                     M,  // number of transforms
@@ -41,14 +51,20 @@ int main()
                     cdist,
                     rdist,
                     g,  // input array
-                    f); // output array
+                    F); // output array
 
   // Initialize data:
   for(unsigned int i=0; i < nx; i++)
     for(unsigned int j=0; j < ny; j++)
-      f(i,j)=i+j;
+      f[rdist*i+j]=i+j;
 
-  cout << endl << "input:" << endl << f;
+  cout << endl << "input:" << endl;
+
+  for(unsigned int i=0; i < nx; i++) {
+    for(unsigned int j=0; j < ny; j++)
+      cout << f[rdist*i+j] << " ";
+    cout << endl;
+  }
 
   Forward.fft(f,g);
 
@@ -56,6 +72,12 @@ int main()
 
   Backward.fftNormalized(g,f);
 
-  cout << endl << "back to input:" << endl << f;
+  cout << endl << "back to input:" << endl;
+
+  for(unsigned int i=0; i < nx; i++) {
+    for(unsigned int j=0; j < ny; j++)
+      cout << f[rdist*i+j] << " ";
+    cout << endl;
+  }
 
 }

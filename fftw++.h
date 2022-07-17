@@ -139,26 +139,45 @@ public:
   }
 };
 
-inline unsigned int realsize(unsigned int n, Complex *in, Complex *out=NULL)
+inline unsigned int realsize(unsigned int n, bool inplace)
 {
-  return (!out || in == out) ? 2*(n/2+1) : n;
+  return inplace ? 2*(n/2+1) : n;
 }
 
-inline unsigned int realsize(unsigned int n, Complex *in, double *out)
+inline unsigned int Inplace(Complex *in, Complex *out=NULL)
 {
-  return realsize(n,in,(Complex *) out);
+  return !out || in == out;
 }
 
-inline unsigned int realsize(unsigned int n, double *in, Complex *out)
+inline unsigned int Inplace(Complex *in, double *out)
 {
-  return realsize(n,(Complex *) in,out);
+  return Inplace(in,(Complex *) out);
 }
+
+inline unsigned int Inplace(double *in, Complex *out)
+{
+  return Inplace((Complex *) in,out);
+}
+
+class Doubles {
+public:
+  size_t rsize,csize;
+
+  Doubles(unsigned int nx, unsigned int M,
+          size_t istride, size_t ostride,
+          size_t idist, size_t odist, bool inplace) {
+    rsize=(realsize(nx,inplace)-2)*istride+(M-1)*idist+2;
+    csize=2*(nx/2*ostride+(M-1)*odist+1);
+    if(inplace)
+      rsize=csize=std::max(rsize,csize);
+  }
+};
 
 // Base clase for fft routines
 //
 class fftw : public ThreadBase {
 protected:
-  unsigned int doubles; // number of double precision values in dataset
+  unsigned int doubles; // number of double precision values in output
   int sign;
   unsigned int threads;
   double norm;
@@ -301,33 +320,35 @@ public:
 #endif
   }
 
+  void fftLoop(Complex *in, Complex *out, unsigned int N) {
+    if(inplace)
+      for(unsigned int i=0; i < N; ++i)
+        fftNormalized(in,out);
+    else
+      for(unsigned int i=0; i < N; ++i)
+        fft(in,out);
+  }
+
   threaddata time(fftw_plan plan1, fftw_plan planT, Complex *in, Complex *out,
                   unsigned int Threads) {
     utils::statistics S,ST;
     double stop=utils::totalseconds()+testseconds;
     threads=1;
     plan=plan1;
-    fft(in,out);
+    fftLoop(in,out,1);
     threads=Threads;
     plan=planT;
-    fft(in,out);
+    fftLoop(in,out,1);
     unsigned int N=1;
-    unsigned int ndoubles=doubles/2;
     for(;;) {
       double t0=utils::totalseconds();
       threads=1;
       plan=plan1;
-      for(unsigned int i=0; i < N; ++i) {
-        for(unsigned int i=0; i < ndoubles; ++i) out[i]=i;
-        fft(in,out);
-      }
+      fftLoop(in,out,N);
       double t1=utils::totalseconds();
       threads=Threads;
       plan=planT;
-      for(unsigned int i=0; i < N; ++i) {
-        for(unsigned int i=0; i < ndoubles; ++i) out[i]=i;
-        fft(in,out);
-      }
+      fftLoop(in,out,N);
       double t=utils::totalseconds();
       S.add(t1-t0);
       ST.add(t-t1);
@@ -728,9 +749,21 @@ public:
     threaddata S1=Setup(in,out);
     fftw_plan planT1=plan;
     threads=S1.threads;
-    bool hermitian=typeid(I) == typeid(double) || typeid(O) == typeid(double);
-
-    if(fftw::maxthreads > 1 && (!hermitian || ostride*(nx/2+1) < idist)) {
+    unsigned int nxp=nx/2+1;
+    unsigned int olength=0;
+    unsigned int ilength=0;
+    if(typeid(I) == typeid(double)) {
+      ilength=nx;
+      olength=nxp;
+    }
+    if(typeid(O) == typeid(double)) {
+      ilength=nxp;
+      olength=nx;
+    }
+    if(fftw::maxthreads > 1 &&
+       (!inplace ||
+        (ostride*olength*sizeof(O) <= idist*sizeof(I) &&
+         odist*sizeof(O) >= istride*ilength*sizeof(I)))) {
       if(Threads > 1) {
         T=std::min(M,Threads);
         Q=T > 0 ? M/T : 0;
@@ -744,7 +777,7 @@ public:
           plan2=plan1;
         }
 
-        if(ST.mean > S1.mean-S1.stdev) { // Use FFTW's multi-threading
+        if(ST.mean > S1.mean-S1.stdev) { // Use FFTW's multithreading
           fftw_destroy_plan(plan);
           if(R > 0) {
             fftw_destroy_plan(plan2);
@@ -754,7 +787,7 @@ public:
           Q=M;
           R=0;
           plan=planT1;
-        } else {                         // Do the multi-threading ourselves
+        } else {                         // Do the multithreading ourselves
           fftw_destroy_plan(planT1);
           threads=ST.threads;
         }
@@ -943,6 +976,11 @@ public:
     M == 1 ? fft1->fftNormalized(in,out) : fftm->fftNormalized(in,out);
   }
 
+  template<class O>
+  void Normalize(O out) {
+    M == 1 ? fft1->Normalize(out) : fftm->Normalize(out);
+  }
+
   ~mfft1d() {
     if(M == 1)
       delete fft1;
@@ -1027,7 +1065,7 @@ public:
 
   crfft1d(unsigned int nx, Complex *in, double *out=NULL,
           unsigned int threads=maxthreads)
-    : fftw(realsize(nx,in,out),1,threads,nx), nx(nx) {Setup(in,out);}
+    : fftw(realsize(nx,Inplace(in,out)),1,threads,nx), nx(nx) {Setup(in,out);}
 
   threaddata lookup(bool inplace, unsigned int threads) {
     return Lookup(threadtable,keytype1(nx,threads,inplace));
@@ -1073,13 +1111,11 @@ class mrcfft1d : public fftwblock<double,fftw_complex>,
                  public Threadtable<keytype3,keyless3> {
   static Table threadtable;
 public:
-  mrcfft1d(unsigned int nx, unsigned int M,
-           size_t istride, size_t ostride,
-           size_t idist, size_t odist,
-           double *in=NULL, Complex *out=NULL,
+  mrcfft1d(unsigned int nx, unsigned int M, size_t istride, size_t ostride,
+           size_t idist, size_t odist, double *in=NULL, Complex *out=NULL,
            unsigned int threads=maxthreads)
-    : fftw(std::max((realsize(nx,in,out)-2)*istride+(M-1)*idist+2,
-                    2*(nx/2*ostride+(M-1)*odist+1)),-1,threads,nx),
+    : fftw(Doubles(nx,M,istride,ostride,idist,odist,Inplace(in,out)).csize,
+           -1,threads,nx),
       fftwblock<double,fftw_complex>
     (nx,M,istride,ostride,idist,odist,(Complex *) in,out,threads) {}
 
@@ -1134,8 +1170,8 @@ public:
   mcrfft1d(unsigned int nx, unsigned int M, size_t istride, size_t ostride,
            size_t idist, size_t odist, Complex *in=NULL, double *out=NULL,
            unsigned int threads=maxthreads)
-    : fftw(std::max(2*(nx/2*istride+(M-1)*idist+1),
-                    (realsize(nx,in,out)-2)*ostride+(M-1)*odist+2),1,threads,nx),
+    : fftw(Doubles(nx,M,ostride,istride,odist,idist,Inplace(in,out)).rsize,
+           1,threads,nx),
       fftwblock<fftw_complex,double>
     (nx,M,istride,ostride,idist,odist,in,(Complex *) out,threads) {}
 
@@ -1323,7 +1359,7 @@ public:
 
   crfft2d(unsigned int nx, unsigned int ny, Complex *in, double *out=NULL,
           unsigned int threads=maxthreads)
-    : fftw(nx*realsize(ny,in,out),1,threads,nx*ny), nx(nx), ny(ny) {
+    : fftw(nx*realsize(ny,Inplace(in,out)),1,threads,nx*ny), nx(nx), ny(ny) {
     Setup(in,out);
   }
 
@@ -1529,8 +1565,8 @@ public:
 
   crfft3d(unsigned int nx, unsigned int ny, unsigned int nz, Complex *in,
           double *out=NULL, unsigned int threads=maxthreads)
-    : fftw(nx*ny*(realsize(nz,in,out)),1,threads,nx*ny*nz), nx(nx), ny(ny),
-      nz(nz) {Setup(in,out);}
+    : fftw(nx*ny*(realsize(nz,Inplace(in,out))),1,threads,nx*ny*nz),
+      nx(nx), ny(ny), nz(nz) {Setup(in,out);}
 
   fftw_plan Plan(Complex *in, Complex *out) {
     return fftw_plan_dft_c2r_3d(nx,ny,nz,(fftw_complex *) in,(double *) out,
