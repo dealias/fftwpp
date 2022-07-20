@@ -14,8 +14,6 @@ unsigned int B=1; // number of outputs
 unsigned int L=512; // input data length
 unsigned int M=1024; // minimum padded length
 
-int stats=MEAN; // Type of statistics used in timing test
-
 int main(int argc, char* argv[])
 {
   fftw::maxthreads=get_max_threads();
@@ -24,7 +22,11 @@ int main(int argc, char* argv[])
   fftw::effort |= FFTW_NO_SIMD;
 #endif
 
+  int stats=MEAN; // Type of statistics used in timing test
+
   optionsHybrid(argc,argv);
+
+  double *T=new double[K];
 
   ForwardBackward FB(A,B);
 #if CENTERED
@@ -33,11 +35,12 @@ int main(int argc, char* argv[])
   fftPad fft(L,M,FB);
 #endif
 
-  double *T=new double[K];
-
-  Complex **f=new Complex *[max(A,B)];
+  unsigned int N=max(A,B);
+  Complex **f=new Complex *[N];
+  unsigned int outputSize=fft.outputSize();
+  Complex *F=ComplexAlign(N*outputSize);
   for(unsigned int a=0; a < A; ++a)
-    f[a]=ComplexAlign(fft.inputSize());
+    f[a]=F+a*outputSize;
 
   for(unsigned int a=0; a < A; ++a) {
     Complex *fa=f[a];
@@ -50,7 +53,7 @@ int main(int argc, char* argv[])
     }
   }
 
-  Convolution Convolve(&fft,A,B);
+  Convolution Convolve(&fft,A,B,F);
 
 #if OUTPUT
   K=1;
@@ -63,8 +66,8 @@ int main(int argc, char* argv[])
 
   cout << endl;
   timings("Hybrid",L,T,K,stats);
-
   cout << endl;
+
 #if OUTPUT
   for(unsigned int b=0; b < B; ++b)
     for(unsigned int j=0; j < L; ++j)

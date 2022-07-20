@@ -1,4 +1,5 @@
 #include "convolve.h"
+#include "timing.h"
 
 #define OUTPUT 0
 
@@ -20,7 +21,11 @@ int main(int argc, char* argv[])
   fftw::effort |= FFTW_NO_SIMD;
 #endif
 
+  int stats=MEAN; // Type of statistics used in timing test
+
   optionsHybrid(argc,argv);
+
+  double *T=new double[K];
 
   ForwardBackward FB(A,B);
 
@@ -28,9 +33,12 @@ int main(int argc, char* argv[])
 
   unsigned int H=ceilquotient(L,2);
 
-  Complex **f=new Complex *[max(A,B)];
+  unsigned int N=max(A,B);
+  Complex **f=new Complex *[N];
+  unsigned int outputSize=fft.outputSize();
+  Complex *F=ComplexAlign(N*outputSize);
   for(unsigned int a=0; a < A; ++a)
-    f[a]=ComplexAlign(fft.inputSize());
+    f[a]=F+a*outputSize;
 
   for(unsigned int a=0; a < A; ++a) {
     Complex *fa=f[a];
@@ -45,24 +53,28 @@ int main(int argc, char* argv[])
 #endif
   }
 
-  ConvolutionHermitian Convolve(&fft,A,B);
+  ConvolutionHermitian Convolve(&fft,A,B,F);
 
 #if OUTPUT
   K=1;
 #endif
-  double t0=totalseconds();
-
-  for(unsigned int k=0; k < K; ++k)
+  for(unsigned int k=0; k < K; ++k) {
+    seconds();
     Convolve.convolve(f,realmultbinary);
+    T[k]=seconds();
+  }
 
-  double t=totalseconds();
-  cout << (t-t0)/K << endl;
   cout << endl;
+  timings("Hybrid",L,T,K,stats);
+  cout << endl;
+
 #if OUTPUT
   for(unsigned int b=0; b < B; ++b)
     for(unsigned int j=0; j < H; ++j)
       cout << f[b][j] << endl;
 #endif
+
+  delete [] T;
 
   return 0;
 }
