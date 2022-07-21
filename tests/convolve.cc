@@ -142,101 +142,95 @@ bool ispure(unsigned int m)
 void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
                                   unsigned int M, Application& app,
                                   unsigned int C, unsigned int S,
-                                  bool centered, unsigned int itmax)
-{
-  unsigned int i=0;
+                                  bool centered, unsigned int itmax,
+                                  bool inner)
+{ 
+  unsigned int q;
+  unsigned int P; // Effective p
+  unsigned int n;
+  
+  unsigned int p=ceilquotient(L,m0);
+  unsigned int i=(inner ? m0 : 0);
   while(i < itmax) {
-    if(ispure(m0)) {
-      check(L,M,app,C,S,m0,centered);
-      m0=nextfftsize(m0+1);
-      break;
+    p=ceilquotient(L,m0);
+    if(inner && (notPow2(p) || (centered && p%2 != 0) || p == q)) {
+      // In the inner loop we must have the following:
+      // p must be a power of 2.
+      // p must be even in the centered case.
+      // p != q.
+      m0=nextpuresize(m0+1);
+      i=m0;
+    } else {
+      P=(centered && p == 2*(p/2)) || p == 2 ? (p/2) : p; // Effective p
+      n=ceilquotient(M,m0*P);
+      q=(inner ? P*n : ceilquotient(M,m0));
+      unsigned int start=DOption > 0 ? min(DOption,n) : 1;
+      unsigned int stop=DOption > 0 ? min(DOption,n) : n;
+      unsigned int stop2=2*stop;
+      for(unsigned int D=start; D < stop2; D *= 2) {
+        if(D > stop) D=stop;
+        check(L,M,C,S,m0,p,q,D,app);
+      }
+      if(inner){
+        m0=nextpuresize(m0+1);
+        i=m0;
+      } else {
+        if(ispure(m0)) {
+          m0=nextfftsize(m0+1);
+          break;
+        }
+        m0=nextfftsize(m0+1);
+        i++;
+      }
     }
-    check(L,M,app,C,S,m0,centered);
-    m0=nextfftsize(m0+1);
-    ++i;
   }
 }
 
 void fftBase::OptBase::defopt(unsigned int L, unsigned int M, Application& app,
-                              unsigned int C, unsigned int S, bool Explicit,
-                              bool centered, unsigned int minsize,
-                              unsigned int itmax)
+                              unsigned int C, unsigned int S,
+                              unsigned int minsize, unsigned int itmax,
+                              bool Explicit, bool centered)
 {
   if(!Explicit) {
-    unsigned int Ld2=L/2;
-    unsigned int m0=minsize;
-    unsigned int p;
-    while(m0 < Ld2) {
-      p=ceilquotient(L,m0);
-      // p must be a power of 2.
-      // p must be even in the centered case.
-      // The optimizer does not use the inner loop for explicit transforms.
-      if(notPow2(p) || (centered && p%2 != 0) || (p == q && p > 2)) {
-        m0=nextpuresize(m0+1);
+    if(mOption >= 1){
+      if(mOption >= L/2)
+        defoptloop(mOption,L,M,app,C,S,centered,1);
+      else
+        defoptloop(mOption,L,M,app,C,S,centered,mOption+1,true);
+    } else {
+      unsigned int m0=nextfftsize(minsize);
+
+      defoptloop(m0,L,M,app,C,S,centered,L/2,true);
+
+      m0=nextfftsize(L/2);
+      defoptloop(m0,L,M,app,C,S,centered,itmax);
+
+      if(L > M/2){
+        m0=nextfftsize(max(M/2,m0));
+        defoptloop(m0,L,M,app,C,S,centered,itmax);
+
+        m0=nextfftsize(max(L,m0));
+        defoptloop(m0,L,M,app,C,S,centered,itmax);
       } else {
-        check(L,M,app,C,S,m0,centered);
-        m0=nextpuresize(m0+1);
+        m0=nextfftsize(max(L <= M/2 ? L : M/2,m0));
+        defoptloop(m0,L,M,app,C,S,centered,itmax);
       }
-    }
-    m0=nextfftsize(Ld2);
-    defoptloop(m0,L,M,app,C,S,centered,itmax);
-
-    if(L > M/2){
-      m0=nextfftsize(max(M/2,m0));
+      m0=nextfftsize(max(M,m0));
       defoptloop(m0,L,M,app,C,S,centered,itmax);
-
-      m0=nextfftsize(max(L,m0));
-      defoptloop(m0,L,M,app,C,S,centered,itmax);
-    } else{
-      m0=nextfftsize(max(L <= M/2 ? L : M/2,m0));
-      defoptloop(m0,L,M,app,C,S,centered,itmax);
-    }
-    m0=nextfftsize(max(M,m0));
-    defoptloop(m0,L,M,app,C,S,centered,itmax);
+      }
   } else {
     unsigned int m0=nextfftsize(M);
     defoptloop(m0,L,m0,app,C,S,centered,itmax);
   }
 }
 
-void fftBase::OptBase::check(unsigned int L, unsigned int M, Application& app,
-                             unsigned int C, unsigned int S, unsigned int m,
-                             bool centered)
+void fftBase::OptBase::check(unsigned int L, unsigned int M,
+                              unsigned int C, unsigned int S, unsigned int m,
+                              unsigned int p, unsigned int q, unsigned int D,
+                              Application& app)
 {
-  //cout << "m=" << m << endl;
-  unsigned int q=ceilquotient(M,m);
-  unsigned int p=ceilquotient(L,m);
-  unsigned int p2=p/2;
-  unsigned int P=(centered && p == 2*p2) || p == 2 ? p2 : p;
-
-  unsigned int n=ceilquotient(M,m*P);
-  if(p > 2) {
-    unsigned int q2=P*n;
-    if(q2 != q) {
-      unsigned int start=DOption > 0 ? min(DOption,n) : 1;
-      unsigned int stop=DOption > 0 ? min(DOption,n) : n;
-      unsigned int stop2=2*stop;
-      for(unsigned int D=start; D < stop2; D *= 2) {
-        if(D > stop) D=stop;
-        if(!valid(D,p,S)) continue;
-        double t=time(L,M,C,S,m,q2,D,app);
-        if(t < T) {
-          this->m=m;
-          this->q=q2;
-          this->D=D;
-          T=t;
-        }
-      }
-    }
-  }
-  if(p > 2 && q % P != 0) return;
-
-  unsigned int start=DOption > 0 ? min(DOption,n) : 1;
-  unsigned int stop=DOption > 0 ? min(DOption,n) : n;
-  unsigned int stop2=2*stop;
-  for(unsigned int D=start; D < stop2; D *= 2) {
-    if(D > stop) D=stop;
-    if(q > 1 && !valid(D,p,S)) continue;
+  if(valid(D,p,S)){
+    //cout<<"D="<<D<<", m="<<m<<endl;
     double t=time(L,M,C,S,m,q,D,app);
     if(t < T) {
       this->m=m;
@@ -255,14 +249,11 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   q=1;
   D=1;
   T=DBL_MAX;
-
   if(L > M) {
     cerr << "L=" << L << " is greater than M=" << M << "." << endl;
     exit(-1);
-  } else if(mOption >= 1 && !Explicit) // Explicit overrides mOption.
-    check(L,M,app,C,S,mOption,centered);
-  else
-    defopt(L,M,app,C,S,Explicit,centered);
+  } 
+  defopt(L,M,app,C,S,32,3,Explicit,centered);
 
   unsigned int p=ceilquotient(L,m);
   unsigned int mpL=m*p-L;

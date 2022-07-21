@@ -123,10 +123,10 @@ public:
 
     // Called by the optimizer to record the time to complete an application
     // for a given value of m.
-    // centered must be true for all centered and Hermitian routines.
     void check(unsigned int L, unsigned int M,
-               Application& app, unsigned int C, unsigned int S,
-               unsigned int m, bool centered=false);
+                unsigned int C, unsigned int S, unsigned int m,
+                unsigned int p, unsigned int q, unsigned int D,
+                Application& app);
 
     // Determine the optimal m value for padding L data values to
     // size >= M for an application app.
@@ -136,19 +136,25 @@ public:
               unsigned int C, unsigned int S, bool Explicit=false,
               bool centered=false);
 
-    // A function used inside defopt to iterate over sizes when p <= 2.
+    // A function called by defopt to iterate over m and D values 
+    // and call check.
+    // Inner is true if p > 2.
+    // If inner is false, ubound is the maximum number maximum number of
+    // m values that are checked.
+    // If inner is true, ubound is the maximum size of m values that are 
+    // checked.
     void defoptloop(unsigned int& m0, unsigned int L, unsigned int M,
                     Application& app, unsigned int C, unsigned int S,
-                    bool centered, unsigned int itmax);
+                    bool centered, unsigned int ubound, bool inner=false);
 
     // The default optimizer routine. Used by scan to iterate and check
     // different m values for a given geometry and application.
-    // minInner is the minimum size of FFT we consider for the inner routines.
-    // itmax is maximum number of iterations done by defoptloop.
+    // 'minInner' is the minimum size of FFT we consider for the inner routines.
+    // 'itmax' is the maximum number of iterations done by defoptloop 
+    // (when p <= 2).
     void defopt(unsigned int L, unsigned int M, Application& app,
-                unsigned int C, unsigned int S, bool Explicit=false,
-                bool centered=false, unsigned int minInner=32,
-                unsigned int itmax=3);
+                unsigned int C, unsigned int S, unsigned int minInner,
+                unsigned int itmax, bool Explicit=false, bool centered=false);
   };
 
   void invalid () {
