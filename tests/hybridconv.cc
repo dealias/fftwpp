@@ -37,10 +37,12 @@ int main(int argc, char* argv[])
 
   unsigned int N=max(A,B);
   Complex **f=new Complex *[N];
-  unsigned int outputSize=fft.outputSize();
-  Complex *F=ComplexAlign(N*outputSize);
+  bool inplace=IOption == 1;
+  unsigned int size=
+    inplace ? fft.outputSize() : fft.inputSize();
+  Complex *F=ComplexAlign(N*size);
   for(unsigned int a=0; a < A; ++a)
-    f[a]=F+a*outputSize;
+    f[a]=F+a*size;
 
   for(unsigned int a=0; a < A; ++a) {
     Complex *fa=f[a];
@@ -53,7 +55,7 @@ int main(int argc, char* argv[])
     }
   }
 
-  Convolution Convolve(&fft,A,B,F);
+  Convolution Convolve(&fft,A,B,inplace ? F : NULL);
 
 #if OUTPUT
   K=1;
