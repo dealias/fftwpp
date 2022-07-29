@@ -5,7 +5,7 @@
 // Replace optimization tests with actual problem
 // Optimize on the fly
 // Apply const to arguments that should be read-only
-// Optimize over -I0 and -I1
+// Optimize over -I0 and -I1 when q != 1
 //
 // Exploit zeta -> -conj(zeta) symmetry for even q
 // Precompute best D and inline options for each m value
@@ -144,25 +144,24 @@ void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
                                   unsigned int C, unsigned int S,
                                   bool centered, unsigned int itmax,
                                   bool inner)
-{ 
+{
   unsigned int q;
   unsigned int P; // Effective p
   unsigned int n;
-  
+
   unsigned int p=ceilquotient(L,m0);
   unsigned int i=(inner ? m0 : 0);
   while(i < itmax) {
     p=ceilquotient(L,m0);
-    if(inner && (notPow2(p) || (centered && p%2 != 0) || p == q)) {
-      // In the inner loop we must have the following:
-      // p must be a power of 2.
-      // p must be even in the centered case.
-      // p != q.
-      m0=nextpuresize(m0+1);
-      i=m0;
-    } else {
-      P=(centered && p == 2*(p/2)) || p == 2 ? (p/2) : p; // Effective p
-      n=ceilquotient(M,m0*P);
+    P=(centered && p == 2*(p/2)) || p == 2 ? (p/2) : p; // Effective p
+    n=ceilquotient(M,m0*P);
+    // In the inner loop we must have the following:
+    // p must be a power of 2.
+    // p must be even in the centered case.
+    // p != q.
+    if(inner && (notPow2(p) || (centered && p%2 != 0) || p == P*n))
+      i=m0=nextpuresize(m0+1);
+    else {
       q=(inner ? P*n : ceilquotient(M,m0));
       unsigned int start=DOption > 0 ? min(DOption,n) : 1;
       unsigned int stop=DOption > 0 ? min(DOption,n) : n;
@@ -252,7 +251,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   if(L > M) {
     cerr << "L=" << L << " is greater than M=" << M << "." << endl;
     exit(-1);
-  } 
+  }
   defopt(L,M,app,C,S,32,3,Explicit,centered);
 
   unsigned int p=ceilquotient(L,m);
@@ -540,7 +539,7 @@ void fftPad::padMany(Complex *W)
     });
 }
 
-void fftPad::forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W)
+void fftPad::forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *)
 {
   if(F != f) {
     PARALLEL(
