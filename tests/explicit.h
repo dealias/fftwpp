@@ -5,6 +5,11 @@
 
 namespace fftwpp {
 
+typedef void Realmultiplier(double **, unsigned int m,
+                            unsigned int threads);
+
+Realmultiplier multbinary;
+
 class ExplicitPad : public ThreadBase {
 protected:
   unsigned int n; // Number of modes including padding
@@ -216,6 +221,9 @@ public:
   void backwards(Complex *f);
   void forwards(Complex *f);
 
+  // F is an array of pointers to distinct data blocks each of size n.
+  void convolve(Complex **F, multiplier *mult);
+
   // Compute f (*) g. The distinct input arrays f and g are each of size n
   // (contents not preserved). The output is returned in f.
   void convolve(Complex *f, Complex *g);
@@ -245,6 +253,9 @@ public:
 
   void backwards(Complex *f);
   void forwards(Complex *f);
+
+  // F is an array of pointers to distinct data blocks each of size n.
+  void convolve(Complex **F, Realmultiplier *mult);
 
 // Compute f (*) g, where f and g contain the m non-negative Fourier
 // components of real functions. Dealiasing is internally implemented via

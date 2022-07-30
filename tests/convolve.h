@@ -697,12 +697,8 @@ public:
 typedef void multiplier(Complex **, unsigned int offset, unsigned int n,
                         unsigned int threads);
 
-// Multiplication routine for binary convolutions and taking two inputs of
-// size e.
-void multbinary(Complex **F, unsigned int n, unsigned int offset,
-                unsigned int threads);
-void realmultbinary(Complex **F, unsigned int n, unsigned int offset,
-                    unsigned int threads);
+// Multiplication routines for binary convolutions that take two inputs of size e.
+multiplier multbinary,realmultbinary;
 
 class Convolution : public ThreadBase {
 public:

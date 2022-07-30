@@ -213,7 +213,7 @@ int main(int argc, char* argv[])
       init(F,m,A);
       seconds();
       C.convolve(F,mult);
-      //C.convolve(F[0],F[1]);
+//    C.convolve(F[0],F[1]);
       T[i]=seconds();
     }
 
@@ -244,7 +244,8 @@ int main(int argc, char* argv[])
     for(unsigned int i=0; i < N; ++i) {
       init(F,m,A);
       seconds();
-      C.convolve(F[0],F[1]);
+      C.convolve(F,multbinary);
+//      C.convolve(F[0],F[1]);
       T[i]=seconds();
     }
 
