@@ -370,6 +370,15 @@ public:
     return q == 1 || inplace ? 0 : outputSize();
   }
 
+  // Allow input data to be embedded within output buffer.
+  bool embed() {
+    return q == 1 || inplace;
+  }
+
+  unsigned int bufferSize() {
+    return embed() ? outputSize() : inputSize();
+  }
+
   unsigned int repad() {
     return !inplace && L < m;
   }

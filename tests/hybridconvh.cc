@@ -35,9 +35,7 @@ int main(int argc, char* argv[])
 
   unsigned int N=max(A,B);
   Complex **f=new Complex *[N];
-  bool inplace=IOption == 1;
-  unsigned int size=
-    inplace ? fft.outputSize() : fft.inputSize();
+  unsigned int size=fft.bufferSize();
   Complex *F=ComplexAlign(N*size);
   for(unsigned int a=0; a < A; ++a)
     f[a]=F+a*size;
@@ -55,7 +53,7 @@ int main(int argc, char* argv[])
 #endif
   }
 
-  ConvolutionHermitian Convolve(&fft,A,B,inplace ? F : NULL);
+  ConvolutionHermitian Convolve(&fft,A,B,fft.embed() ? F : NULL);
 
 #if OUTPUT
   K=1;
