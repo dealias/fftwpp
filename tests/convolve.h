@@ -807,12 +807,10 @@ public:
     inputSize=fft->inputSize();
 
     unsigned int N=max(A,B);
-    F0=F;
-    if(!F0)
-      F0=utils::ComplexAlign(N*outputSize);
+    F0=F ? NULL : F=utils::ComplexAlign(N*outputSize);
     this->F=new Complex*[N];
     for(unsigned int i=0; i < N; ++i)
-      this->F[i]=F0+i*outputSize;
+      this->F[i]=F+i*outputSize;
 
     if(q > 1) {
       allocateV=false;
@@ -1119,12 +1117,10 @@ public:
     scale=1.0/normalization();
 
     unsigned int N=std::max(A,B);
-    F0=F;
-    if(!F0)
-      F0=utils::ComplexAlign(N*outputSize);
+    F0=F ? NULL : F=utils::ComplexAlign(N*outputSize);
     this->F=new Complex*[N];
     for(unsigned int i=0; i < N; ++i)
-      this->F[i]=F0+i*outputSize;
+      this->F[i]=F+i*outputSize;
 
     Lx=fftx->L;
     Ly=fftx->C;
@@ -1447,12 +1443,10 @@ public:
     scale=1.0/normalization();
 
     unsigned int N=std::max(A,B);
-    F0=F;
-    if(!F0)
-      F0=utils::ComplexAlign(N*outputSize);
+    F0=F ? NULL : F=utils::ComplexAlign(N*outputSize);
     this->F=new Complex*[N];
     for(unsigned int i=0; i < N; ++i)
-      this->F[i]=F0+i*outputSize;
+      this->F[i]=F+i*outputSize;
 
     Lx=fftx->L;
     Ly=ffty->L;
