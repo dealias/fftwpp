@@ -75,34 +75,39 @@ marker mark2=marker(g2,Draw(Pen(2)+solid));
 
 pen Lp=fontsize(8pt);
 
-real[] f(real[] x) {return 1e-9*x^d*d*log(x)/log(2);}
+real log2=log(2);
+real[] f(real[] x) {return log2/(1e-9*x^d*d*log(x));}
 
 if(expl) {
   // error bars:
-  e /= f(me);
-  he /= f(me);
-  le /= f(me);
+  real[] ne=f(me);
+  e *= ne;
+  he *= ne;
+  le *= ne;
   if(drawerrorbars)
     errorbars(me,e,0*me,he,0*me,le,Pen(0));
   draw(graph(me,e,e > 0),Pentype(0),Label("explicit",Pen(0)+Lp),mark0);
 
   if(pruned) {
-    p /= f(mp);
-    hp /= f(mp);
-    lp /= f(mp);
+    real[] np=f(mp);
+    p *= np;
+    hp *= np;
+    lp *= np;
     if(drawerrorbars)
       errorbars(mp,p,0*mp,hp,0*mp,lp,Pen(2));
     draw(graph(mp,p,p > 0),Pentype(2)+Dotted,Label(prunelabel,Pen(2)+Lp),mark2);
   }
 }
 
-i /= f(mi);
-hi /= f(mi);
-li /= f(mi);
+real[] ni=f(mi);
+i *= ni;
+hi *= ni;
+li *= ni;
 if(drawerrorbars)
   errorbars(mi,i,0*mi,hi,0*mi,li,Pen(1));
 draw(graph(mi,i,i > 0),Pentype(1),Label("implicit",Pen(1)+Lp),mark1);
 
+/*
 // fitting information; requires running rfit under R.
 real[] f;
 file fin=input(base+"/"+dir+"/implicit",check=false).line();
@@ -119,6 +124,7 @@ if(!error(fin)) {
   // draw(graph(fcurve,a,b),Pen(1)+dashed);
   draw(graph(mi,f,f > 0),Pen(1)+dashed);
 }
+*/
 
 string D=d > 1 ? "^"+(string) d : "";
 
@@ -130,6 +136,5 @@ legendmargin=5;
 attach(legend(),point(NW),17SE+2N);
 
 real mean(real[] a){return sum(a)/a.length;};
-if(expl) {
+if(expl)
   write("speedup="+(string)(mean(e)/mean(i)));
-}

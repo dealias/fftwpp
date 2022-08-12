@@ -151,6 +151,7 @@ def main(argv):
     -P<path to executable>
     -g<grep string>
     -N<int> Number of tests to perform
+    -S<int> Type of statistics (default 0=mean)
     -e<0 or 1>: append to the timing data already existent (skipping
            already-done problem sizes).
     -c<string>: extra commentary for output file.
@@ -304,7 +305,7 @@ def main(argv):
         print("max value of b with ram provided:", b)
 
     if outfile == "":
-        outfile = "implicit"
+        outfile = runtype
 
     goodruns = []
     badruns = []
