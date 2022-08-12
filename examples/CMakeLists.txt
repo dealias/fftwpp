@@ -42,25 +42,29 @@ if ( CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Cla
 elseif( CMAKE_CXX_COMPILER_ID STREQUAL "Intel" )
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ansi-alias -malign-double -fp-model fast=2")
 elseif( CMAKE_CXX_COMPILER_ID STREQUAL "XL" )
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O5 -P -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O5 -P -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp")
 endif()
+
+add_library( fftw++ OBJECT ../fftw++.cc )
+add_library( convolution OBJECT ../convolution.cc )
 
 foreach( sample ${sample_list} )
   
-  if (${sample} IN_LIST fft_list) 
-    add_executable( ${sample} ${sample}.cc ../fftw++.cc )
-  else()
-    add_executable( ${sample} ${sample}.cc ../fftw++.cc ../convolution.cc)
-  endif()
+  add_executable( ${sample} ${sample}.cc ../fftw++.cc )
 
   target_include_directories(${sample} SYSTEM PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../
     ${FFTW_INCLUDE_DIRS})
 
+  if (${sample} IN_LIST conv_list)
+    target_link_libraries( ${sample} PUBLIC convolution )
+  endif()
+  
   target_link_libraries( ${sample} PUBLIC
     OpenMP::OpenMP_CXX
     PkgConfig::FFTW
-    "-lfftw3_omp")
+    "-lfftw3_omp"
+    fftw++)
   # NB: FFTW is missing the fftw3_omp link in the package config file, so we add it manually.
 
 endforeach( sample )
