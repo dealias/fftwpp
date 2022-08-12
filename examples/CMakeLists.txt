@@ -34,6 +34,15 @@ set( conv_list
   examplecconvsame)
 
 
+if ( CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" )
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
+	-fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native")
+elseif( CMAKE_CXX_COMPILER_ID STREQUAL "Intel" )
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ansi-alias -malign-double -fp-model fast=2")
+elseif( CMAKE_CXX_COMPILER_ID STREQUAL "XL" )
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O5 -P -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp")
+endif()
+
 foreach( sample ${fft_list} )
   add_executable( ${sample} ${sample}.cc ../fftw++.cc)
 
@@ -45,8 +54,7 @@ foreach( sample ${fft_list} )
     OpenMP::OpenMP_CXX
     PkgConfig::FFTW
     "-lfftw3_omp")
-  
-  # #CXXFLAGS=-fopenmp -g -Wall -ansi -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse
+  # NB: FFTW is missing the fftw3_omp link in the package config file, so we add it manually.
 
 endforeach( sample )
 
@@ -61,5 +69,6 @@ foreach( sample ${conv_list} )
     OpenMP::OpenMP_CXX
     PkgConfig::FFTW
     "-lfftw3_omp")
+  # NB: FFTW is missing the fftw3_omp link in the package config file, so we add it manually.
 
 endforeach( sample )
