@@ -20,7 +20,7 @@ set( fft_list
   example3
   example3r
   optimal
-)  
+  )  
 
 set( conv_list
   examplecconv
@@ -31,8 +31,10 @@ set( conv_list
   exampleconv3
   exampletranspose 
   examplecconvfull
-  examplecconvsame)
+  examplecconvsame
+  )
 
+set( sample_list ${fft_list} ${conv_list})
 
 if ( CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" )
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
@@ -43,23 +45,13 @@ elseif( CMAKE_CXX_COMPILER_ID STREQUAL "XL" )
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O5 -P -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp")
 endif()
 
-foreach( sample ${fft_list} )
-  add_executable( ${sample} ${sample}.cc ../fftw++.cc)
-
-  target_include_directories(${sample} SYSTEM PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/../
-    ${FFTW_INCLUDE_DIRS})
-
-  target_link_libraries( ${sample} PUBLIC
-    OpenMP::OpenMP_CXX
-    PkgConfig::FFTW
-    "-lfftw3_omp")
-  # NB: FFTW is missing the fftw3_omp link in the package config file, so we add it manually.
-
-endforeach( sample )
-
-foreach( sample ${conv_list} )
-  add_executable( ${sample} ${sample}.cc ../fftw++.cc ../convolution.cc)
+foreach( sample ${sample_list} )
+  
+  if (${sample} IN_LIST fft_list) 
+    add_executable( ${sample} ${sample}.cc ../fftw++.cc )
+  else()
+    add_executable( ${sample} ${sample}.cc ../fftw++.cc ../convolution.cc)
+  endif()
 
   target_include_directories(${sample} SYSTEM PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../
