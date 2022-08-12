@@ -34,11 +34,9 @@ if(name == "tconv2") dir="timings2t";
 if(name == "cconv3") {
   dir="timings3c"; prunelabel="$xz$-pruned"; legendmargin=8;
 }
-if(name == "conv3") {
+if(name == "conv3")
   dir="timings3r";
-  expl=false;
-}
-  
+
 real d=1;
 if(find(name,"2") >= 0) d=2;
 if(find(name,"3") >= 0) d=3;
@@ -49,7 +47,7 @@ if(expl) {
   a=transpose(a);
   me=a[0]; e=a[1]; le=a[2]; he=a[3];
 }
-  
+
 file fin=input(base+"/"+dir+"/implicit").line();
 real[][] a=fin.dimension(0,0);
 a=transpose(a);
@@ -107,7 +105,7 @@ draw(graph(mi,i,i > 0),Pentype(1),Label("implicit",Pen(1)+Lp),mark1);
 
 // fitting information; requires running rfit under R.
 real[] f;
-file fin=input(base+"/"+dir+"/implicit.p",check=false).line();
+file fin=input(base+"/"+dir+"/implicit",check=false).line();
 if(!error(fin)) {
   real[][] A=fin.dimension(0,0);
   real fcurve(real m) {

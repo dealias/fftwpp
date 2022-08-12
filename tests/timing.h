@@ -182,10 +182,10 @@ inline void timings(const char* text, unsigned int m, double *T,
   double sigmaL=0.0, sigmaH=0.0;
   if(algorithm == WRITETOFILE) {
     std::ofstream myfile;
-    myfile.open ("timing.dat", std::fstream::app);
+    myfile.open("timing.dat", std::fstream::app);
     myfile << m << "\t";
     myfile << N << "\t";
-    for(unsigned int i=0;  i<N; ++i)
+    for(unsigned int i=0; i < N; ++i)
       myfile << T[i] << "\t";
     myfile << "\n";
   }

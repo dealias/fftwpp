@@ -12,14 +12,14 @@ def main(argv):
     usage = '''
     Usage:
     \nalltime.py
-    -T <number of threads> 
-    -R <ram in gigabytes> 
-    -S <int> statistical choice (-1 keeps raw data). 
+    -T <number of threads>
+    -R <ram in gigabytes>
+    -S <int> statistical choice (-1 keeps raw data).
     -d dry run
-    -D<outdir>
-    -r<implicit/explicit/pruned/fft>
-    -A<quoted arg list for timed program>
-    -B<quoted arg list inserted before timed program>
+    -D <outdir>
+    -r <implicit/explicit/pruned/fft>
+    -A <quoted arg list for timed program>
+    -B <quoted arg list inserted before timed program>
     '''
 
     dryrun=False
@@ -63,12 +63,12 @@ def main(argv):
 
     progs = [["cconv" , "conv", "tconv"], ["cconv2", "conv2", "tconv2"], \
              ["cconv3","conv3"]]
-    
+
     ab = [[6,20],[4,10],[2,6]] # problem size limits
-    
+
     if runtype == "explicit":
         progs = [["cconv", "conv", "tconv"], ["cconv2", "conv2", "tconv2"], \
-                 ["cconv3"]]
+                 ["cconv3", "conv3"]]
     if runtype == "pruned":
         progs = [[], ["cconv2", "conv2", "tconv2"], ["cconv3"]]
 
@@ -173,7 +173,7 @@ def main(argv):
             # print(pcmd)
             # if not dryrun:
             #     os.system(pcmd)
-        i += 1 
-            
+        i += 1
+
 if __name__ == "__main__":
     main(sys.argv[1:])

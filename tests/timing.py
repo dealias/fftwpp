@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 # a timing script for FFTs and convolutions using OpenMP
 
@@ -21,15 +21,15 @@ def mvals_from_file(filename):
     return mvals
 
 def max_m(p, RAM, runtype):
-    print "program:", p
-    print "runtype:", runtype
-    print "ram:", RAM
-    
+    print("program:", p)
+    print("runtype:", runtype)
+    print("ram:", RAM)
+
     b = 0
     if "transpose" in p:
         # NB: assumes Z=1 and out-of-place
         return int(floor(log(RAM / 32) / log(2) / 2))
-    
+
     if "cconv2" in p:
         if runtype == "implicit":
             # A * 2m^2 * 16
@@ -50,7 +50,7 @@ def max_m(p, RAM, runtype):
         b = int(floor(log(RAM / 4) / log(2)))
         b = min(b, 20) # because we aren't crazy
         return b
-  
+
     if "tconv2" in p:
         if runtype == "implicit":
             # A * 6m^2 * 16
@@ -58,12 +58,12 @@ def max_m(p, RAM, runtype):
         else:
             # A * 12m^2 * 16
             return int(floor( log(RAM / 768) / (2 * log(2)) ))
-    
+
     if "tconv" in p:
         b = int(floor(log(RAM / 6) / log(2)))
         b = min(b, 20) # because we aren't crazy
         return b
-        
+
     if "conv2" in p:
         if runtype == "implicit":
             # A * 3 m^2 * 16
@@ -71,11 +71,11 @@ def max_m(p, RAM, runtype):
         else:
             # A * 4.5 m^2 * 16
             return int(floor(log(RAM / 144) / (2 * log(2)) ))
-            
+
     if "conv3" in p:
         # A * 6 m^3 * 16
         return int(floor(log(RAM / 192) / (3 * log(2)) ))
-        
+
     if "conv" in p:
         b = int(floor(log(RAM / 6) / log(2)))
         b = min(b, 20) # because we aren't crazy
@@ -83,10 +83,10 @@ def max_m(p, RAM, runtype):
 
     if "mft1" in p:
         return int(floor(0.5 * log(RAM / 64) / log(2)))
-    
+
     if "fft1" in p:
         return int(floor(0.5 * log(RAM / 64) / log(2)))
-        
+
     if p == "fft2":
         return int(floor(log(RAM / 32) / log(2) / 2))
 
@@ -102,7 +102,7 @@ def max_m(p, RAM, runtype):
     if p == "transpose":
         return int(floor(log(RAM / 32) / log(2) / 2))
 
-    print "Error! Failed to determine b."
+    print("Error! Failed to determine b.")
     return 0
 
 def default_outdir(p):
@@ -139,11 +139,11 @@ def main(argv):
     -a<start>
     -b<stop>
     -p<cconv,cconv2,cconv3,conv,conv2,conv3,tconv,tconv2>
-    -T<number of threads> 
+    -T<number of threads>
     -A<quoted arg list for timed program>
     -B<pre-commands (eg srun)>
     -r<implicit/explicit/pruned/fft>
-    -R<ram in gigabytes> 
+    -R<ram in gigabytes>
     -d dry run
     -o<output file name>
     -D<outdir>
@@ -151,7 +151,7 @@ def main(argv):
     -P<path to executable>
     -g<grep string>
     -N<int> Number of tests to perform
-    -e<0 or 1>: append to the timing data already existent (skipping 
+    -e<0 or 1>: append to the timing data already existent (skipping
            already-done problem sizes).
     -c<string>: extra commentary for output file.
     -v: verbose output
@@ -159,7 +159,7 @@ def main(argv):
 
     dryrun = False
     #dryrun = True
-    
+
 
     bset = 0
     dorun = True
@@ -181,18 +181,18 @@ def main(argv):
     path = "./"
     verbose = False
     extracomment = ""
-    
+
     try:
         opts, args = getopt.getopt(argv,"hdp:T:a:b:c:A:B:E:e:r:R:S:o:P:D:g:N:v")
     except getopt.GetoptError:
-        print "error in parsing arguments."
-        print usage
+        print("error in parsing arguments.")
+        print(usage)
         sys.exit(2)
     for opt, arg in opts:
         if opt in ("-p"):
             p = arg
         if opt in ("-T"):
-            T = arg
+            T = int(arg)
         elif opt in ("-a"):
             a = int(arg)
         elif opt in ("-N"):
@@ -212,7 +212,7 @@ def main(argv):
         elif opt in ("-r"):
             runtype = str(arg)
         elif opt in ("-R"):
-            print "ram arg:", arg
+            print("ram arg:", arg)
             RAM = float(arg)*2**30
         elif opt in ("-S"):
             stats = int(arg)
@@ -229,19 +229,19 @@ def main(argv):
         elif opt in ("-v"):
             verbose = True
         elif opt in ("-h"):
-            print usage
+            print(usage)
             sys.exit(0)
-            
+
     if dryrun:
-        print "Dry run!  No output actually created."
+        print("Dry run!  No output actually created.")
 
     if p == "":
-        print "please specify a program with -p"
-        print usage
+        print("please specify a program with -p")
+        print(usage)
         sys.exit(2)
 
-    print "RAM:", RAM
-        
+    print("RAM:", RAM)
+
     # if both the max problem size and the ram are unset, go up to 2^8
     if (b == 0 and RAM == 0):
         b = 8
@@ -251,42 +251,42 @@ def main(argv):
 
     if p == "cconv":
         if(runtype == "pruned"):
-            print p + " has no pruned option"
+            print(p + " has no pruned option")
             dorun = False
 
     if p == "conv":
         hermitian = True
         if(runtype == "pruned"):
-            print p + " has no pruned option"
+            print(p + " has no pruned option")
             dorun = False
-            
+
     if p == "conv2":
         hermitian = True
-        
+
     if p == "conv3":
         hermitian = True
         if(runtype != "implicit"):
-            print p + " has no " + r + " option"
+            print(p + " has no " + r + " option")
             dorun = False
 
     if p == "tconv":
         ternary = True
         if(runtype == "pruned"):
-            print p + " has no pruned option"
+            print(p + " has no pruned option")
             dorun = False
-            
+
     if p == "tconv2":
         ternary = True
 
     if p == "fft1":
         runtype = "fft"
-        
+
     if p == "mfft1":
         runtype = "fft"
-        
+
     if p == "fft2":
         runtype = "fft"
-        
+
     if p == "transpose":
         runtype = "transpose"
 
@@ -294,15 +294,15 @@ def main(argv):
         outdir = default_outdir(p)
 
     if outdir == "":
-        print "empty outdir: please select a program or specify an outdir (-D)"
-        print
-        print usage
+        print("empty outdir: please select a program or specify an outdir (-D)")
+        print()
+        print(usage)
         sys.exit(2)
 
     if RAM != 0:
         b = max_m(p, RAM, runtype)
-        print "max value of b with ram provided:", b
-        
+        print("max value of b with ram provided:", b)
+
     if outfile == "":
         outfile = "implicit"
 
@@ -311,7 +311,7 @@ def main(argv):
 
     if dorun:
         if RAM != 0:
-            print "max problem size is "+str(2**b)
+            print("max problem size is "+str(2**b))
 
         if rname == "":
             if runtype == "implicit":
@@ -325,16 +325,16 @@ def main(argv):
             if runtype == "transpose":
                 rname = "transpose"
 
-        print "Search string for timing: " + rname
+        print("Search string for timing: " + rname)
 
         filename = outdir + "/" + outfile
-        print "output in", filename
+        print("output in", filename)
 
         mdone = mvals_from_file(filename)
-        print "problem sizes already done:", mdone
-        
-        print "environment variables:", E
-        
+        print("problem sizes already done:", mdone)
+
+        print("environment variables:", E)
+
         if not dryrun:
             os.system("mkdir -p " + outdir)
             with open(outdir + "/log", "a") as logfile:
@@ -354,9 +354,9 @@ def main(argv):
         cmd += [path + str(p)]
 
         if not os.path.isfile(path + str(p)):
-            print path + str(p), "does not exist!"
+            print(path + str(p), "does not exist!")
             sys.exit(1)
-                        
+
 
         if not "fft" in p:
             if(runtype == "explicit"):
@@ -367,20 +367,20 @@ def main(argv):
 
             if(runtype == "implicit"):
                 cmd.append("-i")
-        
+
         cmd.append("-S" + str(stats))
         if(N > 0):
             cmd.append("-N" + str(N))
         if(T > 0):
-            cmd.append("-T" + T)
+            cmd.append("-T" + str(T))
 
         # Add the extra arguments to the program being timed.
         i = 0
         while i < len(A):
             cmd.append(A[i]);
             i += 1
-            
-        print " ".join(cmd)
+
+        print(" ".join(cmd))
 
         if not dryrun and stats == -1:
             try:
@@ -388,7 +388,7 @@ def main(argv):
             except OSError:
                 pass
 
-            
+
         if not dryrun:
             comment = "#"
 
@@ -412,11 +412,11 @@ def main(argv):
                 prc = vp.returncode
                 if prc == 0:
                     out, err = vp.communicate()
-                    comment += "\t" + out.rstrip()
+                    comment += "\t" + out.rstrip().decode()
 
                 vcmd = []
                 vcmd.append("git")
-                vcmd.append("log") 
+                vcmd.append("log")
                 vcmd.append("-1")
                 vcmd.append("--format=%ci")
                 vp = Popen(vcmd, stdout = PIPE, stderr = PIPE)
@@ -425,12 +425,12 @@ def main(argv):
                 if prc == 0:
                     out, err = vp.communicate()
                     out = out.rstrip()
-                    comment += " (" + out[0:10] + ")"
+                    comment += " (" + out[0:10].decode() + ")"
             else:
                 comment += "\t" + extracomment
-                    
+
             comment += "\n"
-            
+
             if(appendtofile):
                 if os.path.isfile(filename):
                     with open(filename, "a") as myfile:
@@ -447,28 +447,28 @@ def main(argv):
                         myfile.write(comment)
 
         for i in range(a, b + 1):
-            if not hermitian or runtype == "implicit": 
+            if not hermitian or runtype == "implicit":
                 m = str(int(pow(2, i)))
             else:
                 if not ternary:
                     m = str(int(floor((pow(2, i + 1) + 2) / 3)))
                 else:
                     m = str(int(floor((pow(2, i + 2) + 3) / 4)))
-                    
-            print str(i) + " m=" + str(m)
+
+            print(str(i) + " m=" + str(m))
 
             dothism = True
-            
+
             if appendtofile and int(m) in mdone:
-                print "problem size", m, "is already done; skipping."
+                print("problem size", m, "is already done; skipping.")
                 dothism = False
-                
+
             if dothism:
                 mcmd = cmd + ["-m" + str(m)]
 
                 if dryrun:
                     #print mcmd
-                    print " ".join(mcmd)
+                    print(" ".join(mcmd))
                 else:
                     denv = dict(os.environ)
                     i = 0
@@ -481,37 +481,37 @@ def main(argv):
                     prc = p.returncode
                     out, err = p.communicate() # capture output
                     if(verbose):
-                        print "Output from timing.py's popen:"
+                        print("Output from timing.py's popen:")
                         #print " ".join(mcmd)
-                        print "cwd:" , os.getcwd()
-                        print "out:"
-                        print out
-                        print "err:"
-                        print err
+                        print("cwd:" , os.getcwd())
+                        print("out:")
+                        print(out)
+                        print("err:")
+                        print(err)
 
                     # copy the output and error to a log file.
                     with open(outdir + "/log", "a") as logfile:
                         logfile.write(" ".join(mcmd))
                         logfile.write("\n")
-                        logfile.write(out)
-                        logfile.write(err)
+                        logfile.write(out.decode())
+                        logfile.write(err.decode())
 
                     if (prc == 0): # did the process succeed?
-                        #print out
-                        outlines = out.split('\n')
+                        #print(out)
+                        outlines = out.decode().split('\n')
                         itline = 0
                         dataline = ""
                         while itline < len(outlines):
                             line = outlines[itline]
-                            #print line
+                            #print(line)
                             re.search(rname, line)
                             if re.search(rname, line) is not None:
-                                print "\t" + str(outlines[itline])
-                                print "\t" + str(outlines[itline + 1])
+                                print( "\t" + str(outlines[itline]))
+                                print("\t" + str(outlines[itline + 1]))
                                 dataline = outlines[itline + 1]
                                 itline = len(outlines)
                             itline += 1
-                        
+
                         if not stats == -1:
                             if not dataline == "":
                                 goodruns.append(mcmd)
@@ -519,21 +519,21 @@ def main(argv):
                                 with open(filename, "a") as myfile:
                                     myfile.write(dataline + "\n")
                             else:
-                                print "ERROR: no timing data found"
+                                print("ERROR: no timing data found")
                                 badruns.append(mcmd)
                         else:
                             goodruns.append(mcmd)
                     else:
-                        print "FAILURE:"
-                        print cmd
-                        print "with, return code:"
-                        print prc
-                        print "output:"
-                        print out
-                        print "error:"
-                        print err
+                        print( "FAILURE:")
+                        print(cmd)
+                        print("with, return code:")
+                        print(prc)
+                        print("output:")
+                        print(out)
+                        print("error:")
+                        print(err)
                         badruns.append(mcmd)
-                        
+
             if not dryrun and (stats == -1 and os.path.isfile("timing.dat")):
                 if(appendtofile):
                     # Append the new data ot the output.
@@ -543,10 +543,10 @@ def main(argv):
                             for line in fin:
                                 lines.append(line)
                             fout.write(lines[len(lines) - 1])
-                                
+
                 else:
                     shutil.copyfile("timing.dat", filename)
-                    
+
         if not dryrun and stats == -1:
             try:
                 os.remove("timing.dat")
@@ -565,9 +565,9 @@ def main(argv):
                 for mcmd in badruns:
                     goodbads += " ".join(mcmd) + "\n"
             logfile.write(goodbads)
-            print goodbads
+            print(goodbads)
 
 
-            
+
 if __name__ == "__main__":
     main(sys.argv[1:])
