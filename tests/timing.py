@@ -107,7 +107,7 @@ def max_m(p, RAM, runtype):
 
 def default_outdir(p):
     outdir=""
-    if p == "cconv":
+    if p == "cconv" or p == "hybridconv" :
         outdir = "timings1c"
     if p == "cconv2":
         outdir = "timings2c"
@@ -138,7 +138,7 @@ def main(argv):
     \ntimings.py
     -a<start>
     -b<stop>
-    -p<cconv,cconv2,cconv3,conv,conv2,conv3,tconv,tconv2>
+    -p<cconv,hybridconv,cconv2,cconv3,conv,conv2,conv3,tconv,tconv2>
     -T<number of threads>
     -A<quoted arg list for timed program>
     -B<pre-commands (eg srun)>
@@ -247,6 +247,7 @@ def main(argv):
     if (b == 0 and RAM == 0):
         b = 8
 
+    hybrid = False
     hermitian = False
     ternary = False
 
@@ -254,6 +255,9 @@ def main(argv):
         if(runtype == "pruned"):
             print(p + " has no pruned option")
             dorun = False
+
+    if p == "hybridconv":
+        hybrid=True
 
     if p == "conv":
         hermitian = True
@@ -315,17 +319,19 @@ def main(argv):
             print("max problem size is "+str(2**b))
 
         if rname == "":
-            if runtype == "implicit":
-                rname = "Implicit"
-            if runtype == "explicit":
-                rname = "Explicit"
-            if runtype == "pruned":
-                rname = "rune"
-            if runtype == "fft":
-                rname = "fft"
-            if runtype == "transpose":
-                rname = "transpose"
-
+            if hybrid:
+                rname = "Hybrid"
+            else:
+                if runtype == "implicit":
+                    rname = "Implicit"
+                if runtype == "explicit":
+                    rname = "Explicit"
+                if runtype == "pruned":
+                    rname = "rune"
+                if runtype == "fft":
+                    rname = "fft"
+                if runtype == "transpose":
+                    rname = "transpose"
         print("Search string for timing: " + rname)
 
         filename = outdir + "/" + outfile
@@ -359,7 +365,7 @@ def main(argv):
             sys.exit(1)
 
 
-        if not "fft" in p:
+        if not hybrid and not "fft" in p:
             if(runtype == "explicit"):
                 cmd.append("-e")
 
@@ -369,10 +375,11 @@ def main(argv):
             if(runtype == "implicit"):
                 cmd.append("-i")
 
-        cmd.append("-S" + str(stats))
-        if(N > 0):
-            cmd.append("-N" + str(N))
-        if(T > 0):
+        if not hybrid:
+            cmd.append("-S" + str(stats))
+        if N > 0:
+            cmd.append(("-K" if hybrid else "-N") + str(N))
+        if T > 0:
             cmd.append("-T" + str(T))
 
         # Add the extra arguments to the program being timed.
@@ -449,12 +456,12 @@ def main(argv):
 
         for i in range(a, b + 1):
             if not hermitian or runtype == "implicit":
-                m = str(int(pow(2, i)))
+                m = int(pow(2, i))
             else:
                 if not ternary:
-                    m = str(int(floor((pow(2, i + 1) + 2) / 3)))
+                    m = int(floor((pow(2, i + 1) + 2) / 3))
                 else:
-                    m = str(int(floor((pow(2, i + 2) + 3) / 4)))
+                    m = int(floor((pow(2, i + 2) + 3) / 4))
 
             print(str(i) + " m=" + str(m))
 
@@ -465,7 +472,10 @@ def main(argv):
                 dothism = False
 
             if dothism:
-                mcmd = cmd + ["-m" + str(m)]
+                if(hybrid):
+                    mcmd = cmd + ["-L" + str(m)] + ["-M" + str(2*m)]
+                else:
+                    mcmd = cmd + ["-m" + str(m)]
 
                 if dryrun:
                     #print mcmd
@@ -505,7 +515,6 @@ def main(argv):
                         while itline < len(outlines):
                             line = outlines[itline]
                             #print(line)
-                            re.search(rname, line)
                             if re.search(rname, line) is not None:
                                 print( "\t" + str(outlines[itline]))
                                 print("\t" + str(outlines[itline + 1]))
