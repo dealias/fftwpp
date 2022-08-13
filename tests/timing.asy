@@ -10,6 +10,7 @@ bool drawerrorbars=true;
 scale(Log,Linear);
 real[] me,e,le,he;
 real[] mi,i,li,hi;
+real[] mh,h,lh,hh;
 real[] mp,p,lp,hp;
 
 string name;
@@ -49,9 +50,17 @@ if(expl) {
 }
 
 file fin=input(base+"/"+dir+"/implicit").line();
+bool implicit=!error(fin);
+if(implicit) {
+  real[][] a=fin.dimension(0,0);
+  a=transpose(a);
+  mi=a[0]; i=a[1]; li=a[2]; hi=a[3];
+}
+
+file fin=input(base+"/"+dir+"/hybrid").line();
 real[][] a=fin.dimension(0,0);
 a=transpose(a);
-mi=a[0]; i=a[1]; li=a[2]; hi=a[3];
+mh=a[0]; h=a[1]; lh=a[2]; hh=a[3];
 
 file fin=input(base+"/"+dir+"/pruned",check=false).line();
 bool pruned=!error(fin);
@@ -68,15 +77,17 @@ colorPen[2]=deepgreen;
 guide g0=scale(0.5mm)*unitcircle;
 guide g1=scale(0.6mm)*polygon(3);
 guide g2=scale(0.6mm)*polygon(4);
+guide g3=scale(0.6mm)*polygon(5);
 
 marker mark0=marker(g0,Draw(Pen(0)+solid));
 marker mark1=marker(g1,Draw(Pen(1)+solid));
 marker mark2=marker(g2,Draw(Pen(2)+solid));
+marker mark3=marker(g3,Draw(Pen(3)+solid));
 
 pen Lp=fontsize(8pt);
 
 real log2=log(2);
-real[] f(real[] x) {return log2/(1e-9*x^d*d*log(x));}
+real[] f(real[] m) {return log2/(1e-9*m^d*d*log(m));}
 
 if(expl) {
   // error bars:
@@ -94,37 +105,28 @@ if(expl) {
     hp *= np;
     lp *= np;
     if(drawerrorbars)
-      errorbars(mp,p,0*mp,hp,0*mp,lp,Pen(2));
-    draw(graph(mp,p,p > 0),Pentype(2)+Dotted,Label(prunelabel,Pen(2)+Lp),mark2);
+      errorbars(mp,p,0*mp,hp,0*mp,lp,Pen(3));
+    draw(graph(mp,p,p > 0),Pentype(3)+Dotted,Label(prunelabel,Pen(2)+Lp),mark3);
   }
 }
 
-real[] ni=f(mi);
-i *= ni;
-hi *= ni;
-li *= ni;
+if(implicit) {
+  real[] ni=f(mi);
+  i *= ni;
+  hi *= ni;
+  li *= ni;
+  if(drawerrorbars)
+    errorbars(mi,i,0*mi,hi,0*mi,li,Pen(2));
+  draw(graph(mi,i,i > 0),Pentype(2),Label("implicit",Pen(2)+Lp),mark2);
+}
+
+real[] nh=f(mh);
+h *= nh;
+hh *= nh;
+lh *= nh;
 if(drawerrorbars)
-  errorbars(mi,i,0*mi,hi,0*mi,li,Pen(1));
-draw(graph(mi,i,i > 0),Pentype(1),Label("implicit",Pen(1)+Lp),mark1);
-
-/*
-// fitting information; requires running rfit under R.
-real[] f;
-file fin=input(base+"/"+dir+"/implicit",check=false).line();
-if(!error(fin)) {
-  real[][] A=fin.dimension(0,0);
-  real fcurve(real m) {
-    real val=A[0][0]*m*log(m) +A[1][0]*m + A[2][0]*log(m) + A[3][0];
-    return val;
-  }
-
-  for(int i=0; i < mi.length; ++i)
-    f[i]=fcurve(mi[i]);
-  // real a=min(me), b = max(me);
-  // draw(graph(fcurve,a,b),Pen(1)+dashed);
-  draw(graph(mi,f,f > 0),Pen(1)+dashed);
-}
-*/
+  errorbars(mh,h,0*mh,hh,0*mh,lh,Pen(1));
+draw(graph(mh,h,h > 0),Pentype(1),Label("hybrid",Pen(1)+Lp),mark1);
 
 string D=d > 1 ? "^"+(string) d : "";
 

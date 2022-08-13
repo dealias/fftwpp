@@ -309,7 +309,10 @@ def main(argv):
         print("max value of b with ram provided:", b)
 
     if outfile == "":
-        outfile = runtype
+        if hybrid:
+            outfile = "hybrid"
+        else:
+            outfile = runtype
 
     goodruns = []
     badruns = []
