@@ -224,7 +224,7 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
                              unsigned int p, unsigned int q, unsigned int D,
                              Application& app)
 {
-  if(valid(D,p,S)) {
+  if(q == 1 || valid(D,p,S)) {
     // cout << "D=" << D << ", m=" << m << endl;
     double t=time(L,M,C,S,m,q,D,app);
     if(t < T) {
