@@ -26,17 +26,16 @@ string prunelabel="$y$-pruned";
 
 bool expl=true;
 
-if(name == "conv") dir="timings1r";
+if(name == "conv") dir="timings1h";
 if(name == "cconv") dir="timings1c";
 if(name == "tconv") dir="timings1t";
-if(name == "conv2") dir="timings2r";
+if(name == "conv2") dir="timings2h";
 if(name == "cconv2") dir="timings2c";
 if(name == "tconv2") dir="timings2t";
 if(name == "cconv3") {
   dir="timings3c"; prunelabel="$xz$-pruned"; legendmargin=8;
 }
-if(name == "conv3")
-  dir="timings3r";
+if(name == "conv3") dir="timings3h";
 
 real d=1;
 if(find(name,"2") >= 0) d=2;
@@ -45,7 +44,7 @@ if(find(name,"3") >= 0) d=3;
 if(expl) {
   file fin=input(base+"/"+dir+"/explicit").line();
   real[][] a=fin.dimension(0,0);
-  a=transpose(a);
+  a=transpose(sort(a));
   me=a[0]; e=a[1]; le=a[2]; he=a[3];
 }
 
@@ -53,20 +52,21 @@ file fin=input(base+"/"+dir+"/implicit").line();
 bool implicit=!error(fin);
 if(implicit) {
   real[][] a=fin.dimension(0,0);
-  a=transpose(a);
+  a=transpose(sort(a));
   mi=a[0]; i=a[1]; li=a[2]; hi=a[3];
 }
 
 file fin=input(base+"/"+dir+"/hybrid").line();
 real[][] a=fin.dimension(0,0);
-a=transpose(a);
+a=transpose(sort(a));
 mh=a[0]; h=a[1]; lh=a[2]; hh=a[3];
+write(mh,h);
 
 file fin=input(base+"/"+dir+"/pruned",check=false).line();
 bool pruned=!error(fin);
 if(pruned) {
   real[][] a=fin.dimension(0,0);
-  a=transpose(a);
+  a=transpose(sort(a));
   mp=a[0]; p=a[1]; lp=a[2]; hp=a[3];
 }
 

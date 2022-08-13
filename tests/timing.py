@@ -107,14 +107,14 @@ def max_m(p, RAM, runtype):
 
 def default_outdir(p):
     outdir=""
-    if p == "cconv" or p == "hybridconv" :
+    if p == "cconv" or p == "hybridconv":
         outdir = "timings1c"
     if p == "cconv2":
         outdir = "timings2c"
     if p == "cconv3":
         outdir = "timings3c"
-    if p == "conv":
-        outdir = "timings1r"
+    if p == "conv" or p == "hybridconvh" :
+        outdir = "timings1h"
     if p == "conv2":
         outdir = "timings2r"
     if p == "conv3":
@@ -138,7 +138,7 @@ def main(argv):
     \ntimings.py
     -a<start>
     -b<stop>
-    -p<cconv,hybridconv,cconv2,cconv3,conv,conv2,conv3,tconv,tconv2>
+    -p<cconv,hybridconv,cconv2,cconv3,conv,hybridconv,conv2,conv3,tconv,tconv2>
     -T<number of threads>
     -A<quoted arg list for timed program>
     -B<pre-commands (eg srun)>
@@ -152,8 +152,8 @@ def main(argv):
     -g<grep string>
     -N<int> Number of tests to perform
     -S<int> Type of statistics (default 0=mean)
-    -e<0 or 1>: append to the timing data already existent (skipping
-           already-done problem sizes).
+    -e: append to the timing data already existent (skipping
+        already-done problem sizes).
     -c<string>: extra commentary for output file.
     -v: verbose output
     '''
@@ -209,7 +209,7 @@ def main(argv):
         elif opt in ("-E"):
             E += [str(arg)]
         elif opt in ("-e"):
-            appendtofile = (int(arg) == 1)
+            appendtofile = True
         elif opt in ("-r"):
             runtype = str(arg)
         elif opt in ("-R"):
@@ -256,7 +256,7 @@ def main(argv):
             print(p + " has no pruned option")
             dorun = False
 
-    if p == "hybridconv":
+    if re.search("hybrid",p) is not None:
         hybrid=True
 
     if p == "conv":
@@ -264,6 +264,9 @@ def main(argv):
         if(runtype == "pruned"):
             print(p + " has no pruned option")
             dorun = False
+
+    if p == "hybridconvh":
+        hermitian = True
 
     if p == "conv2":
         hermitian = True
@@ -458,7 +461,7 @@ def main(argv):
                         myfile.write(comment)
 
         for i in range(a, b + 1):
-            if not hermitian or runtype == "implicit":
+            if not hermitian or (not hybrid and runtype == "implicit"):
                 m = int(pow(2, i))
             else:
                 if not ternary:
@@ -476,7 +479,7 @@ def main(argv):
 
             if dothism:
                 if(hybrid):
-                    mcmd = cmd + ["-L" + str(m)] + ["-M" + str(2*m)]
+                    mcmd = cmd + ["-L" + (str(2*m-1) if hermitian else str(m))] + ["-M" + (str(3*m-2) if hermitian else str(2*m))]
                 else:
                     mcmd = cmd + ["-m" + str(m)]
 

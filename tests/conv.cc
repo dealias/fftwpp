@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
   fftw::maxthreads=get_max_threads();
 
   unsigned int N=0; // Number of iterations.
-  unsigned int N0=10000000; // Nominal number of iterations
+  unsigned int N0=100000000; // Nominal number of iterations
   unsigned int m=11; // Problem size
 
   int stats=0; // Type of statistics used in timing test.
@@ -244,7 +244,7 @@ int main(int argc, char* argv[])
       T[i]=seconds();
     }
 
-    timings("Implicit",m,T,N,stats);
+    timings("Implicit",2*m-1,T,N,stats);
 
 
     if(m < 100) {
@@ -277,7 +277,7 @@ int main(int argc, char* argv[])
     }
 
     cout << endl;
-    timings("Explicit",m,T,N,stats);
+    timings("Explicit",2*m-1,T,N,stats);
 
     if(m < 100)
       for(unsigned int i=0; i < m; i++)
@@ -298,7 +298,7 @@ int main(int argc, char* argv[])
     T[0]=seconds();
 
     cout << endl;
-    timings("Direct",m,T,1);
+    timings("Direct",2*m-1,T,1);
 
     if(m < 100)
       for(unsigned int i=0; i < m; i++)

@@ -3,7 +3,7 @@
 using namespace std;
 using namespace fftwpp;
 
-unsigned int K=1; // number of iterations
+unsigned int K=0; // number of iterations
 unsigned int C=1;
 unsigned int S=0;
 
@@ -66,9 +66,6 @@ void optionsHybrid(int argc, char* argv[], bool fft)
   cout << "M=" << M << endl;
   if(fft)
     cout << "C=" << C << endl;
-  cout << "K=" << K << endl;
-
-  cout << endl;
 }
 
 }

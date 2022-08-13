@@ -23,9 +23,12 @@ int main(int argc, char* argv[])
 #endif
 
   int stats=MEAN; // Type of statistics used in timing test
-//  int stats=WRITETOFILE; // Type of statistics used in timing test
 
   optionsHybrid(argc,argv);
+
+  unsigned int K0=1000000000;
+  if(K == 0) K=max(K0/M,20);
+  cout << "K=" << K << endl << endl;
 
   double *T=new double[K];
 
