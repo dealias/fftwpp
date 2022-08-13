@@ -72,7 +72,7 @@ if(pruned) {
 
 monoPen[0]=dashed;
 monoPen[1]=solid;
-colorPen[2]=deepgreen;
+colorPen[2]=heavygreen;
 
 guide g0=scale(0.5mm)*unitcircle;
 guide g1=scale(0.6mm)*polygon(3);

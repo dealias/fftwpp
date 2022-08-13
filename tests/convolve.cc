@@ -145,16 +145,12 @@ void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
                                   bool centered, unsigned int itmax,
                                   bool inner)
 {
-  unsigned int q;
-  unsigned int P; // Effective p
-  unsigned int n;
-
-  unsigned int p=ceilquotient(L,m0);
   unsigned int i=(inner ? m0 : 0);
   while(i < itmax) {
-    p=ceilquotient(L,m0);
-    P=(centered && p == 2*(p/2)) || p == 2 ? (p/2) : p; // Effective p
-    n=ceilquotient(M,m0*P);
+    unsigned int p=ceilquotient(L,m0);
+    // Effective p:
+    unsigned int P=(centered && p == 2*(p/2)) || p == 2 ? (p/2) : p;
+    unsigned int n=ceilquotient(M,m0*P);
     // In the inner loop we must have the following:
     // p must be a power of 2.
     // p must be even in the centered case.
@@ -162,7 +158,7 @@ void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
     if(inner && (notPow2(p) || (centered && p%2 != 0) || p == P*n))
       i=m0=nextpuresize(m0+1);
     else {
-      q=(inner ? P*n : ceilquotient(M,m0));
+      unsigned int q=(inner ? P*n : ceilquotient(M,m0));
       unsigned int start=DOption > 0 ? min(DOption,n) : 1;
       unsigned int stop=DOption > 0 ? min(DOption,n) : n;
       unsigned int stop2=2*stop;
@@ -191,7 +187,7 @@ void fftBase::OptBase::defopt(unsigned int L, unsigned int M, Application& app,
                               bool Explicit, bool centered)
 {
   if(!Explicit) {
-    if(mOption >= 1){
+    if(mOption >= 1) {
       if(mOption >= L/2)
         defoptloop(mOption,L,M,app,C,S,centered,1);
       else
@@ -204,7 +200,7 @@ void fftBase::OptBase::defopt(unsigned int L, unsigned int M, Application& app,
       m0=nextfftsize(L/2);
       defoptloop(m0,L,M,app,C,S,centered,itmax);
 
-      if(L > M/2){
+      if(L > M/2) {
         m0=nextfftsize(max(M/2,m0));
         defoptloop(m0,L,M,app,C,S,centered,itmax);
 
@@ -216,7 +212,7 @@ void fftBase::OptBase::defopt(unsigned int L, unsigned int M, Application& app,
       }
       m0=nextfftsize(max(M,m0));
       defoptloop(m0,L,M,app,C,S,centered,itmax);
-      }
+    }
   } else {
     unsigned int m0=nextfftsize(M);
     defoptloop(m0,L,m0,app,C,S,centered,itmax);
@@ -228,8 +224,8 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
                               unsigned int p, unsigned int q, unsigned int D,
                               Application& app)
 {
-  if(valid(D,p,S)){
-    //cout<<"D="<<D<<", m="<<m<<endl;
+  if(valid(D,p,S)) {
+    // cout << "D=" << D << ", m=" << m << endl;
     double t=time(L,M,C,S,m,q,D,app);
     if(t < T) {
       this->m=m;
