@@ -124,9 +124,9 @@ public:
     // Called by the optimizer to record the time to complete an application
     // for a given value of m.
     void check(unsigned int L, unsigned int M,
-                unsigned int C, unsigned int S, unsigned int m,
-                unsigned int p, unsigned int q, unsigned int D,
-                Application& app);
+               unsigned int C, unsigned int S, unsigned int m,
+               unsigned int p, unsigned int q, unsigned int D,
+               Application& app);
 
     // Determine the optimal m value for padding L data values to
     // size >= M for an application app.
@@ -879,10 +879,10 @@ public:
   }
 
   void operate(Complex **F, multiplier *mult, unsigned int r) {
-      unsigned int incr=fft->b;
-      unsigned int stop=fft->complexOutputs(r);
-      for(unsigned int d=0; d < stop; d += incr)
-        (*mult)(F,d,blocksize,threads);
+    unsigned int incr=fft->b;
+    unsigned int stop=fft->complexOutputs(r);
+    for(unsigned int d=0; d < stop; d += incr)
+      (*mult)(F,d,blocksize,threads);
   }
 
   void backward(Complex **F, Complex **f, unsigned int r,
@@ -989,7 +989,7 @@ inline void HermitianSymmetrizeXY(unsigned int Hx, unsigned int Hy,
     }
     )
 
-  // Zero out Nyquist modes
+    // Zero out Nyquist modes
     if(x0 == Hx) {
       unsigned int Ly=y0+Hy;
       for(unsigned int j=0; j < Ly; ++j) {
@@ -999,14 +999,14 @@ inline void HermitianSymmetrizeXY(unsigned int Hx, unsigned int Hy,
       }
     }
 
-    if(y0 == Hy) {
-      unsigned int Lx=x0+Hx;
-      for(unsigned int i=0; i < Lx; ++i) {
-        for(unsigned int k=0; k < Hz; ++k) {
-          f[Sx*i+k]=0.0;
-        }
+  if(y0 == Hy) {
+    unsigned int Lx=x0+Hx;
+    for(unsigned int i=0; i < Lx; ++i) {
+      for(unsigned int k=0; k < Hz; ++k) {
+        f[Sx*i+k]=0.0;
       }
     }
+  }
 }
 
 inline void HermitianSymmetrizeXY(unsigned int Hx, unsigned int Hy,
@@ -1702,8 +1702,8 @@ public:
     this->convolveyz=new Convolution2*[threads];
     this->convolveyz[0]=convolveyz;
     for(unsigned int t=1; t < threads; ++t)
-        this->convolveyz[t]=new ConvolutionHermitian2(convolveyz->fftx,
-                                                      convolvez[t]);
+      this->convolveyz[t]=new ConvolutionHermitian2(convolveyz->fftx,
+                                                    convolvez[t]);
     this->W=W;
     init(F,V);
   }
