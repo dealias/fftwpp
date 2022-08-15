@@ -50,14 +50,13 @@ target_link_libraries( cexample PUBLIC
 
 add_library( fftwpp SHARED fftwpp.f90 )
 set_source_files_properties( fftwpp.f90 LANGUAGES Fortran )
-target_include_directories( fftwpp SYSTEM PUBLIC  ${FFTW_INCLUDEDIR} )
+target_include_directories( fftwpp SYSTEM PUBLIC ${FFTW_INCLUDEDIR} )
 
 add_executable( fexample fexample.f90 )
 set_source_files_properties( fexample.f90 LANGUAGES Fortran )
 target_link_libraries( fexample PUBLIC
   OpenMP::OpenMP_Fortran
-  "-lfftw3"
-  #PkgConfig::FFTW
+  ${FFTW_LDFLAGS}
   "-lfftw3_omp"
   fftwpp
   cfftw++
