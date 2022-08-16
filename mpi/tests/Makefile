@@ -1,6 +1,4 @@
-ifndef MPICXX
-MPICXX=mpic++
-endif
+MPICXX?=mpic++
 
 IDIR=../
 UDIR=../../tests/
