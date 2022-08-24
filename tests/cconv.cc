@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
 
   unsigned int m=11; // Problem size
 
-  int stats=0; // Type of statistics used in timing test.
+  int stats=MEDIAN; // Type of statistics used in timing test.
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;

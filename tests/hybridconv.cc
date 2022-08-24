@@ -22,8 +22,6 @@ int main(int argc, char* argv[])
   fftw::effort |= FFTW_NO_SIMD;
 #endif
 
-  int stats=MEAN; // Type of statistics used in timing test
-
   optionsHybrid(argc,argv);
 
   unsigned int K0=1000000000;

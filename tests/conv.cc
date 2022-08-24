@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
   unsigned int N0=100000000; // Nominal number of iterations
   unsigned int m=11; // Problem size
 
-  int stats=0; // Type of statistics used in timing test.
+  int stats=MEDIAN; // Type of statistics used in timing test.
 
 
 #ifndef __SSE2__

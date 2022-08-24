@@ -11,14 +11,14 @@ import re # regexp package
 import shutil
 
 
-def mvals_from_file(filename):
-    mvals = []
+def Lvals_from_file(filename):
+    Lvals = []
     if os.path.isfile(filename):
         with open(filename, 'r') as fin:
             for line in fin:
                 if not line.startswith("#"):
-                    mvals.append(int(line.split()[0]))
-    return mvals
+                    Lvals.append(int(line.split()[0]))
+    return Lvals
 
 def max_m(p, RAM, runtype):
     print("program:", p)
@@ -81,22 +81,19 @@ def max_m(p, RAM, runtype):
         b = min(b, 20) # because we aren't crazy
         return b
 
-    if "mft1" in p:
-        return int(floor(0.5 * log(RAM / 64) / log(2)))
-
-    if "fft1" in p:
+    if "fft1" in p :
         return int(floor(0.5 * log(RAM / 64) / log(2)))
 
     if p == "fft2":
         return int(floor(log(RAM / 32) / log(2) / 2))
 
-    if p == "fft2r":
+    if p == "fft2h":
         return int(floor(log(RAM / 32) / log(2) / 2))
 
     if p == "fft3":
         return int(floor(log(RAM / 32) / log(2) / 3))
 
-    if p == "fft3r":
+    if p == "fft3h":
         return int(floor(log(RAM / 32) / log(2) / 3))
 
     if p == "transpose":
@@ -116,9 +113,9 @@ def default_outdir(p):
     if p == "conv" or p == "hybridconvh" :
         outdir = "timings1h"
     if p == "conv2":
-        outdir = "timings2r"
+        outdir = "timings2h"
     if p == "conv3":
-        outdir = "timings3r"
+        outdir = "timings3h"
     if p == "tconv":
         outdir = "timings1t"
     if p == "tconv2":
@@ -151,9 +148,8 @@ def main(argv):
     -P<path to executable>
     -g<grep string>
     -N<int> Number of tests to perform
-    -S<int> Type of statistics (default 0=mean)
-    -e: append to the timing data already existent (skipping
-        already-done problem sizes).
+    -S<int> Type of statistics (default 3=MEDIAN)
+    -e: erase existing timing data
     -c<string>: extra commentary for output file.
     -v: verbose output
     '''
@@ -177,14 +173,14 @@ def main(argv):
     outfile = "" # output filename
     rname = ""   # output grep string
     N = 0        # number of tests
-    appendtofile = False
-    stats = 0
+    appendtofile = True
+    stats = 3
     path = "./"
     verbose = False
     extracomment = ""
 
     try:
-        opts, args = getopt.getopt(argv,"hdp:T:a:b:c:A:B:E:e:r:R:S:o:P:D:g:N:v")
+        opts, args = getopt.getopt(argv,"dhep:T:a:b:c:A:B:E:r:R:S:o:P:D:g:N:v")
     except getopt.GetoptError:
         print("error in parsing arguments.")
         print(usage)
@@ -209,7 +205,7 @@ def main(argv):
         elif opt in ("-E"):
             E += [str(arg)]
         elif opt in ("-e"):
-            appendtofile = True
+            appendtofile = False
         elif opt in ("-r"):
             runtype = str(arg)
         elif opt in ("-R"):
@@ -343,8 +339,9 @@ def main(argv):
         filename = outdir + "/" + outfile
         print("output in", filename)
 
-        mdone = mvals_from_file(filename)
-        print("problem sizes already done:", mdone)
+        Ldone = Lvals_from_file(filename)
+        if appendtofile:
+            print("problem sizes already done:", Ldone)
 
         print("environment variables:", E)
 
@@ -381,8 +378,7 @@ def main(argv):
             if(runtype == "implicit"):
                 cmd.append("-i")
 
-        if not hybrid:
-            cmd.append("-S" + str(stats))
+        cmd.append("-S" + str(stats))
         if N > 0:
             cmd.append(("-K" if hybrid else "-N") + str(N))
         if T > 0:
@@ -473,13 +469,16 @@ def main(argv):
 
             dothism = True
 
-            if appendtofile and int(m) in mdone:
-                print("problem size", m, "is already done; skipping.")
+            L = 2*m-1 if hermitian else m
+            M = 3*m-2 if hermitian else 2*m
+
+            if appendtofile and L in Ldone:
+                print("problem size", L, "is already done; skipping.")
                 dothism = False
 
             if dothism:
                 if(hybrid):
-                    mcmd = cmd + ["-L" + (str(2*m-1) if hermitian else str(m))] + ["-M" + (str(3*m-2) if hermitian else str(2*m))]
+                    mcmd=cmd+["-L"+str(L)]+["-M"+str(M)];
                 else:
                     mcmd = cmd + ["-m" + str(m)]
 

@@ -79,10 +79,10 @@ guide g1=scale(0.6mm)*polygon(3);
 guide g2=scale(0.6mm)*polygon(4);
 guide g3=scale(0.6mm)*polygon(5);
 
-marker mark0=marker(g0,Draw(Pen(0)+solid));
-marker mark1=marker(g1,Draw(Pen(1)+solid));
-marker mark2=marker(g2,Draw(Pen(2)+solid));
-marker mark3=marker(g3,Draw(Pen(3)+solid));
+marker mark0=marker(g0,Fill(Pen(0)+solid));
+marker mark1=marker(g1,Fill(Pen(1)+solid));
+marker mark2=marker(g2,Fill(Pen(2)+solid));
+marker mark3=marker(g3,Fill(Pen(3)+solid));
 
 pen Lp=fontsize(8pt);
 
@@ -96,7 +96,7 @@ if(expl) {
   he *= ne;
   le *= ne;
   if(drawerrorbars)
-    errorbars(me,e,0*me,he,0*me,le,Pen(0));
+    errorbars(me,e,0*me,he-e,0*me,e-le,Pen(0));
   draw(graph(me,e,e > 0),Pentype(0),Label("explicit",Pen(0)+Lp),mark0);
 
   if(pruned) {
@@ -105,7 +105,7 @@ if(expl) {
     hp *= np;
     lp *= np;
     if(drawerrorbars)
-      errorbars(mp,p,0*mp,hp,0*mp,lp,Pen(3));
+      errorbars(mp,p,0*mp,hp-p,0*mp,p-lp,Pen(3));
     draw(graph(mp,p,p > 0),Pentype(3)+Dotted,Label(prunelabel,Pen(2)+Lp),mark3);
   }
 }
@@ -116,7 +116,7 @@ if(implicit) {
   hi *= ni;
   li *= ni;
   if(drawerrorbars)
-    errorbars(mi,i,0*mi,hi,0*mi,li,Pen(2));
+    errorbars(mi,i,0*mi,hi-i,0*mi,i-li,Pen(2));
   draw(graph(mi,i,i > 0),Pentype(2),Label("implicit",Pen(2)+Lp),mark2);
 }
 
@@ -125,13 +125,13 @@ h *= nh;
 hh *= nh;
 lh *= nh;
 if(drawerrorbars)
-  errorbars(mh,h,0*mh,hh,0*mh,lh,Pen(1));
+  errorbars(mh,h,0*mh,hh-h,0*mh,h-lh,Pen(1));
 draw(graph(mh,h,h > 0),Pentype(1),Label("hybrid",Pen(1)+Lp),mark1);
 
 string D=d > 1 ? "^"+(string) d : "";
 
-xaxis("$N$",BottomTop,LeftTicks);
-yaxis("time/($N"+D+"\log_2 N"+D+"$) (ns)",LeftRight,RightTicks);
+xaxis("$L$",BottomTop,LeftTicks);
+yaxis("time/($L"+D+"\log_2 L"+D+"$) (ns)",LeftRight,RightTicks);
 
 legendlinelength=0.6cm;
 legendmargin=5;

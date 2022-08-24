@@ -7,23 +7,9 @@
 #include <iostream>
 #include <fstream>
 
-/*
-  inline double emptytime(double *T, unsigned int N)
-  {
-  double val=0.0;
-  for(unsigned int i=0; i < N; ++i) {
-  seconds();
-  T[i]=seconds();
-  }
-  for(unsigned int i=0; i < N; ++i)
-  val += T[i];
-  return val/N;
-  }
-*/
-
 enum timing_algorithm {WRITETOFILE = -1, MEAN, MIN, MAX, MEDIAN, P90, P80, P50};
 
-inline double mean(double *T, unsigned int N, int algorithm)
+inline double value(double *T, unsigned int N, int algorithm)
 {
   switch(algorithm) {
     case WRITETOFILE:
@@ -52,9 +38,10 @@ inline double mean(double *T, unsigned int N, int algorithm)
       return max;
       break;
     }
-    case MEDIAN: {
+    case MEDIAN: { // TODO: Replace with selection algorithm
       std::sort(T,T+N);
-      return T[(int)ceil(N*0.5)];
+      unsigned int h=N/2;
+      return 2*h == N ? (T[h-1]+T[h])/2 : T[h];
       break;
     }
     case P90: {
@@ -99,87 +86,42 @@ inline double mean(double *T, unsigned int N, int algorithm)
   return 0;
 }
 
-inline void stdev(double *T, unsigned int N, double mean,
-                  double &sigmaL, double& sigmaH,
+inline void stdev(double *T, unsigned int N,
+                  double &lower, double& upper,
                   int algorithm)
 {
-  switch(algorithm) {
-    case WRITETOFILE:
-    case MEAN:  {
-      sigmaL=0.0, sigmaH=0.0;
-      for(unsigned int i=0; i < N; ++i) {
-        double v=T[i]-mean;
-        if(v < 0)
-          sigmaL += v*v;
-        if(v > 0)
-          sigmaH += v*v;
-      }
-      double factor=N > 2 ? 2.0/(N-2.0) : 0.0;
-      sigmaL=sqrt(sigmaL*factor);
-      sigmaH=sqrt(sigmaH*factor);
-    }
-      break;
-    case MIN:
-      sigmaL=0.0;
-      sigmaH=0.0;
-      break;
-    case MAX:
-      sigmaL=0.0;
-      sigmaH=0.0;
-      break;
-    case MEDIAN:
-    {
-      // Return 68% confidence intervals
-      sigmaL=mean-T[(int)ceil(N*(0.19))];
-      sigmaH=T[(int)ceil(N*0.81)]-mean;
-    }
-    break;
-    case P90:  {
-      unsigned int start=(int)ceil(N*0.5);
-      unsigned int stop=(int)floor(N*0.95);
-      sigmaL=mean-T[start];
-      sigmaH=T[stop]-mean;
-    }
-      break;
-    case P80: {
-      unsigned int start=(int)ceil(N*0.1);
-      unsigned int stop=(int)floor(N*0.9);
-      sigmaL=mean-T[start];
-      sigmaH=T[stop]-mean;
-    }
-      break;
-    case P50: {
-      unsigned int start=(int)ceil(N*0.25);
-      unsigned int stop=(int)floor(N*0.75);
-      sigmaL=mean-T[start];
-      sigmaH=T[stop]-mean;
-    }
-      break;
-    default:
-      std::cout << "Error: invalid algorithm choice: "
-                << algorithm
-                << std::endl;
-      exit(1);
+  lower=0.0, upper=0.0;
+  double sum=0.0;
+  for(unsigned int i=0; i < N; ++i)
+    sum += T[i];
+  double mean=sum/N;
+  for(unsigned int i=0; i < N; ++i) {
+    double v=T[i]-mean;
+    if(v < 0)
+      lower += v*v;
+    if(v > 0)
+      upper += v*v;
   }
+  double factor=N > 2 ? 2.0/(N-2.0) : 0.0;
+  lower=mean-sqrt(lower*factor);
+  upper=mean+sqrt(upper*factor);
 }
 
 inline void timings(const char* text, unsigned int m, unsigned int count,
-                    double mean, double sigmaL, double sigmaH)
+                    double value, double lower, double upper)
 {
-//  mean -= emptytime(T,N);
-//  if(mean < 0.0) mean=0.0;
   std::cout << text << ":\n"
             << m << "\t"
-            << mean << "\t"
-            << sigmaL << "\t"
-            << sigmaH
+            << value << "\t"
+            << lower << "\t"
+            << upper
             << std::endl;
 }
 
 inline void timings(const char* text, unsigned int m, double *T,
-                    unsigned int N, int algorithm=MEAN)
+                    unsigned int N, int algorithm=MEDIAN)
 {
-  double sigmaL=0.0, sigmaH=0.0;
+  double lower=0.0, upper=0.0;
   if(algorithm == WRITETOFILE) {
     std::ofstream myfile;
     myfile.open("timing.dat", std::fstream::app);
@@ -190,9 +132,9 @@ inline void timings(const char* text, unsigned int m, double *T,
     myfile << "\n";
   }
 
-  double avg=mean(T,N,algorithm);
-  stdev(T,N,avg,sigmaL,sigmaH,algorithm);
-  timings(text,m,N,avg,sigmaL,sigmaH);
+  double avg=value(T,N,algorithm);
+  stdev(T,N,lower,upper,algorithm);
+  timings(text,m,N,avg,lower,upper);
 }
 
 #endif

@@ -1,11 +1,13 @@
 #include "convolve.h"
+#include "timing.h"
 
 using namespace std;
 using namespace fftwpp;
 
-unsigned int K=0; // number of iterations
+unsigned int K=0;
 unsigned int C=1;
 unsigned int S=0;
+int stats=MEDIAN;
 
 extern unsigned int L;
 extern unsigned int M;
@@ -44,7 +46,10 @@ void optionsHybrid(int argc, char* argv[], bool fft)
         M=atoi(optarg);
         break;
       case 'S':
-        S=atoi(optarg);
+        if(fft)
+          S=atoi(optarg);
+        else
+          stats=atoi(optarg);
         break;
       case 'T':
         fftw::maxthreads=max(atoi(optarg),1);

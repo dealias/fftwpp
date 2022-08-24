@@ -8,6 +8,7 @@
 extern unsigned int K; // number of iterations
 extern unsigned int C; // number of padded FFTs to compute
 extern unsigned int S; // stride between padded FFTs
+extern int stats;      // type of statistics used in timing test
 
 #ifdef _WIN32
 #include "getopt.h"
@@ -167,6 +168,8 @@ inline void usageHybrid(bool fft=false)
   std::cerr << "-M\t\t minimal number of padded data values" << std::endl;
   if(fft)
     std::cerr << "-S\t\t stride between padded FFTs (defaults to C)" << std::endl;
+  else
+    std::cerr << "-S\t\t statistics (defaults to MEDIAN)" << std::endl;
   std::cerr << "-T\t\t number of threads" << std::endl;
 }
 
