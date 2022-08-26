@@ -3,7 +3,6 @@
 # a timing script for FFTs and convolutions using OpenMP
 
 import sys, getopt
-import numpy as np
 from math import *
 from subprocess import * # for popen, running processes
 import os
@@ -443,12 +442,8 @@ def main(argv):
             comment += "\n"
 
             if(appendtofile):
-                if os.path.isfile(filename):
-                    with open(filename, "a") as myfile:
-                        myfile.write(comment)
-                else:
-                    with open(filename, "a") as myfile:
-                        myfile.write(comment)
+                with open(filename, "a") as myfile:
+                    myfile.write(comment)
             else:
                 if stats == -1:
                     with open("timing.dat", "w") as myfile:
