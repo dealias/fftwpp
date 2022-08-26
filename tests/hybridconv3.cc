@@ -20,6 +20,10 @@ int main(int argc, char* argv[])
 
   optionsHybrid(argc,argv);
 
+  unsigned int K0=10000000;
+  if(K == 0) K=max(K0/M,20);
+  cout << "K=" << K << endl << endl;
+
   unsigned int Lx=L; // TODO: x
   unsigned int Ly=L;
   unsigned int Lz=L;

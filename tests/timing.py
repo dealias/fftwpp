@@ -254,6 +254,7 @@ def main(argv):
 
     if re.search("hybrid",p) is not None:
         hybrid=True
+        runtype=None
 
     if p == "conv":
         hermitian = True
@@ -456,14 +457,14 @@ def main(argv):
                     with open(filename, "w") as myfile:
                         myfile.write(comment)
 
-        for i in range(a, b + 1):
-            if not hermitian or (not hybrid and runtype == "implicit"):
-                m = int(pow(2, i))
+        for i in range(a,b+1):
+            if not hermitian or runtype == "implicit":
+                m = int(pow(2,i))
             else:
                 if not ternary:
-                    m = int(floor((pow(2, i + 1) + 2) / 3))
+                    m = int((pow(2,i+1)+2) // 3)
                 else:
-                    m = int(floor((pow(2, i + 2) + 3) / 4))
+                    m = int((pow(2,i+2)+3) // 4)
 
             print(str(i) + " m=" + str(m))
 

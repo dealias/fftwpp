@@ -387,7 +387,7 @@ public:
     return overwrite && A >= B;
   }
 
-  double meantime(Application& app, double *Stdev=NULL);
+  double mintime(Application& app, double *Stdev=NULL);
   double report(Application& app);
 };
 
@@ -412,7 +412,7 @@ public:
                 unsigned int m, unsigned int q,unsigned int D,
                 Application &app) {
       fftPad fft(L,M,C,S,m,q,D,app.Threads(),false);
-      return fft.meantime(app);
+      return fft.mintime(app);
     }
   };
 
@@ -512,7 +512,7 @@ public:
                 unsigned int m, unsigned int q, unsigned int D,
                 Application &app) {
       fftPadCentered fft(L,M,C,S,m,q,D,app.Threads());
-      return fft.meantime(app);
+      return fft.mintime(app);
     }
   };
 
@@ -617,7 +617,7 @@ public:
                 unsigned int m, unsigned int q, unsigned int D,
                 Application &app) {
       fftPadHermitian fft(L,M,C,m,q,D,app.Threads());
-      return fft.meantime(app);
+      return fft.mintime(app);
     }
   };
 

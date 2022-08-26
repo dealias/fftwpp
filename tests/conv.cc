@@ -247,7 +247,7 @@ int main(int argc, char* argv[])
     timings("Implicit",2*m-1,T,N,stats);
 
 
-    if(m < 100) {
+    if(m < 100 && false) {
       for(unsigned int b=0; b < B; ++b) {
         for(unsigned int i=0; i < m; i++)
           cout << F[b][i] << endl;
@@ -279,7 +279,7 @@ int main(int argc, char* argv[])
     cout << endl;
     timings("Explicit",2*m-1,T,N,stats);
 
-    if(m < 100)
+    if(m < 100 && false)
       for(unsigned int i=0; i < m; i++)
         cout << f[i] << endl;
     else

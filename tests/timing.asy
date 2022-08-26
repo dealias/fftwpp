@@ -60,7 +60,6 @@ file fin=input(base+"/"+dir+"/hybrid").line();
 real[][] a=fin.dimension(0,0);
 a=transpose(sort(a));
 mh=a[0]; h=a[1]; lh=a[2]; hh=a[3];
-write(mh,h);
 
 file fin=input(base+"/"+dir+"/pruned",check=false).line();
 bool pruned=!error(fin);
@@ -79,10 +78,10 @@ guide g1=scale(0.6mm)*polygon(3);
 guide g2=scale(0.6mm)*polygon(4);
 guide g3=scale(0.6mm)*polygon(5);
 
-marker mark0=marker(g0,Fill(Pen(0)+solid));
-marker mark1=marker(g1,Fill(Pen(1)+solid));
-marker mark2=marker(g2,Fill(Pen(2)+solid));
-marker mark3=marker(g3,Fill(Pen(3)+solid));
+marker mark0=marker(g0,Draw(Pen(0)+solid));
+marker mark1=marker(g1,Draw(Pen(1)+solid));
+marker mark2=marker(g2,Draw(Pen(2)+solid));
+marker mark3=marker(g3,Draw(Pen(3)+solid));
 
 pen Lp=fontsize(8pt);
 
@@ -139,4 +138,4 @@ attach(legend(),point(NW),17SE+2N);
 
 real mean(real[] a){return sum(a)/a.length;};
 if(expl)
-  write("speedup="+(string)(mean(e)/mean(i)));
+  write("speedup="+(string)(mean(e)/mean(h)));

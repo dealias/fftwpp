@@ -1,6 +1,8 @@
 #ifndef __seconds_h__
 #define __seconds_h__ 1
 
+#include <chrono>
+
 #ifdef _WIN32
 #include <Winsock2.h>
 
@@ -79,20 +81,23 @@ inline int gettimeofday(struct timeval *tv, struct timezone *tz)
 
 namespace utils {
 
+// thread-safe; return number of seconds since initialization
 inline double totalseconds()
 {
-  timeval tv;
-  gettimeofday(&tv,NULL);
-  return tv.tv_sec+tv.tv_usec/1000000.0;
+  static auto begin=std::chrono::steady_clock::now();
+  auto end=std::chrono::steady_clock::now();
+  auto elapsed=std::chrono::duration_cast<std::chrono::nanoseconds> (end-begin);
+  return elapsed.count()*1.0e-9;
 }
 
+// not thread-safe; return number of seconds since last call
 inline double seconds()
 {
-  static double lastseconds=totalseconds();
-  double t=totalseconds();
-  double seconds=t-lastseconds;
-  lastseconds=t;
-  return seconds;
+  static auto last=std::chrono::steady_clock::now();
+  auto end=std::chrono::steady_clock::now();
+  auto elapsed=std::chrono::duration_cast<std::chrono::nanoseconds> (end-last);
+  last=end;
+  return elapsed.count()*1.0e-9;
 }
 
 }

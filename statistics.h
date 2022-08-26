@@ -1,6 +1,8 @@
 #ifndef __statistics_h__
 #define __statistics_h__ 1
 
+#include <cfloat>
+
 namespace utils {
 
 class statistics {
@@ -8,12 +10,18 @@ class statistics {
   double A;
   double varL;
   double varH;
+  double m; // min
+  double M; // max
 public:
   statistics() {clear();}
-  void clear() {N=0; A=varL=varH=0.0;}
+  void clear() {N=0; A=varL=varH=0.0; m=DBL_MAX; M=-m;}
   double count() {return N;}
   double mean() {return A;}
+  double min() {return m;}
+  double max() {return M;}
   void add(double t) {
+    m=std::min(m,t);
+    M=std::max(M,t);
     ++N;
     double diff=t-A;
     A += diff/N;

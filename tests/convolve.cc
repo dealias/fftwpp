@@ -276,7 +276,7 @@ fftBase::~fftBase()
     deleteAlign(ZetaqmS0);
 }
 
-double fftBase::meantime(Application& app, double *Stdev)
+double fftBase::mintime(Application& app, double *Stdev)
 {
   unsigned int K=1;
   double eps=0.1;
@@ -286,16 +286,18 @@ double fftBase::meantime(Application& app, double *Stdev)
   while(true) {
     Stats.add(app.time(*this,K));
     double mean=Stats.mean();
+    double min=Stats.min();
     double stdev=Stats.stdev();
     if(Stats.count() < 7) continue;
     int threshold=5000;
-    if(mean*CLOCKS_PER_SEC < threshold || eps*mean < stdev) {
+    ratio r=chrono::steady_clock::period();
+    if(min*r.den < threshold*r.num || eps*mean < stdev) {
       K *= 2;
       Stats.clear();
     } else {
       if(Stdev) *Stdev=stdev/K;
       app.clear();
-      return mean/K;
+      return min/K;
     }
   }
   return 0.0;
@@ -306,11 +308,11 @@ double fftBase::report(Application& app)
   double stdev;
   cout << endl;
 
-  double mean=meantime(app,&stdev);
+  double min=mintime(app,&stdev);
 
-  cout << "mean=" << mean << " +/- " << stdev << endl;
+  cout << "min=" << min << " stdev=" << stdev << endl;
 
-  return mean;
+  return min;
 }
 
 void fftBase::common()
@@ -5223,7 +5225,7 @@ void ForwardBackward::init(fftBase &fft)
 
 double ForwardBackward::time(fftBase &fft, unsigned int K)
 {
-  double t0=totalseconds();
+  seconds();
   for(unsigned int k=0; k < K; ++k) {
     for(unsigned int r=0; r < R; r += fft.increment(r)) {
       for(unsigned int a=0; a < A; ++a)
@@ -5232,8 +5234,7 @@ double ForwardBackward::time(fftBase &fft, unsigned int K)
         (fft.*Backward)(F[b],h[b],r,W);
     }
   }
-  double t=totalseconds();
-  return t-t0;
+  return seconds();
 }
 
 void ForwardBackward::clear()
