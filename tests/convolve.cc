@@ -227,7 +227,7 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
   if(q == 1 || valid(D,p,S)) {
     // cout << "D=" << D << ", m=" << m << endl;
     double t=time(L,M,C,S,m,q,D,app);
-    // cout << p << " " << q << ": " << t << endl;
+//    cout << "p=" << p << " q=" << q << ": " << t << endl;
     if(t < T) {
       this->m=m;
       this->q=q;
@@ -279,26 +279,32 @@ fftBase::~fftBase()
 
 double fftBase::medianTime(Application& app, double *Stdev)
 {
-  unsigned int K=1;
-  double eps=0.1;
+  unsigned int K=1; // Number of iterations in timing loop
+  unsigned int C=10; // Number of samples
+  double eps=0.1; // Allowed relative sample deviation
 
   statistics Stats(true);
   app.init(*this);
-  static ratio r=chrono::steady_clock::period();
-  double threshold=5000*r.num/r.den;
+  ratio r=chrono::steady_clock::period();
+  double threshold=5000.0*r.num/r.den;
   while(true) {
-    double t=app.time(*this,K)/K;
+    double t=app.time(*this,K);
+    if(t < threshold) {
+      K *= 2;
+      Stats.clear();
+      continue;
+    }
     Stats.add(t);
+    if(Stats.count() < C) continue;
     double stdev=Stats.stdev();
-    if(Stats.count() < 7) continue;
     double value=Stats.median();
-    if(value < threshold || eps*value < stdev) {
+    if(eps*value < stdev) {
       K *= 2;
       Stats.clear();
     } else {
-      if(Stdev) *Stdev=stdev;
+      if(Stdev) *Stdev=stdev/K;
       app.clear();
-      return value;
+      return value/K;
     }
   }
   return 0.0;
