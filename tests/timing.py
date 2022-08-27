@@ -4,7 +4,7 @@
 
 import sys, getopt
 from math import *
-from subprocess import * # for popen, running processes
+from subprocess import * # for Popen, running processes
 import os
 import re # regexp package
 import shutil
@@ -334,6 +334,7 @@ def main(argv):
                     rname = "fft"
                 if runtype == "transpose":
                     rname = "transpose"
+            rname += ':'
         print("Search string for timing: " + rname)
 
         filename = outdir + "/" + outfile
@@ -346,14 +347,20 @@ def main(argv):
         print("environment variables:", E)
 
         if not dryrun:
-            os.system("mkdir -p " + outdir)
+            try:
+                os.makedirs(outdir)
+            except:
+                pass
             with open(outdir + "/log", "a") as logfile:
                 logfile.write(str(sys.argv))
                 logfile.write("\n")
                 logfile.write("intial exponent: " + str(a) + "\n")
                 logfile.write("final exponent: " + str(b) + "\n")
             if not appendtofile:
-                os.system("rm -f " + filename)
+                try:
+                    os.remove(filename)
+                except:
+                    pass
 
         cmd = []
         i = 0
@@ -474,7 +481,7 @@ def main(argv):
 
             if dothism:
                 if(hybrid):
-                    mcmd=cmd+["-L"+str(L)]+["-M"+str(M)];
+                    mcmd=cmd+["-L"+str(L)]+["-M"+str(M)] #+["-I0"]
                 else:
                     mcmd = cmd + ["-m" + str(m)]
 
