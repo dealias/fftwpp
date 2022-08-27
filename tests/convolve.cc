@@ -284,7 +284,7 @@ double fftBase::medianTime(Application& app, double *Stdev)
 
   statistics Stats(true);
   app.init(*this);
-  static ratio r=chrono::steady_clock::period();
+  static nano r=chrono::steady_clock::period();
   double threshold=5000*r.num/r.den;
   while(true) {
     double t=app.time(*this,K)/K;
