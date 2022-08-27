@@ -9,6 +9,13 @@
 
 enum timing_algorithm {WRITETOFILE = -1, MEAN, MIN, MAX, MEDIAN, P90, P80, P50};
 
+inline double median(double *T, unsigned int N) // TODO: Replace with selection algorithm
+{
+  std::sort(T,T+N);
+  unsigned int h=N/2;
+  return 2*h == N ? 0.5*(T[h-1]+T[h]) : T[h];
+}
+
 inline double value(double *T, unsigned int N, int algorithm)
 {
   switch(algorithm) {
@@ -18,7 +25,6 @@ inline double value(double *T, unsigned int N, int algorithm)
       for(unsigned int i=0; i < N; ++i)
         sum += T[i];
       return sum/N;
-      break;
     }
     case MIN: {
       double min=T[0];
@@ -27,7 +33,6 @@ inline double value(double *T, unsigned int N, int algorithm)
           min=T[i];
       }
       return min;
-      break;
     }
     case MAX: {
       double max=T[0];
@@ -36,14 +41,9 @@ inline double value(double *T, unsigned int N, int algorithm)
           max=T[i];
       }
       return max;
-      break;
     }
-    case MEDIAN: { // TODO: Replace with selection algorithm
-      std::sort(T,T+N);
-      unsigned int h=N/2;
-      return 2*h == N ? (T[h-1]+T[h])/2 : T[h];
-      break;
-    }
+    case MEDIAN:
+      return median(T,N);
     case P90: {
       std::sort(T,T+N);
       unsigned int start=(int)ceil(N*0.05);
@@ -53,7 +53,6 @@ inline double value(double *T, unsigned int N, int algorithm)
       for(unsigned int i=start; i < stop; ++i)
         sum += T[i];
       return sum/(stop-start);
-      break;
     }
     case P80: {
       std::sort(T,T+N);
@@ -64,7 +63,6 @@ inline double value(double *T, unsigned int N, int algorithm)
       for(unsigned int i=start; i < stop; ++i)
         sum += T[i];
       return sum/(stop-start);
-      break;
     }
     case P50: {
       std::sort(T,T+N);
@@ -75,7 +73,6 @@ inline double value(double *T, unsigned int N, int algorithm)
       for(unsigned int i=start; i < stop; ++i)
         sum += T[i];
       return sum/(stop-start);
-      break;
     }
     default:
       std::cout << "Error: invalid algorithm choice: "

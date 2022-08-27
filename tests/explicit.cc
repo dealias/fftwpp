@@ -4,6 +4,22 @@
 
 namespace fftwpp {
 
+// This multiplication routine is for binary convolutions and takes two inputs
+// of size m.
+// F[0][j] *= F[1][j];
+void multbinary(Complex **F, unsigned int m, unsigned int threads)
+{
+  Complex* F0=F[0];
+  Complex* F1=F[1];
+
+  double ninv=1.0/m;
+
+  PARALLEL(
+    for(unsigned int j=0; j < m; ++j)
+      F0[j] *= ninv*F1[j];
+    );
+}
+
 // This multiplication routine is for binary Hermitian convolutions and takes
 // two inputs.
 // F[0][j] *= F[1][j];
@@ -30,7 +46,7 @@ void ExplicitConvolution::forwards(Complex *f)
   Forwards->fft(f);
 }
 
-void ExplicitConvolution::convolve(Complex **F, multiplier *mult)
+void ExplicitConvolution::convolve(Complex **F, Multiplier *mult)
 {
   const unsigned int A=2;
   const unsigned int B=1;
@@ -40,17 +56,10 @@ void ExplicitConvolution::convolve(Complex **F, multiplier *mult)
     backwards(F[a]);
   }
 
-  (*mult)(F,n,0,NULL,0,threads);
+  (*mult)(F,n,threads);
 
   for(unsigned int b=0; b < B; ++b)
     forwards(F[b]);
-
-  double ninv=1.0/n;
-  for(unsigned int b=0; b < B; ++b) {
-    Complex *f=F[b];
-    for(unsigned int j=0; j < m; ++j)
-      f[j] *= ninv;
-  }
 }
 
 void ExplicitConvolution::convolve(Complex *f, Complex *g)

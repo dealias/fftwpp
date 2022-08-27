@@ -279,7 +279,7 @@ int main(int argc, char* argv[])
     cout << endl;
     timings("Explicit",2*m-1,T,N,stats);
 
-    if(m < 100 && false)
+    if(m < 100)
       for(unsigned int i=0; i < m; i++)
         cout << f[i] << endl;
     else

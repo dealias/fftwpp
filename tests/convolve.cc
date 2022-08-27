@@ -227,6 +227,7 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
   if(q == 1 || valid(D,p,S)) {
     // cout << "D=" << D << ", m=" << m << endl;
     double t=time(L,M,C,S,m,q,D,app);
+    // cout << p << " " << q << ": " << t << endl;
     if(t < T) {
       this->m=m;
       this->q=q;
@@ -276,28 +277,28 @@ fftBase::~fftBase()
     deleteAlign(ZetaqmS0);
 }
 
-double fftBase::mintime(Application& app, double *Stdev)
+double fftBase::medianTime(Application& app, double *Stdev)
 {
   unsigned int K=1;
   double eps=0.1;
 
-  statistics Stats;
+  statistics Stats(true);
   app.init(*this);
+  static ratio r=chrono::steady_clock::period();
+  double threshold=5000*r.num/r.den;
   while(true) {
-    Stats.add(app.time(*this,K));
-    double mean=Stats.mean();
-    double min=Stats.min();
+    double t=app.time(*this,K)/K;
+    Stats.add(t);
     double stdev=Stats.stdev();
     if(Stats.count() < 7) continue;
-    int threshold=5000;
-    ratio r=chrono::steady_clock::period();
-    if(min*r.den < threshold*r.num || eps*mean < stdev) {
+    double value=Stats.median();
+    if(value < threshold || eps*value < stdev) {
       K *= 2;
       Stats.clear();
     } else {
-      if(Stdev) *Stdev=stdev/K;
+      if(Stdev) *Stdev=stdev;
       app.clear();
-      return min/K;
+      return value;
     }
   }
   return 0.0;
@@ -308,11 +309,11 @@ double fftBase::report(Application& app)
   double stdev;
   cout << endl;
 
-  double min=mintime(app,&stdev);
+  double median=medianTime(app,&stdev);
 
-  cout << "min=" << min << " stdev=" << stdev << endl;
+  cout << "median=" << median << " stdev=" << stdev << endl;
 
-  return min;
+  return median;
 }
 
 void fftBase::common()

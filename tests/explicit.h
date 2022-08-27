@@ -5,9 +5,13 @@
 
 namespace fftwpp {
 
+// Specialized mult routines for testing explicit convolutions:
+typedef void Multiplier(Complex **, unsigned int m,
+                        unsigned int threads);
 typedef void Realmultiplier(double **, unsigned int m,
                             unsigned int threads);
 
+Multiplier multbinary;
 Realmultiplier multbinary;
 
 class ExplicitPad : public ThreadBase {
@@ -222,7 +226,7 @@ public:
   void forwards(Complex *f);
 
   // F is an array of pointers to distinct data blocks each of size n.
-  void convolve(Complex **F, multiplier *mult);
+  void convolve(Complex **F, Multiplier *mult);
 
   // Compute f (*) g. The distinct input arrays f and g are each of size n
   // (contents not preserved). The output is returned in f.

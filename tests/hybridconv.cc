@@ -14,6 +14,22 @@ unsigned int B=1; // number of outputs
 unsigned int L=512; // input data length
 unsigned int M=1024; // minimum padded length
 
+// This multiplication routine is for binary convolutions and takes
+// two Complex inputs of size n and outputs one Complex value.
+// F0[j] *= F1[j];
+void multbinaryNormalized(Complex **F, unsigned int offset, unsigned int n,
+                unsigned int threads)
+{
+  Complex *F0=F[0]+offset;
+  Complex *F1=F[1]+offset;
+
+  double ninv=1.0/n;
+  PARALLEL(
+    for(unsigned int j=0; j < n; ++j)
+      F0[j] *= ninv*F1[j];
+    );
+}
+
 int main(int argc, char* argv[])
 {
   fftw::maxthreads=get_max_threads();
@@ -62,7 +78,7 @@ int main(int argc, char* argv[])
 #endif
   for(unsigned int k=0; k < K; ++k) {
     seconds();
-    Convolve.convolve(f,multbinary);
+    Convolve.convolveRaw(f,multbinaryNormalized);
     T[k]=seconds();
   }
 
