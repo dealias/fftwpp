@@ -89,8 +89,8 @@ public:
   unsigned int Cm,Sm;
   unsigned int b; // Total block size, including stride
   unsigned int l; // Block size of a single FFT
-  bool centered;
   bool inplace;
+  bool centered;
   bool overwrite;
   FFTcall Forward,Backward;
   FFTcall ForwardAll,BackwardAll;

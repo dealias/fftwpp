@@ -163,7 +163,7 @@ void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
       unsigned int Dstop=DOption > 0 ? min(DOption,n) : n;
       unsigned int Dstop2=2*Dstop;
 
-      // Always check inplace and out-of-place, regarless of C and q.
+      // Always check inplace and out-of-place, regardless of C and q.
       //unsigned int Istart=IOption == -1 ? 0 : IOption;
 
       // Check inplace and out-of-place unless C > 1.
@@ -241,7 +241,7 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
   if(q == 1 || valid(D,p,S)) {
     //cout << "D=" << D << ", m=" << m << ", L=" << L << ", M=" << M << ", C=" << C << endl;
     double t=time(L,M,C,S,m,q,D,inplace,app);
-//    cout << "p=" << p << " q=" << q << " D=" << D << " m=" << m << ": " << t << endl;
+    cout << "p=" << p << " q=" << q << " D=" << D << " m=" << m << " I=" << inplace << ": " << t << endl;
     if(t < T) {
       this->m=m;
       this->q=q;
