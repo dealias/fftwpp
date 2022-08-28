@@ -387,8 +387,8 @@ public:
     return overwrite && A >= B;
   }
 
-  double medianTime(Application& app, double *Stdev=NULL);
-  double report(Application& app);
+  double medianTime(unsigned int M, Application& app, double *Stdev=NULL);
+  double report(unsigned int M, Application& app);
 };
 
 class fftPad : public fftBase {
@@ -412,7 +412,7 @@ public:
                 unsigned int m, unsigned int q,unsigned int D,
                 Application &app) {
       fftPad fft(L,M,C,S,m,q,D,app.Threads(),false);
-      return fft.medianTime(app);
+      return fft.medianTime(M*C,app);
     }
   };
 
@@ -512,7 +512,7 @@ public:
                 unsigned int m, unsigned int q, unsigned int D,
                 Application &app) {
       fftPadCentered fft(L,M,C,S,m,q,D,app.Threads());
-      return fft.medianTime(app);
+      return fft.medianTime(M*C,app);
     }
   };
 
@@ -617,7 +617,7 @@ public:
                 unsigned int m, unsigned int q, unsigned int D,
                 Application &app) {
       fftPadHermitian fft(L,M,C,m,q,D,app.Threads());
-      return fft.medianTime(app);
+      return fft.medianTime(M*C,app);
     }
   };
 

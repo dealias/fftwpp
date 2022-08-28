@@ -28,11 +28,11 @@ int main(int argc, char* argv[])
   // Minimal explicit padding
   fftPadHermitian fft0(L,M,C,M,1,1);
 
-  double median0=fft0.report(FB);
+  double median0=fft0.report(M*C,FB);
 
   // Optimal explicit padding
   fftPadHermitian fft1(L,M,FB,C,true);
-  double median1=min(median0,fft1.report(FB));
+  double median1=min(median0,fft1.report(M*C,FB));
 
   cout << endl;
   cout << "Hybrid:" << endl;
@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
   // Hybrid padding
   fftPadHermitian fft(L,M,FB,C);
 
-  double median=fft.report(FB);
+  double median=fft.report(M*C,FB);
 
   if(median0 > 0)
     cout << "minimal ratio=" << median/median0 << endl;

@@ -277,10 +277,11 @@ fftBase::~fftBase()
     deleteAlign(ZetaqmS0);
 }
 
-double fftBase::medianTime(Application& app, double *Stdev)
+double fftBase::medianTime(unsigned int M, Application& app,
+                           double *Stdev)
 {
   unsigned int K=1; // Number of loop iterations in a sample
-  unsigned int N=100; // Number of samples
+  unsigned int N=max(10000/M,10); // Number of samples
 
   statistics Stats(true);
   app.init(*this);
@@ -302,12 +303,12 @@ double fftBase::medianTime(Application& app, double *Stdev)
   return value/K;
 }
 
-double fftBase::report(Application& app)
+double fftBase::report(unsigned int M, Application& app)
 {
   double stdev;
   cout << endl;
 
-  double median=medianTime(app,&stdev);
+  double median=medianTime(M,app,&stdev);
 
   cout << "median=" << median << " stdev=" << stdev << endl;
 
