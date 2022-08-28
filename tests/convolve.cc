@@ -20,6 +20,7 @@ namespace fftwpp {
 unsigned int threads=1;
 unsigned int mOption=0;
 unsigned int DOption=0;
+unsigned int Output=0;
 
 int IOption=-1;
 

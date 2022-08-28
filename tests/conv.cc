@@ -7,7 +7,7 @@ using namespace std;
 using namespace utils;
 using namespace fftwpp;
 
-bool Direct=false, Implicit=true, Explicit=false, Test=false;
+bool Direct=false, Implicit=true, Explicit=false, Test=false, Output=false;
 
 unsigned int A=2; // Number of inputs
 unsigned int B=1; // Number of outputs
@@ -127,7 +127,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptA:B:N:m:n:T:S:X:");
+    int c = getopt(argc,argv,"hdeiptA:B:N:O:m:n:T:S:X:");
     if (c == -1) break;
 
     switch (c) {
@@ -154,6 +154,9 @@ int main(int argc, char* argv[])
         break;
       case 'N':
         N=atoi(optarg);
+        break;
+      case 'O':
+        Output=atoi(optarg);
         break;
       case 't':
         Test=true;
@@ -246,16 +249,14 @@ int main(int argc, char* argv[])
 
     timings("Implicit",2*m-1,T,N,stats);
 
-
-    if(m < 100 && false) {
+    if(Output) {
       for(unsigned int b=0; b < B; ++b) {
         for(unsigned int i=0; i < m; i++)
           cout << F[b][i] << endl;
         cout << endl;
       }
-    } else {
+    } else
       cout << f[0] << endl;
-    }
 
     if(Test || Direct) {
       for(unsigned int b=0; b<B; ++b) {
@@ -279,11 +280,13 @@ int main(int argc, char* argv[])
     cout << endl;
     timings("Explicit",2*m-1,T,N,stats);
 
-    if(m < 100)
+    if(Output)
       for(unsigned int i=0; i < m; i++)
         cout << f[i] << endl;
     else
       cout << f[0] << endl;
+    cout << endl;
+
     if(Test || Direct)
       for(unsigned int i=0; i < m; i++)
         h0[i]=f[i];
@@ -300,7 +303,7 @@ int main(int argc, char* argv[])
     cout << endl;
     timings("Direct",2*m-1,T,1);
 
-    if(m < 100)
+    if(Output)
       for(unsigned int i=0; i < m; i++)
         cout << h[i] << endl;
     else

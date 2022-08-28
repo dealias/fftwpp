@@ -42,6 +42,9 @@ void optionsHybrid(int argc, char* argv[], bool fft)
       case 'I':
         IOption=atoi(optarg) > 0;
         break;
+      case 'O':
+        Output=atoi(optarg) > 0;
+        break;
       case 'M':
         M=atoi(optarg);
         break;

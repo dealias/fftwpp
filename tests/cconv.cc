@@ -79,6 +79,7 @@ int main(int argc, char* argv[])
   bool Direct=false;
   bool Implicit=true;
   bool Explicit=false;
+  bool Output=false;
 
   // Number of iterations.
   unsigned int N0=100000000;
@@ -96,7 +97,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptA:B::N:m:n:S:T:");
+    int c = getopt(argc,argv,"hdeiptA:B:N:O:m:n:S:T:");
     if (c == -1) break;
 
     switch (c) {
@@ -123,6 +124,9 @@ int main(int argc, char* argv[])
         break;
       case 'N':
         N=atoi(optarg);
+        break;
+      case 'O':
+        Output=atoi(optarg);
         break;
       case 't':
         Test=true;
@@ -219,16 +223,14 @@ int main(int argc, char* argv[])
 
     timings("Implicit",m,T,N,stats);
 
-    if(m < 100 && false) {
+    if(Output) {
       for(unsigned int b=0; b < B; ++b) {
         for(unsigned int i=0; i < m; i++)
           cout << F[b][i] << endl;
         cout << endl;
       }
-    }
-    else {
+    } else
       cout << f[0] << endl;
-    }
 
     if(Test || Direct) {
       for(unsigned int b=0; b < B; ++b) {
@@ -252,11 +254,14 @@ int main(int argc, char* argv[])
     cout << endl;
     timings("Explicit",m,T,N,stats);
 
-    if(m < 100 && false)
+    if(Output)
       for(unsigned int i=0; i < m; i++)
         cout << F[0][i] << endl;
-    else cout << F[0][0] << endl;
+    else
+      cout << F[0][0] << endl;
+
     cout << endl;
+
     if(Test || Direct)
       for(unsigned int i=0; i < m; i++)
         h0[i]=F[0][i];
@@ -278,7 +283,7 @@ int main(int argc, char* argv[])
     cout << endl;
     timings("Direct",m,T,1);
 
-    if(m < 100)
+    if(Output)
       for(unsigned int i=0; i < m; i++)
         cout << h[i] << endl;
     else

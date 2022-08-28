@@ -1,7 +1,6 @@
 #include "convolve.h"
 #include "timing.h"
 
-#define OUTPUT 0
 #define CENTERED 0
 
 using namespace std;
@@ -63,19 +62,13 @@ int main(int argc, char* argv[])
   for(unsigned int a=0; a < A; ++a) {
     Complex *fa=f[a];
     for(unsigned int j=0; j < L; ++j) {
-#if OUTPUT
-        fa[j]=Complex(j,(1.0+a)*j+1);
-#else
-        fa[j]=0.0;
-#endif
+        fa[j]=Output ? Complex(j,(1.0+a)*j+1) : 0.0;
     }
   }
 
   Convolution Convolve(&fft,A,B,fft.embed() ? F : NULL);
 
-#if OUTPUT
-  K=1;
-#endif
+  if(Output) K=1;
   for(unsigned int k=0; k < K; ++k) {
     seconds();
     Convolve.convolveRaw(f,multbinaryNormalized);
@@ -86,11 +79,10 @@ int main(int argc, char* argv[])
   timings("Hybrid",L,T,K,stats);
   cout << endl;
 
-#if OUTPUT
-  for(unsigned int b=0; b < B; ++b)
-    for(unsigned int j=0; j < L; ++j)
+  if(Output)
+    for(unsigned int b=0; b < B; ++b)
+      for(unsigned int j=0; j < L; ++j)
         cout << f[b][j] << endl;
-#endif
 
   delete [] T;
 
