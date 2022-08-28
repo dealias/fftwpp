@@ -52,6 +52,7 @@ inline void usageCommon(int n)
   std::cerr << "-h\t\t help" << std::endl;
   std::cerr << "-T\t\t number of threads" << std::endl;
   std::cerr << "-N\t\t number of iterations" << std::endl;
+  std::cerr << "-O\t\t output result" << std::endl;
   std::cerr << "-m\t\t size" << std::endl;
   std::cerr << "-S<int>\t\t stats used in timing test: "
             << "0=mean, 1=min, 2=max, 3=median, "
@@ -163,6 +164,7 @@ inline void usageHybrid(bool fft=false)
               << std::endl;
   std::cerr << "-D\t\t number of blocks to process at a time" << std::endl;
   std::cerr << "-I\t\t use in-place FFTs [by default only for multiple FFTs]" << std::endl;
+  std::cerr << "-O\t\t output result" << std::endl;
   std::cerr << "-K\t\t number of iterations" << std::endl;
   std::cerr << "-L\t\t number of physical data values" << std::endl;
   std::cerr << "-M\t\t minimal number of padded data values" << std::endl;
