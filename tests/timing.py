@@ -488,7 +488,7 @@ def main(argv):
 
             if dothism:
                 if(hybrid):
-                    mcmd=cmd+["-L"+str(L)]+["-M"+str(M)]+["-I0"]
+                    mcmd=cmd+["-L"+str(L)]+["-M"+str(M)]
                 else:
                     mcmd = cmd + ["-m" + str(m)]
 
