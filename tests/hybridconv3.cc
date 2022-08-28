@@ -20,16 +20,16 @@ int main(int argc, char* argv[])
 
   optionsHybrid(argc,argv);
 
-  unsigned int K0=10000000;
-  if(K == 0) K=max(K0/M,20);
-  cout << "K=" << K << endl << endl;
-
   unsigned int Lx=L; // TODO: x
   unsigned int Ly=L;
   unsigned int Lz=L;
   unsigned int Mx=M; // TODO: X
   unsigned int My=M;
   unsigned int Mz=M;
+
+  unsigned int K0=10000000;
+  if(K == 0) K=max(K0/(Mx*My*Mz),20);
+  cout << "K=" << K << endl << endl;
 
   unsigned int Sy=0; // y-stride (0 means Lz)
   unsigned int Sx=0; // x-stride (0 means Ly*Sy)
@@ -95,7 +95,7 @@ int main(int argc, char* argv[])
     T += seconds();
   }
 
-  cout << "mean=" << T/K << endl;
+  cout << "median=" << T/K << endl;
 
   Complex sum=0.0;
   for(unsigned int b=0; b < B; ++b) {

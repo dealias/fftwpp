@@ -28,11 +28,11 @@ int main(int argc, char* argv[])
   // Minimal explicit padding
   fftPadHermitian fft0(L,M,C,M,1,1);
 
-  double mean0=fft0.report(FB);
+  double median0=fft0.report(FB);
 
   // Optimal explicit padding
   fftPadHermitian fft1(L,M,FB,C,true);
-  double mean1=min(mean0,fft1.report(FB));
+  double median1=min(median0,fft1.report(FB));
 
   cout << endl;
   cout << "Hybrid:" << endl;
@@ -40,14 +40,14 @@ int main(int argc, char* argv[])
   // Hybrid padding
   fftPadHermitian fft(L,M,FB,C);
 
-  double mean=fft.report(FB);
+  double median=fft.report(FB);
 
-  if(mean0 > 0)
-    cout << "minimal ratio=" << mean/mean0 << endl;
+  if(median0 > 0)
+    cout << "minimal ratio=" << median/median0 << endl;
   cout << endl;
 
-  if(mean1 > 0)
-    cout << "optimal ratio=" << mean/mean1 << endl;
+  if(median1 > 0)
+    cout << "optimal ratio=" << median/median1 << endl;
   cout << endl;
 
   Complex *f=ComplexAlign(fft.inputSize());

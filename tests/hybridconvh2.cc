@@ -20,14 +20,14 @@ int main(int argc, char* argv[])
 
   optionsHybrid(argc,argv);
 
-  unsigned int K0=10000000;
-  if(K == 0) K=max(K0/M,20);
-  cout << "K=" << K << endl << endl;
-
   unsigned int Lx=L;
   unsigned int Ly=L;
   unsigned int Mx=M;
   unsigned int My=M;
+
+  unsigned int K0=10000000;
+  if(K == 0) K=max(K0/(Mx*My),20);
+  cout << "K=" << K << endl << endl;
 
   unsigned int Sx=0; // x stride (0 means ceilquotient(Ly,2))
 
@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
     T += seconds();
   }
 
-  cout << "mean=" << T/K << endl;
+  cout << "median=" << T/K << endl;
 
   Complex sum=0.0;
   for(unsigned int i=0; i < Lx; ++i) {

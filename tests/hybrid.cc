@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
   fftPad fft0(L,M,C,S,M,1,1);
 #endif
 
-  double mean0=fft0.report(FB);
+  double median0=fft0.report(FB);
 
   // Optimal explicit padding
 #if CENTERED
@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
 #else
   fftPad fft1(L,M,FB,C,S,true);
 #endif
-  double mean1=min(mean0,fft1.report(FB));
+  double median1=min(median0,fft1.report(FB));
 
   cout << endl;
   cout << "Hybrid:" << endl;
@@ -55,14 +55,14 @@ int main(int argc, char* argv[])
   fftPad fft(L,M,FB,C,S);
 #endif
 
-  double mean=fft.report(FB);
+  double median=fft.report(FB);
 
-  if(mean0 > 0)
-    cout << "minimal ratio=" << mean/mean0 << endl;
+  if(median0 > 0)
+    cout << "minimal ratio=" << median/median0 << endl;
   cout << endl;
 
-  if(mean1 > 0)
-    cout << "optimal ratio=" << mean/mean1 << endl;
+  if(median1 > 0)
+    cout << "optimal ratio=" << median/median1 << endl;
 
   Complex *f=ComplexAlign(fft.inputSize());
   Complex *h=ComplexAlign(fft.inputSize());
