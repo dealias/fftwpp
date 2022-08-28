@@ -111,11 +111,12 @@ public:
   class OptBase {
   public:
     unsigned int m,q,D;
+    bool inplace;
     double T;
 
     virtual double time(unsigned int L, unsigned int M, unsigned int C,
                         unsigned int S, unsigned int m, unsigned int q,
-                        unsigned int D, Application &app)=0;
+                        unsigned int D, bool inplace, Application &app)=0;
 
     virtual bool valid(unsigned int D, unsigned int p, unsigned int S) {
       return D == 1 || S == 1;
@@ -126,7 +127,7 @@ public:
     void check(unsigned int L, unsigned int M,
                unsigned int C, unsigned int S, unsigned int m,
                unsigned int p, unsigned int q, unsigned int D,
-               Application& app);
+               bool inplace, Application& app);
 
     // Determine the optimal m value for padding L data values to
     // size >= M for an application app.
@@ -169,10 +170,11 @@ public:
     centered(centered) {}
 
   fftBase(unsigned int L, unsigned int M, unsigned int C, unsigned int S,
-          unsigned int m, unsigned int q, unsigned int D,
+          unsigned int m, unsigned int q, unsigned int D, bool inplace,
           unsigned int threads=fftw::maxthreads, bool centered=false) :
     ThreadBase(threads), L(L), M(M), C(C),  S(S == 0 ? C : S), m(m),
-    p(utils::ceilquotient(L,m)), q(q), D(D), centered(centered) {}
+    p(utils::ceilquotient(L,m)), q(q), D(D), inplace(inplace),
+    centered(centered) {}
 
   fftBase(unsigned int L, unsigned int M, Application& app,
           unsigned int C=1, unsigned int S=0, bool Explicit=false,
@@ -410,8 +412,8 @@ public:
 
     double time(unsigned int L, unsigned int M, unsigned int C, unsigned int S,
                 unsigned int m, unsigned int q,unsigned int D,
-                Application &app) {
-      fftPad fft(L,M,C,S,m,q,D,app.Threads(),false);
+                bool inplace, Application &app) {
+      fftPad fft(L,M,C,S,m,q,D,inplace,app.Threads(),false);
       return fft.medianTime(M*C,app);
     }
   };
@@ -422,9 +424,9 @@ public:
 
   // Compute an fft padded to N=m*q >= M >= L
   fftPad(unsigned int L, unsigned int M, unsigned int C, unsigned int S,
-         unsigned int m, unsigned int q, unsigned int D,
+         unsigned int m, unsigned int q, unsigned int D, bool inplace,
          unsigned int threads=fftw::maxthreads, bool centered=false) :
-    fftBase(L,M,C,S,m,q,D,threads,centered) {
+    fftBase(L,M,C,S,m,q,D,inplace,threads,centered) {
     Opt opt;
     if(q > 1 && !opt.valid(D,p,this->S)) invalid();
     init();
@@ -443,6 +445,7 @@ public:
       M=m;
     q=opt.q;
     D=opt.D;
+    inplace=opt.inplace;
     init();
   }
 
@@ -510,8 +513,8 @@ public:
 
     double time(unsigned int L, unsigned int M, unsigned int C, unsigned int S,
                 unsigned int m, unsigned int q, unsigned int D,
-                Application &app) {
-      fftPadCentered fft(L,M,C,S,m,q,D,app.Threads());
+                bool inplace, Application &app) {
+      fftPadCentered fft(L,M,C,S,m,q,D,inplace,app.Threads());
       return fft.medianTime(M*C,app);
     }
   };
@@ -519,9 +522,9 @@ public:
   // Compute an fft padded to N=m*q >= M >= L
   fftPadCentered(unsigned int L, unsigned int M, unsigned int C,
                  unsigned int S, unsigned int m, unsigned int q,
-                 unsigned int D, unsigned int threads=fftw::maxthreads,
-                 bool fast=true) :
-    fftPad(L,M,C,S,m,q,D,threads,true) {
+                 unsigned int D, bool inplace,
+                 unsigned int threads=fftw::maxthreads, bool fast=true) :
+    fftPad(L,M,C,S,m,q,D,inplace,threads,true) {
     Opt opt;
     if(q > 1 && !opt.valid(D,p,this->S)) invalid();
     init(fast);
@@ -539,6 +542,7 @@ public:
       M=m;
     q=opt.q;
     D=opt.D;
+    inplace=opt.inplace;
     fftPad::init();
     init(fast);
   }
@@ -615,16 +619,16 @@ public:
 
     double time(unsigned int L, unsigned int M, unsigned int C, unsigned int,
                 unsigned int m, unsigned int q, unsigned int D,
-                Application &app) {
-      fftPadHermitian fft(L,M,C,m,q,D,app.Threads());
+                bool inplace, Application &app) {
+      fftPadHermitian fft(L,M,C,m,q,D,inplace,app.Threads());
       return fft.medianTime(M*C,app);
     }
   };
 
   fftPadHermitian(unsigned int L, unsigned int M, unsigned int C,
                   unsigned int m, unsigned int q, unsigned int D,
-                  unsigned int threads=fftw::maxthreads) :
-    fftBase(L,M,C,C,m,q,D,threads,true) {
+                  bool inplace,unsigned int threads=fftw::maxthreads) :
+    fftBase(L,M,C,C,m,q,D,inplace,threads,true) {
     Opt opt;
     if(q > 1 && !opt.valid(D,p,C)) invalid();
     init();
@@ -639,6 +643,7 @@ public:
       M=m;
     q=opt.q;
     D=opt.D;
+    inplace=opt.inplace;
     init();
   }
 

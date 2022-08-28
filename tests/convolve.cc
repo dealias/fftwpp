@@ -5,7 +5,6 @@
 // Replace optimization tests with actual problem
 // Optimize on the fly
 // Apply const to arguments that should be read-only
-// Optimize over -I0 and -I1 when q != 1
 //
 // Exploit zeta -> -conj(zeta) symmetry for even q
 // Precompute best D and inline options for each m value
@@ -159,12 +158,25 @@ void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
       i=m0=nextpuresize(m0+1);
     else {
       unsigned int q=(inner ? P*n : ceilquotient(M,m0));
-      unsigned int start=DOption > 0 ? min(DOption,n) : 1;
-      unsigned int stop=DOption > 0 ? min(DOption,n) : n;
-      unsigned int stop2=2*stop;
-      for(unsigned int D=start; D < stop2; D *= 2) {
-        if(D > stop) D=stop;
-        check(L,M,C,S,m0,p,q,D,app);
+      unsigned int Dstart=DOption > 0 ? min(DOption,n) : 1;
+      unsigned int Dstop=DOption > 0 ? min(DOption,n) : n;
+      unsigned int Dstop2=2*Dstop;
+
+      // Always check inplace and out-of-place, regarless of C and q.
+      //unsigned int Istart=IOption == -1 ? 0 : IOption;
+
+      // Check inplace and out-of-place unless C > 1.
+      //unsigned int Istart=IOption == -1 ? (C > 1) : IOption;
+
+      // Check inplace and out-of-place unless C > 1 or q == 1 (explicit).
+      unsigned int Istart=IOption == -1 ? (C > 1 || q == 1) : IOption;
+
+      unsigned int Istop=IOption == -1 ? 2 : IOption+1;
+
+      for(unsigned int D=Dstart; D < Dstop2; D *= 2) {
+        if(D > Dstop) D=Dstop;
+        for(unsigned int inplace=Istart; inplace < Istop; ++inplace)
+          check(L,M,C,S,m0,p,q,D,inplace,app);
       }
       if(inner){
         m0=nextpuresize(m0+1);
@@ -222,16 +234,17 @@ void fftBase::OptBase::defopt(unsigned int L, unsigned int M, Application& app,
 void fftBase::OptBase::check(unsigned int L, unsigned int M,
                              unsigned int C, unsigned int S, unsigned int m,
                              unsigned int p, unsigned int q, unsigned int D,
-                             Application& app)
+                             bool inplace, Application& app)
 {
   if(q == 1 || valid(D,p,S)) {
     // cout << "D=" << D << ", m=" << m << endl;
-    double t=time(L,M,C,S,m,q,D,app);
+    double t=time(L,M,C,S,m,q,D,inplace,app);
 //    cout << "p=" << p << " q=" << q << " D=" << D << " m=" << m << ": " << t << endl;
     if(t < T) {
       this->m=m;
       this->q=q;
       this->D=D;
+      this->inplace=inplace;
       T=t;
     }
   }
@@ -244,6 +257,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   m=M;
   q=1;
   D=1;
+  inplace=false;
   T=DBL_MAX;
   if(L > M) {
     cerr << "L=" << L << " is greater than M=" << M << "." << endl;
@@ -266,6 +280,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   cout << "C=" << C << endl;
   cout << "S=" << S << endl;
   cout << "D=" << D << endl;
+  cout << "inplace: " << inplace << endl;
   cout << "Padding: " << mpL << endl;
 }
 
@@ -330,8 +345,6 @@ void fftBase::common()
 
   p=ceilquotient(L,m);
 
-  inplace=IOption == -1 ? C > 1 : IOption;
-
   Cm=C*m;
   Sm=S*m;
   n=q/p;
@@ -345,7 +358,6 @@ void fftBase::common()
 void fftPad::init()
 {
   common();
-
   if(q == 1) {
     if(C == 1 && S == 1) {
       Forward=&fftBase::forwardExplicit;
