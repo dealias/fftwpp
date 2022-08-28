@@ -144,6 +144,7 @@ void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
                                   bool centered, unsigned int itmax,
                                   bool inner)
 {
+  //cout << "D=" << D << ", m0=" << m0 << ", L=" << L << ", M=" << M << ", C=" << C << endl;
   unsigned int i=(inner ? m0 : 0);
   while(i < itmax) {
     unsigned int p=ceilquotient(L,m0);
@@ -178,6 +179,7 @@ void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
         for(unsigned int inplace=Istart; inplace < Istop; ++inplace)
           check(L,M,C,S,m0,p,q,D,inplace,app);
       }
+      if(mOption >= 1) break;
       if(inner){
         m0=nextpuresize(m0+1);
         i=m0;
@@ -237,7 +239,7 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
                              bool inplace, Application& app)
 {
   if(q == 1 || valid(D,p,S)) {
-    // cout << "D=" << D << ", m=" << m << endl;
+    //cout << "D=" << D << ", m=" << m << ", L=" << L << ", M=" << M << ", C=" << C << endl;
     double t=time(L,M,C,S,m,q,D,inplace,app);
 //    cout << "p=" << p << " q=" << q << " D=" << D << " m=" << m << ": " << t << endl;
     if(t < T) {
