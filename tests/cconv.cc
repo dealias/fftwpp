@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
   bool Explicit=false;
 
   // Number of iterations.
-  unsigned int N0=1000000000;
+  unsigned int N0=100000000;
   unsigned int N=0;
 
   unsigned int m=11; // Problem size

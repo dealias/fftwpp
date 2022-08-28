@@ -134,6 +134,7 @@ def main(argv):
     \ntimings.py
     -a<start>
     -b<stop>
+    -I<increment (if not testing powers of 2)>
     -p<cconv,hybridconv,cconv2,cconv3,conv,hybridconv,conv2,conv3,tconv,tconv2>
     -T<number of threads>
     -A<quoted arg list for timed program>
@@ -164,8 +165,9 @@ def main(argv):
     B = [] # precommands
     A = [] # postcommands
     E = [] # environment variables (eg: -EGOMP_CPU_AFFINITY -E"0 1 2 3")
-    a = 6  # minimum log of problem size
-    b = 0  # maximum log of problem size
+    I = 0  # optional increment between tests (0 means use powers of 2)
+    a = 6  # minimum log2 of problem size if i=0 else minimum problem size
+    b = 0  # maximum log2 of problem size if i=0 else maximum problem size
     runtype = "implicit"  # type of run
     RAM = 0  # ram limit in GB
     outdir = ""  # output directory
@@ -179,7 +181,7 @@ def main(argv):
     extracomment = ""
 
     try:
-        opts, args = getopt.getopt(argv,"dhep:T:a:b:c:A:B:E:r:R:S:o:P:D:g:N:v")
+        opts, args = getopt.getopt(argv,"dhep:T:a:b:c:I:A:B:E:r:R:S:o:P:D:g:N:v")
     except getopt.GetoptError:
         print("error in parsing arguments.")
         print(usage)
@@ -195,6 +197,8 @@ def main(argv):
             N = int(arg)
         elif opt in ("-b"):
             b = int(arg)
+        elif opt in ("-I"):
+            I = int(arg)
         elif opt in ("-c"):
             extracomment = arg
         elif opt in ("-A"):
@@ -459,8 +463,11 @@ def main(argv):
                     with open(filename, "w") as myfile:
                         myfile.write(comment)
 
-        for i in range(a,b+1):
-            if not hermitian or runtype == "implicit":
+        for i in range(a,b+1,1 if I == 0 else I):
+            if I != 0:
+                m=i
+                print(m)
+            elif not hermitian or runtype == "implicit":
                 m = int(pow(2,i))
             else:
                 if not ternary:
@@ -481,7 +488,7 @@ def main(argv):
 
             if dothism:
                 if(hybrid):
-                    mcmd=cmd+["-L"+str(L)]+["-M"+str(M)]+["-I1"]
+                    mcmd=cmd+["-L"+str(L)]+["-M"+str(M)]+["-I0"]
                 else:
                     mcmd = cmd + ["-m" + str(m)]
 
@@ -554,7 +561,7 @@ def main(argv):
 
             if not dryrun and (stats == -1 and os.path.isfile("timing.dat")):
                 if(appendtofile):
-                    # Append the new data ot the output.
+                    # Append the new data to the output.
                     with open(filename, "a") as fout:
                         with open("timing.dat") as fin:
                             lines = []

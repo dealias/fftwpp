@@ -5,7 +5,7 @@ size(175,200,IgnoreAspect);
 barfactor=10;
 
 bool drawerrorbars=true;
-//drawerrorbars=false;
+drawerrorbars=false;
 
 scale(Log,Linear);
 real[] me,e,le,he;
