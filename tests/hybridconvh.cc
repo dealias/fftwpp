@@ -1,8 +1,6 @@
 #include "convolve.h"
 #include "timing.h"
 
-#define OUTPUT 0
-
 using namespace std;
 using namespace utils;
 using namespace Array;
@@ -60,22 +58,20 @@ int main(int argc, char* argv[])
 
   for(unsigned int a=0; a < A; ++a) {
     Complex *fa=f[a];
-#if OUTPUT
-    fa[0]=1.0+a;
-    for(unsigned int j=1; j < H; ++j) {
-      fa[j]=Complex(j,(1.0+a)*j+1);
-    }
-#else
-    for(unsigned int j=0; j < H; ++j)
+    if(Output) {
+      fa[0]=1.0+a;
+      for(unsigned int j=1; j < H; ++j)
+        fa[j]=Complex(j,(1.0+a)*j+1);
+    } else
+      for(unsigned int j=0; j < H; ++j)
         fa[j]=0.0;
-#endif
   }
 
   ConvolutionHermitian Convolve(&fft,A,B,fft.embed() ? F : NULL);
 
-#if OUTPUT
-  K=1;
-#endif
+  if(Output)
+    K=1;
+
   for(unsigned int k=0; k < K; ++k) {
     seconds();
     Convolve.convolveRaw(f,realmultbinaryNormalized);
@@ -86,11 +82,10 @@ int main(int argc, char* argv[])
   timings("Hybrid",L,T,K,stats);
   cout << endl;
 
-#if OUTPUT
-  for(unsigned int b=0; b < B; ++b)
-    for(unsigned int j=0; j < H; ++j)
-      cout << f[b][j] << endl;
-#endif
+  if(Output)
+    for(unsigned int b=0; b < B; ++b)
+      for(unsigned int j=0; j < H; ++j)
+        cout << f[b][j] << endl;
 
   delete [] T;
 

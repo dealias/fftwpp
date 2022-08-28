@@ -68,7 +68,8 @@ int main(int argc, char* argv[])
 
   Convolution Convolve(&fft,A,B,fft.embed() ? F : NULL);
 
-  if(Output) K=1;
+  if(Output)
+    K=1;
   for(unsigned int k=0; k < K; ++k) {
     seconds();
     Convolve.convolveRaw(f,multbinaryNormalized);
