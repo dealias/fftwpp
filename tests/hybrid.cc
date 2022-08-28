@@ -1,7 +1,7 @@
 #include "convolve.h"
 
 #define OUTPUT 0
-#define CENTERED 1
+#define CENTERED 0
 
 using namespace std;
 using namespace utils;
@@ -30,9 +30,9 @@ int main(int argc, char* argv[])
   cout << "Explicit:" << endl;
   // Minimal explicit padding
 #if CENTERED
-  fftPadCentered fft0(L,M,C,S,M,1,1,1);// the last argument being 1 means inplace
+  fftPadCentered fft0(L,M,C,S,M,1,1,1);
 #else
-  fftPad fft0(L,M,C,S,M,1,1,1);// the last argument being 1 means inplace
+  fftPad fft0(L,M,C,S,M,1,1,1);
 #endif
 
   double median0=fft0.report(M*C,FB);
@@ -74,9 +74,9 @@ int main(int argc, char* argv[])
       f[S*j+c]=Complex(j+1+c,j+2+c);
 
 #if CENTERED
-  fftPadCentered fft2(L,fft.M,C,S,fft.M,1,1,fftw::maxthreads,fft.q == 1);
+  fftPadCentered fft2(L,fft.M,C,S,fft.M,1,1,1,fftw::maxthreads,fft.q == 1);
 #else
-  fftPad fft2(L,fft.M,C,S,fft.M,1,1,1);// the last argument being 1 means inplace
+  fftPad fft2(L,fft.M,C,S,fft.M,1,1,1);
 #endif
 
   Complex *F2=ComplexAlign(fft2.outputSize());
