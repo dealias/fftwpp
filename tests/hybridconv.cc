@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
     K=1;
   for(unsigned int k=0; k < K; ++k) {
     seconds();
-    Convolve.convolveRaw(f,multbinaryNormalized);
+    Convolve.convolve(f,multbinary);
     T[k]=seconds();
   }
 
