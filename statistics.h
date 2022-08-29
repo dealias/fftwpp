@@ -1,10 +1,9 @@
 #ifndef __statistics_h__
 #define __statistics_h__ 1
 
-#include<bits/stdc++.h>
+#include <queue>
 
 namespace utils {
-
 
 template <class T, class S, class C>
 void clearpq(std::priority_queue<T, S, C>& q) {
