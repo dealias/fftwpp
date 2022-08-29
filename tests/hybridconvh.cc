@@ -14,11 +14,39 @@ unsigned int M=768; // minimum padded length
 // This multiplication routine is for binary convolutions and takes
 // two real inputs of size n.
 // F0[j] *= F1[j];
-void realmultbinaryNormalized(Complex **F, unsigned int offset, unsigned int n,
+void realmultbinaryNormalized0(double **F, unsigned int n,
                               unsigned int threads)
 {
-  double *F0=(double *) (F[0]+offset);
-  double *F1=(double *) (F[1]+offset);
+  double *F0=F[0];
+  double *F1=F[1];
+
+  double ninv=1.0/n;
+  PARALLEL(
+    for(unsigned int j=0; j < n; ++j)
+      F0[j] *= ninv*F1[j];
+    );
+}
+void realmultbinaryNormalized1(Complex **F, unsigned int n,
+                              unsigned int threads)
+{
+  double *F0=(double *) F[0];
+  double *F1=(double *) F[1];
+
+  double ninv=1.0/n;
+  PARALLEL(
+    for(unsigned int j=0; j < n; ++j)
+      F0[j] *= ninv*F1[j];
+    );
+}
+
+// This multiplication routine is for binary convolutions and takes
+// two real inputs of size n.
+// F0[j] *= F1[j];
+void realmultbinaryNormalized(Complex **F, unsigned int n,
+                              unsigned int threads)
+{
+  double *F0=(double *) F[0];
+  double *F1=(double *) F[1];
 
   double ninv=1.0/n;
   PARALLEL(

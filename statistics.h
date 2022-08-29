@@ -1,30 +1,43 @@
 #ifndef __statistics_h__
 #define __statistics_h__ 1
 
-#include <cfloat>
-#include <list>
+#include<bits/stdc++.h>
 
 namespace utils {
+
+
+template <class T, class S, class C>
+void clearpq(std::priority_queue<T, S, C>& q) {
+  struct HackedQueue : private std::priority_queue<T, S, C> {
+    static S& Container(std::priority_queue<T, S, C>& q) {
+            return q.*&HackedQueue::c;
+        }
+    };
+    HackedQueue::Container(q).clear();
+}
 
 class statistics {
   unsigned int N;
   double A;
   double varL;
   double varH;
-  double m; // min
-  double M; // max
-  std::list<double> T; // Only used if constructed with median=true
-  bool Median;
+  double Median;
+  bool computeMedian;
+
+  // These heap stores are only used when computeMedian=true.
+  // Max heap stores the smaller half elements:
+  std::priority_queue<double> s;
+  // Min heap stores the greater half elements:
+  std::priority_queue<double,std::vector<double>,std::greater<double> > g;
+
 public:
-  statistics(bool median=false) : Median(median) {clear();}
-  void clear() {N=0; A=varL=varH=0.0; m=DBL_MAX; M=-m; T.clear();}
+  statistics(bool computeMedian=false) : computeMedian(computeMedian) {
+    clear();
+  }
+  void clear() {N=0; A=varL=varH=0.0; clearpq(s); clearpq(g);}
   double count() {return N;}
   double mean() {return A;}
-  double min() {return m;}
-  double max() {return M;}
   void add(double t) {
-    m=std::min(m,t);
-    M=std::max(M,t);
     ++N;
     double diff=t-A;
     A += diff/N;
@@ -34,27 +47,46 @@ public:
     else
       varH += v;
 
-    if(Median) {
-      auto p=T.begin();
-      if(N == 1 || t <= *p) T.push_front(t);
+    if(computeMedian) {
+      if(N == 1)
+        s.push(Median=t);
       else {
-        size_t l=0;
-        size_t u=N-1;
-        ssize_t last=0;
-        while(l < u) {
-          ssize_t i=(l+u)/2;
-          std::advance(p,i-last);
-          last=i;
-          if(t < *p) u=i;
-          else {
-            ++p;
-            if(p == T.end() || t <= *p) {T.insert(p,t); break;}
-            last=l=i+1;
+        if(s.size() > g.size()) { // left side heap has more elements
+
+          if(t < Median) {
+            g.push(s.top());
+            s.pop();
+            s.push(t);
+          } else
+            g.push(t);
+
+          Median=0.5*(s.top()+g.top());
+        }
+
+        else if(s.size() == g.size()) { // both heaps are balanced
+          if(t < Median) {
+            s.push(t);
+            Median=(double) s.top();
+          } else {
+            g.push(t);
+            Median=(double) g.top();
           }
+        }
+
+        else { // right side heap has more elements
+          if(t > Median) {
+            s.push(g.top());
+            g.pop();
+            g.push(t);
+          } else
+            s.push(t);
+
+          Median=0.5*(s.top()+g.top());
         }
       }
     }
   }
+
   double stdev(double var, double f) {
     double factor=N > f ? f/(N-f) : 0.0;
     return sqrt(var*factor);
@@ -69,17 +101,14 @@ public:
     return stdev(varH,2.0);
   }
   double median() {
-    if(!Median) {
+    if(!computeMedian) {
       std::cerr << "Constructor requires median=true" << std::endl;
       exit(-1);
     }
-    unsigned int h=N/2;
-    auto p=T.begin();
-    std::advance(p,h-1);
-    return 2*h == N ? 0.5*(*p+*(++p)) : *(++p);
+    return Median;
   }
   void output(const char *text, unsigned int m) {
-    std::cout << text << ":\n"
+    std::cout << text << ": \n"
               << m << "\t"
               << A << "\t"
               << stdevL() << "\t"

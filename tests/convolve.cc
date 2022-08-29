@@ -40,11 +40,10 @@ const double twopi=2.0*M_PI;
 // This multiplication routine is for binary convolutions and takes
 // two Complex inputs of size n and outputs one Complex value.
 // F0[j] *= F1[j];
-void multbinary(Complex **F, unsigned int offset, unsigned int n,
-                unsigned int threads)
+void multbinary(Complex **F, unsigned int n, unsigned int threads)
 {
-  Complex *F0=F[0]+offset;
-  Complex *F1=F[1]+offset;
+  Complex *F0=F[0];
+  Complex *F1=F[1];
 
   PARALLEL(
     for(unsigned int j=0; j < n; ++j)
@@ -55,11 +54,10 @@ void multbinary(Complex **F, unsigned int offset, unsigned int n,
 // This multiplication routine is for binary convolutions and takes
 // two real inputs of size n.
 // F0[j] *= F1[j];
-void realmultbinary(Complex **F, unsigned int offset, unsigned int n,
-                    unsigned int threads)
+void realmultbinary(Complex **F, unsigned int n, unsigned int threads)
 {
-  double *F0=(double *) (F[0]+offset);
-  double *F1=(double *) (F[1]+offset);
+  double *F0=(double *) F[0];
+  double *F1=(double *) F[1];
 
   PARALLEL(
     for(unsigned int j=0; j < n; ++j)
@@ -242,7 +240,7 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
   if(q == 1 || valid(D,p,S)) {
     //cout << "D=" << D << ", m=" << m << ", L=" << L << ", M=" << M << ", C=" << C << endl;
     double t=time(L,M,C,S,m,q,D,inplace,app);
-    cout << "p=" << p << " q=" << q << " D=" << D << " m=" << m << " I=" << inplace << ": " << t << endl;
+//    cout << "p=" << p << " q=" << q << " D=" << D << " m=" << m << " I=" << inplace << ": " << t*1.0e-9 << endl;
     if(t < T) {
       this->m=m;
       this->q=q;
@@ -295,30 +293,19 @@ fftBase::~fftBase()
     deleteAlign(ZetaqmS0);
 }
 
+// In nanoseconds
 double fftBase::medianTime(unsigned int M, Application& app,
                            double *Stdev)
 {
-  unsigned int K=1; // Number of loop iterations in a sample
-  unsigned int N=max(10000/M,10); // Number of samples
+  unsigned int N=max(2000000/M,10); // Number of samples
 
-  statistics Stats(true);
   app.init(*this);
-  static nano r=chrono::steady_clock::period();
-  double threshold=100000.0*r.num/r.den;
-  double stdev,value;
-  while(Stats.count() < N) {
-    double t=app.time(*this,K);
-    if(t < threshold) {
-      K *= 2;
-      Stats.clear();
-    } else
-      Stats.add(t);
-  }
-  value=Stats.median();
-  stdev=Stats.stdev();
-  if(Stdev) *Stdev=stdev/K;
+  statistics Stats(true);
+  for(unsigned int i=0; i < N; ++i)
+    Stats.add(app.time(*this));
+  if(Stdev) *Stdev=Stats.stdev();
   app.clear();
-  return value/K;
+  return Stats.median();
 }
 
 double fftBase::report(unsigned int M, Application& app)
@@ -326,7 +313,7 @@ double fftBase::report(unsigned int M, Application& app)
   double stdev;
   cout << endl;
 
-  double median=medianTime(M,app,&stdev);
+  double median=medianTime(M,app,&stdev)*1.0e-9;
 
   cout << "median=" << median << " stdev=" << stdev << endl;
 
@@ -4081,6 +4068,7 @@ void fftPadHermitian::init()
 
     crfftm=new mcrfft1d(m,C, C,C, 1,1, G,H);
     rcfftm=new mrcfft1d(m,C, C,C, 1,1, H,G);
+
     deleteAlign(G);
     dr=D0=R=Q=1;
   } else {
@@ -5148,49 +5136,48 @@ Convolution::~Convolution()
 void Convolution::convolveRaw(Complex **f, multiplier *mult,
                               unsigned int offset)
 {
+  Complex *g[A];
+  for(unsigned int a=0; a < A; ++a)
+    g[a]=f[a]+offset;
   if(q == 1) {
-    forward(f,F,0,0,A,offset);
-    (*mult)(F,0,blocksize,threads);
-    backward(F,f,0,offset);
+    forward(g,F,0,0,A);
+    (*mult)(F,blocksize,threads);
+    backward(F,g,0);
   } else {
     if(overwrite) {
-      forward(f,F,0,0,A,offset);
-      (*mult)(f,offset,(fft->n-1)*blocksize,threads);
-      (*mult)(F,0,blocksize,threads);
-      backward(F,f,0,offset);
+      forward(g,F,0,0,A);
+      (*mult)(g,(fft->n-1)*blocksize,threads);
+      (*mult)(F,blocksize,threads);
+      backward(F,g,0);
     } else {
       if(loop2) {
-        forward(f,F,0,0,A,offset);
+        forward(g,F,0,0,A);
         operate(F,mult,0);
-        forward(f,Fp,r,0,B,offset);
-        backward(F,f,0,offset,W0);
-        forward(f,Fp,r,B,A,offset);
+        forward(g,Fp,r,0,B);
+        backward(F,g,0,W0);
+        forward(g,Fp,r,B,A);
         operate(Fp,mult,r);
-        backward(Fp,f,r,offset,W0);
+        backward(Fp,g,r,W0);
       } else {
-        unsigned int Offset;
         Complex **h0;
         if(nloops > 1) {
           if(!V) initV();
           h0=V;
-          Offset=0;
-        } else {
-          Offset=offset;
-          h0=f;
-        }
+        } else
+          h0=g;
 
         for(unsigned int r=0; r < R; r += fft->increment(r)) {
-          forward(f,F,r,0,A,offset);
+          forward(g,F,r,0,A);
           operate(F,mult,r);
-          backward(F,h0,r,Offset,W0);
+          backward(F,h0,r,W0);
         }
 
         if(nloops > 1) {
           for(unsigned int b=0; b < B; ++b) {
-            Complex *fb=f[b]+offset;
+            Complex *gb=g[b];
             Complex *hb=h0[b];
             for(unsigned int i=0; i < inputSize; ++i)
-              fb[i]=hb[i];
+              gb[i]=hb[i];
           }
         }
       }
@@ -5238,18 +5225,18 @@ void ForwardBackward::init(fftBase &fft)
   }
 }
 
-double ForwardBackward::time(fftBase &fft, unsigned int K)
+double ForwardBackward::time(fftBase &fft)
 {
-  seconds();
-  for(unsigned int k=0; k < K; ++k) {
-    for(unsigned int r=0; r < R; r += fft.increment(r)) {
-      for(unsigned int a=0; a < A; ++a)
-        (fft.*Forward)(f[a],F[a],r,W);
-      for(unsigned int b=0; b < B; ++b)
-        (fft.*Backward)(F[b],h[b],r,W);
-    }
+  auto begin=std::chrono::steady_clock::now();
+  for(unsigned int r=0; r < R; r += fft.increment(r)) {
+    for(unsigned int a=0; a < A; ++a)
+      (fft.*Forward)(f[a],F[a],r,W);
+    for(unsigned int b=0; b < B; ++b)
+      (fft.*Backward)(F[b],h[b],r,W);
   }
-  return seconds();
+  auto end=std::chrono::steady_clock::now();
+  auto elapsed=std::chrono::duration_cast<std::chrono::nanoseconds> (end-begin);
+  return elapsed.count();
 }
 
 void ForwardBackward::clear()

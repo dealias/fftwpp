@@ -69,7 +69,7 @@ public:
   };
   virtual void init(fftBase &fft)=0;
   virtual void clear()=0;
-  virtual double time(fftBase &fft, unsigned int K)=0;
+  virtual double time(fftBase &fft)=0;
 };
 
 class fftBase : public ThreadBase {
@@ -703,14 +703,13 @@ public:
 
   void init(fftBase &fft);
 
-  double time(fftBase &fft, unsigned int K);
+  double time(fftBase &fft);
 
   void clear();
 
 };
 
-typedef void multiplier(Complex **, unsigned int offset, unsigned int n,
-                        unsigned int threads);
+typedef void multiplier(Complex **, unsigned int n, unsigned int threads);
 
 // Multiplication routines for binary convolutions that take two inputs of size e.
 multiplier multbinary,realmultbinary;
@@ -878,23 +877,26 @@ public:
   }
 
   void forward(Complex **f, Complex **F, unsigned int r,
-               unsigned int start, unsigned int stop,
-               unsigned int offset=0) {
+               unsigned int start, unsigned int stop) {
     for(unsigned int a=start; a < stop; ++a)
-      (fft->*Forward)(f[a]+offset,F[a],r,W);
+      (fft->*Forward)(f[a],F[a],r,W);
   }
 
   void operate(Complex **F, multiplier *mult, unsigned int r) {
     unsigned int incr=fft->b;
     unsigned int stop=fft->complexOutputs(r);
-    for(unsigned int d=0; d < stop; d += incr)
-      (*mult)(F,d,blocksize,threads);
+    for(unsigned int d=0; d < stop; d += incr) {
+      Complex *G[A];
+      for(unsigned int a=0; a < A; ++a)
+        G[a]=F[a]+d;
+      (*mult)(G,blocksize,threads);
+    }
   }
 
   void backward(Complex **F, Complex **f, unsigned int r,
-                unsigned int offset=0, Complex *W0=NULL) {
+                Complex *W0=NULL) {
     for(unsigned int b=0; b < B; ++b)
-      (fft->*Backward)(F[b],f[b]+offset,r,W0);
+      (fft->*Backward)(F[b],f[b],r,W0);
     if(W && W == W0) (fft->*Pad)(W0);
   }
 

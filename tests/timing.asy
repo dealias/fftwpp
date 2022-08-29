@@ -129,6 +129,8 @@ draw(graph(mh,h,h > 0),Pentype(1),Label("hybrid",Pen(1)+Lp),mark1);
 
 string D=d > 1 ? "^"+(string) d : "";
 
+label(dir,point(N),N);
+
 xaxis("$L$",BottomTop,LeftTicks);
 yaxis("time/($L"+D+"\log_2 L"+D+"$) (ns)",LeftRight,RightTicks);
 
