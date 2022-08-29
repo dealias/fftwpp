@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
   fftw::maxthreads=get_max_threads();
 
   unsigned int N=0; // Number of iterations.
-  unsigned int N0=100000000; // Nominal number of iterations
+  unsigned int N0=200000000; // Nominal number of iterations
   unsigned int m=11; // Problem size
 
   int stats=MEDIAN; // Type of statistics used in timing test.
