@@ -156,7 +156,7 @@ void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
     // p must be a power of 2.
     // p must be even in the centered case.
     // p != q.
-    if(inner && (((notPow2(p) || p == P*n) && mOption == 0) || (centered && p%2 != 0))){
+    if(inner && (((notPow2(p) || p == P*n) && !mForced) || (centered && p%2 != 0))){
       if(mOption >= 1){
         cout<<"m="<<mOption<<endl;
         cout<<"p="<<p<<endl;
@@ -166,6 +166,7 @@ void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
       i=m0=nextpuresize(m0+1);
     }
     else {
+      bool oneRun=mForced && (DOption > 0) && IOption > -1 && va
       unsigned int q=(inner ? P*n : ceilquotient(M,m0));
       unsigned int Dstart=DOption > 0 ? min(DOption,n) : 1;
       unsigned int Dstop=DOption > 0 ? min(DOption,n) : n;
@@ -187,7 +188,7 @@ void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
         for(unsigned int inplace=Istart; inplace < Istop; ++inplace)
           check(L,M,C,S,m0,p,q,D,inplace,app);
       }
-      if(mOption >= 1) break;
+      if(mForced) break;
       if(inner){
         m0=nextpuresize(m0+1);
         i=m0;
@@ -209,7 +210,7 @@ void fftBase::OptBase::defopt(unsigned int L, unsigned int M, Application& app,
                               bool Explicit, bool centered)
 {
   if(!Explicit) {
-    if(mOption >= 1) {
+    if(mForced) {
       if(mOption >= L/2)
         defoptloop(mOption,L,M,app,C,S,centered,1);
       else
@@ -273,6 +274,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
     cerr << "L=" << L << " is greater than M=" << M << "." << endl;
     exit(-1);
   }
+  mForced=(mOption >= 1);
   defopt(L,M,app,C,S,32,3,Explicit,centered);
 
   unsigned int p=ceilquotient(L,m);

@@ -112,7 +112,7 @@ public:
   class OptBase {
   public:
     unsigned int m,q,D;
-    bool inplace;
+    bool inplace,mForced;
     double T;
 
     virtual double time(unsigned int L, unsigned int M, unsigned int C,
