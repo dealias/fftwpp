@@ -20,7 +20,7 @@ void optionsHybrid(int argc, char* argv[], bool fft)
   optind=0;
 #endif
   for (;;) {
-    int c=getopt(argc,argv,"hC:D:I:K:L:M:O:S:T:m:");
+    int c=getopt(argc,argv,"hC:D:I:K:L:M:OS:T:m:");
     if (c == -1) break;
 
     switch(c) {
@@ -43,7 +43,7 @@ void optionsHybrid(int argc, char* argv[], bool fft)
         IOption=atoi(optarg) > 0;
         break;
       case 'O':
-        Output=atoi(optarg) > 0;
+        Output=true;
         break;
       case 'M':
         M=atoi(optarg);

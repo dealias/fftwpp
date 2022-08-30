@@ -50,10 +50,11 @@ inline void usageCommon(int n)
 {
   std::cerr << "Options: " << std::endl;
   std::cerr << "-h\t\t help" << std::endl;
-  std::cerr << "-T\t\t number of threads" << std::endl;
-  std::cerr << "-N\t\t number of iterations" << std::endl;
+  std::cerr << "-m n\t\t size m" << std::endl;
+  std::cerr << "-u\t\t unnormalized" << std::endl;
+  std::cerr << "-N n\t\t use n iterations" << std::endl;
+  std::cerr << "-T n\t\t use n threads" << std::endl;
   std::cerr << "-O\t\t output result" << std::endl;
-  std::cerr << "-m\t\t size" << std::endl;
   std::cerr << "-S<int>\t\t stats used in timing test: "
             << "0=mean, 1=min, 2=max, 3=median, "
             << "4=90th percentile, 5=80th percentile, 6=50th percentile"
@@ -158,29 +159,22 @@ inline void usageHybrid(bool fft=false)
 {
   std::cerr << "Options: " << std::endl;
   std::cerr << "-h\t\t help" << std::endl;
-  std::cerr << "-m\t\t subtransform size" << std::endl;
+  std::cerr << "-m n\t\t use subtransform size n" << std::endl;
   if(fft)
-    std::cerr << "-C\t\t number of padded FFTs to compute"
+    std::cerr << "-C n\t\t compute n padded FFTs at a time"
               << std::endl;
-  std::cerr << "-D\t\t number of blocks to process at a time" << std::endl;
-  std::cerr << "-I\t\t use in-place FFTs [by default only for multiple FFTs]" << std::endl;
+  std::cerr << "-D n\t\t number n of blocks to process at a time" << std::endl;
+  std::cerr << "-I\t\t (0=out-of-place, 1=in-place) FFTs [by default I=1 only for multiple FFTs]" << std::endl;
   std::cerr << "-O\t\t output result" << std::endl;
-  std::cerr << "-K\t\t number of iterations" << std::endl;
-  std::cerr << "-L\t\t number of physical data values" << std::endl;
-  std::cerr << "-M\t\t minimal number of padded data values" << std::endl;
+  std::cerr << "-K n\t\t number n of iterations" << std::endl;
+  std::cerr << "-L n\t\t number n of physical data values" << std::endl;
+  std::cerr << "-M n\t\t minimal number n of padded data values" << std::endl;
   if(fft)
-    std::cerr << "-S\t\t stride between padded FFTs (defaults to C)" << std::endl;
+    std::cerr << "-S s\t\t use stride s between padded FFTs (defaults to C)" << std::endl;
   else
-    std::cerr << "-S\t\t statistics (defaults to MEDIAN)" << std::endl;
-  std::cerr << "-T\t\t number of threads" << std::endl;
+    std::cerr << "-S n\t\t use statistics type n (defaults to MEDIAN)" << std::endl;
+  std::cerr << "-T n\t\t number n of threads" << std::endl;
 }
-
-// logM returns the logarithm of base M.
-inline double log3(double n) {return log(n)/log(3.0);}
-
-inline double log5(double n) {return log(n)/log(5.0);}
-
-inline double log7(double n) {return log(n)/log(7.0);}
 
 // ceilpow2(n) returns the smallest power of 2 greater than or equal to n.
 inline unsigned int ceilpow2(unsigned int n)
@@ -237,17 +231,6 @@ inline unsigned int hpadding(unsigned int m)
 inline unsigned int tpadding(unsigned int m)
 {
   return padding(4*m-3);
-}
-
-inline int hash(Complex* f, unsigned int m)
-{
-  int h=0;
-  unsigned int i;
-  for(i=0; i<m; ++i) {
-    h= (h+ (324723947+(int)(f[i].im+0.5)))^93485734985;
-    h= (h+ (324723947+(int)(f[i].im+0.5)))^93485734985;
-  }
-  return h;
 }
 
 }

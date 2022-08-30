@@ -80,6 +80,7 @@ int main(int argc, char* argv[])
   bool Implicit=true;
   bool Explicit=false;
   bool Output=false;
+  bool Normalized=true;
 
   // Number of iterations.
   unsigned int N0=100000000;
@@ -97,7 +98,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptA:B:N:O:m:n:S:T:");
+    int c = getopt(argc,argv,"hdeiptA:B:N:Om:n:uS:T:");
     if (c == -1) break;
 
     switch (c) {
@@ -126,10 +127,13 @@ int main(int argc, char* argv[])
         N=atoi(optarg);
         break;
       case 'O':
-        Output=atoi(optarg);
+        Output=true;
         break;
       case 't':
         Test=true;
+        break;
+      case 'u':
+        Normalized=false;
         break;
       case 'm':
         m=atoi(optarg);
@@ -178,8 +182,13 @@ int main(int argc, char* argv[])
     F[s]=f+s*np;
 
   Complex *h0=NULL;
-  if(Test || Direct)
+  if(Test || Direct) {
     h0=ComplexAlign(m*B);
+    if(!Normalized) {
+      cerr << "-u option is incompatible with -d and -t." << endl;
+      exit(-1);
+    }
+  }
 
   double *T=new double[N];
 
@@ -223,6 +232,13 @@ int main(int argc, char* argv[])
 
     timings("Implicit",m,T,N,stats);
 
+    if(Normalized) {
+      double norm=0.5/m;
+      for(unsigned int b=0; b < B; ++b)
+        for(unsigned int i=0; i < m; i++)
+          F[b][i] *= norm;
+    }
+
     if(Output) {
       for(unsigned int b=0; b < B; ++b) {
         for(unsigned int i=0; i < m; i++)
@@ -242,11 +258,15 @@ int main(int argc, char* argv[])
   }
 
   if(Explicit) {
+    Multiplier *mult;
+    if(Normalized) mult=multbinary;
+    else mult=multbinaryUnNormalized;
+;
     ExplicitConvolution C(n,m,F[0]);
     for(unsigned int i=0; i < N; ++i) {
       init(F,m,A);
       seconds();
-      C.convolve(F,multbinary);
+      C.convolve(F,mult);
 //      C.convolve(F[0],F[1]);
       T[i]=seconds();
     }

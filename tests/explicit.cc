@@ -21,18 +21,46 @@ void multbinary(Complex **F, unsigned int m, unsigned int threads)
 }
 
 // This multiplication routine is for binary Hermitian convolutions and takes
-// two inputs.
+// two inputs of size n.
 // F[0][j] *= F[1][j];
-void multbinary(double **F, unsigned int m, unsigned int threads)
+void multbinary(double **F, unsigned int n, unsigned int threads)
 {
   double* F0=F[0];
   double* F1=F[1];
 
-  double ninv=1.0/m;
+  double ninv=1.0/n;
 
   PARALLEL(
-    for(unsigned int j=0; j < m; ++j)
+    for(unsigned int j=0; j < n; ++j)
       F0[j] *= ninv*F1[j];
+    );
+}
+
+// This multiplication routine is for binary convolutions and takes two inputs
+// of size n.
+// F[0][j] *= F[1][j];
+void multbinaryUnNormalized(Complex **F, unsigned int n, unsigned int threads)
+{
+  Complex* F0=F[0];
+  Complex* F1=F[1];
+
+  PARALLEL(
+    for(unsigned int j=0; j < n; ++j)
+      F0[j] *= F1[j];
+    );
+}
+
+// This multiplication routine is for binary Hermitian convolutions and takes
+// two inputs of size n.
+// F[0][j] *= F[1][j];
+void multbinaryUnNormalized(double **F, unsigned int n, unsigned int threads)
+{
+  double* F0=F[0];
+  double* F1=F[1];
+
+  PARALLEL(
+    for(unsigned int j=0; j < n; ++j)
+      F0[j] *= F1[j];
     );
 }
 

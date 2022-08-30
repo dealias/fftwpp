@@ -243,19 +243,17 @@ void ImplicitConvolution::pretransform(Complex **F)
 // multiply by root of unity to prepare and add for inverse FFT for odd modes
 void ImplicitConvolution::posttransform(Complex *f, Complex *u)
 {
-  double ninv=0.5/m;
-  Vec Ninv=LOAD2(ninv);
   PARALLEL(
     for(unsigned int K=0; K < m; K += s) {
       unsigned int stop=min(K+s,m);
       Complex *ZetaL0=ZetaL-K;
-      Vec Zeta=Ninv*LOAD(ZetaH+K/s);
+      Vec Zeta=LOAD(ZetaH+K/s);
       Vec X=UNPACKL(Zeta,Zeta);
       Vec Y=CONJ(UNPACKH(Zeta,Zeta));
       for(unsigned int k=K; k < stop; ++k) {
         Vec Zetak=ZMULT(X,Y,LOAD(ZetaL0+k));
         Complex *fki=f+k;
-        STORE(fki,ZCMULT(Zetak,LOAD(fki))+Ninv*LOAD(u+k));
+        STORE(fki,ZCMULT(Zetak,LOAD(fki))+LOAD(u+k));
       }
     }
     );
@@ -348,8 +346,6 @@ void ImplicitHConvolution::pretransform(Complex *F, Complex *f1c, Complex *U)
 void ImplicitHConvolution::posttransform(Complex *F, const Complex& w,
                                          Complex *U)
 {
-  double ninv=1.0/(3.0*m);
-  Vec Ninv=LOAD2(ninv);
   Vec Mhalf=LOAD2(-0.5);
   Vec HSqrt3=LOAD2(hsqrt3);
 
@@ -367,16 +363,16 @@ void ImplicitHConvolution::posttransform(Complex *F, const Complex& w,
     Vec Zeta=LOAD(ZetaH+a);
     Vec X=UNPACKL(Zeta,Zeta);
     Vec Y=CONJ(UNPACKH(Zeta,Zeta));
-    Vec zeta1=Ninv*ZMULT(X,Y,LOAD(ZetaL+1-s*a));
+    Vec zeta1=ZMULT(X,Y,LOAD(ZetaL+1-s*a));
     Vec Zeta1=ZCMULT(zeta1,Zetac1);
     Complex *f0=F;
-    Vec F0=LOAD(f0+1)*Ninv;
+    Vec F0=LOAD(f0+1);
     Vec F1=ZCMULT(zeta1,LOAD(&w));
     Vec F2=ZMULT(zeta1,LOAD(U+1));
     Vec S=F1+F2;
     F2=CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2);
     STORE(f0+1,F0+S);
-    F0=LOAD(f0+c)*Ninv;
+    F0=LOAD(f0+c);
     F1=ZCMULT(Zeta1,LOAD(f0+m1));
     STORE(f0+m1,F2);
     F2=ZMULT(Zeta1,LOAD(U+c));
@@ -388,7 +384,7 @@ void ImplicitHConvolution::posttransform(Complex *F, const Complex& w,
     for(unsigned int K=0; K <= D; K += s) {
       Complex *ZetaL0=ZetaL-K;
       unsigned int stop=min(K+s,D+1);
-      Vec Zeta=Ninv*LOAD(ZetaH+K/s);
+      Vec Zeta=LOAD(ZetaH+K/s);
       Vec X=UNPACKL(Zeta,Zeta);
       Vec Y=CONJ(UNPACKH(Zeta,Zeta));
       Complex *fm=F+m;
@@ -399,13 +395,13 @@ void ImplicitHConvolution::posttransform(Complex *F, const Complex& w,
         Vec zetak=ZMULT(X,Y,LOAD(ZetaL0+k));
         Vec Zetak=ZCMULT(zetak,Zetac1);
 
-        Vec F0=LOAD(F+k)*Ninv;
+        Vec F0=LOAD(F+k);
         Vec F1=ZCMULT(zetak,LOAD(fmc1+k));
         Vec F2=ZMULT(zetak,LOAD(U+k));
         Vec S=F1+F2;
         F2=CONJ(F0+Mhalf*S)-HSqrt3*FLIP(F1-F2);
 
-        Vec FA=LOAD(fpc1-k)*Ninv;
+        Vec FA=LOAD(fpc1-k);
         Vec FB=ZCMULT(Zetak,LOAD(fm-k));
         Vec FC=ZMULT(Zetak,LOAD(upc1-k));
         Vec T=FB+FC;
@@ -421,11 +417,11 @@ void ImplicitHConvolution::posttransform(Complex *F, const Complex& w,
 
   if(d == D+1) {
     unsigned int a=d/s;
-    Vec Zeta=Ninv*LOAD(ZetaH+a);
+    Vec Zeta=LOAD(ZetaH+a);
     Vec X=UNPACKL(Zeta,Zeta);
     Vec Y=CONJ(UNPACKH(Zeta,Zeta));
     Vec Zetak=ZMULT(X,Y,LOAD(ZetaL+d-s*a));
-    Vec F0=LOAD(F+d)*Ninv;
+    Vec F0=LOAD(F+d);
     Vec F1=ZCMULT(Zetak,LOAD(d == 1 && even ? &w : F+m-d));
     Vec F2=ZMULT(Zetak,LOAD(U+d));
     Vec S=F1+F2;
@@ -548,15 +544,13 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
     }
   }
 
-  const double ninv=1.0/(3.0*m);
-
   // r=-1 (forwards):
   if(A > B) {
     for(unsigned int b=0; b < B; ++b) {
       rco->fft(d2[b],U[A-1]);
       double R=c1[b][0].re;
       c0[b][start]=Complex(Re[b],Im[b]); // r=0, k=c-1 (c) for m=even (odd)
-      c0[b][0]=(c0[b][0].re+R+U[A-1][0].re)*ninv;
+      c0[b][0]=c0[b][0].re+R+U[A-1][0].re;
       posttransform(c0[b],w[b],U[A-1]);
     }
   } else {
@@ -566,14 +560,14 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
     rc->fft(c2[0]);
     double R=c1[0][0].re;
     c0[0][start]=Complex(Re[0],Im[0]); // r=0, k=c-1 (c) for m=even (odd)
-    c0[0][0]=(c0[0][0].re+R+c2[0][0].re)*ninv;
+    c0[0][0]=c0[0][0].re+R+c2[0][0].re;
     posttransform(c0[0],w[0],c2[0]);
 
     for(unsigned int b=1; b < B; ++b) {
       rco->fft(d2[b],c2[0]);
       double R=c1[b][0].re;
       c0[b][start]=Complex(Re[b],Im[b]); // r=0, k=c-1 (c) for m=even (odd)
-      c0[b][0]=(c0[b][0].re+R+c2[0][0].re)*ninv;
+      c0[b][0]=c0[b][0].re+R+c2[0][0].re;
       posttransform(c0[b],w[b],c2[0]);
     }
   }
@@ -609,13 +603,11 @@ void fftpad::backwards(Complex *f, Complex *u)
 
 void fftpad::reduce(Complex *f, Complex *u)
 {
-  double ninv=0.5/m;
-  Vec Ninv=LOAD2(ninv);
   PARALLEL(
     for(unsigned int K=0; K < m; K += s) {
       Complex *ZetaL0=ZetaL-K;
       unsigned int stop=min(K+s,m);
-      Vec H=Ninv*LOAD(ZetaH+K/s);
+      Vec H=LOAD(ZetaH+K/s);
       for(unsigned int k=K; k < stop; ++k) {
         Vec Zetak=ZMULT(H,LOAD(ZetaL0+k));
         Vec X=UNPACKL(Zetak,Zetak);
@@ -624,7 +616,7 @@ void fftpad::reduce(Complex *f, Complex *u)
         Complex *uk=u+kstride;
         Complex *fk=f+kstride;
         for(unsigned int i=0; i < M; ++i)
-          STORE(fk+i,LOAD(fk+i)*Ninv+ZMULT(X,Y,LOAD(uk+i)));
+          STORE(fk+i,LOAD(fk+i)+ZMULT(X,Y,LOAD(uk+i)));
       }
     }
     );
@@ -697,11 +689,9 @@ void fft0pad::backwards(Complex *f, Complex *u)
 void fft0pad::reduce(Complex *f, Complex *u)
 {
   Complex *umstride=u+m*stride;
-  double ninv=1.0/(3.0*m);
   for(unsigned int i=0; i < M; ++i)
-    umstride[i]=(umstride[i]+f[i]+u[i])*ninv;
+    umstride[i]=umstride[i]+f[i]+u[i];
 
-  Vec Ninv=LOAD2(ninv);
   Vec Mhalf=LOAD2(-0.5);
   Vec HSqrt3=LOAD2(hsqrt3);
   Complex *fm1stride=f+(m-1)*stride;
@@ -709,7 +699,7 @@ void fft0pad::reduce(Complex *f, Complex *u)
   unsigned int stop=s;
   for(unsigned int K=0; K < m; K += s) {
     Complex *ZetaL0=ZetaL-K;
-    Vec H=LOAD(ZetaH+K/s)*Ninv;
+    Vec H=LOAD(ZetaH+K/s);
     for(unsigned int k=max(1,K); k < stop; ++k) {
       Vec Zetak=ZMULT(H,LOAD(ZetaL0+k));
       Vec X=UNPACKL(Zetak,Zetak);
@@ -719,7 +709,7 @@ void fft0pad::reduce(Complex *f, Complex *u)
       Complex *fm1k=fm1stride+kstride;
       Complex *uk=u+kstride;
       for(unsigned int i=0; i < M; ++i) {
-        Vec F0=LOAD(fk+i)*Ninv;
+        Vec F0=LOAD(fk+i);
         Vec F1=ZMULT(X,-Y,LOAD(fm1k+i));
         Vec F2=ZMULT(X,Y,LOAD(uk+i));
         Vec S=F1+F2;
@@ -811,15 +801,13 @@ void fft1pad::reduce(Complex *f, Complex *u)
 {
   Complex *fmstride=f+m*stride;
 
-  double ninv=1.0/(3.0*m);
   for(unsigned int i=0; i < M; ++i) {
     Complex f0=f[i];
     Complex f1=fmstride[i];
     Complex f2=u[i];
     f[i]=0.0; // Zero Nyquist mode, for Hermitian symmetry.
-    fmstride[i]=(f0+f1+f2)*ninv;
+    fmstride[i]=(f0+f1+f2);
   }
-  Vec Ninv=LOAD2(ninv);
   Vec Mhalf=LOAD2(-0.5);
   Vec HSqrt3=LOAD2(hsqrt3);
 
@@ -828,7 +816,7 @@ void fft1pad::reduce(Complex *f, Complex *u)
     for(unsigned int K=0; K < m; K += inc) {
       Complex *ZetaL0=ZetaL-K;
       unsigned int stop=min(K+s,m);
-      Vec Zeta=Ninv*LOAD(ZetaH+K/s);
+      Vec Zeta=LOAD(ZetaH+K/s);
       Vec X=UNPACKL(Zeta,Zeta);
       Vec Y=CONJ(UNPACKH(Zeta,Zeta));
       for(unsigned int k=max(1,K); k < stop; ++k) {
@@ -838,7 +826,7 @@ void fft1pad::reduce(Complex *f, Complex *u)
         Complex *fmk=fmstride+kstride;
         Complex *uk=u+kstride;
         for(unsigned int i=0; i < M; ++i) {
-          Vec F0=LOAD(fk+i)*Ninv;
+          Vec F0=LOAD(fk+i);
           Vec F1=ZCMULT(zetak,LOAD(fmk+i));
           Vec F2=ZMULT(zetak,LOAD(uk+i));
           Vec S=F1+F2;
@@ -1039,19 +1027,17 @@ void ImplicitHTConvolution::convolve(Complex **F, Complex **G, Complex **H,
   Complex *f=F[0]+offset;
   rco->fft((double *) v,f);
 
-  double ninv=0.25/m;
-  Vec Ninv=LOAD2(ninv);
   PARALLEL(
     for(unsigned int K=0; K < m; K += s) {
       Complex *ZetaL0=ZetaL-K;
       unsigned int stop=min(K+s,m);
-      Vec Zeta=Ninv*LOAD(ZetaH+K/s);
+      Vec Zeta=LOAD(ZetaH+K/s);
       Vec X=UNPACKL(Zeta,Zeta);
       Vec Y=CONJ(UNPACKH(Zeta,Zeta));
       for(unsigned int k=K; k < stop; ++k) {
         Vec Zetak=ZMULT(X,Y,LOAD(ZetaL0+k));
         Complex *fk=f+k;
-        STORE(fk,ZCMULT(Zetak,LOAD(u+k))+Ninv*LOAD(fk));
+        STORE(fk,ZCMULT(Zetak,LOAD(u+k))+LOAD(fk));
       }
     }
     );
@@ -1116,20 +1102,17 @@ void ImplicitHFGGConvolution::convolve(Complex *f, Complex *g,
   mult((double *) v,(double *) g);
   rco->fft((double *) v,f);
 
-  double ninv=0.25/m;
-
-  Vec Ninv=LOAD2(ninv);
   PARALLEL(
     for(unsigned int K=0; K < m; K += s) {
       Complex *ZetaL0=ZetaL-K;
       unsigned int stop=min(K+s,m);
-      Vec Zeta=Ninv*LOAD(ZetaH+K/s);
+      Vec Zeta=LOAD(ZetaH+K/s);
       Vec X=UNPACKL(Zeta,Zeta);
       Vec Y=CONJ(UNPACKH(Zeta,Zeta));
       for(unsigned int k=K; k < stop; ++k) {
         Vec Zetak=ZMULT(X,Y,LOAD(ZetaL0+k));
         Complex *fk=f+k;
-        STORE(fk,ZCMULT(Zetak,LOAD(u+k))+Ninv*LOAD(fk));
+        STORE(fk,ZCMULT(Zetak,LOAD(u+k))+LOAD(fk));
       }
     }
     );
@@ -1171,18 +1154,16 @@ void ImplicitHFFFConvolution::convolve(Complex *f, Complex *u)
   cr->fft(f);
   mult((double *) f);
   rc->fft(f);
-  double ninv=0.25/m;
-  Vec Ninv=LOAD2(ninv);
   PARALLEL(
     for(unsigned int K=0; K < m; K += s) {
       Complex *ZetaL0=ZetaL-K;
       unsigned int stop=min(K+s,m);
-      Vec Zeta=Ninv*LOAD(ZetaH+K/s);
+      Vec Zeta=LOAD(ZetaH+K/s);
       Vec X=UNPACKL(Zeta,Zeta);
       Vec Y=CONJ(UNPACKH(Zeta,Zeta));
       for(unsigned int k=K; k < stop; ++k) {
         Complex *p=f+k;
-        STORE(p,ZCMULT(ZMULT(X,Y,LOAD(ZetaL0+k)),LOAD(u+k))+Ninv*LOAD(p));
+        STORE(p,ZCMULT(ZMULT(X,Y,LOAD(ZetaL0+k)),LOAD(u+k))+LOAD(p));
       }
     }
     );
@@ -1223,14 +1204,12 @@ void fft0bipad::forwards(Complex *f, Complex *u)
   Forwards->fft(f);
   Forwards->fft(u);
 
-  double ninv=0.25/m;
   unsigned int twom=2*m;
-  Vec Ninv=LOAD2(ninv);
   PARALLEL(
     for(unsigned int K=0; K < twom; K += s) {
       Complex *ZetaL0=ZetaL-K;
       unsigned int stop=min(K+s,twom);
-      Vec H=Ninv*LOAD(ZetaH+K/s);
+      Vec H=LOAD(ZetaH+K/s);
       for(unsigned int k=max(1,K); k < stop; ++k) {
         Vec Zetak=ZMULT(H,LOAD(ZetaL0+k));
         Vec X=CONJ(UNPACKL(Zetak,Zetak));
@@ -1240,7 +1219,7 @@ void fft0bipad::forwards(Complex *f, Complex *u)
         Complex *fk=f+kstride;
         for(unsigned int i=0; i < M; ++i) {
           Complex *p=fk+i;
-          STORE(p,LOAD(p)*Ninv+ZMULTI(X,Y,LOAD(uk+i)));
+          STORE(p,LOAD(p)+ZMULTI(X,Y,LOAD(uk+i)));
         }
       }
     }
