@@ -184,7 +184,7 @@ void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
 
       // Here we check if there's only one value of
       // m and inplace
-      if(mOption >= 1 && Istart+1 == Istop){
+      if(mForced && Istart+1 == Istop){
         // Next we check to see that there is only one value
         // of D such that valid(D,p,S)==true.
         int Dvalid=0;
