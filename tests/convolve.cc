@@ -166,7 +166,6 @@ void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
       i=m0=nextpuresize(m0+1);
     }
     else {
-      bool oneRun=mForced && (DOption > 0) && IOption > -1 && va
       unsigned int q=(inner ? P*n : ceilquotient(M,m0));
       unsigned int Dstart=DOption > 0 ? min(DOption,n) : 1;
       unsigned int Dstop=DOption > 0 ? min(DOption,n) : n;
