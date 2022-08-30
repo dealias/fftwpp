@@ -182,6 +182,28 @@ void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
 
       unsigned int Istop=IOption == -1 ? 2 : IOption+1;
 
+      // Here we check if there's only one value of
+      // m and inplace
+      if(mForced && Istart+1 == Istop){
+        // Next we check to see that there is only one value
+        // of D such that valid(D,p,S)==true.
+        int Dvalid=0;
+        for(unsigned int D=Dstart; D < Dstop2; D *= 2) {
+          if(D > Dstop) D=Dstop;
+          if(valid(D,p,S)){
+            if(Dvalid == 0) Dvalid=D;
+            else Dvalid=-1;
+          }
+        }
+        // We don't call check if there is only a single case
+        if(Dvalid > 0){
+          this->m=mOption;
+          this->q=q;
+          this->D=Dvalid;
+          this->inplace=Istart;
+          break;
+        }
+      }
       for(unsigned int D=Dstart; D < Dstop2; D *= 2) {
         if(D > Dstop) D=Dstop;
         for(unsigned int inplace=Istart; inplace < Istop; ++inplace)
@@ -246,10 +268,10 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
                              unsigned int p, unsigned int q, unsigned int D,
                              bool inplace, Application& app)
 {
+  //cout << "m=" << m << ", p=" << p << ", q=" << q << ", D=" << D << " I=" << inplace << endl;
   if(q == 1 || valid(D,p,S)) {
-    //cout << "D=" << D << ", m=" << m << ", L=" << L << ", M=" << M << ", C=" << C << endl;
     double t=time(L,M,C,S,m,q,D,inplace,app);
-//    cout << "p=" << p << " q=" << q << " D=" << D << " m=" << m << " I=" << inplace << ": " << t*1.0e-9 << endl;
+    //cout << "m=" << m << ", p=" << p << ", q=" << q << ", D=" << D << " I=" << inplace << ": " << t*1.0e-9 << endl;
     if(t < T) {
       this->m=m;
       this->q=q;
