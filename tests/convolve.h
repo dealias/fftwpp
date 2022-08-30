@@ -375,7 +375,7 @@ public:
 
   // Allow input data to be embedded within output buffer.
   bool embed() {
-    return q == 1 || inplace;
+    return q == 1 || (p == 1 && nloops() == 1);
   }
 
   unsigned int bufferSize() {
