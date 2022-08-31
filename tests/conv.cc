@@ -7,11 +7,11 @@ using namespace std;
 using namespace utils;
 using namespace fftwpp;
 
-bool Direct=false, Implicit=true, Explicit=false, Test=false, Output=false;
-
 unsigned int A=2; // Number of inputs
 unsigned int B=1; // Number of outputs
 bool compact=false;
+
+bool Test=false;
 
 // Pair-wise binary multiply for A=2 or A=4.
 // NB: example function, not optimised or threaded.
@@ -112,6 +112,12 @@ int main(int argc, char* argv[])
 {
   fftw::maxthreads=get_max_threads();
 
+  bool Direct=false;
+  bool Implicit=true;
+  bool Explicit=false;
+  bool Output=false;
+  bool Normalized=true;
+
   unsigned int N=0; // Number of iterations.
   unsigned int N0=200000000; // Nominal number of iterations
   unsigned int m=11; // Problem size
@@ -127,7 +133,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptA:B:N:O:m:n:T:S:X:");
+    int c = getopt(argc,argv,"hdeiptA:B:N:Om:n:uS:T:X:");
     if (c == -1) break;
 
     switch (c) {
@@ -156,10 +162,13 @@ int main(int argc, char* argv[])
         N=atoi(optarg);
         break;
       case 'O':
-        Output=atoi(optarg);
+        Output=true;
         break;
       case 't':
         Test=true;
+        break;
+      case 'u':
+        Normalized=false;
         break;
       case 'm':
         m=atoi(optarg);
@@ -215,8 +224,13 @@ int main(int argc, char* argv[])
     F[s]=f+s*np;
 
   Complex *h0=NULL;
-  if(Test || Direct)
+  if(Test || Direct) {
     h0=ComplexAlign(m*B);
+    if(!Normalized) {
+      cerr << "-u option is incompatible with -d and -t." << endl;
+      exit(-1);
+    }
+  }
 
   double* T=new double[N];
 
@@ -249,6 +263,13 @@ int main(int argc, char* argv[])
 
     timings("Implicit",2*m-1,T,N,stats);
 
+    if(Normalized) {
+      double norm=1.0/(3.0*m);
+      for(unsigned int b=0; b < B; ++b)
+        for(unsigned int i=0; i < m; i++)
+          F[b][i] *= norm;
+    }
+
     if(Output) {
       for(unsigned int b=0; b < B; ++b) {
         for(unsigned int i=0; i < m; i++)
@@ -269,10 +290,14 @@ int main(int argc, char* argv[])
 
   if(Explicit) {
     ExplicitHConvolution C(n,m,f);
+    Realmultiplier *mult;
+    if(Normalized) mult=multbinary;
+    else mult=multbinaryUnNormalized;
+;
     for(unsigned int i=0; i < N; ++i) {
       init(F,m,2);
       seconds();
-      C.convolve(F,multbinary);
+      C.convolve(F,mult);
 //      C.convolve(F[0],F[1]);
       T[i]=seconds();
     }

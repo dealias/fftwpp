@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
 
   double *T=new double[K];
 
-  ForwardBackward FB(A,B);
+  ForwardBackward FB(A,B,multbinary);
 #if CENTERED
   fftPadCentered fft(L,M,FB);
 #else
@@ -56,7 +56,7 @@ int main(int argc, char* argv[])
     K=1;
   for(unsigned int k=0; k < K; ++k) {
     seconds();
-    Convolve.convolveRaw(f,multbinary);
+    Convolve.convolveRaw(f);
     T[k]=seconds();
   }
 

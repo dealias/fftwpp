@@ -15,6 +15,8 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA. */
 
+#include <iostream>
+
 #include "Complex.h"
 #include "fftw++.h"
 #include "cmult-sse2.h"

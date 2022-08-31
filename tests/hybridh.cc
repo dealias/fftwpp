@@ -1,7 +1,5 @@
 #include "convolve.h"
 
-#define OUTPUT 1
-
 using namespace std;
 using namespace utils;
 using namespace Array;
@@ -22,11 +20,11 @@ int main(int argc, char* argv[])
 
   optionsHybrid(argc,argv,true);
 
-  ForwardBackward FB(A,B);
+  ForwardBackward FB(A,B,realmultbinary);
 
   cout << "Explicit:" << endl;
   // Minimal explicit padding
-  fftPadHermitian fft0(L,M,C,M,1,1,1);
+  fftPadHermitian fft0(L,M,C,M,1,1,1,FB.mult);
 
   double median0=fft0.report(M*C,FB);
 
@@ -63,7 +61,7 @@ int main(int argc, char* argv[])
     for(unsigned int c=0; c < C; ++c)
       f[C*j+c]=Complex(j+1+c,j+2+c);
 
-  fftPadHermitian fft2(L,fft.M,C,fft.M,1,1,1);
+  fftPadHermitian fft2(L,fft.M,C,fft.M,1,1,1,FB.mult);
 
   Complex *F2=ComplexAlign(fft2.outputSize());
   double *F2r=(double *) F2;
@@ -84,24 +82,24 @@ int main(int argc, char* argv[])
         unsigned int i=fft.index(r,k+offset);
         error += abs2(Fr[k]-F2r[i]);
         norm += abs2(F2r[i]);
-#if OUTPUT
-        if(k%fft.Cm == 0) cout << endl;
-        cout << i << ": " << Fr[k] << endl;
-#endif
+        if(Output) {
+          if(k%fft.Cm == 0) cout << endl;
+          cout << i << ": " << Fr[k] << endl;
+        }
       }
     }
     fft.backward(F,h,r,W0);
   }
 
-#if OUTPUT
-  cout << endl;
-  for(unsigned int j=0; j < C*fft2.noutputs(); ++j)
-    cout << j << ": " << F2r[j] << endl;
-#endif
+  if(Output) {
+    cout << endl;
+    for(unsigned int j=0; j < C*fft2.noutputs(); ++j)
+      cout << j << ": " << F2r[j] << endl;
+  }
 
   double scale=1.0/fft.normalization();
 
-  if(L < 30) {
+  if(Output) {
     cout << endl;
     cout << "Inverse:" << endl;
     for(unsigned int j=0; j < fft.inputSize(); ++j)

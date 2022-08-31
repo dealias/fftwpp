@@ -49,11 +49,11 @@ int main(int argc, char* argv[])
   for(unsigned int a=0; a < A; ++a)
     f[a]=ComplexAlign(Lx*Sx);
 
-  ForwardBackward FBx(A,B);
+  ForwardBackward FBx(A,B,multbinary);
   fftPad fftx(Lx,Mx,FBx,Sx == Ly*Lz ? Sx : Lz,Sx);
-  ForwardBackward FBy(A,B,FBx.Threads(),fftx.l);
+  ForwardBackward FBy(A,B,multbinary,FBx.Threads(),fftx.l);
   fftPad ffty(Ly,My,FBy,Lz,Sy);
-  ForwardBackward FBz(A,B,FBy.Threads(),ffty.l);
+  ForwardBackward FBz(A,B,multbinary,FBy.Threads(),ffty.l);
   Convolution convolvez(Lz,Mz,FBz);
   Convolution2 convolveyz(&ffty,&convolvez);
   Convolution3 Convolve3(&fftx,&convolveyz);
@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
     }
 
     seconds();
-    Convolve3.convolve(f,multbinary);
+    Convolve3.convolve(f);
     T += seconds();
   }
 
@@ -111,7 +111,7 @@ int main(int argc, char* argv[])
   cout << "sum=" << sum << endl;
   cout << endl;
 
-  if(Lx*Ly*Lz < 200) {
+  if(Output) {
     for(unsigned int b=0; b < B; ++b) {
       Complex *fb=f[b];
       for(unsigned int i=0; i < Lx; ++i) {

@@ -50,9 +50,12 @@ int main(int argc, char* argv[])
 
   array2<Complex> h0(Lx,Sx,f[0]);
 
-  ForwardBackward FB(A,B);
+  ForwardBackward FB(A,B,realmultbinary);
+//  ForwardBackward FB(A,B,multadvection2);
+
   fftPadCentered fftx(Lx,Mx,FB,Hy,Sx);
   ConvolutionHermitian convolvey(Ly,My,FB);
+
   ConvolutionHermitian2 Convolve2(&fftx,&convolvey);
 
   double T=0;
@@ -70,7 +73,7 @@ int main(int argc, char* argv[])
     HermitianSymmetrizeX(Hx,Hy,Lx/2,f0,Sx);
     HermitianSymmetrizeX(Hx,Hy,Lx/2,f1,Sx);
 
-    if(Lx*Hy < 200 && c == 0) {
+    if(Output) {
       for(unsigned int i=0; i < Lx; ++i) {
         for(unsigned int j=0; j < Hy; ++j) {
           cout << f0[i][j] << " ";
@@ -81,8 +84,7 @@ int main(int argc, char* argv[])
     }
 
     seconds();
-    Convolve2.convolve(f,realmultbinary);
-//    Convolve2.convolve(f,multadvection2);
+    Convolve2.convolve(f);
     T += seconds();
   }
 
@@ -98,7 +100,7 @@ int main(int argc, char* argv[])
   cout << "sum=" << sum << endl;
   cout << endl;
 
-  if(Lx*Hy < 200) {
+  if(Output) {
     for(unsigned int i=0; i < Lx; ++i) {
       for(unsigned int j=0; j < Hy; ++j) {
         cout << h0[i][j] << " ";

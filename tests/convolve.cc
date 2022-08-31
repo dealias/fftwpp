@@ -156,8 +156,8 @@ void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
     // p must be a power of 2.
     // p must be even in the centered case.
     // p != q.
-    if(inner && (((notPow2(p) || p == P*n) && !mForced) || (centered && p%2 != 0))){
-      if(mOption >= 1){
+    if(inner && (((notPow2(p) || p == P*n) && !mForced) || (centered && p%2 != 0))) {
+      if(mOption >= 1) {
         cout<<"m="<<mOption<<endl;
         cout<<"p="<<p<<endl;
         cout<<"Odd values of p are incompatible with the centered and Hermitian routines."<<endl;
@@ -184,19 +184,19 @@ void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
 
       // Here we check if there's only one value of
       // m and inplace
-      if(mForced && Istart+1 == Istop){
+      if(mForced && Istart+1 == Istop) {
         // Next we check to see that there is only one value
         // of D such that valid(D,p,S)==true.
         int Dvalid=0;
         for(unsigned int D=Dstart; D < Dstop2; D *= 2) {
           if(D > Dstop) D=Dstop;
-          if(valid(D,p,S)){
+          if(valid(D,p,S)) {
             if(Dvalid == 0) Dvalid=D;
             else Dvalid=-1;
           }
         }
         // We don't call check if there is only a single case
-        if(Dvalid > 0){
+        if(Dvalid > 0) {
           this->m=mOption;
           this->q=q;
           this->D=Dvalid;
@@ -210,7 +210,7 @@ void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
           check(L,M,C,S,m0,p,q,D,inplace,app);
       }
       if(mForced) break;
-      if(inner){
+      if(inner) {
         m0=nextpuresize(m0+1);
         i=m0;
       } else {
@@ -271,7 +271,7 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
   //cout << "m=" << m << ", p=" << p << ", q=" << q << ", D=" << D << " I=" << inplace << endl;
   if(q == 1 || valid(D,p,S)) {
     double t=time(L,M,C,S,m,q,D,inplace,app);
-    //cout << "m=" << m << ", p=" << p << ", q=" << q << ", D=" << D << " I=" << inplace << ": " << t*1.0e-9 << endl;
+    cout << "p=" << p << " q=" << q << " D=" << D << " m=" << m << " I=" << inplace << ": " << t*1.0e-9 << endl;
     if(t < T) {
       this->m=m;
       this->q=q;
@@ -313,7 +313,8 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   cout << "C=" << C << endl;
   cout << "S=" << S << endl;
   cout << "D=" << D << endl;
-  cout << "inplace: " << inplace << endl;
+  cout << "I=" << inplace << endl;
+  cout << endl;
   cout << "Padding: " << mpL << endl;
 }
 
@@ -5125,16 +5126,16 @@ Convolution::~Convolution()
 // f is an array of max(A,B) pointers to distinct data blocks
 // each of size fft->length()
 // offset is applied to each input and output component
-void Convolution::convolveRaw(Complex **f, multiplier *mult,
-                              unsigned int offset)
+void Convolution::convolveRaw(Complex **f, unsigned int offset)
 {
   Complex **g=f;
+  Complex *G[A];
+
   if(offset) {
-    Complex *G[A];
+    g=G;
     for(unsigned int a=0; a < A; ++a)
       g[a]=f[a]+offset;
-    g=G;
-  }
+  } else g=f;
 
   if(q == 1) {
     forward(g,F,0,0,A);
@@ -5149,11 +5150,11 @@ void Convolution::convolveRaw(Complex **f, multiplier *mult,
     } else {
       if(loop2) {
         forward(g,F,0,0,A);
-        operate(F,mult,0);
+        operate(F,0);
         forward(g,Fp,r,0,B);
         backward(F,g,0,W0);
         forward(g,Fp,r,B,A);
-        operate(Fp,mult,r);
+        operate(Fp,r);
         backward(Fp,g,r,W0);
       } else {
         Complex **h0;
@@ -5165,7 +5166,7 @@ void Convolution::convolveRaw(Complex **f, multiplier *mult,
 
         for(unsigned int r=0; r < R; r += fft->increment(r)) {
           forward(g,F,r,0,A);
-          operate(F,mult,r);
+          operate(F,r);
           backward(F,h0,r,W0);
         }
 
@@ -5225,9 +5226,19 @@ void ForwardBackward::init(fftBase &fft)
 double ForwardBackward::time(fftBase &fft)
 {
   auto begin=std::chrono::steady_clock::now();
+  unsigned int incr=fft.b;
+  unsigned int blocksize=fft.noutputs();
   for(unsigned int r=0; r < R; r += fft.increment(r)) {
     for(unsigned int a=0; a < A; ++a)
       (fft.*Forward)(f[a],F[a],r,W);
+
+    unsigned int stop=fft.complexOutputs(r);
+    for(unsigned int d=0; d < stop; d += incr) {
+      Complex *G[A];
+      for(unsigned int a=0; a < A; ++a)
+        G[a]=F[a]+d;
+      (*mult)(G,blocksize,threads);
+    }
     for(unsigned int b=0; b < B; ++b)
       (fft.*Backward)(F[b],h[b],r,W);
   }

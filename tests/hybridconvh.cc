@@ -27,8 +27,7 @@ int main(int argc, char* argv[])
 
   double *T=new double[K];
 
-  ForwardBackward FB(A,B);
-
+  ForwardBackward FB(A,B,realmultbinary);
   fftPadHermitian fft(L,M,FB);
 
   unsigned int H=ceilquotient(L,2);
@@ -58,7 +57,7 @@ int main(int argc, char* argv[])
 
   for(unsigned int k=0; k < K; ++k) {
     seconds();
-    Convolve.convolve(f,realmultbinary);
+    Convolve.convolveRaw(f);
     T[k]=seconds();
   }
 
