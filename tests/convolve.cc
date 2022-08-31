@@ -270,6 +270,11 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
 {
   //cout << "m=" << m << ", p=" << p << ", q=" << q << ", D=" << D << " I=" << inplace << endl;
   if(q == 1 || valid(D,p,S)) {
+    static bool first=true;
+    if(first) {
+      time(L,M,C,S,m,q,D,inplace,app);
+      first=false;
+    }
     double t=time(L,M,C,S,m,q,D,inplace,app);
     cout << "p=" << p << " q=" << q << " D=" << D << " m=" << m << " I=" << inplace << ": " << t*1.0e-9 << endl;
     if(t < T) {
@@ -5105,7 +5110,7 @@ Convolution::~Convolution()
       deleteAlign(W);
 
     if(loop2)
-      delete[] Fp;
+      delete [] Fp;
 
     if(allocateV) {
       for(unsigned int i=0; i < B; ++i)
@@ -5195,25 +5200,34 @@ void ForwardBackward::init(fftBase &fft)
     R=fft.R;
   }
 
-  unsigned int inputSize=fft.inputSize();
+  unsigned int inputSize=fft.bufferSize();
   unsigned int outputSize=fft.outputSize();
   unsigned int N=max(A,B);
 
   f=new Complex*[N];
   F=new Complex*[N];
-  h=new Complex*[B];
 
+  Complex *f0=ComplexAlign(N*inputSize);
   for(unsigned int a=0; a < A; ++a)
-    f[a]=ComplexAlign(inputSize);
+    f[a]=f0+a*inputSize;
 
-  for(unsigned int a=0; a < N; ++a)
-    F[a]=ComplexAlign(outputSize);
+  embed=fft.embed();
+  if(embed) F=f;
+  else {
+    Complex *F0=ComplexAlign(N*outputSize);
+    for(unsigned int a=0; a < N; ++a)
+      F[a]=F0+a*outputSize;
+  }
 
-  for(unsigned int b=0; b < B; ++b)
-    h[b]=ComplexAlign(inputSize);
+  if(fft.q > 1) {
+    h=new Complex*[B];
+    for(unsigned int b=0; b < B; ++b)
+      h[b]=ComplexAlign(inputSize);
 
-  W=ComplexAlign(fft.workSizeW());
-  (fft.*fft.Pad)(W);
+    W=ComplexAlign(fft.workSizeW());
+
+    (fft.*fft.Pad)(W);
+  }
 
   // Initialize entire array to 0 to avoid overflow when timing.
   for(unsigned int a=0; a < A; ++a) {
@@ -5226,21 +5240,32 @@ void ForwardBackward::init(fftBase &fft)
 double ForwardBackward::time(fftBase &fft)
 {
   auto begin=std::chrono::steady_clock::now();
-  unsigned int incr=fft.b;
-  unsigned int blocksize=fft.noutputs();
-  for(unsigned int r=0; r < R; r += fft.increment(r)) {
+//  unsigned int blocksize=fft.noutputs();
+  if(fft.q == 1) {
     for(unsigned int a=0; a < A; ++a)
-      (fft.*Forward)(f[a],F[a],r,W);
-
-    unsigned int stop=fft.complexOutputs(r);
-    for(unsigned int d=0; d < stop; d += incr) {
-      Complex *G[A];
-      for(unsigned int a=0; a < A; ++a)
-        G[a]=F[a]+d;
-      (*mult)(G,blocksize,threads);
-    }
+      (fft.*Forward)(f[a],F[a],0,NULL);
+//    (*mult)(F,blocksize,threads);
     for(unsigned int b=0; b < B; ++b)
-      (fft.*Backward)(F[b],h[b],r,W);
+      (fft.*Backward)(F[b],f[b],0,NULL);
+  } else {
+//    unsigned int incr=fft.b;
+    for(unsigned int r=0; r < R; r += fft.increment(r)) {
+      for(unsigned int a=0; a < A; ++a)
+        (fft.*Forward)(f[a],F[a],r,W);
+
+      /*
+      unsigned int stop=fft.complexOutputs(r);
+      for(unsigned int d=0; d < stop; d += incr) {
+        Complex *G[A];
+        for(unsigned int a=0; a < A; ++a)
+          G[a]=F[a]+d;
+        (*mult)(G,blocksize,threads);
+      }
+      */
+      for(unsigned int b=0; b < B; ++b)
+        (fft.*Backward)(F[b],h[b],r,W);
+      fft.pad(W);
+    }
   }
   auto end=std::chrono::steady_clock::now();
   auto elapsed=std::chrono::duration_cast<std::chrono::nanoseconds> (end-begin);
@@ -5254,26 +5279,21 @@ void ForwardBackward::clear()
     W=NULL;
   }
 
-  unsigned int N=max(A,B);
-
   if(h) {
     for(unsigned int b=0; b < B; ++b)
       deleteAlign(h[b]);
-    delete[] h;
+    delete [] h;
     h=NULL;
   }
 
-  if(F) {
-    for(unsigned int a=0; a < N; ++a)
-      deleteAlign(F[a]);
-    delete[] F;
-    F=NULL;
+  if(!embed) {
+    deleteAlign(F[0]);
+    delete [] F;
   }
 
   if(f) {
-    for(unsigned int a=0; a < A; ++a)
-      deleteAlign(f[a]);
-    delete[] f;
+    deleteAlign(f[0]);
+    delete [] f;
     f=NULL;
   }
 }

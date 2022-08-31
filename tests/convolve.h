@@ -702,10 +702,11 @@ protected:
   Complex **h;
   Complex *W;
   FFTcall Forward,Backward;
+  bool embed;
 public:
   ForwardBackward(unsigned int A, unsigned int B, multiplier *mult,
                   unsigned int threads=fftw::maxthreads, unsigned int n=0) :
-    Application(A,B,mult,threads,n), f(NULL), F(NULL), h(NULL), W(NULL) {
+    Application(A,B,mult,threads,n), f(NULL), h(NULL), W(NULL), embed(false) {
   }
 
   virtual ~ForwardBackward() {
