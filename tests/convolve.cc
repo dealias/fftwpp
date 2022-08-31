@@ -184,7 +184,7 @@ void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
 
       // Here we check if there's only one value of
       // m and inplace
-      if(mForced && Istart+1 == Istop) {
+      if(m0 == mOption && Istart+1 == Istop) {
         // Next we check to see that there is only one value
         // of D such that valid(D,p,S)==true.
         int Dvalid=0;
@@ -300,7 +300,9 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
     cerr << "L=" << L << " is greater than M=" << M << "." << endl;
     exit(-1);
   }
+
   mForced=(mOption >= 1);
+
   defopt(L,M,app,C,S,32,3,Explicit,centered);
 
   unsigned int p=ceilquotient(L,m);
