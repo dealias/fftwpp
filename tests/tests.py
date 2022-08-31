@@ -6,25 +6,56 @@ from subprocess import *
 import re # regexp package
 import argparse
 
-parser = argparse.ArgumentParser()
-parser.add_argument("-S", help="Test Standard convolutions. Specifying neither\
-											S nor H is the same as specifying both of them",
-											action="store_true")
-parser.add_argument("-H", help="Test Hermitian convolutions. Specifying neither\
-											S nor H is the same as specifying both of them",
-											action="store_true")
-parser.add_argument("-one", help="Test 1D Convolutions. Not specifying\
-											one nor two, nor three is the same as specifying all of them",
-											action="store_true")
-parser.add_argument("-two", help="Test 2D Convolutions. Not specifying\
-											one nor two, nor three is the same as specifying all of them",
-											action="store_true")
-parser.add_argument("-three", help="Test 3D Convolutions. Not specifying\
-											one nor two, nor three is the same as specifying all of them",
-											action="store_true")
-args=parser.parse_args()
+def main():
+	parser = argparse.ArgumentParser()
+	parser.add_argument("-S", help="Test Standard convolutions. Specifying neither\
+												S nor H is the same as specifying both of them",
+												action="store_true")
+	parser.add_argument("-H", help="Test Hermitian convolutions. Specifying neither\
+												S nor H is the same as specifying both of them",
+												action="store_true")
+	parser.add_argument("-one", help="Test 1D Convolutions. Not specifying\
+												one nor two nor three is the same as specifying all of them",
+												action="store_true")
+	parser.add_argument("-two", help="Test 2D Convolutions. Not specifying\
+												one nor two nor three is the same as specifying all of them",
+												action="store_true")
+	parser.add_argument("-three", help="Test 3D Convolutions. Not specifying\
+												one nor two nor three is the same as specifying all of them",
+												action="store_true")
+	args=parser.parse_args()
 
-class prog:
+	SH=(not (args.S or args.H))
+	oneTwoThee=(not (args.one or args.two or args.three))
+
+	SorSH=(args.S or SH)
+	HorSH=(args.H or SH)
+	programs=[]
+
+	if args.one or oneTwoThee:
+		if SorSH:
+			programs.append(Program("hybridconv",False))
+		if HorSH:
+			programs.append(Program("hybridconvh",True))
+
+	if args.two or oneTwoThee:
+		if SorSH:
+			programs.append(Program("hybridconv2",False))
+		if HorSH:
+			programs.append(Program("hybridconvh2",True))
+
+	if args.three or oneTwoThee:
+		if SorSH:
+			programs.append(Program("hybridconv3",False))
+		if HorSH:
+			programs.append(Program("hybridconvh3",True))
+
+	for p in programs:
+		iterate(p)
+		print("Done "+p.name+".\n")
+
+
+class Program:
 	def __init__(self, name, centered):
 		self.name=name
 		self.centered=centered
@@ -56,30 +87,5 @@ def iterate(program, L=8, K=1):
 					D*=2
 				check(name,L,M,m,n,I,K)
 
-programs=[]
-
-SH=not (args.S or args.H)
-
-oneTwoThee=not (args.one or args.two or args.three)
-
-if args.one or oneTwoThee:
-	if args.S or SH:
-		programs.append(prog("hybridconv",False))
-	if args.H or SH:
-		programs.append(prog("hybridconvh",True))
-
-if args.two or oneTwoThee:
-	if args.S or SH:
-		programs.append(prog("hybridconv2",False))
-	if args.H or SH:
-		programs.append(prog("hybridconvh2",True))
-
-if args.three or oneTwoThee:
-	if args.S or SH:
-		programs.append(prog("hybridconv3",False))
-	if args.H or SH:
-		programs.append(prog("hybridconvh3",True))
-
-for p in programs:
-	iterate(p)
-	print("Done "+p.name+".\n")
+if __name__ == "__main__":
+	main()
