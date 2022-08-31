@@ -546,7 +546,7 @@ public:
   fftPadCentered(unsigned int L, unsigned int M, Application& app,
                  unsigned int C=1, unsigned int S=0, bool Explicit=false,
                  bool fast=true) :
-    fftPad(L,M,app,C,S,true) {
+    fftPad(L,M,C,S,app.mult,app.Threads(),true) {
     Opt opt=Opt(L,M,app,C,this->S,Explicit);
     m=opt.m;
     if(Explicit)
