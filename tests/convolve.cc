@@ -5205,7 +5205,6 @@ void ForwardBackward::init(fftBase &fft)
   unsigned int N=max(A,B);
 
   f=new Complex*[N];
-  F=new Complex*[N];
 
   Complex *f0=ComplexAlign(N*inputSize);
   for(unsigned int a=0; a < A; ++a)
@@ -5214,6 +5213,7 @@ void ForwardBackward::init(fftBase &fft)
   embed=fft.embed();
   if(embed) F=f;
   else {
+    F=new Complex*[N];
     Complex *F0=ComplexAlign(N*outputSize);
     for(unsigned int a=0; a < N; ++a)
       F[a]=F0+a*outputSize;
@@ -5288,7 +5288,11 @@ void ForwardBackward::clear()
 
   if(!embed) {
     deleteAlign(F[0]);
-    delete [] F;
+    embed=true;
+    if(F) {
+      delete [] F;
+      F=NULL;
+    }
   }
 
   if(f) {

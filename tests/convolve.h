@@ -706,7 +706,7 @@ protected:
 public:
   ForwardBackward(unsigned int A, unsigned int B, multiplier *mult,
                   unsigned int threads=fftw::maxthreads, unsigned int n=0) :
-    Application(A,B,mult,threads,n), f(NULL), h(NULL), W(NULL), embed(false) {
+    Application(A,B,mult,threads,n), f(NULL), F(NULL), h(NULL), W(NULL), embed(true) {
   }
 
   virtual ~ForwardBackward() {
