@@ -5128,7 +5128,7 @@ Convolution::~Convolution()
 // offset is applied to each input and output component
 void Convolution::convolveRaw(Complex **f, unsigned int offset)
 {
-  Complex **g=f;
+  Complex **g;
   Complex *G[A];
 
   if(offset) {
