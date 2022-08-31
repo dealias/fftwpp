@@ -383,12 +383,8 @@ public:
   }
 
   // Allow input data to be embedded within output buffer.
-  bool embed() {
+  virtual bool embed() {
     return q == 1 || (p == 1 && nloops() == 1);
-  }
-
-  unsigned int bufferSize() {
-    return embed() ? outputSize() : inputSize();
   }
 
   unsigned int repad() {
@@ -556,6 +552,10 @@ public:
     inplace=opt.inplace;
     fftPad::init();
     init(fast);
+  }
+
+  bool embed() {
+    return false;
   }
 
   ~fftPadCentered() {

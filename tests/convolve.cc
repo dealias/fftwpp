@@ -5197,7 +5197,7 @@ void ForwardBackward::init(fftBase &fft)
     R=fft.R;
   }
 
-  unsigned int inputSize=fft.bufferSize();
+  unsigned int inputSize=fft.embed() ? fft.outputSize() : fft.inputSize();
   unsigned int outputSize=fft.outputSize();
   unsigned int N=max(A,B);
 

@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
 
   unsigned int N=max(A,B);
   Complex **f=new Complex *[N];
-  unsigned int size=fft.bufferSize();
+  unsigned int size=fft.embed() ? fft.outputSize() : fft.inputSize();
   Complex *F=ComplexAlign(N*size);
   for(unsigned int a=0; a < A; ++a)
     f[a]=F+a*size;
