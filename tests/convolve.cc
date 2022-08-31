@@ -270,11 +270,6 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
 {
   //cout << "m=" << m << ", p=" << p << ", q=" << q << ", D=" << D << " I=" << inplace << endl;
   if(q == 1 || valid(D,p,S)) {
-    static bool first=true;
-    if(first) {
-      time(L,M,C,S,m,q,D,inplace,app);
-      first=false;
-    }
     double t=time(L,M,C,S,m,q,D,inplace,app);
     cout << "p=" << p << " q=" << q << " D=" << D << " m=" << m << " I=" << inplace << ": " << t*1.0e-9 << endl;
     if(t < T) {
