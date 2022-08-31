@@ -1066,8 +1066,8 @@ protected:
   bool overwrite;
 public:
   Convolution2(unsigned int threads=fftw::maxthreads) :
-    ThreadBase(threads), ffty(NULL), W(NULL), allocateW(false),
-    loop2(false) {}
+    ThreadBase(threads), ffty(NULL), convolvey(NULL), W(NULL),
+    allocateW(false), loop2(false) {}
 
   // Lx,Ly: x,y dimensions of input data
   // Mx,My: x,y dimensions of transformed data, including padding
@@ -1206,7 +1206,9 @@ public:
       delete convolvey[0];
       delete ffty;
       delete fftx;
+    }
 
+    if(convolvey) {
       for(unsigned int t=1; t < threads; ++t)
         delete convolvey[t];
       delete [] convolvey;
