@@ -2,7 +2,7 @@
 #include "timing.h"
 #include "direct.h"
 
-#define CENTERED 1
+#define CENTERED 0
 
 using namespace std;
 using namespace utils;
@@ -51,10 +51,11 @@ int main(int argc, char* argv[])
     }
   }
 
-  //DirectConvolution C(L);
-  //Complex *h=ComplexAlign(L);
-  //C.convolve(h,f[0],f[1]);
-
+  Complex *h=ComplexAlign(L);
+  if(direct) {
+    DirectConvolution C(L);
+    C.convolve(h,f[0],f[1]);
+  }
   Convolution Convolve(&fft,A,B,fft.embed() ? F : NULL);
 
   if(Output)
@@ -69,12 +70,19 @@ int main(int argc, char* argv[])
   timings("Hybrid",L,T,K,stats);
   cout << endl;
 
-  if(Output)
-    for(unsigned int b=0; b < B; ++b)
-      for(unsigned int j=0; j < L; ++j)
-        cout << f[b][j] << endl;//" " << h[j] << endl; // Assumes B=2
-
-  //delete h;
+  if(Output){
+    if(direct) {
+      cout << "hybrid | direct" << endl;
+      for(unsigned int b=0; b < B; ++b)
+        for(unsigned int j=0; j < L; ++j)
+          cout << f[b][j] << " | " << h[j] << endl; // Assumes B=2
+    } else {
+      for(unsigned int b=0; b < B; ++b)
+        for(unsigned int j=0; j < L; ++j)
+          cout << f[b][j] << endl; // Assumes B=2
+    }
+  }
+  deleteAlign(h);
   delete [] T;
 
   return 0;

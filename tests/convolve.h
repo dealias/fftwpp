@@ -40,6 +40,7 @@ extern unsigned int DOption;
 
 extern int IOption;
 extern unsigned int Output;
+extern unsigned int direct;
 
 unsigned int nextfftsize(unsigned int m);
 
