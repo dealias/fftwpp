@@ -242,7 +242,7 @@ public:
     return i;
   }
 
-  // Return spatial index for residue r at position i
+  // Return transformed index for residue r at position I
   unsigned int index(unsigned int r, unsigned int I) {
     if(q == 1) return I;
     unsigned int i=I/S;
