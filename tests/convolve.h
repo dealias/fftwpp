@@ -41,6 +41,8 @@ extern unsigned int DOption;
 extern int IOption;
 extern unsigned int Output;
 extern unsigned int direct;
+extern unsigned int showOptTimes;
+
 
 unsigned int nextfftsize(unsigned int m);
 

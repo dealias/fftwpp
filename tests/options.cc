@@ -20,7 +20,7 @@ void optionsHybrid(int argc, char* argv[], bool fft)
   optind=0;
 #endif
   for (;;) {
-    int c=getopt(argc,argv,"hC:D:I:K:L:M:dOS:T:m:");
+    int c=getopt(argc,argv,"hC:D:I:K:L:M:dtOS:T:m:");
     if (c == -1) break;
 
     switch(c) {
@@ -63,13 +63,17 @@ void optionsHybrid(int argc, char* argv[], bool fft)
       case 'd':
         direct=true;
         break;
-      case 'm':
-        mOption=max(atoi(optarg),0);
-        break;
       case 'h':
       default:
         usageHybrid(fft);
         exit(1);
+      case 'm':
+        mOption=max(atoi(optarg),0);
+        break;
+      case 't':
+        showOptTimes=true;
+        break;
+
     }
   }
 

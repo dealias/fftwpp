@@ -22,6 +22,7 @@ unsigned int mOption=0;
 unsigned int DOption=0;
 unsigned int Output=0;
 unsigned int direct=0;
+unsigned int showOptTimes=0;
 
 int IOption=-1;
 
@@ -252,7 +253,8 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
   if(q == 1 || valid(D,p,S)) {
     if(useTimer == true) {
       double t=time(L,M,C,S,m,q,D,inplace,app);
-      //cout << "p=" << p << " q=" << q << " D=" << D << " m=" << m << " I=" << inplace << ": " << t*1.0e-9 << endl;
+      if(showOptTimes)
+        cout << "m=" << m << ", p=" << p << ", q=" << q << ", D=" << D << ", I=" << inplace << ": t=" << t*1.0e-9 << endl;
       if(t < T) {
         this->m=m;
         this->q=q;
@@ -283,6 +285,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
     cerr << "L=" << L << " is greater than M=" << M << "." << endl;
     exit(-1);
   }
+  if(showOptTimes) cout<<"Optimizer Timings:"<<endl;
 
   mForced=(mOption >= 1);
 

@@ -17,7 +17,6 @@ unsigned int M=1024; // minimum padded length
 int main(int argc, char* argv[])
 {
   fftw::maxthreads=get_max_threads();
-
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif
