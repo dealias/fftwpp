@@ -1,5 +1,6 @@
 #include "convolve.h"
 #include "timing.h"
+#include "direct.h"
 
 using namespace std;
 using namespace utils;
@@ -41,7 +42,7 @@ int main(int argc, char* argv[])
 
   for(unsigned int a=0; a < A; ++a) {
     Complex *fa=f[a];
-    if(Output) {
+    if(Output || direct) {
       fa[0]=1.0+a;
       for(unsigned int j=1; j < H; ++j)
         fa[j]=Complex(j,(1.0+a)*j+1);
@@ -50,26 +51,59 @@ int main(int argc, char* argv[])
         fa[j]=0.0;
   }
 
+  Complex *h;
+  if(direct) {
+    h=ComplexAlign(H);
+    DirectHConvolution C(H);
+    C.convolve(h,f[0],f[1]);
+  }
   ConvolutionHermitian Convolve(&fft,A,B,fft.embed() ? F : NULL);
 
-  if(Output)
+  if(Output||direct)
     K=1;
 
   for(unsigned int k=0; k < K; ++k) {
     seconds();
-    Convolve.convolveRaw(f);
+    Convolve.convolve(f);
     T[k]=seconds();
   }
 
   cout << endl;
-  timings("Hybrid",L,T,K,stats);
+  timings("Hermitian Hybrid",L,T,K,stats);
   cout << endl;
 
+  if(Output){
+    if(direct) {
+      cout << "Hermitian Hybrid:" << endl;
+    }
+    for(unsigned int b=0; b < B; ++b)
+      for(unsigned int j=0; j < H; ++j)
+        cout << f[b][j] << endl;
+  }
+
+  if(direct) {
+    double err=0.0;
+    if(Output) {
+      cout<<endl;
+      cout << "Direct:" << endl;
+      for(unsigned int b=0; b < B; ++b)
+        for(unsigned int j=0; j < H; ++j)
+          cout << h[j] << endl; // Assumes B=2
+      cout << endl;
+    }
+    for(unsigned int b=0; b < B; ++b)
+        for(unsigned int j=0; j < H; ++j)
+            err += abs2(f[b][j]-h[j]);
+    cout << "Error: "<< sqrt(err) << endl;
+    deleteAlign(h);
+  }
+
+  /*
   if(Output)
     for(unsigned int b=0; b < B; ++b)
       for(unsigned int j=0; j < H; ++j)
         cout << f[b][j] << endl;
-
+  */
   delete [] T;
 
   return 0;

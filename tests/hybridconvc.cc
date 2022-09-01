@@ -54,6 +54,7 @@ int main(int argc, char* argv[])
 
   if(Output || direct)
     K=1;
+
   for(unsigned int k=0; k < K; ++k) {
     seconds();
     Convolve.convolve(f);
