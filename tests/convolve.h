@@ -118,6 +118,7 @@ public:
 
   class OptBase {
   public:
+    unsigned int counter=0;
     unsigned int m,q,D;
     bool inplace,mForced;
     double T;
@@ -135,7 +136,7 @@ public:
     void check(unsigned int L, unsigned int M,
                unsigned int C, unsigned int S, unsigned int m,
                unsigned int p, unsigned int q, unsigned int D,
-               bool inplace, Application& app);
+               bool inplace, Application& app, bool useTimer);
 
     // Determine the optimal m value for padding L data values to
     // size >= M for an application app.
@@ -154,7 +155,8 @@ public:
     // checked.
     void defoptloop(unsigned int& m0, unsigned int L, unsigned int M,
                     Application& app, unsigned int C, unsigned int S,
-                    bool centered, unsigned int ubound, bool inner=false);
+                    bool centered, unsigned int ubound, bool useTimer,
+                    bool inner=false);
 
     // The default optimizer routine. Used by scan to iterate and check
     // different m values for a given geometry and application.
@@ -163,7 +165,8 @@ public:
     // (when p <= 2).
     void defopt(unsigned int L, unsigned int M, Application& app,
                 unsigned int C, unsigned int S, unsigned int minInner,
-                unsigned int itmax, bool Explicit=false, bool centered=false);
+                unsigned int itmax, bool Explicit, bool centered,
+                bool useTimer=true);
   };
 
   void invalid () {

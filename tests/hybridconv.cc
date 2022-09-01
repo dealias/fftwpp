@@ -2,7 +2,7 @@
 #include "timing.h"
 #include "direct.h"
 
-#define CENTERED 0
+#define CENTERED 1
 
 using namespace std;
 using namespace utils;
@@ -51,9 +51,9 @@ int main(int argc, char* argv[])
     }
   }
 
-  DirectConvolution C(L);
-  Complex *h=ComplexAlign(L);
-  C.convolve(h,f[0],f[1]);
+  //DirectConvolution C(L);
+  //Complex *h=ComplexAlign(L);
+  //C.convolve(h,f[0],f[1]);
 
   Convolution Convolve(&fft,A,B,fft.embed() ? F : NULL);
 
@@ -72,9 +72,9 @@ int main(int argc, char* argv[])
   if(Output)
     for(unsigned int b=0; b < B; ++b)
       for(unsigned int j=0; j < L; ++j)
-        cout << f[b][j] << " " << h[j] << endl; // Assumes B=2
+        cout << f[b][j] << endl;//" " << h[j] << endl; // Assumes B=2
 
-  delete h;
+  //delete h;
   delete [] T;
 
   return 0;

@@ -141,11 +141,12 @@ void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
                                   unsigned int M, Application& app,
                                   unsigned int C, unsigned int S,
                                   bool centered, unsigned int itmax,
-                                  bool inner)
+                                  bool useTimer, bool inner)
 {
   //cout << "D=" << D << ", m0=" << m0 << ", L=" << L << ", M=" << M << ", C=" << C << endl;
   unsigned int i=(inner ? m0 : 0);
   while(i < itmax) {
+    if(useTimer == false && counter > 1) break;
     unsigned int p=ceilquotient(L,m0);
     // Effective p:
     unsigned int P=(centered && p == 2*(p/2)) || p == 2 ? (p/2) : p;
@@ -182,32 +183,10 @@ void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
 
       unsigned int Istop=IOption == -1 ? 2 : IOption+1;
 
-      // Here we check if there's only one value of
-      // m and inplace
-      if(m0 == mOption && Istart+1 == Istop) {
-        // Next we check to see that there is only one value
-        // of D such that valid(D,p,S)==true.
-        int Dvalid=0;
-        for(unsigned int D=Dstart; D < Dstop2; D *= 2) {
-          if(D > Dstop) D=Dstop;
-          if(valid(D,p,S)) {
-            if(Dvalid == 0) Dvalid=D;
-            else Dvalid=-1;
-          }
-        }
-        // We don't call check if there is only a single case
-        if(Dvalid > 0) {
-          this->m=mOption;
-          this->q=q;
-          this->D=Dvalid;
-          this->inplace=Istart;
-          break;
-        }
-      }
       for(unsigned int D=Dstart; D < Dstop2; D *= 2) {
         if(D > Dstop) D=Dstop;
         for(unsigned int inplace=Istart; inplace < Istop; ++inplace)
-          check(L,M,C,S,m0,p,q,D,inplace,app);
+          check(L,M,C,S,m0,p,q,D,inplace,app,useTimer);
       }
       if(mForced) break;
       if(inner) {
@@ -228,56 +207,64 @@ void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
 void fftBase::OptBase::defopt(unsigned int L, unsigned int M, Application& app,
                               unsigned int C, unsigned int S,
                               unsigned int minsize, unsigned int itmax,
-                              bool Explicit, bool centered)
+                              bool Explicit, bool centered, bool useTimer)
 {
   if(!Explicit) {
     if(mForced) {
       if(mOption >= L/2)
-        defoptloop(mOption,L,M,app,C,S,centered,1);
+        defoptloop(mOption,L,M,app,C,S,centered,1,useTimer);
       else
-        defoptloop(mOption,L,M,app,C,S,centered,mOption+1,true);
+        defoptloop(mOption,L,M,app,C,S,centered,mOption+1,useTimer,true);
     } else {
       unsigned int m0=nextfftsize(minsize);
 
-      defoptloop(m0,L,M,app,C,S,centered,L/2,true);
+      defoptloop(m0,L,M,app,C,S,centered,L/2,useTimer,true);
 
       m0=nextfftsize(L/2);
-      defoptloop(m0,L,M,app,C,S,centered,itmax);
+      defoptloop(m0,L,M,app,C,S,centered,itmax,useTimer);
 
       if(L > M/2) {
         m0=nextfftsize(max(M/2,m0));
-        defoptloop(m0,L,M,app,C,S,centered,itmax);
+        defoptloop(m0,L,M,app,C,S,centered,itmax,useTimer);
 
         m0=nextfftsize(max(L,m0));
-        defoptloop(m0,L,M,app,C,S,centered,itmax);
+        defoptloop(m0,L,M,app,C,S,centered,itmax,useTimer);
       } else {
         m0=nextfftsize(max(L <= M/2 ? L : M/2,m0));
-        defoptloop(m0,L,M,app,C,S,centered,itmax);
+        defoptloop(m0,L,M,app,C,S,centered,itmax,useTimer);
       }
       m0=nextfftsize(max(M,m0));
-      defoptloop(m0,L,M,app,C,S,centered,itmax);
+      defoptloop(m0,L,M,app,C,S,centered,itmax,useTimer);
     }
   } else {
     unsigned int m0=nextfftsize(M);
-    defoptloop(m0,L,m0,app,C,S,centered,itmax);
+    defoptloop(m0,L,m0,app,C,S,centered,itmax,useTimer);
   }
 }
 
 void fftBase::OptBase::check(unsigned int L, unsigned int M,
                              unsigned int C, unsigned int S, unsigned int m,
                              unsigned int p, unsigned int q, unsigned int D,
-                             bool inplace, Application& app)
+                             bool inplace, Application& app, bool useTimer)
 {
   //cout << "m=" << m << ", p=" << p << ", q=" << q << ", D=" << D << " I=" << inplace << endl;
   if(q == 1 || valid(D,p,S)) {
-    double t=time(L,M,C,S,m,q,D,inplace,app);
-    cout << "p=" << p << " q=" << q << " D=" << D << " m=" << m << " I=" << inplace << ": " << t*1.0e-9 << endl;
-    if(t < T) {
-      this->m=m;
-      this->q=q;
-      this->D=D;
-      this->inplace=inplace;
-      T=t;
+    if(useTimer == true) {
+      double t=time(L,M,C,S,m,q,D,inplace,app);
+      cout << "p=" << p << " q=" << q << " D=" << D << " m=" << m << " I=" << inplace << ": " << t*1.0e-9 << endl;
+      if(t < T) {
+        this->m=m;
+        this->q=q;
+        this->D=D;
+        this->inplace=inplace;
+        T=t;
+      }
+    } else {
+        counter+=1;
+        this->m=m;
+        this->q=q;
+        this->D=D;
+        this->inplace=inplace;
     }
   }
 }
@@ -298,7 +285,9 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
 
   mForced=(mOption >= 1);
 
-  defopt(L,M,app,C,S,32,3,Explicit,centered);
+  defopt(L,M,app,C,S,32,3,Explicit,centered,false);
+  if(counter > 1)
+    defopt(L,M,app,C,S,32,3,Explicit,centered);
 
   unsigned int p=ceilquotient(L,m);
   unsigned int mpL=m*p-L;
