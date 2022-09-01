@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
 
   for(unsigned int a=0; a < A; ++a) {
     Complex *fa=f[a];
-    if(Output || direct) {
+    if(Output || testError) {
       fa[0]=1.0+a;
       for(unsigned int j=1; j < H; ++j)
         fa[j]=Complex(j,(1.0+a)*j+1);
@@ -52,14 +52,14 @@ int main(int argc, char* argv[])
   }
 
   Complex *h;
-  if(direct) {
+  if(testError) {
     h=ComplexAlign(H);
     DirectHConvolution C(H);
     C.convolve(h,f[0],f[1]);
   }
   ConvolutionHermitian Convolve(&fft,A,B,fft.embed() ? F : NULL);
 
-  if(Output||direct)
+  if(Output||testError)
     K=1;
 
   for(unsigned int k=0; k < K; ++k) {
@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
   cout << endl;
 
   if(Output){
-    if(direct) {
+    if(testError) {
       cout << "Hermitian Hybrid:" << endl;
     }
     for(unsigned int b=0; b < B; ++b)
@@ -81,11 +81,11 @@ int main(int argc, char* argv[])
         cout << f[b][j] << endl;
   }
 
-  if(direct) {
+  if(testError) {
     double err=0.0;
     if(Output) {
       cout<<endl;
-      cout << "Direct:" << endl;
+      cout << "testError:" << endl;
       for(unsigned int b=0; b < B; ++b)
         for(unsigned int j=0; j < H; ++j)
           cout << h[j] << endl; // Assumes B=2
@@ -98,12 +98,6 @@ int main(int argc, char* argv[])
     deleteAlign(h);
   }
 
-  /*
-  if(Output)
-    for(unsigned int b=0; b < B; ++b)
-      for(unsigned int j=0; j < H; ++j)
-        cout << f[b][j] << endl;
-  */
   delete [] T;
 
   return 0;

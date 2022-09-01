@@ -40,19 +40,19 @@ int main(int argc, char* argv[])
   for(unsigned int a=0; a < A; ++a) {
     Complex *fa=f[a];
     for(unsigned int j=0; j < L; ++j) {
-        fa[j]=Output || direct ? Complex(j,(1.0+a)*j+1) : 0.0;
+        fa[j]=Output || testError ? Complex(j,(1.0+a)*j+1) : 0.0;
     }
   }
 
   Complex *h;
-  if(direct) {
+  if(testError) {
     h=ComplexAlign(L);
     DirectConvolution C(L);
     C.Cconvolve(h,f[0],f[1]);
   }
   Convolution Convolve(&fft,A,B,fft.embed() ? F : NULL);
 
-  if(Output || direct)
+  if(Output || testError)
     K=1;
 
   for(unsigned int k=0; k < K; ++k) {
@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
 
 
   if(Output){
-    if(direct) {
+    if(testError) {
       cout << "Centered Hybrid:" << endl;
     }
     for(unsigned int b=0; b < B; ++b)
@@ -75,11 +75,11 @@ int main(int argc, char* argv[])
         cout << f[b][j] << endl;
   }
 
-  if(direct) {
+  if(testError) {
     double err=0.0;
     if(Output) {
       cout<<endl;
-      cout << "Direct:" << endl;
+      cout << "testError:" << endl;
       for(unsigned int b=0; b < B; ++b)
         for(unsigned int j=0; j < L; ++j)
           cout << h[j] << endl; // Assumes B=2
