@@ -40,9 +40,8 @@ int main(int argc, char* argv[])
 
   for(unsigned int a=0; a < A; ++a) {
     Complex *fa=f[a];
-    for(unsigned int j=0; j < L; ++j) {
-        fa[j]=Output || testError ? Complex(j,(1.0+a)*j+1) : 0.0;
-    }
+    for(unsigned int j=0; j < L; ++j)
+      fa[j]=Output || testError ? Complex(j,(1.0+a)*j+1) : 0.0;
   }
 
   Complex *h;
@@ -77,6 +76,8 @@ int main(int argc, char* argv[])
   }
 
   if(testError) {
+    if(M < 2*L-1)
+      cerr << "WARNING: M must be at least 2*L-1 to dealias convolution." << endl;
     double err=0.0;
     if(Output) {
       cout<<endl;

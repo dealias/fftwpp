@@ -82,6 +82,8 @@ int main(int argc, char* argv[])
   }
 
   if(testError) {
+    if(M < 3*((L+1)/2)-2)
+      cerr << "WARNING: M must be at least 3*((L+1)/2)-2 to dealias convolution." << endl;
     double err=0.0;
     if(Output) {
       cout<<endl;
