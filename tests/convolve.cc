@@ -160,10 +160,10 @@ void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
     // p != q.
     if(inner && (((notPow2(p) || p == P*n) && !mForced) || (centered && p%2 != 0))) {
       if(mOption >= 1) {
-        cout<<"m="<<mOption<<endl;
-        cout<<"p="<<p<<endl;
-        cout<<"Odd values of p are incompatible with the centered and Hermitian routines."<<endl;
-        cout<<"Using m="<<M<<" instead."<<endl;
+        cerr<<"m="<<mOption<<endl;
+        cerr<<"p="<<p<<endl;
+        cerr<<"Odd values of p are incompatible with the centered and Hermitian routines."<<endl;
+        cerr<<"Using m="<<M<<" instead."<<endl;
       }
       i=m0=nextpuresize(m0+1);
     }
