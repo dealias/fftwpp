@@ -54,7 +54,7 @@ FILES=conv cconv conv2 cconv2 conv3 cconv3 tconv tconv2 \
 
 FFTW=fftw++
 EXTRA=$(FFTW) convolution explicit direct getopt
-HYBRID=$(FFTW) convolve getopt options
+HYBRID=$(FFTW) convolve direct getopt options
 ALL=$(FILES) $(EXTRA) $(HYBRID)
 
 all: $(FILES)

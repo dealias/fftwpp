@@ -1,5 +1,6 @@
 #include "convolve.h"
 #include "timing.h"
+#include "direct.h"
 
 #define CENTERED 0
 
@@ -50,13 +51,17 @@ int main(int argc, char* argv[])
     }
   }
 
+  DirectConvolution C(L);
+  Complex *h=ComplexAlign(L);
+  C.convolve(h,f[0],f[1]);
+
   Convolution Convolve(&fft,A,B,fft.embed() ? F : NULL);
 
   if(Output)
     K=1;
   for(unsigned int k=0; k < K; ++k) {
     seconds();
-    Convolve.convolveRaw(f);
+    Convolve.convolve(f);
     T[k]=seconds();
   }
 
@@ -67,8 +72,9 @@ int main(int argc, char* argv[])
   if(Output)
     for(unsigned int b=0; b < B; ++b)
       for(unsigned int j=0; j < L; ++j)
-        cout << f[b][j] << endl;
+        cout << f[b][j] << " " << h[j] << endl; // Assumes B=2
 
+  delete h;
   delete [] T;
 
   return 0;

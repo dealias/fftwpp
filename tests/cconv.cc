@@ -294,7 +294,7 @@ int main(int argc, char* argv[])
     init(F,m,A);
     Complex *h=ComplexAlign(m);
     seconds();
-    if(A % 2 == 0)
+    if(A == 2)
       C.convolve(h,F[0],F[1]);
     if(A == 1)
       C.autoconvolve(h,F[0]);
