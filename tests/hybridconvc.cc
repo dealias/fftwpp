@@ -26,10 +26,9 @@ int main(int argc, char* argv[])
   cout << "K=" << K << endl << endl;
 
   double *T=new double[K];
-  char* name;
 
   ForwardBackward FB(A,B,multbinary);
-  fftPad fft(L,M,FB);
+  fftPadCentered fft(L,M,FB);
 
   unsigned int N=max(A,B);
   Complex **f=new Complex *[N];
@@ -49,7 +48,7 @@ int main(int argc, char* argv[])
   if(direct) {
     h=ComplexAlign(L);
     DirectConvolution C(L);
-    C.convolve(h,f[0],f[1]);
+    C.Cconvolve(h,f[0],f[1]);
   }
   Convolution Convolve(&fft,A,B,fft.embed() ? F : NULL);
 
@@ -62,13 +61,13 @@ int main(int argc, char* argv[])
   }
 
   cout << endl;
-  timings("Hybrid",L,T,K,stats);
+  timings("Centered Hybrid",L,T,K,stats);
   cout << endl;
 
 
   if(Output){
     if(direct) {
-      cout << name <<"Hybrid:" << endl;
+      cout << "Centered Hybrid:" << endl;
     }
     for(unsigned int b=0; b < B; ++b)
       for(unsigned int j=0; j < L; ++j)
