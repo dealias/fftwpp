@@ -82,14 +82,15 @@ int main(int argc, char* argv[])
     if(Output) {
       cout<<endl;
       cout << "testError:" << endl;
-      for(unsigned int b=0; b < B; ++b)
-        for(unsigned int j=0; j < L; ++j)
-          cout << h[j] << endl; // Assumes B=2
+      for(unsigned int j=0; j < L; ++j)
+        cout << h[j] << endl;
       cout << endl;
     }
-    for(unsigned int b=0; b < B; ++b)
-        for(unsigned int j=0; j < L; ++j)
-            err += abs2(f[b][j]-h[j]);
+    for(unsigned int j=0; j < L; ++j) {
+      Complex hj=h[j];
+      for(unsigned int b=0; b < B; ++b)
+            err += abs2(f[b][j]-hj);
+    }
     cout << "Error: "<< sqrt(err) << endl;
     deleteAlign(h);
   }
