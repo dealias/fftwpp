@@ -11,6 +11,7 @@ public:
   DirectConvolution(unsigned int m) : m(m) {}
 
   void convolve(Complex *h, Complex *f, Complex *g);
+  void Cconvolve(Complex *h, Complex *f, Complex *g);
   void autoconvolve(Complex *h, Complex *f);
 };
 

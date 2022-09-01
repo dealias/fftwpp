@@ -29,12 +29,15 @@ int main(int argc, char* argv[])
   cout << "K=" << K << endl << endl;
 
   double *T=new double[K];
+  char* name;
 
   ForwardBackward FB(A,B,multbinary);
 #if CENTERED
   fftPadCentered fft(L,M,FB);
+  name=(char*)"Centered Hybrid";
 #else
   fftPad fft(L,M,FB);
+  name=(char*)"Standard Hybrid";
 #endif
 
   unsigned int N=max(A,B);
@@ -47,14 +50,19 @@ int main(int argc, char* argv[])
   for(unsigned int a=0; a < A; ++a) {
     Complex *fa=f[a];
     for(unsigned int j=0; j < L; ++j) {
-        fa[j]=Output ? Complex(j,(1.0+a)*j+1) : 0.0;
+        fa[j]=Output || direct ? Complex(j,(1.0+a)*j+1) : 0.0;
     }
   }
 
-  Complex *h=ComplexAlign(L);
+  Complex *h;
   if(direct) {
+    h=ComplexAlign(L);
     DirectConvolution C(L);
-    C.convolve(h,f[0],f[1]);
+    #if CENTERED
+      C.Cconvolve(h,f[0],f[1]);
+    #else
+      C.convolve(h,f[0],f[1]);
+    #endif
   }
   Convolution Convolve(&fft,A,B,fft.embed() ? F : NULL);
 
@@ -67,22 +75,35 @@ int main(int argc, char* argv[])
   }
 
   cout << endl;
-  timings("Hybrid",L,T,K,stats);
+  timings(name,L,T,K,stats);
   cout << endl;
+
 
   if(Output){
     if(direct) {
-      cout << "hybrid | direct" << endl;
-      for(unsigned int b=0; b < B; ++b)
-        for(unsigned int j=0; j < L; ++j)
-          cout << f[b][j] << " | " << h[j] << endl; // Assumes B=2
-    } else {
-      for(unsigned int b=0; b < B; ++b)
-        for(unsigned int j=0; j < L; ++j)
-          cout << f[b][j] << endl; // Assumes B=2
+      cout << name <<":" << endl;
     }
+    for(unsigned int b=0; b < B; ++b)
+      for(unsigned int j=0; j < L; ++j)
+        cout << f[b][j] << endl;
   }
-  deleteAlign(h);
+
+  if(direct) {
+    double err=0.0;
+    if(Output) {
+      cout<<endl;
+      cout << "Direct:" << endl;
+      for(unsigned int b=0; b < B; ++b)
+        for(unsigned int j=0; j < L; ++j)
+          cout << h[j] << endl; // Assumes B=2
+      cout << endl;
+    }
+    for(unsigned int b=0; b < B; ++b)
+        for(unsigned int j=0; j < L; ++j)
+            err += abs2(f[b][j]-h[j]);
+    cout << "Error: "<< sqrt(err) << endl;
+    deleteAlign(h);
+  }
   delete [] T;
 
   return 0;

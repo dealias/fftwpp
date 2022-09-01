@@ -3,6 +3,7 @@
 
 namespace fftwpp {
 
+// Standard One Dimensional Direct Convolution
 void DirectConvolution::convolve(Complex *h, Complex *f, Complex *g)
 {
 #if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
@@ -12,6 +13,24 @@ void DirectConvolution::convolve(Complex *h, Complex *f, Complex *g)
     Complex sum=0.0;
     for(unsigned int j=0; j <= i; ++j) sum += f[j]*g[i-j];
     h[i]=sum;
+  }
+}
+
+// Centered One Dimensional Direct Convolution
+void DirectConvolution::Cconvolve(Complex *h, Complex *f, Complex *g)
+{
+#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
+#pragma omp parallel for
+#endif
+  for(unsigned int i=0; i < m/2; ++i) {
+    Complex sum=0.0;
+    for(unsigned int j=i+1; j < m; ++j) sum += f[j]*g[m+i-j];
+    h[i+(m+1)/2]=sum;
+  }
+  for(unsigned int i=m/2; i < m; ++i) {
+    Complex sum=0.0;
+    for(unsigned int j=0; j <= i; ++j) sum += f[j]*g[i-j];
+    h[i-m/2]=sum;
   }
 }
 
