@@ -24,7 +24,7 @@ def main():
 			programs.append(Program("hybridconvc",True))
 		if HorSCH:
 			programs.append(Program("hybridconvh",True))
-'''
+
 	if args.two or oneTwoThee:
 		if SorSCH:
 			programs.append(Program("hybridconv2",False))
@@ -36,9 +36,8 @@ def main():
 			programs.append(Program("hybridconv3",False))
 		if HorSCH:
 			programs.append(Program("hybridconvh3",True))
-'''
 	for p in programs:
-		iterate(p)
+		iterate(p,int(args.L),args.T)
 		print("Done "+p.name+".\n")
 
 
@@ -67,10 +66,13 @@ def getargs():
 	parser.add_argument("-three", help="Test 3D Convolutions. Not specifying\
 												one nor two nor three is the same as specifying all of them",
 												action="store_true")
+	parser.add_argument("-T", help="Time over threads.", action="store_true")
+	parser.add_argument("-L", help="L value.", default=8)
 	return parser.parse_args()
 
-def check(prog, L, M, m, D, I, tol=1e-8):
-	cmd = [prog,"-L"+str(L),"-M"+str(M),"-m"+str(m),"-D"+str(D),"-I"+str(I),"-E"]
+def check(prog, L, M, m, D, I, T,tol=1e-8):
+	cmd = [prog,"-L"+str(L),"-M"+str(M),"-m"+str(m),"-D"+str(D),"-I"+str(I),\
+					"-T"+str(T),"-E"]
 
 	vp = Popen(cmd, stdout = PIPE, stderr = PIPE)
 	vp.wait()
@@ -91,22 +93,26 @@ def check(prog, L, M, m, D, I, tol=1e-8):
 		print(" ".join(cmd))
 		print()
 
-
-def iterate(program, L=8):
+def iterate(program, L=8, timeThreads=False):
+	print(L)
 	name=program.name
 	centered=program.centered
+	M0=3*L//2 if centered else 2*L-1
 	Dstart=2 if centered else 1
-	for M in [12,16,24,32]:
-		for m in range(2,M+2,2):
-			p=int(ceil(L/m))
-			q=int(ceil(M/m))
-			n=q//p
-			for I in range(2):
-				D=Dstart
-				while(D < n):
-					check(name,L,M,m,D,I)
-					D*=2
-				check(name,L,M,m,n,I)
+	threads=[1,2,4] if timeThreads else [1]
+	for T in threads:
+		for M in range(M0,3*M0+1,L):
+			for m in [L//4,L//2,L,L+2,M,M+2]:
+				p=int(ceil(L/m))
+				q=int(ceil(M/m)) if p <= 2 else int(ceil(M/(p*m))*p)
+				n=q//p
+				Istart=0 if q > 1 else 1
+				for I in range(Istart,2):
+					D=Dstart
+					while(D < n):
+						check(name,L,M,m,D,I,T)
+						D*=2
+					check(name,L,M,m,n,I,T)
 
 if __name__ == "__main__":
 	main()
