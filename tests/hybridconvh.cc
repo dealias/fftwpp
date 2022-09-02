@@ -1,5 +1,6 @@
 #include "convolve.h"
 #include "timing.h"
+#include "direct.h"
 
 using namespace std;
 using namespace utils;
@@ -27,22 +28,21 @@ int main(int argc, char* argv[])
 
   double *T=new double[K];
 
-  ForwardBackward FB(A,B);
-
+  ForwardBackward FB(A,B,realmultbinary);
   fftPadHermitian fft(L,M,FB);
 
   unsigned int H=ceilquotient(L,2);
 
   unsigned int N=max(A,B);
   Complex **f=new Complex *[N];
-  unsigned int size=fft.bufferSize();
+  unsigned int size=fft.embed() ? fft.outputSize() : fft.inputSize();
   Complex *F=ComplexAlign(N*size);
   for(unsigned int a=0; a < A; ++a)
     f[a]=F+a*size;
 
   for(unsigned int a=0; a < A; ++a) {
     Complex *fa=f[a];
-    if(Output) {
+    if(Output || testError) {
       fa[0]=1.0+a;
       for(unsigned int j=1; j < H; ++j)
         fa[j]=Complex(j,(1.0+a)*j+1);
@@ -51,25 +51,55 @@ int main(int argc, char* argv[])
         fa[j]=0.0;
   }
 
+  Complex *h;
+  if(testError) {
+    h=ComplexAlign(H);
+    DirectHConvolution C(H);
+    C.convolve(h,f[0],f[1]);
+  }
   ConvolutionHermitian Convolve(&fft,A,B,fft.embed() ? F : NULL);
 
-  if(Output)
+  if(Output||testError)
     K=1;
 
   for(unsigned int k=0; k < K; ++k) {
     seconds();
-    Convolve.convolve(f,realmultbinary);
+    Convolve.convolve(f);
     T[k]=seconds();
   }
 
   cout << endl;
-  timings("Hybrid",L,T,K,stats);
+  timings("Hermitian Hybrid",L,T,K,stats);
   cout << endl;
 
-  if(Output)
+  if(Output){
+    if(testError) {
+      cout << "Hermitian Hybrid:" << endl;
+    }
     for(unsigned int b=0; b < B; ++b)
       for(unsigned int j=0; j < H; ++j)
         cout << f[b][j] << endl;
+  }
+
+  if(testError) {
+    if(M < 3*((L+1)/2)-2)
+      cerr << "WARNING: M must be at least 3*((L+1)/2)-2 to dealias convolution." << endl;
+    double err=0.0;
+    if(Output) {
+      cout<<endl;
+      cout << "testError:" << endl;
+      for(unsigned int j=0; j < H; ++j)
+        cout << h[j] << endl;
+      cout << endl;
+    }
+    for(unsigned int j=0; j < H; ++j) {
+      Complex hj=h[j];
+      for(unsigned int b=0; b < B; ++b)
+            err += abs2(f[b][j]-hj);
+    }
+    cout << "Error: "<< sqrt(err) << endl;
+    deleteAlign(h);
+  }
 
   delete [] T;
 

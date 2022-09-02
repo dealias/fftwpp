@@ -26,10 +26,9 @@ int main(int argc, char* argv[])
   cout << "K=" << K << endl << endl;
 
   double *T=new double[K];
-  char* name;
 
   ForwardBackward FB(A,B,multbinary);
-  fftPad fft(L,M,FB);
+  fftPadCentered fft(L,M,FB);
 
   unsigned int N=max(A,B);
   Complex **f=new Complex *[N];
@@ -40,15 +39,16 @@ int main(int argc, char* argv[])
 
   for(unsigned int a=0; a < A; ++a) {
     Complex *fa=f[a];
-    for(unsigned int j=0; j < L; ++j)
-      fa[j]=Output || testError ? Complex(j,(1.0+a)*j+1) : 0.0;
+    for(unsigned int j=0; j < L; ++j) {
+        fa[j]=Output || testError ? Complex(j,(1.0+a)*j+1) : 0.0;
+    }
   }
 
   Complex *h;
   if(testError) {
     h=ComplexAlign(L);
     DirectConvolution C(L);
-    C.convolve(h,f[0],f[1]);
+    C.Cconvolve(h,f[0],f[1]);
   }
   Convolution Convolve(&fft,A,B,fft.embed() ? F : NULL);
 
@@ -62,13 +62,13 @@ int main(int argc, char* argv[])
   }
 
   cout << endl;
-  timings("Hybrid",L,T,K,stats);
+  timings("Centered Hybrid",L,T,K,stats);
   cout << endl;
 
 
   if(Output){
     if(testError) {
-      cout << name <<"Hybrid:" << endl;
+      cout << "Centered Hybrid:" << endl;
     }
     for(unsigned int b=0; b < B; ++b)
       for(unsigned int j=0; j < L; ++j)
@@ -76,8 +76,8 @@ int main(int argc, char* argv[])
   }
 
   if(testError) {
-    if(M < 2*L-1)
-      cerr << "WARNING: M must be at least 2*L-1 to dealias convolution." << endl;
+    if(M < 3*((L+1)/2)-2)
+      cerr << "WARNING: M must be at least 3*((L+1)/2)-2 to dealias convolution." << endl;
     double err=0.0;
     if(Output) {
       cout<<endl;

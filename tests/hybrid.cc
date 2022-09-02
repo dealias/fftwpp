@@ -1,6 +1,5 @@
 #include "convolve.h"
 
-#define OUTPUT 0
 #define CENTERED 0
 
 using namespace std;
@@ -25,14 +24,14 @@ int main(int argc, char* argv[])
 
   if(S == 0) S=C;
 
-  ForwardBackward FB(A,B);
+  ForwardBackward FB(A,B,multbinary);
 
   cout << "Explicit:" << endl;
   // Minimal explicit padding
 #if CENTERED
-  fftPadCentered fft0(L,M,C,S,M,1,1,1);
+  fftPadCentered fft0(L,M,C,S,M,1,1,1,FB.mult);
 #else
-  fftPad fft0(L,M,C,S,M,1,1,1);
+  fftPad fft0(L,M,C,S,M,1,1,1,FB.mult);
 #endif
 
   double median0=fft0.report(M*C,FB);
@@ -74,9 +73,10 @@ int main(int argc, char* argv[])
       f[S*j+c]=Complex(j+1+c,j+2+c);
 
 #if CENTERED
-  fftPadCentered fft2(L,fft.M,C,S,fft.M,1,1,1,fftw::maxthreads,fft.q == 1);
+  fftPadCentered fft2(L,fft.M,C,S,fft.M,1,1,1,FB.mult,
+                      fftw::maxthreads,fft.q == 1);
 #else
-  fftPad fft2(L,fft.M,C,S,fft.M,1,1,1);
+  fftPad fft2(L,fft.M,C,S,fft.M,1,1,1,FB.mult);
 #endif
 
   Complex *F2=ComplexAlign(fft2.outputSize());
@@ -89,34 +89,32 @@ int main(int argc, char* argv[])
   for(unsigned int r=0; r < fft.R; r += fft.increment(r)) {
     fft.forward(f,F,r,W0);
     for(unsigned int k=0; k < fft.noutputs(r); ++k) {
-#if OUTPUT
-      if(k%fft.m == 0) cout << endl;
-#endif
+      if(Output && k%fft.m == 0) cout << endl;
+
       for(unsigned int c=0; c < C; ++c) {
         unsigned int K=S*k+c;
         unsigned int i=fft.index(r,K);
         error += abs2(F[K]-F2[i]);
         norm += abs2(F2[i]);
-#if OUTPUT
-        cout << i << ": " << F[K] << endl;
-#endif
+        if(Output)
+          cout << i << ": " << F[K] << endl;
       }
     }
     fft.backward(F,h,r,W0);
   }
 
-#if OUTPUT
-  cout << endl;
-  for(unsigned int j=0; j < fft2.noutputs(); ++j)
-    for(unsigned int c=0; c < C; ++c) {
-      unsigned int J=S*j+c;
-      cout << J << ": " << F2[J] << endl;
-    }
-#endif
+  if(Output) {
+    cout << endl;
+    for(unsigned int j=0; j < fft2.noutputs(); ++j)
+      for(unsigned int c=0; c < C; ++c) {
+        unsigned int J=S*j+c;
+        cout << J << ": " << F2[J] << endl;
+      }
+  }
 
   double scale=1.0/fft.normalization();
 
-  if(L < 30) {
+  if(Output) {
     cout << endl;
     cout << "Inverse:" << endl;
     for(unsigned int j=0; j < L; ++j) {

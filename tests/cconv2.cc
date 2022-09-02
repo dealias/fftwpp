@@ -44,8 +44,6 @@ inline void init(Complex **F, unsigned int nxp, unsigned int nyp, unsigned int A
   }
 }
 
-unsigned int outlimit=100;
-
 void add(Complex *f, Complex *F)
 {
   for(unsigned int i=0; i < mx; ++i) {
@@ -65,6 +63,9 @@ int main(int argc, char* argv[])
   unsigned int A=2;
   unsigned int B=1;
 
+  bool Output=false;
+  bool Normalized=true;
+
   int stats=0; // Type of statistics used in timing test.
 
 #ifndef __SSE2__
@@ -75,7 +76,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptA:B:N:m:x:y:n:T:S:");
+    int c = getopt(argc,argv,"hdeiptA:B:N:Om:x:y:n:T:uS:");
     if (c == -1) break;
 
     switch (c) {
@@ -106,6 +107,12 @@ int main(int argc, char* argv[])
         break;
       case 'N':
         N=atoi(optarg);
+        break;
+      case 'O':
+        Output=true;
+        break;
+      case 'u':
+        Normalized=false;
         break;
       case 'm':
         mx=my=atoi(optarg);
@@ -198,6 +205,13 @@ int main(int argc, char* argv[])
 
     timings("Implicit",mx,T,N,stats);
 
+    if(Normalized) {
+      double norm=0.25/(mx*my);
+      for(unsigned int i=0; i < mx; i++)
+        for(unsigned int j=0; j < my; j++)
+          f[i][j] *= norm;
+    }
+
     Complex sum=0.0;
     for(unsigned int i=0; i < mx; i++) {
       for(unsigned int j=0; j < my; j++) {
@@ -212,7 +226,7 @@ int main(int argc, char* argv[])
           h0[i][j]=f[i][j];
     }
 
-    if(mx*my < outlimit) {
+    if(Output) {
       for(unsigned int i=0; i < mx; i++) {
         for(unsigned int j=0; j < my; j++)
           cout << f[i][j] << "\t";
@@ -248,7 +262,7 @@ int main(int argc, char* argv[])
           h0[i][j]=F[0][nyp*i+j];
     }
 
-    if(mx*my < outlimit) {
+    if(Output) {
       for(unsigned int i=0; i < mx; i++) {
         for(unsigned int j=0; j < my; j++) {
           cout << F[0][nyp*i+j] << "\t";
@@ -271,7 +285,7 @@ int main(int argc, char* argv[])
     cout << endl;
     timings("Direct",mx,T,1);
 
-    if(mx*my < outlimit)
+    if(Output)
       for(unsigned int i=0; i < mx; i++) {
         for(unsigned int j=0; j < my; j++)
           cout << h[i][j] << "\t";

@@ -56,11 +56,11 @@ int main(int argc, char* argv[])
   array2<Complex> f0(Lx,Sx,f[0]);
   array2<Complex> f1(Lx,Sx,f[1]);
 
-  ForwardBackward FBx(A,B);
+  ForwardBackward FBx(A,B,realmultbinary);
   fftPadCentered fftx(Lx,Mx,FBx,Sx == Ly*Hz ? Sx : Hz,Sx);
-  ForwardBackward FBy(A,B,FBx.Threads(),fftx.l);
+  ForwardBackward FBy(A,B,realmultbinary,FBx.Threads(),fftx.l);
   fftPadCentered ffty(Ly,My,FBy,Hz,Sy);
-  ForwardBackward FBz(A,B,FBy.Threads(),ffty.l);
+  ForwardBackward FBz(A,B,realmultbinary,FBy.Threads(),ffty.l);
   ConvolutionHermitian convolvez(Lz,Mz,FBz);
   ConvolutionHermitian2 convolveyz(&ffty,&convolvez);
   ConvolutionHermitian3 Convolve3(&fftx,&convolveyz);
@@ -100,7 +100,7 @@ int main(int argc, char* argv[])
     }
 
     seconds();
-    Convolve3.convolve(f,realmultbinary);
+    Convolve3.convolve(f);
     T += seconds();
   }
 
@@ -120,7 +120,7 @@ int main(int argc, char* argv[])
   cout << "sum=" << sum << endl;
   cout << endl;
 
-  if(Lx*Ly*Hz < 200) {
+  if(Output) {
     for(unsigned int b=0; b < B; ++b) {
       Complex *fb=f[b];
       for(unsigned int i=0; i < Lx; ++i) {
