@@ -42,6 +42,7 @@ extern int IOption;
 extern unsigned int Output;
 extern unsigned int testError;
 extern unsigned int showOptTimes;
+extern unsigned int CENTERED;
 
 
 unsigned int nextfftsize(unsigned int m);

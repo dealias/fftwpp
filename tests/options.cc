@@ -20,7 +20,7 @@ void optionsHybrid(int argc, char* argv[], bool fft)
   optind=0;
 #endif
   for (;;) {
-    int c=getopt(argc,argv,"hC:D:I:K:L:M:tEOS:T:m:");
+    int c=getopt(argc,argv,"hC:D:I:K:L:M:ctEOS:T:m:");
     if (c == -1) break;
 
     switch(c) {
@@ -63,6 +63,9 @@ void optionsHybrid(int argc, char* argv[], bool fft)
 //      case 'X':
 //        Mx=atoi(optarg);
 //        break;
+      case 'c':
+        CENTERED=true;
+        break;
       case 'h':
       default:
         usageHybrid(fft);

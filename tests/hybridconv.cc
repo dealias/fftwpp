@@ -27,13 +27,14 @@ int main(int argc, char* argv[])
 
   double *T=new double[K];
   char* name;
-
+  //bool CENTERED=true;
   ForwardBackward FB(A,B,multbinary);
-  fftPad fft(L,M,FB);
+  fftBase *fft=CENTERED ? new fftPadCentered(L,M,FB) : new fftPad(L,M,FB);
+
 
   unsigned int N=max(A,B);
   Complex **f=new Complex *[N];
-  unsigned int size=fft.embed() ? fft.outputSize() : fft.inputSize();
+  unsigned int size=fft->embed() ? fft->outputSize() : fft->inputSize();
   Complex *F=ComplexAlign(N*size);
   for(unsigned int a=0; a < A; ++a)
     f[a]=F+a*size;
@@ -48,9 +49,12 @@ int main(int argc, char* argv[])
   if(testError) {
     h=ComplexAlign(L);
     DirectConvolution C(L);
-    C.convolve(h,f[0],f[1]);
+    if(CENTERED)
+      C.Cconvolve(h,f[0],f[1]);
+    else
+      C.convolve(h,f[0],f[1]);
   }
-  Convolution Convolve(&fft,A,B,fft.embed() ? F : NULL);
+  Convolution Convolve(fft,A,B,fft->embed() ? F : NULL);
 
   if(Output || testError)
     K=1;

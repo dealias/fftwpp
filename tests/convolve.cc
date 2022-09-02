@@ -21,6 +21,7 @@ unsigned int threads=1;
 unsigned int mOption=0;
 unsigned int DOption=0;
 unsigned int Output=0;
+unsigned int CENTERED;
 unsigned int testError=0;
 unsigned int showOptTimes=0;
 
