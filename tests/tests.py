@@ -18,6 +18,7 @@ class Program:
     self.extraArgs=extraArgs
     self.total=0
     self.failed=0
+    self.failedCases=[]
 
   def passed(self):
     return self.total-self.failed
@@ -48,6 +49,10 @@ def getArgs():
   parser.add_argument("-L", help="L value. Default is 8.", default=8)
   parser.add_argument("-t",help="Error tolerance. Default is 1e-12.", 
                       default=1e-12)
+  parser.add_argument("-l",help="Show log of failed cases", 
+                      action="store_true")
+  parser.add_argument("-v",help="Show the results of every test.", 
+                      action="store_true")
   return parser.parse_args()
 
 def getPrograms(args):
@@ -92,23 +97,29 @@ def test(programs, args):
   print("\n***************\n")
   if lenP == 1:
     p=programs[0]
-    iterate(p,int(args.L),int(args.T),float(args.t))
+    iterate(p,int(args.L),int(args.T),float(args.t),args.v)
     name=p.name
     if p.extraArgs:
       name+=" "+p.extraArgs
     print("Finished testing "+name+".")
-    print("Out of "+str(p.total)+" tests, "+str(p.passed())+" passed, "+str(p.failed)+" failed.")
+    print("Out of "+str(p.total)+" tests, "+str(p.passed())+" passed, "+str(p.failed)+" failed.\n")
+    if args.l:
+      print("Failed Cases:\n")
+      for case in p.failedCases:
+        print(case)
+      print()
 
   else:
     total=0
     passed=0
     failed=0
+    failedCases=[]
     for p in programs:
       name=p.name
       if p.extraArgs:
         name+=" "+p.extraArgs
       print("Testing "+name+"\n")
-      iterate(p,int(args.L),int(args.T),float(args.t))
+      iterate(p,int(args.L),int(args.T),float(args.t),args.v)
       ptotal=p.total
       pfailed=p.failed
       ppassed=p.passed()
@@ -118,10 +129,18 @@ def test(programs, args):
       total+=ptotal
       passed+=ppassed
       failed+=pfailed
-    print("Finished testing "+str(lenP)+" programs.")
-    print("Out of "+str(total)+" tests, "+str(passed)+" passed, "+str(failed)+" failed.")
+      if args.l:
+        failedCases+=p.failedCases
 
-def iterate(program, L, thr, tol):
+    print("Finished testing "+str(lenP)+" programs.")
+    print("Out of "+str(total)+" tests, "+str(passed)+" passed, "+str(failed)+" failed.\n")
+    if args.l:
+      print("Failed Cases:\n")
+      for case in failedCases:
+        print(case)
+      print()
+
+def iterate(program, L, thr, tol, verbose):
   centered=program.centered
 
   Dstart=2 if centered else 1
@@ -142,11 +161,11 @@ def iterate(program, L, thr, tol):
         for I in range(Istart,2):
           D=Dstart
           while(D < n):
-            check(program,L,M,m,D,I,T,tol)
+            check(program,L,M,m,D,I,T,tol,verbose)
             D*=2
-          check(program,L,M,m,n,I,T,tol)
+          check(program,L,M,m,n,I,T,tol,verbose)
 
-def check(program, L, M, m, D, I, T, tol):
+def check(program, L, M, m, D, I, T, tol, verbose):
   program.total+=1
   name=program.name
   cmd = [name,"-L"+str(L),"-M"+str(M),"-m"+str(m),"-D"+str(D),"-I"+str(I),"-T"+str(T),"-E"]
@@ -156,7 +175,10 @@ def check(program, L, M, m, D, I, T, tol):
   vp = Popen(cmd, stdout = PIPE, stderr = PIPE)
   vp.wait()
   prc = vp.returncode
+
+  boldPassedTest="\033[1mPassed Test:\033[0m"
   boldFailedTest="\033[1mFailed Test:\033[0m"
+
   if prc == 0:
     out, err = vp.communicate()
     comment = out.rstrip().decode()
@@ -164,19 +186,29 @@ def check(program, L, M, m, D, I, T, tol):
     error=re.search(r"(?<=Error: )(nan|\d|\.|e|-|\+)+",comment).group()
     if error == "nan":
       program.failed+=1
-      print("\t"+boldFailedTest+" Test: Error=nan")
-      print("\t"+" ".join(cmd))
+      print("\t"+boldFailedTest+" Error=nan")
+      case=" ".join(cmd)
+      print("\t"+case)
+      program.failedCases.append(case)
       print()
-    if float(error) > tol:
+    elif float(error) > tol:
       program.failed+=1
-      print("\t"+boldFailedTest+"Error="+error+" is too high.\n")
-      print("\t"+" ".join(cmd))
-      print("\tError: "+error)
+      print("\t"+boldFailedTest+" Error="+error+" is too high.")
+      case=" ".join(cmd)
+      print("\t"+case)
+      program.failedCases.append(case)
+      print()
+    elif verbose:
+      print("\t"+boldPassedTest)
+      case=" ".join(cmd)
+      print("\t"+case)
       print()
   except:
     program.failed+=1
     print("\t"+boldFailedTest+" Error not found.")
-    print("\t"+" ".join(cmd))
+    case=" ".join(cmd)
+    print("\t"+case)
+    program.failedCases.append(case)
     print()
 
 if __name__ == "__main__":
