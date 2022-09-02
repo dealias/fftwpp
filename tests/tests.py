@@ -100,7 +100,7 @@ def test(programs, args):
     name=p.name
     if p.extraArgs:
       name+=" "+p.extraArgs
-    print("Testing "+name+".")
+    print("Testing "+name+"\n")
     iterate(p,int(args.L),int(args.T),float(args.t),args.v)
     print("Finished testing "+name+".")
     print("Out of "+str(p.total)+" tests, "+str(p.passed())+" passed, "+str(p.failed)+" failed.\n")
