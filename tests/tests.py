@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 from math import *
-import os
 from subprocess import *
-import re # regexp package
+import os
+import re 
 import argparse
 
 def main():

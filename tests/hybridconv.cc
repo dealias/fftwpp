@@ -23,6 +23,10 @@ int main(int argc, char* argv[])
 
   unsigned int K0=100000000;
   if(K == 0) K=max(K0/M,20);
+
+  if(Output || testError)
+    K=1;
+  
   cout << "K=" << K << endl << endl;
 
   double *T=new double[K];
@@ -54,9 +58,6 @@ int main(int argc, char* argv[])
       C.convolve(h,f[0],f[1]);
   }
   Convolution Convolve(fft,A,B,fft->embed() ? F : NULL);
-
-  if(Output || testError)
-    K=1;
 
   for(unsigned int k=0; k < K; ++k) {
     seconds();
