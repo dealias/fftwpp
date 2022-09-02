@@ -82,20 +82,24 @@ int main(int argc, char* argv[])
   }
 
   if(testError) {
-    double err=0.0;
     if(Output) {
       cout<<endl;
-      cout << "testError:" << endl;
+      cout << "Direct:" << endl;
       for(unsigned int j=0; j < H; ++j)
         cout << h[j] << endl;
       cout << endl;
     }
+    double err=0.0;
+    double norm=0.0;
     for(unsigned int j=0; j < H; ++j) {
       Complex hj=h[j];
-      for(unsigned int b=0; b < B; ++b)
-            err += abs2(f[b][j]-hj);
+      for(unsigned int b=0; b < B; ++b) {
+        err += abs2(f[b][j]-hj);
+        norm += abs2(hj);
+      }
     }
-    cout << "Error: "<< sqrt(err) << endl;
+    double relError=sqrt(err/norm);
+    cout << "Error: "<< relError << endl;
     deleteAlign(h);
   }
 

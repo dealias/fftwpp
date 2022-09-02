@@ -26,8 +26,7 @@ int main(int argc, char* argv[])
   cout << "K=" << K << endl << endl;
 
   double *T=new double[K];
-  char* name;
-  //bool CENTERED=true;
+
   ForwardBackward FB(A,B,multbinary);
   fftBase *fft=CENTERED ? new fftPadCentered(L,M,FB) : new fftPad(L,M,FB);
 
@@ -71,24 +70,23 @@ int main(int argc, char* argv[])
 
 
   if(Output){
-    if(testError) {
-      cout << name <<"Hybrid:" << endl;
-    }
+    if(testError)
+      cout << "Hybrid:" << endl;
     for(unsigned int b=0; b < B; ++b)
       for(unsigned int j=0; j < L; ++j)
         cout << f[b][j] << endl;
   }
 
   if(testError) {
-    double err=0.0;
-    double norm=0.0;
     if(Output) {
       cout << endl;
-      cout << "direct:" << endl;
+      cout << "Direct:" << endl;
       for(unsigned int j=0; j < L; ++j)
         cout << h[j] << endl;
       cout << endl;
     }
+    double err=0.0;
+    double norm=0.0;
     for(unsigned int j=0; j < L; ++j) {
       Complex hj=h[j];
       for(unsigned int b=0; b < B; ++b) {
@@ -96,7 +94,8 @@ int main(int argc, char* argv[])
         norm += abs2(hj);
       }
     }
-    cout << "Error: "<< sqrt(err/norm) << endl;
+    double relError=sqrt(err/norm);
+    cout << "Error: "<< relError << endl;
     deleteAlign(h);
   }
   delete [] T;
