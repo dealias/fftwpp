@@ -97,10 +97,11 @@ def test(programs, args):
   print("\n***************\n")
   if lenP == 1:
     p=programs[0]
-    iterate(p,int(args.L),int(args.T),float(args.t),args.v)
     name=p.name
     if p.extraArgs:
       name+=" "+p.extraArgs
+    print("Testing "+name+".")
+    iterate(p,int(args.L),int(args.T),float(args.t),args.v)
     print("Finished testing "+name+".")
     print("Out of "+str(p.total)+" tests, "+str(p.passed())+" passed, "+str(p.failed)+" failed.\n")
     if args.l:
