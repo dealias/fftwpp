@@ -1,4 +1,5 @@
 #include "convolve.h"
+#include "direct.h"
 
 using namespace std;
 using namespace utils;
@@ -29,6 +30,8 @@ int main(int argc, char* argv[])
 
   unsigned int K0=10000000;
   if(K == 0) K=max(K0/(Mx*My*Mz),20);
+  if(Output || testError)
+    K=1;
   cout << "K=" << K << endl << endl;
 
   unsigned int Sy=0; // y-stride (0 means Lz)
@@ -61,7 +64,7 @@ int main(int argc, char* argv[])
 //  Convolution3 Convolve3(Lx,Mx,Ly,My,Lz,Mz,A,B);
 
   double T=0;
-
+  Complex *h;
   for(unsigned int c=0; c < K; ++c) {
 
     for(unsigned int a=0; a < A; ++a) {
@@ -89,7 +92,11 @@ int main(int argc, char* argv[])
         cout << endl;
       }
     }
-
+    if(testError) {
+      h=ComplexAlign(Lx*Ly*Lz);
+      DirectConvolution3 C(Lx,Ly,Lz);
+      C.convolve(h,f[0],f[1]);
+    }
     seconds();
     Convolve3.convolve(f);
     T += seconds();
@@ -112,6 +119,8 @@ int main(int argc, char* argv[])
   cout << endl;
 
   if(Output) {
+    if(testError)
+      cout << "Hybrid:" << endl;
     for(unsigned int b=0; b < B; ++b) {
       Complex *fb=f[b];
       for(unsigned int i=0; i < Lx; ++i) {
@@ -125,6 +134,33 @@ int main(int argc, char* argv[])
       }
       cout << endl;
     }
+  }
+  if(testError) {
+    if(Output) {
+      cout << endl;
+      cout << "Direct:" << endl;
+      for(unsigned int i=0; i < Lx; ++i) {
+        for(unsigned int j=0; j < Ly; ++j) {
+          for(unsigned int k=0; k < Lz; ++k) {
+            cout << h[Sx*i+Sy*j+k] << " ";
+          }
+          cout << endl;
+        }
+        cout << endl;
+      }
+      cout << endl;
+    }
+    double err=0.0;
+    double norm=0.0;
+    for(unsigned int i=0; i < Lx; ++i) 
+        for(unsigned int j=0; j < Ly; ++j)
+          for(unsigned int k=0; k < Lz; ++k){
+            err += abs2(f[0][Sx*i+Sy*j+k]-h[Sx*i+Sy*j+k]);
+            norm += abs2(h[Sx*i+Sy*j+k]);
+          }
+    double relError=sqrt(err/norm);
+    cout << "Error: "<< relError << endl;
+    deleteAlign(h);
   }
   return 0;
 }

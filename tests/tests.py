@@ -78,10 +78,9 @@ def getPrograms(args):
     '''
 
   if args.Z or XYZ:
-    pass
-    '''
     if SorSCH:
       programs.append(Program("hybridconv3",False))
+    '''
     if HorSCH:
       programs.append(Program("hybridconvh3",True))
     '''
@@ -90,36 +89,37 @@ def getPrograms(args):
 
 def test(programs, args):
   lenP=len(programs)
-
+  print("\n***************\n")
   if lenP == 1:
     p=programs[0]
     iterate(p,int(args.L),int(args.T),float(args.t))
     name=p.name
     if p.extraArgs:
       name+=" "+p.extraArgs
-    print("Finished testing "+name)
-    print(str(p.total)+" tests done: "+str(p.passed())+" passed, "+str(p.failed)+" failed.")
+    print("Finished testing "+name+".")
+    print("Out of "+str(p.total)+" tests, "+str(p.passed())+" passed, "+str(p.failed)+" failed.")
 
   else:
     total=0
     passed=0
     failed=0
     for p in programs:
-      iterate(p,int(args.L),int(args.T),float(args.t))
       name=p.name
       if p.extraArgs:
         name+=" "+p.extraArgs
+      print("Testing "+name+"\n")
+      iterate(p,int(args.L),int(args.T),float(args.t))
       ptotal=p.total
       pfailed=p.failed
       ppassed=p.passed()
-      print("Done "+name)
-      print(str(ptotal)+" tests done: "+str(ppassed)+" passed, "+str(pfailed)+" failed.\n")
+      print("Finished testing "+name+".")
+      print("Out of "+str(ptotal)+" tests, "+str(ppassed)+" passed, "+str(pfailed)+" failed.")
+      print("\n***************\n")
       total+=ptotal
       passed+=ppassed
       failed+=pfailed
-
     print("Finished testing "+str(lenP)+" programs.")
-    print(str(total)+" tests done: "+str(passed)+" passed, "+str(failed)+" failed.")
+    print("Out of "+str(total)+" tests, "+str(passed)+" passed, "+str(failed)+" failed.")
 
 def iterate(program, L, thr, tol):
   centered=program.centered
@@ -156,7 +156,7 @@ def check(program, L, M, m, D, I, T, tol):
   vp = Popen(cmd, stdout = PIPE, stderr = PIPE)
   vp.wait()
   prc = vp.returncode
-
+  boldFailedTest="\033[1mFailed Test:\033[0m"
   if prc == 0:
     out, err = vp.communicate()
     comment = out.rstrip().decode()
@@ -164,19 +164,19 @@ def check(program, L, M, m, D, I, T, tol):
     error=re.search(r"(?<=Error: )(nan|\d|\.|e|-|\+)+",comment).group()
     if error == "nan":
       program.failed+=1
-      print("Error is nan:")
-      print(" ".join(cmd))
+      print("\t"+boldFailedTest+" Test: Error=nan")
+      print("\t"+" ".join(cmd))
       print()
     if float(error) > tol:
       program.failed+=1
-      print("Error too high:")
-      print(" ".join(cmd))
-      print("Error: "+error)
+      print("\t"+boldFailedTest+"Error="+error+" is too high.\n")
+      print("\t"+" ".join(cmd))
+      print("\tError: "+error)
       print()
   except:
     program.failed+=1
-    print("Error not found:")
-    print(" ".join(cmd))
+    print("\t"+boldFailedTest+" Error not found.")
+    print("\t"+" ".join(cmd))
     print()
 
 if __name__ == "__main__":
