@@ -54,6 +54,7 @@ def getPrograms(args):
   programs=[]
 
   SCH=(not (args.S or args.C or args.H))
+  SH=(not (args.S or args.C or args.H))
   XYZ=(not (args.X or args.Y or args.Z))
 
   SorSCH=(args.S or SCH)
@@ -69,10 +70,9 @@ def getPrograms(args):
       programs.append(Program("hybridconvh",True))
 
   if args.Y or XYZ:
-    pass
-    '''
     if SorSCH:
       programs.append(Program("hybridconv2",False))
+    '''
     if HorSCH:
       programs.append(Program("hybridconvh2",True))
     '''
@@ -161,12 +161,17 @@ def check(program, L, M, m, D, I, T, tol):
     out, err = vp.communicate()
     comment = out.rstrip().decode()
   try:
-    error=float(re.search(r"(?<=Error: )(\d|\.|e|-)+",comment).group())
-    if error > tol:
+    error=re.search(r"(?<=Error: )(nan|\d|\.|e|-|\+)+",comment).group()
+    if error == "nan":
+      program.failed+=1
+      print("Error is nan:")
+      print(" ".join(cmd))
+      print()
+    if float(error) > tol:
       program.failed+=1
       print("Error too high:")
       print(" ".join(cmd))
-      print("Error: "+str(error))
+      print("Error: "+error)
       print()
   except:
     program.failed+=1

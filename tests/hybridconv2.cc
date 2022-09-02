@@ -1,4 +1,5 @@
 #include "convolve.h"
+#include "direct.h"
 
 using namespace std;
 using namespace utils;
@@ -30,6 +31,10 @@ int main(int argc, char* argv[])
   unsigned int Sx=0; // x stride (0 means Ly)
 
   if(K == 0) K=max(K0/(Mx*My),20);
+
+  if(Output || testError)
+    K=1;
+
   cout << "K=" << K << endl << endl;
 
   cout << "Lx=" << Lx << endl;
@@ -53,7 +58,7 @@ int main(int argc, char* argv[])
 //  Convolution2 Convolve2(Lx,Mx,Ly,My,A,B);
 
   double T=0;
-
+  Complex *h;
   for(unsigned int c=0; c < K; ++c) {
 
     for(unsigned int a=0; a < A; ++a) {
@@ -66,6 +71,7 @@ int main(int argc, char* argv[])
     }
 
     if(Lx*Ly < 200 && c == 0) {
+      cout << endl << "Inputs:" << endl;
       for(unsigned int a=0; a < A; ++a) {
         for(unsigned int i=0; i < Lx; ++i) {
           for(unsigned int j=0; j < Ly; ++j) {
@@ -75,6 +81,12 @@ int main(int argc, char* argv[])
         }
         cout << endl;
       }
+    }
+
+    if(testError) {
+      h=ComplexAlign(Lx*Ly);
+      DirectConvolution2 C(Lx,Ly);
+      C.convolve(h,f[0],f[1]);
     }
 
     seconds();
@@ -98,6 +110,8 @@ int main(int argc, char* argv[])
   cout << endl;
 
   if(Output) {
+    if(testError)
+      cout << "Hybrid:" << endl;
     for(unsigned int b=0; b < B; ++b) {
       for(unsigned int i=0; i < Lx; ++i) {
         for(unsigned int j=0; j < Ly; ++j) {
@@ -106,6 +120,30 @@ int main(int argc, char* argv[])
         cout << endl;
       }
     }
+  }
+  if(testError) {
+    if(Output) {
+      cout << endl;
+      cout << "Direct:" << endl;
+      for(unsigned int i=0; i < Lx; ++i) {
+        for(unsigned int j=0; j < Ly; ++j) {
+          cout << h[Sx*i+j] << " ";
+        }
+        cout << endl;
+      }
+      cout << endl;
+    }
+    double err=0.0;
+    double norm=0.0;
+    for(unsigned int i=0; i < Lx; ++i) {
+      for(unsigned int j=0; j < Ly; ++j) {
+        err += abs2(f[0][Sx*i+j]-h[Sx*i+j]);
+        norm += abs2(h[Sx*i+j]);
+      }
+    }
+    double relError=sqrt(err/norm);
+    cout << "Error: "<< relError << endl;
+    deleteAlign(h);
   }
   return 0;
 }
