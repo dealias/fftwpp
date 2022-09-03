@@ -173,7 +173,7 @@ double time(fftBase *fft, Application &app)
     Stats.add(elapsed.count());
   }
 
-  delete F;
+  deleteAlign(F);
 
   return Stats.median();
 }

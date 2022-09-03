@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
       }
     }
 
-    if(Lx*Ly < 200 && c == 0) {
+    if(Output && c == 0) {
       cout << endl << "Inputs:" << endl;
       for(unsigned int a=0; a < A; ++a) {
         for(unsigned int i=0; i < Lx; ++i) {
