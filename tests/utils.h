@@ -158,14 +158,17 @@ inline void usageGather()
 inline void usageHybrid(bool fft=false)
 {
   std::cerr << "Options: " << std::endl;
+  std::cerr << "-c\t\t use centered tranforms (if possible)" << std::endl;
   std::cerr << "-h\t\t help" << std::endl;
   std::cerr << "-m n\t\t use subtransform size n" << std::endl;
+  std::cerr << "-t\t\t show times produced by optimizer" << std::endl;
   if(fft)
     std::cerr << "-C n\t\t compute n padded FFTs at a time"
               << std::endl;
   std::cerr << "-D n\t\t number n of blocks to process at a time" << std::endl;
+  std::cerr << "-E\t\t compute relative error using direct convolution (sets K=1 and forces normalization)" << std::endl;
   std::cerr << "-I\t\t (0=out-of-place, 1=in-place) FFTs [by default I=1 only for multiple FFTs]" << std::endl;
-  std::cerr << "-O\t\t output result" << std::endl;
+  std::cerr << "-O\t\t output result (sets K=1)" << std::endl;
   std::cerr << "-K n\t\t number n of iterations" << std::endl;
   std::cerr << "-L n\t\t number n of physical data values" << std::endl;
   std::cerr << "-M n\t\t minimal number n of padded data values" << std::endl;
