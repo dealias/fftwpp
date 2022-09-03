@@ -103,6 +103,8 @@ def test(programs, args):
     print("Testing "+name+"\n")
     iterate(p,int(args.L),int(args.T),float(args.t),args.v)
     print("Finished testing "+name+".")
+    print("\n***************\n")
+    print("Finished testing 1 program.")
     print("Out of "+str(p.total)+" tests, "+str(p.passed())+" passed, "+str(p.failed)+" failed.\n")
     if args.l:
       print("Failed Cases:\n")
@@ -110,7 +112,7 @@ def test(programs, args):
         print(case)
       print()
 
-  else:
+  elif lenP > 1:
     total=0
     passed=0
     failed=0
@@ -140,6 +142,8 @@ def test(programs, args):
       for case in failedCases:
         print(case)
       print()
+  else:
+    print("\nNo programs to test.\n")
 
 def iterate(program, L, thr, tol, verbose):
   centered=program.centered
@@ -183,24 +187,18 @@ def check(program, L, M, m, D, I, T, tol, verbose):
   if prc == 0:
     out, err = vp.communicate()
     comment = out.rstrip().decode()
+
   try:
-    error=re.search(r"(?<=Error: )(nan|\d|\.|e|-|\+)+",comment).group()
-    if error == "nan":
+    error=re.search(r"(?<=Error: )(\w|\d|\.|e|-|\+)*",comment).group()
+    if float(error) > tol or error == "nan" or error == "inf":
       program.failed+=1
-      print("\t"+boldFailedTest+" Error=nan")
-      case=" ".join(cmd)
-      print("\t"+case)
-      program.failedCases.append(case)
-      print()
-    elif float(error) > tol:
-      program.failed+=1
-      print("\t"+boldFailedTest+" Error="+error+" is too high.")
+      print("\t"+boldFailedTest+" Error="+error)
       case=" ".join(cmd)
       print("\t"+case)
       program.failedCases.append(case)
       print()
     elif verbose:
-      print("\t"+boldPassedTest)
+      print("\t"+boldPassedTest+" Error="+error)
       case=" ".join(cmd)
       print("\t"+case)
       print()
