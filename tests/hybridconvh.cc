@@ -100,12 +100,14 @@ int main(int argc, char* argv[])
     }
     double err=0.0;
     double norm=0.0;
+    Complex hj;
+
+    // Assumes B=1
+    Complex* f0=f[0];
     for(unsigned int j=0; j < H; ++j) {
-      Complex hj=h[j];
-      for(unsigned int b=0; b < B; ++b) {
-        err += abs2(f[b][j]-hj);
-        norm += abs2(hj);
-      }
+      hj=h[j];
+      err += abs2(f0[j]-hj);
+      norm += abs2(hj);
     }
     double relError=sqrt(err/norm);
     cout << "Error: "<< relError << endl;

@@ -152,11 +152,15 @@ int main(int argc, char* argv[])
     }
     double err=0.0;
     double norm=0.0;
+    Complex hijk;
+
+    // Assumes B=1
     for(unsigned int i=0; i < Lx; ++i)
         for(unsigned int j=0; j < Ly; ++j)
           for(unsigned int k=0; k < Lz; ++k){
-            err += abs2(f[0][Sx*i+Sy*j+k]-h[Sx*i+Sy*j+k]);
-            norm += abs2(h[Sx*i+Sy*j+k]);
+            hijk=h[Sx*i+Sy*j+k];
+            err += abs2(f[0][Sx*i+Sy*j+k]-hijk);
+            norm += abs2(hijk);
           }
     double relError=sqrt(err/norm);
     cout << "Error: "<< relError << endl;

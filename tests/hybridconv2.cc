@@ -135,10 +135,13 @@ int main(int argc, char* argv[])
     }
     double err=0.0;
     double norm=0.0;
+    Complex hij;
+    // Assumes B=1
     for(unsigned int i=0; i < Lx; ++i) {
       for(unsigned int j=0; j < Ly; ++j) {
-        err += abs2(f[0][Sx*i+j]-h[Sx*i+j]);
-        norm += abs2(h[Sx*i+j]);
+        hij=h[Sx*i+j];
+        err += abs2(f[0][Sx*i+j]-hij);
+        norm += abs2(hij);
       }
     }
     double relError=sqrt(err/norm);
