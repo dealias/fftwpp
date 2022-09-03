@@ -32,8 +32,8 @@ int main(int argc, char* argv[])
 
   double *T=new double[K];
 
-  ForwardBackward FB(A,B,realmultbinary);
-  fftPadHermitian fft(L,M,FB);
+  Application app(A,B,realmultbinary);
+  fftPadHermitian fft(L,M,app);
 
   unsigned int H=ceilquotient(L,2);
 

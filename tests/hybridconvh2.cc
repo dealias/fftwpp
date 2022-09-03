@@ -50,11 +50,11 @@ int main(int argc, char* argv[])
 
   array2<Complex> h0(Lx,Sx,f[0]);
 
-  ForwardBackward FB(A,B,realmultbinary);
-//  ForwardBackward FB(A,B,multadvection2);
+  Application app(A,B,realmultbinary);
+//  Application app(A,B,multadvection2);
 
-  fftPadCentered fftx(Lx,Mx,FB,Hy,Sx);
-  ConvolutionHermitian convolvey(Ly,My,FB);
+  fftPadCentered fftx(Lx,Mx,app,Hy,Sx);
+  ConvolutionHermitian convolvey(Ly,My,app);
 
   ConvolutionHermitian2 Convolve2(&fftx,&convolvey);
 

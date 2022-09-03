@@ -31,8 +31,8 @@ int main(int argc, char* argv[])
 
   double *T=new double[K];
 
-  ForwardBackward FB(A,B,multbinary);
-  fftBase *fft=CENTERED ? new fftPadCentered(L,M,FB) : new fftPad(L,M,FB);
+  Application app(A,B,multbinary);
+  fftBase *fft=CENTERED ? new fftPadCentered(L,M,app) : new fftPad(L,M,app);
 
 
   unsigned int N=max(A,B);
@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
       fa[j]=Output || testError ? Complex(j,(1.0+a)*j+1) : 0.0;
   }
 
-  Complex *h;//=NULL;
+  Complex *h=NULL;
   if(testError) {
     h=ComplexAlign(L);
     DirectConvolution C(L);

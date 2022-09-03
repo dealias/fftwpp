@@ -20,25 +20,25 @@ int main(int argc, char* argv[])
 
   optionsHybrid(argc,argv,true);
 
-  ForwardBackward FB(A,B,realmultbinary);
+  Application app(A,B,realmultbinary);
 
   cout << "Explicit:" << endl;
   // Minimal explicit padding
-  fftPadHermitian fft0(L,M,C,M,1,1,1,FB.mult);
+  fftPadHermitian fft0(L,M,C,M,1,1,1,app.mult);
 
-  double median0=fft0.report(FB);
+  double median0=fft0.report(app);
 
   // Optimal explicit padding
-  fftPadHermitian fft1(L,M,FB,C,true);
-  double median1=min(median0,fft1.report(FB));
+  fftPadHermitian fft1(L,M,app,C,true);
+  double median1=min(median0,fft1.report(app));
 
   cout << endl;
   cout << "Hybrid:" << endl;
 
   // Hybrid padding
-  fftPadHermitian fft(L,M,FB,C);
+  fftPadHermitian fft(L,M,app,C);
 
-  double median=fft.report(FB);
+  double median=fft.report(app);
 
   if(median0 > 0)
     cout << "minimal ratio=" << median/median0 << endl;
@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
     for(unsigned int c=0; c < C; ++c)
       f[C*j+c]=Complex(j+1+c,j+2+c);
 
-  fftPadHermitian fft2(L,fft.M,C,fft.M,1,1,1,FB.mult);
+  fftPadHermitian fft2(L,fft.M,C,fft.M,1,1,1,app.mult);
 
   Complex *F2=ComplexAlign(fft2.outputSize());
   double *F2r=(double *) F2;

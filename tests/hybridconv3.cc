@@ -52,12 +52,12 @@ int main(int argc, char* argv[])
   for(unsigned int a=0; a < A; ++a)
     f[a]=ComplexAlign(Lx*Sx);
 
-  ForwardBackward FBx(A,B,multbinary);
-  fftPad fftx(Lx,Mx,FBx,Sx == Ly*Lz ? Sx : Lz,Sx);
-  ForwardBackward FBy(A,B,multbinary,FBx.Threads(),fftx.l);
-  fftPad ffty(Ly,My,FBy,Lz,Sy);
-  ForwardBackward FBz(A,B,multbinary,FBy.Threads(),ffty.l);
-  Convolution convolvez(Lz,Mz,FBz);
+  Application appx(A,B,multbinary);
+  fftPad fftx(Lx,Mx,appx,Sx == Ly*Lz ? Sx : Lz,Sx);
+  Application appy(A,B,multbinary,appx.Threads(),fftx.l);
+  fftPad ffty(Ly,My,appy,Lz,Sy);
+  Application appz(A,B,multbinary,appy.Threads(),ffty.l);
+  Convolution convolvez(Lz,Mz,appz);
   Convolution2 convolveyz(&ffty,&convolvez);
   Convolution3 Convolve3(&fftx,&convolveyz);
 

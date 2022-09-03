@@ -24,37 +24,37 @@ int main(int argc, char* argv[])
 
   if(S == 0) S=C;
 
-  ForwardBackward FB(A,B,multbinary);
+  Application app(A,B,multbinary);
 
   cout << "Explicit:" << endl;
   // Minimal explicit padding
 #if CENTERED
-  fftPadCentered fft0(L,M,C,S,M,1,1,1,FB.mult);
+  fftPadCentered fft0(L,M,C,S,M,1,1,1,app.mult);
 #else
-  fftPad fft0(L,M,C,S,M,1,1,1,FB.mult);
+  fftPad fft0(L,M,C,S,M,1,1,1,app.mult);
 #endif
 
-  double median0=fft0.report(FB);
+  double median0=fft0.report(app);
 
   // Optimal explicit padding
 #if CENTERED
-  fftPadCentered fft1(L,M,FB,C,S,true);
+  fftPadCentered fft1(L,M,app,C,S,true);
 #else
-  fftPad fft1(L,M,FB,C,S,true);
+  fftPad fft1(L,M,app,C,S,true);
 #endif
-  double median1=min(median0,fft1.report(FB));
+  double median1=min(median0,fft1.report(app));
 
   cout << endl;
   cout << "Hybrid:" << endl;
 
   // Hybrid padding
 #if CENTERED
-  fftPadCentered fft(L,M,FB,C,S);
+  fftPadCentered fft(L,M,app,C,S);
 #else
-  fftPad fft(L,M,FB,C,S);
+  fftPad fft(L,M,app,C,S);
 #endif
 
-  double median=fft.report(FB);
+  double median=fft.report(app);
 
   if(median0 > 0)
     cout << "minimal ratio=" << median/median0 << endl;
@@ -73,10 +73,10 @@ int main(int argc, char* argv[])
       f[S*j+c]=Complex(j+1+c,j+2+c);
 
 #if CENTERED
-  fftPadCentered fft2(L,fft.M,C,S,fft.M,1,1,1,FB.mult,
+  fftPadCentered fft2(L,fft.M,C,S,fft.M,1,1,1,app.mult,
                       fftw::maxthreads,fft.q == 1);
 #else
-  fftPad fft2(L,fft.M,C,S,fft.M,1,1,1,FB.mult);
+  fftPad fft2(L,fft.M,C,S,fft.M,1,1,1,app.mult);
 #endif
 
   Complex *F2=ComplexAlign(fft2.outputSize());

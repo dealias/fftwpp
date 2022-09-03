@@ -56,12 +56,12 @@ int main(int argc, char* argv[])
   array2<Complex> f0(Lx,Sx,f[0]);
   array2<Complex> f1(Lx,Sx,f[1]);
 
-  ForwardBackward FBx(A,B,realmultbinary);
-  fftPadCentered fftx(Lx,Mx,FBx,Sx == Ly*Hz ? Sx : Hz,Sx);
-  ForwardBackward FBy(A,B,realmultbinary,FBx.Threads(),fftx.l);
-  fftPadCentered ffty(Ly,My,FBy,Hz,Sy);
-  ForwardBackward FBz(A,B,realmultbinary,FBy.Threads(),ffty.l);
-  ConvolutionHermitian convolvez(Lz,Mz,FBz);
+  Application appx(A,B,realmultbinary);
+  fftPadCentered fftx(Lx,Mx,appx,Sx == Ly*Hz ? Sx : Hz,Sx);
+  Application appy(A,B,realmultbinary,appx.Threads(),fftx.l);
+  fftPadCentered ffty(Ly,My,appy,Hz,Sy);
+  Application appz(A,B,realmultbinary,appy.Threads(),ffty.l);
+  ConvolutionHermitian convolvez(Lz,Mz,appz);
   ConvolutionHermitian2 convolveyz(&ffty,&convolvez);
   ConvolutionHermitian3 Convolve3(&fftx,&convolveyz);
 

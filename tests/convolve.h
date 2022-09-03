@@ -67,7 +67,7 @@ public:
 
   Application(unsigned int A, unsigned int B, multiplier *mult,
               unsigned int threads=fftw::maxthreads, unsigned int n=0) :
-    ThreadBase(threads), A(A),B(B), mult(mult) {
+    ThreadBase(threads), A(A), B(B), mult(mult) {
     if(n == 0)
       multithread(threads);
     else {
@@ -718,15 +718,6 @@ public:
   }
 };
 
-class ForwardBackward : public Application {
-protected:
-public:
-  ForwardBackward(unsigned int A, unsigned int B, multiplier *mult,
-                  unsigned int threads=fftw::maxthreads, unsigned int n=0) :
-    Application(A,B,mult,threads,n) {
-  }
-};
-
 class Convolution : public ThreadBase {
 public:
   fftBase *fft;
@@ -778,8 +769,8 @@ public:
               unsigned int A, unsigned int B, multiplier *mult,
               unsigned int threads=fftw::maxthreads) :
     ThreadBase(threads), A(A), B(B), mult(mult), W(NULL), allocate(true) {
-    ForwardBackward FB(A,B,mult,threads);
-    fft=new fftPad(L,M,FB);
+    Application app(A,B,mult,threads);
+    fft=new fftPad(L,M,app);
     init();
   }
 
@@ -950,8 +941,8 @@ public:
     this->A=A;
     this->B=B;
     this->mult=mult;
-    ForwardBackward FB(A,B,mult,threads);
-    fft=new fftPadHermitian(L,M,FB);
+    Application app(A,B,mult,threads);
+    fft=new fftPadHermitian(L,M,app);
     init();
   }
 
@@ -1085,10 +1076,10 @@ public:
                unsigned int A, unsigned int B, multiplier *mult,
                unsigned int threads=fftw::maxthreads) :
     ThreadBase(threads), mult(mult), W(NULL), allocateW(false) {
-    ForwardBackward FBx(A,B,mult,threads);
-    fftx=new fftPad(Lx,Mx,FBx,Ly);
-    ForwardBackward FBy(A,B,mult,threads,fftx->l);
-    ffty=new fftPad(Ly,My,FBy);
+    Application appx(A,B,mult,threads);
+    fftx=new fftPad(Lx,Mx,appx,Ly);
+    Application appy(A,B,mult,threads,fftx->l);
+    ffty=new fftPad(Ly,My,appy);
     convolvey=new Convolution*[threads];
     for(unsigned int t=0; t < threads; ++t)
       convolvey[t]=new Convolution(ffty,A,B);
@@ -1322,10 +1313,10 @@ public:
     Convolution2(threads) {
     this->mult=mult;
     unsigned int Hy=utils::ceilquotient(Ly,2);
-    ForwardBackward FBx(A,B,mult,threads);
-    fftx=new fftPadCentered(Lx,Mx,FBx,Hy);
-    ForwardBackward FBy(A,B,mult,threads,fftx->l);
-    ffty=new fftPadHermitian(Ly,My,FBy);
+    Application appx(A,B,mult,threads);
+    fftx=new fftPadCentered(Lx,Mx,appx,Hy);
+    Application appy(A,B,mult,threads,fftx->l);
+    ffty=new fftPadHermitian(Ly,My,appy);
     convolvey=new Convolution*[threads];
     for(unsigned int t=0; t < threads; ++t)
       convolvey[t]=new ConvolutionHermitian(ffty,A,B);
@@ -1401,12 +1392,12 @@ public:
                unsigned int A, unsigned int B, multiplier *mult,
                unsigned int threads=fftw::maxthreads) :
     ThreadBase(threads), mult(mult), W(NULL), allocateW(false) {
-    ForwardBackward FBx(A,B,mult,threads);
-    fftx=new fftPad(Lx,Mx,FBx,Ly*Lz);
-    ForwardBackward FBy(A,B,mult,FBx.Threads(),fftx->l);
-    ffty=new fftPad(Ly,My,FBy,Lz);
-    ForwardBackward FBz(A,B,mult,FBy.Threads(),ffty->l);
-    fftz=new fftPad(Lz,Mz,FBz);
+    Application appx(A,B,mult,threads);
+    fftx=new fftPad(Lx,Mx,appx,Ly*Lz);
+    Application appy(A,B,mult,appx.Threads(),fftx->l);
+    ffty=new fftPad(Ly,My,appy,Lz);
+    Application appz(A,B,mult,appy.Threads(),ffty->l);
+    fftz=new fftPad(Lz,Mz,appz);
     convolvez=new Convolution*[threads];
     for(unsigned int t=0; t < threads; ++t)
       convolvez[t]=new Convolution(fftz,A,B);
@@ -1696,12 +1687,12 @@ public:
     unsigned int Hz=utils::ceilquotient(Lz,2);
     this->mult=mult;
 
-    ForwardBackward FBx(A,B,mult,threads);
-    fftx=new fftPadCentered(Lx,Mx,FBx,Ly*Hz);
-    ForwardBackward FBy(A,B,mult,FBx.Threads(),fftx->l);
-    ffty=new fftPadCentered(Ly,My,FBy,Hz);
-    ForwardBackward FBz(A,B,mult,FBy.Threads(),ffty->l);
-    fftz=new fftPadHermitian(Lz,Mz,FBz);
+    Application appx(A,B,mult,threads);
+    fftx=new fftPadCentered(Lx,Mx,appx,Ly*Hz);
+    Application appy(A,B,mult,appx.Threads(),fftx->l);
+    ffty=new fftPadCentered(Ly,My,appy,Hz);
+    Application appz(A,B,mult,appy.Threads(),ffty->l);
+    fftz=new fftPadHermitian(Lz,Mz,appz);
     convolvez=new Convolution*[threads];
     for(unsigned int t=0; t < threads; ++t)
       convolvez[t]=new ConvolutionHermitian(fftz,A,B);

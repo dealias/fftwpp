@@ -49,10 +49,10 @@ int main(int argc, char* argv[])
   for(unsigned int a=0; a < A; ++a)
     f[a]=ComplexAlign(Lx*Sx);
 
-  ForwardBackward FBx(A,B,multbinary);
-  fftPad fftx(Lx,Mx,FBx,Ly,Sx);
-  ForwardBackward FBy(A,B,multbinary,FBx.Threads(),fftx.l);
-  Convolution convolvey(Ly,My,FBy);
+  Application appx(A,B,multbinary);
+  fftPad fftx(Lx,Mx,appx,Ly,Sx);
+  Application appy(A,B,multbinary,appx.Threads(),fftx.l);
+  Convolution convolvey(Ly,My,appy);
   Convolution2 Convolve2(&fftx,&convolvey);
 
 //  Convolution2 Convolve2(Lx,Mx,Ly,My,A,B);
