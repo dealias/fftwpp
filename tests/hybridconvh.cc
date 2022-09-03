@@ -63,10 +63,18 @@ int main(int argc, char* argv[])
   }
   ConvolutionHermitian Convolve(&fft,A,B,fft.embed() ? F : NULL);
 
-  for(unsigned int k=0; k < K; ++k) {
-    seconds();
-    Convolve.convolveRaw(f);
-    T[k]=seconds();
+  if(normalized || testError) {
+    for(unsigned int k=0; k < K; ++k) {
+      seconds();
+      Convolve.convolve(f);
+      T[k]=seconds();
+    }
+  } else {
+    for(unsigned int k=0; k < K; ++k) {
+      seconds();
+      Convolve.convolveRaw(f);
+      T[k]=seconds();
+    }
   }
 
   cout << endl;

@@ -32,7 +32,7 @@ int main(int argc, char* argv[])
   double *T=new double[K];
 
   Application app(A,B,multbinary);
-  fftBase *fft=CENTERED ? new fftPadCentered(L,M,app) : new fftPad(L,M,app);
+  fftBase *fft=Centered ? new fftPadCentered(L,M,app) : new fftPad(L,M,app);
 
 
   unsigned int N=max(A,B);
@@ -52,17 +52,25 @@ int main(int argc, char* argv[])
   if(testError) {
     h=ComplexAlign(L);
     DirectConvolution C(L);
-    if(CENTERED)
+    if(Centered)
       C.Cconvolve(h,f[0],f[1]);
     else
       C.convolve(h,f[0],f[1]);
   }
   Convolution Convolve(fft,A,B,fft->embed() ? F : NULL);
 
-  for(unsigned int k=0; k < K; ++k) {
-    seconds();
-    Convolve.convolveRaw(f);
-    T[k]=seconds();
+  if(normalized || testError) {
+    for(unsigned int k=0; k < K; ++k) {
+      seconds();
+      Convolve.convolve(f);
+      T[k]=seconds();
+    }
+  } else {
+    for(unsigned int k=0; k < K; ++k) {
+      seconds();
+      Convolve.convolveRaw(f);
+      T[k]=seconds();
+    }
   }
 
   cout << endl;

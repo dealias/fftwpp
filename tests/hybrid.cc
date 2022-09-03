@@ -1,6 +1,6 @@
 #include "convolve.h"
 
-#define CENTERED 0
+#define Centered 0
 
 using namespace std;
 using namespace utils;
@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
 
   cout << "Explicit:" << endl;
   // Minimal explicit padding
-#if CENTERED
+#if Centered
   fftPadCentered fft0(L,M,C,S,M,1,1,1,app.mult);
 #else
   fftPad fft0(L,M,C,S,M,1,1,1,app.mult);
@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
   double median0=fft0.report(app);
 
   // Optimal explicit padding
-#if CENTERED
+#if Centered
   fftPadCentered fft1(L,M,app,C,S,true);
 #else
   fftPad fft1(L,M,app,C,S,true);
@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
   cout << "Hybrid:" << endl;
 
   // Hybrid padding
-#if CENTERED
+#if Centered
   fftPadCentered fft(L,M,app,C,S);
 #else
   fftPad fft(L,M,app,C,S);
@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
     for(unsigned int c=0; c < C; ++c)
       f[S*j+c]=Complex(j+1+c,j+2+c);
 
-#if CENTERED
+#if Centered
   fftPadCentered fft2(L,fft.M,C,S,fft.M,1,1,1,app.mult,
                       fftw::maxthreads,fft.q == 1);
 #else

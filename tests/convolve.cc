@@ -20,10 +20,11 @@ namespace fftwpp {
 unsigned int threads=1;
 unsigned int mOption=0;
 unsigned int DOption=0;
-unsigned int Output=0;
-unsigned int CENTERED;
-unsigned int testError=0;
-unsigned int showOptTimes=0;
+bool Output=false;
+bool Centered=false;
+bool normalized=true;
+bool testError=false;
+bool showOptTimes=false;
 
 int IOption=-1;
 

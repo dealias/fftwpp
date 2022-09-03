@@ -39,11 +39,11 @@ extern unsigned int mOption;
 extern unsigned int DOption;
 
 extern int IOption;
-extern unsigned int Output;
-extern unsigned int testError;
-extern unsigned int showOptTimes;
-extern unsigned int CENTERED;
-
+extern bool Output;
+extern bool testError;
+extern bool showOptTimes;
+extern bool Centered;
+extern bool normalized;
 
 unsigned int nextfftsize(unsigned int m);
 
