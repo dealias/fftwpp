@@ -140,6 +140,53 @@ bool ispure(unsigned int m)
   return false;
 }
 
+
+template<class Convolution>
+double time(fftBase *fft, Application &app)
+{
+  unsigned int N=max(app.A,app.B);
+  Complex **f=new Complex *[N];
+  unsigned int inputSize=fft->inputSize();
+
+  unsigned int size=fft->embed() ? fft->outputSize() : inputSize;
+  Complex *F=ComplexAlign(N*size);
+
+  // Initialize entire array to 0 to avoid overflow when timing.
+  for(unsigned int a=0; a < app.A; ++a) {
+    Complex *fa=F+a*size;
+    f[a]=fa;;
+    for(unsigned int j=0; j < inputSize; ++j)
+      fa[j]=0.0;
+  }
+
+  Convolution Convolve(fft,app.A,app.B,fft->embed() ? F : NULL);
+
+  statistics Stats(true);
+  unsigned int K=max(2000000/(fft->M*fft->C),10); // Number of samples
+  for(unsigned int k=0; k < K; ++k) {
+    auto begin=std::chrono::steady_clock::now();
+    Convolve.convolveRaw(f);
+    auto end=std::chrono::steady_clock::now();
+    auto elapsed=std::chrono::duration_cast<std::chrono::nanoseconds>
+      (end-begin);
+    Stats.add(elapsed.count());
+  }
+
+  delete F;
+
+  return Stats.median();
+}
+
+double timePad(fftBase *fft, Application &app)
+{
+  return time<Convolution>(fft,app);
+}
+
+double timePadHermitian(fftBase *fft, Application &app)
+{
+  return time<ConvolutionHermitian>(fft,app);
+}
+
 void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
                                   unsigned int M, Application& app,
                                   unsigned int C, unsigned int S,
@@ -162,10 +209,10 @@ void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
     // p != q.
     if(inner && (((notPow2(p) || p == P*n) && !mForced) || (centered && p%2 != 0))) {
       if(mOption >= 1) {
-        cerr<<"m="<<mOption<<endl;
-        cerr<<"p="<<p<<endl;
-        cerr<<"Odd values of p are incompatible with the centered and Hermitian routines."<<endl;
-        cerr<<"Using m="<<M<<" instead."<<endl;
+        cerr << "m=" << mOption << endl;
+        cerr << "p=" << p << endl;
+        cerr << "Odd values of p are incompatible with the centered and Hermitian routines." << endl;
+        cerr << "Using m=" << M << " instead." << endl;
       }
       i=m0=nextpuresize(m0+1);
     }
@@ -286,7 +333,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
     cerr << "L=" << L << " is greater than M=" << M << "." << endl;
     exit(-1);
   }
-  if(showOptTimes) cout<<"Optimizer Timings:"<<endl;
+  if(showOptTimes) cout << "Optimizer Timings:" << endl;
 
   mForced=(mOption >= 1);
 
@@ -320,33 +367,6 @@ fftBase::~fftBase()
     deleteAlign(Zetaqm0);
   if(ZetaqmS)
     deleteAlign(ZetaqmS0);
-}
-
-// In nanoseconds
-double fftBase::medianTime(unsigned int M, Application& app,
-                           double *Stdev)
-{
-  unsigned int N=max(2000000/M,10); // Number of samples
-
-  app.init(*this);
-  statistics Stats(true);
-  for(unsigned int i=0; i < N; ++i)
-    Stats.add(app.time(*this));
-  if(Stdev) *Stdev=Stats.stdev();
-  app.clear();
-  return Stats.median();
-}
-
-double fftBase::report(unsigned int M, Application& app)
-{
-  double stdev;
-  cout << endl;
-
-  double median=medianTime(M,app,&stdev)*1.0e-9;
-
-  cout << "median=" << median << " stdev=" << stdev << endl;
-
-  return median;
 }
 
 void fftBase::common()
@@ -5176,120 +5196,6 @@ void Convolution::convolveRaw(Complex **f, unsigned int offset)
         }
       }
     }
-  }
-}
-
-void ForwardBackward::init(fftBase &fft)
-{
-  if(fft.Overwrite(A,B)) {
-    Forward=fft.ForwardAll;
-    Backward=fft.BackwardAll;
-    R=1;
-  } else {
-    Forward=fft.Forward;
-    Backward=fft.Backward;
-    R=fft.R;
-  }
-
-  unsigned int inputSize=fft.embed() ? fft.outputSize() : fft.inputSize();
-  unsigned int outputSize=fft.outputSize();
-  unsigned int N=max(A,B);
-
-  f=new Complex*[N];
-
-  Complex *f0=ComplexAlign(N*inputSize);
-  for(unsigned int a=0; a < A; ++a)
-    f[a]=f0+a*inputSize;
-
-  embed=fft.embed();
-  if(embed) F=f;
-  else {
-    F=new Complex*[N];
-    Complex *F0=ComplexAlign(N*outputSize);
-    for(unsigned int a=0; a < N; ++a)
-      F[a]=F0+a*outputSize;
-  }
-
-  if(fft.q > 1) {
-    h=new Complex*[B];
-    for(unsigned int b=0; b < B; ++b)
-      h[b]=ComplexAlign(inputSize);
-
-    W=ComplexAlign(fft.workSizeW());
-
-    (fft.*fft.Pad)(W);
-  }
-
-  // Initialize entire array to 0 to avoid overflow when timing.
-  for(unsigned int a=0; a < A; ++a) {
-    Complex *fa=f[a];
-    for(unsigned int j=0; j < inputSize; ++j)
-      fa[j]=0.0;
-  }
-}
-
-double ForwardBackward::time(fftBase &fft)
-{
-  auto begin=std::chrono::steady_clock::now();
-//  unsigned int blocksize=fft.noutputs();
-  if(fft.q == 1) {
-    for(unsigned int a=0; a < A; ++a)
-      (fft.*Forward)(f[a],F[a],0,NULL);
-//    (*mult)(F,blocksize,threads);
-    for(unsigned int b=0; b < B; ++b)
-      (fft.*Backward)(F[b],f[b],0,NULL);
-  } else {
-//    unsigned int incr=fft.b;
-    for(unsigned int r=0; r < R; r += fft.increment(r)) {
-      for(unsigned int a=0; a < A; ++a)
-        (fft.*Forward)(f[a],F[a],r,W);
-
-      /*
-      unsigned int stop=fft.complexOutputs(r);
-      for(unsigned int d=0; d < stop; d += incr) {
-        Complex *G[A];
-        for(unsigned int a=0; a < A; ++a)
-          G[a]=F[a]+d;
-        (*mult)(G,blocksize,threads);
-      }
-      */
-      for(unsigned int b=0; b < B; ++b)
-        (fft.*Backward)(F[b],h[b],r,W);
-      fft.pad(W);
-    }
-  }
-  auto end=std::chrono::steady_clock::now();
-  auto elapsed=std::chrono::duration_cast<std::chrono::nanoseconds> (end-begin);
-  return elapsed.count();
-}
-
-void ForwardBackward::clear()
-{
-  if(W) {
-    deleteAlign(W);
-    W=NULL;
-  }
-
-  if(h) {
-    for(unsigned int b=0; b < B; ++b)
-      deleteAlign(h[b]);
-    delete [] h;
-    h=NULL;
-  }
-
-  if(!embed) {
-    deleteAlign(F[0]);
-    embed=true;
-    if(F) {
-      delete [] F;
-      F=NULL;
-    }
-  }
-
-  if(f) {
-    deleteAlign(f[0]);
-    delete [] f;
-    f=NULL;
   }
 }
 

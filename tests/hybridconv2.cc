@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
 //  Convolution2 Convolve2(Lx,Mx,Ly,My,A,B);
 
   double T=0;
-  Complex *h;
+  Complex *h=NULL;
   for(unsigned int c=0; c < K; ++c) {
 
     for(unsigned int a=0; a < A; ++a) {

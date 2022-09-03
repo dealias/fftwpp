@@ -27,7 +27,7 @@ int main(int argc, char* argv[])
 
   if(Output||testError)
     K=1;
-  
+
   cout << "K=" << K << endl << endl;
 
   double *T=new double[K];
@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
         fa[j]=0.0;
   }
 
-  Complex *h;
+  Complex *h=NULL;
   if(testError) {
     h=ComplexAlign(H);
     DirectHConvolution C(H);
@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
 
   for(unsigned int k=0; k < K; ++k) {
     seconds();
-    Convolve.convolve(f);
+    Convolve.convolveRaw(f);
     T[k]=seconds();
   }
 
@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
   timings("Hermitian Hybrid",L,T,K,stats);
   cout << endl;
 
-  if(Output){
+  if(Output) {
     if(testError) {
       cout << "Hermitian Hybrid:" << endl;
     }

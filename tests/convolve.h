@@ -77,9 +77,6 @@ public:
     cout << "Requesting " << this->threads << " threads." << endl;
     cout << endl;
   };
-  virtual void init(fftBase &fft)=0;
-  virtual void clear()=0;
-  virtual double time(fftBase &fft)=0;
 };
 
 class fftBase : public ThreadBase {
@@ -402,9 +399,17 @@ public:
     return overwrite && A >= B;
   }
 
-  double medianTime(unsigned int M, Application& app, double *Stdev=NULL);
-  double report(unsigned int M, Application& app);
+  virtual double time(Application& app)=0;
+
+  double report(Application& app) {
+    double median=time(app)*1.0e-9;
+    cout << "median=" << median << endl;
+    return median;
+  }
 };
+
+typedef double timer(fftBase *fft, Application &app);
+timer timePad,timePadHermitian;
 
 class fftPad : public fftBase {
 protected:
@@ -426,8 +431,8 @@ public:
     double time(unsigned int L, unsigned int M, unsigned int C, unsigned int S,
                 unsigned int m, unsigned int q,unsigned int D,
                 bool inplace, Application &app) {
-      fftPad fft(L,M,C,S,m,q,D,inplace,app.mult,app.Threads(),false);
-      return fft.medianTime(M*C,app);
+      fftPad fft(L,M,C,S,m,q,D,inplace,app.mult,app.Threads());
+      return timePad(&fft,app);
     }
   };
 
@@ -467,6 +472,10 @@ public:
   ~fftPad();
 
   void init();
+
+  double time(Application& app) {
+    return timePad(this,app);
+  }
 
   // Explicitly pad to m.
   void padSingle(Complex *W);
@@ -529,7 +538,7 @@ public:
                 unsigned int m, unsigned int q, unsigned int D,
                 bool inplace, Application &app) {
       fftPadCentered fft(L,M,C,S,m,q,D,inplace,app.mult,app.Threads());
-      return fft.medianTime(M*C,app);
+      return timePad(&fft,app);
     }
   };
 
@@ -573,6 +582,10 @@ public:
   bool conjugates() {return D > 1 && (p == 1 || p % 2 == 0);}
 
   void init(bool fast);
+
+  double time(Application& app) {
+    return timePad(this,app);
+  }
 
   void forwardExplicitFast(Complex *f, Complex *F, unsigned int r, Complex *W);
   void forwardExplicitManyFast(Complex *f, Complex *F, unsigned int r,
@@ -639,7 +652,7 @@ public:
                 unsigned int m, unsigned int q, unsigned int D,
                 bool inplace, Application &app) {
       fftPadHermitian fft(L,M,C,m,q,D,inplace,app.mult,app.Threads());
-      return fft.medianTime(M*C,app);
+      return timePadHermitian(&fft,app);
     }
   };
 
@@ -669,6 +682,10 @@ public:
   ~fftPadHermitian();
 
   void init();
+
+  double time(Application& app) {
+    return timePadHermitian(this,app);
+  }
 
   void forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W);
   void forwardExplicitMany(Complex *f, Complex *F, unsigned int, Complex *W);
@@ -703,29 +720,11 @@ public:
 
 class ForwardBackward : public Application {
 protected:
-  unsigned int R;
-  Complex **f;
-  Complex **F;
-  Complex **h;
-  Complex *W;
-  FFTcall Forward,Backward;
-  bool embed;
 public:
   ForwardBackward(unsigned int A, unsigned int B, multiplier *mult,
                   unsigned int threads=fftw::maxthreads, unsigned int n=0) :
-    Application(A,B,mult,threads,n), f(NULL), F(NULL), h(NULL), W(NULL), embed(true) {
+    Application(A,B,mult,threads,n) {
   }
-
-  virtual ~ForwardBackward() {
-    clear();
-  }
-
-  void init(fftBase &fft);
-
-  double time(fftBase &fft);
-
-  void clear();
-
 };
 
 class Convolution : public ThreadBase {

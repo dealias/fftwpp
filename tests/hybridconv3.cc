@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
 //  Convolution3 Convolve3(Lx,Mx,Ly,My,Lz,Mz,A,B);
 
   double T=0;
-  Complex *h;
+  Complex *h=NULL;
   for(unsigned int c=0; c < K; ++c) {
 
     for(unsigned int a=0; a < A; ++a) {
@@ -152,7 +152,7 @@ int main(int argc, char* argv[])
     }
     double err=0.0;
     double norm=0.0;
-    for(unsigned int i=0; i < Lx; ++i) 
+    for(unsigned int i=0; i < Lx; ++i)
         for(unsigned int j=0; j < Ly; ++j)
           for(unsigned int k=0; k < Lz; ++k){
             err += abs2(f[0][Sx*i+Sy*j+k]-h[Sx*i+Sy*j+k]);

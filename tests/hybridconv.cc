@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
 
   if(Output || testError)
     K=1;
-  
+
   cout << "K=" << K << endl << endl;
 
   double *T=new double[K];
@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
       fa[j]=Output || testError ? Complex(j,(1.0+a)*j+1) : 0.0;
   }
 
-  Complex *h;
+  Complex *h;//=NULL;
   if(testError) {
     h=ComplexAlign(L);
     DirectConvolution C(L);
@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
 
   for(unsigned int k=0; k < K; ++k) {
     seconds();
-    Convolve.convolve(f);
+    Convolve.convolveRaw(f);
     T[k]=seconds();
   }
 
@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
   cout << endl;
 
 
-  if(Output){
+  if(Output) {
     if(testError)
       cout << "Hybrid:" << endl;
     for(unsigned int b=0; b < B; ++b)

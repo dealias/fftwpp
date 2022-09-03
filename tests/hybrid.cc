@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
   fftPad fft0(L,M,C,S,M,1,1,1,FB.mult);
 #endif
 
-  double median0=fft0.report(M*C,FB);
+  double median0=fft0.report(FB);
 
   // Optimal explicit padding
 #if CENTERED
@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
 #else
   fftPad fft1(L,M,FB,C,S,true);
 #endif
-  double median1=min(median0,fft1.report(M*C,FB));
+  double median1=min(median0,fft1.report(FB));
 
   cout << endl;
   cout << "Hybrid:" << endl;
@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
   fftPad fft(L,M,FB,C,S);
 #endif
 
-  double median=fft.report(M*C,FB);
+  double median=fft.report(FB);
 
   if(median0 > 0)
     cout << "minimal ratio=" << median/median0 << endl;
