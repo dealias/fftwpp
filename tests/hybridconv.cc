@@ -96,12 +96,11 @@ int main(int argc, char* argv[])
     }
     double err=0.0;
     double norm=0.0;
-    Complex hj;
 
     // Assumes B=1
     Complex* f0=f[0];
     for(unsigned int j=0; j < L; ++j) {
-      hj=h[j];
+      Complex hj=h[j];
       err += abs2(f0[j]-hj);
       norm += abs2(hj);
     }
