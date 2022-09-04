@@ -1,4 +1,5 @@
 #include "convolve.h"
+#include "direct.h"
 
 using namespace std;
 using namespace utils;
@@ -98,17 +99,65 @@ int main(int argc, char* argv[])
       sum += h0[i][j];
     }
   }
+  //array2<Complex> h;
+
 
   cout << "sum=" << sum << endl;
   cout << endl;
 
   if(Output) {
+    if(testError)
+      cout << "Hybrid:" << endl;
     for(unsigned int i=0; i < Lx; ++i) {
       for(unsigned int j=0; j < Hy; ++j) {
         cout << h0[i][j] << " ";
       }
       cout << endl;
     }
+  }
+
+  if(testError) {
+
+    array2<Complex> h(Lx,Hy,ComplexAlign(Lx*Sx));
+    array2<Complex> g0(Lx,Sx,ComplexAlign(Lx*Sx));
+    array2<Complex> g1(Lx,Sx,ComplexAlign(Lx*Sx));
+
+
+    for(unsigned int i=0; i < Lx; ++i) {
+      for(unsigned int j=0; j < Hy; ++j) {
+        int I=Lx % 2 ? i : -1+i;
+        g0[i][j]=Complex(I,j);
+        g1[i][j]=Complex(2*I,(j+1));
+      }
+    }
+    DirectHConvolution2 C(Hx,Hy);
+    C.convolve(h,g0,g1,true);
+
+    if(Output) {
+      cout << endl;
+      cout << "Direct:" << endl;
+      for(unsigned int i=0; i < Lx; ++i) {
+        for(unsigned int j=0; j < Hy; ++j) {
+          cout << h[i][j] << " ";
+        }
+        cout << endl;
+      }
+      cout << endl;
+    }
+    double err=0.0;
+    double norm=0.0;
+    // Assumes B=1
+
+    for(unsigned int i=0; i < Lx; ++i) {
+      for(unsigned int j=0; j < Hy; ++j) {
+        Complex hij=h[i][j];
+        err += abs2(h0[i][j]-hij);
+        norm += abs2(hij);
+      }
+    }
+    double relError=sqrt(err/norm);
+    cout << "Error: "<< relError << endl;
+
   }
   return 0;
 }
