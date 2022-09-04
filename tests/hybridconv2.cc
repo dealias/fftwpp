@@ -21,8 +21,6 @@ int main(int argc, char* argv[])
 
   optionsHybrid(argc,argv);
 
-  unsigned int K0=10000000;
-
   unsigned int Lx=L;
   unsigned int Ly=L;
   unsigned int Mx=M;
@@ -30,11 +28,10 @@ int main(int argc, char* argv[])
 
   unsigned int Sx=0; // x stride (0 means Ly)
 
+  unsigned int K0=10000000;
   if(K == 0) K=max(K0/(Mx*My),20);
-
   if(Output || testError)
     K=1;
-
   cout << "K=" << K << endl << endl;
 
   cout << "Lx=" << Lx << endl;

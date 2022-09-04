@@ -23,10 +23,8 @@ int main(int argc, char* argv[])
 
   unsigned int K0=100000000;
   if(K == 0) K=max(K0/M,20);
-
   if(Output || testError)
     K=1;
-
   cout << "K=" << K << endl << endl;
 
   double *T=new double[K];
