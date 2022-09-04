@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 # Check whether the local-memory transpose routine produces the
 # correct results for a variety of problem sizes and number of
@@ -22,9 +22,9 @@ zlist = [1,3]
 
 tlist = [1,2,3,4,5,6,7]
 
-print xlist
-print ylist
-print tlist
+print(xlist)
+print(ylist)
+print(tlist)
 
 ntests = 0
 nfailures = 0
@@ -41,23 +41,23 @@ for mx in xlist:
                     command.append("-z"+str(mz))
                     command.append("-T"+str(t))
                     command.append("-i"+str(inplace))
-                    print " ".join(command),
+                    print(" ".join(command),)
                     p = Popen(command, stdout = PIPE, stderr = PIPE)
                     p.wait() # sets the return code
                     prc = p.returncode
                     out, err = p.communicate()
-                    #print prc
+                    #print(prc)
                     if(prc == 0):
-                        print "\tpass"
+                        print("\tpass")
                     else:
                         nfailures += 1
-                        print "\tERROR!"
-print
+                        print("\tERROR!")
+print()
 
 if(nfailures == 0):
-    print "OK:\tall", ntests, "tests passed"
+    print("OK:\tall", ntests, "tests passed")
 else:
-    print "*" * 80
-    print "ERROR:\t", str(nfailures) + " FAILURES in", ntests, "tests!"
+    print("*" * 80)
+    print("ERROR:\t", str(nfailures) + " FAILURES in", ntests, "tests!")
 
 sys.exit(failures)
