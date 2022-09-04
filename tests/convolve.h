@@ -832,11 +832,11 @@ public:
       } else
         this->V=NULL;
 
-      allocateW=!this->W && !fft->inplace;
-      this->W=allocateW ? utils::ComplexAlign(workSizeW) : NULL;
+      allocateW=!W && !fft->inplace;
+      W=allocateW ? utils::ComplexAlign(workSizeW) : NULL;
 
       Pad=fft->Pad;
-      (fft->*Pad)(this->W);
+      (fft->*Pad)(W);
 
       nloops=fft->nloops();
       loop2=fft->loop2(A,B);
@@ -1060,6 +1060,7 @@ protected:
   bool allocateW;
   bool loop2;
   FFTcall Forward,Backward;
+  FFTPad Pad;
   unsigned int nloops;
   bool overwrite;
 public:
@@ -1120,12 +1121,11 @@ public:
       Backward=fftx->Backward;
     }
 
-    if(!fftx->inplace && !W) {
-      allocateW=true;
-      W=utils::ComplexAlign(fftx->workSizeW());
-    }
-
     unsigned int outputSize=fftx->outputSize();
+    unsigned int workSizeW=fftx->workSizeW();
+
+    allocateW=!W && !fftx->inplace;
+    W=allocateW ? utils::ComplexAlign(workSizeW) : NULL;
 
     qx=fftx->q;
     Qx=fftx->Q;
@@ -1144,6 +1144,9 @@ public:
 
     Sx=fftx->S;
 
+    Pad=fftx->Pad;
+    (fftx->*Pad)(W);
+
     nloops=fftx->nloops();
     loop2=fftx->loop2(A,B);
     int extra;
@@ -1157,8 +1160,7 @@ public:
     } else
       extra=0;
 
-    if(A > B+extra && !fftx->inplace &&
-       fftx->workSizeW() <= fftx->outputSize()) {
+    if(A > B+extra && !fftx->inplace && workSizeW <= outputSize) {
       W0=this->F[B];
     } else
       W0=this->W;
@@ -1230,9 +1232,10 @@ public:
   }
 
   void backward(Complex **F, Complex **f, unsigned int rx,
-                unsigned int offset=0, Complex *W=NULL) {
+                unsigned int offset=0, Complex *W0=NULL) {
     for(unsigned int b=0; b < B; ++b)
-      (fftx->*Backward)(F[b],f[b]+offset,rx,W);
+      (fftx->*Backward)(F[b],f[b]+offset,rx,W0);
+    if(W && W == W0) (fftx->*Pad)(W0);
   }
 
   void normalize(Complex **h, unsigned int offset=0) {
@@ -1375,6 +1378,7 @@ protected:
   bool allocateW;
   bool loop2;
   FFTcall Forward,Backward;
+  FFTPad Pad;
   unsigned int nloops;
   bool overwrite;
 public:
@@ -1449,12 +1453,11 @@ public:
       Backward=fftx->Backward;
     }
 
-    if(!fftx->inplace && !W) {
-      allocateW=true;
-      W=utils::ComplexAlign(fftx->workSizeW());
-    }
-
     unsigned int outputSize=fftx->outputSize();
+    unsigned int workSizeW=fftx->workSizeW();
+
+    allocateW=!W && !fftx->inplace;
+    W=allocateW ? utils::ComplexAlign(workSizeW) : NULL;
 
     qx=fftx->q;
     Qx=fftx->Q;
@@ -1480,6 +1483,9 @@ public:
       exit(-1);
     }
 
+    Pad=fftx->Pad;
+    (fftx->*Pad)(W);
+
     nloops=fftx->nloops();
     loop2=fftx->loop2(A,B);
     int extra;
@@ -1493,8 +1499,7 @@ public:
     } else
       extra=0;
 
-    if(A > B+extra && !fftx->inplace &&
-       fftx->workSizeW() <= fftx->outputSize()) {
+    if(A > B+extra && !fftx->inplace && workSizeW <= outputSize) {
       W0=this->F[B];
     } else
       W0=this->W;
@@ -1584,19 +1589,20 @@ public:
   }
 
   void backward(Complex **F, Complex **f, unsigned int rx,
-                unsigned int offset=0, Complex *W=NULL) {
+                unsigned int offset=0, Complex *W0=NULL) {
     for(unsigned int b=0; b < B; ++b) {
       if(Sx == fftx->C)
-        (fftx->*Backward)(F[b],f[b]+offset,rx,W);
+        (fftx->*Backward)(F[b],f[b]+offset,rx,W0);
       else {
         Complex *Fb=F[b];
         Complex *fb=f[b]+offset;
         for(unsigned int j=0; j < Ly; ++j) {
           unsigned int Syj=Sy*j;
-          (fftx->*Backward)(Fb+Syj,fb+Syj,rx,W);
+          (fftx->*Backward)(Fb+Syj,fb+Syj,rx,W0);
         }
       }
     }
+    if(W && W == W0) (fftx->*Pad)(W0);
   }
 
   void normalize(Complex **h, unsigned int offset=0) {
