@@ -94,19 +94,27 @@ def getPrograms(args):
 
 def test(programs, args):
   lenP=len(programs)
+  T=int(args.T)
   print("\n***************\n")
   if lenP == 1:
     p=programs[0]
     name=p.name
     if p.extraArgs:
       name+=" "+p.extraArgs
-    print("Testing "+name+"\n")
-    iterate(p,int(args.L),int(args.T),float(args.t),args.v)
+    if T == 0:
+      print("Testing "+name+" with 1, 2, and 4 threads.\n")
+    elif T == 1:
+      print("Testing "+name+" with "+args.T+" thread.\n")
+    elif T > 1:
+      print("Testing "+name+" with "+args.T+" threads.\n")
+    else: 
+      raise ValueError(str(T)+" is an invalid number of threads.")
+    iterate(p,int(args.L),T,float(args.t),args.v)
     print("Finished testing "+name+".")
     print("\n***************\n")
     print("Finished testing 1 program.")
     print("Out of "+str(p.total)+" tests, "+str(p.passed())+" passed, "+str(p.failed)+" failed.\n")
-    if args.l:
+    if args.l and len(p.failedCases) > 0:
       print("Failed Cases:\n")
       for case in p.failedCases:
         print(case)
@@ -121,8 +129,15 @@ def test(programs, args):
       name=p.name
       if p.extraArgs:
         name+=" "+p.extraArgs
-      print("Testing "+name+"\n")
-      iterate(p,int(args.L),int(args.T),float(args.t),args.v)
+      if T == 0:
+        print("Testing "+name+" with 1, 2, and 4 threads.\n")
+      elif T == 1:
+        print("Testing "+name+" with "+args.T+" thread.\n")
+      elif T > 1:
+        print("Testing "+name+" with "+args.T+" threads.\n")
+      else: 
+        raise ValueError(str(T)+" is an invalid number of threads.")
+      iterate(p,int(args.L),T,float(args.t),args.v)
       ptotal=p.total
       pfailed=p.failed
       ppassed=p.passed()
@@ -137,7 +152,7 @@ def test(programs, args):
 
     print("Finished testing "+str(lenP)+" programs.")
     print("Out of "+str(total)+" tests, "+str(passed)+" passed, "+str(failed)+" failed.\n")
-    if args.l:
+    if args.l and len(failedCases) > 0:
       print("Failed Cases:\n")
       for case in failedCases:
         print(case)
