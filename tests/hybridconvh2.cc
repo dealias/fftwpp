@@ -117,10 +117,13 @@ int main(int argc, char* argv[])
   }
 
   if(testError) {
-
-    array2<Complex> h(Lx,Hy,ComplexAlign(Lx*Sx));
-    array2<Complex> g0(Lx,Sx,ComplexAlign(Lx*Sx));
-    array2<Complex> g1(Lx,Sx,ComplexAlign(Lx*Sx));
+    Complex **g=new Complex *[2];
+    for(unsigned int a=0; a < 2; ++a)
+      g[a]=ComplexAlign(Lx*Sx);
+  
+    array2<Complex> h(Lx,Hy,g[0]);
+    array2<Complex> g0(Lx,Sx,g[0]);
+    array2<Complex> g1(Lx,Sx,g[1]);
 
 
     for(unsigned int i=0; i < Lx; ++i) {
@@ -157,7 +160,9 @@ int main(int argc, char* argv[])
     }
     double relError=sqrt(err/norm);
     cout << "Error: "<< relError << endl;
-
+    for(unsigned int a=0; a < 2; ++a)
+        deleteAlign(g[a]);
+      delete [] g;
   }
   return 0;
 }
