@@ -41,6 +41,10 @@ const union uvec sse2_mm={
 
 const double twopi=2.0*M_PI;
 
+void multNone(Complex **, unsigned int,  unsigned int)
+{
+}
+
 // This multiplication routine is for binary convolutions and takes
 // two Complex inputs of size n and outputs one Complex value.
 // F0[j] *= F1[j];
@@ -155,7 +159,7 @@ double time(fftBase *fft, Application &app)
   // Initialize entire array to 0 to avoid overflow when timing.
   for(unsigned int a=0; a < app.A; ++a) {
     Complex *fa=F+a*size;
-    f[a]=fa;;
+    f[a]=fa;
     for(unsigned int j=0; j < inputSize; ++j)
       fa[j]=0.0;
   }
@@ -300,7 +304,7 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
 {
   //cout << "m=" << m << ", p=" << p << ", q=" << q << ", D=" << D << " I=" << inplace << endl;
   if(q == 1 || valid(D,p,S)) {
-    if(useTimer == true) {
+    if(useTimer) {
       double t=time(L,M,C,S,m,q,D,inplace,app);
       if(showOptTimes)
         cout << "m=" << m << ", p=" << p << ", q=" << q << ", D=" << D << ", I=" << inplace << ": t=" << t*1.0e-9 << endl;
@@ -311,13 +315,8 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
         this->inplace=inplace;
         T=t;
       }
-    } else {
-        counter+=1;
-        this->m=m;
-        this->q=q;
-        this->D=D;
-        this->inplace=inplace;
-    }
+    } else
+      counter += 1;
   }
 }
 
@@ -339,12 +338,16 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   mForced=(mOption >= 1);
 
   defopt(L,M,app,C,S,32,3,Explicit,centered,false);
-  if(counter > 1)
+
+  if(counter > 1) {
     defopt(L,M,app,C,S,32,3,Explicit,centered);
+    if(showOptTimes)
+      cout << endl << "Optimal time: t=" << T*1.0e-9;
+  }
 
   unsigned int p=ceilquotient(L,m);
   unsigned int mpL=m*p-L;
-  cout << endl << "Optimal Padding: ";
+  cout << endl << "Optimal padding: ";
   if(p == q)
     cout << "Explicit" << endl;
   else if(mpL > 0)
@@ -4206,7 +4209,7 @@ void fftPadHermitian::forwardExplicitMany(Complex *f, Complex *F, unsigned int,
 }
 
 void fftPadHermitian::backwardExplicit(Complex *F, Complex *f, unsigned int,
-                                       Complex *W)
+                                       Complex *)
 {
   rcfftm->fft(F);
   unsigned int H=ceilquotient(L,2);

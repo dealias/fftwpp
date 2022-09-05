@@ -9,8 +9,8 @@ using namespace fftwpp;
 
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
-unsigned int L=512; // input data length
-unsigned int M=1024; // minimum padded length
+unsigned int L=8; // input data length
+unsigned int M=16; // minimum padded length
 
 int main(int argc, char* argv[])
 {
@@ -32,13 +32,14 @@ int main(int argc, char* argv[])
   Application app(A,B,multbinary);
   fftBase *fft=Centered ? new fftPadCentered(L,M,app) : new fftPad(L,M,app);
 
-
   unsigned int N=max(A,B);
   Complex **f=new Complex *[N];
   unsigned int size=fft->embed() ? fft->outputSize() : fft->inputSize();
   Complex *F=ComplexAlign(N*size);
   for(unsigned int a=0; a < A; ++a)
     f[a]=F+a*size;
+
+  Convolution Convolve(fft,A,B,fft->embed() ? F : NULL);
 
   for(unsigned int a=0; a < A; ++a) {
     Complex *fa=f[a];
@@ -55,7 +56,6 @@ int main(int argc, char* argv[])
     else
       C.convolve(h,f[0],f[1]);
   }
-  Convolution Convolve(fft,A,B,fft->embed() ? F : NULL);
 
   if(normalized || testError) {
     for(unsigned int k=0; k < K; ++k) {
@@ -74,7 +74,6 @@ int main(int argc, char* argv[])
   cout << endl;
   timings("Hybrid",L,T,K,stats);
   cout << endl;
-
 
   if(Output) {
     if(testError)

@@ -56,7 +56,7 @@ typedef void (fftBase::*FFTPad)(Complex *W);
 typedef void multiplier(Complex **, unsigned int n, unsigned int threads);
 
 // Multiplication routines for binary convolutions that take two inputs.
-multiplier multbinary,realmultbinary;
+multiplier multNone,multbinary,realmultbinary;
 
 class Application : public ThreadBase
 {
@@ -65,7 +65,7 @@ public:
   unsigned int B;
   multiplier *mult;
 
-  Application(unsigned int A, unsigned int B, multiplier *mult,
+  Application(unsigned int A, unsigned int B, multiplier *mult=multNone,
               unsigned int threads=fftw::maxthreads, unsigned int n=0) :
     ThreadBase(threads), A(A), B(B), mult(mult) {
     if(n == 0)
@@ -782,11 +782,11 @@ public:
   //    call pad() if changed between calls to convolve()
   // V: optional work array of size B*fft->workSizeV(A,B)
   //   (only needed for inplace usage)
-
   Convolution(fftBase *fft, unsigned int A, unsigned int B,
               Complex *F=NULL, Complex *W=NULL,
               Complex *V=NULL) : ThreadBase(fft->Threads()), fft(fft),
-                                 A(A), B(B), mult(fft->mult), W(W), allocate(false) {
+                                 A(A), B(B), mult(fft->mult), W(W),
+                                 allocate(false) {
     init(F,V);
   }
 
@@ -1077,7 +1077,7 @@ public:
                unsigned int A, unsigned int B, multiplier *mult,
                unsigned int threads=fftw::maxthreads) :
     ThreadBase(threads), mult(mult), W(NULL), allocateW(false) {
-    Application appx(A,B,mult,threads);
+    Application appx(A,B,multNone,threads);
     fftx=new fftPad(Lx,Mx,appx,Ly);
     Application appy(A,B,mult,threads,fftx->l);
     ffty=new fftPad(Ly,My,appy);
@@ -1316,7 +1316,7 @@ public:
     Convolution2(threads) {
     this->mult=mult;
     unsigned int Hy=utils::ceilquotient(Ly,2);
-    Application appx(A,B,mult,threads);
+    Application appx(A,B,multNone,threads);
     fftx=new fftPadCentered(Lx,Mx,appx,Hy);
     Application appy(A,B,mult,threads,fftx->l);
     ffty=new fftPadHermitian(Ly,My,appy);
@@ -1396,9 +1396,9 @@ public:
                unsigned int A, unsigned int B, multiplier *mult,
                unsigned int threads=fftw::maxthreads) :
     ThreadBase(threads), mult(mult), W(NULL), allocateW(false) {
-    Application appx(A,B,mult,threads);
+    Application appx(A,B,multNone,threads);
     fftx=new fftPad(Lx,Mx,appx,Ly*Lz);
-    Application appy(A,B,mult,appx.Threads(),fftx->l);
+    Application appy(A,B,multNone,appx.Threads(),fftx->l);
     ffty=new fftPad(Ly,My,appy,Lz);
     Application appz(A,B,mult,appy.Threads(),ffty->l);
     fftz=new fftPad(Lz,Mz,appz);
@@ -1591,7 +1591,7 @@ public:
   void backward(Complex **F, Complex **f, unsigned int rx,
                 unsigned int offset=0, Complex *W0=NULL) {
     for(unsigned int b=0; b < B; ++b) {
-      if(Sx == fftx->C)
+      if(Sy == Lz)
         (fftx->*Backward)(F[b],f[b]+offset,rx,W0);
       else {
         Complex *Fb=F[b];
@@ -1693,9 +1693,9 @@ public:
     unsigned int Hz=utils::ceilquotient(Lz,2);
     this->mult=mult;
 
-    Application appx(A,B,mult,threads);
+    Application appx(A,B,multNone,threads);
     fftx=new fftPadCentered(Lx,Mx,appx,Ly*Hz);
-    Application appy(A,B,mult,appx.Threads(),fftx->l);
+    Application appy(A,B,multNone,appx.Threads(),fftx->l);
     ffty=new fftPadCentered(Ly,My,appy,Hz);
     Application appz(A,B,mult,appy.Threads(),ffty->l);
     fftz=new fftPadHermitian(Lz,Mz,appz);

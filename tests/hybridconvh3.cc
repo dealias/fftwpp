@@ -58,9 +58,9 @@ int main(int argc, char* argv[])
   array2<Complex> f0(Lx,Sx,f[0]);
   array2<Complex> f1(Lx,Sx,f[1]);
 
-  Application appx(A,B,realmultbinary);
+  Application appx(A,B);
   fftPadCentered fftx(Lx,Mx,appx,Sx == Ly*Hz ? Sx : Hz,Sx);
-  Application appy(A,B,realmultbinary,appx.Threads(),fftx.l);
+  Application appy(A,B,multNone,appx.Threads(),fftx.l);
   fftPadCentered ffty(Ly,My,appy,Hz,Sy);
   Application appz(A,B,realmultbinary,appy.Threads(),ffty.l);
   ConvolutionHermitian convolvez(Lz,Mz,appz);
@@ -86,20 +86,6 @@ int main(int argc, char* argv[])
 
     HermitianSymmetrizeXY(Hx,Hy,Hz,Lx/2,Ly/2,f0,Sx,Sy);
     HermitianSymmetrizeXY(Hx,Hy,Hz,Lx/2,Ly/2,f1,Sx,Sy);
-
-    if(Lx*Ly*Hz < 200 && c == 0) {
-      for(unsigned int a=0; a < A; ++a) {
-        for(unsigned int i=0; i < Lx; ++i) {
-          for(unsigned int j=0; j < Ly; ++j) {
-            for(unsigned int k=0; k < Hz; ++k)
-              cout << f[a][Sx*i+Sy*j+k] << " ";
-            cout << endl;
-          }
-          cout << endl;
-        }
-        cout << endl;
-      }
-    }
 
     seconds();
     Convolve3.convolve(f);

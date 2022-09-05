@@ -53,12 +53,10 @@ int main(int argc, char* argv[])
 
   array2<Complex> h0(Lx,Sx,f[0]);
 
-  Application app(A,B,realmultbinary);
-//  Application app(A,B,multadvection2);
-
-  fftPadCentered fftx(Lx,Mx,app,Hy,Sx);
-  ConvolutionHermitian convolvey(Ly,My,app);
-
+  Application appx(A,B);
+  fftPadCentered fftx(Lx,Mx,appx,Hy,Sx);
+  Application appy(A,B,realmultbinary,appx.Threads(),fftx.l);
+  ConvolutionHermitian convolvey(Ly,My,appy);
   ConvolutionHermitian2 Convolve2(&fftx,&convolvey);
 
   double T=0;
