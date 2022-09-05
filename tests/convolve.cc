@@ -167,7 +167,8 @@ double time(fftBase *fft, Application &app)
   Convolution Convolve(fft,app.A,app.B,fft->embed() ? F : NULL);
 
   statistics Stats(true);
-  unsigned int K=max(2000000/(fft->M*fft->C),10); // Number of samples
+  // Number of samples
+  unsigned int K=max(ceilquotient(2000000,fft->M*fft->S),1);
   for(unsigned int k=0; k < K; ++k) {
     auto begin=std::chrono::steady_clock::now();
     Convolve.convolveRaw(f);
