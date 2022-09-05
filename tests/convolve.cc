@@ -316,8 +316,15 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
         this->inplace=inplace;
         T=t;
       }
-    } else
+    } else {
       counter += 1;
+      if(counter == 1) {
+        this->m=m;
+        this->q=q;
+        this->D=D;
+        this->inplace=inplace;
+      }
+    }
   }
 }
 
