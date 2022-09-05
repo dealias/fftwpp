@@ -3,7 +3,7 @@
 from math import *
 from subprocess import *
 import os
-import re 
+import re
 import argparse
 
 def main():
@@ -47,11 +47,11 @@ def getArgs():
                       0, iterates over 1, 2, and 4 threads. Default is 1.",
                       default=1)
   parser.add_argument("-L", help="L value. Default is 8.", default=8)
-  parser.add_argument("-t",help="Error tolerance. Default is 1e-12.", 
+  parser.add_argument("-t",help="Error tolerance. Default is 1e-12.",
                       default=1e-12)
-  parser.add_argument("-l",help="Show log of failed cases", 
+  parser.add_argument("-l",help="Show log of failed cases",
                       action="store_true")
-  parser.add_argument("-v",help="Show the results of every test.", 
+  parser.add_argument("-v",help="Show the results of every test.",
                       action="store_true")
   return parser.parse_args()
 
@@ -107,7 +107,7 @@ def test(programs, args):
       print("Testing "+name+" with "+args.T+" thread.\n")
     elif T > 1:
       print("Testing "+name+" with "+args.T+" threads.\n")
-    else: 
+    else:
       raise ValueError(str(T)+" is an invalid number of threads.")
     iterate(p,int(args.L),T,float(args.t),args.v)
     print("Finished testing "+name+".")
@@ -132,10 +132,10 @@ def test(programs, args):
       if T == 0:
         print("Testing "+name+" with 1, 2, and 4 threads.\n")
       elif T == 1:
-        print("Testing "+name+" with "+args.T+" thread.\n")
+        print("Testing "+name+" with "+str(args.T)+" thread.\n")
       elif T > 1:
-        print("Testing "+name+" with "+args.T+" threads.\n")
-      else: 
+        print("Testing "+name+" with "+str(args.T)+" threads.\n")
+      else:
         raise ValueError(str(T)+" is an invalid number of threads.")
       iterate(p,int(args.L),T,float(args.t),args.v)
       ptotal=p.total
