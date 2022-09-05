@@ -209,19 +209,19 @@ void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
     unsigned int n=ceilquotient(M,m0*P);
     //cout<<"inner="<<inner<<", p="<<p<<", P="<<P<<", n="<<n<<", centered="<<centered<<endl;
 
-    // In the inner loop we must have the following:
-    // p must be a power of 2.
-    // p must be even in the centered case.
-    // p != q.
-    if(inner && (((notPow2(p) || p == P*n) && !mForced) || (centered && p%2 != 0))) {
-      if(mOption >= 1) {
+    if(mOption >= 1 && centered && p%2 != 0) {
         cerr << "m=" << mOption << endl;
         cerr << "p=" << p << endl;
         cerr << "Odd values of p are incompatible with the centered and Hermitian routines." << endl;
         cerr << "Using m=" << M << " instead." << endl;
-      }
-      i=m0=nextpuresize(m0+1);
     }
+
+    // In the inner loop we must have the following:
+    // p must be a power of 2.
+    // p must be even in the centered case.
+    // p != q.
+    if(inner && (((notPow2(p) || p == P*n) && !mForced) || (centered && p%2 != 0))) 
+      i=m0=nextpuresize(m0+1);
     else {
       unsigned int q=(inner ? P*n : ceilquotient(M,m0));
       unsigned int Dstart=DOption > 0 ? min(DOption,n) : 1;
