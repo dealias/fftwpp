@@ -1,4 +1,5 @@
 #include "convolve.h"
+#include "timing.h"
 #include "direct.h"
 
 using namespace std;
@@ -26,16 +27,18 @@ int main(int argc, char* argv[])
   unsigned int Mx=M;
   unsigned int My=M;
 
+  unsigned int Sx=0; // x stride (0 means ceilquotient(Ly,2))
+
   unsigned int K0=10000000;
   if(K == 0) K=max(K0/(Mx*My),20);
   if(Output || testError)
     K=1;
   cout << "K=" << K << endl << endl;
 
-  unsigned int Sx=0; // x stride (0 means ceilquotient(Ly,2))
-
   cout << "Lx=" << Lx << endl;
+  cout << "Ly=" << Ly << endl;
   cout << "Mx=" << Mx << endl;
+  cout << "My=" << My << endl;
   cout << endl;
 
   unsigned int Hx=ceilquotient(Lx,2);
@@ -43,15 +46,7 @@ int main(int argc, char* argv[])
 
   if(Sx == 0) Sx=Hy;
 
-  Complex **f=new Complex *[A];
-
-  for(unsigned int a=0; a < A; ++a)
-    f[a]=ComplexAlign(Lx*Sx);
-
-  array2<Complex> f0(Lx,Sx,f[0]);
-  array2<Complex> f1(Lx,Sx,f[1]);
-
-  array2<Complex> h0(Lx,Sx,f[0]);
+  double *T=new double[K];
 
   Application appx(A,B);
   fftPadCentered fftx(Lx,Mx,appx,Hy,Sx);
@@ -59,87 +54,73 @@ int main(int argc, char* argv[])
   ConvolutionHermitian convolvey(Ly,My,appy);
   ConvolutionHermitian2 Convolve2(&fftx,&convolvey);
 
-  double T=0;
+//  ConvolutionHermitian2 Convolve2(Lx,Mx,Ly,My,A,B);
 
-  for(unsigned int c=0; c < K; ++c) {
+  unsigned int N=max(A,B);
+  Complex **f=new Complex *[N];
+  unsigned int size=fftx.inputSize();
+  Complex *f0=ComplexAlign(N*size);
+  for(unsigned int a=0; a < A; ++a)
+    f[a]=f0+a*size;
 
+  for(unsigned int a=0; a < A; ++a) {
+    Complex *fa=f[a];
     for(unsigned int i=0; i < Lx; ++i) {
       for(unsigned int j=0; j < Hy; ++j) {
         int I=Lx % 2 ? i : -1+i;
-        f0[i][j]=Complex(I,j);
-        f1[i][j]=Complex(2*I,(j+1));
+        fa[Sx*i+j]=Output || testError ? Complex(I,j) : 0.0;
       }
     }
-
-    HermitianSymmetrizeX(Hx,Hy,Lx/2,f0,Sx);
-    HermitianSymmetrizeX(Hx,Hy,Lx/2,f1,Sx);
-
-    if(Output) {
-      for(unsigned int i=0; i < Lx; ++i) {
-        for(unsigned int j=0; j < Hy; ++j) {
-          cout << f0[i][j] << " ";
-        }
-        cout << endl;
-      }
-      cout << endl;
-    }
-
-    seconds();
-    Convolve2.convolve(f);
-    T += seconds();
   }
 
-  cout << "median=" << T/K << endl;
+  HermitianSymmetrizeX(Hx,Hy,Lx/2,f[0],Sx);
+  HermitianSymmetrizeX(Hx,Hy,Lx/2,f[1],Sx);
 
-  Complex sum=0.0;
-  for(unsigned int i=0; i < Lx; ++i) {
-    for(unsigned int j=0; j < Hy; ++j) {
-      sum += h0[i][j];
+  Complex *h=NULL;
+  if(testError) {
+    h=ComplexAlign(Lx*Hy);
+    DirectHConvolution2 C(Hx,Hy);
+    C.convolve(h,f[0],f[1]);
+  }
+
+  if(normalized || testError) {
+    for(unsigned int k=0; k < K; ++k) {
+      seconds();
+      Convolve2.convolve(f);
+      T[k] += seconds();
+    }
+  } else {
+    for(unsigned int k=0; k < K; ++k) {
+      seconds();
+      Convolve2.convolveRaw(f);
+      T[k] += seconds();
     }
   }
-  //array2<Complex> h;
 
-
-  cout << "sum=" << sum << endl;
+  cout << endl;
+  timings("Hybrid",L,T,K,stats);
   cout << endl;
 
   if(Output) {
     if(testError)
       cout << "Hybrid:" << endl;
-    for(unsigned int i=0; i < Lx; ++i) {
-      for(unsigned int j=0; j < Hy; ++j) {
-        cout << h0[i][j] << " ";
+    for(unsigned int b=0; b < B; ++b) {
+      for(unsigned int i=0; i < Lx; ++i) {
+        for(unsigned int j=0; j < Hy; ++j) {
+          cout << f[b][Sx*i+j] << " ";
+        }
+        cout << endl;
       }
-      cout << endl;
     }
   }
 
   if(testError) {
-    Complex **g=new Complex *[2];
-    for(unsigned int a=0; a < 2; ++a)
-      g[a]=ComplexAlign(Lx*Sx);
-  
-    array2<Complex> h(Lx,Hy,g[0]);
-    array2<Complex> g0(Lx,Sx,g[0]);
-    array2<Complex> g1(Lx,Sx,g[1]);
-
-
-    for(unsigned int i=0; i < Lx; ++i) {
-      for(unsigned int j=0; j < Hy; ++j) {
-        int I=Lx % 2 ? i : -1+i;
-        g0[i][j]=Complex(I,j);
-        g1[i][j]=Complex(2*I,(j+1));
-      }
-    }
-    DirectHConvolution2 C(Hx,Hy);
-    C.convolve(h,g0,g1,true);
-
     if(Output) {
       cout << endl;
       cout << "Direct:" << endl;
       for(unsigned int i=0; i < Lx; ++i) {
         for(unsigned int j=0; j < Hy; ++j) {
-          cout << h[i][j] << " ";
+          cout << h[Sx*i+j] << " ";
         }
         cout << endl;
       }
@@ -148,19 +129,16 @@ int main(int argc, char* argv[])
     double err=0.0;
     double norm=0.0;
     // Assumes B=1
-
     for(unsigned int i=0; i < Lx; ++i) {
       for(unsigned int j=0; j < Hy; ++j) {
-        Complex hij=h[i][j];
-        err += abs2(h0[i][j]-hij);
+        Complex hij=h[Sx*i+j];
+        err += abs2(f[0][Sx*i+j]-hij);
         norm += abs2(hij);
       }
     }
     double relError=sqrt(err/norm);
     cout << "Error: "<< relError << endl;
-    for(unsigned int a=0; a < 2; ++a)
-        deleteAlign(g[a]);
-      delete [] g;
+    deleteAlign(h);
   }
   return 0;
 }
