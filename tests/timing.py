@@ -394,8 +394,7 @@ def main(argv):
             cmd.append(("-K" if hybrid else "-N") + str(N))
         if T > 0:
             cmd.append("-T" + str(T))
-        if not hybrid:
-            cmd.append("-u")
+        cmd.append("-u")
 
         # Add the extra arguments to the program being timed.
         i = 0
