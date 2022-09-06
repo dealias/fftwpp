@@ -168,7 +168,7 @@ double time(fftBase *fft, Application &app)
 
   statistics Stats(true);
   // Number of samples
-  unsigned int K=max(ceilquotient(2000000,fft->M*fft->S),1);
+  unsigned int K=max(ceilquotient(2000000,fft->M*fft->C),1);
   for(unsigned int k=0; k < K; ++k) {
     auto begin=std::chrono::steady_clock::now();
     Convolve.convolveRaw(f);
@@ -193,7 +193,7 @@ double timePadHermitian(fftBase *fft, Application &app)
   return time<ConvolutionHermitian>(fft,app);
 }
 
-void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
+void fftBase::OptBase::optloop(unsigned int& m0, unsigned int L,
                                   unsigned int M, Application& app,
                                   unsigned int C, unsigned int S,
                                   bool centered, unsigned int itmax,
@@ -220,7 +220,7 @@ void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
     // p must be a power of 2.
     // p must be even in the centered case.
     // p != q.
-    if(inner && (((notPow2(p) || p == P*n) && !mForced) || (centered && p%2 != 0))) 
+    if(inner && (((notPow2(p) || p == P*n) && !mForced) || (centered && p%2 != 0)))
       i=m0=nextpuresize(m0+1);
     else {
       unsigned int q=(inner ? P*n : ceilquotient(M,m0));
@@ -260,7 +260,7 @@ void fftBase::OptBase::defoptloop(unsigned int& m0, unsigned int L,
   }
 }
 
-void fftBase::OptBase::defopt(unsigned int L, unsigned int M, Application& app,
+void fftBase::OptBase::opt(unsigned int L, unsigned int M, Application& app,
                               unsigned int C, unsigned int S,
                               unsigned int minsize, unsigned int itmax,
                               bool Explicit, bool centered, bool useTimer)
@@ -268,33 +268,33 @@ void fftBase::OptBase::defopt(unsigned int L, unsigned int M, Application& app,
   if(!Explicit) {
     if(mForced) {
       if(mOption >= L/2)
-        defoptloop(mOption,L,M,app,C,S,centered,1,useTimer);
+        optloop(mOption,L,M,app,C,S,centered,1,useTimer);
       else
-        defoptloop(mOption,L,M,app,C,S,centered,mOption+1,useTimer,true);
+        optloop(mOption,L,M,app,C,S,centered,mOption+1,useTimer,true);
     } else {
       unsigned int m0=nextfftsize(minsize);
 
-      defoptloop(m0,L,M,app,C,S,centered,L/2,useTimer,true);
+      optloop(m0,L,M,app,C,S,centered,L/2,useTimer,true);
 
       m0=nextfftsize(L/2);
-      defoptloop(m0,L,M,app,C,S,centered,itmax,useTimer);
+      optloop(m0,L,M,app,C,S,centered,itmax,useTimer);
 
       if(L > M/2) {
         m0=nextfftsize(max(M/2,m0));
-        defoptloop(m0,L,M,app,C,S,centered,itmax,useTimer);
+        optloop(m0,L,M,app,C,S,centered,itmax,useTimer);
 
         m0=nextfftsize(max(L,m0));
-        defoptloop(m0,L,M,app,C,S,centered,itmax,useTimer);
+        optloop(m0,L,M,app,C,S,centered,itmax,useTimer);
       } else {
         m0=nextfftsize(max(L <= M/2 ? L : M/2,m0));
-        defoptloop(m0,L,M,app,C,S,centered,itmax,useTimer);
+        optloop(m0,L,M,app,C,S,centered,itmax,useTimer);
       }
       m0=nextfftsize(max(M,m0));
-      defoptloop(m0,L,M,app,C,S,centered,itmax,useTimer);
+      optloop(m0,L,M,app,C,S,centered,itmax,useTimer);
     }
   } else {
     unsigned int m0=nextfftsize(M);
-    defoptloop(m0,L,m0,app,C,S,centered,itmax,useTimer);
+    optloop(m0,L,m0,app,C,S,centered,itmax,useTimer);
   }
 }
 
@@ -345,10 +345,12 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
 
   mForced=(mOption >= 1);
 
-  defopt(L,M,app,C,S,32,3,Explicit,centered,false);
+  unsigned int mStart=2;
+  unsigned int itmax=3;
+  opt(L,M,app,C,S,mStart,itmax,Explicit,centered,false);
 
   if(counter > 1) {
-    defopt(L,M,app,C,S,32,3,Explicit,centered);
+    opt(L,M,app,C,S,mStart,itmax,Explicit,centered);
     if(showOptTimes)
       cout << endl << "Optimal time: t=" << T*1.0e-9;
   }

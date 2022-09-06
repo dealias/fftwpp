@@ -147,14 +147,14 @@ public:
               unsigned int C, unsigned int S, bool Explicit=false,
               bool centered=false);
 
-    // A function called by defopt to iterate over m and D values
+    // A function called by opt to iterate over m and D values
     // and call check.
     // Inner is true if p > 2.
     // If inner is false, ubound is the maximum number maximum number of
     // m values that are checked.
     // If inner is true, ubound is the maximum size of m values that are
     // checked.
-    void defoptloop(unsigned int& m0, unsigned int L, unsigned int M,
+    void optloop(unsigned int& m0, unsigned int L, unsigned int M,
                     Application& app, unsigned int C, unsigned int S,
                     bool centered, unsigned int ubound, bool useTimer,
                     bool inner=false);
@@ -162,9 +162,9 @@ public:
     // The default optimizer routine. Used by scan to iterate and check
     // different m values for a given geometry and application.
     // 'minInner' is the minimum size of FFT we consider for the inner routines.
-    // 'itmax' is the maximum number of iterations done by defoptloop
+    // 'itmax' is the maximum number of iterations done by optloop
     // (when p <= 2).
-    void defopt(unsigned int L, unsigned int M, Application& app,
+    void opt(unsigned int L, unsigned int M, Application& app,
                 unsigned int C, unsigned int S, unsigned int minInner,
                 unsigned int itmax, bool Explicit, bool centered,
                 bool useTimer=true);
