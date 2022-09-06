@@ -310,6 +310,10 @@ public:
 
   void backwards(Complex *f);
   void forwards(Complex *f);
+
+  // F is an array of pointers to distinct data blocks each of size n.
+//  void convolve(Complex **F, Multiplier *mult);
+
   void convolve(Complex *f, Complex *g);
 };
 

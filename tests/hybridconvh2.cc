@@ -10,7 +10,7 @@ using namespace fftwpp;
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
 unsigned int L=7; // input data length
-unsigned int M=12; // minimum padded length
+unsigned int M=10; // minimum padded length
 
 int main(int argc, char* argv[])
 {
@@ -68,13 +68,11 @@ int main(int argc, char* argv[])
     for(unsigned int i=0; i < Lx; ++i) {
       for(unsigned int j=0; j < Hy; ++j) {
         int I=Lx % 2 ? i : -1+i;
-        fa[Sx*i+j]=Output || testError ? Complex(I,j) : 0.0;
+        fa[Sx*i+j]=Output || testError ? Complex((a+1)*I,j+a) : 0.0;
       }
     }
+    HermitianSymmetrizeX(Hx,Hy,Lx/2,fa,Sx);
   }
-
-  HermitianSymmetrizeX(Hx,Hy,Lx/2,f[0],Sx);
-  HermitianSymmetrizeX(Hx,Hy,Lx/2,f[1],Sx);
 
   Complex *h=NULL;
   if(testError) {
@@ -87,13 +85,13 @@ int main(int argc, char* argv[])
     for(unsigned int k=0; k < K; ++k) {
       seconds();
       Convolve2.convolve(f);
-      T[k] += seconds();
+      T[k]=seconds();
     }
   } else {
     for(unsigned int k=0; k < K; ++k) {
       seconds();
       Convolve2.convolveRaw(f);
-      T[k] += seconds();
+      T[k]=seconds();
     }
   }
 

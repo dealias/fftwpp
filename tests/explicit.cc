@@ -241,6 +241,13 @@ void ExplicitHConvolution2::forwards(Complex *f)
     Forwards->fft0(f);
 }
 
+/*
+void ExplicitHConvolution2::convolve(Complex **F, Realmultiplier *mult)
+{
+
+}
+*/
+
 void ExplicitHConvolution2::convolve(Complex **F, Complex **G, bool symmetrize)
 {
   unsigned int xorigin=nx/2;

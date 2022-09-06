@@ -1,4 +1,6 @@
 #include "convolve.h"
+#include "timing.h"
+#include "direct.h"
 
 using namespace std;
 using namespace utils;
@@ -8,7 +10,7 @@ using namespace fftwpp;
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
 unsigned int L=7; // input data length
-unsigned int M=12; // minimum padded length
+unsigned int M=10; // minimum padded length
 
 int main(int argc, char* argv[])
 {
@@ -51,12 +53,7 @@ int main(int argc, char* argv[])
   if(Sy == 0) Sy=Hz;
   if(Sx == 0) Sx=Ly*Sy;
 
-  Complex **f=new Complex *[max(A,B)];
-  for(unsigned int a=0; a < A; ++a)
-    f[a]=ComplexAlign(Lx*Sx);
-
-  array2<Complex> f0(Lx,Sx,f[0]);
-  array2<Complex> f1(Lx,Sx,f[1]);
+  double *T=new double[K];
 
   Application appx(A,B);
   fftPadCentered fftx(Lx,Mx,appx,Sx == Ly*Hz ? Sx : Hz,Sx);
@@ -69,46 +66,56 @@ int main(int argc, char* argv[])
 
 //  ConvolutionHermitian3 Convolve3(Lx,Mx,Ly,My,Lz,Mz,A,B);
 
-  double T=0;
+  unsigned int N=max(A,B);
+  Complex **f=new Complex *[N];
+  unsigned int size=fftx.inputSize();
+  Complex *f0=ComplexAlign(N*size);
+  for(unsigned int a=0; a < A; ++a)
+    f[a]=f0+a*size;
 
-  for(unsigned int c=0; c < K; ++c) {
-
+  for(unsigned int a=0; a < A; ++a) {
+    Complex *fa=f[a];
     for(unsigned int i=0; i < Lx; ++i) {
       for(unsigned int j=0; j < Ly; ++j) {
         for(unsigned int k=0; k < Hz; ++k) {
           int I=Lx % 2 ? i : -1+i;
           int J=Ly % 2 ? j : -1+j;
-          f[0][Sx*i+Sy*j+k]=Complex(I+(int) k,J+k);
-          f[1][Sx*i+Sy*j+k]=Complex(2*I+(int) k,(J+1+k));
+          fa[Sx*i+Sy*j+k]=Output || testError ?
+            Complex((1.0+a)*I+k,J+a+k) : 0.0;
         }
       }
     }
-
-    HermitianSymmetrizeXY(Hx,Hy,Hz,Lx/2,Ly/2,f0,Sx,Sy);
-    HermitianSymmetrizeXY(Hx,Hy,Hz,Lx/2,Ly/2,f1,Sx,Sy);
-
-    seconds();
-    Convolve3.convolve(f);
-    T += seconds();
+    HermitianSymmetrizeXY(Hx,Hy,Hz,Lx/2,Ly/2,fa,Sx,Sy);
   }
 
-  cout << "median=" << T/K << endl;
+  Complex *h=NULL;
+  if(testError) {
+    h=ComplexAlign(Lx*Ly*Hz);
+    DirectHConvolution3 C(Hx,Hy,Hz);
+    C.convolve(h,f[0],f[1]);
+  }
 
-  Complex sum=0.0;
-  for(unsigned int b=0; b < B; ++b) {
-    Complex *fb=f[b];
-    for(unsigned int i=0; i < Lx; ++i) {
-      for(unsigned int j=0; j < Ly; ++j) {
-        for(unsigned int k=0; k < Hz; ++k)
-          sum += fb[Sx*i+Sy*j+k];
-      }
+  if(normalized || testError) {
+    for(unsigned int k=0; k < K; ++k) {
+      seconds();
+      Convolve3.convolve(f);
+      T[k]=seconds();
+    }
+  } else {
+    for(unsigned int k=0; k < K; ++k) {
+      seconds();
+      Convolve3.convolveRaw(f);
+      T[k]=seconds();
     }
   }
 
-  cout << "sum=" << sum << endl;
+  cout << endl;
+  timings("Hybrid",L,T,K,stats);
   cout << endl;
 
   if(Output) {
+    if(testError)
+      cout << "Hybrid:" << endl;
     for(unsigned int b=0; b < B; ++b) {
       Complex *fb=f[b];
       for(unsigned int i=0; i < Lx; ++i) {
@@ -121,6 +128,37 @@ int main(int argc, char* argv[])
       }
       cout << endl;
     }
+  }
+
+  if(testError) {
+    if(Output) {
+      cout << endl;
+      cout << "Direct:" << endl;
+      for(unsigned int i=0; i < Lx; ++i) {
+        for(unsigned int j=0; j < Ly; ++j) {
+          for(unsigned int k=0; k < Hz; ++k) {
+            cout << h[Sx*i+Sy*j+k] << " ";
+          }
+          cout << endl;
+        }
+        cout << endl;
+      }
+      cout << endl;
+    }
+    double err=0.0;
+    double norm=0.0;
+
+    // Assumes B=1
+    for(unsigned int i=0; i < Lx; ++i)
+      for(unsigned int j=0; j < Ly; ++j)
+        for(unsigned int k=0; k < Hz; ++k){
+          Complex hijk=h[Sx*i+Sy*j+k];
+          err += abs2(f[0][Sx*i+Sy*j+k]-hijk);
+          norm += abs2(hijk);
+        }
+    double relError=sqrt(err/norm);
+    cout << "Error: "<< relError << endl;
+    deleteAlign(h);
   }
   return 0;
 }

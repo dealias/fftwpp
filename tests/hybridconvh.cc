@@ -10,7 +10,7 @@ using namespace fftwpp;
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
 unsigned int L=7; // input data length
-unsigned int M=12; // minimum padded length
+unsigned int M=10; // minimum padded length
 
 int main(int argc, char* argv[])
 {

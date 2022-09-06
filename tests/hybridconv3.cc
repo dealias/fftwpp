@@ -22,10 +22,10 @@ int main(int argc, char* argv[])
 
   optionsHybrid(argc,argv);
 
-  unsigned int Lx=L; // TODO: x
+  unsigned int Lx=L;
   unsigned int Ly=L;
   unsigned int Lz=L;
-  unsigned int Mx=M; // TODO: X
+  unsigned int Mx=M;
   unsigned int My=M;
   unsigned int Mz=M;
 
@@ -53,15 +53,12 @@ int main(int argc, char* argv[])
 
   Application appx(A,B);
   fftPad fftx(Lx,Mx,appx,Sx == Ly*Lz ? Sx : Lz,Sx);
-
   Application appy(A,B,multNone,appx.Threads(),fftx.l);
   fftPad ffty(Ly,My,appy,Lz,Sy);
   Application appz(A,B,multbinary,appy.Threads(),ffty.l);
   Convolution convolvez(Lz,Mz,appz);
   Convolution2 convolveyz(&ffty,&convolvez);
   Convolution3 Convolve3(&fftx,&convolveyz);
-
-//  Convolution3 Convolve3(Lx,Mx,Ly,My,Lz,Mz,A,B);
 
   unsigned int N=max(A,B);
   Complex **f=new Complex *[N];
@@ -70,12 +67,15 @@ int main(int argc, char* argv[])
   for(unsigned int a=0; a < A; ++a)
     f[a]=f0+a*size;
 
+//  Convolution3 Convolve3(Lx,Mx,Ly,My,Lz,Mz,A,B);
+
   for(unsigned int a=0; a < A; ++a) {
     Complex *fa=f[a];
     for(unsigned int i=0; i < Lx; ++i) {
       for(unsigned int j=0; j < Ly; ++j) {
         for(unsigned int k=0; k < Lz; ++k) {
-          fa[Sx*i+Sy*j+k]=Output || testError ? Complex((1.0+a)*i+k,j+k+a) : 0.0;
+          fa[Sx*i+Sy*j+k]=Output || testError ?
+            Complex((1.0+a)*i+k,j+k+a) : 0.0;
         }
       }
     }

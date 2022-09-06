@@ -80,13 +80,13 @@ int main(int argc, char* argv[])
     for(unsigned int k=0; k < K; ++k) {
       seconds();
       Convolve2.convolve(f);
-      T[k] += seconds();
+      T[k]=seconds();
     }
   } else {
     for(unsigned int k=0; k < K; ++k) {
       seconds();
       Convolve2.convolveRaw(f);
-      T[k] += seconds();
+      T[k]=seconds();
     }
   }
 

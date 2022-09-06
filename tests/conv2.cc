@@ -20,8 +20,7 @@ unsigned int nxp;
 unsigned int nyp;
 bool xcompact=true;
 bool ycompact=true;
-
-bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
+bool Explicit=false;
 
 unsigned int outlimit=100;
 
@@ -72,6 +71,12 @@ inline void init(Complex **F,
 
 int main(int argc, char* argv[])
 {
+  bool Direct=false;
+  bool Implicit=true;
+  bool Pruned=false;
+  bool Output=false;
+  bool Normalized=true;
+
   fftw::maxthreads=get_max_threads();
 
   unsigned int A=2; // Number of independent inputs
@@ -87,7 +92,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hdeipA:B:N:m:x:y:n:T:S:X:Y:");
+    int c = getopt(argc,argv,"hdeipA:B:N:Om:x:y:n:T:uS:X:Y:");
     if (c == -1) break;
 
     switch (c) {
@@ -118,6 +123,12 @@ int main(int argc, char* argv[])
         break;
       case 'N':
         N=atoi(optarg);
+        break;
+      case 'O':
+        Output=true;
+        break;
+      case 'u':
+        Normalized=false;
         break;
       case 'm':
         mx=my=atoi(optarg);
@@ -167,7 +178,13 @@ int main(int argc, char* argv[])
   size_t align=sizeof(Complex);
 
   array2<Complex> h0;
-  if(Direct) h0.Allocate(mx,my,align);
+  if(Direct) {
+    h0.Allocate(mx,my,align);
+    if(!Normalized) {
+      cerr << "-u option is incompatible with -d." << endl;
+      exit(-1);
+    }
+  }
 
   nxp=Explicit ? nx : 2*mx-xcompact;
   nyp=Explicit ? ny/2+1 : my+!ycompact;
@@ -212,22 +229,31 @@ int main(int argc, char* argv[])
     timings("Implicit",mx,T,N,stats);
     cout << endl;
 
+    if(Normalized) {
+      double norm=1.0/(9.0*mx*my);
+      for(unsigned int b=0; b < B; ++b) {
+        for(unsigned int i=!xcompact; i < nxp; i++) {
+          for(unsigned int j=0; j < nyp; j++)
+            F[b][nyp*i+j] *= norm;
+        }
+      }
+    }
+
     if(Direct) {
       for(unsigned int i=0; i < mx; i++)
         for(unsigned int j=0; j < my; j++)
           h0[i][j]=f[i+!xcompact][j];
     }
 
-    bool output=nxp*my < outlimit;
     Complex sum=0.0;
     for(unsigned int i=!xcompact; i < nxp; i++) {
       for(unsigned int j=0; j < my; j++) {
         Complex v=f[i][j];
         sum += v;
-        if(output)
+        if(Output)
           cout << v << "\t";
       }
-      if(output)
+      if(Output)
         cout << endl;
     }
     cout << "sum=" << sum << endl;
@@ -237,6 +263,12 @@ int main(int argc, char* argv[])
   if(Explicit) {
     unsigned int M=A/2;
     ExplicitHConvolution2 C(nx,ny,mx,my,f,M,Pruned);
+    /*
+    Realmultiplier *mult;
+    if(Normalized) mult=multbinary;
+    else mult=multbinaryUnNormalized;
+    */
+
     cout << "threads=" << C.Threads() << endl << endl;
 
     for(unsigned int i=0; i < N; ++i) {
@@ -257,16 +289,15 @@ int main(int argc, char* argv[])
           h0[i][j]=f[offset+i][j];
     }
 
-    bool output=2*(mx-1)*my < outlimit;
     Complex sum=0.0;
     for(unsigned int i=offset; i < offset+2*mx-1; i++) {
       for(unsigned int j=0; j < my; j++) {
         Complex v=f[i][j];
         sum += v;
-        if(output)
+        if(Output)
           cout << v << "\t";
       }
-      if(output)
+      if(Output)
         cout << endl;
     }
     cout << "sum=" << sum << endl;
@@ -285,12 +316,13 @@ int main(int argc, char* argv[])
     timings("Direct",mx,T,1);
     cout << endl;
 
-    if(nxp*my < outlimit)
+    if(Output) {
       for(unsigned int i=0; i < nxp; i++) {
         for(unsigned int j=0; j < my; j++)
           cout << h[i][j] << "\t";
         cout << endl;
-      } else cout << h[0][0] << endl;
+      }
+    }
 
     { // compare implicit or explicit version with direct verion:
       double error=0.0;
