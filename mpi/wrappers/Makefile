@@ -1,15 +1,15 @@
 MPICXX?=mpic++
 MPICC?=mpicc
 
-
 MPIDIR=../
 IDIR=../../
-
+TESTDIR=../../tests
 
 # GNU compiler
 ifeq ($(shell $(MPICXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
  CXXFLAGS=-O3 -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
-	-fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native
+	-fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native \
+	-std=c++14	
 #For valgrind:
 # CXXFLAGS=-fopenmp -g -Wall -ansi -fomit-frame-pointer -fstrict-aliasing \
 # 	 -ffast-math -msse2 -mfpmath=sse
@@ -27,7 +27,7 @@ CXXFLAGS= -O5 -qsmp=speculative -qtune=qp -qipa -qarch=qp
 #CXXFLAGS= -O5 -P -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp
 endif
 
-CXXFLAGS += $(DEFS) -I$(MPIDIR) -I$(IDIR) 
+CXXFLAGS += $(DEFS) -I$(MPIDIR) -I$(IDIR)  -I$(TESTDIR) 
 ifneq ($(strip $(FFTW_INCLUDE_PATH)),)
 CXXFLAGS+=-I$(FFTW_INCLUDE_PATH)
 endif
@@ -48,21 +48,22 @@ MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
 vpath %.cc ../
 vpath %.cc ../../
 FFTW=fftw++
-FILES= cmpifftw++.o
+FILES=cmpifftw++.o
 
 all: $(FILES)
 
 %.o : %.cc %.h
 	$(MPICXX) $(CXXFLAGS) $(OPTS) -o $@ -c $<
 
-cmpifftw++.o: cmpifftw++.cc cmpifftw++.h
+fftw++.o: ../../fftw++.cc ../../fftw++.h
+	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LDFLAGS)
+
+cmpifftw++.o: cmpifftw++.cc cmpifftw++.h fftw++.o
 	$(MPICXX) $(CXXFLAGS) -c -o $@ $< $(LDFLAGS)
 
 # cmpitranspose.o: cmpitranspose.c cmpitranspose.h
 # 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LDFLAGS)
 
-clean:  FORCE
-	rm -rf $(ALL) $(ALL:=.o) $(ALL:=.d)
 
 .SUFFIXES: .c .cc .o .d
 .cc.o:
@@ -77,5 +78,10 @@ clean:  FORCE
 ifeq (,$(findstring clean,${MAKECMDGOALS}))
 -include $(ALL:=.d)
 endif
+
+clean:
+	rm -f ${FILES}
+
+.PHONY: clean
 
 FORCE:
