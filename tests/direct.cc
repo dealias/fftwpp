@@ -77,17 +77,18 @@ void DirectConvolution2::convolve(Complex *h, Complex *f, Complex *g)
 }
 
 void DirectHConvolution2::convolve(Complex *h, Complex *f, Complex *g,
-                                   bool symmetrize)
+                                   bool symmetrize, bool xcompact,
+                                   bool ycompact)
 {
-  unsigned int xorigin=mx-1;
+  unsigned int xorigin=mx-xcompact;
 
   if(symmetrize) {
-    HermitianSymmetrizeX(mx,my,mx-1,f);
-    HermitianSymmetrizeX(mx,my,mx-1,g);
+    HermitianSymmetrizeX(mx,my,xorigin,f);
+    HermitianSymmetrizeX(mx,my,xorigin,g);
   }
 
   int xstart=-(int)xorigin;
-  int ystart=1-(int) my;
+  int ystart=ycompact-(int) my;
   int xstop=mx;
   int ystop=my;
 #if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP

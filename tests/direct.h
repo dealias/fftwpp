@@ -46,7 +46,8 @@ protected:
 public:
   DirectHConvolution2(unsigned int mx, unsigned int my) : mx(mx), my(my) {}
 
-  void convolve(Complex *h, Complex *f, Complex *g, bool symmetrize=true);
+  void convolve(Complex *h, Complex *f, Complex *g, bool symmetrize=true,
+                bool xcompact=true, bool ycompact=true);
 };
 
 // Out-of-place direct 3D complex convolution.
