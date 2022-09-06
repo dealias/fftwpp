@@ -49,7 +49,6 @@ def getArgs():
   parser.add_argument("-T", help="Number of threads to use in timing. If set to\
                       0, iterates over 1, 2, and 4 threads. Default is 1.",
                       default=1)
-  parser.add_argument("-L", help="L value. Default is 8.", default=8)
   parser.add_argument("-t",help="Error tolerance. Default is 1e-12.",
                       default=1e-12)
   parser.add_argument("-l",help="Show log of failed cases",
@@ -95,6 +94,7 @@ def test(programs, args):
   lenP=len(programs)
   T=int(args.T)
   print("\n***************\n")
+
   if lenP == 1:
     p=programs[0]
     name=p.name
@@ -103,12 +103,12 @@ def test(programs, args):
     if T == 0:
       print("Testing "+name+" with 1, 2, and 4 threads.\n")
     elif T == 1:
-      print("Testing "+name+" with "+args.T+" thread.\n")
+      print("Testing "+name+" with "+str(T)+" thread.\n")
     elif T > 1:
-      print("Testing "+name+" with "+args.T+" threads.\n")
+      print("Testing "+name+" with "+str(T)+" threads.\n")
     else:
       raise ValueError(str(T)+" is an invalid number of threads.")
-    iterate(p,int(args.L),T,float(args.t),args.v)
+    iterate(p,T,float(args.t),args.v)
     print("Finished testing "+name+".")
     print("\n***************\n")
     print("Finished testing 1 program.")
@@ -131,12 +131,12 @@ def test(programs, args):
       if T == 0:
         print("Testing "+name+" with 1, 2, and 4 threads.\n")
       elif T == 1:
-        print("Testing "+name+" with "+str(args.T)+" thread.\n")
+        print("Testing "+name+" with "+str(T)+" thread.\n")
       elif T > 1:
-        print("Testing "+name+" with "+str(args.T)+" threads.\n")
+        print("Testing "+name+" with "+str(T)+" threads.\n")
       else:
         raise ValueError(str(T)+" is an invalid number of threads.")
-      iterate(p,int(args.L),T,float(args.t),args.v)
+      iterate(p,T,float(args.t),args.v)
       ptotal=p.total
       pfailed=p.failed
       ppassed=p.passed()
@@ -159,8 +159,15 @@ def test(programs, args):
   else:
     print("\nNo programs to test.\n")
 
-def iterate(program, L, thr, tol, verbose):
+def iterate(program, thr, tol, verbose):
   centered=program.centered
+
+  # Because of symmetry concerns in the centered cases (compact/noncompact),
+  # we check even and odd L values
+  if centered:
+    Ls=[7,8]
+  else:
+    Ls=[8]
 
   Dstart=2 if centered else 1
   if thr ==  0:
@@ -168,21 +175,30 @@ def iterate(program, L, thr, tol, verbose):
   else:
     threads=[thr]
 
-  M0=3*L//2 if centered else 2*L-1
-  M02=M0//2
-  for T in threads:
-    for M in [M0,3*M02,2*M0,5*M02]:
-      for m in [L//4,L//2,L,L+2,M,M+2]:
-        p=ceilquotient(L,m)
-        q=ceilquotient(M,m) if p <= 2 else ceilquotient(M,m*p)*p
-        n=q//p
-        Istart=0 if q > 1 else 1
-        for I in range(Istart,2):
-          D=Dstart
-          while(D < n):
-            check(program,L,M,m,D,I,T,tol,verbose)
-            D*=2
-          check(program,L,M,m,n,I,T,tol,verbose)
+  for L in Ls:
+    L4=ceilquotient(L,4)
+    L2=ceilquotient(L,2)
+    Ms=[]
+    if centered:
+      Ms.append(3*L2-2*(L%2))
+    Ms+=[2*L,5*L2]
+    for T in threads:
+      for M in Ms:
+        ms=[L4,L2]
+        if not centered:
+          ms+=[L,L+1]
+        ms+=[M,M+1]
+        for m in ms:
+          p=ceilquotient(L,m)
+          q=ceilquotient(M,m) if p <= 2 else ceilquotient(M,m*p)*p
+          n=q//p
+          Istart=0 if q > 1 else 1
+          for I in range(Istart,2):
+            D=Dstart
+            while(D < n):
+              check(program,L,M,m,D,I,T,tol,verbose)
+              D*=2
+            check(program,L,M,m,n,I,T,tol,verbose)
 
 def check(program, L, M, m, D, I, T, tol, verbose):
   program.total+=1
