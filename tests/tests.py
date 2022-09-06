@@ -77,18 +77,14 @@ def getPrograms(args):
   if args.Y or XYZ:
     if SorSCH:
       programs.append(Program("hybridconv2",False))
-    '''
     if HorSCH:
       programs.append(Program("hybridconvh2",True))
-    '''
 
   if args.Z or XYZ:
     if SorSCH:
       programs.append(Program("hybridconv3",False))
-    '''
     if HorSCH:
       programs.append(Program("hybridconvh3",True))
-    '''
 
   return programs
 
