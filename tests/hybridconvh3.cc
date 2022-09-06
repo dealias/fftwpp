@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
   if(testError) {
     h=ComplexAlign(Lx*Ly*Hz);
     DirectHConvolution3 C(Hx,Hy,Hz);
-    C.convolve(h,f[0],f[1]);
+    C.convolve(h,f[0],f[1],false,Lx%2,Ly%2);
   }
 
   if(normalized || testError) {

@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
   if(testError) {
     h=ComplexAlign(Lx*Hy);
     DirectHConvolution2 C(Hx,Hy);
-    C.convolve(h,f[0],f[1],false,Lx%2,Ly%2);
+    C.convolve(h,f[0],f[1],false,Lx%2);
   }
 
   if(normalized || testError) {

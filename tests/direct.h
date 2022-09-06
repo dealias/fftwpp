@@ -47,7 +47,7 @@ public:
   DirectHConvolution2(unsigned int mx, unsigned int my) : mx(mx), my(my) {}
 
   void convolve(Complex *h, Complex *f, Complex *g, bool symmetrize=true,
-                bool xcompact=true, bool ycompact=true);
+                bool xcompact=true);
 };
 
 // Out-of-place direct 3D complex convolution.
@@ -70,7 +70,8 @@ public:
   DirectHConvolution3(unsigned int mx, unsigned int my, unsigned int mz) :
     mx(mx), my(my), mz(mz) {}
 
-  void convolve(Complex *h, Complex *f, Complex *g, bool symmetrize=true);
+  void convolve(Complex *h, Complex *f, Complex *g, bool symmetrize=true,
+                bool xcompact=true, bool ycompact=true);
 };
 
 // Out-of-place direct 1D Hermitian ternary convolution.
