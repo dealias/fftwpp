@@ -209,11 +209,9 @@ void fftBase::OptBase::optloop(unsigned int& m0, unsigned int L,
     unsigned int n=ceilquotient(M,m0*P);
     //cout<<"inner="<<inner<<", p="<<p<<", P="<<P<<", n="<<n<<", centered="<<centered<<endl;
 
-    if(mOption >= 1 && centered && p%2 != 0) {
-        cerr << "m=" << mOption << endl;
-        cerr << "p=" << p << endl;
+    if(mOption >= 1 && mOption < M && centered && p%2 != 0) {
         cerr << "Odd values of p are incompatible with the centered and Hermitian routines." << endl;
-        cerr << "Using m=" << M << " instead." << endl;
+        cerr << "Using explicit routines with m=" << M << " instead." << endl;
     }
 
     // In the inner loop we must have the following:
