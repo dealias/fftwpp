@@ -6,6 +6,9 @@ import os
 import re
 import argparse
 
+def ceilquotient(a,b):
+  return -(a//-b)
+
 def main():
   args=getArgs()
   programs=getPrograms(args)
@@ -170,8 +173,8 @@ def iterate(program, L, thr, tol, verbose):
   for T in threads:
     for M in [M0,3*M02,2*M0,5*M02]:
       for m in [L//4,L//2,L,L+2,M,M+2]:
-        p=int(ceil(L/m))
-        q=int(ceil(M/m)) if p <= 2 else int(ceil(M/(p*m))*p)
+        p=ceilquotient(L,m)
+        q=ceilquotient(M,m) if p <= 2 else ceilquotient(M,m*p)*p
         n=q//p
         Istart=0 if q > 1 else 1
         for I in range(Istart,2):
