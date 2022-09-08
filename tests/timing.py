@@ -341,6 +341,7 @@ def main(argv):
             outfile = runtype
 
     if hybrid and writeOptimalValues:
+        optFile="params/"+p+"Opt"
         try:
             os.makedirs(outdir)
         except:
@@ -392,9 +393,8 @@ def main(argv):
             if not appendtofile:
                 try:
                     os.remove(filename)
-                    if hybrid and writeOptimalValues: 
-                        with open("params/"+p+"Optimal","w") as logfile:
-                            logfile.write("L M m p q C S D I"+"\n")
+                    if hybrid and writeOptimalValues:
+                        os.remove(optFile)
                 except:
                     pass
 
@@ -482,12 +482,14 @@ def main(argv):
                     comment += " (" + out[0:10].decode() + ")"
             else:
                 comment += "\t" + extracomment
-
             comment += "\n"
 
             if(appendtofile):
                 with open(filename, "a") as myfile:
                     myfile.write(comment)
+                if hybrid and writeOptimalValues:
+                    with open(optFile,"a") as logfile:
+                        logfile.write("\n"+comment)
             else:
                 if stats == -1:
                     with open("timing.dat", "w") as myfile:
@@ -495,6 +497,9 @@ def main(argv):
                 else:
                     with open(filename, "w") as myfile:
                         myfile.write(comment)
+                    with open(optFile,"w") as logfile:
+                        logfile.write("# L M m p q C S D I"+"\n")
+                        logfile.write(comment)
 
         for i in range(a,b+1,1 if I == 0 else I):
             if I != 0:
@@ -560,7 +565,7 @@ def main(argv):
                         if hybrid and writeOptimalValues:
                             comment = out.decode()
                             params=collectParams(comment,L,M)
-                            with open("params/" + p+"Optimal", "a") as logfile:
+                            with open(optFile, "a") as logfile:
                                 logfile.write(params+"\n")
 
                         outlines = out.decode().split('\n')
