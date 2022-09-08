@@ -9,6 +9,25 @@ import os
 import re # regexp package
 import shutil
 
+def getParam(name, comment):
+  try:
+    param=re.search(r"(?<="+name+"=)\d+",comment).group()
+    return param
+  except:
+    print("Could not find "+name)
+    return -1
+
+def collectParams(comment,L,M):
+  m=getParam("m",comment)
+  p=getParam("p",comment)
+  q=getParam("q",comment)
+  C=getParam("C",comment)
+  S=getParam("S",comment)
+  D=getParam("D",comment)
+  I=getParam("I",comment)
+
+  params=str(L)+" "+str(M)+" "+m+" "+p+" "+q+" "+C+" "+S+" "+D+" "+I
+  return params
 
 def Lvals_from_file(filename):
     Lvals = []
@@ -150,6 +169,7 @@ def main(argv):
     -N<int> Number of tests to perform
     -S<int> Type of statistics (default 3=MEDIAN)
     -e: erase existing timing data
+    -O: record optimal parameteres (only in hybrid programs)
     -c<string>: extra commentary for output file.
     -v: verbose output
     '''
@@ -175,13 +195,14 @@ def main(argv):
     rname = ""   # output grep string
     N = 0        # number of tests
     appendtofile = True
+    writeOptimalValues = False
     stats = 3
     path = "./"
     verbose = False
     extracomment = ""
 
     try:
-        opts, args = getopt.getopt(argv,"dhep:T:a:b:c:I:A:B:E:r:R:S:o:P:D:g:N:v")
+        opts, args = getopt.getopt(argv,"dheOp:T:a:b:c:I:A:B:E:r:R:S:o:P:D:g:N:v")
     except getopt.GetoptError:
         print("error in parsing arguments.")
         print(usage)
@@ -195,6 +216,8 @@ def main(argv):
             a = int(arg)
         elif opt in ("-N"):
             N = int(arg)
+        elif opt in ("-O"):
+            writeOptimalValues = True
         elif opt in ("-b"):
             b = int(arg)
         elif opt in ("-I"):
@@ -317,6 +340,12 @@ def main(argv):
         else:
             outfile = runtype
 
+    if hybrid and writeOptimalValues:
+        try:
+            os.makedirs(outdir)
+        except:
+            pass
+
     goodruns = []
     badruns = []
 
@@ -363,6 +392,9 @@ def main(argv):
             if not appendtofile:
                 try:
                     os.remove(filename)
+                    if hybrid and writeOptimalValues: 
+                        with open("params/"+p+"Optimal","w") as logfile:
+                            logfile.write("L M m p q C S D I"+"\n")
                 except:
                     pass
 
@@ -503,10 +535,10 @@ def main(argv):
                         denv[E[i]] = E[i + 1]
                         i += 2
 
-                    p = Popen(mcmd, stdout = PIPE, stderr = PIPE, env = denv)
-                    p.wait() # sets the return code
-                    prc = p.returncode
-                    out, err = p.communicate() # capture output
+                    popen = Popen(mcmd, stdout = PIPE, stderr = PIPE, env = denv)
+                    popen.wait() # sets the return code
+                    prc = popen.returncode
+                    out, err = popen.communicate() # capture output
                     if(verbose):
                         print("Output from timing.py's popen:")
                         #print " ".join(mcmd)
@@ -525,12 +557,17 @@ def main(argv):
 
                     if (prc == 0): # did the process succeed?
                         #print(out)
+                        if hybrid and writeOptimalValues:
+                            comment = out.decode()
+                            params=collectParams(comment,L,M)
+                            with open("params/" + p+"Optimal", "a") as logfile:
+                                logfile.write(params+"\n")
+
                         outlines = out.decode().split('\n')
                         itline = 0
                         dataline = ""
                         while itline < len(outlines):
                             line = outlines[itline]
-                            #print(line)
                             if re.search(rname, line) is not None:
                                 print( "\t" + str(outlines[itline]))
                                 print("\t" + str(outlines[itline + 1]))
