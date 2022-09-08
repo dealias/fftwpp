@@ -350,7 +350,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   if(counter > 1) {
     opt(L,M,app,C,S,mStart,itmax,Explicit,centered);
     if(showOptTimes)
-      cout << endl << "Optimal time: t=" << T*1.0e-9;
+      cout << endl << "Optimal time: t=" << T*1.0e-9 << endl;
   }
 
   unsigned int p=ceilquotient(L,m);
