@@ -218,7 +218,7 @@ void fftBase::OptBase::optloop(unsigned int& m0, unsigned int L,
     // p must be a power of 2.
     // p must be even in the centered case.
     // p != q.
-    if(inner && (((notPow2(p) || p == P*n) && !mForced) || (centered && p%2 != 0)))
+    if(inner && (((!ispure(p) || p == P*n) && !mForced) || (centered && p%2 != 0)))
       i=m0=nextpuresize(m0+1);
     else {
       unsigned int q=(inner ? P*n : ceilquotient(M,m0));
