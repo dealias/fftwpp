@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 # a timing script for running multiple timing tests using timing.py
 
@@ -37,7 +37,7 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv,"dp:T:r:R:S:D:g:A:B:E:")
     except getopt.GetoptError:
-        print usage
+        print(usage)
         sys.exit(2)
     for opt, arg in opts:
         if opt in ("-T"):
@@ -72,8 +72,8 @@ def main(argv):
     if runtype == "pruned":
         progs = [[], ["cconv2", "conv2", "tconv2"], ["cconv3"]]
 
-    print "extra args:", A
-    print "environment args:", E
+    print("extra args:", A)
+    print("environment args:", E)
 
     i = 0
     while(i < len(progs)):
@@ -119,7 +119,7 @@ def main(argv):
                             ci += 1
                         cmd0.append("-A-X" + str(X))
                         cmd0.append("-oconv_implicit" + "X" + str(X))
-                        print " ".join(cmd0)
+                        print(" ".join(cmd0))
                         if not dryrun:
                             p = Popen(cmd0)
                             p.wait()
@@ -136,7 +136,7 @@ def main(argv):
                             cmd0.append("-A-Y" + str(Y))
                             cmd0.append("-oconv2_implicitX"\
                                         + str(X) + "Y" + str(Y))
-                            print " ".join(cmd0)
+                            print(" ".join(cmd0))
                             if not dryrun:
                                 p = Popen(cmd0)
                                 p.wait()
@@ -156,14 +156,14 @@ def main(argv):
                                 cmd0.append("-oconv3_implicitX"\
                                             + str(X) + "Y" + str(Y)\
                                             + "Z" + str(Z))
-                                print " ".join(cmd0)
+                                print(" ".join(cmd0))
                                 if not dryrun:
                                     p = Popen(cmd0)
                                     p.wait()
                                     prc = p.returncode
 
             else:
-                print " ".join(cmd)
+                print(" ".join(cmd))
                 if not dryrun:
                     p = Popen(cmd)
                     p.wait() # sets the return code
