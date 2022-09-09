@@ -341,7 +341,7 @@ def main(argv):
             outfile = runtype
 
     if hybrid and writeOptimalValues:
-        optFile="params/"+p+"Opt"
+        optFile="params/"+p
         try:
             os.makedirs(outdir)
         except:
@@ -489,7 +489,7 @@ def main(argv):
                     myfile.write(comment)
                 if hybrid and writeOptimalValues:
                     with open(optFile,"a") as logfile:
-                        logfile.write("\n"+comment)
+                        logfile.write("#\n"+comment)
             else:
                 if stats == -1:
                     with open("timing.dat", "w") as myfile:
@@ -498,8 +498,9 @@ def main(argv):
                     with open(filename, "w") as myfile:
                         myfile.write(comment)
                     with open(optFile,"w") as logfile:
+                        logfile.write("# Optimal values for "+p+"\n")
                         logfile.write("# L M m p q C S D I"+"\n")
-                        logfile.write(comment)
+                        logfile.write("#\n"+comment)
 
         for i in range(a,b+1,1 if I == 0 else I):
             if I != 0:
