@@ -215,7 +215,7 @@ void fftBase::OptBase::optloop(unsigned int& m0, unsigned int L,
     }
 
     // In the inner loop we must have the following:
-    // p must be a power of 2.
+    // p must be a power of 2, 3, 5, or 7.
     // p must be even in the centered case.
     // p != q.
     if(inner && (((!ispure(p) || p == P*n) && !mForced) || (centered && p%2 != 0)))
@@ -265,7 +265,7 @@ void fftBase::OptBase::opt(unsigned int L, unsigned int M, Application& app,
 {
   if(!Explicit) {
     if(mForced) {
-      if(mOption >= L/2)
+      if(mOption >= ceilquotient(L,2))
         optloop(mOption,L,M,app,C,S,centered,1,useTimer);
       else
         optloop(mOption,L,M,app,C,S,centered,mOption+1,useTimer,true);
