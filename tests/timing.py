@@ -341,12 +341,7 @@ def main(argv):
             outfile = runtype
 
     if hybrid and writeOptimalValues:
-        optDir="params"
-        try:
-            os.makedirs(optDir)
-        except:
-            pass
-        optFile=optDir+os.sep+p
+        optFile=outdir+os.sep+"hybridParams"
 
     goodruns = []
     badruns = []
