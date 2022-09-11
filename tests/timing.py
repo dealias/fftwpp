@@ -169,7 +169,6 @@ def main(argv):
     -N<int> Number of tests to perform
     -S<int> Type of statistics (default 3=MEDIAN)
     -e: erase existing timing data
-    -O: record optimal parameteres (only in hybrid programs)
     -c<string>: extra commentary for output file.
     -v: verbose output
     '''
@@ -195,14 +194,13 @@ def main(argv):
     rname = ""   # output grep string
     N = 0        # number of tests
     appendtofile = True
-    writeOptimalValues = False
     stats = 3
     path = "."
     verbose = False
     extracomment = ""
 
     try:
-        opts, args = getopt.getopt(argv,"dheOp:T:a:b:c:I:A:B:E:r:R:S:o:P:D:g:N:v")
+        opts, args = getopt.getopt(argv,"dhep:T:a:b:c:I:A:B:E:r:R:S:o:P:D:g:N:v")
     except getopt.GetoptError:
         print("error in parsing arguments.")
         print(usage)
@@ -216,8 +214,6 @@ def main(argv):
             a = int(arg)
         elif opt in ("-N"):
             N = int(arg)
-        elif opt in ("-O"):
-            writeOptimalValues = True
         elif opt in ("-b"):
             b = int(arg)
         elif opt in ("-I"):
@@ -340,7 +336,7 @@ def main(argv):
         else:
             outfile = runtype
 
-    if hybrid and writeOptimalValues:
+    if hybrid:
         optFile=outdir+os.sep+"hybridParams"
 
     goodruns = []
@@ -389,7 +385,7 @@ def main(argv):
             if not appendtofile:
                 try:
                     os.remove(filename)
-                    if hybrid and writeOptimalValues:
+                    if hybrid:
                         os.remove(optFile)
                 except:
                     pass
@@ -484,7 +480,7 @@ def main(argv):
             if(appendtofile):
                 with open(filename, "a") as myfile:
                     myfile.write(comment)
-                if hybrid and writeOptimalValues:
+                if hybrid:
                     with open(optFile,"a") as logfile:
                         logfile.write("#\n"+comment)
             else:
@@ -559,8 +555,7 @@ def main(argv):
                         logfile.write(err.decode())
 
                     if (prc == 0): # did the process succeed?
-                        #print(out)
-                        if hybrid and writeOptimalValues:
+                        if hybrid:
                             comment = out.decode()
                             params=collectParams(comment,L,M)
                             with open(optFile, "a") as logfile:
