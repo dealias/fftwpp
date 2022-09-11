@@ -197,7 +197,7 @@ def main(argv):
     appendtofile = True
     writeOptimalValues = False
     stats = 3
-    path = "./"
+    path = "."
     verbose = False
     extracomment = ""
 
@@ -341,11 +341,12 @@ def main(argv):
             outfile = runtype
 
     if hybrid and writeOptimalValues:
-        optFile="params/"+p
+        optDir="params"
         try:
-            os.makedirs(outdir)
+            os.makedirs(optDir)
         except:
             pass
+        optFile=optDir+os.sep+p
 
     goodruns = []
     badruns = []
@@ -371,7 +372,7 @@ def main(argv):
             rname += ':'
         print("Search string for timing: " + rname)
 
-        filename = outdir + "/" + outfile
+        filename = outdir + os.sep + outfile
         print("output in", filename)
 
         Ldone = Lvals_from_file(filename)
@@ -385,7 +386,7 @@ def main(argv):
                 os.makedirs(outdir)
             except:
                 pass
-            with open(outdir + "/log", "a") as logfile:
+            with open(outdir + os.sep+"log", "a") as logfile:
                 logfile.write(str(sys.argv))
                 logfile.write("\n")
                 logfile.write("intial exponent: " + str(a) + "\n")
@@ -404,6 +405,7 @@ def main(argv):
             cmd.append(B[i]);
             i += 1
 
+        path += os.sep
         cmd += [path + str(p)]
 
         if not os.path.isfile(path + str(p)):
@@ -555,7 +557,7 @@ def main(argv):
                         print(err)
 
                     # copy the output and error to a log file.
-                    with open(outdir + "/log", "a") as logfile:
+                    with open(outdir + os.sep+"log", "a") as logfile:
                         logfile.write(" ".join(mcmd))
                         logfile.write("\n")
                         logfile.write(out.decode())
@@ -623,7 +625,7 @@ def main(argv):
                 pass
 
     if not dryrun:
-         with open(outdir + "/log", "a") as logfile:
+         with open(outdir + os.sep+"log", "a") as logfile:
             goodbads = ""
             if len(goodruns) > 0:
                 goodbads += "Successful runs:\n"
