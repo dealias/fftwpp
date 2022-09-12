@@ -17,10 +17,10 @@ int stats=MEDIAN;
 
 namespace utils {
 
-int Atoi(char *optarg)
+int Atoi(char *optarg, int min=1)
 {
   int val=atoi(optarg);
-  if(val <= 0) {
+  if(val < min) {
     usageHybrid();
     exit(-1);
   }
@@ -108,16 +108,16 @@ void optionsHybrid(int argc, char* argv[], bool fft)
         break;
       case 'm':
       case mXYZ:
-        m=mx=my=mz=Atoi(optarg);
+        m=mx=my=mz=Atoi(optarg,0);
         break;
       case mX:
-        m=mx=Atoi(optarg);
+        m=mx=Atoi(optarg,0);
         break;
       case mY:
-        my=Atoi(optarg);
+        my=Atoi(optarg,0);
         break;
       case mZ:
-        mz=Atoi(optarg);
+        mz=Atoi(optarg,0);
         break;
       case 'I':
         IOption=atoi(optarg) > 0;
