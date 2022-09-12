@@ -7,11 +7,12 @@ using namespace fftwpp;
 
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
-unsigned int L=512; // input data length
-unsigned int M=768; // minimum padded length
 
 int main(int argc, char* argv[])
 {
+  L=511; // input data length
+  M=766; // minimum padded length
+
   fftw::maxthreads=get_max_threads();
 
 #ifndef __SSE2__
@@ -19,6 +20,9 @@ int main(int argc, char* argv[])
 #endif
 
   optionsHybrid(argc,argv,true);
+
+  cout << "L=" << L << endl;
+  cout << "M=" << M << endl;
 
   Application app(A,B,realmultbinary);
 

@@ -9,11 +9,12 @@ using namespace fftwpp;
 
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
-unsigned int L=7; // input data length
-unsigned int M=10; // minimum padded length
 
 int main(int argc, char* argv[])
 {
+  Lx=Ly=Lz=7;  // input data length
+  Mx=My=Mz=10; // minimum padded length
+
   fftw::maxthreads=get_max_threads();
 
 #ifndef __SSE2__
@@ -22,29 +23,21 @@ int main(int argc, char* argv[])
 
   optionsHybrid(argc,argv);
 
-  unsigned int Lx=L;
-  unsigned int Ly=L;
-  unsigned int Lz=L;
-  unsigned int Mx=M;
-  unsigned int My=M;
-  unsigned int Mz=M;
-
-  unsigned int K0=10000000;
-  if(K == 0) K=max(K0/(Mx*My*Mz),20);
-  if(Output || testError)
-    K=1;
-  cout << "K=" << K << endl << endl;
-
-  unsigned int Sy=0; // y-stride (0 means ceilquotient(L,2))
-  unsigned int Sx=0; // x-stride (0 means Ly*Sy)
-
   cout << "Lx=" << Lx << endl;
   cout << "Ly=" << Ly << endl;
   cout << "Lz=" << Lz << endl;
   cout << "Mx=" << Mx << endl;
   cout << "My=" << My << endl;
   cout << "Mz=" << Mz << endl;
-  cout << endl;
+
+  unsigned int Sy=0; // y-stride (0 means ceilquotient(L,2))
+  unsigned int Sx=0; // x-stride (0 means Ly*Sy)
+
+  unsigned int K0=10000000;
+  if(K == 0) K=max(K0/(Mx*My*Mz),20);
+  if(Output || testError)
+    K=1;
+  cout << "K=" << K << endl << endl;
 
   unsigned int Hx=ceilquotient(Lx,2);
   unsigned int Hy=ceilquotient(Ly,2);
@@ -110,7 +103,7 @@ int main(int argc, char* argv[])
   }
 
   cout << endl;
-  timings("Hybrid",L,T,K,stats);
+  timings("Hybrid",Lx*Ly*Hz,T,K,stats);
   cout << endl;
 
   if(Output) {

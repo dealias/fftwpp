@@ -35,6 +35,9 @@ extern const double twopi;
 // Constants used for initialization and testing.
 const Complex I(0.0,1.0);
 
+extern unsigned int L,Lx,Ly,Lz; // input data lengths
+extern unsigned int M,Mx,My,Mz; // minimum padded lengths
+
 extern unsigned int mOption;
 extern unsigned int DOption;
 

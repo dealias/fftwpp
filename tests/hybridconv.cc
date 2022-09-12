@@ -9,17 +9,21 @@ using namespace fftwpp;
 
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
-unsigned int L=8; // input data length
-unsigned int M=16; // minimum padded length
 
 int main(int argc, char* argv[])
 {
+  L=8;  // input data length
+  M=16; // minimum padded length
+
   fftw::maxthreads=get_max_threads();
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif
 
   optionsHybrid(argc,argv);
+
+  cout << "L=" << L << endl;
+  cout << "M=" << M << endl;
 
   unsigned int K0=100000000;
   if(K == 0) K=max(K0/M,20);

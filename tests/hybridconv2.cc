@@ -9,11 +9,12 @@ using namespace fftwpp;
 
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
-unsigned int L=8; // input data length
-unsigned int M=16; // minimum padded length
 
 int main(int argc, char* argv[])
 {
+  Lx=Ly=8;  // input data length
+  Mx=My=16; // minimum padded length
+
   fftw::maxthreads=get_max_threads();
 
 #ifndef __SSE2__
@@ -22,10 +23,10 @@ int main(int argc, char* argv[])
 
   optionsHybrid(argc,argv);
 
-  unsigned int Lx=L;
-  unsigned int Ly=L;
-  unsigned int Mx=M;
-  unsigned int My=M;
+  cout << "Lx=" << Lx << endl;
+  cout << "Ly=" << Ly << endl;
+  cout << "Mx=" << Mx << endl;
+  cout << "My=" << My << endl;
 
   unsigned int Sx=0; // x stride (0 means Ly)
 
@@ -35,19 +36,15 @@ int main(int argc, char* argv[])
     K=1;
   cout << "K=" << K << endl << endl;
 
-  cout << "Lx=" << Lx << endl;
-  cout << "Ly=" << Ly << endl;
-  cout << "Mx=" << Mx << endl;
-  cout << "My=" << My << endl;
-  cout << endl;
-
   if(Sx == 0) Sx=Ly;
 
   double *T=new double[K];
 
+//  Application appx(A,B,m,D,I);
   Application appx(A,B);
   fftPad fftx(Lx,Mx,appx,Ly,Sx);
   Application appy(A,B,multbinary,appx.Threads(),fftx.l);
+
   Convolution convolvey(Ly,My,appy);
   Convolution2 Convolve2(&fftx,&convolvey);
 
@@ -91,7 +88,7 @@ int main(int argc, char* argv[])
   }
 
   cout << endl;
-  timings("Hybrid",L,T,K,stats);
+  timings("Hybrid",Lx*Ly,T,K,stats);
   cout << endl;
 
   if(Output) {
