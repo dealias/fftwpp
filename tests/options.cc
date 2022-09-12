@@ -7,7 +7,7 @@ using namespace fftwpp;
 namespace fftwpp {
 unsigned int L,Lx,Ly,Lz;
 unsigned int M,Mx,My,Mz;
-unsigned int m,mx,my,mz;
+unsigned int m=0,mx=0,my=0,mz=0;
 }
 
 unsigned int K=0;
