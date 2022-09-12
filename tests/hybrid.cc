@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
 
   if(S == 0) S=C;
 
-  Application app(A,B,multbinary);
+  Application app(A,B,multbinary,fftw::maxthreads,0,m);
 
   cout << "Explicit:" << endl;
   // Minimal explicit padding
