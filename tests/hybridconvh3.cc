@@ -48,11 +48,11 @@ int main(int argc, char* argv[])
 
   double *T=new double[K];
 
-  Application appx(A,B);
+  Application appx(A,B,multNone,fftw::maxthreads,0,mx);
   fftPadCentered fftx(Lx,Mx,appx,Sx == Ly*Hz ? Sx : Hz,Sx);
-  Application appy(A,B,multNone,appx.Threads(),fftx.l);
+  Application appy(A,B,multNone,appx.Threads(),fftx.l,my);
   fftPadCentered ffty(Ly,My,appy,Hz,Sy);
-  Application appz(A,B,realmultbinary,appy.Threads(),ffty.l);
+  Application appz(A,B,realmultbinary,appy.Threads(),ffty.l,mz);
   ConvolutionHermitian convolvez(Lz,Mz,appz);
   ConvolutionHermitian2 convolveyz(&ffty,&convolvez);
   ConvolutionHermitian3 Convolve3(&fftx,&convolveyz);

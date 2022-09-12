@@ -43,9 +43,9 @@ int main(int argc, char* argv[])
 
   double *T=new double[K];
 
-  Application appx(A,B);
+  Application appx(A,B,multNone,fftw::maxthreads,0,mx);
   fftPadCentered fftx(Lx,Mx,appx,Hy,Sx);
-  Application appy(A,B,realmultbinary,appx.Threads(),fftx.l);
+  Application appy(A,B,realmultbinary,appx.Threads(),fftx.l,my);
   ConvolutionHermitian convolvey(Ly,My,appy);
   ConvolutionHermitian2 Convolve2(&fftx,&convolvey);
 

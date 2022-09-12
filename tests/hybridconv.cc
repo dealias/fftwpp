@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
 
   double *T=new double[K];
 
-  Application app(A,B,multbinary);
+  Application app(A,B,multbinary,fftw::maxthreads,0,m);
   fftBase *fft=Centered ? new fftPadCentered(L,M,app) : new fftPad(L,M,app);
 
   unsigned int N=max(A,B);

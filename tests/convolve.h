@@ -37,6 +37,7 @@ const Complex I(0.0,1.0);
 
 extern unsigned int L,Lx,Ly,Lz; // input data lengths
 extern unsigned int M,Mx,My,Mz; // minimum padded lengths
+extern unsigned int m,mx,my,mz;
 
 extern unsigned int mOption;
 extern unsigned int DOption;
@@ -67,10 +68,12 @@ public:
   unsigned int A;
   unsigned int B;
   multiplier *mult;
+  unsigned int m;
 
   Application(unsigned int A, unsigned int B, multiplier *mult=multNone,
-              unsigned int threads=fftw::maxthreads, unsigned int n=0) :
-    ThreadBase(threads), A(A), B(B), mult(mult) {
+              unsigned int threads=fftw::maxthreads, unsigned int n=0,
+              unsigned int m=0) :
+    ThreadBase(threads), A(A), B(B), mult(mult), m(m) {
     if(n == 0)
       multithread(threads);
     else {

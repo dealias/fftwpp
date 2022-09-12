@@ -44,11 +44,11 @@ int main(int argc, char* argv[])
 
   double *T=new double[K];
 
-  Application appx(A,B);
+  Application appx(A,B,multNone,fftw::maxthreads,0,mx);
   fftPad fftx(Lx,Mx,appx,Sx == Ly*Lz ? Sx : Lz,Sx);
-  Application appy(A,B,multNone,appx.Threads(),fftx.l);
+  Application appy(A,B,multNone,appx.Threads(),fftx.l,my);
   fftPad ffty(Ly,My,appy,Lz,Sy);
-  Application appz(A,B,multbinary,appy.Threads(),ffty.l);
+  Application appz(A,B,multbinary,appy.Threads(),ffty.l,mz);
   Convolution convolvez(Lz,Mz,appz);
   Convolution2 convolveyz(&ffty,&convolvez);
   Convolution3 Convolve3(&fftx,&convolveyz);

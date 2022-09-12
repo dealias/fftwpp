@@ -40,10 +40,9 @@ int main(int argc, char* argv[])
 
   double *T=new double[K];
 
-//  Application appx(A,B,m,D,I);
-  Application appx(A,B);
+  Application appx(A,B,multNone,fftw::maxthreads,0,mx);
   fftPad fftx(Lx,Mx,appx,Ly,Sx);
-  Application appy(A,B,multbinary,appx.Threads(),fftx.l);
+  Application appy(A,B,multbinary,appx.Threads(),fftx.l,my);
 
   Convolution convolvey(Ly,My,appy);
   Convolution2 Convolve2(&fftx,&convolvey);

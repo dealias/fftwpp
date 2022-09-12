@@ -18,7 +18,6 @@ using namespace Array;
 namespace fftwpp {
 
 unsigned int threads=1;
-unsigned int mOption=0;
 unsigned int DOption=0;
 bool Output=false;
 bool Centered=false;
@@ -209,7 +208,7 @@ void fftBase::OptBase::optloop(unsigned int& m0, unsigned int L,
     unsigned int n=ceilquotient(M,m0*P);
     //cout<<"inner="<<inner<<", p="<<p<<", P="<<P<<", n="<<n<<", centered="<<centered<<endl;
 
-    if(mOption >= 1 && mOption < M && centered && p%2 != 0) {
+    if(app.m >= 1 && app.m < M && centered && p%2 != 0) {
         cerr << "Odd values of p are incompatible with the centered and Hermitian routines." << endl;
         cerr << "Using explicit routines with m=" << M << " instead." << endl;
     }
@@ -265,10 +264,10 @@ void fftBase::OptBase::opt(unsigned int L, unsigned int M, Application& app,
 {
   if(!Explicit) {
     if(mForced) {
-      if(mOption >= ceilquotient(L,2))
-        optloop(mOption,L,M,app,C,S,centered,1,useTimer);
+      if(app.m >= ceilquotient(L,2))
+        optloop(app.m,L,M,app,C,S,centered,1,useTimer);
       else
-        optloop(mOption,L,M,app,C,S,centered,mOption+1,useTimer,true);
+        optloop(app.m,L,M,app,C,S,centered,app.m+1,useTimer,true);
     } else {
       unsigned int m0=nextfftsize(minsize);
 
@@ -341,7 +340,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   }
   if(showOptTimes) cout << "Optimizer Timings:" << endl;
 
-  mForced=(mOption >= 1);
+  mForced=(app.m >= 1);
 
   unsigned int mStart=2;
   unsigned int itmax=3;

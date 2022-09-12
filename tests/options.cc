@@ -7,6 +7,7 @@ using namespace fftwpp;
 namespace fftwpp {
 unsigned int L,Lx,Ly,Lz;
 unsigned int M,Mx,My,Mz;
+unsigned int m,mx,my,mz;
 }
 
 unsigned int K=0;
@@ -32,7 +33,7 @@ void optionsHybrid(int argc, char* argv[], bool fft)
   optind=0;
 #endif
 
-  enum Parameters {LXYZ=256,LX,LY,LZ,MXYZ,MX,MY,MZ,SX,SY,SZ};
+  enum Parameters {LXYZ=256,LX,LY,LZ,MXYZ,MX,MY,MZ,SX,SY,SZ,mXYZ,mX,mY,mZ};
 
     int option_index = 0;
   static struct option long_options[] =
@@ -48,7 +49,10 @@ void optionsHybrid(int argc, char* argv[], bool fft)
     {"Sx", 1, 0, SX},
     {"Sy", 1, 0, SY},
     {"Sz", 1, 0, SZ},
-//    {"mx", 1, 0, mX},
+    {"m", 1, 0, mXYZ},
+    {"mx", 1, 0, mX},
+    {"my", 1, 0, mY},
+    {"mz", 1, 0, mZ},
 //    {"Dx", 1, 0, DX},
 //    {"Ix", 1, 0, IX},
     {0, 0, 0, 0}
@@ -81,7 +85,7 @@ void optionsHybrid(int argc, char* argv[], bool fft)
         L=Lx=Ly=Lz=Atoi(optarg);
         break;
       case LX:
-        Lx=Atoi(optarg);
+        L=Lx=Atoi(optarg);
         break;
       case LY:
         Ly=Atoi(optarg);
@@ -94,13 +98,26 @@ void optionsHybrid(int argc, char* argv[], bool fft)
         M=Mx=My=Mz=Atoi(optarg);
         break;
       case MX:
-        Mx=Atoi(optarg);
+        M=Mx=Atoi(optarg);
         break;
       case MY:
         My=Atoi(optarg);
         break;
       case MZ:
         Mz=Atoi(optarg);
+        break;
+      case 'm':
+      case mXYZ:
+        m=mx=my=mz=Atoi(optarg);
+        break;
+      case mX:
+        m=mx=Atoi(optarg);
+        break;
+      case mY:
+        my=Atoi(optarg);
+        break;
+      case mZ:
+        mz=Atoi(optarg);
         break;
       case 'I':
         IOption=atoi(optarg) > 0;
@@ -122,9 +139,6 @@ void optionsHybrid(int argc, char* argv[], bool fft)
         break;
       case 'u':
         normalized=false;
-        break;
-      case 'm':
-        mOption=max(atoi(optarg),0);
         break;
       case 't':
         showOptTimes=true;
