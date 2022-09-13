@@ -5,6 +5,7 @@ from subprocess import *
 import os
 import re
 import argparse
+from OptimalValues import *
 
 def ceilquotient(a,b):
   return -(a//-b)
@@ -14,17 +15,46 @@ def main():
   programs=getPrograms(args)
   test(programs, args)
 
-class Program:
-  def __init__(self, name, centered, extraArgs=""):
-    self.name=name
-    self.centered=centered
-    self.extraArgs=extraArgs
-    self.total=0
-    self.failed=0
-    self.failedCases=[]
+def fillOptValues(program):
+  C=1
+  S=1
 
-  def passed(self):
-    return self.total-self.failed
+  centered=program.centered
+  vals=[]
+
+  # Because of symmetry concerns in the centered cases (compact/noncompact),
+  # we check even and odd L values
+  if centered:
+    Ls=[7,8]
+  else:
+    Ls=[8]
+
+  Dstart=2 if centered else 1
+  for L in Ls:
+    L4=ceilquotient(L,4)
+    L2=ceilquotient(L,2)
+    Ms=[]
+    if centered:
+      Ms.append(3*L2-2*(L%2))
+    Ms+=[2*L,5*L2]
+    for M in Ms:
+      ms=[L4,L2]
+      if not centered:
+        ms+=[L,L+1]
+      ms+=[M,M+1]
+      for m in ms:
+        p=ceilquotient(L,m)
+        q=ceilquotient(M,m) if p <= 2 else ceilquotient(M,m*p)*p
+        n=q//p
+        Istart=0 if q > 1 else 1
+        for I in range(Istart,2):
+          D=Dstart
+          while(D < n):
+            vals.append(OptValue(L,M,m,p,q,C,S,D,I))
+            D*=2
+          vals.append(OptValue(L,M,m,p,q,C,S,D,I))
+
+  return vals
 
 def getArgs():
   parser = argparse.ArgumentParser(description="Perform Unit Tests on convolutions with hybrid dealiasing.")
@@ -166,45 +196,17 @@ def test(programs, args):
     print("\nNo programs to test.\n")
 
 def iterate(program, thr, tol, verbose):
-  centered=program.centered
 
-  # Because of symmetry concerns in the centered cases (compact/noncompact),
-  # we check even and odd L values
-  if centered:
-    Ls=[7,8]
-  else:
-    Ls=[8]
-
-  Dstart=2 if centered else 1
   if thr ==  0:
     threads=[1,2,4]
   else:
     threads=[thr]
 
-  for L in Ls:
-    L4=ceilquotient(L,4)
-    L2=ceilquotient(L,2)
-    Ms=[]
-    if centered:
-      Ms.append(3*L2-2*(L%2))
-    Ms+=[2*L,5*L2]
+  optX=OptimalValues(program,fillOptValues)
+
+  for x in optX.vals:
     for T in threads:
-      for M in Ms:
-        ms=[L4,L2]
-        if not centered:
-          ms+=[L,L+1]
-        ms+=[M,M+1]
-        for m in ms:
-          p=ceilquotient(L,m)
-          q=ceilquotient(M,m) if p <= 2 else ceilquotient(M,m*p)*p
-          n=q//p
-          Istart=0 if q > 1 else 1
-          for I in range(Istart,2):
-            D=Dstart
-            while(D < n):
-              check(program,L,M,m,D,I,T,tol,verbose)
-              D*=2
-            check(program,L,M,m,n,I,T,tol,verbose)
+      check(program,x.L,x.M,x.m,x.D,x.I,T,tol,verbose)
 
 def check(program, L, M, m, D, I, T, tol, verbose):
   program.total+=1
