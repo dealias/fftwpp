@@ -185,37 +185,45 @@ def iterate(program, thr, tol, verbose):
   else:
     threads=[thr]
 
+  vals=OptimalValues(program,fillOptValues).vals
   if dim == 1:
-    vals=OptimalValues(program,fillOptValues).vals
     for x in vals:
       for T in threads:
         check(program,[x],T,tol,verbose)
-  elif dim == 2:
-    vals=OptimalValues(program,fillOptValues).vals
-    for x in vals:
-      for y in vals:
-        for T in threads:
-          check(program,[x,y],T,tol,verbose)
-  elif dim == 3:
-    vals=OptimalValues(program,fillOptValues).vals
-    for x in vals:
-      for y in vals:
-        for z in vals:
-          for T in threads:
-            check(program,[x,y,z],T,tol,verbose)
   else:
-    exit("Dimension must be 1 2 or 3.")    
+    def fillmany(program):
+      return fillOptValues(program, True)
 
-def fillOptValues(program):
+    manyvals=OptimalValues(program,fillmany).vals
+
+    if dim == 2:
+      for x in manyvals:
+        for y in vals:
+          for T in threads:
+            check(program,[x,y],T,tol,verbose)
+
+    elif dim == 3:
+      vals=OptimalValues(program,fillOptValues).vals
+      for x in manyvals:
+        for y in manyvals:
+          for z in vals:
+            for T in threads:
+              check(program,[x,y,z],T,tol,verbose)
+
+    else:
+      exit("Dimension must be 1 2 or 3.")
+
+def fillOptValues(program, many=False):
+
   C=1
   S=1
-
   centered=program.centered
+  dim=program.dim
   vals=[]
 
   # Because of symmetry concerns in the centered cases (compact/noncompact),
   # we check even and odd L values
-  if centered:
+  if centered and dim == 1:
     Ls=[7,8]
   else:
     Ls=[8]
@@ -236,13 +244,18 @@ def fillOptValues(program):
       for m in ms:
         p=ceilquotient(L,m)
         q=ceilquotient(M,m) if p <= 2 else ceilquotient(M,m*p)*p
-        n=q//p
-        Istart=0 if q > 1 else 1
-        for I in range(Istart,2):
-          D=Dstart
-          while(D < n):
+        if not many:
+          n=q//p
+          Istart=0 if q > 1 else 1
+          for I in range(Istart,2):
+            D=Dstart
+            while(D < n):
+              vals.append(OptValue(L,M,m,p,q,C,S,D,I))
+              D*=2
             vals.append(OptValue(L,M,m,p,q,C,S,D,I))
-            D*=2
+        else:
+          I=1
+          D=1
           vals.append(OptValue(L,M,m,p,q,C,S,D,I))
 
   return vals
