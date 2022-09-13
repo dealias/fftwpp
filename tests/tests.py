@@ -235,7 +235,12 @@ def fillOptValues(program, many=False):
     Ms=[]
     if centered:
       Ms.append(3*L2-2*(L%2))
-    Ms+=[2*L,5*L2]
+
+    if dim != 1:
+      Ms+= [2*L]
+    else:
+      Ms+=[2*L,5*L2]
+
     for M in Ms:
       ms=[L4,L2]
       if not centered:
