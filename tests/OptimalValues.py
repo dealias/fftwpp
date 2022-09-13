@@ -1,17 +1,8 @@
 def emptyList(program):
   return []
 
-class Program:
-  def __init__(self, name, centered, extraArgs=""):
-    self.name=name
-    self.centered=centered
-    self.extraArgs=extraArgs
-    self.total=0
-    self.failed=0
-    self.failedCases=[]
-
-  def passed(self):
-    return self.total-self.failed
+def zeroValues(program):
+  return [OptValue(0,0,0,0,0,0,0,0,0)]
 
 
 class OptimalValues():
@@ -21,8 +12,7 @@ class OptimalValues():
 
     # The name of the program (as a sting)
     self.program=program
-    self.centered=program.centered
-
+    
     # A list of OptValues
     vals=fillOptValues(program)
     if type(vals) == list:

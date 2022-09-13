@@ -15,46 +15,18 @@ def main():
   programs=getPrograms(args)
   test(programs, args)
 
-def fillOptValues(program):
-  C=1
-  S=1
+class Program:
+  def __init__(self, name, centered, dim=1, extraArgs=""):
+    self.name=name
+    self.centered=centered
+    self.dim=dim
+    self.extraArgs=extraArgs
+    self.total=0
+    self.failed=0
+    self.failedCases=[]
 
-  centered=program.centered
-  vals=[]
-
-  # Because of symmetry concerns in the centered cases (compact/noncompact),
-  # we check even and odd L values
-  if centered:
-    Ls=[7,8]
-  else:
-    Ls=[8]
-
-  Dstart=2 if centered else 1
-  for L in Ls:
-    L4=ceilquotient(L,4)
-    L2=ceilquotient(L,2)
-    Ms=[]
-    if centered:
-      Ms.append(3*L2-2*(L%2))
-    Ms+=[2*L,5*L2]
-    for M in Ms:
-      ms=[L4,L2]
-      if not centered:
-        ms+=[L,L+1]
-      ms+=[M,M+1]
-      for m in ms:
-        p=ceilquotient(L,m)
-        q=ceilquotient(M,m) if p <= 2 else ceilquotient(M,m*p)*p
-        n=q//p
-        Istart=0 if q > 1 else 1
-        for I in range(Istart,2):
-          D=Dstart
-          while(D < n):
-            vals.append(OptValue(L,M,m,p,q,C,S,D,I))
-            D*=2
-          vals.append(OptValue(L,M,m,p,q,C,S,D,I))
-
-  return vals
+  def passed(self):
+    return self.total-self.failed
 
 def getArgs():
   parser = argparse.ArgumentParser(description="Perform Unit Tests on convolutions with hybrid dealiasing.")
@@ -108,21 +80,21 @@ def getPrograms(args):
     if SorNotSCH:
       programs.append(Program("hybridconv",False))
     if CorNotSCH:
-      programs.append(Program("hybridconv",True,"-c"))
+      programs.append(Program("hybridconv",True,extraArgs="-c"))
     if HorNotSCH:
       programs.append(Program("hybridconvh",True))
 
   if Y or notXYZ:
     if SorNotSCH:
-      programs.append(Program("hybridconv2",False))
+      programs.append(Program("hybridconv2",False,dim=2))
     if HorNotSCH:
-      programs.append(Program("hybridconvh2",True))
+      programs.append(Program("hybridconvh2",True,dim=2))
 
   if Z or notXYZ:
     if SorNotSCH:
-      programs.append(Program("hybridconv3",False))
+      programs.append(Program("hybridconv3",False,dim=3))
     if HorNotSCH:
-      programs.append(Program("hybridconvh3",True))
+      programs.append(Program("hybridconvh3",True,dim=3))
 
   return programs
 
@@ -134,8 +106,10 @@ def test(programs, args):
   if lenP == 1:
     p=programs[0]
     name=p.name
+
     if p.extraArgs:
       name+=" "+p.extraArgs
+
     if T == 0:
       print("Testing "+name+" with 1, 2, and 4 threads.\n")
     elif T == 1:
@@ -144,11 +118,14 @@ def test(programs, args):
       print("Testing "+name+" with "+str(T)+" threads.\n")
     else:
       raise ValueError(str(T)+" is an invalid number of threads.")
+
     iterate(p,T,float(args.t),args.v)
+
     print("Finished testing "+name+".")
     print("\n***************\n")
     print("Finished testing 1 program.")
     print("Out of "+str(p.total)+" tests, "+str(p.passed())+" passed, "+str(p.failed)+" failed.\n")
+
     if args.l and len(p.failedCases) > 0:
       print("Failed Cases:\n")
       for case in p.failedCases:
@@ -160,6 +137,7 @@ def test(programs, args):
     passed=0
     failed=0
     failedCases=[]
+
     for p in programs:
       name=p.name
       if p.extraArgs:
@@ -172,10 +150,13 @@ def test(programs, args):
         print("Testing "+name+" with "+str(T)+" threads.\n")
       else:
         raise ValueError(str(T)+" is an invalid number of threads.")
+
       iterate(p,T,float(args.t),args.v)
+
       ptotal=p.total
       pfailed=p.failed
       ppassed=p.passed()
+
       print("Finished testing "+name+".")
       print("Out of "+str(ptotal)+" tests, "+str(ppassed)+" passed, "+str(pfailed)+" failed.")
       print("\n***************\n")
@@ -197,21 +178,86 @@ def test(programs, args):
 
 def iterate(program, thr, tol, verbose):
 
+  dim=program.dim
+
   if thr ==  0:
     threads=[1,2,4]
   else:
     threads=[thr]
 
-  optX=OptimalValues(program,fillOptValues)
+  if dim == 1:
+    vals=OptimalValues(program,fillOptValues).vals
+    for x in vals:
+      for T in threads:
+        check(program,[x],T,tol,verbose)
+  elif dim == 2:
+    vals=OptimalValues(program,fillOptValues).vals
+    for x in vals:
+      for y in vals:
+        for T in threads:
+          check(program,[x,y],T,tol,verbose)
+  elif dim == 3:
+    vals=OptimalValues(program,fillOptValues).vals
+    for x in vals:
+      for y in vals:
+        for z in vals:
+          for T in threads:
+            check(program,[x,y,z],T,tol,verbose)
+  else:
+    exit("Dimension must be 1 2 or 3.")    
 
-  for x in optX.vals:
-    for T in threads:
-      check(program,x.L,x.M,x.m,x.D,x.I,T,tol,verbose)
+def fillOptValues(program):
+  C=1
+  S=1
 
-def check(program, L, M, m, D, I, T, tol, verbose):
+  centered=program.centered
+  vals=[]
+
+  # Because of symmetry concerns in the centered cases (compact/noncompact),
+  # we check even and odd L values
+  if centered:
+    Ls=[7,8]
+  else:
+    Ls=[8]
+
+  Dstart=2 if centered else 1
+  for L in Ls:
+    L4=ceilquotient(L,4)
+    L2=ceilquotient(L,2)
+    Ms=[]
+    if centered:
+      Ms.append(3*L2-2*(L%2))
+    Ms+=[2*L,5*L2]
+    for M in Ms:
+      ms=[L4,L2]
+      if not centered:
+        ms+=[L,L+1]
+      ms+=[M,M+1]
+      for m in ms:
+        p=ceilquotient(L,m)
+        q=ceilquotient(M,m) if p <= 2 else ceilquotient(M,m*p)*p
+        n=q//p
+        Istart=0 if q > 1 else 1
+        for I in range(Istart,2):
+          D=Dstart
+          while(D < n):
+            vals.append(OptValue(L,M,m,p,q,C,S,D,I))
+            D*=2
+          vals.append(OptValue(L,M,m,p,q,C,S,D,I))
+
+  return vals
+
+def check(program, ovals, T, tol, verbose):
   program.total+=1
   name=program.name
-  cmd = [name,"-L "+str(L),"-M "+str(M),"-m "+str(m),"-D "+str(D),"-I "+str(I),"-T "+str(T),"-E"]
+  directions=["x","y","z"]
+  cmd=[]
+  for i in range(len(ovals)):
+    o=ovals[i]
+    d=directions[i]
+    cmd+=[name,"-L"+d+"="+str(o.L),"-M"+d+"="+str(o.M),"-m"+d+"="+str(o.m),"-D"+d+"="+str(o.D),"-I"+d+"="+str(o.I)]
+
+  cmd+=["-T="+str(T),"-E"]
   if program.extraArgs != "":
     cmd.append(program.extraArgs)
 
