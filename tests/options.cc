@@ -123,7 +123,7 @@ void optionsHybrid(int argc, char* argv[], bool fft)
         L=Lx=Ly=Lz=Atoi(optarg);
         break;
       case LX:
-        Lx=Atoi(optarg);
+        L=Lx=Atoi(optarg);
         break;
       case LY:
         Ly=Atoi(optarg);
@@ -136,7 +136,7 @@ void optionsHybrid(int argc, char* argv[], bool fft)
         M=Mx=My=Mz=Atoi(optarg);
         break;
       case MX:
-        Mx=Atoi(optarg);
+        M=Mx=Atoi(optarg);
         break;
       case MY:
         My=Atoi(optarg);
