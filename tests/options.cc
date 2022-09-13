@@ -7,7 +7,9 @@ using namespace fftwpp;
 namespace fftwpp {
 unsigned int L,Lx,Ly,Lz;
 unsigned int M,Mx,My,Mz;
-unsigned int m=0,mx=0,my=0,mz=0;
+unsigned int mx=0,my=0,mz=0;
+unsigned int Dx=0,Dy=0,Dz=0;
+int Ix=-1,Iy=-1,Iz=-1;
 }
 
 unsigned int K=0;
@@ -27,13 +29,21 @@ int Atoi(char *optarg, int min=1)
   return val;
 }
 
+int atoD(char *optarg)
+{
+  int D=Atoi(optarg,0);
+  if(D > 1 && D % 2) ++D;
+  return D;
+}
+
 void optionsHybrid(int argc, char* argv[], bool fft)
 {
 #ifdef __GNUC__
   optind=0;
 #endif
 
-  enum Parameters {LXYZ=256,LX,LY,LZ,MXYZ,MX,MY,MZ,SX,SY,SZ,mXYZ,mX,mY,mZ};
+  enum Parameters {LXYZ=256,LX,LY,LZ,MXYZ,MX,MY,MZ,SX,SY,SZ,mXYZ,mX,mY,mZ,
+    DXYZ,DX,DY,DZ,IXYZ,IX,IY,IZ};
 
     int option_index = 0;
   static struct option long_options[] =
@@ -53,8 +63,14 @@ void optionsHybrid(int argc, char* argv[], bool fft)
     {"mx", 1, 0, mX},
     {"my", 1, 0, mY},
     {"mz", 1, 0, mZ},
-//    {"Dx", 1, 0, DX},
-//    {"Ix", 1, 0, IX},
+    {"D", 1, 0, DXYZ},
+    {"Dx", 1, 0, DX},
+    {"Dy", 1, 0, DY},
+    {"Dz", 1, 0, DZ},
+    {"I", 1, 0, IXYZ},
+    {"Ix", 1, 0, IX},
+    {"Iy", 1, 0, IY},
+    {"Iz", 1, 0, IZ},
     {0, 0, 0, 0}
   };
 
@@ -71,8 +87,17 @@ void optionsHybrid(int argc, char* argv[], bool fft)
         C=Atoi(optarg);
         break;
       case 'D':
-        DOption=max(atoi(optarg),0);
-        if(DOption > 1 && DOption % 2) ++DOption;
+      case DXYZ:
+        Dx=Dy=Dz=atoD(optarg);
+        break;
+      case DX:
+        Dx=atoD(optarg);
+        break;
+      case DY:
+        Dy=atoD(optarg);
+        break;
+      case DZ:
+        Dz=atoD(optarg);
         break;
       case 'E':
         testError=true;
@@ -80,12 +105,25 @@ void optionsHybrid(int argc, char* argv[], bool fft)
       case 'K':
         K=Atoi(optarg);
         break;
+      case 'I':
+      case IXYZ:
+        Ix=Iy=Iz=atoi(optarg) > 0;
+        break;
+      case IX:
+        Ix=atoi(optarg) > 0;
+        break;
+      case IY:
+        Iy=atoi(optarg) > 0;
+        break;
+      case IZ:
+        Iz=atoi(optarg) > 0;
+        break;
       case 'L':
       case LXYZ:
         L=Lx=Ly=Lz=Atoi(optarg);
         break;
       case LX:
-        L=Lx=Atoi(optarg);
+        Lx=Atoi(optarg);
         break;
       case LY:
         Ly=Atoi(optarg);
@@ -98,7 +136,7 @@ void optionsHybrid(int argc, char* argv[], bool fft)
         M=Mx=My=Mz=Atoi(optarg);
         break;
       case MX:
-        M=Mx=Atoi(optarg);
+        Mx=Atoi(optarg);
         break;
       case MY:
         My=Atoi(optarg);
@@ -108,19 +146,16 @@ void optionsHybrid(int argc, char* argv[], bool fft)
         break;
       case 'm':
       case mXYZ:
-        m=mx=my=mz=Atoi(optarg,0);
+        mx=my=mz=Atoi(optarg,0);
         break;
       case mX:
-        m=mx=Atoi(optarg,0);
+        mx=Atoi(optarg,0);
         break;
       case mY:
         my=Atoi(optarg,0);
         break;
       case mZ:
         mz=Atoi(optarg,0);
-        break;
-      case 'I':
-        IOption=atoi(optarg) > 0;
         break;
       case 'O':
         Output=true;

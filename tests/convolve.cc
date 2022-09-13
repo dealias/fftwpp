@@ -18,15 +18,11 @@ using namespace Array;
 namespace fftwpp {
 
 unsigned int threads=1;
-unsigned int DOption=0;
 bool Output=false;
 bool Centered=false;
 bool normalized=true;
 bool testError=false;
 bool showOptTimes=false;
-
-int IOption=-1;
-
 
 #ifdef __SSE2__
 const union uvec sse2_pm={
@@ -167,7 +163,8 @@ double time(fftBase *fft, Application &app)
 
   statistics Stats(true);
   // Number of samples
-  unsigned int K=max(ceilquotient(2000000,fft->M*fft->C),1);
+  unsigned int K=max(ceilquotient(2000000,(unsigned long long) fft->M*fft->C),
+                     1);
   for(unsigned int k=0; k < K; ++k) {
     auto begin=std::chrono::steady_clock::now();
     Convolve.convolveRaw(f);
@@ -221,20 +218,20 @@ void fftBase::OptBase::optloop(unsigned int& m0, unsigned int L,
       i=m0=nextpuresize(m0+1);
     else {
       unsigned int q=(inner ? P*n : ceilquotient(M,m0));
-      unsigned int Dstart=DOption > 0 ? min(DOption,n) : 1;
-      unsigned int Dstop=DOption > 0 ? min(DOption,n) : n;
+      unsigned int Dstart=app.D > 0 ? min(app.D,n) : 1;
+      unsigned int Dstop=app.D > 0 ? min(app.D,n) : n;
       unsigned int Dstop2=2*Dstop;
 
       // Always check inplace and out-of-place, regardless of C and q.
-      //unsigned int Istart=IOption == -1 ? 0 : IOption;
+      //unsigned int Istart=app.I == -1 ? 0 : app.I;
 
       // Check inplace and out-of-place unless C > 1.
-      //unsigned int Istart=IOption == -1 ? (C > 1) : IOption;
+      //unsigned int Istart=app.I == -1 ? (C > 1) : app.I;
 
       // Check inplace and out-of-place unless C > 1 or q == 1 (explicit).
-      unsigned int Istart=IOption == -1 ? (C > 1 || q == 1) : IOption;
+      unsigned int Istart=app.I == -1 ? (C > 1 || q == 1) : app.I;
 
-      unsigned int Istop=IOption == -1 ? 2 : IOption+1;
+      unsigned int Istop=app.I == -1 ? 2 : app.I+1;
 
       for(unsigned int D=Dstart; D < Dstop2; D *= 2) {
         if(D > Dstop) D=Dstop;

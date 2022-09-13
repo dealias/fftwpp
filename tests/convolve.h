@@ -37,12 +37,11 @@ const Complex I(0.0,1.0);
 
 extern unsigned int L,Lx,Ly,Lz; // input data lengths
 extern unsigned int M,Mx,My,Mz; // minimum padded lengths
-extern unsigned int m,mx,my,mz;
 
-extern unsigned int mOption;
-extern unsigned int DOption;
+extern unsigned int mx,my,mz; // internal FFT size
+extern unsigned int Dx,Dy,Dz; // number of residues computed at a time
+extern int Ix,Iy,Iz; // number of residues computed at a time
 
-extern int IOption;
 extern bool Output;
 extern bool testError;
 extern bool showOptTimes;
@@ -69,11 +68,13 @@ public:
   unsigned int B;
   multiplier *mult;
   unsigned int m;
+  unsigned int D;
+  int I;
 
   Application(unsigned int A, unsigned int B, multiplier *mult=multNone,
               unsigned int threads=fftw::maxthreads, unsigned int n=0,
-              unsigned int m=0) :
-    ThreadBase(threads), A(A), B(B), mult(mult), m(m) {
+              unsigned int m=0, unsigned int D=0, int I=-1) :
+    ThreadBase(threads), A(A), B(B), mult(mult), m(m), D(D), I(I) {
     if(n == 0)
       multithread(threads);
     else {

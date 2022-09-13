@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
 
   double *T=new double[K];
 
-  Application app(A,B,realmultbinary,fftw::maxthreads,0,m);
+  Application app(A,B,realmultbinary,fftw::maxthreads,0,mx,Dx,Ix);
   fftPadHermitian fft(L,M,app);
 
   unsigned int H=ceilquotient(L,2);

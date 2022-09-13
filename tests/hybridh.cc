@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
   cout << "L=" << L << endl;
   cout << "M=" << M << endl;
 
-  Application app(A,B,realmultbinary,fftw::maxthreads,0,m);
+  Application app(A,B,realmultbinary,fftw::maxthreads,0,mx,Dx,Ix);
 
   cout << "Explicit:" << endl;
   // Minimal explicit padding

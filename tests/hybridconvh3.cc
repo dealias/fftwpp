@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
   unsigned int Sx=0; // x-stride (0 means Ly*Sy)
 
   unsigned int K0=10000000;
-  if(K == 0) K=max(K0/(Mx*My*Mz),20);
+  if(K == 0) K=max(K0/((unsigned long long) Mx*My*Mz),20);
   if(Output || testError)
     K=1;
   cout << "K=" << K << endl << endl;
@@ -48,11 +48,11 @@ int main(int argc, char* argv[])
 
   double *T=new double[K];
 
-  Application appx(A,B,multNone,fftw::maxthreads,0,mx);
+  Application appx(A,B,multNone,fftw::maxthreads,0,mx,Dx,Ix);
   fftPadCentered fftx(Lx,Mx,appx,Sx == Ly*Hz ? Sx : Hz,Sx);
-  Application appy(A,B,multNone,appx.Threads(),fftx.l,my);
+  Application appy(A,B,multNone,appx.Threads(),fftx.l,my,Dy,Iy);
   fftPadCentered ffty(Ly,My,appy,Hz,Sy);
-  Application appz(A,B,realmultbinary,appy.Threads(),ffty.l,mz);
+  Application appz(A,B,realmultbinary,appy.Threads(),ffty.l,mz,Dz,Iz);
   ConvolutionHermitian convolvez(Lz,Mz,appz);
   ConvolutionHermitian2 convolveyz(&ffty,&convolvez);
   ConvolutionHermitian3 Convolve3(&fftx,&convolveyz);
