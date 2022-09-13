@@ -490,10 +490,11 @@ def main(argv):
                 else:
                     with open(filename, "w") as myfile:
                         myfile.write(comment)
-                    with open(optFile,"w") as logfile:
-                        logfile.write("# Optimal values for "+p+"\n")
-                        logfile.write("# L M m p q C S D I"+"\n")
-                        logfile.write("#\n"+comment)
+                    if hybrid:
+                        with open(optFile,"w") as logfile:
+                            logfile.write("# Optimal values for "+p+"\n")
+                            logfile.write("# L M m p q C S D I"+"\n")
+                            logfile.write("#\n"+comment)
 
         for i in range(a,b+1,1 if I == 0 else I):
             if I != 0:
