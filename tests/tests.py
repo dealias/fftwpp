@@ -27,7 +27,7 @@ class Program:
     return self.total-self.failed
 
 def getArgs():
-  parser = argparse.ArgumentParser()
+  parser = argparse.ArgumentParser(description="Perform Unit Tests on convolutions with hybrid dealiasing.")
   parser.add_argument("-S", help="Test Standard convolutions. Not specifying\
   										S or C or H is the same as specifying all of them",
   										action="store_true")
@@ -37,14 +37,14 @@ def getArgs():
   parser.add_argument("-H", help="Test Hermitian convolutions. Not specifying\
   										S or C or H is the same as specifying all of them",
   										action="store_true")
-  parser.add_argument("-X", help="Test 1D Convolutions. Not specifying\
-  										X or Y or Z is the same as specifying all of them",
+  parser.add_argument("-1","--one", help="Test 1D Convolutions. Not specifying\
+  										1 or 2 or 3 is the same as specifying all of them",
   										action="store_true")
-  parser.add_argument("-Y", help="Test 2D Convolutions. Not specifying\
-  										Z or Y or Z is the same as specifying all of them",
+  parser.add_argument("-2","--two", help="Test 2D Convolutions. Not specifying\
+  										1 or 2 or 3 is the same as specifying all of them",
   										action="store_true")
-  parser.add_argument("-Z", help="Test 3D Convolutions. Not specifying\
-  										X or Y or Z is the same as specifying all of them",
+  parser.add_argument("-3","--three", help="Test 3D Convolutions. Not specifying\
+  										1 or 2 or 3 is the same as specifying all of them",
   										action="store_true")
   parser.add_argument("-T", help="Number of threads to use in timing. If set to\
                       0, iterates over 1, 2, and 4 threads. Default is 1.",
@@ -59,33 +59,39 @@ def getArgs():
 
 def getPrograms(args):
   programs=[]
+  S=args.S
+  C=args.C
+  H=args.H
+  X=args.one
+  Y=args.two
+  Z=args.three
 
-  SCH=(not (args.S or args.C or args.H))
-  SH=(not (args.S or args.C or args.H))
-  XYZ=(not (args.X or args.Y or args.Z))
+  notSCH=(not (S or C or H))
+  notSH=(not (S or C or H))
+  notXYZ=(not (X or Y or Z))
 
-  SorSCH=(args.S or SCH)
-  CorSCH=(args.C or SCH)
-  HorSCH=(args.H or SCH)
+  SorNotSCH=(S or notSCH)
+  CorNotSCH=(C or notSCH)
+  HorNotSCH=(args.H or notSCH)
 
-  if args.X or XYZ:
-    if SorSCH:
+  if X or notXYZ:
+    if SorNotSCH:
       programs.append(Program("hybridconv",False))
-    if CorSCH:
+    if CorNotSCH:
       programs.append(Program("hybridconv",True,"-c"))
-    if HorSCH:
+    if HorNotSCH:
       programs.append(Program("hybridconvh",True))
 
-  if args.Y or XYZ:
-    if SorSCH:
+  if Y or notXYZ:
+    if SorNotSCH:
       programs.append(Program("hybridconv2",False))
-    if HorSCH:
+    if HorNotSCH:
       programs.append(Program("hybridconvh2",True))
 
-  if args.Z or XYZ:
-    if SorSCH:
+  if Z or notXYZ:
+    if SorNotSCH:
       programs.append(Program("hybridconv3",False))
-    if HorSCH:
+    if HorNotSCH:
       programs.append(Program("hybridconvh3",True))
 
   return programs
@@ -203,7 +209,7 @@ def iterate(program, thr, tol, verbose):
 def check(program, L, M, m, D, I, T, tol, verbose):
   program.total+=1
   name=program.name
-  cmd = [name,"-L"+str(L),"-M"+str(M),"-m"+str(m),"-D"+str(D),"-I"+str(I),"-T"+str(T),"-E"]
+  cmd = [name,"-L "+str(L),"-M "+str(M),"-m "+str(m),"-D "+str(D),"-I "+str(I),"-T "+str(T),"-E"]
   if program.extraArgs != "":
     cmd.append(program.extraArgs)
 

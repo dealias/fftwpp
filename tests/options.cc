@@ -43,7 +43,7 @@ void optionsHybrid(int argc, char* argv[], bool fft)
 #endif
 
   enum Parameters {LXYZ=256,LX,LY,LZ,MXYZ,MX,MY,MZ,SX,SY,SZ,mXYZ,mX,mY,mZ,
-    DXYZ,DX,DY,DZ,IXYZ,IX,IY,IZ};
+    DXYZ,DX,DY,DZ,IXYZ,IX,IY,IZ,T};
 
     int option_index = 0;
   static struct option long_options[] =
@@ -71,6 +71,7 @@ void optionsHybrid(int argc, char* argv[], bool fft)
     {"Ix", 1, 0, IX},
     {"Iy", 1, 0, IY},
     {"Iz", 1, 0, IZ},
+    {"T", 1, 0, T},
     {0, 0, 0, 0}
   };
 
@@ -167,6 +168,7 @@ void optionsHybrid(int argc, char* argv[], bool fft)
           stats=atoi(optarg);
         break;
       case 'T':
+      case T:
         fftw::maxthreads=Atoi(optarg);
         break;
       case 'c':
