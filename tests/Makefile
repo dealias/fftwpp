@@ -20,6 +20,13 @@ CXXFLAGS+=-fomit-frame-pointer -fstrict-aliasing -ffast-math
 CXXFLAGS+=-msse2 -mfpmath=sse -march=native
 endif
 
+#Apple Clang compiler
+ifeq ($(shell $(CXX) -v 2>&1 | head -n 1 | head -c 11),Apple clang)
+CXXFLAGS+=-Ofast -g -Wall -DNDEBUG
+CXXFLAGS+=-fomit-frame-pointer -fstrict-aliasing -ffast-math
+CXXFLAGS+=-msse2 -mfpmath=sse -march=native
+endif
+
 #Intel compiler
 ifeq ($(shell $(CXX) -v 2>&1 | head -c 4),icpc)
 CXXFLAGS=-O3 -openmp -ansi-alias -malign-double -fp-model fast=2
@@ -53,8 +60,8 @@ FILES=conv cconv conv2 cconv2 conv3 cconv3 tconv tconv2 \
 	hybridconv3 hybridconvh3
 
 FFTW=fftw++
-EXTRA=$(FFTW) convolution explicit direct getopt
-HYBRID=$(FFTW) convolve direct getopt options
+EXTRA=$(FFTW) convolution explicit direct
+HYBRID=$(FFTW) convolve direct options
 ALL=$(FILES) $(EXTRA) $(HYBRID)
 
 all: $(FILES)
