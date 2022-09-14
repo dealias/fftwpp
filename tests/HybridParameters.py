@@ -1,28 +1,30 @@
-def emptyList(program):
+def emptyList():
   return []
 
-def zeroValues(program):
-  return [OptValue(0,0,0,0,0,0,0,0,0)]
+class ParameterCollection():
+# Holds a collection of Params for a given program
 
+  def __init__(self, fillParameters=emptyList, optArgs=None):
+    # fillParameters: A funtion that returns a list of Parameters.
+    #
+    # optArgs: Optional arguments for fillParameters. If None, then
+    # fillParameters is called without arguments.
 
-class OptimalValues():
-# Holds a collection of OptValues for a given program
+    self.optArgs=optArgs
+    if optArgs != None:
+      vals=fillParameters(optArgs)
+    else:
+      vals=fillParameters()
 
-  def __init__(self, program, fillOptValues=emptyList):
-    # program: The name of the program (probably as a sting)
-    # fillOptValues: A funtion that takes program and returns a list of optValues
-
-    self.program=program
-    vals=fillOptValues(program)
     if type(vals) == list:
       for value in vals:
-        if type(value) != OptValue:
+        if type(value) != Parameters:
           exit("fillOptValues must return a list of OptValues.")
       self.vals=vals
     else:
       exit("fillOptValues must return a list of OptValues.")
-    
-  # returns the L value of the OptValue v
+
+  # returns the L value of the Params v
   def byL(self, v):
     return v.L
 
@@ -107,8 +109,8 @@ class OptimalValues():
     params["I"]=self.I()
     return params
 
-class OptValue():
-# The optimal values for specific L, and M and C
+class Parameters():
+# A collectuion of parameters for a hybrid dealiased convolution
 
   def __init__(self,L,M,m,p,q,C,S,D,I):
     self.L=int(L)
