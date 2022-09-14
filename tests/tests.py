@@ -101,38 +101,8 @@ def getPrograms(args):
 def test(programs, args):
   lenP=len(programs)
   T=int(args.T)
-  print("\n***************\n")
 
-  if lenP == 1:
-    p=programs[0]
-    name=p.name
-
-    if p.extraArgs:
-      name+=" "+p.extraArgs
-
-    if T == 0:
-      print("Testing "+name+" with 1, 2, and 4 threads.\n")
-    elif T == 1:
-      print("Testing "+name+" with "+str(T)+" thread.\n")
-    elif T > 1:
-      print("Testing "+name+" with "+str(T)+" threads.\n")
-    else:
-      raise ValueError(str(T)+" is an invalid number of threads.")
-
-    iterate(p,T,float(args.t),args.v)
-
-    print("Finished testing "+name+".")
-    print("\n***************\n")
-    print("Finished testing 1 program.")
-    print("Out of "+str(p.total)+" tests, "+str(p.passed())+" passed, "+str(p.failed)+" failed.\n")
-
-    if args.l and len(p.failedCases) > 0:
-      print("Failed Cases:\n")
-      for case in p.failedCases:
-        print(case)
-      print()
-
-  elif lenP > 1:
+  if lenP >= 1:
     total=0
     passed=0
     failed=0
@@ -166,8 +136,10 @@ def test(programs, args):
       if args.l:
         failedCases+=p.failedCases
 
-    print("Finished testing "+str(lenP)+" programs.")
-    print("Out of "+str(total)+" tests, "+str(passed)+" passed, "+str(failed)+" failed.\n")
+    if lenP > 1:
+      print("Finished testing "+str(lenP)+" programs.")
+      print("Out of "+str(total)+" tests, "+str(passed)+" passed, "+str(failed)+" failed.\n")
+
     if args.l and len(failedCases) > 0:
       print("Failed Cases:\n")
       for case in failedCases:
