@@ -5,7 +5,7 @@ from subprocess import *
 import os
 import re
 import argparse
-from OptimalValues import *
+from HybridParameters import *
 
 def ceilquotient(a,b):
   return -(a//-b)
@@ -157,17 +157,13 @@ def iterate(program, thr, tol, verbose):
   else:
     threads=[thr]
 
-  vals=OptimalValues(program,fillOptValues).vals
+  vals=ParameterCollection(fillValues,program).vals
   if dim == 1:
     for x in vals:
       for T in threads:
         check(program,[x],T,tol,verbose)
   else:
-    def fillmany(program):
-      return fillOptValues(program, True)
-
-    manyvals=OptimalValues(program,fillmany).vals
-
+    manyvals=ParameterCollection(fillMany,program).vals
     if dim == 2:
       for x in manyvals:
         for y in vals:
@@ -175,7 +171,6 @@ def iterate(program, thr, tol, verbose):
             check(program,[x,y],T,tol,verbose)
 
     elif dim == 3:
-      vals=OptimalValues(program,fillOptValues).vals
       for x in manyvals:
         for y in manyvals:
           for z in vals:
@@ -185,7 +180,7 @@ def iterate(program, thr, tol, verbose):
     else:
       exit("Dimension must be 1 2 or 3.")
 
-def fillOptValues(program, many=False):
+def fillValues(program, many=False):
 
   C=1
   S=1
@@ -226,14 +221,17 @@ def fillOptValues(program, many=False):
           for I in range(Istart,2):
             D=Dstart
             while(D < n):
-              vals.append(OptValue(L,M,m,p,q,C,S,D,I))
+              vals.append(Parameters(L,M,m,p,q,C,S,D,I))
               D*=2
-            vals.append(OptValue(L,M,m,p,q,C,S,D,I))
+            vals.append(Parameters(L,M,m,p,q,C,S,D,I))
         else:
           I=1
           D=1
-          vals.append(OptValue(L,M,m,p,q,C,S,D,I))
+          vals.append(Parameters(L,M,m,p,q,C,S,D,I))
   return vals
+
+def fillMany(program):
+      return fillValues(program, True)
 
 def check(program, ovals, T, tol, verbose):
   program.total+=1
