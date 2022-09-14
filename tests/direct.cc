@@ -70,14 +70,14 @@ void DirectConvolution2::convolve(Complex *h, Complex *f, Complex *g)
       Complex sum=0.0;
       for(unsigned int k=0; k <= i; ++k)
         for(unsigned int p=0; p <= j; ++p)
-          sum += f[k*my+p]*g[(i-k)*my+j-p];
+          sum += f[Sx*k+p]*g[Sx*(i-k)+j-p];
       h[i*my+j]=sum;
     }
   }
 }
 
 void DirectHConvolution2::convolve(Complex *h, Complex *f, Complex *g,
-                                   bool symmetrize, bool xcompact)
+                                   bool symmetrize)
 {
   unsigned int xorigin=mx-xcompact;
 
@@ -102,10 +102,10 @@ void DirectHConvolution2::convolve(Complex *h, Complex *f, Complex *g,
           if(qx >= xstart+!xcompact && qx < xstop) {
             int qy=ky-py;
             if(qy >= ystart && qy < ystop) {
-              sum += ((py >= 0) ? f[(xorigin+px)*my+py] :
-                      conj(f[(xorigin-px)*my-py])) *
-                ((qy >= 0) ? g[(xorigin+qx)*my+qy] :
-                 conj(g[(xorigin-qx)*my-qy]));
+              sum += ((py >= 0) ? f[(xorigin+px)*Sx+py] :
+                      conj(f[(xorigin-px)*Sx-py])) *
+                ((qy >= 0) ? g[(xorigin+qx)*Sx+qy] :
+                 conj(g[(xorigin-qx)*Sx-qy]));
             }
           }
         }
@@ -127,7 +127,7 @@ void DirectConvolution3::convolve(Complex *h, Complex *f, Complex *g)
         for(unsigned int r=0; r <= i; ++r)
           for(unsigned int p=0; p <= j; ++p)
             for(unsigned int q=0; q <= k; ++q)
-              sum += f[r*myz+p*mz+q]*g[(i-r)*myz+(j-p)*mz+(k-q)];
+              sum += f[r*Sx+p*Sy+q]*g[(i-r)*Sx+(j-p)*Sy+(k-q)];
         h[i*myz+j*mz+k]=sum;
       }
     }
@@ -135,8 +135,7 @@ void DirectConvolution3::convolve(Complex *h, Complex *f, Complex *g)
 }
 
 void DirectHConvolution3::convolve(Complex *h, Complex *f, Complex *g,
-                                   bool symmetrize, bool xcompact,
-                                   bool ycompact)
+                                   bool symmetrize)
 {
   unsigned int xorigin=mx-xcompact;
   unsigned int yorigin=my-ycompact;
@@ -170,10 +169,10 @@ void DirectHConvolution3::convolve(Complex *h, Complex *f, Complex *g,
                   int qz=kz-pz;
                   if(qz >= zstart && qz < zstop) {
                     sum += ((pz >= 0) ?
-                            f[((xorigin+px)*ny+yorigin+py)*mz+pz] :
-                            conj(f[((xorigin-px)*ny+yorigin-py)*mz-pz])) *
-                      ((qz >= 0) ? g[((xorigin+qx)*ny+yorigin+qy)*mz+qz] :
-                       conj(g[((xorigin-qx)*ny+yorigin-qy)*mz-qz]));
+                            f[Sx*(xorigin+px)+Sy*(yorigin+py)+pz] :
+                            conj(f[Sx*(xorigin-px)+Sy*(yorigin-py)-pz])) *
+                      ((qz >= 0) ? g[Sx*(xorigin+qx)+Sy*(yorigin+qy)+qz] :
+                       conj(g[Sx*(xorigin-qx)+Sy*(yorigin-qy)-qz]));
                   }
                 }
               }

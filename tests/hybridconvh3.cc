@@ -30,9 +30,6 @@ int main(int argc, char* argv[])
   cout << "My=" << My << endl;
   cout << "Mz=" << Mz << endl;
 
-  unsigned int Sy=0; // y-stride (0 means ceilquotient(L,2))
-  unsigned int Sx=0; // x-stride (0 means Ly*Sy)
-
   unsigned int K0=10000000;
   if(K == 0) K=max(K0/((unsigned long long) Mx*My*Mz),20);
   if(Output || testError)
@@ -84,8 +81,8 @@ int main(int argc, char* argv[])
   Complex *h=NULL;
   if(testError) {
     h=ComplexAlign(Lx*Ly*Hz);
-    DirectHConvolution3 C(Hx,Hy,Hz);
-    C.convolve(h,f[0],f[1],false,Lx%2,Ly%2);
+    DirectHConvolution3 C(Hx,Hy,Hz,Lx%2,Ly%2,Sx,Sy);
+    C.convolve(h,f[0],f[1],false);
   }
 
   if(normalized || testError) {
@@ -130,7 +127,7 @@ int main(int argc, char* argv[])
       for(unsigned int i=0; i < Lx; ++i) {
         for(unsigned int j=0; j < Ly; ++j) {
           for(unsigned int k=0; k < Hz; ++k) {
-            cout << h[Sx*i+Sy*j+k] << " ";
+            cout << h[Hz*(Ly*i+j)+k] << " ";
           }
           cout << endl;
         }
@@ -145,7 +142,7 @@ int main(int argc, char* argv[])
     for(unsigned int i=0; i < Lx; ++i)
       for(unsigned int j=0; j < Ly; ++j)
         for(unsigned int k=0; k < Hz; ++k){
-          Complex hijk=h[Sx*i+Sy*j+k];
+          Complex hijk=h[Hz*(Ly*i+j)+k];
           err += abs2(f[0][Sx*i+Sy*j+k]-hijk);
           norm += abs2(hijk);
         }

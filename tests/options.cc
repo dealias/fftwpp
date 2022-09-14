@@ -9,6 +9,7 @@ unsigned int L,Lx,Ly,Lz;
 unsigned int M,Mx,My,Mz;
 unsigned int mx=0,my=0,mz=0;
 unsigned int Dx=0,Dy=0,Dz=0;
+unsigned int Sx=0,Sy=0;
 int Ix=-1,Iy=-1,Iz=-1;
 }
 
@@ -42,7 +43,7 @@ void optionsHybrid(int argc, char* argv[], bool fft)
   optind=0;
 #endif
 
-  enum Parameters {LXYZ=256,LX,LY,LZ,MXYZ,MX,MY,MZ,SX,SY,SZ,mXYZ,mX,mY,mZ,
+  enum Parameters {LXYZ=256,LX,LY,LZ,MXYZ,MX,MY,MZ,SX,SY,mXYZ,mX,mY,mZ,
     DXYZ,DX,DY,DZ,IXYZ,IX,IY,IZ,T};
 
     int option_index = 0;
@@ -58,7 +59,6 @@ void optionsHybrid(int argc, char* argv[], bool fft)
     {"Mz", 1, 0, MZ},
     {"Sx", 1, 0, SX},
     {"Sy", 1, 0, SY},
-    {"Sz", 1, 0, SZ},
     {"m", 1, 0, mXYZ},
     {"mx", 1, 0, mX},
     {"my", 1, 0, mY},
@@ -166,6 +166,12 @@ void optionsHybrid(int argc, char* argv[], bool fft)
           S=atoi(optarg);
         else
           stats=atoi(optarg);
+        break;
+      case SX:
+        Sx=Atoi(optarg,0);
+        break;
+      case SY:
+        Sy=Atoi(optarg,0);
         break;
       case 'T':
       case T:

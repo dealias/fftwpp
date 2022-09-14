@@ -38,9 +38,10 @@ const Complex I(0.0,1.0);
 extern unsigned int L,Lx,Ly,Lz; // input data lengths
 extern unsigned int M,Mx,My,Mz; // minimum padded lengths
 
-extern unsigned int mx,my,mz; // internal FFT size
-extern unsigned int Dx,Dy,Dz; // number of residues computed at a time
-extern int Ix,Iy,Iz; // number of residues computed at a time
+extern unsigned int mx,my,mz; // internal FFT sizes
+extern unsigned int Dx,Dy,Dz; // numbers of residues computed at a time
+extern unsigned int Sx,Sy;    // strides
+extern int Ix,Iy,Iz;          // inplace flags
 
 extern bool Output;
 extern bool testError;
@@ -1484,6 +1485,11 @@ public:
 
     Sx=fftx->S;
     Sy=ffty->S;
+
+    if(Sx < Ly*Sy) {
+      cout << "Sx cannot be less than Ly*Sy" << endl;
+      exit(-1);
+    }
 
     if(fftx->C != (Sy == Lz ? Ly*Lz : Lz)) {
       cout << "fftx->C is invalid" << endl;

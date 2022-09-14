@@ -28,8 +28,6 @@ int main(int argc, char* argv[])
   cout << "Mx=" << Mx << endl;
   cout << "My=" << My << endl;
 
-  unsigned int Sx=0; // x stride (0 means Ly)
-
   unsigned int K0=10000000;
   if(K == 0) K=max(K0/((unsigned long long) Mx*My),20);
   if(Output || testError)
@@ -68,7 +66,7 @@ int main(int argc, char* argv[])
   Complex *h=NULL;
   if(testError) {
     h=ComplexAlign(Lx*Ly);
-    DirectConvolution2 C(Lx,Ly);
+    DirectConvolution2 C(Lx,Ly,Sx);
     C.convolve(h,f[0],f[1]);
   }
 
@@ -109,7 +107,7 @@ int main(int argc, char* argv[])
       cout << "Direct:" << endl;
       for(unsigned int i=0; i < Lx; ++i) {
         for(unsigned int j=0; j < Ly; ++j) {
-          cout << h[Sx*i+j] << " ";
+          cout << h[Ly*i+j] << " ";
         }
         cout << endl;
       }
@@ -120,7 +118,7 @@ int main(int argc, char* argv[])
     // Assumes B=1
     for(unsigned int i=0; i < Lx; ++i) {
       for(unsigned int j=0; j < Ly; ++j) {
-        Complex hij=h[Sx*i+j];
+        Complex hij=h[Ly*i+j];
         err += abs2(f[0][Sx*i+j]-hij);
         norm += abs2(hij);
       }

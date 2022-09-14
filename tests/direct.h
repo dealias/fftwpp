@@ -32,9 +32,13 @@ public:
 // Out-of-place direct 2D complex convolution.
 class DirectConvolution2 {
 protected:
-  unsigned int mx,my;
+  unsigned int mx,my; // x and y data lengths
+  unsigned int Sx; // x stride
 public:
-  DirectConvolution2(unsigned int mx, unsigned int my) : mx(mx), my(my) {}
+  DirectConvolution2(unsigned int mx, unsigned int my,
+                     unsigned int Sx=0) : mx(mx), my(my) {
+    this->Sx=Sx ? Sx : my;
+  }
 
   void convolve(Complex *h, Complex *f, Complex *g);
 };
@@ -43,21 +47,31 @@ public:
 class DirectHConvolution2 {
 protected:
   unsigned int mx,my;
+  bool xcompact;
+  unsigned int Sx; // x stride
 public:
-  DirectHConvolution2(unsigned int mx, unsigned int my) : mx(mx), my(my) {}
+  DirectHConvolution2(unsigned int mx, unsigned int my, bool xcompact=true,
+                      unsigned int Sx=0) : mx(mx), my(my), xcompact(xcompact) {
+    this->Sx=Sx ? Sx : my;
+  }
 
-  void convolve(Complex *h, Complex *f, Complex *g, bool symmetrize=true,
-                bool xcompact=true);
+  void convolve(Complex *h, Complex *f, Complex *g, bool symmetrize=true);
 };
 
 // Out-of-place direct 3D complex convolution.
 class DirectConvolution3 {
 protected:
   unsigned int mx,my,mz;
+  unsigned int Sx; // x stride
+  unsigned int Sy; // y stride
   unsigned int myz;
 public:
-  DirectConvolution3(unsigned int mx, unsigned int my, unsigned int mz) :
-    mx(mx), my(my), mz(mz), myz(my*mz) {}
+  DirectConvolution3(unsigned int mx, unsigned int my, unsigned int mz,
+                     unsigned int Sx=0, unsigned int Sy=0) :
+    mx(mx), my(my), mz(mz), myz(my*mz) {
+    this->Sy=Sy ? Sy : mz;
+    this->Sx=Sx ? Sx : my*Sy;
+  }
 
   void convolve(Complex *h, Complex *f, Complex *g);
 };
@@ -66,12 +80,19 @@ public:
 class DirectHConvolution3 {
 protected:
   unsigned int mx,my,mz;
+  bool xcompact, ycompact;
+  unsigned int Sx; // x stride
+  unsigned int Sy; // y stride
 public:
-  DirectHConvolution3(unsigned int mx, unsigned int my, unsigned int mz) :
-    mx(mx), my(my), mz(mz) {}
+  DirectHConvolution3(unsigned int mx, unsigned int my, unsigned int mz,
+                      bool xcompact=true, bool ycompact=true,
+                      unsigned int Sx=0, unsigned int Sy=0) :
+    mx(mx), my(my), mz(mz), xcompact(xcompact), ycompact(ycompact) {
+    this->Sy=Sy ? Sy : mz;
+    this->Sx=Sx ? Sx : (2*my-ycompact)*Sy;
+  }
 
-  void convolve(Complex *h, Complex *f, Complex *g, bool symmetrize=true,
-                bool xcompact=true, bool ycompact=true);
+  void convolve(Complex *h, Complex *f, Complex *g, bool symmetrize=true);
 };
 
 // Out-of-place direct 1D Hermitian ternary convolution.
