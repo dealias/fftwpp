@@ -1,10 +1,6 @@
 def emptyList(program):
   return []
 
-def zeroValues(program):
-  return [OptValue(0,0,0,0,0,0,0,0,0)]
-
-
 class OptimalValues():
 # Holds a collection of OptValues for a given program
 

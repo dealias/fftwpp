@@ -212,12 +212,11 @@ def fillOptValues(program, many=False):
       Ms+= [2*L]
     else:
       Ms+=[2*L,5*L2]
-
     for M in Ms:
       ms=[L4,L2]
       if not centered:
         ms+=[L,L+1]
-      ms+=[M,M+1]
+      ms+=[M]
       for m in ms:
         p=ceilquotient(L,m)
         q=ceilquotient(M,m) if p <= 2 else ceilquotient(M,m*p)*p
@@ -234,7 +233,6 @@ def fillOptValues(program, many=False):
           I=1
           D=1
           vals.append(OptValue(L,M,m,p,q,C,S,D,I))
-
   return vals
 
 def check(program, ovals, T, tol, verbose):
