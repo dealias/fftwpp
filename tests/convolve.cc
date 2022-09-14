@@ -302,7 +302,7 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
     if(useTimer) {
       double t=time(L,M,C,S,m,q,D,inplace,app);
       if(showOptTimes)
-        cout << "m=" << m << ", p=" << p << ", q=" << q << ", D=" << D << ", I=" << inplace << ": t=" << t*1.0e-9 << endl;
+        cout << "m=" << m << ", p=" << p << ", q=" << q << ", C=" << C << ", S=" << S << ", D=" << D << ", I=" << inplace << ": t=" << t*1.0e-9 << endl;
       if(t < T) {
         this->m=m;
         this->q=q;
