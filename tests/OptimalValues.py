@@ -9,11 +9,10 @@ class OptimalValues():
 # Holds a collection of OptValues for a given program
 
   def __init__(self, program, fillOptValues=emptyList):
+    # program: The name of the program (probably as a sting)
+    # fillOptValues: A funtion that takes program and returns a list of optValues
 
-    # The name of the program (as a sting)
     self.program=program
-    
-    # A list of OptValues
     vals=fillOptValues(program)
     if type(vals) == list:
       for value in vals:
