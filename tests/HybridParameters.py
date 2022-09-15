@@ -4,7 +4,7 @@ def emptyList():
 class ParameterCollection():
 # Holds a collection of Params for a given program
 
-  def __init__(self, fillParameters=emptyList, optArgs=None):
+  def __init__(self, fillParameters=emptyList, *optArgs):
     # fillParameters: A funtion that returns a list of Parameters.
     #
     # optArgs: Optional arguments for fillParameters. If None, then
@@ -12,7 +12,7 @@ class ParameterCollection():
 
     self.optArgs=optArgs
     if optArgs != None:
-      vals=fillParameters(optArgs)
+      vals=fillParameters(*optArgs)
     else:
       vals=fillParameters()
 

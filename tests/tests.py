@@ -30,10 +30,10 @@ class Program:
 
 def getArgs():
   parser = argparse.ArgumentParser(description="Perform Unit Tests on convolutions with hybrid dealiasing.")
-  parser.add_argument("-S", help="Test Standard convolutions. Not specifying\
-  										S or C or H is the same as specifying all of them",
+  parser.add_argument("-s", help="Test Standard convolutions. Not specifying\
+  										s or c or H is the same as specifying all of them",
   										action="store_true")
-  parser.add_argument("-C", help="Test Centered convolutions. Not specifying\
+  parser.add_argument("-c", help="Test Centered convolutions. Not specifying\
   										S or C or H is the same as specifying all of them",
   										action="store_true")
   parser.add_argument("-H", help="Test Hermitian convolutions. Not specifying\
@@ -51,6 +51,8 @@ def getArgs():
   parser.add_argument("-T", help="Number of threads to use in timing. If set to\
                       0, iterates over 1, 2, and 4 threads. Default is 1.",
                       default=1)
+  parser.add_argument("-S", help="Test different strides.",
+                      action="store_true")
   parser.add_argument("-t",help="Error tolerance. Default is 1e-12.",
                       default=1e-12)
   parser.add_argument("-l",help="Show log of failed cases",
@@ -61,8 +63,8 @@ def getArgs():
 
 def getPrograms(args):
   programs=[]
-  S=args.S
-  C=args.C
+  S=args.s
+  C=args.c
   H=args.H
   X=args.one
   Y=args.two
@@ -121,7 +123,7 @@ def test(programs, args):
       else:
         raise ValueError(str(T)+" is an invalid number of threads.")
 
-      iterate(p,T,float(args.t),args.v)
+      iterate(p,T,float(args.t),args.v,args.S)
 
       ptotal=p.total
       pfailed=p.failed
@@ -148,7 +150,7 @@ def test(programs, args):
   else:
     print("\nNo programs to test.\n")
 
-def iterate(program, thr, tol, verbose):
+def iterate(program, thr, tol, verbose, testS):
 
   dim=program.dim
 
@@ -157,33 +159,33 @@ def iterate(program, thr, tol, verbose):
   else:
     threads=[thr]
 
-  vals=ParameterCollection(fillValues,program).vals
+  vals=ParameterCollection(fillValues,program,False,1,testS).vals
   if dim == 1:
     for x in vals:
       for T in threads:
         check(program,[x],T,tol,verbose)
   else:
-    manyvals=ParameterCollection(fillMany,program).vals
     if dim == 2:
-      for x in manyvals:
-        for y in vals:
+      for y in vals:
+        xvals=ParameterCollection(fillValues,program,True,y.L,testS).vals
+        for x in xvals:
           for T in threads:
             check(program,[x,y],T,tol,verbose)
 
     elif dim == 3:
-      for x in manyvals:
-        for y in manyvals:
-          for z in vals:
+      for z in vals:
+        yvals=ParameterCollection(fillValues,program,True,z.L,testS).vals
+        for y in yvals:
+          xvals=ParameterCollection(fillValues,program,True,y.L*y.S,testS).vals
+          for x in xvals:
             for T in threads:
               check(program,[x,y,z],T,tol,verbose)
-
     else:
       exit("Dimension must be 1 2 or 3.")
 
-def fillValues(program, many=False):
+def fillValues(program, many, minS, testS):
 
   C=1
-  S=1
   centered=program.centered
   dim=program.dim
   vals=[]
@@ -196,42 +198,45 @@ def fillValues(program, many=False):
     Ls=[8]
 
   Dstart=2 if centered else 1
-  for L in Ls:
-    L4=ceilquotient(L,4)
-    L2=ceilquotient(L,2)
-    Ms=[]
-    if centered:
-      Ms.append(3*L2-2*(L%2))
 
-    if dim != 1:
-      Ms+= [2*L]
-    else:
-      Ms+=[2*L,5*L2]
-    for M in Ms:
-      ms=[L4,L2]
-      if not centered:
-        ms+=[L,L+1]
-      ms+=[M]
-      for m in ms:
-        p=ceilquotient(L,m)
-        q=ceilquotient(M,m) if p <= 2 else ceilquotient(M,m*p)*p
-        if not many:
-          n=q//p
-          Istart=0 if q > 1 else 1
-          for I in range(Istart,2):
-            D=Dstart
-            while(D < n):
+  Ss=[minS]
+  if testS:
+    Ss+=[2*minS]
+
+  for S in Ss:
+    for L in Ls:
+      L4=ceilquotient(L,4)
+      L2=ceilquotient(L,2)
+      Ms=[]
+      if centered:
+        Ms.append(3*L2-2*(L%2))
+
+      if dim != 1:
+        Ms+= [2*L]
+      else:
+        Ms+=[2*L,5*L2]
+      for M in Ms:
+        ms=[L4,L2]
+        if not centered:
+          ms+=[L,L+1]
+        ms+=[M]
+        for m in ms:
+          p=ceilquotient(L,m)
+          q=ceilquotient(M,m) if p <= 2 else ceilquotient(M,m*p)*p
+          if not many:
+            n=q//p
+            Istart=0 if q > 1 else 1
+            for I in range(Istart,2):
+              D=Dstart
+              while(D < n):
+                vals.append(Parameters(L,M,m,p,q,C,S,D,I))
+                D*=2
               vals.append(Parameters(L,M,m,p,q,C,S,D,I))
-              D*=2
+          else:
+            I=1
+            D=1
             vals.append(Parameters(L,M,m,p,q,C,S,D,I))
-        else:
-          I=1
-          D=1
-          vals.append(Parameters(L,M,m,p,q,C,S,D,I))
   return vals
-
-def fillMany(program):
-      return fillValues(program, True)
 
 def check(program, ovals, T, tol, verbose):
   program.total+=1
@@ -241,7 +246,7 @@ def check(program, ovals, T, tol, verbose):
   for i in range(len(ovals)):
     o=ovals[i]
     d=directions[i]
-    cmd+=[name,"-L"+d+"="+str(o.L),"-M"+d+"="+str(o.M),"-m"+d+"="+str(o.m),"-D"+d+"="+str(o.D),"-I"+d+"="+str(o.I)]
+    cmd+=[name,"-L"+d+"="+str(o.L),"-M"+d+"="+str(o.M),"-m"+d+"="+str(o.m),"-S"+d+str(o.S),"-D"+d+"="+str(o.D),"-I"+d+"="+str(o.I)]
 
   cmd+=["-T="+str(T),"-E"]
   if program.extraArgs != "":
