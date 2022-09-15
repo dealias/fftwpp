@@ -238,13 +238,19 @@ def fillValues(program, many, minS, testS):
             vals.append(Parameters(L,M,m,p,q,C,S,D,I))
   return vals
 
-def check(program, ovals, T, tol, verbose):
+def check(program, vals, T, tol, verbose):
   program.total+=1
   name=program.name
-  directions=["x","y","z"]
+  lenvals=len(vals)
+
+  if lenvals > 1:
+    directions=["x","y","z"]
+  else:
+    directions=[""]
+
   cmd=[name]
-  for i in range(len(ovals)):
-    o=ovals[i]
+  for i in range(lenvals):
+    o=vals[i]
     d=directions[i]
     cmd+=["-L"+d+"="+str(o.L),"-M"+d+"="+str(o.M),"-m"+d+"="+str(o.m),"-D"+d+"="+str(o.D),"-I"+d+"="+str(o.I)]
     if o.S != 1:
