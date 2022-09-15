@@ -159,7 +159,7 @@ def iterate(program, thr, tol, verbose, testS):
   else:
     threads=[thr]
 
-  vals=ParameterCollection(fillValues,program,False,1,testS).vals
+  vals=ParameterCollection(fillValues,program,False,1,False).vals
   if dim == 1:
     for x in vals:
       for T in threads:
@@ -201,7 +201,7 @@ def fillValues(program, many, minS, testS):
 
   Ss=[minS]
   if testS:
-    Ss+=[2*minS]
+    Ss+=[minS+1]
 
   for S in Ss:
     for L in Ls:
@@ -242,11 +242,13 @@ def check(program, ovals, T, tol, verbose):
   program.total+=1
   name=program.name
   directions=["x","y","z"]
-  cmd=[]
+  cmd=[name]
   for i in range(len(ovals)):
     o=ovals[i]
     d=directions[i]
-    cmd+=[name,"-L"+d+"="+str(o.L),"-M"+d+"="+str(o.M),"-m"+d+"="+str(o.m),"-S"+d+str(o.S),"-D"+d+"="+str(o.D),"-I"+d+"="+str(o.I)]
+    cmd+=["-L"+d+"="+str(o.L),"-M"+d+"="+str(o.M),"-m"+d+"="+str(o.m),"-D"+d+"="+str(o.D),"-I"+d+"="+str(o.I)]
+    if o.S != 1:
+      cmd+=["-S"+d+"="+str(o.S)]
 
   cmd+=["-T="+str(T),"-E"]
   if program.extraArgs != "":
