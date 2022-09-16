@@ -145,7 +145,7 @@ def test(programs, args):
     if args.l and len(failedCases) > 0:
       print("Failed Cases:\n")
       for case in failedCases:
-        print(case)
+        print(case+";")
       print()
   else:
     print("\nNo programs to test.\n")
@@ -159,7 +159,7 @@ def iterate(program, thr, tol, verbose, testS):
   else:
     threads=[thr]
 
-  vals=ParameterCollection(fillValues,program,False,1,testS).vals
+  vals=ParameterCollection(fillValues,program,False,1,False).vals
   if dim == 1:
     for x in vals:
       for T in threads:
@@ -201,7 +201,7 @@ def fillValues(program, many, minS, testS):
 
   Ss=[minS]
   if testS:
-    Ss+=[2*minS]
+    Ss+=[minS+1]
 
   for S in Ss:
     for L in Ls:
@@ -223,30 +223,49 @@ def fillValues(program, many, minS, testS):
         for m in ms:
           p=ceilquotient(L,m)
           q=ceilquotient(M,m) if p <= 2 else ceilquotient(M,m*p)*p
-          if not many:
-            n=q//p
-            Istart=0 if q > 1 else 1
-            for I in range(Istart,2):
+          n=q//p
+          Istart=0 if q > 1 else 1
+          for I in range(Istart,2):
+            if not many:
               D=Dstart
               while(D < n):
                 vals.append(Parameters(L,M,m,p,q,C,S,D,I))
                 D*=2
               vals.append(Parameters(L,M,m,p,q,C,S,D,I))
-          else:
-            I=1
-            D=1
-            vals.append(Parameters(L,M,m,p,q,C,S,D,I))
+            else:
+              D=1
+              vals.append(Parameters(L,M,m,p,q,C,S,D,I))
   return vals
 
-def check(program, ovals, T, tol, verbose):
+def check(program, vals, T, tol, verbose):
+
   program.total+=1
   name=program.name
-  directions=["x","y","z"]
-  cmd=[]
-  for i in range(len(ovals)):
-    o=ovals[i]
-    d=directions[i]
-    cmd+=[name,"-L"+d+"="+str(o.L),"-M"+d+"="+str(o.M),"-m"+d+"="+str(o.m),"-S"+d+str(o.S),"-D"+d+"="+str(o.D),"-I"+d+"="+str(o.I)]
+  lenvals=len(vals)
+
+  cmd=[name]
+
+  if lenvals == 3:
+    x,y,z = vals
+    cmd+=addParams3D(x.L,y.L,z.L,"L")
+    cmd+=addParams3D(x.M,y.M,z.M,"M")
+    cmd+=addParams3D(x.m,y.m,z.m,"m")
+    cmd+=addParams3D(x.I,y.I,z.I,"I")
+    cmd+=addParams3D(x.D,y.D,z.D,"D")
+    cmd+=["-Sx="+str(x.S),"-Sy="+str(y.S)]
+
+  elif lenvals == 2:
+    x,y = vals
+    cmd+=addParams2D(x.L,y.L,"L")
+    cmd+=addParams2D(x.M,y.M,"M")
+    cmd+=addParams2D(x.m,y.m,"m")
+    cmd+=addParams2D(x.I,y.I,"I")
+    cmd+=addParams2D(x.D,y.D,"D")
+    cmd+=["-Sx="+str(x.S)]
+
+  else:
+    x=vals[0]
+    cmd+=["-L="+str(x.L),"-M="+str(x.M),"-m="+str(x.m),"-D="+str(x.D),"-I="+str(x.I)]
 
   cmd+=["-T="+str(T),"-E"]
   if program.extraArgs != "":
@@ -284,6 +303,30 @@ def check(program, ovals, T, tol, verbose):
     print("\t"+case)
     program.failedCases.append(case)
     print()
+
+def addParams3D(px,py,pz,pname):
+  # This code avoids reduntant arguments in the 3D case for readability
+  # e.g. if Lx == Ly == Lz then we can just use L
+  if px == py == pz:
+    cmd=["-"+pname+"="+str(px)]
+  elif  px == py:
+    cmd=["-"+pname+"="+str(px), "-"+pname+"z="+str(pz)]
+  elif  px == pz:
+    cmd=["-"+pname+"="+str(px), "-"+pname+"y="+str(py)]
+  elif  py == pz:
+    cmd=["-"+pname+"="+str(py), "-"+pname+"x="+str(px)]
+  else:
+    cmd=["-"+pname+"x="+str(px), "-"+pname+"y="+str(py),"-"+pname+"z="+str(pz)]
+  return cmd
+
+def addParams2D(px,py,pname):
+  # This code avoids reduntant arguments in the 2D case for readability
+  # e.g. if Lx == Ly then we can just use L
+  if px == py:
+    cmd=["-"+pname+"="+str(px)]
+  else:
+    cmd=["-"+pname+"x="+str(px), "-"+pname+"y="+str(py)]
+  return cmd
 
 if __name__ == "__main__":
   main()
