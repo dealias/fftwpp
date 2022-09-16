@@ -240,36 +240,8 @@ def fillValues(program, many, minS, testS):
 def check(program, vals, T, tol, verbose):
 
   program.total+=1
-  name=program.name
-  lenvals=len(vals)
 
-  cmd=[name]
-
-  if lenvals == 3:
-    x,y,z = vals
-    cmd+=addParams3D(x.L,y.L,z.L,"L")
-    cmd+=addParams3D(x.M,y.M,z.M,"M")
-    cmd+=addParams3D(x.m,y.m,z.m,"m")
-    cmd+=addParams3D(x.I,y.I,z.I,"I")
-    cmd+=addParams3D(x.D,y.D,z.D,"D")
-    cmd+=["-Sx="+str(x.S),"-Sy="+str(y.S)]
-
-  elif lenvals == 2:
-    x,y = vals
-    cmd+=addParams2D(x.L,y.L,"L")
-    cmd+=addParams2D(x.M,y.M,"M")
-    cmd+=addParams2D(x.m,y.m,"m")
-    cmd+=addParams2D(x.I,y.I,"I")
-    cmd+=addParams2D(x.D,y.D,"D")
-    cmd+=["-Sx="+str(x.S)]
-
-  else:
-    x=vals[0]
-    cmd+=["-L="+str(x.L),"-M="+str(x.M),"-m="+str(x.m),"-D="+str(x.D),"-I="+str(x.I)]
-
-  cmd+=["-T="+str(T),"-E"]
-  if program.extraArgs != "":
-    cmd.append(program.extraArgs)
+  cmd=getcmd(program,vals,T)
 
   vp = Popen(cmd, stdout = PIPE, stderr = PIPE)
   vp.wait()
@@ -303,6 +275,41 @@ def check(program, vals, T, tol, verbose):
     print("\t"+case)
     program.failedCases.append(case)
     print()
+
+def getcmd(program, vals, T):
+  name=program.name
+  lenvals=len(vals)
+
+  cmd=[name]
+
+  if lenvals == 3:
+    x,y,z = vals
+    cmd+=addParams3D(x.L,y.L,z.L,"L")
+    cmd+=addParams3D(x.M,y.M,z.M,"M")
+    cmd+=addParams3D(x.m,y.m,z.m,"m")
+    cmd+=addParams3D(x.I,y.I,z.I,"I")
+    cmd+=addParams3D(x.D,y.D,z.D,"D")
+    cmd+=["-Sx="+str(x.S),"-Sy="+str(y.S)]
+
+  elif lenvals == 2:
+    x,y = vals
+    cmd+=addParams2D(x.L,y.L,"L")
+    cmd+=addParams2D(x.M,y.M,"M")
+    cmd+=addParams2D(x.m,y.m,"m")
+    cmd+=addParams2D(x.I,y.I,"I")
+    cmd+=addParams2D(x.D,y.D,"D")
+    cmd+=["-Sx="+str(x.S)]
+
+  else:
+    x=vals[0]
+    cmd+=["-L="+str(x.L),"-M="+str(x.M),"-m="+str(x.m),"-D="+str(x.D),"-I="+str(x.I)]
+
+  cmd+=["-T="+str(T),"-E"]
+
+  if program.extraArgs != "":
+    cmd.append(program.extraArgs)
+
+  return cmd
 
 def addParams3D(px,py,pz,pname):
   # This code avoids reduntant arguments in the 3D case for readability
