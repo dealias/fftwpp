@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
   double *T=new double[K];
 
   Application appx(A,B,multNone,fftw::maxthreads,0,mx,Dx,Ix);
-  fftPad fftx(Lx,Mx,appx,Sx == Ly*Lz ? Sx : Lz,Sx);
+  fftPad fftx(Lx,Mx,appx,Sy == Lz? Ly*Lz : Lz,Sx);
   Application appy(A,B,multNone,appx.Threads(),fftx.l,my,Dy,Iy);
   fftPad ffty(Ly,My,appy,Lz,Sy);
   Application appz(A,B,multbinary,appy.Threads(),ffty.l,mz,Dz,Iz);

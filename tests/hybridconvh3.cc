@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
   double *T=new double[K];
 
   Application appx(A,B,multNone,fftw::maxthreads,0,mx,Dx,Ix);
-  fftPadCentered fftx(Lx,Mx,appx,Sx == Ly*Hz ? Sx : Hz,Sx);
+  fftPadCentered fftx(Lx,Mx,appx,Sy == Hz? Ly*Hz : Hz,Sx);
   Application appy(A,B,multNone,appx.Threads(),fftx.l,my,Dy,Iy);
   fftPadCentered ffty(Ly,My,appy,Hz,Sy);
   Application appz(A,B,realmultbinary,appy.Threads(),ffty.l,mz,Dz,Iz);
