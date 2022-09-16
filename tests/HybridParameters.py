@@ -1,3 +1,5 @@
+import collections
+
 def emptyList():
   return []
 
@@ -24,13 +26,61 @@ class ParameterCollection():
     else:
       exit("fillOptValues must return a list of OptValues.")
 
-  # returns the L value of the Params v
-  def byL(self, v):
-    return v.L
+  def __eq__(self, other):
+    if isinstance(other, ParameterCollection):
+      return collections.Counter(self.vals) == collections.Counter(other.vals)
+    return False
 
-  # sorts self.val by the value of L
+  # sortX() sorts self.val by the value of X
   def sortL(self, reverse=False):
-    self.vals.sort(reverse=reverse,key=self.byL)
+    def byL(v):
+      return v.L
+    self.vals.sort(reverse=reverse,key=byL)
+
+  def sortM(self, reverse=False):
+    def f(v):
+      return v.M
+    self.vals.sort(reverse=reverse,key=f)
+
+  def sortm(self, reverse=False):
+    def f(v):
+      return v.m
+    self.vals.sort(reverse=reverse,key=f)
+
+  def sortp(self, reverse=False):
+    def f(v):
+      return v.p
+    self.vals.sort(reverse=reverse,key=f)
+
+  def sortq(self, reverse=False):
+    def f(v):
+      return v.q
+    self.vals.sort(reverse=reverse,key=f)
+
+  def sortC(self, reverse=False):
+    def f(v):
+      return v.C
+    self.vals.sort(reverse=reverse,key=f)
+
+  def sortS(self, reverse=False):
+    def f(v):
+      return v.S
+    self.vals.sort(reverse=reverse,key=f)
+
+  def sortD(self, reverse=False):
+    def f(v):
+      return v.D
+    self.vals.sort(reverse=reverse,key=f)
+
+  def sortI(self, reverse=False):
+    def f(v):
+      return v.I
+    self.vals.sort(reverse=reverse,key=f)
+
+  def sortt(self, reverse=False):
+    def f(v):
+      return v.t
+    self.vals.sort(reverse=reverse,key=f)
 
   # Returns a list of L values (respecting the order of self.val)
   def L(self):
@@ -95,8 +145,15 @@ class ParameterCollection():
       values.append(v.I)
     return values
 
+  # Returns a list of I values (respecting the order of self.val)
+  def t(self):
+    values=[]
+    for v in self.vals:
+      values.append(v.t)
+    return values
+
   # Returns a dictionary of lists of values (respecting the order of self.val)
-  def allParms(self):
+  def allParams(self):
     params={}
     params["L"]=self.L()
     params["M"]=self.M()
@@ -107,12 +164,13 @@ class ParameterCollection():
     params["S"]=self.S()
     params["D"]=self.D()
     params["I"]=self.I()
+    params["t"]=self.t()
     return params
 
 class Parameters():
 # A collectuion of parameters for a hybrid dealiased convolution
-
-  def __init__(self,L,M,m,p,q,C,S,D,I):
+# Two Parameters objects are equal if all of their parameters OTHER THAN t are equal.
+  def __init__(self,L,M,m,p,q,C,S,D,I,t=-1):
     self.L=int(L)
     self.M=int(M)
     self.m=int(m)
@@ -122,3 +180,30 @@ class Parameters():
     self.S=int(S)
     self.D=int(D)
     self.I=int(I)
+    self.t=float(t)
+
+  def __hash__(self):
+    return hash((self.L, self.M, self.m, self.p, self.q, self.C, self.S, self.D, self.I))
+
+  def __eq__(self, other):
+    if isinstance(other, Parameters):
+      if self.L != other.L:
+        return False
+      if self.M != other.M:
+        return False
+      if self.m != other.m:
+        return False
+      if self.p != other.p:
+        return False
+      if self.q != other.q:
+        return False
+      if self.C != other.C:
+        return False
+      if self.S != other.S:
+        return False
+      if self.D != other.D:
+        return False
+      if self.I != other.I:
+        return False
+      return True
+    return False
