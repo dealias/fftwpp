@@ -168,7 +168,7 @@ class ParameterCollection():
     return params
 
 class Parameters():
-# A collectuion of parameters for a hybrid dealiased convolution
+# A collection of parameters for a hybrid dealiased convolution
 # Two Parameters objects are equal if all of their parameters OTHER THAN t are equal.
   def __init__(self,L,M,m,p,q,C,S,D,I,t=-1):
     self.L=int(L)

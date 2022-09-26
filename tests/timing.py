@@ -499,8 +499,7 @@ def main(argv):
         for i in range(a,b+1,1 if I == 0 else I):
             if I != 0:
                 m=i
-                print(m)
-            elif not hermitian or runtype == "implicit":
+            elif not hermitian or runtype == "implicit": #or hybrid:
                 m = int(pow(2,i))
             else:
                 if not ternary:
@@ -520,7 +519,7 @@ def main(argv):
                 dothism = False
 
             if dothism:
-                if(hybrid):
+                if hybrid:
                     mcmd=cmd+["-L"+str(L)]+["-M"+str(M)]
                 else:
                     mcmd = cmd + ["-m" + str(m)]
