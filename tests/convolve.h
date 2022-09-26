@@ -57,7 +57,19 @@ typedef void (fftBase::*FFTcall)(Complex *f, Complex *F, unsigned int r,
                                  Complex *W);
 typedef void (fftBase::*FFTPad)(Complex *W);
 
-typedef void multiplier(Complex **, unsigned int n, unsigned int threads);
+class Indices
+{
+public:
+  fftBase *fft;
+  unsigned int size;
+  unsigned int *index;
+  unsigned int r;
+
+  Indices() : size(0), r(0) {}
+};
+
+typedef void multiplier(Complex **F, unsigned int n,
+                        const Indices& indices, unsigned int threads);
 
 // Multiplication routines for binary convolutions that take two inputs.
 multiplier multNone,multbinary,realmultbinary;
@@ -249,10 +261,6 @@ public:
                                     Complex *W) {}
   virtual void backwardExplicitManySlow(Complex *F, Complex *f, unsigned int r,
                                         Complex *W) {}
-
-  virtual unsigned int indexExplicit(unsigned int r, unsigned int i) {
-    return i;
-  }
 
   // Return transformed index for residue r at position I
   unsigned int index(unsigned int r, unsigned int I) {
@@ -756,7 +764,11 @@ protected:
   unsigned int inputSize;
   FFTcall Forward,Backward;
   FFTPad Pad;
+
+protected:
+  Indices indices;
 public:
+
   Convolution() :
     ThreadBase(), W(NULL), allocate(false), loop2(false) {}
 
@@ -803,6 +815,8 @@ public:
   }
 
   void init(Complex *F=NULL, Complex *V=NULL) {
+    indices.fft=fft;
+
     L=fft->L;
     q=fft->q;
     Q=fft->Q;
@@ -898,11 +912,12 @@ public:
   void operate(Complex **F, unsigned int r) {
     unsigned int incr=fft->b;
     unsigned int stop=fft->complexOutputs(r);
+    indices.r=r;
     for(unsigned int d=0; d < stop; d += incr) {
       Complex *G[A];
       for(unsigned int a=0; a < A; ++a)
         G[a]=F[a]+d;
-      (*mult)(G,blocksize,threads);
+      (*mult)(G,blocksize,indices,threads);
     }
   }
 

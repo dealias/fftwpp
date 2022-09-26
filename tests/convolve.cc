@@ -36,17 +36,31 @@ const union uvec sse2_mm={
 
 const double twopi=2.0*M_PI;
 
-void multNone(Complex **, unsigned int,  unsigned int)
+void multNone(Complex **F, unsigned int n, const Indices& indices,
+              unsigned int threads)
 {
 }
 
 // This multiplication routine is for binary convolutions and takes
 // two Complex inputs of size n and outputs one Complex value.
 // F0[j] *= F1[j];
-void multbinary(Complex **F, unsigned int n, unsigned int threads)
+void multbinary(Complex **F, unsigned int n, const Indices& indices,
+                unsigned int threads)
 {
   Complex *F0=F[0];
   Complex *F1=F[1];
+
+#if 0 // Transformed indices are available, if needed.
+  size_t N=indices.size;
+  fftBase *fft=indices.fft;
+  unsigned r=indices.r;
+  unsigned *index=indices.index;
+  for(unsigned int j=0; j < n; ++j) {
+    for(unsigned int d=0; d < N; ++d)
+      cout << index[d] << ",";
+    cout << fft->index(r,j) << endl;
+  }
+#endif
 
   PARALLEL(
     for(unsigned int j=0; j < n; ++j)
@@ -57,7 +71,8 @@ void multbinary(Complex **F, unsigned int n, unsigned int threads)
 // This multiplication routine is for binary convolutions and takes
 // two real inputs of size n.
 // F0[j] *= F1[j];
-void realmultbinary(Complex **F, unsigned int n, unsigned int threads)
+void realmultbinary(Complex **F, unsigned int n, const Indices&,
+                    unsigned int threads)
 {
   double *F0=(double *) F[0];
   double *F1=(double *) F[1];
@@ -5155,6 +5170,8 @@ void Convolution::convolveRaw(Complex **f, unsigned int offset)
   Complex **g;
   Complex *G[A];
 
+//  if(indexsize >= 1) index[indexsize-1]=i;
+
   if(offset) {
     g=G;
     for(unsigned int a=0; a < A; ++a)
@@ -5163,13 +5180,21 @@ void Convolution::convolveRaw(Complex **f, unsigned int offset)
 
   if(q == 1) {
     forward(g,F,0,0,A);
-    (*mult)(F,blocksize,threads);
+    (*mult)(F,blocksize,indices,threads);
     backward(F,g,0);
   } else {
     if(overwrite) {
       forward(g,F,0,0,A);
-      (*mult)(g,(fft->n-1)*blocksize,threads);
-      (*mult)(F,blocksize,threads);
+      unsigned int final=fft->n-1;
+      for(unsigned int r=0; r < final; ++r) {
+        Complex *h[A];
+        for(unsigned int a=0; a < A; ++a)
+          h[a]=g[a]+r*blocksize;
+        indices.r=r;
+        (*mult)(h,blocksize,indices,threads);
+      }
+      indices.r=final;
+      (*mult)(F,blocksize,indices,threads);
       backward(F,g,0);
     } else {
       if(loop2) {
