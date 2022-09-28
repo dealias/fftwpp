@@ -197,7 +197,7 @@ def fillValues(program, many, minS, testS):
   else:
     Ls=[8]
 
-  Dstart=2 if centered else 1
+  Dstart=2 if centered and program.extraArgs != "-c" else 1
 
   Ss=[minS]
   if testS:
