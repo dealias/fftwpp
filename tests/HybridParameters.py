@@ -1,5 +1,8 @@
 import collections
 
+def ceilquotient(a,b):
+  return -(a//-b)
+
 def emptyList():
   return []
 

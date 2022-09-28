@@ -7,9 +7,6 @@ import re
 import argparse
 from HybridParameters import *
 
-def ceilquotient(a,b):
-  return -(a//-b)
-
 def main():
   args=getArgs()
   programs=getPrograms(args)
@@ -187,6 +184,8 @@ def fillValues(program, many, minS, testS):
 
   C=1
   centered=program.centered
+  hermitian = centered and program.extraArgs != "-c"
+
   dim=program.dim
   vals=[]
 
@@ -197,7 +196,7 @@ def fillValues(program, many, minS, testS):
   else:
     Ls=[8]
 
-  Dstart=2 if centered and program.extraArgs != "-c" else 1
+  Dstart=2 if hermitian else 1
 
   Ss=[minS]
   if testS:
