@@ -38,12 +38,13 @@ int main(int argc, char* argv[])
 
   unsigned int N=max(A,B);
   Complex **f=new Complex *[N];
-  unsigned int size=fft->embed() ? fft->outputSize() : fft->inputSize();
+  bool embed=fft->embed();
+  unsigned int size=embed ? fft->outputSize() : fft->inputSize();
   Complex *F=ComplexAlign(N*size);
   for(unsigned int a=0; a < A; ++a)
     f[a]=F+a*size;
 
-  Convolution Convolve(fft,A,B,fft->embed() ? F : NULL);
+  Convolution Convolve(fft,A,B,embed ? F : NULL);
 
   for(unsigned int a=0; a < A; ++a) {
     Complex *fa=f[a];

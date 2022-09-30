@@ -41,7 +41,8 @@ int main(int argc, char* argv[])
 
   unsigned int N=max(A,B);
   Complex **f=new Complex *[N];
-  unsigned int size=fft.embed() ? fft.outputSize() : fft.inputSize();
+  bool embed=fft.embed();
+  unsigned int size=embed ? fft.outputSize() : fft.inputSize();
   Complex *F=ComplexAlign(N*size);
   for(unsigned int a=0; a < A; ++a)
     f[a]=F+a*size;
@@ -63,7 +64,7 @@ int main(int argc, char* argv[])
     DirectHConvolution C(H);
     C.convolve(h,f[0],f[1]);
   }
-  ConvolutionHermitian Convolve(&fft,A,B,fft.embed() ? F : NULL);
+  ConvolutionHermitian Convolve(&fft,A,B,embed ? F : NULL);
 
   if(normalized || testError) {
     for(unsigned int k=0; k < K; ++k) {
