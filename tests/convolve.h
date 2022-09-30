@@ -866,9 +866,15 @@ public:
       if(loop2) {
         r=fft->increment(0);
         Fp=new Complex*[A];
-        Fp[0]=this->F[A-1];
-        for(unsigned int a=1; a < A; ++a)
-          Fp[a]=this->F[a-1];
+        unsigned int C=A-B;
+
+        for(unsigned int c=0; c < C; c++)
+          Fp[c]=this->F[B+c];
+
+        for(unsigned int b=0; b < B; b += C)
+           for(unsigned int c=b; c < B; c++)
+             Fp[C+c]=this->F[c];
+
         extra=1;
       } else
         extra=0;
@@ -922,8 +928,9 @@ public:
   }
 
   void backward(Complex **F, Complex **f, unsigned int r,
+                unsigned int start, unsigned int stop,
                 Complex *W0=NULL) {
-    for(unsigned int b=0; b < B; ++b)
+    for(unsigned int b=start; b < stop; ++b)
       (fft->*Backward)(F[b],f[b],r,W0);
     if(W && W == W0) (fft->*Pad)(W0);
   }

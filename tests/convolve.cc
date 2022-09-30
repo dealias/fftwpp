@@ -5181,7 +5181,7 @@ void Convolution::convolveRaw(Complex **f, unsigned int offset)
   if(q == 1) {
     forward(g,F,0,0,A);
     (*mult)(F,blocksize,indices,threads);
-    backward(F,g,0);
+    backward(F,g,0,0,B);
   } else {
     if(overwrite) {
       forward(g,F,0,0,A);
@@ -5195,16 +5195,20 @@ void Convolution::convolveRaw(Complex **f, unsigned int offset)
       }
       indices.r=final;
       (*mult)(F,blocksize,indices,threads);
-      backward(F,g,0);
+      backward(F,g,0,0,B);
     } else {
       if(loop2) {
         forward(g,F,0,0,A);
         operate(F,0);
-        forward(g,Fp,r,0,B);
-        backward(F,g,0,W0);
-        forward(g,Fp,r,B,A);
+        unsigned int C=A-B;
+        unsigned int a=0;
+        for(; a+C <= B; a += C) {
+          forward(g,Fp,r,a,a+C);
+          backward(F,g,0,a,a+C,W0);
+        }
+        forward(g,Fp,r,a,A);
         operate(Fp,r);
-        backward(Fp,g,r,W0);
+        backward(Fp,g,r,0,B,W0);
       } else {
         Complex **h0;
         if(nloops > 1) {
@@ -5216,7 +5220,7 @@ void Convolution::convolveRaw(Complex **f, unsigned int offset)
         for(unsigned int r=0; r < R; r += fft->increment(r)) {
           forward(g,F,r,0,A);
           operate(F,r);
-          backward(F,h0,r,W0);
+          backward(F,h0,r,0,B,W0);
         }
 
         if(nloops > 1) {
