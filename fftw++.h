@@ -936,14 +936,14 @@ public:
 //
 //
 class mfft1d {
-  unsigned int M;
+  bool single;
   fft1d *fft1;
   Mfft1d *fftm;
 public:
   mfft1d(unsigned int nx, int sign, unsigned int M=1,
          Complex *in=NULL, Complex *out=NULL,
-         unsigned int threads=fftw::maxthreads) : M(M) {
-    if(M == 1)
+         unsigned int threads=fftw::maxthreads) : single(M == 1) {
+    if(single)
       fft1=new fft1d(nx,sign,in,out,threads);
     else
       fftm=new Mfft1d(nx,sign,M,in,out,threads);
@@ -951,8 +951,9 @@ public:
 
   mfft1d(unsigned int nx, int sign, unsigned int M, size_t stride=1,
          size_t dist=0, Complex *in=NULL, Complex *out=NULL,
-         unsigned int threads=fftw::maxthreads) : M(M) {
-    if(M == 1)
+         unsigned int threads=fftw::maxthreads) :
+    single(M == 1 && stride == 1) {
+    if(single)
       fft1=new fft1d(nx,sign,in,out,threads);
     else
       fftm=new Mfft1d(nx,sign,M,stride,dist,in,out,threads);
@@ -961,44 +962,44 @@ public:
   mfft1d(unsigned int nx, int sign, unsigned int M,
          size_t istride, size_t ostride, size_t idist, size_t odist,
          Complex *in, Complex *out, unsigned int threads=fftw::maxthreads) :
-    M(M) {
-    if(M == 1)
+    single(M == 1 && istride == 1 && ostride == 1) {
+    if(single)
       fft1=new fft1d(nx,sign,in,out,threads);
     else
       fftm=new Mfft1d(nx,sign,M,istride,ostride,idist,odist,in,out,threads);
   }
 
   unsigned int Threads() {
-    return M == 1 ? fft1->Threads() : fftm->Threads();
+    return single ? fft1->Threads() : fftm->Threads();
   }
 
   template<class I>
   void fft(I in) {
-    M == 1 ? fft1->fft(in) : fftm->fft(in);
+    single ? fft1->fft(in) : fftm->fft(in);
   }
 
   template<class I, class O>
   void fft(I in, O out) {
-    M == 1 ? fft1->fft(in,out) : fftm->fft(in,out);
+    single ? fft1->fft(in,out) : fftm->fft(in,out);
   }
 
   template<class I>
   void fftNormalized(I in) {
-    M == 1 ? fft1->fftNormalized(in) : fftm->fftNormalized(in);
+    single ? fft1->fftNormalized(in) : fftm->fftNormalized(in);
   }
 
   template<class I, class O>
   void fftNormalized(I in, O out) {
-    M == 1 ? fft1->fftNormalized(in,out) : fftm->fftNormalized(in,out);
+    single ? fft1->fftNormalized(in,out) : fftm->fftNormalized(in,out);
   }
 
   template<class O>
   void Normalize(O out) {
-    M == 1 ? fft1->Normalize(out) : fftm->Normalize(out);
+    single ? fft1->Normalize(out) : fftm->Normalize(out);
   }
 
   ~mfft1d() {
-    if(M == 1)
+    if(single)
       delete fft1;
     else
       delete fftm;
@@ -1153,49 +1154,50 @@ public:
 //   out contains the first n/2+1 Complex Fourier values.
 //
 class mrcfft1d {
-  unsigned int M;
+  bool single;
   rcfft1d *fft1;
   Mrcfft1d *fftm;
 public:
   mrcfft1d(unsigned int nx, unsigned int M, size_t istride, size_t ostride,
            size_t idist, size_t odist, double *in=NULL, Complex *out=NULL,
-           unsigned int threads=fftw::maxthreads) : M(M) {
-    if(M == 1)
+           unsigned int threads=fftw::maxthreads) :
+    single(M == 1 && istride == 1 && ostride == 1) {
+    if(single)
       fft1=new rcfft1d(nx,in,out,threads);
     else
       fftm=new Mrcfft1d(nx,M,istride,ostride,idist,odist,in,out,threads);
   }
 
   unsigned int Threads() {
-    return M == 1 ? fft1->Threads() : fftm->Threads();
+    return single ? fft1->Threads() : fftm->Threads();
   }
 
   template<class I>
   void fft(I in) {
-    M == 1 ? fft1->fft(in) : fftm->fft(in);
+    single ? fft1->fft(in) : fftm->fft(in);
   }
 
   template<class I, class O>
   void fft(I in, O out) {
-    M == 1 ? fft1->fft(in,out) : fftm->fft(in,out);
+    single ? fft1->fft(in,out) : fftm->fft(in,out);
   }
 
   void Normalize(Complex *out) {
-    M == 1 ? fft1->Normalize(out) : fftm->Normalize(out);
+    single ? fft1->Normalize(out) : fftm->Normalize(out);
   }
 
   template<class I>
   void fftNormalized(I in) {
-    M == 1 ? fft1->fftNormalized(in) : fftm->fftNormalized(in);
+    single ? fft1->fftNormalized(in) : fftm->fftNormalized(in);
   }
 
   template<class I, class O>
   void fftNormalized(I in, O out=NULL) {
-    M == 1 ? fft1->fftNormalized(in,out) : fftm->fftNormalized(in,out);
+    single ? fft1->fftNormalized(in,out) : fftm->fftNormalized(in,out);
   }
 
   ~mrcfft1d() {
-    if(M == 1)
+    if(single)
       delete fft1;
     else
       delete fftm;
@@ -1255,49 +1257,50 @@ public:
 //   out contains the n real values stored as a Complex array.
 //
 class mcrfft1d {
-  unsigned int M;
+  bool single;
   crfft1d *fft1;
   Mcrfft1d *fftm;
 public:
   mcrfft1d(unsigned int nx, unsigned int M, size_t istride, size_t ostride,
            size_t idist, size_t odist, Complex *in=NULL, double *out=NULL,
-           unsigned int threads=fftw::maxthreads) : M(M) {
-    if(M == 1)
+           unsigned int threads=fftw::maxthreads) :
+    single(M == 1 && istride == 1 && ostride == 1) {
+    if(single)
       fft1=new crfft1d(nx,in,out,threads);
     else
       fftm=new Mcrfft1d(nx,M,istride,ostride,idist,odist,in,out,threads);
   }
 
   unsigned int Threads() {
-    return M == 1 ? fft1->Threads() : fftm->Threads();
+    return single ? fft1->Threads() : fftm->Threads();
   }
 
   template<class I>
   void fft(I in) {
-    M == 1 ? fft1->fft(in) : fftm->fft(in);
+    single ? fft1->fft(in) : fftm->fft(in);
   }
 
   template<class I, class O>
   void fft(I in, O out) {
-    M == 1 ? fft1->fft(in,out) : fftm->fft(in,out);
+    single ? fft1->fft(in,out) : fftm->fft(in,out);
   }
 
   void Normalize(double *out) {
-    M == 1 ? fft1->Normalize(out) : fftm->Normalize(out);
+    single ? fft1->Normalize(out) : fftm->Normalize(out);
   }
 
   template<class I>
   void fftNormalized(I in) {
-    M == 1 ? fft1->fftNormalized(in) : fftm->fftNormalized(in);
+    single ? fft1->fftNormalized(in) : fftm->fftNormalized(in);
   }
 
   template<class I, class O>
   void fftNormalized(I in, O out=NULL) {
-    M == 1 ? fft1->fftNormalized(in,out) : fftm->fftNormalized(in,out);
+    single ? fft1->fftNormalized(in,out) : fftm->fftNormalized(in,out);
   }
 
   ~mcrfft1d() {
-    if(M == 1)
+    if(single)
       delete fft1;
     else
       delete fftm;
