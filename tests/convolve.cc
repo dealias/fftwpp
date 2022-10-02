@@ -36,7 +36,7 @@ const union uvec sse2_mm={
 
 const double twopi=2.0*M_PI;
 
-void multNone(Complex **F, unsigned int n, const Indices& indices,
+void multNone(Complex **F, unsigned int n, Indices *indices,
               unsigned int threads)
 {
 }
@@ -44,20 +44,19 @@ void multNone(Complex **F, unsigned int n, const Indices& indices,
 // This multiplication routine is for binary convolutions and takes
 // two Complex inputs of size n and outputs one Complex value.
 // F0[j] *= F1[j];
-void multbinary(Complex **F, unsigned int n, const Indices& indices,
+void multbinary(Complex **F, unsigned int n, Indices *indices,
                 unsigned int threads)
 {
   Complex *F0=F[0];
   Complex *F1=F[1];
 
 #if 0 // Transformed indices are available, if needed.
-  size_t N=indices.size;
-  fftBase *fft=indices.fft;
-  unsigned r=indices.r;
-  unsigned *index=indices.index;
+  size_t N=indices->size;
+  fftBase *fft=indices->fft;
+  unsigned int r=indices->r;
   for(unsigned int j=0; j < n; ++j) {
     for(unsigned int d=0; d < N; ++d)
-      cout << index[d] << ",";
+      cout << indices->index[N-1-d] << ",";
     cout << fft->index(r,j) << endl;
   }
 #endif
@@ -71,7 +70,7 @@ void multbinary(Complex **F, unsigned int n, const Indices& indices,
 // This multiplication routine is for binary convolutions and takes
 // two real inputs of size n.
 // F0[j] *= F1[j];
-void realmultbinary(Complex **F, unsigned int n, const Indices&,
+void realmultbinary(Complex **F, unsigned int n, Indices *,
                     unsigned int threads)
 {
   double *F0=(double *) F[0];
@@ -5165,12 +5164,15 @@ Convolution::~Convolution()
 // f is an array of max(A,B) pointers to distinct data blocks
 // each of size fft->length()
 // offset is applied to each input and output component
-void Convolution::convolveRaw(Complex **f, unsigned int offset)
+void Convolution::convolveRaw(Complex **f, unsigned int offset,
+                              Indices *indices2)
 {
   Complex **g;
   Complex *G[A];
 
-//  if(indexsize >= 1) index[indexsize-1]=i;
+  for(unsigned int t=0; t < threads; ++t)
+    indices.copy(indices2,0);
+  indices.fft=fft;
 
   if(offset) {
     g=G;
@@ -5180,7 +5182,7 @@ void Convolution::convolveRaw(Complex **f, unsigned int offset)
 
   if(q == 1) {
     forward(g,F,0,0,A);
-    (*mult)(F,blocksize,indices,threads);
+    (*mult)(F,blocksize,&indices,threads);
     backward(F,g,0,0,B);
   } else {
     if(overwrite) {
@@ -5191,15 +5193,15 @@ void Convolution::convolveRaw(Complex **f, unsigned int offset)
         for(unsigned int a=0; a < A; ++a)
           h[a]=g[a]+r*blocksize;
         indices.r=r;
-        (*mult)(h,blocksize,indices,threads);
+        (*mult)(h,blocksize,&indices,threads);
       }
       indices.r=final;
-      (*mult)(F,blocksize,indices,threads);
+      (*mult)(F,blocksize,&indices,threads);
       backward(F,g,0,0,B);
     } else {
       if(loop2) {
         forward(g,F,0,0,A);
-        operate(F,0);
+        operate(F,0,&indices);
         unsigned int C=A-B;
         unsigned int a=0;
         for(; a+C <= B; a += C) {
@@ -5207,7 +5209,7 @@ void Convolution::convolveRaw(Complex **f, unsigned int offset)
           backward(F,g,0,a,a+C,W0);
         }
         forward(g,Fp,r,a,A);
-        operate(Fp,r);
+        operate(Fp,r,&indices);
         backward(Fp,g,r,0,B,W0);
       } else {
         Complex **h0;
@@ -5219,7 +5221,7 @@ void Convolution::convolveRaw(Complex **f, unsigned int offset)
 
         for(unsigned int r=0; r < R; r += fft->increment(r)) {
           forward(g,F,r,0,A);
-          operate(F,r);
+          operate(F,r,&indices);
           backward(F,h0,r,0,B,W0);
         }
 

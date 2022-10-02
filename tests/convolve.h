@@ -61,15 +61,34 @@ class Indices
 {
 public:
   fftBase *fft;
-  unsigned int size;
   unsigned int *index;
+  size_t size,maxsize;
+  bool allocated;
   unsigned int r;
 
-  Indices() : size(0), r(0) {}
+  Indices() : index(NULL), maxsize(0) {}
+
+  void copy(Indices *indices, unsigned int size0) {
+    size=indices ? indices->size : size0;
+    if(size > maxsize) {
+      if(maxsize > 0)
+        delete [] index;
+      index=new unsigned int[size];
+      maxsize=size;
+    }
+    if(indices)
+      for(unsigned int d=1; d < size; ++d)
+        index[d]=indices->index[d];
+  }
+
+  ~Indices() {
+    if(maxsize > 0)
+      delete [] index;
+  }
 };
 
 typedef void multiplier(Complex **F, unsigned int n,
-                        const Indices& indices, unsigned int threads);
+                        Indices *indices, unsigned int threads);
 
 // Multiplication routines for binary convolutions that take two inputs.
 multiplier multNone,multbinary,realmultbinary;
@@ -263,9 +282,8 @@ public:
                                         Complex *W) {}
 
   // Return transformed index for residue r at position I
-  unsigned int index(unsigned int r, unsigned int I) {
-    if(q == 1) return I;
-    unsigned int i=I/S;
+  unsigned int index(unsigned int r, unsigned int i) {
+    if(q == 1) return i;
     unsigned int s=i%m;
     unsigned int u;
     unsigned int P;
@@ -289,7 +307,12 @@ public:
       u=(i/m)%p;
       r += i/(p*m);
     }
-    return S*(q*s+n*u+r-i)+I;
+    return q*s+n*u+r;
+  }
+
+  unsigned int Index(unsigned int r, unsigned int I) {
+    unsigned int i=I/S;
+    return S*(index(r,i)-i)+I;
   }
 
   virtual void forward1(Complex *f, Complex *F0, unsigned int r0, Complex *W)
@@ -764,10 +787,8 @@ protected:
   unsigned int inputSize;
   FFTcall Forward,Backward;
   FFTPad Pad;
-
-protected:
-  Indices indices;
 public:
+  Indices indices;
 
   Convolution() :
     ThreadBase(), W(NULL), allocate(false), loop2(false) {}
@@ -815,8 +836,6 @@ public:
   }
 
   void init(Complex *F=NULL, Complex *V=NULL) {
-    indices.fft=fft;
-
     L=fft->L;
     q=fft->q;
     Q=fft->Q;
@@ -915,15 +934,16 @@ public:
       (fft->*Forward)(f[a],F[a],r,W);
   }
 
-  void operate(Complex **F, unsigned int r) {
+  void operate(Complex **F, unsigned int r, Indices *indices) {
     unsigned int incr=fft->b;
     unsigned int stop=fft->complexOutputs(r);
-    indices.r=r;
+    indices->r=r;
     for(unsigned int d=0; d < stop; d += incr) {
       Complex *G[A];
       for(unsigned int a=0; a < A; ++a)
         G[a]=F[a]+d;
       (*mult)(G,blocksize,indices,threads);
+      ++indices->r;
     }
   }
 
@@ -935,7 +955,7 @@ public:
     if(W && W == W0) (fft->*Pad)(W0);
   }
 
-  void convolveRaw(Complex **f, unsigned int offset=0);
+  void convolveRaw(Complex **f, unsigned int offset=0, Indices *indices=NULL);
 
   void convolve(Complex **f, unsigned int offset=0) {
     convolveRaw(f,offset);
@@ -1094,6 +1114,8 @@ protected:
   unsigned int nloops;
   bool overwrite;
 public:
+  Indices indices;
+
   Convolution2(unsigned int threads=fftw::maxthreads) :
     ThreadBase(threads), ffty(NULL), convolvey(NULL), W(NULL),
     allocateW(false), loop2(false) {}
@@ -1253,11 +1275,15 @@ public:
   }
 
   void subconvolution(Complex **F, unsigned int C,
-                      unsigned int stride, unsigned int offset=0) {
+                      unsigned int stride, unsigned int r,
+                      unsigned int offset=0) {
     PARALLEL(
-      for(unsigned int i=0; i < C; ++i)
-        convolvey[ThreadBase::get_thread_num0()]->
-          convolveRaw(F,offset+i*stride);
+      for(unsigned int i=0; i < C; ++i) {
+        unsigned int t=ThreadBase::get_thread_num0();
+        Convolution *C=convolvey[t];
+        C->indices.index[0]=fftx->index(r,i);
+        C->convolveRaw(F,offset+i*stride,&C->indices);
+      }
       );
   }
 
@@ -1281,20 +1307,25 @@ public:
 
 // f is a pointer to A distinct data blocks each of size Lx*Sx,
 // shifted by offset.
-  void convolveRaw(Complex **f, unsigned int offset=0) {
+  void convolveRaw(Complex **f, unsigned int offset=0, Indices *indices=NULL) {
+    for(unsigned int t=0; t < threads; ++t)
+      convolvey[t]->indices.copy(indices,1);
+
     if(overwrite) {
       forward(f,F,0,0,A,offset);
-      subconvolution(f,(fftx->n-1)*lx,Sx,offset);
-      subconvolution(F,lx,Sx);
+      unsigned int final=fftx->n-1;
+      for(unsigned int r=0; r < final; ++r)
+        subconvolution(f,lx,Sx,r,offset+Sx*r*lx);
+      subconvolution(F,lx,Sx,final);
       backward(F,f,0,offset,W);
     } else {
-      if(loop2) {
+      if(loop2) { // FIXME
         forward(f,F,0,0,A,offset);
-        subconvolution(F,fftx->D0*lx,Sx);
+        subconvolution(F,fftx->D0*lx,Sx,0);
         forward(f,Fp,r,0,B,offset);
         backward(F,f,0,offset,W0);
         forward(f,Fp,r,B,A,offset);
-        subconvolution(Fp,fftx->D*lx,Sx);
+        subconvolution(Fp,fftx->D*lx,Sx,r);
         backward(Fp,f,r,offset,W0);
       } else {
         unsigned int Offset;
@@ -1310,7 +1341,7 @@ public:
 
         for(unsigned int rx=0; rx < Rx; rx += fftx->increment(rx)) {
           forward(f,F,rx,0,A,offset);
-          subconvolution(F,(rx == 0 ? fftx->D0 : fftx->D)*lx,Sx);
+          subconvolution(F,(rx == 0 ? fftx->D0 : fftx->D)*lx,Sx,rx);
           backward(F,h0,rx,Offset,W);
         }
 
@@ -1663,7 +1694,7 @@ public:
       subconvolution(F,lx,Sx);
       backward(F,f,0,offset,W);
     } else {
-      if(loop2) {
+      if(loop2) { // FIXME
         forward(f,F,0,0,A,offset);
         subconvolution(F,fftx->D0*lx,Sx);
         forward(f,Fp,r,0,B,offset);
