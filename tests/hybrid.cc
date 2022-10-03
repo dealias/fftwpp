@@ -155,8 +155,8 @@ int main(int argc, char* argv[])
   if(error > eps || error2 > eps)
     cerr << endl << "WARNING: " << endl;
   cout << endl;
-  cout << "forward error=" << error << endl;
-  cout << "backward error=" << error2 << endl;
+  cout << "Forward Error: " << error << endl;
+  cout << "Backward Error: " << error2 << endl;
 
   return 0;
 }
