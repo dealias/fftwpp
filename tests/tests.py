@@ -13,11 +13,12 @@ def main():
   test(programs, args)
 
 class Program:
-  def __init__(self, name, centered, dim=1, extraArgs=""):
+  def __init__(self, name, centered, dim=1, extraArgs="",mult=True):
     self.name=name
     self.centered=centered
     self.dim=dim
     self.extraArgs=extraArgs
+    self.mult=mult
     self.total=0
     self.failed=0
     self.failedCases=[]
@@ -77,10 +78,13 @@ def getPrograms(args):
 
   if X or notXYZ:
     if SorNotSCH:
+      programs.append(Program("hybrid",False,mult=False))
       programs.append(Program("hybridconv",False))
     if CorNotSCH:
+      programs.append(Program("hybrid",True,extraArgs="-c",mult=False))
       programs.append(Program("hybridconv",True,extraArgs="-c"))
     if HorNotSCH:
+      programs.append(Program("hybridh",True,mult=False))
       programs.append(Program("hybridconvh",True))
 
   if Y or notXYZ:
@@ -246,34 +250,41 @@ def check(program, vals, T, tol, verbose):
   vp.wait()
   prc = vp.returncode
 
-  boldPassedTest="\033[1mPassed Test:\033[0m"
-  boldFailedTest="\033[1mFailed Test:\033[0m"
-
   if prc == 0:
     out, err = vp.communicate()
     comment = out.rstrip().decode()
 
+  if program.mult:
+    checkError(program, comment, cmd, tol, verbose, r"Error")
+  else:
+    checkError(program, comment, cmd, tol, verbose, r"Forward Error")
+    checkError(program, comment, cmd, tol, verbose, r"Backward Error")
+
+def checkError(program, comment, cmd, tol, verbose, message):
+  boldPassedTest="\033[1mPassed Test:\033[0m"
+  boldFailedTest="\033[1mFailed Test:\033[0m"
   try:
-    error=re.search(r"(?<=Error: )(\w|\d|\.|e|-|\+)*",comment).group()
+    error=re.search(r"(?<="+message+": )(\w|\d|\.|e|-|\+)*",comment).group()
     if float(error) > tol or error == "nan" or error == "inf":
       program.failed+=1
-      print("\t"+boldFailedTest+" Error="+error)
+      print("\t"+boldFailedTest+" "+message+": "+error)
       case=" ".join(cmd)
       print("\t"+case)
       program.failedCases.append(case)
       print()
     elif verbose:
-      print("\t"+boldPassedTest+" Error="+error)
+      print("\t"+boldPassedTest+" "+message+": "+error)
       case=" ".join(cmd)
       print("\t"+case)
       print()
   except:
     program.failed+=1
-    print("\t"+boldFailedTest+" Error not found.")
+    print("\t"+boldFailedTest+" "+message+" not found.")
     case=" ".join(cmd)
     print("\t"+case)
     program.failedCases.append(case)
     print()
+
 
 def getcmd(program, vals, T):
   name=program.name
