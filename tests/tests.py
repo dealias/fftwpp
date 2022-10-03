@@ -43,6 +43,9 @@ def getArgs():
   parser.add_argument("-H", help="Test Hermitian convolutions. Not specifying\
   										S or C or H is the same as specifying all of them",
   										action="store_true")
+  parser.add_argument("-f", help="Test forward backward routines (hybrid.cc\
+                       and/or hybridh.cc). Only in 1D.",
+                      action="store_true")
   parser.add_argument("-1","--one", help="Test 1D Convolutions. Not specifying\
   										1 or 2 or 3 is the same as specifying all of them",
   										action="store_true")
@@ -55,6 +58,8 @@ def getArgs():
   parser.add_argument("-T", help="Number of threads to use in timing. If set to\
                       0, iterates over 1, 2, and 4 threads. Default is 1.",
                       default=1)
+  parser.add_argument("-A", help="Preform all tests.",
+                      action="store_true")
   parser.add_argument("-S", help="Test different strides.",
                       action="store_true")
   parser.add_argument("-t",help="Error tolerance. Default is 1e-12.",
@@ -67,12 +72,14 @@ def getArgs():
 
 def getPrograms(args):
   programs=[]
-  S=args.s
-  C=args.c
-  H=args.H
-  X=args.one
-  Y=args.two
-  Z=args.three
+  A=args.A
+  S=args.s or A
+  C=args.c or A
+  H=args.H or A
+  f=args.f or A
+  X=args.one or A
+  Y=args.two or A
+  Z=args.three or A
 
   notSCH=(not (S or C or H))
   notSH=(not (S or C or H))
@@ -84,14 +91,17 @@ def getPrograms(args):
 
   if X or notXYZ:
     if SorNotSCH:
-      programs.append(Program("hybrid",False,mult=False))
       programs.append(Program("hybridconv",False))
+      if f:
+        programs.append(Program("hybrid",False,mult=False))
     if CorNotSCH:
-      programs.append(Program("hybrid",True,extraArgs="-c",mult=False))
       programs.append(Program("hybridconv",True,extraArgs="-c"))
+      if f:
+        programs.append(Program("hybrid",True,extraArgs="-c",mult=False))
     if HorNotSCH:
-      programs.append(Program("hybridh",True,mult=False))
       programs.append(Program("hybridconvh",True))
+      if f:
+        programs.append(Program("hybridh",True,mult=False))
 
   if Y or notXYZ:
     if SorNotSCH:
@@ -109,7 +119,8 @@ def getPrograms(args):
 
 def test(programs, args):
   lenP=len(programs)
-  T=int(args.T)
+  T=0 if args.A else int(args.T)
+
 
   if lenP >= 1:
     passed=0
@@ -210,7 +221,7 @@ def fillValues(program, minS, testS):
 
   # Because of symmetry concerns in the centered cases (compact/noncompact),
   # we check even and odd L values
-  if centered and dim == 1:
+  if centered and dim == 1 and program.mult:
     Ls=[7,8]
   else:
     Ls=[8]
