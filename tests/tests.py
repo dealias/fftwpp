@@ -166,36 +166,36 @@ def iterate(program, thr, tol, verbose, testS):
   else:
     threads=[thr]
 
-  vals=ParameterCollection(fillValues,program,False,1,testS and not program.mult).vals
+  vals=ParameterCollection(fillValues,program,1,testS and not program.mult).vals
   if dim == 1:
     for x in vals:
       for T in threads:
         check(program,[x],T,tol,verbose)
     if not program.mult:
-      vals=ParameterCollection(fillValues,program,False,8,testS and not program.mult).vals
+      vals=ParameterCollection(fillValues,program,8,testS and not program.mult).vals
       for x in vals:
         for T in threads:
           check(program,[x],T,tol,verbose)
   else:
     if dim == 2:
       for y in vals:
-        xvals=ParameterCollection(fillValues,program,True,y.L,testS).vals
+        xvals=ParameterCollection(fillValues,program,y.L,testS).vals
         for x in xvals:
           for T in threads:
             check(program,[x,y],T,tol,verbose)
 
     elif dim == 3:
       for z in vals:
-        yvals=ParameterCollection(fillValues,program,True,z.L,testS).vals
+        yvals=ParameterCollection(fillValues,program,z.L,testS).vals
         for y in yvals:
-          xvals=ParameterCollection(fillValues,program,True,y.L*y.S,testS).vals
+          xvals=ParameterCollection(fillValues,program,y.L*y.S,testS).vals
           for x in xvals:
             for T in threads:
               check(program,[x,y,z],T,tol,verbose)
     else:
       exit("Dimension must be 1 2 or 3.")
 
-def fillValues(program, many, minS, testS):
+def fillValues(program, minS, testS):
 
   # This doesn't quite correspond to C in the main code but it has the property
   # that C == 1 in 1D and C > 1 in higher dimensions
@@ -244,7 +244,7 @@ def fillValues(program, many, minS, testS):
           n=q//p
           Istart=0 if q > 1 else 1
           for I in range(Istart,2):
-            if not many and C == 1:
+            if C == 1:
               D=Dstart
               while(D < n):
                 vals.append(Parameters(L,M,m,p,q,C,S,D,I))
