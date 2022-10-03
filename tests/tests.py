@@ -160,11 +160,16 @@ def iterate(program, thr, tol, verbose, testS):
   else:
     threads=[thr]
 
-  vals=ParameterCollection(fillValues,program,False,1,False).vals
+  vals=ParameterCollection(fillValues,program,False,1,testS and not program.mult).vals
   if dim == 1:
     for x in vals:
       for T in threads:
         check(program,[x],T,tol,verbose)
+    if not program.mult:
+      vals=ParameterCollection(fillValues,program,False,8,testS and not program.mult).vals
+      for x in vals:
+        for T in threads:
+          check(program,[x],T,tol,verbose)
   else:
     if dim == 2:
       for y in vals:
@@ -186,7 +191,11 @@ def iterate(program, thr, tol, verbose, testS):
 
 def fillValues(program, many, minS, testS):
 
-  C=1
+  # This doesn't quite correspond to C in the main code but it has the property
+  # that C == 1 in 1D and C > 1 in higher dimensions
+  # It also works for tesing hybrid.cc and hybridh.cc.
+  C=minS
+
   centered=program.centered
   hermitian = centered and program.extraArgs != "-c"
 
@@ -200,7 +209,7 @@ def fillValues(program, many, minS, testS):
   else:
     Ls=[8]
 
-  Dstart=2 if hermitian else 1
+  Dstart=2 if hermitian and C == 1 else 1
 
   Ss=[minS]
   if testS:
@@ -229,7 +238,7 @@ def fillValues(program, many, minS, testS):
           n=q//p
           Istart=0 if q > 1 else 1
           for I in range(Istart,2):
-            if not many:
+            if not many and C == 1:
               D=Dstart
               while(D < n):
                 vals.append(Parameters(L,M,m,p,q,C,S,D,I))
@@ -313,7 +322,8 @@ def getcmd(program, vals, T):
   else:
     x=vals[0]
     cmd+=["-L="+str(x.L),"-M="+str(x.M),"-m="+str(x.m),"-D="+str(x.D),"-I="+str(x.I)]
-
+    if not program.mult:
+      cmd+=["-S"+str(x.S), "-C"+str(x.C)]
   cmd+=["-T="+str(T),"-E"]
 
   if program.extraArgs != "":
