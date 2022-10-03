@@ -1,7 +1,5 @@
 #include "convolve.h"
 
-#define Centered 0
-
 using namespace std;
 using namespace utils;
 using namespace Array;
