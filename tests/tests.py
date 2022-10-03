@@ -43,7 +43,7 @@ def getArgs():
   parser.add_argument("-H", help="Test Hermitian convolutions. Not specifying\
   										S or C or H is the same as specifying all of them",
   										action="store_true")
-  parser.add_argument("-f", help="Test forward backward routines (hybrid.cc\
+  parser.add_argument("-i","--identity", help="Test forward backward routines (hybrid.cc\
                        and/or hybridh.cc). Only in 1D.",
                       action="store_true")
   parser.add_argument("-1","--one", help="Test 1D Convolutions. Not specifying\
@@ -58,9 +58,9 @@ def getArgs():
   parser.add_argument("-T", help="Number of threads to use in timing. If set to\
                       0, iterates over 1, 2, and 4 threads. Default is 1.",
                       default=1)
-  parser.add_argument("-A", help="Preform all tests.",
-                      action="store_true")
   parser.add_argument("-S", help="Test different strides.",
+                      action="store_true")
+  parser.add_argument("-A", help="Preform all tests.",
                       action="store_true")
   parser.add_argument("-t",help="Error tolerance. Default is 1e-12.",
                       default=1e-12)
@@ -76,7 +76,7 @@ def getPrograms(args):
   S=args.s or A
   C=args.c or A
   H=args.H or A
-  f=args.f or A
+  i=args.identity or A
   X=args.one or A
   Y=args.two or A
   Z=args.three or A
@@ -92,15 +92,15 @@ def getPrograms(args):
   if X or notXYZ:
     if SorNotSCH:
       programs.append(Program("hybridconv",False))
-      if f:
+      if i:
         programs.append(Program("hybrid",False,mult=False))
     if CorNotSCH:
       programs.append(Program("hybridconv",True,extraArgs="-c"))
-      if f:
+      if i:
         programs.append(Program("hybrid",True,extraArgs="-c",mult=False))
     if HorNotSCH:
       programs.append(Program("hybridconvh",True))
-      if f:
+      if i:
         programs.append(Program("hybridh",True,mult=False))
 
   if Y or notXYZ:
