@@ -60,7 +60,7 @@ def getArgs():
                       default=1)
   parser.add_argument("-S", help="Test different strides.",
                       action="store_true")
-  parser.add_argument("-A", help="Preform all tests.",
+  parser.add_argument("-A","--All", help="Preform all tests.",
                       action="store_true")
   parser.add_argument("-t",help="Error tolerance. Default is 1e-12.",
                       default=1e-12)
@@ -72,7 +72,7 @@ def getArgs():
 
 def getPrograms(args):
   programs=[]
-  A=args.A
+  A=args.All
   S=args.s or A
   C=args.c or A
   H=args.H or A
@@ -119,8 +119,7 @@ def getPrograms(args):
 
 def test(programs, args):
   lenP=len(programs)
-  T=0 if args.A else int(args.T)
-
+  T=0 if args.All else int(args.T)
 
   if lenP >= 1:
     passed=0
