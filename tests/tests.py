@@ -19,12 +19,18 @@ class Program:
     self.dim=dim
     self.extraArgs=extraArgs
     self.mult=mult
-    self.total=0
     self.failed=0
+    self.passed=0
+    self.total=0
     self.failedCases=[]
 
-  def passed(self):
-    return self.total-self.failed
+  def passTest(self):
+    self.passed+=1
+    self.total+=1
+
+  def failTest(self):
+    self.failed+=1
+    self.total+=1
 
 def getArgs():
   parser = argparse.ArgumentParser(description="Perform Unit Tests on convolutions with hybrid dealiasing.")
@@ -106,9 +112,9 @@ def test(programs, args):
   T=int(args.T)
 
   if lenP >= 1:
-    total=0
     passed=0
     failed=0
+    total=0
     failedCases=[]
 
     for p in programs:
@@ -126,9 +132,9 @@ def test(programs, args):
 
       iterate(p,T,float(args.t),args.v,args.S)
 
-      ptotal=p.total
+      ppassed=p.passed
       pfailed=p.failed
-      ppassed=p.passed()
+      ptotal=p.total
 
       print("Finished testing "+name+".")
       print("Out of "+str(ptotal)+" tests, "+str(ppassed)+" passed, "+str(pfailed)+" failed.")
@@ -251,8 +257,6 @@ def fillValues(program, many, minS, testS):
 
 def check(program, vals, T, tol, verbose):
 
-  program.total+=1
-
   cmd=getcmd(program,vals,T)
 
   vp = Popen(cmd, stdout = PIPE, stderr = PIPE)
@@ -275,19 +279,21 @@ def checkError(program, comment, cmd, tol, verbose, message):
   try:
     error=re.search(r"(?<="+message+": )(\w|\d|\.|e|-|\+)*",comment).group()
     if float(error) > tol or error == "nan" or error == "inf":
-      program.failed+=1
+      program.failTest()
       print("\t"+boldFailedTest+" "+message+": "+error)
       case=" ".join(cmd)
       print("\t"+case)
       program.failedCases.append(case)
       print()
-    elif verbose:
-      print("\t"+boldPassedTest+" "+message+": "+error)
-      case=" ".join(cmd)
-      print("\t"+case)
-      print()
+    else:
+      program.passTest()
+      if verbose:
+        print("\t"+boldPassedTest+" "+message+": "+error)
+        case=" ".join(cmd)
+        print("\t"+case)
+        print()
   except:
-    program.failed+=1
+    program.failTest()
     print("\t"+boldFailedTest+" "+message+" not found.")
     case=" ".join(cmd)
     print("\t"+case)
