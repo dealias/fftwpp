@@ -252,7 +252,8 @@ void fftBase::OptBase::optloop(unsigned int& m0, unsigned int L,
       for(unsigned int D=Dstart; D < Dstop2; D *= 2) {
         if(D > Dstop) D=Dstop;
         for(unsigned int inplace=Istart; inplace < Istop; ++inplace)
-          check(L,M,C,S,m0,p,q,D,inplace,app,useTimer);
+          if((q == 1 || valid(D,p,S)) && D <= n)
+            check(L,M,C,S,m0,p,q,D,inplace,app,useTimer);
       }
       if(mForced) break;
       if(inner) {
@@ -314,26 +315,24 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
                              bool inplace, Application& app, bool useTimer)
 {
   //cout << "m=" << m << ", p=" << p << ", q=" << q << ", D=" << D << " I=" << inplace << endl;
-  if(q == 1 || valid(D,p,S)) {
-    if(useTimer) {
-      double t=time(L,M,C,S,m,q,D,inplace,app);
-      if(showOptTimes)
-        cout << "m=" << m << ", p=" << p << ", q=" << q << ", C=" << C << ", S=" << S << ", D=" << D << ", I=" << inplace << ": t=" << t*1.0e-9 << endl;
-      if(t < T) {
-        this->m=m;
-        this->q=q;
-        this->D=D;
-        this->inplace=inplace;
-        T=t;
-      }
-    } else {
-      counter += 1;
-      if(counter == 1) {
-        this->m=m;
-        this->q=q;
-        this->D=D;
-        this->inplace=inplace;
-      }
+  if(useTimer) {
+    double t=time(L,M,C,S,m,q,D,inplace,app);
+    if(showOptTimes)
+      cout << "m=" << m << ", p=" << p << ", q=" << q << ", C=" << C << ", S=" << S << ", D=" << D << ", I=" << inplace << ": t=" << t*1.0e-9 << endl;
+    if(t < T) {
+      this->m=m;
+      this->q=q;
+      this->D=D;
+      this->inplace=inplace;
+      T=t;
+    }
+  } else {
+    counter += 1;
+    if(counter == 1) {
+      this->m=m;
+      this->q=q;
+      this->D=D;
+      this->inplace=inplace;
     }
   }
 }
