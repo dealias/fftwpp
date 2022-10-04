@@ -60,7 +60,10 @@ def getArgs():
                       default=1)
   parser.add_argument("-S", help="Test different strides.",
                       action="store_true")
-  parser.add_argument("-A","--All", help="Preform all tests.",
+  parser.add_argument("-A","--All", help="Preform all tests. If the dimension\
+                      (1, 2 or 3) and\or convolution type (s, c or H) is\
+                      specified then preform all tests in that dimension and/or\
+                      type.",
                       action="store_true")
   parser.add_argument("-t",help="Error tolerance. Default is 1e-12.",
                       default=1e-12)
@@ -73,13 +76,13 @@ def getArgs():
 def getPrograms(args):
   programs=[]
   A=args.All
-  S=args.s or A
-  C=args.c or A
-  H=args.H or A
+  S=args.s
+  C=args.c
+  H=args.H
   i=args.identity or A
-  X=args.one or A
-  Y=args.two or A
-  Z=args.three or A
+  X=args.one
+  Y=args.two
+  Z=args.three
 
   notSCH=(not (S or C or H))
   notSH=(not (S or C or H))
@@ -140,7 +143,7 @@ def test(programs, args):
       else:
         raise ValueError(str(T)+" is an invalid number of threads.")
 
-      iterate(p,T,float(args.t),args.v,args.S)
+      iterate(p,T,float(args.t),args.v,args.S or args.All)
 
       ppassed=p.passed
       pfailed=p.failed
