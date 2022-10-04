@@ -232,9 +232,10 @@ void fftBase::OptBase::optloop(unsigned int& m0, unsigned int L,
     if(inner && (((!ispure(p) || p == P*n) && !mForced) || (centered && p%2 != 0)))
       i=m0=nextpuresize(m0+1);
     else {
+      bool forceD=app.D > 0 && valid(app.D, p, S);
       unsigned int q=(inner ? P*n : ceilquotient(M,m0));
-      unsigned int Dstart=app.D > 0 ? min(app.D,n) : 1;
-      unsigned int Dstop=app.D > 0 ? min(app.D,n) : n;
+      unsigned int Dstart=forceD ? app.D : 1;
+      unsigned int Dstop=forceD ? app.D : n;
       unsigned int Dstop2=2*Dstop;
 
       // Always check inplace and out-of-place, regardless of C and q.
