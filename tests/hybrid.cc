@@ -95,7 +95,7 @@ int main(int argc, char* argv[])
 
       for(unsigned int c=0; c < C; ++c) {
         unsigned int K=S*k+c;
-        unsigned int i=fft.index(r,K);
+        unsigned int i=fft.Index(r,K);
         error += abs2(F[K]-F2[i]);
         norm += abs2(F2[i]);
         if(Output)
@@ -132,7 +132,7 @@ int main(int argc, char* argv[])
     for(unsigned int k=0; k < fft.noutputs(r); ++k) {
       for(unsigned int c=0; c < C; ++c) {
         unsigned int K=S*k+c;
-        F[K]=F2[fft.index(r,K)];
+        F[K]=F2[fft.Index(r,K)];
       }
     }
     fft.backward(F,h,r,W0);
