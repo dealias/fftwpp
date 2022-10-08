@@ -232,7 +232,7 @@ public:
   fftBase(unsigned int L, unsigned int M, Application& app,
           unsigned int C=1, unsigned int S=0, bool Explicit=false,
           bool centered=false) :
-    ThreadBase(app.Threads()), L(L), M(M), C(C), S(S == 0 ? C : S),
+    ThreadBase(app.threads), L(L), M(M), C(C), S(S == 0 ? C : S),
     mult(app.mult), centered(centered) {}
 
   virtual ~fftBase();
@@ -470,7 +470,7 @@ public:
     double time(unsigned int L, unsigned int M, unsigned int C, unsigned int S,
                 unsigned int m, unsigned int q,unsigned int D,
                 bool inplace, Application &app) {
-      fftPad fft(L,M,C,S,m,q,D,inplace,app.mult,app.Threads());
+      fftPad fft(L,M,C,S,m,q,D,inplace,app.mult,app.threads);
       return timePad(&fft,app);
     }
   };
@@ -576,7 +576,7 @@ public:
     double time(unsigned int L, unsigned int M, unsigned int C, unsigned int S,
                 unsigned int m, unsigned int q, unsigned int D,
                 bool inplace, Application &app) {
-      fftPadCentered fft(L,M,C,S,m,q,D,inplace,app.mult,app.Threads());
+      fftPadCentered fft(L,M,C,S,m,q,D,inplace,app.mult,app.threads);
       return timePad(&fft,app);
     }
   };
@@ -597,7 +597,7 @@ public:
   fftPadCentered(unsigned int L, unsigned int M, Application& app,
                  unsigned int C=1, unsigned int S=0, bool Explicit=false,
                  bool fast=true) :
-    fftPad(L,M,C,S,app.mult,app.Threads(),true) {
+    fftPad(L,M,C,S,app.mult,app.threads,true) {
     Opt opt=Opt(L,M,app,C,this->S,Explicit);
     m=opt.m;
     if(Explicit)
@@ -690,7 +690,7 @@ public:
     double time(unsigned int L, unsigned int M, unsigned int C, unsigned int,
                 unsigned int m, unsigned int q, unsigned int D,
                 bool inplace, Application &app) {
-      fftPadHermitian fft(L,M,C,m,q,D,inplace,app.mult,app.Threads());
+      fftPadHermitian fft(L,M,C,m,q,D,inplace,app.mult,app.threads);
       return timePadHermitian(&fft,app);
     }
   };
@@ -794,10 +794,10 @@ public:
     ThreadBase(), W(NULL), allocate(false), loop2(false) {}
 
   Convolution(Application &app) :
-    ThreadBase(app.Threads()), A(app.A), B(app.B), mult(app.mult), W(NULL), allocate(false) {}
+    ThreadBase(app.threads), A(app.A), B(app.B), mult(app.mult), W(NULL), allocate(false) {}
 
   Convolution(unsigned int L, unsigned int M, Application &app) :
-    ThreadBase(app.Threads()), A(app.A), B(app.B), mult(app.mult), W(NULL), allocate(true) {
+    ThreadBase(app.threads), A(app.A), B(app.B), mult(app.mult), W(NULL), allocate(true) {
     fft=new fftPad(L,M,app);
     init();
   }
@@ -968,7 +968,7 @@ class ConvolutionHermitian : public Convolution {
 public:
   ConvolutionHermitian(unsigned int L, unsigned int M, Application &app) :
     Convolution() {
-    threads=app.Threads();
+    threads=app.threads;
     A=app.A;
     B=app.B;
     mult=app.mult;

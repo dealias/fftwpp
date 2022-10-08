@@ -104,21 +104,19 @@ extern const char *inout;
 
 struct threaddata {
   unsigned int threads;
-  double mean;
-  double stdev;
-  threaddata() : threads(0), mean(0.0), stdev(0.0) {}
-  threaddata(unsigned int threads, double mean, double stdev) :
-    threads(threads), mean(mean), stdev(stdev) {}
+  double median;
+  threaddata() : threads(0), median(0.0) {}
+  threaddata(unsigned int threads, double median) :
+    threads(threads), median(median) {}
 };
 
 class fftw;
 
 class ThreadBase
 {
-protected:
+public:
   unsigned int threads;
   unsigned int innerthreads;
-public:
   ThreadBase();
   ThreadBase(unsigned int threads) : threads(threads) {}
   void Threads(unsigned int nthreads) {threads=nthreads;}
@@ -331,49 +329,39 @@ public:
 
   threaddata time(fftw_plan plan1, fftw_plan planT, Complex *in, Complex *out,
                   unsigned int Threads) {
-    utils::statistics S,ST;
-    double stop=utils::totalseconds()+testseconds;
-    threads=1;
-    plan=plan1;
+    utils::statistics S(true),ST(true);
     fftLoop(in,out,1);
     threads=Threads;
     plan=planT;
     fftLoop(in,out,1);
-    unsigned int N=1;
-    for(;;) {
-      double t0=utils::totalseconds();
+    unsigned int N=std::max(utils::ceilquotient(100000,
+                                                (unsigned int) doubles),1u);
+    auto t0=std::chrono::steady_clock::now();
+    threads=1;
+    plan=plan1;
+    fftLoop(in,out,N);
+    auto t1=std::chrono::steady_clock::now();
+    threads=Threads;
+    plan=planT;
+    fftLoop(in,out,N);
+    auto t=std::chrono::steady_clock::now();
+    auto elapsed=std::chrono::duration_cast<std::chrono::nanoseconds>
+      (t1-t0);
+    S.add(elapsed.count());
+    auto Elapsed=std::chrono::duration_cast<std::chrono::nanoseconds>
+      (t-t1);
+    ST.add(Elapsed.count());
+    double median=S.median();
+    double medianT=ST.median();
+    if(median <= medianT) {
       threads=1;
       plan=plan1;
-      fftLoop(in,out,N);
-      double t1=utils::totalseconds();
-      threads=Threads;
-      plan=planT;
-      fftLoop(in,out,N);
-      double t=utils::totalseconds();
-      S.add(t1-t0);
-      ST.add(t-t1);
-      if(S.mean() < 100.0/CLOCKS_PER_SEC) {
-        N *= 2;
-        S.clear();
-        ST.clear();
-      }
-      if(S.count() >= 10) {
-        double error=S.stdev();
-        double diff=ST.mean()-S.mean();
-        if(diff >= 0.0 || t > stop) {
-          threads=1;
-          plan=plan1;
-          fftw_destroy_plan(planT);
-          break;
-        }
-        if(diff < -error) {
-          threads=Threads;
-          fftw_destroy_plan(plan1);
-          break;
-        }
-      }
+      fftw_destroy_plan(planT);
+    } else {
+      median=medianT;
+      fftw_destroy_plan(plan1);
     }
-    return threaddata(threads,S.mean(),S.stdev());
+    return threaddata(threads,median);
   }
 
   virtual threaddata lookup(bool inplace, unsigned int threads) {
@@ -403,7 +391,7 @@ public:
     unsigned int Threads=threads;
 
     if(threads > 1) data=lookup(inplace,threads);
-    else data=threaddata(1,0.0,0.0);
+    else data=threaddata(1,0.0);
 
     threads=data.threads > 0 ? data.threads : 1;
     planThreads(threads);
@@ -420,7 +408,7 @@ public:
         if(planT)
           data=time(plan,planT,in,out,threads);
         else noplan();
-        store(inplace,threaddata(threads,data.mean,data.stdev));
+        store(inplace,threaddata(threads,data.median));
       }
     }
 
@@ -793,7 +781,7 @@ public:
           plan2=plan1;
         }
 
-        if(ST.mean > S1.mean-S1.stdev) { // Use FFTW's multithreading
+        if(ST.median > S1.median) { // Use FFTW's multithreading
           fftw_destroy_plan(plan);
           if(R > 0) {
             fftw_destroy_plan(plan2);
@@ -886,25 +874,25 @@ public:
     fftwblock<fftw_complex,fftw_complex>
     (nx,M,1,1,nx,nx,in,out,threads) {}
 
-  Mfft1d(unsigned int nx, int sign, unsigned int M, size_t stride=1,
-         size_t dist=0, Complex *in=NULL, Complex *out=NULL,
-         unsigned int threads=maxthreads) :
-    fftw(2*((nx-1)*stride+(M-1)*Dist(nx,stride,dist)+1),sign,threads,nx),
-    fftwblock<fftw_complex,fftw_complex>
-    (nx,M,stride,stride,dist,dist,in,out,threads) {}
+    Mfft1d(unsigned int nx, int sign, unsigned int M, size_t stride=1,
+           size_t dist=0, Complex *in=NULL, Complex *out=NULL,
+           unsigned int threads=maxthreads) :
+      fftw(2*((nx-1)*stride+(M-1)*Dist(nx,stride,dist)+1),sign,threads,nx),
+      fftwblock<fftw_complex,fftw_complex>
+      (nx,M,stride,stride,dist,dist,in,out,threads) {}
 
-  Mfft1d(unsigned int nx, int sign, unsigned int M,
-         size_t istride, size_t ostride, size_t idist, size_t odist,
-         Complex *in, Complex *out, unsigned int threads=maxthreads):
-    fftw(std::max(2*((nx-1)*istride+(M-1)*Dist(nx,istride,idist)+1),
-                  2*((nx-1)*ostride+(M-1)*Dist(nx,ostride,odist)+1)),sign,
-         threads, nx),
-    fftwblock<fftw_complex,fftw_complex>(nx,M,istride,ostride,idist,odist,in,
-                                         out,threads) {}
+      Mfft1d(unsigned int nx, int sign, unsigned int M,
+             size_t istride, size_t ostride, size_t idist, size_t odist,
+             Complex *in, Complex *out, unsigned int threads=maxthreads):
+        fftw(std::max(2*((nx-1)*istride+(M-1)*Dist(nx,istride,idist)+1),
+                      2*((nx-1)*ostride+(M-1)*Dist(nx,ostride,odist)+1)),sign,
+             threads, nx),
+        fftwblock<fftw_complex,fftw_complex>(nx,M,istride,ostride,idist,odist,in,
+                                             out,threads) {}
 
-  threaddata lookup(bool inplace, unsigned int threads) {
-    return Lookup(threadtable,keytype3(nx,Q,R,threads,inplace));
-  }
+        threaddata lookup(bool inplace, unsigned int threads) {
+          return Lookup(threadtable,keytype3(nx,Q,R,threads,inplace));
+        }
   void store(bool inplace, const threaddata& data) {
     Store(threadtable,keytype3(nx,Q,R,data.threads,inplace),data);
   }
@@ -1112,9 +1100,9 @@ public:
       fftwblock<double,fftw_complex>
     (nx,M,istride,ostride,idist,odist,(Complex *) in,out,threads) {}
 
-  threaddata lookup(bool inplace, unsigned int threads) {
-    return Lookup(threadtable,keytype3(nx,Q,R,threads,inplace));
-  }
+    threaddata lookup(bool inplace, unsigned int threads) {
+      return Lookup(threadtable,keytype3(nx,Q,R,threads,inplace));
+    }
 
   void store(bool inplace, const threaddata& data) {
     Store(threadtable,keytype3(nx,Q,R,data.threads,inplace),data);
@@ -1216,9 +1204,9 @@ public:
       fftwblock<fftw_complex,double>
     (nx,M,istride,ostride,idist,odist,in,(Complex *) out,threads) {}
 
-  threaddata lookup(bool inplace, unsigned int threads) {
-    return Lookup(threadtable,keytype3(nx,Q,R,threads,inplace));
-  }
+    threaddata lookup(bool inplace, unsigned int threads) {
+      return Lookup(threadtable,keytype3(nx,Q,R,threads,inplace));
+    }
 
   void store(bool inplace, const threaddata& data) {
     Store(threadtable,keytype3(nx,Q,R,data.threads,inplace),data);

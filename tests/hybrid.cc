@@ -31,9 +31,9 @@ int main(int argc, char* argv[])
   cout << "Explicit:" << endl;
   // Minimal explicit padding
 #if Centered
-  fftPadCentered fft0(L,M,C,S,M,1,1,1,app.mult);
+  fftPadCentered fft0(L,M,C,S,M,1,1,1,app.mult,app.threads);
 #else
-  fftPad fft0(L,M,C,S,M,1,1,1,app.mult);
+  fftPad fft0(L,M,C,S,M,1,1,1,app.mult,app.threads);
 #endif
 
   double median0=fft0.report(app);

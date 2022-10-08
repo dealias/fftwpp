@@ -36,6 +36,7 @@ public:
   void clear() {N=0; A=varL=varH=0.0; clearpq(s); clearpq(g);}
   double count() {return N;}
   double mean() {return A;}
+  double sum() {return N*A;}
   void add(double t) {
     ++N;
     double diff=t-A;
@@ -98,6 +99,9 @@ public:
   }
   double stdevH() {
     return stdev(varH,2.0);
+  }
+  double stderror() {
+    return stdev()/sqrt(N);
   }
   double median() {
     if(!computeMedian) {
