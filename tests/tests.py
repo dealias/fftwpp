@@ -55,7 +55,7 @@ def getArgs():
   parser.add_argument("-3","--three", help="Test 3D Convolutions. Not specifying\
   										1 or 2 or 3 is the same as specifying all of them",
   										action="store_true")
-  parser.add_argument("-T", help="Number of threads to use in timing. If set to\
+  parser.add_argument("-T",metavar='threads',help="Number of threads to use in timing. If set to\
                       0, iterates over 1, 2, and 4 threads. Default is 1.",
                       default=1)
   parser.add_argument("-S", help="Test different strides.",
@@ -65,7 +65,7 @@ def getArgs():
                       specified then perform all tests in that dimension and/or\
                       type.",
                       action="store_true")
-  parser.add_argument("-t",help="Error tolerance. Default is 1e-12.",
+  parser.add_argument("-t",metavar='tolerance',help="Error tolerance. Default is 1e-12.",
                       default=1e-12)
   parser.add_argument("-l",help="Show log of failed cases",
                       action="store_true")
