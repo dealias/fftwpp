@@ -212,7 +212,6 @@ void fftBase::OptBase::optloop(unsigned int& m0, unsigned int L,
   //cout << "D=" << D << ", m0=" << m0 << ", L=" << L << ", M=" << M << ", C=" << C << endl;
   unsigned int i=(inner ? m0 : 0);
   while(i < itmax) {
-    if(useTimer == false && counter > 1) break;
     unsigned int p=ceilquotient(L,m0);
     // Effective p:
     unsigned int P=(centered && p == 2*(p/2)) || p == 2 ? (p/2) : p;
@@ -251,8 +250,9 @@ void fftBase::OptBase::optloop(unsigned int& m0, unsigned int L,
       for(unsigned int D=Dstart; D < Dstop2; D *= 2) {
         if(D > Dstop) D=Dstop;
         for(unsigned int inplace=Istart; inplace < Istop; ++inplace)
-          if((q == 1 || valid(D,p,S)) && D <= n)
+          if((q == 1 || valid(D,p,S)) && D <= n) {
             check(L,M,C,S,m0,p,q,D,inplace,app,useTimer);
+          }
       }
       if(mForced) break;
       if(inner) {
@@ -327,6 +327,8 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
     }
   } else {
     counter += 1;
+    if(m != mlist.back())
+      mlist.push_back(m);
     if(counter == 1) {
       this->m=m;
       this->q=q;
@@ -358,7 +360,11 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   opt(L,M,app,C,S,mStart,itmax,Explicit,centered,false);
 
   if(counter > 1) {
-    opt(L,M,app,C,S,mStart,itmax,Explicit,centered);
+    mForced=true;
+    for(mList::reverse_iterator r=mlist.rbegin(); r != mlist.rend(); ++r) {
+      app.m=*r;
+      opt(L,M,app,C,S,mStart,itmax,Explicit,centered);
+    }
     if(showOptTimes)
       cout << endl << "Optimal time: t=" << T*1.0e-9 << endl;
   }

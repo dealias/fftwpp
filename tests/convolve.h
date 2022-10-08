@@ -17,6 +17,7 @@
 
 #include <cfloat>
 #include <climits>
+#include <list>
 
 #include "Complex.h"
 #include "fftw++.h"
@@ -161,6 +162,8 @@ public:
     unsigned int counter=0;
     unsigned int m,q,D;
     bool inplace,mForced;
+    typedef std::list<unsigned int> mList;
+    mList mlist;
     double T;
 
     virtual double time(unsigned int L, unsigned int M, unsigned int C,
