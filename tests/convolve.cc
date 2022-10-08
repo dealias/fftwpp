@@ -178,22 +178,17 @@ double time(fftBase *fft, Application &app)
   statistics medianStats(true);
   double eps=0.1;
 
-  for(unsigned int K=1;; ++K) {
-    for(unsigned int k=0; k < K; ++k) {
-      auto begin=std::chrono::steady_clock::now();
-      Convolve.convolveRaw(f);
-      auto end=std::chrono::steady_clock::now();
-      auto elapsed=std::chrono::duration_cast<std::chrono::nanoseconds>
-        (end-begin);
-      double t=elapsed.count();
-      Stats.add(t);
-      double median=Stats.median();
-      medianStats.add(median);
-    }
-    double e=medianStats.stderror();
-    if(e > 0 && e < eps*medianStats.mean())
-      break;
-  }
+  do {
+    auto begin=std::chrono::steady_clock::now();
+    Convolve.convolveRaw(f);
+    auto end=std::chrono::steady_clock::now();
+    auto elapsed=std::chrono::duration_cast<std::chrono::nanoseconds>
+      (end-begin);
+    Stats.add(elapsed.count());
+    medianStats.add(Stats.median());
+  } while(medianStats.count() == 1 ||
+          medianStats.stderror() > eps*medianStats.mean());
+
   deleteAlign(F);
   return Stats.median();
 }
