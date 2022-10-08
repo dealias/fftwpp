@@ -204,10 +204,10 @@ double timePadHermitian(fftBase *fft, Application &app)
 }
 
 void fftBase::OptBase::optloop(unsigned int& m0, unsigned int L,
-                                  unsigned int M, Application& app,
-                                  unsigned int C, unsigned int S,
-                                  bool centered, unsigned int itmax,
-                                  bool useTimer, bool inner)
+                               unsigned int M, Application& app,
+                               unsigned int C, unsigned int S,
+                               bool centered, unsigned int itmax,
+                               bool useTimer, bool inner)
 {
   //cout << "D=" << D << ", m0=" << m0 << ", L=" << L << ", M=" << M << ", C=" << C << endl;
   unsigned int i=(inner ? m0 : 0);
@@ -219,8 +219,8 @@ void fftBase::OptBase::optloop(unsigned int& m0, unsigned int L,
     //cout<<"inner="<<inner<<", p="<<p<<", P="<<P<<", n="<<n<<", centered="<<centered<<endl;
 
     if(app.m >= 1 && app.m < M && centered && p%2 != 0) {
-        cerr << "Odd values of p are incompatible with the centered and Hermitian routines." << endl;
-        cerr << "Using explicit routines with m=" << M << " instead." << endl;
+      cerr << "Odd values of p are incompatible with the centered and Hermitian routines." << endl;
+      cerr << "Using explicit routines with m=" << M << " instead." << endl;
     }
 
     // In the inner loop we must have the following:
@@ -250,9 +250,8 @@ void fftBase::OptBase::optloop(unsigned int& m0, unsigned int L,
       for(unsigned int D=Dstart; D < Dstop2; D *= 2) {
         if(D > Dstop) D=Dstop;
         for(unsigned int inplace=Istart; inplace < Istop; ++inplace)
-          if((q == 1 || valid(D,p,S)) && D <= n) {
+          if((q == 1 || valid(D,p,S)) && D <= n)
             check(L,M,C,S,m0,p,q,D,inplace,app,useTimer);
-          }
       }
       if(mForced) break;
       if(inner) {
@@ -271,9 +270,9 @@ void fftBase::OptBase::optloop(unsigned int& m0, unsigned int L,
 }
 
 void fftBase::OptBase::opt(unsigned int L, unsigned int M, Application& app,
-                              unsigned int C, unsigned int S,
-                              unsigned int minsize, unsigned int itmax,
-                              bool Explicit, bool centered, bool useTimer)
+                           unsigned int C, unsigned int S,
+                           unsigned int minsize, unsigned int itmax,
+                           bool Explicit, bool centered, bool useTimer)
 {
   if(!Explicit) {
     if(mForced) {
@@ -1353,7 +1352,7 @@ void fftPad::backward1(Complex *F0, Complex *f, unsigned int r0, Complex *W)
         for(unsigned int s=0; s < L; ++s)
           f[s]=W[s];
         );
-     } else { // q even, r=0,q/2
+    } else { // q even, r=0,q/2
       residues=2;
       Complex *V=W+m;
       f[0]=W[0]+V[0];

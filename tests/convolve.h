@@ -197,9 +197,9 @@ public:
     // If inner is true, ubound is the maximum size of m values that are
     // checked.
     void optloop(unsigned int& m0, unsigned int L, unsigned int M,
-                    Application& app, unsigned int C, unsigned int S,
-                    bool centered, unsigned int ubound, bool useTimer,
-                    bool inner=false);
+                 Application& app, unsigned int C, unsigned int S,
+                 bool centered, unsigned int ubound, bool useTimer,
+                 bool inner=false);
 
     // The default optimizer routine. Used by scan to iterate and check
     // different m values for a given geometry and application.
@@ -207,9 +207,9 @@ public:
     // 'itmax' is the maximum number of iterations done by optloop
     // (when p <= 2).
     void opt(unsigned int L, unsigned int M, Application& app,
-                unsigned int C, unsigned int S, unsigned int minInner,
-                unsigned int itmax, bool Explicit, bool centered,
-                bool useTimer=true);
+             unsigned int C, unsigned int S, unsigned int minInner,
+             unsigned int itmax, bool Explicit, bool centered,
+             bool useTimer=true);
   };
 
   void invalid () {
@@ -894,8 +894,8 @@ public:
           Fp[c]=this->F[B+c];
 
         for(unsigned int b=0; b < B; b += C)
-           for(unsigned int c=b; c < B; c++)
-             Fp[C+c]=this->F[c];
+          for(unsigned int c=b; c < B; c++)
+            Fp[C+c]=this->F[c];
 
         extra=1;
       } else
