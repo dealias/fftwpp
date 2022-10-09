@@ -164,6 +164,7 @@ public:
     bool inplace,mForced;
     typedef std::list<unsigned int> mList;
     mList mlist;
+    double threshold;
     double T;
 
     virtual double time(unsigned int L, unsigned int M, unsigned int C,
@@ -450,7 +451,7 @@ public:
   }
 };
 
-typedef double timer(fftBase *fft, Application &app);
+typedef double timer(fftBase *fft, Application &app, double& threshold);
 timer timePad,timePadHermitian;
 
 class fftPad : public fftBase {
@@ -474,7 +475,7 @@ public:
                 unsigned int m, unsigned int q,unsigned int D,
                 bool inplace, Application &app) {
       fftPad fft(L,M,C,S,m,q,D,inplace,app.mult,app.threads);
-      return timePad(&fft,app);
+      return timePad(&fft,app,threshold);
     }
   };
 
@@ -516,7 +517,8 @@ public:
   void init();
 
   double time(Application& app) {
-    return timePad(this,app);
+    double threshold=DBL_MAX;
+    return timePad(this,app,threshold);
   }
 
   // Explicitly pad to m.
@@ -580,7 +582,7 @@ public:
                 unsigned int m, unsigned int q, unsigned int D,
                 bool inplace, Application &app) {
       fftPadCentered fft(L,M,C,S,m,q,D,inplace,app.mult,app.threads);
-      return timePad(&fft,app);
+      return timePad(&fft,app,threshold);
     }
   };
 
@@ -626,7 +628,8 @@ public:
   void init(bool fast);
 
   double time(Application& app) {
-    return timePad(this,app);
+    double threshold=DBL_MAX;
+    return timePad(this,app,threshold);
   }
 
   void forwardExplicitFast(Complex *f, Complex *F, unsigned int r, Complex *W);
@@ -694,7 +697,7 @@ public:
                 unsigned int m, unsigned int q, unsigned int D,
                 bool inplace, Application &app) {
       fftPadHermitian fft(L,M,C,m,q,D,inplace,app.mult,app.threads);
-      return timePadHermitian(&fft,app);
+      return timePadHermitian(&fft,app,threshold);
     }
   };
 
@@ -726,7 +729,8 @@ public:
   void init();
 
   double time(Application& app) {
-    return timePadHermitian(this,app);
+    double threshold=DBL_MAX;
+    return timePadHermitian(this,app,threshold);
   }
 
   void forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W);

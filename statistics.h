@@ -2,6 +2,7 @@
 #define __statistics_h__ 1
 
 #include <queue>
+#include <cfloat>
 
 namespace utils {
 
@@ -20,6 +21,7 @@ class statistics {
   double A;
   double varL;
   double varH;
+  double m,M;
   double Median;
   bool computeMedian;
 
@@ -33,9 +35,11 @@ public:
   statistics(bool computeMedian=false) : computeMedian(computeMedian) {
     clear();
   }
-  void clear() {N=0; A=varL=varH=0.0; clearpq(s); clearpq(g);}
+  void clear() {N=0; A=varL=varH=0.0; m=DBL_MAX; M=-m; clearpq(s); clearpq(g);}
   double count() {return N;}
   double mean() {return A;}
+  double max() {return M;}
+  double min() {return m;}
   double sum() {return N*A;}
   void add(double t) {
     ++N;
@@ -46,6 +50,9 @@ public:
       varL += v;
     else
       varH += v;
+
+    if(t < m) m=t;
+    if(t > M) M=t;
 
     if(computeMedian) {
       if(N == 1)

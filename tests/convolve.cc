@@ -155,7 +155,7 @@ bool ispure(unsigned int m)
 
 
 template<class Convolution>
-double time(fftBase *fft, Application &app)
+double time(fftBase *fft, Application &app, double &threshold)
 {
   unsigned int N=max(app.A,app.B);
   Complex **f=new Complex *[N];
@@ -175,8 +175,8 @@ double time(fftBase *fft, Application &app)
   Convolution Convolve(fft,app.A,app.B,fft->embed() ? F : NULL);
 
   statistics Stats(true);
-  statistics medianStats(true);
-  double eps=0.1;
+  statistics medianStats(false);
+  double eps=0.02;
 
   do {
     auto begin=std::chrono::steady_clock::now();
@@ -184,38 +184,41 @@ double time(fftBase *fft, Application &app)
     auto end=std::chrono::steady_clock::now();
     auto elapsed=std::chrono::duration_cast<std::chrono::nanoseconds>
       (end-begin);
-    Stats.add(elapsed.count());
+    double t=elapsed.count();
+    Stats.add(t);
+    if(t >= threshold) break;
     medianStats.add(Stats.median());
   } while(medianStats.count() == 1 ||
           medianStats.stderror() > eps*medianStats.mean());
 
+  threshold=min(threshold,Stats.max());
   deleteAlign(F);
   return Stats.median();
 }
 
-double timePad(fftBase *fft, Application &app)
+double timePad(fftBase *fft, Application &app, double& threshold)
 {
-  return time<Convolution>(fft,app);
+  return time<Convolution>(fft,app,threshold);
 }
 
-double timePadHermitian(fftBase *fft, Application &app)
+double timePadHermitian(fftBase *fft, Application &app, double& threshold)
 {
-  return time<ConvolutionHermitian>(fft,app);
+  return time<ConvolutionHermitian>(fft,app,threshold);
 }
 
-void fftBase::OptBase::optloop(unsigned int& m0, unsigned int L,
+void fftBase::OptBase::optloop(unsigned int& m, unsigned int L,
                                unsigned int M, Application& app,
                                unsigned int C, unsigned int S,
                                bool centered, unsigned int itmax,
                                bool useTimer, bool inner)
 {
-  //cout << "D=" << D << ", m0=" << m0 << ", L=" << L << ", M=" << M << ", C=" << C << endl;
-  unsigned int i=(inner ? m0 : 0);
+  //cout << "D=" << D << ", m=" << m << ", L=" << L << ", M=" << M << ", C=" << C << endl;
+  unsigned int i=(inner ? m : 0);
   while(i < itmax) {
-    unsigned int p=ceilquotient(L,m0);
+    unsigned int p=ceilquotient(L,m);
     // Effective p:
     unsigned int P=(centered && p == 2*(p/2)) || p == 2 ? (p/2) : p;
-    unsigned int n=ceilquotient(M,m0*P);
+    unsigned int n=ceilquotient(M,m*P);
     //cout<<"inner="<<inner<<", p="<<p<<", P="<<P<<", n="<<n<<", centered="<<centered<<endl;
 
     if(app.m >= 1 && app.m < M && centered && p%2 != 0) {
@@ -228,10 +231,10 @@ void fftBase::OptBase::optloop(unsigned int& m0, unsigned int L,
     // p must be even in the centered case.
     // p != q.
     if(inner && (((!ispure(p) || p == P*n) && !mForced) || (centered && p%2 != 0)))
-      i=m0=nextpuresize(m0+1);
+      i=m=nextpuresize(m+1);
     else {
       bool forceD=app.D > 0 && valid(app.D, p, S);
-      unsigned int q=(inner ? P*n : ceilquotient(M,m0));
+      unsigned int q=(inner ? P*n : ceilquotient(M,m));
       unsigned int Dstart=forceD ? app.D : 1;
       unsigned int Dstop=forceD ? app.D : n;
       unsigned int Dstop2=2*Dstop;
@@ -251,18 +254,18 @@ void fftBase::OptBase::optloop(unsigned int& m0, unsigned int L,
         if(D > Dstop) D=Dstop;
         for(unsigned int inplace=Istart; inplace < Istop; ++inplace)
           if((q == 1 || valid(D,p,S)) && D <= n)
-            check(L,M,C,S,m0,p,q,D,inplace,app,useTimer);
+            check(L,M,C,S,m,p,q,D,inplace,app,useTimer);
       }
       if(mForced) break;
       if(inner) {
-        m0=nextpuresize(m0+1);
-        i=m0;
+        m=nextpuresize(m+1);
+        i=m;
       } else {
-        if(ispure(m0)) {
-          m0=nextfftsize(m0+1);
+        if(ispure(m)) {
+          m=nextfftsize(m+1);
           break;
         }
-        m0=nextfftsize(m0+1);
+        m=nextfftsize(m+1);
         i++;
       }
     }
@@ -281,29 +284,29 @@ void fftBase::OptBase::opt(unsigned int L, unsigned int M, Application& app,
       else
         optloop(app.m,L,M,app,C,S,centered,app.m+1,useTimer,true);
     } else {
-      unsigned int m0=nextfftsize(minsize);
+      unsigned int m=nextfftsize(minsize);
 
-      optloop(m0,L,M,app,C,S,centered,L/2,useTimer,true);
+      optloop(m,L,M,app,C,S,centered,L/2,useTimer,true);
 
-      m0=nextfftsize(L/2);
-      optloop(m0,L,M,app,C,S,centered,itmax,useTimer);
+      m=nextfftsize(L/2);
+      optloop(m,L,M,app,C,S,centered,itmax,useTimer);
 
       if(L > M/2) {
-        m0=nextfftsize(max(M/2,m0));
-        optloop(m0,L,M,app,C,S,centered,itmax,useTimer);
+        m=nextfftsize(max(M/2,m));
+        optloop(m,L,M,app,C,S,centered,itmax,useTimer);
 
-        m0=nextfftsize(max(L,m0));
-        optloop(m0,L,M,app,C,S,centered,itmax,useTimer);
+        m=nextfftsize(max(L,m));
+        optloop(m,L,M,app,C,S,centered,itmax,useTimer);
       } else {
-        m0=nextfftsize(max(L <= M/2 ? L : M/2,m0));
-        optloop(m0,L,M,app,C,S,centered,itmax,useTimer);
+        m=nextfftsize(max(L <= M/2 ? L : M/2,m));
+        optloop(m,L,M,app,C,S,centered,itmax,useTimer);
       }
-      m0=nextfftsize(max(M,m0));
-      optloop(m0,L,M,app,C,S,centered,itmax,useTimer);
+      m=nextfftsize(max(M,m));
+      optloop(m,L,M,app,C,S,centered,itmax,useTimer);
     }
   } else {
-    unsigned int m0=nextfftsize(M);
-    optloop(m0,L,m0,app,C,S,centered,itmax,useTimer);
+    unsigned int m=nextfftsize(M);
+    optloop(m,L,m,app,C,S,centered,itmax,useTimer);
   }
 }
 
@@ -346,6 +349,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   D=1;
   inplace=false;
   T=DBL_MAX;
+  threshold=T;
   if(L > M) {
     cerr << "L=" << L << " is greater than M=" << M << "." << endl;
     exit(-1);
