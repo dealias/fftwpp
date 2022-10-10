@@ -318,50 +318,69 @@ public:
 #endif
   }
 
-  void fftLoop(Complex *in, Complex *out, unsigned int N) {
-    if(inplace)
-      for(unsigned int i=0; i < N; ++i)
-        fftNormalized(in,out);
-    else
-      for(unsigned int i=0; i < N; ++i)
-        fft(in,out);
-  }
-
   threaddata time(fftw_plan plan1, fftw_plan planT, Complex *in, Complex *out,
                   unsigned int Threads) {
     utils::statistics S(true),ST(true);
-    fftLoop(in,out,1);
-    threads=Threads;
-    plan=planT;
-    fftLoop(in,out,1);
-    unsigned int N=std::max(utils::ceilquotient(100000,
-                                                (unsigned int) doubles),1u);
-    auto t0=std::chrono::steady_clock::now();
+    utils::statistics medianS(true),medianST(true);
+
     threads=1;
     plan=plan1;
-    fftLoop(in,out,N);
-    auto t1=std::chrono::steady_clock::now();
+    inplace ? fftNormalized(in,out) : fft(in,out);
+
     threads=Threads;
     plan=planT;
-    fftLoop(in,out,N);
-    auto t=std::chrono::steady_clock::now();
-    auto elapsed=std::chrono::duration_cast<std::chrono::nanoseconds>
-      (t1-t0);
-    S.add(elapsed.count());
-    auto Elapsed=std::chrono::duration_cast<std::chrono::nanoseconds>
-      (t-t1);
-    ST.add(Elapsed.count());
-    double median=S.median();
-    double medianT=ST.median();
-    if(median <= medianT) {
+    inplace ? fftNormalized(in,out) : fft(in,out);
+
+    double eps=0.01;
+
+    do {
+      threads=1;
+      plan=plan1;
+      auto t0=std::chrono::steady_clock::now();
+      inplace ? fftNormalized(in,out) : fft(in,out);
+      auto t1=std::chrono::steady_clock::now();
+
+      threads=Threads;
+      plan=planT;
+      auto t2=std::chrono::steady_clock::now();
+      inplace ? fftNormalized(in,out) : fft(in,out);
+      auto t3=std::chrono::steady_clock::now();
+
+      auto elapsed=std::chrono::duration_cast<std::chrono::nanoseconds>
+        (t1-t0);
+      S.add(elapsed.count());
+
+      auto elapsedT=std::chrono::duration_cast<std::chrono::nanoseconds>
+        (t3-t2);
+      ST.add(elapsedT.count());
+
+      if(S.count() > 1) {
+        if(ST.min() >= S.max()) {
+          threads=1;
+          plan=plan1;
+          fftw_destroy_plan(planT);
+          return threaddata(threads,S.median());
+        } else if(S.min() >= ST.max()) {
+          fftw_destroy_plan(plan1);
+          return threaddata(threads,ST.median());
+        }
+      }
+
+      medianS.add(S.median());
+      medianST.add(ST.median());
+
+    } while(medianS.stderror() > eps*medianS.mean() ||
+            medianST.stderror() > eps*medianST.mean());
+
+    if(S.median() <= ST.median()) {
       threads=1;
       plan=plan1;
       fftw_destroy_plan(planT);
+      return threaddata(threads,S.median());
     } else {
-      median=medianT;
       fftw_destroy_plan(plan1);
+      return threaddata(threads,ST.median());
     }
-    return threaddata(threads,median);
   }
 
   virtual threaddata lookup(bool inplace, unsigned int threads) {
