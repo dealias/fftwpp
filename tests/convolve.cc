@@ -186,10 +186,9 @@ double time(fftBase *fft, Application &app, double &threshold)
       (end-begin);
     double t=elapsed.count();
     Stats.add(t);
-    if(t >= threshold) break;
+    if(Stats.count() > 1 && Stats.min() >= threshold) break;
     medianStats.add(Stats.median());
-  } while(medianStats.count() == 1 ||
-          medianStats.stderror() > eps*medianStats.mean());
+  } while(medianStats.stderror() > eps*medianStats.mean());
 
   threshold=min(threshold,Stats.max());
   deleteAlign(F);

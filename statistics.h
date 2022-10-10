@@ -95,8 +95,8 @@ public:
   }
 
   double stdev(double var, double f) {
-    double factor=N > f ? f/(N-f) : 0.0;
-    return sqrt(var*factor);
+    if(N <= f) return DBL_MAX;
+    return sqrt(var*f/(N-f));
   }
   double stdev() {
     return stdev(varL+varH,1.0);
