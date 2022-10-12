@@ -163,7 +163,9 @@ public:
   public:
     unsigned int counter=0;
     unsigned int m,q,D;
-    bool inplace,mForced;
+    bool inplace;
+    unsigned int threads;
+    bool mForced;
     typedef std::list<unsigned int> mList;
     mList mlist;
     double threshold;
@@ -171,7 +173,8 @@ public:
 
     virtual double time(unsigned int L, unsigned int M, unsigned int C,
                         unsigned int S, unsigned int m, unsigned int q,
-                        unsigned int D, bool inplace, Application &app)=0;
+                        unsigned int D, bool inplace, unsigned int threads,
+                        Application &app)=0;
 
     virtual bool valid(unsigned int D, unsigned int p, unsigned int S) {
       return D == 1 || S == 1;
@@ -182,7 +185,8 @@ public:
     void check(unsigned int L, unsigned int M,
                unsigned int C, unsigned int S, unsigned int m,
                unsigned int p, unsigned int q, unsigned int D,
-               bool inplace, Application& app, bool useTimer);
+               bool inplace, unsigned int threads, Application& app,
+               bool useTimer);
 
     // Determine the optimal m value for padding L data values to
     // size >= M for an application app.
@@ -475,8 +479,8 @@ public:
 
     double time(unsigned int L, unsigned int M, unsigned int C, unsigned int S,
                 unsigned int m, unsigned int q,unsigned int D,
-                bool inplace, Application &app) {
-      fftPad fft(L,M,C,S,m,q,D,inplace,app.mult,app.threads);
+                bool inplace, unsigned int threads, Application &app) {
+      fftPad fft(L,M,C,S,m,q,D,inplace,app.mult,threads);
       return timePad(&fft,app,threshold);
     }
   };
@@ -511,6 +515,7 @@ public:
     q=opt.q;
     D=opt.D;
     inplace=opt.inplace;
+    threads=opt.threads;
     init();
   }
 
@@ -582,8 +587,8 @@ public:
 
     double time(unsigned int L, unsigned int M, unsigned int C, unsigned int S,
                 unsigned int m, unsigned int q, unsigned int D,
-                bool inplace, Application &app) {
-      fftPadCentered fft(L,M,C,S,m,q,D,inplace,app.mult,app.threads);
+                bool inplace, unsigned int threads, Application &app) {
+      fftPadCentered fft(L,M,C,S,m,q,D,inplace,app.mult,threads);
       return timePad(&fft,app,threshold);
     }
   };
@@ -612,6 +617,7 @@ public:
     q=opt.q;
     D=opt.D;
     inplace=opt.inplace;
+    threads=opt.threads;
     fftPad::init();
     init(fast);
   }
@@ -697,8 +703,8 @@ public:
 
     double time(unsigned int L, unsigned int M, unsigned int C, unsigned int,
                 unsigned int m, unsigned int q, unsigned int D,
-                bool inplace, Application &app) {
-      fftPadHermitian fft(L,M,C,m,q,D,inplace,app.mult,app.threads);
+                bool inplace, unsigned int threads, Application &app) {
+      fftPadHermitian fft(L,M,C,m,q,D,inplace,app.mult,threads);
       return timePadHermitian(&fft,app,threshold);
     }
   };
@@ -723,6 +729,7 @@ public:
     q=opt.q;
     D=opt.D;
     inplace=opt.inplace;
+    threads=opt.threads;
     init();
   }
 

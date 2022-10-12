@@ -249,11 +249,15 @@ void fftBase::OptBase::optloop(unsigned int& m, unsigned int L,
 
       unsigned int Istop=app.I == -1 ? 2 : app.I+1;
 
-      for(unsigned int D=Dstart; D < Dstop2; D *= 2) {
-        if(D > Dstop) D=Dstop;
-        for(unsigned int inplace=Istart; inplace < Istop; ++inplace)
-          if((q == 1 || valid(D,p,S)) && D <= n)
-            check(L,M,C,S,m,p,q,D,inplace,app,useTimer);
+        for(unsigned int D=Dstart; D < Dstop2; D *= 2) {
+          if(D > Dstop) D=Dstop;
+          for(unsigned int inplace=Istart; inplace < Istop; ++inplace)
+            if((q == 1 || valid(D,p,S)) && D <= n) {
+              for(unsigned int multithread=0; multithread < 2; ++multithread) {
+                unsigned int threads=multithread ? app.threads : 1;
+                check(L,M,C,S,m,p,q,D,inplace,threads,app,useTimer);
+              }
+        }
       }
       if(mForced) break;
       if(inner) {
@@ -312,18 +316,20 @@ void fftBase::OptBase::opt(unsigned int L, unsigned int M, Application& app,
 void fftBase::OptBase::check(unsigned int L, unsigned int M,
                              unsigned int C, unsigned int S, unsigned int m,
                              unsigned int p, unsigned int q, unsigned int D,
-                             bool inplace, Application& app, bool useTimer)
+                             bool inplace, unsigned int threads,
+                             Application& app, bool useTimer)
 {
   //cout << "m=" << m << ", p=" << p << ", q=" << q << ", D=" << D << " I=" << inplace << endl;
   if(useTimer) {
-    double t=time(L,M,C,S,m,q,D,inplace,app);
+    double t=time(L,M,C,S,m,q,D,inplace,threads,app);
     if(showOptTimes)
-      cout << "m=" << m << ", p=" << p << ", q=" << q << ", C=" << C << ", S=" << S << ", D=" << D << ", I=" << inplace << ": t=" << t*1.0e-9 << endl;
+      cout << "m=" << m << ", p=" << p << ", q=" << q << ", C=" << C << ", S=" << S << ", D=" << D << ", I=" << inplace << ", threads=" << threads << ": t=" << t*1.0e-9 << endl;
     if(t < T) {
       this->m=m;
       this->q=q;
       this->D=D;
       this->inplace=inplace;
+      this->threads=threads;
       T=t;
     }
   } else {
@@ -335,6 +341,7 @@ void fftBase::OptBase::check(unsigned int L, unsigned int M,
       this->q=q;
       this->D=D;
       this->inplace=inplace;
+      this->threads=threads;
     }
   }
 }
@@ -383,6 +390,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   cout << "S=" << S << endl;
   cout << "D=" << D << endl;
   cout << "I=" << inplace << endl;
+  cout << "threads=" << threads << endl;
   cout << endl;
   cout << "Padding: " << mpL << endl;
 }
