@@ -275,6 +275,7 @@ def check(program, vals, T, tol, verbose):
   vp = Popen(cmd, stdout = PIPE, stderr = PIPE)
   vp.wait()
   prc = vp.returncode
+  comment = ""
 
   if prc == 0:
     out, err = vp.communicate()
