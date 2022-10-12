@@ -349,10 +349,6 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   inplace=false;
   T=DBL_MAX;
   threshold=T;
-  if(L > M) {
-    cerr << "L=" << L << " is greater than M=" << M << "." << endl;
-    exit(-1);
-  }
   if(showOptTimes) cout << "Optimizer Timings:" << endl;
 
   mForced=(app.m >= 1);
@@ -399,21 +395,27 @@ fftBase::~fftBase()
     deleteAlign(ZetaqmS0);
 }
 
-void fftBase::common()
+void fftBase::checkParameters()
 {
+  if(L > M) {
+    cerr << "L=" << L << " is greater than M=" << M << "." << endl;
+    exit(-1);
+  }
+
   if(S < C) {
     cerr << "stride S cannot be less than count C" << endl;
     exit(-1);
   }
+}
 
+void fftBase::common()
+{
   if(q*m < M) {
     cerr << "Invalid parameters: " << endl
          << " q=" << q << " m=" << m << " M=" << M << endl;
     exit(-1);
   }
-
   p=ceilquotient(L,m);
-
   Cm=C*m;
   Sm=S*m;
   n=q/p;

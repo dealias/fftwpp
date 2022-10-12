@@ -153,6 +153,8 @@ protected:
   Complex *ZetaqmS0;
 public:
 
+  void checkParameters();
+
   void common();
 
   void initZetaqm(unsigned int q, unsigned int m);
@@ -223,7 +225,7 @@ public:
           multiplier *mult, unsigned int threads=fftw::maxthreads,
           bool centered=false) :
     ThreadBase(threads), L(L), M(M), C(C),  S(S == 0 ? C : S),
-    mult(mult), centered(centered) {}
+    mult(mult), centered(centered) {checkParameters();}
 
   fftBase(unsigned int L, unsigned int M, unsigned int C, unsigned int S,
           unsigned int m, unsigned int q, unsigned int D, bool inplace,
@@ -231,13 +233,13 @@ public:
           bool centered=false) :
     ThreadBase(threads), L(L), M(M), C(C),  S(S == 0 ? C : S), m(m),
     p(utils::ceilquotient(L,m)), q(q), D(D), inplace(inplace), mult(mult),
-    centered(centered) {}
+    centered(centered) {checkParameters();}
 
   fftBase(unsigned int L, unsigned int M, Application& app,
           unsigned int C=1, unsigned int S=0, bool Explicit=false,
           bool centered=false) :
     ThreadBase(app.threads), L(L), M(M), C(C), S(S == 0 ? C : S),
-    mult(app.mult), centered(centered) {}
+    mult(app.mult), centered(centered) {checkParameters();}
 
   virtual ~fftBase();
 
