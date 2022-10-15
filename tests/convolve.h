@@ -49,6 +49,7 @@ extern bool testError;
 extern bool showOptTimes;
 extern bool Centered;
 extern bool normalized;
+extern bool Tforced;
 
 unsigned int nextfftsize(unsigned int m);
 

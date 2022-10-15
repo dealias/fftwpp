@@ -18,10 +18,11 @@ using namespace Array;
 namespace fftwpp {
 
 bool Output=false;
-bool Centered=false;
-bool normalized=true;
 bool testError=false;
 bool showOptTimes=false;
+bool Centered=false;
+bool normalized=true;
+bool Tforced=false;
 
 #ifdef __SSE2__
 const union uvec sse2_pm={
@@ -253,7 +254,8 @@ void fftBase::OptBase::optloop(unsigned int& m, unsigned int L,
           if(D > Dstop) D=Dstop;
           for(unsigned int inplace=Istart; inplace < Istop; ++inplace)
             if((q == 1 || valid(D,p,S)) && D <= n) {
-              for(unsigned int multithread=0; multithread < 2; ++multithread) {
+              for(unsigned int multithread=Tforced; multithread < 2;
+                  ++multithread) {
                 unsigned int threads=multithread ? app.threads : 1;
                 check(L,M,C,S,m,p,q,D,inplace,threads,app,useTimer);
               }
