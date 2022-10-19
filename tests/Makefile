@@ -1,5 +1,5 @@
 IDIR =../
-
+LDFLAGS=
 # GNU compiler
 ifeq ($(shell $(CXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
 CXXFLAGS+=-Ofast -g -Wall -DNDEBUG
@@ -18,6 +18,8 @@ ifeq ($(shell $(CXX) -v 2>&1 | head -n 1 | head -c 5),clang)
 CXXFLAGS+=-Ofast -g -Wall -DNDEBUG
 CXXFLAGS+=-fomit-frame-pointer -fstrict-aliasing -ffast-math
 CXXFLAGS+=-msse2 -mfpmath=sse -march=native
+#Thread nonsense
+#CXXFLAGS+=-I/opt/local/include/libomp -Xpreprocessor -fopenmp
 endif
 
 #Apple Clang compiler
@@ -46,7 +48,7 @@ ifneq ($(strip $(FFTW_INCLUDE_PATH)),)
 CXXFLAGS+=-I$(FFTW_INCLUDE_PATH)
 endif
 
-LDFLAGS=
+
 ifneq ($(strip $(FFTW_LIB_PATH)),)
 LDFLAGS+=-L$(FFTW_LIB_PATH)
 endif
