@@ -355,6 +355,7 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   m=M;
   q=1;
   D=1;
+  threads=app.threads;
   inplace=false;
   T=DBL_MAX;
   threshold=T;
