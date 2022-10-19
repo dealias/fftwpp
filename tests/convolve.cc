@@ -212,11 +212,13 @@ void fftBase::OptBase::optloop(unsigned int& m, unsigned int L,
                                bool centered, unsigned int itmax,
                                bool useTimer, bool inner)
 {
-  //cout << "D=" << D << ", m=" << m << ", L=" << L << ", M=" << M << ", C=" << C << endl;
   unsigned int i=(inner ? m : 0);
+  // If inner == true, i is an m value and itmax is the largest m value that
+  // we consider. If inner == false, i is a counter starting at zero, and
+  // itmax is maximum number of m values we consider before exiting optloop.
   while(i < itmax) {
     unsigned int p=ceilquotient(L,m);
-    // Effective p:
+    // P is the effective p value
     unsigned int P=(centered && p == 2*(p/2)) || p == 2 ? (p/2) : p;
     unsigned int n=ceilquotient(M,m*P);
     //cout<<"inner="<<inner<<", p="<<p<<", P="<<P<<", n="<<n<<", centered="<<centered<<endl;
@@ -257,6 +259,7 @@ void fftBase::OptBase::optloop(unsigned int& m, unsigned int L,
               for(unsigned int multithread=Tforced; multithread < 2;
                   ++multithread) {
                 unsigned int threads=multithread ? app.threads : 1;
+                cout << "threads=" << threads << endl;
                 check(L,M,C,S,m,p,q,D,inplace,threads,app,useTimer);
               }
         }
