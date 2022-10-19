@@ -70,11 +70,22 @@ void multbinary(Complex **F, unsigned int n, Indices *indices,
 // This multiplication routine is for binary convolutions and takes
 // two real inputs of size n.
 // F0[j] *= F1[j];
-void realmultbinary(Complex **F, unsigned int n, Indices *,
+void realmultbinary(Complex **F, unsigned int n, Indices *indices,
                     unsigned int threads)
 {
   double *F0=(double *) F[0];
   double *F1=(double *) F[1];
+
+#if 0 // Transformed indices are available, if needed.
+  size_t N=indices->size;
+  fftBase *fft=indices->fft;
+  unsigned int r=indices->r;
+  for(unsigned int j=0; j < n; ++j) {
+    for(unsigned int d=0; d < N; ++d)
+      cout << indices->index[N-1-d] << ",";
+    cout << fft->index(r,j) << endl;
+  }
+#endif
 
   PARALLEL(
     for(unsigned int j=0; j < n; ++j)
@@ -256,10 +267,9 @@ void fftBase::OptBase::optloop(unsigned int& m, unsigned int L,
           if(D > Dstop) D=Dstop;
           for(unsigned int inplace=Istart; inplace < Istop; ++inplace)
             if((q == 1 || valid(D,p,S)) && D <= n) {
-              for(unsigned int multithread=Tforced; multithread < 2;
-                  ++multithread) {
-                unsigned int threads=multithread ? app.threads : 1;
-                cout << "threads=" << threads << endl;
+              for(unsigned int pass=app.threads == 1 || Tforced; pass < 2;
+                  ++pass) {
+                unsigned int threads=pass ? app.threads : 1;
                 check(L,M,C,S,m,p,q,D,inplace,threads,app,useTimer);
               }
         }
