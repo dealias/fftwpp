@@ -344,7 +344,10 @@ def getcmd(program, vals, T):
     cmd+=["-L="+str(x.L),"-M="+str(x.M),"-m="+str(x.m),"-D="+str(x.D),"-I="+str(x.I)]
     if not program.mult:
       cmd+=["-S"+str(x.S), "-C"+str(x.C)]
-  cmd+=["-T="+str(T),"-E"]
+  cmd+=["-T="+str(T)]
+  if T > 1:
+    cmd+=["-Tforced"]
+  cmd+=["-E"]
 
   if program.extraArgs != "":
     cmd.append(program.extraArgs)
