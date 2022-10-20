@@ -372,7 +372,6 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   inplace=false;
   T=DBL_MAX;
   threshold=T;
-  if(showOptTimes) cout << "Optimizer Timings:" << endl;
 
   mForced=(app.m >= 1);
 
@@ -380,19 +379,23 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   unsigned int itmax=3;
   opt(L,M,app,C,S,mStart,itmax,Explicit,centered,false);
 
-  if(counter > 1) {
+  if(counter == 0) {
+    cerr << "Optimizer found no valid cases with specified parameters." << endl;
+    cerr << "Using explicit routines with m=" << M << " instead." << endl << endl;
+  } else if(counter > 1) {
+    if(showOptTimes) cout << "Optimizer Timings:" << endl;
     mForced=true;
     for(mList::reverse_iterator r=mlist.rbegin(); r != mlist.rend(); ++r) {
       app.m=*r;
       opt(L,M,app,C,S,mStart,itmax,Explicit,centered);
     }
     if(showOptTimes)
-      cout << endl << "Optimal time: t=" << T*1.0e-9 << endl;
+      cout << endl << "Optimal time: t=" << T*1.0e-9 << endl << endl;
   }
 
   unsigned int p=ceilquotient(L,m);
   unsigned int mpL=m*p-L;
-  cout << endl << "Optimal padding: ";
+  cout << "Optimal padding: ";
   if(p == q)
     cout << "Explicit" << endl;
   else if(mpL > 0)
