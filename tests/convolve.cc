@@ -465,8 +465,8 @@ void fftPad::init()
       Backward=&fftBase::backwardExplicitMany;
     }
     Complex *G=ComplexAlign(Sm);
-    fftm=new mfft1d(m,1,C, S,1, G,G,threads);
-    ifftm=new mfft1d(m,-1,C, S,1, G,G,threads);
+    fftm=new mfft1d(m,1,C, S,1, G);
+    ifftm=new mfft1d(m,-1,C, S,1, G);
     deleteAlign(G);
     dr=D=D0=R=Q=1;
     l=M;
@@ -525,11 +525,11 @@ void fftPad::init()
 
       // L'=p, M'=q, m'=p, p'=1, q'=n
       if(S == C) {
-        fftp=new mfft1d(P,1,Cm, Cm,1, G,G,threads);
-        ifftp=new mfft1d(P,-1,Cm, Cm,1, G,G,threads);
+        fftp=new mfft1d(P,1,Cm, Cm,1, G);
+        ifftp=new mfft1d(P,-1,Cm, Cm,1, G);
       } else {
-        fftp=new mfft1d(P,1,C, Sm,1, G,G,threads);
-        ifftp=new mfft1d(P,-1,C, Sm,1, G,G,threads);
+        fftp=new mfft1d(P,1,C, Sm,1, G);
+        ifftp=new mfft1d(P,-1,C, Sm,1, G);
       }
     } else {
       if(p == 2) {
@@ -579,17 +579,17 @@ void fftPad::init()
     if(D0 == 0) D0=D;
 
     if(C == 1 && S == 1) {
-      fftm=new mfft1d(m,1,d, 1,m, G,H,threads);
-      ifftm=new mfft1d(m,-1,d, 1,m, G,H,threads);
+      fftm=new mfft1d(m,1,d, 1,m, G,H);
+      ifftm=new mfft1d(m,-1,d, 1,m, G,H);
     } else {
-      fftm=new mfft1d(m,1,C, S,1, G,H,threads);
-      ifftm=new mfft1d(m,-1,C, S,1, G,H,threads);
+      fftm=new mfft1d(m,1,C, S,1, G,H);
+      ifftm=new mfft1d(m,-1,C, S,1, G,H);
     }
 
     if(D0 != D) {
       unsigned int x=D0*P;
-      fftm0=new mfft1d(m,1,x, 1,Sm, G,H,threads);
-      ifftm0=new mfft1d(m,-1,x, 1,Sm, G,H,threads);
+      fftm0=new mfft1d(m,1,x, 1,Sm, G,H);
+      ifftm0=new mfft1d(m,-1,x, 1,Sm, G,H);
     } else
       fftm0=NULL;
 
@@ -4107,8 +4107,8 @@ void fftPadHermitian::init()
     Complex *G=ComplexAlign(Ce1);
     double *H=(double *) G;
 
-    crfftm=new mcrfft1d(m,C, C,C, 1,1, G,H,threads);
-    rcfftm=new mrcfft1d(m,C, C,C, 1,1, H,G,threads);
+    crfftm=new mcrfft1d(m,C, C,C, 1,1, G,H);
+    rcfftm=new mrcfft1d(m,C, C,C, 1,1, H,G);
 
     deleteAlign(G);
     dr=D0=R=Q=1;
@@ -4138,8 +4138,8 @@ void fftPadHermitian::init()
         for(unsigned int t=1; t <= p2; ++t)
           Zetaqp[p2*r+t]=expi(r*t*twopibyq);
 
-      fftp=new mfft1d(p2,1,Ce1, Ce1,1, G,G,threads);
-      ifftp=new mfft1d(p2,-1,Ce1, Ce1,1, G,G,threads);
+      fftp=new mfft1d(p2,1,Ce1, Ce1,1, G);
+      ifftp=new mfft1d(p2,-1,Ce1, Ce1,1, G);
     } else { // p=2
       Q=n=q;
       if(C == 1) {
@@ -4156,12 +4156,12 @@ void fftPadHermitian::init()
     if(D0 == 0) D0=D;
 
     if(C == 1) {
-      crfftm=new mcrfft1d(m,p2, 1,1, e1,m, G,H,threads);
-      rcfftm=new mrcfft1d(m,p2, 1,1, m,e1, H,G,threads);
+      crfftm=new mcrfft1d(m,p2, 1,1, e1,m, G,H);
+      rcfftm=new mrcfft1d(m,p2, 1,1, m,e1, H,G);
     } else {
       unsigned int d=C*p2;
-      crfftm=new mcrfft1d(m,d, C,C, 1,1, G,H,threads);
-      rcfftm=new mrcfft1d(m,d, C,C, 1,1, H,G,threads);
+      crfftm=new mcrfft1d(m,d, C,C, 1,1, G,H);
+      rcfftm=new mrcfft1d(m,d, C,C, 1,1, H,G);
     }
 
     if(!inplace)
