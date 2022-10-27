@@ -304,7 +304,7 @@ void fftBase::OptBase::opt(unsigned int L, unsigned int M, Application& app,
     } else {
       unsigned int m=nextfftsize(minsize);
 
-      optloop(m,L,M,app,C,S,centered,L/2,useTimer,true);
+      optloop(m,L,M,app,C,S,centered,max(L/2,32),useTimer,true);
 
       m=nextfftsize(L/2);
       optloop(m,L,M,app,C,S,centered,itmax,useTimer);
