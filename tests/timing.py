@@ -124,15 +124,16 @@ def default_outdir(p):
     outdir=""
     if p == "cconv" or p == "hybridconv":
         outdir = "timings1c"
-    if p == "cconv2":
+    if p == "cconv2" or p == "hybridconv2":
+        print(p)
         outdir = "timings2c"
-    if p == "cconv3":
+    if p == "cconv3" or p == "hybridconv3":
         outdir = "timings3c"
     if p == "conv" or p == "hybridconvh" :
         outdir = "timings1h"
-    if p == "conv2":
+    if p == "conv2" or p == "hybridconvh2":
         outdir = "timings2h"
-    if p == "conv3":
+    if p == "conv3" or p == "hybridconvh3":
         outdir = "timings3h"
     if p == "tconv":
         outdir = "timings1t"
@@ -266,8 +267,18 @@ def main(argv):
         b = 8
 
     hybrid = False
+
+    # For hybrid convolutions.
+    dimension=1
+
     hermitian = False
     ternary = False
+
+    if p == "hybridconv2" or p == "hybridconvh2":
+        dimension=2
+
+    if p == "hybridconv3" or p == "hybridconvh3":
+        dimension=3
 
     if p == "cconv":
         if(runtype == "pruned"):
@@ -514,8 +525,15 @@ def main(argv):
             L = 2*m-1 if hermitian else m
             M = 3*m-2 if hermitian else 2*m
 
-            if appendtofile and L in Ldone:
-                print("problem size", L, "is already done; skipping.")
+            alreadyDone=(dimension == 1 and L in Ldone) or\
+                        (dimension == 2 and L**2 in Ldone) or\
+                        (dimension == 3 and L**3 in Ldone)
+
+            if appendtofile and alreadyDone:
+                if hybrid:
+                    print(f"problem size L={L} is already done; skipping.")
+                else:
+                    print(f"problem size {L} is already done; skipping.")
                 dothism = False
 
             if dothism:
