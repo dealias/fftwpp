@@ -120,25 +120,21 @@ def max_m(p, RAM, runtype):
     print("Error! Failed to determine b.")
     return 0
 
-dimension=1
+
 def default_outdir(p):
     outdir=""
     if p == "cconv" or p == "hybridconv":
         outdir = "timings1c"
     if p == "cconv2" or p == "hybridconv2":
         outdir = "timings2c"
-        dimension = 2
     if p == "cconv3" or p == "hybridconv3":
         outdir = "timings3c"
-        dimension = 3
     if p == "conv" or p == "hybridconvh" :
         outdir = "timings1h"
     if p == "conv2" or p == "hybridconvh2":
         outdir = "timings2h"
-        dimension = 2
     if p == "conv3" or p == "hybridconvh3":
         outdir = "timings3h"
-        dimension = 3
     if p == "tconv":
         outdir = "timings1t"
     if p == "tconv2":
@@ -270,14 +266,15 @@ def main(argv):
     if (b == 0 and RAM == 0):
         b = 8
 
+    dimension=1
     hybrid = False
     hermitian = False
     ternary = False
 
-    if p == "hybridconv2" or p == "hybridconvh2":
+    if p == "cconv2" or p == "conv2" or p == "hybridconv2" or p == "hybridconvh2":
         dimension=2
 
-    if p == "hybridconv3" or p == "hybridconvh3":
+    if p == "cconv3" or p == "conv3" or p == "hybridconv3" or p == "hybridconvh3":
         dimension=3
 
     if p == "cconv":
