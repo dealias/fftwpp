@@ -584,7 +584,7 @@ def main(argv):
                         if hybrid:
                             comment = out.decode()
                             params=collectParams(comment,L,M)
-                            print(params)
+                            #print(params)
                             with open(optFile, "a") as logfile:
                                 logfile.write(params+"\n")
 
