@@ -15,7 +15,7 @@ unsigned int N=0;
 unsigned int nx=0;
 unsigned int ny=0;
 unsigned int mx=4;
-unsigned int my=4;
+unsigned int my=0;
 unsigned int nxp;
 unsigned int nyp;
 bool xcompact=true;
@@ -163,6 +163,8 @@ int main(int argc, char* argv[])
     }
   }
 
+  if(my == 0) my=mx;
+
   nx=hpadding(mx);
   ny=hpadding(my);
 
@@ -226,7 +228,7 @@ int main(int argc, char* argv[])
       T[i]=seconds();
     }
 
-    timings("Implicit",mx,T,N,stats);
+    timings("Implicit",mx*my,T,N,stats);
     cout << endl;
 
     if(Normalized) {
@@ -278,7 +280,7 @@ int main(int argc, char* argv[])
       T[i]=seconds();
     }
 
-    timings(Pruned ? "Pruned" : "Explicit",mx,T,N,stats);
+    timings(Pruned ? "Pruned" : "Explicit",mx*my,T,N,stats);
     cout << endl;
 
     unsigned int offset=nx/2-mx+1;
@@ -313,7 +315,7 @@ int main(int argc, char* argv[])
     C.convolve(h,F[0],F[1]);
     T[0]=seconds();
 
-    timings("Direct",mx,T,1);
+    timings("Direct",mx*my,T,1);
     cout << endl;
 
     if(Output) {

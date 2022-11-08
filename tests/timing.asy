@@ -86,7 +86,7 @@ marker mark3=marker(g3,Draw(Pen(3)+solid));
 pen Lp=fontsize(8pt);
 
 real log2=log(2);
-real[] f(real[] m) {return log2/(1e-9*m^d*d*log(m));}
+real[] f(real[] m) {return log2/(1e-9*m*log(m));}
 
 if(expl) {
   // error bars:
@@ -127,12 +127,10 @@ if(drawerrorbars)
   errorbars(mh,h,0*mh,hh-h,0*mh,h-lh,Pen(1));
 draw(graph(mh,h,h > 0),Pentype(1),Label("hybrid",Pen(1)+Lp),mark1);
 
-string D=d > 1 ? "^"+(string) d : "";
-
 label(dir,point(N),N);
 
 xaxis("$L$",BottomTop,LeftTicks);
-yaxis("time/($L"+D+"\log_2 L"+D+"$) (ns)",LeftRight,RightTicks);
+yaxis("time/($L\log_2 L$) (ns)",LeftRight,RightTicks);
 
 legendlinelength=0.6cm;
 legendmargin=5;

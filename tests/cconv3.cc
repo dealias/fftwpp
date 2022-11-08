@@ -16,8 +16,8 @@ unsigned int nx=0;
 unsigned int ny=0;
 unsigned int nz=0;
 unsigned int mx=4;
-unsigned int my=4;
-unsigned int mz=4;
+unsigned int my=0;
+unsigned int mz=0;
 
 bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
@@ -134,8 +134,8 @@ int main(int argc, char* argv[])
     }
   }
 
-
   if(my == 0) my=mx;
+  if(mz == 0) mz=mx;
 
   nx=cpadding(mx);
   ny=cpadding(my);
@@ -202,7 +202,7 @@ int main(int argc, char* argv[])
     }
 
     cout << endl;
-    timings("Implicit",mx,T,N,stats);
+    timings("Implicit",mx*my*mz,T,N,stats);
 
     if(Direct)
       for(unsigned int i=0; i < mx; i++)
@@ -238,7 +238,7 @@ int main(int argc, char* argv[])
     }
 
     cout << endl;
-    timings(Pruned ? "Pruned" : "Explicit",mx,T,N,stats);
+    timings(Pruned ? "Pruned" : "Explicit",mx*my*mz,T,N,stats);
 
     if(Direct) {
       for(unsigned int i=0; i < mx; i++)
@@ -274,7 +274,7 @@ int main(int argc, char* argv[])
     C.convolve(h,F[0],F[1]);
     T[0]=seconds();
 
-    timings("Direct",mx,T,1);
+    timings("Direct",mx*my*mz,T,1);
 
     if(mx*my*mz < outlimit) {
       for(unsigned int i=0; i < mx; i++) {

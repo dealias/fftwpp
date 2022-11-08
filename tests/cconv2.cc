@@ -15,7 +15,7 @@ unsigned int N=0;
 unsigned int nx=0;
 unsigned int ny=0;
 unsigned int mx=4;
-unsigned int my=4;
+unsigned int my=0;
 
 bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
@@ -203,7 +203,7 @@ int main(int argc, char* argv[])
       T[i]=seconds();
     }
 
-    timings("Implicit",mx,T,N,stats);
+    timings("Implicit",mx*my,T,N,stats);
 
     if(Normalized) {
       double norm=0.25/(mx*my);
@@ -254,7 +254,7 @@ int main(int argc, char* argv[])
     }
 
     cout << endl;
-    timings(Pruned ? "Pruned" : "Explicit",mx,T,N,stats);
+    timings(Pruned ? "Pruned" : "Explicit",mx*my,T,N,stats);
 
     if(Direct) {
       for(unsigned int i=0; i < mx; i++)
@@ -283,7 +283,7 @@ int main(int argc, char* argv[])
     T[0]=seconds();
 
     cout << endl;
-    timings("Direct",mx,T,1);
+    timings("Direct",mx*my,T,1);
 
     if(Output)
       for(unsigned int i=0; i < mx; i++) {

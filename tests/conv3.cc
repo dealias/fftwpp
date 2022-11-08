@@ -16,8 +16,8 @@ unsigned int nx=0;
 unsigned int ny=0;
 unsigned int nz=0;
 unsigned int mx=4;
-unsigned int my=4;
-unsigned int mz=4;
+unsigned int my=0;
+unsigned int mz=0;
 unsigned int nxp;
 unsigned int nyp;
 unsigned int nzp;
@@ -195,6 +195,9 @@ int main(int argc, char* argv[])
     }
   }
 
+  if(my == 0) my=mx;
+  if(mz == 0) mz=mx;
+
   nx=hpadding(mx);
   ny=hpadding(my);
   nz=hpadding(mz);
@@ -252,7 +255,7 @@ int main(int argc, char* argv[])
       T[i]=seconds();
     }
 
-    timings("Implicit",mx,T,N,stats);
+    timings("Implicit",mx*my*mz,T,N,stats);
     cout << endl;
 
     if(Direct) {
@@ -302,7 +305,7 @@ int main(int argc, char* argv[])
       T[i] += seconds();
     }
 
-    timings("Explicit",mx,T,N,stats);
+    timings("Explicit",mx*my*mz,T,N,stats);
     cout << endl;
 
     unsigned int xoffset=nx/2-mx+1;
@@ -347,7 +350,7 @@ int main(int argc, char* argv[])
     C.convolve(h,F[0],F[1]);
     T[0]=seconds();
 
-    timings("Direct",mx,T,1);
+    timings("Direct",mx*my*mz,T,1);
     cout << endl;
 
     if(nxp*nyp*mz < outlimit)
