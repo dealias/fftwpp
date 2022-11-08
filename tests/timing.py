@@ -11,8 +11,8 @@ import shutil
 
 def getParam(name, comment):
   try:
-    param=re.search(r"(?<="+name+"=)\d+",comment).group()
-    return param
+    param=re.findall(r"(?<="+name+"=)\d+",comment)
+    return " ".join(param)
   except:
     print("Could not find "+name)
     return -1
@@ -491,7 +491,7 @@ def main(argv):
             if(appendtofile):
                 with open(filename, "a") as myfile:
                     myfile.write(comment)
-                if hybrid and dimension == 1:
+                if hybrid:
                     with open(optFile,"a") as logfile:
                         logfile.write("#\n"+comment)
             else:
@@ -501,10 +501,18 @@ def main(argv):
                 else:
                     with open(filename, "w") as myfile:
                         myfile.write(comment)
-                    if hybrid and dimension == 1:
+                    if hybrid:
                         with open(optFile,"w") as logfile:
                             logfile.write("# Optimal values for "+p+"\n")
-                            logfile.write("# L M m p q C S D I"+"\n")
+                            if dimension == 1:
+                                logfile.write("# L M m p q C S D I\n")
+                            if dimension == 2:
+                                logfile.write("# L M mx my px py qx qy Cx Cy Sx\
+                                               Sy Dx Dy Ix Iy\n")
+                            if dimension == 3:
+                                logfile.write("# L M mx my mz px py pz qx qy\
+                                               qz Cx Cy Cz Sx Sy Sz Dx Dy Dz\
+                                               Ix Iy Iz\n")
                             logfile.write("#\n"+comment)
 
         for i in range(a,b+1,1 if I == 0 else I):
@@ -573,9 +581,10 @@ def main(argv):
                         logfile.write(err.decode())
 
                     if (prc == 0): # did the process succeed?
-                        if hybrid and dimension == 1:
+                        if hybrid:
                             comment = out.decode()
                             params=collectParams(comment,L,M)
+                            print(params)
                             with open(optFile, "a") as logfile:
                                 logfile.write(params+"\n")
 
