@@ -573,7 +573,7 @@ def main(argv):
                         logfile.write(err.decode())
 
                     if (prc == 0): # did the process succeed?
-                        if hybrid:
+                        if hybrid and dimension == 1:
                             comment = out.decode()
                             params=collectParams(comment,L,M)
                             with open(optFile, "a") as logfile:
