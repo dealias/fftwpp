@@ -491,7 +491,7 @@ def main(argv):
             if(appendtofile):
                 with open(filename, "a") as myfile:
                     myfile.write(comment)
-                if hybrid:
+                if hybrid and dimension == 1:
                     with open(optFile,"a") as logfile:
                         logfile.write("#\n"+comment)
             else:
@@ -501,7 +501,7 @@ def main(argv):
                 else:
                     with open(filename, "w") as myfile:
                         myfile.write(comment)
-                    if hybrid:
+                    if hybrid and dimension == 1:
                         with open(optFile,"w") as logfile:
                             logfile.write("# Optimal values for "+p+"\n")
                             logfile.write("# L M m p q C S D I"+"\n")
