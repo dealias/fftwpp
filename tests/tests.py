@@ -255,7 +255,7 @@ def fillValues(program, minS, testS):
           p=ceilquotient(L,m)
           q=ceilquotient(M,m) if p <= 2 else ceilquotient(M,m*p)*p
           n=q//p
-          Istart=0 if q > 1 else 1
+          Istart=0
           for I in range(Istart,2):
             if C == 1:
               D=Dstart
