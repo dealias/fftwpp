@@ -40,24 +40,23 @@ int main(int argc, char* argv[])
   if(Sx == 0) Sx=Hy;
 
   double *T=new double[K];
+  unsigned int N=max(A,B);
+  Complex **f=new Complex *[N];
 
   Application appx(A,B,multNone,fftw::maxthreads,0,mx,Dx,Ix);
   fftPadCentered fftx(Lx,Mx,appx,Hy,Sx);
+  bool embed=fftx.embed();
+  unsigned int size=embed ? fftx.outputSize() : fftx.inputSize();
+  Complex *F=ComplexAlign(N*size);
   Application appy(A,B,realmultbinary,appx.Threads(),fftx.l,my,Dy,Iy);
   ConvolutionHermitian convolvey(Ly,My,appy);
-  ConvolutionHermitian2 Convolve2(&fftx,&convolvey);
+  ConvolutionHermitian2 Convolve2(&fftx,&convolvey,embed ? F : NULL);
 
 //  ConvolutionHermitian2 Convolve2(Lx,Mx,Ly,My,A,B);
 
-  unsigned int N=max(A,B);
-  Complex **f=new Complex *[N];
-  unsigned int size=fftx.inputSize();
-  Complex *f0=ComplexAlign(N*size);
-  for(unsigned int a=0; a < A; ++a)
-    f[a]=f0+a*size;
-
   for(unsigned int a=0; a < A; ++a) {
-    Complex *fa=f[a];
+    Complex *fa=F+a*size;
+    f[a]=fa;
     for(unsigned int i=0; i < Lx; ++i) {
       for(unsigned int j=0; j < Hy; ++j) {
         int I=Lx % 2 ? i : -1+i;

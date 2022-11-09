@@ -26,6 +26,8 @@ int main(int argc, char* argv[])
   cout << "L=" << L << endl;
   cout << "M=" << M << endl;
 
+  unsigned int H=ceilquotient(L,2);
+
   unsigned int K0=200000000;
   if(K == 0) K=max(K0/M,20);
   if(Output||testError)
@@ -33,22 +35,19 @@ int main(int argc, char* argv[])
   cout << "K=" << K << endl << endl;
 
   double *T=new double[K];
+  unsigned int N=max(A,B);
+  Complex **f=new Complex *[N];
 
   Application app(A,B,realmultbinary,fftw::maxthreads,0,mx,Dx,Ix);
   fftPadHermitian fft(L,M,app);
-
-  unsigned int H=ceilquotient(L,2);
-
-  unsigned int N=max(A,B);
-  Complex **f=new Complex *[N];
   bool embed=fft.embed();
   unsigned int size=embed ? fft.outputSize() : fft.inputSize();
   Complex *F=ComplexAlign(N*size);
-  for(unsigned int a=0; a < A; ++a)
-    f[a]=F+a*size;
+  ConvolutionHermitian Convolve(&fft,A,B,embed ? F : NULL);
 
   for(unsigned int a=0; a < A; ++a) {
-    Complex *fa=f[a];
+    Complex *fa=F+a*size;
+    f[a]=fa;
     if(Output || testError) {
       fa[0]=1.0+a;
       for(unsigned int j=1; j < H; ++j)
@@ -64,7 +63,6 @@ int main(int argc, char* argv[])
     DirectHConvolution C(H);
     C.convolve(h,f[0],f[1]);
   }
-  ConvolutionHermitian Convolve(&fft,A,B,embed ? F : NULL);
 
   if(normalized || testError) {
     for(unsigned int k=0; k < K; ++k) {

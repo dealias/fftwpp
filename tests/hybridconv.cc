@@ -32,22 +32,19 @@ int main(int argc, char* argv[])
   cout << "K=" << K << endl << endl;
 
   double *T=new double[K];
+  unsigned int N=max(A,B);
+  Complex **f=new Complex *[N];
 
   Application app(A,B,multbinary,fftw::maxthreads,0,mx,Dx,Ix);
   fftBase *fft=Centered ? new fftPadCentered(L,M,app) : new fftPad(L,M,app);
-
-  unsigned int N=max(A,B);
-  Complex **f=new Complex *[N];
   bool embed=fft->embed();
   unsigned int size=embed ? fft->outputSize() : fft->inputSize();
   Complex *F=ComplexAlign(N*size);
-  for(unsigned int a=0; a < A; ++a)
-    f[a]=F+a*size;
-
   Convolution Convolve(fft,A,B,embed ? F : NULL);
 
   for(unsigned int a=0; a < A; ++a) {
-    Complex *fa=f[a];
+    Complex *fa=F+a*size;
+    f[a]=fa;
     for(unsigned int j=0; j < L; ++j)
       fa[j]=Output || testError ? Complex(j,(1.0+a)*j+1) : 0.0;
   }

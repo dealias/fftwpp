@@ -37,25 +37,23 @@ int main(int argc, char* argv[])
   if(Sx == 0) Sx=Ly;
 
   double *T=new double[K];
+  unsigned int N=max(A,B);
+  Complex **f=new Complex *[N];
 
   Application appx(A,B,multNone,fftw::maxthreads,0,mx,Dx,Ix);
   fftPad fftx(Lx,Mx,appx,Ly,Sx);
+  bool embed=fftx.embed();
+  unsigned int size=embed ? fftx.outputSize() : fftx.inputSize();
+  Complex *F=ComplexAlign(N*size);
   Application appy(A,B,multbinary,appx.Threads(),fftx.l,my,Dy,Iy);
-
   Convolution convolvey(Ly,My,appy);
-  Convolution2 Convolve2(&fftx,&convolvey);
+  Convolution2 Convolve2(&fftx,&convolvey,embed ? F : NULL);
 
 //  Convolution2 Convolve2(Lx,Mx,Ly,My,A,B);
 
-  unsigned int N=max(A,B);
-  Complex **f=new Complex *[N];
-  unsigned int size=fftx.inputSize();
-  Complex *f0=ComplexAlign(N*size);
-  for(unsigned int a=0; a < A; ++a)
-    f[a]=f0+a*size;
-
   for(unsigned int a=0; a < A; ++a) {
-    Complex *fa=f[a];
+    Complex *fa=F+a*size;
+    f[a]=fa;
     for(unsigned int i=0; i < Lx; ++i) {
       for(unsigned int j=0; j < Ly; ++j) {
         fa[Sx*i+j]=Output || testError ? Complex((1.0+a)*i,j+a) : 0.0;
