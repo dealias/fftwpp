@@ -433,7 +433,7 @@ public:
   }
 
   virtual unsigned int workSizeW() {
-    return q == 1 || inplace ? 0 : outputSize();
+    return inplace ? 0 : outputSize();
   }
 
   // Allow input data to be embedded within output buffer.
@@ -766,7 +766,7 @@ public:
   }
 
   unsigned int workSizeW() {
-    return q == 1 || inplace ? 0 : B*D;
+    return inplace ? 0 : B*D;
   }
 
   unsigned int inputSize() {
@@ -880,6 +880,9 @@ public:
     for(unsigned int i=0; i < N; ++i)
       this->F[i]=F+i*outputSize;
 
+    allocateW=!W && !fft->inplace;
+    W=allocateW ? utils::ComplexAlign(workSizeW) : NULL;
+
     if(q > 1) {
       allocateV=false;
       if(V) {
@@ -889,9 +892,6 @@ public:
           this->V[i]=V+i*size;
       } else
         this->V=NULL;
-
-      allocateW=!W && !fft->inplace;
-      W=allocateW ? utils::ComplexAlign(workSizeW) : NULL;
 
       Pad=fft->Pad;
       (fft->*Pad)(W);
@@ -969,6 +969,12 @@ public:
                 Complex *W0=NULL) {
     for(unsigned int b=start; b < stop; ++b)
       (fft->*Backward)(F[b],f[b],r,W0);
+  }
+
+  void backwardPad(Complex **F, Complex **f, unsigned int r,
+                   unsigned int start, unsigned int stop,
+                   Complex *W0=NULL) {
+    backward(F,f,r,start,stop,W0);
     if(W && W == W0) (fft->*Pad)(W0);
   }
 
