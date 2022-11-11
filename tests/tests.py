@@ -290,6 +290,7 @@ def check(program, vals, T, tol, verbose):
 def checkError(program, comment, cmd, tol, verbose, message):
   boldPassedTest="\033[1mPassed Test:\033[0m"
   boldFailedTest="\033[1mFailed Test:\033[0m"
+  boldWarning="\033[1mWARNING:\033[0m"
   try:
     error=re.search(r"(?<="+message+": )(\w|\d|\.|e|-|\+)*",comment).group()
     if float(error) > tol or error == "nan" or error == "inf":
@@ -300,12 +301,21 @@ def checkError(program, comment, cmd, tol, verbose, message):
       program.failedCases.append(case)
       print()
     else:
-      program.passTest()
-      if verbose:
-        print("\t"+boldPassedTest+" "+message+": "+error)
+      try:
+        program.failTest()
+        warning=re.search(r"(?<=WARNING: )(\S| )*",comment).group()
+        print("\t"+boldWarning+" "+warning)
         case=" ".join(cmd)
         print("\t"+case)
+        program.failedCases.append(case)
         print()
+      except:
+        program.passTest()
+        if verbose:
+          print("\t"+boldPassedTest+" "+message+": "+error)
+          case=" ".join(cmd)
+          print("\t"+case)
+          print()
   except:
     program.failTest()
     print("\t"+boldFailedTest+" "+message+" not found.")
