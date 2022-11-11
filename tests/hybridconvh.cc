@@ -36,18 +36,16 @@ int main(int argc, char* argv[])
 
   double *T=new double[K];
   unsigned int N=max(A,B);
-  Complex **f=new Complex *[N];
 
   Application app(A,B,realmultbinary,fftw::maxthreads,0,mx,Dx,Ix);
   fftPadHermitian fft(L,M,app);
   bool embed=fft.embed();
   unsigned int size=embed ? fft.outputSize() : fft.inputSize();
-  Complex *F=ComplexAlign(N*size);
-  ConvolutionHermitian Convolve(&fft,A,B,embed ? F : NULL);
+  Complex **f=ComplexAlign(N,size);
+  ConvolutionHermitian Convolve(&fft,A,B,embed ? f : NULL);
 
   for(unsigned int a=0; a < A; ++a) {
-    Complex *fa=F+a*size;
-    f[a]=fa;
+    Complex *fa=f[a];
     if(Output || testError) {
       fa[0]=1.0+a;
       for(unsigned int j=1; j < H; ++j)

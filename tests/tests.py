@@ -272,7 +272,7 @@ def check(program, vals, T, tol, verbose):
 
   cmd=getcmd(program,vals,T)
 
-  vp = Popen(cmd, stdout = PIPE, stderr = PIPE)
+  vp = Popen(cmd, stdout = PIPE, stderr = STDOUT)
   vp.wait()
   prc = vp.returncode
   comment = ""

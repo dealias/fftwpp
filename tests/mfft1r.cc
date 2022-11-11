@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
   }
   cout << "N=" << N << endl;
 
-  size_t align=sizeof(Complex);
+  size_t align=ALIGNMENT;
 
   array2<double> f(mx,my,align);
   array2<Complex> g(np,my,align);

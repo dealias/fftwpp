@@ -170,40 +170,36 @@ template<class Convolution>
 double time(fftBase *fft, Application &app, double &threshold)
 {
   unsigned int N=max(app.A,app.B);
-  Complex **f=new Complex *[N];
   unsigned int inputSize=fft->inputSize();
 
   unsigned int size=fft->embed() ? fft->outputSize() : inputSize;
-  Complex *F=ComplexAlign(N*size);
+  Complex **f=ComplexAlign(N,size);
 
   // Initialize entire array to 0 to avoid overflow when timing.
   for(unsigned int a=0; a < app.A; ++a) {
-    Complex *fa=F+a*size;
-    f[a]=fa;
+    Complex *fa=f[a];
     for(unsigned int j=0; j < inputSize; ++j)
       fa[j]=0.0;
   }
 
-  Convolution Convolve(fft,app.A,app.B,fft->embed() ? F : NULL);
+  Convolution Convolve(fft,app.A,app.B,fft->embed() ? f : NULL);
 
   statistics Stats(true);
   statistics medianStats(false);
   double eps=0.02;
 
   do {
-    auto begin=std::chrono::steady_clock::now();
+    seconds();
     Convolve.convolveRaw(f);
-    auto end=std::chrono::steady_clock::now();
-    auto elapsed=std::chrono::duration_cast<std::chrono::nanoseconds>
-      (end-begin);
-    double t=elapsed.count();
+    double t=1e9*seconds();
     Stats.add(t);
     if(Stats.count() > 1 && Stats.min() >= threshold) break;
     medianStats.add(Stats.median());
   } while(medianStats.stderror() > eps*medianStats.mean());
 
   threshold=min(threshold,Stats.max());
-  deleteAlign(F);
+  deleteAlign(f[0]);
+  delete [] f;
   return Stats.median();
 }
 
@@ -4135,8 +4131,10 @@ void fftPadHermitian::init()
     double twopibyq=twopi/q;
     unsigned int p2=p/2;
 
-    b=ceilquotient(p2*Cm,2); // Output block size
-    B=p2*Ce1; // Work block size
+    // Output block size
+    b=align(ceilquotient(p2*Cm,2));
+    // Work block size
+    B=align(p2*Ce1);
 
     if(inplace) b=B;
 
@@ -5163,9 +5161,10 @@ Convolution::~Convolution()
       delete [] V;
   }
 
-  if(F0)
-    utils::deleteAlign(F0);
-  delete [] F;
+  if(allocateF) {
+    utils::deleteAlign(F[0]);
+    delete [] F;
+  }
 
   if(allocate)
     delete fft;

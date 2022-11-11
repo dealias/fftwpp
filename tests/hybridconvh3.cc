@@ -45,25 +45,23 @@ int main(int argc, char* argv[])
 
   double *T=new double[K];
   unsigned int N=max(A,B);
-  Complex **f=new Complex *[N];
 
   Application appx(A,B,multNone,fftw::maxthreads,0,mx,Dx,Ix);
   fftPadCentered fftx(Lx,Mx,appx,Sy == Hz? Ly*Hz : Hz,Sx);
   bool embed=fftx.embed();
   unsigned int size=embed ? fftx.outputSize() : fftx.inputSize();
-  Complex *F=ComplexAlign(N*size);
+  Complex **f=ComplexAlign(N,size);
   Application appy(A,B,multNone,appx.Threads(),fftx.l,my,Dy,Iy);
   fftPadCentered ffty(Ly,My,appy,Hz,Sy);
   Application appz(A,B,realmultbinary,appy.Threads(),ffty.l,mz,Dz,Iz);
   ConvolutionHermitian convolvez(Lz,Mz,appz);
   ConvolutionHermitian2 convolveyz(&ffty,&convolvez);
-  ConvolutionHermitian3 Convolve3(&fftx,&convolveyz,embed ? F : NULL);
+  ConvolutionHermitian3 Convolve3(&fftx,&convolveyz,embed ? f : NULL);
 
 //  ConvolutionHermitian3 Convolve3(Lx,Mx,Ly,My,Lz,Mz,A,B);
 
   for(unsigned int a=0; a < A; ++a) {
-    Complex *fa=F+a*size;
-    f[a]=fa;
+    Complex *fa=f[a];
     for(unsigned int i=0; i < Lx; ++i) {
       for(unsigned int j=0; j < Ly; ++j) {
         for(unsigned int k=0; k < Hz; ++k) {

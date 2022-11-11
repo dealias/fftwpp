@@ -25,6 +25,7 @@ int main(int argc, char* argv[])
   cout << "M=" << M << endl;
 
   if(S == 0) S=C;
+  S=align(S);
 
   Application app(A,B,multbinary,fftw::maxthreads,0,mx,Dx,Ix);
 

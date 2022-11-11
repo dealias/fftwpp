@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
     }
   }
 
-  size_t align=sizeof(Complex);
+  size_t align=ALIGNMENT;
 
   unsigned int nyp=ny/2+1;
 

@@ -177,7 +177,7 @@ int main(int argc, char* argv[])
   }
   cout << "N=" << N << endl;
 
-  size_t align=sizeof(Complex);
+  size_t align=ALIGNMENT;
 
   array2<Complex> h0;
   if(Direct) {

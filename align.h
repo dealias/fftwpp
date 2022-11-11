@@ -89,6 +89,8 @@ inline void deleteAlign(T *v, size_t len)
 
 namespace utils {
 
+extern int ALIGNMENT;
+
 inline unsigned int ceilquotient(unsigned int a, unsigned int b)
 {
   return (a+b-1)/b;
@@ -98,15 +100,34 @@ inline Complex *ComplexAlign(size_t size)
 {
   if(size == 0) return NULL;
   Complex *v;
-  Array::newAlign(v,size,sizeof(Complex));
+  Array::newAlign(v,size,ALIGNMENT);
+  return v;
+}
+
+// Return a contiguous array v of n aligned buffers of length size.
+// Deallocate with deleteAlign(v[0]); delete v;
+inline Complex **ComplexAlign(unsigned int n, size_t size)
+{
+  if(n == 0 || size == 0) return NULL;
+  Complex **v=new Complex*[n];
+  unsigned int Size=ALIGNMENT*ceilquotient(size,ALIGNMENT);
+  Complex *B=ComplexAlign((n-1)*Size+size);
+  for(unsigned int i=0; i < n; ++i)
+    v[i]=B+i*Size;
   return v;
 }
 
 inline double *doubleAlign(size_t size)
 {
   double *v;
-  Array::newAlign(v,size,sizeof(Complex));
+  Array::newAlign(v,size,ALIGNMENT);
   return v;
+}
+
+// Extend n*sizeof(Complex) to a multiple of ALIGNMENT
+inline unsigned int align(unsigned int n)
+{
+  return ceilquotient(n*sizeof(Complex),ALIGNMENT)*ALIGNMENT/sizeof(Complex);
 }
 
 template<class T>

@@ -33,18 +33,16 @@ int main(int argc, char* argv[])
 
   double *T=new double[K];
   unsigned int N=max(A,B);
-  Complex **f=new Complex *[N];
 
   Application app(A,B,multbinary,fftw::maxthreads,0,mx,Dx,Ix);
   fftBase *fft=Centered ? new fftPadCentered(L,M,app) : new fftPad(L,M,app);
   bool embed=fft->embed();
   unsigned int size=embed ? fft->outputSize() : fft->inputSize();
-  Complex *F=ComplexAlign(N*size);
-  Convolution Convolve(fft,A,B,embed ? F : NULL);
+  Complex **f=ComplexAlign(N,size);
+  Convolution Convolve(fft,A,B,embed ? f : NULL);
 
   for(unsigned int a=0; a < A; ++a) {
-    Complex *fa=F+a*size;
-    f[a]=fa;
+    Complex *fa=f[a];
     for(unsigned int j=0; j < L; ++j)
       fa[j]=Output || testError ? Complex(j,(1.0+a)*j+1) : 0.0;
   }

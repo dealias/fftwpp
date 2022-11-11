@@ -175,7 +175,7 @@ inline void usageHybrid(bool fft=false)
   if(fft)
     std::cerr << "-S s\t\t use stride s between padded FFTs (defaults to C)" << std::endl;
   else
-    std::cerr << "-S n\t\t use statistics type n (defaults to MEDIAN)" << std::endl;
+    std::cerr << "-S n\t\t use statistics type n (defaults to 0: MEDIAN)" << std::endl;
   std::cerr << "-T n\t\t number n of threads" << std::endl;
 }
 

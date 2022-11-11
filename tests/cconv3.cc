@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
   }
   cout << "N=" << N << endl;
 
-  size_t align=sizeof(Complex);
+  size_t align=ALIGNMENT;
 
   array3<Complex> h0;
   if(Direct) h0.Allocate(mx,my,mz,align);

@@ -100,7 +100,7 @@ int main(int argc, char* argv[])
 
   cout << "threads=" << fftw::maxthreads << endl;
 
-  size_t align=sizeof(Complex);
+  size_t align=ALIGNMENT;
 
   array3<Complex> f(mx,my,mz,align);
   Complex *pg=inplace ? f() : ComplexAlign(mx*my*mz);

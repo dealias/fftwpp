@@ -211,7 +211,7 @@ int main(int argc, char* argv[])
   }
   cout << "N=" << N << endl;
 
-  size_t align=sizeof(Complex);
+  size_t align=ALIGNMENT;
   nxp=Explicit ? nx : 2*mx-xcompact;
   nyp=Explicit ? ny : 2*my-ycompact;
   nzp=Explicit ? nz/2+1 : mz+!zcompact;

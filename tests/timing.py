@@ -168,7 +168,7 @@ def main(argv):
     -P<path to executable>
     -g<grep string>
     -N<int> Number of tests to perform
-    -S<int> Type of statistics (default 3=MEDIAN)
+    -S<int> Type of statistics (default 0=MEDIAN)
     -e: erase existing timing data
     -c<string>: extra commentary for output file.
     -v: verbose output
@@ -195,7 +195,7 @@ def main(argv):
     rname = ""   # output grep string
     N = 0        # number of tests
     appendtofile = True
-    stats = 3
+    stats = 0
     path = "."
     verbose = False
     extracomment = ""
@@ -224,7 +224,7 @@ def main(argv):
         elif opt in ("-A"):
             A += [str(arg)]
         elif opt in ("-B"):
-            B += [str(arg)]
+            B = str(arg).split(" ");
         elif opt in ("-E"):
             E += [str(arg)]
         elif opt in ("-e"):

@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
   }
 
 
-  size_t align=sizeof(Complex);
+  size_t align=ALIGNMENT;
 
   array1<Complex> f(m,align);
 

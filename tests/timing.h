@@ -7,7 +7,7 @@
 #include <iostream>
 #include <fstream>
 
-enum timing_algorithm {WRITETOFILE = -1, MEAN, MIN, MAX, MEDIAN, P90, P80, P50};
+enum timing_algorithm {WRITETOFILE = -1, MEDIAN, MEAN, MIN, MAX, P90, P80, P50};
 
 inline double median(double *T, unsigned int N) // TODO: Replace with selection algorithm
 {
@@ -20,6 +20,8 @@ inline double value(double *T, unsigned int N, int algorithm)
 {
   switch(algorithm) {
     case WRITETOFILE:
+    case MEDIAN:
+      return median(T,N);
     case MEAN: {
       double sum=0.0;
       for(unsigned int i=0; i < N; ++i)
@@ -42,8 +44,6 @@ inline double value(double *T, unsigned int N, int algorithm)
       }
       return max;
     }
-    case MEDIAN:
-      return median(T,N);
     case P90: {
       std::sort(T,T+N);
       unsigned int start=(int)ceil(N*0.05);

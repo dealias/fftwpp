@@ -139,7 +139,7 @@ int main(int argc, char* argv[])
     exit(1);
   }
 
-  size_t align=sizeof(Complex);
+  size_t align=ALIGNMENT;
   array2<Complex> h0;
   if(Direct) h0.Allocate(mx,my,align);
   nxp=Explicit ? nx : (Implicit ? 2*mx : 2*mx-1);
