@@ -302,8 +302,8 @@ def checkError(program, comment, cmd, tol, verbose, message):
       print()
     else:
       try:
-        program.failTest()
         warning=re.search(r"(?<=WARNING: )(\S| )*",comment).group()
+        program.failTest()
         print("\t"+boldWarning+" "+warning)
         case=" ".join(cmd)
         print("\t"+case)
