@@ -1302,7 +1302,7 @@ public:
   void subconvolution(Complex **F, unsigned int C,
                       unsigned int stride, unsigned int rx,
                       unsigned int offset=0) {
-    unsigned int D=r == 0 ? fftx->D0 : fftx->D;
+    unsigned int D=rx == 0 ? fftx->D0 : fftx->D;
     PARALLEL(
       for(unsigned int i=0; i < C; ++i) {
         unsigned int t=ThreadBase::get_thread_num0();
@@ -1684,7 +1684,7 @@ public:
   void subconvolution(Complex **F, unsigned int C,
                       unsigned int stride, unsigned int rx,
                       unsigned int offset=0) {
-    unsigned int D=r == 0 ? fftx->D0 : fftx->D;
+    unsigned int D=rx == 0 ? fftx->D0 : fftx->D;
     PARALLEL(
       for(unsigned int i=0; i < C; ++i) {
         unsigned int t=ThreadBase::get_thread_num0();
