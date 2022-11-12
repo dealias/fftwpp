@@ -272,7 +272,7 @@ int main(int argc, char* argv[])
       T[i]=seconds();
     }
 
-    timings("Implicit",mx*my*mz,T,N,stats);
+    timings("Implicit",(2*mx-1)*(2*my-1)*(2*mz-1),T,N,stats);
     cout << endl;
 
     if(Normalized) {
@@ -324,7 +324,7 @@ int main(int argc, char* argv[])
       T[i] += seconds();
     }
 
-    timings("Explicit",mx*my*mz,T,N,stats);
+    timings("Explicit",(2*mx-1)*(2*my-1)*(2*mz-1),T,N,stats);
     cout << endl;
 
     unsigned int xoffset=nx/2-mx+1;
@@ -362,7 +362,7 @@ int main(int argc, char* argv[])
     C.convolve(h,F[0],F[1]);
     T[0]=seconds();
 
-    timings("Direct",mx*my*mz,T,1);
+    timings("Direct",(2*mx-1)*(2*my-1)*(2*mz-1),T,1);
     cout << endl;
 
     if(nxp*nyp*mz < outlimit)

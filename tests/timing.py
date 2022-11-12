@@ -300,9 +300,6 @@ def main(argv):
 
     if p == "conv3":
         hermitian = True
-        if(runtype != "implicit"):
-            print(p + " has no " + r + " option")
-            dorun = False
 
     if p == "tconv":
         ternary = True
@@ -515,7 +512,7 @@ def main(argv):
         for i in range(a,b+1,1 if I == 0 else I):
             if I != 0:
                 m=i
-            elif not hermitian or runtype == "implicit": #or hybrid:
+            elif not hermitian or runtype == "implicit":# or hybrid:
                 m = int(pow(2,i))
             else:
                 if not ternary:

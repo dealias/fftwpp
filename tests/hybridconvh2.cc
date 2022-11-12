@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
   }
 
   cout << endl;
-  timings("Hybrid",Lx*Hy,T,K,stats);
+  timings("Hybrid",Lx*Ly,T,K,stats);
   cout << endl;
 
   if(Output) {
