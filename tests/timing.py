@@ -155,7 +155,7 @@ def main(argv):
     -a<start>
     -b<stop>
     -I<increment (if not testing powers of 2)>
-    -p<cconv,hybridconv,cconv2,cconv3,conv,hybridconv,conv2,conv3,tconv,tconv2>
+    -p<hybridconv,hybridconv2,hybridconv3,hybridconvh,hybridconvh2,hybridconvh3,cconv,cconv2,cconv3,conv,conv2,conv3,tconv,tconv2>
     -T<number of threads>
     -A<quoted arg list for timed program>
     -B<pre-commands (eg srun)>
@@ -292,7 +292,7 @@ def main(argv):
             print(p + " has no pruned option")
             dorun = False
 
-    if p == "hybridconvh":
+    if p == "hybridconvh" || p == "hybridconvh2" || p == "hybridconvh3":
         hermitian = True
 
     if p == "conv2":
