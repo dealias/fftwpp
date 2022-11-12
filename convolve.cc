@@ -433,8 +433,8 @@ void fftBase::common()
     exit(-1);
   }
   p=ceilquotient(L,m);
-  Cm=C*m;
-  Sm=S*m;
+  Cm=C*(size_t) m;
+  Sm=S*(size_t) m;
   n=q/p;
   M=m*q;
   Pad=&fftBase::padNone;

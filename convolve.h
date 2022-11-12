@@ -135,7 +135,7 @@ public:
   unsigned int dr; // r increment
   unsigned int D;  // number of residues stored in F at a time
   unsigned int D0; // remainder
-  unsigned int Cm,Sm;
+  size_t Cm,Sm;
   unsigned int b;  // total block size, including stride
   unsigned int l;  // block size of a single FFT
   bool inplace;
