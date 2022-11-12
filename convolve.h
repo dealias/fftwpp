@@ -29,8 +29,6 @@
 
 namespace fftwpp {
 
-using namespace std; // Temporary
-
 extern const double twopi;
 
 // Constants used for initialization and testing.
@@ -115,8 +113,8 @@ public:
       multithread(n);
       this->threads=innerthreads;
     }
-    cout << "Requesting " << this->threads << " threads." << endl;
-    cout << endl;
+    std::cout << "Requesting " << this->threads << " threads." << std::endl;
+    std::cout << std::endl;
   };
 };
 
@@ -221,8 +219,8 @@ public:
   };
 
   void invalid () {
-    cerr << "Invalid parameters: " << endl
-         << " D=" << D << " p=" << p << " C=" << C << endl;
+    std::cerr << "Invalid parameters: " << std::endl
+         << " D=" << D << " p=" << p << " C=" << C << std::endl;
     exit(-1);
   }
 
@@ -453,7 +451,7 @@ public:
 
   double report(Application& app) {
     double median=time(app)*1.0e-9;
-    cout << "median=" << median << endl;
+    std::cout << "median=" << median << std::endl;
     return median;
   }
 };
@@ -761,7 +759,7 @@ public:
   }
 
   unsigned int noutputs(unsigned int r) {
-    cerr << "For Hermitian transforms, use noutputs() instead of noutputs(unsigned int r)." << endl;
+    std::cerr << "For Hermitian transforms, use noutputs() instead of noutputs(unsigned int r)." << std::endl;
     exit(-1);
   }
 
@@ -877,7 +875,7 @@ public:
     unsigned int workSizeW=fft->workSizeW();
     inputSize=fft->inputSize();
 
-    unsigned int N=max(A,B);
+    unsigned int N=std::max(A,B);
     allocateF=!F;
     this->F=allocateF ? utils::ComplexAlign(N,outputSize) : F;
 
@@ -1574,12 +1572,12 @@ public:
     Sy=ffty->S;
 
     if(Sx < Ly*Sy) {
-      cout << "Sx cannot be less than Ly*Sy" << endl;
+      std::cerr << "Sx cannot be less than Ly*Sy" << std::endl;
       exit(-1);
     }
 
     if(fftx->C != (Sy == Lz ? Ly*Lz : Lz)) {
-      cout << "fftx->C is invalid" << endl;
+      std::cerr << "fftx->C is invalid" << std::endl;
       exit(-1);
     }
 

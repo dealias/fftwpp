@@ -1383,7 +1383,7 @@ void fftPad::backward1(Complex *F0, Complex *f, unsigned int r0, Complex *W)
     unsigned int q2=q/2;
     if(D == 1 || 2*q2 < q) { // q odd, r=0
       residues=1;
-      PARALLEL( // TODO: Check if W == f?
+      PARALLEL(
         for(unsigned int s=0; s < L; ++s)
           f[s]=W[s];
         );
