@@ -4261,6 +4261,8 @@ void fftPadHermitian::backwardExplicit(Complex *F, Complex *f, unsigned int,
 void fftPadHermitian::backwardExplicitMany(Complex *F, Complex *f,
                                            unsigned int, Complex *W)
 {
+  if(W == NULL) W=F;
+
   rcfftm->fft(F,W);
   if(W != f) {
     unsigned int H=ceilquotient(L,2);
