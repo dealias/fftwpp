@@ -217,7 +217,7 @@ void fftBase::OptBase::optloop(unsigned int& m, unsigned int L,
                                unsigned int M, Application& app,
                                unsigned int C, unsigned int S,
                                bool centered, unsigned int itmax,
-                               bool useTimer, bool inner)
+                               bool useTimer, bool Explicit, bool inner)
 {
   unsigned int i=(inner ? m : 0);
   // If inner == true, i is an m value and itmax is the largest m value that
@@ -230,7 +230,7 @@ void fftBase::OptBase::optloop(unsigned int& m, unsigned int L,
     unsigned int n=ceilquotient(M,m*P);
     //cout<<"inner="<<inner<<", p="<<p<<", P="<<P<<", n="<<n<<", centered="<<centered<<endl;
 
-    if(app.m >= 1 && app.m < M && centered && p%2 != 0) {
+    if(!Explicit && app.m >= 1 && app.m < M && centered && p%2 != 0) {
       cerr << "Odd values of p are incompatible with the centered and Hermitian routines." << endl;
       cerr << "Using explicit routines with m=" << M << " instead." << endl;
     }
@@ -288,33 +288,33 @@ void fftBase::OptBase::opt(unsigned int L, unsigned int M, Application& app,
   if(!Explicit) {
     if(mForced) {
       if(app.m >= ceilquotient(L,2))
-        optloop(app.m,L,M,app,C,S,centered,1,useTimer);
+        optloop(app.m,L,M,app,C,S,centered,1,useTimer,false);
       else
-        optloop(app.m,L,M,app,C,S,centered,app.m+1,useTimer,true);
+        optloop(app.m,L,M,app,C,S,centered,app.m+1,useTimer,false,true);
     } else {
       unsigned int m=nextfftsize(minsize);
 
-      optloop(m,L,M,app,C,S,centered,max(L/2,32),useTimer,true);
+      optloop(m,L,M,app,C,S,centered,max(L/2,32),useTimer,false,true);
 
       m=nextfftsize(L/2);
-      optloop(m,L,M,app,C,S,centered,itmax,useTimer);
+      optloop(m,L,M,app,C,S,centered,itmax,useTimer,false);
 
       if(L > M/2) {
         m=nextfftsize(max(M/2,m));
-        optloop(m,L,M,app,C,S,centered,itmax,useTimer);
+        optloop(m,L,M,app,C,S,centered,itmax,useTimer,false);
 
         m=nextfftsize(max(L,m));
-        optloop(m,L,M,app,C,S,centered,itmax,useTimer);
+        optloop(m,L,M,app,C,S,centered,itmax,useTimer,false);
       } else {
         m=nextfftsize(max(L <= M/2 ? L : M/2,m));
-        optloop(m,L,M,app,C,S,centered,itmax,useTimer);
+        optloop(m,L,M,app,C,S,centered,itmax,useTimer,false);
       }
       m=nextfftsize(max(M,m));
-      optloop(m,L,M,app,C,S,centered,itmax,useTimer);
+      optloop(m,L,M,app,C,S,centered,itmax,useTimer,false);
     }
   } else {
     unsigned int m=nextfftsize(M);
-    optloop(m,L,m,app,C,S,centered,itmax,useTimer);
+    optloop(m,L,m,app,C,S,centered,itmax,useTimer,true);
   }
 }
 

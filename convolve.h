@@ -207,7 +207,7 @@ public:
     void optloop(unsigned int& m0, unsigned int L, unsigned int M,
                  Application& app, unsigned int C, unsigned int S,
                  bool centered, unsigned int ubound, bool useTimer,
-                 bool inner=false);
+                 bool Explicit, bool inner=false);
 
     // The default optimizer routine. Used by scan to iterate and check
     // different m values for a given geometry and application.
