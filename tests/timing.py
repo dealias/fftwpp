@@ -292,7 +292,7 @@ def main(argv):
             print(p + " has no pruned option")
             dorun = False
 
-    if p == "hybridconvh" || p == "hybridconvh2" || p == "hybridconvh3":
+    if p == "hybridconvh" or p == "hybridconvh2" or p == "hybridconvh3":
         hermitian = True
 
     if p == "conv2":
