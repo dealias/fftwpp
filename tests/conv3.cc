@@ -27,9 +27,9 @@ bool zcompact=true;
 
 unsigned int threads;
 
-bool Direct=false, Implicit=true, Explicit=false;
-
 unsigned int outlimit=300;
+
+bool Explicit=false;
 
 inline void init(Complex **F,
                  unsigned int mx, unsigned int my, unsigned int mz,
@@ -117,6 +117,11 @@ int main(int argc, char* argv[])
 {
   threads=fftw::maxthreads=get_max_threads();
 
+  bool Direct=false;
+  bool Implicit=true;
+  bool Output=false;
+  bool Normalized=true;
+
   unsigned int A=2; // Number of independent inputs
   unsigned int B=1; // Number of outputs
 
@@ -130,7 +135,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hdeipA:B:N:m:x:y:z:n:T:S:X:Y:Z:");
+    int c = getopt(argc,argv,"hdeipA:B:N:Om:x:y:z:n:T:uS:X:Y:Z:");
     if (c == -1) break;
 
     switch (c) {
@@ -156,6 +161,9 @@ int main(int argc, char* argv[])
       case 'N':
         N=atoi(optarg);
         break;
+      case 'O':
+        Output=true;
+        break;
       case 'm':
         mx=my=mz=atoi(optarg);
         break;
@@ -167,6 +175,9 @@ int main(int argc, char* argv[])
         break;
       case 'z':
         mz=atoi(optarg);
+        break;
+      case 'u':
+        Normalized=false;
         break;
       case 'n':
         N0=atoi(optarg);
@@ -232,7 +243,13 @@ int main(int argc, char* argv[])
   array3<Complex> f(nxp,nyp,nzp,F[0]);
 
   array3<Complex> h0;
-  if(Direct) h0.Allocate(mx,my,mz,align);
+  if(Direct) {
+    h0.Allocate(mx,my,mz,align);
+    if(!Normalized) {
+      cerr << "-u option is incompatible with -d." << endl;
+      exit(-1);
+    }
+  }
 
   double *T=new double[N];
 
@@ -258,6 +275,16 @@ int main(int argc, char* argv[])
     timings("Implicit",mx*my*mz,T,N,stats);
     cout << endl;
 
+    if(Normalized) {
+      double norm=1.0/(27.0*mx*my*mz);
+      for(unsigned int i=!xcompact; i < nxp; ++i) {
+        for(unsigned int j=!ycompact; j < nyp; ++j) {
+          for(unsigned int k=0; k < mz; k++)
+          f[i][j][k] *= norm;
+        }
+      }
+    }
+
     if(Direct) {
       for(unsigned int i=0; i < mx; i++)
         for(unsigned int j=0; j < my; j++)
@@ -265,24 +292,16 @@ int main(int argc, char* argv[])
             h0[i][j][k]=f[i+!xcompact][j+!ycompact][k];
     }
 
-    bool output=nxp*nyp*mz < outlimit;
-    Complex sum=0.0;
-    for(unsigned int i=!xcompact; i < nxp; ++i) {
-      for(unsigned int j=!ycompact; j < nyp; ++j) {
-        for(unsigned int k=0; k < mz; ++k) {
-          Complex v=f[i][j][k];
-          sum += v;
-          if(output)
-            cout << v << "\t";
-        }
-        if(output)
+    if(Output) {
+      for(unsigned int i=!xcompact; i < nxp; ++i) {
+        for(unsigned int j=!ycompact; j < nyp; ++j) {
+          for(unsigned int k=0; k < mz; ++k)
+            cout << f[i][j][k] << "\t";
           cout << endl;
-      }
-      if(output)
+        }
         cout << endl;
+      }
     }
-    cout << "sum=" << sum << endl;
-    cout << endl;
   }
 
   if(Explicit) {
@@ -318,24 +337,17 @@ int main(int argc, char* argv[])
             h0[i][j][k]=f[xoffset+i][yoffset+j][k];
     }
 
-    bool output=2*(mx-1)*2*(my-1)*mz < outlimit;
-    Complex sum=0.0;
-    for(unsigned int i=xoffset; i < xoffset+2*mx-1; i++) {
-      for(unsigned int j=yoffset; j < yoffset+2*my-1; j++) {
-        for(unsigned int k=0; k < mz; ++k) {
-          Complex v=f[i][j][k];
-          sum += v;
-          if(output)
-            cout << v << "\t";
-        }
-        if(output)
+    if(Output) {
+      for(unsigned int i=xoffset; i < xoffset+2*mx-1; i++) {
+        for(unsigned int j=yoffset; j < yoffset+2*my-1; j++) {
+          for(unsigned int k=0; k < mz; ++k)
+            cout << f[i][j][k] << "\t";
           cout << endl;
-      }
-      if(output)
+        }
         cout << endl;
+      }
+      cout << endl;
     }
-    cout << "sum=" << sum << endl;
-    cout << endl;
   }
 
   if(Direct) {

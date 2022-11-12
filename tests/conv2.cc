@@ -247,30 +247,19 @@ int main(int argc, char* argv[])
           h0[i][j]=f[i+!xcompact][j];
     }
 
-    Complex sum=0.0;
-    for(unsigned int i=!xcompact; i < nxp; i++) {
-      for(unsigned int j=0; j < my; j++) {
-        Complex v=f[i][j];
-        sum += v;
-        if(Output)
-          cout << v << "\t";
-      }
-      if(Output)
+    if(Output) {
+      for(unsigned int i=!xcompact; i < nxp; i++) {
+        for(unsigned int j=0; j < my; j++)
+          cout << f[i][j] << "\t";
         cout << endl;
+      }
+      cout << endl;
     }
-    cout << "sum=" << sum << endl;
-    cout << endl;
   }
 
   if(Explicit) {
     unsigned int M=A/2;
     ExplicitHConvolution2 C(nx,ny,mx,my,f,M,Pruned);
-    /*
-    Realmultiplier *mult;
-    if(Normalized) mult=multbinary;
-    else mult=multbinaryUnNormalized;
-    */
-
     cout << "threads=" << C.Threads() << endl << endl;
 
     for(unsigned int i=0; i < N; ++i) {
@@ -291,19 +280,13 @@ int main(int argc, char* argv[])
           h0[i][j]=f[offset+i][j];
     }
 
-    Complex sum=0.0;
-    for(unsigned int i=offset; i < offset+2*mx-1; i++) {
-      for(unsigned int j=0; j < my; j++) {
-        Complex v=f[i][j];
-        sum += v;
-        if(Output)
-          cout << v << "\t";
-      }
-      if(Output)
+    if(Output) {
+      for(unsigned int i=offset; i < offset+2*mx-1; i++) {
+        for(unsigned int j=0; j < my; j++)
+          cout << f[i][j] << "\t";
         cout << endl;
+      }
     }
-    cout << "sum=" << sum << endl;
-    cout << endl;
   }
 
   if(Direct) {

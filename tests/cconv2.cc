@@ -17,8 +17,6 @@ unsigned int ny=0;
 unsigned int mx=4;
 unsigned int my=0;
 
-bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
-
 inline void init(Complex **F, unsigned int nxp, unsigned int nyp, unsigned int A)
 {
   if(A%2 == 0) {
@@ -60,11 +58,15 @@ int main(int argc, char* argv[])
 {
   fftw::maxthreads=get_max_threads();
 
-  unsigned int A=2;
-  unsigned int B=1;
-
+  bool Direct=false;
+  bool Implicit=true;
+  bool Explicit=false;
   bool Output=false;
   bool Normalized=true;
+  bool Pruned=false;
+
+  unsigned int A=2;
+  unsigned int B=1;
 
   int stats=0; // Type of statistics used in timing test.
 
@@ -156,7 +158,14 @@ int main(int argc, char* argv[])
 
   size_t align=ALIGNMENT;
   array2<Complex> h0;
-  if(Direct) h0.Allocate(mx,my,align);
+  if(Direct) {
+    if(!Normalized) {
+      cerr << "-u option is incompatible with -d." << endl;
+      exit(-1);
+    }
+
+    h0.Allocate(mx,my,align);
+  }
   int nxp=Explicit ? nx : mx;
   int nyp=Explicit ? ny : my;
 
@@ -212,14 +221,6 @@ int main(int argc, char* argv[])
           f[i][j] *= norm;
     }
 
-    Complex sum=0.0;
-    for(unsigned int i=0; i < mx; i++) {
-      for(unsigned int j=0; j < my; j++) {
-          sum += f[i][j];
-      }
-    }
-    cout << "sum=" << sum << endl;
-
     if(Direct) {
       for(unsigned int i=0; i < mx; i++)
         for(unsigned int j=0; j < my; j++)
@@ -232,8 +233,6 @@ int main(int argc, char* argv[])
           cout << f[i][j] << "\t";
         cout << endl;
       }
-    } else {
-      cout << f[0][0] << endl;
     }
   }
 

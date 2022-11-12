@@ -19,9 +19,6 @@ unsigned int mx=4;
 unsigned int my=0;
 unsigned int mz=0;
 
-bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
-
-
 inline void init(Complex **F,
                  unsigned int nxp, unsigned int nyp, unsigned int nzp,
                  unsigned int A)
@@ -60,6 +57,13 @@ int main(int argc, char* argv[])
 {
   fftw::maxthreads=get_max_threads();
 
+  bool Direct=false;
+  bool Implicit=true;
+  bool Explicit=false;
+  bool Output=false;
+  bool Normalized=true;
+  bool Pruned=false;
+
   unsigned int A=2; // Number of independent inputs
   unsigned int B=1; // Number of independent outputs
 
@@ -73,7 +77,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptA:B:N:m:x:y:z:n:T:S:");
+    int c = getopt(argc,argv,"hdeiptA:B:N:Om:x:y:z:n:T:uS:");
     if (c == -1) break;
 
     switch (c) {
@@ -105,6 +109,9 @@ int main(int argc, char* argv[])
       case 'N':
         N=atoi(optarg);
         break;
+      case 'O':
+        Output=true;
+        break;
       case 'm':
         mx=my=mz=atoi(optarg);
         break;
@@ -116,6 +123,9 @@ int main(int argc, char* argv[])
         break;
       case 'z':
         mz=atoi(optarg);
+        break;
+      case 'u':
+        Normalized=false;
         break;
       case 'n':
         N0=atoi(optarg);
@@ -153,7 +163,13 @@ int main(int argc, char* argv[])
   size_t align=ALIGNMENT;
 
   array3<Complex> h0;
-  if(Direct) h0.Allocate(mx,my,mz,align);
+  if(Direct) {
+    h0.Allocate(mx,my,mz,align);
+    if(!Normalized) {
+      cerr << "-u option is incompatible with -d." << endl;
+      exit(-1);
+    }
+  }
 
   int nxp=Explicit ? nx : mx;
   int nyp=Explicit ? ny : my;
@@ -204,21 +220,22 @@ int main(int argc, char* argv[])
     cout << endl;
     timings("Implicit",mx*my*mz,T,N,stats);
 
+    if(Normalized) {
+      double norm=0.125/(mx*my*mz);
+      for(unsigned int i=0; i < mx; i++)
+        for(unsigned int j=0; j < my; j++)
+          for(unsigned int k=0; k < mz; k++)
+          f[i][j][k] *= norm;
+    }
+
     if(Direct)
       for(unsigned int i=0; i < mx; i++)
         for(unsigned int j=0; j < my; j++)
           for(unsigned int k=0; k < mz; k++)
             h0[i][j][k]=f[i][j][k];
 
-    Complex sum=0.0;
-      for(unsigned int i=0; i < mx; i++)
-        for(unsigned int j=0; j < my; j++)
-          for(unsigned int k=0; k < mz; k++)
-            sum += f[i][j][k];
-    cout << endl;
-    if(mx*my*mz < outlimit)
+    if(Output)
       cout << f;
-    cout << endl << "sum=" << sum << endl;
   }
 
   if(Explicit) {
