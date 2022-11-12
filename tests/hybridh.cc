@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
       double *Fr=(double *) (F+fft.b*d);
       unsigned int offset=noutputs*d;
       for(unsigned int k=0; k < noutputs; ++k) {
-        unsigned int i=fft.index(r,k+offset);
+        unsigned int i=fft.Index(r,k+offset);
         error += abs2(Fr[k]-F2r[i]);
         norm += abs2(F2r[i]);
         if(Output) {
@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
       unsigned int offset=noutputs*d;
       for(unsigned int k=0; k < noutputs; ++k) {
         unsigned int K=k+offset;
-        Fr[k]=F2r[fft.index(r,K)];
+        Fr[k]=F2r[fft.Index(r,K)];
       }
     }
     fft.backward(F,h,r,W0);
