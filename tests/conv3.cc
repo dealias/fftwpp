@@ -266,13 +266,13 @@ int main(int argc, char* argv[])
 
     for(unsigned int i=0; i < N; ++i) {
       init(F,mx,my,mz,nxp,nyp,nzp,A,xcompact,ycompact,zcompact);
-      seconds();
+     double t0=nanoseconds();
       C.convolve(F,mult);
 //      C.convolve(f,g);
-      T[i]=seconds();
+      T[i]=nanoseconds()-t0;
     }
 
-    timings("Implicit",(2*mx-1)*(2*my-1)*(2*mz-1),T,N,stats);
+    timings("Implicit",(2*mx-1)*(2*my-1)*mz,T,N,stats);
     cout << endl;
 
     if(Normalized) {
@@ -312,19 +312,20 @@ int main(int argc, char* argv[])
     array3<Complex> g(nxp,nyp,nzp,F[1]);
 
     for(unsigned int i=0; i < N; ++i) {
-      seconds();
+      double t0=nanoseconds();
       f=0.0;
       g=0.0;
-      T[i]=seconds();
+      double t1=nanoseconds();
+      double sum=t1-t0;
       init(F,mx,my,mz,nxp,nyp,nzp,A,true,true,true,false);
-      T[i] -= seconds();
+      sum -= nanoseconds()-t1;
       init(F,mx,my,mz,nxp,nyp,nzp,A,true,true,true);
-      seconds();
+      double t2=nanoseconds();
       C.convolve(F,F+M);
-      T[i] += seconds();
+      T[i]=sum+nanoseconds()-t2;
     }
 
-    timings("Explicit",(2*mx-1)*(2*my-1)*(2*mz-1),T,N,stats);
+    timings("Explicit",(2*mx-1)*(2*my-1)*mz,T,N,stats);
     cout << endl;
 
     unsigned int xoffset=nx/2-mx+1;
@@ -358,11 +359,11 @@ int main(int argc, char* argv[])
 
     DirectHConvolution3 C(mx,my,mz);
     init(F,mx,my,mz,nxp,nyp,mz,A,true,true,true);
-    seconds();
+    double t0=nanoseconds();
     C.convolve(h,F[0],F[1]);
-    T[0]=seconds();
+    T[0]=nanoseconds()-t0;
 
-    timings("Direct",(2*mx-1)*(2*my-1)*(2*mz-1),T,1);
+    timings("Direct",(2*mx-1)*(2*my-1)*mz,T,1);
     cout << endl;
 
     if(nxp*nyp*mz < outlimit)

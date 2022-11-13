@@ -146,9 +146,9 @@ int main(int argc, char* argv[])
 
     for(unsigned int i=0; i < N; ++i) {
       init(f);
-      seconds();
+      double t0=nanoseconds();
       transpose.transpose(f(),g());
-      T[i]=seconds();
+      T[i]=nanoseconds()-t0;
     }
 
     timings("transpose",mx,T,N,stats);
@@ -160,4 +160,3 @@ int main(int argc, char* argv[])
 
   return 0;
 }
-

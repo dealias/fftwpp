@@ -101,10 +101,10 @@ int main(int argc, char* argv[])
 
     for(unsigned int i=0; i < N; ++i) {
       init(f);
-      seconds();
+      double t0=nanoseconds();
       Forward2.fft(f);
       Backward2.fft(f);
-      T[i]=0.5*seconds();
+      T[i]=0.5*nanoseconds()-t0;
       Backward2.Normalize(f);
     }
     timings("fft2d, in-place",mx,T,N,stats);
@@ -117,10 +117,10 @@ int main(int argc, char* argv[])
 
     for(unsigned int i=0; i < N; ++i) {
       init(f);
-      seconds();
+      double t0=nanoseconds();
       Forward2.fft(f,g);
       Backward2.fft(g,f);
-      T[i]=0.5*seconds();
+      T[i]=0.5*nanoseconds()-t0;
       Backward2.Normalize(f);
     }
     timings("fft2d, out-of-place",mx,T,N,stats);
@@ -139,7 +139,7 @@ int main(int argc, char* argv[])
 
     for(unsigned int i=0; i < N; ++i) {
       init(f);
-      seconds();
+      double t0=nanoseconds();
 
       Forwardy.fft(f);
       Txy.transpose(f());
@@ -148,7 +148,7 @@ int main(int argc, char* argv[])
       Backwardx.fft(f);
       Tyx.transpose(f());
       Backwardy.fft(f);
-      T[i]=0.5*seconds();
+      T[i]=0.5*nanoseconds()-t0;
       Backwardx.Normalize(f);
       Backwardy.Normalize(f);
     }
@@ -168,7 +168,7 @@ int main(int argc, char* argv[])
 
     for(unsigned int i=0; i < N; ++i) {
       init(f);
-      seconds();
+      double t0=nanoseconds();
 
       Forwardy.fft(f,g);
       Txy.transpose(g(),f());
@@ -177,7 +177,7 @@ int main(int argc, char* argv[])
       Backwardx.fft(g,f);
       Tyx.transpose(f(),g());
       Backwardy.fft(g,f);
-      T[i]=0.5*seconds();
+      T[i]=0.5*nanoseconds()-t0;
       Backwardx.Normalize(f);
       Backwardy.Normalize(f);
     }
@@ -197,7 +197,7 @@ int main(int argc, char* argv[])
 
     for(unsigned int i=0; i < N; ++i) {
       init(f);
-      seconds();
+      double t0=nanoseconds();
 
       Forwardy.fft(f);
       Txy.transpose(f());
@@ -209,7 +209,7 @@ int main(int argc, char* argv[])
       Backwardx.fft(f);
       Tyx.transpose(f());
       Backwardy.fft(f);
-      T[i]=0.5*seconds();
+      T[i]=0.5*nanoseconds()-t0;
       Backwardx.Normalize(f);
       Backwardy.Normalize(f);
     }
@@ -229,7 +229,7 @@ int main(int argc, char* argv[])
 
     for(unsigned int i=0; i < N; ++i) {
       init(f);
-      seconds();
+      double t0=nanoseconds();
 
       Forwardy.fft(f,g);
       Txy.transpose(g(),f());
@@ -242,7 +242,7 @@ int main(int argc, char* argv[])
       Backwardx.fft(g,f);
       Tyx.transpose(f(),g());
       Backwardy.fft(g,f);
-      T[i]=0.5*seconds();
+      T[i]=0.5*nanoseconds()-t0;
       Backwardx.Normalize(f);
       Backwardy.Normalize(f);
     }
@@ -259,14 +259,14 @@ int main(int argc, char* argv[])
 
     for(unsigned int i=0; i < N; ++i) {
       init(f);
-      seconds();
+      double t0=nanoseconds();
 
       Forwardy.fft(f);
       Forwardx.fft(f);
 
       Backwardx.fft(f);
       Backwardy.fft(f);
-      T[i]=0.5*seconds();
+      T[i]=0.5*nanoseconds()-t0;
       Backwardx.Normalize(f);
       Backwardy.Normalize(f);
     }
@@ -284,14 +284,14 @@ int main(int argc, char* argv[])
 
     for(unsigned int i=0; i < N; ++i) {
       init(f);
-      seconds();
+      double t0=nanoseconds();
 
       Forwardy.fft(f,g);
       Forwardx.fft(g,f);
 
       Backwardx.fft(f,g);
       Backwardy.fft(g,f);
-      T[i]=0.5*seconds();
+      T[i]=0.5*nanoseconds()-t0;
       Backwardx.Normalize(f);
       Backwardy.Normalize(f);
     }
@@ -312,4 +312,3 @@ int main(int argc, char* argv[])
 
   return 0;
 }
-

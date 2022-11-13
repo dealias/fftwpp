@@ -7,6 +7,8 @@
 #include <iostream>
 #include <fstream>
 
+const double unit=1.0e-9; // default unit is 1 nanosecond
+
 enum timing_algorithm {WRITETOFILE = -1, MEDIAN, MEAN, MIN, MAX, P90, P80, P50};
 
 inline double median(double *T, unsigned int N) // TODO: Replace with selection algorithm
@@ -125,11 +127,11 @@ inline void timings(const char* text, unsigned int m, double *T,
     myfile << m << "\t";
     myfile << N << "\t";
     for(unsigned int i=0; i < N; ++i)
-      myfile << T[i] << "\t";
+      myfile << T[i]*unit << "\t";
     myfile << "\n";
   }
 
-  double avg=value(T,N,algorithm);
+  double avg=value(T,N,algorithm)*unit;
   stdev(T,N,lower,upper,algorithm);
   timings(text,m,N,avg,lower,upper);
 }

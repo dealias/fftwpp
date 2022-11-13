@@ -68,15 +68,15 @@ int main(int argc, char* argv[])
 
   if(normalized || testError) {
     for(unsigned int k=0; k < K; ++k) {
-      seconds();
+      double t0=nanoseconds();
       Convolve2.convolve(f);
-      T[k]=seconds();
+      T[k]=nanoseconds()-t0;
     }
   } else {
     for(unsigned int k=0; k < K; ++k) {
-      seconds();
+      double t0=nanoseconds();
       Convolve2.convolveRaw(f);
-      T[k]=seconds();
+      T[k]=nanoseconds()-t0;
     }
   }
 

@@ -77,10 +77,10 @@ int main(int argc, char* argv[])
 
   if(r == -1 || r == 0) {
     for(int i=0; i < N; ++i) {
-      seconds();
+      double t0=nanoseconds();
       Forward.fft(f);
       Backward.fft(f);
-      T[i]=0.5*seconds();
+      T[i]=0.5*nanoseconds()-t0;
       Backward.Normalize(f);
     }
 
@@ -89,10 +89,10 @@ int main(int argc, char* argv[])
 
   if(r == -1 || r == 1) {
     for(int i=0; i < N; ++i) {
-      seconds();
+      double t0=nanoseconds();
       Forward0.fft(f,g);
       Backward0.fft(g,f);
-      T[i]=0.5*seconds();
+      T[i]=0.5*nanoseconds()-t0;
       Backward0.Normalize(f);
     }
 

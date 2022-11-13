@@ -29,6 +29,7 @@
 #include <cerrno>
 #include <map>
 #include <typeinfo>
+#include <chrono>
 
 #ifndef _OPENMP
 #ifndef FFTWPP_SINGLE_THREAD
@@ -78,7 +79,6 @@ inline int get_max_threads()
 typedef std::complex<double> Complex;
 #endif
 
-#include "seconds.h"
 #include "statistics.h"
 #include "align.h"
 

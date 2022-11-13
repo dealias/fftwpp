@@ -81,13 +81,19 @@ inline int gettimeofday(struct timeval *tv, struct timezone *tz)
 
 namespace utils {
 
-// thread-safe; return number of seconds since initialization
-inline double totalseconds()
+// thread-safe; return number of nanoseconds since initialization
+inline double nanoseconds()
 {
   static auto begin=std::chrono::steady_clock::now();
   auto end=std::chrono::steady_clock::now();
   auto elapsed=std::chrono::duration_cast<std::chrono::nanoseconds> (end-begin);
-  return elapsed.count()*1.0e-9;
+  return elapsed.count();
+}
+
+// thread-safe; return number of seconds since initialization
+inline double totalseconds()
+{
+  return nanoseconds()*1.0e-9;
 }
 
 // not thread-safe; return number of seconds since last call

@@ -144,10 +144,10 @@ int main(int argc, char* argv[])
     }
     for(unsigned int i=0; i < N; ++i) {
       init(e,f,g,M);
-      seconds();
+      double t0=nanoseconds();
       C.convolve(E,F,G);
 //      C.convolve(e,f,g);
-      T[i]=seconds();
+      T[i]=nanoseconds()-t0;
     }
 
     timings("Implicit",m,T,N,stats);
@@ -167,9 +167,9 @@ int main(int argc, char* argv[])
     ExplicitHTConvolution C(n,m,f);
     for(unsigned int i=0; i < N; ++i) {
       init(e,f,g);
-      seconds();
+      double t0=nanoseconds();
       C.convolve(e,f,g);
-      T[i]=seconds();
+      T[i]=nanoseconds()-t0;
     }
 
     timings("Explicit",m,T,N,stats);
@@ -183,9 +183,9 @@ int main(int argc, char* argv[])
     DirectHTConvolution C(m);
     init(e,f,g);
     Complex *h=ComplexAlign(m);
-    seconds();
+    double t0=nanoseconds();
     C.convolve(h,e,f,g);
-    T[0]=seconds();
+    T[0]=nanoseconds()-t0;
 
     timings("Direct",m,T,1);
 

@@ -224,10 +224,10 @@ int main(int argc, char* argv[])
 
     for(unsigned int i=0; i < N; ++i) {
       init(F,m,A);
-      seconds();
+      double t0=nanoseconds();
       C.convolve(F,mult);
 //    C.convolve(F[0],F[1]);
-      T[i]=seconds();
+      T[i]=nanoseconds()-t0;
     }
 
     timings("Implicit",m,T,N,stats);
@@ -245,8 +245,7 @@ int main(int argc, char* argv[])
           cout << F[b][i] << endl;
         cout << endl;
       }
-    } else
-      cout << f[0] << endl;
+    }
 
     if(Test || Direct) {
       for(unsigned int b=0; b < B; ++b) {
@@ -265,10 +264,10 @@ int main(int argc, char* argv[])
     ExplicitConvolution C(n,m,F[0]);
     for(unsigned int i=0; i < N; ++i) {
       init(F,m,A);
-      seconds();
+      double t0=nanoseconds();
       C.convolve(F,mult);
 //      C.convolve(F[0],F[1]);
-      T[i]=seconds();
+      T[i]=nanoseconds()-t0;
     }
 
     cout << endl;
@@ -293,12 +292,12 @@ int main(int argc, char* argv[])
       A=2;
     init(F,m,A);
     Complex *h=ComplexAlign(m);
-    seconds();
+    double t0=nanoseconds();
     if(A == 2)
       C.convolve(h,F[0],F[1]);
     if(A == 1)
       C.autoconvolve(h,F[0]);
-    T[0]=seconds();
+    T[0]=nanoseconds()-t0;
 
     cout << endl;
     timings("Direct",m,T,1);
@@ -306,8 +305,6 @@ int main(int argc, char* argv[])
     if(Output)
       for(unsigned int i=0; i < m; i++)
         cout << h[i] << endl;
-    else
-      cout << h[0] << endl;
 
     { // compare implicit or explicit version with direct verion:
       double error=0.0;

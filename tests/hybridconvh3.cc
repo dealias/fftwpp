@@ -84,20 +84,20 @@ int main(int argc, char* argv[])
 
   if(normalized || testError) {
     for(unsigned int k=0; k < K; ++k) {
-      seconds();
+      double t0=nanoseconds();
       Convolve3.convolve(f);
-      T[k]=seconds();
+      T[k]=nanoseconds()-t0;
     }
   } else {
     for(unsigned int k=0; k < K; ++k) {
-      seconds();
+      double t0=nanoseconds();
       Convolve3.convolveRaw(f);
-      T[k]=seconds();
+      T[k]=nanoseconds()-t0;
     }
   }
 
   cout << endl;
-  timings("Hybrid",Lx*Ly*Lz,T,K,stats);
+  timings("Hybrid",Lx*Ly*Hz,T,K,stats);
   cout << endl;
 
   if(Output) {

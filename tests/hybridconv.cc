@@ -59,15 +59,15 @@ int main(int argc, char* argv[])
 
   if(normalized || testError) {
     for(unsigned int k=0; k < K; ++k) {
-      seconds();
+      double t0=nanoseconds();
       Convolve.convolve(f);
-      T[k]=seconds();
+      T[k]=nanoseconds()-t0;
     }
   } else {
     for(unsigned int k=0; k < K; ++k) {
-      seconds();
+      double t0=nanoseconds();
       Convolve.convolveRaw(f);
-      T[k]=seconds();
+      T[k]=nanoseconds()-t0;
     }
   }
 
@@ -105,7 +105,6 @@ int main(int argc, char* argv[])
     cout << "Error: "<< relError << endl;
     deleteAlign(h);
   }
-  delete [] T;
 
   return 0;
 }

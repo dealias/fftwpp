@@ -107,10 +107,10 @@ int main(int argc, char* argv[])
 
     for(unsigned int i = 0; i < N; ++i) {
       init(f);
-      seconds();
+      double t0=nanoseconds();
       Forward3.fft(f);
       Backward3.fft(f);
-      T[i]=0.5*seconds();
+      T[i]=0.5*nanoseconds()-t0;
       Backward3.Normalize(f);
     }
     timings("fft3d, in-place", mx, T, N, stats);
@@ -122,10 +122,10 @@ int main(int argc, char* argv[])
 
     for(unsigned int i = 0; i < N; ++i) {
       init(f);
-      seconds();
+      double t0=nanoseconds();
       Forward3.fft(f,g);
       Backward3.fft(g,f);
-      T[i]=0.5*seconds();
+      T[i]=0.5*nanoseconds()-t0;
       Backward3.Normalize(f);
     }
     timings("fft3d, out-of-place", mx, T, N, stats);
@@ -135,4 +135,3 @@ int main(int argc, char* argv[])
 
   return 0;
 }
-

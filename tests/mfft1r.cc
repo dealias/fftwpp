@@ -143,10 +143,10 @@ int main(int argc, char* argv[])
     double *T=new double[N];
     for(unsigned int i=0; i < N; ++i) {
       init(f,mx,my);
-      seconds();
+      double t0=nanoseconds();
       Forward.fft(f,g);
       Backward.fft(g,f);
-      T[i]=0.5*seconds();
+      T[i]=0.5*nanoseconds()-t0;
       Backward.Normalize(f);
     }
     timings("mfft1r, in-place",mx,T,N,stats);

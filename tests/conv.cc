@@ -255,10 +255,10 @@ int main(int argc, char* argv[])
 
     for(unsigned int i=0; i < N; ++i) {
       init(F,m,A);
-      seconds();
+     double t0=nanoseconds();
       C.convolve(F,mult);
 //      C.convolve(F[0],F[1]);
-      T[i]=seconds();
+      T[i]=nanoseconds()-t0;
     }
 
     timings("Implicit",2*m-1,T,N,stats);
@@ -296,10 +296,10 @@ int main(int argc, char* argv[])
 ;
     for(unsigned int i=0; i < N; ++i) {
       init(F,m,2);
-      seconds();
+     double t0=nanoseconds();
       C.convolve(F,mult);
 //      C.convolve(F[0],F[1]);
-      T[i]=seconds();
+      T[i]=nanoseconds()-t0;
     }
 
     cout << endl;
@@ -321,9 +321,9 @@ int main(int argc, char* argv[])
     DirectHConvolution C(m);
     init(F,m,2);
     Complex *h=ComplexAlign(m);
-    seconds();
+    double t0=nanoseconds();
     C.convolve(h,F[0],F[1]);
-    T[0]=seconds();
+    T[0]=nanoseconds()-t0;
 
     cout << endl;
     timings("Direct",2*m-1,T,1);
