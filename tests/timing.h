@@ -133,7 +133,7 @@ inline void timings(const char* text, unsigned int m, double *T,
 
   double avg=value(T,N,algorithm)*unit;
   stdev(T,N,lower,upper,algorithm);
-  timings(text,m,N,avg,lower,upper);
+  timings(text,m,N,avg,lower*unit,upper*unit);
 }
 
 #endif
