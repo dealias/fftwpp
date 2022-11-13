@@ -501,31 +501,34 @@ def main(argv):
                             if dimension == 1:
                                 logfile.write("# L M m p q C S D I\n")
                             if dimension == 2:
-                                logfile.write("# L M mx my px py qx qy Cx Cy Sx\
-                                               Sy Dx Dy Ix Iy\n")
+                                logfile.write("# L M mx my px py qx qy Cx Cy "+\
+                                              "Sx Sy Dx Dy Ix Iy\n")
                             if dimension == 3:
-                                logfile.write("# L M mx my mz px py pz qx qy\
-                                               qz Cx Cy Cz Sx Sy Sz Dx Dy Dz\
-                                               Ix Iy Iz\n")
+                                logfile.write("# L M mx my mz px py pz qx qy "+\
+                                              "qz Cx Cy Cz Sx Sy Sz Dx Dy Dz "+\
+                                              "Ix Iy Iz\n")
                             logfile.write("#\n"+comment)
 
         for i in range(a,b+1,1 if I == 0 else I):
             if I != 0:
                 m=i
-            elif not hermitian or runtype == "implicit":# or hybrid:
+                L = 2*m if hermitian and hybrid else 2*m-1 if hermitian else m
+                M = 3*m if hermitian and hybrid else 3*m-2 if hermitian else 2*m
+            elif not hermitian or runtype == "implicit" or hybrid:
                 m = int(pow(2,i))
+                L = 2*m if hermitian and hybrid else 2*m-1 if hermitian else m
+                M = 3*m if hermitian and hybrid else 3*m-2 if hermitian else 2*m
             else:
                 if not ternary:
                     m = int((pow(2,i+1)+2) // 3)
                 else:
                     m = int((pow(2,i+2)+3) // 4)
+                L = 2*m-1
+                M = 3*m-2
 
             print(str(i) + " m=" + str(m))
 
             dothism = True
-
-            L = 2*m-1 if hermitian else m
-            M = 3*m-2 if hermitian else 2*m
 
             alreadyDone=(dimension == 1 and L in Ldone) or\
                         (dimension == 2 and L**2 in Ldone) or\
