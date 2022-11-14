@@ -77,7 +77,7 @@ void optionsHybrid(int argc, char* argv[], bool fft)
   };
 
   for (;;) {
-    int c=getopt_long_only(argc,argv,"hC:D:I:K:L:M:ctEOS:T:m:u",
+    int c=getopt_long_only(argc,argv,"hC:D:I:K:L:M:ctEORS:T:m:u",
                            long_options,&option_index);
 
     if (c == -1) break;
@@ -161,6 +161,9 @@ void optionsHybrid(int argc, char* argv[], bool fft)
         break;
       case 'O':
         Output=true;
+        break;
+      case 'R':
+        showRoutines=true;
         break;
       case 'S':
         if(fft)

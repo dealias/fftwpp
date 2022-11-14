@@ -23,6 +23,7 @@ bool showOptTimes=false;
 bool Centered=false;
 bool normalized=true;
 bool Tforced=false;
+bool showRoutines=false;
 
 #ifdef __SSE2__
 const union uvec sse2_pm={
@@ -361,9 +362,11 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   inplace=false;
   T=DBL_MAX;
   threshold=T;
-
   mForced=(app.m >= 1);
 
+  bool sR=showRoutines;
+
+  showRoutines=false;
   unsigned int mStart=2;
   unsigned int itmax=3;
   opt(L,M,app,C,S,mStart,itmax,Explicit,centered,false);
@@ -401,6 +404,8 @@ void fftBase::OptBase::scan(unsigned int L, unsigned int M, Application& app,
   cout << "threads=" << threads << endl;
   cout << endl;
   cout << "Padding: " << mpL << endl;
+
+  showRoutines=sR;
 }
 
 fftBase::~fftBase()
@@ -445,15 +450,22 @@ void fftBase::common()
 void fftPad::init()
 {
   common();
+
+  char const * FR;
+  char const * BR;
+
   if(q == 1) {
     if(C == 1 && S == 1) {
       Forward=&fftBase::forwardExplicit;
       Backward=&fftBase::backwardExplicit;
+      FR="fftBase::forwardExplicit";
+      BR="fftBase::backwardExplicit";
     } else {
       Forward=&fftBase::forwardExplicitMany;
       Backward=&fftBase::backwardExplicitMany;
+      FR="fftBase::forwardExplicitMany";
+      BR="fftBase::backwardExplicitMany";
     }
-
     Complex *G=ComplexAlign(Sm);
     Complex *H=inplace ? G : ComplexAlign(Sm);
 
@@ -503,11 +515,15 @@ void fftPad::init()
         Backward=&fftBase::backwardInner;
         ForwardAll=&fftBase::forwardInnerAll;
         BackwardAll=&fftBase::backwardInnerAll;
+        FR="forwardInner";
+        BR="backwardInner";
       } else {
         Forward=&fftBase::forwardInnerMany;
         Backward=&fftBase::backwardInnerMany;
         ForwardAll=&fftBase::forwardInnerManyAll;
         BackwardAll=&fftBase::backwardInnerManyAll;
+        FR="forwardInnerMany";
+        BR="backwardInnerMany";
       }
       Q=n;
 
@@ -541,11 +557,15 @@ void fftPad::init()
           Backward=&fftBase::backward2;
           ForwardAll=&fftBase::forward2All;
           BackwardAll=&fftBase::backward2All;
+          FR="forward2";
+          BR="backward2";
         } else {
           Forward=&fftBase::forward2Many;
           Backward=&fftBase::backward2Many;
           ForwardAll=&fftBase::forward2ManyAll;
           BackwardAll=&fftBase::backward2ManyAll;
+          FR="forward2Many";
+          BR="backward2Many";
         }
       } else { // p == 1
         if(C == 1 && S == 1) {
@@ -553,6 +573,8 @@ void fftPad::init()
           Backward=&fftBase::backward1;
           ForwardAll=&fftBase::forward1All;
           BackwardAll=&fftBase::backward1All;
+          FR="forward1";
+          BR="backward1";
           if(repad())
             Pad=&fftBase::padSingle;
         } else {
@@ -560,6 +582,8 @@ void fftPad::init()
           Backward=&fftBase::backward1Many;
           ForwardAll=&fftBase::forward1ManyAll;
           BackwardAll=&fftBase::backward1ManyAll;
+          FR="forward1Many";
+          BR="backward1Many";
           if(repad())
             Pad=&fftBase::padMany;
         }
@@ -592,6 +616,14 @@ void fftPad::init()
     deleteAlign(G);
 
     initZetaqm(q,centered && p == 2 ? m+1 : m);
+  }
+  if(showRoutines) {// && (q != 1 || !centered)) {
+    char const* cent=centered ? "Centered" : "";
+    char const* all=overwrite ? "All" : "";
+    cout << endl << "Forwards Routine: " << "fftPad" << cent << "::" << FR << all << endl;
+    cout << "Backwards Routine: " << "fftPad" << cent << "::" << BR << all << endl;
+    if(overwrite)
+      cout << "Note: If A < B, then the 'All' versions aren't used." << endl;
   }
 }
 
@@ -1895,24 +1927,38 @@ void fftPad::backwardInnerMany(Complex *F, Complex *f, unsigned int r,
 void fftPadCentered::init(bool fast)
 {
   ZetaShift=NULL;
+  char const * FR;
+  char const * BR;
   if(q == 1) {
     if(M % 2 == 0 && fast) {
       if(C == 1 && S == 1) {
         Forward=&fftBase::forwardExplicitFast;
         Backward=&fftBase::backwardExplicitFast;
+        FR="forwardExplicitFast";
+        BR="backwardExplicitFast";
       } else {
         Forward=&fftBase::forwardExplicitManyFast;
         Backward=&fftBase::backwardExplicitManyFast;
+        FR="forwardExplicitManyFast";
+        BR="backwardExplicitManyFast";
       }
     } else {
       initShift();
       if(C == 1 && S == 1) {
         Forward=&fftBase::forwardExplicitSlow;
         Backward=&fftBase::backwardExplicitSlow;
+        FR="forwardExplicitSlow";
+        BR="backwardExplicitSlow";
       } else {
         Forward=&fftBase::forwardExplicitManySlow;
         Backward=&fftBase::backwardExplicitManySlow;
+        FR="forwardExplicitManySlow";
+        BR="backwardExplicitManySlow";
       }
+    }
+    if(showRoutines) {
+      cout << endl << "Forwards Routine: " << "fftPadCentered::" << FR << endl;
+      cout << "Backwards Routine: " << "fftPadCentered::" << BR << endl;
     }
   }
 }
@@ -2130,7 +2176,6 @@ void fftPadCentered::forward2(Complex *f, Complex *F0, unsigned int r0,
                               Complex *W)
 {
   if(W == NULL) W=F0;
-
   Complex *W0=W;
   unsigned int dr0=dr;
   mfft1d *fftm1;
@@ -4103,15 +4148,21 @@ void fftPadHermitian::init()
   e=m/2;
   unsigned int e1=e+1;
   unsigned int Ce1=C*e1;
+  char const * FR;
+  char const * BR;
 
   if(q == 1) {
     B=b=Ce1;
     if(C == 1) {
       Forward=&fftBase::forwardExplicit;
       Backward=&fftBase::backwardExplicit;
+      FR="forwardExplicit";
+      BR="backwardExplicit";
     } else {
       Forward=&fftBase::forwardExplicitMany;
       Backward=&fftBase::backwardExplicitMany;
+      FR="forwardExplicitMany";
+      BR="backwardExplicitMany";
     }
 
     Complex *G=ComplexAlign(Ce1);
@@ -4144,6 +4195,8 @@ void fftPadHermitian::init()
     if(p > 2) { // p must be even, only C=1 implemented
       Forward=&fftBase::forwardInner;
       Backward=&fftBase::backwardInner;
+      FR="forwardInner";
+      BR="backwardInner";
       Q=n=q/p2;
 
       Zetaqp0=ComplexAlign((n-1)*p2);
@@ -4159,9 +4212,13 @@ void fftPadHermitian::init()
       if(C == 1) {
         Forward=&fftBase::forward2;
         Backward=&fftBase::backward2;
+        FR="forward2";
+        BR="backward2";
       } else {
         Forward=&fftBase::forward2Many;
         Backward=&fftBase::backward2Many;
+        FR="forward2Many";
+        BR="backward2Many";
       }
     }
 
@@ -4183,6 +4240,10 @@ void fftPadHermitian::init()
     deleteAlign(G);
 
     initZetaqm(p == 2 ? q/2+1 : q,m);
+  }
+  if(showRoutines) {
+    cout << endl << "Forwards Routine: " << "fftPadHermitian::" << FR << endl;
+    cout << "Backwards Routine: " << "fftPadHermitian::" << BR << endl;
   }
 }
 

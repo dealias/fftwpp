@@ -48,6 +48,7 @@ extern bool showOptTimes;
 extern bool Centered;
 extern bool normalized;
 extern bool Tforced;
+extern bool showRoutines;
 
 unsigned int nextfftsize(unsigned int m);
 

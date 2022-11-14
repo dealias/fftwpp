@@ -169,6 +169,7 @@ inline void usageHybrid(bool fft=false)
   std::cerr << "-E\t\t compute relative error using direct convolution (sets K=1 and forces normalization)" << std::endl;
   std::cerr << "-I\t\t (0=out-of-place, 1=in-place) FFTs [by default I=1 only for multiple FFTs]" << std::endl;
   std::cerr << "-O\t\t output result (sets K=1)" << std::endl;
+  std::cerr << "-R\t\t show which forward and backward routines are used" << std::endl;
   std::cerr << "-K n\t\t number n of iterations" << std::endl;
   std::cerr << "-L n\t\t number n of physical data values" << std::endl;
   std::cerr << "-M n\t\t minimal number n of padded data values" << std::endl;
