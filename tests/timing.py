@@ -9,6 +9,9 @@ import os
 import re # regexp package
 import shutil
 
+def ceilquotient(a,b):
+  return -(a//-b)
+
 def getParam(name, comment):
   try:
     param=re.findall(r"(?<="+name+"=)\d+",comment)
@@ -408,18 +411,6 @@ def main(argv):
             print(path + str(p), "does not exist!")
             sys.exit(1)
 
-        if hermitian:
-          if hybrid:
-            pass
-          else:
-            if dimension == 2:
-              cmd.append('-X1')
-              cmd.append('-Y1')
-            if(dimension == 3):
-              cmd.append('-X1')
-              cmd.append('-Y1')
-              cmd.append('-Z1')
-
         if not hybrid and not "fft" in p:
             if(runtype == "explicit"):
                 cmd.append("-e")
@@ -538,6 +529,20 @@ def main(argv):
                 M = 3*m-2
 
             print(str(i) + " m=" + str(m))
+
+            if hermitian:
+              if hybrid:
+                if dimension > 1:
+                    Sx=ceilquotient(L**(dimension-1),1)+2
+                    cmd.append(f'-Sx={Sx}')
+              else:
+                if dimension == 2:
+                  cmd.append('-X1')
+                  cmd.append('-Y1')
+                if dimension == 3 :
+                  cmd.append('-X1')
+                  cmd.append('-Y1')
+                  cmd.append('-Z1')
 
             dothism = True
 
