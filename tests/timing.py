@@ -408,6 +408,17 @@ def main(argv):
             print(path + str(p), "does not exist!")
             sys.exit(1)
 
+        if hermitian:
+          if hybrid:
+            pass
+          else:
+            if dimension == 2:
+              cmd.append('-X1')
+              cmd.append('-Y1')
+            if(dimension == 3):
+              cmd.append('-X1')
+              cmd.append('-Y1')
+              cmd.append('-Z1')
 
         if not hybrid and not "fft" in p:
             if(runtype == "explicit"):
