@@ -458,13 +458,13 @@ void fftPad::init()
     if(C == 1 && S == 1) {
       Forward=&fftBase::forwardExplicit;
       Backward=&fftBase::backwardExplicit;
-      FR="fftBase::forwardExplicit";
-      BR="fftBase::backwardExplicit";
+      FR="forwardExplicit";
+      BR="backwardExplicit";
     } else {
       Forward=&fftBase::forwardExplicitMany;
       Backward=&fftBase::backwardExplicitMany;
-      FR="fftBase::forwardExplicitMany";
-      BR="fftBase::backwardExplicitMany";
+      FR="forwardExplicitMany";
+      BR="backwardExplicitMany";
     }
     Complex *G=ComplexAlign(Sm);
     Complex *H=inplace ? G : ComplexAlign(Sm);
