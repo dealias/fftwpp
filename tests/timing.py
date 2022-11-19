@@ -530,19 +530,24 @@ def main(argv):
 
             print(str(i) + " m=" + str(m))
 
-            if hermitian:
-              if hybrid:
-                if dimension > 1:
-                    Sx=ceilquotient(L**(dimension-1),1)+2
-                    cmd.append(f'-Sx={Sx}')
-              else:
+            options=[]
+            if hybrid:
+              if dimension == 2:
+                Sx=(ceilquotient(L,2) if hermitian else L)+2
+                options.append(f'-Sx={Sx}')
+              if dimension == 3:
+                Sy=(ceilquotient(L,2) if hermitian else L)+2
+                options.append(f'-Sy={Sy}')
+                Sx=Sy*L+2
+                options.append(f'-Sx={Sx}')
+            if hermitian and not hybrid:
                 if dimension == 2:
-                  cmd.append('-X1')
-                  cmd.append('-Y1')
+                  options.append('-X1')
+                  options.append('-Y1')
                 if dimension == 3 :
-                  cmd.append('-X1')
-                  cmd.append('-Y1')
-                  cmd.append('-Z1')
+                  options.append('-X1')
+                  options.append('-Y1')
+                  options.append('-Z1')
 
             dothism = True
 
@@ -561,7 +566,9 @@ def main(argv):
                 if hybrid:
                     mcmd=cmd+["-L"+str(L)]+["-M"+str(M)]
                 else:
-                    mcmd = cmd + ["-m" + str(m)]
+                    mcmd=cmd+["-m" + str(m)]
+
+                mcmd += options
 
                 if dryrun:
                     #print mcmd
