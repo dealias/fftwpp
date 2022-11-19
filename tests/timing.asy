@@ -19,23 +19,11 @@ string base;
 usersetting();
 
 if(base == "") base=getstring("base directory",".");
-if(name == "") name=getstring("program name","cconv");
+string dir=getstring("directory","timings1");
 
-string dir;
 string prunelabel="$y$-pruned";
 
 bool expl=true;
-
-if(name == "conv") dir="timings1h";
-if(name == "cconv") dir="timings1c";
-if(name == "tconv") dir="timings1t";
-if(name == "conv2") dir="timings2h";
-if(name == "cconv2") dir="timings2c";
-if(name == "tconv2") dir="timings2t";
-if(name == "cconv3") {
-  dir="timings3c"; prunelabel="$xz$-pruned"; legendmargin=8;
-}
-if(name == "conv3") dir="timings3h";
 
 real d=1;
 if(find(name,"2") >= 0) d=2;
