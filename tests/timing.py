@@ -124,24 +124,24 @@ def max_m(p, RAM, runtype):
     return 0
 
 
-def default_outdir(p):
+def default_outdir(p,T):
     outdir=""
     if p == "cconv" or p == "hybridconv":
-        outdir = "timings1c"
+        outdir = "timings1"
     if p == "cconv2" or p == "hybridconv2":
-        outdir = "timings2c"
+        outdir = "timings2"
     if p == "cconv3" or p == "hybridconv3":
-        outdir = "timings3c"
+        outdir = "timings3"
     if p == "conv" or p == "hybridconvh" :
-        outdir = "timings1h"
+        outdir = "timingsh1"
     if p == "conv2" or p == "hybridconvh2":
-        outdir = "timings2h"
+        outdir = "timingsh2"
     if p == "conv3" or p == "hybridconvh3":
-        outdir = "timings3h"
+        outdir = "timingsh3"
     if p == "tconv":
         outdir = "timings1t"
     if p == "tconv2":
-        outdir="timings2t"
+        outdir="timingst2"
     if p == "fft1":
         outdir = "timingsf1"
     if p == "mfft1":
@@ -150,7 +150,7 @@ def default_outdir(p):
         outdir = "timingsf2"
     if p == "transpose":
         outdir="transpose2"
-    return outdir
+    return outdir if T == 1 else outdir+".T"+str(T);
 
 def main(argv):
     usage = '''Usage:
@@ -326,7 +326,7 @@ def main(argv):
         runtype = "transpose"
 
     if outdir == "":
-        outdir = default_outdir(p)
+        outdir = default_outdir(p,T)
 
     if outdir == "":
         print("empty outdir: please select a program or specify an outdir (-D)")
