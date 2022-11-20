@@ -172,7 +172,7 @@ int main(int argc, char* argv[])
   cout << "mx=" << mx << ", my=" << my << endl;
 
   if(N == 0) {
-    N=N0/nx/ny;
+    N=N0/(9*mx*my);
     N=max(N,20);
   }
   cout << "N=" << N << endl;
@@ -228,7 +228,7 @@ int main(int argc, char* argv[])
       T[i]=nanoseconds()-t0;
     }
 
-    timings("Implicit",(2*mx-1)*my,T,N,stats);
+    timings("Implicit",(2*mx-1)*(2*my-1),T,N,stats);
     cout << endl;
 
     if(Normalized) {
@@ -269,7 +269,7 @@ int main(int argc, char* argv[])
       T[i]=nanoseconds()-t0;
     }
 
-    timings(Pruned ? "Pruned" : "Explicit",(2*mx-1)*my,T,N,stats);
+    timings(Pruned ? "Pruned" : "Explicit",(2*mx-1)*(2*my-1),T,N,stats);
     cout << endl;
 
     unsigned int offset=nx/2-mx+1;
@@ -298,7 +298,7 @@ int main(int argc, char* argv[])
     C.convolve(h,F[0],F[1]);
     T[0]=nanoseconds()-t0;
 
-    timings("Direct",(2*mx-1)*my,T,1);
+    timings("Direct",(2*mx-1)*(2*my-1),T,1);
     cout << endl;
 
     if(Output) {

@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
 
   Complex *h=NULL;
   if(testError) {
-    h=ComplexAlign(Lx*Ly*Hz);
+    h=ComplexAlign(Lx*Ly*Lz);
     DirectHConvolution3 C(Hx,Hy,Hz,Lx%2,Ly%2,Sx,Sy);
     C.convolve(h,f[0],f[1],false);
   }
@@ -97,7 +97,7 @@ int main(int argc, char* argv[])
   }
 
   cout << endl;
-  timings("Hybrid",Lx*Ly*Hz,T,K,stats);
+  timings("Hybrid",Lx*Ly*Lz,T,K,stats);
   cout << endl;
 
   if(Output) {

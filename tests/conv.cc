@@ -119,7 +119,7 @@ int main(int argc, char* argv[])
   bool Normalized=true;
 
   unsigned int N=0; // Number of iterations.
-  unsigned int N0=200000000; // Nominal number of iterations
+  unsigned int N0=400000000; // Nominal number of iterations
   unsigned int m=11; // Problem size
 
   int stats=MEDIAN; // Type of statistics used in timing test.
@@ -202,8 +202,8 @@ int main(int argc, char* argv[])
   cout << "m=" << m << endl;
 
   if(N == 0) {
-    N=N0/n;
-    N = max(N, 20);
+    N=N0/(3*m);
+    N=max(N,20);
   }
   cout << "N=" << N << endl;
 

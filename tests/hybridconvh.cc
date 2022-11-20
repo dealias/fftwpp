@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
 
   unsigned int H=ceilquotient(L,2);
 
-  unsigned int K0=200000000;
+  unsigned int K0=400000000;
   if(K == 0) K=max(K0/M,20);
   if(Output||testError)
     K=1;

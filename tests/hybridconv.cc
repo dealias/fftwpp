@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
   cout << "L=" << L << endl;
   cout << "M=" << M << endl;
 
-  unsigned int K0=100000000;
+  unsigned int K0=400000000;
   if(K == 0) K=max(K0/M,20);
   if(Output || testError)
     K=1;

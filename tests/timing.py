@@ -150,7 +150,7 @@ def default_outdir(p,T):
         outdir = "timingsf2"
     if p == "transpose":
         outdir="transpose2"
-    return outdir if T == 1 else outdir+".T"+str(T);
+    return outdir+".T"+str(T);
 
 def main(argv):
     usage = '''Usage:
@@ -287,7 +287,6 @@ def main(argv):
 
     if re.search("hybrid",p) is not None:
         hybrid=True
-        runtype=None
 
     if p == "conv":
         hermitian = True
@@ -516,7 +515,7 @@ def main(argv):
                 m=i
                 L = 2*m if hermitian and hybrid else 2*m-1 if hermitian else m
                 M = 3*m if hermitian and hybrid else 3*m-2 if hermitian else 2*m
-            elif not hermitian or runtype == "implicit" or hybrid:
+            elif not hermitian or runtype == "implicit":
                 m = int(pow(2,i))
                 L = 2*m if hermitian and hybrid else 2*m-1 if hermitian else m
                 M = 3*m if hermitian and hybrid else 3*m-2 if hermitian else 2*m
