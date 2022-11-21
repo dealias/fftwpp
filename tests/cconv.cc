@@ -276,8 +276,6 @@ int main(int argc, char* argv[])
     if(Output)
       for(unsigned int i=0; i < m; i++)
         cout << F[0][i] << endl;
-    else
-      cout << F[0][0] << endl;
 
     cout << endl;
 

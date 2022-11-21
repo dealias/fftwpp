@@ -193,9 +193,9 @@ double time(fftBase *fft, Application &app, double &threshold)
     double t0=nanoseconds();
     Convolve.convolveRaw(f);
     Stats.add(nanoseconds()-t0);
-    if(Stats.count() > 1 && Stats.min() >= threshold) break;
+    if(Stats.count() >= 2 && Stats.min() >= threshold) break;
     medianStats.add(Stats.median());
-  } while(medianStats.stderror() > eps*medianStats.mean());
+  } while(Stats.count() < 5 || medianStats.stderror() > eps*medianStats.mean());
 
   threshold=min(threshold,Stats.max());
   deleteAlign(f[0]);
@@ -256,13 +256,8 @@ void fftBase::OptBase::optloop(unsigned int& m, unsigned int L,
         for(unsigned int D=Dstart; D < Dstop2; D *= 2) {
           if(D > Dstop) D=Dstop;
           for(unsigned int inplace=Istart; inplace < Istop; ++inplace)
-            if((q == 1 || valid(D,p,S)) && D <= n) {
-              for(unsigned int pass=app.threads == 1 || Tforced; pass < 2;
-                  ++pass) {
-                unsigned int threads=pass ? app.threads : 1;
-                check(L,M,C,S,m,p,q,D,inplace,threads,app,useTimer);
-              }
-        }
+            if((q == 1 || valid(D,p,S)) && D <= n)
+              check(L,M,C,S,m,p,q,D,inplace,app.threads,app,useTimer);
       }
       if(mForced) break;
       if(inner) {
@@ -625,6 +620,8 @@ void fftPad::init()
     if(overwrite)
       cout << "Note: If A < B, then the 'All' versions aren't used." << endl;
   }
+  if(fftm->Threads() == 1 && !Tforced)
+    threads=1;
 }
 
 fftPad::~fftPad() {
@@ -663,7 +660,7 @@ void fftPad::padMany(Complex *W)
     Complex *F=W+S*s;
     for(unsigned int c=0; c < C; ++c)
       F[c]=0.0;
-  };
+  }
 }
 
 void fftPad::forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W)
@@ -711,7 +708,14 @@ void fftPad::forwardExplicitMany(Complex *f, Complex *F, unsigned int,
           Fs[c]=fs[c];
       });
   }
-  padMany(W);
+
+  PARALLEL(
+    for(unsigned int s=L; s < m; ++s) {
+      Complex *F=W+S*s;
+      for(unsigned int c=0; c < C; ++c)
+        F[c]=0.0;
+    });
+
   fftm->fft(W,F);
 }
 
@@ -4245,6 +4249,8 @@ void fftPadHermitian::init()
     cout << endl << "Forwards Routine: " << "fftPadHermitian::" << FR << endl;
     cout << "Backwards Routine: " << "fftPadHermitian::" << BR << endl;
   }
+  if(crfftm->Threads() == 1 && !Tforced)
+    threads=crfftm->Threads();
 }
 
 fftPadHermitian::~fftPadHermitian()

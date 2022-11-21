@@ -47,6 +47,7 @@ void LoadWisdom()
   }
 }
 
+
 void SaveWisdom()
 {
   ofstream ofWisdom;

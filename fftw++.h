@@ -331,37 +331,37 @@ public:
     plan=planT;
     inplace ? fftNormalized(in,out) : fft(in,out);
 
-    double eps=0.01;
+    double eps=0.02;
 
     do {
+      threads=Threads;
+      plan=planT;
+      auto T0=std::chrono::steady_clock::now();
+      inplace ? fftNormalized(in,out) : fft(in,out);
+      auto T1=std::chrono::steady_clock::now();
+
+      auto elapsedT=std::chrono::duration_cast<std::chrono::nanoseconds>
+        (T1-T0);
+      ST.add(elapsedT.count());
+
       threads=1;
       plan=plan1;
       auto t0=std::chrono::steady_clock::now();
       inplace ? fftNormalized(in,out) : fft(in,out);
       auto t1=std::chrono::steady_clock::now();
 
-      threads=Threads;
-      plan=planT;
-      auto t2=std::chrono::steady_clock::now();
-      inplace ? fftNormalized(in,out) : fft(in,out);
-      auto t3=std::chrono::steady_clock::now();
-
       auto elapsed=std::chrono::duration_cast<std::chrono::nanoseconds>
         (t1-t0);
       S.add(elapsed.count());
 
-      auto elapsedT=std::chrono::duration_cast<std::chrono::nanoseconds>
-        (t3-t2);
-      ST.add(elapsedT.count());
+      if(ST.min() >= S.max()) {
+        fftw_destroy_plan(planT);
+        return threaddata(threads,S.median());
 
-      if(S.count() > 1) {
-        if(ST.min() >= S.max()) {
-          threads=1;
-          plan=plan1;
-          fftw_destroy_plan(planT);
-          return threaddata(threads,S.median());
-        } else if(S.min() >= ST.max()) {
-          fftw_destroy_plan(plan1);
+      if(S.count() >= 5 && S.min() > ST.max()) {
+        threads=Threads;
+        plan=planT;
+         fftw_destroy_plan(plan1);
           return threaddata(threads,ST.median());
         }
       }
@@ -369,15 +369,16 @@ public:
       medianS.add(S.median());
       medianST.add(ST.median());
 
-    } while(medianS.stderror() > eps*medianS.mean() ||
-            medianST.stderror() > eps*medianST.mean());
+    } while(S.count() < 5 ||
+            (medianS.stderror() > eps*medianS.mean() ||
+             medianST.stderror() > eps*medianST.mean()));
 
-    if(S.median() <= ST.median()) {
-      threads=1;
-      plan=plan1;
+    if(medianS.min() <= medianST.max()) {
       fftw_destroy_plan(planT);
       return threaddata(threads,S.median());
     } else {
+      threads=Threads;
+      plan=planT;
       fftw_destroy_plan(plan1);
       return threaddata(threads,ST.median());
     }
@@ -413,15 +414,16 @@ public:
     else data=threaddata(1,0.0);
 
     threads=data.threads > 0 ? data.threads : 1;
+
     planThreads(threads);
     plan=(*planner)(this,in,out);
     if(!plan) noplan();
 
-    fftw_plan planT;
     if(fftw::maxthreads > 1) {
       threads=Threads;
       planThreads(threads);
-      planT=(*planner)(this,in,out);
+      fftw_plan planT=(*planner)(this,in,out);
+      if(!planT) noplan();
 
       if(data.threads == 0) {
         if(planT)
@@ -810,6 +812,7 @@ public:
           Q=M;
           R=0;
           plan=planT1;
+          threads=S1.threads;
         } else {                         // Do the multithreading ourselves
           fftw_destroy_plan(planT1);
           threads=ST.threads;
