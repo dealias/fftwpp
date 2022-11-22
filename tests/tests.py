@@ -356,7 +356,7 @@ def getcmd(program, vals, T):
       cmd+=["-S"+str(x.S), "-C"+str(x.C)]
   cmd+=["-T="+str(T)]
   if T > 1:
-    cmd+=["-Tforced"]
+    cmd+=["-threshold","1"]
   cmd+=["-E"]
 
   if program.extraArgs != "":

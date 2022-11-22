@@ -535,7 +535,7 @@ def main(argv):
                 Sx=(ceilquotient(L,2) if hermitian else L)+2
                 options.append(f'-Sx={Sx}')
               if dimension == 3:
-                Sy=(ceilquotient(L,2) if hermitian else L)+2
+                Sy=(ceilquotient(L,2)+2 if hermitian else L if T > 1 else L+2)
                 options.append(f'-Sy={Sy}')
                 Sx=Sy*L+2
                 options.append(f'-Sx={Sx}')

@@ -30,6 +30,7 @@
 #include <map>
 #include <typeinfo>
 #include <chrono>
+#include <climits>
 
 #ifndef _OPENMP
 #ifndef FFTWPP_SINGLE_THREAD
@@ -64,14 +65,19 @@ inline int get_max_threads()
   if(threads > 1) {                                     \
     _Pragma("omp parallel for num_threads(threads)")    \
       code                                              \
-      } else {                                          \
-    code                                                \
-      }
+      } else {code}
 #else
-#define PARALLEL(code)                          \
-  {                                             \
-    code                                        \
-      }
+#define PARALLELIF(condition,code) {code}
+#endif
+
+#ifndef FFTWPP_SINGLE_THREAD
+#define PARALLELIF(condition,code)                      \
+  if(condition) {                                       \
+    _Pragma("omp parallel for num_threads(threads)")    \
+      code                                              \
+      } else {code}
+#else
+#define PARALLELIF(condition,code) {code}
 #endif
 
 #ifndef __Complex_h__
@@ -83,6 +89,8 @@ typedef std::complex<double> Complex;
 #include "align.h"
 
 namespace fftwpp {
+
+extern unsigned int threshold;
 
 // Obsolete names:
 #define FFTWComplex ComplexAlign
@@ -170,6 +178,8 @@ public:
       rsize=csize=std::max(rsize,csize);
   }
 };
+
+unsigned int Threshold(unsigned int threads);
 
 // Base clase for fft routines
 //
@@ -312,6 +322,8 @@ public:
   }
 
   static void planThreads(unsigned int threads) {
+    if(threshold == UINT_MAX-1)
+      threshold=Threshold(maxthreads);
 #ifndef FFTWPP_SINGLE_THREAD
     omp_set_num_threads(threads);
     fftw_plan_with_nthreads(threads);
