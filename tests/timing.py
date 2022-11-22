@@ -150,7 +150,7 @@ def default_outdir(p,T):
         outdir = "timingsf2"
     if p == "transpose":
         outdir="transpose2"
-    return outdir+".T"+str(T);
+    return outdir+"-T"+str(T);
 
 def main(argv):
     usage = '''Usage:

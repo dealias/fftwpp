@@ -19,7 +19,7 @@ string base;
 usersetting();
 
 if(base == "") base=getstring("base directory",".");
-string dir=getstring("directory","timings1");
+string dir=getstring("directory","timings1-T1");
 
 string prunelabel="$y$-pruned";
 
@@ -127,3 +127,6 @@ attach(legend(),point(NW),17SE+2N);
 real mean(real[] a){return sum(a)/a.length;};
 if(expl)
   write("speedup="+(string)(mean(e)/mean(h)));
+
+shipout(dir);
+erase();
