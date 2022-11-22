@@ -322,8 +322,11 @@ public:
   }
 
   static void planThreads(unsigned int threads) {
-    if(threshold == UINT_MAX-1)
-      threshold=Threshold(maxthreads);
+    if(threads == 1)
+      threshold=UINT_MAX;
+    else
+      if(threshold == UINT_MAX-1)
+        threshold=Threshold(maxthreads);
 #ifndef FFTWPP_SINGLE_THREAD
     omp_set_num_threads(threads);
     fftw_plan_with_nthreads(threads);
