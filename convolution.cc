@@ -227,7 +227,8 @@ pretransform<pretransform4>(Complex **F, unsigned int k, Vec& Zetak)
 template<class T>
 void ImplicitConvolution::pretransform(Complex **F)
 {
-  PARALLEL(
+  PARALLELIF(
+    m > threshold,
     for(unsigned int K=0; K < m; K += s) {
       Complex *ZetaL0=ZetaL-K;
       unsigned int stop=min(K+s,m);
@@ -245,7 +246,8 @@ void ImplicitConvolution::pretransform(Complex **F)
 // multiply by root of unity to prepare and add for inverse FFT for odd modes
 void ImplicitConvolution::posttransform(Complex *f, Complex *u)
 {
-  PARALLEL(
+  PARALLELIF(
+    m > threshold,
     for(unsigned int K=0; K < m; K += s) {
       unsigned int stop=min(K+s,m);
       Complex *ZetaL0=ZetaL-K;
@@ -298,7 +300,8 @@ void ImplicitHConvolution::pretransform(Complex *F, Complex *f1c, Complex *U)
   Vec X=UNPACKL(Zeta,Zeta);
   Vec Y=CONJ(UNPACKH(Zeta,Zeta));
   Vec Zetac1=ZMULT(X,Y,LOAD(ZetaL+c1-s*a));
-  PARALLEL(
+  PARALLELIF(
+    d > threshold,
     for(unsigned int K=0; K <= d; K += s) {
       Complex *ZetaL0=ZetaL-K;
       unsigned int stop=min(K+s,d+1);
@@ -336,8 +339,7 @@ void ImplicitHConvolution::pretransform(Complex *F, Complex *f1c, Complex *U)
         STORE(upc1-k,a-b);
         STORE(fm-k,CONJ(a+b));
       }
-    }
-    );
+    });
 
   if(even) {
     F[c]=Re;
@@ -382,7 +384,8 @@ void ImplicitHConvolution::posttransform(Complex *F, const Complex& w,
   }
 
   unsigned int D=c-d;
-  PARALLEL(
+  PARALLELIF(
+    D > threshold,
     for(unsigned int K=0; K <= D; K += s) {
       Complex *ZetaL0=ZetaL-K;
       unsigned int stop=min(K+s,D+1);
@@ -413,8 +416,7 @@ void ImplicitHConvolution::posttransform(Complex *F, const Complex& w,
         STORE(fmc1+k,CONJ(FA+Mhalf*T)-HSqrt3*FLIP(FB-FC));
         STORE(fm-k,F2);
       }
-    }
-    );
+    });
 
 
   if(d == D+1) {
@@ -577,7 +579,8 @@ void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
 
 void fftpad::expand(Complex *f, Complex *u)
 {
-  PARALLEL(
+  PARALLELIF(
+    m*M > threshold,
     for(unsigned int K=0; K < m; K += s) {
       Complex *ZetaL0=ZetaL-K;
       unsigned int stop=min(K+s,m);
@@ -605,7 +608,8 @@ void fftpad::backwards(Complex *f, Complex *u)
 
 void fftpad::reduce(Complex *f, Complex *u)
 {
-  PARALLEL(
+  PARALLELIF(
+    m*M > threshold,
     for(unsigned int K=0; K < m; K += s) {
       Complex *ZetaL0=ZetaL-K;
       unsigned int stop=min(K+s,m);
@@ -620,8 +624,7 @@ void fftpad::reduce(Complex *f, Complex *u)
         for(unsigned int i=0; i < M; ++i)
           STORE(fk+i,LOAD(fk+i)+ZMULT(X,Y,LOAD(uk+i)));
       }
-    }
-    );
+    });
 }
 
 void fftpad::forwards(Complex *f, Complex *u)
@@ -634,8 +637,11 @@ void fftpad::forwards(Complex *f, Complex *u)
 void fft0pad::expand(Complex *f, Complex *u)
 {
   Complex *fm1stride=f+(m-1)*stride;
-  for(unsigned int i=0; i < M; ++i)
-    u[i]=fm1stride[i];
+  PARALLELIF(
+    M > threshold,
+    for(unsigned int i=0; i < M; ++i)
+      u[i]=fm1stride[i];
+    );
 
   Vec Mhalf=LOAD2(-0.5);
   Vec Mhsqrt3=LOAD2(-hsqrt3);
@@ -673,10 +679,13 @@ void fft0pad::Backwards1(Complex *f, Complex *u)
 {
   Complex *umstride=u+m*stride;
   Complex *fm1stride=f+(m-1)*stride;
-  for(unsigned int i=0; i < M; ++i) {
-    umstride[i]=fm1stride[i]; // Store extra value here.
-    fm1stride[i]=u[i];
-  }
+
+  PARALLELIF(
+    M > threshold,
+    for(unsigned int i=0; i < M; ++i) {
+      umstride[i]=fm1stride[i]; // Store extra value here.
+      fm1stride[i]=u[i];
+    });
   Backwards->fft(fm1stride);
 }
 
@@ -691,8 +700,11 @@ void fft0pad::backwards(Complex *f, Complex *u)
 void fft0pad::reduce(Complex *f, Complex *u)
 {
   Complex *umstride=u+m*stride;
+  PARALLELIF(
+    M > threshold,
   for(unsigned int i=0; i < M; ++i)
     umstride[i]=umstride[i]+f[i]+u[i];
+    );
 
   Vec Mhalf=LOAD2(-0.5);
   Vec HSqrt3=LOAD2(hsqrt3);
@@ -736,11 +748,13 @@ void fft0pad::Forwards1(Complex *f, Complex *u)
   Complex *umstride=u+m*stride;
   unsigned int m1stride=(m-1)*stride;
   Complex *fm1stride=f+m1stride;
+  PARALLELIF(
+    M > threshold,
   for(unsigned int i=0; i < M; ++i) {
     Complex temp=umstride[i];
     umstride[i]=fm1stride[i];
     fm1stride[i]=temp;
-  }
+  });
 }
 
 void fft0pad::forwards(Complex *f, Complex *u)
@@ -755,16 +769,19 @@ void fft0pad::forwards(Complex *f, Complex *u)
 void fft1pad::expand(Complex *f, Complex *u)
 {
   Complex *fmstride=f+m*stride;
+  PARALLELIF(
+    M > threshold,
   for(unsigned int i=0; i < M; ++i) {
     Complex Nyquist=f[i];
     f[i]=fmstride[i]+2.0*Nyquist;
     u[i]=fmstride[i] -= Nyquist;
-  }
+  });
 
   Vec Mhalf=LOAD2(-0.5);
   Vec Mhsqrt3=LOAD2(-hsqrt3);
   unsigned int inc=s;
-  PARALLEL(
+  PARALLELIF(
+    m*M > threshold,
     for(unsigned int K=0; K < m; K += inc) {
       Complex *ZetaL0=ZetaL-K;
       unsigned int stop=min(K+s,m);
@@ -790,8 +807,7 @@ void fft1pad::expand(Complex *f, Complex *u)
           STORE(uk+i,CONJ(A-B));
         }
       }
-    }
-    );
+    });
 }
 
 void fft1pad::Backwards1(Complex *f, Complex *u)
@@ -814,7 +830,8 @@ void fft1pad::reduce(Complex *f, Complex *u)
   Vec HSqrt3=LOAD2(hsqrt3);
 
   unsigned int inc=s;
-  PARALLEL(
+  PARALLELIF(
+    m*M > threshold,
     for(unsigned int K=0; K < m; K += inc) {
       Complex *ZetaL0=ZetaL-K;
       unsigned int stop=min(K+s,m);
@@ -1239,14 +1256,16 @@ void multautocorrelation(Complex **F, unsigned int m,
   Complex* F0=F[0];
 
 #ifdef __SSE2__
-  PARALLEL(
+  PARALLELIF(
+    m > threshold,
     for(unsigned int j=0; j < m; ++j) {
       Complex *p=F0+j;
       STORE(p,ZMULT(LOAD(p),CONJ(LOAD(p))));
     }
     );
 #else
-  PARALLEL(
+  PARALLELIF(
+    m > threshold,
     for(unsigned int j=0; j < m; ++j)
       F0[j] *= conj(F0[j]);
     );
@@ -1270,7 +1289,8 @@ void multcorrelation(Complex **F, unsigned int m,
     }
     );
 #else
-  PARALLEL(
+  PARALLELIF(
+    m > threshold,
     for(unsigned int j=0; j < m; ++j)
       F0[j] *= conj(F1[j]);
     );
@@ -1301,14 +1321,16 @@ void multbinary(Complex **F, unsigned int m,
 #endif
 
 #ifdef __SSE2__
-  PARALLEL(
+  PARALLELIF(
+    m > threshold,
     for(unsigned int j=0; j < m; ++j) {
       Complex *p=F0+j;
       STORE(p,ZMULT(LOAD(p),LOAD(F1+j)));
     }
     );
 #else
-  PARALLEL(
+  PARALLELIF(
+    m > threshold,
     for(unsigned int j=0; j < m; ++j)
       F0[j] *= F1[j];
     );
@@ -1324,14 +1346,16 @@ void multautoconvolution(Complex **F, unsigned int m,
   Complex* F0=F[0];
 
 #ifdef __SSE2__
-  PARALLEL(
+  PARALLELIF(
+    m > threshold,
     for(unsigned int j=0; j < m; ++j) {
       Complex *p=F0+j;
       STORE(p,ZMULT(LOAD(p),LOAD(p)));
     }
     );
 #else
-  PARALLEL(
+  PARALLELIF(
+    m > threshold,
     for(unsigned int j=0; j < m; ++j)
       F0[j] *= F0[j];
     );
@@ -1367,7 +1391,8 @@ void multbinary(double **F, unsigned int m,
 
 #ifdef __SSE2__
   unsigned int m1=m-1;
-  PARALLEL(
+  PARALLELIF(
+    m > threshold,
     for(unsigned int j=0; j < m1; j += 2) {
       double *p=F0+j;
       STORE(p,LOAD(p)*LOAD(F1+j));
@@ -1376,7 +1401,8 @@ void multbinary(double **F, unsigned int m,
       F0[m1] *= F1[m1];
     );
 #else
-  PARALLEL(
+  PARALLELIF(
+    m > threshold,
     for(unsigned int j=0; j < m; ++j)
       F0[j] *= F1[j];
     );
@@ -1395,7 +1421,8 @@ void multbinary2(Complex **F, unsigned int m,
   Complex* F3=F[3];
 
 #ifdef __SSE2__
-  PARALLEL(
+  PARALLELIF(
+    m > threshold,
     for(unsigned int j=0; j < m; ++j) {
       Complex *F0j=F0+j;
       STORE(F0j,ZMULT(LOAD(F0j),LOAD(F2+j))
@@ -1403,7 +1430,8 @@ void multbinary2(Complex **F, unsigned int m,
     }
     );
 #else
-  PARALLEL(
+  PARALLELIF(
+    m > threshold,
     for(unsigned int j=0; j < m; ++j)
       F0[j]=F0[j]*F2[j]+F1[j]*F3[j];
     );
@@ -1423,7 +1451,8 @@ void multbinary2(double **F, unsigned int m,
 
 #ifdef __SSE2__
   unsigned int m1=m-1;
-  PARALLEL(
+  PARALLELIF(
+    m > threshold,
     for(unsigned int j=0; j < m1; j += 2) {
       double *F0j=F0+j;
       STORE(F0j,LOAD(F0j)*LOAD(F2+j)+LOAD(F1+j)*LOAD(F3+j));
@@ -1432,7 +1461,8 @@ void multbinary2(double **F, unsigned int m,
   if(m % 2)
     F0[m1]=F0[m1]*F2[m1]+F1[m1]*F3[m1];
 #else
-  PARALLEL(
+  PARALLELIF(
+    m > threshold,
     for(unsigned int j=0; j < m; ++j)
       F0[j]=F0[j]*F2[j]+F1[j]*F3[j];
     );
@@ -1453,7 +1483,8 @@ void multbinary3(Complex **F, unsigned int m,
   Complex* F5=F[5];
 
 #ifdef __SSE2__
-  PARALLEL(
+  PARALLELIF(
+    m > threshold,
     for(unsigned int j=0; j < m; ++j) {
       Complex *F0j=F0+j;
       STORE(F0j,ZMULT(LOAD(F0j),LOAD(F3+j))
@@ -1463,7 +1494,8 @@ void multbinary3(Complex **F, unsigned int m,
     }
     );
 #else
-  PARALLEL(
+   PARALLELIF(
+    m > threshold,
     for(unsigned int j=0; j < m; ++j)
       F0[j]=F0[j]*F3[j]+F1[j]*F4[j]+F2[j]*F5[j];
     );
@@ -1487,7 +1519,8 @@ void multbinary4(Complex **F, unsigned int m,
   Complex* F7=F[7];
 
 #ifdef __SSE2__
-  PARALLEL(
+   PARALLELIF(
+    m > threshold,
     for(unsigned int j=0; j < m; ++j) {
       Complex *F0j=F0+j;
       STORE(F0j,ZMULT(LOAD(F0j),LOAD(F4+j))
@@ -1498,7 +1531,8 @@ void multbinary4(Complex **F, unsigned int m,
     }
     );
 #else
-  PARALLEL(
+  PARALLELIF(
+    m > threshold,
     for(unsigned int j=0; j < m; ++j)
       F0[j]=F0[j]*F4[j]+F1[j]*F5[j]+F2[j]*F6[j]+F3[j]*F7[j];
     );
@@ -1531,7 +1565,8 @@ void multbinary8(Complex **F, unsigned int m,
   Complex* F15=F[15];
 
 #ifdef __SSE2__
-  PARALLEL(
+  PARALLELIF(
+    m > threshold,
     for(unsigned int j=0; j < m; ++j) {
       Complex *F0j=F0+j;
       STORE(F0j,
@@ -1547,7 +1582,8 @@ void multbinary8(Complex **F, unsigned int m,
     }
     );
 #else
-  PARALLEL(
+  PARALLELIF(
+    m > threshold,
     for(unsigned int j=0; j < m; ++j)
       F0[j]=F0[j]*F8[j]+F1[j]*F9[j]+F2[j]*F10[j]+F3[j]*F11[j]
         +F4[j]*F12[j]+F5[j]*F13[j]+F6[j]*F14[j]+F7[j]*F15[j];
@@ -1567,7 +1603,8 @@ void multadvection2(double **F, unsigned int m,
 
 #ifdef __SSE2__
   unsigned int m1=m-1;
-  PARALLEL(
+  PARALLELIF(
+    m > threshold,
     for(unsigned int j=0; j < m1; j += 2) {
       double *F0j=F0+j;
       double *F1j=F1+j;
@@ -1584,12 +1621,14 @@ void multadvection2(double **F, unsigned int m,
     F1[m1]=u*v;
   }
 #else
+  PARALLELIF(
+    m > threshold,
   for(unsigned int j=0; j < m; ++j) {
     double u=F0[j];
     double v=F1[j];
     F0[j]=v*v-u*u;
     F1[j]=u*v;
-  }
+  })
 #endif
 }
 

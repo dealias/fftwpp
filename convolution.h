@@ -24,6 +24,13 @@
 
 namespace fftwpp {
 
+// TEMP
+#define PARALLELIF(condition,code)                      \
+  if(condition) {                                       \
+    _Pragma("omp parallel for num_threads(threads)")    \
+      code                                              \
+      } else {code}
+
 #ifndef __convolution_h__
 #define __convolution_h__ 1
 
@@ -736,14 +743,17 @@ public:
 };
 
 inline void HermitianSymmetrizeX(unsigned int mx, unsigned int stride,
-                                 unsigned int xorigin, Complex *f)
+                                 unsigned int xorigin, Complex *f,
+                                 int threads=fftw::maxthreads)
 {
   Complex *F=f+xorigin*stride;
   F[0].im=0.0;
+  PARALLELIF(
+    mx > threshold,
   for(unsigned int i=1; i < mx; ++i) {
     unsigned int istride=i*stride;
     *(F-istride)=conj(F[istride]);
-  }
+  });
 }
 
 // Enforce 3D Hermiticity using specified (x >= 0,y=0,z=0) and (x,y > 0,z=0).
@@ -763,7 +773,8 @@ inline void HermitianSymmetrizeXY(unsigned int Hx, unsigned int Hy,
 
   F[0].im=0.0;
 
-  PARALLEL(
+  PARALLELIF(
+    2*Hx*Hy > threshold,
     for(int i=(-Hx+1)*Sx; i < (int) stop; i += Sx) {
       unsigned int m=origin-i;
       unsigned int p=origin+i;
@@ -771,27 +782,30 @@ inline void HermitianSymmetrizeXY(unsigned int Hx, unsigned int Hy,
       for(unsigned int j=Sy; j < Stop; j += Sy) {
         f[m-j]=conj(f[p+j]);
       }
-    }
-    )
+    });
 
   // Zero out Nyquist modes
-    if(x0 == Hx) {
-      unsigned int Ly=y0+Hy;
+  if(x0 == Hx) {
+    unsigned int Ly=y0+Hy;
+    PARALLELIF(
+      Ly*Hz > threshold,
       for(unsigned int j=0; j < Ly; ++j) {
         for(unsigned int k=0; k < Hz; ++k) {
           f[Sy*j+k]=0.0;
         }
-      }
-    }
+      });
+  }
 
-    if(y0 == Hy) {
-      unsigned int Lx=x0+Hx;
+  if(y0 == Hy) {
+    unsigned int Lx=x0+Hx;
+    PARALLELIF(
+      Lx*Hz > threshold,
       for(unsigned int i=0; i < Lx; ++i) {
         for(unsigned int k=0; k < Hz; ++k) {
           f[Sx*i+k]=0.0;
         }
-      }
-    }
+      });
+  }
 }
 
 inline void HermitianSymmetrizeXY(unsigned int Hx, unsigned int Hy,
@@ -938,7 +952,7 @@ public:
     for(unsigned int a=0; a < A; ++a) {
       Complex *f=F[a]+offset;
       if(symmetrize)
-        HermitianSymmetrizeX(mx,ny,mx-xcompact,f);
+        HermitianSymmetrizeX(mx,ny,mx-xcompact,f,threads);
       xfftpad->backwards(f,U2[a]);
     }
   }
@@ -1792,21 +1806,21 @@ public:
     for(unsigned int s=0; s < M; ++s) {
       Complex *f=F[s]+offset;
       if(symmetrize)
-        HermitianSymmetrizeX(mx,my1,mx,f);
+        HermitianSymmetrizeX(mx,my1,mx,f,threads);
       xfftpad->backwards(f,u2+s*mu);
     }
 
     for(unsigned int s=0; s < M; ++s) {
       Complex *g=G[s]+offset;
       if(symmetrize)
-        HermitianSymmetrizeX(mx,my1,mx,g);
+        HermitianSymmetrizeX(mx,my1,mx,g,threads);
       xfftpad->backwards(g,v2+s*mu);
     }
 
     for(unsigned int s=0; s < M; ++s) {
       Complex *h=H[s]+offset;
       if(symmetrize)
-        HermitianSymmetrizeX(mx,my1,mx,h);
+        HermitianSymmetrizeX(mx,my1,mx,h,threads);
       xfftpad->backwards(h,w2+s*mu);
     }
 
@@ -1924,11 +1938,11 @@ public:
     unsigned int mu=2*mx*my1;
 
     if(symmetrize)
-      HermitianSymmetrizeX(mx,my1,mx,f);
+      HermitianSymmetrizeX(mx,my1,mx,f,threads);
     xfftpad->backwards(f,u2);
 
     if(symmetrize)
-      HermitianSymmetrizeX(mx,my1,mx,g);
+      HermitianSymmetrizeX(mx,my1,mx,g,threads);
     xfftpad->backwards(g,v2);
 
 #ifndef FFTWPP_SINGLE_THREAD
@@ -2022,7 +2036,7 @@ public:
     unsigned int mu=2*mx*my1;
 
     if(symmetrize)
-      HermitianSymmetrizeX(mx,my1,mx,f);
+      HermitianSymmetrizeX(mx,my1,mx,f,threads);
     xfftpad->backwards(f,u2);
 
 #ifndef FFTWPP_SINGLE_THREAD

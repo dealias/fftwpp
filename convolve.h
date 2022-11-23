@@ -1069,7 +1069,8 @@ inline void HermitianSymmetrizeXY(unsigned int Hx, unsigned int Hy,
 
   F[0].im=0.0;
 
-  PARALLEL(
+  PARALLELIF(
+    2*Hx*Hy > threshold,
     for(int i=(-Hx+1)*Sx; i < (int) stop; i += Sx) {
       unsigned int m=origin-i;
       unsigned int p=origin+i;
@@ -1077,26 +1078,29 @@ inline void HermitianSymmetrizeXY(unsigned int Hx, unsigned int Hy,
       for(unsigned int j=Sy; j < Stop; j += Sy) {
         f[m-j]=conj(f[p+j]);
       }
-    }
-    )
+    });
 
-    // Zero out Nyquist modes
-    if(x0 == Hx) {
-      unsigned int Ly=y0+Hy;
+  // Zero out Nyquist modes
+  if(x0 == Hx) {
+    unsigned int Ly=y0+Hy;
+    PARALLELIF(
+      Ly*Hz > threshold,
       for(unsigned int j=0; j < Ly; ++j) {
         for(unsigned int k=0; k < Hz; ++k) {
           f[Sy*j+k]=0.0;
         }
-      }
-    }
+      });
+  }
 
   if(y0 == Hy) {
     unsigned int Lx=x0+Hx;
-    for(unsigned int i=0; i < Lx; ++i) {
-      for(unsigned int k=0; k < Hz; ++k) {
-        f[Sx*i+k]=0.0;
-      }
-    }
+    PARALLELIF(
+      Lx*Hz > threshold,
+      for(unsigned int i=0; i < Lx; ++i) {
+        for(unsigned int k=0; k < Hz; ++k) {
+          f[Sx*i+k]=0.0;
+        }
+      });
   }
 }
 

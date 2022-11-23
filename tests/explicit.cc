@@ -14,7 +14,8 @@ void multbinary(Complex **F, unsigned int m, unsigned int threads)
 
   double ninv=1.0/m;
 
-  PARALLEL(
+  PARALLELIF(
+    m > threshold,
     for(unsigned int j=0; j < m; ++j)
       F0[j] *= ninv*F1[j];
     );
@@ -30,7 +31,8 @@ void multbinary(double **F, unsigned int n, unsigned int threads)
 
   double ninv=1.0/n;
 
-  PARALLEL(
+  PARALLELIF(
+    n > threshold,
     for(unsigned int j=0; j < n; ++j)
       F0[j] *= ninv*F1[j];
     );
@@ -44,7 +46,8 @@ void multbinaryUnNormalized(Complex **F, unsigned int n, unsigned int threads)
   Complex* F0=F[0];
   Complex* F1=F[1];
 
-  PARALLEL(
+  PARALLELIF(
+    n > threshold,
     for(unsigned int j=0; j < n; ++j)
       F0[j] *= F1[j];
     );
@@ -58,7 +61,8 @@ void multbinaryUnNormalized(double **F, unsigned int n, unsigned int threads)
   double* F0=F[0];
   double* F1=F[1];
 
-  PARALLEL(
+  PARALLELIF(
+    n > threshold,
     for(unsigned int j=0; j < n; ++j)
       F0[j] *= F1[j];
     );
@@ -101,7 +105,8 @@ void ExplicitConvolution::convolve(Complex *f, Complex *g)
   double ninv=1.0/n;
 
   Vec Ninv=LOAD2(ninv);
-  PARALLEL(
+  PARALLELIF(
+    n > threshold,
     for(unsigned int k=0; k < n; ++k)
       STORE(f+k,Ninv*ZMULT(LOAD(f+k),LOAD(g+k)));
     );
@@ -146,7 +151,8 @@ void ExplicitHConvolution::convolve(Complex *f, Complex *g)
   double *G=(double *) g;
 
   double ninv=1.0/n;
-  PARALLEL(
+  PARALLELIF(
+    n > threshold,
     for(unsigned int k=0; k < n; ++k)
       F[k] *= G[k]*ninv;
     );
@@ -182,7 +188,8 @@ void ExplicitConvolution2::convolve(Complex *f, Complex *g)
 
   unsigned int n=nx*ny;
   Vec Ninv=LOAD2(1.0/n);
-  PARALLEL(
+  PARALLELIF(
+    n > threshold,
     for(unsigned int k=0; k < n; ++k)
       STORE(f+k,Ninv*ZMULT(LOAD(f+k),LOAD(g+k)));
     );
@@ -241,13 +248,6 @@ void ExplicitHConvolution2::forwards(Complex *f)
     Forwards->fft0(f);
 }
 
-/*
-void ExplicitHConvolution2::convolve(Complex **F, Realmultiplier *mult)
-{
-
-}
-*/
-
 void ExplicitHConvolution2::convolve(Complex **F, Complex **G, bool symmetrize)
 {
   unsigned int xorigin=nx/2;
@@ -272,7 +272,8 @@ void ExplicitHConvolution2::convolve(Complex **F, Complex **G, bool symmetrize)
   double *g=(double *) G[0];
 
   if(M == 1) {
-    PARALLEL(
+    PARALLELIF(
+      nx*nyp > threshold,
       for(unsigned int i=0; i < nx; ++i) {
         unsigned int nyp2i=nyp2*i;
         unsigned int stop=nyp2i+ny;
@@ -283,7 +284,8 @@ void ExplicitHConvolution2::convolve(Complex **F, Complex **G, bool symmetrize)
   } else if(M == 2) {
     double *f1=(double *) F[1];
     double *g1=(double *) G[1];
-    PARALLEL(
+    PARALLELIF(
+      nx*nyp > threshold,
       for(unsigned int i=0; i < nx; ++i) {
         unsigned int nyp2i=nyp2*i;
         unsigned int stop=nyp2i+ny;
@@ -292,7 +294,8 @@ void ExplicitHConvolution2::convolve(Complex **F, Complex **G, bool symmetrize)
       }
       );
   } else {
-    PARALLEL(
+    PARALLELIF(
+      nx*(M-1) > threshold,
       for(unsigned int i=0; i < nx; ++i) {
         unsigned int nyp2i=nyp2*i;
         unsigned int stop=nyp2i+ny;
@@ -345,7 +348,8 @@ void ExplicitConvolution3::convolve(Complex *f, Complex *g)
 
   unsigned int n=nx*ny*nz;
   Vec Ninv=LOAD2(1.0/n);
-  PARALLEL(
+  PARALLELIF(
+    n > threshold,
     for(unsigned int k=0; k < n; ++k)
       STORE(f+k,Ninv*ZMULT(LOAD(f+k),LOAD(g+k)));
     );
@@ -390,7 +394,8 @@ void ExplicitHConvolution3::convolve(Complex **F, Complex **G, bool symmetrize)
   double *g=(double *) G[0];
 
   if(M == 1) {
-    PARALLEL(
+    PARALLELIF(
+      nx > threshold,
       for(unsigned int i=0; i < nx; ++i) {
         unsigned int nzp2i=nzp2*ny*i;
         for(unsigned int j=0; j < ny; ++j) {
@@ -432,7 +437,8 @@ void ExplicitHTConvolution::convolve(Complex *f, Complex *g, Complex *h)
   double *H=(double *) h;
 
   double ninv=1.0/n;
-  PARALLEL(
+  PARALLELIF(
+    n > threshold,
     for(unsigned int k=0; k < n; ++k)
       F[k] *= G[k]*H[k]*ninv;
     );
@@ -489,7 +495,8 @@ void ExplicitHTConvolution2::convolve(Complex *f, Complex *g, Complex *h,
   double ninv=1.0/(nx*ny);
   unsigned int nyp2=2*nyp;
 
-  PARALLEL(
+  PARALLELIF(
+    nx*nyp > threshold,
     for(unsigned int i=0; i < nx; ++i) {
       unsigned int nyp2i=nyp2*i;
       unsigned int stop=nyp2i+ny;

@@ -67,7 +67,7 @@ inline int get_max_threads()
       code                                              \
       } else {code}
 #else
-#define PARALLELIF(condition,code) {code}
+#define PARALLEL(code) {code}
 #endif
 
 #ifndef FFTWPP_SINGLE_THREAD
@@ -322,11 +322,8 @@ public:
   }
 
   static void planThreads(unsigned int threads) {
-    if(threads == 1)
-      threshold=UINT_MAX;
-    else
-      if(threshold == UINT_MAX-1)
-        threshold=Threshold(maxthreads);
+    if(threshold == UINT_MAX-1)
+      threshold=Threshold(maxthreads);
 #ifndef FFTWPP_SINGLE_THREAD
     omp_set_num_threads(threads);
     fftw_plan_with_nthreads(threads);

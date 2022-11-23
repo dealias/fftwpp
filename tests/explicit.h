@@ -22,7 +22,8 @@ public:
   ExplicitPad(unsigned int n, unsigned int m) : n(n), m(m) {}
 
   void pad(Complex *f) {
-    PARALLEL(
+    PARALLELIF(
+      n-m > threshold,
       for(unsigned int i=m; i < n; ++i) f[i]=0.0;
       );
   }
@@ -39,19 +40,20 @@ public:
 
   void pad(Complex *f) {
     // zero pad upper block
-    PARALLEL(
+    PARALLELIF(
+      mx*ny > threshold,
       for(unsigned int i=0; i < mx; ++i) {
         unsigned int nyi=ny*i;
         unsigned int stop=nyi+ny;
         for(unsigned int j=nyi+my; j < stop; ++j)
           f[j]=0.0;
-      }
-      );
+      });
 
     // zero pad right-hand block
     const unsigned int start=mx*ny;
     const unsigned int stop=nx*ny;
-    PARALLEL(
+    PARALLELIF(
+      stop-start > threshold,
       for(unsigned int i=start; i < stop; ++i)
         f[i]=0.0;
       );
@@ -73,7 +75,8 @@ public:
 
     // zero pad left block
     unsigned int stop=(nx2-mx+1)*nyp;
-    PARALLEL(
+    PARALLELIF(
+      stop > threshold,
       for(unsigned int i=0; i < stop; ++i)
         f[i]=0.0;
       );
@@ -81,7 +84,8 @@ public:
     // zero pad top-middle block
     unsigned int stop2=stop+2*mx*nyp;
     unsigned int diff=nyp-my;
-    PARALLEL(
+    PARALLELIF(
+      2*mx*diff > threshold,
       for(unsigned int i=stop+nyp; i < stop2; i += nyp) {
         for(unsigned int j=i-diff; j < i; ++j)
           f[j]=0.0;
@@ -90,7 +94,8 @@ public:
 
     // zero pad right block
     stop=nx*nyp;
-    PARALLEL(
+    PARALLELIF(
+      stop-(nx2+mx)*nyp > threshold,
       for(unsigned int i=(nx2+mx)*nyp; i < stop; ++i)
         f[i]=0.0;
       );
