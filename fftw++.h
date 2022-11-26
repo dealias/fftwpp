@@ -777,15 +777,15 @@ public:
         (t1-t0);
       ST.add(elapsedT.count());
 
-      if(S.count() > 1 && ST.min() >= S.max())
+      if(S.count() >= 2 && ST.min() >= S.max())
         return true;
-      if(S.count() > 1 && S.min() >= ST.max())
+      if(S.count() >= 2 && S.min() >= ST.max())
         return false;
 
       medianS.add(S.median());
       medianST.add(ST.median());
 
-    } while(medianS.stderror() > eps*medianS.mean() ||
+    } while(S.count() < 5 || medianS.stderror() > eps*medianS.mean() ||
             medianST.stderror() > eps*medianST.mean());
 
     return S.median() <= ST.median();

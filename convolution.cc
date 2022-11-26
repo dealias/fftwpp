@@ -1281,7 +1281,8 @@ void multcorrelation(Complex **F, unsigned int m,
   Complex* F1=F[1];
 
 #ifdef __SSE2__
-  PARALLEL(
+  PARALLELIF(
+    m > threshold,
     for(unsigned int j=0; j < m; ++j) {
       Complex *p=F0+j;
       Complex *q=F1+j;
@@ -1392,7 +1393,7 @@ void multbinary(double **F, unsigned int m,
 #ifdef __SSE2__
   unsigned int m1=m-1;
   PARALLELIF(
-    m > threshold,
+    m1 > threshold,
     for(unsigned int j=0; j < m1; j += 2) {
       double *p=F0+j;
       STORE(p,LOAD(p)*LOAD(F1+j));
@@ -1452,7 +1453,7 @@ void multbinary2(double **F, unsigned int m,
 #ifdef __SSE2__
   unsigned int m1=m-1;
   PARALLELIF(
-    m > threshold,
+    m1 > threshold,
     for(unsigned int j=0; j < m1; j += 2) {
       double *F0j=F0+j;
       STORE(F0j,LOAD(F0j)*LOAD(F2+j)+LOAD(F1+j)*LOAD(F3+j));
