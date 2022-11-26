@@ -102,10 +102,16 @@ unsigned int Threshold(unsigned int threads)
         break;
       if(parallelLoop(A,m,threads) < parallelLoop(A,m,1))
         return m;
-      delete [] A;
+      utils::deleteAlign(A);
     }
   }
   return UINT_MAX;
+}
+
+void Threshold()
+{
+  if(threshold == UINT_MAX-1)
+    threshold=Threshold(fftw::maxthreads);
 }
 
 ThreadBase::ThreadBase() {threads=fftw::maxthreads;}

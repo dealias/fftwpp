@@ -91,6 +91,7 @@ typedef std::complex<double> Complex;
 namespace fftwpp {
 
 extern unsigned int threshold;
+void Threshold();
 
 // Obsolete names:
 #define FFTWComplex ComplexAlign
@@ -305,7 +306,8 @@ public:
   }
 
   virtual ~fftw() {
-    if(plan) fftw_destroy_plan(plan);
+    if(plan)
+      fftw_destroy_plan(plan);
   }
 
   virtual fftw_plan Plan(Complex *in, Complex *out) {return NULL;};
@@ -322,78 +324,10 @@ public:
   }
 
   static void planThreads(unsigned int threads) {
-    if(threshold == UINT_MAX-1)
-      threshold=Threshold(maxthreads);
 #ifndef FFTWPP_SINGLE_THREAD
     omp_set_num_threads(threads);
     fftw_plan_with_nthreads(threads);
 #endif
-  }
-
-  threaddata time(fftw_plan plan1, fftw_plan planT, Complex *in, Complex *out,
-                  unsigned int Threads) {
-    utils::statistics S(true),ST(true);
-    utils::statistics medianS(true),medianST(true);
-
-    threads=1;
-    plan=plan1;
-    inplace ? fftNormalized(in,out) : fft(in,out);
-
-    threads=Threads;
-    plan=planT;
-    inplace ? fftNormalized(in,out) : fft(in,out);
-
-    double eps=0.02;
-
-    do {
-      threads=Threads;
-      plan=planT;
-      auto T0=std::chrono::steady_clock::now();
-      inplace ? fftNormalized(in,out) : fft(in,out);
-      auto T1=std::chrono::steady_clock::now();
-
-      auto elapsedT=std::chrono::duration_cast<std::chrono::nanoseconds>
-        (T1-T0);
-      ST.add(elapsedT.count());
-
-      threads=1;
-      plan=plan1;
-      auto t0=std::chrono::steady_clock::now();
-      inplace ? fftNormalized(in,out) : fft(in,out);
-      auto t1=std::chrono::steady_clock::now();
-
-      auto elapsed=std::chrono::duration_cast<std::chrono::nanoseconds>
-        (t1-t0);
-      S.add(elapsed.count());
-
-      if(ST.min() >= S.max()) {
-        fftw_destroy_plan(planT);
-        return threaddata(threads,S.median());
-
-      if(S.count() >= 5 && S.min() > ST.max()) {
-        threads=Threads;
-        plan=planT;
-         fftw_destroy_plan(plan1);
-          return threaddata(threads,ST.median());
-        }
-      }
-
-      medianS.add(S.median());
-      medianST.add(ST.median());
-
-    } while(S.count() < 5 ||
-            (medianS.stderror() > eps*medianS.mean() ||
-             medianST.stderror() > eps*medianST.mean()));
-
-    if(medianS.min() <= medianST.max()) {
-      fftw_destroy_plan(planT);
-      return threaddata(threads,S.median());
-    } else {
-      threads=Threads;
-      plan=planT;
-      fftw_destroy_plan(plan1);
-      return threaddata(threads,ST.median());
-    }
   }
 
   virtual threaddata lookup(bool inplace, unsigned int threads) {
@@ -413,52 +347,33 @@ public:
     return out;
   }
 
-  threaddata Setup(Complex *in, Complex *out=NULL) {
+  void Setup(Complex *in, Complex *out=NULL) {
     bool alloc=!in;
     if(alloc) in=utils::ComplexAlign((doubles+1)/2);
     out=CheckAlign(in,out);
     inplace=(out==in);
 
-    threaddata data;
-    unsigned int Threads=threads;
-
-    if(threads > 1) data=lookup(inplace,threads);
-    else data=threaddata(1,0.0);
-
-    threads=data.threads > 0 ? data.threads : 1;
+    Threshold();
+    if(doubles/2 < threshold)
+      threads=1;
 
     planThreads(threads);
     plan=(*planner)(this,in,out);
     if(!plan) noplan();
-
-    if(fftw::maxthreads > 1) {
-      threads=Threads;
-      planThreads(threads);
-      fftw_plan planT=(*planner)(this,in,out);
-      if(!planT) noplan();
-
-      if(data.threads == 0) {
-        if(planT)
-          data=time(plan,planT,in,out,threads);
-        else noplan();
-        store(inplace,threaddata(threads,data.median));
-      }
-    }
 
     if(alloc) Array::deleteAlign(in,(doubles+1)/2);
 #ifdef FFTWPP_VERBOSE
     if(threads > 1)
       std::cout << "Using " << threads << " threads." << std::endl;
 #endif
-    return data;
   }
 
-  threaddata Setup(Complex *in, double *out) {
-    return Setup(in,(Complex *) out);
+  void Setup(Complex *in, double *out) {
+    Setup(in,(Complex *) out);
   }
 
-  threaddata Setup(double *in, Complex *out=NULL) {
-    return Setup((Complex *) in,out);
+  void Setup(double *in, Complex *out=NULL) {
+    Setup((Complex *) in,out);
   }
 
   virtual void Execute(Complex *in, Complex *out, bool=false) {
@@ -599,6 +514,10 @@ public:
     size /= sizeof(double);
     length *= size;
 
+    Threshold();
+    if(length*rows*cols/2 < threshold)
+      threads=1;
+
     fftw::planThreads(threads);
 
     fftw_iodim dims[3];
@@ -621,7 +540,8 @@ public:
   }
 
   ~Transpose() {
-    if(plan) fftw_destroy_plan(plan);
+    if(plan)
+      fftw_destroy_plan(plan);
   }
 
   template<class T>
@@ -770,7 +690,7 @@ public:
   size_t idist,odist;
   fftw_plan plan1,plan2;
   unsigned int T,Q,R;
-  fftwblock() : plan2(NULL) {
+  fftwblock() : plan1(NULL), plan2(NULL) {
   }
 
   fftwblock(unsigned int nx, unsigned int M,
@@ -783,56 +703,94 @@ public:
     Q=M;
     R=0;
 
-    threaddata S1=Setup(in,out);
-    fftw_plan planT1=plan;
-    threads=S1.threads;
-    unsigned int nxp=nx/2+1;
-    unsigned int olength=0;
-    unsigned int ilength=0;
-    if(typeid(I) == typeid(double)) {
-      ilength=nx;
-      olength=nxp;
-    }
-    if(typeid(O) == typeid(double)) {
-      ilength=nxp;
-      olength=nx;
-    }
-    if(fftw::maxthreads > 1 &&
-       (!inplace ||
-        (ostride*olength*sizeof(O) <= idist*sizeof(I) &&
-         odist*sizeof(O) >= istride*ilength*sizeof(I)))) {
-      if(Threads > 1) {
-        T=std::min(M,Threads);
+    threads=Threads;
+    Setup(in,out);
+    Threads=threads;
+
+    fftw_plan planFFTW=plan;
+
+    unsigned T0=std::min(M,Threads);
+    if(T0 > 1) {
+      unsigned int nxp=nx/2+1;
+      unsigned int olength=0;
+      unsigned int ilength=0;
+      if(typeid(I) == typeid(double)) {
+        ilength=nx;
+        olength=nxp;
+      }
+      if(typeid(O) == typeid(double)) {
+        ilength=nxp;
+        olength=nx;
+      }
+      if(!inplace ||
+         (ostride*olength*sizeof(O) <= idist*sizeof(I) &&
+          odist*sizeof(O) >= istride*ilength*sizeof(I))) {
+        T=T0;
         Q=T > 0 ? M/T : 0;
         R=M-Q*T;
 
-        threads=Threads;
-        threaddata ST=Setup(in,out);
-
-        if(R > 0 && threads == 1 && plan1 != plan2) {
-          fftw_destroy_plan(plan2);
-          plan2=plan1;
-        }
-
-        if(ST.median > S1.median) { // Use FFTW's multithreading
-          fftw_destroy_plan(plan);
-          if(R > 0) {
-            fftw_destroy_plan(plan2);
-            plan2=NULL;
-          }
-          T=1;
-          Q=M;
-          R=0;
-          plan=planT1;
-          threads=S1.threads;
-        } else {                         // Do the multithreading ourselves
-          fftw_destroy_plan(planT1);
-          threads=ST.threads;
-        }
-      } else
-        Setup(in,out); // Synchronize wisdom
+        threads=1;
+        Setup(in,out);
+        plan1=plan;
+      }
     }
+
+    plan=planFFTW;
+
+    if(T0 == 1 || time(in,out)) { // Use FFTW's multithreading
+      T=1;
+      if(plan1) {
+        fftw_destroy_plan(plan1);
+        plan1=NULL;
+        if(plan2) {
+          fftw_destroy_plan(plan2);
+          plan2=NULL;
+        }
+      }
+    } else // Do the multithreading ourselves
+      T=T0;
+//      return threaddata(threads,ST.median());
   }
+
+  bool time(Complex *in, Complex *out) {
+    utils::statistics S(true),ST(true);
+    utils::statistics medianS(true),medianST(true);
+
+    double eps=0.02;
+
+    unsigned int T0=T;
+
+    do {
+      T=1; // FFTW
+      auto t2=std::chrono::steady_clock::now();
+      inplace ? fftNormalized(in,out) : fft(in,out);
+      auto t3=std::chrono::steady_clock::now();
+      auto elapsed1=std::chrono::duration_cast<std::chrono::nanoseconds>
+        (t3-t2);
+      S.add(elapsed1.count());
+
+      T=T0; // BLOCK
+      auto t0=std::chrono::steady_clock::now();
+      inplace ? fftNormalized(in,out) : fft(in,out);
+      auto t1=std::chrono::steady_clock::now();
+      auto elapsedT=std::chrono::duration_cast<std::chrono::nanoseconds>
+        (t1-t0);
+      ST.add(elapsedT.count());
+
+      if(S.count() > 1 && ST.min() >= S.max())
+        return true;
+      if(S.count() > 1 && S.min() >= ST.max())
+        return false;
+
+      medianS.add(S.median());
+      medianST.add(ST.median());
+
+    } while(medianS.stderror() > eps*medianS.mean() ||
+            medianST.stderror() > eps*medianST.mean());
+
+    return S.median() <= ST.median();
+  }
+
 
   fftw_plan Plan(int Q, fftw_complex *in, fftw_complex *out) {
     return fftw_plan_many_dft(1,&nx,Q,in,NULL,istride,idist,
@@ -853,7 +811,6 @@ public:
     if(R > 0) {
       plan2=Plan(Q+1,(I *) in,(O *) out);
       if(!plan2) return NULL;
-      if(threads == 1) plan1=plan2;
     }
     return Plan(Q,(I *) in,(O *) out);
   }
@@ -881,7 +838,7 @@ public:
       for(unsigned int i=0; i < T; ++i) {
         unsigned int iQ=i*Q;
         if(i < extra)
-          Execute(plan,(I *) in+iQ*idist,(O *) out+iQ*odist);
+          Execute(plan1,(I *) in+iQ*idist,(O *) out+iQ*odist);
         else {
           unsigned int offset=iQ+i-extra;
           Execute(plan2,(I *) in+offset*idist,(O *) out+offset*odist);
@@ -893,7 +850,10 @@ public:
   unsigned int Threads() {return std::max(T,threads);}
 
   ~fftwblock() {
-    if(plan2) fftw_destroy_plan(plan2);
+    if(plan1)
+      fftw_destroy_plan(plan1);
+    if(plan2)
+      fftw_destroy_plan(plan2);
   }
 };
 
