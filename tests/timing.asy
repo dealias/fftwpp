@@ -129,4 +129,4 @@ if(expl)
   write("speedup="+(string)(mean(e)/mean(h)));
 
 shipout(dir);
-erase();
+currentpicture.uptodate=true;
