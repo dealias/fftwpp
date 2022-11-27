@@ -256,11 +256,11 @@ void fftBase::OptBase::optloop(unsigned int& m, unsigned int L,
 
       unsigned int Istop=app.I == -1 ? 2 : app.I+1;
 
-        for(unsigned int D=Dstart; D < Dstop2; D *= 2) {
-          if(D > Dstop) D=Dstop;
-          for(unsigned int inplace=Istart; inplace < Istop; ++inplace)
-            if((q == 1 || valid(D,p,S)) && D <= n)
-              check(L,M,C,S,m,p,q,D,inplace,app.threads,app,useTimer);
+      for(unsigned int D=Dstart; D < Dstop2; D *= 2) {
+        if(D > Dstop) D=Dstop;
+        for(unsigned int inplace=Istart; inplace < Istop; ++inplace)
+          if((q == 1 || valid(D,p,S)) && D <= n)
+            check(L,M,C,S,m,p,q,D,inplace,app.threads,app,useTimer);
       }
       if(mForced) break;
       if(inner) {
@@ -651,8 +651,8 @@ void fftPad::padSingle(Complex *W)
     Complex *F=W+m*d;
     PARALLELIF(
       mp-L > threshold,
-    for(unsigned int s=L; s < mp; ++s)
-      F[s]=0.0;
+      for(unsigned int s=L; s < mp; ++s)
+        F[s]=0.0;
       );
   }
 }
@@ -663,9 +663,9 @@ void fftPad::padMany(Complex *W)
   PARALLELIF(
     (mp-L)*C > threshold,
     for(unsigned int s=L; s < mp; ++s) {
-    Complex *F=W+S*s;
-    for(unsigned int c=0; c < C; ++c)
-      F[c]=0.0;
+      Complex *F=W+S*s;
+      for(unsigned int c=0; c < C; ++c)
+        F[c]=0.0;
     }
     );
 }
@@ -891,11 +891,11 @@ void fftPad::forward1Many(Complex *f, Complex *F, unsigned int r, Complex *W)
   if(inplace) {
     PARALLELIF(
       (m-L)*C > threshold,
-    for(unsigned int s=L; s < m; ++s) {
-      Complex *Fs=W+S*s;
-      for(unsigned int c=0; c < C; ++c)
-        Fs[c]=0.0;
-    });
+      for(unsigned int s=L; s < m; ++s) {
+        Complex *Fs=W+S*s;
+        for(unsigned int c=0; c < C; ++c)
+          Fs[c]=0.0;
+      });
   }
   if(r == 0) {
     if(!inplace && L >= m && S == C)
@@ -1107,17 +1107,17 @@ void fftPad::forward2ManyAll(Complex *f, Complex *F, unsigned int, Complex *)
   Vec Zetam=LOAD(Zetar2);
   PARALLELIF(
     C > threshold,
-  for(unsigned int c=0; c < C; ++c) {
-    Complex *v0=f+c;
-    Complex *v1=g+c;
-    Vec V1=LOAD(v1);
-    Vec A=Zetam*UNPACKL(V1,V1);
-    Vec B=ZMULTI(Zetam*UNPACKH(V1,V1));
-    Vec V0=LOAD(v0);
-    STORE(v0,V0+V1);
-    STORE(v1,V0+A+B);
-    STORE(F+c,V0+CONJ(A-B));
-  });
+    for(unsigned int c=0; c < C; ++c) {
+      Complex *v0=f+c;
+      Complex *v1=g+c;
+      Vec V1=LOAD(v1);
+      Vec A=Zetam*UNPACKL(V1,V1);
+      Vec B=ZMULTI(Zetam*UNPACKH(V1,V1));
+      Vec V0=LOAD(v0);
+      STORE(v0,V0+V1);
+      STORE(v1,V0+A+B);
+      STORE(F+c,V0+CONJ(A-B));
+    });
   Complex *Zetar=Zetaqm+m;
   PARALLELIF(
     (m-1)*C > threshold,
@@ -1176,8 +1176,8 @@ void fftPad::forward2Many(Complex *f, Complex *F, unsigned int r, Complex *W)
     Complex *fm=f+Sm;
     PARALLELIF(
       C > threshold,
-    for(unsigned int c=0; c < C; ++c)
-      W[c]=f[c]+Zeta2*fm[c];
+      for(unsigned int c=0; c < C; ++c)
+        W[c]=f[c]+Zeta2*fm[c];
       );
     Complex *Zetar=Zetaqm+m*r;
     PARALLELIF(
@@ -1220,13 +1220,13 @@ void fftPad::forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W)
   if(r0 == 0) {
     PARALLELIF(
       pm1*m > threshold,
-    for(unsigned int t=0; t < pm1; ++t) {
-      unsigned int mt=m*t;
-      Complex *Ft=W+mt;
-      Complex *ft=f+mt;
+      for(unsigned int t=0; t < pm1; ++t) {
+        unsigned int mt=m*t;
+        Complex *Ft=W+mt;
+        Complex *ft=f+mt;
         for(unsigned int s=0; s < m; ++s)
           Ft[s]=ft[s];
-    });
+      });
 
     unsigned int mt=m*pm1;
     Complex *Ft=W+mt;
@@ -1291,7 +1291,7 @@ void fftPad::forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W)
     PARALLELIF(
       m-stop > threshold,
       for(unsigned int s=stop; s < m; ++s)
-      Ft[s]=0.0;
+        Ft[s]=0.0;
       );
 
     fftp->fft(F);
@@ -1320,10 +1320,10 @@ void fftPad::forwardInnerMany(Complex *f, Complex *F, unsigned int r,
   if(r == 0) {
     PARALLELIF(
       pm1*m*C > threshold,
-    for(unsigned int t=0; t < pm1; ++t) {
-      unsigned int Smt=Sm*t;
-      Complex *Ft=W+Smt;
-      Complex *ft=f+Smt;
+      for(unsigned int t=0; t < pm1; ++t) {
+        unsigned int Smt=Sm*t;
+        Complex *Ft=W+Smt;
+        Complex *ft=f+Smt;
         for(unsigned int s=0; s < m; ++s) {
           unsigned int Ss=S*s;
           Complex *Fts=Ft+Ss;
@@ -1331,7 +1331,7 @@ void fftPad::forwardInnerMany(Complex *f, Complex *F, unsigned int r,
           for(unsigned int c=0; c < C; ++c)
             Fts[c]=fts[c];
         }
-    });
+      });
     unsigned int Smt=Sm*pm1;
     Complex *Ft=W+Smt;
     Complex *ft=f+Smt;
@@ -1357,8 +1357,8 @@ void fftPad::forwardInnerMany(Complex *f, Complex *F, unsigned int r,
     else
       PARALLELIF(
         m > threshold,
-      for(unsigned int s=0; s < m; ++s)
-        fftp->fft(W+S*s);
+        for(unsigned int s=0; s < m; ++s)
+          fftp->fft(W+S*s);
         );
 
     PARALLELIF(
@@ -1416,11 +1416,11 @@ void fftPad::forwardInnerMany(Complex *f, Complex *F, unsigned int r,
       });
     PARALLELIF(
       (m-stop)*C > threshold,
-    for(unsigned int s=stop; s < m; ++s) {
-      Complex *Fts=Ft+S*s;
-      for(unsigned int c=0; c < C; ++c)
-        Fts[c]=0.0;
-    });
+      for(unsigned int s=stop; s < m; ++s) {
+        Complex *Fts=Ft+S*s;
+        for(unsigned int c=0; c < C; ++c)
+          Fts[c]=0.0;
+      });
 
     if(S == C)
       fftp->fft(W);
@@ -1977,17 +1977,17 @@ void fftPad::backwardInnerMany(Complex *F, Complex *f, unsigned int r,
   } else {
     PARALLELIF(
       p*(m-1)*C > threshold,
-    for(unsigned int t=0; t < p; ++t) {
-      unsigned int R=n*t+r;
-      Complex *Ft=W+Sm*t;
-      Complex *Zetar=Zetaqm+m*R;
+      for(unsigned int t=0; t < p; ++t) {
+        unsigned int R=n*t+r;
+        Complex *Ft=W+Sm*t;
+        Complex *Zetar=Zetaqm+m*R;
         for(unsigned int s=1; s < m; ++s) {
           Complex *Fts=Ft+S*s;
           Complex Zetars=conj(Zetar[s]);
           for(unsigned int c=0; c < C; ++c)
             Fts[c] *= Zetars;
         }
-    });
+      });
 
     if(S == C)
       ifftp->fft(W);
@@ -2009,11 +2009,11 @@ void fftPad::backwardInnerMany(Complex *F, Complex *f, unsigned int r,
     Complex *Zetaqr=Zetaqp+pm1*r;
     PARALLELIF(
       (pm1-1)*m*C > threshold,
-    for(unsigned int t=1; t < pm1; ++t) {
-      unsigned int Smt=Sm*t;
-      Complex *ft=f+Smt;
-      Complex *Ft=W+Smt;
-      Complex Zeta=conj(Zetaqr[t]);
+      for(unsigned int t=1; t < pm1; ++t) {
+        unsigned int Smt=Sm*t;
+        Complex *ft=f+Smt;
+        Complex *Ft=W+Smt;
+        Complex Zeta=conj(Zetaqr[t]);
         for(unsigned int s=0; s < m; ++s) {
           unsigned int Ss=S*s;
           Complex *fts=ft+Ss;
@@ -2021,7 +2021,7 @@ void fftPad::backwardInnerMany(Complex *F, Complex *f, unsigned int r,
           for(unsigned int c=0; c < C; ++c)
             fts[c] += Zeta*Fts[c];
         }
-    });
+      });
     Complex *ft=f+Sm*pm1;
     Complex *Ft=W+Sm*pm1;
     Complex Zeta=conj(Zetaqr[pm1]);
@@ -4895,11 +4895,11 @@ void fftPadHermitian::backward2Many(Complex *F, Complex *f, unsigned int r,
 
     rcfftm->fft(G,V);
 
-      PARALLELIF(
-        C > threshold,
-        for(unsigned int c=0; c < C; ++c)
-          f[c] += W[c]+V[c];
-        );
+    PARALLELIF(
+      C > threshold,
+      for(unsigned int c=0; c < C; ++c)
+        f[c] += W[c]+V[c];
+      );
 
     Complex *Zetar=Zetaqm+m*r;
     PARALLELIF(
@@ -4948,9 +4948,9 @@ void fftPadHermitian::backward2Many(Complex *F, Complex *f, unsigned int r,
       Vec Y=UNPACKH(Zeta,-Zeta);
       PARALLELIF(
         C > threshold,
-      for(unsigned int c=0; c < C; ++c)
+        for(unsigned int c=0; c < C; ++c)
 //        fe[c] += conj(Zetare)*We[c]+Zetare*Ve[c];
-        STORE(fe+c,LOAD(fe+c)+ZMULT2(X,Y,LOAD(Ve+c),LOAD(We+c)));
+          STORE(fe+c,LOAD(fe+c)+ZMULT2(X,Y,LOAD(Ve+c),LOAD(We+c)));
         );
     }
   }
@@ -4984,27 +4984,27 @@ void fftPadHermitian::forwardInner(Complex *f, Complex *F, unsigned int r,
         );
       PARALLELIF(
         (p2-1)*e1 > threshold,
-      for(unsigned int t=1; t < p2; ++t) {
-        unsigned int tm=t*m;
-        unsigned int te1=t*e1;
-        Complex *fmt=fm-tm;
-        Complex *ft=f+tm;
-        Complex *Wt=W+te1;
+        for(unsigned int t=1; t < p2; ++t) {
+          unsigned int tm=t*m;
+          unsigned int te1=t*e1;
+          Complex *fmt=fm-tm;
+          Complex *ft=f+tm;
+          Complex *Wt=W+te1;
           for(unsigned int s=0; s < e1; ++s)
             Wt[s]=conj(*(fmt-s))+ft[s];
-      });
+        });
 
       fftp->fft(W);
 
       unsigned int mn=m*n;
-        PARALLELIF(
-          (p2-1)*(e1-1) > threshold,
-      for(unsigned int u=1; u < p2; ++u) {
-        Complex *Wu=W+u*e1;
-        Complex *Zeta0=Zetaqm+mn*u;
+      PARALLELIF(
+        (p2-1)*(e1-1) > threshold,
+        for(unsigned int u=1; u < p2; ++u) {
+          Complex *Wu=W+u*e1;
+          Complex *Zeta0=Zetaqm+mn*u;
           for(unsigned int s=1; s < e1; ++s)
             Wu[s] *= Zeta0[s];
-      });
+        });
       crfftm->fft(W,F);
     } else { // n even, r=0,n/2
       Complex *V=W+B;
@@ -5025,23 +5025,23 @@ void fftPadHermitian::forwardInner(Complex *f, Complex *F, unsigned int r,
       Complex *Zetaqn2=Zetaqp+p2*n2;
       PARALLELIF(
         (p2-1)*e1 > threshold,
-      for(unsigned int t=1; t < p2; ++t) {
-        unsigned int tm=t*m;
-        unsigned int te1=t*e1;
-        Complex *Wt=W+te1;
-        Complex *Vt=V+te1;
-        Complex *fmt=fm-tm;
-        Complex *ft=f+tm;
-        Vec Zeta=LOAD(Zetaqn2+t); //*zeta_q^{tn/2}
-        Vec X=UNPACKL(Zeta,Zeta);
-        Vec Y=UNPACKH(Zeta,-Zeta);
+        for(unsigned int t=1; t < p2; ++t) {
+          unsigned int tm=t*m;
+          unsigned int te1=t*e1;
+          Complex *Wt=W+te1;
+          Complex *Vt=V+te1;
+          Complex *fmt=fm-tm;
+          Complex *ft=f+tm;
+          Vec Zeta=LOAD(Zetaqn2+t); //*zeta_q^{tn/2}
+          Vec X=UNPACKL(Zeta,Zeta);
+          Vec Y=UNPACKH(Zeta,-Zeta);
           for(unsigned int s=0; s < e1; ++s) {
             Vec fmts=CONJ(LOAD(fmt-s));
             Vec fts=LOAD(ft+s);
             STORE(Wt+s,fmts+fts);
             STORE(Vt+s,ZMULT(X,Y,fts-fmts));
           }
-      });
+        });
 
       fftp->fft(W);
       fftp->fft(V);
@@ -5141,7 +5141,7 @@ void fftPadHermitian::forwardInner(Complex *f, Complex *F, unsigned int r,
         Complex *Vu=V+e1u;
         for(unsigned int s=1; s < e1; ++s)
           Vu[s] *= Zetar2[s];
-    });
+      });
     crfftm->fft(W,F);
     crfftm->fft(V,G);
   }
@@ -5167,14 +5167,14 @@ void fftPadHermitian::backwardInner(Complex *F, Complex *f, unsigned int r,
       rcfftm->fft(F,W);
       PARALLELIF(
         (p2-1)*(e1-1) > threshold,
-      for(unsigned int u=1; u < p2; ++u) {
-        unsigned int mu=m*u;
-        unsigned int e1u=u*e1;
-        Complex *Wu=W+e1u;
-        Complex *Zeta0=Zetaqm+n*mu;
+        for(unsigned int u=1; u < p2; ++u) {
+          unsigned int mu=m*u;
+          unsigned int e1u=u*e1;
+          Complex *Wu=W+e1u;
+          Complex *Zeta0=Zetaqm+n*mu;
           for(unsigned int s=1; s < e1; ++s)
             Wu[s] *= conj(Zeta0[s]);
-      });
+        });
 
       ifftp->fft(W);
 
@@ -5192,22 +5192,22 @@ void fftPadHermitian::backwardInner(Complex *F, Complex *f, unsigned int r,
           *(fm-s)=conj(Ws);
         });
 
-        PARALLELIF(
-          (p2-1)*(S-1) > threshold,
-          for(unsigned int t=1; t < p2; ++t) {
-            unsigned int tm=t*m;
-            unsigned int te1=t*e1;
-            Complex *Wt=W+te1;
-            Complex *ft=f+tm;
-            // s=0 case (this is important to avoid overlap)
-            ft[0]=Wt[0];
-            Complex *fmt=fm-tm;
-            for(unsigned int s=1; s < S; ++s) {
-              Complex Wts=Wt[s];
-              ft[s]=Wts;
-              *(fmt-s)=conj(Wts);
-            }
-          });
+      PARALLELIF(
+        (p2-1)*(S-1) > threshold,
+        for(unsigned int t=1; t < p2; ++t) {
+          unsigned int tm=t*m;
+          unsigned int te1=t*e1;
+          Complex *Wt=W+te1;
+          Complex *ft=f+tm;
+          // s=0 case (this is important to avoid overlap)
+          ft[0]=Wt[0];
+          Complex *fmt=fm-tm;
+          for(unsigned int s=1; s < S; ++s) {
+            Complex Wts=Wt[s];
+            ft[s]=Wts;
+            *(fmt-s)=conj(Wts);
+          }
+        });
 
       if(S < e1) {
         f[e]=W[e];
@@ -5292,10 +5292,10 @@ void fftPadHermitian::backwardInner(Complex *F, Complex *f, unsigned int r,
         f[e]=W[e]+V[e];
         PARALLELIF(
           p2 > threshold,
-        for(unsigned int t=1; t < p2; ++t) {
-          unsigned int te1e=t*e1+e;
-          f[t*m+e]=W[te1e]+conj(Zetaqn2[t])*V[te1e];
-        });
+          for(unsigned int t=1; t < p2; ++t) {
+            unsigned int te1e=t*e1+e;
+            f[t*m+e]=W[te1e]+conj(Zetaqn2[t])*V[te1e];
+          });
       }
     }
   } else { // r > 0
@@ -5379,15 +5379,15 @@ void fftPadHermitian::backwardInner(Complex *F, Complex *f, unsigned int r,
     if(S < e1) {
       f[e]+=W[e]+V[e];
       PARALLELIF(
-      p2 > threshold,
-      for(unsigned int t=1; t < p2; ++t) {
-        unsigned int te1e=t*e1+e;
-        unsigned int tme=t*m+e;
-        Vec Zeta=LOAD(Zetaqr+t);
-        Vec X=UNPACKL(Zeta,Zeta);
-        Vec Y=UNPACKH(Zeta,-Zeta);
-        STORE(f+tme,LOAD(f+tme)+ZMULT2(X,Y,LOAD(V+te1e),LOAD(W+te1e)));
-      });
+        p2 > threshold,
+        for(unsigned int t=1; t < p2; ++t) {
+          unsigned int te1e=t*e1+e;
+          unsigned int tme=t*m+e;
+          Vec Zeta=LOAD(Zetaqr+t);
+          Vec X=UNPACKL(Zeta,Zeta);
+          Vec Y=UNPACKH(Zeta,-Zeta);
+          STORE(f+tme,LOAD(f+tme)+ZMULT2(X,Y,LOAD(V+te1e),LOAD(W+te1e)));
+        });
     }
   }
 }

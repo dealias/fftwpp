@@ -221,7 +221,7 @@ public:
 
   void invalid () {
     std::cerr << "Invalid parameters: " << std::endl
-         << " D=" << D << " p=" << p << " C=" << C << std::endl;
+              << " D=" << D << " p=" << p << " C=" << C << std::endl;
     exit(-1);
   }
 
