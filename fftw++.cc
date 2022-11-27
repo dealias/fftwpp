@@ -24,13 +24,9 @@ const char *fftw::oddshift="Shift is not implemented for odd nx";
 const char *inout=
   "constructor and call must be both in place or both out of place";
 
-fft1d::Table fft1d::threadtable;
 Mfft1d::Table Mfft1d::threadtable;
-rcfft1d::Table rcfft1d::threadtable;
-crfft1d::Table crfft1d::threadtable;
 Mrcfft1d::Table Mrcfft1d::threadtable;
 Mcrfft1d::Table Mcrfft1d::threadtable;
-fft2d::Table fft2d::threadtable;
 
 void LoadWisdom()
 {

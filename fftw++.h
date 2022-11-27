@@ -111,14 +111,6 @@ void SaveWisdom();
 
 extern const char *inout;
 
-struct threaddata {
-  unsigned int threads;
-  double median;
-  threaddata() : threads(0), median(0.0) {}
-  threaddata(unsigned int threads, double median) :
-    threads(threads), median(median) {}
-};
-
 class fftw;
 
 class ThreadBase
@@ -329,11 +321,6 @@ public:
     fftw_plan_with_nthreads(threads);
 #endif
   }
-
-  virtual threaddata lookup(bool inplace, unsigned int threads) {
-    return threaddata();
-  }
-  virtual void store(bool inplace, const threaddata& data) {}
 
   inline Complex *CheckAlign(Complex *in, Complex *out, bool constructor=true)
   {
@@ -559,74 +546,35 @@ public:
 template<class T, class L>
 class Threadtable {
 public:
-  typedef std::map<T,threaddata,L> Table;
+  typedef std::map<T,unsigned int,L> Table;
 
-  threaddata Lookup(Table& table, T key) {
+  unsigned int Lookup(Table& table, T key) {
     typename Table::iterator p=table.find(key);
-    return p == table.end() ? threaddata() : p->second;
+    return p == table.end() ? 0 : p->second;
   }
 
-  void Store(Table& threadtable, T key, const threaddata& data) {
-    threadtable[key]=data;
+  void Store(Table& threadtable, T key, unsigned int t) {
+    threadtable[key]=t;
   }
 };
 
-struct keytype1 {
+struct keytype {
   unsigned int nx;
+  unsigned int M;
   unsigned int threads;
   bool inplace;
-  keytype1(unsigned int nx, unsigned int threads, bool inplace) :
-    nx(nx), threads(threads), inplace(inplace) {}
+  keytype(unsigned int nx, unsigned int M, unsigned int threads,
+          bool inplace) :
+    nx(nx), M(M), threads(threads), inplace(inplace) {}
 };
 
-struct keyless1 {
-  bool operator()(const keytype1& a, const keytype1& b) const {
+struct keyless {
+  bool operator()(const keytype& a, const keytype& b) const {
     return a.nx < b.nx || (a.nx == b.nx &&
-                           (a.threads < b.threads || (a.threads == b.threads &&
-                                                      a.inplace < b.inplace)));
-  }
-};
-
-struct keytype2 {
-  unsigned int nx;
-  unsigned int ny;
-  unsigned int threads;
-  bool inplace;
-  keytype2(unsigned int nx, unsigned int ny, unsigned int threads,
-           bool inplace) :
-    nx(nx), ny(ny), threads(threads), inplace(inplace) {}
-};
-
-struct keyless2 {
-  bool operator()(const keytype2& a, const keytype2& b) const {
-    return a.nx < b.nx || (a.nx == b.nx &&
-                           (a.ny < b.ny || (a.ny == b.ny &&
-                                            (a.threads < b.threads ||
-                                             (a.threads == b.threads &&
-                                              a.inplace < b.inplace)))));
-  }
-};
-
-struct keytype3 {
-  unsigned int nx;
-  unsigned int ny;
-  unsigned int nz;
-  unsigned int threads;
-  bool inplace;
-  keytype3(unsigned int nx, unsigned int ny, unsigned int nz,
-           unsigned int threads, bool inplace) :
-    nx(nx), ny(ny), nz(nz), threads(threads), inplace(inplace) {}
-};
-
-struct keyless3 {
-  bool operator()(const keytype3& a, const keytype3& b) const {
-    return a.nx < b.nx || (a.nx == b.nx &&
-                           (a.ny < b.ny || (a.ny == b.ny &&
-                                            (a.nz < b.nz ||
-                                             (a.nz == b.nz &&
+                           (a.M < b.M || (a.M == b.M &&
                                               (a.threads < b.threads ||
                                                (a.threads == b.threads &&
-                                                a.inplace < b.inplace)))))));
+                                                a.inplace < b.inplace)))));
   }
 };
 
@@ -653,9 +601,8 @@ struct keyless3 {
 //   fft1d Backward(n,1);
 //   Backward.fft(in);
 //
-class fft1d : public fftw, public Threadtable<keytype1,keyless1> {
+class fft1d : public fftw {
   unsigned int nx;
-  static Table threadtable;
 public:
   fft1d(unsigned int nx, int sign, Complex *in=NULL, Complex *out=NULL,
         unsigned int threads=maxthreads)
@@ -668,13 +615,6 @@ public:
     : fftw(2*in.Nx(),sign,threads), nx(in.Nx()) {Setup(in,out);}
 #endif
 
-  threaddata lookup(bool inplace, unsigned int threads) {
-    return this->Lookup(threadtable,keytype1(nx,threads,inplace));
-  }
-  void store(bool inplace, const threaddata& data) {
-    this->Store(threadtable,keytype1(nx,data.threads,inplace),data);
-  }
-
   fftw_plan Plan(Complex *in, Complex *out) {
     return fftw_plan_dft_1d(nx,(fftw_complex *) in,(fftw_complex *) out,
                             sign,effort);
@@ -682,7 +622,8 @@ public:
 };
 
 template<class I, class O>
-class fftwblock : public virtual fftw {
+class fftwblock : public virtual fftw,
+                  public virtual Threadtable<keytype,keyless> {
 public:
   int nx;
   unsigned int M;
@@ -690,15 +631,16 @@ public:
   size_t idist,odist;
   fftw_plan plan1,plan2;
   unsigned int T,Q,R;
-  fftwblock() : plan1(NULL), plan2(NULL) {
-  }
+  fftwblock() : plan1(NULL), plan2(NULL) {}
 
   fftwblock(unsigned int nx, unsigned int M,
-            size_t istride, size_t ostride, size_t idist, size_t odist,
-            Complex *in, Complex *out, unsigned int Threads)
+            size_t istride, size_t ostride, size_t idist, size_t odist)
     : fftw(), nx(nx), M(M), istride(istride), ostride(ostride),
       idist(Dist(nx,istride,idist)), odist(Dist(nx,ostride,odist)),
-      plan1(NULL), plan2(NULL) {
+      plan1(NULL), plan2(NULL) {}
+
+  void init(Complex *in, Complex *out, unsigned int Threads,
+            Table& threadtable) {
     T=1;
     Q=M;
     R=0;
@@ -706,8 +648,6 @@ public:
     threads=Threads;
     Setup(in,out);
     Threads=threads;
-
-    fftw_plan planFFTW=plan;
 
     unsigned T0=std::min(M,Threads);
     if(T0 > 1) {
@@ -729,13 +669,22 @@ public:
         Q=T > 0 ? M/T : 0;
         R=M-Q*T;
 
-        threads=1;
-        Setup(in,out);
-        plan1=plan;
-      }
+        unsigned int data=Lookup(threadtable,keytype(nx,M,Threads,inplace));
+        if(data == 1)
+          T0=1;
+        else {
+          fftw_plan planFFTW=plan;
+          threads=1;
+          Setup(in,out);
+          plan1=plan;
+          if(data == T) {
+            plan=NULL;
+            return;
+          }
+          plan=planFFTW;
+        }
+      } else T0=1;
     }
-
-    plan=planFFTW;
 
     if(T0 == 1 || time(in,out)) { // Use FFTW's multithreading
       T=1;
@@ -746,10 +695,12 @@ public:
           fftw_destroy_plan(plan2);
           plan2=NULL;
         }
+        Store(threadtable,keytype(nx,M,Threads,inplace),T);
       }
-    } else // Do the multithreading ourselves
+    } else { // Do the multithreading ourselves
       T=T0;
-//      return threaddata(threads,ST.median());
+      Store(threadtable,keytype(nx,M,Threads,inplace),T);
+    }
   }
 
   bool time(Complex *in, Complex *out) {
@@ -858,37 +809,35 @@ public:
 };
 
 class Mfft1d : public fftwblock<fftw_complex,fftw_complex>,
-               public Threadtable<keytype3,keyless3> {
+               public virtual Threadtable<keytype,keyless> {
   static Table threadtable;
 public:
   Mfft1d(unsigned int nx, int sign, unsigned int M=1,
          Complex *in=NULL, Complex *out=NULL,
          unsigned int threads=maxthreads) :
     fftw(2*((nx-1)+(M-1)*nx+1),sign,threads,nx),
-    fftwblock<fftw_complex,fftw_complex>
-    (nx,M,1,1,nx,nx,in,out,threads) {}
+    fftwblock<fftw_complex,fftw_complex>(nx,M,1,1,nx,nx) {
+    init(in,out,threads,threadtable);
+  }
 
     Mfft1d(unsigned int nx, int sign, unsigned int M, size_t stride=1,
            size_t dist=0, Complex *in=NULL, Complex *out=NULL,
            unsigned int threads=maxthreads) :
       fftw(2*((nx-1)*stride+(M-1)*Dist(nx,stride,dist)+1),sign,threads,nx),
       fftwblock<fftw_complex,fftw_complex>
-      (nx,M,stride,stride,dist,dist,in,out,threads) {}
+      (nx,M,stride,stride,dist,dist) {
+      init(in,out,threads,threadtable);
+    }
 
       Mfft1d(unsigned int nx, int sign, unsigned int M,
              size_t istride, size_t ostride, size_t idist, size_t odist,
              Complex *in, Complex *out, unsigned int threads=maxthreads):
         fftw(std::max(2*((nx-1)*istride+(M-1)*Dist(nx,istride,idist)+1),
                       2*((nx-1)*ostride+(M-1)*Dist(nx,ostride,odist)+1)),sign,
-             threads, nx),
-        fftwblock<fftw_complex,fftw_complex>(nx,M,istride,ostride,idist,odist,in,
-                                             out,threads) {}
-
-        threaddata lookup(bool inplace, unsigned int threads) {
-          return Lookup(threadtable,keytype3(nx,Q,R,threads,inplace));
-        }
-  void store(bool inplace, const threaddata& data) {
-    Store(threadtable,keytype3(nx,Q,R,data.threads,inplace),data);
+             threads,nx),
+        fftwblock<fftw_complex,fftw_complex>(nx,M,istride,ostride,idist,odist)
+  {
+    init(in,out,threads,threadtable);
   }
 };
 
@@ -1007,9 +956,8 @@ public:
 //   in contains the n real values stored as a Complex array;
 //   out contains the first n/2+1 Complex Fourier values.
 //
-class rcfft1d : public fftw, public Threadtable<keytype1,keyless1> {
+class rcfft1d : public fftw {
   unsigned int nx;
-  static Table threadtable;
 public:
   rcfft1d(unsigned int nx, Complex *out=NULL, unsigned int threads=maxthreads)
     : fftw(2*(nx/2+1),-1,threads,nx), nx(nx) {Setup(out,(double*) NULL);}
@@ -1017,13 +965,6 @@ public:
   rcfft1d(unsigned int nx, double *in, Complex *out=NULL,
           unsigned int threads=maxthreads)
     : fftw(2*(nx/2+1),-1,threads,nx), nx(nx) {Setup(in,out);}
-
-  threaddata lookup(bool inplace, unsigned int threads) {
-    return Lookup(threadtable,keytype1(nx,threads,inplace));
-  }
-  void store(bool inplace, const threaddata& data) {
-    Store(threadtable,keytype1(nx,data.threads,inplace),data);
-  }
 
   fftw_plan Plan(Complex *in, Complex *out) {
     return fftw_plan_dft_r2c_1d(nx,(double *) in,(fftw_complex *) out, effort);
@@ -1055,9 +996,8 @@ public:
 //   in contains the first n/2+1 Complex Fourier values.
 //   out contains the n real values stored as a Complex array;
 //
-class crfft1d : public fftw, public Threadtable<keytype1,keyless1> {
+class crfft1d : public fftw {
   unsigned int nx;
-  static Table threadtable;
 public:
   crfft1d(unsigned int nx, double *out=NULL, unsigned int threads=maxthreads)
     : fftw(2*(nx/2+1),1,threads,nx), nx(nx) {Setup(out);}
@@ -1065,13 +1005,6 @@ public:
   crfft1d(unsigned int nx, Complex *in, double *out=NULL,
           unsigned int threads=maxthreads)
     : fftw(realsize(nx,Inplace(in,out)),1,threads,nx), nx(nx) {Setup(in,out);}
-
-  threaddata lookup(bool inplace, unsigned int threads) {
-    return Lookup(threadtable,keytype1(nx,threads,inplace));
-  }
-  void store(bool inplace, const threaddata& data) {
-    Store(threadtable,keytype1(nx,data.threads,inplace),data);
-  }
 
   fftw_plan Plan(Complex *in, Complex *out) {
     return fftw_plan_dft_c2r_1d(nx,(fftw_complex *) in,(double *) out,effort);
@@ -1083,7 +1016,7 @@ public:
 };
 
 class Mrcfft1d : public fftwblock<double,fftw_complex>,
-                 public Threadtable<keytype3,keyless3> {
+                 public virtual Threadtable<keytype,keyless> {
   static Table threadtable;
 public:
   Mrcfft1d(unsigned int nx, unsigned int M, size_t istride, size_t ostride,
@@ -1092,14 +1025,8 @@ public:
     : fftw(Doubles(nx,M,istride,ostride,idist,odist,Inplace(in,out)).csize,
            -1,threads,nx),
       fftwblock<double,fftw_complex>
-    (nx,M,istride,ostride,idist,odist,(Complex *) in,out,threads) {}
-
-    threaddata lookup(bool inplace, unsigned int threads) {
-      return Lookup(threadtable,keytype3(nx,Q,R,threads,inplace));
-    }
-
-  void store(bool inplace, const threaddata& data) {
-    Store(threadtable,keytype3(nx,Q,R,data.threads,inplace),data);
+    (nx,M,istride,ostride,idist,odist) {
+    init((Complex *) in,out,threads,threadtable);
   }
 
   void Normalize(Complex *out) {
@@ -1187,7 +1114,7 @@ public:
 };
 
 class Mcrfft1d : public fftwblock<fftw_complex,double>,
-                 public Threadtable<keytype3,keyless3> {
+                 public virtual Threadtable<keytype,keyless> {
   static Table threadtable;
 public:
   Mcrfft1d(unsigned int nx, unsigned int M, size_t istride, size_t ostride,
@@ -1196,14 +1123,8 @@ public:
     : fftw(Doubles(nx,M,ostride,istride,odist,idist,Inplace(in,out)).rsize,
            1,threads,nx),
       fftwblock<fftw_complex,double>
-    (nx,M,istride,ostride,idist,odist,in,(Complex *) out,threads) {}
-
-    threaddata lookup(bool inplace, unsigned int threads) {
-      return Lookup(threadtable,keytype3(nx,Q,R,threads,inplace));
-    }
-
-  void store(bool inplace, const threaddata& data) {
-    Store(threadtable,keytype3(nx,Q,R,data.threads,inplace),data);
+    (nx,M,istride,ostride,idist,odist) {
+    init(in,(Complex *) out,threads,threadtable);
   }
 
   void Normalize(double *out) {
@@ -1315,10 +1236,9 @@ public:
 // Note:
 //   in[ny*i+j] contains the ny Complex values for each i=0,...,nx-1.
 //
-class fft2d : public fftw, public Threadtable<keytype2,keyless2> {
+class fft2d : public fftw {
   unsigned int nx;
   unsigned int ny;
-  static Table threadtable;
 public:
   fft2d(unsigned int nx, unsigned int ny, int sign, Complex *in=NULL,
         Complex *out=NULL, unsigned int threads=maxthreads)
@@ -1332,13 +1252,6 @@ public:
     Setup(in,out);
   }
 #endif
-
-  threaddata lookup(bool inplace, unsigned int threads) {
-    return this->Lookup(threadtable,keytype2(nx,ny,threads,inplace));
-  }
-  void store(bool inplace, const threaddata& data) {
-    this->Store(threadtable,keytype2(nx,ny,data.threads,inplace),data);
-  }
 
   fftw_plan Plan(Complex *in, Complex *out) {
     return fftw_plan_dft_2d(nx,ny,(fftw_complex *) in,(fftw_complex *) out,
