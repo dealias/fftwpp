@@ -87,12 +87,13 @@ unsigned int parallelLoop(Complex *A, unsigned int m, unsigned int threads)
   return elapsed.count();
 }
 
-unsigned int threshold=UINT_MAX-1;
+const unsigned int maxThreshold=1 << 24;
+unsigned int threshold=UINT_MAX;
 
 unsigned int Threshold(unsigned int threads)
 {
   if(threads > 1) {
-    for(unsigned int m=1; m < UINT_MAX; m *= 2) {
+    for(unsigned int m=1; m < maxThreshold; m *= 2) {
       Complex *A=utils::ComplexAlign(m);
       if(!A)
         break;
@@ -101,12 +102,12 @@ unsigned int Threshold(unsigned int threads)
       utils::deleteAlign(A);
     }
   }
-  return UINT_MAX;
+  return maxThreshold;
 }
 
 void Threshold()
 {
-  if(threshold == UINT_MAX-1)
+  if(threshold == UINT_MAX)
     threshold=Threshold(fftw::maxthreads);
 }
 

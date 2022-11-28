@@ -72,7 +72,7 @@ inline int get_max_threads()
 
 #ifndef FFTWPP_SINGLE_THREAD
 #define PARALLELIF(condition,code)                      \
-  if(condition) {                                       \
+  if(threads > 1 && condition) {                        \
     _Pragma("omp parallel for num_threads(threads)")    \
       code                                              \
       } else {code}
@@ -341,7 +341,7 @@ public:
     inplace=(out==in);
 
     Threshold();
-    if(doubles/2 < threshold)
+    if(doubles < 2*threshold)
       threads=1;
 
     planThreads(threads);
@@ -356,10 +356,18 @@ public:
   }
 
   void Setup(Complex *in, double *out) {
+    Threshold();
+    if(doubles < 4*threshold)
+      threads=1;
+
     Setup(in,(Complex *) out);
   }
 
   void Setup(double *in, Complex *out=NULL) {
+    Threshold();
+    if(doubles < 4*threshold)
+      threads=1;
+
     Setup((Complex *) in,out);
   }
 
@@ -676,6 +684,7 @@ public:
           fftw_plan planFFTW=plan;
           threads=1;
           Setup(in,out);
+          threads=Threads;
           plan1=plan;
           if(data == T) {
             plan=NULL;
@@ -728,9 +737,10 @@ public:
         (t1-t0);
       ST.add(elapsedT.count());
 
-      if(S.count() >= 2 && ST.min() >= S.max())
+      if(S.count() >= 4 && ST.min() >= S.max())
         return true;
-      if(S.count() >= 2 && S.min() >= ST.max())
+
+      if(S.count() >= 4 && S.min() >= ST.max())
         return false;
 
       medianS.add(S.median());

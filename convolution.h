@@ -24,13 +24,6 @@
 
 namespace fftwpp {
 
-// TEMP
-#define PARALLELIF(condition,code)                      \
-  if(condition) {                                       \
-    _Pragma("omp parallel for num_threads(threads)")    \
-      code                                              \
-      } else {code}
-
 #ifndef __convolution_h__
 #define __convolution_h__ 1
 
