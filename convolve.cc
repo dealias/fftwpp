@@ -90,7 +90,7 @@ void realmultbinary(Complex **F, unsigned int n, Indices *indices,
 #endif
 
   PARALLELIF(
-    n > threshold,
+    n > 2*threshold,
     for(unsigned int j=0; j < n; ++j)
       F0[j] *= F1[j];
     );
