@@ -72,7 +72,7 @@ inline int get_max_threads()
 
 #ifndef FFTWPP_SINGLE_THREAD
 #define PARALLELIF(condition,code)                      \
-  if(condition) {                        \
+  if(threads > 1 && condition) {                        \
     _Pragma("omp parallel for num_threads(threads)")    \
       code                                              \
       } else {code}

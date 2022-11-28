@@ -114,8 +114,6 @@ public:
       multithread(n);
       this->threads=innerthreads;
     }
-    std::cout << "Requesting " << this->threads << " threads." << std::endl;
-    std::cout << std::endl;
   };
 };
 
@@ -173,7 +171,7 @@ public:
 
     virtual double time(unsigned int L, unsigned int M, unsigned int C,
                         unsigned int S, unsigned int m, unsigned int q,
-                        unsigned int D, bool inplace, unsigned int &threads,
+                        unsigned int D, bool inplace, unsigned int threads,
                         Application &app)=0;
 
     virtual bool valid(unsigned int D, unsigned int p, unsigned int S) {
@@ -479,9 +477,8 @@ public:
 
     double time(unsigned int L, unsigned int M, unsigned int C, unsigned int S,
                 unsigned int m, unsigned int q,unsigned int D,
-                bool inplace, unsigned int &threads, Application &app) {
+                bool inplace, unsigned int threads, Application &app) {
       fftPad fft(L,M,C,S,m,q,D,inplace,app.mult,threads);
-      threads=fft.Threads();
       return timePad(&fft,app,threshold);
     }
   };
@@ -588,9 +585,8 @@ public:
 
     double time(unsigned int L, unsigned int M, unsigned int C, unsigned int S,
                 unsigned int m, unsigned int q, unsigned int D,
-                bool inplace, unsigned int &threads, Application &app) {
+                bool inplace, unsigned int threads, Application &app) {
       fftPadCentered fft(L,M,C,S,m,q,D,inplace,app.mult,threads);
-      threads=fft.Threads();
       return timePad(&fft,app,threshold);
     }
   };
@@ -705,9 +701,8 @@ public:
 
     double time(unsigned int L, unsigned int M, unsigned int C, unsigned int,
                 unsigned int m, unsigned int q, unsigned int D,
-                bool inplace, unsigned int &threads, Application &app) {
+                bool inplace, unsigned int threads, Application &app) {
       fftPadHermitian fft(L,M,C,m,q,D,inplace,app.mult,threads);
-      threads=fft.Threads();
       return timePadHermitian(&fft,app,threshold);
     }
   };
