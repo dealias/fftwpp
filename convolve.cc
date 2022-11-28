@@ -4501,7 +4501,6 @@ void fftPadHermitian::init()
     cout << endl << "Forwards Routine: " << "fftPadHermitian::" << FR << endl;
     cout << "Backwards Routine: " << "fftPadHermitian::" << BR << endl;
   }
-  threads=crfftm->Threads();
 }
 
 fftPadHermitian::~fftPadHermitian()

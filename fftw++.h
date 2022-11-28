@@ -72,7 +72,7 @@ inline int get_max_threads()
 
 #ifndef FFTWPP_SINGLE_THREAD
 #define PARALLELIF(condition,code)                      \
-  if(threads > 1 && condition) {                        \
+  if(condition) {                        \
     _Pragma("omp parallel for num_threads(threads)")    \
       code                                              \
       } else {code}
@@ -684,7 +684,6 @@ public:
           fftw_plan planFFTW=plan;
           threads=1;
           Setup(in,out);
-          threads=Threads;
           plan1=plan;
           if(data == T) {
             plan=NULL;
@@ -704,10 +703,12 @@ public:
           fftw_destroy_plan(plan2);
           plan2=NULL;
         }
+        threads=Threads;
         Store(threadtable,keytype(nx,M,Threads,inplace),T);
       }
     } else { // Do the multithreading ourselves
       T=T0;
+      threads=T;
       Store(threadtable,keytype(nx,M,Threads,inplace),T);
     }
   }
