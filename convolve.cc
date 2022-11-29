@@ -614,7 +614,7 @@ void fftPad::init()
 
     initZetaqm(q,centered && p == 2 ? m+1 : m);
   }
-  if(showRoutines) {// && (q != 1 || !centered)) {
+  if(showRoutines && (q != 1 || !centered)) {
     char const* cent=centered ? "Centered" : "";
     char const* all=overwrite ? "All" : "";
     cout << endl << "Forwards Routine: " << "fftPad" << cent << "::" << FR << all << endl;
