@@ -460,6 +460,8 @@ timer timePad,timePadHermitian;
 
 class fftPad : public fftBase {
 protected:
+  fft1d *fftm1;
+  fft1d *ifftm1;
   mfft1d *fftm,*fftm0;
   mfft1d *ifftm,*ifftm0;
   mfft1d *fftp;
@@ -680,6 +682,8 @@ public:
 class fftPadHermitian : public fftBase {
   unsigned int e;
   unsigned int B; // Work block size
+  crfft1d *crfftm1;
+  rcfft1d *rcfftm1;
   mcrfft1d *crfftm;
   mrcfft1d *rcfftm;
   mfft1d *fftp;
@@ -976,9 +980,17 @@ public:
     if(W && W == W0) (fft->*Pad)(W0);
   }
 
-  void convolveRaw(Complex **f, unsigned int offset=0, Indices *indices=NULL);
+  void convolveRaw(Complex **f);
+  void convolveRaw(Complex **f, Indices *indices);
 
-  void convolve(Complex **f, unsigned int offset=0) {
+  void convolveRaw(Complex **f, unsigned int offset);
+  void convolveRaw(Complex **f, unsigned int offset, Indices *indices);
+
+  void convolve(Complex **f) {
+    convolveRaw(f);
+    normalize(f);
+  }
+  void convolve(Complex **f, unsigned int offset) {
     convolveRaw(f,offset);
     normalize(f,offset);
   }

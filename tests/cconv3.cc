@@ -51,8 +51,6 @@ inline void init(Complex **F,
   }
 }
 
-unsigned int outlimit=3000;
-
 int main(int argc, char* argv[])
 {
   fftw::maxthreads=get_max_threads();
@@ -264,7 +262,7 @@ int main(int argc, char* argv[])
             h0[i][j][k]=F[0][nyp*nzp*i+nzp*j+k];
     }
 
-    if(mx*my*mz < outlimit) {
+    if(Output) {
       for(unsigned int i=0; i < mx; i++) {
         for(unsigned int j=0; j < my; j++) {
           for(unsigned int k=0; k < mz; k++)
@@ -293,7 +291,7 @@ int main(int argc, char* argv[])
 
     timings("Direct",mx*my*mz,T,1);
 
-    if(mx*my*mz < outlimit) {
+    if(Output) {
       for(unsigned int i=0; i < mx; i++) {
         for(unsigned int j=0; j < my; j++) {
           for(unsigned int k=0; k < mz; k++)
@@ -302,7 +300,7 @@ int main(int argc, char* argv[])
         }
         cout << endl;
       }
-    } else cout << h[0][0][0] << endl;
+    }
 
     { // compare implicit or explicit version with direct verion:
       double error=0.0;

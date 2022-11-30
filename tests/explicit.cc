@@ -32,7 +32,7 @@ void multbinary(double **F, unsigned int n, unsigned int threads)
   double ninv=1.0/n;
 
   PARALLELIF(
-    n > threshold,
+    n > 2*threshold,
     for(unsigned int j=0; j < n; ++j)
       F0[j] *= ninv*F1[j];
     );
@@ -62,7 +62,7 @@ void multbinaryUnNormalized(double **F, unsigned int n, unsigned int threads)
   double* F1=F[1];
 
   PARALLELIF(
-    n > threshold,
+    n > 2*threshold,
     for(unsigned int j=0; j < n; ++j)
       F0[j] *= F1[j];
     );

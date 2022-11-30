@@ -27,8 +27,6 @@ bool zcompact=true;
 
 unsigned int threads;
 
-unsigned int outlimit=300;
-
 bool Explicit=false;
 
 inline void init(Complex **F,
@@ -366,7 +364,7 @@ int main(int argc, char* argv[])
     timings("Direct",(2*mx-1)*(2*my-1)*(2*mz-1),T,1);
     cout << endl;
 
-    if(nxp*nyp*mz < outlimit)
+    if(Output)
       for(unsigned int i=0; i < nxp; ++i) {
         for(unsigned int j=0; j < nyp; ++j) {
           for(unsigned int k=0; k < mz; ++k)
