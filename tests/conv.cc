@@ -202,7 +202,7 @@ int main(int argc, char* argv[])
   cout << "m=" << m << endl;
 
   if(N == 0) {
-    N=N0/(3*m);
+    N=N0/n;
     N=max(N,20);
   }
   cout << "N=" << N << endl;

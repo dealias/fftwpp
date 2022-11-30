@@ -172,7 +172,7 @@ int main(int argc, char* argv[])
   cout << "mx=" << mx << ", my=" << my << endl;
 
   if(N == 0) {
-    N=N0/(9*mx*my);
+    N=N0/(nx*ny);
     N=max(N,20);
   }
   cout << "N=" << N << endl;
