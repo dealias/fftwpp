@@ -15,7 +15,11 @@ def ceilquotient(a,b):
 def getParam(name, comment):
   try:
     param=re.findall(r"(?<="+name+"=)\d+",comment)
-    return " ".join(param)
+    l=len(param)
+    xyz=["x","y","z"] if l > 1 else [""]
+    for i in range(l):
+        param[i]=f"{name}{xyz[i]}={param[i]}"
+    return"  ".join(param)
   except:
     print("Could not find "+name)
     return -1
@@ -29,7 +33,7 @@ def collectParams(comment,L,M):
   D=getParam("D",comment)
   I=getParam("I",comment)
 
-  params=str(L)+" "+str(M)+" "+m+" "+p+" "+q+" "+C+" "+S+" "+D+" "+I
+  params=f"#\nL={L}  M={M}\n{m}\n{p}\n{q}\n{C}\n{S}\n{D}\n{I}"
   return params
 
 def Lvals_from_file(filename):
@@ -499,15 +503,6 @@ def main(argv):
                     if hybrid:
                         with open(optFile,"w") as logfile:
                             logfile.write("# Optimal values for "+p+"\n")
-                            if dimension == 1:
-                                logfile.write("# L M m p q C S D I\n")
-                            if dimension == 2:
-                                logfile.write("# L M mx my px py qx qy Cx Cy "+\
-                                              "Sx Sy Dx Dy Ix Iy\n")
-                            if dimension == 3:
-                                logfile.write("# L M mx my mz px py pz qx qy "+\
-                                              "qz Cx Cy Cz Sx Sy Sz Dx Dy Dz "+\
-                                              "Ix Iy Iz\n")
                             logfile.write("#\n"+comment)
 
         for i in range(a,b+1,1 if I == 0 else I):
