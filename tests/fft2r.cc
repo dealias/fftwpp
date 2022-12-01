@@ -18,7 +18,7 @@ void finit(array2<double> f, unsigned int nx, unsigned int ny)
   }
 }
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
   cout << "2D real-to-complex FFT" << endl;
 

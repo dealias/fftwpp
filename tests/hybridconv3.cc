@@ -1,3 +1,5 @@
+#include <vector>
+
 #include "convolve.h"
 #include "timing.h"
 #include "direct.h"
@@ -10,7 +12,7 @@ using namespace fftwpp;
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
   Lx=Ly=Lz=8;  // input data length
   Mx=My=Mz=16; // minimum padded length
@@ -30,17 +32,16 @@ int main(int argc, char* argv[])
   cout << "My=" << My << endl;
   cout << "Mz=" << Mz << endl;
 
-  unsigned int K0=10000000;
-  if(K == 0) K=max(K0/((unsigned long long) Mx*My*Mz),20);
   if(Output || testError)
-    K=1;
+    K=0;
   cout << "K=" << K << endl << endl;
+  K *= 1.0e9;
+
+  vector<double> T;
+  unsigned int N=max(A,B);
 
   if(Sy == 0) Sy=Lz;
   if(Sx == 0) Sx=Ly*Sy;
-
-  double *T=new double[K];
-  unsigned int N=max(A,B);
 
   Application appx(A,B,multNone,fftw::maxthreads,0,mx,Dx,Ix);
   fftPad fftx(Lx,Mx,appx,Sy == Lz? Ly*Lz : Lz,Sx);
@@ -75,22 +76,24 @@ int main(int argc, char* argv[])
     C.convolve(h,f[0],f[1]);
   }
 
-  if(normalized || testError) {
-    for(unsigned int k=0; k < K; ++k) {
+  double sum=0.0;
+  while(sum <= K || T.size() < minCount) {
+    double t;
+    if(normalized || testError) {
       double t0=nanoseconds();
       Convolve3.convolve(f);
-      T[k]=nanoseconds()-t0;
-    }
-  } else {
-    for(unsigned int k=0; k < K; ++k) {
+      t=nanoseconds()-t0;
+    } else {
       double t0=nanoseconds();
       Convolve3.convolveRaw(f);
-      T[k]=nanoseconds()-t0;
+      t=nanoseconds()-t0;
     }
+    T.push_back(t);
+    sum += t;
   }
 
   cout << endl;
-  timings("Hybrid",Lx*Ly*Lz,T,K,stats);
+  timings("Hybrid",Lx*Ly*Lz,T.data(),T.size(),stats);
   cout << endl;
 
   if(Output) {

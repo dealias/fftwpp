@@ -5,7 +5,9 @@
 #include "seconds.h"
 #include "Complex.h"
 
-extern unsigned int K; // number of iterations
+extern double K;       // Time limit (seconds) for testing
+extern unsigned int minCount; // Minimum sample size for testing
+
 extern unsigned int C; // number of padded FFTs to compute
 extern unsigned int S; // stride between padded FFTs
 extern int stats;      // type of statistics used in timing test
@@ -52,7 +54,7 @@ inline void usageCommon(int n)
   std::cerr << "-h\t\t help" << std::endl;
   std::cerr << "-m n\t\t size m" << std::endl;
   std::cerr << "-u\t\t unnormalized" << std::endl;
-  std::cerr << "-N n\t\t use n iterations" << std::endl;
+  std::cerr << "-K t\t\t time limit (seconds)" << std::endl;
   std::cerr << "-T n\t\t use n threads" << std::endl;
   std::cerr << "-O\t\t output result" << std::endl;
   std::cerr << "-S<int>\t\t stats used in timing test: "
@@ -170,7 +172,7 @@ inline void usageHybrid(bool fft=false)
   std::cerr << "-I\t\t (0=out-of-place, 1=in-place) FFTs [by default I=1 only for multiple FFTs]" << std::endl;
   std::cerr << "-O\t\t output result (sets K=1)" << std::endl;
   std::cerr << "-R\t\t show which forward and backward routines are used" << std::endl;
-  std::cerr << "-K n\t\t number n of iterations" << std::endl;
+  std::cerr << "-K t\t\t time limit (seconds)" << std::endl;
   std::cerr << "-L n\t\t number n of physical data values" << std::endl;
   std::cerr << "-M n\t\t minimal number n of padded data values" << std::endl;
   if(fft)

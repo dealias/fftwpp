@@ -174,7 +174,7 @@ def main(argv):
     -o<outfile>
     -P<path to executable>
     -g<grep string>
-    -N<int> Number of tests to perform
+    -K<float> minimum time per test (default 1s)
     -S<int> Type of statistics (default 0=MEDIAN)
     -e: erase existing timing data
     -c<string>: extra commentary for output file.
@@ -200,7 +200,7 @@ def main(argv):
     outdir = ""  # output directory
     outfile = "" # output filename
     rname = ""   # output grep string
-    N = 0        # number of tests
+    K = 0
     appendtofile = True
     stats = 0
     path = "."
@@ -208,7 +208,7 @@ def main(argv):
     extracomment = ""
 
     try:
-        opts, args = getopt.getopt(argv,"dhep:T:a:b:c:I:A:B:E:r:R:S:o:P:D:g:N:v")
+        opts, args = getopt.getopt(argv,"dhep:T:a:b:c:I:A:B:E:r:R:S:o:P:D:g:K:v")
     except getopt.GetoptError:
         print("error in parsing arguments.")
         print(usage)
@@ -220,8 +220,8 @@ def main(argv):
             T = int(arg)
         elif opt in ("-a"):
             a = int(arg)
-        elif opt in ("-N"):
-            N = int(arg)
+        elif opt in ("-K"):
+            K = float(arg)
         elif opt in ("-b"):
             b = int(arg)
         elif opt in ("-I"):
@@ -426,8 +426,8 @@ def main(argv):
 
         cmd.append("-S" + str(stats))
         cmd.append("-T" + str(T))
-        if N > 0:
-            cmd.append(("-K" if hybrid else "-N") + str(N))
+        if K > 0:
+            cmd.append("-K" + str(K))
         cmd.append("-u")
 
         # Add the extra arguments to the program being timed.

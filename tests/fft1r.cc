@@ -15,7 +15,7 @@ void finit(array1<double> f, unsigned int m)
     f[i]=i;
 }
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
   cout << "1D Complex to real in-place FFT" << endl;
 

@@ -1,3 +1,5 @@
+#include <vector>
+
 #include "convolution.h"
 #include "explicit.h"
 #include "direct.h"
@@ -111,7 +113,7 @@ inline void init(Complex **F,
   }
 }
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
   threads=fftw::maxthreads=get_max_threads();
 
@@ -119,6 +121,9 @@ int main(int argc, char* argv[])
   bool Implicit=true;
   bool Output=false;
   bool Normalized=true;
+
+  double K=1.0; // Time limit (seconds)
+  unsigned int minCount=20;
 
   unsigned int A=2; // Number of independent inputs
   unsigned int B=1; // Number of outputs
@@ -156,8 +161,8 @@ int main(int argc, char* argv[])
       case 'B':
         B=atoi(optarg);
         break;
-      case 'N':
-        N=atoi(optarg);
+      case 'K':
+        K=atof(optarg);
         break;
       case 'O':
         Output=true;
@@ -176,9 +181,6 @@ int main(int argc, char* argv[])
         break;
       case 'u':
         Normalized=false;
-        break;
-      case 'n':
-        N0=atoi(optarg);
         break;
       case 'T':
         threads=fftw::maxthreads=max(atoi(optarg),1);
@@ -213,12 +215,9 @@ int main(int argc, char* argv[])
 
   cout << "nx=" << nx << ", ny=" << ny << ", nz=" << ny << endl;
   cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
+  cout << "K=" << K << endl;
 
-  if(N == 0) {
-    N=N0/(nx*ny*nz);
-    N=max(N,20);
-  }
-  cout << "N=" << N << endl;
+  K *= 1.0e9;
 
   size_t align=ALIGNMENT;
   nxp=Explicit ? nx : 2*mx-xcompact;
@@ -249,7 +248,7 @@ int main(int argc, char* argv[])
     }
   }
 
-  double *T=new double[N];
+  vector<double> T;
 
   if(Implicit) {
     ImplicitHConvolution3 C(mx,my,mz,xcompact,ycompact,zcompact,A,B);
@@ -262,15 +261,19 @@ int main(int argc, char* argv[])
       default: cerr << "A=" << A << " is not yet implemented" << endl; exit(1);
     }
 
-    for(unsigned int i=0; i < N; ++i) {
+    double sum=0.0;
+    while(sum <= K || T.size() < minCount) {
       init(F,mx,my,mz,nxp,nyp,nzp,A,xcompact,ycompact,zcompact);
-     double t0=nanoseconds();
+      double t0=nanoseconds();
       C.convolve(F,mult);
 //      C.convolve(f,g);
-      T[i]=nanoseconds()-t0;
+      double t=nanoseconds()-t0;
+      T.push_back(t);
+      sum += t;
     }
 
-    timings("Implicit",(2*mx-1)*(2*my-1)*(2*mz-1),T,N,stats);
+    timings("Implicit",(2*mx-1)*(2*my-1)*(2*mz-1),T.data(),T.size(),stats);
+    T.clear();
     cout << endl;
 
     if(Normalized) {
@@ -309,21 +312,24 @@ int main(int argc, char* argv[])
 
     array3<Complex> g(nxp,nyp,nzp,F[1]);
 
-    for(unsigned int i=0; i < N; ++i) {
+    double sum=0.0;
+    while(sum <= K || T.size() < minCount) {
       double t0=nanoseconds();
       f=0.0;
       g=0.0;
       double t1=nanoseconds();
-      double sum=t1-t0;
+      double Sum=t1-t0;
       init(F,mx,my,mz,nxp,nyp,nzp,A,true,true,true,false);
       sum -= nanoseconds()-t1;
       init(F,mx,my,mz,nxp,nyp,nzp,A,true,true,true);
       double t2=nanoseconds();
       C.convolve(F,F+M);
-      T[i]=sum+nanoseconds()-t2;
+      double t=Sum+nanoseconds()-t2;
+      T.push_back(t);
+      sum += t;
     }
 
-    timings("Explicit",(2*mx-1)*(2*my-1)*(2*mz-1),T,N,stats);
+    timings("Explicit",(2*mx-1)*(2*my-1)*(2*mz-1),T.data(),T.size(),stats);
     cout << endl;
 
     unsigned int xoffset=nx/2-mx+1;
@@ -361,7 +367,8 @@ int main(int argc, char* argv[])
     C.convolve(h,F[0],F[1]);
     T[0]=nanoseconds()-t0;
 
-    timings("Direct",(2*mx-1)*(2*my-1)*(2*mz-1),T,1);
+    timings("Direct",(2*mx-1)*(2*my-1)*(2*mz-1),T.data(),1);
+    T.clear();
     cout << endl;
 
     if(Output)
@@ -392,7 +399,6 @@ int main(int argc, char* argv[])
 
   }
 
-  delete [] T;
   for(unsigned int a=0; a < A; ++a)
     deleteAlign(F[a]);
   delete [] F;

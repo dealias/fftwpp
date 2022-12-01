@@ -23,7 +23,7 @@ inline void init(array2<Complex>& f, unsigned int mx, unsigned int my)
 
 unsigned int outlimit=100;
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
   fftw::maxthreads=get_max_threads();
 

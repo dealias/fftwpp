@@ -11,7 +11,7 @@ using namespace utils;
 using namespace Array;
 using namespace fftwpp;
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
   cout << "1D Complex to complex in-place FFT" << endl;
 

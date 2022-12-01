@@ -17,7 +17,7 @@ void finit(array3<double> f, unsigned int nx, unsigned int ny, unsigned int nz)
         f(i,j,k)=i+j+k;
 }
 
-int main(int argc,char* argv[])
+int main(int argc,char *argv[])
 {
   cout << "3D real-to-complex FFT" << endl;
 

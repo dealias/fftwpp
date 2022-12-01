@@ -1,3 +1,5 @@
+#include <vector>
+
 #include "convolution.h"
 #include "explicit.h"
 #include "direct.h"
@@ -54,7 +56,7 @@ void add(Complex *f, Complex *F)
   }
 }
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
   fftw::maxthreads=get_max_threads();
 
@@ -64,6 +66,9 @@ int main(int argc, char* argv[])
   bool Output=false;
   bool Normalized=true;
   bool Pruned=false;
+
+  double K=1.0; // Time limit (seconds)
+  unsigned int minCount=20;
 
   unsigned int A=2;
   unsigned int B=1;
@@ -107,8 +112,8 @@ int main(int argc, char* argv[])
       case 'B':
         B=atoi(optarg);
         break;
-      case 'N':
-        N=atoi(optarg);
+      case 'K':
+        K=atof(optarg);
         break;
       case 'O':
         Output=true;
@@ -124,9 +129,6 @@ int main(int argc, char* argv[])
         break;
       case 'y':
         my=atoi(optarg);
-        break;
-      case 'n':
-        N0=atoi(optarg);
         break;
       case 'T':
         fftw::maxthreads=max(atoi(optarg),1);
@@ -150,11 +152,8 @@ int main(int argc, char* argv[])
   cout << "nx=" << nx << ", ny=" << ny << endl;
   cout << "mx=" << mx << ", my=" << my << endl;
 
-  if(N == 0) {
-    N=N0/nx/ny;
-    N = max(N, 20);
-  }
-  cout << "N=" << N << endl;
+  cout << "K=" << K << endl;
+  K *= 1.0e9;
 
   size_t align=ALIGNMENT;
   array2<Complex> h0;
@@ -186,7 +185,7 @@ int main(int argc, char* argv[])
   // For easy access of first element
   array2<Complex> f(mx,my,F[0]);
 
-  double *T=new double[N];
+  vector<double> T;
 
   if(Implicit) {
     multiplier *mult;
@@ -204,15 +203,19 @@ int main(int argc, char* argv[])
     ImplicitConvolution2 C(mx,my,A,B);
     cout << "threads=" << C.Threads() << endl << endl;;
 
-    for(unsigned int i=0; i < N; ++i) {
+    double sum=0.0;
+    while(sum <= K || T.size() < minCount) {
       init(F,mx,my,A);
       double t0=nanoseconds();
       C.convolve(F,mult);
 //      C.convolve(F[0],F[1]);
-      T[i]=nanoseconds()-t0;
+      double t=nanoseconds()-t0;
+      T.push_back(t);
+      sum += t;
     }
 
-    timings("Implicit",mx*my,T,N,stats);
+    timings("Implicit",mx*my,T.data(),T.size(),stats);
+    T.clear();
 
     if(Normalized) {
       double norm=0.25/(mx*my);
@@ -245,15 +248,19 @@ int main(int argc, char* argv[])
     ExplicitConvolution2 C(nx,ny,mx,my,F[0],Pruned);
     cout << "threads=" << C.Threads() << endl << endl;;
 
-    for(unsigned int i=0; i < N; ++i) {
+    double sum=0.0;
+    while(sum <= K || T.size() < minCount) {
       init(F,nxp,nyp,A);
       double t0=nanoseconds();
       C.convolve(F[0],F[1]);
-      T[i]=nanoseconds()-t0;
+      double t=nanoseconds()-t0;
+      T.push_back(t);
+      sum += t;
     }
 
     cout << endl;
-    timings(Pruned ? "Pruned" : "Explicit",mx*my,T,N,stats);
+    timings(Pruned ? "Pruned" : "Explicit",mx*my,T.data(),T.size(),stats);
+    T.clear();
 
     if(Direct) {
       for(unsigned int i=0; i < mx; i++)
@@ -282,7 +289,8 @@ int main(int argc, char* argv[])
     T[0]=nanoseconds()-t0;
 
     cout << endl;
-    timings("Direct",mx*my,T,1);
+    timings("Direct",mx*my,T.data(),1);
+    T.clear();
 
     if(Output)
       for(unsigned int i=0; i < mx; i++) {
@@ -308,7 +316,6 @@ int main(int argc, char* argv[])
     }
   }
 
-  delete [] T;
   for(unsigned int a=0; a < A; ++a)
     deleteAlign(F[a]);
   delete [] F;

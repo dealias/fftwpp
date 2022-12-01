@@ -1,3 +1,5 @@
+#include <vector>
+
 #include "convolution.h"
 #include "explicit.h"
 #include "direct.h"
@@ -72,7 +74,7 @@ void multA(Complex **F, unsigned int m,
   }
 }
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
   fftw::maxthreads=get_max_threads();
 
@@ -82,10 +84,8 @@ int main(int argc, char* argv[])
   bool Output=false;
   bool Normalized=true;
 
-  // Number of iterations.
-  unsigned int N0=100000000;
-  unsigned int N=0;
-
+  double K=1.0; // Time limit (seconds)
+  unsigned int minCount=20;
   unsigned int m=11; // Problem size
 
   int stats=MEDIAN; // Type of statistics used in timing test.
@@ -123,8 +123,8 @@ int main(int argc, char* argv[])
       case 'B':
         B=atoi(optarg);
         break;
-      case 'N':
-        N=atoi(optarg);
+      case 'K':
+        K=atof(optarg);
         break;
       case 'O':
         Output=true;
@@ -137,9 +137,6 @@ int main(int argc, char* argv[])
         break;
       case 'm':
         m=atoi(optarg);
-        break;
-      case 'n':
-        N0=atoi(optarg);
         break;
       case 'T':
         fftw::maxthreads=max(atoi(optarg),1);
@@ -159,12 +156,9 @@ int main(int argc, char* argv[])
 
   cout << "n=" << n << endl;
   cout << "m=" << m << endl;
+  cout << "K=" << K << endl;
 
-  if(N == 0) {
-    N=N0/n;
-    N=max(N,20);
-  }
-  cout << "N=" << N << endl;
+  K *= 1.0e9;
 
   // Explicit and direct methods are only implemented for binary convolutions.
   if(!Implicit)
@@ -190,7 +184,7 @@ int main(int argc, char* argv[])
     }
   }
 
-  double *T=new double[N];
+  vector<double> T;
 
   if(Implicit) {
     ImplicitConvolution C(m,A,B);
@@ -222,15 +216,19 @@ int main(int argc, char* argv[])
       exit(1);
     }
 
-    for(unsigned int i=0; i < N; ++i) {
+    double sum=0.0;
+    while(sum <= K || T.size() < minCount) {
       init(F,m,A);
       double t0=nanoseconds();
       C.convolve(F,mult);
 //    C.convolve(F[0],F[1]);
-      T[i]=nanoseconds()-t0;
+      double t=nanoseconds()-t0;
+      T.push_back(t);
+      sum += t;
     }
 
-    timings("Implicit",m,T,N,stats);
+    timings("Implicit",m,T.data(),T.size(),stats);
+    T.clear();
 
     if(Normalized) {
       double norm=0.5/m;
@@ -262,16 +260,20 @@ int main(int argc, char* argv[])
     else mult=multbinaryUnNormalized;
 ;
     ExplicitConvolution C(n,m,F[0]);
-    for(unsigned int i=0; i < N; ++i) {
+    double sum=0.0;
+    while(sum <= K || T.size() < minCount) {
       init(F,m,A);
       double t0=nanoseconds();
       C.convolve(F,mult);
 //      C.convolve(F[0],F[1]);
-      T[i]=nanoseconds()-t0;
+      double t=nanoseconds()-t0;
+      T.push_back(t);
+      sum += t;
     }
 
     cout << endl;
-    timings("Explicit",m,T,N,stats);
+    timings("Explicit",m,T.data(),T.size(),stats);
+    T.clear();
 
     if(Output)
       for(unsigned int i=0; i < m; i++)
@@ -298,7 +300,7 @@ int main(int argc, char* argv[])
     T[0]=nanoseconds()-t0;
 
     cout << endl;
-    timings("Direct",m,T,1);
+    timings("Direct",m,T.data(),1);
 
     if(Output)
       for(unsigned int i=0; i < m; i++)
@@ -367,7 +369,6 @@ int main(int argc, char* argv[])
     deleteAlign(h);
   }
 
-  delete [] T;
   delete [] F;
   deleteAlign(f);
 

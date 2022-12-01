@@ -1,3 +1,5 @@
+#include <vector>
+
 #include "convolve.h"
 #include "timing.h"
 #include "direct.h"
@@ -10,7 +12,7 @@ using namespace fftwpp;
 unsigned int A=2; // number of inputs
 unsigned int B=1; // number of outputs
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
   L=7;  // input data length
   M=10; // minimum padded length
@@ -26,15 +28,14 @@ int main(int argc, char* argv[])
   cout << "L=" << L << endl;
   cout << "M=" << M << endl;
 
+  if(Output||testError)
+    K=0;
+  cout << "K=" << K << endl << endl;
+  K *= 1.0e9;
+
   unsigned int H=ceilquotient(L,2);
 
-  unsigned int K0=400000000;
-  if(K == 0) K=max(K0/M,20);
-  if(Output||testError)
-    K=1;
-  cout << "K=" << K << endl << endl;
-
-  double *T=new double[K];
+  vector<double> T;
   unsigned int N=max(A,B);
 
   Application app(A,B,realmultbinary,fftw::maxthreads,0,mx,Dx,Ix);
@@ -62,28 +63,29 @@ int main(int argc, char* argv[])
     C.convolve(h,f[0],f[1]);
   }
 
-  if(normalized || testError) {
-    for(unsigned int k=0; k < K; ++k) {
+  double sum=0.0;
+  while(sum <= K || T.size() < minCount) {
+    double t;
+    if(normalized || testError) {
       double t0=nanoseconds();
       Convolve.convolve(f);
-      T[k]=nanoseconds()-t0;
-    }
-  } else {
-    for(unsigned int k=0; k < K; ++k) {
+      t=nanoseconds()-t0;
+    } else {
       double t0=nanoseconds();
       Convolve.convolveRaw(f);
-      T[k]=nanoseconds()-t0;
+      t=nanoseconds()-t0;
     }
+    T.push_back(t);
+    sum += t;
   }
 
   cout << endl;
-  timings("Hermitian Hybrid",L,T,K,stats);
+  timings("Hermitian Hybrid",L,T.data(),T.size(),stats);
   cout << endl;
 
   if(Output) {
-    if(testError) {
+    if(testError)
       cout << "Hermitian Hybrid:" << endl;
-    }
     for(unsigned int b=0; b < B; ++b)
       for(unsigned int j=0; j < H; ++j)
         cout << f[b][j] << endl;
@@ -91,7 +93,7 @@ int main(int argc, char* argv[])
 
   if(testError) {
     if(Output) {
-      cout<<endl;
+      cout << endl;
       cout << "Direct:" << endl;
       for(unsigned int j=0; j < H; ++j)
         cout << h[j] << endl;
@@ -112,8 +114,6 @@ int main(int argc, char* argv[])
     cout << "Error: "<< relError << endl;
     deleteAlign(h);
   }
-
-  delete [] T;
 
   return 0;
 }

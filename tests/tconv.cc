@@ -39,7 +39,7 @@ inline void init(Complex *e, Complex *f, Complex *g, unsigned int M=1)
   }
 }
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
   fftw::maxthreads=get_max_threads();
 

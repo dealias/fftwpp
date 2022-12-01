@@ -50,7 +50,7 @@ inline void init(Array2<Complex>& e, Array2<Complex>& f, Array2<Complex>& g,
   }
 }
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
   fftw::maxthreads=get_max_threads();
 

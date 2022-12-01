@@ -33,7 +33,7 @@ inline void init(array3<Complex>& f, bool transpose=false)
 
 unsigned int outlimit=100;
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
   fftw::maxthreads=get_max_threads();
 

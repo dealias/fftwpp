@@ -13,7 +13,8 @@ unsigned int Sx=0,Sy=0;
 int Ix=-1,Iy=-1,Iz=-1;
 }
 
-unsigned int K=0;
+double K=1.0; // Time limit (seconds)
+unsigned int minCount=20; // Minimum sample size for testing
 unsigned int C=1;
 unsigned int S=0;
 int stats=MEDIAN;
@@ -37,7 +38,7 @@ int atoD(char *optarg)
   return D;
 }
 
-void optionsHybrid(int argc, char* argv[], bool fft)
+void optionsHybrid(int argc, char *argv[], bool fft)
 {
 #ifdef __GNUC__
   optind=0;
@@ -105,7 +106,7 @@ void optionsHybrid(int argc, char* argv[], bool fft)
         testError=true;
         break;
       case 'K':
-        K=Atoi(optarg);
+        K=atof(optarg);
         break;
       case 'I':
       case IXYZ:

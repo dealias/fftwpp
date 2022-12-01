@@ -1,3 +1,5 @@
+#include <vector>
+
 #include "convolution.h"
 #include "explicit.h"
 #include "direct.h"
@@ -108,7 +110,7 @@ void test(unsigned int m, Complex *h0)
   deleteAlign(h);
 }
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
   fftw::maxthreads=get_max_threads();
 
@@ -118,12 +120,11 @@ int main(int argc, char* argv[])
   bool Output=false;
   bool Normalized=true;
 
-  unsigned int N=0; // Number of iterations.
-  unsigned int N0=400000000; // Nominal number of iterations
+  double K=1.0; // Time limit (seconds)
+  unsigned int minCount=20;
   unsigned int m=11; // Problem size
 
   int stats=MEDIAN; // Type of statistics used in timing test.
-
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
@@ -133,7 +134,7 @@ int main(int argc, char* argv[])
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptA:B:N:Om:n:uS:T:X:");
+    int c = getopt(argc,argv,"hdeiptA:B:K:Om:n:uS:T:X:");
     if (c == -1) break;
 
     switch (c) {
@@ -158,8 +159,8 @@ int main(int argc, char* argv[])
       case 'B':
         B=atoi(optarg);
         break;
-      case 'N':
-        N=atoi(optarg);
+      case 'K':
+        K=atof(optarg);
         break;
       case 'O':
         Output=true;
@@ -172,9 +173,6 @@ int main(int argc, char* argv[])
         break;
       case 'm':
         m=atoi(optarg);
-        break;
-      case 'n':
-        N0=atoi(optarg);
         break;
       case 'T':
         fftw::maxthreads=max(atoi(optarg),1);
@@ -200,12 +198,9 @@ int main(int argc, char* argv[])
 
   cout << "n=" << n << endl;
   cout << "m=" << m << endl;
+  cout << "K=" << K << endl;
 
-  if(N == 0) {
-    N=N0/n;
-    N=max(N,20);
-  }
-  cout << "N=" << N << endl;
+  K *= 1.0e9;
 
   unsigned int np=Explicit ? n/2+1 : m+!compact;
 
@@ -232,7 +227,7 @@ int main(int argc, char* argv[])
     }
   }
 
-  double* T=new double[N];
+  vector<double> T;
 
   if(Implicit) {
     ImplicitHConvolution C(m,compact,A,B);
@@ -253,15 +248,19 @@ int main(int argc, char* argv[])
     } else
       mult=multA;
 
-    for(unsigned int i=0; i < N; ++i) {
+    double sum=0.0;
+    while(sum <= K || T.size() < minCount) {
       init(F,m,A);
-     double t0=nanoseconds();
+      double t0=nanoseconds();
       C.convolve(F,mult);
 //      C.convolve(F[0],F[1]);
-      T[i]=nanoseconds()-t0;
+      double t=nanoseconds()-t0;
+      T.push_back(t);
+      sum += t;
     }
 
-    timings("Implicit",2*m-1,T,N,stats);
+    timings("Implicit",2*m-1,T.data(),T.size(),stats);
+    T.clear();
 
     if(Normalized) {
       double norm=1.0/(3.0*m);
@@ -276,8 +275,7 @@ int main(int argc, char* argv[])
           cout << F[b][i] << endl;
         cout << endl;
       }
-    } else
-      cout << f[0] << endl;
+    }
 
     if(Test || Direct) {
       for(unsigned int b=0; b<B; ++b) {
@@ -294,22 +292,24 @@ int main(int argc, char* argv[])
     if(Normalized) mult=multbinary;
     else mult=multbinaryUnNormalized;
 ;
-    for(unsigned int i=0; i < N; ++i) {
+    double sum=0.0;
+    while(sum <= K || T.size() < minCount) {
       init(F,m,2);
-     double t0=nanoseconds();
+      double t0=nanoseconds();
       C.convolve(F,mult);
 //      C.convolve(F[0],F[1]);
-      T[i]=nanoseconds()-t0;
+      double t=nanoseconds()-t0;
+      T.push_back(t);
+      sum += t;
     }
 
     cout << endl;
-    timings("Explicit",2*m-1,T,N,stats);
+    timings("Explicit",2*m-1,T.data(),T.size(),stats);
+    T.clear();
 
     if(Output)
       for(unsigned int i=0; i < m; i++)
         cout << f[i] << endl;
-    else
-      cout << f[0] << endl;
     cout << endl;
 
     if(Test || Direct)
@@ -326,13 +326,12 @@ int main(int argc, char* argv[])
     T[0]=nanoseconds()-t0;
 
     cout << endl;
-    timings("Direct",2*m-1,T,1);
+    timings("Direct",2*m-1,T.data(),1);
+    T.clear();
 
     if(Output)
       for(unsigned int i=0; i < m; i++)
         cout << h[i] << endl;
-    else
-      cout << h[0] << endl;
 
     { // compare implicit or explicit version with direct verion:
       double error=0.0;
@@ -361,7 +360,6 @@ int main(int argc, char* argv[])
   if(Test)
     test(m,h0);
 
-  delete [] T;
   deleteAlign(f);
   delete [] F;
 
