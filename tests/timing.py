@@ -187,7 +187,7 @@ def main(argv):
 
     bset = 0
     dorun = True
-    T = 0 # number of threads
+    T = 1 # number of threads
     p = "" # program name
     B = [] # precommands
     A = [] # postcommands
@@ -425,10 +425,9 @@ def main(argv):
                 cmd.append("-i")
 
         cmd.append("-S" + str(stats))
+        cmd.append("-T" + str(T))
         if N > 0:
             cmd.append(("-K" if hybrid else "-N") + str(N))
-        if T > 0:
-            cmd.append("-T" + str(T))
         cmd.append("-u")
 
         # Add the extra arguments to the program being timed.
