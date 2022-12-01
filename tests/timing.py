@@ -19,7 +19,7 @@ def getParam(name, comment):
     xyz=["x","y","z"] if l > 1 else [""]
     for i in range(l):
         param[i]=f"{name}{xyz[i]}={param[i]}"
-    return"  ".join(param)
+    return"\t\t".join(param)
   except:
     print("Could not find "+name)
     return -1
@@ -33,7 +33,7 @@ def collectParams(comment,L,M):
   D=getParam("D",comment)
   I=getParam("I",comment)
 
-  params=f"#\nL={L}  M={M}\n{m}\n{p}\n{q}\n{C}\n{S}\n{D}\n{I}"
+  params=f"{m}\n{p}\n{q}\n{C}\n{S}\n{D}\n{I}"
   return params
 
 def Lvals_from_file(filename):
@@ -466,10 +466,10 @@ def main(argv):
                 vp = Popen(vcmd, stdout = PIPE, stderr = PIPE)
                 vp.wait()
                 prc = vp.returncode
+                gitcommit=""
                 if prc == 0:
                     out, err = vp.communicate()
-                    comment += "\t" + out.rstrip().decode()
-
+                    gitcommit += out.rstrip().decode()
                 vcmd = []
                 vcmd.append("git")
                 vcmd.append("log")
@@ -481,17 +481,19 @@ def main(argv):
                 if prc == 0:
                     out, err = vp.communicate()
                     out = out.rstrip()
-                    comment += " (" + out[0:10].decode() + ")"
+                    gitcommit += " (" + out[0:10].decode() + ")"
+                    comment += "\t" +gitcommit
             else:
                 comment += "\t" + extracomment
             comment += "\n"
 
+            hybridParamsMessage="#\n#\n# Run on "+date+" using commit "+gitcommit+":\n"
             if(appendtofile):
                 with open(filename, "a") as myfile:
                     myfile.write(comment)
                 if hybrid:
                     with open(optFile,"a") as logfile:
-                        logfile.write("#\n"+comment)
+                        logfile.write(hybridParamsMessage)
             else:
                 if stats == -1:
                     with open("timing.dat", "w") as myfile:
@@ -502,7 +504,8 @@ def main(argv):
                     if hybrid:
                         with open(optFile,"w") as logfile:
                             logfile.write("# Optimal values for "+p+"\n")
-                            logfile.write("#\n"+comment)
+                            logfile.write(hybridParamsMessage)
+
 
         for i in range(a,b+1,1 if I == 0 else I):
             if I != 0:
@@ -597,10 +600,10 @@ def main(argv):
 
                     if (prc == 0): # did the process succeed?
                         if hybrid:
-                            comment = out.decode()
-                            params=collectParams(comment,L,M)
-                            #print(params)
+                            results = out.decode()
+                            params=collectParams(results,L,M)
                             with open(optFile, "a") as logfile:
+                                logfile.write("#\n# "+" ".join(mcmd)[2:]+"\n")
                                 logfile.write(params+"\n")
 
                         outlines = out.decode().split('\n')
