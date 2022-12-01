@@ -69,17 +69,15 @@ fftw_plan Planner(fftw *F, Complex *in, Complex *out)
 
 unsigned int parallelLoop(Complex *A, unsigned int m, unsigned int threads)
 {
+  PARALLEL(
+    for(unsigned int k=0; k < m; ++k)
+      A[k]=k;
+    );
   auto T0=std::chrono::steady_clock::now();
-  for(unsigned int i=0; i < 10; ++i) {
-    PARALLEL(
-      for(unsigned int k=0; k < m; ++k)
-        A[k]=k;
-      );
-    PARALLEL(
-      for(unsigned int k=0; k < m; ++k)
-        A[k] *= k;
-      );
-  }
+  PARALLEL(
+    for(unsigned int k=0; k < m; ++k)
+      A[k] *= k;
+    );
   auto T1=std::chrono::steady_clock::now();
 
   auto elapsed=std::chrono::duration_cast<std::chrono::nanoseconds>
@@ -107,8 +105,11 @@ unsigned int Threshold(unsigned int threads)
 
 void Threshold()
 {
-  if(threshold == UINT_MAX)
-    threshold=Threshold(fftw::maxthreads);
+  if(threshold == UINT_MAX) {
+    threshold=1;
+    for(unsigned int i=0; i < 10; ++i)
+      threshold=max(threshold,Threshold(fftw::maxthreads));
+  }
 }
 
 ThreadBase::ThreadBase() {threads=fftw::maxthreads;}
