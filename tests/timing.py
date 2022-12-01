@@ -426,6 +426,8 @@ def main(argv):
 
         cmd.append("-S" + str(stats))
         cmd.append("-T" + str(T))
+        if hybrid:
+            cmd.append("-R")
         if K > 0:
             cmd.append("-K" + str(K))
         cmd.append("-u")
