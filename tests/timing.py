@@ -603,7 +603,7 @@ def main(argv):
                             results = out.decode()
                             params=collectParams(results,L,M)
                             with open(optFile, "a") as logfile:
-                                logfile.write("#\n# "+" ".join(mcmd)[2:]+"\n")
+                                logfile.write("#\n# "+" ".join(mcmd)+"\n")
                                 logfile.write(params+"\n")
 
                         outlines = out.decode().split('\n')
