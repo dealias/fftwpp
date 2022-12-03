@@ -13,21 +13,21 @@ real[] mi,i,li,hi;
 real[] mh,h,lh,hh;
 real[] mp,p,lp,hp;
 
-string name;
-string base;
+string base,dir;
+bool title=true;
 
 usersetting();
 
 if(base == "") base=getstring("base directory",".");
-string dir=getstring("directory","timings1-T1");
+if(dir == "") dir=getstring("directory","timings1-T1");
 
 string prunelabel="$y$-pruned";
 
 bool expl=true;
 
 real d=1;
-if(find(name,"2") >= 0) d=2;
-if(find(name,"3") >= 0) d=3;
+if(find(dir,"2-") >= 0) d=2;
+if(find(dir,"3-") >= 0) d=3;
 
 if(expl) {
   file fin=input(base+"/"+dir+"/explicit").line();
@@ -75,10 +75,12 @@ pen Lp=fontsize(8pt);
 
 real log2=log(2);
 real[] f(real[] m) {return log2/(1e-9*m*log(m));}
+real[] g(real[] x) {return x^(1/d);}
 
 if(expl) {
   // error bars:
   real[] ne=f(me);
+  me=g(me);
   e *= ne;
   he *= ne;
   le *= ne;
@@ -88,6 +90,7 @@ if(expl) {
 
   if(pruned) {
     real[] np=f(mp);
+    mp=g(mp);
     p *= np;
     hp *= np;
     lp *= np;
@@ -99,6 +102,7 @@ if(expl) {
 
 if(implicit) {
   real[] ni=f(mi);
+  mi=g(mi);
   i *= ni;
   hi *= ni;
   li *= ni;
@@ -108,6 +112,7 @@ if(implicit) {
 }
 
 real[] nh=f(mh);
+mh=g(mh);
 h *= nh;
 hh *= nh;
 lh *= nh;
@@ -115,10 +120,14 @@ if(drawerrorbars)
   errorbars(mh,h,0*mh,hh-h,0*mh,h-lh,Pen(1));
 draw(graph(mh,h,h > 0),Pentype(1),Label("hybrid",Pen(1)+Lp),mark1);
 
-label(dir,point(N),N);
+if(title)
+  label(dir,point(N),N);
+
+string sd=d > 1 ? (string) d : "";
+string D=d > 1 ? "^"+sd : "";
 
 xaxis("$L$",BottomTop,LeftTicks);
-yaxis("time/($L\log_2 L$) (ns)",LeftRight,RightTicks);
+yaxis("time/($"+sd+"L"+D+"\log_2 L$) (ns)",LeftRight,RightTicks("%#.1f"));
 
 legendlinelength=0.6cm;
 legendmargin=5;
@@ -128,5 +137,7 @@ real mean(real[] a){return sum(a)/a.length;};
 if(expl)
   write("speedup="+(string)(mean(e)/mean(h)));
 
-shipout(dir);
-currentpicture.erase();
+if(!settings.xasy) {
+  shipout(dir);
+  currentpicture.erase();
+}
