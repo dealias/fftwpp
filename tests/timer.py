@@ -8,9 +8,23 @@ import re
 def main():
   args=getArgs()
   threads=args.T
+  dimensions=[]
   S=args.S
   H=args.H
-  notSorH = not (S or H)
+
+  one=args.one
+  two=args.two
+  three=args.three
+
+  not123=not (one or two or three)
+
+  if one or not123:
+    dimensions.append(1)
+  if two or not123:
+    dimensions.append(2)
+  if three or not123:
+    dimensions.append(3)
+
   if threads == 0:
     cmd = 'echo $OMP_NUM_THREADS'
     OMP_NUM_THREADS=str(check_output(cmd, shell=True))
@@ -18,18 +32,21 @@ def main():
     Ts=[1,T]
   else:
     Ts=[threads]
-  for T in Ts:
-    if S or notSorH:
-      time(args,False,T)
-    if H or notSorH:
-      time(args,True,T)
 
-def time(args,Hermitian, T):
+  notSorH = not (S or H)
+  for d in dimensions:
+    for T in Ts:
+      if S or notSorH:
+        time(args,d,False,T)
+      if H or notSorH:
+        time(args,d,True,T)
+
+def time(args,d,Hermitian, T):
   a=args.a
   b=args.b
   I=args.I
   e=args.e
-  d=str(args.d) if args.d > 1 else ""
+  dim=str(d) if d > 1 else ""
 
   new="hybridconv"
   old="conv"
@@ -39,8 +56,8 @@ def time(args,Hermitian, T):
   else:
     old = "c"+old
 
-  new+=d
-  old+=d
+  new+=dim
+  old+=dim
 
   cmd1=["timing.py"]
   if not args.t:
@@ -71,8 +88,15 @@ def getArgs():
                       action="store_true")
   parser.add_argument("-T",metavar='threads',help="Number of threads. Not specifying, runs T=1 and T=$OMP_NUM_THREADS", default=0, type=int)
 
-  parser.add_argument("-d",metavar='dimension',help="Dimension. Default is 1.",
-                      default=1, type=int)
+  parser.add_argument("-1","--one", help="Time 1D Convolutions. Not specifying\
+                      1 or 2 or 3 is the same as specifying all of them",
+                      action="store_true")
+  parser.add_argument("-2","--two", help="Time 2D Convolutions. Not specifying\
+                      1 or 2 or 3 is the same as specifying all of them",
+                      action="store_true")
+  parser.add_argument("-3","--three", help="Time 3D Convolutions. Not specifying\
+                      1 or 2 or 3 is the same as specifying all of them",
+                      action="store_true")
   parser.add_argument("-a",help="Start.",
                       default=1, type=int)
   parser.add_argument("-b",help="End.",
