@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptA:B:N:Om:x:y:n:T:uS:");
+    int c = getopt(argc,argv,"hdeiptA:B:K:Om:x:y:n:T:uS:");
     if (c == -1) break;
 
     switch (c) {
@@ -152,6 +152,7 @@ int main(int argc, char *argv[])
   cout << "nx=" << nx << ", ny=" << ny << endl;
   cout << "mx=" << mx << ", my=" << my << endl;
 
+  if(K == 0) minCount=1;
   cout << "K=" << K << endl;
   K *= 1.0e9;
 

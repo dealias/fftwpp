@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptA:B:N:Om:n:uS:T:");
+    int c = getopt(argc,argv,"hdeiptA:B:K:Om:n:uS:T:");
     if (c == -1) break;
 
     switch (c) {
@@ -156,8 +156,9 @@ int main(int argc, char *argv[])
 
   cout << "n=" << n << endl;
   cout << "m=" << m << endl;
-  cout << "K=" << K << endl;
 
+  if(K == 0) minCount=1;
+  cout << "K=" << K << endl;
   K *= 1.0e9;
 
   // Explicit and direct methods are only implemented for binary convolutions.

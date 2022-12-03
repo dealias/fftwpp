@@ -29,6 +29,7 @@ int main(int argc, char *argv[])
 
   if(Output || testError)
     K=0;
+  if(K == 0) minCount=1;
   cout << "K=" << K << endl << endl;
   K *= 1.0e9;
 

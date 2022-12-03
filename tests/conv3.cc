@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hdeipA:B:N:Om:x:y:z:n:T:uS:X:Y:Z:");
+    int c = getopt(argc,argv,"hdeipA:B:K:Om:x:y:z:n:T:uS:X:Y:Z:");
     if (c == -1) break;
 
     switch (c) {
@@ -199,8 +199,9 @@ int main(int argc, char *argv[])
 
   cout << "nx=" << nx << ", ny=" << ny << ", nz=" << ny << endl;
   cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
-  cout << "K=" << K << endl;
 
+  if(K == 0) minCount=1;
+  cout << "K=" << K << endl;
   K *= 1.0e9;
 
   size_t align=ALIGNMENT;

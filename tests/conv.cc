@@ -198,8 +198,9 @@ int main(int argc, char *argv[])
 
   cout << "n=" << n << endl;
   cout << "m=" << m << endl;
-  cout << "K=" << K << endl;
 
+  if(K == 0) minCount=1;
+  cout << "K=" << K << endl;
   K *= 1.0e9;
 
   unsigned int np=Explicit ? n/2+1 : m+!compact;
