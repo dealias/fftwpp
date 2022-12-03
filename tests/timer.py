@@ -35,10 +35,11 @@ def main():
 
   notSorH = not (S or H)
   for d in dimensions:
-    for T in Ts:
-      if S or notSorH:
+    if S or notSorH:
+      for T in Ts:
         time(args,d,False,T)
-      if H or notSorH:
+    if H or notSorH:
+      for T in Ts:
         time(args,d,True,T)
 
 def time(args,d,Hermitian, T):
