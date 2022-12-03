@@ -34,8 +34,7 @@ bool Explicit=false;
 inline void init(Complex **F,
                  unsigned int mx, unsigned int my, unsigned int mz,
                  unsigned int nxp, unsigned int nyp, unsigned int nzp,
-                 unsigned int A, bool xcompact, bool ycompact, bool zcompact,
-                 bool init=true)
+                 unsigned int A, bool xcompact, bool ycompact, bool zcompact)
 {
   if(A % 2 == 0) {
     unsigned int M=A/2;
@@ -79,8 +78,7 @@ inline void init(Complex **F,
         }
       }
 
-      if(init) {
-        PARALLEL(
+      PARALLEL(
         for(unsigned int i=0; i < nx; ++i) {
           unsigned int I=i+xoffset;
           for(unsigned int j=0; j < ny; ++j) {
@@ -91,21 +89,7 @@ inline void init(Complex **F,
             }
           }
         }
-          )
-      } else {
-        PARALLEL(
-        for(unsigned int i=0; i < nx; ++i) {
-          unsigned int I=i+xoffset;
-          for(unsigned int j=0; j < ny; ++j) {
-            unsigned int J=j+yoffset;
-            for(unsigned int k=0; k < mz; ++k) {
-              f[I][J][k]=0.0;
-              g[I][J][k]=0.0;
-            }
-          }
-        }
-          )
-      }
+        );
     }
   } else {
     cerr << "Init not implemented for A=" << A << endl;
@@ -318,9 +302,8 @@ int main(int argc, char *argv[])
       f=0.0;
       g=0.0;
       double t1=nanoseconds();
-      double Sum=t1-t0;
-      init(F,mx,my,mz,nxp,nyp,nzp,A,true,true,true,false);
-      sum -= nanoseconds()-t1;
+      // Conservative estimate accounting for extra zero padding above.
+      double Sum=(t1-t0)*19.0/27.0;
       init(F,mx,my,mz,nxp,nyp,nzp,A,true,true,true);
       double t2=nanoseconds();
       C.convolve(F,F+M);
@@ -328,6 +311,7 @@ int main(int argc, char *argv[])
       T.push_back(t);
       sum += t;
     }
+
 
     timings("Explicit",(2*mx-1)*(2*my-1)*(2*mz-1),T.data(),T.size(),stats);
     cout << endl;
