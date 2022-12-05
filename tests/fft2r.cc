@@ -9,10 +9,10 @@ using namespace utils;
 using namespace Array;
 using namespace fftwpp;
 
-void finit(array2<double> f, unsigned int nx, unsigned int ny)
+void finit(array2<double> f, size_t nx, size_t ny)
 {
-  for(unsigned int i=0; i < nx; ++i) {
-    for(unsigned int j=0; j < ny; ++j) {
+  for(size_t i=0; i < nx; ++i) {
+    for(size_t j=0; j < ny; ++j) {
       f(i,j)=i+j;
     }
   }
@@ -22,11 +22,11 @@ int main(int argc, char *argv[])
 {
   cout << "2D real-to-complex FFT" << endl;
 
-  unsigned int nx=4;
-  unsigned int ny=5;
+  size_t nx=4;
+  size_t ny=5;
 
   int N=1000;
-  unsigned int stats=MEAN; // Type of statistics used in timing test.
+  size_t stats=MEAN; // Type of statistics used in timing test.
 
   bool inplace=false;
   bool shift=false;
@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
 
   size_t align=ALIGNMENT;
 
-  unsigned int nyp=ny/2+1;
+  size_t nyp=ny/2+1;
 
   array2<Complex> g(nx,nyp,align);
   array2<double> f;
@@ -95,8 +95,8 @@ int main(int argc, char *argv[])
   if(!quiet) {
     finit(f,nx,ny);
     cout << endl << "Input:" << endl;
-    for(unsigned int i=0; i < nx; ++i) {
-      for(unsigned int j=0; j < ny; ++j) {
+    for(size_t i=0; i < nx; ++i) {
+      for(size_t j=0; j < ny; ++j) {
         cout << f(i,j) << " ";
       }
       cout << endl;
@@ -114,8 +114,8 @@ int main(int argc, char *argv[])
       Backward.fft(g,f);
     Backward.Normalize(f);
     cout << endl << "Back to input:" << endl;
-    for(unsigned int i=0; i < nx; ++i) {
-      for(unsigned int j=0; j < ny; ++j) {
+    for(size_t i=0; i < nx; ++i) {
+      for(size_t j=0; j < ny; ++j) {
         cout << f(i,j) << " ";
       }
       cout << endl;

@@ -12,32 +12,32 @@ using namespace Array;
 using namespace fftwpp;
 
 // Number of iterations.
-unsigned int N0=10000000;
-unsigned int N=0;
-unsigned int nx=0;
-unsigned int ny=0;
-unsigned int nz=0;
-unsigned int mx=4;
-unsigned int my=0;
-unsigned int mz=0;
+size_t N0=10000000;
+size_t N=0;
+size_t nx=0;
+size_t ny=0;
+size_t nz=0;
+size_t mx=4;
+size_t my=0;
+size_t mz=0;
 
 inline void init(Complex **F,
-                 unsigned int nxp, unsigned int nyp, unsigned int nzp,
-                 unsigned int A)
+                 size_t nxp, size_t nyp, size_t nzp,
+                 size_t A)
 {
   if(A %2 == 0) {
-    unsigned int M=A/2;
+    size_t M=A/2;
     double factor=1.0/sqrt((double) M);
-    for(unsigned int s=0; s < M; ++s) {
+    for(size_t s=0; s < M; ++s) {
       double S=sqrt(1.0+s);
       double ffactor=S*factor;
       double gfactor=1.0/S*factor;
       array3<Complex> f(nxp,nyp,nzp,F[s]);
       array3<Complex> g(nxp,nyp,nzp,F[M+s]);
 #pragma omp parallel for
-      for(unsigned int i=0; i < mx; ++i) {
-        for(unsigned int j=0; j < my; j++) {
-          for(unsigned int k=0; k < mz; k++) {
+      for(size_t i=0; i < mx; ++i) {
+        for(size_t j=0; j < my; j++) {
+          for(size_t k=0; k < mz; k++) {
             f[i][j][k]=ffactor*Complex(i+k,j+k);
             g[i][j][k]=gfactor*Complex(2*i+k,j+1+k);
             //cout << f[i][j][k] << " ";
@@ -65,12 +65,12 @@ int main(int argc, char *argv[])
   bool Pruned=false;
 
   double K=1.0; // Time limit (seconds)
-  unsigned int minCount=20;
+  size_t minCount=20;
 
-  unsigned int A=2; // Number of independent inputs
-  unsigned int B=1; // Number of independent outputs
+  size_t A=2; // Number of independent inputs
+  size_t B=1; // Number of independent outputs
 
-  unsigned int stats=0; // Type of statistics used in timing test.
+  size_t stats=0; // Type of statistics used in timing test.
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
 
   // Allocate input/ouput memory and set up pointers
   Complex **F=new Complex *[A];
-  for(unsigned int a=0; a < A; ++a)
+  for(size_t a=0; a < A; ++a)
     F[a]=ComplexAlign(nxp*nyp*nzp);
 
   // For easy access of first element
@@ -227,16 +227,16 @@ int main(int argc, char *argv[])
 
     if(Normalized) {
       double norm=0.125/(mx*my*mz);
-      for(unsigned int i=0; i < mx; i++)
-        for(unsigned int j=0; j < my; j++)
-          for(unsigned int k=0; k < mz; k++)
+      for(size_t i=0; i < mx; i++)
+        for(size_t j=0; j < my; j++)
+          for(size_t k=0; k < mz; k++)
           f[i][j][k] *= norm;
     }
 
     if(Direct)
-      for(unsigned int i=0; i < mx; i++)
-        for(unsigned int j=0; j < my; j++)
-          for(unsigned int k=0; k < mz; k++)
+      for(size_t i=0; i < mx; i++)
+        for(size_t j=0; j < my; j++)
+          for(size_t k=0; k < mz; k++)
             h0[i][j][k]=f[i][j][k];
 
     if(Output)
@@ -267,16 +267,16 @@ int main(int argc, char *argv[])
     T.clear();
 
     if(Direct) {
-      for(unsigned int i=0; i < mx; i++)
-        for(unsigned int j=0; j < my; j++)
-          for(unsigned int k=0; k < mz; k++)
+      for(size_t i=0; i < mx; i++)
+        for(size_t j=0; j < my; j++)
+          for(size_t k=0; k < mz; k++)
             h0[i][j][k]=F[0][nyp*nzp*i+nzp*j+k];
     }
 
     if(Output) {
-      for(unsigned int i=0; i < mx; i++) {
-        for(unsigned int j=0; j < my; j++) {
-          for(unsigned int k=0; k < mz; k++)
+      for(size_t i=0; i < mx; i++) {
+        for(size_t j=0; j < my; j++) {
+          for(size_t k=0; k < mz; k++)
             cout << F[0][nyp*nzp*i+nzp*j+k] << " ";
           cout << endl;
         }
@@ -284,9 +284,9 @@ int main(int argc, char *argv[])
       }
     } else {
       Complex sum=0.0;
-      for(unsigned int i=0; i < mx; i++)
-        for(unsigned int j=0; j < my; j++)
-          for(unsigned int k=0; k < mz; k++)
+      for(size_t i=0; i < mx; i++)
+        for(size_t j=0; j < my; j++)
+          for(size_t k=0; k < mz; k++)
             sum += F[0][nyp*nzp*i+nzp*j+k];
       cout << endl << "sum=" << sum << endl;
     }
@@ -304,9 +304,9 @@ int main(int argc, char *argv[])
     T.clear();
 
     if(Output) {
-      for(unsigned int i=0; i < mx; i++) {
-        for(unsigned int j=0; j < my; j++) {
-          for(unsigned int k=0; k < mz; k++)
+      for(size_t i=0; i < mx; i++) {
+        for(size_t j=0; j < my; j++) {
+          for(size_t k=0; k < mz; k++)
             cout << h[i][j][k] << "\t";
           cout << endl;
         }
@@ -317,9 +317,9 @@ int main(int argc, char *argv[])
     { // compare implicit or explicit version with direct verion:
       double error=0.0;
       double norm=0.0;
-      for(unsigned int i=0; i < mx; i++) {
-        for(unsigned int j=0; j < my; j++) {
-          for(unsigned int k=0; k < mz; k++) {
+      for(size_t i=0; i < mx; i++) {
+        for(size_t j=0; j < my; j++) {
+          for(size_t k=0; k < mz; k++) {
             error += abs2(h0[i][j][k]-h[i][j][k]);
             norm += abs2(h[i][j][k]);
           }
@@ -333,7 +333,7 @@ int main(int argc, char *argv[])
 
   }
 
-  for(unsigned int a=0; a < A; ++a)
+  for(size_t a=0; a < A; ++a)
     deleteAlign(F[a]);
   delete [] F;
 

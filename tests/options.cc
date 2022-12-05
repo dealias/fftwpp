@@ -5,25 +5,25 @@ using namespace std;
 using namespace fftwpp;
 
 namespace fftwpp {
-unsigned int L,Lx,Ly,Lz;
-unsigned int M,Mx,My,Mz;
-unsigned int mx=0,my=0,mz=0;
-unsigned int Dx=0,Dy=0,Dz=0;
-unsigned int Sx=0,Sy=0;
-int Ix=-1,Iy=-1,Iz=-1;
+size_t L,Lx,Ly,Lz;
+size_t M,Mx,My,Mz;
+size_t mx=0,my=0,mz=0;
+size_t Dx=0,Dy=0,Dz=0;
+size_t Sx=0,Sy=0;
+ptrdiff_t Ix=-1,Iy=-1,Iz=-1;
 }
 
 double K=1.0; // Time limit (seconds)
-unsigned int minCount=20; // Minimum sample size for testing
-unsigned int C=1;
-unsigned int S=0;
+size_t minCount=20; // Minimum sample size for testing
+size_t C=1;
+size_t S=0;
 int stats=MEDIAN;
 
 namespace utils {
 
-int Atoi(char *optarg, int min=1)
+size_t Atoi(char *optarg, size_t min=1)
 {
-  int val=atoi(optarg);
+  size_t val=atoll(optarg);
   if(val < min) {
     usageHybrid();
     exit(-1);
@@ -31,7 +31,7 @@ int Atoi(char *optarg, int min=1)
   return val;
 }
 
-int atoD(char *optarg)
+size_t atoD(char *optarg)
 {
   int D=Atoi(optarg,0);
   if(D > 1 && D % 2) ++D;

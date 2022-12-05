@@ -9,8 +9,8 @@ using namespace utils;
 using namespace Array;
 using namespace fftwpp;
 
-unsigned int A=2; // number of inputs
-unsigned int B=1; // number of outputs
+size_t A=2; // number of inputs
+size_t B=1; // number of outputs
 
 int main(int argc, char *argv[])
 {
@@ -34,26 +34,26 @@ int main(int argc, char *argv[])
   cout << "K=" << K << endl << endl;
   K *= 1.0e9;
 
-  unsigned int H=ceilquotient(L,2);
+  size_t H=ceilquotient(L,2);
 
   vector<double> T;
-  unsigned int N=max(A,B);
+  size_t N=max(A,B);
 
   Application app(A,B,realmultbinary,fftw::maxthreads,0,mx,Dx,Ix);
   fftPadHermitian fft(L,M,app);
   bool embed=fft.embed();
-  unsigned int size=embed ? fft.outputSize() : fft.inputSize();
+  size_t size=embed ? fft.outputSize() : fft.inputSize();
   Complex **f=ComplexAlign(N,size);
   ConvolutionHermitian Convolve(&fft,A,B,embed ? f : NULL);
 
-  for(unsigned int a=0; a < A; ++a) {
+  for(size_t a=0; a < A; ++a) {
     Complex *fa=f[a];
     if(Output || testError) {
       fa[0]=1.0+a;
-      for(unsigned int j=1; j < H; ++j)
+      for(size_t j=1; j < H; ++j)
         fa[j]=Complex(j,(1.0+a)*j+1);
     } else
-      for(unsigned int j=0; j < H; ++j)
+      for(size_t j=0; j < H; ++j)
         fa[j]=0.0;
   }
 
@@ -87,8 +87,8 @@ int main(int argc, char *argv[])
   if(Output) {
     if(testError)
       cout << "Hermitian Hybrid:" << endl;
-    for(unsigned int b=0; b < B; ++b)
-      for(unsigned int j=0; j < H; ++j)
+    for(size_t b=0; b < B; ++b)
+      for(size_t j=0; j < H; ++j)
         cout << f[b][j] << endl;
   }
 
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
     if(Output) {
       cout << endl;
       cout << "Direct:" << endl;
-      for(unsigned int j=0; j < H; ++j)
+      for(size_t j=0; j < H; ++j)
         cout << h[j] << endl;
       cout << endl;
     }
@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
 
     // Assumes B=1
     Complex* f0=f[0];
-    for(unsigned int j=0; j < H; ++j) {
+    for(size_t j=0; j < H; ++j) {
       hj=h[j];
       err += abs2(f0[j]-hj);
       norm += abs2(hj);

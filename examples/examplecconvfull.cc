@@ -11,18 +11,18 @@ using namespace fftwpp;
 
 double f0[]={0,1,2,3,4};
 
-void init(Complex *f, Complex *g, unsigned int m)
+void init(Complex *f, Complex *g, size_t m)
 {
-  for(unsigned int k=0; k < m; k++) {
+  for(size_t k=0; k < m; k++) {
     f[k]=f0[k];
     g[k]=f0[k];
   }
 }
 
-void multbinaryfull(Complex **F, unsigned int m,
-                    const unsigned int indexsize,
-                    const unsigned int *index,
-                    unsigned int r, unsigned int threads)
+void multbinaryfull(Complex **F, size_t m,
+                    const size_t indexsize,
+                    const size_t *index,
+                    size_t r, size_t threads)
 {
   Complex* F0=F[0];
   Complex* F1=F[1];
@@ -30,7 +30,7 @@ void multbinaryfull(Complex **F, unsigned int m,
   double sign=r == 0 ? 1 : -1;
 
   PARALLEL(
-    for(unsigned int j=0; j < m; ++j) {
+    for(size_t j=0; j < m; ++j) {
       Complex *F0j=F0+j;
       Complex *F1j=F1+j;
       Vec h=ZMULT(LOAD(F0j),LOAD(F1j));
@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
   fftw::maxthreads=get_max_threads();
 
   // size of problem
-  unsigned int m=sizeof(f0)/sizeof(double);
+  size_t m=sizeof(f0)/sizeof(double);
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
@@ -61,14 +61,14 @@ int main(int argc, char* argv[])
   cout << "1d non-centered complex convolution:" << endl;
   init(f,g,m);
   cout << "\ninput:\nf\tg" << endl;
-  for(unsigned int i=0; i < m; i++)
+  for(size_t i=0; i < m; i++)
     cout << f[i] << "\t" << g[i] << endl;
 
   C.convolve(F,multbinaryfull);
 
   cout << "\noutput:" << endl;
-  for(unsigned int i=0; i < m; i++) cout << f[i] << endl;
-  for(unsigned int i=0; i < m-1; i++) cout << g[i] << endl;
+  for(size_t i=0; i < m; i++) cout << f[i] << endl;
+  for(size_t i=0; i < m-1; i++) cout << g[i] << endl;
 
   deleteAlign(f);
 

@@ -11,14 +11,14 @@ const double unit=1.0e-9; // default unit is 1 nanosecond
 
 enum timing_algorithm {WRITETOFILE = -1, MEDIAN, MEAN, MIN, MAX, P90, P80, P50};
 
-inline double median(double *T, unsigned int N) // TODO: Replace with selection algorithm
+inline double median(double *T, size_t N) // TODO: Replace with selection algorithm
 {
   std::sort(T,T+N);
-  unsigned int h=N/2;
+  size_t h=N/2;
   return 2*h == N ? 0.5*(T[h-1]+T[h]) : T[h];
 }
 
-inline double value(double *T, unsigned int N, int algorithm)
+inline double value(double *T, size_t N, int algorithm)
 {
   switch(algorithm) {
     case WRITETOFILE:
@@ -26,13 +26,13 @@ inline double value(double *T, unsigned int N, int algorithm)
       return median(T,N);
     case MEAN: {
       double sum=0.0;
-      for(unsigned int i=0; i < N; ++i)
+      for(size_t i=0; i < N; ++i)
         sum += T[i];
       return sum/N;
     }
     case MIN: {
       double min=T[0];
-      for(unsigned int i=0; i < N; ++i) {
+      for(size_t i=0; i < N; ++i) {
         if(T[i] < min)
           min=T[i];
       }
@@ -40,7 +40,7 @@ inline double value(double *T, unsigned int N, int algorithm)
     }
     case MAX: {
       double max=T[0];
-      for(unsigned int i=0; i < N; ++i) {
+      for(size_t i=0; i < N; ++i) {
         if(T[i] > max)
           max=T[i];
       }
@@ -48,31 +48,31 @@ inline double value(double *T, unsigned int N, int algorithm)
     }
     case P90: {
       std::sort(T,T+N);
-      unsigned int start=(int)ceil(N*0.05);
-      unsigned int stop=(int)floor(N*0.95);
+      size_t start=(size_t) ceil(N*0.05);
+      size_t stop=(size_t) floor(N*0.95);
 
       double sum=0.0;
-      for(unsigned int i=start; i < stop; ++i)
+      for(size_t i=start; i < stop; ++i)
         sum += T[i];
       return sum/(stop-start);
     }
     case P80: {
       std::sort(T,T+N);
-      unsigned int start=(int)ceil(N*0.1);
-      unsigned int stop=(int)floor(N*0.9);
+      size_t start=(size_t) ceil(N*0.1);
+      size_t stop=(size_t) floor(N*0.9);
 
       double sum=0.0;
-      for(unsigned int i=start; i < stop; ++i)
+      for(size_t i=start; i < stop; ++i)
         sum += T[i];
       return sum/(stop-start);
     }
     case P50: {
       std::sort(T,T+N);
-      unsigned int start=(int)ceil(N*0.25);
-      unsigned int stop=(int)floor(N*0.75);
+      size_t start=(size_t) ceil(N*0.25);
+      size_t stop=(size_t) floor(N*0.75);
 
       double sum=0.0;
-      for(unsigned int i=start; i < stop; ++i)
+      for(size_t i=start; i < stop; ++i)
         sum += T[i];
       return sum/(stop-start);
     }
@@ -85,16 +85,16 @@ inline double value(double *T, unsigned int N, int algorithm)
   return 0;
 }
 
-inline void stdev(double *T, unsigned int N,
+inline void stdev(double *T, size_t N,
                   double &lower, double& upper,
                   int algorithm)
 {
   lower=0.0, upper=0.0;
   double sum=0.0;
-  for(unsigned int i=0; i < N; ++i)
+  for(size_t i=0; i < N; ++i)
     sum += T[i];
   double mean=sum/N;
-  for(unsigned int i=0; i < N; ++i) {
+  for(size_t i=0; i < N; ++i) {
     double v=T[i]-mean;
     if(v < 0)
       lower += v*v;
@@ -106,7 +106,7 @@ inline void stdev(double *T, unsigned int N,
   upper=mean+sqrt(upper*factor);
 }
 
-inline void timings(const char* text, unsigned int m, unsigned int count,
+inline void timings(const char* text, size_t m, size_t count,
                     double value, double lower, double upper)
 {
   std::cout << text << ":\n"
@@ -117,8 +117,8 @@ inline void timings(const char* text, unsigned int m, unsigned int count,
             << std::endl;
 }
 
-inline void timings(const char* text, unsigned int m, double *T,
-                    unsigned int N, int algorithm=MEDIAN)
+inline void timings(const char* text, size_t m, double *T,
+                    size_t N, int algorithm=MEDIAN)
 {
   double lower=0.0, upper=0.0;
   if(algorithm == WRITETOFILE) {
@@ -126,7 +126,7 @@ inline void timings(const char* text, unsigned int m, double *T,
     myfile.open("timing.dat", std::fstream::app);
     myfile << m << "\t";
     myfile << N << "\t";
-    for(unsigned int i=0; i < N; ++i)
+    for(size_t i=0; i < N; ++i)
       myfile << T[i]*unit << "\t";
     myfile << "\n";
   }

@@ -10,26 +10,26 @@ using namespace Array;
 using namespace fftwpp;
 
 // Number of iterations.
-unsigned int N0=10000000;
+size_t N0=10000000;
 
 bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
-inline void init(array2<Complex>& f, unsigned int mx, unsigned int my)
+inline void init(array2<Complex>& f, size_t mx, size_t my)
 {
-  for(unsigned int i=0; i < mx; ++i)
-    for(unsigned int j=0; j < my; j++)
+  for(size_t i=0; i < mx; ++i)
+    for(size_t j=0; j < my; j++)
       f[i][j]=Complex(i,j);
 }
 
-unsigned int outlimit=100;
+size_t outlimit=100;
 
 int main(int argc, char *argv[])
 {
   fftw::maxthreads=get_max_threads();
 
-  unsigned int N=0;
-  unsigned int mx=4;
-  unsigned int my=4;
+  size_t N=0;
+  size_t mx=4;
+  size_t my=4;
 
   int stats=0; // Type of statistics used in timing test.
 
@@ -96,8 +96,8 @@ int main(int argc, char *argv[])
   cout << "\nInput:" << endl;
   init(f,mx,my);
   if(mx*my < outlimit) {
-    for(unsigned int i=0; i < mx; i++) {
-      for(unsigned int j=0; j < my; j++)
+    for(size_t i=0; i < mx; i++) {
+      for(size_t j=0; j < my; j++)
         cout << f[i][j] << "\t";
       cout << endl;
     }
@@ -108,8 +108,8 @@ int main(int argc, char *argv[])
   cout << "\nOutput:" << endl;
   Forward.fft(f);
   if(mx*my < outlimit) {
-    for(unsigned int i=0; i < mx; i++) {
-      for(unsigned int j=0; j < my; j++)
+    for(size_t i=0; i < mx; i++) {
+      for(size_t j=0; j < my; j++)
         cout << f[i][j] << "\t";
       cout << endl;
     }
@@ -120,8 +120,8 @@ int main(int argc, char *argv[])
   cout << "\nBack to input:" << endl;
   Backward.fftNormalized(f);
   if(mx*my < outlimit) {
-    for(unsigned int i=0; i < mx; i++) {
-      for(unsigned int j=0; j < my; j++)
+    for(size_t i=0; i < mx; i++) {
+      for(size_t j=0; j < my; j++)
         cout << f[i][j] << "\t";
       cout << endl;
     }
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
 
   cout << endl;
   double *T=new double[N];
-  for(unsigned int i=0; i < N; ++i) {
+  for(size_t i=0; i < N; ++i) {
     init(f,mx,my);
     double t0=nanoseconds();
     Forward.fft(f);

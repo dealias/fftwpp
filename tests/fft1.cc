@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
 {
   cout << "1D Complex to complex in-place FFT" << endl;
 
-  unsigned int m=11; // Problem size
+  size_t m=11; // Problem size
 
   int N=1000;
   int stats=MEAN; // Type of statistics used in timing test.
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
   fft1d Forward0(-1,f,g);
   fft1d Backward0(1,g,f);
 
-  for(unsigned int i=0; i < m; i++) f[i]=i;
+  for(size_t i=0; i < m; i++) f[i]=i;
 
   double *T=new double[N];
 

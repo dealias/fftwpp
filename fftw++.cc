@@ -13,9 +13,9 @@ namespace fftwpp {
 const double fftw::twopi=2.0*acos(-1.0);
 
 // User settings:
-unsigned int fftw::effort=FFTW_MEASURE;
+size_t fftw::effort=FFTW_MEASURE;
 const char *fftw::WisdomName="wisdom3.txt";
-unsigned int fftw::maxthreads=1;
+size_t fftw::maxthreads=1;
 double fftw::testseconds=0.2; // Time limit for threading efficiency tests
 
 fftw_plan (*fftw::planner)(fftw *f, Complex *in, Complex *out)=Planner;
@@ -67,15 +67,15 @@ fftw_plan Planner(fftw *F, Complex *in, Complex *out)
   return plan;
 }
 
-unsigned int parallelLoop(Complex *A, unsigned int m, unsigned int threads)
+size_t parallelLoop(Complex *A, size_t m, size_t threads)
 {
   PARALLEL(
-    for(unsigned int k=0; k < m; ++k)
+    for(size_t k=0; k < m; ++k)
       A[k]=k;
     );
   auto T0=std::chrono::steady_clock::now();
   PARALLEL(
-    for(unsigned int k=0; k < m; ++k)
+    for(size_t k=0; k < m; ++k)
       A[k] *= k;
     );
   auto T1=std::chrono::steady_clock::now();
@@ -85,13 +85,13 @@ unsigned int parallelLoop(Complex *A, unsigned int m, unsigned int threads)
   return elapsed.count();
 }
 
-const unsigned int maxThreshold=1 << 24;
-unsigned int threshold=UINT_MAX;
+const size_t maxThreshold=1 << 24;
+size_t threshold=UINT_MAX;
 
-unsigned int Threshold(unsigned int threads)
+size_t Threshold(size_t threads)
 {
   if(threads > 1) {
-    for(unsigned int m=1; m < maxThreshold; m *= 2) {
+    for(size_t m=1; m < maxThreshold; m *= 2) {
       Complex *A=utils::ComplexAlign(m);
       if(!A)
         break;
@@ -107,7 +107,7 @@ void Threshold()
 {
   if(threshold == UINT_MAX) {
     threshold=1;
-    for(unsigned int i=0; i < 10; ++i)
+    for(size_t i=0; i < 10; ++i)
       threshold=max(threshold,Threshold(fftw::maxthreads));
   }
 }
@@ -117,5 +117,5 @@ ThreadBase::ThreadBase() {threads=fftw::maxthreads;}
 }
 
 namespace utils {
-unsigned int defaultmpithreads=1;
+size_t defaultmpithreads=1;
 }

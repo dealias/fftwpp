@@ -17,26 +17,26 @@ int main()
 //  cout << endl << "FFTW requires memory alignment of " << fftw_alignment()
 //       << "."  << endl;
 
-  unsigned int n=4;
+  size_t n=4;
   Complex *f=ComplexAlign(n);
 
   fft1d Forward(n,-1);
   fft1d Backward(n,1);
 
-  for(unsigned int i=0; i < n; i++) f[i]=i;
+  for(size_t i=0; i < n; i++) f[i]=i;
 
   cout << "\ninput:" << endl;
-  for(unsigned int i=0; i < n; i++) cout << f[i] << endl;
+  for(size_t i=0; i < n; i++) cout << f[i] << endl;
 
   Forward.fft(f);
 
   cout << "\noutput:" << endl;
-  for(unsigned int i=0; i < n; i++) cout << f[i] << endl;
+  for(size_t i=0; i < n; i++) cout << f[i] << endl;
 
   Backward.fftNormalized(f);
 
   cout << "\ntransformed back:" << endl;
-  for(unsigned int i=0; i < n; i++) cout << f[i] << endl;
+  for(size_t i=0; i < n; i++) cout << f[i] << endl;
 
   deleteAlign(f);
 }

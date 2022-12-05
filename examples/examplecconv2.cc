@@ -11,13 +11,13 @@ using namespace Array;
 using namespace fftwpp;
 
 // size of problem
-unsigned int mx=4;
-unsigned int my=4;
+size_t mx=4;
+size_t my=4;
 
 inline void init(array2<Complex>& f, array2<Complex>& g)
 {
-  for(unsigned int i=0; i < mx; ++i) {
-    for(unsigned int j=0; j < my; j++) {
+  for(size_t i=0; i < mx; ++i) {
+    for(size_t j=0; j < my; j++) {
       f[i][j]=Complex(i,j);
       g[i][j]=Complex(2*i,j+1);
     }

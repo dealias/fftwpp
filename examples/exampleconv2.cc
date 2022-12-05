@@ -11,23 +11,23 @@ using namespace Array;
 using namespace fftwpp;
 
 // size of problem
-unsigned int m=8;
+size_t m=8;
 
-unsigned int mx=4;
-unsigned int my=4;
+size_t mx=4;
+size_t my=4;
 
-inline void init(array2<Complex>& f, array2<Complex>& g, unsigned int M=1)
+inline void init(array2<Complex>& f, array2<Complex>& g, size_t M=1)
 {
-  unsigned int stop=2*mx-1;
-  unsigned int stopoffset=stop;
+  size_t stop=2*mx-1;
+  size_t stopoffset=stop;
   double factor=1.0/sqrt((double) M);
-  for(unsigned int s=0; s < M; ++s) {
+  for(size_t s=0; s < M; ++s) {
     double S=sqrt(1.0+s);
     double ffactor=S*factor;
     double gfactor=1.0/S*factor;
-    for(unsigned int i=0; i < stop; ++i) {
-      unsigned int I=s*stopoffset+i;
-      for(unsigned int j=0; j < my; j++) {
+    for(size_t i=0; i < stop; ++i) {
+      size_t I=s*stopoffset+i;
+      for(size_t j=0; j < my; j++) {
         f[I][j]=ffactor*Complex(i,j);
         g[I][j]=gfactor*Complex(2*i,j+1);
       }

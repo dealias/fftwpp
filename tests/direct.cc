@@ -9,9 +9,9 @@ void DirectConvolution::convolve(Complex *h, Complex *f, Complex *g)
 #if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #pragma omp parallel for
 #endif
-  for(unsigned int i=0; i < m; ++i) {
+  for(size_t i=0; i < m; ++i) {
     Complex sum=0.0;
-    for(unsigned int j=0; j <= i; ++j) sum += f[j]*g[i-j];
+    for(size_t j=0; j <= i; ++j) sum += f[j]*g[i-j];
     h[i]=sum;
   }
 }
@@ -22,14 +22,14 @@ void DirectConvolution::Cconvolve(Complex *h, Complex *f, Complex *g)
 #if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #pragma omp parallel for
 #endif
-  for(unsigned int i=0; i < m/2; ++i) {
+  for(size_t i=0; i < m/2; ++i) {
     Complex sum=0.0;
-    for(unsigned int j=i+1; j < m; ++j) sum += f[j]*g[m+i-j];
+    for(size_t j=i+1; j < m; ++j) sum += f[j]*g[m+i-j];
     h[i+(m+1)/2]=sum;
   }
-  for(unsigned int i=m/2; i < m; ++i) {
+  for(size_t i=m/2; i < m; ++i) {
     Complex sum=0.0;
-    for(unsigned int j=0; j <= i; ++j) sum += f[j]*g[i-j];
+    for(size_t j=0; j <= i; ++j) sum += f[j]*g[i-j];
     h[i-m/2]=sum;
   }
 }
@@ -39,9 +39,9 @@ void DirectConvolution::autoconvolve(Complex *h, Complex *f)
 #if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #pragma omp parallel for
 #endif
-  for(unsigned int i=0; i < m; ++i) {
+  for(size_t i=0; i < m; ++i) {
     Complex sum=0.0;
-    for(unsigned int j=0; j <= i; ++j) sum += f[j]*f[i-j];
+    for(size_t j=0; j <= i; ++j) sum += f[j]*f[i-j];
     h[i]=sum;
   }
 }
@@ -51,11 +51,11 @@ void DirectHConvolution::convolve(Complex *h, Complex *f, Complex *g)
 #if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #pragma omp parallel for
 #endif
-  for(unsigned int i=0; i < m; ++i) {
+  for(size_t i=0; i < m; ++i) {
     Complex sum=0.0;
-    for(unsigned int j=0; j <= i; ++j) sum += f[j]*g[i-j];
-    for(unsigned int j=i+1; j < m; ++j) sum += f[j]*conj(g[j-i]);
-    for(unsigned int j=1; j < m-i; ++j) sum += conj(f[j])*g[i+j];
+    for(size_t j=0; j <= i; ++j) sum += f[j]*g[i-j];
+    for(size_t j=i+1; j < m; ++j) sum += f[j]*conj(g[j-i]);
+    for(size_t j=1; j < m-i; ++j) sum += conj(f[j])*g[i+j];
     h[i]=sum;
   }
 }
@@ -65,11 +65,11 @@ void DirectConvolution2::convolve(Complex *h, Complex *f, Complex *g)
 #if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #pragma omp parallel for
 #endif
-  for(unsigned int i=0; i < mx; ++i) {
-    for(unsigned int j=0; j < my; ++j) {
+  for(size_t i=0; i < mx; ++i) {
+    for(size_t j=0; j < my; ++j) {
       Complex sum=0.0;
-      for(unsigned int k=0; k <= i; ++k)
-        for(unsigned int p=0; p <= j; ++p)
+      for(size_t k=0; k <= i; ++k)
+        for(size_t p=0; p <= j; ++p)
           sum += f[Sx*k+p]*g[Sx*(i-k)+j-p];
       h[i*my+j]=sum;
     }
@@ -79,7 +79,7 @@ void DirectConvolution2::convolve(Complex *h, Complex *f, Complex *g)
 void DirectHConvolution2::convolve(Complex *h, Complex *f, Complex *g,
                                    bool symmetrize)
 {
-  unsigned int xorigin=mx-xcompact;
+  size_t xorigin=mx-xcompact;
 
   if(symmetrize) {
     HermitianSymmetrizeX(mx,my,xorigin,f);
@@ -120,13 +120,13 @@ void DirectConvolution3::convolve(Complex *h, Complex *f, Complex *g)
 #if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #pragma omp parallel for
 #endif
-  for(unsigned int i=0; i < mx; ++i) {
-    for(unsigned int j=0; j < my; ++j) {
-      for(unsigned int k=0; k < mz; ++k) {
+  for(size_t i=0; i < mx; ++i) {
+    for(size_t j=0; j < my; ++j) {
+      for(size_t k=0; k < mz; ++k) {
         Complex sum=0.0;
-        for(unsigned int r=0; r <= i; ++r)
-          for(unsigned int p=0; p <= j; ++p)
-            for(unsigned int q=0; q <= k; ++q)
+        for(size_t r=0; r <= i; ++r)
+          for(size_t p=0; p <= j; ++p)
+            for(size_t q=0; q <= k; ++q)
               sum += f[r*Sx+p*Sy+q]*g[(i-r)*Sx+(j-p)*Sy+(k-q)];
         h[i*myz+j*mz+k]=sum;
       }
@@ -137,9 +137,9 @@ void DirectConvolution3::convolve(Complex *h, Complex *f, Complex *g)
 void DirectHConvolution3::convolve(Complex *h, Complex *f, Complex *g,
                                    bool symmetrize)
 {
-  unsigned int xorigin=mx-xcompact;
-  unsigned int yorigin=my-ycompact;
-  unsigned int ny=2*my-ycompact;
+  size_t xorigin=mx-xcompact;
+  size_t yorigin=my-ycompact;
+  size_t ny=2*my-ycompact;
 
   if(symmetrize) {
     HermitianSymmetrizeXY(mx,my,mz,xorigin,yorigin,f);
@@ -218,7 +218,7 @@ void DirectHTConvolution2::convolve(Complex *h, Complex *e, Complex *f,
     HermitianSymmetrizeX(mx,my,mx-1,g);
   }
 
-  unsigned int xorigin=mx-1;
+  size_t xorigin=mx-1;
   int xstart=-(int) xorigin;
   int xstop=mx;
   int ystop=my;

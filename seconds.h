@@ -30,7 +30,7 @@ inline int gettimeofday(struct timeval *tv, struct timezone *tz)
   FILETIME ft;
 
 // Initialize the present time to 0 and the timezone to UTC
-  unsigned __int64 tmpres = 0;
+  size_t __int64 tmpres = 0;
   static int tzflag = 0;
 
   if (NULL != tv)
@@ -91,19 +91,9 @@ inline double nanoseconds()
 }
 
 // thread-safe; return number of seconds since initialization
-inline double totalseconds()
-{
-  return nanoseconds()*1.0e-9;
-}
-
-// not thread-safe; return number of seconds since last call
 inline double seconds()
 {
-  static auto last=std::chrono::steady_clock::now();
-  auto end=std::chrono::steady_clock::now();
-  auto elapsed=std::chrono::duration_cast<std::chrono::nanoseconds> (end-last);
-  last=end;
-  return elapsed.count()*1.0e-9;
+  return nanoseconds()*1.0e-9;
 }
 
 }

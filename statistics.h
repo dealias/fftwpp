@@ -17,7 +17,7 @@ void clearpq(std::priority_queue<T, S, C>& q) {
 }
 
 class statistics {
-  unsigned int N;
+  size_t N;
   double A;
   double varL;
   double varH;
@@ -117,7 +117,7 @@ public:
     }
     return Median;
   }
-  void output(const char *text, unsigned int m) {
+  void output(const char *text, size_t m) {
     std::cout << text << ": \n"
               << m << "\t"
               << A << "\t"

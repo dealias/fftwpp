@@ -1,5 +1,5 @@
 /* SSE2 complex multiplication routines
-   Copyright (C) 2010 John C. Bowman, University of Alberta
+   Copyright (C) 2010-2022 John C. Bowman, University of Alberta
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by

@@ -15,7 +15,7 @@ int main()
 
   fftw::maxthreads=get_max_threads();
 
-  unsigned int n=4;
+  size_t n=4;
   size_t align=sizeof(Complex);
 
   array1<Complex> f(n,align);
@@ -23,7 +23,7 @@ int main()
   fft1d Forward(-1,f);
   fft1d Backward(1,f);
 
-  for(unsigned int i=0; i < n; i++) f[i]=i;
+  for(size_t i=0; i < n; i++) f[i]=i;
 
   cout << "\ninput:\n" << f << endl;
 

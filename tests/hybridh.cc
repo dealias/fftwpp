@@ -5,8 +5,8 @@ using namespace utils;
 using namespace Array;
 using namespace fftwpp;
 
-unsigned int A=2; // number of inputs
-unsigned int B=1; // number of outputs
+size_t A=2; // number of inputs
+size_t B=1; // number of outputs
 
 int main(int argc, char *argv[])
 {
@@ -57,12 +57,12 @@ int main(int argc, char *argv[])
   Complex *F=ComplexAlign(fft.outputSize());
   Complex *W0=ComplexAlign(fft.workSizeW());
 
-  unsigned int H=ceilquotient(L,2);
+  size_t H=ceilquotient(L,2);
 
-  for(unsigned int c=0; c < C; ++c)
+  for(size_t c=0; c < C; ++c)
     f[c]=1+c;
-  for(unsigned int j=1; j < H; ++j)
-    for(unsigned int c=0; c < C; ++c)
+  for(size_t j=1; j < H; ++j)
+    for(size_t c=0; c < C; ++c)
       f[C*j+c]=Complex(j+1+c,j+2+c);
 
   fftPadHermitian fft2(L,fft.M,C,fft.M,1,1,1,app.mult);
@@ -75,15 +75,15 @@ int main(int argc, char *argv[])
   fft.pad(W0);
   double error=0.0, error2=0.0;
   double norm=0.0, norm2=0.0;
-  unsigned int noutputs=C*fft.noutputs();
-  for(unsigned int r=0; r < fft.R; r += fft.increment(r)) {
+  size_t noutputs=C*fft.noutputs();
+  for(size_t r=0; r < fft.R; r += fft.increment(r)) {
     fft.forward(f,F,r,W0);
-    unsigned int D1=r == 0 ? fft.D0 : fft.D;
-    for(unsigned int d=0; d < D1; ++d) {
+    size_t D1=r == 0 ? fft.D0 : fft.D;
+    for(size_t d=0; d < D1; ++d) {
       double *Fr=(double *) (F+fft.b*d);
-      unsigned int offset=noutputs*d;
-      for(unsigned int k=0; k < noutputs; ++k) {
-        unsigned int i=fft.Index(r,k+offset);
+      size_t offset=noutputs*d;
+      for(size_t k=0; k < noutputs; ++k) {
+        size_t i=fft.Index(r,k+offset);
         error += abs2(Fr[k]-F2r[i]);
         norm += abs2(F2r[i]);
         if(Output) {
@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
 
   if(Output) {
     cout << endl;
-    for(unsigned int j=0; j < C*fft2.noutputs(); ++j)
+    for(size_t j=0; j < C*fft2.noutputs(); ++j)
       cout << j << ": " << F2r[j] << endl;
   }
 
@@ -106,25 +106,25 @@ int main(int argc, char *argv[])
   if(Output) {
     cout << endl;
     cout << "Inverse:" << endl;
-    for(unsigned int j=0; j < fft.inputSize(); ++j)
+    for(size_t j=0; j < fft.inputSize(); ++j)
       cout << h[j]*scale << endl;
     cout << endl;
   }
 
-  for(unsigned int r=0; r < fft.R; r += fft.increment(r)) {
-    unsigned int D1=r == 0 ? fft.D0 : fft.D;
-    for(unsigned int d=0; d < D1; ++d) {
+  for(size_t r=0; r < fft.R; r += fft.increment(r)) {
+    size_t D1=r == 0 ? fft.D0 : fft.D;
+    for(size_t d=0; d < D1; ++d) {
       double *Fr=(double *) (F+fft.b*d);
-      unsigned int offset=noutputs*d;
-      for(unsigned int k=0; k < noutputs; ++k) {
-        unsigned int K=k+offset;
+      size_t offset=noutputs*d;
+      for(size_t k=0; k < noutputs; ++k) {
+        size_t K=k+offset;
         Fr[k]=F2r[fft.Index(r,K)];
       }
     }
     fft.backward(F,h,r,W0);
   }
 
-  for(unsigned int j=0; j < fft.inputSize(); ++j) {
+  for(size_t j=0; j < fft.inputSize(); ++j) {
     error2 += abs2(h[j]*scale-f[j]);
     norm2 += abs2(f[j]);
   }

@@ -9,8 +9,8 @@ using namespace utils;
 using namespace Array;
 using namespace fftwpp;
 
-unsigned int A=2; // number of inputs
-unsigned int B=1; // number of outputs
+size_t A=2; // number of inputs
+size_t B=1; // number of outputs
 
 int main(int argc, char *argv[])
 {
@@ -34,18 +34,18 @@ int main(int argc, char *argv[])
   K *= 1.0e9;
 
   vector<double> T;
-  unsigned int N=max(A,B);
+  size_t N=max(A,B);
 
   Application app(A,B,multbinary,fftw::maxthreads,0,mx,Dx,Ix);
   fftBase *fft=Centered ? new fftPadCentered(L,M,app) : new fftPad(L,M,app);
   bool embed=fft->embed();
-  unsigned int size=embed ? fft->outputSize() : fft->inputSize();
+  size_t size=embed ? fft->outputSize() : fft->inputSize();
   Complex **f=ComplexAlign(N,size);
   Convolution Convolve(fft,A,B,embed ? f : NULL);
 
-  for(unsigned int a=0; a < A; ++a) {
+  for(size_t a=0; a < A; ++a) {
     Complex *fa=f[a];
-    for(unsigned int j=0; j < L; ++j)
+    for(size_t j=0; j < L; ++j)
       fa[j]=Output || testError ? Complex(j,(1.0+a)*j+1) : 0.0;
   }
 
@@ -82,8 +82,8 @@ int main(int argc, char *argv[])
   if(Output) {
     if(testError)
       cout << "Hybrid:" << endl;
-    for(unsigned int b=0; b < B; ++b)
-      for(unsigned int j=0; j < L; ++j)
+    for(size_t b=0; b < B; ++b)
+      for(size_t j=0; j < L; ++j)
         cout << f[b][j] << endl;
   }
 
@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
     if(Output) {
       cout << endl;
       cout << "Direct:" << endl;
-      for(unsigned int j=0; j < L; ++j)
+      for(size_t j=0; j < L; ++j)
         cout << h[j] << endl;
       cout << endl;
     }
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 
     // Assumes B=1
     Complex* f0=f[0];
-    for(unsigned int j=0; j < L; ++j) {
+    for(size_t j=0; j < L; ++j) {
       Complex hj=h[j];
       err += abs2(f0[j]-hj);
       norm += abs2(hj);

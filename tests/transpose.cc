@@ -10,17 +10,17 @@ using namespace Array;
 using namespace fftwpp;
 
 // Number of iterations.
-unsigned int N0=10000000;
-unsigned int N=0;
-unsigned int mx=4;
-unsigned int my=4;
-unsigned int mz=4;
+size_t N0=10000000;
+size_t N=0;
+size_t mx=4;
+size_t my=4;
+size_t mz=4;
 
 inline void init(array3<Complex>& f, bool transpose=false)
 {
-  for(unsigned int i=0; i < mx; ++i) {
-    for(unsigned int j=0; j < my; ++j) {
-      for(unsigned int k=0; k < mz; ++k) {
+  for(size_t i=0; i < mx; ++i) {
+    for(size_t j=0; j < my; ++j) {
+      for(size_t k=0; k < mz; ++k) {
         Complex val=Complex(i,j);
         if(!transpose)
           f[i][j][k]=val;
@@ -31,7 +31,7 @@ inline void init(array3<Complex>& f, bool transpose=false)
   }
 }
 
-unsigned int outlimit=100;
+size_t outlimit=100;
 
 int main(int argc, char *argv[])
 {
@@ -128,9 +128,9 @@ int main(int argc, char *argv[])
     array3<Complex> f0(my,mx,mz,align);
     init(f0,true);
     double errmax = 0.0;
-    for(unsigned int i = 0; i < my; ++i) {
-      for(unsigned int j = 0; j < mx; ++j) {
-        for(unsigned int k = 0; k < mz; ++k) {
+    for(size_t i = 0; i < my; ++i) {
+      for(size_t j = 0; j < mx; ++j) {
+        for(size_t k = 0; k < mz; ++k) {
           errmax = max(errmax,abs(g[i][j][k]-f0[i][j][k]));
         }
       }
@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
   } else {
     double *T=new double[N];
 
-    for(unsigned int i=0; i < N; ++i) {
+    for(size_t i=0; i < N; ++i) {
       init(f);
       double t0=nanoseconds();
       transpose.transpose(f(),g());

@@ -10,23 +10,23 @@ using namespace Array;
 using namespace fftwpp;
 
 // Number of iterations.
-unsigned int N0 = 10000000;
-unsigned int N = 0;
-unsigned int mx = 4;
-unsigned int my = 4;
-unsigned int mz = 4;
+size_t N0 = 10000000;
+size_t N = 0;
+size_t mx = 4;
+size_t my = 4;
+size_t mz = 4;
 
 bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
 inline void init(array3<Complex>& f)
 {
-  for(unsigned int i = 0; i < mx; ++i)
-    for(unsigned int j = 0; j < my; j++)
-      for(unsigned int k = 0; k < mz; k++)
+  for(size_t i = 0; i < mx; ++i)
+    for(size_t j = 0; j < my; j++)
+      for(size_t k = 0; k < mz; k++)
         f(i, j, k)=Complex(10 * k + i, j);
 }
 
-unsigned int outlimit = 100;
+size_t outlimit = 100;
 
 int main(int argc, char *argv[])
 {
@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
     fft3d Forward3(-1, f);
     fft3d Backward3(1, f);
 
-    for(unsigned int i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
       init(f);
       double t0=nanoseconds();
       Forward3.fft(f);
@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
     fft3d Forward3(-1, f, g);
     fft3d Backward3(1, f, g);
 
-    for(unsigned int i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
       init(f);
       double t0=nanoseconds();
       Forward3.fft(f,g);

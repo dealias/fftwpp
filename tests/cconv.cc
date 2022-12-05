@@ -17,34 +17,34 @@ const Complex iG(sqrt(5.0),sqrt(11.0));
 
 bool Test=false;
 
-unsigned int A=2; // number of inputs
-unsigned int B=1; // number of outputs
+size_t A=2; // number of inputs
+size_t B=1; // number of outputs
 
-inline void init(Complex **F, unsigned int m, unsigned int A)
+inline void init(Complex **F, size_t m, size_t A)
 {
   if(A % 2 == 0) {
-    unsigned int M=A/2;
+    size_t M=A/2;
     double factor=1.0/sqrt((double) M);
-    for(unsigned int s=0; s < M; ++s) {
+    for(size_t s=0; s < M; ++s) {
       double ffactor=(1.0+s)*factor;
       double gfactor=1.0/(1.0+s)*factor;
       Complex *fs=F[s];
       Complex *gs=F[s+M];
       if(Test) {
-        for(unsigned int k=0; k < m; k++) {
+        for(size_t k=0; k < m; k++) {
           fs[k]=factor*iF*pow(E,k*I);
           gs[k]=factor*iG*pow(E,k*I);
         }
       } else {
-        for(unsigned int k=0; k < m; k++) {
+        for(size_t k=0; k < m; k++) {
           fs[k]=ffactor*Complex(k,k+1);
           gs[k]=gfactor*Complex(k,2*k+1);
         }
       }
     }
   } else {
-    for(unsigned int a=0; a < A; ++a) {
-      for(unsigned int k=0; k < m; ++k) {
+    for(size_t a=0; a < A; ++a) {
+      for(size_t k=0; k < m; ++k) {
         F[a][k]=(a+1)*Complex(k,k+1);
       }
     }
@@ -53,10 +53,10 @@ inline void init(Complex **F, unsigned int m, unsigned int A)
 
 // Pair-wise binary multiply for A=2 or A=4.
 // NB: example function, not optimised or threaded.
-void multA(Complex **F, unsigned int m,
-           const unsigned int indexsize,
-           const unsigned int *index,
-           unsigned int r, unsigned int threads)
+void multA(Complex **F, size_t m,
+           const size_t indexsize,
+           const size_t *index,
+           size_t r, size_t threads)
 {
   switch(A) {
     case 2: multbinary(F,m,indexsize,index,r,threads); break;
@@ -66,9 +66,9 @@ void multA(Complex **F, unsigned int m,
       exit(1);
   }
 
-  for(unsigned int b=1; b < B; ++b) {
+  for(size_t b=1; b < B; ++b) {
     double factor=1.0+b;
-    for(unsigned int i=0; i < m; ++i) {
+    for(size_t i=0; i < m; ++i) {
       F[b][i]=factor*F[0][i];
     }
   }
@@ -85,8 +85,8 @@ int main(int argc, char *argv[])
   bool Normalized=true;
 
   double K=1.0; // Time limit (seconds)
-  unsigned int minCount=20;
-  unsigned int m=11; // Problem size
+  size_t minCount=20;
+  size_t m=11; // Problem size
 
   int stats=MEDIAN; // Type of statistics used in timing test.
 
@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
     }
   }
 
-  unsigned int n=cpadding(m);
+  size_t n=cpadding(m);
 
   cout << "n=" << n << endl;
   cout << "m=" << m << endl;
@@ -168,12 +168,12 @@ int main(int argc, char *argv[])
   if(B < 1)
     B=1;
 
-  unsigned int np=Explicit ? n : m;
-  unsigned int C=max(A,B);
+  size_t np=Explicit ? n : m;
+  size_t C=max(A,B);
   Complex *f=ComplexAlign(C*np);
 
   Complex **F=new Complex *[C];
-  for(unsigned int s=0; s < C; ++s)
+  for(size_t s=0; s < C; ++s)
     F[s]=f+s*np;
 
   Complex *h0=NULL;
@@ -233,22 +233,22 @@ int main(int argc, char *argv[])
 
     if(Normalized) {
       double norm=0.5/m;
-      for(unsigned int b=0; b < B; ++b)
-        for(unsigned int i=0; i < m; i++)
+      for(size_t b=0; b < B; ++b)
+        for(size_t i=0; i < m; i++)
           F[b][i] *= norm;
     }
 
     if(Output) {
-      for(unsigned int b=0; b < B; ++b) {
-        for(unsigned int i=0; i < m; i++)
+      for(size_t b=0; b < B; ++b) {
+        for(size_t i=0; i < m; i++)
           cout << F[b][i] << endl;
         cout << endl;
       }
     }
 
     if(Test || Direct) {
-      for(unsigned int b=0; b < B; ++b) {
-        for(unsigned int i=0; i < m; i++) {
+      for(size_t b=0; b < B; ++b) {
+        for(size_t i=0; i < m; i++) {
           h0[i+b*m]=F[b][i];
         }
       }
@@ -277,13 +277,13 @@ int main(int argc, char *argv[])
     T.clear();
 
     if(Output)
-      for(unsigned int i=0; i < m; i++)
+      for(size_t i=0; i < m; i++)
         cout << F[0][i] << endl;
 
     cout << endl;
 
     if(Test || Direct)
-      for(unsigned int i=0; i < m; i++)
+      for(size_t i=0; i < m; i++)
         h0[i]=F[0][i];
   }
 
@@ -304,15 +304,15 @@ int main(int argc, char *argv[])
     timings("Direct",m,T.data(),1);
 
     if(Output)
-      for(unsigned int i=0; i < m; i++)
+      for(size_t i=0; i < m; i++)
         cout << h[i] << endl;
 
     { // compare implicit or explicit version with direct verion:
       double error=0.0;
       double norm=0.0;
-      for(unsigned int b=0; b < B; ++b) {
+      for(size_t b=0; b < B; ++b) {
         double factor=1.0+b;
-        for(unsigned long long k=0; k < m; k++) {
+        for(size_t k=0; k < m; k++) {
           error += abs2(h0[k+b*m]-factor*h[k]);
           norm += abs2(h[k]);
         }
@@ -324,7 +324,7 @@ int main(int argc, char *argv[])
     }
 
     if(Test)
-      for(unsigned int i=0; i < m; i++)
+      for(size_t i=0; i < m; i++)
         h0[i]=h[i];
     deleteAlign(h);
   }
@@ -341,7 +341,7 @@ int main(int argc, char *argv[])
     // Exact solutions for test case.
     if(A % 2 == 0) {
       testok=true;
-      for(unsigned long long k=0; k < m; k++) {
+      for(size_t k=0; k < m; k++) {
         h[k]=iF*iG*(k+1)*pow(E,k*I);
         //  h[k]=iF*iG*(k*(k+1)/2.0*(k-(2*k+1)/3.0));
       }
@@ -350,7 +350,7 @@ int main(int argc, char *argv[])
     // autoconvolution of f[k]=k
     if(A == 1) {
       testok=true;
-      for(unsigned long long k=0; k < m; k++)
+      for(size_t k=0; k < m; k++)
         h[k]=k*(0.5*k*(k+1)) - k*(k+1)*(2*k+1)/6.0;
     }
 
@@ -359,7 +359,7 @@ int main(int argc, char *argv[])
       exit(1);
     }
 
-    for(unsigned long long k=0; k < m; k++) {
+    for(size_t k=0; k < m; k++) {
       error += abs2(h0[k]-h[k]);
       norm += abs2(h[k]);
     }

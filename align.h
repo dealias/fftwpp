@@ -91,7 +91,7 @@ namespace utils {
 
 extern int ALIGNMENT;
 
-inline unsigned int ceilquotient(unsigned int a, unsigned int b)
+inline size_t ceilquotient(size_t a, size_t b)
 {
   return (a+b-1)/b;
 }
@@ -106,13 +106,13 @@ inline Complex *ComplexAlign(size_t size)
 
 // Return a contiguous array v of n aligned buffers of length size.
 // Deallocate with deleteAlign(v[0]); delete v;
-inline Complex **ComplexAlign(unsigned int n, size_t size)
+inline Complex **ComplexAlign(size_t n, size_t size)
 {
   if(n == 0 || size == 0) return NULL;
   Complex **v=new Complex*[n];
-  unsigned int Size=ALIGNMENT*ceilquotient(size,ALIGNMENT);
+  size_t Size=ALIGNMENT*ceilquotient(size,ALIGNMENT);
   Complex *B=ComplexAlign((n-1)*Size+size);
-  for(unsigned int i=0; i < n; ++i)
+  for(size_t i=0; i < n; ++i)
     v[i]=B+i*Size;
   return v;
 }
@@ -125,7 +125,7 @@ inline double *doubleAlign(size_t size)
 }
 
 // Extend n*sizeof(Complex) to a multiple of ALIGNMENT
-inline unsigned int align(unsigned int n)
+inline size_t align(size_t n)
 {
   return ceilquotient(n*sizeof(Complex),ALIGNMENT)*ALIGNMENT/sizeof(Complex);
 }

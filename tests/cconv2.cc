@@ -12,27 +12,27 @@ using namespace Array;
 using namespace fftwpp;
 
 // Number of iterations.
-unsigned int N0=10000000;
-unsigned int N=0;
-unsigned int nx=0;
-unsigned int ny=0;
-unsigned int mx=4;
-unsigned int my=0;
+size_t N0=10000000;
+size_t N=0;
+size_t nx=0;
+size_t ny=0;
+size_t mx=4;
+size_t my=0;
 
-inline void init(Complex **F, unsigned int nxp, unsigned int nyp, unsigned int A)
+inline void init(Complex **F, size_t nxp, size_t nyp, size_t A)
 {
   if(A%2 == 0) {
-    unsigned int M=A/2;
+    size_t M=A/2;
     double factor=1.0/sqrt((double) M);
-    for(unsigned int s=0; s < M; ++s) {
+    for(size_t s=0; s < M; ++s) {
       double S=sqrt(1.0+s);
       double ffactor=S*factor;
       double gfactor=1.0/S*factor;
       array2<Complex> f(nxp,nyp,F[s]);
       array2<Complex> g(nxp,nyp,F[M+s]);
 #pragma omp parallel for
-      for(unsigned int i=0; i < mx; ++i) {
-        for(unsigned int j=0; j < my; j++) {
+      for(size_t i=0; i < mx; ++i) {
+        for(size_t j=0; j < my; j++) {
           f[i][j]=ffactor*Complex(i,j);
           g[i][j]=gfactor*Complex(2*i,j+1);
         }
@@ -46,11 +46,11 @@ inline void init(Complex **F, unsigned int nxp, unsigned int nyp, unsigned int A
 
 void add(Complex *f, Complex *F)
 {
-  for(unsigned int i=0; i < mx; ++i) {
-    unsigned int imy=i*my;
+  for(size_t i=0; i < mx; ++i) {
+    size_t imy=i*my;
     Complex *fi=f+imy;
     Complex *Fi=F+imy;
-    for(unsigned int j=0; j < my; ++j) {
+    for(size_t j=0; j < my; ++j) {
       fi[j] += Fi[j];
     }
   }
@@ -68,10 +68,10 @@ int main(int argc, char *argv[])
   bool Pruned=false;
 
   double K=1.0; // Time limit (seconds)
-  unsigned int minCount=20;
+  size_t minCount=20;
 
-  unsigned int A=2;
-  unsigned int B=1;
+  size_t A=2;
+  size_t B=1;
 
   int stats=0; // Type of statistics used in timing test.
 
@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
 
   // Allocate input/ouput memory and set up pointers
   Complex **F=new Complex *[A];
-  for(unsigned int a=0; a < A; ++a)
+  for(size_t a=0; a < A; ++a)
     F[a]=ComplexAlign(nxp*nyp);
 
   // For easy access of first element
@@ -220,20 +220,20 @@ int main(int argc, char *argv[])
 
     if(Normalized) {
       double norm=0.25/(mx*my);
-      for(unsigned int i=0; i < mx; i++)
-        for(unsigned int j=0; j < my; j++)
+      for(size_t i=0; i < mx; i++)
+        for(size_t j=0; j < my; j++)
           f[i][j] *= norm;
     }
 
     if(Direct) {
-      for(unsigned int i=0; i < mx; i++)
-        for(unsigned int j=0; j < my; j++)
+      for(size_t i=0; i < mx; i++)
+        for(size_t j=0; j < my; j++)
           h0[i][j]=f[i][j];
     }
 
     if(Output) {
-      for(unsigned int i=0; i < mx; i++) {
-        for(unsigned int j=0; j < my; j++)
+      for(size_t i=0; i < mx; i++) {
+        for(size_t j=0; j < my; j++)
           cout << f[i][j] << "\t";
         cout << endl;
       }
@@ -264,14 +264,14 @@ int main(int argc, char *argv[])
     T.clear();
 
     if(Direct) {
-      for(unsigned int i=0; i < mx; i++)
-        for(unsigned int j=0; j < my; j++)
+      for(size_t i=0; i < mx; i++)
+        for(size_t j=0; j < my; j++)
           h0[i][j]=F[0][nyp*i+j];
     }
 
     if(Output) {
-      for(unsigned int i=0; i < mx; i++) {
-        for(unsigned int j=0; j < my; j++) {
+      for(size_t i=0; i < mx; i++) {
+        for(size_t j=0; j < my; j++) {
           cout << F[0][nyp*i+j] << "\t";
         }
         cout << endl;
@@ -294,8 +294,8 @@ int main(int argc, char *argv[])
     T.clear();
 
     if(Output)
-      for(unsigned int i=0; i < mx; i++) {
-        for(unsigned int j=0; j < my; j++)
+      for(size_t i=0; i < mx; i++) {
+        for(size_t j=0; j < my; j++)
           cout << h[i][j] << "\t";
         cout << endl;
       } else cout << h[0][0] << endl;
@@ -304,8 +304,8 @@ int main(int argc, char *argv[])
       double error=0.0;
       cout << endl;
       double norm=0.0;
-      for(unsigned int i=0; i < mx; i++) {
-        for(unsigned int j=0; j < my; j++) {
+      for(size_t i=0; i < mx; i++) {
+        for(size_t j=0; j < my; j++) {
           error += abs2(h0[i][j]-h[i][j]);
           norm += abs2(h[i][j]);
         }
@@ -317,7 +317,7 @@ int main(int argc, char *argv[])
     }
   }
 
-  for(unsigned int a=0; a < A; ++a)
+  for(size_t a=0; a < A; ++a)
     deleteAlign(F[a]);
   delete [] F;
 

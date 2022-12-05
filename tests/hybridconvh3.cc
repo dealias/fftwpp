@@ -9,8 +9,8 @@ using namespace utils;
 using namespace Array;
 using namespace fftwpp;
 
-unsigned int A=2; // number of inputs
-unsigned int B=1; // number of outputs
+size_t A=2; // number of inputs
+size_t B=1; // number of outputs
 
 int main(int argc, char *argv[])
 {
@@ -38,20 +38,20 @@ int main(int argc, char *argv[])
   cout << "K=" << K << endl << endl;
   K *= 1.0e9;
 
-  unsigned int Hx=ceilquotient(Lx,2);
-  unsigned int Hy=ceilquotient(Ly,2);
-  unsigned int Hz=ceilquotient(Lz,2);
+  size_t Hx=ceilquotient(Lx,2);
+  size_t Hy=ceilquotient(Ly,2);
+  size_t Hz=ceilquotient(Lz,2);
 
   if(Sy == 0) Sy=Hz;
   if(Sx == 0) Sx=Ly*Sy;
 
   vector<double> T;
-  unsigned int N=max(A,B);
+  size_t N=max(A,B);
 
   Application appx(A,B,multNone,fftw::maxthreads,0,mx,Dx,Ix);
   fftPadCentered fftx(Lx,Mx,appx,Sy == Hz? Ly*Hz : Hz,Sx);
   bool embed=fftx.embed();
-  unsigned int size=embed ? fftx.outputSize() : fftx.inputSize();
+  size_t size=embed ? fftx.outputSize() : fftx.inputSize();
   Complex **f=ComplexAlign(N,size);
   Application appy(A,B,multNone,appx.Threads(),fftx.l,my,Dy,Iy);
   fftPadCentered ffty(Ly,My,appy,Hz,Sy);
@@ -62,11 +62,11 @@ int main(int argc, char *argv[])
 
 //  ConvolutionHermitian3 Convolve3(Lx,Mx,Ly,My,Lz,Mz,A,B);
 
-  for(unsigned int a=0; a < A; ++a) {
+  for(size_t a=0; a < A; ++a) {
     Complex *fa=f[a];
-    for(unsigned int i=0; i < Lx; ++i) {
-      for(unsigned int j=0; j < Ly; ++j) {
-        for(unsigned int k=0; k < Hz; ++k) {
+    for(size_t i=0; i < Lx; ++i) {
+      for(size_t j=0; j < Ly; ++j) {
+        for(size_t k=0; k < Hz; ++k) {
           int I=Lx % 2 ? i : -1+i;
           int J=Ly % 2 ? j : -1+j;
           fa[Sx*i+Sy*j+k]=Output || testError ?
@@ -107,11 +107,11 @@ int main(int argc, char *argv[])
   if(Output) {
     if(testError)
       cout << "Hybrid:" << endl;
-    for(unsigned int b=0; b < B; ++b) {
+    for(size_t b=0; b < B; ++b) {
       Complex *fb=f[b];
-      for(unsigned int i=0; i < Lx; ++i) {
-        for(unsigned int j=0; j < Ly; ++j) {
-          for(unsigned int k=0; k < Hz; ++k)
+      for(size_t i=0; i < Lx; ++i) {
+        for(size_t j=0; j < Ly; ++j) {
+          for(size_t k=0; k < Hz; ++k)
             cout << fb[Sx*i+Sy*j+k] << " ";
           cout << endl;
         }
@@ -125,9 +125,9 @@ int main(int argc, char *argv[])
     if(Output) {
       cout << endl;
       cout << "Direct:" << endl;
-      for(unsigned int i=0; i < Lx; ++i) {
-        for(unsigned int j=0; j < Ly; ++j) {
-          for(unsigned int k=0; k < Hz; ++k) {
+      for(size_t i=0; i < Lx; ++i) {
+        for(size_t j=0; j < Ly; ++j) {
+          for(size_t k=0; k < Hz; ++k) {
             cout << h[Hz*(Ly*i+j)+k] << " ";
           }
           cout << endl;
@@ -140,9 +140,9 @@ int main(int argc, char *argv[])
     double norm=0.0;
 
     // Assumes B=1
-    for(unsigned int i=0; i < Lx; ++i)
-      for(unsigned int j=0; j < Ly; ++j)
-        for(unsigned int k=0; k < Hz; ++k){
+    for(size_t i=0; i < Lx; ++i)
+      for(size_t j=0; j < Ly; ++j)
+        for(size_t k=0; k < Hz; ++k){
           Complex hijk=h[Hz*(Ly*i+j)+k];
           err += abs2(f[0][Sx*i+Sy*j+k]-hijk);
           norm += abs2(hijk);

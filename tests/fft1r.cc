@@ -9,9 +9,9 @@ using namespace utils;
 using namespace Array;
 using namespace fftwpp;
 
-void finit(array1<double> f, unsigned int m)
+void finit(array1<double> f, size_t m)
 {
-  for(unsigned int i=0; i < m; i++)
+  for(size_t i=0; i < m; i++)
     f[i]=i;
 }
 
@@ -19,10 +19,10 @@ int main(int argc, char *argv[])
 {
   cout << "1D Complex to real in-place FFT" << endl;
 
-  unsigned int m=11; // Problem size
+  size_t m=11; // Problem size
 
   int N=1000;
-  unsigned int stats=MEAN; // Type of statistics used in timing test.
+  size_t stats=MEAN; // Type of statistics used in timing test.
 
   fftw::maxthreads=get_max_threads();
   int r=-1;
@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
 
   size_t align=ALIGNMENT;
 
-  unsigned int mp=m/2+1;
+  size_t mp=m/2+1;
 
   array1<double> f(m+2,align);
   array1<Complex> g(mp,align);

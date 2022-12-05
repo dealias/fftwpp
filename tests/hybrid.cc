@@ -5,8 +5,8 @@ using namespace utils;
 using namespace Array;
 using namespace fftwpp;
 
-unsigned int A=2; // number of inputs
-unsigned int B=1; // number of outputs
+size_t A=2; // number of inputs
+size_t B=1; // number of outputs
 
 int main(int argc, char *argv[])
 {
@@ -71,8 +71,8 @@ int main(int argc, char *argv[])
   Complex *F=ComplexAlign(fft.outputSize());
   Complex *W0=ComplexAlign(fft.workSizeW());
 
-  for(unsigned int j=0; j < L; ++j)
-    for(unsigned int c=0; c < C; ++c)
+  for(size_t j=0; j < L; ++j)
+    for(size_t c=0; c < C; ++c)
       f[S*j+c]=Complex(j+1+c,j+2+c);
 
 #if Centered
@@ -89,14 +89,14 @@ int main(int argc, char *argv[])
   fft.pad(W0);
   double error=0.0, error2=0.0;
   double norm=0.0, norm2=0.0;
-  for(unsigned int r=0; r < fft.R; r += fft.increment(r)) {
+  for(size_t r=0; r < fft.R; r += fft.increment(r)) {
     fft.forward(f,F,r,W0);
-    for(unsigned int k=0; k < fft.noutputs(r); ++k) {
+    for(size_t k=0; k < fft.noutputs(r); ++k) {
       if(Output && k%fft.m == 0) cout << endl;
 
-      for(unsigned int c=0; c < C; ++c) {
-        unsigned int K=S*k+c;
-        unsigned int i=fft.Index(r,K);
+      for(size_t c=0; c < C; ++c) {
+        size_t K=S*k+c;
+        size_t i=fft.Index(r,K);
         error += abs2(F[K]-F2[i]);
         norm += abs2(F2[i]);
         if(Output)
@@ -108,9 +108,9 @@ int main(int argc, char *argv[])
 
   if(Output) {
     cout << endl;
-    for(unsigned int j=0; j < fft2.noutputs(); ++j)
-      for(unsigned int c=0; c < C; ++c) {
-        unsigned int J=S*j+c;
+    for(size_t j=0; j < fft2.noutputs(); ++j)
+      for(size_t c=0; c < C; ++c) {
+        size_t J=S*j+c;
         cout << J << ": " << F2[J] << endl;
       }
   }
@@ -120,28 +120,28 @@ int main(int argc, char *argv[])
   if(Output) {
     cout << endl;
     cout << "Inverse:" << endl;
-    for(unsigned int j=0; j < L; ++j) {
-      for(unsigned int c=0; c < C; ++c) {
-        unsigned int J=S*j+c;
+    for(size_t j=0; j < L; ++j) {
+      for(size_t c=0; c < C; ++c) {
+        size_t J=S*j+c;
         cout << h[J]*scale << endl;
       }
     }
     cout << endl;
   }
 
-  for(unsigned int r=0; r < fft.R; r += fft.increment(r)) {
-    for(unsigned int k=0; k < fft.noutputs(r); ++k) {
-      for(unsigned int c=0; c < C; ++c) {
-        unsigned int K=S*k+c;
+  for(size_t r=0; r < fft.R; r += fft.increment(r)) {
+    for(size_t k=0; k < fft.noutputs(r); ++k) {
+      for(size_t c=0; c < C; ++c) {
+        size_t K=S*k+c;
         F[K]=F2[fft.Index(r,K)];
       }
     }
     fft.backward(F,h,r,W0);
   }
 
-  for(unsigned int j=0; j < L; ++j) {
-    for(unsigned int c=0; c < C; ++c) {
-      unsigned int J=S*j+c;
+  for(size_t j=0; j < L; ++j) {
+    for(size_t c=0; c < C; ++c) {
+      size_t J=S*j+c;
       error2 += abs2(h[J]*scale-f[J]);
       norm2 += abs2(f[J]);
     }

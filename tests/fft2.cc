@@ -10,21 +10,21 @@ using namespace Array;
 using namespace fftwpp;
 
 // Number of iterations.
-unsigned int N0=10000000;
-unsigned int N=0;
-unsigned int mx=4;
-unsigned int my=4;
+size_t N0=10000000;
+size_t N=0;
+size_t mx=4;
+size_t my=4;
 
 bool Direct=false, Implicit=true, Explicit=false, Pruned=false;
 
 inline void init(array2<Complex>& f)
 {
-  for(unsigned int i=0; i < mx; ++i)
-    for(unsigned int j=0; j < my; j++)
+  for(size_t i=0; i < mx; ++i)
+    for(size_t j=0; j < my; j++)
       f[i][j]=Complex(i,j);
 }
 
-unsigned int outlimit=100;
+size_t outlimit=100;
 
 int main(int argc, char *argv[])
 {
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
     fft2d Forward2(-1,f);
     fft2d Backward2(1,f);
 
-    for(unsigned int i=0; i < N; ++i) {
+    for(size_t i=0; i < N; ++i) {
       init(f);
       double t0=nanoseconds();
       Forward2.fft(f);
@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
     fft2d Forward2(-1,f,g);
     fft2d Backward2(1,f,g);
 
-    for(unsigned int i=0; i < N; ++i) {
+    for(size_t i=0; i < N; ++i) {
       init(f);
       double t0=nanoseconds();
       Forward2.fft(f,g);
@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
     mfft1d Forwardy(my,-1,mx,1,mx);
     mfft1d Backwardy(my,1,mx,1,mx);
 
-    for(unsigned int i=0; i < N; ++i) {
+    for(size_t i=0; i < N; ++i) {
       init(f);
       double t0=nanoseconds();
 
@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
     mfft1d Forwardy(my,-1,mx,1,mx,f,g);
     mfft1d Backwardy(my,1,mx,1,mx,f,g);
 
-    for(unsigned int i=0; i < N; ++i) {
+    for(size_t i=0; i < N; ++i) {
       init(f);
       double t0=nanoseconds();
 
@@ -195,7 +195,7 @@ int main(int argc, char *argv[])
     mfft1d Forwardy(my,-1,mx,1,mx);
     mfft1d Backwardy(my,1,mx,1,mx);
 
-    for(unsigned int i=0; i < N; ++i) {
+    for(size_t i=0; i < N; ++i) {
       init(f);
       double t0=nanoseconds();
 
@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
     mfft1d Forwardy(my,-1,mx,1,mx,f,g);
     mfft1d Backwardy(my,1,mx,1,mx,f,g);
 
-    for(unsigned int i=0; i < N; ++i) {
+    for(size_t i=0; i < N; ++i) {
       init(f);
       double t0=nanoseconds();
 
@@ -257,7 +257,7 @@ int main(int argc, char *argv[])
     mfft1d Forwardy(my,-1,mx,1,mx,f,f);
     mfft1d Backwardy(my,1,mx,1,mx,f,f);
 
-    for(unsigned int i=0; i < N; ++i) {
+    for(size_t i=0; i < N; ++i) {
       init(f);
       double t0=nanoseconds();
 
@@ -282,7 +282,7 @@ int main(int argc, char *argv[])
     mfft1d Forwardy(my,-1,mx,1,mx,f,g);
     mfft1d Backwardy(my,1,mx,1,mx,f,g);
 
-    for(unsigned int i=0; i < N; ++i) {
+    for(size_t i=0; i < N; ++i) {
       init(f);
       double t0=nanoseconds();
 
@@ -300,8 +300,8 @@ int main(int argc, char *argv[])
 
   cout << endl;
   if(mx*my < outlimit) {
-    for(unsigned int i=0; i < mx; i++) {
-      for(unsigned int j=0; j < my; j++)
+    for(size_t i=0; i < mx; i++) {
+      for(size_t j=0; j < my; j++)
         cout << f[i][j] << "\t";
       cout << endl;
     }

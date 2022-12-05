@@ -12,39 +12,39 @@ using namespace Array;
 using namespace fftwpp;
 
 // Number of iterations.
-unsigned int N0=10000000;
-unsigned int N=0;
-unsigned int nx=0;
-unsigned int ny=0;
-unsigned int nz=0;
-unsigned int mx=4;
-unsigned int my=0;
-unsigned int mz=0;
-unsigned int nxp;
-unsigned int nyp;
-unsigned int nzp;
+size_t N0=10000000;
+size_t N=0;
+size_t nx=0;
+size_t ny=0;
+size_t nz=0;
+size_t mx=4;
+size_t my=0;
+size_t mz=0;
+size_t nxp;
+size_t nyp;
+size_t nzp;
 bool xcompact=true;
 bool ycompact=true;
 bool zcompact=true;
 
-unsigned int threads;
+size_t threads;
 
 bool Explicit=false;
 
 inline void init(Complex **F,
-                 unsigned int mx, unsigned int my, unsigned int mz,
-                 unsigned int nxp, unsigned int nyp, unsigned int nzp,
-                 unsigned int A, bool xcompact, bool ycompact, bool zcompact)
+                 size_t mx, size_t my, size_t mz,
+                 size_t nxp, size_t nyp, size_t nzp,
+                 size_t A, bool xcompact, bool ycompact, bool zcompact)
 {
   if(A % 2 == 0) {
-    unsigned int M=A/2;
-    unsigned int xoffset=Explicit ? nxp/2-mx+1 : !xcompact;
-    unsigned int yoffset=Explicit ? nyp/2-my+1 : !ycompact;
-    unsigned int nx=2*mx-1;
-    unsigned int ny=2*my-1;
+    size_t M=A/2;
+    size_t xoffset=Explicit ? nxp/2-mx+1 : !xcompact;
+    size_t yoffset=Explicit ? nyp/2-my+1 : !ycompact;
+    size_t nx=2*mx-1;
+    size_t ny=2*my-1;
 
     double factor=1.0/sqrt((double) M);
-    for(unsigned int s=0; s < M; ++s) {
+    for(size_t s=0; s < M; ++s) {
       double S=sqrt(1.0+s);
       double ffactor=S*factor;
       double gfactor=1.0/S*factor;
@@ -53,16 +53,16 @@ inline void init(Complex **F,
       array3<Complex> g(nxp,nyp,nzp,F[M+s]);
 
       if(!xcompact) {
-        for(unsigned int j=0; j < ny+!ycompact; ++j) {
-          for(unsigned int k=0; k < mz+!zcompact; ++k) {
+        for(size_t j=0; j < ny+!ycompact; ++j) {
+          for(size_t k=0; k < mz+!zcompact; ++k) {
             f[0][j][k]=0.0;
             g[0][j][k]=0.0;
           }
         }
       }
       if(!ycompact) {
-        for(unsigned int i=0; i < nx+!xcompact; ++i) {
-          for(unsigned int k=0; k < mz+!zcompact; ++k) {
+        for(size_t i=0; i < nx+!xcompact; ++i) {
+          for(size_t k=0; k < mz+!zcompact; ++k) {
             f[i][0][k]=0.0;
             g[i][0][k]=0.0;
           }
@@ -70,8 +70,8 @@ inline void init(Complex **F,
       }
 
       if(!zcompact) {
-        for(unsigned int i=0; i < nx+!xcompact; ++i) {
-          for(unsigned int j=0; j < ny+!ycompact; ++j) {
+        for(size_t i=0; i < nx+!xcompact; ++i) {
+          for(size_t j=0; j < ny+!ycompact; ++j) {
             f[i][j][mz]=0.0;
             g[i][j][mz]=0.0;
           }
@@ -79,11 +79,11 @@ inline void init(Complex **F,
       }
 
       PARALLEL(
-        for(unsigned int i=0; i < nx; ++i) {
-          unsigned int I=i+xoffset;
-          for(unsigned int j=0; j < ny; ++j) {
-            unsigned int J=j+yoffset;
-            for(unsigned int k=0; k < mz; ++k) {
+        for(size_t i=0; i < nx; ++i) {
+          size_t I=i+xoffset;
+          for(size_t j=0; j < ny; ++j) {
+            size_t J=j+yoffset;
+            for(size_t k=0; k < mz; ++k) {
               f[I][J][k]=ffactor*Complex(i+k,j+k);
               g[I][J][k]=gfactor*Complex(2*i+k,j+1+k);
             }
@@ -107,10 +107,10 @@ int main(int argc, char *argv[])
   bool Normalized=true;
 
   double K=1.0; // Time limit (seconds)
-  unsigned int minCount=20;
+  size_t minCount=20;
 
-  unsigned int A=2; // Number of independent inputs
-  unsigned int B=1; // Number of outputs
+  size_t A=2; // Number of independent inputs
+  size_t B=1; // Number of outputs
 
   int stats=0; // Type of statistics used in timing test.
 
@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
   }
 
   Complex **F=new Complex *[A];
-  for(unsigned int a=0; a < A; ++a)
+  for(size_t a=0; a < A; ++a)
     F[a]=ComplexAlign(nxp*nyp*nzp);
 
   // For easy access of first element
@@ -263,25 +263,25 @@ int main(int argc, char *argv[])
 
     if(Normalized) {
       double norm=1.0/(27.0*mx*my*mz);
-      for(unsigned int i=!xcompact; i < nxp; ++i) {
-        for(unsigned int j=!ycompact; j < nyp; ++j) {
-          for(unsigned int k=0; k < mz; k++)
+      for(size_t i=!xcompact; i < nxp; ++i) {
+        for(size_t j=!ycompact; j < nyp; ++j) {
+          for(size_t k=0; k < mz; k++)
           f[i][j][k] *= norm;
         }
       }
     }
 
     if(Direct) {
-      for(unsigned int i=0; i < mx; i++)
-        for(unsigned int j=0; j < my; j++)
-          for(unsigned int k=0; k < mz; k++)
+      for(size_t i=0; i < mx; i++)
+        for(size_t j=0; j < my; j++)
+          for(size_t k=0; k < mz; k++)
             h0[i][j][k]=f[i+!xcompact][j+!ycompact][k];
     }
 
     if(Output) {
-      for(unsigned int i=!xcompact; i < nxp; ++i) {
-        for(unsigned int j=!ycompact; j < nyp; ++j) {
-          for(unsigned int k=0; k < mz; ++k)
+      for(size_t i=!xcompact; i < nxp; ++i) {
+        for(size_t j=!ycompact; j < nyp; ++j) {
+          for(size_t k=0; k < mz; ++k)
             cout << f[i][j][k] << "\t";
           cout << endl;
         }
@@ -291,7 +291,7 @@ int main(int argc, char *argv[])
   }
 
   if(Explicit) {
-    unsigned int M=A/2;
+    size_t M=A/2;
     ExplicitHConvolution3 C(nx,ny,nz,mx,my,mz,f,M);
     cout << "threads=" << C.Threads() << endl << endl;
 
@@ -317,20 +317,20 @@ int main(int argc, char *argv[])
     timings("Explicit",(2*mx-1)*(2*my-1)*(2*mz-1),T.data(),T.size(),stats);
     cout << endl;
 
-    unsigned int xoffset=nx/2-mx+1;
-    unsigned int yoffset=ny/2-my+1;
+    size_t xoffset=nx/2-mx+1;
+    size_t yoffset=ny/2-my+1;
 
     if(Direct) {
-      for(unsigned int i=0; i < mx; i++)
-        for(unsigned int j=0; j < my; j++)
-          for(unsigned int k=0; k < mz; ++k)
+      for(size_t i=0; i < mx; i++)
+        for(size_t j=0; j < my; j++)
+          for(size_t k=0; k < mz; ++k)
             h0[i][j][k]=f[xoffset+i][yoffset+j][k];
     }
 
     if(Output) {
-      for(unsigned int i=xoffset; i < xoffset+2*mx-1; i++) {
-        for(unsigned int j=yoffset; j < yoffset+2*my-1; j++) {
-          for(unsigned int k=0; k < mz; ++k)
+      for(size_t i=xoffset; i < xoffset+2*mx-1; i++) {
+        for(size_t j=yoffset; j < yoffset+2*my-1; j++) {
+          for(size_t k=0; k < mz; ++k)
             cout << f[i][j][k] << "\t";
           cout << endl;
         }
@@ -341,8 +341,8 @@ int main(int argc, char *argv[])
   }
 
   if(Direct) {
-    unsigned int nxp=2*mx-1;
-    unsigned int nyp=2*my-1;
+    size_t nxp=2*mx-1;
+    size_t nyp=2*my-1;
 
     array3<Complex> h(nxp,nyp,mz,align);
 
@@ -357,9 +357,9 @@ int main(int argc, char *argv[])
     cout << endl;
 
     if(Output)
-      for(unsigned int i=0; i < nxp; ++i) {
-        for(unsigned int j=0; j < nyp; ++j) {
-          for(unsigned int k=0; k < mz; ++k)
+      for(size_t i=0; i < nxp; ++i) {
+        for(size_t j=0; j < nyp; ++j) {
+          for(size_t k=0; k < mz; ++k)
             cout << h[i][j][k] << "\t";
           cout << endl;
         }
@@ -369,9 +369,9 @@ int main(int argc, char *argv[])
     { // compare implicit or explicit version with direct verion:
       double error=0.0;
       double norm=0.0;
-      for(unsigned int i=0; i < mx; i++) {
-        for(unsigned int j=0; j < my; j++) {
-          for(unsigned int k=0; k < mz; k++) {
+      for(size_t i=0; i < mx; i++) {
+        for(size_t j=0; j < my; j++) {
+          for(size_t k=0; k < mz; k++) {
             error += abs2(h0[i][j][k]-h[i][j][k]);
             norm += abs2(h[i][j][k]);
           }
@@ -384,7 +384,7 @@ int main(int argc, char *argv[])
 
   }
 
-  for(unsigned int a=0; a < A; ++a)
+  for(size_t a=0; a < A; ++a)
     deleteAlign(F[a]);
   delete [] F;
 

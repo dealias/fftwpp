@@ -34,13 +34,13 @@ extern const double twopi;
 // Constants used for initialization and testing.
 const Complex I(0.0,1.0);
 
-extern unsigned int L,Lx,Ly,Lz; // input data lengths
-extern unsigned int M,Mx,My,Mz; // minimum padded lengths
+extern size_t L,Lx,Ly,Lz; // input data lengths
+extern size_t M,Mx,My,Mz; // minimum padded lengths
 
-extern unsigned int mx,my,mz; // internal FFT sizes
-extern unsigned int Dx,Dy,Dz; // numbers of residues computed at a time
-extern unsigned int Sx,Sy;    // strides
-extern int Ix,Iy,Iz;          // inplace flags
+extern size_t mx,my,mz; // internal FFT sizes
+extern size_t Dx,Dy,Dz; // numbers of residues computed at a time
+extern size_t Sx,Sy;    // strides
+extern ptrdiff_t Ix,Iy,Iz;          // inplace flags
 
 extern bool Output;
 extern bool testError;
@@ -50,11 +50,11 @@ extern bool normalized;
 extern bool Tforced;
 extern bool showRoutines;
 
-unsigned int nextfftsize(unsigned int m);
+size_t nextfftsize(size_t m);
 
 class fftBase;
 
-typedef void (fftBase::*FFTcall)(Complex *f, Complex *F, unsigned int r,
+typedef void (fftBase::*FFTcall)(Complex *f, Complex *F, size_t r,
                                  Complex *W);
 typedef void (fftBase::*FFTPad)(Complex *W);
 
@@ -62,23 +62,23 @@ class Indices
 {
 public:
   fftBase *fft;
-  unsigned int *index;
+  size_t *index;
   size_t size,maxsize;
   bool allocated;
-  unsigned int r;
+  size_t r;
 
   Indices() : index(NULL), maxsize(0) {}
 
-  void copy(Indices *indices, unsigned int size0) {
+  void copy(Indices *indices, size_t size0) {
     size=indices ? indices->size : size0;
     if(size > maxsize) {
       if(maxsize > 0)
         delete [] index;
-      index=new unsigned int[size];
+      index=new size_t[size];
       maxsize=size;
     }
     if(indices)
-      for(unsigned int d=1; d < size; ++d)
+      for(size_t d=1; d < size; ++d)
         index[d]=indices->index[d];
   }
 
@@ -88,8 +88,8 @@ public:
   }
 };
 
-typedef void multiplier(Complex **F, unsigned int n,
-                        Indices *indices, unsigned int threads);
+typedef void multiplier(Complex **F, size_t n,
+                        Indices *indices, size_t threads);
 
 // Multiplication routines for binary convolutions that take two inputs.
 multiplier multNone,multbinary,realmultbinary;
@@ -97,16 +97,16 @@ multiplier multNone,multbinary,realmultbinary;
 class Application : public ThreadBase
 {
 public:
-  unsigned int A;
-  unsigned int B;
+  size_t A;
+  size_t B;
   multiplier *mult;
-  unsigned int m;
-  unsigned int D;
-  int I;
+  size_t m;
+  size_t D;
+  ptrdiff_t I;
 
-  Application(unsigned int A, unsigned int B, multiplier *mult=multNone,
-              unsigned int threads=fftw::maxthreads, unsigned int n=0,
-              unsigned int m=0, unsigned int D=0, int I=-1) :
+  Application(size_t A, size_t B, multiplier *mult=multNone,
+              size_t threads=fftw::maxthreads, size_t n=0,
+              size_t m=0, size_t D=0, ptrdiff_t I=-1) :
     ThreadBase(threads), A(A), B(B), mult(mult), m(m), D(D), I(I) {
     if(n == 0)
       multithread(threads);
@@ -119,22 +119,22 @@ public:
 
 class fftBase : public ThreadBase {
 public:
-  unsigned int L; // number of unpadded Complex data values
-  unsigned int M; // minimum number of padded Complex data values
-  unsigned int C; // number of FFTs to compute in parallel
-  unsigned int S; // stride between successive elements
-  unsigned int m;
-  unsigned int p;
-  unsigned int q;
-  unsigned int n;
-  unsigned int Q;  // number of residues
-  unsigned int R;  // number of residue blocks
-  unsigned int dr; // r increment
-  unsigned int D;  // number of residues stored in F at a time
-  unsigned int D0; // remainder
+  size_t L; // number of unpadded Complex data values
+  size_t M; // minimum number of padded Complex data values
+  size_t C; // number of FFTs to compute in parallel
+  size_t S; // stride between successive elements
+  size_t m;
+  size_t p;
+  size_t q;
+  size_t n;
+  size_t Q;  // number of residues
+  size_t R;  // number of residue blocks
+  size_t dr; // r increment
+  size_t D;  // number of residues stored in F at a time
+  size_t D0; // remainder
   size_t Cm,Sm;
-  unsigned int b;  // total block size, including stride
-  unsigned int l;  // block size of a single FFT
+  size_t b;  // total block size, including stride
+  size_t l;  // block size of a single FFT
   bool inplace;
   multiplier *mult;
   bool centered;
@@ -155,43 +155,43 @@ public:
 
   void common();
 
-  void initZetaqm(unsigned int q, unsigned int m);
+  void initZetaqm(size_t q, size_t m);
 
   class OptBase {
   public:
-    unsigned int counter=0;
-    unsigned int m,q,D;
+    size_t counter=0;
+    size_t m,q,D;
     bool inplace;
-    unsigned int threads;
+    size_t threads;
     bool mForced;
-    typedef std::list<unsigned int> mList;
+    typedef std::list<size_t> mList;
     mList mlist;
     double threshold;
     double T;
 
-    virtual double time(unsigned int L, unsigned int M, unsigned int C,
-                        unsigned int S, unsigned int m, unsigned int q,
-                        unsigned int D, bool inplace, unsigned int threads,
+    virtual double time(size_t L, size_t M, size_t C,
+                        size_t S, size_t m, size_t q,
+                        size_t D, bool inplace, size_t threads,
                         Application &app)=0;
 
-    virtual bool valid(unsigned int D, unsigned int p, unsigned int S) {
+    virtual bool valid(size_t D, size_t p, size_t S) {
       return D == 1 || S == 1;
     }
 
     // Called by the optimizer to record the time to complete an application
     // for a given value of m.
-    void check(unsigned int L, unsigned int M,
-               unsigned int C, unsigned int S, unsigned int m,
-               unsigned int p, unsigned int q, unsigned int D,
-               bool inplace, unsigned int threads, Application& app,
+    void check(size_t L, size_t M,
+               size_t C, size_t S, size_t m,
+               size_t p, size_t q, size_t D,
+               bool inplace, size_t threads, Application& app,
                bool useTimer);
 
     // Determine the optimal m value for padding L data values to
     // size >= M for an application app.
     // If Explicit=true, we only consider m >= M.
     // centered must be true for all centered and Hermitian routines.
-    void scan(unsigned int L, unsigned int M, Application& app,
-              unsigned int C, unsigned int S, bool Explicit=false,
+    void scan(size_t L, size_t M, Application& app,
+              size_t C, size_t S, bool Explicit=false,
               bool centered=false);
 
     // A function called by opt to iterate over m and D values
@@ -201,9 +201,9 @@ public:
     // m values that are checked.
     // If inner is true, ubound is the maximum size of m values that are
     // checked.
-    void optloop(unsigned int& m0, unsigned int L, unsigned int M,
-                 Application& app, unsigned int C, unsigned int S,
-                 bool centered, unsigned int ubound, bool useTimer,
+    void optloop(size_t& m0, size_t L, size_t M,
+                 Application& app, size_t C, size_t S,
+                 bool centered, size_t ubound, bool useTimer,
                  bool Explicit, bool inner=false);
 
     // The default optimizer routine. Used by scan to iterate and check
@@ -211,9 +211,9 @@ public:
     // 'minInner' is the minimum size of FFT we consider for the inner routines.
     // 'itmax' is the maximum number of iterations done by optloop
     // (when p <= 2).
-    void opt(unsigned int L, unsigned int M, Application& app,
-             unsigned int C, unsigned int S, unsigned int minInner,
-             unsigned int itmax, bool Explicit, bool centered,
+    void opt(size_t L, size_t M, Application& app,
+             size_t C, size_t S, size_t minInner,
+             size_t itmax, bool Explicit, bool centered,
              bool useTimer=true);
   };
 
@@ -223,22 +223,22 @@ public:
     exit(-1);
   }
 
-  fftBase(unsigned int L, unsigned int M, unsigned int C, unsigned int S,
-          multiplier *mult, unsigned int threads=fftw::maxthreads,
+  fftBase(size_t L, size_t M, size_t C, size_t S,
+          multiplier *mult, size_t threads=fftw::maxthreads,
           bool centered=false) :
     ThreadBase(threads), L(L), M(M), C(C),  S(S == 0 ? C : S),
     mult(mult), centered(centered) {checkParameters();}
 
-  fftBase(unsigned int L, unsigned int M, unsigned int C, unsigned int S,
-          unsigned int m, unsigned int q, unsigned int D, bool inplace,
-          multiplier *mult, unsigned int threads=fftw::maxthreads,
+  fftBase(size_t L, size_t M, size_t C, size_t S,
+          size_t m, size_t q, size_t D, bool inplace,
+          multiplier *mult, size_t threads=fftw::maxthreads,
           bool centered=false) :
     ThreadBase(threads), L(L), M(M), C(C),  S(S == 0 ? C : S), m(m),
     p(utils::ceilquotient(L,m)), q(q), D(D), inplace(inplace), mult(mult),
     centered(centered) {checkParameters();}
 
-  fftBase(unsigned int L, unsigned int M, Application& app,
-          unsigned int C=1, unsigned int S=0, bool Explicit=false,
+  fftBase(size_t L, size_t M, Application& app,
+          size_t C=1, size_t S=0, bool Explicit=false,
           bool centered=false) :
     ThreadBase(app.threads), L(L), M(M), C(C), S(S == 0 ? C : S),
     mult(app.mult), centered(centered) {checkParameters();}
@@ -255,50 +255,50 @@ public:
       (this->*Pad)(W);
   }
 
-  void forward(Complex *f, Complex *F, unsigned int r=0, Complex *W=NULL) {
+  void forward(Complex *f, Complex *F, size_t r=0, Complex *W=NULL) {
     (this->*Forward)(f,F,r,W);
   }
 
-  void backward(Complex *f, Complex *F, unsigned int r=0, Complex *W=NULL) {
+  void backward(Complex *f, Complex *F, size_t r=0, Complex *W=NULL) {
     (this->*Backward)(f,F,r,W);
   }
 
-  virtual void forwardExplicit(Complex *f, Complex *F, unsigned int,
+  virtual void forwardExplicit(Complex *f, Complex *F, size_t,
                                Complex *W)=0;
-  virtual void forwardExplicitMany(Complex *f, Complex *F, unsigned int,
+  virtual void forwardExplicitMany(Complex *f, Complex *F, size_t,
                                    Complex *W)=0;
-  virtual void forwardExplicitFast(Complex *f, Complex *F, unsigned int,
+  virtual void forwardExplicitFast(Complex *f, Complex *F, size_t,
                                    Complex *W) {}
-  virtual void forwardExplicitManyFast(Complex *f, Complex *F, unsigned int,
+  virtual void forwardExplicitManyFast(Complex *f, Complex *F, size_t,
                                        Complex *W) {}
-  virtual void forwardExplicitSlow(Complex *f, Complex *F, unsigned int r,
+  virtual void forwardExplicitSlow(Complex *f, Complex *F, size_t r,
                                    Complex *W) {}
-  virtual void forwardExplicitManySlow(Complex *f, Complex *F, unsigned int r,
+  virtual void forwardExplicitManySlow(Complex *f, Complex *F, size_t r,
                                        Complex *W) {}
 
-  virtual void backwardExplicit(Complex *F, Complex *f, unsigned int,
+  virtual void backwardExplicit(Complex *F, Complex *f, size_t,
                                 Complex *W)=0;
-  virtual void backwardExplicitMany(Complex *F, Complex *f, unsigned int,
+  virtual void backwardExplicitMany(Complex *F, Complex *f, size_t,
                                     Complex *W)=0;
-  virtual void backwardExplicitFast(Complex *F, Complex *f, unsigned int,
+  virtual void backwardExplicitFast(Complex *F, Complex *f, size_t,
                                     Complex *W) {}
-  virtual void backwardExplicitManyFast(Complex *F, Complex *f, unsigned int,
+  virtual void backwardExplicitManyFast(Complex *F, Complex *f, size_t,
                                         Complex *W) {}
-  virtual void backwardExplicitSlow(Complex *F, Complex *f, unsigned int r,
+  virtual void backwardExplicitSlow(Complex *F, Complex *f, size_t r,
                                     Complex *W) {}
-  virtual void backwardExplicitManySlow(Complex *F, Complex *f, unsigned int r,
+  virtual void backwardExplicitManySlow(Complex *F, Complex *f, size_t r,
                                         Complex *W) {}
 
   // Return transformed index for residue r at position I
-  unsigned int index(unsigned int r, unsigned int i) {
+  size_t index(size_t r, size_t i) {
     if(q == 1) return i;
-    unsigned int s=i%m;
-    unsigned int u;
-    unsigned int P;
+    size_t s=i%m;
+    size_t u;
+    size_t P;
     if(D > 1 && ((centered && p % 2 == 0) || p <= 2)) {
       P=utils::ceilquotient(p,2);
       u=(i/m)%P;
-      unsigned int offset=r == 0 && i >= P*m && D0 % 2 == 1 ? 1 : 0;
+      size_t offset=r == 0 && i >= P*m && D0 % 2 == 1 ? 1 : 0;
       double incr=(i+P*m*offset)/(2*P*m);
       r += incr;
       if(i/(P*m)-2*incr+offset == 1) {
@@ -318,66 +318,66 @@ public:
     return q*s+n*u+r;
   }
 
-  unsigned int Index(unsigned int r, unsigned int I) {
-    unsigned int i=I/S;
+  size_t Index(size_t r, size_t I) {
+    size_t i=I/S;
     return S*(index(r,i)-i)+I;
   }
 
-  virtual void forward1(Complex *f, Complex *F0, unsigned int r0, Complex *W)
+  virtual void forward1(Complex *f, Complex *F0, size_t r0, Complex *W)
   {}
-  virtual void forward1All(Complex *f, Complex *F0, unsigned int r0,
+  virtual void forward1All(Complex *f, Complex *F0, size_t r0,
                            Complex *W) {}
-  virtual void forward1Many(Complex *f, Complex *F, unsigned int r,
+  virtual void forward1Many(Complex *f, Complex *F, size_t r,
                             Complex *W) {}
-  virtual void forward1ManyAll(Complex *f, Complex *F, unsigned int r,
+  virtual void forward1ManyAll(Complex *f, Complex *F, size_t r,
                                Complex *W) {}
-  virtual void forward2(Complex *f, Complex *F0, unsigned int r0, Complex *W)
+  virtual void forward2(Complex *f, Complex *F0, size_t r0, Complex *W)
   {}
-  virtual void forward2All(Complex *f, Complex *F0, unsigned int r0,
+  virtual void forward2All(Complex *f, Complex *F0, size_t r0,
                            Complex *W) {}
-  virtual void forward2Many(Complex *f, Complex *F, unsigned int r,
+  virtual void forward2Many(Complex *f, Complex *F, size_t r,
                             Complex *W) {}
-  virtual void forward2ManyAll(Complex *f, Complex *F, unsigned int r,
+  virtual void forward2ManyAll(Complex *f, Complex *F, size_t r,
                                Complex *W) {}
-  virtual void forwardInner(Complex *f, Complex *F0, unsigned int r0,
+  virtual void forwardInner(Complex *f, Complex *F0, size_t r0,
                             Complex *W) {}
-  virtual void forwardInnerAll(Complex *f, Complex *F0, unsigned int r0,
+  virtual void forwardInnerAll(Complex *f, Complex *F0, size_t r0,
                                Complex *W) {}
-  virtual void forwardInnerMany(Complex *f, Complex *F, unsigned int r,
+  virtual void forwardInnerMany(Complex *f, Complex *F, size_t r,
                                 Complex *W) {}
-  virtual void forwardInnerManyAll(Complex *f, Complex *F, unsigned int r,
+  virtual void forwardInnerManyAll(Complex *f, Complex *F, size_t r,
                                    Complex *W) {}
 
-  virtual void backward1(Complex *F0, Complex *f, unsigned int r0, Complex *W)
+  virtual void backward1(Complex *F0, Complex *f, size_t r0, Complex *W)
   {}
-  virtual void backward1All(Complex *F0, Complex *f, unsigned int r0,
+  virtual void backward1All(Complex *F0, Complex *f, size_t r0,
                             Complex *W) {}
-  virtual void backward1Many(Complex *F, Complex *f, unsigned int r,
+  virtual void backward1Many(Complex *F, Complex *f, size_t r,
                              Complex *W) {}
-  virtual void backward1ManyAll(Complex *F, Complex *f, unsigned int r,
+  virtual void backward1ManyAll(Complex *F, Complex *f, size_t r,
                                 Complex *W) {}
-  virtual void backward2(Complex *F0, Complex *f, unsigned int r0,
+  virtual void backward2(Complex *F0, Complex *f, size_t r0,
                          Complex *W) {}
-  virtual void backward2All(Complex *F0, Complex *f, unsigned int r0,
+  virtual void backward2All(Complex *F0, Complex *f, size_t r0,
                             Complex *W) {}
-  virtual void backward2Many(Complex *F, Complex *f, unsigned int r,
+  virtual void backward2Many(Complex *F, Complex *f, size_t r,
                              Complex *W) {}
-  virtual void backward2ManyAll(Complex *F, Complex *f, unsigned int r,
+  virtual void backward2ManyAll(Complex *F, Complex *f, size_t r,
                                 Complex *W) {}
-  virtual void backwardInner(Complex *F0, Complex *f, unsigned int r0,
+  virtual void backwardInner(Complex *F0, Complex *f, size_t r0,
                              Complex *W) {}
-  virtual void backwardInnerAll(Complex *F0, Complex *f, unsigned int r0,
+  virtual void backwardInnerAll(Complex *F0, Complex *f, size_t r0,
                                 Complex *W) {}
-  virtual void backwardInnerMany(Complex *F, Complex *f, unsigned int r,
+  virtual void backwardInnerMany(Complex *F, Complex *f, size_t r,
                                  Complex *W) {}
-  virtual void backwardInnerManyAll(Complex *F, Complex *f, unsigned int r,
+  virtual void backwardInnerManyAll(Complex *F, Complex *f, size_t r,
                                     Complex *W) {}
 
-  unsigned int normalization() {
+  size_t normalization() {
     return M;
   }
 
-  virtual unsigned int outputSize() {
+  virtual size_t outputSize() {
     return b*D;
   }
 
@@ -385,51 +385,51 @@ public:
     return D > 1 && (p <= 2 || (centered && p % 2 == 0));
   }
 
-  unsigned int residueBlocks() {
+  size_t residueBlocks() {
     return conjugates() ? utils::ceilquotient(Q,2) : Q;
   }
 
-  unsigned int Dr() {return conjugates() ? D/2 : D;}
+  size_t Dr() {return conjugates() ? D/2 : D;}
 
-  unsigned int increment(unsigned int r) {
+  size_t increment(size_t r) {
     return r > 0 ? dr : (conjugates() ? utils::ceilquotient(D0,2) : D0);
   }
 
-  unsigned int nloops() {
-    unsigned int count=0;
-    for(unsigned int r=0; r < R; r += increment(r))
+  size_t nloops() {
+    size_t count=0;
+    for(size_t r=0; r < R; r += increment(r))
       ++count;
     return count;
   }
 
-  bool loop2(unsigned int A, unsigned int B) {
+  bool loop2(size_t A, size_t B) {
     return nloops() == 2 && A > B && !Overwrite(A,B);
   }
 
-  virtual unsigned int inputSize() {
+  virtual size_t inputSize() {
     return S*L;
   }
 
   // Number of complex outputs per residue per copy
-  virtual unsigned int noutputs() {
+  virtual size_t noutputs() {
     return l;
   }
 
   // Number of outputs per iteration per copy
-  virtual unsigned int noutputs(unsigned int r) {
+  virtual size_t noutputs(size_t r) {
     return l*(r == 0 ? D0 : D);
   }
 
   // Number of complex outputs per iteration
-  unsigned int complexOutputs(unsigned int r) {
+  size_t complexOutputs(size_t r) {
     return b*(r == 0 ? D0 : D);
   }
 
-  unsigned int workSizeV(unsigned int A, unsigned int B) {
+  size_t workSizeV(size_t A, size_t B) {
     return nloops() == 1 || loop2(A,B) ? 0 : inputSize();
   }
 
-  virtual unsigned int workSizeW() {
+  virtual size_t workSizeW() {
     return inplace ? 0 : outputSize();
   }
 
@@ -438,11 +438,11 @@ public:
     return q == 1 || (p == 1 && nloops() == 1);
   }
 
-  unsigned int repad() {
+  size_t repad() {
     return !inplace && L < m;
   }
 
-  bool Overwrite(unsigned int A, unsigned int B) {
+  bool Overwrite(size_t A, size_t B) {
     return overwrite && A >= B;
   }
 
@@ -472,28 +472,28 @@ public:
   public:
     Opt() {}
 
-    Opt(unsigned int L, unsigned int M, Application& app,
-        unsigned int C, unsigned int S, bool Explicit=false) {
+    Opt(size_t L, size_t M, Application& app,
+        size_t C, size_t S, bool Explicit=false) {
       scan(L,M,app,C,S,Explicit);
     }
 
-    double time(unsigned int L, unsigned int M, unsigned int C, unsigned int S,
-                unsigned int m, unsigned int q,unsigned int D,
-                bool inplace, unsigned int threads, Application &app) {
+    double time(size_t L, size_t M, size_t C, size_t S,
+                size_t m, size_t q,size_t D,
+                bool inplace, size_t threads, Application &app) {
       fftPad fft(L,M,C,S,m,q,D,inplace,app.mult,threads);
       return timePad(&fft,app,threshold);
     }
   };
 
-  fftPad(unsigned int L, unsigned int M, unsigned int C, unsigned int S,
-         multiplier *mult, unsigned int threads=fftw::maxthreads,
+  fftPad(size_t L, size_t M, size_t C, size_t S,
+         multiplier *mult, size_t threads=fftw::maxthreads,
          bool centered=false) :
     fftBase(L,M,C,S,mult,threads,centered) {}
 
   // Compute an fft padded to N=m*q >= M >= L
-  fftPad(unsigned int L, unsigned int M, unsigned int C, unsigned int S,
-         unsigned int m, unsigned int q, unsigned int D, bool inplace,
-         multiplier *mult, unsigned int threads=fftw::maxthreads,
+  fftPad(size_t L, size_t M, size_t C, size_t S,
+         size_t m, size_t q, size_t D, bool inplace,
+         multiplier *mult, size_t threads=fftw::maxthreads,
          bool centered=false) :
     fftBase(L,M,C,S,m,q,D,inplace,mult,threads,centered) {
     Opt opt;
@@ -504,8 +504,8 @@ public:
   // Normal entry point.
   // Compute C ffts of length L with stride S >= C and distance 1
   // padded to at least M
-  fftPad(unsigned int L, unsigned int M, Application& app,
-         unsigned int C=1, unsigned int S=0, bool Explicit=false,
+  fftPad(size_t L, size_t M, Application& app,
+         size_t C=1, size_t S=0, bool Explicit=false,
          bool centered=false) :
     fftBase(L,M,app,C,S,Explicit,centered) {
     Opt opt=Opt(L,M,app,C,this->S,Explicit);
@@ -534,38 +534,38 @@ public:
   // Explicitly pad C FFTs to m.
   void padMany(Complex *W);
 
-  void forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W);
-  void forwardExplicitMany(Complex *f, Complex *F, unsigned int, Complex *W);
+  void forwardExplicit(Complex *f, Complex *F, size_t, Complex *W);
+  void forwardExplicitMany(Complex *f, Complex *F, size_t, Complex *W);
 
-  void backwardExplicit(Complex *F, Complex *f, unsigned int, Complex *W);
-  void backwardExplicitMany(Complex *F, Complex *f, unsigned int, Complex *W);
+  void backwardExplicit(Complex *F, Complex *f, size_t, Complex *W);
+  void backwardExplicitMany(Complex *F, Complex *f, size_t, Complex *W);
 
   // p=1 && C=1
-  void forward1(Complex *f, Complex *F0, unsigned int r0, Complex *W);
-  void forward1All(Complex *f, Complex *F0, unsigned int r0, Complex *W);
-  void forward1Many(Complex *f, Complex *F, unsigned int r, Complex *W);
-  void forward1ManyAll(Complex *f, Complex *F, unsigned int r, Complex *W);
-  void forward2(Complex *f, Complex *F0, unsigned int r0, Complex *W);
-  void forward2All(Complex *f, Complex *F0, unsigned int r0, Complex *W);
-  void forward2Many(Complex *f, Complex *F, unsigned int r, Complex *W);
-  void forward2ManyAll(Complex *f, Complex *F, unsigned int r, Complex *W);
-  void forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W);
-  void forwardInnerMany(Complex *f, Complex *F, unsigned int r, Complex *W);
+  void forward1(Complex *f, Complex *F0, size_t r0, Complex *W);
+  void forward1All(Complex *f, Complex *F0, size_t r0, Complex *W);
+  void forward1Many(Complex *f, Complex *F, size_t r, Complex *W);
+  void forward1ManyAll(Complex *f, Complex *F, size_t r, Complex *W);
+  void forward2(Complex *f, Complex *F0, size_t r0, Complex *W);
+  void forward2All(Complex *f, Complex *F0, size_t r0, Complex *W);
+  void forward2Many(Complex *f, Complex *F, size_t r, Complex *W);
+  void forward2ManyAll(Complex *f, Complex *F, size_t r, Complex *W);
+  void forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W);
+  void forwardInnerMany(Complex *f, Complex *F, size_t r, Complex *W);
 
 // Compute an inverse fft of length N=m*q unpadded back
 // to size m*p >= L.
 // input and output arrays must be distinct
 // Input F destroyed
-  void backward1(Complex *F0, Complex *f, unsigned int r0, Complex *W);
-  void backward1All(Complex *F0, Complex *f, unsigned int r0, Complex *W);
-  void backward1Many(Complex *F, Complex *f, unsigned int r, Complex *W);
-  void backward1ManyAll(Complex *F, Complex *f, unsigned int r, Complex *W);
-  void backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W);
-  void backward2All(Complex *F0, Complex *f, unsigned int r0, Complex *W);
-  void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W);
-  void backward2ManyAll(Complex *F, Complex *f, unsigned int r, Complex *W);
-  void backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W);
-  void backwardInnerMany(Complex *F, Complex *f, unsigned int r, Complex *W);
+  void backward1(Complex *F0, Complex *f, size_t r0, Complex *W);
+  void backward1All(Complex *F0, Complex *f, size_t r0, Complex *W);
+  void backward1Many(Complex *F, Complex *f, size_t r, Complex *W);
+  void backward1ManyAll(Complex *F, Complex *f, size_t r, Complex *W);
+  void backward2(Complex *F0, Complex *f, size_t r0, Complex *W);
+  void backward2All(Complex *F0, Complex *f, size_t r0, Complex *W);
+  void backward2Many(Complex *F, Complex *f, size_t r, Complex *W);
+  void backward2ManyAll(Complex *F, Complex *f, size_t r, Complex *W);
+  void backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W);
+  void backwardInnerMany(Complex *F, Complex *f, size_t r, Complex *W);
 };
 
 class fftPadCentered : public fftPad {
@@ -576,28 +576,28 @@ public:
   public:
     Opt() {}
 
-    Opt(unsigned int L, unsigned int M, Application& app,
-        unsigned int C, unsigned int S, bool Explicit=false) {
+    Opt(size_t L, size_t M, Application& app,
+        size_t C, size_t S, bool Explicit=false) {
       scan(L,M,app,C,S,Explicit,true);
     }
 
-    bool valid(unsigned int D, unsigned int p, unsigned int S) {
+    bool valid(size_t D, size_t p, size_t S) {
       return p%2 == 0 && (D == 1 || S == 1);
     }
 
-    double time(unsigned int L, unsigned int M, unsigned int C, unsigned int S,
-                unsigned int m, unsigned int q, unsigned int D,
-                bool inplace, unsigned int threads, Application &app) {
+    double time(size_t L, size_t M, size_t C, size_t S,
+                size_t m, size_t q, size_t D,
+                bool inplace, size_t threads, Application &app) {
       fftPadCentered fft(L,M,C,S,m,q,D,inplace,app.mult,threads);
       return timePad(&fft,app,threshold);
     }
   };
 
   // Compute an fft padded to N=m*q >= M >= L
-  fftPadCentered(unsigned int L, unsigned int M, unsigned int C,
-                 unsigned int S, unsigned int m, unsigned int q,
-                 unsigned int D, bool inplace, multiplier *mult,
-                 unsigned int threads=fftw::maxthreads, bool fast=true) :
+  fftPadCentered(size_t L, size_t M, size_t C,
+                 size_t S, size_t m, size_t q,
+                 size_t D, bool inplace, multiplier *mult,
+                 size_t threads=fftw::maxthreads, bool fast=true) :
     fftPad(L,M,C,S,m,q,D,inplace,mult,threads,true) {
     Opt opt;
     if(q > 1 && !opt.valid(D,p,this->S)) invalid();
@@ -606,8 +606,8 @@ public:
 
   // Normal entry point.
   // Compute C ffts of length L and distance 1 padded to at least M
-  fftPadCentered(unsigned int L, unsigned int M, Application& app,
-                 unsigned int C=1, unsigned int S=0, bool Explicit=false,
+  fftPadCentered(size_t L, size_t M, Application& app,
+                 size_t C=1, size_t S=0, bool Explicit=false,
                  bool fast=true) :
     fftPad(L,M,C,S,app.mult,app.threads,true) {
     Opt opt=Opt(L,M,app,C,this->S,Explicit);
@@ -640,48 +640,48 @@ public:
     return timePad(this,app,threshold);
   }
 
-  void forwardExplicitFast(Complex *f, Complex *F, unsigned int r, Complex *W);
-  void forwardExplicitManyFast(Complex *f, Complex *F, unsigned int r,
+  void forwardExplicitFast(Complex *f, Complex *F, size_t r, Complex *W);
+  void forwardExplicitManyFast(Complex *f, Complex *F, size_t r,
                                Complex *W);
-  void forwardExplicitSlow(Complex *f, Complex *F, unsigned int r, Complex *W);
-  void forwardExplicitManySlow(Complex *f, Complex *F, unsigned int r,
+  void forwardExplicitSlow(Complex *f, Complex *F, size_t r, Complex *W);
+  void forwardExplicitManySlow(Complex *f, Complex *F, size_t r,
                                Complex *W);
 
-  void backwardExplicitFast(Complex *F, Complex *f, unsigned int r,
+  void backwardExplicitFast(Complex *F, Complex *f, size_t r,
                             Complex *W);
-  void backwardExplicitManyFast(Complex *F, Complex *f, unsigned int r,
+  void backwardExplicitManyFast(Complex *F, Complex *f, size_t r,
                                 Complex *W);
-  void backwardExplicitSlow(Complex *F, Complex *f, unsigned int r,
+  void backwardExplicitSlow(Complex *F, Complex *f, size_t r,
                             Complex *W);
-  void backwardExplicitManySlow(Complex *F, Complex *f, unsigned int r,
+  void backwardExplicitManySlow(Complex *F, Complex *f, size_t r,
                                 Complex *W);
 
   void initShift();
 
-  void forward2(Complex *f, Complex *F0, unsigned int r0, Complex *W);
-  void forward2All(Complex *f, Complex *F0, unsigned int r0, Complex *W);
-  void forward2Many(Complex *f, Complex *F, unsigned int r, Complex *W);
-  void forward2ManyAll(Complex *f, Complex *F, unsigned int r, Complex *W);
-  void forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W);
-  void forwardInnerAll(Complex *f, Complex *F0, unsigned int r0, Complex *W);
-  void forwardInnerMany(Complex *f, Complex *F0, unsigned int r0, Complex *W);
-  void forwardInnerManyAll(Complex *f, Complex *F0, unsigned int r0,
+  void forward2(Complex *f, Complex *F0, size_t r0, Complex *W);
+  void forward2All(Complex *f, Complex *F0, size_t r0, Complex *W);
+  void forward2Many(Complex *f, Complex *F, size_t r, Complex *W);
+  void forward2ManyAll(Complex *f, Complex *F, size_t r, Complex *W);
+  void forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W);
+  void forwardInnerAll(Complex *f, Complex *F0, size_t r0, Complex *W);
+  void forwardInnerMany(Complex *f, Complex *F0, size_t r0, Complex *W);
+  void forwardInnerManyAll(Complex *f, Complex *F0, size_t r0,
                            Complex *W);
 
-  void backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W);
-  void backward2All(Complex *F0, Complex *f, unsigned int r0, Complex *W);
-  void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W);
-  void backward2ManyAll(Complex *F, Complex *f, unsigned int r, Complex *W);
-  void backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W);
-  void backwardInnerAll(Complex *F0, Complex *f, unsigned int r0, Complex *W);
-  void backwardInnerMany(Complex *F0, Complex *f, unsigned int r0, Complex *W);
-  void backwardInnerManyAll(Complex *F0, Complex *f, unsigned int r0,
+  void backward2(Complex *F0, Complex *f, size_t r0, Complex *W);
+  void backward2All(Complex *F0, Complex *f, size_t r0, Complex *W);
+  void backward2Many(Complex *F, Complex *f, size_t r, Complex *W);
+  void backward2ManyAll(Complex *F, Complex *f, size_t r, Complex *W);
+  void backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W);
+  void backwardInnerAll(Complex *F0, Complex *f, size_t r0, Complex *W);
+  void backwardInnerMany(Complex *F0, Complex *f, size_t r0, Complex *W);
+  void backwardInnerManyAll(Complex *F0, Complex *f, size_t r0,
                             Complex *W);
 };
 
 class fftPadHermitian : public fftBase {
-  unsigned int e;
-  unsigned int B; // Work block size
+  size_t e;
+  size_t B; // Work block size
   crfft1d *crfftm1;
   rcfft1d *rcfftm1;
   mcrfft1d *crfftm;
@@ -694,35 +694,35 @@ public:
   public:
     Opt() {}
 
-    Opt(unsigned int L, unsigned int M, Application& app,
-        unsigned int C, unsigned int, bool Explicit=false) {
+    Opt(size_t L, size_t M, Application& app,
+        size_t C, size_t, bool Explicit=false) {
       scan(L,M,app,C,C,Explicit,true);
     }
 
-    bool valid(unsigned int D, unsigned int p, unsigned int C) {
+    bool valid(size_t D, size_t p, size_t C) {
       return D == 2 && p%2 == 0 && (p == 2 || C == 1);
     }
 
-    double time(unsigned int L, unsigned int M, unsigned int C, unsigned int,
-                unsigned int m, unsigned int q, unsigned int D,
-                bool inplace, unsigned int threads, Application &app) {
+    double time(size_t L, size_t M, size_t C, size_t,
+                size_t m, size_t q, size_t D,
+                bool inplace, size_t threads, Application &app) {
       fftPadHermitian fft(L,M,C,m,q,D,inplace,app.mult,threads);
       return timePadHermitian(&fft,app,threshold);
     }
   };
 
-  fftPadHermitian(unsigned int L, unsigned int M, unsigned int C,
-                  unsigned int m, unsigned int q, unsigned int D,
+  fftPadHermitian(size_t L, size_t M, size_t C,
+                  size_t m, size_t q, size_t D,
                   bool inplace, multiplier *mult,
-                  unsigned int threads=fftw::maxthreads) :
+                  size_t threads=fftw::maxthreads) :
     fftBase(L,M,C,C,m,q,D,inplace,mult,threads,true) {
     Opt opt;
     if(q > 1 && !opt.valid(D,p,C)) invalid();
     init();
   }
 
-  fftPadHermitian(unsigned int L, unsigned int M, Application& app,
-                  unsigned int C=1, bool Explicit=false) :
+  fftPadHermitian(size_t L, size_t M, Application& app,
+                  size_t C=1, bool Explicit=false) :
     fftBase(L,M,app,C,C,Explicit,true) {
     Opt opt=Opt(L,M,app,C,C,Explicit);
     m=opt.m;
@@ -744,33 +744,33 @@ public:
     return timePadHermitian(this,app,threshold);
   }
 
-  void forwardExplicit(Complex *f, Complex *F, unsigned int, Complex *W);
-  void forwardExplicitMany(Complex *f, Complex *F, unsigned int, Complex *W);
-  void forward2(Complex *f, Complex *F0, unsigned int r0, Complex *W);
-  void forward2Many(Complex *f, Complex *F, unsigned int r, Complex *W);
-  void forwardInner(Complex *f, Complex *F0, unsigned int r0, Complex *W);
+  void forwardExplicit(Complex *f, Complex *F, size_t, Complex *W);
+  void forwardExplicitMany(Complex *f, Complex *F, size_t, Complex *W);
+  void forward2(Complex *f, Complex *F0, size_t r0, Complex *W);
+  void forward2Many(Complex *f, Complex *F, size_t r, Complex *W);
+  void forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W);
 
-  void backwardExplicit(Complex *F, Complex *f, unsigned int, Complex *W);
-  void backwardExplicitMany(Complex *F, Complex *f, unsigned int, Complex *W);
-  void backward2(Complex *F0, Complex *f, unsigned int r0, Complex *W);
-  void backward2Many(Complex *F, Complex *f, unsigned int r, Complex *W);
-  void backwardInner(Complex *F0, Complex *f, unsigned int r0, Complex *W);
+  void backwardExplicit(Complex *F, Complex *f, size_t, Complex *W);
+  void backwardExplicitMany(Complex *F, Complex *f, size_t, Complex *W);
+  void backward2(Complex *F0, Complex *f, size_t r0, Complex *W);
+  void backward2Many(Complex *F, Complex *f, size_t r, Complex *W);
+  void backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W);
 
   // Number of real outputs per residue per copy
-  unsigned int noutputs() {
+  size_t noutputs() {
     return m*(q == 1 ? 1 : p/2);
   }
 
-  unsigned int noutputs(unsigned int r) {
-    std::cerr << "For Hermitian transforms, use noutputs() instead of noutputs(unsigned int r)." << std::endl;
+  size_t noutputs(size_t r) {
+    std::cerr << "For Hermitian transforms, use noutputs() instead of noutputs(size_t r)." << std::endl;
     exit(-1);
   }
 
-  unsigned int workSizeW() {
+  size_t workSizeW() {
     return inplace ? 0 : B*D;
   }
 
-  unsigned int inputSize() {
+  size_t inputSize() {
     return C*utils::ceilquotient(L,2);
   }
 };
@@ -778,17 +778,17 @@ public:
 class Convolution : public ThreadBase {
 public:
   fftBase *fft;
-  unsigned int L;
-  unsigned int A;
-  unsigned int B;
+  size_t L;
+  size_t A;
+  size_t B;
   multiplier *mult;
   double scale;
 protected:
-  unsigned int q;
-  unsigned int Q;
-  unsigned int R;
-  unsigned int r;
-  unsigned int blocksize;
+  size_t q;
+  size_t Q;
+  size_t R;
+  size_t r;
+  size_t blocksize;
   Complex **F,**Fp;
   Complex *FpB;
   Complex **V;
@@ -799,10 +799,10 @@ protected:
   bool allocateF;
   bool allocateV;
   bool allocateW;
-  unsigned int nloops;
+  size_t nloops;
   bool loop2;
   bool overwrite;
-  unsigned int inputSize;
+  size_t inputSize;
   FFTcall Forward,Backward;
   FFTPad Pad;
 public:
@@ -817,7 +817,7 @@ public:
     q(1), W(NULL), allocate(false), allocateF(false),
     allocateW(false) {}
 
-  Convolution(unsigned int L, unsigned int M, Application &app) :
+  Convolution(size_t L, size_t M, Application &app) :
     ThreadBase(app.threads), A(app.A), B(app.B), mult(app.mult), W(NULL), allocate(true) {
     fft=new fftPad(L,M,app);
     init();
@@ -827,9 +827,9 @@ public:
   // M: dimension of transformed data, including padding
   // A: number of inputs.
   // B: number of outputs.
-  Convolution(unsigned int L, unsigned int M,
-              unsigned int A, unsigned int B, multiplier *mult,
-              unsigned int threads=fftw::maxthreads) :
+  Convolution(size_t L, size_t M,
+              size_t A, size_t B, multiplier *mult,
+              size_t threads=fftw::maxthreads) :
     ThreadBase(threads), A(A), B(B), mult(mult), W(NULL), allocate(true) {
     Application app(A,B,mult,threads);
     fft=new fftPad(L,M,app);
@@ -844,7 +844,7 @@ public:
   //    call pad() if changed between calls to convolve()
   // V: optional work array of size B*fft->workSizeV(A,B)
   //   (only needed for inplace usage)
-  Convolution(fftBase *fft, unsigned int A, unsigned int B,
+  Convolution(fftBase *fft, size_t A, size_t B,
               Complex **F=NULL, Complex *W=NULL,
               Complex *V=NULL) : ThreadBase(fft->Threads()), fft(fft),
                                  A(A), B(B), mult(fft->mult), W(W),
@@ -874,11 +874,11 @@ public:
     R=fft->residueBlocks();
 
     scale=1.0/normalization();
-    unsigned int outputSize=fft->outputSize();
-    unsigned int workSizeW=fft->workSizeW();
+    size_t outputSize=fft->outputSize();
+    size_t workSizeW=fft->workSizeW();
     inputSize=fft->inputSize();
 
-    unsigned int N=std::max(A,B);
+    size_t N=std::max(A,B);
     allocateF=!F;
     this->F=allocateF ? utils::ComplexAlign(N,outputSize) : F;
 
@@ -889,8 +889,8 @@ public:
       allocateV=false;
       if(V) {
         this->V=new Complex*[B];
-        unsigned int size=fft->workSizeV(A,B);
-        for(unsigned int i=0; i < B; ++i)
+        size_t size=fft->workSizeV(A,B);
+        for(size_t i=0; i < B; ++i)
           this->V[i]=V+i*size;
       } else
         this->V=NULL;
@@ -900,17 +900,17 @@ public:
 
       nloops=fft->nloops();
       loop2=fft->loop2(A,B);
-      int extra;
+      size_t extra;
       if(loop2) {
         r=fft->increment(0);
         Fp=new Complex*[A];
-        unsigned int C=A-B;
+        size_t C=A-B;
 
-        for(unsigned int c=0; c < C; c++)
+        for(size_t c=0; c < C; c++)
           Fp[c]=this->F[B+c];
 
-        for(unsigned int b=0; b < B; b += C)
-          for(unsigned int c=b; c < B; c++)
+        for(size_t b=0; b < B; b += C)
+          for(size_t c=b; c < B; c++)
             Fp[C+c]=this->F[c];
 
         extra=1;
@@ -928,53 +928,53 @@ public:
   void initV() {
     allocateV=true;
     V=new Complex*[B];
-    unsigned int size=fft->workSizeV(A,B);
-    for(unsigned int i=0; i < B; ++i)
+    size_t size=fft->workSizeV(A,B);
+    for(size_t i=0; i < B; ++i)
       V[i]=utils::ComplexAlign(size);
   }
 
-  unsigned int increment(unsigned int r) {
+  size_t increment(size_t r) {
     return fft->increment(r);
   }
 
   ~Convolution();
 
-  void normalize(Complex **f, unsigned int offset=0) {
-    for(unsigned int b=0; b < B; ++b) {
+  void normalize(Complex **f, size_t offset=0) {
+    for(size_t b=0; b < B; ++b) {
       Complex *fb=f[b]+offset;
-      for(unsigned int i=0; i < inputSize; ++i)
+      for(size_t i=0; i < inputSize; ++i)
         fb[i] *= scale;
     }
   }
 
-  void forward(Complex **f, Complex **F, unsigned int r,
-               unsigned int start, unsigned int stop) {
-    for(unsigned int a=start; a < stop; ++a)
+  void forward(Complex **f, Complex **F, size_t r,
+               size_t start, size_t stop) {
+    for(size_t a=start; a < stop; ++a)
       (fft->*Forward)(f[a],F[a],r,W);
   }
 
-  void operate(Complex **F, unsigned int r, Indices *indices) {
-    unsigned int incr=fft->b;
-    unsigned int stop=fft->complexOutputs(r);
+  void operate(Complex **F, size_t r, Indices *indices) {
+    size_t incr=fft->b;
+    size_t stop=fft->complexOutputs(r);
     indices->r=r;
-    for(unsigned int d=0; d < stop; d += incr) {
+    for(size_t d=0; d < stop; d += incr) {
       Complex *G[A];
-      for(unsigned int a=0; a < A; ++a)
+      for(size_t a=0; a < A; ++a)
         G[a]=F[a]+d;
       (*mult)(G,blocksize,indices,threads);
       ++indices->r;
     }
   }
 
-  void backward(Complex **F, Complex **f, unsigned int r,
-                unsigned int start, unsigned int stop,
+  void backward(Complex **F, Complex **f, size_t r,
+                size_t start, size_t stop,
                 Complex *W0=NULL) {
-    for(unsigned int b=start; b < stop; ++b)
+    for(size_t b=start; b < stop; ++b)
       (fft->*Backward)(F[b],f[b],r,W0);
   }
 
-  void backwardPad(Complex **F, Complex **f, unsigned int r,
-                   unsigned int start, unsigned int stop,
+  void backwardPad(Complex **F, Complex **f, size_t r,
+                   size_t start, size_t stop,
                    Complex *W0=NULL) {
     backward(F,f,r,start,stop,W0);
     if(W && W == W0) (fft->*Pad)(W0);
@@ -983,14 +983,14 @@ public:
   void convolveRaw(Complex **f);
   void convolveRaw(Complex **f, Indices *indices);
 
-  void convolveRaw(Complex **f, unsigned int offset);
-  void convolveRaw(Complex **f, unsigned int offset, Indices *indices);
+  void convolveRaw(Complex **f, size_t offset);
+  void convolveRaw(Complex **f, size_t offset, Indices *indices);
 
   void convolve(Complex **f) {
     convolveRaw(f);
     normalize(f);
   }
-  void convolve(Complex **f, unsigned int offset) {
+  void convolve(Complex **f, size_t offset) {
     convolveRaw(f,offset);
     normalize(f,offset);
   }
@@ -999,7 +999,7 @@ public:
 
 class ConvolutionHermitian : public Convolution {
 public:
-  ConvolutionHermitian(unsigned int L, unsigned int M, Application &app) :
+  ConvolutionHermitian(size_t L, size_t M, Application &app) :
     Convolution() {
     threads=app.threads;
     A=app.A;
@@ -1016,9 +1016,9 @@ public:
   //    if changed between calls to convolve(), be sure to call pad()
   // V: optional work array of size B*fft->workSizeV(A,B)
   //    (for inplace usage)
-  ConvolutionHermitian(unsigned int L, unsigned int M,
-                       unsigned int A, unsigned int B, multiplier *mult,
-                       unsigned int threads=fftw::maxthreads) :
+  ConvolutionHermitian(size_t L, size_t M,
+                       size_t A, size_t B, multiplier *mult,
+                       size_t threads=fftw::maxthreads) :
     Convolution() {
     this->threads=threads;
     this->A=A;
@@ -1029,95 +1029,95 @@ public:
     init();
   }
 
-  ConvolutionHermitian(fftBase *fft, unsigned int A, unsigned B,
+  ConvolutionHermitian(fftBase *fft, size_t A, size_t B,
                        Complex **F=NULL, Complex *W=NULL, Complex *V=NULL) :
     Convolution(fft,A,B,F,W,V) {}
 };
 
 // Enforce 2D Hermiticity using specified (x >= 0,y=0) data.
-inline void HermitianSymmetrizeX(unsigned int Hx, unsigned int Hy,
-                                 unsigned int x0, Complex *f,
-                                 unsigned int Sx)
+inline void HermitianSymmetrizeX(size_t Hx, size_t Hy,
+                                 size_t x0, Complex *f,
+                                 size_t Sx)
 {
   Complex *F=f+x0*Sx;
-  unsigned int stop=Hx*Sx;
-  for(unsigned int i=Sx; i < stop; i += Sx)
+  size_t stop=Hx*Sx;
+  for(size_t i=Sx; i < stop; i += Sx)
     *(F-i)=conj(F[i]);
 
   F[0].im=0.0;
 
   // Zero out Nyquist modes
   if(x0 == Hx) {
-    for(unsigned int j=0; j < Hy; ++j)
+    for(size_t j=0; j < Hy; ++j)
       f[j]=0.0;
   }
 }
 
-inline void HermitianSymmetrizeX(unsigned int Hx, unsigned int Hy,
-                                 unsigned int x0, Complex *f)
+inline void HermitianSymmetrizeX(size_t Hx, size_t Hy,
+                                 size_t x0, Complex *f)
 {
   HermitianSymmetrizeX(Hx,Hy,x0,f,Hy);
 }
 
 // Enforce 3D Hermiticity using specified (x >= 0,y=0,z=0) and (x,y > 0,z=0).
 // data.
-inline void HermitianSymmetrizeXY(unsigned int Hx, unsigned int Hy,
-                                  unsigned int Hz,
-                                  unsigned int x0, unsigned int y0,
+inline void HermitianSymmetrizeXY(size_t Hx, size_t Hy,
+                                  size_t Hz,
+                                  size_t x0, size_t y0,
                                   Complex *f,
-                                  unsigned int Sx, unsigned int Sy,
-                                  unsigned int threads=fftw::maxthreads)
+                                  size_t Sx, size_t Sy,
+                                  size_t threads=fftw::maxthreads)
 {
-  unsigned int origin=x0*Sx+y0*Sy;
+  size_t origin=x0*Sx+y0*Sy;
   Complex *F=f+origin;
-  unsigned int stop=Hx*Sx;
-  for(unsigned int i=Sx; i < stop; i += Sx)
+  size_t stop=Hx*Sx;
+  for(size_t i=Sx; i < stop; i += Sx)
     *(F-i)=conj(F[i]);
 
   F[0].im=0.0;
 
   PARALLELIF(
     2*Hx*Hy > threshold,
-    for(int i=(-Hx+1)*Sx; i < (int) stop; i += Sx) {
-      unsigned int m=origin-i;
-      unsigned int p=origin+i;
-      unsigned int Stop=Sy*Hy;
-      for(unsigned int j=Sy; j < Stop; j += Sy) {
+    for(ptrdiff_t i=(-Hx+1)*Sx; i < (ptrdiff_t) stop; i += Sx) {
+      size_t m=origin-i;
+      size_t p=origin+i;
+      size_t Stop=Sy*Hy;
+      for(size_t j=Sy; j < Stop; j += Sy) {
         f[m-j]=conj(f[p+j]);
       }
     });
 
   // Zero out Nyquist modes
   if(x0 == Hx) {
-    unsigned int Ly=y0+Hy;
+    size_t Ly=y0+Hy;
     PARALLELIF(
       Ly*Hz > threshold,
-      for(unsigned int j=0; j < Ly; ++j) {
-        for(unsigned int k=0; k < Hz; ++k) {
+      for(size_t j=0; j < Ly; ++j) {
+        for(size_t k=0; k < Hz; ++k) {
           f[Sy*j+k]=0.0;
         }
       });
   }
 
   if(y0 == Hy) {
-    unsigned int Lx=x0+Hx;
+    size_t Lx=x0+Hx;
     PARALLELIF(
       Lx*Hz > threshold,
-      for(unsigned int i=0; i < Lx; ++i) {
-        for(unsigned int k=0; k < Hz; ++k) {
+      for(size_t i=0; i < Lx; ++i) {
+        for(size_t k=0; k < Hz; ++k) {
           f[Sx*i+k]=0.0;
         }
       });
   }
 }
 
-inline void HermitianSymmetrizeXY(unsigned int Hx, unsigned int Hy,
-                                  unsigned int Hz,
-                                  unsigned int x0, unsigned int y0,
+inline void HermitianSymmetrizeXY(size_t Hx, size_t Hy,
+                                  size_t Hz,
+                                  size_t x0, size_t y0,
                                   Complex *f,
-                                  unsigned int threads=fftw::maxthreads)
+                                  size_t threads=fftw::maxthreads)
 {
-  unsigned int Ly=y0+Hy;
+  size_t Ly=y0+Hy;
   HermitianSymmetrizeXY(Hx,Hy,Hz,x0,y0,f,Ly*Hz,Hz,threads);
 }
 
@@ -1125,19 +1125,19 @@ class Convolution2 : public ThreadBase {
 public:
   fftBase *fftx,*ffty;
   Convolution **convolvey;
-  unsigned int Lx,Ly; // x,y dimensions of input data
-  unsigned int Sx; // x stride
-  unsigned int A;
-  unsigned int B;
+  size_t Lx,Ly; // x,y dimensions of input data
+  size_t Sx; // x stride
+  size_t A;
+  size_t B;
   multiplier *mult;
   double scale;
 protected:
-  unsigned int lx; // x dimension of Fx buffer
-  unsigned int Q;
-  unsigned int qx;
-  unsigned int Qx; // number of residues
-  unsigned int Rx; // number of residue blocks
-  unsigned int r;
+  size_t lx; // x dimension of Fx buffer
+  size_t Q;
+  size_t qx;
+  size_t Qx; // number of residues
+  size_t Rx; // number of residue blocks
+  size_t r;
   Complex **F,**Fp;
   Complex **V;
   Complex *W;
@@ -1148,12 +1148,12 @@ protected:
   bool loop2;
   FFTcall Forward,Backward;
   FFTPad Pad;
-  unsigned int nloops;
+  size_t nloops;
   bool overwrite;
 public:
   Indices indices;
 
-  Convolution2(unsigned int threads=fftw::maxthreads) :
+  Convolution2(size_t threads=fftw::maxthreads) :
     ThreadBase(threads), ffty(NULL), convolvey(NULL), V(NULL),
     W(NULL), allocateF(false), allocateV(false), allocateW(false),
     loop2(false) {}
@@ -1162,17 +1162,17 @@ public:
   // Mx,My: x,y dimensions of transformed data, including padding
   // A: number of inputs
   // B: number of outputs
-  Convolution2(unsigned int Lx, unsigned int Mx,
-               unsigned int Ly, unsigned int My,
-               unsigned int A, unsigned int B, multiplier *mult,
-               unsigned int threads=fftw::maxthreads) :
+  Convolution2(size_t Lx, size_t Mx,
+               size_t Ly, size_t My,
+               size_t A, size_t B, multiplier *mult,
+               size_t threads=fftw::maxthreads) :
     ThreadBase(threads), mult(mult), W(NULL) {
     Application appx(A,B,multNone,threads);
     fftx=new fftPad(Lx,Mx,appx,Ly);
     Application appy(A,B,mult,threads,fftx->l);
     ffty=new fftPad(Ly,My,appy);
     convolvey=new Convolution*[threads];
-    for(unsigned int t=0; t < threads; ++t)
+    for(size_t t=0; t < threads; ++t)
       convolvey[t]=new Convolution(ffty,A,B);
     init();
   }
@@ -1188,7 +1188,7 @@ public:
     multithread(fftx->l);
     this->convolvey=new Convolution*[threads];
     this->convolvey[0]=convolvey;
-    for(unsigned int t=1; t < threads; ++t)
+    for(size_t t=1; t < threads; ++t)
       this->convolvey[t]=new Convolution(convolvey->fft,
                                          convolvey->A,convolvey->B);
     init(F,V);
@@ -1211,10 +1211,10 @@ public:
       Backward=fftx->Backward;
     }
 
-    unsigned int outputSize=fftx->outputSize();
-    unsigned int workSizeW=fftx->workSizeW();
+    size_t outputSize=fftx->outputSize();
+    size_t workSizeW=fftx->workSizeW();
 
-    unsigned int N=std::max(A,B);
+    size_t N=std::max(A,B);
     allocateF=!F;
     this->F=allocateF ? utils::ComplexAlign(N,outputSize) : F;
 
@@ -1237,12 +1237,12 @@ public:
 
     nloops=fftx->nloops();
     loop2=fftx->loop2(A,B);
-    int extra;
+    size_t extra;
     if(loop2) {
       r=fftx->increment(0);
       Fp=new Complex*[A];
       Fp[0]=this->F[A-1];
-      for(unsigned int a=1; a < A; ++a)
+      for(size_t a=1; a < A; ++a)
         Fp[a]=this->F[a-1];
       extra=1;
     } else
@@ -1257,8 +1257,8 @@ public:
 
     if(V) {
       this->V=new Complex*[B];
-      unsigned int size=fftx->workSizeV(A,B);
-      for(unsigned int i=0; i < B; ++i)
+      size_t size=fftx->workSizeV(A,B);
+      for(size_t i=0; i < B; ++i)
         this->V[i]=V+i*size;
     } else
       this->V=NULL;
@@ -1267,8 +1267,8 @@ public:
   void initV() {
     allocateV=true;
     V=new Complex*[B];
-    unsigned int size=fftx->workSizeV(A,B);
-    for(unsigned int i=0; i < B; ++i)
+    size_t size=fftx->workSizeV(A,B);
+    for(size_t i=0; i < B; ++i)
       V[i]=utils::ComplexAlign(size);
   }
 
@@ -1282,7 +1282,7 @@ public:
       utils::deleteAlign(W);
 
     if(allocateV) {
-      for(unsigned int i=0; i < B; ++i)
+      for(size_t i=0; i < B; ++i)
         utils::deleteAlign(V[i]);
     }
 
@@ -1299,28 +1299,28 @@ public:
     }
 
     if(convolvey) {
-      for(unsigned int t=1; t < threads; ++t)
+      for(size_t t=1; t < threads; ++t)
         delete convolvey[t];
       delete [] convolvey;
     }
   }
 
-  void forward(Complex **f, Complex **F, unsigned int rx,
-               unsigned int start, unsigned int stop,
-               unsigned int offset=0) {
-    for(unsigned int a=start; a < stop; ++a)
+  void forward(Complex **f, Complex **F, size_t rx,
+               size_t start, size_t stop,
+               size_t offset=0) {
+    for(size_t a=start; a < stop; ++a)
       (fftx->*Forward)(f[a]+offset,F[a],rx,W);
   }
 
-  void subconvolution(Complex **F, unsigned int C,
-                      unsigned int stride, unsigned int rx,
-                      unsigned int offset=0) {
-    unsigned int D=rx == 0 ? fftx->D0 : fftx->D;
+  void subconvolution(Complex **F, size_t C,
+                      size_t stride, size_t rx,
+                      size_t offset=0) {
+    size_t D=rx == 0 ? fftx->D0 : fftx->D;
     PARALLEL(
-      for(unsigned int i=0; i < C; ++i) {
-        unsigned int t=ThreadBase::get_thread_num0();
+      for(size_t i=0; i < C; ++i) {
+        size_t t=ThreadBase::get_thread_num0();
         Convolution *cy=convolvey[t];
-        for(unsigned int d=0; d < D; ++d) {
+        for(size_t d=0; d < D; ++d) {
           cy->indices.index[0]=fftx->index(rx+d,i);
           cy->convolveRaw(F,offset+(D*i+d)*stride,&cy->indices);
         }
@@ -1328,20 +1328,20 @@ public:
       );
   }
 
-  void backward(Complex **F, Complex **f, unsigned int rx,
-                unsigned int start, unsigned int stop,
-                unsigned int offset=0, Complex *W0=NULL) {
-    for(unsigned int b=start; b < stop; ++b)
+  void backward(Complex **F, Complex **f, size_t rx,
+                size_t start, size_t stop,
+                size_t offset=0, Complex *W0=NULL) {
+    for(size_t b=start; b < stop; ++b)
       (fftx->*Backward)(F[b],f[b]+offset,rx,W0);
     if(W && W == W0) (fftx->*Pad)(W0);
   }
 
-  void normalize(Complex **h, unsigned int offset=0) {
-    for(unsigned int b=0; b < B; ++b) {
+  void normalize(Complex **h, size_t offset=0) {
+    for(size_t b=0; b < B; ++b) {
       Complex *hb=h[b]+offset;
-      for(unsigned int i=0; i < Lx; ++i) {
+      for(size_t i=0; i < Lx; ++i) {
         Complex *hbi=hb+Sx*i;
-        for(unsigned int j=0; j < Ly; ++j)
+        for(size_t j=0; j < Ly; ++j)
           hbi[j] *= scale;
       }
     }
@@ -1349,14 +1349,14 @@ public:
 
 // f is a pointer to A distinct data blocks each of size Lx*Sx,
 // shifted by offset.
-  void convolveRaw(Complex **f, unsigned int offset=0, Indices *indices=NULL) {
-    for(unsigned int t=0; t < threads; ++t)
+  void convolveRaw(Complex **f, size_t offset=0, Indices *indices=NULL) {
+    for(size_t t=0; t < threads; ++t)
       convolvey[t]->indices.copy(indices,1);
 
     if(overwrite) {
       forward(f,F,0,0,A,offset);
-      unsigned int final=fftx->n-1;
-      for(unsigned int r=0; r < final; ++r)
+      size_t final=fftx->n-1;
+      for(size_t r=0; r < final; ++r)
         subconvolution(f,lx,Sx,r,offset+Sx*r*lx);
       subconvolution(F,lx,Sx,final);
       backward(F,f,0,0,B,offset,W);
@@ -1364,8 +1364,8 @@ public:
       if(loop2) {
         forward(f,F,0,0,A,offset);
         subconvolution(F,lx,Sx,0);
-        unsigned int C=A-B;
-        unsigned int a=0;
+        size_t C=A-B;
+        size_t a=0;
         for(; a+C <= B; a += C) {
           forward(f,Fp,r,a,a+C,offset);
           backward(F,f,0,a,a+C,offset,W0);
@@ -1374,7 +1374,7 @@ public:
         subconvolution(Fp,lx,Sx,r);
         backward(Fp,f,r,0,B,offset,W0);
       } else {
-        unsigned int Offset;
+        size_t Offset;
         Complex **h0;
         if(nloops > 1) {
           if(!V) initV();
@@ -1385,21 +1385,21 @@ public:
           h0=f;
         }
 
-        for(unsigned int rx=0; rx < Rx; rx += fftx->increment(rx)) {
+        for(size_t rx=0; rx < Rx; rx += fftx->increment(rx)) {
           forward(f,F,rx,0,A,offset);
           subconvolution(F,lx,Sx,rx);
           backward(F,h0,rx,0,B,Offset,W);
         }
 
         if(nloops > 1) {
-          for(unsigned int b=0; b < B; ++b) {
+          for(size_t b=0; b < B; ++b) {
             Complex *fb=f[b]+offset;
             Complex *hb=h0[b];
-            for(unsigned int i=0; i < Lx; ++i) {
-              unsigned int Sxi=Sx*i;
+            for(size_t i=0; i < Lx; ++i) {
+              size_t Sxi=Sx*i;
               Complex *fbi=fb+Sxi;
               Complex *hbi=hb+Sxi;
-              for(unsigned int j=0; j < Ly; ++j)
+              for(size_t j=0; j < Ly; ++j)
                 fbi[j]=hbi[j];
             }
           }
@@ -1408,7 +1408,7 @@ public:
     }
   }
 
-  void convolve(Complex **f, unsigned int offset=0) {
+  void convolve(Complex **f, size_t offset=0) {
     convolveRaw(f,offset);
     normalize(f,offset);
   }
@@ -1416,19 +1416,19 @@ public:
 
 class ConvolutionHermitian2 : public Convolution2 {
 public:
-  ConvolutionHermitian2(unsigned int Lx, unsigned int Mx,
-                        unsigned int Ly, unsigned int My,
-                        unsigned int A, unsigned int B, multiplier *mult,
-                        unsigned int threads=fftw::maxthreads) :
+  ConvolutionHermitian2(size_t Lx, size_t Mx,
+                        size_t Ly, size_t My,
+                        size_t A, size_t B, multiplier *mult,
+                        size_t threads=fftw::maxthreads) :
     Convolution2(threads) {
     this->mult=mult;
-    unsigned int Hy=utils::ceilquotient(Ly,2);
+    size_t Hy=utils::ceilquotient(Ly,2);
     Application appx(A,B,multNone,threads);
     fftx=new fftPadCentered(Lx,Mx,appx,Hy);
     Application appy(A,B,mult,threads,fftx->l);
     ffty=new fftPadHermitian(Ly,My,appy);
     convolvey=new Convolution*[threads];
-    for(unsigned int t=0; t < threads; ++t)
+    for(size_t t=0; t < threads; ++t)
       convolvey[t]=new ConvolutionHermitian(ffty,A,B);
     init();
   }
@@ -1446,7 +1446,7 @@ public:
     multithread(fftx->l);
     this->convolvey=new Convolution*[threads];
     this->convolvey[0]=convolvey;
-    for(unsigned int t=1; t < threads; ++t)
+    for(size_t t=1; t < threads; ++t)
       this->convolvey[t]=new ConvolutionHermitian(convolvey->fft,
                                                   convolvey->A,convolvey->B);
     this->W=W;
@@ -1463,19 +1463,19 @@ public:
   fftBase *fftx,*ffty,*fftz;
   Convolution **convolvez;
   Convolution2 **convolveyz;
-  unsigned int Lx,Ly,Lz; // x,y,z dimensions of input data
-  unsigned int Sx,Sy; // x stride, y stride
-  unsigned int A;
-  unsigned int B;
+  size_t Lx,Ly,Lz; // x,y,z dimensions of input data
+  size_t Sx,Sy; // x stride, y stride
+  size_t A;
+  size_t B;
   multiplier *mult;
   double scale;
 protected:
-  unsigned int lx;    // x dimension of Fx buffer
-  unsigned int Q;
-  unsigned int qx;
-  unsigned int Qx; // number of residues
-  unsigned int Rx; // number of residue blocks
-  unsigned int r;
+  size_t lx;    // x dimension of Fx buffer
+  size_t Q;
+  size_t qx;
+  size_t Qx; // number of residues
+  size_t Rx; // number of residue blocks
+  size_t r;
   Complex **F,**Fp;
   Complex **V;
   Complex *W;
@@ -1486,12 +1486,12 @@ protected:
   bool loop2;
   FFTcall Forward,Backward;
   FFTPad Pad;
-  unsigned int nloops;
+  size_t nloops;
   bool overwrite;
 public:
   Indices indices;
 
-  Convolution3(unsigned int threads=fftw::maxthreads) :
+  Convolution3(size_t threads=fftw::maxthreads) :
     ThreadBase(threads), fftz(NULL), convolvez(NULL), convolveyz(NULL),
     W(NULL), allocateF(false), allocateV(false), allocateW(false),
     loop2(false) {}
@@ -1500,11 +1500,11 @@ public:
   // Mx,My,Mz: x,y,z dimensions of transformed data, including padding
   // A: number of inputs
   // B: number of outputs
-  Convolution3(unsigned int Lx, unsigned int Mx,
-               unsigned int Ly, unsigned int My,
-               unsigned int Lz, unsigned int Mz,
-               unsigned int A, unsigned int B, multiplier *mult,
-               unsigned int threads=fftw::maxthreads) :
+  Convolution3(size_t Lx, size_t Mx,
+               size_t Ly, size_t My,
+               size_t Lz, size_t Mz,
+               size_t A, size_t B, multiplier *mult,
+               size_t threads=fftw::maxthreads) :
     ThreadBase(threads), mult(mult), W(NULL), allocateW(false) {
     Application appx(A,B,multNone,threads);
     fftx=new fftPad(Lx,Mx,appx,Ly*Lz);
@@ -1513,10 +1513,10 @@ public:
     Application appz(A,B,mult,appy.Threads(),ffty->l);
     fftz=new fftPad(Lz,Mz,appz);
     convolvez=new Convolution*[threads];
-    for(unsigned int t=0; t < threads; ++t)
+    for(size_t t=0; t < threads; ++t)
       convolvez[t]=new Convolution(fftz,A,B);
     convolveyz=new Convolution2*[threads];
-    for(unsigned int t=0; t < threads; ++t)
+    for(size_t t=0; t < threads; ++t)
       convolveyz[t]=new Convolution2(ffty,convolvez[t]);
     init();
   }
@@ -1534,13 +1534,13 @@ public:
     fftBase *fftz=convolveyz->convolvey[0]->fft;
     convolvez=new Convolution*[threads];
     convolvez[0]=convolveyz->convolvey[0];
-    for(unsigned int t=1; t < threads; ++t)
+    for(size_t t=1; t < threads; ++t)
       convolvez[t]=new Convolution(fftz,convolveyz->A,convolveyz->B);
 
     ffty=convolveyz->fftx;
     this->convolveyz=new Convolution2*[threads];
     this->convolveyz[0]=convolveyz;
-    for(unsigned int t=1; t < threads; ++t)
+    for(size_t t=1; t < threads; ++t)
       this->convolveyz[t]=new Convolution2(ffty,convolvez[t]);
 
     init(F,V);
@@ -1563,10 +1563,10 @@ public:
       Backward=fftx->Backward;
     }
 
-    unsigned int outputSize=fftx->outputSize();
-    unsigned int workSizeW=fftx->workSizeW();
+    size_t outputSize=fftx->outputSize();
+    size_t workSizeW=fftx->workSizeW();
 
-    unsigned int N=std::max(A,B);
+    size_t N=std::max(A,B);
     allocateF=!F;
     this->F=allocateF ? utils::ComplexAlign(N,outputSize) : F;
 
@@ -1601,12 +1601,12 @@ public:
 
     nloops=fftx->nloops();
     loop2=fftx->loop2(A,B);
-    int extra;
+    size_t extra;
     if(loop2) {
       r=fftx->increment(0);
       Fp=new Complex*[A];
       Fp[0]=this->F[A-1];
-      for(unsigned int a=1; a < A; ++a)
+      for(size_t a=1; a < A; ++a)
         Fp[a]=this->F[a-1];
       extra=1;
     } else
@@ -1621,8 +1621,8 @@ public:
 
     if(V) {
       this->V=new Complex*[B];
-      unsigned int size=fftx->workSizeV(A,B);
-      for(unsigned int i=0; i < B; ++i)
+      size_t size=fftx->workSizeV(A,B);
+      for(size_t i=0; i < B; ++i)
         this->V[i]=V+i*size;
     } else
       this->V=NULL;
@@ -1631,8 +1631,8 @@ public:
   void initV() {
     allocateV=true;
     V=new Complex*[B];
-    unsigned int size=fftx->workSizeV(A,B);
-    for(unsigned int i=0; i < B; ++i)
+    size_t size=fftx->workSizeV(A,B);
+    for(size_t i=0; i < B; ++i)
       V[i]=utils::ComplexAlign(size);
   }
 
@@ -1646,7 +1646,7 @@ public:
       utils::deleteAlign(W);
 
     if(allocateV) {
-      for(unsigned int i=0; i < B; ++i)
+      for(size_t i=0; i < B; ++i)
         utils::deleteAlign(V[i]);
     }
 
@@ -1665,44 +1665,44 @@ public:
     }
 
     if(convolveyz) {
-      for(unsigned int t=1; t < threads; ++t)
+      for(size_t t=1; t < threads; ++t)
         delete convolveyz[t];
       delete [] convolveyz;
     }
 
     if(convolvez) {
-      for(unsigned int t=1; t < threads; ++t)
+      for(size_t t=1; t < threads; ++t)
         delete convolvez[t];
       delete [] convolvez;
     }
   }
 
-  void forward(Complex **f, Complex **F, unsigned int rx,
-               unsigned int start, unsigned int stop,
-               unsigned int offset=0) {
-    for(unsigned int a=start; a < stop; ++a) {
+  void forward(Complex **f, Complex **F, size_t rx,
+               size_t start, size_t stop,
+               size_t offset=0) {
+    for(size_t a=start; a < stop; ++a) {
       if(Sy == Lz)
         (fftx->*Forward)(f[a]+offset,F[a],rx,W);
       else {
         Complex *fa=f[a]+offset;
         Complex *Fa=F[a];
-        for(unsigned int j=0; j < Ly; ++j) {
-          unsigned int Syj=Sy*j;
+        for(size_t j=0; j < Ly; ++j) {
+          size_t Syj=Sy*j;
           (fftx->*Forward)(fa+Syj,Fa+Syj,rx,W);
         }
       }
     }
   }
 
-  void subconvolution(Complex **F, unsigned int C,
-                      unsigned int stride, unsigned int rx,
-                      unsigned int offset=0) {
-    unsigned int D=rx == 0 ? fftx->D0 : fftx->D;
+  void subconvolution(Complex **F, size_t C,
+                      size_t stride, size_t rx,
+                      size_t offset=0) {
+    size_t D=rx == 0 ? fftx->D0 : fftx->D;
     PARALLEL(
-      for(unsigned int i=0; i < C; ++i) {
-        unsigned int t=ThreadBase::get_thread_num0();
+      for(size_t i=0; i < C; ++i) {
+        size_t t=ThreadBase::get_thread_num0();
         Convolution2 *cyz=convolveyz[t];
-        for(unsigned int d=0; d < D; ++d) {
+        for(size_t d=0; d < D; ++d) {
           cyz->indices.index[1]=fftx->index(rx+d,i);
           cyz->convolveRaw(F,offset+(D*i+d)*stride,&cyz->indices);
         }
@@ -1710,17 +1710,17 @@ public:
       );
   }
 
-  void backward(Complex **F, Complex **f, unsigned int rx,
-                unsigned int start, unsigned int stop,
-                unsigned int offset=0, Complex *W0=NULL) {
-    for(unsigned int b=start; b < stop; ++b) {
+  void backward(Complex **F, Complex **f, size_t rx,
+                size_t start, size_t stop,
+                size_t offset=0, Complex *W0=NULL) {
+    for(size_t b=start; b < stop; ++b) {
       if(Sy == Lz)
         (fftx->*Backward)(F[b],f[b]+offset,rx,W0);
       else {
         Complex *Fb=F[b];
         Complex *fb=f[b]+offset;
-        for(unsigned int j=0; j < Ly; ++j) {
-          unsigned int Syj=Sy*j;
+        for(size_t j=0; j < Ly; ++j) {
+          size_t Syj=Sy*j;
           (fftx->*Backward)(Fb+Syj,fb+Syj,rx,W0);
         }
       }
@@ -1728,14 +1728,14 @@ public:
     if(W && W == W0) (fftx->*Pad)(W0);
   }
 
-  void normalize(Complex **h, unsigned int offset=0) {
-    for(unsigned int b=0; b < B; ++b) {
+  void normalize(Complex **h, size_t offset=0) {
+    for(size_t b=0; b < B; ++b) {
       Complex *hb=h[b]+offset;
-      for(unsigned int i=0; i < Lx; ++i) {
+      for(size_t i=0; i < Lx; ++i) {
         Complex *hbi=hb+Sx*i;
-        for(unsigned int j=0; j < Ly; ++j) {
+        for(size_t j=0; j < Ly; ++j) {
           Complex *hbij=hbi+Sy*j;
-          for(unsigned int k=0; k < Lz; ++k)
+          for(size_t k=0; k < Lz; ++k)
             hbij[k] *= scale;
         }
       }
@@ -1744,14 +1744,14 @@ public:
 
 // f is a pointer to A distinct data blocks each of size Lx*Sx,
 // shifted by offset.
-  void convolveRaw(Complex **f, unsigned int offset=0, Indices *indices=NULL) {
-    for(unsigned int t=0; t < threads; ++t)
+  void convolveRaw(Complex **f, size_t offset=0, Indices *indices=NULL) {
+    for(size_t t=0; t < threads; ++t)
       convolveyz[t]->indices.copy(indices,2);
 
     if(overwrite) {
       forward(f,F,0,0,A,offset);
-      unsigned int final=fftx->n-1;
-      for(unsigned int r=0; r < final; ++r)
+      size_t final=fftx->n-1;
+      for(size_t r=0; r < final; ++r)
         subconvolution(f,lx,Sx,r,offset+Sx*r*lx);
       subconvolution(F,lx,Sx,final);
       backward(F,f,0,0,B,offset,W);
@@ -1759,8 +1759,8 @@ public:
       if(loop2) {
         forward(f,F,0,0,A,offset);
         subconvolution(F,lx,Sx,0);
-        unsigned int C=A-B;
-        unsigned int a=0;
+        size_t C=A-B;
+        size_t a=0;
         for(; a+C <= B; a += C) {
           forward(f,Fp,r,a,a+C,offset);
           backward(F,f,0,a,a+C,offset,W0);
@@ -1769,7 +1769,7 @@ public:
         subconvolution(Fp,lx,Sx,r);
         backward(Fp,f,r,0,B,offset,W0);
       } else {
-        unsigned int Offset;
+        size_t Offset;
         Complex **h0;
         if(nloops > 1) {
           if(!V) initV();
@@ -1780,25 +1780,25 @@ public:
           h0=f;
         }
 
-        for(unsigned int rx=0; rx < Rx; rx += fftx->increment(rx)) {
+        for(size_t rx=0; rx < Rx; rx += fftx->increment(rx)) {
           forward(f,F,rx,0,A,offset);
           subconvolution(F,lx,Sx,rx);
           backward(F,h0,rx,0,B,Offset,W);
         }
 
         if(nloops > 1) {
-          for(unsigned int b=0; b < B; ++b) {
+          for(size_t b=0; b < B; ++b) {
             Complex *fb=f[b]+offset;
             Complex *hb=h0[b];
-            for(unsigned int i=0; i < Lx; ++i) {
-              unsigned int Sxi=Sx*i;
+            for(size_t i=0; i < Lx; ++i) {
+              size_t Sxi=Sx*i;
               Complex *fbi=fb+Sxi;
               Complex *hbi=hb+Sxi;
-              for(unsigned int j=0; j < Ly; ++j) {
-                unsigned int Syj=Sy*j;
+              for(size_t j=0; j < Ly; ++j) {
+                size_t Syj=Sy*j;
                 Complex *fbij=fbi+Syj;
                 Complex *hbij=hbi+Syj;
-                for(unsigned int k=0; k < Lz; ++k)
+                for(size_t k=0; k < Lz; ++k)
                   fbij[k]=hbij[k];
               }
             }
@@ -1808,7 +1808,7 @@ public:
     }
   }
 
-  void convolve(Complex **f, unsigned int offset=0) {
+  void convolve(Complex **f, size_t offset=0) {
     convolveRaw(f,offset);
     normalize(f,offset);
   }
@@ -1816,13 +1816,13 @@ public:
 
 class ConvolutionHermitian3 : public Convolution3 {
 public:
-  ConvolutionHermitian3(unsigned int Lx, unsigned int Mx,
-                        unsigned int Ly, unsigned int My,
-                        unsigned int Lz, unsigned int Mz,
-                        unsigned int A, unsigned int B, multiplier *mult,
-                        unsigned int threads=fftw::maxthreads) :
+  ConvolutionHermitian3(size_t Lx, size_t Mx,
+                        size_t Ly, size_t My,
+                        size_t Lz, size_t Mz,
+                        size_t A, size_t B, multiplier *mult,
+                        size_t threads=fftw::maxthreads) :
     Convolution3(threads) {
-    unsigned int Hz=utils::ceilquotient(Lz,2);
+    size_t Hz=utils::ceilquotient(Lz,2);
     this->mult=mult;
 
     Application appx(A,B,multNone,threads);
@@ -1832,10 +1832,10 @@ public:
     Application appz(A,B,mult,appy.Threads(),ffty->l);
     fftz=new fftPadHermitian(Lz,Mz,appz);
     convolvez=new Convolution*[threads];
-    for(unsigned int t=0; t < threads; ++t)
+    for(size_t t=0; t < threads; ++t)
       convolvez[t]=new ConvolutionHermitian(fftz,A,B);
     convolveyz=new Convolution2*[threads];
-    for(unsigned int t=0; t < threads; ++t)
+    for(size_t t=0; t < threads; ++t)
       convolveyz[t]=new ConvolutionHermitian2(ffty,convolvez[t]);
     init();
   }
@@ -1855,13 +1855,13 @@ public:
     fftBase *fftz=convolveyz->convolvey[0]->fft;
     convolvez=new Convolution*[threads];
     convolvez[0]=convolveyz->convolvey[0];
-    for(unsigned int t=1; t < threads; ++t)
+    for(size_t t=1; t < threads; ++t)
       convolvez[t]=new ConvolutionHermitian(fftz,convolveyz->A,convolveyz->B);
 
     ffty=convolveyz->fftx;
     this->convolveyz=new Convolution2*[threads];
     this->convolveyz[0]=convolveyz;
-    for(unsigned int t=1; t < threads; ++t)
+    for(size_t t=1; t < threads; ++t)
       this->convolveyz[t]=new ConvolutionHermitian2(convolveyz->fftx,
                                                     convolvez[t]);
     this->W=W;

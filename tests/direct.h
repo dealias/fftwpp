@@ -6,9 +6,9 @@ namespace fftwpp {
 // Out-of-place direct 1D complex convolution.
 class DirectConvolution {
 protected:
-  unsigned int m;
+  size_t m;
 public:
-  DirectConvolution(unsigned int m) : m(m) {}
+  DirectConvolution(size_t m) : m(m) {}
 
   void convolve(Complex *h, Complex *f, Complex *g);
   void Cconvolve(Complex *h, Complex *f, Complex *g);
@@ -18,9 +18,9 @@ public:
 // Out-of-place direct 1D Hermitian convolution.
 class DirectHConvolution {
 protected:
-  unsigned int m;
+  size_t m;
 public:
-  DirectHConvolution(unsigned int m) : m(m) {}
+  DirectHConvolution(size_t m) : m(m) {}
 
 // Compute h= f (*) g via direct convolution, where f and g contain the m
 // non-negative Fourier components of real functions (contents
@@ -32,11 +32,11 @@ public:
 // Out-of-place direct 2D complex convolution.
 class DirectConvolution2 {
 protected:
-  unsigned int mx,my; // x and y data lengths
-  unsigned int Sx; // x stride
+  size_t mx,my; // x and y data lengths
+  size_t Sx; // x stride
 public:
-  DirectConvolution2(unsigned int mx, unsigned int my,
-                     unsigned int Sx=0) : mx(mx), my(my) {
+  DirectConvolution2(size_t mx, size_t my,
+                     size_t Sx=0) : mx(mx), my(my) {
     this->Sx=Sx ? Sx : my;
   }
 
@@ -46,12 +46,12 @@ public:
 // Out-of-place direct 2D Hermitian convolution.
 class DirectHConvolution2 {
 protected:
-  unsigned int mx,my;
+  size_t mx,my;
   bool xcompact;
-  unsigned int Sx; // x stride
+  size_t Sx; // x stride
 public:
-  DirectHConvolution2(unsigned int mx, unsigned int my, bool xcompact=true,
-                      unsigned int Sx=0) : mx(mx), my(my), xcompact(xcompact) {
+  DirectHConvolution2(size_t mx, size_t my, bool xcompact=true,
+                      size_t Sx=0) : mx(mx), my(my), xcompact(xcompact) {
     this->Sx=Sx ? Sx : my;
   }
 
@@ -61,13 +61,13 @@ public:
 // Out-of-place direct 3D complex convolution.
 class DirectConvolution3 {
 protected:
-  unsigned int mx,my,mz;
-  unsigned int Sx; // x stride
-  unsigned int Sy; // y stride
-  unsigned int myz;
+  size_t mx,my,mz;
+  size_t Sx; // x stride
+  size_t Sy; // y stride
+  size_t myz;
 public:
-  DirectConvolution3(unsigned int mx, unsigned int my, unsigned int mz,
-                     unsigned int Sx=0, unsigned int Sy=0) :
+  DirectConvolution3(size_t mx, size_t my, size_t mz,
+                     size_t Sx=0, size_t Sy=0) :
     mx(mx), my(my), mz(mz), myz(my*mz) {
     this->Sy=Sy ? Sy : mz;
     this->Sx=Sx ? Sx : my*Sy;
@@ -79,14 +79,14 @@ public:
 // Out-of-place direct 3D Hermitian convolution.
 class DirectHConvolution3 {
 protected:
-  unsigned int mx,my,mz;
+  size_t mx,my,mz;
   bool xcompact, ycompact;
-  unsigned int Sx; // x stride
-  unsigned int Sy; // y stride
+  size_t Sx; // x stride
+  size_t Sy; // y stride
 public:
-  DirectHConvolution3(unsigned int mx, unsigned int my, unsigned int mz,
+  DirectHConvolution3(size_t mx, size_t my, size_t mz,
                       bool xcompact=true, bool ycompact=true,
-                      unsigned int Sx=0, unsigned int Sy=0) :
+                      size_t Sx=0, size_t Sy=0) :
     mx(mx), my(my), mz(mz), xcompact(xcompact), ycompact(ycompact) {
     this->Sy=Sy ? Sy : mz;
     this->Sx=Sx ? Sx : (2*my-ycompact)*Sy;
@@ -98,9 +98,9 @@ public:
 // Out-of-place direct 1D Hermitian ternary convolution.
 class DirectHTConvolution {
 protected:
-  unsigned int m;
+  size_t m;
 public:
-  DirectHTConvolution(unsigned int m) : m(m) {}
+  DirectHTConvolution(size_t m) : m(m) {}
 
   void convolve(Complex *h, Complex *e, Complex *f, Complex *g);
 };
@@ -108,9 +108,9 @@ public:
 // Out-of-place direct 2D Hermitian ternary convolution.
 class DirectHTConvolution2 {
 protected:
-  unsigned int mx,my;
+  size_t mx,my;
 public:
-  DirectHTConvolution2(unsigned int mx, unsigned int my) : mx(mx), my(my)
+  DirectHTConvolution2(size_t mx, size_t my) : mx(mx), my(my)
   {}
 
   void convolve(Complex *h, Complex *e, Complex *f, Complex *g,

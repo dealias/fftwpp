@@ -9,8 +9,8 @@ using namespace utils;
 using namespace Array;
 using namespace fftwpp;
 
-unsigned int A=2; // number of inputs
-unsigned int B=1; // number of outputs
+size_t A=2; // number of inputs
+size_t B=1; // number of outputs
 
 int main(int argc, char *argv[])
 {
@@ -39,12 +39,12 @@ int main(int argc, char *argv[])
   if(Sx == 0) Sx=Ly;
 
   vector<double> T;
-  unsigned int N=max(A,B);
+  size_t N=max(A,B);
 
   Application appx(A,B,multNone,fftw::maxthreads,0,mx,Dx,Ix);
   fftPad fftx(Lx,Mx,appx,Ly,Sx);
   bool embed=fftx.embed();
-  unsigned int size=embed ? fftx.outputSize() : fftx.inputSize();
+  size_t size=embed ? fftx.outputSize() : fftx.inputSize();
   Complex **f=ComplexAlign(N,size);
   Application appy(A,B,multbinary,appx.Threads(),fftx.l,my,Dy,Iy);
   Convolution convolvey(Ly,My,appy);
@@ -52,10 +52,10 @@ int main(int argc, char *argv[])
 
 //  Convolution2 Convolve2(Lx,Mx,Ly,My,A,B);
 
-  for(unsigned int a=0; a < A; ++a) {
+  for(size_t a=0; a < A; ++a) {
     Complex *fa=f[a];
-    for(unsigned int i=0; i < Lx; ++i) {
-      for(unsigned int j=0; j < Ly; ++j) {
+    for(size_t i=0; i < Lx; ++i) {
+      for(size_t j=0; j < Ly; ++j) {
         fa[Sx*i+j]=Output || testError ? Complex((1.0+a)*i,j+a) : 0.0;
       }
     }
@@ -91,9 +91,9 @@ int main(int argc, char *argv[])
   if(Output) {
     if(testError)
       cout << "Hybrid:" << endl;
-    for(unsigned int b=0; b < B; ++b) {
-      for(unsigned int i=0; i < Lx; ++i) {
-        for(unsigned int j=0; j < Ly; ++j) {
+    for(size_t b=0; b < B; ++b) {
+      for(size_t i=0; i < Lx; ++i) {
+        for(size_t j=0; j < Ly; ++j) {
           cout << f[b][Sx*i+j] << " ";
         }
         cout << endl;
@@ -105,8 +105,8 @@ int main(int argc, char *argv[])
     if(Output) {
       cout << endl;
       cout << "Direct:" << endl;
-      for(unsigned int i=0; i < Lx; ++i) {
-        for(unsigned int j=0; j < Ly; ++j) {
+      for(size_t i=0; i < Lx; ++i) {
+        for(size_t j=0; j < Ly; ++j) {
           cout << h[Ly*i+j] << " ";
         }
         cout << endl;
@@ -116,8 +116,8 @@ int main(int argc, char *argv[])
     double err=0.0;
     double norm=0.0;
     // Assumes B=1
-    for(unsigned int i=0; i < Lx; ++i) {
-      for(unsigned int j=0; j < Ly; ++j) {
+    for(size_t i=0; i < Lx; ++i) {
+      for(size_t j=0; j < Ly; ++j) {
         Complex hij=h[Ly*i+j];
         err += abs2(f[0][Sx*i+j]-hij);
         norm += abs2(hij);

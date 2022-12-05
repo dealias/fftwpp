@@ -7,7 +7,7 @@ namespace fftwpp {
 // This multiplication routine is for binary convolutions and takes two inputs
 // of size m.
 // F[0][j] *= F[1][j];
-void multbinary(Complex **F, unsigned int m, unsigned int threads)
+void multbinary(Complex **F, size_t m, size_t threads)
 {
   Complex* F0=F[0];
   Complex* F1=F[1];
@@ -16,7 +16,7 @@ void multbinary(Complex **F, unsigned int m, unsigned int threads)
 
   PARALLELIF(
     m > threshold,
-    for(unsigned int j=0; j < m; ++j)
+    for(size_t j=0; j < m; ++j)
       F0[j] *= ninv*F1[j];
     );
 }
@@ -24,7 +24,7 @@ void multbinary(Complex **F, unsigned int m, unsigned int threads)
 // This multiplication routine is for binary Hermitian convolutions and takes
 // two inputs of size n.
 // F[0][j] *= F[1][j];
-void multbinary(double **F, unsigned int n, unsigned int threads)
+void multbinary(double **F, size_t n, size_t threads)
 {
   double* F0=F[0];
   double* F1=F[1];
@@ -33,7 +33,7 @@ void multbinary(double **F, unsigned int n, unsigned int threads)
 
   PARALLELIF(
     n > 2*threshold,
-    for(unsigned int j=0; j < n; ++j)
+    for(size_t j=0; j < n; ++j)
       F0[j] *= ninv*F1[j];
     );
 }
@@ -41,14 +41,14 @@ void multbinary(double **F, unsigned int n, unsigned int threads)
 // This multiplication routine is for binary convolutions and takes two inputs
 // of size n.
 // F[0][j] *= F[1][j];
-void multbinaryUnNormalized(Complex **F, unsigned int n, unsigned int threads)
+void multbinaryUnNormalized(Complex **F, size_t n, size_t threads)
 {
   Complex* F0=F[0];
   Complex* F1=F[1];
 
   PARALLELIF(
     n > threshold,
-    for(unsigned int j=0; j < n; ++j)
+    for(size_t j=0; j < n; ++j)
       F0[j] *= F1[j];
     );
 }
@@ -56,14 +56,14 @@ void multbinaryUnNormalized(Complex **F, unsigned int n, unsigned int threads)
 // This multiplication routine is for binary Hermitian convolutions and takes
 // two inputs of size n.
 // F[0][j] *= F[1][j];
-void multbinaryUnNormalized(double **F, unsigned int n, unsigned int threads)
+void multbinaryUnNormalized(double **F, size_t n, size_t threads)
 {
   double* F0=F[0];
   double* F1=F[1];
 
   PARALLELIF(
     n > 2*threshold,
-    for(unsigned int j=0; j < n; ++j)
+    for(size_t j=0; j < n; ++j)
       F0[j] *= F1[j];
     );
 }
@@ -80,17 +80,17 @@ void ExplicitConvolution::forwards(Complex *f)
 
 void ExplicitConvolution::convolve(Complex **F, Multiplier *mult)
 {
-  const unsigned int A=2;
-  const unsigned int B=1;
+  const size_t A=2;
+  const size_t B=1;
 
-  for(unsigned int a=0; a < A; ++a) {
+  for(size_t a=0; a < A; ++a) {
     pad(F[a]);
     backwards(F[a]);
   }
 
   (*mult)(F,n,threads);
 
-  for(unsigned int b=0; b < B; ++b)
+  for(size_t b=0; b < B; ++b)
     forwards(F[b]);
 }
 
@@ -107,7 +107,7 @@ void ExplicitConvolution::convolve(Complex *f, Complex *g)
   Vec Ninv=LOAD2(ninv);
   PARALLELIF(
     n > threshold,
-    for(unsigned int k=0; k < n; ++k)
+    for(size_t k=0; k < n; ++k)
       STORE(f+k,Ninv*ZMULT(LOAD(f+k),LOAD(g+k)));
     );
   forwards(f);
@@ -125,17 +125,17 @@ void ExplicitHConvolution::forwards(Complex *f)
 
 void ExplicitHConvolution::convolve(Complex **F, Realmultiplier *mult)
 {
-  const unsigned int A=2;
-  const unsigned int B=1;
+  const size_t A=2;
+  const size_t B=1;
 
-  for(unsigned int a=0; a < A; ++a) {
+  for(size_t a=0; a < A; ++a) {
     pad(F[a]);
     backwards(F[a]);
   }
 
   (*mult)((double **) F,n,threads);
 
-  for(unsigned int b=0; b < B; ++b)
+  for(size_t b=0; b < B; ++b)
     forwards(F[b]);
 }
 
@@ -153,7 +153,7 @@ void ExplicitHConvolution::convolve(Complex *f, Complex *g)
   double ninv=1.0/n;
   PARALLELIF(
     n > threshold,
-    for(unsigned int k=0; k < n; ++k)
+    for(size_t k=0; k < n; ++k)
       F[k] *= G[k]*ninv;
     );
 
@@ -186,31 +186,31 @@ void ExplicitConvolution2::convolve(Complex *f, Complex *g)
   pad(g);
   backwards(g);
 
-  unsigned int n=nx*ny;
+  size_t n=nx*ny;
   Vec Ninv=LOAD2(1.0/n);
   PARALLELIF(
     n > threshold,
-    for(unsigned int k=0; k < n; ++k)
+    for(size_t k=0; k < n; ++k)
       STORE(f+k,Ninv*ZMULT(LOAD(f+k),LOAD(g+k)));
     );
   forwards(f);
 }
 
-void oddShift(unsigned int nx, unsigned int ny, Complex *f, int sign,
-              unsigned int s, Complex *ZetaH, Complex *ZetaL)
+void oddShift(size_t nx, size_t ny, Complex *f, int sign,
+              size_t s, Complex *ZetaH, Complex *ZetaL)
 {
-  unsigned int nyp=ny/2+1;
+  size_t nyp=ny/2+1;
   int Sign=-1;
   sign=-sign;
-  unsigned int stop=s;
+  size_t stop=s;
   Complex *ZetaL0=ZetaL;
-  for(unsigned int a=0, k=1; k < nx; ++a) {
+  for(size_t a=0, k=1; k < nx; ++a) {
     Complex H=ZetaH[a];
     for(; k < stop; ++k) {
       Complex zeta=Sign*H*ZetaL0[k];
       zeta.im *= sign;
-      unsigned int j=nyp*k;
-      unsigned int stop=j+nyp;
+      size_t j=nyp*k;
+      size_t stop=j+nyp;
       for(; j < stop; ++j)
         f[j] *= zeta;
       Sign=-Sign;
@@ -250,10 +250,10 @@ void ExplicitHConvolution2::forwards(Complex *f)
 
 void ExplicitHConvolution2::convolve(Complex **F, Complex **G, bool symmetrize)
 {
-  unsigned int xorigin=nx/2;
-  unsigned int nyp=ny/2+1;
+  size_t xorigin=nx/2;
+  size_t nyp=ny/2+1;
 
-  for(unsigned int s=0; s < M; ++s) {
+  for(size_t s=0; s < M; ++s) {
     Complex *f=F[s];
     if(symmetrize) HermitianSymmetrizeX(mx,nyp,xorigin,f);
     pad(f);
@@ -266,7 +266,7 @@ void ExplicitHConvolution2::convolve(Complex **F, Complex **G, bool symmetrize)
   }
 
   double ninv=1.0/(nx*ny);
-  unsigned int nyp2=2*nyp;
+  size_t nyp2=2*nyp;
 
   double *f=(double *) F[0];
   double *g=(double *) G[0];
@@ -274,10 +274,10 @@ void ExplicitHConvolution2::convolve(Complex **F, Complex **G, bool symmetrize)
   if(M == 1) {
     PARALLELIF(
       nx*nyp > threshold,
-      for(unsigned int i=0; i < nx; ++i) {
-        unsigned int nyp2i=nyp2*i;
-        unsigned int stop=nyp2i+ny;
-        for(unsigned int j=nyp2i; j < stop; ++j)
+      for(size_t i=0; i < nx; ++i) {
+        size_t nyp2i=nyp2*i;
+        size_t stop=nyp2i+ny;
+        for(size_t j=nyp2i; j < stop; ++j)
           f[j] *= g[j]*ninv;
       }
       );
@@ -286,22 +286,22 @@ void ExplicitHConvolution2::convolve(Complex **F, Complex **G, bool symmetrize)
     double *g1=(double *) G[1];
     PARALLELIF(
       nx*nyp > threshold,
-      for(unsigned int i=0; i < nx; ++i) {
-        unsigned int nyp2i=nyp2*i;
-        unsigned int stop=nyp2i+ny;
-        for(unsigned int j=nyp2i; j < stop; ++j)
+      for(size_t i=0; i < nx; ++i) {
+        size_t nyp2i=nyp2*i;
+        size_t stop=nyp2i+ny;
+        for(size_t j=nyp2i; j < stop; ++j)
           f[j]=(f[j]*g[j]+f1[j]*g1[j])*ninv;
       }
       );
   } else {
     PARALLELIF(
       nx*(M-1) > threshold,
-      for(unsigned int i=0; i < nx; ++i) {
-        unsigned int nyp2i=nyp2*i;
-        unsigned int stop=nyp2i+ny;
-        for(unsigned int j=nyp2i; j < stop; ++j) {
+      for(size_t i=0; i < nx; ++i) {
+        size_t nyp2i=nyp2*i;
+        size_t stop=nyp2i+ny;
+        for(size_t j=nyp2i; j < stop; ++j) {
           double sum=f[j]*g[j];
-          for(unsigned int s=1; s < M; ++s)
+          for(size_t s=1; s < M; ++s)
             sum += ((double *) F[s])[j]*((double *) G[s])[j];
           f[j]=sum*ninv;
         }
@@ -314,11 +314,11 @@ void ExplicitHConvolution2::convolve(Complex **F, Complex **G, bool symmetrize)
 
 void ExplicitConvolution3::backwards(Complex *f)
 {
-  unsigned int nyz=ny*nz;
+  size_t nyz=ny*nz;
   if(prune) {
-    for(unsigned int i=0; i < mx; ++i)
+    for(size_t i=0; i < mx; ++i)
       yBackwards->fft(f+i*nyz);
-    for(unsigned int j=0; j < ny; ++j)
+    for(size_t j=0; j < ny; ++j)
       xBackwards->fft(f+j*nz);
     zBackwards->fft(f);
   } else
@@ -329,10 +329,10 @@ void ExplicitConvolution3::forwards(Complex *f)
 {
   if(prune) {
     zForwards->fft(f);
-    for(unsigned int j=0; j < ny; ++j)
+    for(size_t j=0; j < ny; ++j)
       xForwards->fft(f+j*nz);
-    unsigned int nyz=ny*nz;
-    for(unsigned int i=0; i < mx; ++i)
+    size_t nyz=ny*nz;
+    for(size_t i=0; i < mx; ++i)
       yForwards->fft(f+i*nyz);
   } else
     Forwards->fft(f);
@@ -346,11 +346,11 @@ void ExplicitConvolution3::convolve(Complex *f, Complex *g)
   pad(g);
   backwards(g);
 
-  unsigned int n=nx*ny*nz;
+  size_t n=nx*ny*nz;
   Vec Ninv=LOAD2(1.0/n);
   PARALLELIF(
     n > threshold,
-    for(unsigned int k=0; k < n; ++k)
+    for(size_t k=0; k < n; ++k)
       STORE(f+k,Ninv*ZMULT(LOAD(f+k),LOAD(g+k)));
     );
   forwards(f);
@@ -368,11 +368,11 @@ void ExplicitHConvolution3::forwards(Complex *f)
 
 void ExplicitHConvolution3::convolve(Complex **F, Complex **G, bool symmetrize)
 {
-  unsigned int xorigin=nx/2;
-  unsigned int yorigin=ny/2;
-  unsigned int nzp=nz/2+1;
+  size_t xorigin=nx/2;
+  size_t yorigin=ny/2;
+  size_t nzp=nz/2+1;
 
-  for(unsigned int s=0; s < M; ++s) {
+  for(size_t s=0; s < M; ++s) {
     Complex *f=F[s];
 
     if(symmetrize) HermitianSymmetrizeXY(mx,my,mz,xorigin,yorigin,f,ny*nzp,
@@ -388,7 +388,7 @@ void ExplicitHConvolution3::convolve(Complex **F, Complex **G, bool symmetrize)
   }
 
   double ninv=1.0/(nx*ny*nz);
-  unsigned int nzp2=2*nzp;
+  size_t nzp2=2*nzp;
 
   double *f=(double *) F[0];
   double *g=(double *) G[0];
@@ -396,12 +396,12 @@ void ExplicitHConvolution3::convolve(Complex **F, Complex **G, bool symmetrize)
   if(M == 1) {
     PARALLELIF(
       nx > threshold,
-      for(unsigned int i=0; i < nx; ++i) {
-        unsigned int nzp2i=nzp2*ny*i;
-        for(unsigned int j=0; j < ny; ++j) {
-          unsigned int nzp2ij=nzp2i+nzp2*j;
-          unsigned int stop=nzp2ij+nz;
-          for(unsigned int j=nzp2ij; j < stop; ++j)
+      for(size_t i=0; i < nx; ++i) {
+        size_t nzp2i=nzp2*ny*i;
+        for(size_t j=0; j < ny; ++j) {
+          size_t nzp2ij=nzp2i+nzp2*j;
+          size_t stop=nzp2ij+nz;
+          for(size_t j=nzp2ij; j < stop; ++j)
             f[j] *= g[j]*ninv;
         }
       }
@@ -439,7 +439,7 @@ void ExplicitHTConvolution::convolve(Complex *f, Complex *g, Complex *h)
   double ninv=1.0/n;
   PARALLELIF(
     n > threshold,
-    for(unsigned int k=0; k < n; ++k)
+    for(size_t k=0; k < n; ++k)
       F[k] *= G[k]*H[k]*ninv;
     );
 
@@ -473,8 +473,8 @@ void ExplicitHTConvolution2::forwards(Complex *f, bool shift)
 void ExplicitHTConvolution2::convolve(Complex *f, Complex *g, Complex *h,
                                       bool symmetrize)
 {
-  unsigned int xorigin=nx/2;
-  unsigned int nyp=ny/2+1;
+  size_t xorigin=nx/2;
+  size_t nyp=ny/2+1;
 
   if(symmetrize) HermitianSymmetrizeX(mx,nyp,xorigin,f);
   pad(f);
@@ -493,14 +493,14 @@ void ExplicitHTConvolution2::convolve(Complex *f, Complex *g, Complex *h,
   double *H=(double *) h;
 
   double ninv=1.0/(nx*ny);
-  unsigned int nyp2=2*nyp;
+  size_t nyp2=2*nyp;
 
   PARALLELIF(
     nx*nyp > threshold,
-    for(unsigned int i=0; i < nx; ++i) {
-      unsigned int nyp2i=nyp2*i;
-      unsigned int stop=nyp2i+ny;
-      for(unsigned int j=nyp2i; j < stop; ++j)
+    for(size_t i=0; i < nx; ++i) {
+      size_t nyp2i=nyp2*i;
+      size_t stop=nyp2i+ny;
+      for(size_t j=nyp2i; j < stop; ++j)
         F[j] *= G[j]*H[j]*ninv;
     }
     );

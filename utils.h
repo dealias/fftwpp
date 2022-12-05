@@ -6,10 +6,10 @@
 #include "Complex.h"
 
 extern double K;       // Time limit (seconds) for testing
-extern unsigned int minCount; // Minimum sample size for testing
+extern size_t minCount; // Minimum sample size for testing
 
-extern unsigned int C; // number of padded FFTs to compute
-extern unsigned int S; // stride between padded FFTs
+extern size_t C; // number of padded FFTs to compute
+extern size_t S; // stride between padded FFTs
 extern int stats;      // type of statistics used in timing test
 
 #ifdef _WIN32
@@ -33,12 +33,12 @@ inline T max(const T a, const S b)
 }
 
 template<class T>
-inline T pow(T x, unsigned int y)
+inline T pow(T x, size_t y)
 {
   if(y == 0) return 1;
   if(x == 0) return 0;
 
-  unsigned int r = 1;
+  size_t r = 1;
   while(true) {
     if(y & 1) r *= x;
     if((y >>= 1) == 0) return r;
@@ -93,7 +93,7 @@ inline void usageTest()
   std::cerr << "-t\t\t accuracy test" << std::endl;
 }
 
-inline void usageExplicit(unsigned int n)
+inline void usageExplicit(size_t n)
 {
   usageDirect();
   std::cerr << "-e\t\t explicitly padded convolution" << std::endl;
@@ -101,7 +101,7 @@ inline void usageExplicit(unsigned int n)
     std::cerr << "-p\t\t pruned explicitly padded convolution" << std::endl;
 }
 
-inline void usageCompact(unsigned int n)
+inline void usageCompact(size_t n)
 {
   std::cerr << "-X\t\t x Hermitian padding (0 or 1)" << std::endl;
   if(n > 1)
@@ -183,7 +183,7 @@ inline void usageHybrid(bool fft=false)
 }
 
 // ceilpow2(n) returns the smallest power of 2 greater than or equal to n.
-inline unsigned int ceilpow2(unsigned int n)
+inline size_t ceilpow2(size_t n)
 {
   --n;
   n |= n >> 1;
@@ -195,11 +195,11 @@ inline unsigned int ceilpow2(unsigned int n)
 }
 
 // Return the smallest power of p greater than or equal to n.
-inline unsigned int ceilpow(unsigned int p, unsigned int n)
+inline size_t ceilpow(size_t p, size_t n)
 {
-  unsigned int x=p;
-  unsigned int u=1;
-  unsigned int l=0;
+  size_t x=p;
+  size_t u=1;
+  size_t l=0;
   while(n > x) {
     x *= x;
     l=u;
@@ -208,7 +208,7 @@ inline unsigned int ceilpow(unsigned int p, unsigned int n)
   if(n == x) return n;
 
   while (l < u) {
-    unsigned int i=(l+u) >> 1;
+    size_t i=(l+u) >> 1;
     if(n > pow(p,i))
       l=i+1;
     else
@@ -217,24 +217,24 @@ inline unsigned int ceilpow(unsigned int p, unsigned int n)
   return pow(p,u);
 }
 
-inline unsigned int padding(unsigned int n)
+inline size_t padding(size_t n)
 {
   std::cout << "min padded buffer=" << n << std::endl;
   // Choose next power of 2 for maximal efficiency.
   return ceilpow2(n);
 }
 
-inline unsigned int cpadding(unsigned int m)
+inline size_t cpadding(size_t m)
 {
   return padding(2*m);
 }
 
-inline unsigned int hpadding(unsigned int m)
+inline size_t hpadding(size_t m)
 {
   return padding(3*m-2);
 }
 
-inline unsigned int tpadding(unsigned int m)
+inline size_t tpadding(size_t m)
 {
   return padding(4*m-3);
 }

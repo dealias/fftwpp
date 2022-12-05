@@ -1,4 +1,5 @@
 #include "fftw++.h"
+#include "seconds.h"
 
 // Compile with:
 // g++ -I .. -fopenmp optimal.cc ../fftw++.cc -lfftw3 -lfftw3_omp
@@ -15,7 +16,7 @@ int main(int argc, char *argv[])
 
   double eps=0.5;
 
-  unsigned int N;
+  size_t N;
 
   cerr << "Determining optimal sizes for 1D complex to complex in-place FFTs...";
 
@@ -31,32 +32,32 @@ int main(int argc, char *argv[])
 
   fout << "# length\tmean\tstdev" << endl;
 
-  unsigned int pow2=1;
-  for(unsigned int i=0; pow2 <= N; ++i, pow2 *= 2) {
-    unsigned int pow23=pow2;
-    for(unsigned int j=0; pow23 <= N; ++j, pow23 *= 3) {
-      unsigned int pow235=pow23;
-      for(unsigned int k=0; pow235 <= N; ++k, pow235 *= 5) {
-        unsigned int n=pow235;
-        for(unsigned int l=0; n <= N; ++l, n *= 7) {
+  size_t pow2=1;
+  for(size_t i=0; pow2 <= N; ++i, pow2 *= 2) {
+    size_t pow23=pow2;
+    for(size_t j=0; pow23 <= N; ++j, pow23 *= 3) {
+      size_t pow235=pow23;
+      for(size_t k=0; pow235 <= N; ++k, pow235 *= 5) {
+        size_t n=pow235;
+        for(size_t l=0; n <= N; ++l, n *= 7) {
 
           utils::statistics S;
-          unsigned int K=1;
+          size_t K=1;
 
           if(n == 1) continue;
 
           fft1d Forward(n,-1,f);
 
           for(;;) {
-            double t0=utils::totalseconds();
-            for(unsigned int i=0; i < K; ++i)
-              for(unsigned int i=0; i < n; ++i) f[i]=i;
-            double t1=utils::totalseconds();
-            for(unsigned int i=0; i < K; ++i) {
-              for(unsigned int i=0; i < n; ++i) f[i]=i;
+            double t0=utils::seconds();
+            for(size_t i=0; i < K; ++i)
+              for(size_t i=0; i < n; ++i) f[i]=i;
+            double t1=utils::seconds();
+            for(size_t i=0; i < K; ++i) {
+              for(size_t i=0; i < n; ++i) f[i]=i;
               Forward.fft(f);
             }
-            double t=utils::totalseconds();
+            double t=utils::seconds();
             S.add(((t-t1)-(t1-t0))/K);
             double mean=S.mean();
             if(K*mean < 1000.0/CLOCKS_PER_SEC) {

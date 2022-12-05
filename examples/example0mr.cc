@@ -12,8 +12,8 @@ int main()
 
   fftw::maxthreads=get_max_threads();
 
-  unsigned int nx=4, ny=4;
-  unsigned int nyp=ny/2+1;
+  size_t nx=4, ny=4;
+  size_t nyp=ny/2+1;
   size_t align=sizeof(Complex);
 
   cout << "Out-of-place transforms:" << endl;
@@ -34,7 +34,7 @@ int main()
   size_t cstride=1;
   size_t rdist=ny;
   size_t cdist=nyp;
-  unsigned int M=nx;
+  size_t M=nx;
 
   mrcfft1d Forward(ny, // length of transform
                    M,  // number of transforms
@@ -54,14 +54,14 @@ int main()
                     F); // output array
 
   // Initialize data:
-  for(unsigned int i=0; i < nx; i++)
-    for(unsigned int j=0; j < ny; j++)
+  for(size_t i=0; i < nx; i++)
+    for(size_t j=0; j < ny; j++)
       f[rdist*i+j]=i+j;
 
   cout << endl << "input:" << endl;
 
-  for(unsigned int i=0; i < nx; i++) {
-    for(unsigned int j=0; j < ny; j++)
+  for(size_t i=0; i < nx; i++) {
+    for(size_t j=0; j < ny; j++)
       cout << f[rdist*i+j] << " ";
     cout << endl;
   }
@@ -74,8 +74,8 @@ int main()
 
   cout << endl << "back to input:" << endl;
 
-  for(unsigned int i=0; i < nx; i++) {
-    for(unsigned int j=0; j < ny; j++)
+  for(size_t i=0; i < nx; i++) {
+    for(size_t j=0; j < ny; j++)
       cout << f[rdist*i+j] << " ";
     cout << endl;
   }

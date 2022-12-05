@@ -13,9 +13,9 @@ using namespace fftwpp;
 
 double f0[]={0,1,2,3,4};
 
-void init(Complex *f, Complex *g, unsigned int m)
+void init(Complex *f, Complex *g, size_t m)
 {
-  for(unsigned int k=0; k < m; k++) {
+  for(size_t k=0; k < m; k++) {
     f[k]=f0[k];
     g[k]=f0[k];
   }
@@ -24,31 +24,31 @@ void init(Complex *f, Complex *g, unsigned int m)
 class ZetaTable {
 public:
   Complex *ZetaH, *ZetaL;
-  unsigned int s;
+  size_t s;
   ZetaTable() {}
-  ZetaTable(unsigned int m) {
+  ZetaTable(size_t m) {
     int c=m/2;
     s=BuildZeta(twopi*c/(2*m),2*m,ZetaH,ZetaL);
   }
 };
 
-static void multbinarysame(Complex **F, unsigned int m,
-                           const unsigned int indexsize,
-                           const unsigned int *index,
-                           unsigned int r, unsigned int threads)
+static void multbinarysame(Complex **F, size_t m,
+                           const size_t indexsize,
+                           const size_t *index,
+                           size_t r, size_t threads)
 {
   static ZetaTable zeta;
-  static unsigned int lastm=0;
+  static size_t lastm=0;
 
   Complex* F0=F[0];
   Complex* F1=F[1];
 
-  unsigned int c=m/2;
+  size_t c=m/2;
   if(2*c == m) {
     if(r == 0) {
       double sign=1;
       PARALLEL(
-        for(unsigned int j=0; j < m; ++j) {
+        for(size_t j=0; j < m; ++j) {
           Complex *F0j=F0+j;
           Vec h=ZMULT(LOAD(F0j),LOAD(F1+j));
           STORE(F0j,sign*h);
@@ -58,7 +58,7 @@ static void multbinarysame(Complex **F, unsigned int m,
     } else {
       double sign=-1;
       PARALLEL(
-        for(unsigned int j=0; j < m; ++j) {
+        for(size_t j=0; j < m; ++j) {
           Complex *F0j=F0+j;
           Vec h=ZMULT(LOAD(F0j),LOAD(F1+j));
           STORE(F0j,sign*ZMULTI(h));
@@ -70,8 +70,8 @@ static void multbinarysame(Complex **F, unsigned int m,
   } else {
     if(m != lastm) {
       lastm=m;
-      static std::map<unsigned int,ZetaTable> list;
-      std::map<unsigned int,ZetaTable>::iterator p=list.find(m);
+      static std::map<size_t,ZetaTable> list;
+      std::map<size_t,ZetaTable>::iterator p=list.find(m);
       if(p == list.end()) {
         zeta=ZetaTable(m);
         list[m]=zeta;
@@ -80,14 +80,14 @@ static void multbinarysame(Complex **F, unsigned int m,
 
     Complex *ZetaH=zeta.ZetaH;
     Complex *ZetaL=zeta.ZetaL;
-    unsigned int s=zeta.s;
+    size_t s=zeta.s;
 
     PARALLEL(
-      for(unsigned int j=0; j < m; ++j) {
+      for(size_t j=0; j < m; ++j) {
         Complex *F0j=F0+j;
         Vec h=ZMULT(LOAD(F0j),LOAD(F1+j));
-        unsigned int index=2*j+r;
-        unsigned int a=index/s;
+        size_t index=2*j+r;
+        size_t a=index/s;
         Vec Zeta=LOAD(ZetaH+a);
         Vec X=UNPACKL(Zeta,Zeta);
         Vec Y=UNPACKH(CONJ(Zeta),Zeta);
@@ -102,7 +102,7 @@ int main(int argc, char* argv[])
   fftw::maxthreads=get_max_threads();
 
   // size of problem
-  unsigned int m=sizeof(f0)/sizeof(double);
+  size_t m=sizeof(f0)/sizeof(double);
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
@@ -118,13 +118,13 @@ int main(int argc, char* argv[])
   cout << "1d non-centered complex convolution:" << endl;
   init(f,g,m);
   cout << "\ninput:\nf\tg" << endl;
-  for(unsigned int i=0; i < m; i++)
+  for(size_t i=0; i < m; i++)
     cout << f[i] << "\t" << g[i] << endl;
 
   C.convolve(F,multbinarysame);
 
   cout << "\noutput:" << endl;
-  for(unsigned int i=0; i < m; i++) cout << f[i] << endl;
+  for(size_t i=0; i < m; i++) cout << f[i] << endl;
 
   deleteAlign(f);
 

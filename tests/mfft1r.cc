@@ -10,27 +10,27 @@ using namespace Array;
 using namespace fftwpp;
 
 
-inline void init(array2<double>& f, unsigned int mx, unsigned int my)
+inline void init(array2<double>& f, size_t mx, size_t my)
 {
-  for(unsigned int i=0; i < mx; ++i)
-    for(unsigned int j=0; j < my; j++)
+  for(size_t i=0; i < mx; ++i)
+    for(size_t j=0; j < my; j++)
       f[i][j] = 10 * i + j;
 }
 
-unsigned int outlimit=100;
+size_t outlimit=100;
 
 int main(int argc, char *argv[])
 {
   fftw::maxthreads=get_max_threads();
 
   // Number of iterations.
-  unsigned int N0=10000000;
+  size_t N0=10000000;
 
-  unsigned int N=0;
-  unsigned int mx=4;
-  unsigned int my=4;
+  size_t N=0;
+  size_t mx=4;
+  size_t my=4;
 
-  unsigned int stats=0; // Type of statistics used in timing test.
+  size_t stats=0; // Type of statistics used in timing test.
 
   bool Nset = false;
 
@@ -79,9 +79,9 @@ int main(int argc, char *argv[])
   if(my == 0) my=mx;
 
   cout << "mx=" << mx << ", my=" << my << endl;
-  unsigned int np=mx/2+1;
+  size_t np=mx/2+1;
   cout << "np=" << np << endl;
-  unsigned int M=my;
+  size_t M=my;
 
   if(!Nset) {
     N=N0/mx/my;
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
   cout << endl;
   if(N > 0) {
     double *T=new double[N];
-    for(unsigned int i=0; i < N; ++i) {
+    for(size_t i=0; i < N; ++i) {
       init(f,mx,my);
       double t0=nanoseconds();
       Forward.fft(f,g);

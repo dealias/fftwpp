@@ -9,8 +9,8 @@ using namespace utils;
 using namespace Array;
 using namespace fftwpp;
 
-unsigned int A=2; // number of inputs
-unsigned int B=1; // number of outputs
+size_t A=2; // number of inputs
+size_t B=1; // number of outputs
 
 int main(int argc, char *argv[])
 {
@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
   K *= 1.0e9;
 
   vector<double> T;
-  unsigned int N=max(A,B);
+  size_t N=max(A,B);
 
   if(Sy == 0) Sy=Lz;
   if(Sx == 0) Sx=Ly*Sy;
@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
   Application appx(A,B,multNone,fftw::maxthreads,0,mx,Dx,Ix);
   fftPad fftx(Lx,Mx,appx,Sy == Lz? Ly*Lz : Lz,Sx);
   bool embed=fftx.embed();
-  unsigned int size=embed ? fftx.outputSize() : fftx.inputSize();
+  size_t size=embed ? fftx.outputSize() : fftx.inputSize();
   Complex **f=ComplexAlign(N,size);
   Application appy(A,B,multNone,appx.Threads(),fftx.l,my,Dy,Iy);
   fftPad ffty(Ly,My,appy,Lz,Sy);
@@ -58,11 +58,11 @@ int main(int argc, char *argv[])
 
 //  Convolution3 Convolve3(Lx,Mx,Ly,My,Lz,Mz,A,B);
 
-  for(unsigned int a=0; a < A; ++a) {
+  for(size_t a=0; a < A; ++a) {
     Complex *fa=f[a];
-    for(unsigned int i=0; i < Lx; ++i) {
-      for(unsigned int j=0; j < Ly; ++j) {
-        for(unsigned int k=0; k < Lz; ++k) {
+    for(size_t i=0; i < Lx; ++i) {
+      for(size_t j=0; j < Ly; ++j) {
+        for(size_t k=0; k < Lz; ++k) {
           fa[Sx*i+Sy*j+k]=Output || testError ?
             Complex((1.0+a)*i+k,j+k+a) : 0.0;
         }
@@ -100,11 +100,11 @@ int main(int argc, char *argv[])
   if(Output) {
     if(testError)
       cout << "Hybrid:" << endl;
-    for(unsigned int b=0; b < B; ++b) {
+    for(size_t b=0; b < B; ++b) {
       Complex *fb=f[b];
-      for(unsigned int i=0; i < Lx; ++i) {
-        for(unsigned int j=0; j < Ly; ++j) {
-          for(unsigned int k=0; k < Lz; ++k) {
+      for(size_t i=0; i < Lx; ++i) {
+        for(size_t j=0; j < Ly; ++j) {
+          for(size_t k=0; k < Lz; ++k) {
             cout << fb[Sx*i+Sy*j+k] << " ";
           }
           cout << endl;
@@ -118,9 +118,9 @@ int main(int argc, char *argv[])
     if(Output) {
       cout << endl;
       cout << "Direct:" << endl;
-      for(unsigned int i=0; i < Lx; ++i) {
-        for(unsigned int j=0; j < Ly; ++j) {
-          for(unsigned int k=0; k < Lz; ++k) {
+      for(size_t i=0; i < Lx; ++i) {
+        for(size_t j=0; j < Ly; ++j) {
+          for(size_t k=0; k < Lz; ++k) {
             cout << h[Lz*(Ly*i+j)+k] << " ";
           }
           cout << endl;
@@ -133,9 +133,9 @@ int main(int argc, char *argv[])
     double norm=0.0;
 
     // Assumes B=1
-    for(unsigned int i=0; i < Lx; ++i)
-        for(unsigned int j=0; j < Ly; ++j)
-          for(unsigned int k=0; k < Lz; ++k){
+    for(size_t i=0; i < Lx; ++i)
+        for(size_t j=0; j < Ly; ++j)
+          for(size_t k=0; k < Lz; ++k){
             Complex hijk=h[Lz*(Ly*i+j)+k];
             err += abs2(f[0][Sx*i+Sy*j+k]-hijk);
             norm += abs2(hijk);

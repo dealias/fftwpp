@@ -15,8 +15,8 @@ int main()
 
   fftw::maxthreads=get_max_threads();
 
-  unsigned int nx=4, ny=5;
-  unsigned int nyp=ny/2+1;
+  size_t nx=4, ny=5;
+  size_t nyp=ny/2+1;
   size_t align=sizeof(Complex);
 
   array2<Complex> F(nx,nyp,align);
@@ -26,8 +26,8 @@ int main()
   rcfft2d Forward(nx,ny,f,F);
   crfft2d Backward(nx,ny,F,f);
 
-  for(unsigned int i=0; i < nx; i++)
-    for(unsigned int j=0; j < ny; j++)
+  for(size_t i=0; i < nx; i++)
+    for(size_t j=0; j < ny; j++)
       f(i,j)=i+j;
 
   cout << endl << "input:" << endl << f;

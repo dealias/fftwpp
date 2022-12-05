@@ -15,23 +15,23 @@ int main()
 
   fftw::maxthreads=4;
 
-  unsigned int M=10; // Number of FFTs performed
-  unsigned int n=8; // Length of FFT
-  unsigned int N=10; // Number data points for timing test.
+  size_t M=10; // Number of FFTs performed
+  size_t n=8; // Length of FFT
+  size_t N=10; // Number data points for timing test.
 
   Complex *f=ComplexAlign(n*M);
 
   mfft1d Forward(n,-1,M,M,1);
   mfft1d Backward(n,1,M,M,1);
 
-  for(unsigned int i=0; i < n*M; i++) f[i]=i;
+  for(size_t i=0; i < n*M; i++) f[i]=i;
 
-  unsigned int outlimit=100;
+  size_t outlimit=100;
 
   if(n*M < outlimit) {
     cout << endl << "input:" << endl;
-    for(unsigned int i=0; i < n; i++) {
-      for(unsigned int j=0; j < M; j++) {
+    for(size_t i=0; i < n; i++) {
+      for(size_t j=0; j < M; j++) {
         Complex value=n*j+i;
         f[M*i+j]=value;
         cout << value << "\t";
@@ -41,19 +41,19 @@ int main()
   }
 
   // Timing test:
-  seconds();
+  double t0=seconds();
 
-  for(unsigned int j=0; j < N; ++j) {
+  for(size_t j=0; j < N; ++j) {
     Forward.fft(f);
     Backward.fftNormalized(f);
   }
 
-  double time=seconds();
+  double time=seconds()-t0;
 
   if(n*M < outlimit) {
     cout << endl << "back to input:" << endl;
-    for(unsigned int i=0; i < n; i++) {
-      for(unsigned int j=0; j < M; j++) {
+    for(size_t i=0; i < n; i++) {
+      for(size_t j=0; j < M; j++) {
         cout << f[M*i+j] << "\t";
       }
       cout << endl;
@@ -63,7 +63,7 @@ int main()
   cout << endl << "average seconds: " << time/N << endl;
 
   Complex sum=0.0;
-  for(unsigned int i=0; i < n*M; i++)
+  for(size_t i=0; i < n*M; i++)
     sum += f[i];
 
   cout << endl << "sum of outputs (used for error-checking): " << sum << endl;
