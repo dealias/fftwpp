@@ -14,6 +14,16 @@ def ceilquotient(a,b):
 
 
 def forwardBackward(comment):
+
+  try:
+    FR=re.findall(r"(?<=Forwards Routine: )\S+",comment)
+    BR=re.findall(r"(?<=Backwards Routine: )\S+",comment)
+    params="\n"+"\t\t".join(FR)+"\n"+"\t\t".join(BR)
+    return params
+  except:
+    print("Could not find "+name)
+    return -1
+
   try:
     FR=re.findall(r"(?<=Forwards Routine: )\S+",comment)
     BR=re.findall(r"(?<=Backwards Routine: )\S+",comment)
