@@ -42,8 +42,18 @@ def main():
       for T in Ts:
         time(args,d,True,T)
 
-def Run(cmd):
-  print(' '.join(cmd)+'\n',flush=True)
+def callTiming(args,program, erase,taskset,runtype=None):
+  cmd=["timing.py"]
+  cmdLine="timing.py"
+  if taskset != "":
+    cmd+=[f"-B{taskset}"]
+    cmdLine+=f" -B\"{taskset}\""
+  cmd+=[f"-p{program}"]+args+erase
+  cmdLine+=f" -p{program} "+" ".join(args+erase)
+  if runtype != None:
+    cmd+=[f"-r{runtype}"]
+    cmdLine+=f" -r{runtype}"
+  print(cmdLine)
   run(cmd)
 
 def time(args,d,Hermitian, T):
@@ -65,32 +75,31 @@ def time(args,d,Hermitian, T):
   new+=dim
   old+=dim
 
-  cmd1=["timing.py"]
+  taskset=""
   if not args.t:
-    taskset="-Btaskset -c 0"
+    taskset="taskset -c 0"
     if T > 1:
       taskset+="-15"
-    cmd1.append(taskset)
 
-  cmd2=[f"-a{a}",f"-b{b}",f"-I{I}",f"-T{T}"]
+  args=[f"-a{a}",f"-b{b}",f"-I{I}",f"-T{T}"]
   erase=[]
   if e:
     erase.append("-e")
 
   if runtype == "implicit":
-    Run(cmd1+[f"-p{old}"]+cmd2+["-rimplicit"]+erase)
+    callTiming(args,old,erase,taskset,runtype)
   elif runtype == "explicit":
-    Run(cmd1+[f"-p{old}"]+cmd2+["-rexplicit"]+erase)
+    callTiming(args,old,erase,taskset,runtype)
   elif runtype == "hybrid":
-    Run(cmd1+[f"-p{new}"]+cmd2+erase)
+    callTiming(args,new,erase,taskset)
     if Hermitian and I == 0:
-      Run(cmd1+[f"-p{new}"]+cmd2+["-rexplicit"])
+      callTiming(args,new,erase,taskset,"explicit")
   elif runtype == None:
-    Run(cmd1+[f"-p{old}"]+cmd2+["-rimplicit"]+erase)
-    Run(cmd1+[f"-p{old}"]+cmd2+["-rexplicit"]+erase)
-    Run(cmd1+[f"-p{new}"]+cmd2+erase)
+    callTiming(args,old,erase,taskset,"implicit")
+    callTiming(args,old,erase,taskset,"explicit")
+    callTiming(args,new,erase,taskset)
     if Hermitian and I == 0:
-      Run(cmd1+[f"-p{new}"]+cmd2+["-rexplicit"])
+      callTiming(args,new,erase,taskset,"explicit")
   else:
     print(f"runtype=\"{runtype}\" is invalid")
 
