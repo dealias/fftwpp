@@ -86,7 +86,7 @@ size_t parallelLoop(Complex *A, size_t m, size_t threads)
 }
 
 const size_t maxThreshold=1 << 24;
-size_t threshold=UINT_MAX;
+size_t threshold=SIZE_MAX;
 
 size_t Threshold(size_t threads)
 {
@@ -105,7 +105,7 @@ size_t Threshold(size_t threads)
 
 void Threshold()
 {
-  if(threshold == UINT_MAX) {
+  if(threshold == SIZE_MAX) {
     threshold=1;
     for(size_t i=0; i < 10; ++i)
       threshold=max(threshold,Threshold(fftw::maxthreads));
