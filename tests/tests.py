@@ -18,6 +18,7 @@ class Program:
     self.centered=centered
     self.dim=dim
     self.extraArgs=extraArgs
+    self.hermitian=centered and extraArgs != "-c"
     self.mult=mult
     self.failed=0
     self.passed=0
@@ -192,15 +193,18 @@ def iterate(program, thr, tol, verbose, testS):
   else:
     if dim == 2:
       for y in vals:
-        xvals=ParameterCollection(fillValues,program,y.L,testS).vals
+        minS=(ceilquotient(y.L,2) if program.hermitian else y.L)
+        xvals=ParameterCollection(fillValues,program,minS,testS).vals
         for x in xvals:
           for T in threads:
             check(program,[x,y],T,tol,verbose)
 
     elif dim == 3:
       for z in vals:
-        yvals=ParameterCollection(fillValues,program,z.L,testS).vals
+        minSy=ceilquotient(z.L,2) if program.hermitian else z.L
+        yvals=ParameterCollection(fillValues,program,minSy,testS).vals
         for y in yvals:
+          minSy=y.S*y.L
           xvals=ParameterCollection(fillValues,program,y.L*y.S,testS).vals
           for x in xvals:
             for T in threads:
@@ -209,14 +213,13 @@ def iterate(program, thr, tol, verbose, testS):
       exit("Dimension must be 1 2 or 3.")
 
 def fillValues(program, minS, testS):
-
   # This doesn't quite correspond to C in the main code but it has the property
   # that C == 1 in 1D and C > 1 in higher dimensions
   # It also works for tesing hybrid.cc and hybridh.cc.
   C=minS
 
   centered=program.centered
-  hermitian = centered and program.extraArgs != "-c"
+  hermitian=program.hermitian
 
   dim=program.dim
   vals=[]
@@ -232,7 +235,11 @@ def fillValues(program, minS, testS):
 
   Ss=[minS]
   if testS:
-    Ss+=[minS+1]
+    if dim == 2:
+      Ss+=[minS+2]
+    if dim == 3:
+      Ss+=[minS+2]
+    print(Ss)
 
   for S in Ss:
     for L in Ls:
