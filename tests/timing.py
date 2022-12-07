@@ -22,7 +22,7 @@ def forwardBackward(comment):
     params="\n"+"\t\t".join(FR)+"\n"+"\t\t".join(BR)
     return params
   except:
-    print("Could not find "+name)
+    print("Could not find routines used.")
     return -1
 
 def getParam(name, comment):
