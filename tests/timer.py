@@ -73,11 +73,17 @@ def time(args,d,Hermitian, T):
   if e:
     erase.append("-e")
 
-  if runtype == "implicit" or "":
+  if runtype == "implicit":
     run(cmd1+[f"-p{old}"]+cmd2+["-rimplicit"]+erase)
-  elif runtype == "explicit" or "":
+  elif runtype == "explicit":
     run(cmd1+[f"-p{old}"]+cmd2+["-rexplicit"]+erase)
-  elif runtype == "hybrid" or "":
+  elif runtype == "hybrid":
+    run(cmd1+[f"-p{new}"]+cmd2+erase)
+    if Hermitian and I == 0:
+      run(cmd1+[f"-p{new}"]+cmd2+["-rexplicit"])
+  elif runtype == None:
+    run(cmd1+[f"-p{old}"]+cmd2+["-rimplicit"]+erase)
+    run(cmd1+[f"-p{old}"]+cmd2+["-rexplicit"]+erase)
     run(cmd1+[f"-p{new}"]+cmd2+erase)
     if Hermitian and I == 0:
       run(cmd1+[f"-p{new}"]+cmd2+["-rexplicit"])
@@ -87,31 +93,23 @@ def time(args,d,Hermitian, T):
 
 def getArgs():
   parser = argparse.ArgumentParser(description="Call timing.py with correct parameters.")
-  parser.add_argument("-e", help="Erase old data.", action="store_true")
-  parser.add_argument("-S", help="Test Standard convolutions. Not specifying S or H is the same as specifying both.",
-                      action="store_true")
-
-  parser.add_argument("-H", help="Test Hermitian convolutions. Not specifying S or H is the same as specifying both.",
-                      action="store_true")
-  parser.add_argument("-T",metavar='threads',help="Number of threads. Not specifying, runs T=1 and T=$OMP_NUM_THREADS", default=0, type=int)
-
   parser.add_argument("-1","--one", help="Time 1D Convolutions. Not specifying\
                       1 or 2 or 3 is the same as specifying all of them",
                       action="store_true")
   parser.add_argument("-2","--two", help="Time 2D Convolutions. Not specifying\
                       1 or 2 or 3 is the same as specifying all of them",
                       action="store_true")
-  parser.add_argument("-3","--three", help="Time 3D Convolutions. Not specifying\
-                      1 or 2 or 3 is the same as specifying all of them",
+  parser.add_argument("-3","--three", help="Time 3D Convolutions. Not specifying\ 1 or 2 or 3 is the same as specifying all of them",
                       action="store_true")
-  parser.add_argument("-a",help="Start.",
-                      default=1, type=int)
-  parser.add_argument("-b",help="End.",
-                      default=1, type=int)
-  parser.add_argument("-I",help="Interval. Checks powers of 2 when 0. Default is 0.",
-                      default=0, type=int)
-  parser.add_argument("-r",help="runtype: implicit, explicit, or hybrid. Not specifying does all of them.",
-                      default="", type=str)
+  parser.add_argument("-a",help="Start.", default=1, type=int)
+  parser.add_argument("-b",help="End.", default=1, type=int)
+  parser.add_argument("-e", help="Erase old data.", action="store_true")
+  parser.add_argument("-H", help="Test Hermitian convolutions. Not specifying S or H is the same as specifying both.", action="store_true")
+  parser.add_argument("-I",help="Interval. Checks powers of 2 when 0. Default is 0.", default=0, type=int)
+  parser.add_argument("-r",help="runtype: implicit, explicit, or hybrid. Not specifying does all of them.", type=str)
+  parser.add_argument("-S", help="Test Standard convolutions. Not specifying S or H is the same as specifying both.",
+                      action="store_true")
+  parser.add_argument("-T",metavar='threads',help="Number of threads. Not specifying, runs T=1 and T=$OMP_NUM_THREADS", default=0, type=int)
   parser.add_argument("-t", help="Don't use 'taskset'.",
                       action="store_true")
   return parser.parse_args()
