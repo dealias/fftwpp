@@ -8,6 +8,7 @@ from subprocess import * # for Popen, running processes
 import os
 import re # regexp package
 import shutil
+import time
 
 def ceilquotient(a,b):
   return -(a//-b)
@@ -466,8 +467,7 @@ def main(argv):
             comment += " " + " ".join(cmd)
 
             # Add the run date as a comment
-            import time
-            date = time.strftime("%Y-%m-%d")
+            date = time.strftime("%Y-%m-%d-%H:%M:%S-%Z")
             comment += "\t" + date
 
             if extracomment == "":
