@@ -24,19 +24,6 @@ def forwardBackward(comment):
     print("Could not find "+name)
     return -1
 
-  try:
-    FR=re.findall(r"(?<=Forwards Routine: )\S+",comment)
-    BR=re.findall(r"(?<=Backwards Routine: )\S+",comment)
-    l=len(FR)
-    xyz=["x","y","z"] if l > 1 else [""]
-    out=""
-    for i in range(l):
-        out+=f"\nForward-{xyz[i]} Routine: {FR[i]}\nBackward-{xyz[i]} Routine: {BR[i]}"
-    return out
-  except:
-    print("Could not find routines used.")
-    return -1
-
 def getParam(name, comment):
   try:
     param=re.findall(r"(?<="+name+"=)\d+",comment)
