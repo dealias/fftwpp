@@ -68,6 +68,7 @@ def getArgs():
                       action="store_true")
   parser.add_argument("-t",metavar='tolerance',help="Error tolerance. Default is 1e-12.",
                       default=1e-12)
+  parser.add_argument("-p",help="Print out everything.",action="store_true")
   parser.add_argument("-l",help="Show log of failed cases",
                       action="store_true")
   parser.add_argument("-v",help="Show the results of every test.",
@@ -144,7 +145,7 @@ def test(programs, args):
       else:
         raise ValueError(str(T)+" is an invalid number of threads.")
 
-      iterate(p,T,float(args.t),args.v,args.S or args.All)
+      iterate(p,T,float(args.t),args.v,args.S or args.All,args.p)
 
       ppassed=p.passed
       pfailed=p.failed
@@ -171,7 +172,7 @@ def test(programs, args):
   else:
     print("\nNo programs to test.\n")
 
-def iterate(program, thr, tol, verbose, testS):
+def iterate(program, thr, tol, verbose, testS, printEverything):
 
   dim=program.dim
 
@@ -184,12 +185,12 @@ def iterate(program, thr, tol, verbose, testS):
   if dim == 1:
     for x in vals:
       for T in threads:
-        check(program,[x],T,tol,verbose)
+        check(program,[x],T,tol,verbose,printEverything)
     if not program.mult:
       vals=ParameterCollection(fillValues,program,8,testS and not program.mult).vals
       for x in vals:
         for T in threads:
-          check(program,[x],T,tol,verbose)
+          check(program,[x],T,tol,verbose,printEverything)
   else:
     if dim == 2:
       for y in vals:
@@ -197,7 +198,7 @@ def iterate(program, thr, tol, verbose, testS):
         xvals=ParameterCollection(fillValues,program,minS,testS).vals
         for x in xvals:
           for T in threads:
-            check(program,[x,y],T,tol,verbose)
+            check(program,[x,y],T,tol,verbose,printEverything)
 
     elif dim == 3:
       for z in vals:
@@ -208,7 +209,7 @@ def iterate(program, thr, tol, verbose, testS):
           xvals=ParameterCollection(fillValues,program,y.L*y.S,testS).vals
           for x in xvals:
             for T in threads:
-              check(program,[x,y,z],T,tol,verbose)
+              check(program,[x,y,z],T,tol,verbose,printEverything)
     else:
       exit("Dimension must be 1 2 or 3.")
 
@@ -275,7 +276,7 @@ def fillValues(program, minS, testS):
               vals.append(Parameters(L,M,m,p,q,C,S,D,I))
   return vals
 
-def check(program, vals, T, tol, verbose):
+def check(program, vals, T, tol, verbose, printEverything):
 
   cmd=getcmd(program,vals,T)
 
@@ -287,6 +288,9 @@ def check(program, vals, T, tol, verbose):
   if prc == 0:
     out, err = vp.communicate()
     comment = out.rstrip().decode()
+
+  if printEverything:
+    print(f"{' '.join(cmd)}\n{comment}\n")
 
   if program.mult:
     checkError(program, comment, cmd, tol, verbose, r"Error")
