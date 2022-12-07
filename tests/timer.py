@@ -42,6 +42,10 @@ def main():
       for T in Ts:
         time(args,d,True,T)
 
+def Run(cmd):
+  print(' '.join(cmd)+'\n',flush=True)
+  run(cmd)
+
 def time(args,d,Hermitian, T):
   a=args.a
   b=args.b
@@ -74,19 +78,19 @@ def time(args,d,Hermitian, T):
     erase.append("-e")
 
   if runtype == "implicit":
-    run(cmd1+[f"-p{old}"]+cmd2+["-rimplicit"]+erase)
+    Run(cmd1+[f"-p{old}"]+cmd2+["-rimplicit"]+erase)
   elif runtype == "explicit":
-    run(cmd1+[f"-p{old}"]+cmd2+["-rexplicit"]+erase)
+    Run(cmd1+[f"-p{old}"]+cmd2+["-rexplicit"]+erase)
   elif runtype == "hybrid":
-    run(cmd1+[f"-p{new}"]+cmd2+erase)
+    Run(cmd1+[f"-p{new}"]+cmd2+erase)
     if Hermitian and I == 0:
-      run(cmd1+[f"-p{new}"]+cmd2+["-rexplicit"])
+      Run(cmd1+[f"-p{new}"]+cmd2+["-rexplicit"])
   elif runtype == None:
-    run(cmd1+[f"-p{old}"]+cmd2+["-rimplicit"]+erase)
-    run(cmd1+[f"-p{old}"]+cmd2+["-rexplicit"]+erase)
-    run(cmd1+[f"-p{new}"]+cmd2+erase)
+    Run(cmd1+[f"-p{old}"]+cmd2+["-rimplicit"]+erase)
+    Run(cmd1+[f"-p{old}"]+cmd2+["-rexplicit"]+erase)
+    Run(cmd1+[f"-p{new}"]+cmd2+erase)
     if Hermitian and I == 0:
-      run(cmd1+[f"-p{new}"]+cmd2+["-rexplicit"])
+      Run(cmd1+[f"-p{new}"]+cmd2+["-rexplicit"])
   else:
     print(f"runtype=\"{runtype}\" is invalid")
 
