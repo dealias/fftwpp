@@ -47,6 +47,7 @@ def time(args,d,Hermitian, T):
   b=args.b
   I=args.I
   e=args.e
+  runtype=args.r
   dim=str(d) if d > 1 else ""
 
   new="hybridconv"
@@ -72,11 +73,16 @@ def time(args,d,Hermitian, T):
   if e:
     erase.append("-e")
 
-  run(cmd1+[f"-p{old}"]+cmd2+["-rimplicit"]+erase)
-  run(cmd1+[f"-p{old}"]+cmd2+["-rexplicit"]+erase)
-  run(cmd1+[f"-p{new}"]+cmd2+erase)
-  if Hermitian and I == 0:
-    run(cmd1+[f"-p{new}"]+cmd2+["-rexplicit"])
+  if runtype == "implicit" or "":
+    run(cmd1+[f"-p{old}"]+cmd2+["-rimplicit"]+erase)
+  elif runtype == "explicit" or "":
+    run(cmd1+[f"-p{old}"]+cmd2+["-rexplicit"]+erase)
+  elif runtype == "hybrid" or "":
+    run(cmd1+[f"-p{new}"]+cmd2+erase)
+    if Hermitian and I == 0:
+      run(cmd1+[f"-p{new}"]+cmd2+["-rexplicit"])
+  else:
+    print(f"runtype=\"{runtype}\" is invalid")
 
 
 def getArgs():
@@ -104,6 +110,8 @@ def getArgs():
                       default=1, type=int)
   parser.add_argument("-I",help="Interval. Checks powers of 2 when 0. Default is 0.",
                       default=0, type=int)
+  parser.add_argument("-r",help="runtype: implicit, explicit, or hybrid. Not specifying does all of them.",
+                      default="", type=str)
   parser.add_argument("-t", help="Don't use 'taskset'.",
                       action="store_true")
   return parser.parse_args()
