@@ -448,7 +448,6 @@ def main(argv):
         if K > 0:
             cmd.append("-K" + str(K))
         cmd.append("-u")
-        print(runtype)
 
         # Add the extra arguments to the program being timed.
         i = 0

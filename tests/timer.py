@@ -56,13 +56,13 @@ def callTiming(args,program, erase,taskset,runtype=None):
   print(cmdLine,flush=True)
   run(cmd)
 
-def time(args,d,Hermitian, T):
+def time(args,dim,Hermitian, T):
   a=args.a
   b=args.b
   I=args.I
   e=args.e
   runtype=args.r
-  dim=str(d) if d > 1 else ""
+  dimString=str(dim) if dim > 1 else ""
 
   new="hybridconv"
   old="conv"
@@ -72,8 +72,8 @@ def time(args,d,Hermitian, T):
   else:
     old = "c"+old
 
-  new+=dim
-  old+=dim
+  new+=dimString
+  old+=dimString
 
   taskset=""
   if not args.t:
@@ -90,6 +90,11 @@ def time(args,d,Hermitian, T):
     callTiming(args,old,erase,taskset,runtype)
   elif runtype == "explicit":
     callTiming(args,old,erase,taskset,runtype)
+  elif runtype == "explicito":
+    if dim != 1:
+      print("explicito is only supported for 1 dimensional routines.")
+    else:
+      callTiming(args+["-I0"],old,erase,taskset,runtype)
   elif runtype == "hybrid":
     callTiming(args,new,erase,taskset)
     if Hermitian and I == 0:
@@ -97,6 +102,8 @@ def time(args,d,Hermitian, T):
   elif runtype == None:
     callTiming(args,old,erase,taskset,"implicit")
     callTiming(args,old,erase,taskset,"explicit")
+    if dim == 1:
+      callTiming(args+["-I0"],old,erase,taskset,"explicito")
     callTiming(args,new,erase,taskset)
     if Hermitian and I == 0:
       callTiming(args,new,erase,taskset,"explicit")
