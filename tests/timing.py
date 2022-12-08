@@ -378,6 +378,8 @@ def main(argv):
                     rname = "Implicit"
                 if runtype == "explicit":
                     rname = "Explicit"
+                if runtype == "explicito":
+                    rname = "Explicit"
                 if runtype == "pruned":
                     rname = "rune"
                 if runtype == "fft":
@@ -428,7 +430,7 @@ def main(argv):
             sys.exit(1)
 
         if not hybrid and not "fft" in p:
-            if(runtype == "explicit"):
+            if(runtype == "explicit" or "explicito"):
                 cmd.append("-e")
 
             if(runtype == "pruned"):
@@ -439,11 +441,14 @@ def main(argv):
 
         cmd.append("-S" + str(stats))
         cmd.append("-T" + str(T))
+        if runtype == "explicito":
+            cmd.append("-I0")
         if hybrid:
             cmd.append("-R")
         if K > 0:
             cmd.append("-K" + str(K))
         cmd.append("-u")
+        print(runtype)
 
         # Add the extra arguments to the program being timed.
         i = 0
