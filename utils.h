@@ -96,6 +96,9 @@ inline void usageTest()
 inline void usageExplicit(size_t n)
 {
   usageDirect();
+  if(n == 1)
+    std::cerr << "-I b\t\t 1=inplace (default), 0=out of place" << std::endl;
+
   std::cerr << "-e\t\t explicitly padded convolution" << std::endl;
   if(n > 1)
     std::cerr << "-p\t\t pruned explicitly padded convolution" << std::endl;

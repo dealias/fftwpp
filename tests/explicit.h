@@ -214,10 +214,11 @@ protected:
 public:
 
   // u is a temporary array of size n.
-  ExplicitConvolution(size_t n, size_t m, Complex *u) :
+  ExplicitConvolution(size_t n, size_t m, Complex *u, Complex *v=NULL) :
     ExplicitPad(n,m) {
-    Backwards=new fft1d(n,1,u);
-    Forwards=new fft1d(n,-1,u);
+    if(v == NULL) v=u;
+    Backwards=new fft1d(n,1,u,v);
+    Forwards=new fft1d(n,-1,v,u);
 
     threads=Forwards->Threads();
   }
@@ -227,11 +228,11 @@ public:
     delete Backwards;
   }
 
-  void backwards(Complex *f);
-  void forwards(Complex *f);
+  void backwards(Complex *f, Complex *F);
+  void forwards(Complex *F, Complex *f);
 
   // F is an array of pointers to distinct data blocks each of size n.
-  void convolve(Complex **F, Multiplier *mult);
+  void convolve(Complex **F, Multiplier *mult, Complex **G=NULL);
 
   // Compute f (*) g. The distinct input arrays f and g are each of size n
   // (contents not preserved). The output is returned in f.
@@ -247,10 +248,11 @@ protected:
   size_t threads;
 public:
   // u is a temporary array of size n.
-  ExplicitHConvolution(size_t n, size_t m, Complex *u) :
+  ExplicitHConvolution(size_t n, size_t m, Complex *u, double *v) :
     ExplicitPad(n/2+1,m), n(n), m(m) {
-    rc=new rcfft1d(n,u);
-    cr=new crfft1d(n,u);
+    if(v == NULL) v=(double *) u;
+    rc=new rcfft1d(n,v,u);
+    cr=new crfft1d(n,u,v);
 
     threads=cr->Threads();
   }
@@ -260,11 +262,11 @@ public:
     delete rc;
   }
 
-  void backwards(Complex *f);
-  void forwards(Complex *f);
+  void backwards(Complex *F, double *G);
+  void forwards(double *G, Complex *F);
 
   // F is an array of pointers to distinct data blocks each of size n.
-  void convolve(Complex **F, Realmultiplier *mult);
+  void convolve(Complex **F, Realmultiplier *mult, double **G=NULL);
 
 // Compute f (*) g, where f and g contain the m non-negative Fourier
 // components of real functions. Dealiasing is internally implemented via
@@ -273,7 +275,7 @@ public:
 // The (distinct) input arrays f and g must each be allocated to size n/2+1
 // (contents not preserved). The output is returned in the first m elements
 // of f.
-  void convolve(Complex *f, Complex *g);
+//  void convolve(Complex *f, Complex *g);
 };
 
 // In-place explicitly dealiased 2D complex convolution.

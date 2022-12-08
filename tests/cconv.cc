@@ -83,6 +83,7 @@ int main(int argc, char *argv[])
   bool Explicit=false;
   bool Output=false;
   bool Normalized=true;
+  bool Inplace=true;
 
   double K=1.0; // Time limit (seconds)
   size_t minCount=20;
@@ -98,7 +99,7 @@ int main(int argc, char *argv[])
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptA:B:K:Om:n:uS:T:");
+    int c = getopt(argc,argv,"hdeiptA:B:I:K:Om:n:uS:T:");
     if (c == -1) break;
 
     switch (c) {
@@ -114,6 +115,9 @@ int main(int argc, char *argv[])
       case 'i':
         Implicit=true;
         Explicit=false;
+        break;
+      case 'I':
+        Inplace=atoi(optarg) > 0;
         break;
       case 'p':
         break;
@@ -147,6 +151,7 @@ int main(int argc, char *argv[])
       case 'h':
       default:
         usage(1);
+        usageExplicit(1);
         usageTest();
         exit(1);
     }
@@ -168,13 +173,23 @@ int main(int argc, char *argv[])
   if(B < 1)
     B=1;
 
+  if(!Explicit)
+    Inplace=false;
+
   size_t np=Explicit ? n : m;
   size_t C=max(A,B);
   Complex *f=ComplexAlign(C*np);
+  Complex *g=Inplace ? f : ComplexAlign(C*np);
 
   Complex **F=new Complex *[C];
+  Complex **G=Inplace ? F : new Complex *[C];
+
   for(size_t s=0; s < C; ++s)
     F[s]=f+s*np;
+
+  if(!Inplace)
+    for(size_t s=0; s < C; ++s)
+      G[s]=g+s*np;
 
   Complex *h0=NULL;
   if(Test || Direct) {
@@ -260,12 +275,12 @@ int main(int argc, char *argv[])
     if(Normalized) mult=multbinary;
     else mult=multbinaryUnNormalized;
 ;
-    ExplicitConvolution C(n,m,F[0]);
+    ExplicitConvolution C(n,m,F[0],G[0]);
     double sum=0.0;
     while(sum <= K || T.size() < minCount) {
       init(F,m,A);
       double t0=nanoseconds();
-      C.convolve(F,mult);
+      C.convolve(F,mult,G);
 //      C.convolve(F[0],F[1]);
       double t=nanoseconds()-t0;
       T.push_back(t);

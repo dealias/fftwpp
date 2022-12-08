@@ -68,39 +68,41 @@ void multbinaryUnNormalized(double **F, size_t n, size_t threads)
     );
 }
 
-void ExplicitConvolution::backwards(Complex *f)
+void ExplicitConvolution::backwards(Complex *F, Complex *G)
 {
-  Backwards->fft(f);
+  Backwards->fft(F,G);
 }
 
-void ExplicitConvolution::forwards(Complex *f)
+void ExplicitConvolution::forwards(Complex *G, Complex *F)
 {
-  Forwards->fft(f);
+  Forwards->fft(G,F);
 }
 
-void ExplicitConvolution::convolve(Complex **F, Multiplier *mult)
+void ExplicitConvolution::convolve(Complex **F, Multiplier *mult, Complex **G)
 {
+  if(G == NULL) G=F;
+
   const size_t A=2;
   const size_t B=1;
 
   for(size_t a=0; a < A; ++a) {
     pad(F[a]);
-    backwards(F[a]);
+    backwards(F[a],G[a]);
   }
 
-  (*mult)(F,n,threads);
+  (*mult)(G,n,threads);
 
   for(size_t b=0; b < B; ++b)
-    forwards(F[b]);
+    forwards(G[b],F[b]);
 }
 
 void ExplicitConvolution::convolve(Complex *f, Complex *g)
 {
   pad(f);
-  backwards(f);
+  backwards(f,f);
 
   pad(g);
-  backwards(g);
+  backwards(g,g);
 
   double ninv=1.0/n;
 
@@ -110,35 +112,38 @@ void ExplicitConvolution::convolve(Complex *f, Complex *g)
     for(size_t k=0; k < n; ++k)
       STORE(f+k,Ninv*ZMULT(LOAD(f+k),LOAD(g+k)));
     );
-  forwards(f);
+  forwards(f,f);
 }
 
-void ExplicitHConvolution::backwards(Complex *f)
+void ExplicitHConvolution::backwards(Complex *F, double *G)
 {
-  cr->fft(f);
+  cr->fft(F,G);
 }
 
-void ExplicitHConvolution::forwards(Complex *f)
+void ExplicitHConvolution::forwards(double *G, Complex *F)
 {
-  rc->fft(f);
+  rc->fft(G,F);
 }
 
-void ExplicitHConvolution::convolve(Complex **F, Realmultiplier *mult)
+void ExplicitHConvolution::convolve(Complex **F, Realmultiplier *mult, double **G)
 {
+  if(G == NULL) G=(double **) F;
+
   const size_t A=2;
   const size_t B=1;
 
   for(size_t a=0; a < A; ++a) {
     pad(F[a]);
-    backwards(F[a]);
+    backwards(F[a],G[a]);
   }
 
-  (*mult)((double **) F,n,threads);
+  (*mult)(G,n,threads);
 
   for(size_t b=0; b < B; ++b)
-    forwards(F[b]);
+    forwards(G[b],F[b]);
 }
 
+/*
 void ExplicitHConvolution::convolve(Complex *f, Complex *g)
 {
   pad(f);
@@ -159,6 +164,7 @@ void ExplicitHConvolution::convolve(Complex *f, Complex *g)
 
   forwards(f);
 }
+*/
 
 void ExplicitConvolution2::backwards(Complex *f)
 {

@@ -119,6 +119,7 @@ int main(int argc, char *argv[])
   bool Explicit=false;
   bool Output=false;
   bool Normalized=true;
+  bool Inplace=true;
 
   double K=1.0; // Time limit (seconds)
   size_t minCount=20;
@@ -134,7 +135,7 @@ int main(int argc, char *argv[])
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptA:B:K:Om:n:uS:T:X:");
+    int c = getopt(argc,argv,"hdeiptA:B:I:K:Om:n:uS:T:X:");
     if (c == -1) break;
 
     switch (c) {
@@ -150,6 +151,9 @@ int main(int argc, char *argv[])
       case 'i':
         Implicit=true;
         Explicit=false;
+        break;
+      case 'I':
+        Inplace=atoi(optarg) > 0;
         break;
       case 'p':
         break;
@@ -213,11 +217,21 @@ int main(int argc, char *argv[])
   if(B < 1)
     B=1;
 
+  if(!Explicit)
+    Inplace=false;
+
   size_t C=max(A,B);
   Complex *f=ComplexAlign(C*np);
+  double *g=Inplace ? (double *) f : doubleAlign(C*n);
   Complex **F=new Complex *[C];
+  double **G=Inplace ? NULL : new double *[C*n];
+
   for(size_t s=0; s < C; ++s)
     F[s]=f+s*np;
+
+  if(!Inplace)
+    for(size_t s=0; s < C; ++s)
+      G[s]=g+s*n;
 
   Complex *h0=NULL;
   if(Test || Direct) {
@@ -288,7 +302,7 @@ int main(int argc, char *argv[])
   }
 
   if(Explicit) {
-    ExplicitHConvolution C(n,m,f);
+    ExplicitHConvolution C(n,m,f,g);
     Realmultiplier *mult;
     if(Normalized) mult=multbinary;
     else mult=multbinaryUnNormalized;
@@ -297,7 +311,7 @@ int main(int argc, char *argv[])
     while(sum <= K || T.size() < minCount) {
       init(F,m,2);
       double t0=nanoseconds();
-      C.convolve(F,mult);
+      C.convolve(F,mult,G);
 //      C.convolve(F[0],F[1]);
       double t=nanoseconds()-t0;
       T.push_back(t);
