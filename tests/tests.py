@@ -385,7 +385,7 @@ def getcmd(program, vals, T, R):
       cmd+=["-S"+str(x.S), "-C"+str(x.C)]
   cmd+=["-T="+str(T)]
   if T > 1:
-    cmd+=["-threshold","1"]
+    cmd+=["-threshold","0"]
   cmd+=["-E"]
   if R:
     cmd+=["-R"]

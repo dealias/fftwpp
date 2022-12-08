@@ -3,6 +3,7 @@
 #include "fftw++.h"
 
 using namespace std;
+using namespace utils;
 
 namespace utils {
 int ALIGNMENT=2*sizeof(Complex); // Must be a multiple of sizeof(Complex)
@@ -69,11 +70,11 @@ fftw_plan Planner(fftw *F, Complex *in, Complex *out)
 
 size_t parallelLoop(Complex *A, size_t m, size_t threads)
 {
+  auto T0=std::chrono::steady_clock::now();
   PARALLEL(
     for(size_t k=0; k < m; ++k)
       A[k]=k;
     );
-  auto T0=std::chrono::steady_clock::now();
   PARALLEL(
     for(size_t k=0; k < m; ++k)
       A[k] *= k;
@@ -86,29 +87,32 @@ size_t parallelLoop(Complex *A, size_t m, size_t threads)
 }
 
 const size_t maxThreshold=1 << 24;
-size_t threshold=SIZE_MAX;
+size_t threshold=0;
+size_t lastThreads=SIZE_MAX;
 
-size_t Threshold(size_t threads)
+size_t measureThreshold(size_t threads)
 {
   if(threads > 1) {
     for(size_t m=1; m < maxThreshold; m *= 2) {
-      Complex *A=utils::ComplexAlign(m);
+      Complex *A=ComplexAlign(m);
       if(!A)
         break;
       if(parallelLoop(A,m,threads) < parallelLoop(A,m,1))
         return m;
-      utils::deleteAlign(A);
+      deleteAlign(A);
     }
   }
   return maxThreshold;
 }
 
-void Threshold()
+void Threshold(size_t threads)
 {
-  if(threshold == SIZE_MAX) {
-    threshold=1;
+  if(threads > 1 && threads < lastThreads) {
+    statistics S(true);
     for(size_t i=0; i < 10; ++i)
-      threshold=max(threshold,Threshold(fftw::maxthreads));
+      S.add(measureThreshold(threads));
+    threshold=S.median();
+    lastThreads=threads;
   }
 }
 

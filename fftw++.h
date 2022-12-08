@@ -91,7 +91,7 @@ typedef std::complex<double> Complex;
 namespace fftwpp {
 
 extern size_t threshold;
-void Threshold();
+extern size_t lastThreads;
 
 // Obsolete names:
 #define FFTWComplex ComplexAlign
@@ -172,7 +172,7 @@ public:
   }
 };
 
-size_t Threshold(size_t threads);
+void Threshold(size_t threads);
 
 // Base clase for fft routines
 //
@@ -340,7 +340,7 @@ public:
     out=CheckAlign(in,out);
     inplace=(out==in);
 
-    Threshold();
+    Threshold(threads);
     if(doubles < 2*threshold)
       threads=1;
 
@@ -356,7 +356,7 @@ public:
   }
 
   void Setup(Complex *in, double *out) {
-    Threshold();
+    Threshold(threads);
     if(doubles < 4*threshold)
       threads=1;
 
@@ -364,7 +364,7 @@ public:
   }
 
   void Setup(double *in, Complex *out=NULL) {
-    Threshold();
+    Threshold(threads);
     if(doubles < 4*threshold)
       threads=1;
 
@@ -509,7 +509,7 @@ public:
     size /= sizeof(double);
     length *= size;
 
-    Threshold();
+    Threshold(threads);
     if(length*rows*cols/2 < threshold)
       threads=1;
 
@@ -653,11 +653,13 @@ public:
     Q=M;
     R=0;
 
+    if(Threads > M && M > 1) Threads=M;
+
     threads=Threads;
     Setup(in,out);
     Threads=threads;
 
-    size_t T0=std::min(M,Threads);
+    size_t T0=Threads;
     if(T0 > 1) {
       size_t nxp=nx/2+1;
       size_t olength=0;

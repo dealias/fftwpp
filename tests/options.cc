@@ -183,7 +183,8 @@ void optionsHybrid(int argc, char *argv[], bool fft)
         fftw::maxthreads=Atoi(optarg);
         break;
       case THRESHOLD:
-        threshold=Atoi(optarg);
+        threshold=Atoi(optarg,0);
+        lastThreads=0;
         break;
       case 'c':
         Centered=true;

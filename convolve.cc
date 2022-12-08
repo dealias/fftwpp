@@ -469,6 +469,9 @@ void fftPad::init()
       BR="backwardExplicitMany";
       fftm=new mfft1d(m,1,C, S,1, G,H,threads);
       ifftm=new mfft1d(m,-1,C, S,1, H,G,threads);
+
+      if(fftm->Threads() > 1)
+        threads=fftm->Threads();
     }
 
     deleteAlign(G);
@@ -507,6 +510,17 @@ void fftPad::init()
     H=inplace ? G : ComplexAlign(size);
 
     overwrite=inplace && L == p*m && n == (centered ? 3 : p+1) && D == 1;
+
+    if(S == 1) {
+      fftm=new mfft1d(m,1,d, 1,m, G,H,threads);
+      ifftm=new mfft1d(m,-1,d, 1,m, H,G,threads);
+    } else {
+      fftm=new mfft1d(m,1,C, S,1, G,H,threads);
+      ifftm=new mfft1d(m,-1,C, S,1, H,G,threads);
+    }
+
+    if(fftm->Threads() > 1)
+      threads=fftm->Threads();
 
     if(p > 2) { // Implies L > 2m
       if(!centered) overwrite=false;
@@ -596,14 +610,6 @@ void fftPad::init()
     D0=Q % D;
     if(D0 == 0) D0=D;
 
-    if(S == 1) {
-      fftm=new mfft1d(m,1,d, 1,m, G,H,threads);
-      ifftm=new mfft1d(m,-1,d, 1,m, H,G,threads);
-    } else {
-      fftm=new mfft1d(m,1,C, S,1, G,H,threads);
-      ifftm=new mfft1d(m,-1,C, S,1, H,G,threads);
-    }
-
     if(D0 != D) {
       size_t x=D0*P;
       fftm0=new mfft1d(m,1,x, 1,Sm, G,H,threads);
@@ -616,7 +622,9 @@ void fftPad::init()
     deleteAlign(G);
 
     initZetaqm(q,centered && p == 2 ? m+1 : m);
+
   }
+
   if(showRoutines && (q != 1 || !centered)) {
     char const* cent=centered ? "Centered" : "";
     char const* all=overwrite ? "All" : "";
@@ -4428,6 +4436,9 @@ void fftPadHermitian::init()
       BR="backwardExplicitMany";
       crfftm=new mcrfft1d(m,C, C,C, 1,1, G,H,threads);
       rcfftm=new mrcfft1d(m,C, C,C, 1,1, H,G,threads);
+
+      if(crfftm->Threads() > 1)
+        threads=crfftm->Threads();
     }
 
     if(!inplace)
@@ -4497,6 +4508,9 @@ void fftPadHermitian::init()
       crfftm=new mcrfft1d(m,d, C,C, 1,1, G,H,threads);
       rcfftm=new mrcfft1d(m,d, C,C, 1,1, H,G,threads);
     }
+
+    if(crfftm->Threads() > 1)
+      threads=crfftm->Threads();
 
     if(!inplace)
       deleteAlign(H);
