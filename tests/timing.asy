@@ -120,7 +120,7 @@ if(explicito) {
   lo *= no;
   if(drawerrorbars)
     errorbars(mo,o,0*mo,ho-o,0*mo,o-lo,Pen(2));
-  draw(graph(mi,i,i > 0),Pentype(3),Label("explicito",Pen(2)+Lp),mark3);
+  draw(graph(mo,o,i > 0),Pentype(3),Label("explicito",Pen(2)+Lp),mark3);
 }
 
 if(implicit) {
