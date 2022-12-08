@@ -53,7 +53,7 @@ def callTiming(args,program, erase,taskset,runtype=None):
   if runtype != None:
     cmd+=[f"-r{runtype}"]
     cmdLine+=f" -r{runtype}"
-  print(cmdLine)
+  print(cmdLine,flush=True)
   run(cmd)
 
 def time(args,d,Hermitian, T):
