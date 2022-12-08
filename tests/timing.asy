@@ -9,10 +9,12 @@ drawerrorbars=false;
 
 scale(Log,Linear);
 real[] me,e,le,he;
+real[] mo,o,lo,ho;
 real[] mi,i,li,hi;
 real[] mh,h,lh,hh;
 real[] mp,p,lp,hp;
 
+bool explicito = false;
 string base,dir;
 bool title=true;
 
@@ -34,6 +36,16 @@ if(expl) {
   real[][] a=fin.dimension(0,0);
   a=transpose(sort(a));
   me=a[0]; e=a[1]; le=a[2]; he=a[3];
+}
+
+if(d == 1) {
+  file fin=input(base+"/"+dir+"/explicito").line();
+  explicito=!error(fin);
+  if(explicito) {
+    real[][] a=fin.dimension(0,0);
+    a=transpose(sort(a));
+    mo=a[0]; o=a[1]; lo=a[2]; ho=a[3];
+  }
 }
 
 file fin=input(base+"/"+dir+"/implicit").line();
@@ -98,6 +110,17 @@ if(expl) {
       errorbars(mp,p,0*mp,hp-p,0*mp,p-lp,Pen(3));
     draw(graph(mp,p,p > 0),Pentype(3)+Dotted,Label(prunelabel,Pen(2)+Lp),mark3);
   }
+}
+
+if(explicito) {
+  real[] no=f(mo);
+  mo=g(mo);
+  o *= no;
+  ho *= no;
+  lo *= no;
+  if(drawerrorbars)
+    errorbars(mo,o,0*mo,ho-o,0*mo,o-lo,Pen(2));
+  draw(graph(mi,i,i > 0),Pentype(3),Label("explicito",Pen(2)+Lp),mark3);
 }
 
 if(implicit) {
