@@ -2052,13 +2052,13 @@ void fftPad::backwardInnerMany(Complex *F, Complex *f, size_t r,
   }
 }
 
-void fftPadCentered::init(bool fast)
+void fftPadCentered::init()
 {
   ZetaShift=NULL;
   char const *FR;
   char const *BR;
   if(q == 1) {
-    if(M % 2 == 0 && fast) {
+    if(M % 2 == 0) {
       if(S == 1) {
         Forward=&fftBase::forwardExplicitFast;
         Backward=&fftBase::backwardExplicitFast;

@@ -597,19 +597,18 @@ public:
   fftPadCentered(size_t L, size_t M, size_t C,
                  size_t S, size_t m, size_t q,
                  size_t D, bool inplace, multiplier *mult,
-                 size_t threads=fftw::maxthreads, bool fast=true) :
+                 size_t threads=fftw::maxthreads) :
     fftPad(L,M,C,S,m,q,D,inplace,mult,threads,true) {
     Opt opt;
     if(q > 1 && !opt.valid(D,p,this->S)) invalid();
-    init(fast);
+    init();
   }
 
   // Normal entry point.
   // Compute C ffts of length L and distance 1 padded to at least M
   fftPadCentered(size_t L, size_t M, Application& app,
-                 size_t C=1, size_t S=0, bool Explicit=false,
-                 bool fast=true) :
-    fftPad(L,M,C,S,app.mult,app.threads,true) {
+                 size_t C=1, size_t S=0, bool Explicit=false) :
+    fftPad(L,M,C,S,app.mult,app.threads) {
     Opt opt=Opt(L,M,app,C,this->S,Explicit);
     m=opt.m;
     if(Explicit)
@@ -619,7 +618,7 @@ public:
     inplace=opt.inplace;
     threads=opt.threads;
     fftPad::init();
-    init(fast);
+    init();
   }
 
   bool embed() {
@@ -633,7 +632,7 @@ public:
 
   bool conjugates() {return D > 1 && (p == 1 || p % 2 == 0);}
 
-  void init(bool fast);
+  void init();
 
   double time(Application& app) {
     double threshold=DBL_MAX;
