@@ -608,7 +608,7 @@ public:
   // Compute C ffts of length L and distance 1 padded to at least M
   fftPadCentered(size_t L, size_t M, Application& app,
                  size_t C=1, size_t S=0, bool Explicit=false) :
-    fftPad(L,M,C,S,app.mult,app.threads) {
+    fftPad(L,M,C,S,app.mult,app.threads,true) {
     Opt opt=Opt(L,M,app,C,this->S,Explicit);
     m=opt.m;
     if(Explicit)

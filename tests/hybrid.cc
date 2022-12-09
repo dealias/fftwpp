@@ -76,8 +76,7 @@ int main(int argc, char *argv[])
       f[S*j+c]=Complex(j+1+c,j+2+c);
 
 #if Centered
-  fftPadCentered fft2(L,fft.M,C,S,fft.M,1,1,1,app.mult,
-                      fftw::maxthreads,fft.q == 1);
+  fftPadCentered fft2(L,fft.M,C,S,fft.M,1,1,1,app.mult);
 #else
   fftPad fft2(L,fft.M,C,S,fft.M,1,1,1,app.mult);
 #endif
