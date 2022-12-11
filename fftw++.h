@@ -71,14 +71,17 @@ inline int get_max_threads()
 #endif
 
 #ifndef FFTWPP_SINGLE_THREAD
-#define PARALLELIF(condition,code)                      \
-  if(threads > 1 && condition) {                        \
-    _Pragma("omp parallel for num_threads(threads)")    \
-      code                                              \
+#define OMPIF(condition,directive,code)    \
+  if(threads > 1 && condition) {             \
+    _Pragma(directive)                             \
+      code                                   \
       } else {code}
 #else
-#define PARALLELIF(condition,code) {code}
+#define OMPIF(condition,directive,code) {code}
 #endif
+
+#define PARALLELIF(condition,code) \
+  OMPIF(condition,"omp parallel for num_threads(threads)",code)
 
 #ifndef __Complex_h__
 #include <complex>
