@@ -504,27 +504,12 @@ def main(argv):
             else:
                 comment += "\t" + extracomment
             comment += "\n"
+            filenameMessage=comment
 
             hybridParamsMessage="#\n#\n# Run on "+date+" using commit "+gitcommit+":\n"
-            if(appendtofile):
-                with open(filename, "a") as myfile:
-                    myfile.write(comment)
-                if hybrid:
-                    with open(optFile,"a") as logfile:
-                        logfile.write(hybridParamsMessage)
-            else:
-                if stats == -1:
-                    with open("timing.dat", "w") as myfile:
-                        myfile.write(comment)
-                else:
-                    with open(filename, "w") as myfile:
-                        myfile.write(comment)
-                    if hybrid:
-                        with open(optFile,"w") as logfile:
-                            logfile.write("# Optimal values for "+p+"\n")
-                            logfile.write(hybridParamsMessage)
 
 
+        newdata=False
         for i in range(a,b+1,1 if I == 0 else I):
             if I != 0:
                 m=i
@@ -579,6 +564,25 @@ def main(argv):
                 dothism = False
 
             if dothism:
+                if newdata == False:
+                    newdata=True
+                    if(appendtofile):
+                        with open(filename, "a") as myfile:
+                            myfile.write(comment)
+                        if hybrid:
+                            with open(optFile,"a") as logfile:
+                                logfile.write(hybridParamsMessage)
+                    else:
+                        if stats == -1:
+                            with open("timing.dat", "w") as myfile:
+                                myfile.write(filenameMessage)
+                        else:
+                            with open(filename, "w") as myfile:
+                                myfile.write(filenameMessage)
+                            if hybrid:
+                                with open(optFile,"w") as logfile:
+                                    logfile.write("# Optimal values for "+p+"\n")
+                                    logfile.write(hybridParamsMessage)
                 if hybrid:
                     mcmd=cmd+["-L"+str(L)]+["-M"+str(M)]
                 else:
