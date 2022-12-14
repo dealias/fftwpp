@@ -175,9 +175,7 @@ double time(fftBase *fft, Application &app, double &threshold)
 {
   size_t N=max(app.A,app.B);
   size_t inputSize=fft->inputSize();
-
-  size_t size=fft->embed() ? fft->outputSize() : inputSize;
-  Complex **f=ComplexAlign(N,size);
+  Complex **f=ComplexAlign(N,inputSize);
 
   // Initialize entire array to 0 to avoid overflow when timing.
   for(size_t a=0; a < app.A; ++a) {
@@ -186,7 +184,7 @@ double time(fftBase *fft, Application &app, double &threshold)
       fa[j]=0.0;
   }
 
-  Convolution Convolve(fft,app.Embed() ? f : NULL);
+  Convolution Convolve(fft,f);
 
   statistics Stats(true);
   statistics medianStats(false);
@@ -348,7 +346,6 @@ void fftBase::OptBase::scan(size_t L, size_t M, Application& app,
   m=M;
   q=1;
   D=1;
-  threads=app.threads;
   inplace=false;
   T=DBL_MAX;
   threshold=T;
@@ -391,7 +388,7 @@ void fftBase::OptBase::scan(size_t L, size_t M, Application& app,
   cout << "S=" << S << endl;
   cout << "D=" << D << endl;
   cout << "I=" << inplace << endl;
-  cout << "threads=" << threads << endl;
+  cout << "threads=" << app.threads << endl;
   cout << endl;
   cout << "Padding: " << mpL << endl;
 
@@ -518,19 +515,29 @@ void fftPad::init()
     if(p > 2) { // Implies L > 2m
       if(!centered) overwrite=false;
       if(S == 1) {
-        Forward=&fftBase::forwardInner;
-        Backward=&fftBase::backwardInner;
-        ForwardAll=&fftBase::forwardInnerAll;
-        BackwardAll=&fftBase::backwardInnerAll;
-        FR="forwardInner";
-        BR="backwardInner";
+        if(Overwrite()) {
+          Forward=&fftBase::forwardInnerAll;
+          Backward=&fftBase::backwardInnerAll;
+          FR="forwardInnerAll";
+          BR="backwardInnerAll";
+        } else {
+          Forward=&fftBase::forwardInner;
+          Backward=&fftBase::backwardInner;
+          FR="forwardInner";
+          BR="backwardInner";
+        }
       } else {
-        Forward=&fftBase::forwardInnerMany;
-        Backward=&fftBase::backwardInnerMany;
-        ForwardAll=&fftBase::forwardInnerManyAll;
-        BackwardAll=&fftBase::backwardInnerManyAll;
-        FR="forwardInnerMany";
-        BR="backwardInnerMany";
+        if(Overwrite()) {
+          Forward=&fftBase::forwardInnerManyAll;
+          Backward=&fftBase::backwardInnerManyAll;
+          FR="forwardInnerManyAll";
+          BR="backwardInnerManyAll";
+        } else {
+          Forward=&fftBase::forwardInnerMany;
+          Backward=&fftBase::backwardInnerMany;
+          FR="forwardInnerMany";
+          BR="backwardInnerMany";
+        }
       }
       Q=n;
 
@@ -560,37 +567,57 @@ void fftPad::init()
         }
 
         if(S == 1) {
-          Forward=&fftBase::forward2;
-          Backward=&fftBase::backward2;
-          ForwardAll=&fftBase::forward2All;
-          BackwardAll=&fftBase::backward2All;
-          FR="forward2";
-          BR="backward2";
+          if(Overwrite()) {
+            Forward=&fftBase::forward2All;
+            Backward=&fftBase::backward2All;
+            FR="forward2All";
+            BR="backward2All";
+          } else {
+            Forward=&fftBase::forward2;
+            Backward=&fftBase::backward2;
+            FR="forward2";
+            BR="backward2";
+          }
         } else {
-          Forward=&fftBase::forward2Many;
-          Backward=&fftBase::backward2Many;
-          ForwardAll=&fftBase::forward2ManyAll;
-          BackwardAll=&fftBase::backward2ManyAll;
-          FR="forward2Many";
-          BR="backward2Many";
+          if(Overwrite()) {
+            Forward=&fftBase::forward2ManyAll;
+            Backward=&fftBase::backward2ManyAll;
+            FR="forward2ManyAll";
+            BR="backward2ManyAll";
+          } else {
+            Forward=&fftBase::forward2Many;
+            Backward=&fftBase::backward2Many;
+            FR="forward2Many";
+            BR="backward2Many";
+          }
         }
       } else { // p == 1
         if(S == 1) {
-          Forward=&fftBase::forward1;
-          Backward=&fftBase::backward1;
-          ForwardAll=&fftBase::forward1All;
-          BackwardAll=&fftBase::backward1All;
-          FR="forward1";
-          BR="backward1";
+          if(Overwrite()) {
+            Forward=&fftBase::forward1All;
+            Backward=&fftBase::backward1All;
+            FR="forward1All";
+            BR="backward1All";
+          } else {
+            Forward=&fftBase::forward1;
+            Backward=&fftBase::backward1;
+            FR="forward1";
+            BR="backward1";
+          }
           if(repad())
             Pad=&fftBase::padSingle;
         } else {
-          Forward=&fftBase::forward1Many;
-          Backward=&fftBase::backward1Many;
-          ForwardAll=&fftBase::forward1ManyAll;
-          BackwardAll=&fftBase::backward1ManyAll;
-          FR="forward1Many";
-          BR="backward1Many";
+          if(Overwrite()) {
+            Forward=&fftBase::forward1ManyAll;
+            Backward=&fftBase::backward1ManyAll;
+            FR="forward1ManyAll";
+            BR="backward1ManyAll";
+          } else {
+            Forward=&fftBase::forward1Many;
+            Backward=&fftBase::backward1Many;
+            FR="forward1Many";
+            BR="backward1Many";
+}
           if(repad())
             Pad=&fftBase::padMany;
         }
@@ -619,11 +646,9 @@ void fftPad::init()
   }
   if(showRoutines && (q != 1 || !centered)) {
     char const* cent=centered ? "Centered" : "";
-    char const* all=overwrite ? "All" : "";
-    cout << endl << "Forwards Routine: " << "fftPad" << cent << "::" << FR << all << endl;
-    cout << "Backwards Routine: " << "fftPad" << cent << "::" << BR << all << endl;
-    if(overwrite)
-      cout << "Note: If A < B, then the 'All' versions aren't used." << endl;
+    cout << endl;
+    cout << "Forwards Routine: " << "fftPad" << cent << "::" << FR << endl;
+    cout << "Backwards Routine: " << "fftPad" << cent << "::" << BR << endl;
   }
 }
 
@@ -5577,10 +5602,8 @@ Convolution::~Convolution()
     delete fft;
 }
 
-// f is an array of max(A,B) pointers to distinct data blocks
-// each of size fft->length()
-// offset is applied to each input and output component
-
+// g is an array of max(A,B) pointers to distinct data blocks
+// each of size fft->inputSize()
 void Convolution::convolveRaw(Complex **g)
 {
   if(q == 1) {
@@ -5588,7 +5611,7 @@ void Convolution::convolveRaw(Complex **g)
     (*mult)(F,blocksize,&indices,threads);
     backward(F,g,0,0,B,W);
   } else {
-    if(overwrite) {
+    if(fft->Overwrite()) {
       forward(g,F,0,0,A);
       size_t final=fft->n-1;
       for(size_t r=0; r < final; ++r) {

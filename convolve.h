@@ -103,12 +103,11 @@ public:
   size_t m;
   size_t D;
   ptrdiff_t I;
-  bool embed; // Allow embedding of FFT output into input buffer?
 
   Application(size_t A, size_t B, multiplier *mult=multNone,
               size_t threads=fftw::maxthreads, size_t n=0,
               size_t m=0, size_t D=0, ptrdiff_t I=-1) :
-    ThreadBase(threads), A(A), B(B), mult(mult), m(m), D(D), I(I), embed(true)
+    ThreadBase(threads), A(A), B(B), mult(mult), m(m), D(D), I(I)
   {
     if(n == 0)
       multithread(threads);
@@ -117,14 +116,6 @@ public:
       this->threads=innerthreads;
     }
   };
-
-  void Embed(bool b) {
-    embed=b;
-  }
-
-  bool Embed() {
-    return embed;
-  }
 };
 
 class fftBase : public ThreadBase {
@@ -150,7 +141,6 @@ public:
   bool centered;
   bool overwrite;
   FFTcall Forward,Backward;
-  FFTcall ForwardAll,BackwardAll;
   FFTPad Pad;
 protected:
   Complex *Zetaqp;
@@ -172,7 +162,6 @@ public:
     size_t counter=0;
     size_t m,q,D;
     bool inplace;
-    size_t threads;
     bool mForced;
     typedef std::list<size_t> mList;
     mList mlist;
@@ -408,8 +397,8 @@ public:
     return count;
   }
 
-  bool loop2(size_t A, size_t B) {
-    return nloops() == 2 && A > B && !Overwrite(A,B);
+  bool loop2() {
+    return nloops() == 2 && app.A > app.B && !Overwrite();
   }
 
   virtual size_t dataSize() {
@@ -435,8 +424,8 @@ public:
     return b*(r == 0 ? D0 : D);
   }
 
-  size_t workSizeV(size_t A, size_t B) {
-    return nloops() == 1 || loop2(A,B) ? 0 : inputSize();
+  size_t workSizeV() {
+    return nloops() == 1 || loop2() ? 0 : inputSize();
   }
 
   virtual size_t workSizeW() {
@@ -452,8 +441,8 @@ public:
     return !inplace && L < m;
   }
 
-  bool Overwrite(size_t A, size_t B) {
-    return overwrite && A >= B;
+  bool Overwrite() {
+    return overwrite && app.A >= app.B;
   }
 
   virtual double time(Application& app)=0;
@@ -512,8 +501,7 @@ public:
   // Compute C ffts of length L with stride S >= C and distance 1
   // padded to at least M
   fftPad(size_t L, size_t M, Application& app,
-         size_t C=1, size_t S=0, bool Explicit=false,
-         bool centered=false) :
+         size_t C=1, size_t S=0, bool Explicit=false, bool centered=false) :
     fftBase(L,M,app,C,S,Explicit,centered) {
     Opt opt=Opt(L,M,app,C,this->S,Explicit);
     m=opt.m;
@@ -522,7 +510,6 @@ public:
     q=opt.q;
     D=opt.D;
     inplace=opt.inplace;
-    threads=opt.threads;
     init();
   }
 
@@ -621,7 +608,6 @@ public:
     q=opt.q;
     D=opt.D;
     inplace=opt.inplace;
-    threads=opt.threads;
     fftPad::init();
     init();
   }
@@ -733,7 +719,6 @@ public:
     q=opt.q;
     D=opt.D;
     inplace=opt.inplace;
-    threads=opt.threads;
     init();
   }
 
@@ -803,7 +788,6 @@ protected:
   bool allocateW;
   size_t nloops;
   bool loop2;
-  bool overwrite;
   size_t inputSize;
   FFTcall Forward,Backward;
   FFTPad Pad;
@@ -815,7 +799,7 @@ public:
   // F: optional array of max(A,B) work arrays of size fft->outputSize()
   // W: optional work array of size fft->workSizeW();
   //    call pad() if changed between calls to convolve()
-  // V: optional work array of size B*fft->workSizeV(A,B)
+  // V: optional work array of size B*fft->workSizeV()
   //   (only needed for inplace usage)
   Convolution(fftBase *fft, Complex **f,
               Complex **F=NULL, Complex *W=NULL, Complex *V=NULL) :
@@ -834,14 +818,8 @@ public:
     q=fft->q;
     Q=fft->Q;
 
-    overwrite=fft->Overwrite(A,B);
-    if(overwrite) {
-      Forward=fft->ForwardAll;
-      Backward=fft->BackwardAll;
-    } else {
-      Forward=fft->Forward;
-      Backward=fft->Backward;
-    }
+    Forward=fft->Forward;
+    Backward=fft->Backward;
 
     blocksize=fft->noutputs();
     R=fft->residueBlocks();
@@ -862,7 +840,7 @@ public:
       allocateV=false;
       if(V) {
         this->V=new Complex*[B];
-        size_t size=fft->workSizeV(A,B);
+        size_t size=fft->workSizeV();
         for(size_t i=0; i < B; ++i)
           this->V[i]=V+i*size;
       } else
@@ -872,7 +850,7 @@ public:
       (fft->*Pad)(W);
 
       nloops=fft->nloops();
-      loop2=fft->loop2(A,B);
+      loop2=fft->loop2();
       size_t extra;
       if(loop2) {
         r=fft->increment(0);
@@ -901,7 +879,7 @@ public:
   void initV() {
     allocateV=true;
     V=new Complex*[B];
-    size_t size=fft->workSizeV(A,B);
+    size_t size=fft->workSizeV();
     for(size_t i=0; i < B; ++i)
       V[i]=utils::ComplexAlign(size);
   }
@@ -1085,7 +1063,6 @@ protected:
   FFTcall Forward,Backward;
   FFTPad Pad;
   size_t nloops;
-  bool overwrite;
 public:
   Indices indices;
 
@@ -1093,20 +1070,16 @@ public:
   // F: optional array of max(A,B) work arrays of size fftx->outputSize()
   // W: optional work array of size fftx->workSizeW();
   //    call fftx->pad() if W changed between calls to convolve()
-  // V: optional work array of size B*fftx->workSizeV(A,B)
+  // V: optional work array of size B*fftx->workSizeV()
   Convolution2(fftBase *fftx, fftBase *ffty, Complex **f,
                Complex **F=NULL, Complex *W=NULL, Complex *V=NULL) :
     ThreadBase(fftx->Threads()), fftx(fftx), ffty(ffty),
     A(fftx->app.A), B(fftx->app.B), mult(fftx->app.mult),
     W(W), allocateF(false), allocateW(false) {
-//    multithread(fftx->l);
-
-    Convolution *convolvey=new Convolution(ffty,NULL);
-
     this->convolvey=new Convolution*[threads];
-    this->convolvey[0]=convolvey;
-    for(size_t t=1; t < threads; ++t)
+    for(size_t t=0; t < threads; ++t)
       this->convolvey[t]=new Convolution(ffty,NULL);
+
     if(fftx->embed()) F=f;
     init(F,V);
   }
@@ -1116,14 +1089,8 @@ public:
   }
 
   void init(Complex **F=NULL, Complex *V=NULL) {
-    overwrite=fftx->Overwrite(A,B);
-    if(overwrite) {
-      Forward=fftx->ForwardAll;
-      Backward=fftx->BackwardAll;
-    } else {
-      Forward=fftx->Forward;
-      Backward=fftx->Backward;
-    }
+    Forward=fftx->Forward;
+    Backward=fftx->Backward;
 
     size_t outputSize=fftx->outputSize();
     size_t workSizeW=fftx->workSizeW();
@@ -1150,7 +1117,7 @@ public:
     (fftx->*Pad)(W);
 
     nloops=fftx->nloops();
-    loop2=fftx->loop2(A,B);
+    loop2=fftx->loop2();
     size_t extra;
     if(loop2) {
       r=fftx->increment(0);
@@ -1171,7 +1138,7 @@ public:
 
     if(V) {
       this->V=new Complex*[B];
-      size_t size=fftx->workSizeV(A,B);
+      size_t size=fftx->workSizeV();
       for(size_t i=0; i < B; ++i)
         this->V[i]=V+i*size;
     } else
@@ -1181,7 +1148,7 @@ public:
   void initV() {
     allocateV=true;
     V=new Complex*[B];
-    size_t size=fftx->workSizeV(A,B);
+    size_t size=fftx->workSizeV();
     for(size_t i=0; i < B; ++i)
       V[i]=utils::ComplexAlign(size);
   }
@@ -1259,7 +1226,7 @@ public:
     for(size_t t=0; t < threads; ++t)
       convolvey[t]->indices.copy(indices,1);
 
-    if(overwrite) {
+    if(fftx->Overwrite()) {
       forward(f,F,0,0,A,offset);
       size_t final=fftx->n-1;
       for(size_t r=0; r < final; ++r)
@@ -1349,7 +1316,6 @@ protected:
   FFTcall Forward,Backward;
   FFTPad Pad;
   size_t nloops;
-  bool overwrite;
 public:
   Indices indices;
 
@@ -1357,19 +1323,14 @@ public:
   // F: optional array of max(A,B) work arrays of size fftx->outputSize()
   // W: optional work array of size fftx->workSizeW();
   //    call fftx->pad() if W changed between calls to convolve()
-  // V: optional work array of size B*fftx->workSizeV(A,B)
+  // V: optional work array of size B*fftx->workSizeV()
   Convolution3(fftBase *fftx, fftBase *ffty, fftBase *fftz, Complex **f,
                Complex **F=NULL, Complex *W=NULL, Complex *V=NULL) :
     ThreadBase(fftx->Threads()), fftx(fftx), ffty(ffty), fftz(fftz),
     A(fftx->app.A), B(fftx->app.B), mult(fftx->app.mult),
     W(W), allocateF(false), allocateW(false) {
-//    multithread(fftx->l);
-
-    Convolution2 *convolveyz=new Convolution2(ffty,fftz,NULL);
-
     this->convolveyz=new Convolution2*[threads];
-    this->convolveyz[0]=convolveyz;
-    for(size_t t=1; t < threads; ++t)
+    for(size_t t=0; t < threads; ++t)
       this->convolveyz[t]=new Convolution2(ffty,fftz,NULL);
 
     if(fftx->embed()) F=f;
@@ -1381,14 +1342,8 @@ public:
   }
 
   void init(Complex **F=NULL, Complex *V=NULL) {
-    overwrite=fftx->Overwrite(A,B);
-    if(overwrite) {
-      Forward=fftx->ForwardAll;
-      Backward=fftx->BackwardAll;
-    } else {
-      Forward=fftx->Forward;
-      Backward=fftx->Backward;
-    }
+    Forward=fftx->Forward;
+    Backward=fftx->Backward;
 
     size_t outputSize=fftx->outputSize();
     size_t workSizeW=fftx->workSizeW();
@@ -1427,7 +1382,7 @@ public:
     (fftx->*Pad)(W);
 
     nloops=fftx->nloops();
-    loop2=fftx->loop2(A,B);
+    loop2=fftx->loop2();
     size_t extra;
     if(loop2) {
       r=fftx->increment(0);
@@ -1448,7 +1403,7 @@ public:
 
     if(V) {
       this->V=new Complex*[B];
-      size_t size=fftx->workSizeV(A,B);
+      size_t size=fftx->workSizeV();
       for(size_t i=0; i < B; ++i)
         this->V[i]=V+i*size;
     } else
@@ -1458,7 +1413,7 @@ public:
   void initV() {
     allocateV=true;
     V=new Complex*[B];
-    size_t size=fftx->workSizeV(A,B);
+    size_t size=fftx->workSizeV();
     for(size_t i=0; i < B; ++i)
       V[i]=utils::ComplexAlign(size);
   }
@@ -1559,7 +1514,7 @@ public:
     for(size_t t=0; t < threads; ++t)
       convolveyz[t]->indices.copy(indices,2);
 
-    if(overwrite) {
+    if(fftx->Overwrite()) {
       forward(f,F,0,0,A,offset);
       size_t final=fftx->n-1;
       for(size_t r=0; r < final; ++r)
