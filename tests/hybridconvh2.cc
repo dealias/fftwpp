@@ -42,18 +42,13 @@ int main(int argc, char *argv[])
   if(Sx == 0) Sx=Hy;
 
   vector<double> T;
-  size_t N=max(A,B);
 
   Application appx(A,B,multNone,fftw::maxthreads,0,mx,Dx,Ix);
   fftPadCentered fftx(Lx,Mx,appx,Hy,Sx);
-  bool embed=fftx.embed();
-  size_t size=embed ? fftx.outputSize() : fftx.inputSize();
-  Complex **f=ComplexAlign(N,size);
+  Complex **f=ComplexAlign(max(A,B),fftx.inputSize());
   Application appy(A,B,realmultbinary,appx.Threads(),fftx.l,my,Dy,Iy);
-  ConvolutionHermitian convolvey(Ly,My,appy);
-  ConvolutionHermitian2 Convolve2(&fftx,&convolvey,embed ? f : NULL);
-
-//  ConvolutionHermitian2 Convolve2(Lx,Mx,Ly,My,A,B);
+  fftPadHermitian ffty(Ly,My,appy);
+  Convolution2 Convolve2(&fftx,&ffty,f);
 
   for(size_t a=0; a < A; ++a) {
     Complex *fa=f[a];

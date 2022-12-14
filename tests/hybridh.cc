@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 
   cout << "Explicit:" << endl;
   // Minimal explicit padding
-  fftPadHermitian fft0(L,M,C,M,1,1,1,app.mult);
+  fftPadHermitian fft0(L,M,C,M,1,1,1,app);
 
   double median0=fft0.report(app);
 
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
     for(size_t c=0; c < C; ++c)
       f[C*j+c]=Complex(j+1+c,j+2+c);
 
-  fftPadHermitian fft2(L,fft.M,C,fft.M,1,1,1,app.mult);
+  fftPadHermitian fft2(L,fft.M,C,fft.M,1,1,1,app);
 
   Complex *F2=ComplexAlign(fft2.outputSize());
   double *F2r=(double *) F2;
@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
   if(Output) {
     cout << endl;
     cout << "Inverse:" << endl;
-    for(size_t j=0; j < fft.inputSize(); ++j)
+    for(size_t j=0; j < fft.dataSize(); ++j)
       cout << h[j]*scale << endl;
     cout << endl;
   }
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
     fft.backward(F,h,r,W0);
   }
 
-  for(size_t j=0; j < fft.inputSize(); ++j) {
+  for(size_t j=0; j < fft.dataSize(); ++j) {
     error2 += abs2(h[j]*scale-f[j]);
     norm2 += abs2(f[j]);
   }

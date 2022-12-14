@@ -34,14 +34,11 @@ int main(int argc, char *argv[])
   K *= 1.0e9;
 
   vector<double> T;
-  size_t N=max(A,B);
 
   Application app(A,B,multbinary,fftw::maxthreads,0,mx,Dx,Ix);
   fftBase *fft=Centered ? new fftPadCentered(L,M,app) : new fftPad(L,M,app);
-  bool embed=fft->embed();
-  size_t size=embed ? fft->outputSize() : fft->inputSize();
-  Complex **f=ComplexAlign(N,size);
-  Convolution Convolve(fft,A,B,embed ? f : NULL);
+  Complex **f=ComplexAlign(max(A,B),fft->inputSize());
+  Convolution Convolve(fft,f);
 
   for(size_t a=0; a < A; ++a) {
     Complex *fa=f[a];

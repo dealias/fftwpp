@@ -186,7 +186,7 @@ double time(fftBase *fft, Application &app, double &threshold)
       fa[j]=0.0;
   }
 
-  Convolution Convolve(fft,app.A,app.B,fft->embed() ? f : NULL);
+  Convolution Convolve(fft,app.Embed() ? f : NULL);
 
   statistics Stats(true);
   statistics medianStats(false);
@@ -212,11 +212,6 @@ double timePad(fftBase *fft, Application &app, double& threshold)
   return time<Convolution>(fft,app,threshold);
 }
 
-double timePadHermitian(fftBase *fft, Application &app, double& threshold)
-{
-  return time<ConvolutionHermitian>(fft,app,threshold);
-}
-
 void fftBase::OptBase::optloop(size_t& m, size_t L,
                                size_t M, Application& app,
                                size_t C, size_t S,
@@ -232,7 +227,6 @@ void fftBase::OptBase::optloop(size_t& m, size_t L,
     // P is the effective p value
     size_t P=(centered && p == 2*(p/2)) || p == 2 ? (p/2) : p;
     size_t n=ceilquotient(M,m*P);
-    //cout<<"inner="<<inner<<", p="<<p<<", P="<<P<<", n="<<n<<", centered="<<centered<<endl;
 
     if(!Explicit && app.m >= 1 && app.m < M && centered && p%2 != 0) {
       cerr << "Odd values of p are incompatible with the centered and Hermitian routines." << endl;
@@ -261,7 +255,7 @@ void fftBase::OptBase::optloop(size_t& m, size_t L,
         if(D > Dstop) D=Dstop;
         for(size_t inplace=Istart; inplace < Istop; ++inplace)
           if((q == 1 || valid(D,p,S)) && D <= n)
-            check(L,M,C,S,m,p,q,D,inplace,app.threads,app,useTimer);
+            check(L,M,C,S,m,p,q,D,inplace,app,useTimer);
       }
       if(mForced) break;
       if(inner) {
@@ -320,12 +314,11 @@ void fftBase::OptBase::opt(size_t L, size_t M, Application& app,
 void fftBase::OptBase::check(size_t L, size_t M,
                              size_t C, size_t S, size_t m,
                              size_t p, size_t q, size_t D,
-                             bool inplace, size_t threads,
-                             Application& app, bool useTimer)
+                             bool inplace, Application& app, bool useTimer)
 {
   //cout << "m=" << m << ", p=" << p << ", q=" << q << ", D=" << D << " I=" << inplace << endl;
   if(useTimer) {
-    double t=time(L,M,C,S,m,q,D,inplace,threads,app);
+    double t=time(L,M,C,S,m,q,D,inplace,app);
     if(showOptTimes)
       cout << "m=" << m << ", p=" << p << ", q=" << q << ", C=" << C << ", S=" << S << ", D=" << D << ", I=" << inplace << ": t=" << t*1.0e-9 << endl;
     if(t < T) {

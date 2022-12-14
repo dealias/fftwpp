@@ -39,16 +39,13 @@ int main(int argc, char *argv[])
   if(Sx == 0) Sx=Ly;
 
   vector<double> T;
-  size_t N=max(A,B);
 
   Application appx(A,B,multNone,fftw::maxthreads,0,mx,Dx,Ix);
   fftPad fftx(Lx,Mx,appx,Ly,Sx);
-  bool embed=fftx.embed();
-  size_t size=embed ? fftx.outputSize() : fftx.inputSize();
-  Complex **f=ComplexAlign(N,size);
+  Complex **f=ComplexAlign(max(A,B),fftx.inputSize());
   Application appy(A,B,multbinary,appx.Threads(),fftx.l,my,Dy,Iy);
-  Convolution convolvey(Ly,My,appy);
-  Convolution2 Convolve2(&fftx,&convolvey,embed ? f : NULL);
+  fftPad ffty(Ly,My,appy);
+  Convolution2 Convolve2(&fftx,&ffty,f);
 
 //  Convolution2 Convolve2(Lx,Mx,Ly,My,A,B);
 

@@ -39,22 +39,18 @@ int main(int argc, char *argv[])
   K *= 1.0e9;
 
   vector<double> T;
-  size_t N=max(A,B);
 
   if(Sy == 0) Sy=Lz;
   if(Sx == 0) Sx=Ly*Sy;
 
   Application appx(A,B,multNone,fftw::maxthreads,0,mx,Dx,Ix);
   fftPad fftx(Lx,Mx,appx,Sy == Lz? Ly*Lz : Lz,Sx);
-  bool embed=fftx.embed();
-  size_t size=embed ? fftx.outputSize() : fftx.inputSize();
-  Complex **f=ComplexAlign(N,size);
+  Complex **f=ComplexAlign(max(A,B),fftx.inputSize());
   Application appy(A,B,multNone,appx.Threads(),fftx.l,my,Dy,Iy);
   fftPad ffty(Ly,My,appy,Lz,Sy);
   Application appz(A,B,multbinary,appy.Threads(),ffty.l,mz,Dz,Iz);
-  Convolution convolvez(Lz,Mz,appz);
-  Convolution2 convolveyz(&ffty,&convolvez);
-  Convolution3 Convolve3(&fftx,&convolveyz,embed ? f : NULL);
+  fftPad fftz(Lz,Mz,appz);
+  Convolution3 Convolve3(&fftx,&ffty,&fftz,f);
 
 //  Convolution3 Convolve3(Lx,Mx,Ly,My,Lz,Mz,A,B);
 

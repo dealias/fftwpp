@@ -37,14 +37,11 @@ int main(int argc, char *argv[])
   size_t H=ceilquotient(L,2);
 
   vector<double> T;
-  size_t N=max(A,B);
 
   Application app(A,B,realmultbinary,fftw::maxthreads,0,mx,Dx,Ix);
   fftPadHermitian fft(L,M,app);
-  bool embed=fft.embed();
-  size_t size=embed ? fft.outputSize() : fft.inputSize();
-  Complex **f=ComplexAlign(N,size);
-  ConvolutionHermitian Convolve(&fft,A,B,embed ? f : NULL);
+  Complex **f=ComplexAlign(max(A,B),fft.inputSize());
+  Convolution Convolve(&fft,f);
 
   for(size_t a=0; a < A; ++a) {
     Complex *fa=f[a];

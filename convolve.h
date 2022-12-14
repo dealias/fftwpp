@@ -103,11 +103,13 @@ public:
   size_t m;
   size_t D;
   ptrdiff_t I;
+  bool embed; // Allow embedding of FFT output into input buffer?
 
   Application(size_t A, size_t B, multiplier *mult=multNone,
               size_t threads=fftw::maxthreads, size_t n=0,
               size_t m=0, size_t D=0, ptrdiff_t I=-1) :
-    ThreadBase(threads), A(A), B(B), mult(mult), m(m), D(D), I(I) {
+    ThreadBase(threads), A(A), B(B), mult(mult), m(m), D(D), I(I), embed(true)
+  {
     if(n == 0)
       multithread(threads);
     else {
@@ -115,6 +117,14 @@ public:
       this->threads=innerthreads;
     }
   };
+
+  void Embed(bool b) {
+    embed=b;
+  }
+
+  bool Embed() {
+    return embed;
+  }
 };
 
 class fftBase : public ThreadBase {
@@ -136,7 +146,7 @@ public:
   size_t b;  // total block size, including stride
   size_t l;  // block size of a single FFT
   bool inplace;
-  multiplier *mult;
+  Application app;
   bool centered;
   bool overwrite;
   FFTcall Forward,Backward;
@@ -171,8 +181,7 @@ public:
 
     virtual double time(size_t L, size_t M, size_t C,
                         size_t S, size_t m, size_t q,
-                        size_t D, bool inplace, size_t threads,
-                        Application &app)=0;
+                        size_t D, bool inplace, Application &app)=0;
 
     virtual bool valid(size_t D, size_t p, size_t S) {
       return D == 1 || S == 1;
@@ -183,8 +192,7 @@ public:
     void check(size_t L, size_t M,
                size_t C, size_t S, size_t m,
                size_t p, size_t q, size_t D,
-               bool inplace, size_t threads, Application& app,
-               bool useTimer);
+               bool inplace,  Application& app, bool useTimer);
 
     // Determine the optimal m value for padding L data values to
     // size >= M for an application app.
@@ -224,24 +232,22 @@ public:
   }
 
   fftBase(size_t L, size_t M, size_t C, size_t S,
-          multiplier *mult, size_t threads=fftw::maxthreads,
-          bool centered=false) :
-    ThreadBase(threads), L(L), M(M), C(C),  S(S == 0 ? C : S),
-    mult(mult), centered(centered) {checkParameters();}
+          Application &app, bool centered=false) :
+    ThreadBase(app.threads), L(L), M(M), C(C),  S(S == 0 ? C : S),
+    app(app), centered(centered) {checkParameters();}
 
   fftBase(size_t L, size_t M, size_t C, size_t S,
           size_t m, size_t q, size_t D, bool inplace,
-          multiplier *mult, size_t threads=fftw::maxthreads,
-          bool centered=false) :
-    ThreadBase(threads), L(L), M(M), C(C),  S(S == 0 ? C : S), m(m),
-    p(utils::ceilquotient(L,m)), q(q), D(D), inplace(inplace), mult(mult),
-    centered(centered) {checkParameters();}
+          Application &app, bool centered=false) :
+    ThreadBase(app.threads), L(L), M(M), C(C),  S(S == 0 ? C : S), m(m),
+    p(utils::ceilquotient(L,m)), q(q), D(D), inplace(inplace),
+    app(app), centered(centered) {checkParameters();}
 
   fftBase(size_t L, size_t M, Application& app,
           size_t C=1, size_t S=0, bool Explicit=false,
           bool centered=false) :
     ThreadBase(app.threads), L(L), M(M), C(C), S(S == 0 ? C : S),
-    mult(app.mult), centered(centered) {checkParameters();}
+    app(app), centered(centered) {checkParameters();}
 
   virtual ~fftBase();
 
@@ -406,8 +412,12 @@ public:
     return nloops() == 2 && A > B && !Overwrite(A,B);
   }
 
-  virtual size_t inputSize() {
+  virtual size_t dataSize() {
     return S*L;
+  }
+
+  size_t inputSize() {
+    return embed() ? std::max(dataSize(),outputSize()) : dataSize();
   }
 
   // Number of complex outputs per residue per copy
@@ -435,7 +445,7 @@ public:
 
   // Allow input data to be embedded within output buffer.
   virtual bool embed() {
-    return q == 1 || (p == 1 && nloops() == 1);
+    return (q == 1 || (p <= 2 && nloops() == 1)) && threads == 1;
   }
 
   size_t repad() {
@@ -456,7 +466,7 @@ public:
 };
 
 typedef double timer(fftBase *fft, Application &app, double& threshold);
-timer timePad,timePadHermitian;
+timer timePad;
 
 class fftPad : public fftBase {
 protected:
@@ -478,24 +488,21 @@ public:
     }
 
     double time(size_t L, size_t M, size_t C, size_t S,
-                size_t m, size_t q,size_t D,
-                bool inplace, size_t threads, Application &app) {
-      fftPad fft(L,M,C,S,m,q,D,inplace,app.mult,threads);
+                size_t m, size_t q,size_t D, bool inplace, Application &app) {
+      fftPad fft(L,M,C,S,m,q,D,inplace,app);
       return timePad(&fft,app,threshold);
     }
   };
 
   fftPad(size_t L, size_t M, size_t C, size_t S,
-         multiplier *mult, size_t threads=fftw::maxthreads,
-         bool centered=false) :
-    fftBase(L,M,C,S,mult,threads,centered) {}
+         Application &app, bool centered=false) :
+    fftBase(L,M,C,S,app,centered) {}
 
   // Compute an fft padded to N=m*q >= M >= L
   fftPad(size_t L, size_t M, size_t C, size_t S,
          size_t m, size_t q, size_t D, bool inplace,
-         multiplier *mult, size_t threads=fftw::maxthreads,
-         bool centered=false) :
-    fftBase(L,M,C,S,m,q,D,inplace,mult,threads,centered) {
+         Application &app, bool centered=false) :
+    fftBase(L,M,C,S,m,q,D,inplace,app,centered) {
     Opt opt;
     if(q > 1 && !opt.valid(D,p,this->S)) invalid();
     init();
@@ -586,9 +593,8 @@ public:
     }
 
     double time(size_t L, size_t M, size_t C, size_t S,
-                size_t m, size_t q, size_t D,
-                bool inplace, size_t threads, Application &app) {
-      fftPadCentered fft(L,M,C,S,m,q,D,inplace,app.mult,threads);
+                size_t m, size_t q, size_t D, bool inplace, Application &app) {
+      fftPadCentered fft(L,M,C,S,m,q,D,inplace,app);
       return timePad(&fft,app,threshold);
     }
   };
@@ -596,9 +602,8 @@ public:
   // Compute an fft padded to N=m*q >= M >= L
   fftPadCentered(size_t L, size_t M, size_t C,
                  size_t S, size_t m, size_t q,
-                 size_t D, bool inplace, multiplier *mult,
-                 size_t threads=fftw::maxthreads) :
-    fftPad(L,M,C,S,m,q,D,inplace,mult,threads,true) {
+                 size_t D, bool inplace, Application &app) :
+    fftPad(L,M,C,S,m,q,D,inplace,app,true) {
     Opt opt;
     if(q > 1 && !opt.valid(D,p,this->S)) invalid();
     init();
@@ -608,7 +613,7 @@ public:
   // Compute C ffts of length L and distance 1 padded to at least M
   fftPadCentered(size_t L, size_t M, Application& app,
                  size_t C=1, size_t S=0, bool Explicit=false) :
-    fftPad(L,M,C,S,app.mult,app.threads,true) {
+    fftPad(L,M,C,S,app,true) {
     Opt opt=Opt(L,M,app,C,this->S,Explicit);
     m=opt.m;
     if(Explicit)
@@ -703,18 +708,16 @@ public:
     }
 
     double time(size_t L, size_t M, size_t C, size_t,
-                size_t m, size_t q, size_t D,
-                bool inplace, size_t threads, Application &app) {
-      fftPadHermitian fft(L,M,C,m,q,D,inplace,app.mult,threads);
-      return timePadHermitian(&fft,app,threshold);
+                size_t m, size_t q, size_t D, bool inplace, Application &app) {
+      fftPadHermitian fft(L,M,C,m,q,D,inplace,app);
+      return timePad(&fft,app,threshold);
     }
   };
 
   fftPadHermitian(size_t L, size_t M, size_t C,
                   size_t m, size_t q, size_t D,
-                  bool inplace, multiplier *mult,
-                  size_t threads=fftw::maxthreads) :
-    fftBase(L,M,C,C,m,q,D,inplace,mult,threads,true) {
+                  bool inplace, Application &app) :
+    fftBase(L,M,C,C,m,q,D,inplace,app,true) {
     Opt opt;
     if(q > 1 && !opt.valid(D,p,C)) invalid();
     init();
@@ -740,7 +743,7 @@ public:
 
   double time(Application& app) {
     double threshold=DBL_MAX;
-    return timePadHermitian(this,app,threshold);
+    return timePad(this,app,threshold);
   }
 
   void forwardExplicit(Complex *f, Complex *F, size_t, Complex *W);
@@ -769,7 +772,7 @@ public:
     return inplace ? 0 : B*D;
   }
 
-  size_t inputSize() {
+  size_t dataSize() {
     return C*utils::ceilquotient(L,2);
   }
 };
@@ -807,47 +810,18 @@ protected:
 public:
   Indices indices;
 
-  Convolution() :
-    ThreadBase(), q(1), W(NULL), allocate(false),
-    allocateF(false), allocateW(false), loop2(false) {}
-
-  Convolution(Application &app) :
-    ThreadBase(app.threads), A(app.A), B(app.B), mult(app.mult),
-    q(1), W(NULL), allocate(false), allocateF(false),
-    allocateW(false) {}
-
-  Convolution(size_t L, size_t M, Application &app) :
-    ThreadBase(app.threads), A(app.A), B(app.B), mult(app.mult), W(NULL), allocate(true) {
-    fft=new fftPad(L,M,app);
-    init();
-  }
-
-  // L: dimension of input data
-  // M: dimension of transformed data, including padding
-  // A: number of inputs.
-  // B: number of outputs.
-  Convolution(size_t L, size_t M,
-              size_t A, size_t B, multiplier *mult,
-              size_t threads=fftw::maxthreads) :
-    ThreadBase(threads), A(A), B(B), mult(mult), W(NULL), allocate(true) {
-    Application app(A,B,mult,threads);
-    fft=new fftPad(L,M,app);
-    init();
-  }
-
   // fft: precomputed fftPad
-  // A: number of inputs
-  // B: number of outputs
+  // f: array of max(A,B) arrays of size fft->inputSize()
   // F: optional array of max(A,B) work arrays of size fft->outputSize()
   // W: optional work array of size fft->workSizeW();
   //    call pad() if changed between calls to convolve()
   // V: optional work array of size B*fft->workSizeV(A,B)
   //   (only needed for inplace usage)
-  Convolution(fftBase *fft, size_t A, size_t B,
-              Complex **F=NULL, Complex *W=NULL,
-              Complex *V=NULL) : ThreadBase(fft->Threads()), fft(fft),
-                                 A(A), B(B), mult(fft->mult), W(W),
-                                 allocate(false) {
+  Convolution(fftBase *fft, Complex **f,
+              Complex **F=NULL, Complex *W=NULL, Complex *V=NULL) :
+    ThreadBase(fft->Threads()), fft(fft),
+    A(fft->app.A), B(fft->app.B), mult(fft->app.mult), W(W), allocate(false) {
+    if(fft->embed()) F=f;
     init(F,V);
   }
 
@@ -996,43 +970,6 @@ public:
 
 };
 
-class ConvolutionHermitian : public Convolution {
-public:
-  ConvolutionHermitian(size_t L, size_t M, Application &app) :
-    Convolution() {
-    threads=app.threads;
-    A=app.A;
-    B=app.B;
-    mult=app.mult;
-    fft=new fftPadHermitian(L,M,app);
-    init();
-  }
-
-  // A: number of inputs.
-  // B: number of outputs.
-  // F: optional array of max(A,B) work arrays of size fft->outputSize()
-  // W: optional work array of size fft->workSizeW();
-  //    if changed between calls to convolve(), be sure to call pad()
-  // V: optional work array of size B*fft->workSizeV(A,B)
-  //    (for inplace usage)
-  ConvolutionHermitian(size_t L, size_t M,
-                       size_t A, size_t B, multiplier *mult,
-                       size_t threads=fftw::maxthreads) :
-    Convolution() {
-    this->threads=threads;
-    this->A=A;
-    this->B=B;
-    this->mult=mult;
-    Application app(A,B,mult,threads);
-    fft=new fftPadHermitian(L,M,app);
-    init();
-  }
-
-  ConvolutionHermitian(fftBase *fft, size_t A, size_t B,
-                       Complex **F=NULL, Complex *W=NULL, Complex *V=NULL) :
-    Convolution(fft,A,B,F,W,V) {}
-};
-
 // Enforce 2D Hermiticity using specified (x >= 0,y=0) data.
 inline void HermitianSymmetrizeX(size_t Hx, size_t Hy,
                                  size_t x0, Complex *f,
@@ -1152,44 +1089,25 @@ protected:
 public:
   Indices indices;
 
-  Convolution2(size_t threads=fftw::maxthreads) :
-    ThreadBase(threads), ffty(NULL), convolvey(NULL), V(NULL),
-    W(NULL), allocateF(false), allocateV(false), allocateW(false),
-    loop2(false) {}
-
-  // Lx,Ly: x,y dimensions of input data
-  // Mx,My: x,y dimensions of transformed data, including padding
-  // A: number of inputs
-  // B: number of outputs
-  Convolution2(size_t Lx, size_t Mx,
-               size_t Ly, size_t My,
-               size_t A, size_t B, multiplier *mult,
-               size_t threads=fftw::maxthreads) :
-    ThreadBase(threads), mult(mult), W(NULL) {
-    Application appx(A,B,multNone,threads);
-    fftx=new fftPad(Lx,Mx,appx,Ly);
-    Application appy(A,B,mult,threads,fftx->l);
-    ffty=new fftPad(Ly,My,appy);
-    convolvey=new Convolution*[threads];
-    for(size_t t=0; t < threads; ++t)
-      convolvey[t]=new Convolution(ffty,A,B);
-    init();
-  }
-
+  // f: array of max(A,B) arrays of size fftx->inputSize()
   // F: optional array of max(A,B) work arrays of size fftx->outputSize()
   // W: optional work array of size fftx->workSizeW();
   //    call fftx->pad() if W changed between calls to convolve()
   // V: optional work array of size B*fftx->workSizeV(A,B)
-  Convolution2(fftBase *fftx, Convolution *convolvey,
+  Convolution2(fftBase *fftx, fftBase *ffty, Complex **f,
                Complex **F=NULL, Complex *W=NULL, Complex *V=NULL) :
-    ThreadBase(fftx->Threads()), fftx(fftx), ffty(NULL),
-    mult(fftx->mult), W(W), allocateF(false), allocateW(false) {
-    multithread(fftx->l);
+    ThreadBase(fftx->Threads()), fftx(fftx), ffty(ffty),
+    A(fftx->app.A), B(fftx->app.B), mult(fftx->app.mult),
+    W(W), allocateF(false), allocateW(false) {
+//    multithread(fftx->l);
+
+    Convolution *convolvey=new Convolution(ffty,NULL);
+
     this->convolvey=new Convolution*[threads];
     this->convolvey[0]=convolvey;
     for(size_t t=1; t < threads; ++t)
-      this->convolvey[t]=new Convolution(convolvey->fft,
-                                         convolvey->A,convolvey->B);
+      this->convolvey[t]=new Convolution(ffty,NULL);
+    if(fftx->embed()) F=f;
     init(F,V);
   }
 
@@ -1198,9 +1116,6 @@ public:
   }
 
   void init(Complex **F=NULL, Complex *V=NULL) {
-    A=convolvey[0]->A;
-    B=convolvey[0]->B;
-
     overwrite=fftx->Overwrite(A,B);
     if(overwrite) {
       Forward=fftx->ForwardAll;
@@ -1291,17 +1206,9 @@ public:
     if(loop2)
       delete [] Fp;
 
-    if(ffty) {
-      delete convolvey[0];
-      delete ffty;
-      delete fftx;
-    }
-
-    if(convolvey) {
-      for(size_t t=1; t < threads; ++t)
-        delete convolvey[t];
-      delete [] convolvey;
-    }
+    for(size_t t=0; t < threads; ++t)
+      delete convolvey[t];
+    delete [] convolvey;
   }
 
   void forward(Complex **f, Complex **F, size_t rx,
@@ -1413,50 +1320,6 @@ public:
   }
 };
 
-class ConvolutionHermitian2 : public Convolution2 {
-public:
-  ConvolutionHermitian2(size_t Lx, size_t Mx,
-                        size_t Ly, size_t My,
-                        size_t A, size_t B, multiplier *mult,
-                        size_t threads=fftw::maxthreads) :
-    Convolution2(threads) {
-    this->mult=mult;
-    size_t Hy=utils::ceilquotient(Ly,2);
-    Application appx(A,B,multNone,threads);
-    fftx=new fftPadCentered(Lx,Mx,appx,Hy);
-    Application appy(A,B,mult,threads,fftx->l);
-    ffty=new fftPadHermitian(Ly,My,appy);
-    convolvey=new Convolution*[threads];
-    for(size_t t=0; t < threads; ++t)
-      convolvey[t]=new ConvolutionHermitian(ffty,A,B);
-    init();
-  }
-
-  // F: optional array of max(A,B) work arrays of size fftx->outputSize()
-  // W is an optional work array of size fftx->workSizeW(),
-  //    call fftx->pad() if changed between calls to convolve()
-  // V is an optional work array of size B*fftx->workSizeV(A,B)
-  ConvolutionHermitian2(fftPadCentered *fftx,
-                        ConvolutionHermitian *convolvey,
-                        Complex **F=NULL, Complex *W=NULL, Complex *V=NULL) :
-    Convolution2(fftx->Threads()) {
-    this->fftx=fftx;
-    this->mult=fftx->mult;
-    multithread(fftx->l);
-    this->convolvey=new Convolution*[threads];
-    this->convolvey[0]=convolvey;
-    for(size_t t=1; t < threads; ++t)
-      this->convolvey[t]=new ConvolutionHermitian(convolvey->fft,
-                                                  convolvey->A,convolvey->B);
-    this->W=W;
-    init(F,V);
-  }
-
-  ConvolutionHermitian2(fftBase *fftx,  Convolution *convolvey,
-                        Complex **F=NULL, Complex *W=NULL, Complex *V=NULL) :
-    Convolution2(fftx,convolvey,F,W,V) {}
-};
-
 class Convolution3 : public ThreadBase {
 public:
   fftBase *fftx,*ffty,*fftz;
@@ -1490,58 +1353,26 @@ protected:
 public:
   Indices indices;
 
-  Convolution3(size_t threads=fftw::maxthreads) :
-    ThreadBase(threads), fftz(NULL), convolvez(NULL), convolveyz(NULL),
-    W(NULL), allocateF(false), allocateV(false), allocateW(false),
-    loop2(false) {}
-
-  // Lx,Ly,Lz: x,y,z dimensions of input data
-  // Mx,My,Mz: x,y,z dimensions of transformed data, including padding
-  // A: number of inputs
-  // B: number of outputs
-  Convolution3(size_t Lx, size_t Mx,
-               size_t Ly, size_t My,
-               size_t Lz, size_t Mz,
-               size_t A, size_t B, multiplier *mult,
-               size_t threads=fftw::maxthreads) :
-    ThreadBase(threads), mult(mult), W(NULL), allocateW(false) {
-    Application appx(A,B,multNone,threads);
-    fftx=new fftPad(Lx,Mx,appx,Ly*Lz);
-    Application appy(A,B,multNone,appx.Threads(),fftx->l);
-    ffty=new fftPad(Ly,My,appy,Lz);
-    Application appz(A,B,mult,appy.Threads(),ffty->l);
-    fftz=new fftPad(Lz,Mz,appz);
-    convolvez=new Convolution*[threads];
-    for(size_t t=0; t < threads; ++t)
-      convolvez[t]=new Convolution(fftz,A,B);
-    convolveyz=new Convolution2*[threads];
-    for(size_t t=0; t < threads; ++t)
-      convolveyz[t]=new Convolution2(ffty,convolvez[t]);
-    init();
-  }
-
+  // f: array of max(A,B) arrays of size fftx->inputSize()
   // F: optional array of max(A,B) work arrays of size fftx->outputSize()
   // W: optional work array of size fftx->workSizeW();
   //    call fftx->pad() if W changed between calls to convolve()
   // V: optional work array of size B*fftx->workSizeV(A,B)
-  Convolution3(fftBase *fftx, Convolution2 *convolveyz,
+  Convolution3(fftBase *fftx, fftBase *ffty, fftBase *fftz, Complex **f,
                Complex **F=NULL, Complex *W=NULL, Complex *V=NULL) :
-    ThreadBase(fftx->Threads()), fftx(fftx), fftz(NULL), mult(fftx->mult),
-    W(W), allocateW(false) {
-    multithread(fftx->l);
+    ThreadBase(fftx->Threads()), fftx(fftx), ffty(ffty), fftz(fftz),
+    A(fftx->app.A), B(fftx->app.B), mult(fftx->app.mult),
+    W(W), allocateF(false), allocateW(false) {
+//    multithread(fftx->l);
 
-    fftBase *fftz=convolveyz->convolvey[0]->fft;
-    convolvez=new Convolution*[threads];
-    convolvez[0]=convolveyz->convolvey[0];
-    for(size_t t=1; t < threads; ++t)
-      convolvez[t]=new Convolution(fftz,convolveyz->A,convolveyz->B);
+    Convolution2 *convolveyz=new Convolution2(ffty,fftz,NULL);
 
-    ffty=convolveyz->fftx;
     this->convolveyz=new Convolution2*[threads];
     this->convolveyz[0]=convolveyz;
     for(size_t t=1; t < threads; ++t)
-      this->convolveyz[t]=new Convolution2(ffty,convolvez[t]);
+      this->convolveyz[t]=new Convolution2(ffty,fftz,NULL);
 
+    if(fftx->embed()) F=f;
     init(F,V);
   }
 
@@ -1550,9 +1381,6 @@ public:
   }
 
   void init(Complex **F=NULL, Complex *V=NULL) {
-    A=convolveyz[0]->A;
-    B=convolveyz[0]->B;
-
     overwrite=fftx->Overwrite(A,B);
     if(overwrite) {
       Forward=fftx->ForwardAll;
@@ -1655,25 +1483,9 @@ public:
     if(loop2)
       delete [] Fp;
 
-    if(fftz) {
-      delete convolveyz[0];
-      delete convolvez[0];
-      delete fftz;
-      delete ffty;
-      delete fftx;
-    }
-
-    if(convolveyz) {
-      for(size_t t=1; t < threads; ++t)
-        delete convolveyz[t];
-      delete [] convolveyz;
-    }
-
-    if(convolvez) {
-      for(size_t t=1; t < threads; ++t)
-        delete convolvez[t];
-      delete [] convolvez;
-    }
+    for(size_t t=0; t < threads; ++t)
+      delete convolveyz[t];
+    delete [] convolveyz;
   }
 
   void forward(Complex **f, Complex **F, size_t rx,
@@ -1811,65 +1623,6 @@ public:
     convolveRaw(f,offset);
     normalize(f,offset);
   }
-};
-
-class ConvolutionHermitian3 : public Convolution3 {
-public:
-  ConvolutionHermitian3(size_t Lx, size_t Mx,
-                        size_t Ly, size_t My,
-                        size_t Lz, size_t Mz,
-                        size_t A, size_t B, multiplier *mult,
-                        size_t threads=fftw::maxthreads) :
-    Convolution3(threads) {
-    size_t Hz=utils::ceilquotient(Lz,2);
-    this->mult=mult;
-
-    Application appx(A,B,multNone,threads);
-    fftx=new fftPadCentered(Lx,Mx,appx,Ly*Hz);
-    Application appy(A,B,multNone,appx.Threads(),fftx->l);
-    ffty=new fftPadCentered(Ly,My,appy,Hz);
-    Application appz(A,B,mult,appy.Threads(),ffty->l);
-    fftz=new fftPadHermitian(Lz,Mz,appz);
-    convolvez=new Convolution*[threads];
-    for(size_t t=0; t < threads; ++t)
-      convolvez[t]=new ConvolutionHermitian(fftz,A,B);
-    convolveyz=new Convolution2*[threads];
-    for(size_t t=0; t < threads; ++t)
-      convolveyz[t]=new ConvolutionHermitian2(ffty,convolvez[t]);
-    init();
-  }
-
-  // F: optional array of max(A,B) work arrays of size fftx->outputSize()
-  // W: optional work array of size fftx->workSizeW(),
-  //    call fftx->pad() if changed between calls to convolve()
-  // V: optional work array of size B*fftx->workSizeV(A,B)
-  ConvolutionHermitian3(fftPadCentered *fftx,
-                        ConvolutionHermitian2 *convolveyz,
-                        Complex **F=NULL, Complex *W=NULL, Complex *V=NULL) :
-    Convolution3(fftx->Threads()) {
-    this->fftx=fftx;
-    this->mult=fftx->mult;
-    multithread(fftx->l);
-
-    fftBase *fftz=convolveyz->convolvey[0]->fft;
-    convolvez=new Convolution*[threads];
-    convolvez[0]=convolveyz->convolvey[0];
-    for(size_t t=1; t < threads; ++t)
-      convolvez[t]=new ConvolutionHermitian(fftz,convolveyz->A,convolveyz->B);
-
-    ffty=convolveyz->fftx;
-    this->convolveyz=new Convolution2*[threads];
-    this->convolveyz[0]=convolveyz;
-    for(size_t t=1; t < threads; ++t)
-      this->convolveyz[t]=new ConvolutionHermitian2(convolveyz->fftx,
-                                                    convolvez[t]);
-    this->W=W;
-    init(F,V);
-  }
-
-  ConvolutionHermitian3(fftBase *fftx, Convolution2 *convolveyz,
-                        Complex **F=NULL, Complex *W=NULL, Complex *V=NULL) :
-    Convolution3(fftx,convolveyz,F,W,V) {}
 };
 
 } //end namespace fftwpp

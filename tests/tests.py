@@ -242,7 +242,6 @@ def fillValues(program, minS, testS):
       Ss+=[minS+2]
     if dim == 3:
       Ss+=[minS+2]
-    print(Ss)
 
   for S in Ss:
     for L in Ls:
