@@ -5,9 +5,6 @@ using namespace utils;
 using namespace Array;
 using namespace fftwpp;
 
-size_t A=2; // number of inputs
-size_t B=1; // number of outputs
-
 int main(int argc, char *argv[])
 {
   L=512; // input data length
@@ -27,7 +24,8 @@ int main(int argc, char *argv[])
   if(S == 0) S=C;
   S=align(S);
 
-  Application app(A,B,multbinary,fftw::maxthreads,0,mx,Dx,Ix);
+// Disable overwrite optimization for these tests.
+  Application app(1,2,multNone,fftw::maxthreads,0,mx,Dx,Ix);
 
   cout << "Explicit:" << endl;
   // Minimal explicit padding

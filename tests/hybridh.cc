@@ -24,7 +24,8 @@ int main(int argc, char *argv[])
   cout << "L=" << L << endl;
   cout << "M=" << M << endl;
 
-  Application app(A,B,realmultbinary,fftw::maxthreads,0,mx,Dx,Ix);
+// Disable overwrite optimization for these tests.
+  Application app(1,2,multNone,fftw::maxthreads,0,mx,Dx,Ix);
 
   cout << "Explicit:" << endl;
   // Minimal explicit padding
