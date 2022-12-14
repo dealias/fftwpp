@@ -238,7 +238,7 @@ void fftBase::OptBase::optloop(size_t& m, size_t L,
     if(inner && (((!ispure(p) || p == P*n) && !mForced) || (centered && p%2 != 0)))
       i=m=nextpuresize(m+1);
     else {
-      bool forceD=app.D > 0 && valid(app.D,p,C);
+      bool forceD=app.D > 0 && valid(app.D, p, S);
       size_t q=(inner ? P*n : ceilquotient(M,m));
       size_t Dstart=forceD ? app.D : 1;
       size_t Dstop=forceD ? app.D : n;
@@ -252,7 +252,7 @@ void fftBase::OptBase::optloop(size_t& m, size_t L,
       for(size_t D=Dstart; D < Dstop2; D *= 2) {
         if(D > Dstop) D=Dstop;
         for(size_t inplace=Istart; inplace < Istop; ++inplace)
-          if((q == 1 || valid(D,p,C)) && D <= n)
+          if((q == 1 || valid(D,p,S)) && D <= n)
             check(L,M,C,S,m,p,q,D,inplace,app,useTimer);
       }
       if(mForced) break;
@@ -445,7 +445,7 @@ void fftPad::init()
   Complex *H=inplace ? G : ComplexAlign(Sm);
 
   if(q == 1) {
-    if(C == 1) {
+    if(S == 1) {
       Forward=&fftBase::forwardExplicit;
       Backward=&fftBase::backwardExplicit;
       FR="forwardExplicit";
@@ -501,7 +501,7 @@ void fftPad::init()
 
     overwrite=inplace && L == p*m && n == (centered ? 3 : p+1) && D == 1;
 
-    if(C == 1) {
+    if(S == 1) {
       fftm=new mfft1d(m,1,d, 1,m, G,H,threads);
       ifftm=new mfft1d(m,-1,d, 1,m, H,G,threads);
     } else {
@@ -514,7 +514,7 @@ void fftPad::init()
 
     if(p > 2) { // Implies L > 2m
       if(!centered) overwrite=false;
-      if(C == 1) {
+      if(S == 1) {
         if(Overwrite()) {
           Forward=&fftBase::forwardInnerAll;
           Backward=&fftBase::backwardInnerAll;
@@ -566,7 +566,7 @@ void fftPad::init()
               ZetaqmS[Lm*r+s]=expi(r*s*twopibyN);
         }
 
-        if(C == 1) {
+        if(S == 1) {
           if(Overwrite()) {
             Forward=&fftBase::forward2All;
             Backward=&fftBase::backward2All;
@@ -592,7 +592,7 @@ void fftPad::init()
           }
         }
       } else { // p == 1
-        if(C == 1) {
+        if(S == 1) {
           if(Overwrite()) {
             Forward=&fftBase::forward1All;
             Backward=&fftBase::backward1All;
@@ -654,7 +654,7 @@ void fftPad::init()
 
 fftPad::~fftPad() {
   if(q == 1) {
-    if(C == 1) {
+    if(S == 1) {
       delete fftm1;
       delete ifftm1;
     } else {
@@ -2076,7 +2076,7 @@ void fftPadCentered::init()
   char const *BR;
   if(q == 1) {
     if(M % 2 == 0) {
-      if(C == 1) {
+      if(S == 1) {
         Forward=&fftBase::forwardExplicitFast;
         Backward=&fftBase::backwardExplicitFast;
         FR="forwardExplicitFast";
@@ -2089,7 +2089,7 @@ void fftPadCentered::init()
       }
     } else {
       initShift();
-      if(C == 1) {
+      if(S == 1) {
         Forward=&fftBase::forwardExplicitSlow;
         Backward=&fftBase::backwardExplicitSlow;
         FR="forwardExplicitSlow";
