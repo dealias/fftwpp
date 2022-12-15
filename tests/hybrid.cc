@@ -22,7 +22,6 @@ int main(int argc, char *argv[])
   cout << "M=" << M << endl;
 
   if(S == 0) S=C;
-  S=align(S);
 
 // Disable overwrite optimization for these tests.
   Application app(1,2,multNone,fftw::maxthreads,0,mx,Dx,Ix);
