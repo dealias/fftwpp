@@ -220,10 +220,10 @@ int main(int argc, char *argv[])
     double sum=0.0;
     while(sum <= K || T.size() < minCount) {
       init(F,mx,my,nxp,nyp,A,xcompact,ycompact);
-      double t0=nanoseconds();
+      cpuTimer c;
       C.convolve(F,mult);
 //      C.convolve(f,g);
-      double t=nanoseconds()-t0;
+      double t=c.nanoseconds();
       T.push_back(t);
       sum += t;
     }
@@ -266,9 +266,9 @@ int main(int argc, char *argv[])
     double sum=0.0;
     while(sum <= K || T.size() < minCount) {
       init(F,mx,my,nxp,nyp,A,true,true);
-      double t0=nanoseconds();
+      cpuTimer c;
       C.convolve(F,F+M);
-      double t=nanoseconds()-t0;
+      double t=c.nanoseconds();
       T.push_back(t);
       sum += t;
     }
@@ -300,9 +300,9 @@ int main(int argc, char *argv[])
     array2<Complex> h(nxp,my,align);
     DirectHConvolution2 C(mx,my);
     init(F,mx,my,nxp,my,2,true,true);
-    double t0=nanoseconds();
+    cpuTimer c;
     C.convolve(h,F[0],F[1]);
-    T[0]=nanoseconds()-t0;
+    T[0]=c.nanoseconds();
 
     timings("Direct",(2*mx-1)*(2*my-1),T.data(),1);
     T.clear();

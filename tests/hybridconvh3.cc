@@ -84,13 +84,13 @@ int main(int argc, char *argv[])
   while(sum <= K || T.size() < minCount) {
     double t;
     if(normalized || testError) {
-      double t0=nanoseconds();
+      cpuTimer c;
       Convolve3.convolve(f);
-      t=nanoseconds()-t0;
+      t=c.nanoseconds();
     } else {
-      double t0=nanoseconds();
+      cpuTimer c;
       Convolve3.convolveRaw(f);
-      t=nanoseconds()-t0;
+      t=c.nanoseconds();
     }
     T.push_back(t);
     sum += t;

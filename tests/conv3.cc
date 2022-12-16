@@ -249,10 +249,10 @@ int main(int argc, char *argv[])
     double sum=0.0;
     while(sum <= K || T.size() < minCount) {
       init(F,mx,my,mz,nxp,nyp,nzp,A,xcompact,ycompact,zcompact);
-      double t0=nanoseconds();
+      cpuTimer c;
       C.convolve(F,mult);
 //      C.convolve(f,g);
-      double t=nanoseconds()-t0;
+      double t=c.nanoseconds();
       T.push_back(t);
       sum += t;
     }
@@ -299,16 +299,15 @@ int main(int argc, char *argv[])
 
     double sum=0.0;
     while(sum <= K || T.size() < minCount) {
-      double t0=nanoseconds();
+      cpuTimer c;
       f=0.0;
       g=0.0;
-      double t1=nanoseconds();
       // Conservative estimate accounting for extra zero padding above.
-      double Sum=(t1-t0)*19.0/27.0;
+      double Sum=c.nanoseconds()*19.0/27.0;
       init(F,mx,my,mz,nxp,nyp,nzp,A,true,true,true);
-      double t2=nanoseconds();
+      cpuTimer c2;
       C.convolve(F,F+M);
-      double t=Sum+nanoseconds()-t2;
+      double t=c2.nanoseconds()+Sum;
       T.push_back(t);
       sum += t;
     }
@@ -348,9 +347,9 @@ int main(int argc, char *argv[])
 
     DirectHConvolution3 C(mx,my,mz);
     init(F,mx,my,mz,nxp,nyp,mz,A,true,true,true);
-    double t0=nanoseconds();
+    cpuTimer c;
     C.convolve(h,F[0],F[1]);
-    T[0]=nanoseconds()-t0;
+    T[0]=c.nanoseconds();
 
     timings("Direct",(2*mx-1)*(2*my-1)*(2*mz-1),T.data(),1);
     T.clear();

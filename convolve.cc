@@ -191,9 +191,9 @@ double time(fftBase *fft, Application &app, double &threshold)
   double eps=0.02;
 
   do {
-    double t0=nanoseconds();
+    cpuTimer C;
     Convolve.convolveRaw(f);
-    Stats.add(nanoseconds()-t0);
+    Stats.add(C.nanoseconds());
     if(Stats.min() >= 2.0*threshold) break;
     if(Stats.count() >= 4 && Stats.min() >= threshold) break;
     medianStats.add(Stats.median());

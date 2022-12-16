@@ -146,9 +146,9 @@ int main(int argc, char *argv[])
 
     for(size_t i=0; i < N; ++i) {
       init(f);
-      double t0=nanoseconds();
+      cpuTimer c;
       transpose.transpose(f(),g());
-      T[i]=nanoseconds()-t0;
+      T[i]=c.nanoseconds();
     }
 
     timings("transpose",mx,T,N,stats);

@@ -167,10 +167,10 @@ int main(int argc, char *argv[])
     }
     for(size_t i=0; i < N; ++i) {
       init(e,f,g,M);
-      double t0=nanoseconds();
+      cpuTimer c;
       C.convolve(E,F,G);
 //      C.convolve(e,f,g);
-      T[i]=nanoseconds()-t0;
+      T[i]=c.nanoseconds();
     }
 
     timings("Implicit",mx,T,N,stats);
@@ -198,9 +198,9 @@ int main(int argc, char *argv[])
     ExplicitHTConvolution2 C(nx,ny,mx,my,f,Pruned);
     for(size_t i=0; i < N; ++i) {
       init(e,f,g);
-      double t0=nanoseconds();
+      cpuTimer c;
       C.convolve(e,f,g);
-      T[i]=nanoseconds()-t0;
+      T[i]=c.nanoseconds();
     }
 
     timings(Pruned ? "Pruned" : "Explicit",mx,T,N,stats);
@@ -229,9 +229,9 @@ int main(int argc, char *argv[])
     Array2<Complex> g(nxp,my,0,0,align);
     DirectHTConvolution2 C(mx,my);
     init(e,f,g);
-    double t0=nanoseconds();
+    cpuTimer c;
     C.convolve(h,e,f,g);
-    T[0]=nanoseconds()-t0;
+    T[0]=c.nanoseconds();
 
     timings("Direct",mx,T,1);
 

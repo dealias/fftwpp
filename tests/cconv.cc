@@ -235,10 +235,10 @@ int main(int argc, char *argv[])
     double sum=0.0;
     while(sum <= K || T.size() < minCount) {
       init(F,m,A);
-      double t0=nanoseconds();
+      cpuTimer c;
       C.convolve(F,mult);
 //    C.convolve(F[0],F[1]);
-      double t=nanoseconds()-t0;
+      double t=c.nanoseconds();
       T.push_back(t);
       sum += t;
     }
@@ -279,10 +279,10 @@ int main(int argc, char *argv[])
     double sum=0.0;
     while(sum <= K || T.size() < minCount) {
       init(F,m,A);
-      double t0=nanoseconds();
+      cpuTimer c;
       C.convolve(F,mult,G);
 //      C.convolve(F[0],F[1]);
-      double t=nanoseconds()-t0;
+      double t=c.nanoseconds();
       T.push_back(t);
       sum += t;
     }
@@ -308,12 +308,12 @@ int main(int argc, char *argv[])
       A=2;
     init(F,m,A);
     Complex *h=ComplexAlign(m);
-    double t0=nanoseconds();
+    cpuTimer c;
     if(A == 2)
       C.convolve(h,F[0],F[1]);
     if(A == 1)
       C.autoconvolve(h,F[0]);
-    T[0]=nanoseconds()-t0;
+    T[0]=c.nanoseconds();
 
     cout << endl;
     timings("Direct",m,T.data(),1);

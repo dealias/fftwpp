@@ -29,7 +29,7 @@
 #include <cerrno>
 #include <map>
 #include <typeinfo>
-#include <chrono>
+#include <seconds.h>
 #include <climits>
 
 #ifndef _OPENMP
@@ -198,7 +198,6 @@ protected:
 public:
   static size_t effort;
   static size_t maxthreads;
-  static double testseconds;
   static const char *WisdomName;
   static fftw_plan (*planner)(fftw *f, Complex *in, Complex *out);
 
@@ -728,20 +727,14 @@ public:
 
     do {
       T=1; // FFTW
-      auto t2=std::chrono::steady_clock::now();
+      utils::cpuTimer C;
       inplace ? fftNormalized(in,out) : fft(in,out);
-      auto t3=std::chrono::steady_clock::now();
-      auto elapsed1=std::chrono::duration_cast<std::chrono::nanoseconds>
-        (t3-t2);
-      S.add(elapsed1.count());
+      S.add(C.nanoseconds());
 
       T=T0; // BLOCK
-      auto t0=std::chrono::steady_clock::now();
+      utils::cpuTimer CT;
       inplace ? fftNormalized(in,out) : fft(in,out);
-      auto t1=std::chrono::steady_clock::now();
-      auto elapsedT=std::chrono::duration_cast<std::chrono::nanoseconds>
-        (t1-t0);
-      ST.add(elapsedT.count());
+      ST.add(CT.nanoseconds());
 
       if(S.count() >= 4 && ST.min() >= S.max())
         return true;
