@@ -46,8 +46,6 @@ int main(int argc, char *argv[])
   fftPad ffty(Ly,My,appy);
   Convolution2 Convolve2(&fftx,&ffty);
 
-//  Convolution2 Convolve2(Lx,Mx,Ly,My,A,B);
-
   Complex **f=ComplexAlign(max(A,B),fftx.inputSize());
 
   for(size_t a=0; a < A; ++a) {

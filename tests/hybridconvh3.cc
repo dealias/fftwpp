@@ -55,8 +55,6 @@ int main(int argc, char *argv[])
   fftPadHermitian fftz(Lz,Mz,appz);
   Convolution3 Convolve3(&fftx,&ffty,&fftz);
 
-//  ConvolutionHermitian3 Convolve3(Lx,Mx,Ly,My,Lz,Mz,A,B);
-
   Complex **f=ComplexAlign(max(A,B),fftx.inputSize());
 
   for(size_t a=0; a < A; ++a) {

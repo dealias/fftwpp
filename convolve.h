@@ -401,7 +401,7 @@ public:
     return nloops() == 2 && app.A > app.B && !Overwrite();
   }
 
-  size_t inputSize() {
+  virtual size_t inputSize() {
     return S*L;
   }
 
@@ -786,10 +786,9 @@ public:
   //    call pad() if changed between calls to convolve()
   // V: optional work array of size B*fft->workSizeV()
   //   (only needed for inplace usage)
-  Convolution(fftBase *fft,
-              Complex **F=NULL, Complex *W=NULL, Complex *V=NULL) :
-    ThreadBase(fft->Threads()), fft(fft),
-    A(fft->app.A), B(fft->app.B), mult(fft->app.mult), W(W), allocate(false) {
+  Convolution(fftBase *fft, Complex **F=NULL, Complex *W=NULL, Complex *V=NULL)
+    : ThreadBase(fft->Threads()), fft(fft), A(fft->app.A), B(fft->app.B),
+      mult(fft->app.mult), W(W), allocate(false) {
     init(F,V);
   }
 

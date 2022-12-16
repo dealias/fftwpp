@@ -184,7 +184,7 @@ double time(fftBase *fft, Application &app, double &threshold)
       fa[j]=0.0;
   }
 
-  Convolution Convolve(fft,f);
+  Convolution Convolve(fft);
 
   statistics Stats(true);
   statistics medianStats(false);
