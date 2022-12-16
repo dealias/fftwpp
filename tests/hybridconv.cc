@@ -37,9 +37,9 @@ int main(int argc, char *argv[])
 
   Application app(A,B,multbinary,fftw::maxthreads,0,mx,Dx,Ix);
   fftBase *fft=Centered ? new fftPadCentered(L,M,app) : new fftPad(L,M,app);
-  Complex **f=ComplexAlign(max(A,B),fft->inputSize());
-  Convolution Convolve(fft,f);
+  Convolution Convolve(fft);
 
+  Complex **f=ComplexAlign(max(A,B),L);
   for(size_t a=0; a < A; ++a) {
     Complex *fa=f[a];
     for(size_t j=0; j < L; ++j)

@@ -401,12 +401,8 @@ public:
     return nloops() == 2 && app.A > app.B && !Overwrite();
   }
 
-  virtual size_t dataSize() {
-    return S*L;
-  }
-
   size_t inputSize() {
-    return embed() ? std::max(dataSize(),outputSize()) : dataSize();
+    return S*L;
   }
 
   // Number of complex outputs per residue per copy
@@ -430,11 +426,6 @@ public:
 
   virtual size_t workSizeW() {
     return inplace ? 0 : outputSize();
-  }
-
-  // Allow input data to be embedded within output buffer.
-  virtual bool embed() {
-    return (q == 1 || (p <= 2 && nloops() == 1)) && threads == 1;
   }
 
   size_t repad() {
@@ -612,10 +603,6 @@ public:
     init();
   }
 
-  bool embed() {
-    return false;
-  }
-
   ~fftPadCentered() {
     if(ZetaShift)
       utils::deleteAlign(ZetaShift);
@@ -757,7 +744,7 @@ public:
     return inplace ? 0 : B*D;
   }
 
-  size_t dataSize() {
+  size_t inputSize() {
     return C*utils::ceilquotient(L,2);
   }
 };
@@ -788,24 +775,21 @@ protected:
   bool allocateW;
   size_t nloops;
   bool loop2;
-  size_t inputSize;
   FFTcall Forward,Backward;
   FFTPad Pad;
 public:
   Indices indices;
 
   // fft: precomputed fftPad
-  // f: array of max(A,B) arrays of size fft->inputSize()
   // F: optional array of max(A,B) work arrays of size fft->outputSize()
   // W: optional work array of size fft->workSizeW();
   //    call pad() if changed between calls to convolve()
   // V: optional work array of size B*fft->workSizeV()
   //   (only needed for inplace usage)
-  Convolution(fftBase *fft, Complex **f,
+  Convolution(fftBase *fft,
               Complex **F=NULL, Complex *W=NULL, Complex *V=NULL) :
     ThreadBase(fft->Threads()), fft(fft),
     A(fft->app.A), B(fft->app.B), mult(fft->app.mult), W(W), allocate(false) {
-    if(fft->embed()) F=f;
     init(F,V);
   }
 
@@ -827,7 +811,6 @@ public:
     scale=1.0/normalization();
     size_t outputSize=fft->outputSize();
     size_t workSizeW=fft->workSizeW();
-    inputSize=fft->inputSize();
 
     size_t N=std::max(A,B);
     allocateF=!F;
@@ -891,6 +874,7 @@ public:
   ~Convolution();
 
   void normalize(Complex **f, size_t offset=0) {
+    size_t inputSize=fft->inputSize();
     for(size_t b=0; b < B; ++b) {
       Complex *fb=f[b]+offset;
       for(size_t i=0; i < inputSize; ++i)
@@ -1066,21 +1050,19 @@ protected:
 public:
   Indices indices;
 
-  // f: array of max(A,B) arrays of size fftx->inputSize()
   // F: optional array of max(A,B) work arrays of size fftx->outputSize()
   // W: optional work array of size fftx->workSizeW();
   //    call fftx->pad() if W changed between calls to convolve()
   // V: optional work array of size B*fftx->workSizeV()
-  Convolution2(fftBase *fftx, fftBase *ffty, Complex **f,
+  Convolution2(fftBase *fftx, fftBase *ffty,
                Complex **F=NULL, Complex *W=NULL, Complex *V=NULL) :
     ThreadBase(fftx->Threads()), fftx(fftx), ffty(ffty),
     A(fftx->app.A), B(fftx->app.B), mult(fftx->app.mult),
     W(W), allocateF(false), allocateW(false) {
     this->convolvey=new Convolution*[threads];
     for(size_t t=0; t < threads; ++t)
-      this->convolvey[t]=new Convolution(ffty,NULL);
+      this->convolvey[t]=new Convolution(ffty);
 
-    if(fftx->embed()) F=f;
     init(F,V);
   }
 
@@ -1319,21 +1301,19 @@ protected:
 public:
   Indices indices;
 
-  // f: array of max(A,B) arrays of size fftx->inputSize()
   // F: optional array of max(A,B) work arrays of size fftx->outputSize()
   // W: optional work array of size fftx->workSizeW();
   //    call fftx->pad() if W changed between calls to convolve()
   // V: optional work array of size B*fftx->workSizeV()
-  Convolution3(fftBase *fftx, fftBase *ffty, fftBase *fftz, Complex **f,
+  Convolution3(fftBase *fftx, fftBase *ffty, fftBase *fftz,
                Complex **F=NULL, Complex *W=NULL, Complex *V=NULL) :
     ThreadBase(fftx->Threads()), fftx(fftx), ffty(ffty), fftz(fftz),
     A(fftx->app.A), B(fftx->app.B), mult(fftx->app.mult),
     W(W), allocateF(false), allocateW(false) {
     this->convolveyz=new Convolution2*[threads];
     for(size_t t=0; t < threads; ++t)
-      this->convolveyz[t]=new Convolution2(ffty,fftz,NULL);
+      this->convolveyz[t]=new Convolution2(ffty,fftz);
 
-    if(fftx->embed()) F=f;
     init(F,V);
   }
 

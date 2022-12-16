@@ -40,9 +40,9 @@ int main(int argc, char *argv[])
 
   Application app(A,B,realmultbinary,fftw::maxthreads,0,mx,Dx,Ix);
   fftPadHermitian fft(L,M,app);
-  Complex **f=ComplexAlign(max(A,B),fft.inputSize());
-  Convolution Convolve(&fft,f);
+  Convolution Convolve(&fft);
 
+  Complex **f=ComplexAlign(max(A,B),H);
   for(size_t a=0; a < A; ++a) {
     Complex *fa=f[a];
     if(Output || testError) {

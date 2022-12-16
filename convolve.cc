@@ -706,13 +706,11 @@ void fftPad::forwardExplicit(Complex *f, Complex *F, size_t, Complex *W)
 {
   if(W == NULL) W=F;
 
-  if(W != f) {
-    PARALLELIF(
-      L > threshold,
-      for(size_t s=0; s < L; ++s)
-        W[s]=f[s];
-      );
-  }
+  PARALLELIF(
+    L > threshold,
+    for(size_t s=0; s < L; ++s)
+      W[s]=f[s];
+    );
   PARALLELIF(
     M-L > threshold,
     for(size_t s=L; s < M; ++s)
@@ -726,13 +724,11 @@ void fftPad::backwardExplicit(Complex *F, Complex *f, size_t, Complex *W)
   if(W == NULL) W=F;
 
   ifftm1->fft(F,W);
-  if(W != f) {
-    PARALLELIF(
-      L > threshold,
-      for(size_t s=0; s < L; ++s)
-        f[s]=W[s];
-      );
-  }
+  PARALLELIF(
+    L > threshold,
+    for(size_t s=0; s < L; ++s)
+      f[s]=W[s];
+    );
 }
 
 void fftPad::forwardExplicitMany(Complex *f, Complex *F, size_t,
@@ -740,17 +736,15 @@ void fftPad::forwardExplicitMany(Complex *f, Complex *F, size_t,
 {
   if(W == NULL) W=F;
 
-  if(W != f) {
-    PARALLELIF(
-      L*C > threshold,
-      for(size_t s=0; s < L; ++s) {
-        size_t Ss=S*s;
-        Complex *Fs=W+Ss;
-        Complex *fs=f+Ss;
-        for(size_t c=0; c < C; ++c)
-          Fs[c]=fs[c];
-      });
-  }
+  PARALLELIF(
+    L*C > threshold,
+    for(size_t s=0; s < L; ++s) {
+      size_t Ss=S*s;
+      Complex *Fs=W+Ss;
+      Complex *fs=f+Ss;
+      for(size_t c=0; c < C; ++c)
+        Fs[c]=fs[c];
+    });
 
   padMany(W);
   fftm->fft(W,F);
@@ -762,17 +756,15 @@ void fftPad::backwardExplicitMany(Complex *F, Complex *f, size_t,
   if(W == NULL) W=F;
 
   ifftm->fft(F,W);
-  if(W != f) {
-    PARALLELIF(
-      L*C > threshold,
-      for(size_t s=0; s < L; ++s) {
-        size_t Ss=S*s;
-        Complex *fs=f+Ss;
-        Complex *Fs=W+Ss;
-        for(size_t c=0; c < C; ++c)
-          fs[c]=Fs[c];
-      });
-  }
+  PARALLELIF(
+    L*C > threshold,
+    for(size_t s=0; s < L; ++s) {
+      size_t Ss=S*s;
+      Complex *fs=f+Ss;
+      Complex *Fs=W+Ss;
+      for(size_t c=0; c < C; ++c)
+        fs[c]=Fs[c];
+    });
 }
 
 void fftPad::forward1All(Complex *f, Complex *F, size_t, Complex *)
@@ -815,21 +807,13 @@ void fftPad::forward1(Complex *f, Complex *F0, size_t r0, Complex *W)
       Complex *V=W+m;
       V[0]=W[0]=f[0];
       Complex *Zetar=Zetaqm+m*q2;
-      if(W != f) {
-        PARALLELIF(
-          L > threshold,
-          for(size_t s=1; s < L; ++s) {
-            Complex fs=f[s];
-            W[s]=fs;
-            V[s]=Zetar[s]*fs;
-          });
-      } else {
-        PARALLELIF(
-          L > threshold,
-          for(size_t s=1; s < L; ++s)
-            V[s]=Zetar[s]*f[s];
-          );
-      }
+      PARALLELIF(
+        L > threshold,
+        for(size_t s=1; s < L; ++s) {
+          Complex fs=f[s];
+          W[s]=fs;
+          V[s]=Zetar[s]*fs;
+        });
       if(inplace) {
         for(size_t s=L; s < m; ++s)
           V[s]=0.0;
@@ -4562,13 +4546,11 @@ void fftPadHermitian::forwardExplicit(Complex *f, Complex *F, size_t, Complex *W
   if(W == NULL) W=F;
 
   size_t H=ceilquotient(L,2);
-  if(W != f) {
-    PARALLELIF(
-      H > threshold,
-      for(size_t s=0; s < H; ++s)
-        W[s]=f[s];
-      );
-  }
+  PARALLELIF(
+    H > threshold,
+    for(size_t s=0; s < H; ++s)
+      W[s]=f[s];
+    );
   PARALLELIF(
     e-H > threshold,
     for(size_t s=H; s <= e; ++s)
@@ -4584,17 +4566,15 @@ void fftPadHermitian::forwardExplicitMany(Complex *f, Complex *F, size_t,
   if(W == NULL) W=F;
 
   size_t H=ceilquotient(L,2);
-  if(W != f) {
-    PARALLELIF(
-      H*C > threshold,
-      for(size_t s=0; s < H; ++s) {
-        size_t Cs=C*s;
-        Complex *Fs=W+Cs;
-        Complex *fs=f+Cs;
-        for(size_t c=0; c < C; ++c)
-          Fs[c]=fs[c];
-      });
-  }
+  PARALLELIF(
+    H*C > threshold,
+    for(size_t s=0; s < H; ++s) {
+      size_t Cs=C*s;
+      Complex *Fs=W+Cs;
+      Complex *fs=f+Cs;
+      for(size_t c=0; c < C; ++c)
+        Fs[c]=fs[c];
+    });
   PARALLELIF(
     (e+1-H)*C > threshold,
     for(size_t s=H; s <= e; ++s) {
@@ -4613,14 +4593,12 @@ void fftPadHermitian::backwardExplicit(Complex *F, Complex *f, size_t,
 
   rcfftm1->fft(F,W);
 
-  if(W != f) {
-    size_t H=ceilquotient(L,2);
-    PARALLELIF(
-      H > threshold,
-      for(size_t s=0; s < H; ++s)
-        f[s]=W[s];
-      );
-  }
+  size_t H=ceilquotient(L,2);
+  PARALLELIF(
+    H > threshold,
+    for(size_t s=0; s < H; ++s)
+      f[s]=W[s];
+    );
 }
 
 void fftPadHermitian::backwardExplicitMany(Complex *F, Complex *f,
@@ -4629,18 +4607,16 @@ void fftPadHermitian::backwardExplicitMany(Complex *F, Complex *f,
   if(W == NULL) W=F;
 
   rcfftm->fft(F,W);
-  if(W != f) {
-    size_t H=ceilquotient(L,2);
-    PARALLELIF(
-      H*C > threshold,
-      for(size_t s=0; s < H; ++s) {
-        size_t Cs=C*s;
-        Complex *fs=f+Cs;
-        Complex *Fs=W+Cs;
-        for(size_t c=0; c < C; ++c)
-          fs[c]=Fs[c];
-      });
-  }
+  size_t H=ceilquotient(L,2);
+  PARALLELIF(
+    H*C > threshold,
+    for(size_t s=0; s < H; ++s) {
+      size_t Cs=C*s;
+      Complex *fs=f+Cs;
+      Complex *Fs=W+Cs;
+      for(size_t c=0; c < C; ++c)
+        fs[c]=Fs[c];
+    });
 }
 
 void fftPadHermitian::forward2(Complex *f, Complex *F, size_t r,
@@ -5652,6 +5628,7 @@ void Convolution::convolveRaw(Complex **g)
         }
 
         if(nloops > 1) {
+          size_t inputSize=fft->inputSize();
           for(size_t b=0; b < B; ++b) {
             Complex *gb=g[b];
             Complex *hb=h0[b];

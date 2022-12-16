@@ -49,14 +49,15 @@ int main(int argc, char *argv[])
 
   Application appx(A,B,multNone,fftw::maxthreads,0,mx,Dx,Ix);
   fftPadCentered fftx(Lx,Mx,appx,Sy == Hz? Ly*Hz : Hz,Sx);
-  Complex **f=ComplexAlign(max(A,B),fftx.inputSize());
   Application appy(A,B,multNone,appx.Threads(),fftx.l,my,Dy,Iy);
   fftPadCentered ffty(Ly,My,appy,Hz,Sy);
   Application appz(A,B,realmultbinary,appy.Threads(),ffty.l,mz,Dz,Iz);
   fftPadHermitian fftz(Lz,Mz,appz);
-  Convolution3 Convolve3(&fftx,&ffty,&fftz,f);
+  Convolution3 Convolve3(&fftx,&ffty,&fftz);
 
 //  ConvolutionHermitian3 Convolve3(Lx,Mx,Ly,My,Lz,Mz,A,B);
+
+  Complex **f=ComplexAlign(max(A,B),fftx.inputSize());
 
   for(size_t a=0; a < A; ++a) {
     Complex *fa=f[a];

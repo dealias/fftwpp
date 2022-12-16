@@ -45,10 +45,11 @@ int main(int argc, char *argv[])
 
   Application appx(A,B,multNone,fftw::maxthreads,0,mx,Dx,Ix);
   fftPadCentered fftx(Lx,Mx,appx,Hy,Sx);
-  Complex **f=ComplexAlign(max(A,B),fftx.inputSize());
   Application appy(A,B,realmultbinary,appx.Threads(),fftx.l,my,Dy,Iy);
   fftPadHermitian ffty(Ly,My,appy);
-  Convolution2 Convolve2(&fftx,&ffty,f);
+  Convolution2 Convolve2(&fftx,&ffty);
+
+  Complex **f=ComplexAlign(max(A,B),fftx.inputSize());
 
   for(size_t a=0; a < A; ++a) {
     Complex *fa=f[a];

@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
   if(Output) {
     cout << endl;
     cout << "Inverse:" << endl;
-    for(size_t j=0; j < fft.dataSize(); ++j)
+    for(size_t j=0; j < fft.inputSize(); ++j)
       cout << h[j]*scale << endl;
     cout << endl;
   }
@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
     fft.backward(F,h,r,W0);
   }
 
-  for(size_t j=0; j < fft.dataSize(); ++j) {
+  for(size_t j=0; j < fft.inputSize(); ++j) {
     error2 += abs2(h[j]*scale-f[j]);
     norm2 += abs2(f[j]);
   }
