@@ -349,7 +349,7 @@ void fftBase::OptBase::scan(size_t L, size_t M, Application& app,
   inplace=false;
   T=DBL_MAX;
   threshold=T;
-  mForced=(app.m >= 1);
+  mForced=app.m >= 1;
 
   bool sR=showRoutines;
 
@@ -362,14 +362,15 @@ void fftBase::OptBase::scan(size_t L, size_t M, Application& app,
     cerr << "Optimizer found no valid cases with specified parameters." << endl;
     cerr << "Using explicit routines with m=" << M << " instead." << endl << endl;
   } else if(counter > 1) {
-    if(showOptTimes) cout << "Optimizer Timings:" << endl;
+    if(showOptTimes) cout << endl << "Timing " << counter << " algorithms:" << endl;
     mForced=true;
     for(mList::reverse_iterator r=mlist.rbegin(); r != mlist.rend(); ++r) {
       app.m=*r;
       opt(L,M,app,C,S,mStart,itmax,Explicit,centered);
     }
-    if(showOptTimes)
+    if(showOptTimes) {
       cout << endl << "Optimal time: t=" << T*1.0e-9 << endl << endl;
+    }
   }
 
   size_t p=ceilquotient(L,m);
@@ -882,8 +883,11 @@ void fftPad::forward1(Complex *f, Complex *F0, size_t r0, Complex *W)
 void fftPad::forward1ManyAll(Complex *f, Complex *F, size_t, Complex *)
 {
   Complex *Zetar=Zetaqm+m;
+  PARALLELIF(
+    C > threshold,
   for(size_t c=0; c < C; ++c)
     F[c]=f[c];
+    );
   PARALLELIF(
     (m-1)*C > threshold,
     for(size_t s=1; s < m; ++s) {
@@ -1813,8 +1817,11 @@ void fftPad::backward2Many(Complex *F, Complex *f, size_t r, Complex *W)
       });
   } else {
     size_t Lm=L-m;
+    PARALLELIF(
+      C > threshold,
     for(size_t c=0; c < C; ++c)
       f[c] += W[c];
+      );
     Complex *Zetar=Zetaqm+m*r;
     PARALLELIF(
       (m-1)*C > threshold,
@@ -4797,8 +4804,11 @@ void fftPadHermitian::forward2Many(Complex *f, Complex *F, size_t r,
     Complex *V=W == F ? G : W+B;
     Complex *Zetar=Zetaqm+m*r;
 
-    for(size_t c=0; c < C; ++c)
-      V[c]=W[c]=f[c];
+    PARALLELIF(
+      C > threshold,
+      for(size_t c=0; c < C; ++c)
+        V[c]=W[c]=f[c];
+      );
 
     PARALLELIF(
       mH1*C > threshold,
