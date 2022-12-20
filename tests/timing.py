@@ -404,8 +404,8 @@ def main(argv):
             except:
                 pass
             with open(outdir + os.sep+"log", "a") as logfile:
-                logfile.write(str(sys.argv))
-                logfile.write("\n")
+                #logfile.write(str(sys.argv))
+                #logfile.write("\n")
                 logfile.write("intial exponent: " + str(a) + "\n")
                 logfile.write("final exponent: " + str(b) + "\n")
             if not appendtofile:
