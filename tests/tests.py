@@ -57,7 +57,7 @@ def getArgs():
   										1 or 2 or 3 is the same as specifying all of them",
   										action="store_true")
   parser.add_argument("-T",metavar='threads',help="Number of threads to use in timing. If set to\
-                      0, iterates over 1, 2, and 4 threads. Default is 1.",
+                      0, tests over 1 and OMP_NUM_THREADS. Default is 1.",
                       default=1)
   parser.add_argument("-R", help="Find routines used in output.",
                       action="store_true")
@@ -139,15 +139,21 @@ def test(programs, args):
       if p.extraArgs:
         name+=" "+p.extraArgs
       if T == 0:
-        print("Testing "+name+" with 1, 2, and 4 threads.\n")
+        cmd = 'echo $OMP_NUM_THREADS'
+        OMP_NUM_THREADS=str(check_output(cmd, shell=True))
+        Tnum=int(re.search(r"\d+",OMP_NUM_THREADS).group(0))
+        Ts=[1,Tnum]
+        print(f"Testing {name} with 1 and {Tnum} threads.\n")
       elif T == 1:
-        print("Testing "+name+" with "+str(T)+" thread.\n")
+        print(f"Testing {name} with 1 thread.\n")
+        Ts=[1]
       elif T > 1:
-        print("Testing "+name+" with "+str(T)+" threads.\n")
+        print(f"Testing {name} with {T} threads.\n")
+        Ts=[T]
       else:
-        raise ValueError(str(T)+" is an invalid number of threads.")
+        raise ValueError(f"{T} is an invalid number of threads.")
 
-      iterate(p,T,float(args.t),args.v,args.R,args.S or args.All,args.p)
+      iterate(p,Ts,float(args.t),args.v,args.R,args.S or args.All,args.p)
 
       ppassed=p.passed
       pfailed=p.failed
@@ -174,14 +180,9 @@ def test(programs, args):
   else:
     print("\nNo programs to test.\n")
 
-def iterate(program, thr, tol, verbose, R, testS, printEverything):
+def iterate(program, threads, tol, verbose, R, testS, printEverything):
 
   dim=program.dim
-
-  if thr ==  0:
-    threads=[1,2,4]
-  else:
-    threads=[thr]
 
   vals=ParameterCollection(fillValues,program,1,testS and not program.mult).vals
   if dim == 1:
