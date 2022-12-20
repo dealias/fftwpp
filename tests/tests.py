@@ -186,8 +186,9 @@ def iterate(program, threads, tol, verbose, R, testS, printEverything):
 
   vals=ParameterCollection(fillValues,program,1,testS and not program.mult).vals
   if dim == 1:
-    for x in vals:
-      for T in threads:
+    for T in threads:
+      checkOptimizer(program,vals[0].L,vals[0].M,T,tol,R,verbose,printEverything)
+      for x in vals:
         check(program,[x],T,tol,R,verbose,printEverything)
     if not program.mult:
       vals=ParameterCollection(fillValues,program,8,testS and not program.mult).vals
@@ -277,6 +278,34 @@ def fillValues(program, minS, testS):
               D=1
               vals.append(Parameters(L,M,m,p,q,C,S,D,I))
   return vals
+
+def checkOptimizer(program, L, M, T, tol, R, verbose, printEverything):
+
+  cmd=[program.name,f"-L={L}",f"-M={M}",f"-T={T}","-E","-t"]
+
+  if R:
+    cmd.append("-R")
+
+  if program.extraArgs != "":
+    cmd.append(program.extraArgs)
+
+  vp = Popen(cmd, stdout = PIPE, stderr = STDOUT)
+  vp.wait()
+  prc = vp.returncode
+  comment = ""
+
+  if prc == 0:
+    out, err = vp.communicate()
+    comment = out.rstrip().decode()
+
+  if printEverything:
+    print(f"{' '.join(cmd)}\n{comment}\n")
+
+  if program.mult:
+    checkError(program, comment, cmd, tol, verbose, R, r"Error")
+  else:
+    checkError(program, comment, cmd, tol, verbose, R, r"Forward Error")
+    checkError(program, comment, cmd, tol, verbose, R, r"Backward Error")
 
 def check(program, vals, T, tol, R, verbose, printEverything):
 
