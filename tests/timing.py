@@ -430,7 +430,7 @@ def main(argv):
             sys.exit(1)
 
         if not hybrid and not "fft" in p:
-            if(runtype == "explicit" or "explicito"):
+            if(runtype == "explicit" or runtype == "explicito"):
                 cmd.append("-e")
 
             if(runtype == "pruned"):
