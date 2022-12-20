@@ -471,7 +471,7 @@ def main(argv):
             comment += " " + " ".join(cmd)
 
             # Add the run date as a comment
-            date = time.strftime("%Y-%m-%d-%H:%M:%S-%Z")
+            date = time.strftime("%Y-%m-%d  %H:%M:%S-%Z")
             comment += "\t" + date
 
             if extracomment == "":
