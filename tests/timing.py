@@ -695,6 +695,7 @@ def main(argv):
                 for mcmd in badruns:
                     goodbads += " ".join(mcmd) + "\n"
             logfile.write(goodbads)
+            logfile.write("\n")
             print(goodbads)
 
 
