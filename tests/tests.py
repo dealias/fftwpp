@@ -57,7 +57,7 @@ def getArgs():
   										1 or 2 or 3 is the same as specifying all of them",
   										action="store_true")
   parser.add_argument("-T",metavar='threads',help="Number of threads to use in timing. If set to\
-                      0, iterates over 1, 2, and 4 threads. Default is 1.",
+                      0, tests over 1 and OMP_NUM_THREADS. Default is 1.",
                       default=1)
   parser.add_argument("-R", help="Find routines used in output.",
                       action="store_true")
@@ -139,15 +139,21 @@ def test(programs, args):
       if p.extraArgs:
         name+=" "+p.extraArgs
       if T == 0:
-        print("Testing "+name+" with 1, 2, and 4 threads.\n")
+        cmd = 'echo $OMP_NUM_THREADS'
+        OMP_NUM_THREADS=str(check_output(cmd, shell=True))
+        Tnum=int(re.search(r"\d+",OMP_NUM_THREADS).group(0))
+        Ts=[1,Tnum]
+        print(f"Testing {name} with 1 and {Tnum} threads.\n")
       elif T == 1:
-        print("Testing "+name+" with "+str(T)+" thread.\n")
+        print(f"Testing {name} with 1 thread.\n")
+        Ts=[1]
       elif T > 1:
-        print("Testing "+name+" with "+str(T)+" threads.\n")
+        print(f"Testing {name} with {T} threads.\n")
+        Ts=[T]
       else:
-        raise ValueError(str(T)+" is an invalid number of threads.")
+        raise ValueError(f"{T} is an invalid number of threads.")
 
-      iterate(p,T,float(args.t),args.v,args.R,args.S or args.All,args.p)
+      iterate(p,Ts,float(args.t),args.v,args.R,args.S or args.All,args.p)
 
       ppassed=p.passed
       pfailed=p.failed
@@ -174,19 +180,15 @@ def test(programs, args):
   else:
     print("\nNo programs to test.\n")
 
-def iterate(program, thr, tol, verbose, R, testS, printEverything):
+def iterate(program, threads, tol, verbose, R, testS, printEverything):
 
   dim=program.dim
 
-  if thr ==  0:
-    threads=[1,2,4]
-  else:
-    threads=[thr]
-
   vals=ParameterCollection(fillValues,program,1,testS and not program.mult).vals
   if dim == 1:
-    for x in vals:
-      for T in threads:
+    for T in threads:
+      checkOptimizer(program,vals[0].L,vals[0].M,T,tol,R,verbose,printEverything)
+      for x in vals:
         check(program,[x],T,tol,R,verbose,printEverything)
     if not program.mult:
       vals=ParameterCollection(fillValues,program,8,testS and not program.mult).vals
@@ -276,6 +278,34 @@ def fillValues(program, minS, testS):
               D=1
               vals.append(Parameters(L,M,m,p,q,C,S,D,I))
   return vals
+
+def checkOptimizer(program, L, M, T, tol, R, verbose, printEverything):
+
+  cmd=[program.name,f"-L={L}",f"-M={M}",f"-T={T}","-E","-t"]
+
+  if R:
+    cmd.append("-R")
+
+  if program.extraArgs != "":
+    cmd.append(program.extraArgs)
+
+  vp = Popen(cmd, stdout = PIPE, stderr = STDOUT)
+  vp.wait()
+  prc = vp.returncode
+  comment = ""
+
+  if prc == 0:
+    out, err = vp.communicate()
+    comment = out.rstrip().decode()
+
+  if printEverything:
+    print(f"{' '.join(cmd)}\n{comment}\n")
+
+  if program.mult:
+    checkError(program, comment, cmd, tol, verbose, R, r"Error")
+  else:
+    checkError(program, comment, cmd, tol, verbose, R, r"Forward Error")
+    checkError(program, comment, cmd, tol, verbose, R, r"Backward Error")
 
 def check(program, vals, T, tol, R, verbose, printEverything):
 

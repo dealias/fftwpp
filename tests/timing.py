@@ -19,7 +19,7 @@ def forwardBackward(comment):
   try:
     FR=re.findall(r"(?<=Forwards Routine: )\S+",comment)
     BR=re.findall(r"(?<=Backwards Routine: )\S+",comment)
-    params="\n"+"\t\t".join(FR)+"\n"+"\t\t".join(BR)
+    params="\n"+"\t".join(FR)+"\n"+"\t".join(BR)
     return params
   except:
     print("Could not find routines used.")
@@ -32,7 +32,7 @@ def getParam(name, comment):
     xyz=["x","y","z"] if l > 1 else [""]
     for i in range(l):
         param[i]=f"{name}{xyz[i]}={param[i]}"
-    return"\t\t".join(param)
+    return"\t".join(param)
   except:
     print("Could not find "+name)
     return -1
@@ -404,8 +404,8 @@ def main(argv):
             except:
                 pass
             with open(outdir + os.sep+"log", "a") as logfile:
-                logfile.write(str(sys.argv))
-                logfile.write("\n")
+                #logfile.write(str(sys.argv))
+                #logfile.write("\n")
                 logfile.write("intial exponent: " + str(a) + "\n")
                 logfile.write("final exponent: " + str(b) + "\n")
             if not appendtofile:
@@ -430,7 +430,7 @@ def main(argv):
             sys.exit(1)
 
         if not hybrid and not "fft" in p:
-            if(runtype == "explicit" or "explicito"):
+            if(runtype == "explicit" or runtype == "explicito"):
                 cmd.append("-e")
 
             if(runtype == "pruned"):
@@ -471,7 +471,7 @@ def main(argv):
             comment += " " + " ".join(cmd)
 
             # Add the run date as a comment
-            date = time.strftime("%Y-%m-%d-%H:%M:%S-%Z")
+            date = time.strftime("%Y-%m-%d  %H:%M:%S-%Z")
             comment += "\t" + date
 
             if extracomment == "":
@@ -695,6 +695,7 @@ def main(argv):
                 for mcmd in badruns:
                     goodbads += " ".join(mcmd) + "\n"
             logfile.write(goodbads)
+            logfile.write("\n")
             print(goodbads)
 
 
