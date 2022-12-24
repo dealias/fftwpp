@@ -31,13 +31,6 @@ size_t Atoi(char *optarg, size_t min=1)
   return val;
 }
 
-size_t atoD(char *optarg)
-{
-  int D=Atoi(optarg,0);
-  if(D > 1 && D % 2) ++D;
-  return D;
-}
-
 void optionsHybrid(int argc, char *argv[], bool fft)
 {
 #ifdef __GNUC__
@@ -91,16 +84,16 @@ void optionsHybrid(int argc, char *argv[], bool fft)
         break;
       case 'D':
       case DXYZ:
-        Dx=Dy=Dz=atoD(optarg);
+        Dx=Dy=Dz=Atoi(optarg);
         break;
       case DX:
-        Dx=atoD(optarg);
+        Dx=Atoi(optarg);
         break;
       case DY:
-        Dy=atoD(optarg);
+        Dy=Atoi(optarg);
         break;
       case DZ:
-        Dz=atoD(optarg);
+        Dz=Atoi(optarg);
         break;
       case 'E':
         testError=true;
