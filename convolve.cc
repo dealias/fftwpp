@@ -553,8 +553,8 @@ void fftPad::init()
         fftp=new mfft1d(P,1,Cm, Cm,1, G,G,threads);
         ifftp=new mfft1d(P,-1,Cm, Cm,1, G,G,threads);
       } else {
-        fftp=new mfft1d(P,1,C, Sm,1, G,G,1);
-        ifftp=new mfft1d(P,-1,C, Sm,1, G,G,1);
+        fftp=new mfft1d(P,1,C, Sm,1, G,G,threads);
+        ifftp=new mfft1d(P,-1,C, Sm,1, G,G,threads);
       }
     } else {
       if(p == 2) {
@@ -618,7 +618,7 @@ void fftPad::init()
             Backward=&fftBase::backward1Many;
             FR="forward1Many";
             BR="backward1Many";
-}
+          }
           if(repad())
             Pad=&fftBase::padMany;
         }
@@ -885,8 +885,8 @@ void fftPad::forward1ManyAll(Complex *f, Complex *F, size_t, Complex *)
   Complex *Zetar=Zetaqm+m;
   PARALLELIF(
     C > threshold,
-  for(size_t c=0; c < C; ++c)
-    F[c]=f[c];
+    for(size_t c=0; c < C; ++c)
+      F[c]=f[c];
     );
   PARALLELIF(
     (m-1)*C > threshold,
@@ -1375,11 +1375,8 @@ void fftPad::forwardInnerMany(Complex *f, Complex *F, size_t r,
     if(S == C)
       fftp->fft(W);
     else
-      PARALLELIF(
-        m > threshold,
-        for(size_t s=0; s < m; ++s)
-          fftp->fft(W+S*s);
-        );
+      for(size_t s=0; s < m; ++s)
+        fftp->fft(W+S*s);
 
     PARALLELIF(
       (p-1)*(m-1)*C > threshold,
@@ -1445,11 +1442,8 @@ void fftPad::forwardInnerMany(Complex *f, Complex *F, size_t r,
     if(S == C)
       fftp->fft(W);
     else
-      PARALLELIF(
-        m > threshold,
-        for(size_t s=0; s < m; ++s)
-          fftp->fft(W+S*s);
-        );
+      for(size_t s=0; s < m; ++s)
+        fftp->fft(W+S*s);
 
     PARALLELIF(
       p*(m-1)*C > threshold,
@@ -1819,8 +1813,8 @@ void fftPad::backward2Many(Complex *F, Complex *f, size_t r, Complex *W)
     size_t Lm=L-m;
     PARALLELIF(
       C > threshold,
-    for(size_t c=0; c < C; ++c)
-      f[c] += W[c];
+      for(size_t c=0; c < C; ++c)
+        f[c] += W[c];
       );
     Complex *Zetar=Zetaqm+m*r;
     PARALLELIF(
@@ -1965,11 +1959,8 @@ void fftPad::backwardInnerMany(Complex *F, Complex *f, size_t r,
     if(S == C)
       ifftp->fft(W);
     else
-      PARALLELIF(
-        m > threshold,
-        for(size_t s=0; s < m; ++s)
-          ifftp->fft(W+S*s);
-        );
+      for(size_t s=0; s < m; ++s)
+        ifftp->fft(W+S*s);
 
     PARALLELIF(
       pm1*m*C > threshold,
@@ -2015,11 +2006,8 @@ void fftPad::backwardInnerMany(Complex *F, Complex *f, size_t r,
     if(S == C)
       ifftp->fft(W);
     else
-      PARALLELIF(
-        m > threshold,
-        for(size_t s=0; s < m; ++s)
-          ifftp->fft(W+S*s);
-        );
+      for(size_t s=0; s < m; ++s)
+        ifftp->fft(W+S*s);
     PARALLELIF(
       m*C > threshold,
       for(size_t s=0; s < m; ++s) {
@@ -3385,14 +3373,12 @@ void fftPadCentered::forwardInnerManyAll(Complex *f, Complex *F, size_t,
     fftp->fft(g);
     fftp->fft(F);
   } else {
-    PARALLELIF(
-      m > threshold,
     for(size_t s=0; s < m; ++s) {
       size_t Ss=S*s;
       fftp->fft(f+Ss);
       fftp->fft(g+Ss);
       fftp->fft(F+Ss);
-    });
+    };
   }
 
   Complex *Zetar=Zetaqm+m;
@@ -3523,11 +3509,8 @@ void fftPadCentered::forwardInnerMany(Complex *f, Complex *F, size_t r,
     if(S == C)
       fftp->fft(W);
     else
-      PARALLELIF(
-        m > threshold,
-        for(size_t s=0; s < m; ++s)
-          fftp->fft(W+S*s);
-        );
+      for(size_t s=0; s < m; ++s)
+        fftp->fft(W+S*s);
     size_t mn=m*n;
     for(size_t u=1; u < p2; ++u) {
       Complex *Wu=W+u*Sm;
@@ -3625,11 +3608,8 @@ void fftPadCentered::forwardInnerMany(Complex *f, Complex *F, size_t r,
     if(S == C)
       fftp->fft(W);
     else
-      PARALLELIF(
-        m > threshold,
-        for(size_t s=0; s < m; ++s)
-          fftp->fft(W+S*s);
-        );
+      for(size_t s=0; s < m; ++s)
+        fftp->fft(W+S*s);
     size_t mr=m*r;
     for(size_t u=0; u < p2; ++u) {
       size_t mu=m*u;
@@ -4323,11 +4303,8 @@ void fftPadCentered::backwardInnerMany(Complex *F, Complex *f, size_t r,
     if(S == C)
       ifftp->fft(W);
     else
-      PARALLELIF(
-        m > threshold,
       for(size_t s=0; s < m; ++s)
         ifftp->fft(W+S*s);
-        );
 
     PARALLELIF(
       m0*C > threshold,
