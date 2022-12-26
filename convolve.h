@@ -436,16 +436,16 @@ public:
     return overwrite && app.A >= app.B;
   }
 
-  virtual double time(Application& app)=0;
+  virtual double time()=0;
 
-  double report(Application& app) {
-    double median=time(app)*1.0e-9;
+  double report() {
+    double median=time()*1.0e-9;
     std::cout << "median=" << median << std::endl;
     return median;
   }
 };
 
-typedef double timer(fftBase *fft, Application &app, double& threshold);
+typedef double timer(fftBase *fft, double& threshold);
 timer timePad;
 
 class fftPad : public fftBase {
@@ -470,7 +470,8 @@ public:
     double time(size_t L, size_t M, size_t C, size_t S,
                 size_t m, size_t q,size_t D, bool inplace, Application &app) {
       fftPad fft(L,M,C,S,m,q,D,inplace,app);
-      return timePad(&fft,app,threshold);
+      double threshold=DBL_MAX;
+      return timePad(&fft,threshold);
     }
   };
 
@@ -508,9 +509,9 @@ public:
 
   void init();
 
-  double time(Application& app) {
+  double time() {
     double threshold=DBL_MAX;
-    return timePad(this,app,threshold);
+    return timePad(this,threshold);
   }
 
   // Explicitly pad to m.
@@ -573,7 +574,8 @@ public:
     double time(size_t L, size_t M, size_t C, size_t S,
                 size_t m, size_t q, size_t D, bool inplace, Application &app) {
       fftPadCentered fft(L,M,C,S,m,q,D,inplace,app);
-      return timePad(&fft,app,threshold);
+      double threshold=DBL_MAX;
+      return timePad(&fft,threshold);
     }
   };
 
@@ -612,9 +614,9 @@ public:
 
   void init();
 
-  double time(Application& app) {
+  double time() {
     double threshold=DBL_MAX;
-    return timePad(this,app,threshold);
+    return timePad(this,threshold);
   }
 
   void forwardExplicitFast(Complex *f, Complex *F, size_t r, Complex *W);
@@ -683,7 +685,7 @@ public:
     double time(size_t L, size_t M, size_t C, size_t,
                 size_t m, size_t q, size_t D, bool inplace, Application &app) {
       fftPadHermitian fft(L,M,C,m,q,D,inplace,app);
-      return timePad(&fft,app,threshold);
+      return timePad(&fft,threshold);
     }
   };
 
@@ -713,9 +715,9 @@ public:
 
   void init();
 
-  double time(Application& app) {
+  double time() {
     double threshold=DBL_MAX;
-    return timePad(this,app,threshold);
+    return timePad(this,threshold);
   }
 
   void forwardExplicit(Complex *f, Complex *F, size_t, Complex *W);

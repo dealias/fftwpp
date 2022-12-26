@@ -171,33 +171,50 @@ bool ispure(size_t m)
 
 
 template<class Convolution>
-double time(fftBase *fft, Application &app, double &threshold)
+double time(fftBase *fft, double &threshold)
 {
-  size_t N=max(app.A,app.B);
+  size_t N=max(fft->app.A,fft->app.B);
   size_t inputSize=fft->inputSize();
   Complex **f=ComplexAlign(N,inputSize);
 
   // Initialize entire array to 0 to avoid overflow when timing.
-  for(size_t a=0; a < app.A; ++a) {
+  for(size_t a=0; a < fft->app.A; ++a) {
     Complex *fa=f[a];
     for(size_t j=0; j < inputSize; ++j)
       fa[j]=0.0;
   }
 
-  Convolution Convolve(fft);
+  size_t threads=fft->app.threads == 1 ? fftw::maxthreads : 1;
+
+  Convolution **Convolve=new Convolution*[threads];
+  for(size_t t=0; t < threads; ++t)
+    Convolve[t]=new Convolution(fft);
 
   statistics Stats(true);
   statistics medianStats(false);
   double eps=0.02;
 
   do {
-    cpuTimer C;
-    Convolve.convolveRaw(f);
-    Stats.add(C.nanoseconds());
+    if(threads > 1) {
+      cpuTimer C;
+#pragma omp parallel for num_threads(threads)
+      for(size_t t=0; t < threads; ++t)
+        Convolve[t]->convolveRaw(f);
+      Stats.add(C.nanoseconds());
+    } else {
+      Convolution *Convolve0=Convolve[0];
+      cpuTimer C;
+      Convolve0->convolveRaw(f);
+      Stats.add(C.nanoseconds());
+    }
     if(Stats.min() >= 2.0*threshold) break;
     if(Stats.count() >= 4 && Stats.min() >= threshold) break;
     medianStats.add(Stats.median());
   } while(Stats.count() < 5 || medianStats.stderror() > eps*medianStats.mean());
+
+  for(size_t t=0; t < threads; ++t)
+    delete Convolve[t];
+  delete [] Convolve;
 
   threshold=min(threshold,Stats.max());
   deleteAlign(f[0]);
@@ -205,9 +222,9 @@ double time(fftBase *fft, Application &app, double &threshold)
   return Stats.median();
 }
 
-double timePad(fftBase *fft, Application &app, double& threshold)
+double timePad(fftBase *fft, double& threshold)
 {
-  return time<Convolution>(fft,app,threshold);
+  return time<Convolution>(fft,threshold);
 }
 
 void fftBase::OptBase::optloop(size_t& m, size_t L,
