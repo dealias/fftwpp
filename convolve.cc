@@ -173,7 +173,7 @@ bool ispure(size_t m)
 template<class Convolution>
 double time(fftBase *fft, double &threshold)
 {
-  size_t threads=fft->app.threads == 1 ? fftw::maxthreads : 1;
+  size_t threads=fft->app.threads == 1 ? fft->app.maxthreads : 1;
 
   size_t N=max(fft->app.A,fft->app.B);
   size_t inputSize=fft->inputSize();

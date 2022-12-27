@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
 
   Application appx(A,B,multNone,fftw::maxthreads,0,mx,Dx,Ix);
   fftPadCentered fftx(Lx,Mx,appx,Hy,Sx);
-  Application appy(A,B,realmultbinary,appx.Threads(),fftx.l,my,Dy,Iy);
+  Application appy(A,B,realmultbinary,appx,fftx.C,my,Dy,Iy);
   fftPadHermitian ffty(Ly,My,appy);
   Convolution2 Convolve2(&fftx,&ffty);
 

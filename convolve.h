@@ -103,19 +103,34 @@ public:
   size_t m;
   size_t D;
   ptrdiff_t I;
+  size_t maxthreads;
 
-  Application(size_t A, size_t B, multiplier *mult=multNone,
-              size_t threads=fftw::maxthreads, size_t n=0,
-              size_t m=0, size_t D=0, ptrdiff_t I=-1) :
-    ThreadBase(threads), A(A), B(B), mult(mult), m(m), D(D), I(I)
-  {
+  void init(size_t n) {
     if(n == 0)
       multithread(threads);
     else {
       multithread(n);
       this->threads=innerthreads;
     }
-  };
+  }
+
+  Application(size_t A, size_t B, multiplier *mult,
+              size_t threads=fftw::maxthreads, size_t n=0,
+              size_t m=0, size_t D=0, ptrdiff_t I=-1) :
+    ThreadBase(threads), A(A), B(B), mult(mult), m(m), D(D), I(I)
+  {
+    init(n);
+    maxthreads=threads;
+  }
+
+  Application(size_t A, size_t B, multiplier *mult,
+              Application &parent, size_t n=0,
+              size_t m=0, size_t D=0, ptrdiff_t I=-1) :
+    ThreadBase(parent.Threads()), A(A), B(B), mult(mult), m(m), D(D), I(I)
+  {
+    init(n);
+    maxthreads=threads*parent.maxthreads;
+  }
 };
 
 class fftBase : public ThreadBase {
