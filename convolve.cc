@@ -173,18 +173,20 @@ bool ispure(size_t m)
 template<class Convolution>
 double time(fftBase *fft, double &threshold)
 {
+  size_t threads=fft->app.threads == 1 ? fftw::maxthreads : 1;
+
   size_t N=max(fft->app.A,fft->app.B);
   size_t inputSize=fft->inputSize();
-  Complex **f=ComplexAlign(N,inputSize);
+  Complex **f=ComplexAlign(N*threads,inputSize);
 
   // Initialize entire array to 0 to avoid overflow when timing.
-  for(size_t a=0; a < fft->app.A; ++a) {
-    Complex *fa=f[a];
-    for(size_t j=0; j < inputSize; ++j)
-      fa[j]=0.0;
+  for(size_t t=0; t < threads; ++t) {
+    for(size_t a=0; a < fft->app.A; ++a) {
+      Complex *fa=f[N*t+a];
+      for(size_t j=0; j < inputSize; ++j)
+        fa[j]=0.0;
+    }
   }
-
-  size_t threads=fft->app.threads == 1 ? fftw::maxthreads : 1;
 
   Convolution **Convolve=new Convolution*[threads];
   for(size_t t=0; t < threads; ++t)
@@ -199,7 +201,7 @@ double time(fftBase *fft, double &threshold)
       cpuTimer C;
 #pragma omp parallel for num_threads(threads)
       for(size_t t=0; t < threads; ++t)
-        Convolve[t]->convolveRaw(f);
+        Convolve[t]->convolveRaw(f+N*t);
       Stats.add(C.nanoseconds());
     } else {
       Convolution *Convolve0=Convolve[0];
