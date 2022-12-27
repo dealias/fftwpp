@@ -14,7 +14,7 @@ ptrdiff_t Ix=-1,Iy=-1,Iz=-1;
 }
 
 double K=1.0; // Time limit (seconds)
-size_t minCount=1; // Minimum sample size for testing
+size_t minCount=20; // Minimum sample size for testing
 size_t C=1;
 size_t S=0;
 int stats=MEDIAN;
