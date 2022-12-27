@@ -533,8 +533,6 @@ def main(argv):
             if hybrid:
               if dimension == 2:
                 Sx=(ceilquotient(L,2) if hermitian else L)+2
-                if T > 1:
-                  Sx += 2
                 options.append(f'-Sx={Sx}')
               if dimension == 3:
                 Sy=ceilquotient(L,2) if hermitian else L
