@@ -3,6 +3,8 @@
 
 #include <chrono>
 
+namespace utils {
+
 #ifdef _WIN32
 #include <Windows.h>
 inline double cpuTime() {
@@ -12,16 +14,13 @@ inline double cpuTime() {
               ((unsigned long long)d.dwHighDateTime << 32))*100.0 : 0.0;
 }
 #else
+#include <time.h>
 inline double cpuTime() {
   timespec t;
   clock_gettime(CLOCK_THREAD_CPUTIME_ID,&t);
   return 1.0e9*t.tv_sec+t.tv_nsec;
 }
 #endif
-
-#include <time.h>
-
-namespace utils {
 
 class cpuTimer {
   double start;

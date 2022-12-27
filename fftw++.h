@@ -29,8 +29,9 @@
 #include <cerrno>
 #include <map>
 #include <typeinfo>
-#include <seconds.h>
 #include <climits>
+
+#include "seconds.h"
 
 #ifndef _OPENMP
 #ifndef FFTWPP_SINGLE_THREAD
