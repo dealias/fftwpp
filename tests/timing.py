@@ -533,6 +533,8 @@ def main(argv):
             if hybrid:
               if dimension == 2:
                 Sx=(ceilquotient(L,2) if hermitian else L)+2
+                if T > 1:
+                  Sx += 2
                 options.append(f'-Sx={Sx}')
               if dimension == 3:
                 Sy=ceilquotient(L,2) if hermitian else L
@@ -540,15 +542,17 @@ def main(argv):
                   Sy += 2
                 options.append(f'-Sy={Sy}')
                 Sx=Sy*L+2
+                if T > 1:
+                  Sx += 2
                 options.append(f'-Sx={Sx}')
-            if hermitian and not hybrid:
-                if dimension == 2:
-                  options.append('-X1')
-                  options.append('-Y1')
-                if dimension == 3 :
-                  options.append('-X1')
-                  options.append('-Y1')
-                  options.append('-Z1')
+            elif hermitian:
+              if dimension == 2:
+                options.append('-X1')
+                options.append('-Y1')
+              if dimension == 3 :
+                options.append('-X1')
+                options.append('-Y1')
+                options.append('-Z1')
 
             dothism = True
 
