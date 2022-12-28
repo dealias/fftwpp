@@ -96,13 +96,8 @@ void realmultbinary(Complex **F, size_t n, Indices *indices,
     );
 }
 
-bool notPow2(size_t m)
-{
-  return m != ceilpow2(m);
-}
-
-// Returns the smallest natural number greater than m of the form
-// 2^a 3^b 5^c 7^d for some nonnegative integers a, b, c, and d.
+// Returns the smallest natural number greater than a positive number
+// m of the form 2^a 3^b 5^c 7^d for some nonnegative integers a, b, c, and d.
 size_t nextfftsize(size_t m)
 {
   if(m == ceilpow2(m))
@@ -296,8 +291,9 @@ void fftBase::OptBase::opt(size_t L, size_t M, Application& app,
                            bool Explicit, bool centered, bool useTimer)
 {
   if(!Explicit) {
+    size_t H=ceilquotient(L,2);
     if(mForced) {
-      if(app.m >= ceilquotient(L,2))
+      if(app.m >= H)
         optloop(app.m,L,M,app,C,S,centered,1,useTimer,false);
       else
         optloop(app.m,L,M,app,C,S,centered,app.m+1,useTimer,false,true);
@@ -306,17 +302,19 @@ void fftBase::OptBase::opt(size_t L, size_t M, Application& app,
 
       optloop(m,L,M,app,C,S,centered,max(L/2,32),useTimer,false,true);
 
-      m=nextfftsize(L/2);
+      m=nextfftsize(H);
+
       optloop(m,L,M,app,C,S,centered,itmax,useTimer,false);
 
-      if(L > M/2) {
-        m=nextfftsize(max(M/2,m));
+      size_t Mhalf=ceilquotient(M,2);
+      if(L > Mhalf) {
+        m=nextfftsize(max(Mhalf,m));
         optloop(m,L,M,app,C,S,centered,itmax,useTimer,false);
 
         m=nextfftsize(max(L,m));
         optloop(m,L,M,app,C,S,centered,itmax,useTimer,false);
       } else {
-        m=nextfftsize(max(L <= M/2 ? L : M/2,m));
+        m=nextfftsize(max(min(L,Mhalf),m));
         optloop(m,L,M,app,C,S,centered,itmax,useTimer,false);
       }
       m=nextfftsize(max(M,m));

@@ -185,7 +185,8 @@ inline void usageHybrid(bool fft=false)
   std::cerr << "-T n\t\t number n of threads" << std::endl;
 }
 
-// ceilpow2(n) returns the smallest power of 2 greater than or equal to n.
+// ceilpow2(n) returns the smallest power of 2 greater than or equal
+// to a positive integer n.
 inline size_t ceilpow2(size_t n)
 {
   --n;
@@ -194,6 +195,7 @@ inline size_t ceilpow2(size_t n)
   n |= n >> 4;
   n |= n >> 8;
   n |= n >> 16;
+  n |= n >> 32;
   return ++n;
 }
 
