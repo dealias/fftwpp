@@ -1,5 +1,6 @@
 #include <cstring>
 #include <sstream>
+
 #include "fftw++.h"
 
 using namespace std;
@@ -16,7 +17,7 @@ const double fftw::twopi=2.0*acos(-1.0);
 // User settings:
 size_t fftw::effort=FFTW_MEASURE;
 const char *fftw::WisdomName="wisdom3.txt";
-const char *fftw::WisdomTemp="wisdom3_.txt";
+ostringstream WisdomTemp;
 size_t fftw::maxthreads=1;
 
 fftw_plan (*fftw::planner)(fftw *f, Complex *in, Complex *out)=Planner;
@@ -33,6 +34,7 @@ void LoadWisdom()
 {
   static bool Wise=false;
   if(!Wise) {
+    WisdomTemp << fftw::WisdomName << "_" << getpid();
     ifstream ifWisdom;
     ifWisdom.open(fftw::WisdomName);
     ostringstream wisdom;
@@ -44,16 +46,15 @@ void LoadWisdom()
   }
 }
 
-
 void SaveWisdom()
 {
-  ofstream ofWisdom;
-  ofWisdom.open(fftw::WisdomTemp);
   char *wisdom=fftw_export_wisdom_to_string();
+  ofstream ofWisdom;
+  ofWisdom.open(WisdomTemp.str().c_str());
   ofWisdom << wisdom;
   fftw_free(wisdom);
   ofWisdom.close();
-  rename(fftw::WisdomTemp,fftw::WisdomName);
+  rename(WisdomTemp.str().c_str(),fftw::WisdomName);
 }
 
 fftw_plan Planner(fftw *F, Complex *in, Complex *out)

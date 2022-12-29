@@ -7,6 +7,7 @@ namespace utils {
 
 #ifdef _WIN32
 #include <Windows.h>
+#define getpid GetCurrentProcessId
 inline double cpuTime() {
   FILETIME a,b,c,d;
   return GetProcessTimes(GetCurrentThread(),&a,&b,&c,&d) != 0 ?
@@ -14,6 +15,7 @@ inline double cpuTime() {
               ((unsigned long long)d.dwHighDateTime << 32))*100.0 : 0.0;
 }
 #else
+#include <unistd.h>
 #include <time.h>
 inline double cpuTime() {
   timespec t;
