@@ -200,6 +200,7 @@ public:
   static size_t effort;
   static size_t maxthreads;
   static const char *WisdomName;
+  static const char *WisdomTemp;
   static fftw_plan (*planner)(fftw *f, Complex *in, Complex *out);
 
   virtual size_t Threads() {return threads;}

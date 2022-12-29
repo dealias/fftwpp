@@ -16,6 +16,7 @@ const double fftw::twopi=2.0*acos(-1.0);
 // User settings:
 size_t fftw::effort=FFTW_MEASURE;
 const char *fftw::WisdomName="wisdom3.txt";
+const char *fftw::WisdomTemp="wisdom3_.txt";
 size_t fftw::maxthreads=1;
 
 fftw_plan (*fftw::planner)(fftw *f, Complex *in, Complex *out)=Planner;
@@ -47,11 +48,12 @@ void LoadWisdom()
 void SaveWisdom()
 {
   ofstream ofWisdom;
-  ofWisdom.open(fftw::WisdomName);
+  ofWisdom.open(fftw::WisdomTemp);
   char *wisdom=fftw_export_wisdom_to_string();
   ofWisdom << wisdom;
   fftw_free(wisdom);
   ofWisdom.close();
+  rename(fftw::WisdomTemp,fftw::WisdomName);
 }
 
 fftw_plan Planner(fftw *F, Complex *in, Complex *out)
