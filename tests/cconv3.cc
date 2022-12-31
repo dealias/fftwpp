@@ -109,8 +109,8 @@ int main(int argc, char *argv[])
       case 'B':
         B=atoi(optarg);
         break;
-      case 'N':
-        N=atoi(optarg);
+      case 'K':
+        K=atof(optarg);
         break;
       case 'O':
         Output=true;
