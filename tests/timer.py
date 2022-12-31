@@ -78,11 +78,9 @@ def time(args,dim,Hermitian, T):
 
   taskset=""
   if not args.t:
-    taskset="taskset -c 0"
-    if T > 1:
-      taskset+="-15"
+    taskset="taskset -c 0-15"
 
-  args=[f"-a{a}",f"-b{b}",f"-I{I}",f"-T{T}"]
+  args=[f"-a{a}",f"-b{b}",f"-I{I}",f"-T{T}",f"-K{args.K}"]
   erase=[]
   if e:
     erase.append("-e")
@@ -127,6 +125,7 @@ def getArgs():
   parser.add_argument("-e", help="Erase old data.", action="store_true")
   parser.add_argument("-H", help="Test Hermitian convolutions. Not specifying S or H is the same as specifying both.", action="store_true")
   parser.add_argument("-I",help="Interval. Checks powers of 2 when 0. Default is 0.", default=0, type=int)
+  parser.add_argument("-K",help="Minimum time limit (seconds).", default=5, type=float)
   parser.add_argument("-r",help="runtype: implicit, explicit, or hybrid. Not specifying does all of them.", type=str)
   parser.add_argument("-S", help="Test Standard convolutions. Not specifying S or H is the same as specifying both.",
                       action="store_true")

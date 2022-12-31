@@ -105,31 +105,19 @@ public:
   ptrdiff_t I;
   size_t maxthreads;
 
-  void init(size_t n) {
-    if(n == 0)
-      multithread(threads);
-    else {
-      multithread(n);
-      this->threads=innerthreads;
-    }
-  }
-
   Application(size_t A, size_t B, multiplier *mult,
-              size_t threads=fftw::maxthreads, size_t n=0,
+              size_t threads=fftw::maxthreads,
               size_t m=0, size_t D=0, ptrdiff_t I=-1) :
     ThreadBase(threads), A(A), B(B), mult(mult), m(m), D(D), I(I)
   {
-    init(n);
     maxthreads=threads;
   }
 
-  Application(size_t A, size_t B, multiplier *mult,
-              Application &parent, size_t n=0,
+  Application(size_t A, size_t B, multiplier *mult, Application &parent,
               size_t m=0, size_t D=0, ptrdiff_t I=-1) :
-    ThreadBase(parent.Threads()), A(A), B(B), mult(mult), m(m), D(D), I(I)
+    ThreadBase(1), A(A), B(B), mult(mult), m(m), D(D), I(I)
   {
-    init(n);
-    maxthreads=threads*parent.maxthreads;
+    maxthreads=parent.maxthreads;
   }
 };
 
@@ -1075,6 +1063,12 @@ public:
     ThreadBase(fftx->Threads()), fftx(fftx), ffty(ffty),
     A(fftx->app.A), B(fftx->app.B), mult(fftx->app.mult),
     W(W), allocateF(false), allocateW(false) {
+
+    if(fftx->l < threads) {
+      ffty->Threads(threads);
+      threads=1;
+    }
+
     this->convolvey=new Convolution*[threads];
     for(size_t t=0; t < threads; ++t)
       this->convolvey[t]=new Convolution(ffty);
@@ -1183,20 +1177,17 @@ public:
       (fftx->*Forward)(f[a]+offset,F[a],rx,W);
   }
 
-  void subconvolution(Complex **F, size_t C,
-                      size_t stride, size_t rx,
-                      size_t offset=0) {
+  void subconvolution(Complex **F, size_t rx, size_t offset=0) {
     size_t D=rx == 0 ? fftx->D0 : fftx->D;
     PARALLEL(
-      for(size_t i=0; i < C; ++i) {
+      for(size_t i=0; i < lx; ++i) {
         size_t t=ThreadBase::get_thread_num0();
         Convolution *cy=convolvey[t];
         for(size_t d=0; d < D; ++d) {
           cy->indices.index[0]=fftx->index(rx+d,i);
-          cy->convolveRaw(F,offset+(D*i+d)*stride,&cy->indices);
+          cy->convolveRaw(F,offset+(D*i+d)*Sx,&cy->indices);
         }
-      }
-      );
+      });
   }
 
   void backward(Complex **F, Complex **f, size_t rx,
@@ -1228,13 +1219,13 @@ public:
       forward(f,F,0,0,A,offset);
       size_t final=fftx->n-1;
       for(size_t r=0; r < final; ++r)
-        subconvolution(f,lx,Sx,r,offset+Sx*r*lx);
-      subconvolution(F,lx,Sx,final);
+        subconvolution(f,r,offset+Sx*r*lx);
+      subconvolution(F,final);
       backward(F,f,0,0,B,offset,W);
     } else {
       if(loop2) {
         forward(f,F,0,0,A,offset);
-        subconvolution(F,lx,Sx,0);
+        subconvolution(F,0);
         size_t C=A-B;
         size_t a=0;
         for(; a+C <= B; a += C) {
@@ -1242,7 +1233,7 @@ public:
           backward(F,f,0,a,a+C,offset,W0);
         }
         forward(f,Fp,r,a,A,offset);
-        subconvolution(Fp,lx,Sx,r);
+        subconvolution(Fp,r);
         backward(Fp,f,r,0,B,offset,W0);
       } else {
         size_t Offset;
@@ -1258,7 +1249,7 @@ public:
 
         for(size_t rx=0; rx < Rx; rx += fftx->increment(rx)) {
           forward(f,F,rx,0,A,offset);
-          subconvolution(F,lx,Sx,rx);
+          subconvolution(F,rx);
           backward(F,h0,rx,0,B,Offset,W);
         }
 
@@ -1326,6 +1317,12 @@ public:
     ThreadBase(fftx->Threads()), fftx(fftx), ffty(ffty), fftz(fftz),
     A(fftx->app.A), B(fftx->app.B), mult(fftx->app.mult),
     W(W), allocateF(false), allocateW(false) {
+
+    if(fftx->l < threads) {
+      ffty->Threads(threads);
+      threads=1;
+    }
+
     this->convolveyz=new Convolution2*[threads];
     for(size_t t=0; t < threads; ++t)
       this->convolveyz[t]=new Convolution2(ffty,fftz);
@@ -1456,20 +1453,17 @@ public:
     }
   }
 
-  void subconvolution(Complex **F, size_t C,
-                      size_t stride, size_t rx,
-                      size_t offset=0) {
+  void subconvolution(Complex **F, size_t rx, size_t offset=0) {
     size_t D=rx == 0 ? fftx->D0 : fftx->D;
     PARALLEL(
-      for(size_t i=0; i < C; ++i) {
+      for(size_t i=0; i < lx; ++i) {
         size_t t=ThreadBase::get_thread_num0();
         Convolution2 *cyz=convolveyz[t];
         for(size_t d=0; d < D; ++d) {
           cyz->indices.index[1]=fftx->index(rx+d,i);
-          cyz->convolveRaw(F,offset+(D*i+d)*stride,&cyz->indices);
+          cyz->convolveRaw(F,offset+(D*i+d)*Sx,&cyz->indices);
         }
-      }
-      );
+      });
   }
 
   void backward(Complex **F, Complex **f, size_t rx,
@@ -1514,13 +1508,13 @@ public:
       forward(f,F,0,0,A,offset);
       size_t final=fftx->n-1;
       for(size_t r=0; r < final; ++r)
-        subconvolution(f,lx,Sx,r,offset+Sx*r*lx);
-      subconvolution(F,lx,Sx,final);
+        subconvolution(f,r,offset+Sx*r*lx);
+      subconvolution(F,final);
       backward(F,f,0,0,B,offset,W);
     } else {
       if(loop2) {
         forward(f,F,0,0,A,offset);
-        subconvolution(F,lx,Sx,0);
+        subconvolution(F,0);
         size_t C=A-B;
         size_t a=0;
         for(; a+C <= B; a += C) {
@@ -1528,7 +1522,7 @@ public:
           backward(F,f,0,a,a+C,offset,W0);
         }
         forward(f,Fp,r,a,A,offset);
-        subconvolution(Fp,lx,Sx,r);
+        subconvolution(Fp,r);
         backward(Fp,f,r,0,B,offset,W0);
       } else {
         size_t Offset;
@@ -1544,7 +1538,7 @@ public:
 
         for(size_t rx=0; rx < Rx; rx += fftx->increment(rx)) {
           forward(f,F,rx,0,A,offset);
-          subconvolution(F,lx,Sx,rx);
+          subconvolution(F,rx);
           backward(F,h0,rx,0,B,Offset,W);
         }
 
