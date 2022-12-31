@@ -40,9 +40,9 @@ int main(int argc, char *argv[])
 
   vector<double> T;
 
-  Application appx(A,B,multNone,fftw::maxthreads,0,mx,Dx,Ix);
+  Application appx(A,B,multNone,fftw::maxthreads,mx,Dx,Ix);
   fftPad fftx(Lx,Mx,appx,Ly,Sx);
-  Application appy(A,B,multbinary,appx,fftx.C,my,Dy,Iy);
+  Application appy(A,B,multbinary,appx,my,Dy,Iy);
   fftPad ffty(Ly,My,appy);
   Convolution2 Convolve2(&fftx,&ffty);
 

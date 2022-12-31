@@ -47,11 +47,11 @@ int main(int argc, char *argv[])
 
   vector<double> T;
 
-  Application appx(A,B,multNone,fftw::maxthreads,0,mx,Dx,Ix);
+  Application appx(A,B,multNone,fftw::maxthreads,mx,Dx,Ix);
   fftPadCentered fftx(Lx,Mx,appx,Sy == Hz ? Ly*Hz : Hz,Sx);
-  Application appy(A,B,multNone,appx,fftx.C,my,Dy,Iy);
+  Application appy(A,B,multNone,appx,my,Dy,Iy);
   fftPadCentered ffty(Ly,My,appy,Hz,Sy);
-  Application appz(A,B,realmultbinary,appy,ffty.C,mz,Dz,Iz);
+  Application appz(A,B,realmultbinary,appy,mz,Dz,Iz);
   fftPadHermitian fftz(Lz,Mz,appz);
   Convolution3 Convolve3(&fftx,&ffty,&fftz);
 
