@@ -565,7 +565,7 @@ def main(argv):
                     print(f"problem size {L} is already done; skipping.")
                 dothism = False
 
-            if dothism:
+            if dothism and not dryrun:
                 if newdata == False:
                     newdata=True
                     if(appendtofile):
