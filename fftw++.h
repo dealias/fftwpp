@@ -32,57 +32,7 @@
 #include <climits>
 
 #include "seconds.h"
-
-#ifndef _OPENMP
-#ifndef FFTWPP_SINGLE_THREAD
-#define FFTWPP_SINGLE_THREAD
-#endif
-#endif
-
-#ifndef FFTWPP_SINGLE_THREAD
-#include <omp.h>
-#endif
-
-inline int get_thread_num()
-{
-#ifdef FFTWPP_SINGLE_THREAD
-  return 0;
-#else
-  return omp_get_thread_num();
-#endif
-}
-
-inline int get_max_threads()
-{
-#ifdef FFTWPP_SINGLE_THREAD
-  return 1;
-#else
-  return omp_get_max_threads();
-#endif
-}
-
-#ifndef FFTWPP_SINGLE_THREAD
-#define PARALLEL(code)                                  \
-  if(threads > 1) {                                     \
-    _Pragma("omp parallel for num_threads(threads)")    \
-      code                                              \
-      } else {code}
-#else
-#define PARALLEL(code) {code}
-#endif
-
-#ifndef FFTWPP_SINGLE_THREAD
-#define OMPIF(condition,directive,code)    \
-  if(threads > 1 && condition) {             \
-    _Pragma(directive)                             \
-      code                                   \
-      } else {code}
-#else
-#define OMPIF(condition,directive,code) {code}
-#endif
-
-#define PARALLELIF(condition,code) \
-  OMPIF(condition,"omp parallel for num_threads(threads)",code)
+#include "parallel.h"
 
 #ifndef __Complex_h__
 #include <complex>
@@ -93,9 +43,6 @@ typedef std::complex<double> Complex;
 #include "align.h"
 
 namespace fftwpp {
-
-extern size_t threshold;
-extern size_t lastThreads;
 
 // Obsolete names:
 #define FFTWComplex ComplexAlign
@@ -175,8 +122,6 @@ public:
       rsize=csize=std::max(rsize,csize);
   }
 };
-
-void Threshold(size_t threads);
 
 // Base clase for fft routines
 //
@@ -343,7 +288,7 @@ public:
     out=CheckAlign(in,out);
     inplace=(out==in);
 
-    Threshold(threads);
+    parallel::Threshold(threads);
     if(doubles < 2*threshold)
       threads=1;
 
@@ -359,7 +304,7 @@ public:
   }
 
   void Setup(Complex *in, double *out) {
-    Threshold(threads);
+    parallel::Threshold(threads);
     if(doubles < 4*threshold)
       threads=1;
 
@@ -367,7 +312,7 @@ public:
   }
 
   void Setup(double *in, Complex *out=NULL) {
-    Threshold(threads);
+    parallel::Threshold(threads);
     if(doubles < 4*threshold)
       threads=1;
 
@@ -512,7 +457,7 @@ public:
     size /= sizeof(double);
     length *= size;
 
-    Threshold(threads);
+    parallel::Threshold(threads);
     if(length*rows*cols/2 < threshold)
       threads=1;
 

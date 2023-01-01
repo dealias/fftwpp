@@ -64,7 +64,7 @@ FILES=conv cconv conv2 cconv2 conv3 cconv3 tconv tconv2 \
 	hybrid hybridh hybridconv hybridconvh hybridconv2 hybridconvh2 \
 	hybridconv3 hybridconvh3
 
-FFTW=fftw++
+FFTW=fftw++ parallel
 EXTRA=$(FFTW) convolution explicit direct
 HYBRID=$(FFTW) convolve direct options
 ALL=$(FILES) $(EXTRA) $(HYBRID)

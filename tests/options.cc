@@ -177,7 +177,7 @@ void optionsHybrid(int argc, char *argv[], bool fft)
         break;
       case THRESHOLD:
         threshold=Atoi(optarg,0);
-        lastThreads=0;
+        parallel::lastThreads=0;
         break;
       case 'c':
         Centered=true;
