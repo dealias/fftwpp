@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
   L=511; // input data length
   M=766; // minimum padded length
 
-  fftw::maxthreads=get_max_threads();
+  fftw::maxthreads=parallel::get_max_threads();
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;

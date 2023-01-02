@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
   double K=1.0; // Time limit (seconds)
   size_t minCount=20;
 
-  fftw::maxthreads=get_max_threads();
+  fftw::maxthreads=parallel::get_max_threads();
 
   size_t A=2; // Number of independent inputs
   size_t B=1;   // Number of outputs

@@ -679,7 +679,7 @@ public:
 #pragma omp parallel for num_threads(threads)
 #endif
       for(size_t i=0; i < M; ++i)
-        yconvolve[get_thread_num()]->convolve(F,pmult,2*i+r,offset+i*stride);
+        yconvolve[parallel::get_thread_num()]->convolve(F,pmult,2*i+r,offset+i*stride);
     } else {
       ImplicitConvolution *yconvolve0=yconvolve[0];
       for(size_t i=0; i < M; ++i)
@@ -959,7 +959,7 @@ public:
 #pragma omp parallel for num_threads(threads)
 #endif
       for(size_t i=0; i < M; ++i)
-        yconvolve[get_thread_num()]->convolve(F,pmult,indexfunction(i,mx),
+        yconvolve[parallel::get_thread_num()]->convolve(F,pmult,indexfunction(i,mx),
                                               offset+i*stride);
     } else {
       ImplicitHConvolution *yconvolve0=yconvolve[0];
@@ -1137,7 +1137,7 @@ public:
 #pragma omp parallel for num_threads(threads)
 #endif
       for(size_t i=0; i < M; ++i)
-        yzconvolve[get_thread_num()]->convolve(F,pmult,2*i+r,offset+i*stride);
+        yzconvolve[parallel::get_thread_num()]->convolve(F,pmult,2*i+r,offset+i*stride);
     } else {
       ImplicitConvolution2 *yzconvolve0=yzconvolve[0];
       for(size_t i=0; i < M; ++i) {
@@ -1367,7 +1367,7 @@ public:
 #pragma omp parallel for num_threads(threads)
 #endif
       for(size_t i=0; i < M; ++i)
-        yzconvolve[get_thread_num()]->convolve(F,pmult,false,
+        yzconvolve[parallel::get_thread_num()]->convolve(F,pmult,false,
                                                indexfunction(i,mx),
                                                offset+i*stride);
     } else {
@@ -1821,7 +1821,7 @@ public:
 #pragma omp parallel for num_threads(threads)
 #endif
     for(size_t i=0; i < mu; i += my1) {
-      size_t thread=get_thread_num();
+      size_t thread=parallel::get_thread_num();
       yconvolve->convolve(F,G,H,u[thread],v[thread],W[thread],i+offset);
     }
 
@@ -1829,7 +1829,7 @@ public:
 #pragma omp parallel for num_threads(threads)
 #endif
     for(size_t i=0; i < mu; i += my1) {
-      size_t thread=get_thread_num();
+      size_t thread=parallel::get_thread_num();
       yconvolve->convolve(U2,V2,W2,u[thread],v[thread],W[thread],i+offset);
     }
 
@@ -1942,7 +1942,7 @@ public:
 #pragma omp parallel for num_threads(threads)
 #endif
     for(size_t i=0; i < mu; i += my1) {
-      size_t thread=get_thread_num();
+      size_t thread=parallel::get_thread_num();
       yconvolve->convolve(f+i,g+i,u[thread],v[thread]);
     }
 
@@ -1950,7 +1950,7 @@ public:
 #pragma omp parallel for num_threads(threads)
 #endif
     for(size_t i=0; i < mu; i += my1) {
-      size_t thread=get_thread_num();
+      size_t thread=parallel::get_thread_num();
       yconvolve->convolve(u2+i,v2+i,u[thread],v[thread]);
     }
 
@@ -2036,13 +2036,13 @@ public:
 #pragma omp parallel for num_threads(threads)
 #endif
     for(size_t i=0; i < mu; i += my1)
-      yconvolve->convolve(f+i,u[get_thread_num()]);
+      yconvolve->convolve(f+i,u[parallel::get_thread_num()]);
 
 #ifndef FFTWPP_SINGLE_THREAD
 #pragma omp parallel for num_threads(threads)
 #endif
     for(size_t i=0; i < mu; i += my1)
-      yconvolve->convolve(u2+i,u[get_thread_num()]);
+      yconvolve->convolve(u2+i,u[parallel::get_thread_num()]);
 
     xfftpad->forwards(f,u2);
   }

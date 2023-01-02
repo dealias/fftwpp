@@ -85,7 +85,7 @@ public:
   }
 
   int get_thread_num0() {
-    return threads > 1 ? ::get_thread_num() : 0;
+    return threads > 1 ? parallel::get_thread_num() : 0;
   }
 };
 

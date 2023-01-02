@@ -52,7 +52,7 @@ inline void init(Array2<Complex>& e, Array2<Complex>& f, Array2<Complex>& g,
 
 int main(int argc, char *argv[])
 {
-  fftw::maxthreads=get_max_threads();
+  fftw::maxthreads=parallel::get_max_threads();
 
   int stats=0; // Type of statistics used in timing test.
 

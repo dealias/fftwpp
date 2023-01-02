@@ -1,11 +1,5 @@
 #pragma once
 
-extern size_t threshold;
-
-namespace parallel {
-extern size_t lastThreads;
-}
-
 #ifndef _OPENMP
 #ifndef SINGLE_THREAD
 #define SINGLE_THREAD
@@ -16,6 +10,10 @@ extern size_t lastThreads;
 #include <omp.h>
 #endif
 
+extern size_t threshold;
+
+namespace parallel {
+extern size_t lastThreads;
 inline int get_thread_num()
 {
 #ifdef SINGLE_THREAD
@@ -32,6 +30,7 @@ inline int get_max_threads()
 #else
   return omp_get_max_threads();
 #endif
+}
 }
 
 #ifndef SINGLE_THREAD

@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
   int N=1000;
   size_t stats=MEAN; // Type of statistics used in timing test.
 
-  fftw::maxthreads=get_max_threads();
+  fftw::maxthreads=parallel::get_max_threads();
   int r=-1;
 
 #ifdef __GNUC__

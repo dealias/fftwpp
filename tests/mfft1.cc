@@ -25,7 +25,7 @@ size_t outlimit=100;
 
 int main(int argc, char *argv[])
 {
-  fftw::maxthreads=get_max_threads();
+  fftw::maxthreads=parallel::get_max_threads();
 
   size_t N=0;
   size_t mx=4;

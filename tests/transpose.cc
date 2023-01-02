@@ -35,7 +35,7 @@ size_t outlimit=100;
 
 int main(int argc, char *argv[])
 {
-  fftw::maxthreads=get_max_threads();
+  fftw::maxthreads=parallel::get_max_threads();
 
   int stats=0; // Type of statistics used in timing test.
 

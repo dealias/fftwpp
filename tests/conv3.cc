@@ -99,7 +99,7 @@ inline void init(Complex **F,
 
 int main(int argc, char *argv[])
 {
-  threads=fftw::maxthreads=get_max_threads();
+  threads=fftw::maxthreads=parallel::get_max_threads();
 
   bool Direct=false;
   bool Implicit=true;

@@ -41,7 +41,7 @@ inline void init(Complex *e, Complex *f, Complex *g, size_t M=1)
 
 int main(int argc, char *argv[])
 {
-  fftw::maxthreads=get_max_threads();
+  fftw::maxthreads=parallel::get_max_threads();
 
   size_t stats=0; // Type of statistics used in timing test.
 

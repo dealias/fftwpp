@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
   bool shift=false;
   bool quiet=false;
 
-  fftw::maxthreads=get_max_threads();
+  fftw::maxthreads=parallel::get_max_threads();
 
 #ifdef __GNUC__
   optind=0;

@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
   Lx=Ly=Lz=7;  // input data length
   Mx=My=Mz=10; // minimum padded length
 
-  fftw::maxthreads=get_max_threads();
+  fftw::maxthreads=parallel::get_max_threads();
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
