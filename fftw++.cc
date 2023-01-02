@@ -6,10 +6,6 @@
 using namespace std;
 using namespace utils;
 
-namespace utils {
-int ALIGNMENT=2*sizeof(Complex); // Must be a multiple of sizeof(Complex)
-}
-
 namespace fftwpp {
 
 const double fftw::twopi=2.0*acos(-1.0);

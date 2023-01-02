@@ -13,6 +13,10 @@ typedef std::complex<double> Complex;
 #include "align.h"
 #include <chrono>
 
+namespace utils {
+int ALIGNMENT=2*sizeof(Complex); // Must be a multiple of sizeof(Complex)
+}
+
 using namespace utils;
 
 size_t threshold=SIZE_MAX;
