@@ -98,7 +98,7 @@ if(expl) {
   le *= ne;
   if(drawerrorbars)
     errorbars(me,e,0*me,he-e,0*me,e-le,Pen(0));
-  draw(graph(me,e,e > 0),Pentype(0),Label("explicit",Pen(0)+Lp),mark0);
+  draw(graph(me,e,e > 0),Pentype(0),Label("explicit (IP)",Pen(0)+Lp),mark0);
 
   if(pruned) {
     real[] np=f(mp);
@@ -120,7 +120,7 @@ if(explicito) {
   lo *= no;
   if(drawerrorbars)
     errorbars(mo,o,0*mo,ho-o,0*mo,o-lo,Pen(3));
-  draw(graph(mo,o,o > 0),Pentype(3),Label("explicito",Pen(3)+Lp),mark3);
+  draw(graph(mo,o,o > 0),Pentype(3),Label("explicito (OP)",Pen(3)+Lp),mark3);
 }
 
 if(implicit) {
