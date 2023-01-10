@@ -98,10 +98,7 @@ if(expl) {
   le *= ne;
   if(drawerrorbars)
     errorbars(me,e,0*me,he-e,0*me,e-le,Pen(0));
-  if(explicito)
-    draw(graph(me,e,e > 0),Pentype(0),Label("explicit (IP)",Pen(0)+Lp),mark0);
-  else
-    draw(graph(me,e,e > 0),Pentype(0),Label("explicit",Pen(0)+Lp),mark0);
+  draw(graph(me,e,e > 0),Pentype(0),Label("explicit"+(explicito ? " (IP)" : ""),Pen(0)+Lp),mark0);
 
 
   if(pruned) {
