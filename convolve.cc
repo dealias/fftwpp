@@ -164,8 +164,6 @@ bool ispure(size_t m)
   return false;
 }
 
-
-template<class Convolution>
 double time(fftBase *fft, double &threshold)
 {
   size_t threads=fft->app.threads == 1 ? fft->app.maxthreads : 1;
@@ -221,7 +219,7 @@ double time(fftBase *fft, double &threshold)
 
 double timePad(fftBase *fft, double& threshold)
 {
-  return time<Convolution>(fft,threshold);
+  return time(fft,threshold);
 }
 
 void fftBase::OptBase::optloop(size_t& m, size_t L,

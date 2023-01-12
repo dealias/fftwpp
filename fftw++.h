@@ -62,8 +62,6 @@ void SaveWisdom();
 
 extern const char *inout;
 
-class fftw;
-
 class ThreadBase
 {
 public:
@@ -146,6 +144,7 @@ public:
   static size_t maxthreads;
   static const char *WisdomName;
   static fftw_plan (*planner)(fftw *f, Complex *in, Complex *out);
+  static bool wiser;
 
   virtual size_t Threads() {return threads;}
 
