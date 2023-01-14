@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, getopt
+import sys, getopt, os
 import argparse
 from subprocess import *
 import re
@@ -45,7 +45,7 @@ def main():
 def callTiming(args,program, erase,taskset,runtype=None):
   cmd=["timing.py"]
   cmdLine="timing.py"
-  if taskset != "":
+  if taskset != None:
     cmd+=[f"-B{taskset}"]
     cmdLine+=f" -B\"{taskset}\""
   cmd+=[f"-p{program}"]+args+erase
@@ -76,9 +76,7 @@ def time(args,dim,Hermitian, T):
   new+=dimString
   old+=dimString
 
-  taskset=""
-  if not args.t:
-    taskset="taskset -c 0-15"
+  taskset=os.getenv("TASKSET")
 
   args=[f"-a{a}",f"-b{b}",f"-I{I}",f"-T{T}",f"-K{args.K}"]
   erase=[]
@@ -130,8 +128,6 @@ def getArgs():
   parser.add_argument("-S", help="Test Standard convolutions. Not specifying S or H is the same as specifying both.",
                       action="store_true")
   parser.add_argument("-T",metavar='threads',help="Number of threads. Not specifying, runs T=1 and T=$OMP_NUM_THREADS", default=0, type=int)
-  parser.add_argument("-t", help="Don't use 'taskset'.",
-                      action="store_true")
   return parser.parse_args()
 
 if __name__ == "__main__":
