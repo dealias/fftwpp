@@ -91,7 +91,7 @@ def time(args,dim,Hermitian, T):
     if dim != 1:
       print("explicito is only supported for 1 dimensional routines.")
     else:
-      callTiming(args+["-I0"],old,erase,taskset,runtype)
+      callTiming(args,old,erase,taskset,runtype)
   elif runtype == "hybrid":
     callTiming(args,new,erase,taskset)
     if Hermitian and I == 0:
@@ -100,7 +100,7 @@ def time(args,dim,Hermitian, T):
     callTiming(args,old,erase,taskset,"implicit")
     callTiming(args,old,erase,taskset,"explicit")
     if dim == 1:
-      callTiming(args+["-I0"],old,erase,taskset,"explicito")
+      callTiming(args,old,erase,taskset,"explicito")
     callTiming(args,new,erase,taskset)
     if Hermitian and I == 0:
       callTiming(args,new,erase,taskset,"explicit")
