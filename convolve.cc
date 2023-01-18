@@ -2366,30 +2366,27 @@ void fftPadCentered::forward2(Complex *f, Complex *F0, size_t r0,
       residues=2;
       Complex *V=W+m;
       Complex *Zetar=Zetaqm+(m+1)*q2;
-      Complex *Zetarm=Zetar+m;
       PARALLELIF(
         mH > threshold,
         for(size_t s=0; s < mH; ++s) {
-          W[s]=fH[s];
-          V[s]=Zetar[s]*fH[s];
+          Complex A=fH[s];
+          W[s]=A;
+          V[s]=Zetar[s]*A;
         });
       PARALLELIF(
         LH-mH > threshold,
         for(size_t s=mH; s < LH; ++s) {
-//        W[s]=fmH[s]+fH[s];
-//        V[s]=conj(*(Zetarm-s))*fmH[s]+Zetar[s]*fH[s];
-          Vec Zeta=LOAD(Zetar+s);
-          Vec Zetam=LOAD(Zetarm-s);
-          Vec fs=LOAD(fH+s);
-          Vec fms=LOAD(fmH+s);
-          STORE(W+s,fms+fs);
-          STORE(V+s,ZCMULT(Zetam,fms)+ZMULT(Zeta,fs));
+          Complex B=fmH[s];
+          Complex A=fH[s];
+          W[s]=A+B;
+          V[s]=Zetar[s]*(A-B);
         });
       PARALLELIF(
         m-LH > threshold,
         for(size_t s=LH; s < m; ++s) {
-          W[s]=fmH[s];
-          V[s]=conj(*(Zetarm-s))*fmH[s];
+          Complex B=fmH[s];
+          W[s]=B;
+          V[s]=-Zetar[s]*B;
         });
     }
     W += residues*m;
