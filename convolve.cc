@@ -5120,19 +5120,18 @@ void fftPadHermitian::forwardInner(Complex *f, Complex *F, size_t r,
   if(W == NULL) W=F;
 
   size_t p2=p/2;
-  size_t H=L/2;
+  size_t H=ceilquotient(L,2);
   size_t e1=e+1;
   size_t p2m=p2*m;
-  size_t p2mH=p2m+H-L;
+  size_t p2mH=p2m-H;
   size_t m0=min(p2mH+1,e1);
   Complex *fm=f+p2m;
   if(r == 0) {
     size_t n2=n/2;
     if(2*n2 < n) { // n odd, r=0
-      W[0]=f[0];
       PARALLELIF(
         m0 > threshold,
-        for(size_t s=1; s < m0; ++s)
+        for(size_t s=0; s < m0; ++s)
           W[s]=f[s];
         );
       PARALLELIF(
@@ -5311,10 +5310,10 @@ void fftPadHermitian::backwardInner(Complex *F, Complex *f, size_t r,
   if(W == NULL) W=F;
 
   size_t p2=p/2;
-  size_t H=L/2;
+  size_t H=ceilquotient(L,2);
   size_t e1=e+1;
   size_t p2m=p2*m;
-  size_t p2mH=p2m+H-L;
+  size_t p2mH=p2m-H;
   size_t S=m-e;
   size_t m0=min(p2mH+1,e1);
   Complex *fm=f+p2m;
