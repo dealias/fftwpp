@@ -2922,7 +2922,7 @@ void fftPadCentered::forwardInnerAll(Complex *f, Complex *F, size_t,
                                      Complex *)
 {
   size_t p2=p/2;
-  Vec Zetanr=CONJ(LOAD(Zetaqp+p)); // zeta_n^-r
+  Vec Zetanr=CONJ(LOAD(Zetaqp+p)); // zeta_n^{-r}
   Complex *g=f+b;
   PARALLELIF(
     m > threshold,
@@ -3155,7 +3155,7 @@ void fftPadCentered::forwardInner(Complex *f, Complex *F0, size_t r0,
   if(D == 1) {
     if(dr0 > 0) {
       Complex *Zetaqr=Zetaqp+p2*r0;
-      Vec Zetanr=CONJ(LOAD(Zetaqr+p2)); // zeta_n^-r
+      Vec Zetanr=CONJ(LOAD(Zetaqr+p2)); // zeta_n^{-r}
 
       PARALLELIF(
         m0 > threshold,
@@ -3191,7 +3191,7 @@ void fftPadCentered::forwardInner(Complex *f, Complex *F0, size_t r0,
       Complex *fm0t=fm0+p2s1m;
       Complex *fHt=fH+p2s1m;
       Vec Zeta=LOAD(Zetaqr+p2s1);
-      Vec Zetam=ZMULT(Zeta,Zetanr);
+      Vec Zetam=ZMULT(Zeta,Zetanr); // zeta_q^{-r}
       Vec Xm=UNPACKL(Zetam,Zetam);
       Vec Ym=UNPACKH(Zetam,-Zetam);
       X=UNPACKL(Zeta,Zeta);
@@ -3230,7 +3230,7 @@ void fftPadCentered::forwardInner(Complex *f, Complex *F0, size_t r0,
     for(size_t d=0; d < dr0; ++d) {
       Complex *F=W+2*b*d;
       size_t r=r0+d;
-      Vec Zetanr=CONJ(LOAD(Zetaqp+p2*r+p2)); // zeta_n^-r
+      Vec Zetanr=CONJ(LOAD(Zetaqp+p2*r+p2)); // zeta_n^{-r}
       Complex *G=F+b;
 
       PARALLELIF(
@@ -3330,7 +3330,7 @@ void fftPadCentered::forwardInnerManyAll(Complex *f, Complex *F, size_t,
                                          Complex *)
 {
   size_t p2=p/2;
-  Vec Zetanr=CONJ(LOAD(Zetaqp+p)); // zeta_n^-r
+  Vec Zetanr=CONJ(LOAD(Zetaqp+p)); // zeta_n^{-r}
   Complex *g=f+b;
   PARALLELIF(
     m*C > threshold,
@@ -3540,7 +3540,7 @@ void fftPadCentered::forwardInnerMany(Complex *f, Complex *F, size_t r,
     }
   } else {
     Complex *Zetaqr=Zetaqp+p2*r;
-    Vec Zetanr=CONJ(LOAD(Zetaqr+p2)); // zeta_n^-r
+    Vec Zetanr=CONJ(LOAD(Zetaqr+p2)); // zeta_n^{-r}
 
     PARALLELIF(
       m0*C > threshold,
@@ -5231,7 +5231,7 @@ void fftPadHermitian::forwardInner(Complex *f, Complex *F, size_t r,
       crfftm->fft(V,F+b);
     }
   } else {
-    Vec Zetanr=CONJ(LOAD(Zetaqp+p2*r+p2)); // zeta_n^-r
+    Vec Zetanr=CONJ(LOAD(Zetaqp+p2*r+p2)); // zeta_n^{-r}
     Complex *G=F+b;
     Complex *V=W == F ? G : W+B;
     V[0]=W[0]=f[0];
