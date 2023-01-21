@@ -267,7 +267,11 @@ def fillValues(program, minS, testS):
           q=ceilquotient(M,m) if p <= 2 else ceilquotient(M,m*p)*p
           n=q//p
           Istart=0
-          Dstop=2 if hermitian else n
+          Dstop=n
+          if q == 1:
+            Dstop=1
+          elif hermitian:
+            Dstop=2
           for I in range(Istart,2):
             if C == 1:
               D=Dstart
