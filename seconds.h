@@ -24,14 +24,43 @@ inline double cpuTime() {
 }
 #endif
 
+class stopWatch {
+  std::chrono::time_point<std::chrono::steady_clock> Start;
+
+public:
+  void reset() {
+    Start=std::chrono::steady_clock::now();
+  }
+
+  stopWatch() {
+    reset();
+  }
+
+  double nanoseconds(bool reset=false) {
+    auto Stop=std::chrono::steady_clock::now();
+    double ns=std::chrono::duration_cast<std::chrono::nanoseconds>
+      (Stop-Start).count();
+    if(reset) Start=Stop;
+    return ns;
+  }
+
+  double seconds(bool reset=false) {
+    return 1.0e-9*nanoseconds(reset);
+  }
+};
+
 class cpuTimer {
   double start;
   std::chrono::time_point<std::chrono::steady_clock> Start;
 
 public:
-  cpuTimer() {
+  void reset() {
     start=cpuTime();
     Start=std::chrono::steady_clock::now();
+  }
+
+  cpuTimer() {
+    reset();
   }
 
   double nanoseconds() {
