@@ -267,13 +267,14 @@ def fillValues(program, minS, testS):
           q=ceilquotient(M,m) if p <= 2 else ceilquotient(M,m*p)*p
           n=q//p
           Istart=0
+          Dstop=2 if hermitian else n
           for I in range(Istart,2):
             if C == 1:
               D=Dstart
-              while(D < n):
+              while(D < Dstop):
                 vals.append(Parameters(L,M,m,p,q,C,S,D,I))
                 D*=2
-              vals.append(Parameters(L,M,m,p,q,C,S,D,I))
+              vals.append(Parameters(L,M,m,p,q,C,S,Dstop,I))
             else:
               D=1
               vals.append(Parameters(L,M,m,p,q,C,S,D,I))
