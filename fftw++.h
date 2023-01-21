@@ -57,8 +57,9 @@ extern "C" size_t fftw_alignment();
 class fftw;
 
 extern "C" fftw_plan Planner(fftw *F, Complex *in, Complex *out);
-void LoadWisdom();
-void SaveWisdom();
+void loadWisdom();
+void saveWisdom();
+extern std::string wisdomName;
 
 extern const char *inout;
 
@@ -142,7 +143,6 @@ protected:
 public:
   static size_t effort;
   static size_t maxthreads;
-  static const char *WisdomName;
   static fftw_plan (*planner)(fftw *f, Complex *in, Complex *out);
   static bool wiser;
 

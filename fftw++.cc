@@ -13,8 +13,8 @@ bool fftw::wiser=false;
 
 // User settings:
 size_t fftw::effort=FFTW_MEASURE;
-const char *fftw::WisdomName="wisdom3.txt";
-ostringstream WisdomTemp;
+string wisdomName="wisdom3.txt";
+ostringstream wisdomTemp;
 size_t fftw::maxthreads=1;
 
 fftw_plan (*fftw::planner)(fftw *f, Complex *in, Complex *out)=Planner;
@@ -27,13 +27,13 @@ Mfft1d::Table Mfft1d::threadtable;
 Mrcfft1d::Table Mrcfft1d::threadtable;
 Mcrfft1d::Table Mcrfft1d::threadtable;
 
-void LoadWisdom()
+void loadWisdom()
 {
   static bool Wise=false;
   if(!Wise) {
-    WisdomTemp << fftw::WisdomName << "_" << getpid();
+    wisdomTemp << wisdomName << "_" << getpid();
     ifstream ifWisdom;
-    ifWisdom.open(fftw::WisdomName);
+    ifWisdom.open(wisdomName);
     ostringstream wisdom;
     wisdom << ifWisdom.rdbuf();
     ifWisdom.close();
@@ -43,23 +43,23 @@ void LoadWisdom()
   }
 }
 
-void SaveWisdom()
+void saveWisdom()
 {
   if(fftw::wiser) {
     char *wisdom=fftw_export_wisdom_to_string();
     ofstream ofWisdom;
-    ofWisdom.open(WisdomTemp.str().c_str());
+    ofWisdom.open(wisdomTemp.str().c_str());
     ofWisdom << wisdom;
     fftw_free(wisdom);
     ofWisdom.close();
-    rename(WisdomTemp.str().c_str(),fftw::WisdomName);
+    rename(wisdomTemp.str().c_str(),wisdomName.c_str());
     fftw::wiser=false;
   }
 }
 
 fftw_plan Planner(fftw *F, Complex *in, Complex *out)
 {
-  LoadWisdom();
+  loadWisdom();
   fftw::effort |= FFTW_WISDOM_ONLY;
   fftw_plan plan=F->Plan(in,out);
   fftw::effort &= ~FFTW_WISDOM_ONLY;
@@ -67,7 +67,7 @@ fftw_plan Planner(fftw *F, Complex *in, Complex *out)
     plan=F->Plan(in,out);
     static bool first=true;
     if(first) {
-      atexit(SaveWisdom);
+      atexit(saveWisdom);
       first=false;
     }
     fftw::wiser=true;
