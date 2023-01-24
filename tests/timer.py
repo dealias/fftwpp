@@ -45,7 +45,7 @@ def main():
 def callTiming(args,program, erase,taskset,runtype=None):
   cmd=["timing.py"]
   cmdLine="timing.py"
-  if taskset != None:
+  if taskset != None and taskset != "":
     cmd+=[f"-B{taskset}"]
     cmdLine+=f" -B\"{taskset}\""
   cmd+=[f"-p{program}"]+args+erase
