@@ -141,7 +141,7 @@ def max_m(p, RAM, runtype):
     return 0
 
 
-def default_outdir(p,T):
+def default_outdir(p,T,I):
     outdir=""
     if p == "cconv" or p == "hybridconv":
         outdir = "timings1"
@@ -167,7 +167,10 @@ def default_outdir(p,T):
         outdir = "timingsf2"
     if p == "transpose":
         outdir="transpose2"
-    return outdir+"-T"+str(T);
+    outdir += "-T"+str(T)
+    if I != 0:
+      outdir += "I"+str(I)
+    return outdir
 
 def main(argv):
     usage = '''Usage:
@@ -244,7 +247,7 @@ def main(argv):
         elif opt in ("-A"):
             A += [str(arg)]
         elif opt in ("-B"):
-            B = str(arg).split(" ");
+            B = str(arg).split(" ")
         elif opt in ("-E"):
             E += [str(arg)]
         elif opt in ("-e"):
@@ -342,7 +345,7 @@ def main(argv):
         runtype = "transpose"
 
     if outdir == "":
-        outdir = default_outdir(p,T)
+        outdir = default_outdir(p,T,I)
 
     if outdir == "":
         print("empty outdir: please select a program or specify an outdir (-D)")
@@ -419,7 +422,7 @@ def main(argv):
         cmd = []
         i = 0
         while i < len(B):
-            cmd.append(B[i]);
+            cmd.append(B[i])
             i += 1
 
         path += os.sep
@@ -452,7 +455,7 @@ def main(argv):
         # Add the extra arguments to the program being timed.
         i = 0
         while i < len(A):
-            cmd.append(A[i]);
+            cmd.append(A[i])
             i += 1
 
         print(" ".join(cmd))
