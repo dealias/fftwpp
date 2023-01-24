@@ -261,6 +261,8 @@ def fillValues(program, minS, testS):
         ms=[L4,L2]
         if not centered:
           ms+=[L,L+1]
+        elif not hermitian:
+          ms+=[ceilquotient((L2+L),2)]
         ms+=[M]
         for m in ms:
           p=ceilquotient(L,m)
