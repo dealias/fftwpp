@@ -1,13 +1,10 @@
 include graph;
 
-size(175,200,IgnoreAspect);
-
 barfactor=10;
 
 bool drawerrorbars=true;
 drawerrorbars=false;
 
-scale(Log,Linear);
 real[] me,e,le,he;
 real[] mo,o,lo,ho;
 real[] mi,i,li,hi;
@@ -22,6 +19,11 @@ usersetting();
 
 if(base == "") base=getstring("base directory",".");
 if(dir == "") dir=getstring("directory","timings1-T1");
+
+bool incremental=find(dir,"I1") >= 0;
+size(incremental ? 350 : 175,200,IgnoreAspect);
+
+scale(incremental ? Linear : Log,Linear);
 
 string prunelabel="$y$-pruned";
 
