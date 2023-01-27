@@ -383,6 +383,10 @@ public:
     plan=(*planner)(this,in,out);
     if(!plan) noplan();
 
+
+    const char* planprint = fftw_sprint_plan(plan);
+    std::cout << planprint << std::endl;
+    
     fftw_plan planT;
     if(fftw::maxthreads > 1) {
       threads=Threads;

@@ -3,13 +3,18 @@ MPICC?=mpicc
 
 MPIDIR=../
 IDIR=../../
+WDIR=../../wrappers
 TESTDIR=../../tests
+
 
 # GNU compiler
 ifeq ($(shell $(MPICXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
  CXXFLAGS=-O3 -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
-	-fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native \
-	-std=c++14	
+	-std=c++14
+ CFLAGS=-O3 -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
+	-std=c99	
+#-fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native \
+
 #For valgrind:
 # CXXFLAGS=-fopenmp -g -Wall -ansi -fomit-frame-pointer -fstrict-aliasing \
 # 	 -ffast-math -msse2 -mfpmath=sse
@@ -27,7 +32,8 @@ CXXFLAGS= -O5 -qsmp=speculative -qtune=qp -qipa -qarch=qp
 #CXXFLAGS= -O5 -P -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp
 endif
 
-CXXFLAGS += $(DEFS) -I$(MPIDIR) -I$(IDIR)  -I$(TESTDIR) 
+CXXFLAGS += $(DEFS) -I$(MPIDIR) -I$(IDIR) -I$(WDIR) -I$(TESTDIR) -fPIC
+CFLAGS += $(DEFS) -I$(MPIDIR) -I$(IDIR) -I$(WDIR) -I$(TESTDIR) -fPIC
 ifneq ($(strip $(FFTW_INCLUDE_PATH)),)
 CXXFLAGS+=-I$(FFTW_INCLUDE_PATH)
 endif
@@ -47,22 +53,44 @@ MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
 
 vpath %.cc ../
 vpath %.cc ../../
-FFTW=fftw++
-FILES=cmpifftw++.o
+vpath %.cc ../../wrappers
+
+
+MPITRANSPOSE=mpitranspose
+MPIFFT= $(MPITRANSPOSE) mpifftw++
+FILES=cmpifftw++.so _fftwpp.so cexample
 
 all: $(FILES)
 
 %.o : %.cc %.h
-	$(MPICXX) $(CXXFLAGS) $(OPTS) -o $@ -c $<
+	$(MPICXX) -c $(CXXFLAGS) $(OPTS) -o $@ $<
 
-fftw++.o: ../../fftw++.cc ../../fftw++.h
+%.so : %.cc %.h
+	$(MPICXX) -c -shared $(CXXFLAGS) $(OPTS) -o $@ $<
+
+cfftw++.o: cfftw++.cc cfftw++.h convolution.o fftw++.o
 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LDFLAGS)
 
-cmpifftw++.o: cmpifftw++.cc cmpifftw++.h fftw++.o
-	$(MPICXX) $(CXXFLAGS) -c -o $@ $< $(LDFLAGS)
+# cfftw++.o: cfftw++.cc ../../wrappers/cfftw++.h convolution.o fftw++.o
+# 	$(CXX) $(CXXFLAGS) -c -o $@ $^ $(LDFLAGS)
 
-# cmpitranspose.o: cmpitranspose.c cmpitranspose.h
-# 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LDFLAGS)
+_fftwpp.so: fftw++.o convolution.o
+	$(CXX) $(CXXFLAGS) -shared -o $@ $^ $(LDFLAGS)
+
+mpitranspose.so: ../mpitranspose.cc ../mpitranspose.h
+	$(MPICXX) $(CXXFLAGS) -shared -o $@ $^ $(LDFLAGS)
+
+mpifftwpp.so: ../mpifftw++.cc ../mpifftw++.h
+	$(MPICXX) $(CXXFLAGS) -shared -o $@ $^ $(LDFLAGS)
+
+cmpifftw++.so: cmpifftw++.cc cmpifftw++.h
+	$(MPICXX) $(CXXFLAGS) -shared -o $@ $^ $(LDFLAGS)
+
+cexample: cexample.c mpifftwpp.so mpitranspose.so _fftwpp.so cmpifftw++.so
+	$(MPICC) $(CFLAGS) -lstdc++ -o $@ $^ $(LDFLAGS)
+
+cmpitranspose.o: cmpitranspose.c cmpitranspose.h
+	$(CXX) $(CXXFLAGS) -c -o $@ $^ $(LDFLAGS)
 
 
 .SUFFIXES: .c .cc .o .d
@@ -80,7 +108,7 @@ ifeq (,$(findstring clean,${MAKECMDGOALS}))
 endif
 
 clean:
-	rm -f ${FILES}
+	rm -f ${FILES} *.o *.so
 
 .PHONY: clean
 
