@@ -1,10 +1,9 @@
 #include "mpiconvolution.h"
 
 using namespace std;
-using namespace utils;
 using namespace fftwpp;
 
-inline void init(double *f, split d) 
+inline void init(double *f, utils::split d) 
 {
   unsigned int c=0;
   for(unsigned int i=0; i < d.x; ++i) {
@@ -34,7 +33,7 @@ int main(int argc, char* argv[])
   
   int divisor=0;    // Test for best divisor
   int alltoall=-1;  // Test for best communication routine
-  mpiOptions options(divisor,alltoall);
+  utils::mpiOptions options(divisor,alltoall);
   
   bool xcompact=false;
   bool ycompact=false;
@@ -42,12 +41,12 @@ int main(int argc, char* argv[])
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_MULTIPLE,&provided);
 
-  MPIgroup group(MPI_COMM_WORLD,nyp);
+  utils::MPIgroup group(MPI_COMM_WORLD,nyp);
 
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;
   
-  defaultmpithreads=fftw::maxthreads;
+  utils::defaultmpithreads=fftw::maxthreads;
 
   if(group.rank == 0) {
     cout << "Configuration: " 
@@ -63,15 +62,15 @@ int main(int argc, char* argv[])
     } 
 
     // Set up per-process dimensions
-    split df(nx,ny,group.active);
-    split dg(nx,nyp,group.active);
-    split du(mx+xcompact,nyp,group.active);
+    utils::split df(nx,ny,group.active);
+    utils::split dg(nx,nyp,group.active);
+    utils::split du(mx+xcompact,nyp,group.active);
 
     // Allocate complex-aligned memory
-    double *f0=doubleAlign(df.n);
-    double *f1=doubleAlign(df.n);
-    Complex *g0=ComplexAlign(dg.n);
-    Complex *g1=ComplexAlign(dg.n);
+    double *f0=utils::doubleAlign(df.n);
+    double *f1=utils::doubleAlign(df.n);
+    Complex *g0=utils::ComplexAlign(dg.n);
+    Complex *g1=utils::ComplexAlign(dg.n);
 
     // Create instance of FFT
     rcfft2dMPI rcfft(df,dg,f0,g0,options);
@@ -85,34 +84,34 @@ int main(int argc, char* argv[])
 
     if(main) cout << "\nDistributed input (split in x direction):" << endl;
     if(main) cout << "f0:" << endl;
-    show(f0,df.x,df.Y,group.active);
+    utils::show(f0,df.x,df.Y,group.active);
     if(main) cout << "f1:" << endl;
-    show(f1,df.x,df.Y,group.active);
+    utils::show(f1,df.x,df.Y,group.active);
       
     if(main) cout << "\nDistributed output (split in y direction:)" << endl;
     if(main) cout << "g0:" << endl;
     rcfft.Forward0(f0,g0);
-    show(g0,dg.X,dg.y,group.active);
+    utils::show(g0,dg.X,dg.y,group.active);
     if(main) cout << "g1:" << endl;
     rcfft.Forward0(f1,g1);
-    show(g1,dg.X,dg.y,group.active);
+    utils::show(g1,dg.X,dg.y,group.active);
 
     if(main) cout << "\nAfter convolution (split in y direction):" << endl;
     C.convolve(G,multbinary);
     if(main) cout << "g0:" << endl;
-    show(g0,dg.X,dg.y,group.active);
+    utils::show(g0,dg.X,dg.y,group.active);
 
     if(main) cout << "\nTransformed back to real-space (split in x direction):"
                   << endl;
     if(main) cout << "f0:" << endl;
     rcfft.Backward0(g0,f0);
     rcfft.Normalize(f0);
-    show(f0,df.x,df.Y,group.active);
+    utils::show(f0,df.x,df.Y,group.active);
 
-    deleteAlign(g1);
-    deleteAlign(g0);
-    deleteAlign(f1);
-    deleteAlign(f0);
+    utils::deleteAlign(g1);
+    utils::deleteAlign(g0);
+    utils::deleteAlign(f1);
+    utils::deleteAlign(f0);
   }
   
   MPI_Finalize();

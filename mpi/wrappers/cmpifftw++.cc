@@ -12,6 +12,7 @@
 #include "cmpifftw++.h"
 #include "mpifftw++.h"
 
+
 extern "C" {
 
   namespace fftwpp {
@@ -32,7 +33,7 @@ extern "C" {
 
       auto opts = utils::mpiOptions(divisor,
 				    alltoall,
-				    utils::defaultmpithreads,
+				    1, //utils::defaultmpithreads,
 				    0);
     
       return new fft2dMPI(d,

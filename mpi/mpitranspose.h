@@ -32,8 +32,8 @@
 */  
   
 #include <mpi.h>
-#include <cstring>
-#include <typeinfo>
+//#include <cstring>
+//#include <typeinfo>
 #include <cfloat>
 #include "Complex.h"
 #include "seconds.h"

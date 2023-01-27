@@ -65,8 +65,14 @@ all: $(FILES)
 %.o : %.cc %.h
 	$(MPICXX) -c $(CXXFLAGS) $(OPTS) -o $@ $<
 
+%.o : %.cc
+	$(MPICXX) -c $(CXXFLAGS) $(OPTS) -o $@ $<
+
 %.so : %.cc %.h
-	$(MPICXX) -c -shared $(CXXFLAGS) $(OPTS) -o $@ $<
+	$(MPICXX) -shared $(CXXFLAGS) $(OPTS) -o $@ $^
+
+%.so : %.cc
+	$(MPICXX) -shared $(CXXFLAGS) $(OPTS) -o $@ $<
 
 cfftw++.so: cfftw++.cc ../../wrappers/cfftw++.h convolution.o fftw++.o
 	$(CXX) $(CXXFLAGS) -shared -o $@ $^ $(LDFLAGS)
@@ -80,13 +86,16 @@ _fftwpp.so: fftw++.o convolution.o
 mpitranspose.so: ../mpitranspose.cc ../mpitranspose.h
 	$(MPICXX) $(CXXFLAGS) -shared -o $@ $^ $(LDFLAGS)
 
-mpifftwpp.so: ../mpifftw++.cc ../mpifftw++.h
+mpifftwpp.so: ../mpifftw++.cc ../mpifftw++.h 
 	$(MPICXX) $(CXXFLAGS) -shared -o $@ $^ $(LDFLAGS)
 
-cmpifftw++.so: cmpifftw++.cc cmpifftw++.h
+cmpifftwpp.so: cmpifftw++.cc cmpifftw++.h
 	$(MPICXX) $(CXXFLAGS) -shared -o $@ $^ $(LDFLAGS)
 
-cexample: cexample.c mpifftwpp.so mpitranspose.so _fftwpp.so cmpifftw++.so cfftw++.so
+cexample.so: cexample.c
+	$(MPICC) $(CFLAGS) -shared -std=c99 -lstdc++ -o $@ $< $(LDFLAGS)
+
+cexample: cexample.so cmpifftwpp.so mpifftwpp.so mpitranspose.so cfftw++.so _fftwpp.so 
 	$(MPICC) $(CFLAGS) -std=c99 -lstdc++ -o $@ $^ $(LDFLAGS)
 
 cmpitranspose.o: cmpitranspose.c cmpitranspose.h

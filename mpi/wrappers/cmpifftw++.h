@@ -9,10 +9,12 @@
 #define _CMPIFFTWPP_H_
 
 #include <mpi.h>
-/* #include "mpifftw++.h" */
+#include "cmpifftw++.h"
+
 
 #ifdef  __cplusplus
 namespace mpifftwpp { extern "C" {
+
 #endif
         typedef struct fft2dMPI fft2dMPI;
         fft2dMPI* mpifftwpp_create_fft2d(MPI_Comm comm,
