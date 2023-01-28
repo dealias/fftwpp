@@ -7,6 +7,8 @@ real[][] a=in;
 a=sort(a);
 a=transpose(a);
 
+scale(Log,Log);
+
 int[] size=map(floor,a[0]);
 real[] mean=a[1];
 
@@ -40,7 +42,7 @@ for(int i=0; i < size.length; ++i) {
         m #= p;
       frame f;
       fill(f,scale(0.5*p^0.6)*unitcircle,Pen(p));
-      add(currentpicture,f,z);
+      add(currentpicture,f,Scale(z));
     }
   }
   //  if(m > 1) {
@@ -49,13 +51,13 @@ for(int i=0; i < size.length; ++i) {
   if(Mean <= min(mean[i:j+1])) {
     frame f;
     fill(f,unitcircle,black);
-    add(currentpicture,f,z);
+    add(currentpicture,f,Scale(z));
     ++count;
   }
 }
 
 real a=8e-11;
-draw(graph(new real(real x) {return a*5*x*log(x)/log(2);},1,size[size.length-1]),blue);
+draw(graph(new real(real x) {return a*5*x*log(x)/log(2);},2,size[size.length-1]),blue);
 
 
 xaxis("length",BottomTop,LeftTicks);
