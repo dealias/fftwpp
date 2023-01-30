@@ -17,48 +17,48 @@
 extern "C" {
 
   namespace utils {
-      // FIXME: this is a 1d group.
-      MPIgroup* mpifftwpp_create_group_1d(const MPI_Comm comm,
-					  const unsigned int ny) {
-          return new utils::MPIgroup(comm, ny);
-      }
-      MPIgroup* mpifftwpp_create_group_2d(const MPI_Comm comm,
-					  const unsigned int nx,
-					  const unsigned int ny) {
-	return new utils::MPIgroup(comm, nx, ny);
-      }
-      void mpifftwpp_delete_group(MPIgroup* group) {
-	delete group;
-      }
+    // FIXME: this is a 1d group.
+    MPIgroup* mpifftwpp_create_group_1d(const MPI_Comm comm,
+					const unsigned int ny) {
+      return new utils::MPIgroup(comm, ny);
+    }
+    MPIgroup* mpifftwpp_create_group_2d(const MPI_Comm comm,
+					const unsigned int nx,
+					const unsigned int ny) {
+      return new utils::MPIgroup(comm, nx, ny);
+    }
+    void mpifftwpp_delete_group(MPIgroup* group) {
+      delete group;
+    }
 
       
-      split* mpifftwpp_create_split(const MPI_Comm comm,
-                                    const unsigned int nx,
-                                    const unsigned int ny) {
-          return new utils::split(nx, ny, comm);
-      }
-      void mpifftwpp_delete_split(split* dim) {
-	delete dim;
-      }
-      unsigned int mpifftwpp_split_n(const split* dim) {
-	return dim->n;
-      }
-      
-      
-      split3* mpifftwpp_create_split3(const MPIgroup* group,
-				      const unsigned int nx,
-				      const unsigned int ny,
-				      const unsigned int nz) {
-	return new utils::split3(nx, ny, nz, *group);
-      }
-      void mpifftwpp_delete_split3(split3* dim) {
-	delete dim;
-      }
-      unsigned int mpifftwpp_split3_n(const split3* dim) {
-	return dim->n;
-      }
-      
+    split* mpifftwpp_create_split(const MPI_Comm comm,
+				  const unsigned int nx,
+				  const unsigned int ny) {
+      return new utils::split(nx, ny, comm);
     }
+    void mpifftwpp_delete_split(split* dim) {
+      delete dim;
+    }
+    unsigned int mpifftwpp_split_n(const split* dim) {
+      return dim->n;
+    }
+      
+      
+    split3* mpifftwpp_create_split3(const MPIgroup* group,
+				    const unsigned int nx,
+				    const unsigned int ny,
+				    const unsigned int nz) {
+      return new utils::split3(nx, ny, nz, *group);
+    }
+    void mpifftwpp_delete_split3(split3* dim) {
+      delete dim;
+    }
+    unsigned int mpifftwpp_split3_n(const split3* dim) {
+      return dim->n;
+    }
+      
+  }
 
   
   namespace fftwpp {
@@ -80,7 +80,7 @@ extern "C" {
 			  (Complex*)in,
 			  (Complex*)out,
 			  opts);
-    };
+    }
 
     void mpifftwpp_delete_fft2d(fft2dMPI* fft) {
       delete fft;
@@ -93,8 +93,8 @@ extern "C" {
     }
 
     void mpifftwpp_fft2d_backward(fft2dMPI* fft,
-				 double __complex__ *in,
-				 double __complex__ *out) {
+				  double __complex__ *in,
+				  double __complex__ *out) {
       fft->Backward((Complex*) in, (Complex*) out);
     }
 
@@ -118,21 +118,21 @@ extern "C" {
 			    in,
 			    (Complex*)out,
 			    opts);
-    };
+    }
 
     void mpifftwpp_delete_rcfft2d(rcfft2dMPI* fft) {
       delete fft;
     }
 
     void mpifftwpp_rcfft2d_forward(rcfft2dMPI* fft,
-				 double *in,
-				 double __complex__ *out) {
+				   double *in,
+				   double __complex__ *out) {
       fft->Forward(in, (Complex*) out);
     }
 
     void mpifftwpp_rcfft2d_backward(rcfft2dMPI* fft,
-				 double __complex__ *in,
-				 double  *out) {
+				    double __complex__ *in,
+				    double  *out) {
       fft->Backward((Complex*) in, out);
     }
 
@@ -174,6 +174,43 @@ extern "C" {
       fft->Backward((Complex*) in, (Complex*) out);
     }
 
+    
+    rcfft3dMPI* mpifftwpp_create_rcfft3d(const utils::split3* rdim,
+					 const utils::split3* cdim,
+					 double *in,
+					 double __complex__ *out){
+      /* Test for best block divisor: */
+      int divisor = 0;
+
+      /* Test for best alltoall routine: */
+      int alltoall = -1;
+
+      auto opts = utils::mpiOptions(divisor,
+				    alltoall,
+				    1, //utils::defaultmpithreads,
+				    0);
+      return new rcfft3dMPI(*rdim,
+			    *cdim,
+			    in,
+			    (Complex*)out,
+			    opts);
+    }
+
+
+    void mpifftwpp_delete_rcfft3d(rcfft3dMPI* fft){
+      delete fft;
+    }
+    void mpifftwpp_rcfft3d_forward(rcfft3dMPI* fft,
+				   double *in,
+				   double __complex__ *out){
+      fft->Forward(in, (Complex*) out);
+    }
+    void mpifftwpp_rcfft3d_backward(rcfft3dMPI* fft,
+				    double __complex__ *in,
+				    double *out){
+      fft->Backward((Complex*) in, out);
+    }
+    
   } /* namespace fftwpp */
   
 } /* extern C */

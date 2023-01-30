@@ -68,7 +68,6 @@ namespace mpifftwpp { extern "C" {
 
         
         typedef struct fft3dMPI fft3dMPI;
-        // fft3dMPI* mpifftwpp_create_fft3d();
         fft3dMPI* mpifftwpp_create_fft3d(const split3* dim,
                                          double __complex__ *in,
                                          double __complex__ *out);
@@ -79,6 +78,20 @@ namespace mpifftwpp { extern "C" {
         void mpifftwpp_fft3d_backward(fft3dMPI* fft,
                                       double __complex__ *in,
                                       double __complex__ *out);
+
+        typedef struct rcfft3dMPI rcfft3dMPI;
+        rcfft3dMPI* mpifftwpp_create_rcfft3d(const split3* rdim,
+                                           const split3* cdim,
+                                           double *in,
+                                           double __complex__ *out);
+        void mpifftwpp_delete_rcfft3d(rcfft3dMPI* fft);
+        void mpifftwpp_rcfft3d_forward(rcfft3dMPI* fft,
+                                       double *in,
+                                       double __complex__ *out);
+        void mpifftwpp_rcfft3d_backward(rcfft3dMPI* fft,
+                                        double __complex__ *in,
+                                        double *out);
+
         
 #ifdef  __cplusplus
     } }
