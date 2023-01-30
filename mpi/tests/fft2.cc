@@ -1,13 +1,12 @@
-#include "Array.h"
+ #include "Array.h"
 #include "mpifftw++.h"
 #include "utils.h"
 
-using namespace std;
-using namespace utils;
+//using namespace utils;
 using namespace fftwpp;
 using namespace Array;
 
-inline void init(Complex *f, split d) 
+inline void init(Complex *f, utils::split d) 
 {
   unsigned int c=0;
   for(unsigned int i=0; i < d.x; ++i) {
@@ -99,8 +98,8 @@ int main(int argc, char* argv[])
       case 'h':
       default:
         if(rank == 0) {
-          usageInplace(2);
-          usageTranspose();
+            utils::usageInplace(2);
+          utils::usageTranspose();
         }
         exit(1);
     }
@@ -113,44 +112,44 @@ int main(int argc, char* argv[])
     if(N < 10) N=10;
   }
   
-  MPIgroup group(MPI_COMM_WORLD,ny);
+  utils::MPIgroup group(MPI_COMM_WORLD,ny);
 
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;
   
-  defaultmpithreads=fftw::maxthreads;
+  utils::defaultmpithreads=fftw::maxthreads;
 
   if(group.rank < group.size) { 
     bool main=group.rank == 0;
   
     if(!quiet && main) {
-      cout << "Configuration: " 
+      std::cout << "Configuration: " 
            << group.size << " nodes X " << fftw::maxthreads 
-           << " threads/node" << endl;
-      cout << "Using MPI VERSION " << MPI_VERSION << endl;
-      cout << "N=" << N << endl;
-      cout << "nx=" << nx << ", ny=" << ny << endl;
+           << " threads/node" << std::endl;
+      std::cout << "Using MPI VERSION " << MPI_VERSION << std::endl;
+      std::cout << "N=" << N << std::endl;
+      std::cout << "nx=" << nx << ", ny=" << ny << std::endl;
     } 
 
     bool showresult = nx*ny < outlimit;
     
-    split d(nx,ny,group.active);
+    utils::split d(nx,ny,group.active);
   
-    Complex *f=ComplexAlign(d.n);
-    Complex *g=inplace ? f : ComplexAlign(d.n);
+    Complex *f=utils::ComplexAlign(d.n);
+    Complex *g=inplace ? f : utils::ComplexAlign(d.n);
 
     // Create instance of FFT
-    fft2dMPI fft(d,f,g,mpiOptions(divisor,alltoall,defaultmpithreads,0));
+    fft2dMPI fft(d,f,g,utils::mpiOptions(divisor,alltoall,utils::defaultmpithreads,0));
 
     if(!quiet && group.rank == 0)
-      cout << "Initialized after " << seconds() << " seconds." << endl;    
+        std::cout << "Initialized after " << utils::seconds() << " seconds." << std::endl;    
 
     if(test) {
       init(f,d);
 
       if(!quiet && showresult) {
-        if(main) cout << "\nDistributed input:" << endl;
-        show(f,d.x,ny,group.active);
+        if(main) std::cout << "\nDistributed input:" << std::endl;
+        utils::show(f,d.x,ny,group.active);
       }
 
       size_t align=sizeof(Complex);
@@ -158,30 +157,30 @@ int main(int argc, char* argv[])
       fft2d localForward(-1,flocal);
       fft2d localBackward(1,flocal);
 
-      gatherx(f,flocal(),d,1,group.active);
+      utils::gatherx(f,flocal(),d,1,group.active);
 
       if(!quiet && main) {
-        cout << "\nGathered input:\n" << flocal << endl;
+        std::cout << "\nGathered input:\n" << flocal << std::endl;
       }
 
       fft.Forward(f,g);
 
       if(!quiet && showresult) {
         if(main)
-	  cout << "\nDistributed output:" << endl;
-        show(f,nx,d.y,group.active);
+	  std::cout << "\nDistributed output:" << std::endl;
+        utils::show(f,nx,d.y,group.active);
       }
       
       array2<Complex> fgather(nx,ny,align);
       
-      gathery(g,fgather(),d,1,group.active);
+      utils::gathery(g,fgather(),d,1,group.active);
       
       MPI_Barrier(group.active);
       if(main) {
         localForward.fft(flocal);
         if(!quiet) {
-          cout << "\nGathered output:\n" << fgather << endl;
-          cout << "\nLocal output:\n" << flocal << endl;
+          std::cout << "\nGathered output:\n" << fgather << std::endl;
+          std::cout << "\nLocal output:\n" << flocal << std::endl;
         }
         double maxerr=0.0, norm=0.0;
         unsigned int stop=d.X*d.Y;
@@ -189,9 +188,9 @@ int main(int argc, char* argv[])
           maxerr=std::max(maxerr,abs(fgather(i)-flocal(i)));
           norm=std::max(norm,abs(flocal(i)));
         }
-        cout << "max error: " << maxerr << endl;
+        std::cout << "max error: " << maxerr << std::endl;
         if(maxerr > 1e-12*norm) {
-          cerr << "CAUTION: max error is LARGE!" << endl;
+          std::cerr << "CAUTION: max error is LARGE!" << std::endl;
           retval += 1;
         }
       }
@@ -200,27 +199,27 @@ int main(int argc, char* argv[])
       fft.Normalize(f);
 
       if(!quiet && showresult) {
-        if(main) cout << "\nDistributed inverse:" << endl;
-        show(f,d.x,ny,group.active);
+        if(main) std::cout << "\nDistributed inverse:" << std::endl;
+        utils::show(f,d.x,ny,group.active);
       }
 
-      gatherx(f,fgather(),d,1,group.active);
+      utils::gatherx(f,fgather(),d,1,group.active);
       MPI_Barrier(group.active);
       if(main) {
         localBackward.fftNormalized(flocal);
         if(!quiet) {
-          cout << "\nGathered inverse:\n" << fgather << endl;
-          cout << "\nLocal inverse:\n" << flocal << endl;
+          std::cout << "\nGathered inverse:\n" << fgather << std::endl;
+          std::cout << "\nLocal inverse:\n" << flocal << std::endl;
         }
-        retval += checkerror(flocal(),fgather(),d.X*d.Y);
+        retval += utils::checkerror(flocal(),fgather(),d.X*d.Y);
       }
 
       if(!quiet && group.rank == 0) {
-        cout << endl;
+        std::cout << std::endl;
         if(retval == 0)
-          cout << "pass" << endl;
+          std::cout << "pass" << std::endl;
         else
-          cout << "FAIL" << endl;
+          std::cout << "FAIL" << std::endl;
       }  
   
     } else {
@@ -228,23 +227,23 @@ int main(int argc, char* argv[])
         double *T=new double[N];
         for(unsigned int i=0; i < N; ++i) {
           init(f,d);
-          seconds();
+          utils::seconds();
           fft.Forward(f,g);
           fft.Backward(g,f);
-          T[i]=0.5*seconds();
+          T[i]=0.5*utils::seconds();
           fft.Normalize(f);
         }    
         if(!quiet && showresult)
-	  show(f,d.X,d.y,group.active);
+	  utils::show(f,d.X,d.y,group.active);
         if(main)
 	  timings("FFT timing:",nx,T,N,stats);
         delete [] T;
       }
     }
 
-    deleteAlign(f);
+    utils::deleteAlign(f);
     if(!inplace)
-      deleteAlign(g);
+      utils::deleteAlign(g);
   }
   
   MPI_Finalize();

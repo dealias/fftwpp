@@ -16,15 +16,60 @@
 namespace mpifftwpp { extern "C" {
 
 #endif
+        typedef struct MPIgroup MPIgroup;
+        MPIgroup* mpifftwpp_create_group_1d(const MPI_Comm comm,
+                                            const unsigned int ny);
+        MPIgroup* mpifftwpp_create_group_2d(const MPI_Comm comm,
+                                            const unsigned int nx,
+                                            const unsigned int ny);
+
+        void mpifftwpp_delete_group(MPIgroup* group);
+        
+               
+        typedef struct split split;
+        split* mpifftwpp_create_split(const MPI_Comm comm,
+                                      const unsigned int nx,
+                                      const unsigned int ny);
+        void mpifftwpp_delete_split(split* dim);
+        unsigned int mpifftwpp_split_n(const split* dim);
+        
+        typedef struct split3 split3;
+        split3* mpifftwpp_create_split3(const MPIgroup* group,
+                                        const unsigned int nx,
+                                        const unsigned int ny,
+                                        const unsigned int nz);
+        void mpifftwpp_delete_split3(split3* dim);
+        unsigned int mpifftwpp_split3_n(const split3* dim);
+        
+        
         typedef struct fft2dMPI fft2dMPI;
-        fft2dMPI* mpifftwpp_create_fft2d(MPI_Comm comm,
+        fft2dMPI* mpifftwpp_create_fft2d(const split* dim,
                                          double __complex__ *in,
-                                         double __complex__ *out,
-                                         unsigned int nx,
-                                         unsigned int ny);
+                                         double __complex__ *out);
+        void mpifftwpp_delete_fft2d(fft2dMPI* fft);
+        void mpifftwpp_fft2d_forward(fft2dMPI* fft,
+                                     double __complex__ *in,
+                                     double __complex__ *out);
+        void mpifftwpp_fft2d_backward(fft2dMPI* fft,
+                                      double __complex__ *in,
+                                      double __complex__ *out);
+
+        
+        typedef struct fft3dMPI fft3dMPI;
+        // fft3dMPI* mpifftwpp_create_fft3d();
+        fft3dMPI* mpifftwpp_create_fft3d(const split3* dim,
+                                         double __complex__ *in,
+                                         double __complex__ *out);
+        void mpifftwpp_delete_fft3d(fft3dMPI* fft);
+        void mpifftwpp_fft3d_forward(fft3dMPI* fft,
+                                     double __complex__ *in,
+                                     double __complex__ *out);
+        void mpifftwpp_fft3d_backward(fft3dMPI* fft,
+                                      double __complex__ *in,
+                                      double __complex__ *out);
         
 #ifdef  __cplusplus
-} }
+    } }
 #endif
 
 #endif
