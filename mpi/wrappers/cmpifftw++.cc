@@ -99,6 +99,44 @@ extern "C" {
     }
 
     
+    rcfft2dMPI* mpifftwpp_create_rcfft2d(const utils::split* rdim,
+					 const utils::split* cdim,
+					 double *in,
+					 double __complex__ *out) {
+      /* Test for best block divisor: */
+      int divisor = 0;
+
+      /* Test for best alltoall routine: */
+      int alltoall = -1;
+
+      auto opts = utils::mpiOptions(divisor,
+				    alltoall,
+				    1, //utils::defaultmpithreads,
+				    0);
+      return new rcfft2dMPI(*rdim,
+			    *cdim,
+			    in,
+			    (Complex*)out,
+			    opts);
+    };
+
+    void mpifftwpp_delete_rcfft2d(rcfft2dMPI* fft) {
+      delete fft;
+    }
+
+    void mpifftwpp_rcfft2d_forward(rcfft2dMPI* fft,
+				 double *in,
+				 double __complex__ *out) {
+      fft->Forward(in, (Complex*) out);
+    }
+
+    void mpifftwpp_rcfft2d_backward(rcfft2dMPI* fft,
+				 double __complex__ *in,
+				 double  *out) {
+      fft->Backward((Complex*) in, out);
+    }
+
+    
     fft3dMPI* mpifftwpp_create_fft3d(const utils::split3* dim,
 				     double __complex__ *in,
 				     double __complex__ *out) {
