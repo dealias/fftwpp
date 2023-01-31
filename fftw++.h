@@ -384,8 +384,8 @@ public:
     if(!plan) noplan();
 
 
-    const char* planprint = fftw_sprint_plan(plan);
-    std::cout << planprint << std::endl;
+    // const char* planprint = fftw_sprint_plan(plan);
+    // std::cout << planprint << std::endl;
     
     fftw_plan planT;
     if(fftw::maxthreads > 1) {

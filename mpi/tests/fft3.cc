@@ -26,7 +26,7 @@ void init(Complex *f,
 
 void init(Complex *f, split3 d)
 {
-  init(f,d.X,d.Y,d.Z,d.x0,d.y0,d.z0,d.x,d.y,d.z);
+  init(f, d.X, d.Y, d.Z, d.x0, d.y0, d.z0, d.x, d.y, d.z);
 }
 
 
@@ -189,7 +189,7 @@ int main(int argc, char* argv[])
       
       if(!quiet && showresult) {
         if(main) cout << "Distributed output:" << endl;
-        show(f,d.X,d.xy.y,d.z,group.active);
+        show(g,d.X,d.xy.y,d.z,group.active);
       }
       gatheryz(g,fgathered(),d,group.active); 
 

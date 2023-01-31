@@ -22,9 +22,7 @@ namespace mpifftwpp { extern "C" {
         MPIgroup* mpifftwpp_create_group_2d(const MPI_Comm comm,
                                             const unsigned int nx,
                                             const unsigned int ny);
-
         void mpifftwpp_delete_group(MPIgroup* group);
-        
                
         typedef struct split split;
         split* mpifftwpp_create_split(const MPI_Comm comm,
@@ -32,6 +30,32 @@ namespace mpifftwpp { extern "C" {
                                       const unsigned int ny);
         void mpifftwpp_delete_split(split* dim);
         unsigned int mpifftwpp_split_n(const split* dim);
+        unsigned int mpifftwpp_split_x(const split* dim);
+        unsigned int mpifftwpp_split_y(const split* dim);
+        unsigned int mpifftwpp_split_x0(const split* dim);
+        unsigned int mpifftwpp_split_y0(const split* dim);
+        unsigned int mpifftwpp_split_X(const split* dim);
+        unsigned int mpifftwpp_split_Y(const split* dim);
+
+        void mpitfftwpp_show_complex(const double __complex__ * f,
+                                     const unsigned int x,
+                                     const unsigned int ny,
+                                     const MPI_Comm comm);
+        void mpitfftwpp_show_real(const double * f,
+                                  const unsigned int x,
+                                  const unsigned int ny,
+                                  const MPI_Comm comm);
+        void mpitfftwpp_show_complex3(const double __complex__ * f,
+                                      const unsigned int x,
+                                      const unsigned int y,
+                                      const unsigned int Z,
+                                      const MPI_Comm comm);
+        void mpitfftwpp_show_real3(const double * f,
+                                   const unsigned int x,
+                                   const unsigned int y,
+                                   const unsigned int Z,
+                                   const MPI_Comm comm);
+        
         
         typedef struct split3 split3;
         split3* mpifftwpp_create_split3(const MPIgroup* group,
@@ -41,6 +65,17 @@ namespace mpifftwpp { extern "C" {
         void mpifftwpp_delete_split3(split3* dim);
         unsigned int mpifftwpp_split3_n(const split3* dim);
         
+        unsigned int mpifftwpp_split3_x(const split3* dim);
+        unsigned int mpifftwpp_split3_y(const split3* dim);
+        unsigned int mpifftwpp_split3_z(const split3* dim);
+        unsigned int mpifftwpp_split3_X(const split3* dim);
+        unsigned int mpifftwpp_split3_Y(const split3* dim);
+        unsigned int mpifftwpp_split3_Z(const split3* dim);
+        unsigned int mpifftwpp_split3_x0(const split3* dim);
+        unsigned int mpifftwpp_split3_y0(const split3* dim);
+        unsigned int mpifftwpp_split3_z0(const split3* dim);
+        unsigned int mpifftwpp_split3_xyy(const split3* dim);
+      
         typedef struct fft2dMPI fft2dMPI;
         fft2dMPI* mpifftwpp_create_fft2d(const split* dim,
                                          double __complex__ *in,
@@ -65,7 +100,6 @@ namespace mpifftwpp { extern "C" {
         void mpifftwpp_rcfft2d_backward(rcfft2dMPI* fft,
                                         double __complex__ *in,
                                         double *out);
-
         
         typedef struct fft3dMPI fft3dMPI;
         fft3dMPI* mpifftwpp_create_fft3d(const split3* dim,

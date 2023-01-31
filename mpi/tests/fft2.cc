@@ -168,7 +168,7 @@ int main(int argc, char* argv[])
       if(!quiet && showresult) {
         if(main)
 	  std::cout << "\nDistributed output:" << std::endl;
-        utils::show(f,nx,d.y,group.active);
+        utils::show(g,nx,d.y,group.active);
       }
       
       array2<Complex> fgather(nx,ny,align);
