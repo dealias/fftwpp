@@ -15,8 +15,8 @@ namespace fftwpp { extern "C" {
 #endif
 
 // wrappers for allocating aligned memory arrays
-  double *create_doublealign(unsigned int n);
-  void delete_complexAlign(double __complex__ * p);
+  double *create_doubleAlign(unsigned int n);
+  void delete_doubleAlign(double * p);
   double __complex__  *create_complexAlign(unsigned int n);
   void delete_complexAlign(double __complex__ * p);
 

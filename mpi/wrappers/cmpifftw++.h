@@ -54,10 +54,10 @@ namespace mpifftwpp { extern "C" {
                                       double __complex__ *out);
 
         typedef struct rcfft2dMPI rcfft2dMPI;
-        fft2dMPI* mpifftwpp_create_rcfft2d(const split* rdim,
-                                           const split* cdim,
-                                           double *in,
-                                           double __complex__ *out);
+        rcfft2dMPI* mpifftwpp_create_rcfft2d(const split* rdim,
+                                             const split* cdim,
+                                             double *in,
+                                             double __complex__ *out);
         void mpifftwpp_delete_rcfft2d(rcfft2dMPI* fft);
         void mpifftwpp_rcfft2d_forward(rcfft2dMPI* fft,
                                        double *in,
