@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import sys, getopt
 import numpy as np
 from math import *
