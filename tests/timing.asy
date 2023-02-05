@@ -156,8 +156,8 @@ xaxis("$L$",BottomTop,LeftTicks);
 yaxis("time/($"+sd+"L"+D+"\log_2 L$) (ns)",LeftRight,RightTicks("%#.1f"));
 
 legendlinelength=0.6cm;
-legendmargin=5;
-attach(legend(),point(NW),17SE+2N);
+legendmargin=4;
+attach(legend(),point(NW),15SE+1N);
 
 real mean(real[] a){return sum(a)/a.length;};
 if(expl)
