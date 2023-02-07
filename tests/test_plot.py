@@ -43,7 +43,7 @@ def plot(x,y,z,thread):
 	plt.show()
 
 thread = [[],[],[],[],[],[],[],[]]
-ly_values = [j for j in range(128, 164)]
+ly_values = [j for j in range(128, 129)]
 final_m_values = []
 final_time_values = []
 t_array = [1,8]
