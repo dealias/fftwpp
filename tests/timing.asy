@@ -21,7 +21,7 @@ if(base == "") base=getstring("base directory",".");
 if(dir == "") dir=getstring("directory","timings1-T1");
 
 bool incremental=find(dir,"I1") >= 0;
-size(incremental ? 350 : 175,200,IgnoreAspect);
+size(incremental ? 370.4pt : 181.5pt,185,IgnoreAspect);
 
 scale(incremental ? Linear : Log,Linear);
 
