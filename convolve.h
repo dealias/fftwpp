@@ -939,19 +939,25 @@ public:
 // Enforce 2D Hermiticity using specified (x >= 0,y=0) data.
 inline void HermitianSymmetrizeX(size_t Hx, size_t Hy,
                                  size_t x0, Complex *f,
-                                 size_t Sx)
+                                 size_t Sx, size_t threads=fftw::maxthreads)
 {
   Complex *F=f+x0*Sx;
   size_t stop=Hx*Sx;
+  PARALLELIF(
+    Hx > threshold,
   for(size_t i=Sx; i < stop; i += Sx)
     *(F-i)=conj(F[i]);
+    );
 
   F[0].im=0.0;
 
   // Zero out Nyquist modes
   if(x0 == Hx) {
+    PARALLELIF(
+      Hy > threshold,
     for(size_t j=0; j < Hy; ++j)
       f[j]=0.0;
+      );
   }
 }
 
@@ -973,8 +979,11 @@ inline void HermitianSymmetrizeXY(size_t Hx, size_t Hy,
   size_t origin=x0*Sx+y0*Sy;
   Complex *F=f+origin;
   size_t stop=Hx*Sx;
+  PARALLELIF(
+    Hx > threshold,
   for(size_t i=Sx; i < stop; i += Sx)
     *(F-i)=conj(F[i]);
+    );
 
   F[0].im=0.0;
 
@@ -1016,11 +1025,10 @@ inline void HermitianSymmetrizeXY(size_t Hx, size_t Hy,
 inline void HermitianSymmetrizeXY(size_t Hx, size_t Hy,
                                   size_t Hz,
                                   size_t x0, size_t y0,
-                                  Complex *f,
-                                  size_t threads=fftw::maxthreads)
+                                  Complex *f)
 {
   size_t Ly=y0+Hy;
-  HermitianSymmetrizeXY(Hx,Hy,Hz,x0,y0,f,Ly*Hz,Hz,threads);
+  HermitianSymmetrizeXY(Hx,Hy,Hz,x0,y0,f,Ly*Hz,Hz);
 }
 
 class Convolution2 : public ThreadBase {
@@ -1181,7 +1189,7 @@ public:
     size_t D=rx == 0 ? fftx->D0 : fftx->D;
     PARALLEL(
       for(size_t i=0; i < lx; ++i) {
-        size_t t=ThreadBase::get_thread_num0();
+        size_t t=parallel::get_thread_num(threads);
         Convolution *cy=convolvey[t];
         for(size_t d=0; d < D; ++d) {
           cy->indices.index[0]=fftx->index(rx+d,i);
@@ -1457,7 +1465,7 @@ public:
     size_t D=rx == 0 ? fftx->D0 : fftx->D;
     PARALLEL(
       for(size_t i=0; i < lx; ++i) {
-        size_t t=ThreadBase::get_thread_num0();
+        size_t t=parallel::get_thread_num(threads);
         Convolution2 *cyz=convolveyz[t];
         for(size_t d=0; d < D; ++d) {
           cyz->indices.index[1]=fftx->index(rx+d,i);

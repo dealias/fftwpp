@@ -23,6 +23,10 @@ inline int get_thread_num()
 #endif
 }
 
+inline int get_thread_num(unsigned int threads) {
+  return threads > 1 ? get_thread_num() : 0;
+}
+
 inline int get_max_threads()
 {
 #ifdef SINGLE_THREAD

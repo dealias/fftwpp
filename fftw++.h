@@ -82,10 +82,6 @@ public:
       threads=1;
     }
   }
-
-  int get_thread_num0() {
-    return threads > 1 ? parallel::get_thread_num() : 0;
-  }
 };
 
 inline size_t realsize(size_t n, bool inplace)
