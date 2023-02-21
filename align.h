@@ -89,7 +89,7 @@ inline void deleteAlign(T *v, size_t len)
 
 namespace utils {
 
-extern int ALIGNMENT;
+extern size_t ALIGNMENT;
 
 inline size_t ceilquotient(size_t a, size_t b)
 {
