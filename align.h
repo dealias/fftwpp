@@ -124,6 +124,19 @@ inline double *doubleAlign(size_t size)
   return v;
 }
 
+// Return a contiguous array v of n aligned buffers of length size.
+// Deallocate with deleteAlign(v[0]); delete v;
+inline double **doubleAlign(size_t n, size_t size)
+{
+  if(n == 0 || size == 0) return NULL;
+  double **v=new double*[n];
+  size_t Size=ALIGNMENT*ceilquotient(size,ALIGNMENT);
+  double *B=doubleAlign((n-1)*Size+size);
+  for(size_t i=0; i < n; ++i)
+    v[i]=B+i*Size;
+  return v;
+}
+
 // Extend n*sizeof(Complex) to a multiple of ALIGNMENT
 inline size_t align(size_t n)
 {

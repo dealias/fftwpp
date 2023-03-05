@@ -262,9 +262,9 @@ public:
   }
 
   virtual void forwardExplicit(Complex *f, Complex *F, size_t,
-                               Complex *W)=0;
+                               Complex *W) {};
   virtual void forwardExplicitMany(Complex *f, Complex *F, size_t,
-                                   Complex *W)=0;
+                                   Complex *W) {};
   virtual void forwardExplicitFast(Complex *f, Complex *F, size_t,
                                    Complex *W) {}
   virtual void forwardExplicitManyFast(Complex *f, Complex *F, size_t,
@@ -275,9 +275,9 @@ public:
                                        Complex *W) {}
 
   virtual void backwardExplicit(Complex *F, Complex *f, size_t,
-                                Complex *W)=0;
+                                Complex *W) {};
   virtual void backwardExplicitMany(Complex *F, Complex *f, size_t,
-                                    Complex *W)=0;
+                                    Complex *W) {};
   virtual void backwardExplicitFast(Complex *F, Complex *f, size_t,
                                     Complex *W) {}
   virtual void backwardExplicitManyFast(Complex *F, Complex *f, size_t,
@@ -752,6 +752,90 @@ public:
   size_t inputSize() {
     return C*utils::ceilquotient(L,2);
   }
+};
+
+class fftPadReal : public fftBase {
+  size_t e;
+  rcfft1d *rcfftm1;
+  crfft1d *crfftm1;
+public:
+
+  class Opt : public OptBase {
+  public:
+    Opt() {}
+
+    Opt(size_t L, size_t M, Application& app,
+        size_t C, size_t S, bool Explicit=false) {
+      scan(L,M,app,C,S,Explicit);
+    }
+
+    bool valid(size_t D, size_t p, size_t S) {
+      return D == 1 && p == 1 && S == 1;
+    }
+
+    double time(size_t L, size_t M, size_t C, size_t S,
+                size_t m, size_t q,size_t D, bool inplace, Application &app) {
+      fftPad fft(L,M,C,S,m,q,D,inplace,app);
+      double threshold=DBL_MAX;
+      return timePad(&fft,threshold);
+    }
+  };
+
+  fftPadReal(size_t L, size_t M, size_t C, size_t S, Application &app) :
+    fftBase(L,M,C,S,app) {}
+
+  // Compute an fft padded to N=m*q >= M >= L
+  fftPadReal(size_t L, size_t M, size_t C, size_t S,
+         size_t m, size_t q, size_t D, bool inplace,
+         Application &app) :
+    fftBase(L,M,C,S,m,q,D,inplace,app) {
+    Opt opt;
+    if(q > 1 && !opt.valid(D,p,this->S)) invalid();
+    init();
+  }
+
+  // Normal entry point.
+  // Compute C ffts of length L with stride S >= C and distance 1
+  // padded to at least M
+  fftPadReal(size_t L, size_t M, Application& app,
+         size_t C=1, size_t S=0, bool Explicit=false) :
+    fftBase(L,M,app,C,S,Explicit) {
+    Opt opt=Opt(L,M,app,C,this->S,Explicit);
+    m=opt.m;
+    if(Explicit)
+      M=m;
+    q=opt.q;
+    D=opt.D;
+    inplace=opt.inplace;
+    init();
+  }
+
+  ~fftPadReal();
+
+  void init();
+
+  double time() {
+    double threshold=DBL_MAX;
+    return timePad(this,threshold);
+  }
+
+  // Explicitly pad to m.
+  void padSingle(Complex *W) {}
+
+  // Explicitly pad C FFTs to m.
+  void padMany(Complex *W) {}
+
+  void forwardExplicit(Complex *f, Complex *F, size_t, Complex *W);
+  void backwardExplicit(Complex *F, Complex *f, size_t, Complex *W);
+
+  // p=1 && C=1
+//  void forward1(Complex *f, Complex *F0, size_t r0, Complex *W);
+//  void backward1(Complex *F0, Complex *f, size_t r0, Complex *W);
+
+  size_t inputSize() {
+    return S*utils::ceilquotient(L,2);
+  }
+
 };
 
 class Convolution : public ThreadBase {
