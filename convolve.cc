@@ -5699,6 +5699,106 @@ void fftPadReal::forwardExplicit(Complex *f, Complex *F, size_t, Complex *W)
   rcfftm1->fft(W,F);
 }
 
+void fftPadReal::forward1(Complex *f, Complex *F0, size_t r0, Complex *W)
+{
+  if(W == NULL) W=F0;
+
+  Complex *W0=W;
+  size_t dr0=dr;
+  mfft1d *fftm1;
+
+  if(r0 == 0) {
+    size_t residues;
+    size_t q2=q/2;
+    if(D == 1 || 2*q2 < q) { // q odd, r=0
+      if(!inplace && D == 1 && L >= m)
+        return fftm->fft(f,F0);
+      residues=1;
+      if(W != f) {
+        PARALLELIF(
+          L > threshold,
+          for(size_t s=0; s < L; ++s)
+            W[s]=f[s];
+          );
+      }
+    } else { // q even, r=0,q/2
+      residues=2;
+      Complex *V=W+m;
+      V[0]=W[0]=f[0];
+      Complex *Zetar=Zetaqm+m*q2;
+      PARALLELIF(
+        L > threshold,
+        for(size_t s=1; s < L; ++s) {
+          Complex fs=f[s];
+          W[s]=fs;
+          V[s]=Zetar[s]*fs;
+        });
+      if(inplace) {
+        for(size_t s=L; s < m; ++s)
+          V[s]=0.0;
+      }
+    }
+    if(inplace) {
+      for(size_t s=L; s < m; ++s)
+        W[s]=0.0;
+    }
+    W += residues*m;
+    r0=1;
+    dr0=(D0-residues)/2;
+    fftm1=D0 == D ? fftm : fftm0;
+  } else
+    fftm1=fftm;
+
+  if(D == 1) {
+    if(dr0 > 0) {
+      W[0]=f[0];
+      Complex *Zetar=Zetaqm+m*r0;
+      PARALLELIF(
+        L > threshold,
+        for(size_t s=1; s < L; ++s)
+          W[s]=Zetar[s]*f[s];
+        );
+      if(inplace) {
+        for(size_t s=L; s < m; ++s)
+          W[s]=0.0;
+      }
+    }
+  } /*else {
+    for(size_t d=0; d < dr0; ++d) {
+      Complex *F=W+2*m*d;
+      Complex *G=F+m;
+      size_t r=r0+d;
+      F[0]=G[0]=f[0];
+      Complex *Zetar=Zetaqm+m*r;
+      PARALLELIF(
+        L > threshold,
+        for(size_t s=1; s < L; ++s) {
+//        F[s]=Zeta*fs;
+//        G[s]=conj(Zeta)*fs;
+          Vec Zeta=LOAD(Zetar+s);
+          Vec fs=LOAD(f+s);
+          Vec A=Zeta*UNPACKL(fs,fs);
+          Vec B=ZMULTI(Zeta*UNPACKH(fs,fs));
+          STORE(F+s,A+B);
+          STORE(G+s,CONJ(A-B));
+        });
+    }
+    if(inplace) {
+      for(size_t d=0; d < dr0; ++d) {
+        Complex *F=W+2*m*d;
+        Complex *G=F+m;
+        for(size_t s=L; s < m; ++s)
+          F[s]=0.0;
+        for(size_t s=L; s < m; ++s)
+          G[s]=0.0;
+      }
+    }
+  }*/
+
+  fftm1->fft(W0,F0);
+}
+
+
 void fftPadReal::backwardExplicit(Complex *F, Complex *f, size_t, Complex *W)
 {
   if(W == NULL) W=F;
@@ -5712,6 +5812,72 @@ void fftPadReal::backwardExplicit(Complex *F, Complex *f, size_t, Complex *W)
     for(size_t s=0; s < L; ++s)
       fr[s]=Wr[s];
     );
+}
+
+void fftPadReal::backward1(Complex *F0, Complex *f, size_t r0, Complex *W)
+{
+  if(W == NULL) W=F0;
+
+  if(r0 == 0 && !inplace && D == 1 && L >= m)
+    return ifftm->fft(F0,f);
+
+  (r0 > 0 || D0 == D ? ifftm : ifftm0)->fft(F0,W);
+
+  size_t dr0=dr;
+
+  if(r0 == 0) {
+    size_t residues;
+    size_t q2=q/2;
+    if(D == 1 || 2*q2 < q) { // q odd, r=0
+      residues=1;
+      PARALLELIF(
+        L > threshold,
+        for(size_t s=0; s < L; ++s)
+          f[s]=W[s];
+        );
+    } else { // q even, r=0,q/2
+      residues=2;
+      Complex *V=W+m;
+      f[0]=W[0]+V[0];
+      Complex *Zetar=Zetaqm+m*q2;
+      PARALLELIF(
+        L > threshold,
+        for(size_t s=1; s < L; ++s)
+          f[s]=W[s]+conj(Zetar[s])*V[s];
+        );
+    }
+    W += residues*m;
+    r0=1;
+    dr0=(D0-residues)/2;
+  }
+
+  if(D == 1) {
+    if(dr0 > 0) {
+      f[0] += W[0];
+      Complex *Zetar=Zetaqm+m*r0;
+      PARALLELIF(
+        L > threshold,
+        for(size_t s=1; s < L; ++s)
+          f[s] += conj(Zetar[s])*W[s];
+        );
+    }
+  } /*else {
+    for(size_t d=0; d < dr0; ++d) {
+      Complex *U=W+2*m*d;
+      Complex *V=U+m;
+      f[0] += U[0]+V[0];
+      size_t r=r0+d;
+      Complex *Zetar=Zetaqm+m*r;
+      PARALLELIF(
+        L > threshold,
+        for(size_t s=1; s < L; ++s) {
+          Vec Zeta=LOAD(Zetar+s);
+          Vec Us=LOAD(U+s);
+          Vec Vs=LOAD(V+s);
+          STORE(f+s,LOAD(f+s)+ZMULT2(Zeta,Vs,Us));
+        });
+    }
+  }*/
 }
 
 Convolution::~Convolution()

@@ -758,6 +758,10 @@ class fftPadReal : public fftBase {
   size_t e;
   rcfft1d *rcfftm1;
   crfft1d *crfftm1;
+  //fft1d *fftm1;
+  //fft1d *ifftm1;
+  mfft1d *fftm,*fftm0;
+  mfft1d *ifftm,*ifftm0;
 public:
 
   class Opt : public OptBase {
@@ -829,8 +833,8 @@ public:
   void backwardExplicit(Complex *F, Complex *f, size_t, Complex *W);
 
   // p=1 && C=1
-//  void forward1(Complex *f, Complex *F0, size_t r0, Complex *W);
-//  void backward1(Complex *F0, Complex *f, size_t r0, Complex *W);
+  void forward1(Complex *f, Complex *F0, size_t r0, Complex *W);
+  void backward1(Complex *F0, Complex *f, size_t r0, Complex *W);
 
   size_t inputSize() {
     return S*utils::ceilquotient(L,2);
