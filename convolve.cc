@@ -5556,6 +5556,7 @@ void fftPadReal::init()
   char const *FR;
   char const *BR;
 
+  n=ceilquotient(q,2); //TEMP
   if(q == 1) {
     b=Ce;
     l=Ce;
@@ -5582,6 +5583,7 @@ void fftPadReal::init()
         threads=crfftm->Threads();
       */
     }
+
 
     if(!inplace)
       deleteAlign(H);
@@ -5703,6 +5705,9 @@ void fftPadReal::forward1(Complex *f, Complex *F0, size_t r0, Complex *W)
 {
   if(W == NULL) W=F0;
 
+  double *Wr=(double *) W;
+  double *fr=(double *) f;
+
   Complex *W0=W;
   size_t dr0=dr;
   mfft1d *fftm1;
@@ -5718,7 +5723,7 @@ void fftPadReal::forward1(Complex *f, Complex *F0, size_t r0, Complex *W)
         PARALLELIF(
           L > threshold,
           for(size_t s=0; s < L; ++s)
-            W[s]=f[s];
+            W[s]=fr[s];
           );
       }
     } else { // q even, r=0,q/2
@@ -5751,12 +5756,12 @@ void fftPadReal::forward1(Complex *f, Complex *F0, size_t r0, Complex *W)
 
   if(D == 1) {
     if(dr0 > 0) {
-      W[0]=f[0];
+      W[0]=fr[0];
       Complex *Zetar=Zetaqm+m*r0;
       PARALLELIF(
         L > threshold,
         for(size_t s=1; s < L; ++s)
-          W[s]=Zetar[s]*f[s];
+          W[s]=Zetar[s]*fr[s];
         );
       if(inplace) {
         for(size_t s=L; s < m; ++s)
@@ -5817,6 +5822,7 @@ void fftPadReal::backwardExplicit(Complex *F, Complex *f, size_t, Complex *W)
 void fftPadReal::backward1(Complex *F0, Complex *f, size_t r0, Complex *W)
 {
   if(W == NULL) W=F0;
+  double *fr=(double *) f;
 
   if(r0 == 0 && !inplace && D == 1 && L >= m)
     return ifftm->fft(F0,f);
@@ -5833,7 +5839,7 @@ void fftPadReal::backward1(Complex *F0, Complex *f, size_t r0, Complex *W)
       PARALLELIF(
         L > threshold,
         for(size_t s=0; s < L; ++s)
-          f[s]=W[s];
+          fr[s]=real(W[s]);
         );
     } else { // q even, r=0,q/2
       residues=2;
@@ -5853,12 +5859,12 @@ void fftPadReal::backward1(Complex *F0, Complex *f, size_t r0, Complex *W)
 
   if(D == 1) {
     if(dr0 > 0) {
-      f[0] += W[0];
+      fr[0] += real(W[0]);
       Complex *Zetar=Zetaqm+m*r0;
       PARALLELIF(
         L > threshold,
         for(size_t s=1; s < L; ++s)
-          f[s] += conj(Zetar[s])*W[s];
+          fr[s] += 2*real(conj(Zetar[s])*W[s]);
         );
     }
   } /*else {
