@@ -137,8 +137,8 @@ public:
   size_t D;  // number of residues stored in F at a time
   size_t D0; // remainder
   size_t Cm,Sm;
-  size_t b;  // total block size, including stride
   size_t l;  // block size of a single FFT
+  size_t b;  // total block size, including stride
   bool inplace;
   Application app;
   bool centered;
@@ -383,7 +383,7 @@ public:
     return D > 1 && (p <= 2 || (centered && p % 2 == 0));
   }
 
-  size_t residueBlocks() {
+  virtual size_t residueBlocks() {
     return conjugates() ? utils::ceilquotient(Q,2) : Q;
   }
 
@@ -840,6 +840,9 @@ public:
     return S*utils::ceilquotient(L,2);
   }
 
+  size_t residueBlocks() {
+    return Q/2+1;
+  }
 };
 
 class Convolution : public ThreadBase {
