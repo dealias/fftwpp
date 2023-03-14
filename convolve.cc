@@ -5810,7 +5810,18 @@ void fftPadReal::backward1(Complex *F0, Complex *f, size_t r0, Complex *W)
   }
 
   if(D == 1) {
-    if(dr0 > 0) {
+    if(q%2 == 0 && r0 == q/2) {
+      // Temporary
+      // This residue doesn't need to be multiplied by 2.0
+      // But should be computed with a FFT of size e anyways
+      fr[0] += real(W[0]);
+      Complex *Zetar=Zetaqm+m*r0;
+      PARALLELIF(
+        L > threshold,
+        for(size_t s=1; s < L; ++s)
+          fr[s] += real(conj(Zetar[s])*W[s]);
+        );
+    } else if(dr0 > 0) {
       fr[0] += 2.0*real(W[0]);
       Complex *Zetar=Zetaqm+m*r0;
       PARALLELIF(
