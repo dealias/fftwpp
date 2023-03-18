@@ -5598,6 +5598,9 @@ void fftPadReal::init()
     G=ComplexAlign(size);
     H=inplace ? G : ComplexAlign(size);
 
+    rcfftm1=new rcfft1d(m,(double *) H,G,threads);
+    crfftm1=new crfft1d(m,G,(double *) H,threads);
+
     if(S == 1) {
       fftm=new mfft1d(m,1,d, 1,m, G,H,threads);
       ifftm=new mfft1d(m,-1,d, 1,m, H,G,threads);
@@ -5636,13 +5639,20 @@ void fftPadReal::init()
 
 fftPadReal::~fftPadReal()
 {
-  if(C == 1 && q == 1) {
+  if(q == 1) {
+    if(C == 1) {
+      delete crfftm1;
+      delete rcfftm1;
+    } else {
+//      delete crfftm;
+//      delete rcfftm;
+    }
+  } else {
     delete crfftm1;
     delete rcfftm1;
-  }// else {
-//    delete crfftm;
-//    delete rcfftm;
-//  }
+    delete fftm;
+    delete ifftm;
+  }
 }
 
 void fftPadReal::forwardExplicit(Complex *f, Complex *F, size_t, Complex *W)
@@ -5669,19 +5679,22 @@ void fftPadReal::forward1(Complex *f, Complex *F, size_t r, Complex *W)
   if(W == NULL) W=F;
 
   double *fr=(double *) f;
+  double *Wr=(double *) W;
 
   if(r == 0) {
-    if(W != f) {
+//    if(Wr != fr) {
       PARALLELIF(
         L > threshold,
         for(size_t s=0; s < L; ++s)
-          W[s]=fr[s];
+          Wr[s]=fr[s];
         );
-    }
+//    }
     if(inplace) {
       for(size_t s=L; s < m; ++s)
-        W[s]=0.0;
+        Wr[s]=0.0;
     }
+    rcfftm1->fft(Wr,F);
+//    fftm->fft(W,F);
   } else {
     W[0]=fr[0];
     Complex *Zetar=Zetaqm+m*r;
@@ -5694,9 +5707,8 @@ void fftPadReal::forward1(Complex *f, Complex *F, size_t r, Complex *W)
       for(size_t s=L; s < m; ++s)
         W[s]=0.0;
     }
+    fftm->fft(W,F);
   }
-
-  fftm->fft(W,F);
 }
 
 
@@ -5706,8 +5718,8 @@ void fftPadReal::backwardExplicit(Complex *F, Complex *f, size_t, Complex *W)
 
   crfftm1->fft(F,W);
 
-  double *Wr=(double *) W;
   double *fr=(double *) f;
+  double *Wr=(double *) W;
   PARALLELIF(
     L > threshold,
     for(size_t s=0; s < L; ++s)
@@ -5719,16 +5731,17 @@ void fftPadReal::backward1(Complex *F, Complex *f, size_t r, Complex *W)
 {
   if(W == NULL) W=F;
   double *fr=(double *) f;
-
-  ifftm->fft(F,W);
+  double *Wr=(double *) W;
 
   if(r == 0) {
+    crfftm1->fft(F,Wr);
     PARALLELIF(
       L > threshold,
       for(size_t s=0; s < L; ++s)
-        fr[s]=real(W[s]);
+        fr[s]=Wr[s];
       );
   } else {
+    ifftm->fft(F,W);
     if(q%2 == 0 && r == q/2) {
       // Temporary
       // This residue doesn't need to be multiplied by 2.0
