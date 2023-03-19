@@ -762,6 +762,8 @@ class fftPadReal : public fftBase {
   //fft1d *ifftm1;
   mfft1d *fftm,*fftm0;
   mfft1d *ifftm,*ifftm0;
+  fft1d *ffte;
+  fft1d *iffte;
 public:
 
   class Opt : public OptBase {
@@ -774,6 +776,7 @@ public:
     }
 
     bool valid(size_t D, size_t p, size_t m, size_t S) {
+//      return q%2 == 1 || m%2 == 0 && D == 1 && p == 1 && S == 1;
       return m%2 == 0 && D == 1 && p == 1 && S == 1;
     }
 
