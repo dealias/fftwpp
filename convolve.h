@@ -827,10 +827,12 @@ public:
   }
 
   // Explicitly pad to m.
-  void padSingle(Complex *W) {}
+  void padSingle(Complex *W);
 
+  /*
   // Explicitly pad C FFTs to m.
   void padMany(Complex *W) {}
+  */
 
   void forwardExplicit(Complex *f, Complex *F, size_t, Complex *W);
   void backwardExplicit(Complex *F, Complex *f, size_t, Complex *W);
@@ -841,6 +843,10 @@ public:
 
   size_t inputSize() {
     return S*utils::ceilquotient(L,2);
+  }
+
+  size_t workSizeW() {
+    return inplace ? 0 : q == 2 ? outputSize()/2 : outputSize();
   }
 
   size_t residueBlocks() {

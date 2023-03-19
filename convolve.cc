@@ -5621,8 +5621,8 @@ void fftPadReal::init()
       FR="forward1";
       BR="backward1";
     }
-//    if(repad())  // TODO Pad up to m or h, as appropriate
-//      Pad=&fftBase::padSingle;
+    if(repad())
+      Pad=&fftBase::padSingle;
 
     Q=q;
     dr=Dr();
@@ -5661,6 +5661,22 @@ fftPadReal::~fftPadReal()
   }
 }
 
+void fftPadReal::padSingle(Complex *W)
+{
+  // If q=2, W is allocated as half the size.
+  size_t m=this->m;
+  if(q == 2) m /= 2;
+  size_t mp=m*p;
+  for(size_t d=0; d < D; ++d) {
+    Complex *F=W+m*d;
+    PARALLELIF(
+      mp-L > threshold,
+      for(size_t s=L; s < mp; ++s)
+        F[s]=0.0;
+      );
+  }
+}
+
 void fftPadReal::forwardExplicit(Complex *f, Complex *F, size_t, Complex *W)
 {
   if(W == NULL) W=F;
@@ -5685,22 +5701,22 @@ void fftPadReal::forward1(Complex *f, Complex *F, size_t r, Complex *W)
   if(W == NULL) W=F;
 
   double *fr=(double *) f;
-  double *Wr=(double *) W;
 
   if(r == 0) {
+    double *Wr=(double *) W;
+    bool repad=inplace || q == 2;
+    if(!repad) Wr += L; // Make use of existing padding
 //    if(Wr != fr) {
-      PARALLELIF(
-        L > threshold,
-        for(size_t s=0; s < L; ++s)
-          Wr[s]=fr[s];
-        );
+    PARALLELIF(
+      L > threshold,
+      for(size_t s=0; s < L; ++s)
+        Wr[s]=fr[s];
+      );
 //    }
-    if(inplace) {
+    if(repad)
       for(size_t s=L; s < m; ++s)
         Wr[s]=0.0;
-    }
     rcfftm1->fft(Wr,F);
-//    fftm->fft(W,F);
   } else if(2*r < q) {
     W[0]=fr[0];
     Complex *Zetar=Zetaqm+m*r;
@@ -5727,7 +5743,7 @@ void fftPadReal::forward1(Complex *f, Complex *F, size_t r, Complex *W)
       stop=h;
     }
 //    PARALLELIF(
-//      e > threshold,
+//      Lmh > threshold,
 //      );
     for(size_t s=0; s < Lmh; ++s)
       W[s]=Zetar[s]*Complex(fr[s],frh[s]);
