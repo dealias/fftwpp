@@ -42,13 +42,13 @@ def getArgs():
   										s or c or H or r is the same as specifying all of them",
   										action="store_true")
   parser.add_argument("-c", help="Test Centered convolutions. Not specifying\
-  										S or C or H or r is the same as specifying all of them",
+  										s or c or H or r is the same as specifying all of them",
   										action="store_true")
   parser.add_argument("-H", help="Test Hermitian convolutions. Not specifying\
-  										S or C or H or r is the same as specifying all of them",
+  										s or c or H or r is the same as specifying all of them",
   										action="store_true")
-  parser.add_argument("-R", help="Test Real convolutions. Not specifying\
-                      S or C or H or r is the same as specifying all of them",
+  parser.add_argument("-r", help="Test Real convolutions. Not specifying\
+                      s or c or H or r is the same as specifying all of them",
                       action="store_true")
   parser.add_argument("-i","--identity", help="Test forward backward routines (hybrid.cc\
                        and/or hybridh.cc). Only in 1D.",
@@ -65,7 +65,7 @@ def getArgs():
   parser.add_argument("-T",metavar='threads',help="Number of threads to use in timing. If set to\
                       0, tests over 1 and OMP_NUM_THREADS. Default is 1.",
                       default=1)
-  parser.add_argument("-r", help="Find routines used in output.",
+  parser.add_argument("-R", help="Find routines used in output.",
                       action="store_true")
   parser.add_argument("-S", help="Test different strides.",
                       action="store_true")
@@ -89,7 +89,7 @@ def getPrograms(args):
   S=args.s
   C=args.c
   H=args.H
-  R=args.R
+  R=args.r
   i=args.identity or A
   X=args.one
   Y=args.two
@@ -162,7 +162,7 @@ def test(programs, args):
       else:
         raise ValueError(f"{T} is an invalid number of threads.")
 
-      iterate(p,Ts,float(args.t),args.v,args.r,args.S or args.All,args.p)
+      iterate(p,Ts,float(args.t),args.v,args.R,args.S or args.All,args.p)
 
       ppassed=p.passed
       pfailed=p.failed
@@ -189,21 +189,21 @@ def test(programs, args):
   else:
     print("No programs to test.\n")
 
-def iterate(program, threads, tol, verbose, r, testS, printEverything):
+def iterate(program, threads, tol, verbose, R, testS, printEverything):
 
   dim=program.dim
 
   vals=ParameterCollection(fillValues,program,1,testS and not program.mult).vals
   if dim == 1:
     for T in threads:
-      checkOptimizer(program,vals[0].L,vals[0].M,T,tol,r,verbose,printEverything)
+      checkOptimizer(program,vals[0].L,vals[0].M,T,tol,R,verbose,printEverything)
       for x in vals:
-        check(program,[x],T,tol,r,verbose,printEverything)
+        check(program,[x],T,tol,R,verbose,printEverything)
     if not program.mult:
       vals=ParameterCollection(fillValues,program,8,testS and not program.mult).vals
       for x in vals:
         for T in threads:
-          check(program,[x],T,tol,r,verbose,printEverything)
+          check(program,[x],T,tol,R,verbose,printEverything)
   else:
     if dim == 2:
       for y in vals:
@@ -211,7 +211,7 @@ def iterate(program, threads, tol, verbose, r, testS, printEverything):
         xvals=ParameterCollection(fillValues,program,minS,testS).vals
         for x in xvals:
           for T in threads:
-            check(program,[x,y],T,tol,r,verbose,printEverything)
+            check(program,[x,y],T,tol,R,verbose,printEverything)
 
     elif dim == 3:
       for z in vals:
@@ -222,7 +222,7 @@ def iterate(program, threads, tol, verbose, r, testS, printEverything):
           xvals=ParameterCollection(fillValues,program,y.L*y.S,testS).vals
           for x in xvals:
             for T in threads:
-              check(program,[x,y,z],T,tol,r,verbose,printEverything)
+              check(program,[x,y,z],T,tol,R,verbose,printEverything)
     else:
       exit("Dimension must be 1 2 or 3.")
 
@@ -299,11 +299,11 @@ def fillValues(program, minS, testS):
               vals.append(Parameters(L,M,m,p,q,C,S,D,I))
   return vals
 
-def checkOptimizer(program, L, M, T, tol, r, verbose, printEverything):
+def checkOptimizer(program, L, M, T, tol, R, verbose, printEverything):
 
   cmd=[program.name,f"-L={L}",f"-M={M}",f"-T={T}","-E","-t"]
 
-  if r:
+  if R:
     cmd.append("-R")
 
   if program.extraArgs != "":
@@ -322,14 +322,14 @@ def checkOptimizer(program, L, M, T, tol, r, verbose, printEverything):
     print(f"{' '.join(cmd)}\n{comment}\n")
 
   if program.mult:
-    checkError(program, comment, cmd, tol, verbose, r, r"Error")
+    checkError(program, comment, cmd, tol, verbose, R, r"Error")
   else:
-    checkError(program, comment, cmd, tol, verbose, r, r"Forward Error")
-    checkError(program, comment, cmd, tol, verbose, r, r"Backward Error")
+    checkError(program, comment, cmd, tol, verbose, R, r"Forward Error")
+    checkError(program, comment, cmd, tol, verbose, R, r"Backward Error")
 
-def check(program, vals, T, tol, r, verbose, printEverything):
+def check(program, vals, T, tol, R, verbose, printEverything):
 
-  cmd=getcmd(program,vals,T,r)
+  cmd=getcmd(program,vals,T,R)
 
   vp = Popen(cmd, stdout = PIPE, stderr = STDOUT)
   vp.wait()
@@ -344,12 +344,12 @@ def check(program, vals, T, tol, r, verbose, printEverything):
     print(f"{' '.join(cmd)}\n{comment}\n")
 
   if program.mult:
-    checkError(program, comment, cmd, tol, verbose, r, r"Error")
+    checkError(program, comment, cmd, tol, verbose, R, r"Error")
   else:
-    checkError(program, comment, cmd, tol, verbose, r, r"Forward Error")
-    checkError(program, comment, cmd, tol, verbose, r, r"Backward Error")
+    checkError(program, comment, cmd, tol, verbose, R, r"Forward Error")
+    checkError(program, comment, cmd, tol, verbose, R, r"Backward Error")
 
-def checkError(program, comment, cmd, tol, verbose, r, message):
+def checkError(program, comment, cmd, tol, verbose, R, message):
   boldPassedTest="\033[1mPassed Test:\033[0m"
   boldFailedTest="\033[1mFailed Test:\033[0m"
   boldWarning="\033[1mWARNING:\033[0m"
@@ -360,7 +360,7 @@ def checkError(program, comment, cmd, tol, verbose, r, message):
       print("\t"+boldFailedTest+" "+message+": "+error)
       case=" ".join(cmd)
       print("\t"+case)
-      if r:
+      if R:
         findRoutines(comment)
       program.failedCases.append(case)
       print()
@@ -371,7 +371,7 @@ def checkError(program, comment, cmd, tol, verbose, r, message):
         print("\t"+boldWarning+" "+warning)
         case=" ".join(cmd)
         print("\t"+case)
-        if r:
+        if R:
           findRoutines(comment)
         program.failedCases.append(case)
         print()
@@ -381,7 +381,7 @@ def checkError(program, comment, cmd, tol, verbose, r, message):
           print("\t"+boldPassedTest+" "+message+": "+error)
           case=" ".join(cmd)
           print("\t"+case)
-          if r:
+          if R:
             findRoutines(comment)
           print()
   except:
@@ -389,7 +389,7 @@ def checkError(program, comment, cmd, tol, verbose, r, message):
     print("\t"+boldFailedTest+" "+message+" not found.")
     case=" ".join(cmd)
     print("\t"+case)
-    if r:
+    if R:
       findRoutines(comment)
     program.failedCases.append(case)
     print()
@@ -403,7 +403,7 @@ def findRoutines(comment):
   except:
     print("Could not find routines used.")
 
-def getcmd(program, vals, T, r):
+def getcmd(program, vals, T, R):
   name=program.name
   lenvals=len(vals)
 
@@ -436,7 +436,7 @@ def getcmd(program, vals, T, r):
   if T > 1:
     cmd+=["-threshold","0"]
   cmd+=["-E"]
-  if r:
+  if R:
     cmd+=["-R"]
 
   if program.extraArgs != "":
