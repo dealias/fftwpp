@@ -60,6 +60,19 @@ void DirectHConvolution::convolve(Complex *h, Complex *f, Complex *g)
   }
 }
 
+// Standard One Dimensional Direct Convolution
+void DirectrConvolution::convolve(double *h, double *f, double *g)
+{
+#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
+#pragma omp parallel for
+#endif
+  for(size_t i=0; i < m; ++i) {
+    double sum=0.0;
+    for(size_t j=0; j <= i; ++j) sum += f[j]*g[i-j];
+    h[i]=sum;
+  }
+}
+
 void DirectConvolution2::convolve(Complex *h, Complex *f, Complex *g)
 {
 #if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP

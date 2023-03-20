@@ -46,17 +46,17 @@ int main(int argc, char *argv[])
       fa[j]=Output || testError ? j : 0.0;
   }
 
-  Complex *h=NULL;
+  double *h=NULL;
   if(testError) {
-    Complex **F=ComplexAlign(max(A,B),L);
+    double **F=doubleAlign(max(A,B),L);
     for(size_t a=0; a < A; ++a) {
-      Complex *Fa=F[a];
+      double *Fa=F[a];
       double *fa=f[a];
       for(size_t j=0; j < L; ++j)
         Fa[j]=fa[j];
     }
-    h=ComplexAlign(L);
-    DirectConvolution C(L);
+    h=doubleAlign(L);
+    DirectrConvolution C(L);
     C.convolve(h,F[0],F[1]);
   }
 
@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
     // Assumes B=1
     double* f0=f[0];
     for(size_t j=0; j < L; ++j) {
-      double hj=h[j].re;
+      double hj=h[j];
       err += abs2(f0[j]-hj);
       norm += abs2(hj);
     }
