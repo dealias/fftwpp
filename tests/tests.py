@@ -13,13 +13,14 @@ def main():
   test(programs, args)
 
 class Program:
-  def __init__(self, name, centered, dim=1, extraArgs="",mult=True):
+  def __init__(self, name, centered, dim=1, extraArgs="",mult=True,real=False):
     self.name=name
     self.centered=centered
     self.dim=dim
     self.extraArgs=extraArgs
     self.hermitian=centered and extraArgs != "-c"
     self.mult=mult
+    self.real=real
     self.failed=0
     self.passed=0
     self.total=0
@@ -36,14 +37,17 @@ class Program:
 def getArgs():
   parser = argparse.ArgumentParser(description="Perform Unit Tests on convolutions with hybrid dealiasing.")
   parser.add_argument("-s", help="Test Standard convolutions. Not specifying\
-  										s or c or H is the same as specifying all of them",
+  										s or c or H or r is the same as specifying all of them",
   										action="store_true")
   parser.add_argument("-c", help="Test Centered convolutions. Not specifying\
-  										S or C or H is the same as specifying all of them",
+  										S or C or H or r is the same as specifying all of them",
   										action="store_true")
   parser.add_argument("-H", help="Test Hermitian convolutions. Not specifying\
-  										S or C or H is the same as specifying all of them",
+  										S or C or H or r is the same as specifying all of them",
   										action="store_true")
+  parser.add_argument("-r", help="Test Real convolutions. Not specifying\
+                      S or C or H or r is the same as specifying all of them",
+                      action="store_true")
   parser.add_argument("-i","--identity", help="Test forward backward routines (hybrid.cc\
                        and/or hybridh.cc). Only in 1D.",
                       action="store_true")
@@ -83,32 +87,35 @@ def getPrograms(args):
   S=args.s
   C=args.c
   H=args.H
+  r=args.r
   i=args.identity or A
   X=args.one
   Y=args.two
   Z=args.three
 
-  notSCH=(not (S or C or H))
-  notSH=(not (S or C or H))
+  notSCHr=(not (S or C or H or r))
   notXYZ=(not (X or Y or Z))
 
-  SorNotSCH=(S or notSCH)
-  CorNotSCH=(C or notSCH)
-  HorNotSCH=(args.H or notSCH)
+  SorNotSCHr=(S or notSCHr)
+  CorNotSCHr=(C or notSCHr)
+  HorNotSCHr=(H or notSCHr)
+  rorNotSCHr=(r or notSCHr)
 
   if X or notXYZ:
-    if SorNotSCH:
+    if SorNotSCHr:
       programs.append(Program("hybridconv",False))
       if i:
         programs.append(Program("hybrid",False,mult=False))
-    if CorNotSCH:
+    if CorNotSCHr:
       programs.append(Program("hybridconv",True,extraArgs="-c"))
       if i:
         programs.append(Program("hybrid",True,extraArgs="-c",mult=False))
-    if HorNotSCH:
+    if HorNotSCHr:
       programs.append(Program("hybridconvh",True))
       if i:
         programs.append(Program("hybridh",True,mult=False))
+    if rorNotSCHr:
+      programs.append(Program("hybridconvr",False,real=True))
 
   if Y or notXYZ:
     if SorNotSCH:
@@ -220,11 +227,12 @@ def iterate(program, threads, tol, verbose, R, testS, printEverything):
 def fillValues(program, minS, testS):
   # This doesn't quite correspond to C in the main code but it has the property
   # that C == 1 in 1D and C > 1 in higher dimensions
-  # It also works for tesing hybrid.cc and hybridh.cc.
+  # It also works for testing hybrid.cc and hybridh.cc.
   C=minS
 
   centered=program.centered
   hermitian=program.hermitian
+  real=program.real
 
   dim=program.dim
   vals=[]
@@ -258,7 +266,10 @@ def fillValues(program, minS, testS):
       else:
         Ms+=[2*L,5*L2]
       for M in Ms:
-        ms=[L4,L2]
+        if real:
+          ms=[]
+        else:
+          ms=[L4,L2]
         if not centered:
           ms+=[L,L+1]
         elif not hermitian:
@@ -270,7 +281,7 @@ def fillValues(program, minS, testS):
           n=q//p
           Istart=0
           Dstop=n
-          if q == 1:
+          if q == 1 or real:
             Dstop=1
           elif hermitian:
             Dstop=2
