@@ -13,14 +13,16 @@ def main():
   test(programs, args)
 
 class Program:
-  def __init__(self, name, centered, dim=1, extraArgs="",mult=True,real=False):
+  def __init__(self, name, dim=1, mult=True, centered=False, hermitian=False, real=False):
     self.name=name
-    self.centered=centered
     self.dim=dim
-    self.extraArgs=extraArgs
-    self.hermitian=centered and extraArgs != "-c"
     self.mult=mult
+    self.centered=centered or hermitian
+    self.hermitian=hermitian
     self.real=real
+
+    self.extraArgs="-c" if (centered and not hermitian) else ""
+
     self.failed=0
     self.passed=0
     self.total=0
@@ -103,31 +105,31 @@ def getPrograms(args):
 
   if X or notXYZ:
     if SorNotSCHR:
-      programs.append(Program("hybridconv",False))
+      programs.append(Program("hybridconv"))
       if i:
-        programs.append(Program("hybrid",False,mult=False))
+        programs.append(Program("hybrid",mult=False))
     if CorNotSCHR:
-      programs.append(Program("hybridconv",True,extraArgs="-c"))
+      programs.append(Program("hybridconv",centered=True))
       if i:
-        programs.append(Program("hybrid",True,extraArgs="-c",mult=False))
+        programs.append(Program("hybrid",centered=True,mult=False))
     if HorNotSCHR:
-      programs.append(Program("hybridconvh",True))
+      programs.append(Program("hybridconvh",hermitian=True))
       if i:
-        programs.append(Program("hybridh",True,mult=False))
+        programs.append(Program("hybridh",hermitian=True,mult=False))
     if rorNotSCHR:
-      programs.append(Program("hybridconvr",False,real=True))
+      programs.append(Program("hybridconvr",real=True))
 
   if Y or notXYZ:
     if SorNotSCHR:
-      programs.append(Program("hybridconv2",False,dim=2))
+      programs.append(Program("hybridconv2",dim=2))
     if HorNotSCHR:
-      programs.append(Program("hybridconvh2",True,dim=2))
+      programs.append(Program("hybridconvh2",dim=2,hermitian=True))
 
   if Z or notXYZ:
     if SorNotSCHR:
-      programs.append(Program("hybridconv3",False,dim=3))
+      programs.append(Program("hybridconv3",dim=3))
     if HorNotSCHR:
-      programs.append(Program("hybridconvh3",True,dim=3))
+      programs.append(Program("hybridconvh3",dim=3,hermitian=True))
 
   return programs
 
