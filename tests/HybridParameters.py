@@ -3,24 +3,14 @@ import collections
 def ceilquotient(a,b):
   return -(a//-b)
 
-def emptyList():
-  return []
-
 class ParameterCollection():
 # Holds a collection of Params for a given program
 
-  def __init__(self, fillParameters=emptyList, *optArgs):
+  def __init__(self, vals=[]):
     # fillParameters: A funtion that returns a list of Parameters.
     #
     # optArgs: Optional arguments for fillParameters. If None, then
     # fillParameters is called without arguments.
-
-    self.optArgs=optArgs
-    if optArgs != None:
-      vals=fillParameters(*optArgs)
-    else:
-      vals=fillParameters()
-
     if type(vals) == list:
       for value in vals:
         if type(value) != Parameters:

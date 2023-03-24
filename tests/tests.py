@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 
-from math import *
-from subprocess import *
-import os
+import subprocess
 import re
 import argparse
+import sys
 from HybridParameters import *
 
 def main():
@@ -63,14 +62,14 @@ def getArgs():
   										1 or 2 or 3 is the same as specifying all of them",
   										action="store_true")
   parser.add_argument("-T",metavar='threads',help="Number of threads to use in timing. If set to\
-                      0, tests over 1 and OMP_NUM_THREADS. Default is 1.",
+                      0, tests over 1 and OMP_NUM_THREADS (which must be set and an environment variable). Default is 1.",
                       default=1)
   parser.add_argument("-R", help="Find routines used in output.",
                       action="store_true")
   parser.add_argument("-S", help="Test different strides.",
                       action="store_true")
   parser.add_argument("-A","--All", help="Perform all tests. If the dimension\
-                      (1, 2 or 3) and\or convolution type (s, c or H) is\
+                      (1, 2 or 3) and/or convolution type (s, c or H) is\
                       specified then perform all tests in that dimension and/or\
                       type.",
                       action="store_true")
@@ -149,8 +148,12 @@ def test(programs, args):
         name+=" "+p.extraArgs
       if T == 0:
         cmd = 'echo $OMP_NUM_THREADS'
-        OMP_NUM_THREADS=str(check_output(cmd, shell=True))
-        Tnum=int(re.search(r"\d+",OMP_NUM_THREADS).group(0))
+        OMP_NUM_THREADS=str(subprocess.check_output(cmd, shell=True))
+        Tnum=re.search(r"\d+",OMP_NUM_THREADS)
+        if Tnum is not None:
+          Tnum=int(Tnum.group(0))
+        else:
+          sys.exit("Could not find OMP_NUM_THREADS environment variable for T=0 option.")
         Ts=[1,Tnum]
         print(f"Testing {name} with 1 and {Tnum} threads.\n")
       elif T == 1:
@@ -193,14 +196,14 @@ def iterate(program, threads, tol, verbose, R, testS, printEverything):
 
   dim=program.dim
 
-  vals=ParameterCollection(fillValues,program,1,testS and not program.mult).vals
+  vals=ParameterCollection(fillValues(program,1,testS and not program.mult)).vals
   if dim == 1:
     for T in threads:
       checkOptimizer(program,vals[0].L,vals[0].M,T,tol,R,verbose,printEverything)
       for x in vals:
         check(program,[x],T,tol,R,verbose,printEverything)
     if not program.mult:
-      vals=ParameterCollection(fillValues,program,8,testS and not program.mult).vals
+      vals=ParameterCollection(fillValues(program,8,testS and not program.mult)).vals
       for x in vals:
         for T in threads:
           check(program,[x],T,tol,R,verbose,printEverything)
@@ -208,7 +211,7 @@ def iterate(program, threads, tol, verbose, R, testS, printEverything):
     if dim == 2:
       for y in vals:
         minS=(ceilquotient(y.L,2) if program.hermitian else y.L)
-        xvals=ParameterCollection(fillValues,program,minS,testS).vals
+        xvals=ParameterCollection(fillValues(program,minS,testS)).vals
         for x in xvals:
           for T in threads:
             check(program,[x,y],T,tol,R,verbose,printEverything)
@@ -216,10 +219,10 @@ def iterate(program, threads, tol, verbose, R, testS, printEverything):
     elif dim == 3:
       for z in vals:
         minSy=ceilquotient(z.L,2) if program.hermitian else z.L
-        yvals=ParameterCollection(fillValues,program,minSy,testS).vals
+        yvals=ParameterCollection(fillValues(program,minSy,testS)).vals
         for y in yvals:
           minSy=y.S*y.L
-          xvals=ParameterCollection(fillValues,program,y.L*y.S,testS).vals
+          xvals=ParameterCollection(fillValues(program,y.L*y.S,testS)).vals
           for x in xvals:
             for T in threads:
               check(program,[x,y,z],T,tol,R,verbose,printEverything)
@@ -309,13 +312,13 @@ def checkOptimizer(program, L, M, T, tol, R, verbose, printEverything):
   if program.extraArgs != "":
     cmd.append(program.extraArgs)
 
-  vp = Popen(cmd, stdout = PIPE, stderr = STDOUT)
+  vp = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
   vp.wait()
   prc = vp.returncode
   comment = ""
 
   if prc == 0:
-    out, err = vp.communicate()
+    out, _ = vp.communicate()
     comment = out.rstrip().decode()
 
   if printEverything:
@@ -331,13 +334,13 @@ def check(program, vals, T, tol, R, verbose, printEverything):
 
   cmd=getcmd(program,vals,T,R)
 
-  vp = Popen(cmd, stdout = PIPE, stderr = STDOUT)
+  vp = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
   vp.wait()
   prc = vp.returncode
   comment = ""
 
   if prc == 0:
-    out, err = vp.communicate()
+    out, _ = vp.communicate()
     comment = out.rstrip().decode()
 
   if printEverything:
@@ -354,7 +357,7 @@ def checkError(program, comment, cmd, tol, verbose, R, message):
   boldFailedTest="\033[1mFailed Test:\033[0m"
   boldWarning="\033[1mWARNING:\033[0m"
   try:
-    error=re.search(r"(?<="+message+": )(\w|\d|\.|e|-|\+)*",comment).group()
+    error=re.search(r"(?<="+message+r": )(\w|\d|\.|e|-|\+)*",comment).group()
     if float(error) > tol or error == "nan" or error == "inf":
       program.failTest()
       print("\t"+boldFailedTest+" "+message+": "+error)
