@@ -62,7 +62,7 @@ def getArgs():
   										1 or 2 or 3 is the same as specifying all of them",
   										action="store_true")
   parser.add_argument("-T",metavar='threads',help="Number of threads to use in timing. If set to\
-                      0, tests over 1 and OMP_NUM_THREADS (which must be set and an environment variable). Default is 1.",
+                      0, tests over 1 and OMP_NUM_THREADS (which must be set as an environment variable). Default is 1.",
                       default=1)
   parser.add_argument("-R", help="Find routines used in output.",
                       action="store_true")
@@ -357,39 +357,52 @@ def checkError(program, comment, cmd, tol, verbose, R, message):
   boldFailedTest="\033[1mFailed Test:\033[0m"
   boldWarning="\033[1mWARNING:\033[0m"
   try:
-    error=re.search(r"(?<="+message+r": )(\w|\d|\.|e|-|\+)*",comment).group()
-    if float(error) > tol or error == "nan" or error == "inf":
-      program.failTest()
-      print("\t"+boldFailedTest+" "+message+": "+error)
-      case=" ".join(cmd)
-      print("\t"+case)
-      if R:
-        findRoutines(comment)
-      program.failedCases.append(case)
-      print()
-    else:
-      try:
-        warning=re.search(r"(?<=WARNING: )(\S| )*",comment).group()
+    error=re.search(r"(?<="+message+r": )(\w|\d|\.|e|-|\+)*",comment)
+    if error is not None:
+      error=error.group()
+      if float(error) > tol or error == "nan" or error == "-nan" or error == "inf":
         program.failTest()
-        print("\t"+boldWarning+" "+warning)
+        print("\t"+boldFailedTest+" "+message+": "+error)
         case=" ".join(cmd)
         print("\t"+case)
         if R:
           findRoutines(comment)
         program.failedCases.append(case)
         print()
-      except:
-        program.passTest()
-        if verbose:
-          print("\t"+boldPassedTest+" "+message+": "+error)
+      else:
+        warning=re.search(r"(?<=WARNING: )(\S| )*",comment)
+        if warning is not None:
+          warning=warning.group()
+          program.failTest()
+          print("\t"+boldWarning+" "+warning)
           case=" ".join(cmd)
           print("\t"+case)
           if R:
             findRoutines(comment)
+          program.failedCases.append(case)
           print()
-  except:
+        else:
+          program.passTest()
+          if verbose:
+            print("\t"+boldPassedTest+" "+message+": "+error)
+            case=" ".join(cmd)
+            print("\t"+case)
+            if R:
+              findRoutines(comment)
+            print()
+    else:
+      program.failTest()
+      print("\t"+boldFailedTest+" "+message+" not found.")
+      case=" ".join(cmd)
+      print("\t"+case)
+      if R:
+        findRoutines(comment)
+      program.failedCases.append(case)
+      print()
+  except Exception as e:
     program.failTest()
-    print("\t"+boldFailedTest+" "+message+" not found.")
+    print("\t"+boldFailedTest+f" Exception raised.")
+    print(f"\t{e}.")
     case=" ".join(cmd)
     print("\t"+case)
     if R:
