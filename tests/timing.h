@@ -9,6 +9,7 @@
 
 const double unit=1.0e-9; // default unit is 1 nanosecond
 
+const std::string Algorithm[]={"Median","Mean","Min","Max","P90","P80","P50"};
 enum timing_algorithm {WRITETOFILE = -1, MEDIAN, MEAN, MIN, MAX, P90, P80, P50};
 
 inline double median(double *T, size_t N) // TODO: Replace with selection algorithm
@@ -110,10 +111,10 @@ inline void timings(const char* text, size_t m, size_t count,
                     double value, double lower, double upper)
 {
   std::cout << text << ":\n"
-            << m << "\t"
-            << value << "\t"
-            << lower << "\t"
-            << upper
+            << m
+            << "\t" << value
+//            << "\t" << lower
+//            << "\t" << upper
             << std::endl;
 }
 
@@ -129,11 +130,14 @@ inline void timings(const char* text, size_t m, double *T,
     for(size_t i=0; i < N; ++i)
       myfile << T[i]*unit << "\t";
     myfile << "\n";
-  }
+  } else {
+    double avg=value(T,N,algorithm)*unit;
+    stdev(T,N,lower,upper,algorithm);
+    std::cout << "Statistics: " << Algorithm[algorithm] << " " << "time" << std::endl;
+    std::cout << "Count: " << N << std::endl << std::endl;
 
-  double avg=value(T,N,algorithm)*unit;
-  stdev(T,N,lower,upper,algorithm);
-  timings(text,m,N,avg,lower*unit,upper*unit);
+    timings(text,m,N,avg,lower*unit,upper*unit);
+  }
 }
 
 #endif

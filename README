@@ -1,7 +1,7 @@
-     FFTW++: Fast Fourier Transform C++ Header/MPI Transpose for FFTW3 Library
+     FFTW++: Library of Fast Fourier Transforms, Convolutions, and MPI Transposes built on FFTW3
  
-Copyright (C) 2004-17 John C. Bowman and Malcolm Roberts, University of Alberta
-                    http://fftwpp.sourceforge.net
+Copyright (C) 2004-23 John C. Bowman, Malcolm Roberts, and Noel Murasko, 
+University of Alberta http://fftwpp.sourceforge.net
 
 FFTW++ is a C++ header/MPI transpose for Version 3 of the highly optimized FFTW
 (http://www.fftw.org) Fourier Transform library. It provides a simple
@@ -12,6 +12,8 @@ wisdom, and communication on both serial and parallel (OpenMP/MPI)
 architectures. Wrappers for multiple 1D transforms are also provided. As
 with the FFTW3 library itself, both in-place and out-of-place transforms of
 arbitrary size are supported.
+
+For reproducibility, see the section Test Programs below.
 
 Implicit dealiasing of standard and centered Hermitian convolutions is
 also implemented; in 2D and 3D implicit zero-padding substantially
@@ -171,55 +173,50 @@ MPI transform and explicit padding.
 The following programs are provided in tests/, along with various
 timing and error analysis scripts.  Asymptote
 (http://asymptote.sourceforge.net/) scripts are provided for
-visualizing the output.
+visualizing the output. Passing the argument -h to each of these programs
+outputs usage information.
 
 1D complex convolution test:
-cconv.cc
+hybridconv
 
 1D Hermitian convolution test:
-conv.cc
-
-1D Hermitian ternary convolution test:
-tconv.cc
+hybridconvh
 
 2D complex convolution test:
-cconv2.cc
+hybridconv2
 
 2D Hermitian convolution test:
-conv2.cc
-
-2D Hermitian ternary convolution test:
-tconv2.cc
+hybridconvh2
 
 3D complex convolution test:
-cconv3.cc
+hybridconv3
 
 3D Hermitian convolution test:
-conv3.cc
+hybridconvh3
 
 1D FFT:
-fft1.cc
+fft1
 
 1D real FFT:
-fft1r.cc
+fft1r
 
 1D multiple FFT:
-mfft1.cc
+mfft1
 
 1D multiple real FFT:
-mfft1r.cc
+mfft1r
 
 2D FFT:
-fft2.cc
+fft2
 
 2D real FFT:
-fft2r.cc
+fft2r
 
 3D FFT:
-fft3.cc
+fft3
 
 3D real FFT:
-fft3r.cc
+fft3r
 
 
 ######################## Availability and License ########################
