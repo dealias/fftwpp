@@ -1,8 +1,7 @@
 # FFTW++
 Library of Fast Fourier Transforms, Convolutions, and MPI Transposes built on FFTW3
 
-University of Alberta http://fftwpp.sourceforge.net
-Copyright &copy; 2004-2023 John C. Bowman, Malcolm Roberts, and Noel Murasko
+&copy; 2004-2023 John C. Bowman, Malcolm Roberts, and Noel Murasko, University of Alberta http://fftwpp.sourceforge.net
 
 ---
 
