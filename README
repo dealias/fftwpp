@@ -19,7 +19,7 @@ Implicit dealiasing of standard and centered Hermitian convolutions is
 also implemented; in 2D and 3D implicit zero-padding substantially
 reduces memory usage and computation time.  For more information, see
 
-"Efficient Dealiased Convolutions without Padding," by
+"Efficient Dealiased Convolutions without Padding", by
 John C. Bowman and Malcolm Roberts, SIAM Journal on Scientific
 Computing, 33:1, 386-406 (2011).
 http://www.math.ualberta.ca/~bowman/publications/dealias.pdf
@@ -41,7 +41,7 @@ Multithreading requires linking with a multithreaded FFTW implementation
 and can be disabled by adding -DFFTWPP_SINGLE_THREAD to CFLAGS. 
 
 FFTW++ can also exploit the high-performance Array class available at
-http://www.math.ualberta.ca/~bowman/Array (version 1.49 or higher),
+http://www.math.ualberta.ca/~bowman/Array (version 1.56 or higher),
 designed for scientific computing. The arrays in that package do
 memory bounds checking in debugging mode, but can be optimized by
 specifying the -DNDEBUG compilation option (1D arrays optimize
