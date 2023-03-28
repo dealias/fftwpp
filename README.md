@@ -1,7 +1,10 @@
-     FFTW++: Library of Fast Fourier Transforms, Convolutions, and MPI Transposes built on FFTW3
- 
-Copyright (C) 2004-23 John C. Bowman, Malcolm Roberts, and Noel Murasko, 
+# FFTW++
+### Library of Fast Fourier Transforms, Convolutions, and MPI Transposes built on FFTW3
+
+Copyright (C) 2004-23 John C. Bowman, Malcolm Roberts, and Noel Murasko,
 University of Alberta http://fftwpp.sourceforge.net
+
+---
 
 FFTW++ is a C++ header/MPI transpose for Version 3 of the highly optimized FFTW
 (http://www.fftw.org) Fourier Transform library. It provides a simple
@@ -38,7 +41,7 @@ The global variable fftw::maxthreads specifies the maximum number of threads
 to use. The constructors invoke a short timing test to check that using
 multiple threads is actually beneficial for the given problem size.
 Multithreading requires linking with a multithreaded FFTW implementation
-and can be disabled by adding -DFFTWPP_SINGLE_THREAD to CFLAGS. 
+and can be disabled by adding -DFFTWPP_SINGLE_THREAD to CFLAGS.
 
 FFTW++ can also exploit the high-performance Array class available at
 http://www.math.ualberta.ca/~bowman/Array (version 1.56 or higher),
@@ -56,7 +59,7 @@ ensure that the data is optimally aligned to sizeof(Complex), to
 enable the SIMD extensions.  The optional alignment check in fftw++.h
 can be disabled with the -DNO_CHECK_ALIGN compiler option.
 
-########################## MPI ##########################
+#### MPI
 
 Hybrid OpenMP/MPI versions of the convolution routines in 2 and 3
 dimensions are available in the mpi/ directory.  Parallelization is
@@ -70,12 +73,12 @@ Science, Springer Proceedings in Mathematics & Statistics 117,
 http://www.math.ualberta.ca/~bowman/publications/transpose.pdf
 
 Either a 1D ("slab") and 2D ("pencil") data decomposition is used
-for the three-dimensional convolutions, depending on the number of processors. 
+for the three-dimensional convolutions, depending on the number of processors.
 
 mpi/fftw/ contains comparison code using FFTW's parallel MPI transform
 and explicit padding.
 
-########################## Examples ##########################
+#### Examples
 
 The following programs are provided in the examples directory:
 
@@ -110,7 +113,7 @@ More general types of convolutions (for example, autoconvolutions)
 can be performed by defining a custom multiplier or realmultiplier
 function pointer.
 
-########################## Wrappers ##########################
+#### Wrappers
 
 Wrappers for the convolution routines are available for C, Fortran,
 and Python. Examples are given in the wrappers/ directory. The C
@@ -128,7 +131,7 @@ The following programs are available in the wrappers directory:
 Using C to call multi-threaded 1D, 2D, and 3D binary convolutions and
 1D and 2D ternary convolutions, with and without passing work arrays,
 where the operation in physical space may correspond to either a
-scalar multiplication (M=1) or a dot product (M > 1): 
+scalar multiplication (M=1) or a dot product (M > 1):
 cexample.c
 
 Using Fortran to call multi-threaded 1D, 2D, and 3D binary
@@ -143,7 +146,7 @@ constructor):
 pexample.py
 
 
-########################## MPI ##########################
+#### MPI
 
 Hybrid OpenMP/MPI versions of the convolution routines in 2 and 3
 dimensions are available in the mpi directory.
@@ -168,7 +171,7 @@ The directory mpi/explicit contains comparison code using FFTW's parallel
 MPI transform and explicit padding.
 
 
-########################## Test Programs ##########################
+#### Test Programs
 
 The following programs are provided in tests/, along with various
 timing and error analysis scripts.  Asymptote
@@ -219,7 +222,7 @@ fft3
 fft3r
 
 
-######################## Availability and License ########################
+#### Availability and License
 
 To compile from Git developmental source code:
 git clone https://github.com/dealias/fftwpp
@@ -229,7 +232,7 @@ are released under version 3 (or later) of the GNU Lesser General Public
 License (see the files LICENSE.LESSER and LICENSE in the top-level source
 directory).
 
-========================================================================
+---
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -245,4 +248,4 @@ You should have received a copy of the GNU Lesser General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-========================================================================
+---
