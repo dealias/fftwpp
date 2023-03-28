@@ -24,9 +24,9 @@ John C. Bowman and Malcolm Roberts, SIAM Journal on Scientific
 Computing, 33:1, 386-406 (2011).
 http://www.math.ualberta.ca/~bowman/publications/dealias.pdf
 
-"Parallel Implicitly Dealiased Convolutions on Shared Memory Architectures,"
-by Malcolm Roberts and John C. Bowman, submitted to Journal of Scientific
-Computing, (2017).
+"Multithreaded implicitly dealiased convolutions",
+by Malcolm Roberts and John C. Bowman, Journal of Computational
+Physics, 356, 98-114 (2018).
 http://www.math.ualberta.ca/~bowman/publications/dealias2.pdf
 
 Convenient optional shift routines that place the Fourier origin in the logical
@@ -172,7 +172,7 @@ MPI transform and explicit padding.
 
 The following programs are provided in tests/, along with various
 timing and error analysis scripts.  Asymptote
-(http://asymptote.sourceforge.net/) scripts are provided for
+(http://asymptote.sourceforge.io/) scripts are provided for
 visualizing the output. Passing the argument -h to each of these programs
 outputs usage information.
 
