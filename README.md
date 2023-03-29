@@ -1,7 +1,7 @@
 # FFTW++
-Library of Fast Fourier Transforms, Convolutions, and MPI Transposes built on FFTW3
+__Library of Fast Fourier Transforms, Convolutions, and MPI Transposes built on FFTW3__
 
-&copy; 2004-2023 John C. Bowman, Malcolm Roberts, and Noel Murasko, University of Alberta http://fftwpp.sourceforge.net
+Copyright &copy; 2004-2023 by John C. Bowman, Malcolm Roberts, and Noel Murasko, University of Alberta http://fftwpp.sourceforge.net
 
 ---
 
@@ -14,21 +14,21 @@ architectures. Wrappers for multiple 1D transforms are also provided. As
 with the FFTW3 library itself, both in-place and out-of-place transforms of
 arbitrary size are supported.
 
-For reproducibility, see the section [Test Programs](#test-programs) below.
+For reproducibility of _Hybrid Dealiased Convolutions_, see the [test programs](#test-programs) below.
 
 Implicit dealiasing of standard and centered Hermitian convolutions is
 also implemented; in 2D and 3D implicit zero-padding substantially
 reduces memory usage and computation time.  For more information, see
 
-_"Efficient Dealiased Convolutions without Padding",
+- _Efficient Dealiased Convolutions without Padding_,
 John C. Bowman and Malcolm Roberts, SIAM Journal on Scientific
 Computing, 33:1, 386-406 (2011).
-http://www.math.ualberta.ca/~bowman/publications/dealias.pdf_
+http://www.math.ualberta.ca/~bowman/publications/dealias.pdf
 
-_"Multithreaded implicitly dealiased convolutions",
+- _Multithreaded implicitly dealiased convolutions_,
 Malcolm Roberts and John C. Bowman, Journal of Computational
 Physics, 356, 98-114 (2018).
-http://www.math.ualberta.ca/~bowman/publications/dealias2.pdf_
+http://www.math.ualberta.ca/~bowman/publications/dealias2.pdf
 
 Convenient optional shift routines that place the Fourier origin in the logical
 center of the domain are provided for centered complex-to-real transforms
@@ -75,28 +75,38 @@ for the three-dimensional convolutions, depending on the number of processors.
 `mpi/fftw/` contains comparison code using FFTW's parallel MPI transform
 and explicit padding.
 
-### Examples
+#### Examples
 
 The following programs are provided in the examples directory:
 
-- 1D examples using ComplexAlign allocator: `example0.cc`, `example0r.cc`
+- 1D examples using ComplexAlign allocator:
+    * `example0.cc`
+    * `example0r.cc`
 
-- 1D examples using Array class: `example1.cc`, `example1r.cc`
+- 1D examples using Array class:
+    * `example1.cc`
+    * `example1r.cc`
 
-- 2D examples using Array class: `example2.cc`, `example2r.cc`
+- 2D examples using Array class:
+    * `example2.cc`
+    * `example2r.cc`
 
-- 3D examples using Array class: `example3.cc`, `example3r.cc`
+- 3D examples using Array class:
+    * `example3.cc`
+    * `example3r.cc`
 
-Examples of implicitly dealiased convolutions on complex non-centered
-data in 1, 2, and 3 dimensions:
-`examplecconv.cc`, `examplecconv2.cc`, `examplecconv3.cc`
+- Examples of implicitly dealiased convolutions on complex non-centered data in 1, 2, and 3 dimensions:
+    * `examplecconv.cc`
+    * `examplecconv2.cc`
+    * `examplecconv3.cc`
 
-Examples of implicitly dealiased convolutions on complex
-Hermitian-symmetric centered data in 1, 2, and 3 dimensions:
-`exampleconv.cc`, `exampleconv2.cc`, `exampleconv3.cc`
+- Examples of implicitly dealiased convolutions on complex Hermitian-symmetric centered data in 1, 2, and 3 dimensions:
+    * `exampleconv.cc
+    * `exampleconv2.cc`
+    * `exampleconv3.cc`
 
-Local transpose (in-place or out-of-place):
-`exampletranspose.cc`
+- Local transpose (in-place or out-of-place):
+    * `exampletranspose.cc`
 
 More general types of convolutions (for example, autoconvolutions)
 can be performed by defining a custom multiplier or realmultiplier
@@ -120,17 +130,17 @@ The following programs are available in the wrappers directory:
 Using C to call multi-threaded 1D, 2D, and 3D binary convolutions and
 1D and 2D ternary convolutions, with and without passing work arrays,
 where the operation in physical space may correspond to either a
-scalar multiplication (`M=1`) or a dot product (`M > 1`):
+scalar multiplication (`M == 1`) or a dot product (`M > 1`):
 `cexample.c`
 
 Using Fortran to call multi-threaded 1D, 2D, and 3D binary
 convolutions, with and without passing work arrays, where the
 operation in physical space may correspond to either a scalar
-multiplication (`mm=1`) or a dot product (`mm > 1`):
+multiplication (`mm == 1`) or a dot product (`mm > 1`):
 `fexample.f90`
 
 Using Python to call multi-threaded 1D, 2D, and 3D binary convolutions
-(for scalar multiplication (`M=1`) and with work arrays created by the
+(for scalar multiplication (`M == 1`) and with work arrays created by the
 constructor):
 `pexample.py`
 
