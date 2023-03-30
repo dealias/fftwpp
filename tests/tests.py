@@ -196,14 +196,14 @@ def iterate(program, threads, tol, verbose, R, testS, printEverything):
 
   dim=program.dim
 
-  vals=ParameterCollection(fillValues(program,1,testS and not program.mult)).vals
+  vals=ParameterCollection(findTests(program,1,testS and not program.mult)).vals
   if dim == 1:
     for T in threads:
       checkOptimizer(program,vals[0].L,vals[0].M,T,tol,R,verbose,printEverything)
       for x in vals:
         check(program,[x],T,tol,R,verbose,printEverything)
     if not program.mult:
-      vals=ParameterCollection(fillValues(program,8,testS and not program.mult)).vals
+      vals=ParameterCollection(findTests(program,8,testS and not program.mult)).vals
       for x in vals:
         for T in threads:
           check(program,[x],T,tol,R,verbose,printEverything)
@@ -211,7 +211,7 @@ def iterate(program, threads, tol, verbose, R, testS, printEverything):
     if dim == 2:
       for y in vals:
         minS=(ceilquotient(y.L,2) if program.hermitian else y.L)
-        xvals=ParameterCollection(fillValues(program,minS,testS)).vals
+        xvals=ParameterCollection(findTests(program,minS,testS)).vals
         for x in xvals:
           for T in threads:
             check(program,[x,y],T,tol,R,verbose,printEverything)
@@ -219,39 +219,39 @@ def iterate(program, threads, tol, verbose, R, testS, printEverything):
     elif dim == 3:
       for z in vals:
         minSy=ceilquotient(z.L,2) if program.hermitian else z.L
-        yvals=ParameterCollection(fillValues(program,minSy,testS)).vals
+        yvals=ParameterCollection(findTests(program,minSy,testS)).vals
         for y in yvals:
           minSy=y.S*y.L
-          xvals=ParameterCollection(fillValues(program,y.L*y.S,testS)).vals
+          xvals=ParameterCollection(findTests(program,y.L*y.S,testS)).vals
           for x in xvals:
             for T in threads:
               check(program,[x,y,z],T,tol,R,verbose,printEverything)
     else:
       exit("Dimension must be 1 2 or 3.")
 
-def fillValues(program, minS, testS):
-  # This doesn't quite correspond to C in the main code but it has the property
-  # that C == 1 in 1D and C > 1 in higher dimensions
-  # It also works for testing hybrid.cc and hybridh.cc.
-  C=minS
-
-  centered=program.centered
-  hermitian=program.hermitian
-  real=program.real
-
-  dim=program.dim
+def collectTests(program, L, M, m, minS, testS, Dmin=0, Dmax=0, I0=True, I1=True):
   vals=[]
 
-  # Because of symmetry concerns in the centered cases (compact/noncompact),
-  # we check even and odd L values
-  if centered and dim == 1 and program.mult:
-    Ls=[7,8]
-  elif real:
-    Ls=[3,4,8]
-  else:
-    Ls=[8]
+  C=minS
+  dim=program.dim
+  hermitian=program.hermitian
 
-  Dstart=2 if hermitian and C == 1 else 1
+  p=ceilquotient(L,m)
+  q=ceilquotient(M,m) if p <= 2 else ceilquotient(M,m*p)*p
+  n=q//p
+
+  if Dmax == 0:
+    Dmax=n
+
+  if C > 1:
+    Dstart=1
+    Dstop=1
+  elif hermitian:
+    Dstart=max(Dmin,2)
+    Dstop=min(max(Dmax,2),n)
+  else:
+    Dstart=max(Dmin,1)
+    Dstop=min(max(Dmax,1),n)
 
   Ss=[minS]
   if testS:
@@ -260,53 +260,85 @@ def fillValues(program, minS, testS):
     if dim == 3:
       Ss+=[minS+2]
 
+  Istart=0
+  Istop=2
+  if not I0:
+    Istart=1
+  if not I1:
+    Istop=1
+
   for S in Ss:
-    for L in Ls:
-      L4=ceilquotient(L,4)
-      L2=ceilquotient(L,2)
-      Ms=[]
-      if centered:
-        Ms.append(3*L2-2*(L%2))
-      if dim != 1:
-        Ms+= [2*L]
-      elif real:
-        Ms+=[4*L,4*Ls[-1]]
-      else:
-        Ms+=[2*L,5*L2]
-      for M in Ms:
-        if real:
-          Lsend=Ls[-1]
-          if L < Lsend:
-            ms=[L+L%2,Ls[-1]+Ls[-1]]
-          else:
-            ms=[L+L%2]
-        else:
-          ms=[L4,L2]
-        if not centered and not real:
-          ms+=[L,L+1]
-        elif not hermitian and not real:
-          ms+=[ceilquotient((L2+L),2)]
-        ms+=[M]
-        for m in ms:
-          p=ceilquotient(L,m)
-          q=ceilquotient(M,m) if p <= 2 else ceilquotient(M,m*p)*p
-          n=q//p
-          Istart=0
-          Dstop=n
-          if q == 1 or real:
-            Dstop=1
-          elif hermitian:
-            Dstop=2
-          for I in range(Istart,2):
-            if C == 1:
-              D=Dstart
-              while(D < Dstop):
-                vals.append(Parameters(L,M,m,p,q,C,S,D,I))
-                D*=2
-              vals.append(Parameters(L,M,m,p,q,C,S,Dstop,I))
-            else:
-              D=1
-              vals.append(Parameters(L,M,m,p,q,C,S,D,I))
+    for I in range(Istart,Istop):
+      D=Dstart
+      while(D < Dstop):
+        vals.append(Parameters(L,M,m,p,q,C,S,D,I))
+        D*=2
+      vals.append(Parameters(L,M,m,p,q,C,S,Dstop,I))
+
+  return vals
+
+def findTests(program, minS, testS):
+  if program.real:
+    return realTests(program, minS, testS)
+  elif program.hermitian:
+    return hermitianTests(program, minS, testS)
+  elif program.centered:
+    return centeredTests(program, minS, testS)
+  else:
+    return complexTests(program, minS, testS)
+
+def complexTests(program, minS, testS):
+  vals=[]
+  L=8
+  Mvalues=[2*L,5*L//2]
+  for M in Mvalues:
+    mvalues=[L//4,L//2,L,L+1,M]
+    for m in mvalues:
+      vals+=collectTests(program, L=L, M=M, m=m, minS=minS, testS=testS)
+  return vals
+
+def centeredTests(program, minS, testS):
+  assert program.centered
+  vals=[]
+  Lvalues=[]
+  if program.dim == 1 and program.mult:
+    Lvalues=[7,8]
+  else:
+    Lvalues=[8]
+  for L in Lvalues:
+    L2=ceilquotient(L,2)
+    Mvalues=[3*L2-2*(L%2),2*L,5*L2]
+    for M in Mvalues:
+      mvalues=[L//4,L2,ceilquotient(L2+L,2),M]
+      for m in mvalues:
+        vals+=collectTests(program, L=L, M=M, m=m, minS=minS, testS=testS)
+  return vals
+
+def hermitianTests(program, minS, testS):
+  assert program.hermitian
+  vals=[]
+  Lvalues=[]
+  if program.dim == 1 and program.mult:
+    Lvalues=[7,8]
+  else:
+    Lvalues=[8]
+  for L in Lvalues:
+    L2=ceilquotient(L,2)
+    Mvalues=[3*L2-2*(L%2),2*L,5*L2]
+    for M in Mvalues:
+      mvalues=[L//4,L2,M]
+      for m in mvalues:
+        vals+=collectTests(program, L=L, M=M, m=m, minS=minS, testS=testS)
+  return vals
+
+def realTests(program, minS, testS):
+  assert program.real
+  vals=[]
+  mvalues=[4,8,16]
+  for m in mvalues:
+    vals+=collectTests(program, L=8, M=32, m=m, Dmin=1, Dmax=1, minS=minS, testS=testS)
+    vals+=collectTests(program, L=4, M=16, m=m, Dmin=1, Dmax=1, minS=minS, testS=testS)
+    vals+=collectTests(program, L=3, M=16, m=m, Dmin=1, Dmax=1, minS=minS, testS=testS)
   return vals
 
 def checkOptimizer(program, L, M, T, tol, R, verbose, printEverything):
