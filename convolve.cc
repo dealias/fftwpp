@@ -5658,6 +5658,11 @@ fftPadReal::~fftPadReal()
     delete rcfftm1;
     delete fftm;
     delete ifftm;
+
+    if(q % 2 == 0) {
+      delete ffte;
+      delete iffte;
+    }
   }
 }
 
@@ -5705,7 +5710,7 @@ void fftPadReal::forward1(Complex *f, Complex *F, size_t r, Complex *W)
   if(r == 0) {
     double *Wr=(double *) W;
     bool repad=inplace || q == 2;
-    if(!repad) Wr += L; // Make use of existing padding
+    if(!repad) Wr += L; // Make use of existing zero padding
 //    if(Wr != fr) {
     PARALLELIF(
       L > threshold,
@@ -5793,25 +5798,27 @@ void fftPadReal::backward1(Complex *F, Complex *f, size_t r, Complex *W)
     PARALLELIF(
       L > threshold,
       for(size_t s=1; s < L; ++s)
-        fr[s] += 2.0*real(conj(Zetar[s])*W[s]); // Optimize
+        fr[s] += 2.0*realproduct(Zetar[s],W[s]);
       );
   } else {
     iffte->fft(F,W);
-//    fr[0] += real(W[0]);
     Complex *Zetar=Zetaqm+m*r;
     size_t h=e-1;
     double *frh=fr+h;
 //    PARALLELIF(
 //      L > threshold,
     size_t Lmh,stop;
+    Complex z=W[0];
+    fr[0] += 2.0*real(z);
     if(L <= h) {
-      Lmh=0;
+      Lmh=1;
       stop=L;
     } else {
       Lmh=L-h;
       stop=h;
+      frh[0] += 2.0*imag(z);
     }
-    for(size_t s=0; s < Lmh; ++s) {
+    for(size_t s=1; s < Lmh; ++s) {
       Complex z=conj(Zetar[s])*W[s];
       fr[s] += 2.0*real(z);
       frh[s] += 2.0*imag(z);

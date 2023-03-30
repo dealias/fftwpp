@@ -244,6 +244,12 @@ inline size_t tpadding(size_t m)
   return padding(4*m-3);
 }
 
+// return real(conj(z)*w)
+inline double realproduct(const Complex& z, const Complex& w)
+{
+  return z.re*w.re+z.im*w.im;
+}
+
 }
 
 #endif
