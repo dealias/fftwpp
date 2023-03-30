@@ -24,16 +24,25 @@ class Program:
 
     self.failed=0
     self.passed=0
+    self.warnings=0
     self.total=0
+    self.warningCases=[]
     self.failedCases=[]
 
   def passTest(self):
     self.passed+=1
     self.total+=1
 
-  def failTest(self):
+  def warningTest(self, case):
+    self.passed+=1
+    self.warnings+=1
+    self.total+=1
+    self.warningCases.append(case)
+
+  def failTest(self,case):
     self.failed+=1
     self.total+=1
+    self.failedCases.append(case)
 
 def getArgs():
   parser = argparse.ArgumentParser(description="Perform Unit Tests on convolutions with hybrid dealiasing.")
@@ -139,6 +148,7 @@ def test(programs, args):
   if lenP >= 1:
     passed=0
     failed=0
+    warnings=0
     total=0
     failedCases=[]
 
@@ -169,21 +179,28 @@ def test(programs, args):
 
       ppassed=p.passed
       pfailed=p.failed
+      pwarnings=p.warnings
       ptotal=p.total
 
-      print("Finished testing "+name+".")
-      print("Out of "+str(ptotal)+" tests, "+str(ppassed)+" passed, "+str(pfailed)+" failed.")
-      print("\n***************\n")
+      s="s" if pwarnings > 1 else ""
+      warningText=f" with {pwarnings} warning{s}," if pwarnings > 0 else ","
+
+      print(f"Finished testing {name}.")
+      print(f"Out of {ptotal} tests, {ppassed} passed{warningText} {pfailed} failed.\n")
+      if lenP > 1:
+        print("***************\n")
       total+=ptotal
       passed+=ppassed
       failed+=pfailed
+      warnings+=pwarnings
       if args.l:
         failedCases+=p.failedCases
 
     if lenP > 1:
-      print("Finished testing "+str(lenP)+" programs.")
-      print("Out of "+str(total)+" tests, "+str(passed)+" passed, "+str(failed)+" failed.")
-
+      s="s" if warnings > 1 else ""
+      warningText=f" with {warnings} warning{s}," if warnings > 0 else ","
+      print(f"Finished testing {lenP} programs.")
+      print(f"Out of {total} tests, {passed} passed{warningText} {failed} failed.\n")
     if args.l and len(failedCases) > 0:
       print("\nFailed Cases:\n")
       for case in failedCases:
@@ -400,25 +417,24 @@ def checkError(program, comment, cmd, tol, verbose, R, message):
     if error is not None:
       error=error.group()
       if float(error) > tol or error == "nan" or error == "-nan" or error == "inf":
-        program.failTest()
         print("\t"+boldFailedTest+" "+message+": "+error)
         case=" ".join(cmd)
         print("\t"+case)
         if R:
           findRoutines(comment)
-        program.failedCases.append(case)
+        program.failTest(case)
         print()
       else:
         warning=re.search(r"(?<=WARNING: )(\S| )*",comment)
         if warning is not None:
           warning=warning.group()
-          program.failTest()
+
           print("\t"+boldWarning+" "+warning)
           case=" ".join(cmd)
           print("\t"+case)
           if R:
             findRoutines(comment)
-          program.failedCases.append(case)
+          program.warningTest(case)
           print()
         else:
           program.passTest()
@@ -430,23 +446,21 @@ def checkError(program, comment, cmd, tol, verbose, R, message):
               findRoutines(comment)
             print()
     else:
-      program.failTest()
       print("\t"+boldFailedTest+" "+message+" not found.")
       case=" ".join(cmd)
       print("\t"+case)
       if R:
         findRoutines(comment)
-      program.failedCases.append(case)
+      program.failTest(case)
       print()
   except Exception as e:
-    program.failTest()
     print("\t"+boldFailedTest+f" Exception raised.")
     print(f"\t{e}.")
     case=" ".join(cmd)
     print("\t"+case)
     if R:
       findRoutines(comment)
-    program.failedCases.append(case)
+    program.failTest(case)
     print()
 
 def findRoutines(comment):
