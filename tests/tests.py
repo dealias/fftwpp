@@ -246,6 +246,8 @@ def fillValues(program, minS, testS):
   # we check even and odd L values
   if centered and dim == 1 and program.mult:
     Ls=[7,8]
+  elif real:
+    Ls=[3,4,8]
   else:
     Ls=[8]
 
@@ -265,19 +267,24 @@ def fillValues(program, minS, testS):
       Ms=[]
       if centered:
         Ms.append(3*L2-2*(L%2))
-
       if dim != 1:
         Ms+= [2*L]
+      elif real:
+        Ms+=[4*L,4*Ls[-1]]
       else:
         Ms+=[2*L,5*L2]
       for M in Ms:
         if real:
-          ms=[]
+          Lsend=Ls[-1]
+          if L < Lsend:
+            ms=[L+L%2,Ls[-1]+Ls[-1]]
+          else:
+            ms=[L+L%2]
         else:
           ms=[L4,L2]
-        if not centered:
+        if not centered and not real:
           ms+=[L,L+1]
-        elif not hermitian:
+        elif not hermitian and not real:
           ms+=[ceilquotient((L2+L),2)]
         ms+=[M]
         for m in ms:
