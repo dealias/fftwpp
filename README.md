@@ -14,21 +14,22 @@ architectures. Wrappers for multiple 1D transforms are also provided. As
 with the FFTW3 library itself, both in-place and out-of-place transforms of
 arbitrary size are supported.
 
-For reproducibility of _Hybrid Dealiased Convolutions_, see the [test programs](#test-programs) below.
+For reproducibility of Hybrid Dealiased Convolutions, see the [test programs](#test-programs) below.
 
 Implicit dealiasing of standard and centered Hermitian convolutions is
 also implemented; in 2D and 3D implicit zero-padding substantially
 reduces memory usage and computation time.  For more information, see
 
 - _Efficient Dealiased Convolutions without Padding_,
-John C. Bowman and Malcolm Roberts, SIAM Journal on Scientific
-Computing, 33:1, 386-406 (2011).
-http://www.math.ualberta.ca/~bowman/publications/dealias.pdf
+John C. Bowman and Malcolm Roberts. SIAM Journal on Scientific
+Computing, 33:1, 386-406 (2011): http://www.math.ualberta.ca/~bowman/publications/dealias.pdf
 
 - _Multithreaded implicitly dealiased convolutions_,
-Malcolm Roberts and John C. Bowman, Journal of Computational
-Physics, 356, 98-114 (2018).
-http://www.math.ualberta.ca/~bowman/publications/dealias2.pdf
+Malcolm Roberts and John C. Bowman. Journal of Computational
+Physics, 356, 98-114 (2018): http://www.math.ualberta.ca/~bowman/publications/dealias2.pdf
+
+- _Hybrid Dealiasing of Complex Convolutions_,
+Noel Murasko and John C. Bowman. Submitted in Februrary 2023: [arXiv:2303.17510](https://arxiv.org/abs/2303.17510)
 
 Convenient optional shift routines that place the Fourier origin in the logical
 center of the domain are provided for centered complex-to-real transforms
@@ -63,11 +64,11 @@ dimensions are available in the `mpi/` directory.  Parallelization is
 accomplished using the adaptive hybrid OpenMP/MPI transpose routine
 described in
 
-_"Adaptive Matrix Transpose Algorithms for Distributed
-Multicore Processors", John C. Bowman and Malcolm Roberts,
+- _Adaptive Matrix Transpose Algorithms for Distributed
+Multicore Processors_, John C. Bowman and Malcolm Roberts.
 Interdisciplinary Topics in Applied Mathematics, Modeling and Computational
 Science, Springer Proceedings in Mathematics & Statistics 117,
-97-103 (2015): http://www.math.ualberta.ca/~bowman/publications/transpose.pdf_
+97-103 (2015): http://www.math.ualberta.ca/~bowman/publications/transpose.pdf
 
 Either a 1D ("slab") and 2D ("pencil") data decomposition is used
 for the three-dimensional convolutions, depending on the number of processors.
