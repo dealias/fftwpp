@@ -802,6 +802,10 @@ public:
   }
 
   void init(Complex **F=NULL, Complex *V=NULL) {
+    for(unsigned int t=0; t < threads; ++t)
+      indices.copy(NULL,0);
+    indices.fft=fft;
+
     L=fft->L;
     q=fft->q;
     Q=fft->Q;
