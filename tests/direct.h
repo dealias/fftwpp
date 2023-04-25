@@ -29,6 +29,15 @@ public:
   void convolve(Complex *h, Complex *f, Complex *g);
 };
 
+// Out-of-place direct 1D real convolution.
+class DirectrConvolution {
+protected:
+  size_t m;
+public:
+  DirectrConvolution(size_t m) : m(m) {}
+  void convolve(double *h, double *f, double *g);
+};
+
 // Out-of-place direct 2D complex convolution.
 class DirectConvolution2 {
 protected:

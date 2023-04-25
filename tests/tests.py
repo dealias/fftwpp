@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 
-from math import *
-from subprocess import *
-import os
+import subprocess
 import re
 import argparse
+import sys
 from HybridParameters import *
 
 def main():
@@ -13,37 +12,52 @@ def main():
   test(programs, args)
 
 class Program:
-  def __init__(self, name, centered, dim=1, extraArgs="",mult=True):
+  def __init__(self, name, dim=1, mult=True, centered=False, hermitian=False, real=False):
     self.name=name
-    self.centered=centered
     self.dim=dim
-    self.extraArgs=extraArgs
-    self.hermitian=centered and extraArgs != "-c"
     self.mult=mult
+    self.centered=centered or hermitian
+    self.hermitian=hermitian
+    self.real=real
+
+    self.extraArgs="-c" if (centered and not hermitian) else ""
+
     self.failed=0
     self.passed=0
+    self.warnings=0
     self.total=0
+    self.warningCases=[]
     self.failedCases=[]
 
   def passTest(self):
     self.passed+=1
     self.total+=1
 
-  def failTest(self):
+  def warningTest(self, case):
+    self.passed+=1
+    self.warnings+=1
+    self.total+=1
+    self.warningCases.append(case)
+
+  def failTest(self,case):
     self.failed+=1
     self.total+=1
+    self.failedCases.append(case)
 
 def getArgs():
   parser = argparse.ArgumentParser(description="Perform Unit Tests on convolutions with hybrid dealiasing.")
   parser.add_argument("-s", help="Test Standard convolutions. Not specifying\
-  										s or c or H is the same as specifying all of them",
+  										s or c or H or r is the same as specifying all of them",
   										action="store_true")
   parser.add_argument("-c", help="Test Centered convolutions. Not specifying\
-  										S or C or H is the same as specifying all of them",
+  										s or c or H or r is the same as specifying all of them",
   										action="store_true")
   parser.add_argument("-H", help="Test Hermitian convolutions. Not specifying\
-  										S or C or H is the same as specifying all of them",
+  										s or c or H or r is the same as specifying all of them",
   										action="store_true")
+  parser.add_argument("-r", help="Test Real convolutions. Not specifying\
+                      s or c or H or r is the same as specifying all of them",
+                      action="store_true")
   parser.add_argument("-i","--identity", help="Test forward backward routines (hybrid.cc\
                        and/or hybridh.cc). Only in 1D.",
                       action="store_true")
@@ -57,14 +71,14 @@ def getArgs():
   										1 or 2 or 3 is the same as specifying all of them",
   										action="store_true")
   parser.add_argument("-T",metavar='threads',help="Number of threads to use in timing. If set to\
-                      0, tests over 1 and OMP_NUM_THREADS. Default is 1.",
+                      0, tests over 1 and OMP_NUM_THREADS (which must be set as an environment variable). Default is 1.",
                       default=1)
   parser.add_argument("-R", help="Find routines used in output.",
                       action="store_true")
   parser.add_argument("-S", help="Test different strides.",
                       action="store_true")
   parser.add_argument("-A","--All", help="Perform all tests. If the dimension\
-                      (1, 2 or 3) and\or convolution type (s, c or H) is\
+                      (1, 2 or 3) and/or convolution type (s, c or H) is\
                       specified then perform all tests in that dimension and/or\
                       type.",
                       action="store_true")
@@ -83,44 +97,47 @@ def getPrograms(args):
   S=args.s
   C=args.c
   H=args.H
+  R=args.r
   i=args.identity or A
   X=args.one
   Y=args.two
   Z=args.three
 
-  notSCH=(not (S or C or H))
-  notSH=(not (S or C or H))
+  notSCHR=(not (S or C or H or R))
   notXYZ=(not (X or Y or Z))
 
-  SorNotSCH=(S or notSCH)
-  CorNotSCH=(C or notSCH)
-  HorNotSCH=(args.H or notSCH)
+  SorNotSCHR=(S or notSCHR)
+  CorNotSCHR=(C or notSCHR)
+  HorNotSCHR=(H or notSCHR)
+  rorNotSCHR=(R or notSCHR)
 
   if X or notXYZ:
-    if SorNotSCH:
-      programs.append(Program("hybridconv",False))
+    if SorNotSCHR:
+      programs.append(Program("hybridconv"))
       if i:
-        programs.append(Program("hybrid",False,mult=False))
-    if CorNotSCH:
-      programs.append(Program("hybridconv",True,extraArgs="-c"))
+        programs.append(Program("hybrid",mult=False))
+    if CorNotSCHR:
+      programs.append(Program("hybridconv",centered=True))
       if i:
-        programs.append(Program("hybrid",True,extraArgs="-c",mult=False))
-    if HorNotSCH:
-      programs.append(Program("hybridconvh",True))
+        programs.append(Program("hybrid",centered=True,mult=False))
+    if HorNotSCHR:
+      programs.append(Program("hybridconvh",hermitian=True))
       if i:
-        programs.append(Program("hybridh",True,mult=False))
+        programs.append(Program("hybridh",hermitian=True,mult=False))
+    if rorNotSCHR:
+      programs.append(Program("hybridconvr",real=True))
 
   if Y or notXYZ:
-    if SorNotSCH:
-      programs.append(Program("hybridconv2",False,dim=2))
-    if HorNotSCH:
-      programs.append(Program("hybridconvh2",True,dim=2))
+    if SorNotSCHR:
+      programs.append(Program("hybridconv2",dim=2))
+    if HorNotSCHR:
+      programs.append(Program("hybridconvh2",dim=2,hermitian=True))
 
   if Z or notXYZ:
-    if SorNotSCH:
-      programs.append(Program("hybridconv3",False,dim=3))
-    if HorNotSCH:
-      programs.append(Program("hybridconvh3",True,dim=3))
+    if SorNotSCHR:
+      programs.append(Program("hybridconv3",dim=3))
+    if HorNotSCHR:
+      programs.append(Program("hybridconvh3",dim=3,hermitian=True))
 
   return programs
 
@@ -131,6 +148,7 @@ def test(programs, args):
   if lenP >= 1:
     passed=0
     failed=0
+    warnings=0
     total=0
     failedCases=[]
 
@@ -140,8 +158,12 @@ def test(programs, args):
         name+=" "+p.extraArgs
       if T == 0:
         cmd = 'echo $OMP_NUM_THREADS'
-        OMP_NUM_THREADS=str(check_output(cmd, shell=True))
-        Tnum=int(re.search(r"\d+",OMP_NUM_THREADS).group(0))
+        OMP_NUM_THREADS=str(subprocess.check_output(cmd, shell=True))
+        Tnum=re.search(r"\d+",OMP_NUM_THREADS)
+        if Tnum is not None:
+          Tnum=int(Tnum.group(0))
+        else:
+          sys.exit("Could not find OMP_NUM_THREADS environment variable for T=0 option.")
         Ts=[1,Tnum]
         print(f"Testing {name} with 1 and {Tnum} threads.\n")
       elif T == 1:
@@ -157,41 +179,48 @@ def test(programs, args):
 
       ppassed=p.passed
       pfailed=p.failed
+      pwarnings=p.warnings
       ptotal=p.total
 
-      print("Finished testing "+name+".")
-      print("Out of "+str(ptotal)+" tests, "+str(ppassed)+" passed, "+str(pfailed)+" failed.")
-      print("\n***************\n")
+      s="s" if pwarnings > 1 else ""
+      warningText=f" with {pwarnings} warning{s}," if pwarnings > 0 else ","
+
+      print(f"Finished testing {name}.")
+      print(f"Out of {ptotal} tests, {ppassed} passed{warningText} {pfailed} failed.\n")
+      if lenP > 1:
+        print("***************\n")
       total+=ptotal
       passed+=ppassed
       failed+=pfailed
+      warnings+=pwarnings
       if args.l:
         failedCases+=p.failedCases
 
     if lenP > 1:
-      print("Finished testing "+str(lenP)+" programs.")
-      print("Out of "+str(total)+" tests, "+str(passed)+" passed, "+str(failed)+" failed.\n")
-
+      s="s" if warnings > 1 else ""
+      warningText=f" with {warnings} warning{s}," if warnings > 0 else ","
+      print(f"Finished testing {lenP} programs.")
+      print(f"Out of {total} tests, {passed} passed{warningText} {failed} failed.\n")
     if args.l and len(failedCases) > 0:
-      print("Failed Cases:\n")
+      print("\nFailed Cases:\n")
       for case in failedCases:
         print(case+";")
       print()
   else:
-    print("\nNo programs to test.\n")
+    print("No programs to test.\n")
 
 def iterate(program, threads, tol, verbose, R, testS, printEverything):
 
   dim=program.dim
 
-  vals=ParameterCollection(fillValues,program,1,testS and not program.mult).vals
+  vals=ParameterCollection(findTests(program,1,testS and not program.mult)).vals
   if dim == 1:
     for T in threads:
       checkOptimizer(program,vals[0].L,vals[0].M,T,tol,R,verbose,printEverything)
       for x in vals:
         check(program,[x],T,tol,R,verbose,printEverything)
     if not program.mult:
-      vals=ParameterCollection(fillValues,program,8,testS and not program.mult).vals
+      vals=ParameterCollection(findTests(program,8,testS and not program.mult)).vals
       for x in vals:
         for T in threads:
           check(program,[x],T,tol,R,verbose,printEverything)
@@ -199,7 +228,7 @@ def iterate(program, threads, tol, verbose, R, testS, printEverything):
     if dim == 2:
       for y in vals:
         minS=(ceilquotient(y.L,2) if program.hermitian else y.L)
-        xvals=ParameterCollection(fillValues,program,minS,testS).vals
+        xvals=ParameterCollection(findTests(program,minS,testS)).vals
         for x in xvals:
           for T in threads:
             check(program,[x,y],T,tol,R,verbose,printEverything)
@@ -207,36 +236,39 @@ def iterate(program, threads, tol, verbose, R, testS, printEverything):
     elif dim == 3:
       for z in vals:
         minSy=ceilquotient(z.L,2) if program.hermitian else z.L
-        yvals=ParameterCollection(fillValues,program,minSy,testS).vals
+        yvals=ParameterCollection(findTests(program,minSy,testS)).vals
         for y in yvals:
           minSy=y.S*y.L
-          xvals=ParameterCollection(fillValues,program,y.L*y.S,testS).vals
+          xvals=ParameterCollection(findTests(program,y.L*y.S,testS)).vals
           for x in xvals:
             for T in threads:
               check(program,[x,y,z],T,tol,R,verbose,printEverything)
     else:
       exit("Dimension must be 1 2 or 3.")
 
-def fillValues(program, minS, testS):
-  # This doesn't quite correspond to C in the main code but it has the property
-  # that C == 1 in 1D and C > 1 in higher dimensions
-  # It also works for tesing hybrid.cc and hybridh.cc.
-  C=minS
-
-  centered=program.centered
-  hermitian=program.hermitian
-
-  dim=program.dim
+def collectTests(program, L, M, m, minS, testS, Dmin=0, Dmax=0, I0=True, I1=True):
   vals=[]
 
-  # Because of symmetry concerns in the centered cases (compact/noncompact),
-  # we check even and odd L values
-  if centered and dim == 1 and program.mult:
-    Ls=[7,8]
-  else:
-    Ls=[8]
+  C=minS
+  dim=program.dim
+  hermitian=program.hermitian
 
-  Dstart=2 if hermitian and C == 1 else 1
+  p=ceilquotient(L,m)
+  q=ceilquotient(M,m) if p <= 2 else ceilquotient(M,m*p)*p
+  n=q//p
+
+  if Dmax == 0:
+    Dmax=n
+
+  if C > 1:
+    Dstart=1
+    Dstop=1
+  elif hermitian:
+    Dstart=max(Dmin,2)
+    Dstop=min(max(Dmax,2),n)
+  else:
+    Dstart=max(Dmin,1)
+    Dstop=min(max(Dmax,1),n)
 
   Ss=[minS]
   if testS:
@@ -245,45 +277,85 @@ def fillValues(program, minS, testS):
     if dim == 3:
       Ss+=[minS+2]
 
-  for S in Ss:
-    for L in Ls:
-      L4=ceilquotient(L,4)
-      L2=ceilquotient(L,2)
-      Ms=[]
-      if centered:
-        Ms.append(3*L2-2*(L%2))
+  Istart=0
+  Istop=2
+  if not I0:
+    Istart=1
+  if not I1:
+    Istop=1
 
-      if dim != 1:
-        Ms+= [2*L]
-      else:
-        Ms+=[2*L,5*L2]
-      for M in Ms:
-        ms=[L4,L2]
-        if not centered:
-          ms+=[L,L+1]
-        elif not hermitian:
-          ms+=[ceilquotient((L2+L),2)]
-        ms+=[M]
-        for m in ms:
-          p=ceilquotient(L,m)
-          q=ceilquotient(M,m) if p <= 2 else ceilquotient(M,m*p)*p
-          n=q//p
-          Istart=0
-          Dstop=n
-          if q == 1:
-            Dstop=1
-          elif hermitian:
-            Dstop=2
-          for I in range(Istart,2):
-            if C == 1:
-              D=Dstart
-              while(D < Dstop):
-                vals.append(Parameters(L,M,m,p,q,C,S,D,I))
-                D*=2
-              vals.append(Parameters(L,M,m,p,q,C,S,Dstop,I))
-            else:
-              D=1
-              vals.append(Parameters(L,M,m,p,q,C,S,D,I))
+  for S in Ss:
+    for I in range(Istart,Istop):
+      D=Dstart
+      while(D < Dstop):
+        vals.append(Parameters(L,M,m,p,q,C,S,D,I))
+        D*=2
+      vals.append(Parameters(L,M,m,p,q,C,S,Dstop,I))
+
+  return vals
+
+def findTests(program, minS, testS):
+  if program.real:
+    return realTests(program, minS, testS)
+  elif program.hermitian:
+    return hermitianTests(program, minS, testS)
+  elif program.centered:
+    return centeredTests(program, minS, testS)
+  else:
+    return complexTests(program, minS, testS)
+
+def complexTests(program, minS, testS):
+  vals=[]
+  L=8
+  Mvalues=[2*L,5*L//2]
+  for M in Mvalues:
+    mvalues=[L//4,L//2,L,L+1,M]
+    for m in mvalues:
+      vals+=collectTests(program, L=L, M=M, m=m, minS=minS, testS=testS)
+  return vals
+
+def centeredTests(program, minS, testS):
+  assert program.centered
+  vals=[]
+  Lvalues=[]
+  if program.dim == 1 and program.mult:
+    Lvalues=[7,8]
+  else:
+    Lvalues=[8]
+  for L in Lvalues:
+    L2=ceilquotient(L,2)
+    Mvalues=[3*L2-2*(L%2),2*L,5*L2]
+    for M in Mvalues:
+      mvalues=[L//4,L2,ceilquotient(L2+L,2),M]
+      for m in mvalues:
+        vals+=collectTests(program, L=L, M=M, m=m, minS=minS, testS=testS)
+  return vals
+
+def hermitianTests(program, minS, testS):
+  assert program.hermitian
+  vals=[]
+  Lvalues=[]
+  if program.dim == 1 and program.mult:
+    Lvalues=[7,8]
+  else:
+    Lvalues=[8]
+  for L in Lvalues:
+    L2=ceilquotient(L,2)
+    Mvalues=[3*L2-2*(L%2),2*L,5*L2]
+    for M in Mvalues:
+      mvalues=[L//4,L2,M]
+      for m in mvalues:
+        vals+=collectTests(program, L=L, M=M, m=m, minS=minS, testS=testS)
+  return vals
+
+def realTests(program, minS, testS):
+  assert program.real
+  vals=[]
+  mvalues=[4,8,16]
+  for m in mvalues:
+    vals+=collectTests(program, L=8, M=32, m=m, Dmin=1, Dmax=1, minS=minS, testS=testS)
+    vals+=collectTests(program, L=4, M=16, m=m, Dmin=1, Dmax=1, minS=minS, testS=testS)
+    vals+=collectTests(program, L=3, M=16, m=m, Dmin=1, Dmax=1, minS=minS, testS=testS)
   return vals
 
 def checkOptimizer(program, L, M, T, tol, R, verbose, printEverything):
@@ -296,13 +368,13 @@ def checkOptimizer(program, L, M, T, tol, R, verbose, printEverything):
   if program.extraArgs != "":
     cmd.append(program.extraArgs)
 
-  vp = Popen(cmd, stdout = PIPE, stderr = STDOUT)
+  vp = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
   vp.wait()
   prc = vp.returncode
   comment = ""
 
   if prc == 0:
-    out, err = vp.communicate()
+    out, _ = vp.communicate()
     comment = out.rstrip().decode()
 
   if printEverything:
@@ -318,13 +390,13 @@ def check(program, vals, T, tol, R, verbose, printEverything):
 
   cmd=getcmd(program,vals,T,R)
 
-  vp = Popen(cmd, stdout = PIPE, stderr = STDOUT)
+  vp = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
   vp.wait()
   prc = vp.returncode
   comment = ""
 
   if prc == 0:
-    out, err = vp.communicate()
+    out, _ = vp.communicate()
     comment = out.rstrip().decode()
 
   if printEverything:
@@ -341,44 +413,54 @@ def checkError(program, comment, cmd, tol, verbose, R, message):
   boldFailedTest="\033[1mFailed Test:\033[0m"
   boldWarning="\033[1mWARNING:\033[0m"
   try:
-    error=re.search(r"(?<="+message+": )(\w|\d|\.|e|-|\+)*",comment).group()
-    if float(error) > tol or error == "nan" or error == "inf":
-      program.failTest()
-      print("\t"+boldFailedTest+" "+message+": "+error)
-      case=" ".join(cmd)
-      print("\t"+case)
-      if R:
-        findRoutines(comment)
-      program.failedCases.append(case)
-      print()
-    else:
-      try:
-        warning=re.search(r"(?<=WARNING: )(\S| )*",comment).group()
-        program.failTest()
-        print("\t"+boldWarning+" "+warning)
+    error=re.search(r"(?<="+message+r": )(\w|\d|\.|e|-|\+)*",comment)
+    if error is not None:
+      error=error.group()
+      if float(error) > tol or error == "nan" or error == "-nan" or error == "inf":
+        print("\t"+boldFailedTest+" "+message+": "+error)
         case=" ".join(cmd)
         print("\t"+case)
         if R:
           findRoutines(comment)
-        program.failedCases.append(case)
+        program.failTest(case)
         print()
-      except:
-        program.passTest()
-        if verbose:
-          print("\t"+boldPassedTest+" "+message+": "+error)
+      else:
+        warning=re.search(r"(?<=WARNING: )(\S| )*",comment)
+        if warning is not None:
+          warning=warning.group()
+
+          print("\t"+boldWarning+" "+warning)
           case=" ".join(cmd)
           print("\t"+case)
           if R:
             findRoutines(comment)
+          program.warningTest(case)
           print()
-  except:
-    program.failTest()
-    print("\t"+boldFailedTest+" "+message+" not found.")
+        else:
+          program.passTest()
+          if verbose:
+            print("\t"+boldPassedTest+" "+message+": "+error)
+            case=" ".join(cmd)
+            print("\t"+case)
+            if R:
+              findRoutines(comment)
+            print()
+    else:
+      print("\t"+boldFailedTest+" "+message+" not found.")
+      case=" ".join(cmd)
+      print("\t"+case)
+      if R:
+        findRoutines(comment)
+      program.failTest(case)
+      print()
+  except Exception as e:
+    print("\t"+boldFailedTest+f" Exception raised.")
+    print(f"\t{e}.")
     case=" ".join(cmd)
     print("\t"+case)
     if R:
       findRoutines(comment)
-    program.failedCases.append(case)
+    program.failTest(case)
     print()
 
 def findRoutines(comment):

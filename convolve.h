@@ -137,8 +137,8 @@ public:
   size_t D;  // number of residues stored in F at a time
   size_t D0; // remainder
   size_t Cm,Sm;
-  size_t b;  // total block size, including stride
   size_t l;  // block size of a single FFT
+  size_t b;  // total block size, including stride
   bool inplace;
   Application app;
   bool centered;
@@ -175,7 +175,7 @@ public:
                         size_t S, size_t m, size_t q,
                         size_t D, bool inplace, Application &app)=0;
 
-    virtual bool valid(size_t D, size_t p, size_t S) {
+    virtual bool valid(size_t D, size_t p, size_t m, size_t S) {
       return D == 1 || S == 1;
     }
 
@@ -262,9 +262,9 @@ public:
   }
 
   virtual void forwardExplicit(Complex *f, Complex *F, size_t,
-                               Complex *W)=0;
+                               Complex *W) {};
   virtual void forwardExplicitMany(Complex *f, Complex *F, size_t,
-                                   Complex *W)=0;
+                                   Complex *W) {};
   virtual void forwardExplicitFast(Complex *f, Complex *F, size_t,
                                    Complex *W) {}
   virtual void forwardExplicitManyFast(Complex *f, Complex *F, size_t,
@@ -275,9 +275,9 @@ public:
                                        Complex *W) {}
 
   virtual void backwardExplicit(Complex *F, Complex *f, size_t,
-                                Complex *W)=0;
+                                Complex *W) {};
   virtual void backwardExplicitMany(Complex *F, Complex *f, size_t,
-                                    Complex *W)=0;
+                                    Complex *W) {};
   virtual void backwardExplicitFast(Complex *F, Complex *f, size_t,
                                     Complex *W) {}
   virtual void backwardExplicitManyFast(Complex *F, Complex *f, size_t,
@@ -383,7 +383,7 @@ public:
     return D > 1 && (p <= 2 || (centered && p % 2 == 0));
   }
 
-  size_t residueBlocks() {
+  virtual size_t residueBlocks() {
     return conjugates() ? utils::ceilquotient(Q,2) : Q;
   }
 
@@ -488,7 +488,7 @@ public:
          Application &app, bool centered=false) :
     fftBase(L,M,C,S,m,q,D,inplace,app,centered) {
     Opt opt;
-    if(q > 1 && !opt.valid(D,p,this->S)) invalid();
+    if(q > 1 && !opt.valid(D,p,m,this->S)) invalid();
     init();
   }
 
@@ -570,7 +570,7 @@ public:
       scan(L,M,app,C,S,Explicit,true);
     }
 
-    bool valid(size_t D, size_t p, size_t S) {
+    bool valid(size_t D, size_t p, size_t m, size_t S) {
       return p%2 == 0 && (D == 1 || S == 1);
     }
 
@@ -588,7 +588,7 @@ public:
                  size_t D, bool inplace, Application &app) :
     fftPad(L,M,C,S,m,q,D,inplace,app,true) {
     Opt opt;
-    if(q > 1 && !opt.valid(D,p,this->S)) invalid();
+    if(q > 1 && !opt.valid(D,p,m,this->S)) invalid();
     init();
   }
 
@@ -681,7 +681,7 @@ public:
       scan(L,M,app,C,C,Explicit,true);
     }
 
-    bool valid(size_t D, size_t p, size_t C) {
+    bool valid(size_t D, size_t p, size_t m, size_t C) {
       return D == 2 && p%2 == 0 && (p == 2 || C == 1);
     }
 
@@ -697,7 +697,7 @@ public:
                   bool inplace, Application &app) :
     fftBase(L,M,C,C,m,q,D,inplace,app,true) {
     Opt opt;
-    if(q > 1 && !opt.valid(D,p,C)) invalid();
+    if(q > 1 && !opt.valid(D,p,m,C)) invalid();
     init();
   }
 
@@ -751,6 +751,106 @@ public:
 
   size_t inputSize() {
     return C*utils::ceilquotient(L,2);
+  }
+};
+
+class fftPadReal : public fftBase {
+  size_t e;
+  rcfft1d *rcfftm1;
+  crfft1d *crfftm1;
+  //fft1d *fftm1;
+  //fft1d *ifftm1;
+  mfft1d *fftm,*fftm0;
+  mfft1d *ifftm,*ifftm0;
+  fft1d *ffte;
+  fft1d *iffte;
+public:
+
+  class Opt : public OptBase {
+  public:
+    Opt() {}
+
+    Opt(size_t L, size_t M, Application& app,
+        size_t C, size_t S, bool Explicit=false) {
+      scan(L,M,app,C,S,Explicit);
+    }
+
+    bool valid(size_t D, size_t p, size_t m, size_t S) {
+//      return q%2 == 1 || m%2 == 0 && D == 1 && p == 1 && S == 1;
+      return m%2 == 0 && D == 1 && p == 1 && S == 1;
+    }
+
+    double time(size_t L, size_t M, size_t C, size_t S,
+                size_t m, size_t q,size_t D, bool inplace, Application &app) {
+      fftPad fft(L,M,C,S,m,q,D,inplace,app);
+      double threshold=DBL_MAX;
+      return timePad(&fft,threshold);
+    }
+  };
+
+  fftPadReal(size_t L, size_t M, size_t C, size_t S, Application &app) :
+    fftBase(L,M,C,S,app) {}
+
+  // Compute an fft padded to N=m*q >= M >= L
+  fftPadReal(size_t L, size_t M, size_t C, size_t S,
+         size_t m, size_t q, size_t D, bool inplace,
+         Application &app) :
+    fftBase(L,M,C,S,m,q,D,inplace,app) {
+    Opt opt;
+    if(q > 1 && !opt.valid(D,p,m,this->S)) invalid();
+    init();
+  }
+
+  // Normal entry point.
+  // Compute C ffts of length L with stride S >= C and distance 1
+  // padded to at least M
+  fftPadReal(size_t L, size_t M, Application& app,
+         size_t C=1, size_t S=0, bool Explicit=false) :
+    fftBase(L,M,app,C,S,Explicit) {
+    Opt opt=Opt(L,M,app,C,this->S,Explicit);
+    m=opt.m;
+    if(Explicit)
+      M=m;
+    q=opt.q;
+    D=opt.D;
+    inplace=opt.inplace;
+    init();
+  }
+
+  ~fftPadReal();
+
+  void init();
+
+  double time() {
+    double threshold=DBL_MAX;
+    return timePad(this,threshold);
+  }
+
+  // Explicitly pad to m.
+  void padSingle(Complex *W);
+
+  /*
+  // Explicitly pad C FFTs to m.
+  void padMany(Complex *W) {}
+  */
+
+  void forwardExplicit(Complex *f, Complex *F, size_t, Complex *W);
+  void backwardExplicit(Complex *F, Complex *f, size_t, Complex *W);
+
+  // p=1 && C=1
+  void forward1(Complex *f, Complex *F0, size_t r0, Complex *W);
+  void backward1(Complex *F0, Complex *f, size_t r0, Complex *W);
+
+  size_t inputSize() {
+    return S*utils::ceilquotient(L,2);
+  }
+
+  size_t workSizeW() {
+    return inplace ? 0 : q == 2 ? outputSize()/2 : outputSize();
+  }
+
+  size_t residueBlocks() {
+    return Q/2+1;
   }
 };
 

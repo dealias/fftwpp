@@ -171,9 +171,9 @@ inline void usageHybrid(bool fft=false)
     std::cerr << "-C n\t\t compute n padded FFTs at a time"
               << std::endl;
   std::cerr << "-D n\t\t number n of blocks to process at a time" << std::endl;
-  std::cerr << "-E\t\t compute relative error using direct convolution (sets K=1 and forces normalization)" << std::endl;
+  std::cerr << "-E\t\t compute relative error using direct convolution (sets K=0 and forces normalization)" << std::endl;
   std::cerr << "-I\t\t (0=out-of-place, 1=in-place) FFTs [by default I=1 only for multiple FFTs]" << std::endl;
-  std::cerr << "-O\t\t output result (sets K=1)" << std::endl;
+  std::cerr << "-O\t\t output result (sets K=0)" << std::endl;
   std::cerr << "-R\t\t show which forward and backward routines are used" << std::endl;
   std::cerr << "-K t\t\t time limit (seconds)" << std::endl;
   std::cerr << "-L n\t\t number n of physical data values" << std::endl;
@@ -242,6 +242,12 @@ inline size_t hpadding(size_t m)
 inline size_t tpadding(size_t m)
 {
   return padding(4*m-3);
+}
+
+// return real(conj(z)*w)
+inline double realproduct(const Complex& z, const Complex& w)
+{
+  return z.re*w.re+z.im*w.im;
 }
 
 }
