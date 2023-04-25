@@ -5712,13 +5712,11 @@ void fftPadReal::forward1(Complex *f, Complex *F, size_t r, Complex *W)
     bool repad=inplace || q == 2 || L%2;
     // Make use of existing zero padding, respecting alignment
     if(!repad) Wr += L;
-//    if(Wr != fr) {
     PARALLELIF(
       L > threshold,
       for(size_t s=0; s < L; ++s)
         Wr[s]=fr[s];
       );
-//    }
     if(repad)
       for(size_t s=L; s < m; ++s)
         Wr[s]=0.0;
@@ -5748,16 +5746,23 @@ void fftPadReal::forward1(Complex *f, Complex *F, size_t r, Complex *W)
       Lmh=L-h;
       stop=h;
     }
-//    PARALLELIF(
-//      Lmh > threshold,
-//      );
-    for(size_t s=0; s < Lmh; ++s)
-      W[s]=Zetar[s]*Complex(fr[s],frh[s]);
-    for(size_t s=Lmh; s < stop; ++s)
-      W[s]=Zetar[s]*fr[s];
+    W[0]=Complex(fr[0],frh[0]);
+    PARALLELIF(
+      Lmh > threshold,
+      for(size_t s=1; s < Lmh; ++s)
+        W[s]=Zetar[s]*Complex(fr[s],frh[s]);
+      );
+    PARALLELIF(
+      stop-Lmh > threshold,
+      for(size_t s=Lmh; s < stop; ++s)
+        W[s]=Zetar[s]*fr[s];
+      );
     if(inplace) {
-      for(size_t s=L; s < h; ++s)
-        W[s]=0.0;
+      PARALLELIF(
+        h-L > threshold,
+        for(size_t s=L; s < h; ++s)
+          W[s]=0.0;
+        );
     }
     ffte->fft(W,F);
   }
@@ -5806,8 +5811,6 @@ void fftPadReal::backward1(Complex *F, Complex *f, size_t r, Complex *W)
     Complex *Zetar=Zetaqm+m*r;
     size_t h=e-1;
     double *frh=fr+h;
-//    PARALLELIF(
-//      L > threshold,
     size_t Lmh,stop;
     Complex z=W[0];
     fr[0] += 2.0*real(z);
@@ -5819,16 +5822,20 @@ void fftPadReal::backward1(Complex *F, Complex *f, size_t r, Complex *W)
       stop=h;
       frh[0] += 2.0*imag(z);
     }
-    for(size_t s=1; s < Lmh; ++s) {
-      Complex z=conj(Zetar[s])*W[s];
-      fr[s] += 2.0*real(z);
-      frh[s] += 2.0*imag(z);
-    }
-    for(size_t s=Lmh; s < stop; ++s) {
-      Complex z=conj(Zetar[s])*W[s];
-      fr[s] += 2.0*real(z);
-    }
-//      );
+    PARALLELIF(
+      Lmh > threshold,
+      for(size_t s=1; s < Lmh; ++s) {
+        Complex z=conj(Zetar[s])*W[s];
+        fr[s] += 2.0*real(z);
+        frh[s] += 2.0*imag(z);
+      });
+
+    PARALLELIF(
+      stop-Lmh > threshold,
+      for(size_t s=Lmh; s < stop; ++s) {
+        Complex z=conj(Zetar[s])*W[s];
+        fr[s] += 2.0*real(z);
+      });
   }
 }
 
