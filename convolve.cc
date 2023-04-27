@@ -379,9 +379,10 @@ void fftBase::OptBase::scan(size_t L, size_t M, Application& app,
   } else if(counter > 1) {
     if(showOptTimes) cout << endl << "Timing " << counter << " algorithms:" << endl;
     mForced=true;
+    Application App(app);
     for(mList::reverse_iterator r=mlist.rbegin(); r != mlist.rend(); ++r) {
-      app.m=*r;
-      opt(L,M,app,C,S,mStart,itmax,Explicit,centered);
+      App.m=*r;
+      opt(L,M,App,C,S,mStart,itmax,Explicit,centered);
     }
     if(showOptTimes) {
       cout << endl << "Optimal time: t=" << T*1.0e-9 << endl << endl;
