@@ -268,6 +268,17 @@ inline Complex polar(double r, double t)
   return Complex(r*cos(t), r*sin(t));
 }
 
+inline double realProduct(double x, double y)
+{
+  return x*y;
+}
+
+// Return real(conj(z)*w)
+inline double realProduct(const Complex& x, const Complex& y)
+{
+  return x.re*y.re+x.im*y.im;
+}
+
 // Complex exponentiation
 #ifndef _GNU_SOURCE
 inline void sincos(const double x, double *sinx, double *cosx)
