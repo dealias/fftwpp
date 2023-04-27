@@ -68,9 +68,14 @@ int main(int argc, char *argv[])
   Complex *F=ComplexAlign(fft.outputSize());
   Complex *W0=ComplexAlign(fft.workSizeW());
 
+  double scale=1.0/fft.normalization();
+
   for(size_t j=0; j < L; ++j)
     for(size_t c=0; c < C; ++c)
-      f[S*j+c]=Complex(j+1+c,j+2+c);
+      f[S*j+c]=Complex(j,0.0)*scale;
+
+  fft1d Backward(L,-1);
+  Backward.fft(f);
 
 #if Centered
   fftPadCentered fft2(L,fft.M,C,S,fft.M,1,1,1,app);
@@ -95,8 +100,9 @@ int main(int argc, char *argv[])
         size_t i=fft.Index(r,K);
         error += abs2(F[K]-F2[i]);
         norm += abs2(F2[i]);
-        if(Output)
-          cout << i << ": " << F[K] << endl;
+//        if(Output)
+          if(abs(i-F[K].re) > 1e-6)
+            cout << i << ": " << F[K].re << endl;
       }
     }
     fft.backward(F,h,r,W0);
@@ -110,8 +116,6 @@ int main(int argc, char *argv[])
         cout << J << ": " << F2[J] << endl;
       }
   }
-
-  double scale=1.0/fft.normalization();
 
   if(Output) {
     cout << endl;

@@ -58,13 +58,21 @@ int main(int argc, char *argv[])
   Complex *F=ComplexAlign(fft.outputSize());
   Complex *W0=ComplexAlign(fft.workSizeW());
 
-  size_t H=ceilquotient(L,2);
+//  size_t H=ceilquotient(L,2);
 
-  for(size_t c=0; c < C; ++c)
-    f[c]=1+c;
-  for(size_t j=1; j < H; ++j)
+  double scale=1.0/fft.normalization();
+
+  size_t l=fft.paddedSize();
+  cout << "l=" << l << endl;
+  double *fr=doubleAlign(l);
+  for(size_t j=0; j < l; ++j)
     for(size_t c=0; c < C; ++c)
-      f[C*j+c]=Complex(j+1+c,j+2+c);
+      fr[C*j+c]=j*scale;
+
+  rcfft1d Backward(l,fr,f);
+  Backward.fft(fr,f);
+
+//  Backward.fftNormalized(fr,f); // FIXME
 
   fftPadHermitian fft2(L,fft.M,C,fft.M,1,1,1,app);
 
@@ -87,10 +95,11 @@ int main(int argc, char *argv[])
         size_t i=fft.Index(r,k+offset);
         error += abs2(Fr[k]-F2r[i]);
         norm += abs2(F2r[i]);
-        if(Output) {
+//        if(Output) {
           if(k%fft.Cm == 0) cout << endl;
-          cout << i << ": " << Fr[k] << endl;
-        }
+//            if(abs(i-Fr[k]) > 1e-6)
+        cout << i << ": " << Fr[k] << endl;
+//        }
       }
     }
     fft.backward(F,h,r,W0);
@@ -101,8 +110,6 @@ int main(int argc, char *argv[])
     for(size_t j=0; j < C*fft2.noutputs(); ++j)
       cout << j << ": " << F2r[j] << endl;
   }
-
-  double scale=1.0/fft.normalization();
 
   if(Output) {
     cout << endl;
