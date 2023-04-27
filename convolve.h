@@ -375,6 +375,10 @@ public:
     return M;
   }
 
+  virtual size_t paddedSize() {
+    return m*q;
+  }
+
   virtual size_t outputSize() {
     return b*D;
   }
