@@ -5833,8 +5833,7 @@ void fftPadReal::backward1(Complex *F, Complex *f, size_t r, Complex *W)
     PARALLELIF(
       stop-Lmh > threshold,
       for(size_t s=Lmh; s < stop; ++s) {
-        Complex z=conj(Zetar[s])*W[s];
-        fr[s] += 2.0*real(z);
+        fr[s] += 2.0*realproduct(Zetar[s],W[s]);
       });
   }
 }
