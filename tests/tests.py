@@ -6,6 +6,10 @@ import argparse
 import sys
 from HybridParameters import *
 
+boldPassedTest="\033[1mPassed Test:\033[0m"
+boldFailedTest="\033[1mFailed Test:\033[0m"
+boldWarning="\033[1mWARNING:\033[0m"
+
 def main():
   args=getArgs()
   programs=getPrograms(args)
@@ -43,6 +47,15 @@ class Program:
     self.failed+=1
     self.total+=1
     self.failedCases.append(case)
+
+class Options:
+  def __init__(self, tol, verbose, R, testS, printEverything, checkTests):
+    self.tol=tol
+    self.verbose=verbose
+    self.R=R
+    self.testS=testS
+    self.printEverything=printEverything
+    self.checkTests=checkTests
 
 def getArgs():
   parser = argparse.ArgumentParser(description="Perform Unit Tests on convolutions with hybrid dealiasing.")
@@ -178,7 +191,9 @@ def test(programs, args):
       else:
         raise ValueError(f"{T} is an invalid number of threads.")
 
-      iterate(p,Ts,float(args.t),args.v,args.R,args.S or args.All,args.p,args.checkTests)
+      options=Options(float(args.t),args.v,args.R,args.S or args.All,args.p,args.checkTests)
+
+      iterate(p,Ts,options)
 
       ppassed=p.passed
       pfailed=p.failed
@@ -212,21 +227,21 @@ def test(programs, args):
   else:
     print("No programs to test.\n")
 
-def iterate(program, threads, tol, verbose, R, testS, printEverything,checkTests):
-
+def iterate(program, threads, options):
+  # threads, tol, verbose, R, testS, printEverything,checkTests
   dim=program.dim
-
+  testS=options.testS
   vals=ParameterCollection(findTests(program,1,testS and not program.mult)).vals
   if dim == 1:
     for T in threads:
-      checkOptimizer(program,vals[0].L,vals[0].M,T,tol,R,verbose,printEverything)
+      checkOptimizer(program,vals[0].L,vals[0].M,T,options)
       for x in vals:
-        check(program,[x],T,tol,R,verbose,printEverything,checkTests)
+        check(program,[x],T,options)
     if not program.mult:
       vals=ParameterCollection(findTests(program,8,testS and not program.mult)).vals
       for x in vals:
         for T in threads:
-          check(program,[x],T,tol,R,verbose,printEverything,checkTests)
+          check(program,[x],T,options)
   else:
     if dim == 2:
       for y in vals:
@@ -234,7 +249,7 @@ def iterate(program, threads, tol, verbose, R, testS, printEverything,checkTests
         xvals=ParameterCollection(findTests(program,minS,testS)).vals
         for x in xvals:
           for T in threads:
-            check(program,[x,y],T,tol,R,verbose,printEverything,checkTests)
+            check(program,[x,y],T,options)
 
     elif dim == 3:
       for z in vals:
@@ -245,7 +260,7 @@ def iterate(program, threads, tol, verbose, R, testS, printEverything,checkTests
           xvals=ParameterCollection(findTests(program,y.L*y.S,testS)).vals
           for x in xvals:
             for T in threads:
-              check(program,[x,y,z],T,tol,R,verbose,printEverything,checkTests)
+              check(program,[x,y,z],T,options)
     else:
       exit("Dimension must be 1 2 or 3.")
 
@@ -363,11 +378,11 @@ def realTests(program, minS, testS):
     vals+=collectTests(program, L=3, M=16, m=m, Dmin=1, Dmax=1, minS=minS, testS=testS)
   return vals
 
-def checkOptimizer(program, L, M, T, tol, R, verbose, printEverything):
+def checkOptimizer(program, L, M, T, options):
 
   cmd=[program.name,f"-L={L}",f"-M={M}",f"-T={T}","-E","-t"]
 
-  if R:
+  if options.R:
     cmd.append("-R")
 
   if program.extraArgs != "":
@@ -382,17 +397,18 @@ def checkOptimizer(program, L, M, T, tol, R, verbose, printEverything):
     out, _ = vp.communicate()
     comment = out.rstrip().decode()
 
-  if printEverything:
+  if options.printEverything:
     print(f"{' '.join(cmd)}\n{comment}\n")
 
   if program.mult:
-    checkError(program, comment, cmd, tol, verbose, R, r"Error")
+    checkError(program, comment, cmd, options, r"Error")
   else:
-    checkError(program, comment, cmd, tol, verbose, R, r"Forward Error")
-    checkError(program, comment, cmd, tol, verbose, R, r"Backward Error")
+    checkError(program, comment, cmd, options, r"Forward Error")
+    checkError(program, comment, cmd, options, r"Backward Error")
 
-def check(program, vals, T, tol, R, verbose, printEverything, checkTests):
-
+def check(program, vals, T, options):
+  # T, tol, R, verbose, printEverything, checkTests
+  R=options.R
   cmd=getcmd(program,vals,T,R)
 
   vp = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
@@ -404,51 +420,25 @@ def check(program, vals, T, tol, R, verbose, printEverything, checkTests):
     out, _ = vp.communicate()
     comment = out.rstrip().decode()
 
-  if printEverything:
+  if options.printEverything:
     print(f"{' '.join(cmd)}\n{comment}\n")
 
-  if checkTests:
+  if options.checkTests:
     checkInvalidTests(program,comment,cmd,R)
 
   if program.mult:
-    checkError(program, comment, cmd, tol, verbose, R, r"Error")
+    checkError(program, comment, cmd, options, r"Error")
   else:
-    checkError(program, comment, cmd, tol, verbose, R, r"Forward Error")
-    checkError(program, comment, cmd, tol, verbose, R, r"Backward Error")
+    checkError(program, comment, cmd, options, r"Forward Error")
+    checkError(program, comment, cmd, options, r"Backward Error")
 
-def checkInvalidTests(program, comment, cmd, R):
-  #boldPassedTest="\033[1mPassed Test:\033[0m"
-  boldFailedTest="\033[1mFailed Test:\033[0m"
-  boldWarning="\033[1mWARNING:\033[0m"
-  message="Optimizer found no valid cases with specified parameters."
-  try:
-    invalidTest=re.search(message,comment)
-    if invalidTest is not None:
-      invalidTest=invalidTest.group()
-      print("\t"+boldWarning+" "+message)
-      case=" ".join(cmd)
-      print("\t"+case)
-      program.warningTest(case)
-      print()
-  except Exception as e:
-    print("\t"+boldFailedTest+f" Exception raised.")
-    print(f"\t{e}.")
-    case=" ".join(cmd)
-    print("\t"+case)
-    if R:
-      findRoutines(comment)
-    program.failTest(case)
-    print()
-
-def checkError(program, comment, cmd, tol, verbose, R, message):
-  boldPassedTest="\033[1mPassed Test:\033[0m"
-  boldFailedTest="\033[1mFailed Test:\033[0m"
-  boldWarning="\033[1mWARNING:\033[0m"
+def checkError(program, comment, cmd, options, message):
+  R=options.R
   try:
     error=re.search(r"(?<="+message+r": )(\w|\d|\.|e|-|\+)*",comment)
     if error is not None:
       error=error.group()
-      if float(error) > tol or error == "nan" or error == "-nan" or error == "inf":
+      if float(error) > options.tol or error == "nan" or error == "-nan" or error == "inf":
         print("\t"+boldFailedTest+" "+message+": "+error)
         case=" ".join(cmd)
         print("\t"+case)
@@ -470,7 +460,7 @@ def checkError(program, comment, cmd, tol, verbose, R, message):
           print()
         else:
           program.passTest()
-          if verbose:
+          if options.verbose:
             print("\t"+boldPassedTest+" "+message+": "+error)
             case=" ".join(cmd)
             print("\t"+case)
@@ -486,14 +476,31 @@ def checkError(program, comment, cmd, tol, verbose, R, message):
       program.failTest(case)
       print()
   except Exception as e:
-    print("\t"+boldFailedTest+f" Exception raised.")
-    print(f"\t{e}.")
-    case=" ".join(cmd)
-    print("\t"+case)
-    if R:
-      findRoutines(comment)
-    program.failTest(case)
-    print()
+    testException(program, comment, cmd, R, e)
+
+def checkInvalidTests(program, comment, cmd, R):
+  message="Optimizer found no valid cases with specified parameters."
+  try:
+    invalidTest=re.search(message,comment)
+    if invalidTest is not None:
+      invalidTest=invalidTest.group()
+      print("\t"+boldWarning+" "+message)
+      case=" ".join(cmd)
+      print("\t"+case)
+      program.warningTest(case)
+      print()
+  except Exception as e:
+    testException(program, comment, cmd, R, e)
+
+def testException(program, comment, cmd, R, e):
+  print("\t"+boldFailedTest+f" Exception raised.")
+  print(f"\t{e}.")
+  case=" ".join(cmd)
+  print("\t"+case)
+  if R:
+    findRoutines(comment)
+  program.failTest(case)
+  print()
 
 def findRoutines(comment):
   try:
