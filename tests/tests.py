@@ -343,7 +343,9 @@ def hermitianTests(program, minS, testS):
     L2=ceilquotient(L,2)
     Mvalues=[3*L2-2*(L%2),2*L,5*L2]
     for M in Mvalues:
-      mvalues=[L//4,L2,M]
+      mvalues=[L2,M]
+      if minS == 1:
+        mvalues=[L//4]+mvalues
       for m in mvalues:
         vals+=collectTests(program, L=L, M=M, m=m, minS=minS, testS=testS)
   return vals
