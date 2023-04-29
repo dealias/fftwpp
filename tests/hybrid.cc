@@ -34,7 +34,9 @@ int main(int argc, char *argv[])
   double median0=fft0->report();
 
   // Optimal explicit padding
-  fftPad *fft1=Centered ? new fftPadCentered(L,M,app,C,S,true) :
+  Application appE(app);
+  appE.D=1;
+  fftPad *fft1=Centered ? new fftPadCentered(L,M,appE,C,S,true) :
     new fftPad(L,M,app,C,S,true);
 
   double median1=min(median0,fft1->report());

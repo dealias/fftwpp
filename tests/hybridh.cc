@@ -34,7 +34,9 @@ int main(int argc, char *argv[])
   double median0=fft0.report();
 
   // Optimal explicit padding
-  fftPadHermitian fft1(L,M,app,C,true);
+  Application appE(app);
+  appE.D=1;
+  fftPadHermitian fft1(L,M,appE,C,true);
   double median1=min(median0,fft1.report());
 
   cout << endl;
