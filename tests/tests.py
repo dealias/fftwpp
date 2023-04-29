@@ -325,9 +325,9 @@ def findTests(program, minS, testS):
 def complexTests(program, minS, testS):
   vals=[]
   L=8
-  Mvalues=[2*L,5*L//2]
+  Mvalues=[2*L,ceilquotient(5*L,2)]
   for M in Mvalues:
-    mvalues=[L//4,L//2,L,L+1,M]
+    mvalues=[ceilquotient(L,4),ceilquotient(L,2),L,L+1,M]
     for m in mvalues:
       vals+=collectTests(program, L=L, M=M, m=m, minS=minS, testS=testS)
   return vals
@@ -344,7 +344,7 @@ def centeredTests(program, minS, testS):
     L2=ceilquotient(L,2)
     Mvalues=[3*L2-2*(L%2),2*L,5*L2]
     for M in Mvalues:
-      mvalues=[L//4,L2,ceilquotient(L2+L,2),M]
+      mvalues=[ceilquotient(L,4),L2,ceilquotient(L2+L,2),M]
       for m in mvalues:
         vals+=collectTests(program, L=L, M=M, m=m, minS=minS, testS=testS)
   return vals
@@ -363,7 +363,7 @@ def hermitianTests(program, minS, testS):
     for M in Mvalues:
       mvalues=[L2,M]
       if minS == 1:
-        mvalues=[L//4]+mvalues
+        mvalues=[ceilquotient(L,4)]+mvalues
       for m in mvalues:
         vals+=collectTests(program, L=L, M=M, m=m, minS=minS, testS=testS)
   return vals
@@ -372,8 +372,9 @@ def realTests(program, minS, testS):
   assert program.real
   vals=[]
   mvalues=[4,8,16]
+  vals+=collectTests(program, L=8, M=32, m=8, Dmin=1, Dmax=1, minS=minS, testS=testS)
+  vals+=collectTests(program, L=8, M=32, m=16, Dmin=1, Dmax=1, minS=minS, testS=testS)
   for m in mvalues:
-    vals+=collectTests(program, L=8, M=32, m=m, Dmin=1, Dmax=1, minS=minS, testS=testS)
     vals+=collectTests(program, L=4, M=16, m=m, Dmin=1, Dmax=1, minS=minS, testS=testS)
     vals+=collectTests(program, L=3, M=16, m=m, Dmin=1, Dmax=1, minS=minS, testS=testS)
   return vals
