@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
   Application appE(app);
   appE.D=1;
   fftPad *fft1=Centered ? new fftPadCentered(L,M,appE,C,S,true) :
-    new fftPad(L,M,app,C,S,true);
+    new fftPad(L,M,appE,C,S,true);
 
   double median1=min(median0,fft1->report());
 
