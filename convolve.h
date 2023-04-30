@@ -162,7 +162,7 @@ public:
 
   class OptBase {
   public:
-    size_t counter=0;
+    size_t counter;
     size_t m,q,D;
     bool inplace;
     bool mForced;
