@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 // Disable overwrite optimization for these tests.
   Application app(1,2,multNone,fftw::maxthreads,mx,Dx,Ix);
 
-  cout << "Explicit:" << endl;
+  cout << endl << "Minimal Explicit:" << endl;
   // Minimal explicit padding
   fftPad *fft0=Centered ? new fftPadCentered(L,M,C,S,M,1,1,1,app) :
     new fftPad(L,M,C,S,M,1,1,1,app);
@@ -34,6 +34,7 @@ int main(int argc, char *argv[])
   double median0=fft0->report();
 
   // Optimal explicit padding
+  cout << endl << "Optimal Explicit:" << endl;
   Application appE(app);
   appE.D=1;
   fftPad *fft1=Centered ? new fftPadCentered(L,M,appE,C,S,true) :
@@ -51,8 +52,7 @@ int main(int argc, char *argv[])
   double median=fft->report();
 
   if(median0 > 0)
-    cout << "minimal ratio=" << median/median0 << endl;
-  cout << endl;
+    cout << endl << "minimal ratio=" << median/median0 << endl;
 
   if(median1 > 0)
     cout << "optimal ratio=" << median/median1 << endl;
