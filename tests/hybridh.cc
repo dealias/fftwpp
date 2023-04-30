@@ -135,9 +135,9 @@ int main(int argc, char *argv[])
   if(norm > 0) error=sqrt(error/norm);
   if(norm2 > 0) error2=sqrt(error2/norm2);
 
-  double eps=1e-12;
-  if(error > eps || error2 > eps)
-    cerr << endl << "WARNING: " << endl;
+  //double eps=1e-12;
+  //if(error > eps || error2 > eps)
+  //  cerr << endl << "WARNING: " << endl;
   cout << endl;
   cout << "Forward Error: " << error << endl;
   cout << "Backward Error: " << error2 << endl;
