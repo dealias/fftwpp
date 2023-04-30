@@ -233,7 +233,10 @@ public:
           Application &app, bool centered=false) :
     ThreadBase(app.threads), L(L), M(M), C(C),  S(S == 0 ? C : S), m(m),
     p(utils::ceilquotient(L,m)), q(q), D(D), inplace(inplace),
-    app(app), centered(centered) {checkParameters();}
+    app(app), centered(centered) {
+    checkParameters();
+    this->app.D=D;
+  }
 
   fftBase(size_t L, size_t M, Application& app,
           size_t C=1, size_t S=0, bool Explicit=false,

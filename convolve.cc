@@ -250,7 +250,7 @@ void fftBase::OptBase::optloop(size_t& m, size_t L,
     if(inner && (((!ispure(p) || p == P*n) && !mForced) || (centered && p%2 != 0)))
       i=m=nextpuresize(m+1);
     else {
-      bool forceD=app.D > 0 && valid(app.D,p,m,S);
+      bool forceD=app.D > 0 && (valid(app.D, p, m, S) || (p == q == D == 1));
       size_t q=(inner ? P*n : ceilquotient(M,m));
       size_t Dstart=forceD ? app.D : 1;
       size_t Dstop=forceD ? app.D : n;
@@ -379,9 +379,10 @@ void fftBase::OptBase::scan(size_t L, size_t M, Application& app,
   } else if(counter > 1) {
     if(showOptTimes) cout << endl << "Timing " << counter << " algorithms:" << endl;
     mForced=true;
+    Application App(app);
     for(mList::reverse_iterator r=mlist.rbegin(); r != mlist.rend(); ++r) {
-      app.m=*r;
-      opt(L,M,app,C,S,mStart,itmax,Explicit,centered);
+      App.m=*r;
+      opt(L,M,App,C,S,mStart,itmax,Explicit,centered);
     }
     if(showOptTimes) {
       cout << endl << "Optimal time: t=" << T*1.0e-9 << endl << endl;
