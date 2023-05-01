@@ -328,7 +328,7 @@ void fftBase::OptBase::check(size_t L, size_t M,
                              bool inplace, Application& app, bool useTimer)
 {
   //cout << "m=" << m << ", p=" << p << ", q=" << q << ", D=" << D << " I=" << inplace << endl;
-  if(valid(D,p,n,S)||(q == 1 && D == 1)) {
+  if(valid(m,p,q,n,D,S)) {
     if(useTimer) {
       double t=time(L,M,C,S,m,q,D,inplace,app);
       if(showOptTimes)

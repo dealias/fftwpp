@@ -175,7 +175,7 @@ public:
                         size_t S, size_t m, size_t q,
                         size_t D, bool inplace, Application &app)=0;
 
-    virtual bool valid(size_t D, size_t p, size_t n, size_t S)=0;
+    virtual bool valid(size_t m, size_t p, size_t q, size_t n, size_t D, size_t S)=0;
 
     // Called by the optimizer to record the time to complete an application
     // for a given value of m.
@@ -466,8 +466,8 @@ protected:
   mfft1d *ifftp;
 public:
 
-  static bool valid(size_t D, size_t p, size_t n, size_t S) {
-    return D == 1 || (S == 1 && ((D < n && D % 2 == 0) || D == n));
+  static bool valid(size_t m, size_t p, size_t q , size_t n, size_t D, size_t S) {
+    return D == 1 || (((S == 1 && ((D < n && D % 2 == 0) || D == n))) && q != 1);
   }
 
   class Opt : public OptBase {
@@ -479,8 +479,8 @@ public:
       scan(L,M,app,C,S,Explicit);
     }
 
-    bool valid(size_t D, size_t p, size_t n, size_t S) {
-      return fftPad::valid(D,p,n,S);
+    bool valid(size_t m, size_t p, size_t q , size_t n, size_t D, size_t S) {
+      return fftPad::valid(m,p,q,n,D,S);
     }
 
     double time(size_t L, size_t M, size_t C, size_t S,
@@ -502,7 +502,7 @@ public:
     fftBase(L,M,C,S,m,q,D,inplace,app,centered) {
     Opt opt;
     init();
-    if(q > 1 && !opt.valid(D,p,n,this->S)) invalid();
+    if(q > 1 && !opt.valid(m,p,q,n,D,this->S)) invalid();
   }
 
   // Normal entry point.
@@ -583,8 +583,8 @@ public:
       scan(L,M,app,C,S,Explicit,true);
     }
 
-    bool valid(size_t D, size_t p, size_t n, size_t S) {
-      return p%2 == 0 && fftPad::valid(D,p,n,S);
+    bool valid(size_t m, size_t p, size_t q , size_t n, size_t D, size_t S) {
+      return p%2 == 0 && fftPad::valid(m,p,q,n,D,S);
     }
 
     double time(size_t L, size_t M, size_t C, size_t S,
@@ -602,7 +602,7 @@ public:
     fftPad(L,M,C,S,m,q,D,inplace,app,true) {
     Opt opt;
     init();
-    if(q > 1 && !opt.valid(D,p,n,this->S)) invalid();
+    if(q > 1 && !opt.valid(m,p,q,n,D,this->S)) invalid();
   }
 
   // Normal entry point.
@@ -694,8 +694,8 @@ public:
       scan(L,M,app,C,C,Explicit,true);
     }
 
-    bool valid(size_t D, size_t p, size_t n, size_t C) {
-      return D == 2 && p%2 == 0 && (p == 2 || C == 1);
+    bool valid(size_t m, size_t p, size_t q , size_t n, size_t D, size_t C) {
+      return (D == 1 && q == 1) || (D == 2 && p%2 == 0 && (p == 2 || C == 1));
     }
 
     double time(size_t L, size_t M, size_t C, size_t,
@@ -711,7 +711,7 @@ public:
     fftBase(L,M,C,C,m,q,D,inplace,app,true) {
     Opt opt;
     init();
-    if(q > 1 && !opt.valid(D,p,n,C)) invalid();
+    if(q > 1 && !opt.valid(m,p,q,n,D,C)) invalid();
   }
 
   fftPadHermitian(size_t L, size_t M, Application& app,
