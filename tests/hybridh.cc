@@ -27,13 +27,14 @@ int main(int argc, char *argv[])
 // Disable overwrite optimization for these tests.
   Application app(1,2,multNone,fftw::maxthreads,mx,Dx,Ix);
 
-  cout << "Explicit:" << endl;
+  cout << endl << "Minimal Explicit:" << endl;
   // Minimal explicit padding
   fftPadHermitian fft0(L,M,C,M,1,1,1,app);
 
   double median0=fft0.report();
 
   // Optimal explicit padding
+  cout << endl << "Optimal Explicit:" << endl;
   Application appE(app);
   appE.D=1;
   fftPadHermitian fft1(L,M,appE,C,true);
@@ -48,12 +49,10 @@ int main(int argc, char *argv[])
   double median=fft.report();
 
   if(median0 > 0)
-    cout << "minimal ratio=" << median/median0 << endl;
-  cout << endl;
+    cout << endl << "minimal ratio=" << median/median0 << endl;
 
   if(median1 > 0)
     cout << "optimal ratio=" << median/median1 << endl;
-  cout << endl;
 
   Complex *f=ComplexAlign(fft.inputSize());
   Complex *h=ComplexAlign(fft.inputSize());

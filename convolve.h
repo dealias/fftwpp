@@ -130,8 +130,7 @@ public:
   size_t m;
   size_t p;
   size_t q;
-  size_t n;
-  size_t Q;  // number of residues
+  size_t n;  // number of residues
   size_t R;  // number of residue blocks
   size_t dr; // r increment
   size_t D;  // number of residues stored in F at a time
@@ -162,10 +161,11 @@ public:
 
   class OptBase {
   public:
-    size_t counter=0;
+    size_t counter;
     size_t m,q,D;
     bool inplace;
     bool mForced;
+    bool DForced;
     typedef std::list<size_t> mList;
     mList mlist;
     double threshold;
@@ -175,15 +175,13 @@ public:
                         size_t S, size_t m, size_t q,
                         size_t D, bool inplace, Application &app)=0;
 
-    virtual bool valid(size_t D, size_t p, size_t m, size_t S) {
-      return D == 1 || S == 1;
-    }
+    virtual bool valid(size_t m, size_t p, size_t q, size_t n, size_t D, size_t S)=0;
 
     // Called by the optimizer to record the time to complete an application
     // for a given value of m.
     void check(size_t L, size_t M,
                size_t C, size_t S, size_t m,
-               size_t p, size_t q, size_t D,
+               size_t p, size_t q, size_t n, size_t D,
                bool inplace,  Application& app, bool useTimer);
 
     // Determine the optimal m value for padding L data values to
@@ -390,8 +388,8 @@ public:
     return D > 1 && (p <= 2 || (centered && p % 2 == 0));
   }
 
-  virtual size_t residueBlocks() {
-    return conjugates() ? utils::ceilquotient(Q,2) : Q;
+  size_t residueBlocks() {
+    return conjugates() ? utils::ceilquotient(n,2) : n;
   }
 
   size_t Dr() {return conjugates() ? D/2 : D;}
@@ -468,6 +466,10 @@ protected:
   mfft1d *ifftp;
 public:
 
+  static bool valid(size_t m, size_t p, size_t q , size_t n, size_t D, size_t S) {
+    return D == 1 || (((S == 1 && ((D < n && D % 2 == 0) || D == n))) && q != 1);
+  }
+
   class Opt : public OptBase {
   public:
     Opt() {}
@@ -475,6 +477,10 @@ public:
     Opt(size_t L, size_t M, Application& app,
         size_t C, size_t S, bool Explicit=false) {
       scan(L,M,app,C,S,Explicit);
+    }
+
+    bool valid(size_t m, size_t p, size_t q , size_t n, size_t D, size_t S) {
+      return fftPad::valid(m,p,q,n,D,S);
     }
 
     double time(size_t L, size_t M, size_t C, size_t S,
@@ -495,8 +501,8 @@ public:
          Application &app, bool centered=false) :
     fftBase(L,M,C,S,m,q,D,inplace,app,centered) {
     Opt opt;
-    if(q > 1 && !opt.valid(D,p,m,this->S)) invalid();
     init();
+    if(q > 1 && !opt.valid(m,p,q,n,D,this->S)) invalid();
   }
 
   // Normal entry point.
@@ -577,8 +583,8 @@ public:
       scan(L,M,app,C,S,Explicit,true);
     }
 
-    bool valid(size_t D, size_t p, size_t m, size_t S) {
-      return p%2 == 0 && (D == 1 || S == 1);
+    bool valid(size_t m, size_t p, size_t q , size_t n, size_t D, size_t S) {
+      return p%2 == 0 && fftPad::valid(m,p,q,n,D,S);
     }
 
     double time(size_t L, size_t M, size_t C, size_t S,
@@ -595,8 +601,8 @@ public:
                  size_t D, bool inplace, Application &app) :
     fftPad(L,M,C,S,m,q,D,inplace,app,true) {
     Opt opt;
-    if(q > 1 && !opt.valid(D,p,m,this->S)) invalid();
     init();
+    if(q > 1 && !opt.valid(m,p,q,n,D,this->S)) invalid();
   }
 
   // Normal entry point.
@@ -688,8 +694,8 @@ public:
       scan(L,M,app,C,C,Explicit,true);
     }
 
-    bool valid(size_t D, size_t p, size_t m, size_t C) {
-      return D == 2 && p%2 == 0 && (p == 2 || C == 1);
+    bool valid(size_t m, size_t p, size_t q , size_t n, size_t D, size_t C) {
+      return (D == 1 && q == 1) || (D == 2 && p%2 == 0 && (p == 2 || C == 1));
     }
 
     double time(size_t L, size_t M, size_t C, size_t,
@@ -704,8 +710,8 @@ public:
                   bool inplace, Application &app) :
     fftBase(L,M,C,C,m,q,D,inplace,app,true) {
     Opt opt;
-    if(q > 1 && !opt.valid(D,p,m,C)) invalid();
     init();
+    if(q > 1 && !opt.valid(m,p,q,n,D,C)) invalid();
   }
 
   fftPadHermitian(size_t L, size_t M, Application& app,
@@ -782,7 +788,7 @@ public:
       scan(L,M,app,C,S,Explicit);
     }
 
-    bool valid(size_t D, size_t p, size_t m, size_t S) {
+    bool valid(size_t m, size_t p, size_t q, size_t n, size_t D, size_t S) {
 //      return q%2 == 1 || m%2 == 0 && D == 1 && p == 1 && S == 1;
       return m%2 == 0 && D == 1 && p == 1 && S == 1;
     }
@@ -804,7 +810,7 @@ public:
          Application &app) :
     fftBase(L,M,C,S,m,q,D,inplace,app) {
     Opt opt;
-    if(q > 1 && !opt.valid(D,p,m,this->S)) invalid();
+    if(q > 1 && !opt.valid(m,p,q,n,D,this->S)) invalid();
     init();
   }
 
@@ -857,7 +863,7 @@ public:
   }
 
   size_t residueBlocks() {
-    return Q/2+1;
+    return utils::ceilquotient(n+1,2);
   }
 };
 
@@ -871,7 +877,7 @@ public:
   double scale;
 protected:
   size_t q;
-  size_t Q;
+  size_t n;
   size_t R;
   size_t r;
   size_t blocksize;
@@ -915,13 +921,14 @@ public:
 
     L=fft->L;
     q=fft->q;
-    Q=fft->Q;
+    n=fft->n;
 
     Forward=fft->Forward;
     Backward=fft->Backward;
 
     blocksize=fft->noutputs();
     R=fft->residueBlocks();
+    std::cout << "conv init: R=" << R<<std::endl;
 
     scale=1.0/normalization();
     size_t outputSize=fft->outputSize();
@@ -1154,9 +1161,8 @@ public:
   double scale;
 protected:
   size_t lx; // x dimension of Fx buffer
-  size_t Q;
   size_t qx;
-  size_t Qx; // number of residues
+  size_t nx; // number of residues
   size_t Rx; // number of residue blocks
   size_t r;
   Complex **F,**Fp;
@@ -1214,7 +1220,7 @@ public:
     W=allocateW ? utils::ComplexAlign(workSizeW) : NULL;
 
     qx=fftx->q;
-    Qx=fftx->Q;
+    nx=fftx->n;
     Rx=fftx->R;
     lx=fftx->l;
     scale=1.0/normalization();
@@ -1408,9 +1414,8 @@ public:
   double scale;
 protected:
   size_t lx;    // x dimension of Fx buffer
-  size_t Q;
   size_t qx;
-  size_t Qx; // number of residues
+  size_t nx; // number of residues
   size_t Rx; // number of residue blocks
   size_t r;
   Complex **F,**Fp;
@@ -1468,7 +1473,7 @@ public:
     W=allocateW ? utils::ComplexAlign(workSizeW) : NULL;
 
     qx=fftx->q;
-    Qx=fftx->Q;
+    nx=fftx->n;
     Rx=fftx->R;
     lx=fftx->l;
     scale=1.0/normalization();

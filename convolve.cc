@@ -240,7 +240,7 @@ void fftBase::OptBase::optloop(size_t& m, size_t L,
 
     if(!Explicit && app.m >= 1 && app.m < M && centered && p%2 != 0) {
       cerr << "Odd values of p are incompatible with the centered and Hermitian routines." << endl;
-      cerr << "Using explicit routines with m=" << M << " instead." << endl;
+      cerr << "Using explicit routines with m=" << M << ", D=1, and I=0 instead." << endl;
     }
 
     // In the inner loop we must have the following:
@@ -250,10 +250,9 @@ void fftBase::OptBase::optloop(size_t& m, size_t L,
     if(inner && (((!ispure(p) || p == P*n) && !mForced) || (centered && p%2 != 0)))
       i=m=nextpuresize(m+1);
     else {
-      bool forceD=app.D > 0 && (valid(app.D, p, m, S) || (p == q == D == 1));
       size_t q=(inner ? P*n : ceilquotient(M,m));
-      size_t Dstart=forceD ? app.D : 1;
-      size_t Dstop=forceD ? app.D : n;
+      size_t Dstart=DForced ? app.D : 1;
+      size_t Dstop=DForced ? app.D : n;
       size_t Dstop2=2*Dstop;
 
       // Check inplace and out-of-place unless C > 1.
@@ -264,8 +263,7 @@ void fftBase::OptBase::optloop(size_t& m, size_t L,
       for(size_t D=Dstart; D < Dstop2; D *= 2) {
         if(D > Dstop) D=Dstop;
         for(size_t inplace=Istart; inplace < Istop; ++inplace)
-          if((q == 1 || valid(D,p,m,S)) && D <= n)
-            check(L,M,C,S,m,p,q,D,inplace,app,useTimer);
+          check(L,M,C,S,m,p,q,n,D,inplace,app,useTimer);
       }
       if(mForced) break;
       if(inner) {
@@ -326,30 +324,32 @@ void fftBase::OptBase::opt(size_t L, size_t M, Application& app,
 
 void fftBase::OptBase::check(size_t L, size_t M,
                              size_t C, size_t S, size_t m,
-                             size_t p, size_t q, size_t D,
+                             size_t p, size_t q, size_t n, size_t D,
                              bool inplace, Application& app, bool useTimer)
 {
   //cout << "m=" << m << ", p=" << p << ", q=" << q << ", D=" << D << " I=" << inplace << endl;
-  if(useTimer) {
-    double t=time(L,M,C,S,m,q,D,inplace,app);
-    if(showOptTimes)
-      cout << "m=" << m << ", p=" << p << ", q=" << q << ", C=" << C << ", S=" << S << ", D=" << D << ", I=" << inplace << ": t=" << t*1.0e-9 << endl;
-    if(t < T) {
-      this->m=m;
-      this->q=q;
-      this->D=D;
-      this->inplace=inplace;
-      T=t;
-    }
-  } else {
-    counter += 1;
-    if(m != mlist.back())
-      mlist.push_back(m);
-    if(counter == 1) {
-      this->m=m;
-      this->q=q;
-      this->D=D;
-      this->inplace=inplace;
+  if(valid(m,p,q,n,D,S)) {
+    if(useTimer) {
+      double t=time(L,M,C,S,m,q,D,inplace,app);
+      if(showOptTimes)
+        cout << "m=" << m << ", p=" << p << ", q=" << q << ", C=" << C << ", S=" << S << ", D=" << D << ", I=" << inplace << ": t=" << t*1.0e-9 << endl;
+      if(t < T) {
+        this->m=m;
+        this->q=q;
+        this->D=D;
+        this->inplace=inplace;
+        T=t;
+      }
+    } else {
+      counter += 1;
+      if(m != mlist.back())
+        mlist.push_back(m);
+      if(counter == 1) {
+        this->m=m;
+        this->q=q;
+        this->D=D;
+        this->inplace=inplace;
+      }
     }
   }
 }
@@ -365,6 +365,8 @@ void fftBase::OptBase::scan(size_t L, size_t M, Application& app,
   T=DBL_MAX;
   threshold=T;
   mForced=app.m >= 1;
+  DForced=app.D > 0;
+  counter=0;
 
   bool sR=showRoutines;
 
@@ -375,7 +377,7 @@ void fftBase::OptBase::scan(size_t L, size_t M, Application& app,
 
   if(counter == 0) {
     cerr << "Optimizer found no valid cases with specified parameters." << endl;
-    cerr << "Using explicit routines with m=" << M << " instead." << endl << endl;
+    cerr << "Using explicit routines with m=" << M << ", D=1, and I=0 instead." << endl << endl;
   } else if(counter > 1) {
     if(showOptTimes) cout << endl << "Timing " << counter << " algorithms:" << endl;
     mForced=true;
@@ -484,7 +486,7 @@ void fftPad::init()
     deleteAlign(G);
     if(!inplace)
       deleteAlign(H);
-    dr=D=D0=R=Q=1;
+    dr=D=D0=R=n=1;
     l=M;
     b=S*l;
   } else {
@@ -495,10 +497,10 @@ void fftPad::init()
     size_t p2=p/2;
 
     if(p == 2) {
-      Q=n=q;
+      n=q;
       P1=P=1;
     } else if(centered && p == 2*p2) {
-      Q=n=q/p2;
+      n=q/p2;
       P=p2;
       P1=P+1;
     } else
@@ -554,7 +556,6 @@ void fftPad::init()
           BR="backwardInnerMany";
         }
       }
-      Q=n;
 
       Zetaqp0=ComplexAlign((n-1)*(P1-1));
       Zetaqp=Zetaqp0-P1;
@@ -607,6 +608,7 @@ void fftPad::init()
           }
         }
       } else { // p == 1
+        n=q;
         if(S == 1) {
           if(Overwrite()) {
             Forward=&fftBase::forward1All;
@@ -636,13 +638,12 @@ void fftPad::init()
           if(repad())
             Pad=&fftBase::padMany;
         }
-        Q=q;
       }
     }
 
     dr=Dr();
     R=residueBlocks();
-    D0=Q % D;
+    D0=n % D;
     if(D0 == 0) D0=D;
 
     if(D0 != D) {
@@ -4438,7 +4439,7 @@ void fftPadHermitian::init()
     if(!inplace)
       deleteAlign(H);
     deleteAlign(G);
-    dr=D0=R=Q=1;
+    dr=D0=R=n=1;
   } else {
     dr=Dr();
 
@@ -4461,7 +4462,7 @@ void fftPadHermitian::init()
       Backward=&fftBase::backwardInner;
       FR="forwardInner";
       BR="backwardInner";
-      Q=n=q/p2;
+      n=q/p2;
 
       Zetaqp0=ComplexAlign((n-1)*p2);
       Zetaqp=Zetaqp0-p2-1;
@@ -4476,7 +4477,7 @@ void fftPadHermitian::init()
       fftp=new mfft1d(p2,1,Ce, Ce,1, G,G,threads);
       ifftp=new mfft1d(p2,-1,Ce, Ce,1, G,G,threads);
     } else { // p=2
-      Q=n=q;
+      n=q;
       if(C == 1) {
         Forward=&fftBase::forward2;
         Backward=&fftBase::backward2;
@@ -4491,7 +4492,7 @@ void fftPadHermitian::init()
     }
 
     R=residueBlocks();
-    D0=Q % D;
+    D0=n % D;
     if(D0 == 0) D0=D;
 
     if(C == 1) {
@@ -5554,7 +5555,7 @@ void fftPadReal::init()
   char const *FR;
   char const *BR;
 
-  n=ceilquotient(q,2); //TEMP
+
   if(q == 1) {
     l=e;
     b=S*l;
@@ -5586,7 +5587,7 @@ void fftPadReal::init()
     if(!inplace)
       deleteAlign(H);
     deleteAlign(G);
-    dr=D0=R=Q=1;
+    dr=D0=R=n=1;
   } else {
     l=m;
     b=S*l;
@@ -5625,10 +5626,11 @@ void fftPadReal::init()
     if(repad())
       Pad=&fftBase::padSingle;
 
-    Q=q;
+    n=q;
     dr=Dr();
     R=residueBlocks();
-    D0=Q % D;
+    cout << "R=" << R << endl;
+    D0=n % D;
     if(D0 == 0) D0=D;
 
     if(!inplace)
@@ -5908,7 +5910,6 @@ void Convolution::convolveRaw(Complex **g)
           h0=V;
         } else
           h0=g;
-
         for(size_t r=0; r < R; r += fft->increment(r)) {
           forward(g,F,r,0,A);
           operate(F,r,&indices);
