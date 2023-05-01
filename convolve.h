@@ -388,7 +388,7 @@ public:
     return D > 1 && (p <= 2 || (centered && p % 2 == 0));
   }
 
-  size_t residueBlocks() {
+  virtual size_t residueBlocks() {
     return conjugates() ? utils::ceilquotient(n,2) : n;
   }
 
