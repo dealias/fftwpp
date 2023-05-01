@@ -269,24 +269,29 @@ def collectTests(program, L, M, m, minS, testS, Dmin=0, Dmax=0, I0=True, I1=True
 
   C=minS
   dim=program.dim
+  centered=program.centered
   hermitian=program.hermitian
+  real=program.real
 
-  p=ceilquotient(L,m)
-  q=ceilquotient(M,m) if p <= 2 else ceilquotient(M,m*p)*p
-  n=q//p
+  p,q,n=getpqn(centered, hermitian, real, L, M, m)
 
   if Dmax == 0:
     Dmax=n
 
-  if C > 1:
+  if q == 1:
     Dstart=1
-    Dstop=1
+    Dstop=Dstart
+  elif C > 1:
+    Dstart=2 if hermitian else 1
+    Dstop=Dstart
   elif hermitian:
-    Dstart=max(Dmin,2)
-    Dstop=min(max(Dmax,2),n)
+    Dstart=2
+    Dstop=Dstart
   else:
     Dstart=max(Dmin,1)
     Dstop=min(max(Dmax,1),n)
+
+  Ds=getDs(Dstart,Dstop)
 
   Ss=[minS]
   if testS:
@@ -304,13 +309,30 @@ def collectTests(program, L, M, m, minS, testS, Dmin=0, Dmax=0, I0=True, I1=True
 
   for S in Ss:
     for I in range(Istart,Istop):
-      D=Dstart
-      while(D < Dstop):
+      for D in Ds:
         vals.append(Parameters(L,M,m,p,q,C,S,D,I))
-        D*=2
-      vals.append(Parameters(L,M,m,p,q,C,S,Dstop,I))
 
   return vals
+
+def getpqn(centered, hermitian, real, L, M, m):
+  p=ceilquotient(L,m)
+  if ((centered or hermitian) and p%2==0) or p == 2:
+    P=p//2
+  else:
+    P=p
+  n=ceilquotient(M,m*P)
+  q=ceilquotient(M,m) if p <= 2 else n*p
+  if real:
+    n=ceilquotient(n+1,2)
+  return p, q, n
+
+def getDs(start, stop):
+  result=[]
+  result.append(start)
+  result+=list(range(start+2-start%2, stop,2))
+  if stop > start:
+    result.append(stop)
+  return result
 
 def findTests(program, minS, testS):
   if program.real:
