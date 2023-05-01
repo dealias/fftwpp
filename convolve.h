@@ -928,7 +928,6 @@ public:
 
     blocksize=fft->noutputs();
     R=fft->residueBlocks();
-    std::cout << "conv init: R=" << R<<std::endl;
 
     scale=1.0/normalization();
     size_t outputSize=fft->outputSize();
