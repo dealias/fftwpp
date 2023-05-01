@@ -5629,7 +5629,6 @@ void fftPadReal::init()
     n=q;
     dr=Dr();
     R=residueBlocks();
-    cout << "R=" << R << endl;
     D0=n % D;
     if(D0 == 0) D0=D;
 
