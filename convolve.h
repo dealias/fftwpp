@@ -165,6 +165,7 @@ public:
     size_t m,q,D;
     bool inplace;
     bool mForced;
+    bool DForced;
     typedef std::list<size_t> mList;
     mList mlist;
     double threshold;

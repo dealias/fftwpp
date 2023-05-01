@@ -250,10 +250,9 @@ void fftBase::OptBase::optloop(size_t& m, size_t L,
     if(inner && (((!ispure(p) || p == P*n) && !mForced) || (centered && p%2 != 0)))
       i=m=nextpuresize(m+1);
     else {
-      bool forceD=app.D > 0;
       size_t q=(inner ? P*n : ceilquotient(M,m));
-      size_t Dstart=forceD ? app.D : 1;
-      size_t Dstop=forceD ? app.D : n;
+      size_t Dstart=DForced ? app.D : 1;
+      size_t Dstop=DForced ? app.D : n;
       size_t Dstop2=2*Dstop;
 
       // Check inplace and out-of-place unless C > 1.
@@ -366,6 +365,7 @@ void fftBase::OptBase::scan(size_t L, size_t M, Application& app,
   T=DBL_MAX;
   threshold=T;
   mForced=app.m >= 1;
+  DForced=app.D > 0;
   counter=0;
 
   bool sR=showRoutines;
