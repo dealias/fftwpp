@@ -130,8 +130,7 @@ public:
   size_t m;
   size_t p;
   size_t q;
-  size_t n;
-  size_t Q;  // number of residues
+  size_t n;  // number of residues
   size_t R;  // number of residue blocks
   size_t dr; // r increment
   size_t D;  // number of residues stored in F at a time
@@ -175,9 +174,7 @@ public:
                         size_t S, size_t m, size_t q,
                         size_t D, bool inplace, Application &app)=0;
 
-    virtual bool valid(size_t D, size_t p, size_t S) {
-      return D == 1 || S == 1;
-    }
+    virtual bool valid(size_t D, size_t p, size_t n, size_t S)=0;
 
     // Called by the optimizer to record the time to complete an application
     // for a given value of m.
@@ -391,7 +388,7 @@ public:
   }
 
   size_t residueBlocks() {
-    return conjugates() ? utils::ceilquotient(Q,2) : Q;
+    return conjugates() ? utils::ceilquotient(n,2) : n;
   }
 
   size_t Dr() {return conjugates() ? D/2 : D;}
@@ -468,6 +465,10 @@ protected:
   mfft1d *ifftp;
 public:
 
+  static bool valid(size_t D, size_t p, size_t n, size_t S) {
+    return D == 1 || (S == 1 && ((D < n && D % 2 == 0) || D == n));
+  }
+
   class Opt : public OptBase {
   public:
     Opt() {}
@@ -475,6 +476,10 @@ public:
     Opt(size_t L, size_t M, Application& app,
         size_t C, size_t S, bool Explicit=false) {
       scan(L,M,app,C,S,Explicit);
+    }
+
+    bool valid(size_t D, size_t p, size_t n, size_t S) {
+      return fftPad::valid(D,p,n,S);
     }
 
     double time(size_t L, size_t M, size_t C, size_t S,
@@ -495,8 +500,8 @@ public:
          Application &app, bool centered=false) :
     fftBase(L,M,C,S,m,q,D,inplace,app,centered) {
     Opt opt;
-    if(q > 1 && !opt.valid(D,p,this->S)) invalid();
     init();
+    if(q > 1 && !opt.valid(D,p,n,this->S)) invalid();
   }
 
   // Normal entry point.
@@ -577,8 +582,8 @@ public:
       scan(L,M,app,C,S,Explicit,true);
     }
 
-    bool valid(size_t D, size_t p, size_t S) {
-      return p%2 == 0 && (D == 1 || S == 1);
+    bool valid(size_t D, size_t p, size_t n, size_t S) {
+      return p%2 == 0 && fftPad::valid(D,p,n,S);
     }
 
     double time(size_t L, size_t M, size_t C, size_t S,
@@ -595,8 +600,8 @@ public:
                  size_t D, bool inplace, Application &app) :
     fftPad(L,M,C,S,m,q,D,inplace,app,true) {
     Opt opt;
-    if(q > 1 && !opt.valid(D,p,this->S)) invalid();
     init();
+    if(q > 1 && !opt.valid(D,p,n,this->S)) invalid();
   }
 
   // Normal entry point.
@@ -688,7 +693,7 @@ public:
       scan(L,M,app,C,C,Explicit,true);
     }
 
-    bool valid(size_t D, size_t p, size_t C) {
+    bool valid(size_t D, size_t p, size_t n, size_t C) {
       return D == 2 && p%2 == 0 && (p == 2 || C == 1);
     }
 
@@ -704,8 +709,8 @@ public:
                   bool inplace, Application &app) :
     fftBase(L,M,C,C,m,q,D,inplace,app,true) {
     Opt opt;
-    if(q > 1 && !opt.valid(D,p,C)) invalid();
     init();
+    if(q > 1 && !opt.valid(D,p,n,C)) invalid();
   }
 
   fftPadHermitian(size_t L, size_t M, Application& app,
@@ -771,7 +776,7 @@ public:
   double scale;
 protected:
   size_t q;
-  size_t Q;
+  size_t n;
   size_t R;
   size_t r;
   size_t blocksize;
@@ -815,7 +820,7 @@ public:
 
     L=fft->L;
     q=fft->q;
-    Q=fft->Q;
+    n=fft->n;
 
     Forward=fft->Forward;
     Backward=fft->Backward;
@@ -1054,9 +1059,8 @@ public:
   double scale;
 protected:
   size_t lx; // x dimension of Fx buffer
-  size_t Q;
   size_t qx;
-  size_t Qx; // number of residues
+  size_t nx; // number of residues
   size_t Rx; // number of residue blocks
   size_t r;
   Complex **F,**Fp;
@@ -1114,7 +1118,7 @@ public:
     W=allocateW ? utils::ComplexAlign(workSizeW) : NULL;
 
     qx=fftx->q;
-    Qx=fftx->Q;
+    nx=fftx->n;
     Rx=fftx->R;
     lx=fftx->l;
     scale=1.0/normalization();
@@ -1308,9 +1312,8 @@ public:
   double scale;
 protected:
   size_t lx;    // x dimension of Fx buffer
-  size_t Q;
   size_t qx;
-  size_t Qx; // number of residues
+  size_t nx; // number of residues
   size_t Rx; // number of residue blocks
   size_t r;
   Complex **F,**Fp;
@@ -1368,7 +1371,7 @@ public:
     W=allocateW ? utils::ComplexAlign(workSizeW) : NULL;
 
     qx=fftx->q;
-    Qx=fftx->Q;
+    nx=fftx->n;
     Rx=fftx->R;
     lx=fftx->l;
     scale=1.0/normalization();

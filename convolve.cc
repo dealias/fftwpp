@@ -250,7 +250,7 @@ void fftBase::OptBase::optloop(size_t& m, size_t L,
     if(inner && (((!ispure(p) || p == P*n) && !mForced) || (centered && p%2 != 0)))
       i=m=nextpuresize(m+1);
     else {
-      bool forceD=app.D > 0 && (valid(app.D, p, S) ||
+      bool forceD=app.D > 0 && (valid(app.D,p,n,S) ||
                                 (p == 1 && q == 1 && D == 1));
       size_t q=(inner ? P*n : ceilquotient(M,m));
       size_t Dstart=forceD ? app.D : 1;
@@ -265,7 +265,7 @@ void fftBase::OptBase::optloop(size_t& m, size_t L,
       for(size_t D=Dstart; D < Dstop2; D *= 2) {
         if(D > Dstop) D=Dstop;
         for(size_t inplace=Istart; inplace < Istop; ++inplace)
-          if((q == 1 || valid(D,p,S)) && D <= n)
+          if(q == 1 || valid(D,p,n,S))
             check(L,M,C,S,m,p,q,D,inplace,app,useTimer);
       }
       if(mForced) break;
@@ -486,7 +486,7 @@ void fftPad::init()
     deleteAlign(G);
     if(!inplace)
       deleteAlign(H);
-    dr=D=D0=R=Q=1;
+    dr=D=D0=R=n=1;
     l=M;
     b=S*l;
   } else {
@@ -499,10 +499,10 @@ void fftPad::init()
     size_t p2=p/2;
 
     if(p == 2) {
-      Q=n=q;
+      n=q;
       P1=P=1;
     } else if(centered && p == 2*p2) {
-      Q=n=q/p2;
+      n=q/p2;
       P=p2;
       P1=P+1;
     } else
@@ -558,7 +558,6 @@ void fftPad::init()
           BR="backwardInnerMany";
         }
       }
-      Q=n;
 
       Zetaqp0=ComplexAlign((n-1)*(P1-1));
       Zetaqp=Zetaqp0-P1;
@@ -611,6 +610,7 @@ void fftPad::init()
           }
         }
       } else { // p == 1
+        n=q;
         if(S == 1) {
           if(Overwrite()) {
             Forward=&fftBase::forward1All;
@@ -640,13 +640,12 @@ void fftPad::init()
           if(repad())
             Pad=&fftBase::padMany;
         }
-        Q=q;
       }
     }
 
     dr=Dr();
     R=residueBlocks();
-    D0=Q % D;
+    D0=n % D;
     if(D0 == 0) D0=D;
 
     if(D0 != D) {
@@ -4443,7 +4442,7 @@ void fftPadHermitian::init()
     if(!inplace)
       deleteAlign(H);
     deleteAlign(G);
-    dr=D0=R=Q=1;
+    dr=D0=R=n=1;
   } else {
     dr=Dr();
 
@@ -4466,7 +4465,7 @@ void fftPadHermitian::init()
       Backward=&fftBase::backwardInner;
       FR="forwardInner";
       BR="backwardInner";
-      Q=n=q/p2;
+      n=q/p2;
 
       Zetaqp0=ComplexAlign((n-1)*p2);
       Zetaqp=Zetaqp0-p2-1;
@@ -4481,7 +4480,7 @@ void fftPadHermitian::init()
       fftp=new mfft1d(p2,1,Ce, Ce,1, G,G,threads);
       ifftp=new mfft1d(p2,-1,Ce, Ce,1, G,G,threads);
     } else { // p=2
-      Q=n=q;
+      n=q;
       if(C == 1) {
         Forward=&fftBase::forward2;
         Backward=&fftBase::backward2;
@@ -4496,7 +4495,7 @@ void fftPadHermitian::init()
     }
 
     R=residueBlocks();
-    D0=Q % D;
+    D0=n % D;
     if(D0 == 0) D0=D;
 
     if(C == 1) {
