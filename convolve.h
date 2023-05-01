@@ -180,7 +180,7 @@ public:
     // for a given value of m.
     void check(size_t L, size_t M,
                size_t C, size_t S, size_t m,
-               size_t p, size_t q, size_t D,
+               size_t p, size_t q, size_t n, size_t D,
                bool inplace,  Application& app, bool useTimer);
 
     // Determine the optimal m value for padding L data values to

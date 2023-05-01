@@ -240,7 +240,7 @@ void fftBase::OptBase::optloop(size_t& m, size_t L,
 
     if(!Explicit && app.m >= 1 && app.m < M && centered && p%2 != 0) {
       cerr << "Odd values of p are incompatible with the centered and Hermitian routines." << endl;
-      cerr << "Using explicit routines with m=" << M << " instead." << endl;
+      cerr << "Using explicit routines with m=" << M << ", D=1, and I=0 instead." << endl;
     }
 
     // In the inner loop we must have the following:
@@ -250,8 +250,7 @@ void fftBase::OptBase::optloop(size_t& m, size_t L,
     if(inner && (((!ispure(p) || p == P*n) && !mForced) || (centered && p%2 != 0)))
       i=m=nextpuresize(m+1);
     else {
-      bool forceD=app.D > 0 && (valid(app.D,p,n,S) ||
-                                (p == 1 && q == 1 && D == 1));
+      bool forceD=app.D > 0;
       size_t q=(inner ? P*n : ceilquotient(M,m));
       size_t Dstart=forceD ? app.D : 1;
       size_t Dstop=forceD ? app.D : n;
@@ -265,8 +264,7 @@ void fftBase::OptBase::optloop(size_t& m, size_t L,
       for(size_t D=Dstart; D < Dstop2; D *= 2) {
         if(D > Dstop) D=Dstop;
         for(size_t inplace=Istart; inplace < Istop; ++inplace)
-          if(q == 1 || valid(D,p,n,S))
-            check(L,M,C,S,m,p,q,D,inplace,app,useTimer);
+          check(L,M,C,S,m,p,q,n,D,inplace,app,useTimer);
       }
       if(mForced) break;
       if(inner) {
@@ -327,30 +325,32 @@ void fftBase::OptBase::opt(size_t L, size_t M, Application& app,
 
 void fftBase::OptBase::check(size_t L, size_t M,
                              size_t C, size_t S, size_t m,
-                             size_t p, size_t q, size_t D,
+                             size_t p, size_t q, size_t n, size_t D,
                              bool inplace, Application& app, bool useTimer)
 {
   //cout << "m=" << m << ", p=" << p << ", q=" << q << ", D=" << D << " I=" << inplace << endl;
-  if(useTimer) {
-    double t=time(L,M,C,S,m,q,D,inplace,app);
-    if(showOptTimes)
-      cout << "m=" << m << ", p=" << p << ", q=" << q << ", C=" << C << ", S=" << S << ", D=" << D << ", I=" << inplace << ": t=" << t*1.0e-9 << endl;
-    if(t < T) {
-      this->m=m;
-      this->q=q;
-      this->D=D;
-      this->inplace=inplace;
-      T=t;
-    }
-  } else {
-    counter += 1;
-    if(m != mlist.back())
-      mlist.push_back(m);
-    if(counter == 1) {
-      this->m=m;
-      this->q=q;
-      this->D=D;
-      this->inplace=inplace;
+  if(valid(D,p,n,S)||(q == 1 && D == 1)) {
+    if(useTimer) {
+      double t=time(L,M,C,S,m,q,D,inplace,app);
+      if(showOptTimes)
+        cout << "m=" << m << ", p=" << p << ", q=" << q << ", C=" << C << ", S=" << S << ", D=" << D << ", I=" << inplace << ": t=" << t*1.0e-9 << endl;
+      if(t < T) {
+        this->m=m;
+        this->q=q;
+        this->D=D;
+        this->inplace=inplace;
+        T=t;
+      }
+    } else {
+      counter += 1;
+      if(m != mlist.back())
+        mlist.push_back(m);
+      if(counter == 1) {
+        this->m=m;
+        this->q=q;
+        this->D=D;
+        this->inplace=inplace;
+      }
     }
   }
 }
@@ -377,7 +377,7 @@ void fftBase::OptBase::scan(size_t L, size_t M, Application& app,
 
   if(counter == 0) {
     cerr << "Optimizer found no valid cases with specified parameters." << endl;
-    cerr << "Using explicit routines with m=" << M << " instead." << endl << endl;
+    cerr << "Using explicit routines with m=" << M << ", D=1, and I=0 instead." << endl << endl;
   } else if(counter > 1) {
     if(showOptTimes) cout << endl << "Timing " << counter << " algorithms:" << endl;
     mForced=true;
