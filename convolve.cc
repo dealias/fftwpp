@@ -366,6 +366,7 @@ void fftBase::OptBase::scan(size_t L, size_t M, Application& app,
   T=DBL_MAX;
   threshold=T;
   mForced=app.m >= 1;
+  counter=0;
 
   bool sR=showRoutines;
 
