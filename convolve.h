@@ -695,7 +695,6 @@ public:
     }
 
     bool valid(size_t m, size_t p, size_t q , size_t n, size_t D, size_t C) {
-      std::cout << "Hermitian" << std::endl;
       return (D == 1 && q == 1) || (D == 2 && p%2 == 0 && (p == 2 || C == 1));
     }
 

@@ -327,7 +327,7 @@ void fftBase::OptBase::check(size_t L, size_t M,
                              size_t p, size_t q, size_t n, size_t D,
                              bool inplace, Application& app, bool useTimer)
 {
-  cout << "m=" << m << ", p=" << p << ", q=" << q << ", D=" << D << " I=" << inplace << endl;
+  //cout << "m=" << m << ", p=" << p << ", q=" << q << ", D=" << D << " I=" << inplace << endl;
   //cout << "valid(m,p,q,n,D,S)=" << valid(m,p,q,n,D,S) << endl;
   if(valid(m,p,q,n,D,S)) {
     if(useTimer) {

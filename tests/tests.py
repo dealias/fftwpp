@@ -49,13 +49,13 @@ class Program:
     self.failedCases.append(case)
 
 class Options:
-  def __init__(self, tol, verbose, R, testS, printEverything, checkTests):
+  def __init__(self, tol, verbose, R, testS, printEverything, valid):
     self.tol=tol
     self.verbose=verbose
     self.R=R
     self.testS=testS
     self.printEverything=printEverything
-    self.checkTests=checkTests
+    self.valid=valid
 
 def getArgs():
   parser = argparse.ArgumentParser(description="Perform Unit Tests on convolutions with hybrid dealiasing.")
@@ -95,8 +95,7 @@ def getArgs():
                       specified then perform all tests in that dimension and/or\
                       type.",
                       action="store_true")
-  parser.add_argument("--checkTests", help="Check tests to see if they're valid.\
-                      This is only used for testing tests.py",
+  parser.add_argument("-V", "--valid", help="Check tests to see if they're valid.",
                       action="store_true")
   parser.add_argument("-t",metavar='tolerance',help="Error tolerance. Default is 1e-12.",
                       default=1e-12)
@@ -191,7 +190,7 @@ def test(programs, args):
       else:
         raise ValueError(f"{T} is an invalid number of threads.")
 
-      options=Options(float(args.t),args.v,args.R,args.S or args.All,args.p,args.checkTests)
+      options=Options(float(args.t),args.v,args.R,args.S or args.All,args.p,args.valid)
 
       iterate(p,Ts,options)
 
@@ -228,7 +227,6 @@ def test(programs, args):
     print("No programs to test.\n")
 
 def iterate(program, threads, options):
-  # threads, tol, verbose, R, testS, printEverything,checkTests
   dim=program.dim
   testS=options.testS
   vals=ParameterCollection(findTests(program,1,testS and not program.mult)).vals
@@ -424,13 +422,12 @@ def checkOptimizer(program, L, M, T, options):
     print(f"{' '.join(cmd)}\n{comment}\n")
 
   if program.mult:
-    checkError(program, comment, cmd, options, r"Error")
+    errorSearch(program, comment, cmd, options, r"Error")
   else:
-    checkError(program, comment, cmd, options, r"Forward Error")
-    checkError(program, comment, cmd, options, r"Backward Error")
+    errorSearch(program, comment, cmd, options, r"Forward Error")
+    errorSearch(program, comment, cmd, options, r"Backward Error")
 
 def check(program, vals, T, options):
-  # T, tol, R, verbose, printEverything, checkTests
   R=options.R
   cmd=getcmd(program,vals,T,R)
 
@@ -446,16 +443,16 @@ def check(program, vals, T, options):
   if options.printEverything:
     print(f"{' '.join(cmd)}\n{comment}\n")
 
-  if options.checkTests:
-    checkInvalidTests(program,comment,cmd,R)
+  if options.valid:
+    invalidSearch(program,comment,cmd,R)
 
   if program.mult:
-    checkError(program, comment, cmd, options, r"Error")
+    errorSearch(program, comment, cmd, options, r"Error")
   else:
-    checkError(program, comment, cmd, options, r"Forward Error")
-    checkError(program, comment, cmd, options, r"Backward Error")
+    errorSearch(program, comment, cmd, options, r"Forward Error")
+    errorSearch(program, comment, cmd, options, r"Backward Error")
 
-def checkError(program, comment, cmd, options, message):
+def errorSearch(program, comment, cmd, options, message):
   R=options.R
   try:
     error=re.search(r"(?<="+message+r": )(\w|\d|\.|e|-|\+)*",comment)
@@ -501,19 +498,33 @@ def checkError(program, comment, cmd, options, message):
   except Exception as e:
     testException(program, comment, cmd, R, e)
 
-def checkInvalidTests(program, comment, cmd, R):
+def invalidSearch(program, comment, cmd, R):
   message="Optimizer found no valid cases with specified parameters."
   try:
     invalidTest=re.search(message,comment)
     if invalidTest is not None:
-      invalidTest=invalidTest.group()
       print("\t"+boldWarning+" "+message)
       case=" ".join(cmd)
       print("\t"+case)
       program.warningTest(case)
       print()
+      return None
   except Exception as e:
     testException(program, comment, cmd, R, e)
+  for param in cmd[3:6]:
+    message=param[1:]
+    try:
+      invalidTest=re.search(message,comment)
+      if invalidTest is None:
+        print("\t"+boldWarning+" "+message+" not found.")
+        case=" ".join(cmd)
+        print("\t"+case)
+        program.warningTest(case)
+        print()
+        break
+    except Exception as e:
+      testException(program, comment, cmd, R, e)
+  return None
 
 def testException(program, comment, cmd, R, e):
   print("\t"+boldFailedTest+f" Exception raised.")
