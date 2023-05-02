@@ -14,10 +14,10 @@ class ParameterCollection():
     if type(vals) == list:
       for value in vals:
         if type(value) != Parameters:
-          exit("fillOptValues must return a list of OptValues.")
+          exit("fillOptValues must return a list of Parameters.")
       self.vals=vals
     else:
-      exit("fillOptValues must return a list of OptValues.")
+      exit("fillOptValues must return a list of Parameters.")
 
   def __eq__(self, other):
     if isinstance(other, ParameterCollection):

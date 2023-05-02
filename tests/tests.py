@@ -57,6 +57,89 @@ class Options:
     self.printEverything=printEverything
     self.valid=valid
 
+class Command:
+  def __init__(self, program, T, R, vals=None, L=None, M=None):
+    self.name=[program.name]
+    self.extraArgs=[]
+    if L is not None and M is not None:
+      self.L=["-L="+str(L)]
+      self.M=["-M="+str(M)]
+      self.m=[]
+      self.I=[]
+      self.D=[]
+      self.S=[]
+      self.C=[]
+      self.extraArgs.append("-t")
+    elif vals is not None:
+      lenvals=len(vals)
+      if lenvals == 3:
+        x,y,z = vals
+        self.L=self.addParams("L",x.L,y.L,z.L)
+        self.M=self.addParams("M",x.M,y.M,z.M)
+        self.m=self.addParams("m",x.m,y.m,z.m)
+        self.I=self.addParams("I",x.I,y.I,z.I)
+        self.D=self.addParams("D",x.D,y.D,z.D)
+        self.S=["-Sx="+str(x.S),"-Sy="+str(y.S)]
+        self.C=[]
+      elif lenvals == 2:
+        x,y = vals
+        self.L=self.addParams("L",x.L,y.L)
+        self.M=self.addParams("M",x.M,y.M)
+        self.m=self.addParams("m",x.m,y.m)
+        self.I=self.addParams("I",x.I,y.I)
+        self.D=self.addParams("D",x.D,y.D)
+        self.S=["-Sx="+str(x.S)]
+        self.C=[]
+      else:
+        x=vals[0]
+        self.L=["-L="+str(x.L)]
+        self.M=["-M="+str(x.M)]
+        self.m=["-m="+str(x.m)]
+        self.D=["-D="+str(x.D)]
+        self.I=["-I="+str(x.I)]
+        if not program.mult:
+          self.S=["-S"+str(x.S)]
+          self.C=["-C"+str(x.C)]
+        else:
+          self.S=[]
+          self.C=[]
+    else:
+      sys.exit("Either vals or both L and M must be specified to initialize a Command.")
+    self.T=["-T="+str(T)]
+    if T > 1:
+      self.extraArgs.append("-threshold0")
+    self.extraArgs.append("-E")
+    if R:
+      self.extraArgs.append("-R")
+
+    if program.extraArgs != "":
+      self.extraArgs.append(program.extraArgs)
+
+    self.list=self.name+self.L+self.M+self.m+self.D+self.I+self.S+self.C+self.T+self.extraArgs
+
+    self.case=" ".join(self.list)
+
+  def addParams(self, pname, px, py, pz=None):
+    # This code avoids reduntant arguments in the 2D and 3D cases for readability
+    # e.g. if Lx == Ly == Lz then we can just use L
+    if pz is not None:
+      if px == py == pz:
+        cmd=["-"+pname+"="+str(px)]
+      elif  px == py:
+        cmd=["-"+pname+"="+str(px), "-"+pname+"z="+str(pz)]
+      elif  px == pz:
+        cmd=["-"+pname+"="+str(px), "-"+pname+"y="+str(py)]
+      elif  py == pz:
+        cmd=["-"+pname+"="+str(py), "-"+pname+"x="+str(px)]
+      else:
+        cmd=["-"+pname+"x="+str(px), "-"+pname+"y="+str(py),"-"+pname+"z="+str(pz)]
+    else:
+      if px == py:
+        cmd=["-"+pname+"="+str(px)]
+      else:
+        cmd=["-"+pname+"x="+str(px), "-"+pname+"y="+str(py)]
+    return cmd
+
 def getArgs():
   parser = argparse.ArgumentParser(description="Perform Unit Tests on convolutions with hybrid dealiasing.")
   parser.add_argument("-s", help="Test Standard convolutions. Not specifying\
@@ -172,8 +255,8 @@ def test(programs, args):
       if p.extraArgs:
         name+=" "+p.extraArgs
       if T == 0:
-        cmd = 'echo $OMP_NUM_THREADS'
-        OMP_NUM_THREADS=str(subprocess.check_output(cmd, shell=True))
+        omp = 'echo $OMP_NUM_THREADS'
+        OMP_NUM_THREADS=str(subprocess.check_output(omp, shell=True))
         Tnum=re.search(r"\d+",OMP_NUM_THREADS)
         if Tnum is not None:
           Tnum=int(Tnum.group(0))
@@ -400,15 +483,9 @@ def realTests(program, minS, testS):
   return vals
 
 def checkOptimizer(program, L, M, T, options):
-  cmd=[program.name,f"-L={L}",f"-M={M}",f"-T={T}","-E","-t"]
+  cmd=Command(program,T,options.R,L=L,M=M)
 
-  if options.R:
-    cmd.append("-R")
-
-  if program.extraArgs != "":
-    cmd.append(program.extraArgs)
-
-  vp = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
+  vp = subprocess.Popen(cmd.list, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
   vp.wait()
   prc = vp.returncode
   output = ""
@@ -418,7 +495,7 @@ def checkOptimizer(program, L, M, T, options):
     output = out.rstrip().decode()
 
   if options.printEverything:
-    print(f"{' '.join(cmd)}\n{output}\n")
+    print(f"{cmd.case}\n{output}\n")
 
   if program.mult:
     errorSearch(program, output, cmd, options, r"Error")
@@ -428,9 +505,9 @@ def checkOptimizer(program, L, M, T, options):
 
 def check(program, vals, T, options):
   R=options.R
-  cmd=getcmd(program,vals,T,R)
+  cmd=Command(program,T,R,vals)
 
-  vp = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
+  vp = subprocess.Popen(cmd.list, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
   vp.wait()
   prc = vp.returncode
   output = ""
@@ -440,7 +517,7 @@ def check(program, vals, T, options):
     output = out.rstrip().decode()
 
   if options.printEverything:
-    print(f"{' '.join(cmd)}\n{output}\n")
+    print(f"{cmd.case}\n{output}\n")
 
   if options.valid:
     invalidSearch(program,output,cmd,R)
@@ -459,40 +536,35 @@ def errorSearch(program, output, cmd, options, message):
       error=error.group()
       if float(error) > options.tol or error == "nan" or error == "-nan" or error == "inf":
         print("\t"+boldFailedTest+" "+message+": "+error)
-        case=" ".join(cmd)
-        print("\t"+case)
+        print("\t"+cmd.case)
         if R:
           findRoutines(output)
-        program.failTest(case)
+        program.failTest(cmd.case)
         print()
       else:
         warning=re.search(r"(?<=WARNING: )(\S| )*",output)
         if warning is not None:
           warning=warning.group()
-
           print("\t"+boldWarning+" "+warning)
-          case=" ".join(cmd)
-          print("\t"+case)
+          print("\t"+cmd.case)
           if R:
             findRoutines(output)
-          program.warningTest(case)
+          program.warningTest(cmd.case)
           print()
         else:
           program.passTest()
           if options.verbose:
             print("\t"+boldPassedTest+" "+message+": "+error)
-            case=" ".join(cmd)
-            print("\t"+case)
+            print("\t"+cmd.case)
             if R:
               findRoutines(output)
             print()
     else:
       print("\t"+boldFailedTest+" "+message+" not found.")
-      case=" ".join(cmd)
-      print("\t"+case)
+      print("\t"+cmd.case)
       if R:
         findRoutines(output)
-      program.failTest(case)
+      program.failTest(cmd.case)
       print()
   except Exception as e:
     testException(program, output, cmd, R, e)
@@ -503,9 +575,8 @@ def invalidSearch(program, output, cmd, R):
     invalidTest=re.search(message,output)
     if invalidTest is not None:
       print("\t"+boldWarning+" "+message)
-      case=" ".join(cmd)
-      print("\t"+case)
-      program.warningTest(case)
+      print("\t"+cmd.case)
+      program.warningTest(cmd.case)
       print()
       return None
   except Exception as e:
@@ -516,9 +587,8 @@ def invalidSearch(program, output, cmd, R):
       invalidTest=re.search(message,output)
       if invalidTest is None:
         print("\t"+boldWarning+" "+message+" not found.")
-        case=" ".join(cmd)
-        print("\t"+case)
-        program.warningTest(case)
+        print("\t"+cmd.case)
+        program.warningTest(cmd.case)
         print()
         break
     except Exception as e:
@@ -528,11 +598,10 @@ def invalidSearch(program, output, cmd, R):
 def testException(program, output, cmd, R, e):
   print("\t"+boldFailedTest+f" Exception raised.")
   print(f"\t{e}.")
-  case=" ".join(cmd)
-  print("\t"+case)
+  print("\t"+cmd.case)
   if R:
     findRoutines(output)
-  program.failTest(case)
+  program.failTest(cmd.case)
   print()
 
 def findRoutines(output):
@@ -543,71 +612,6 @@ def findRoutines(output):
     print(params)
   except:
     print("Could not find routines used.")
-
-def getcmd(program, vals, T, R):
-  name=program.name
-  lenvals=len(vals)
-
-  cmd=[name]
-
-  if lenvals == 3:
-    x,y,z = vals
-    cmd+=addParams3D(x.L,y.L,z.L,"L")
-    cmd+=addParams3D(x.M,y.M,z.M,"M")
-    cmd+=addParams3D(x.m,y.m,z.m,"m")
-    cmd+=addParams3D(x.I,y.I,z.I,"I")
-    cmd+=addParams3D(x.D,y.D,z.D,"D")
-    cmd+=["-Sx="+str(x.S),"-Sy="+str(y.S)]
-
-  elif lenvals == 2:
-    x,y = vals
-    cmd+=addParams2D(x.L,y.L,"L")
-    cmd+=addParams2D(x.M,y.M,"M")
-    cmd+=addParams2D(x.m,y.m,"m")
-    cmd+=addParams2D(x.I,y.I,"I")
-    cmd+=addParams2D(x.D,y.D,"D")
-    cmd+=["-Sx="+str(x.S)]
-
-  else:
-    x=vals[0]
-    cmd+=["-L="+str(x.L),"-M="+str(x.M),"-m="+str(x.m),"-D="+str(x.D),"-I="+str(x.I)]
-    if not program.mult:
-      cmd+=["-S"+str(x.S), "-C"+str(x.C)]
-  cmd+=["-T="+str(T)]
-  if T > 1:
-    cmd+=["-threshold","0"]
-  cmd+=["-E"]
-  if R:
-    cmd+=["-R"]
-
-  if program.extraArgs != "":
-    cmd.append(program.extraArgs)
-
-  return cmd
-
-def addParams3D(px,py,pz,pname):
-  # This code avoids reduntant arguments in the 3D case for readability
-  # e.g. if Lx == Ly == Lz then we can just use L
-  if px == py == pz:
-    cmd=["-"+pname+"="+str(px)]
-  elif  px == py:
-    cmd=["-"+pname+"="+str(px), "-"+pname+"z="+str(pz)]
-  elif  px == pz:
-    cmd=["-"+pname+"="+str(px), "-"+pname+"y="+str(py)]
-  elif  py == pz:
-    cmd=["-"+pname+"="+str(py), "-"+pname+"x="+str(px)]
-  else:
-    cmd=["-"+pname+"x="+str(px), "-"+pname+"y="+str(py),"-"+pname+"z="+str(pz)]
-  return cmd
-
-def addParams2D(px,py,pname):
-  # This code avoids reduntant arguments in the 2D case for readability
-  # e.g. if Lx == Ly then we can just use L
-  if px == py:
-    cmd=["-"+pname+"="+str(px)]
-  else:
-    cmd=["-"+pname+"x="+str(px), "-"+pname+"y="+str(py)]
-  return cmd
 
 if __name__ == "__main__":
   main()
