@@ -400,7 +400,6 @@ def realTests(program, minS, testS):
   return vals
 
 def checkOptimizer(program, L, M, T, options):
-
   cmd=[program.name,f"-L={L}",f"-M={M}",f"-T={T}","-E","-t"]
 
   if options.R:
@@ -412,20 +411,20 @@ def checkOptimizer(program, L, M, T, options):
   vp = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
   vp.wait()
   prc = vp.returncode
-  comment = ""
+  output = ""
 
   if prc == 0:
     out, _ = vp.communicate()
-    comment = out.rstrip().decode()
+    output = out.rstrip().decode()
 
   if options.printEverything:
-    print(f"{' '.join(cmd)}\n{comment}\n")
+    print(f"{' '.join(cmd)}\n{output}\n")
 
   if program.mult:
-    errorSearch(program, comment, cmd, options, r"Error")
+    errorSearch(program, output, cmd, options, r"Error")
   else:
-    errorSearch(program, comment, cmd, options, r"Forward Error")
-    errorSearch(program, comment, cmd, options, r"Backward Error")
+    errorSearch(program, output, cmd, options, r"Forward Error")
+    errorSearch(program, output, cmd, options, r"Backward Error")
 
 def check(program, vals, T, options):
   R=options.R
@@ -434,28 +433,28 @@ def check(program, vals, T, options):
   vp = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
   vp.wait()
   prc = vp.returncode
-  comment = ""
+  output = ""
 
   if prc == 0:
     out, _ = vp.communicate()
-    comment = out.rstrip().decode()
+    output = out.rstrip().decode()
 
   if options.printEverything:
-    print(f"{' '.join(cmd)}\n{comment}\n")
+    print(f"{' '.join(cmd)}\n{output}\n")
 
   if options.valid:
-    invalidSearch(program,comment,cmd,R)
+    invalidSearch(program,output,cmd,R)
 
   if program.mult:
-    errorSearch(program, comment, cmd, options, r"Error")
+    errorSearch(program, output, cmd, options, r"Error")
   else:
-    errorSearch(program, comment, cmd, options, r"Forward Error")
-    errorSearch(program, comment, cmd, options, r"Backward Error")
+    errorSearch(program, output, cmd, options, r"Forward Error")
+    errorSearch(program, output, cmd, options, r"Backward Error")
 
-def errorSearch(program, comment, cmd, options, message):
+def errorSearch(program, output, cmd, options, message):
   R=options.R
   try:
-    error=re.search(r"(?<="+message+r": )(\w|\d|\.|e|-|\+)*",comment)
+    error=re.search(r"(?<="+message+r": )(\w|\d|\.|e|-|\+)*",output)
     if error is not None:
       error=error.group()
       if float(error) > options.tol or error == "nan" or error == "-nan" or error == "inf":
@@ -463,11 +462,11 @@ def errorSearch(program, comment, cmd, options, message):
         case=" ".join(cmd)
         print("\t"+case)
         if R:
-          findRoutines(comment)
+          findRoutines(output)
         program.failTest(case)
         print()
       else:
-        warning=re.search(r"(?<=WARNING: )(\S| )*",comment)
+        warning=re.search(r"(?<=WARNING: )(\S| )*",output)
         if warning is not None:
           warning=warning.group()
 
@@ -475,7 +474,7 @@ def errorSearch(program, comment, cmd, options, message):
           case=" ".join(cmd)
           print("\t"+case)
           if R:
-            findRoutines(comment)
+            findRoutines(output)
           program.warningTest(case)
           print()
         else:
@@ -485,23 +484,23 @@ def errorSearch(program, comment, cmd, options, message):
             case=" ".join(cmd)
             print("\t"+case)
             if R:
-              findRoutines(comment)
+              findRoutines(output)
             print()
     else:
       print("\t"+boldFailedTest+" "+message+" not found.")
       case=" ".join(cmd)
       print("\t"+case)
       if R:
-        findRoutines(comment)
+        findRoutines(output)
       program.failTest(case)
       print()
   except Exception as e:
-    testException(program, comment, cmd, R, e)
+    testException(program, output, cmd, R, e)
 
-def invalidSearch(program, comment, cmd, R):
+def invalidSearch(program, output, cmd, R):
   message="Optimizer found no valid cases with specified parameters."
   try:
-    invalidTest=re.search(message,comment)
+    invalidTest=re.search(message,output)
     if invalidTest is not None:
       print("\t"+boldWarning+" "+message)
       case=" ".join(cmd)
@@ -510,11 +509,11 @@ def invalidSearch(program, comment, cmd, R):
       print()
       return None
   except Exception as e:
-    testException(program, comment, cmd, R, e)
+    testException(program, output, cmd, R, e)
   for param in cmd[3:6]:
     message=param[1:]
     try:
-      invalidTest=re.search(message,comment)
+      invalidTest=re.search(message,output)
       if invalidTest is None:
         print("\t"+boldWarning+" "+message+" not found.")
         case=" ".join(cmd)
@@ -523,23 +522,23 @@ def invalidSearch(program, comment, cmd, R):
         print()
         break
     except Exception as e:
-      testException(program, comment, cmd, R, e)
+      testException(program, output, cmd, R, e)
   return None
 
-def testException(program, comment, cmd, R, e):
+def testException(program, output, cmd, R, e):
   print("\t"+boldFailedTest+f" Exception raised.")
   print(f"\t{e}.")
   case=" ".join(cmd)
   print("\t"+case)
   if R:
-    findRoutines(comment)
+    findRoutines(output)
   program.failTest(case)
   print()
 
-def findRoutines(comment):
+def findRoutines(output):
   try:
-    FR=re.findall(r"(?<=Forwards Routine: )\S+",comment)
-    BR=re.findall(r"(?<=Backwards Routine: )\S+",comment)
+    FR=re.findall(r"(?<=Forwards Routine: )\S+",output)
+    BR=re.findall(r"(?<=Backwards Routine: )\S+",output)
     params="\t"+"\t\t".join(FR)+"\n\t"+"\t\t".join(BR)
     print(params)
   except:
