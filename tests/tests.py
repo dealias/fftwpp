@@ -107,7 +107,8 @@ class Command:
       sys.exit("Either vals or both L and M must be specified to initialize a Command.")
     self.T=["-T="+str(T)]
     if T > 1:
-      self.extraArgs.append("-threshold0")
+      self.extraArgs.append("-threshold")
+      self.extraArgs.append("0")
     self.extraArgs.append("-E")
     if R:
       self.extraArgs.append("-R")
