@@ -483,7 +483,8 @@ def realTests(program, minS, testS):
   return vals
 
 def checkOptimizer(program, L, M, T, options):
-  cmd=Command(program,T,options.R,L=L,M=M)
+  R=options.R
+  cmd=Command(program,T,R,L=L,M=M)
 
   vp = subprocess.Popen(cmd.list, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
   vp.wait()
@@ -497,11 +498,16 @@ def checkOptimizer(program, L, M, T, options):
   if options.printEverything:
     print(f"{cmd.case}\n{output}\n")
 
-  if program.mult:
-    errorSearch(program, output, cmd, options, r"Error")
+  if R:
+    routines=findRoutines(output)
   else:
-    errorSearch(program, output, cmd, options, r"Forward Error")
-    errorSearch(program, output, cmd, options, r"Backward Error")
+    routines=None
+
+  if program.mult:
+    errorSearch(program,output,cmd,options,routines,r"Error")
+  else:
+    errorSearch(program,output,cmd,options,routines,r"Forward Error")
+    errorSearch(program,output,cmd,options,routines,r"Backward Error")
 
 def check(program, vals, T, options):
   R=options.R
@@ -519,99 +525,89 @@ def check(program, vals, T, options):
   if options.printEverything:
     print(f"{cmd.case}\n{output}\n")
 
+  if R:
+    routines=findRoutines(output)
+  else:
+    routines=None
+
   if options.valid:
-    invalidSearch(program,output,cmd,R)
+    invalidSearch(program,output,cmd,routines)
 
   if program.mult:
-    errorSearch(program, output, cmd, options, r"Error")
+    errorSearch(program,output,cmd,options,routines,r"Error")
   else:
-    errorSearch(program, output, cmd, options, r"Forward Error")
-    errorSearch(program, output, cmd, options, r"Backward Error")
+    errorSearch(program,output,cmd,options,routines,r"Forward Error")
+    errorSearch(program,output,cmd,options,routines,r"Backward Error")
 
-def errorSearch(program, output, cmd, options, message):
-  R=options.R
+def errorSearch(program, output, cmd, options, routines, msg):
   try:
-    error=re.search(r"(?<="+message+r": )(\w|\d|\.|e|-|\+)*",output)
+    error=re.search(r"(?<="+msg+r": )(\w|\d|\.|e|-|\+)*",output)
     if error is not None:
       error=error.group()
       if float(error) > options.tol or error == "nan" or error == "-nan" or error == "inf":
-        print("\t"+boldFailedTest+" "+message+": "+error)
-        print("\t"+cmd.case)
-        if R:
-          findRoutines(output)
-        program.failTest(cmd.case)
-        print()
+        evaluate(program,"f",msg+": "+error,cmd.case,routines)
       else:
         warning=re.search(r"(?<=WARNING: )(\S| )*",output)
         if warning is not None:
-          warning=warning.group()
-          print("\t"+boldWarning+" "+warning)
-          print("\t"+cmd.case)
-          if R:
-            findRoutines(output)
-          program.warningTest(cmd.case)
-          print()
+          evaluate(program,"w",warning.group(),cmd.case,routines)
         else:
-          program.passTest()
-          if options.verbose:
-            print("\t"+boldPassedTest+" "+message+": "+error)
-            print("\t"+cmd.case)
-            if R:
-              findRoutines(output)
-            print()
+          evaluate(program,"p",msg+": "+error,cmd.case,routines,options.verbose)
     else:
-      print("\t"+boldFailedTest+" "+message+" not found.")
-      print("\t"+cmd.case)
-      if R:
-        findRoutines(output)
-      program.failTest(cmd.case)
-      print()
+      evaluate(program,"f",msg+" not found.",cmd.case,routines)
   except Exception as e:
-    testException(program, output, cmd, R, e)
+    evaluate(program,"f",f" Exception raised.\n\t{e}",cmd.case,routines)
 
-def invalidSearch(program, output, cmd, R):
-  message="Optimizer found no valid cases with specified parameters."
+def invalidSearch(program, output, cmd, routines):
+  msg="Optimizer found no valid cases with specified parameters."
   try:
-    invalidTest=re.search(message,output)
+    invalidTest=re.search(msg,output)
     if invalidTest is not None:
-      print("\t"+boldWarning+" "+message)
-      print("\t"+cmd.case)
-      program.warningTest(cmd.case)
-      print()
+      evaluate(program,"w",msg,cmd.case,routines)
       return None
   except Exception as e:
-    testException(program, output, cmd, R, e)
-  for param in cmd[3:6]:
-    message=param[1:]
-    try:
-      invalidTest=re.search(message,output)
-      if invalidTest is None:
-        print("\t"+boldWarning+" "+message+" not found.")
-        print("\t"+cmd.case)
-        program.warningTest(cmd.case)
-        print()
-        break
-    except Exception as e:
-      testException(program, output, cmd, R, e)
-  return None
+    evaluate(program,"f",f" Exception raised.\n\t{e}",cmd.case,routines)
 
-def testException(program, output, cmd, R, e):
-  print("\t"+boldFailedTest+f" Exception raised.")
-  print(f"\t{e}.")
-  print("\t"+cmd.case)
-  if R:
-    findRoutines(output)
-  program.failTest(cmd.case)
-  print()
+  if program.dim == 1:
+    # optimization parameters
+    op=cmd.m+cmd.D+cmd.I
+    for p in op:
+      msg=p[1:]
+      try:
+        invalidTest=re.search(msg,output)
+        if invalidTest is None:
+          evaluate(program,"w",msg+" not found.",cmd.case,routines)
+          break
+      except Exception as e:
+        evaluate(program,"f",f" Exception raised.\n\t{e}",cmd.case,routines)
+    return None
+
+def evaluate(program, result, message, case, routines, verbose=True):
+  if result=="p":
+    program.passTest()
+    b=boldPassedTest
+  elif result=="w":
+    program.warningTest(case)
+    b=boldWarning
+  elif result=="f":
+    program.failTest(case)
+    b=boldFailedTest
+  else:
+    sys.exit("In evaluate, result must either be 'p', 'w', or 'f'.")
+  if verbose:
+    print("\t"+b+" "+message)
+    print("\t"+case)
+    if routines is not None:
+      print(routines)
+    print()
 
 def findRoutines(output):
   try:
     FR=re.findall(r"(?<=Forwards Routine: )\S+",output)
     BR=re.findall(r"(?<=Backwards Routine: )\S+",output)
     params="\t"+"\t\t".join(FR)+"\n\t"+"\t\t".join(BR)
-    print(params)
+    return params
   except:
-    print("Could not find routines used.")
+    return "Could not find routines used."
 
 if __name__ == "__main__":
   main()
