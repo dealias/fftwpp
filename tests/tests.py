@@ -6,10 +6,6 @@ import argparse
 import sys
 from HybridParameters import *
 
-boldPassedTest="\033[1mPassed Test:\033[0m"
-boldFailedTest="\033[1mFailed Test:\033[0m"
-boldWarning="\033[1mWARNING:\033[0m"
-
 def main():
   args=getArgs()
   programs=getPrograms(args)
@@ -209,7 +205,6 @@ def getPrograms(args):
   CorNotSCHR=(C or notSCHR)
   HorNotSCHR=(H or notSCHR)
   rorNotSCHR=(R or notSCHR)
-
   if X or notXYZ:
     if SorNotSCHR:
       programs.append(Program("hybridconv"))
@@ -408,10 +403,12 @@ def getpqn(centered, hermitian, real, L, M, m):
     n=ceilquotient(n+1,2)
   return p, q, n
 
-def getDs(start, stop):
-  result=[]
-  result.append(start)
-  result+=list(range(start+2-start%2, stop,2))
+def getDs(start, stop, pow2=False):
+  result=[start]
+  if pow2:
+    result+=[x for x in range(start+2-start%2,stop,2) if ceilpow2(x)==x]
+  else:
+    result+=list(range(start+2-start%2, stop,2))
   if stop > start:
     result.append(stop)
   return result
@@ -583,6 +580,9 @@ def invalidSearch(program, output, cmd, routines):
     return None
 
 def evaluate(program, result, message, case, routines, verbose=True):
+  boldPassedTest="\033[1mPassed Test:\033[0m"
+  boldFailedTest="\033[1mFailed Test:\033[0m"
+  boldWarning="\033[1mWARNING:\033[0m"
   if result=="p":
     program.passTest()
     b=boldPassedTest
@@ -609,6 +609,16 @@ def findRoutines(output):
     return params
   except:
     return "Could not find routines used."
+
+def ceilpow2(n):
+  n-=1
+  n |= n >> 1;
+  n |= n >> 2;
+  n |= n >> 4;
+  n |= n >> 8;
+  n |= n >> 16;
+  n |= n >> 32;
+  return n+1;
 
 if __name__ == "__main__":
   main()
