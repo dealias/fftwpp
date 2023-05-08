@@ -5713,7 +5713,7 @@ void fftPadReal::forward1(Complex *f, Complex *F, size_t r, Complex *W)
   if(r == 0) {
     double *Wr=(double *) W;
     bool repad=inplace || q == 2 || L%2;
-    // Make use of existing zero padding, respecting alignment
+    // Make use of existing zero padding, respecting minimal alignment
     if(!repad) Wr += L;
     PARALLELIF(
       L > threshold,
