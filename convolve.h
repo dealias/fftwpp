@@ -773,8 +773,8 @@ class fftPadReal : public fftBase {
   crfft1d *crfftm1;
   //fft1d *fftm1;
   //fft1d *ifftm1;
-  mfft1d *fftm;//,*fftm0;
-  mfft1d *ifftm;//,*ifftm0;
+  mfft1d *fftm,*fftm0;
+  mfft1d *ifftm,*ifftm0;
   fft1d *ffte;
   fft1d *iffte;
 public:
@@ -789,9 +789,9 @@ public:
     }
 
     bool valid(size_t m, size_t p, size_t q, size_t n, size_t D, size_t S) {
+//      return (q%2 == 1 || m%2 == 0) && p == 1 &&
+//        (D == 1 || (S == 1 && ((D < (n-1)/2 && D % 2 == 0) || D == (n-1)/2)));
       return (q%2 == 1 || m%2 == 0) && D == 1 && p == 1 && S == 1;
-      //return m%2 == 0 && D == 1 && p == 1 && S == 1;
-
     }
 
     double time(size_t L, size_t M, size_t C, size_t S,
@@ -865,6 +865,16 @@ public:
 
   size_t residueBlocks() {
     return utils::ceilquotient(n+1,2);
+  }
+
+  // Number of outputs per iteration per copy
+  virtual size_t noutputs(size_t r) {
+    return l*((r == 0 || r == n/2) ? 1 : r == 1 ? D0 : D);
+  }
+
+  // Number of complex outputs per iteration
+  size_t complexOutputs(size_t r) {
+    return noutputs(r);
   }
 };
 

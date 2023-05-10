@@ -5630,8 +5630,15 @@ void fftPadReal::init()
     n=q;
     dr=Dr();
     R=residueBlocks();
-    D0=n % D;
+    D0=(n-1)/2 % D;
     if(D0 == 0) D0=D;
+
+    if(D0 != D) {
+      size_t x=D0*P;
+      fftm0=new mfft1d(m,1,x, 1,Sm, G,H,threads);
+      ifftm0=new mfft1d(m,-1,x, 1,Sm, H,G,threads);
+    } else
+      fftm0=NULL;
 
     if(!inplace)
       deleteAlign(H);
@@ -5659,6 +5666,12 @@ fftPadReal::~fftPadReal()
   } else {
     delete crfftm1;
     delete rcfftm1;
+
+    if(fftm0) {
+      delete fftm0;
+      delete ifftm0;
+    }
+
     delete fftm;
     delete ifftm;
 
@@ -5704,13 +5717,13 @@ void fftPadReal::forwardExplicit(Complex *f, Complex *F, size_t, Complex *W)
   rcfftm1->fft(W,F);
 }
 
-void fftPadReal::forward1(Complex *f, Complex *F, size_t r, Complex *W)
+void fftPadReal::forward1(Complex *f, Complex *F, size_t r0, Complex *W)
 {
   if(W == NULL) W=F;
 
   double *fr=(double *) f;
 
-  if(r == 0) {
+  if(r0 == 0) {
     double *Wr=(double *) W;
     bool repad=inplace || q == 2 || L%2;
     // Make use of existing zero padding, respecting minimal alignment
@@ -5724,22 +5737,27 @@ void fftPadReal::forward1(Complex *f, Complex *F, size_t r, Complex *W)
       for(size_t s=L; s < m; ++s)
         Wr[s]=0.0;
     rcfftm1->fft(Wr,F);
-  } else if(2*r < q) {
-    W[0]=fr[0];
-    Complex *Zetar=Zetaqm+m*r;
-    PARALLELIF(
-      L > threshold,
-      for(size_t s=1; s < L; ++s)
-        W[s]=Zetar[s]*fr[s];
-      );
-    if(inplace) {
-      for(size_t s=L; s < m; ++s)
-        W[s]=0.0;
+  } else if(2*r0 < q) {
+    size_t Dstop=r0 == 1 ? D0 : D;
+    for(size_t d=0; d < Dstop; ++d) {
+      size_t r=r0+d;
+      Complex *U=W+m*d;
+      U[0]=fr[0];
+      Complex *Zetar=Zetaqm+m*r;
+      PARALLELIF(
+        L > threshold,
+        for(size_t s=1; s < L; ++s)
+          U[s]=Zetar[s]*fr[s];
+        );
+      if(inplace) {
+        for(size_t s=L; s < m; ++s)
+          U[s]=0.0;
+      }
     }
-    fftm->fft(W,F);
+    r0 == 1 && D0 != D ? fftm0->fft(W,F) : fftm->fft(W,F);
   } else {
     size_t h=e-1;
-    Complex *Zetar=Zetaqm+m*r;
+    Complex *Zetar=Zetaqm+m*r0;
     double *frh=fr+h;
     size_t Lmh,stop;
     if(L <= h) {
