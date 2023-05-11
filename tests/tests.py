@@ -364,6 +364,9 @@ def collectTests(program, L, M, m, minS, testS, Dmin=0, Dmax=0, I0=True, I1=True
   elif hermitian:
     Dstart=2
     Dstop=Dstart
+  elif real:
+    Dstart=max(Dmin,1)
+    Dstop=min(max(Dmax,1),(n-1)//2)
   else:
     Dstart=max(Dmin,1)
     Dstop=min(max(Dmax,1),n)
@@ -471,11 +474,14 @@ def realTests(program, minS, testS):
   assert program.real
   vals=[]
   mvalues=[4,8,16,17]
-  vals+=collectTests(program, L=8, M=32, m=8, Dmin=1, Dmax=1, minS=minS, testS=testS)
-  vals+=collectTests(program, L=8, M=32, m=16, Dmin=1, Dmax=1, minS=minS, testS=testS)
+  vals+=collectTests(program, L=8, M=100, m=8, minS=minS, testS=testS)
+  vals+=collectTests(program, L=8, M=48, m=8, minS=minS, testS=testS)
+  vals+=collectTests(program, L=8, M=40, m=8, minS=minS, testS=testS)
+  vals+=collectTests(program, L=8, M=32, m=8, minS=minS, testS=testS)
+  vals+=collectTests(program, L=8, M=32, m=16, minS=minS, testS=testS)
   for m in mvalues:
-    vals+=collectTests(program, L=4, M=16, m=m, Dmin=1, Dmax=1, minS=minS, testS=testS)
-    vals+=collectTests(program, L=3, M=16, m=m, Dmin=1, Dmax=1, minS=minS, testS=testS)
+    vals+=collectTests(program, L=4, M=16, m=m, minS=minS, testS=testS)
+    vals+=collectTests(program, L=3, M=16, m=m, minS=minS, testS=testS)
   return vals
 
 def checkOptimizer(program, L, M, T, options):
