@@ -399,8 +399,6 @@ def getpqn(centered, hermitian, real, L, M, m):
     P=p
   n=ceilquotient(M,m*P)
   q=ceilquotient(M,m) if p <= 2 else n*p
-  if real:
-    n=ceilquotient(n+1,2)
   return p, q, n
 
 def getDs(start, stop, pow2=False):
