@@ -467,7 +467,8 @@ protected:
 public:
 
   static bool valid(size_t m, size_t p, size_t q , size_t n, size_t D, size_t S) {
-    return D == 1 || (((S == 1 && ((D < n && D % 2 == 0) || D == n))) && q != 1);
+    if(q == 1) return D == 1;
+    return D == 1 || (S == 1 && ((D < n && D % 2 == 0) || D == n));
   }
 
   class Opt : public OptBase {
