@@ -649,8 +649,8 @@ void fftPad::init()
 
     if(D0 != D) {
       size_t x=D0*P;
-      fftm0=new mfft1d(m,1,x, 1,Sm, G,H,threads);
-      ifftm0=new mfft1d(m,-1,x, 1,Sm, H,G,threads);
+      fftm0=new mfft1d(m,1,x, 1,m, G,H,threads);
+      ifftm0=new mfft1d(m,-1,x, 1,m, H,G,threads);
     } else
       fftm0=NULL;
 
@@ -5592,8 +5592,7 @@ void fftPadReal::init()
   } else {
     l=m;
     b=S*l;
-    size_t P=p;
-    size_t d=C*D*P;
+    size_t d=C*D*p;
 
     Complex *G,*H;
     size_t size=b*D;
@@ -5634,9 +5633,9 @@ void fftPadReal::init()
     if(D0 == 0) D0=D;
 
     if(D0 != D) {
-      size_t x=D0*P;
-      fftm0=new mfft1d(m,1,x, 1,Sm, G,H,threads);
-      ifftm0=new mfft1d(m,-1,x, 1,Sm, H,G,threads);
+      size_t x=D0*p;
+      fftm0=new mfft1d(m,1,x, 1,m, G,H,threads);
+      ifftm0=new mfft1d(m,-1,x, 1,m, H,G,threads);
     } else
       fftm0=NULL;
 
@@ -5644,7 +5643,7 @@ void fftPadReal::init()
       deleteAlign(H);
     deleteAlign(G);
 
-    initZetaqm(q,centered && p == 2 ? m+1 : m);
+    initZetaqm(q,m);
   }
 
   if(showRoutines) {
@@ -5738,7 +5737,8 @@ void fftPadReal::forward1(Complex *f, Complex *F, size_t r0, Complex *W)
         Wr[s]=0.0;
     rcfftm1->fft(Wr,F);
   } else if(2*r0 < q) {
-    size_t Dstop=r0 == 1 ? D0 : D;
+    bool remainder=r0 == 1 && D0 != D;
+    size_t Dstop=remainder ? D0 : D;
     for(size_t d=0; d < Dstop; ++d) {
       size_t r=r0+d;
       Complex *U=W+m*d;
@@ -5754,7 +5754,7 @@ void fftPadReal::forward1(Complex *f, Complex *F, size_t r0, Complex *W)
           U[s]=0.0;
       }
     }
-    r0 == 1 && D0 != D ? fftm0->fft(W,F) : fftm->fft(W,F);
+    remainder ? fftm0->fft(W,F) : fftm->fft(W,F);
   } else {
     size_t h=e-1;
     Complex *Zetar=Zetaqm+m*r0;
@@ -5805,31 +5805,43 @@ void fftPadReal::backwardExplicit(Complex *F, Complex *f, size_t, Complex *W)
     );
 }
 
-void fftPadReal::backward1(Complex *F, Complex *f, size_t r, Complex *W)
+void fftPadReal::backward1(Complex *F, Complex *f, size_t r0, Complex *W)
 {
   if(W == NULL) W=F;
   double *fr=(double *) f;
   double *Wr=(double *) W;
 
-  if(r == 0) {
+  if(r0 == 0) {
     crfftm1->fft(F,Wr);
     PARALLELIF(
       L > threshold,
       for(size_t s=0; s < L; ++s)
         fr[s]=Wr[s];
       );
-  } else if(2*r < q) {
-    ifftm->fft(F,W);
-    fr[0] += 2.0*real(W[0]);
-    Complex *Zetar=Zetaqm+m*r;
-    PARALLELIF(
-      L > threshold,
-      for(size_t s=1; s < L; ++s)
-        fr[s] += 2.0*realproduct(Zetar[s],W[s]);
-      );
+  } else if(2*r0 < q) {
+    bool remainder=r0 == 1 && D0 != D;
+    size_t Dstop;
+    if(remainder) {
+      ifftm0->fft(F,W);
+      Dstop=D0;
+    } else {
+      ifftm->fft(F,W);
+      Dstop=D;
+    }
+    for(size_t d=0; d < Dstop; ++d) {
+      size_t r=r0+d;
+      Complex *U=W+m*d;
+      fr[0] += 2.0*real(U[0]);
+      Complex *Zetar=Zetaqm+m*r;
+      PARALLELIF(
+        L > threshold,
+        for(size_t s=1; s < L; ++s)
+          fr[s] += 2.0*realproduct(Zetar[s],U[s]);
+        );
+    }
   } else {
     iffte->fft(F,W);
-    Complex *Zetar=Zetaqm+m*r;
+    Complex *Zetar=Zetaqm+m*r0;
     size_t h=e-1;
     double *frh=fr+h;
     size_t Lmh,stop;
@@ -5929,6 +5941,7 @@ void Convolution::convolveRaw(Complex **g)
         } else
           h0=g;
         for(size_t r=0; r < R; r += fft->increment(r)) {
+          cout << "r=" << r << endl;
           forward(g,F,r,0,A);
           operate(F,r,&indices);
           backwardPad(F,h0,r,0,B,W0);

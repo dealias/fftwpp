@@ -394,7 +394,7 @@ public:
 
   size_t Dr() {return conjugates() ? D/2 : D;}
 
-  size_t increment(size_t r) {
+  virtual size_t increment(size_t r) {
     return r > 0 ? dr : (conjugates() ? utils::ceilquotient(D0,2) : D0);
   }
 
@@ -790,9 +790,9 @@ public:
     }
 
     bool valid(size_t m, size_t p, size_t q, size_t n, size_t D, size_t S) {
-//      return (q%2 == 1 || m%2 == 0) && p == 1 &&
-//        (D == 1 || (S == 1 && ((D < (n-1)/2 && D % 2 == 0) || D == (n-1)/2)));
-      return (q%2 == 1 || m%2 == 0) && D == 1 && p == 1 && S == 1;
+      return (q%2 == 1 || m%2 == 0) && p == 1 &&
+        (D == 1 || (S == 1 && ((D < (n-1)/2 && D % 2 == 0) || D == (n-1)/2)));
+//      return (q%2 == 1 || m%2 == 0) && D == 1 && p == 1 && S == 1;
     }
 
     double time(size_t L, size_t M, size_t C, size_t S,
@@ -864,8 +864,16 @@ public:
     return inplace ? 0 : q == 2 ? outputSize()/2 : outputSize();
   }
 
+  virtual bool conjugates() {
+    return false;
+  }
+
   size_t residueBlocks() {
     return utils::ceilquotient(n+1,2);
+  }
+
+  size_t increment(size_t r) {
+    return r > 1 ? D : r == 1 ? D0 : 1;
   }
 
   // Number of outputs per iteration per copy
