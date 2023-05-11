@@ -5941,7 +5941,6 @@ void Convolution::convolveRaw(Complex **g)
         } else
           h0=g;
         for(size_t r=0; r < R; r += fft->increment(r)) {
-          cout << "r=" << r << endl;
           forward(g,F,r,0,A);
           operate(F,r,&indices);
           backwardPad(F,h0,r,0,B,W0);
