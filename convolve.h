@@ -177,6 +177,8 @@ public:
 
     virtual bool valid(size_t m, size_t p, size_t q, size_t n, size_t D, size_t S)=0;
 
+    virtual size_t maxD(size_t n)=0;
+
     // Called by the optimizer to record the time to complete an application
     // for a given value of m.
     void check(size_t L, size_t M,
@@ -484,6 +486,10 @@ public:
       return fftPad::valid(m,p,q,n,D,S);
     }
 
+    size_t maxD(size_t n) {
+      return n;
+    }
+
     double time(size_t L, size_t M, size_t C, size_t S,
                 size_t m, size_t q,size_t D, bool inplace, Application &app) {
       fftPad fft(L,M,C,S,m,q,D,inplace,app);
@@ -586,6 +592,10 @@ public:
 
     bool valid(size_t m, size_t p, size_t q , size_t n, size_t D, size_t S) {
       return (q == 1 || p%2 == 0) && fftPad::valid(m,p,q,n,D,S);
+    }
+
+    size_t maxD(size_t n) {
+      return n;
     }
 
     double time(size_t L, size_t M, size_t C, size_t S,
@@ -699,6 +709,10 @@ public:
       return (D == 1 && q == 1) || (D == 2 && p%2 == 0 && (p == 2 || C == 1));
     }
 
+    size_t maxD(size_t n) {
+      return n;
+    }
+
     double time(size_t L, size_t M, size_t C, size_t,
                 size_t m, size_t q, size_t D, bool inplace, Application &app) {
       fftPadHermitian fft(L,M,C,m,q,D,inplace,app);
@@ -795,9 +809,13 @@ public:
 //      return (q%2 == 1 || m%2 == 0) && D == 1 && p == 1 && S == 1;
     }
 
+    size_t maxD(size_t n) {
+      return n > 2 ? (n-1)/2 : 1;
+    }
+
     double time(size_t L, size_t M, size_t C, size_t S,
                 size_t m, size_t q,size_t D, bool inplace, Application &app) {
-      fftPad fft(L,M,C,S,m,q,D,inplace,app);
+      fftPadReal fft(L,M,C,S,m,q,D,inplace,app);
       double threshold=DBL_MAX;
       return timePad(&fft,threshold);
     }

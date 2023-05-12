@@ -252,7 +252,7 @@ void fftBase::OptBase::optloop(size_t& m, size_t L,
     else {
       size_t q=(inner ? P*n : ceilquotient(M,m));
       size_t Dstart=DForced ? app.D : 1;
-      size_t Dstop=DForced ? app.D : n;
+      size_t Dstop=DForced ? app.D : maxD(n);
       size_t Dstop2=2*Dstop;
 
       // Check inplace and out-of-place unless C > 1.
