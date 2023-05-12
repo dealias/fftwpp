@@ -219,7 +219,9 @@ public:
 
   void invalid () {
     std::cerr << "Invalid parameters: " << std::endl
-              << " D=" << D << " p=" << p << " C=" << C << std::endl;
+              << "m=" << m << " p=" << p << " q=" << q
+              << " n=" << n << " " << " D=" << D << " S=" << S
+              << std::endl;
     exit(-1);
   }
 
@@ -386,6 +388,10 @@ public:
     return b*D;
   }
 
+  virtual size_t qReduced(size_t p, size_t q) {
+    return q/p;
+  }
+
   virtual bool conjugates() {
     return D > 1 && (p <= 2 || (centered && p % 2 == 0));
   }
@@ -468,6 +474,10 @@ protected:
   mfft1d *ifftp;
 public:
 
+  size_t qReduced(size_t p, size_t q) {
+    return p == 2 ? q : q/p;
+  }
+
   static bool valid(size_t m, size_t p, size_t q , size_t n, size_t D, size_t S) {
     if(q == 1) return D == 1;
     return D == 1 || (S == 1 && ((D < n && D % 2 == 0) || D == n));
@@ -482,7 +492,7 @@ public:
       scan(L,M,app,C,S,Explicit);
     }
 
-    bool valid(size_t m, size_t p, size_t q , size_t n, size_t D, size_t S) {
+    bool valid(size_t m, size_t p, size_t q, size_t n, size_t D, size_t S) {
       return fftPad::valid(m,p,q,n,D,S);
     }
 
@@ -499,17 +509,24 @@ public:
   };
 
   fftPad(size_t L, size_t M, size_t C, size_t S,
-         Application &app, bool centered=false) :
+         Application &app, bool centered) :
     fftBase(L,M,C,S,app,centered) {}
+
+  fftPad(size_t L, size_t M, size_t C, size_t S,
+         size_t m, size_t q, size_t D, bool inplace,
+         Application &app, bool centered) :
+    fftBase(L,M,C,S,m,q,D,inplace,app) {}
 
   // Compute an fft padded to N=m*q >= M >= L
   fftPad(size_t L, size_t M, size_t C, size_t S,
          size_t m, size_t q, size_t D, bool inplace,
-         Application &app, bool centered=false) :
-    fftBase(L,M,C,S,m,q,D,inplace,app,centered) {
+         Application &app) :
+    fftBase(L,M,C,S,m,q,D,inplace,app) {
     Opt opt;
-    init();
+    p=utils::ceilquotient(L,m);
+    n=qReduced(p,q);
     if(q > 1 && !opt.valid(m,p,q,n,D,this->S)) invalid();
+    init();
   }
 
   // Normal entry point.
@@ -525,6 +542,9 @@ public:
     q=opt.q;
     D=opt.D;
     inplace=opt.inplace;
+//    n=opt.n;
+    p=utils::ceilquotient(L,m);
+    n=qReduced(p,q);
     init();
   }
 
@@ -581,6 +601,11 @@ class fftPadCentered : public fftPad {
   Complex *ZetaShift;
 public:
 
+  size_t qReduced(size_t p, size_t q) {
+    size_t p2=p/2;
+    return p == 2*p2 ? q/p2 : q/p;
+  }
+
   class Opt : public OptBase {
   public:
     Opt() {}
@@ -612,8 +637,11 @@ public:
                  size_t D, bool inplace, Application &app) :
     fftPad(L,M,C,S,m,q,D,inplace,app,true) {
     Opt opt;
-    init();
+    p=utils::ceilquotient(L,m);
+    n=qReduced(p,q);
     if(q > 1 && !opt.valid(m,p,q,n,D,this->S)) invalid();
+    fftPad::init();
+    init();
   }
 
   // Normal entry point.
@@ -628,6 +656,8 @@ public:
     q=opt.q;
     D=opt.D;
     inplace=opt.inplace;
+    p=utils::ceilquotient(L,m);
+    n=qReduced(p,q);
     fftPad::init();
     init();
   }
@@ -696,6 +726,12 @@ class fftPadHermitian : public fftBase {
   mfft1d *ifftp;
 public:
 
+  size_t qReduced(size_t p, size_t q) {
+    if(p == 1) return 1;
+    size_t p2=p/2;
+    return q/p2;
+  }
+
   class Opt : public OptBase {
   public:
     Opt() {}
@@ -725,8 +761,10 @@ public:
                   bool inplace, Application &app) :
     fftBase(L,M,C,C,m,q,D,inplace,app,true) {
     Opt opt;
-    init();
+    p=utils::ceilquotient(L,m);
+    n=qReduced(p,q);
     if(q > 1 && !opt.valid(m,p,q,n,D,C)) invalid();
+    init();
   }
 
   fftPadHermitian(size_t L, size_t M, Application& app,
@@ -739,6 +777,8 @@ public:
     q=opt.q;
     D=opt.D;
     inplace=opt.inplace;
+    p=utils::ceilquotient(L,m);
+    n=qReduced(p,q);
     init();
   }
 
@@ -805,7 +845,7 @@ public:
 
     bool valid(size_t m, size_t p, size_t q, size_t n, size_t D, size_t S) {
       return (q%2 == 1 || m%2 == 0) && p == 1 &&
-        (D == 1 || (S == 1 && ((D < (n-1)/2 && D % 2 == 0) || D == (n-1)/2)));
+        (D == 1 || (S == 1 && ((D < (q-1)/2 && D % 2 == 0) || D == (q-1)/2)));
 //      return (q%2 == 1 || m%2 == 0) && D == 1 && p == 1 && S == 1;
     }
 
@@ -830,6 +870,8 @@ public:
          Application &app) :
     fftBase(L,M,C,S,m,q,D,inplace,app) {
     Opt opt;
+    p=utils::ceilquotient(L,m);
+    n=qReduced(p,q);
     if(q > 1 && !opt.valid(m,p,q,n,D,this->S)) invalid();
     init();
   }
@@ -847,6 +889,8 @@ public:
     q=opt.q;
     D=opt.D;
     inplace=opt.inplace;
+    p=utils::ceilquotient(L,m);
+    n=qReduced(p,q);
     init();
   }
 
