@@ -533,14 +533,17 @@ def check(program, vals, T, options):
   else:
     routines=None
 
+  testPassed=True
   if options.valid:
-    invalidSearch(program,output,cmd,routines)
+    testPassed=invalidSearch(program,output,cmd,routines)
 
-  if program.mult:
-    errorSearch(program,output,cmd,options,routines,r"Error")
-  else:
-    errorSearch(program,output,cmd,options,routines,r"Forward Error")
-    errorSearch(program,output,cmd,options,routines,r"Backward Error")
+  if testPassed:
+    if program.mult:
+      errorSearch(program,output,cmd,options,routines,r"Error")
+    else:
+      testPassed=errorSearch(program,output,cmd,options,routines,r"Forward Error")
+      if testPassed:
+        errorSearch(program,output,cmd,options,routines,r"Backward Error")
 
 def errorSearch(program, output, cmd, options, routines, msg):
   try:
@@ -548,27 +551,26 @@ def errorSearch(program, output, cmd, options, routines, msg):
     if error is not None:
       error=error.group()
       if float(error) > options.tol or error == "nan" or error == "-nan" or error == "inf":
-        evaluate(program,"f",msg+": "+error,cmd.case,routines)
+        return evaluate(program,"f",msg+": "+error,cmd.case,routines)
       else:
         warning=re.search(r"(?<=WARNING: )(\S| )*",output)
         if warning is not None:
-          evaluate(program,"w",warning.group(),cmd.case,routines)
+          return evaluate(program,"w",warning.group(),cmd.case,routines)
         else:
-          evaluate(program,"p",msg+": "+error,cmd.case,routines,options.verbose)
+          return evaluate(program,"p",msg+": "+error,cmd.case,routines,options.verbose)
     else:
-      evaluate(program,"f",msg+" not found.",cmd.case,routines)
+      return evaluate(program,"f",msg+" not found.",cmd.case,routines)
   except Exception as e:
-    evaluate(program,"f",f" Exception raised.\n\t{e}",cmd.case,routines)
+    return evaluate(program,"f",f" Exception raised.\n\t{e}",cmd.case,routines)
 
 def invalidSearch(program, output, cmd, routines):
   msg="Optimizer found no valid cases with specified parameters."
   try:
     invalidTest=re.search(msg,output)
     if invalidTest is not None:
-      evaluate(program,"w",msg,cmd.case,routines)
-      return None
+      return evaluate(program,"w",msg,cmd.case,routines)
   except Exception as e:
-    evaluate(program,"f",f" Exception raised.\n\t{e}",cmd.case,routines)
+    return evaluate(program,"f",f" Exception raised.\n\t{e}",cmd.case,routines)
 
   if program.dim == 1:
     # optimization parameters
@@ -582,7 +584,7 @@ def invalidSearch(program, output, cmd, routines):
           break
       except Exception as e:
         evaluate(program,"f",f" Exception raised.\n\t{e}",cmd.case,routines)
-    return None
+  return True
 
 def evaluate(program, result, message, case, routines, verbose=True):
   boldPassedTest="\033[1mPassed Test:\033[0m"
@@ -590,17 +592,22 @@ def evaluate(program, result, message, case, routines, verbose=True):
   boldWarning="\033[1mWARNING:\033[0m"
   if result=="p":
     program.passTest()
-    b=boldPassedTest
+    printResults(boldPassedTest, message, case, routines, verbose)
+    return True
   elif result=="w":
     program.warningTest(case)
-    b=boldWarning
+    printResults(boldWarning, message, case, routines, verbose)
+    return False
   elif result=="f":
     program.failTest(case)
-    b=boldFailedTest
+    printResults(boldFailedTest, message, case, routines, verbose)
+    return False
   else:
     sys.exit("In evaluate, result must either be 'p', 'w', or 'f'.")
+
+def printResults(resultMessage, message, case, routines, verbose):
   if verbose:
-    print("\t"+b+" "+message)
+    print("\t"+resultMessage+" "+message)
     print("\t"+case)
     if routines is not None:
       print(routines)
