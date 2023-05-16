@@ -5620,6 +5620,13 @@ void fftPadReal::init()
         Backward=&fftBase::backward2;
         FR="forward2";
         BR="backward2";
+        size_t Lm=L-m;
+        double twopibyN=twopi/M;
+        ZetaqmS0=ComplexAlign((q-1)*Lm);
+        ZetaqmS=ZetaqmS0-L;
+        for(size_t r=1; r < q; ++r)
+          for(size_t s=m; s < L; ++s)
+            ZetaqmS[Lm*r+s]=expi(r*s*twopibyN);
       }
 //    }
     if(repad())
