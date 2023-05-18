@@ -474,13 +474,12 @@ def realTests(program, minS, testS):
   assert program.real
   vals=[]
   mvalues=[4,8,16,17]
-  vals+=collectTests(program, L=8, M=64, m=8, minS=minS, testS=testS)
-  vals+=collectTests(program, L=8, M=56, m=8, minS=minS, testS=testS)
-  vals+=collectTests(program, L=8, M=48, m=8, minS=minS, testS=testS)
-  vals+=collectTests(program, L=8, M=40, m=8, minS=minS, testS=testS)
-  vals+=collectTests(program, L=8, M=32, m=8, minS=minS, testS=testS)
-  vals+=collectTests(program, L=8, M=32, m=16, minS=minS, testS=testS)
   for m in mvalues:
+    vals+=collectTests(program, L=8, M=64, m=m, minS=minS, testS=testS)
+    vals+=collectTests(program, L=8, M=56, m=m, minS=minS, testS=testS)
+    vals+=collectTests(program, L=8, M=48, m=m, minS=minS, testS=testS)
+    vals+=collectTests(program, L=8, M=40, m=m, minS=minS, testS=testS)
+    vals+=collectTests(program, L=8, M=32, m=m, minS=minS, testS=testS)
     vals+=collectTests(program, L=4, M=16, m=m, minS=minS, testS=testS)
     vals+=collectTests(program, L=3, M=16, m=m, minS=minS, testS=testS)
   return vals
