@@ -5859,22 +5859,19 @@ void fftPadReal::forward2(Complex *f, Complex *F, size_t r0, Complex *W)
     }
     PARALLELIF(
       stop1 > threshold,
-      for(size_t s=1; s < stop1; ++s) {
-        cout << "H1" << endl;
+      for(size_t s=1; s < stop1; ++s)
         W[s]=Zetar[s]*Complex(fr[s]-frm[s],frh[s]-frhm[s]);
-      });
+      );
     PARALLELIF(
       stop2-stop1 > threshold,
-      for(size_t s=stop1; s < stop2; ++s) {
-        cout << "H2" << endl;
+      for(size_t s=stop1; s < stop2; ++s)
         W[s]=Zetar[s]*Complex(fr[s]-frm[s],frh[s]);
-      });
+      );
     PARALLELIF(
       h-stop2 > threshold,
-      for(size_t s=stop2; s < h; ++s) {
-        cout << "H3" << endl;
+      for(size_t s=stop2; s < h; ++s)
         W[s]=Zetar[s]*Complex(fr[s],frh[s]);
-      });
+      );
     ffte->fft(W,F);
   }
 }
