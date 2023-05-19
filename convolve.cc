@@ -5636,7 +5636,6 @@ void fftPadReal::init()
     R=residueBlocks();
     D0=(n-1)/2 % D;
     if(D0 == 0) D0=D;
-
     if(D0 != D) {
       size_t x=D0*p;
       fftm0=new mfft1d(m,1,x, 1,m, G,H,threads);
@@ -5822,7 +5821,7 @@ void fftPadReal::forward2(Complex *f, Complex *F, size_t r0, Complex *W)
     for(size_t d=0; d < Dstop; ++d) {
       size_t r=r0+d;
       Complex *U=W+m*d;
-      Complex *Zetar2=ZetaqmS+Lm*r0+m;
+      Complex *Zetar2=ZetaqmS+Lm*r+m;
       U[0]=fr[0]+Zetar2[0]*frm[0];
       Complex *Zetar=Zetaqm+m*r;
       PARALLELIF(

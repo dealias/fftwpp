@@ -841,7 +841,6 @@ public:
     }
 
     bool valid(size_t m, size_t p, size_t q, size_t n, size_t D, size_t S) {
-      if(p == 2 && D > 1) return false; //TEMP
       return (q%2 == 1 || m%2 == 0) && p <= 2 &&
         (D == 1 || (S == 1 && ((D < (q-1)/2 && D % 2 == 0) || D == (q-1)/2)));
 //      return (q%2 == 1 || m%2 == 0) && D == 1 && p == 1 && S == 1;
