@@ -5938,9 +5938,9 @@ void fftPadReal::backward1(Complex *F, Complex *f, size_t r0, Complex *W)
     PARALLELIF(
       Lmh > threshold,
       for(size_t s=1; s < Lmh; ++s) {
-        Complex z=conj(Zetar[s])*W[s];
-        fr[s] += 2.0*real(z);
-        frh[s] += 2.0*imag(z);
+        Complex z=2.0*conj(Zetar[s])*W[s];
+        fr[s] += real(z);
+        frh[s] += imag(z);
       });
 
     PARALLELIF(
@@ -6010,34 +6010,56 @@ void fftPadReal::backward2(Complex *F, Complex *f, size_t r0, Complex *W)
     size_t stop1,stop2;
     //Complex z=W[0];
     //fr[0] += 2.0*real(z);
+    Complex z0=2.0*W[0];
+    double Rez0=real(z0);
+    double Imz0=imag(z0);
+
+    fr[0] += Rez0;
+    frm[0] -= Rez0;
+    frh[0] += Imz0;
     if(2*m == L) {
       stop1=h;
       stop2=h;
+      frmh[0] -= Imz0;
     } else if(mh < L) {
       stop1=L-mh;
       stop2=e;
+      frmh[0] -= Imz0;
     } else {
-      stop1=0;
+      stop1=1;
       stop2=L-m;
     }
     PARALLELIF(
-      h > threshold,
-      for(size_t s=0; s < h; ++s) {
-        Complex z=conj(Zetar[s])*W[s];
-        fr[s] += 2.0*real(z);
-        frh[s] += 2.0*imag(z);
-      });
-    PARALLELIF(
       stop1 > threshold,
-      for(size_t s=0; s < stop1; ++s) {
-        Complex z=conj(Zetar[s])*W[s];
-        frm[s] -= 2.0*real(z);
-        frmh[s] -= 2.0*imag(z);
+      for(size_t s=1; s < stop1; ++s) {
+        Complex z=2.0*conj(Zetar[s])*W[s];
+        double Rez=real(z);
+        double Imz=imag(z);
+        // t=0
+        fr[s] += Rez;
+        frm[s] -= Rez;
+        // t=1
+        frh[s] += Imz;
+        frmh[s] -= Imz;
       });
     PARALLELIF(
       stop2-stop1 > threshold,
       for(size_t s=stop1; s < stop2; ++s) {
-        frm[s] -= 2.0*realproduct(Zetar[s],W[s]);
+        Complex z=2.0*conj(Zetar[s])*W[s];
+        double Rez=real(z);
+        // t=0
+        fr[s] += Rez;
+        frh[s] += imag(z);
+        // t=1
+        frm[s] -= Rez;
+      });
+    PARALLELIF(
+      h > threshold,
+      for(size_t s=stop2; s < h; ++s) {
+        Complex z=2.0*conj(Zetar[s])*W[s];
+        // t=0
+        fr[s] += real(z);
+        frh[s] += imag(z);
       });
   }
 }
