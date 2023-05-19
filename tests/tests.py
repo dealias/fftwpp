@@ -478,13 +478,15 @@ def realTests(program, minS, testS):
     vals+=collectTests(program, L=16, M=40, m=m, minS=minS, testS=testS)
   mvalues=[4,8,16,17]
   for m in mvalues:
-    vals+=collectTests(program, L=8, M=64, m=m, minS=minS, testS=testS)
-    vals+=collectTests(program, L=8, M=56, m=m, minS=minS, testS=testS)
     vals+=collectTests(program, L=8, M=48, m=m, minS=minS, testS=testS)
     vals+=collectTests(program, L=8, M=40, m=m, minS=minS, testS=testS)
-    vals+=collectTests(program, L=8, M=32, m=m, minS=minS, testS=testS)
     vals+=collectTests(program, L=4, M=16, m=m, minS=minS, testS=testS)
     vals+=collectTests(program, L=3, M=16, m=m, minS=minS, testS=testS)
+  mvalues=[4,8,16]
+  for m in mvalues:
+    vals+=collectTests(program, L=8, M=64, m=m, minS=minS, testS=testS)
+    vals+=collectTests(program, L=8, M=56, m=m, minS=minS, testS=testS)
+    vals+=collectTests(program, L=8, M=32, m=m, minS=minS, testS=testS)
   return vals
 
 def checkOptimizer(program, L, M, T, options):
