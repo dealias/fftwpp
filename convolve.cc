@@ -6018,14 +6018,17 @@ void fftPadReal::backward2(Complex *F, Complex *f, size_t r0, Complex *W)
     frm[0] -= Rez0;
     frh[0] += Imz0;
     if(2*m == L) {
+      cout << "2m == L" << endl;
       stop1=h;
       stop2=h;
       frmh[0] -= Imz0;
     } else if(mh < L) {
+      cout << "m+h < L" << endl;
       stop1=L-mh;
       stop2=e;
       frmh[0] -= Imz0;
     } else {
+      cout << "m+h >= L" << endl;
       stop1=1;
       stop2=L-m;
     }
