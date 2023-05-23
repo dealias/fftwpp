@@ -9,6 +9,7 @@ using namespace std;
 using namespace utils;
 using namespace Array;
 using namespace fftwpp;
+using namespace parallel;
 
 // size of problem
 size_t mx=4;

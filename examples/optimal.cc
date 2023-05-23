@@ -7,6 +7,7 @@
 using namespace std;
 using namespace utils;
 using namespace fftwpp;
+using namespace parallel;
 
 int main(int argc, char *argv[])
 {
@@ -49,16 +50,16 @@ int main(int argc, char *argv[])
           fft1d Forward(n,-1,f);
 
           for(;;) {
-            double t0=utils::seconds();
+            cpuTimer c;
             for(size_t i=0; i < K; ++i)
               for(size_t i=0; i < n; ++i) f[i]=i;
-            double t1=utils::seconds();
+            double t1=c.seconds();
             for(size_t i=0; i < K; ++i) {
               for(size_t i=0; i < n; ++i) f[i]=i;
               Forward.fft(f);
             }
-            double t=utils::seconds();
-            S.add(((t-t1)-(t1-t0))/K);
+            double t=c.seconds();
+            S.add(((t-t1)-t1)/K);
             double mean=S.mean();
             if(K*mean < 1000.0/CLOCKS_PER_SEC) {
               K *= 2;

@@ -8,7 +8,7 @@
 using namespace std;
 using namespace utils;
 using namespace fftwpp;
-
+using namespace parallel;
 
 void init(Complex *f, Complex *g, size_t m)
 {

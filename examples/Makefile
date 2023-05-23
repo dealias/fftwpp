@@ -53,9 +53,10 @@ FILES=example0 example0r example0m example0mr \
 	examplecconv3 exampleconv3 exampletranspose \
 	examplecconvfull examplecconvsame optimal
 
-FFTW=fftw++
+FFTW=fftw++ parallel
 EXTRA=$(FFTW) convolution
-ALL=$(FILES) $(EXTRA)
+HYBRID=$(FFTW) convolve
+ALL=$(FILES) $(EXTRA) $(HYBRID)
 
 all: $(FILES)
 
@@ -104,7 +105,7 @@ examplecconvfull: examplecconvfull.o $(EXTRA:=.o)
 examplecconvsame: examplecconvsame.o $(EXTRA:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-exampleconv: exampleconv.o $(EXTRA:=.o)
+exampleconv: exampleconv.o $(HYBRID:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 examplecconv2: examplecconv2.o $(EXTRA:=.o)
