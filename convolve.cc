@@ -5615,7 +5615,7 @@ void fftPadReal::init()
         Backward=&fftBase::backward1;
         FR="forward1";
         BR="backward1";
-      } else {
+      } else { // p == 2
         Forward=&fftBase::forward2;
         Backward=&fftBase::backward2;
         FR="forward2";
@@ -5916,7 +5916,7 @@ void fftPadReal::backward1(Complex *F, Complex *f, size_t r0, Complex *W)
     for(size_t d=0; d < Dstop; ++d) {
       size_t r=r0+d;
       Complex *U=W+m*d;
-      fr[0] += 2.0*real(U[0]);
+      fr[0] += 2.0*U[0].re;
       Complex *Zetar=Zetaqm+m*r;
       PARALLELIF(
         L > threshold,
@@ -5931,21 +5931,21 @@ void fftPadReal::backward1(Complex *F, Complex *f, size_t r0, Complex *W)
     double *frh=fr+h;
     size_t Lmh,stop;
     Complex z=W[0];
-    fr[0] += 2.0*real(z);
+    fr[0] += 2.0*z.re;
     if(L <= h) {
       Lmh=1;
       stop=L;
     } else {
       Lmh=L-h;
       stop=h;
-      frh[0] += 2.0*imag(z);
+      frh[0] += 2.0*z.im;
     }
     PARALLELIF(
       Lmh > threshold,
       for(size_t s=1; s < Lmh; ++s) {
         Complex z=2.0*conj(Zetar[s])*W[s];
-        fr[s] += real(z);
-        frh[s] += imag(z);
+        fr[s] += z.re;
+        frh[s] += z.im;
       });
 
     PARALLELIF(
@@ -5989,7 +5989,7 @@ void fftPadReal::backward2(Complex *F, Complex *f, size_t r0, Complex *W)
     for(size_t d=0; d < Dstop; ++d) {
       size_t r=r0+d;
       Complex *U=W+m*d;
-      fr[0] += 2.0*real(U[0]);
+      fr[0] += 2.0*U[0].re;
       Complex *Zetar=Zetaqm+m*r;
       PARALLELIF(
         m > threshold,
@@ -6015,8 +6015,8 @@ void fftPadReal::backward2(Complex *F, Complex *f, size_t r0, Complex *W)
     size_t stop1,stop2;
 
     Complex z0=2.0*W[0];
-    double Rez0=real(z0);
-    double Imz0=imag(z0);
+    double Rez0=z0.re;
+    double Imz0=z0.im;
     fr[0] += Rez0;
     frm[0] -= Rez0;
     frh[0] += Imz0;
@@ -6037,8 +6037,8 @@ void fftPadReal::backward2(Complex *F, Complex *f, size_t r0, Complex *W)
       stop1 > threshold,
       for(size_t s=1; s < stop1; ++s) {
         Complex z=2.0*conj(Zetar[s])*W[s];
-        double Rez=real(z);
-        double Imz=imag(z);
+        double Rez=z.re;
+        double Imz=z.im;
         // t=0
         fr[s] += Rez;
         frh[s] += Imz;
@@ -6050,10 +6050,10 @@ void fftPadReal::backward2(Complex *F, Complex *f, size_t r0, Complex *W)
       stop2-stop1 > threshold,
       for(size_t s=stop1; s < stop2; ++s) {
         Complex z=2.0*conj(Zetar[s])*W[s];
-        double Rez=real(z);
+        double Rez=z.re;
         // t=0
         fr[s] += Rez;
-        frh[s] += imag(z);
+        frh[s] += z.im;
         // t=1
         frm[s] -= Rez;
       });
@@ -6062,8 +6062,8 @@ void fftPadReal::backward2(Complex *F, Complex *f, size_t r0, Complex *W)
       for(size_t s=stop2; s < h; ++s) {
         Complex z=2.0*conj(Zetar[s])*W[s];
         // t=0
-        fr[s] += real(z);
-        frh[s] += imag(z);
+        fr[s] += z.re;
+        frh[s] += z.im;
       });
   }
 }
