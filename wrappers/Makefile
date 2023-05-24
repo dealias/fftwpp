@@ -34,7 +34,7 @@ CXX=mpixlcxx_r
 CC=mpixlc_r
 FC=mpixlf90_r
 CXXFLAGS= -O3 -qsmp -I..
-CFLAGS= -O3 -qsmp 
+CFLAGS= -O3 -qsmp
 FFLGAS=-qsmp
 endif
 
@@ -66,9 +66,12 @@ endif
 
 LDFLAGS += -lfftw3_omp -lfftw3 -lm -lstdc++
 
-all: _fftwpp.so cexample fexample
+all: _fftwpp.so cexample #fexample
 
 fftw++.o: ../fftw++.cc ../fftw++.h
+	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LDFLAGS)
+
+parallel.o: ../parallel.cc ../parallel.h
 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LDFLAGS)
 
 convolution.o: ../convolution.cc ../convolution.h fftw++.o
@@ -77,19 +80,20 @@ convolution.o: ../convolution.cc ../convolution.h fftw++.o
 cfftw++.o: cfftw++.cc cfftw++.h convolution.o fftw++.o
 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LDFLAGS)
 
-cexample: cexample.c cfftw++.o convolution.o fftw++.o
+cexample: cexample.c cfftw++.o convolution.o parallel.o fftw++.o
 	$(CC) $(CFLAGS) -std=c99 -o $@ $^ $(LDFLAGS)
 
-fftwpp.o: fftwpp.f90
+fftwpp.o: fftwpp.f90 parallel.o
 	$(FC)  $(FFLAGS) -c -o $@ $< $(LDFLAGS)
 
-fexample: fexample.f90 fftwpp.o cfftw++.o convolution.o fftw++.o
-	$(FC) $(FFLAGS) -o $@ $^ $(FIFLAGS) $(LDFLAGS)
+#fexample: fexample.f90 fftwpp.o cfftw++.o convolution.o fftw++.o
+#	$(FC) $(FFLAGS) -o $@ $^ $(FIFLAGS) $(LDFLAGS)
 
-_fftwpp.so: fftw++.o cfftw++.o convolution.o
+_fftwpp.so: fftw++.o cfftw++.o convolution.o parallel.o
 	$(CXX) $(CXXFLAGS) -shared -o $@ $^ $(LDFLAGS)
 
 clean:
-	rm -f cexample fexample *.so *.pyc *.o *.h.gch *.mod
+#	rm -f cexample fexample *.so *.pyc *.o *.h.gch *.mod
+	rm -f cexample *.so *.pyc *.o *.h.gch *.mod
 
 .PHONY: clean
