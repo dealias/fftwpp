@@ -66,6 +66,8 @@ endif
 
 LDFLAGS += -lfftw3_omp -lfftw3 -lm -lstdc++
 
+FILES = fftw++ parallel convolution
+
 all: _fftwpp.so cexample fexample
 
 fftw++.o: ../fftw++.cc ../fftw++.h
@@ -74,22 +76,22 @@ fftw++.o: ../fftw++.cc ../fftw++.h
 parallel.o: ../parallel.cc ../parallel.h
 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LDFLAGS)
 
-convolution.o: ../convolution.cc ../convolution.h fftw++.o
+convolution.o: ../convolution.cc ../convolution.h
 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LDFLAGS)
 
-cfftw++.o: cfftw++.cc cfftw++.h convolution.o fftw++.o
+cfftw++.o: cfftw++.cc cfftw++.h
 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LDFLAGS)
 
-cexample: cexample.c cfftw++.o convolution.o parallel.o fftw++.o
+cexample: cexample.c cfftw++.o $(FILES:=.o)
 	$(CC) $(CFLAGS) -std=c99 -o $@ $^ $(LDFLAGS)
 
 fftwpp.o: fftwpp.f90 parallel.o
 	$(FC)  $(FFLAGS) -c -o $@ $< $(LDFLAGS)
 
-fexample: fexample.f90 fftwpp.o cfftw++.o convolution.o fftw++.o parallel.o
+fexample: fexample.f90 fftwpp.o cfftw++.o $(FILES:=.o)
 	$(FC) $(FFLAGS) -o $@ $^ $(FIFLAGS) $(LDFLAGS)
 
-_fftwpp.so: fftw++.o cfftw++.o convolution.o parallel.o
+_fftwpp.so: cfftw++.o $(FILES:=.o)
 	$(CXX) $(CXXFLAGS) -shared -o $@ $^ $(LDFLAGS)
 
 clean:
