@@ -228,11 +228,13 @@ void fftBase::OptBase::optloop(size_t& m, size_t L,
                                bool centered, size_t itmax,
                                bool useTimer, bool Explicit, bool inner)
 {
+  size_t m0=m;
+  size_t m1=m;
   size_t i=(inner ? m : 0);
   // If inner == true, i is an m value and itmax is the largest m value that
   // we consider. If inner == false, i is a counter starting at zero, and
   // itmax is maximum number of m values we consider before exiting optloop.
-  while(i < itmax) {
+  while(i <= itmax+1) {
     size_t p=ceilquotient(L,m);
     // P is the effective p value
     size_t p2=p/2;
@@ -271,12 +273,22 @@ void fftBase::OptBase::optloop(size_t& m, size_t L,
         m=nextpuresize(m+1);
         i=m;
       } else {
-        if(ispure(m)) {
+        if(ispure(m) and i < itmax) {
           m=nextfftsize(m+1);
           break;
         }
-        m=nextfftsize(m+1);
+        m1=m;
         i++;
+        if(i == itmax) {
+          m=nextpuresize(m0+1);
+        } else if(i == itmax + 1 && m0 >= M) {
+          m=ceilpow2(m0+1);
+        } else if(i >= itmax) {
+          m=nextfftsize(m1+1);
+          break;
+        } else {
+          m=nextfftsize(m1+1);
+        }
       }
     }
   }
