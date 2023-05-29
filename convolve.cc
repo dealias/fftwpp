@@ -2071,7 +2071,6 @@ void fftPad::backwardInnerMany(Complex *F, Complex *f, size_t r,
 
 void fftPadCentered::init()
 {
-  std::cout << "N=" << n << std::endl;
   ZetaShift=NULL;
   char const *FR;
   char const *BR;
