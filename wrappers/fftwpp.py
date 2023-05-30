@@ -105,8 +105,8 @@ class Convolution(object):
     >>> N = 8
     >>> f = fftwpp.complex_align([N])
     >>> g = fftwpp.complex_align([N])
-    >>> for i in range(len(f)): f[i]=np.complex(i,i+1)
-    >>> for i in range(len(g)): g[i]=np.complex(i,2*i+1)
+    >>> for i in range(len(f)): f[i]=complex(i,i+1)
+    >>> for i in range(len(g)): g[i]=complex(i,2*i+1)
 
     At this point, both ``f`` and ``g`` have shape ``(N,)``::
 
@@ -116,11 +116,12 @@ class Convolution(object):
 
     >>> c = fftwpp.Convolution(f.shape)
     >>> c.convolve(f, g)
-
+    >>> norm = 1/(2*N)
+    >>> for i in range(len(f)): f[i] *= norm
+    
     The convolution is now in ``f``::
 
-    >>> np.allclose(f, [  -1.  +0.j,   -5.  +2.j,  -13.  +9.j,  -26. +24.j, \
-    -45. +50.j,-71. +90.j, -105.+147.j, -148.+224.j])
+    >>> np.allclose(f, [  -1.  +0.j,   -5.  +2.j,  -13.  +9.j,  -26. +24.j, -45. +50.j,-71. +90.j, -105.+147.j, -148.+224.j])
     True
 
     Two dimensional convolutions
@@ -135,11 +136,11 @@ class Convolution(object):
     >>> g = fftwpp.complex_align([N,N])
     >>> for i in range(len(f)):
     ...     for j in range(len(f[i])):
-    ...             f[i][j]=np.complex(i,j)
+    ...             f[i][j]=complex(i,j)
     ...
     >>> for i in range(len(g)):
     ...     for j in range(len(g[i])):
-    ...             g[i][j]=np.complex(2*i,j+1)
+    ...             g[i][j]=complex(2*i,j+1)
     ...
 
     At this point, both ``f`` and ``g`` have shape ``(N, N)``::
@@ -168,8 +169,8 @@ class Convolution(object):
     >>> for i in range(len(f)):
     ...     for j in range(len(f[i])):
     ...             for k in range(len(f[i][j])):
-    ...                     f[i][j][k]=np.complex(i+k,j+k)
-    ...                     g[i][j][k]=np.complex(2*i+k,j+1+k)
+    ...                     f[i][j][k]=complex(i+k,j+k)
+    ...                     g[i][j][k]=complex(2*i+k,j+1+k)
     ... 
 
     At this point, both ``f`` and ``g`` have shape ``(N, N, N)``::
@@ -226,18 +227,17 @@ class Convolution(object):
 
         self._convolve(self.cptr, f, g)
 
-    # def correlate(self, f, g):
-    #     """Compute the convolution of *f* and *g*.
+    def correlate(self, f, g):
+        """Compute the convolution of *f* and *g*.
 
-    #     The convolution is performed in-place (*f* is over-written).
-    #     """
+        The convolution is performed in-place (*f* is over-written).
+        """
 
-    #     assert f.shape == self.shape
-    #     assert g.shape == self.shape
+        assert f.shape == self.shape
+        assert g.shape == self.shape
 
-    #     self._correlate(self.cptr, f, g)
+        self._correlate(self.cptr, f, g)
         
-
 class HConvolution(object):
     """Implicitly zero-padded complex Hermitian-symmetric convolution class.
 
@@ -253,12 +253,14 @@ class HConvolution(object):
 
     >>> import numpy as np
     >>> import fftwpp
-    >>> N = 8
+    >>> N = 11
     >>> f = fftwpp.complex_align([N])
     >>> g = fftwpp.complex_align([N])
-    >>> for i in range(len(f)):
-    ...     f[i] = np.complex(i, i + 1)
-    ...     g[i] = np.complex(i, 2 * i + 1)
+    >>> f[0] = complex(1, 0)
+    >>> g[0] = complex(2, 0)
+    >>> for i in range(1, len(f)):
+    ...     f[i] = complex(i, i + 1)
+    ...     g[i] = complex(i, 2 * i + 1)
 
     At this point, both ``f`` and ``g`` have shape ``(N,)``::
 
@@ -267,11 +269,12 @@ class HConvolution(object):
     Now, construct the convolution object and convolve::
     >>> c = fftwpp.HConvolution(N)
     >>> c.convolve(f, g)
-
+    >>> norm = 1/(3*N)
+    >>> for i in range(len(f)): f[i] *= norm
+    
     The convolution is now in ``f``::
 
-    >>> np.allclose(f, [ 1022.  +0.j,   828. -12.j,   635. -15.j,   449.  -6.j,\
-    275. +18.j,   118. +60.j,   -17.+123.j,  -125.+210.j])
+    >>> np.allclose(f, [2662.  +0.j, 2298. -11.j, 1937. -16.j, 1583.  -9.j, 1241. +13.j,  916. +53.j, 613.+114.j,  337.+199.j,   93.+311.j, -114.+453.j, -279.+628.j])
     True
 
 
@@ -288,8 +291,8 @@ class HConvolution(object):
     >>> g = fftwpp.complex_align([2 * Nx - 1, Ny])
     >>> for i in range(len(f)):
     ...     for j in range(len(f[i])):
-    ...             f[i][j] = np.complex(i, j)
-    ...             g[i][j] = np.complex(2 * i, j + 1)
+    ...             f[i][j] = complex(i, j)
+    ...             g[i][j] = complex(2 * i, j + 1)
     ... 
 
     Now, construct the convolution object and convolve::
@@ -320,9 +323,6 @@ class HConvolution(object):
 
     Again, the convolution is now in ``f``::
 
-    >>> #np.allclose(f/N**3, np.fft.fftn(np.sin(x)*np.sin(5*y)*np.sin(z)))
-    True
-
     """
 
     def __init__(self, shape):
@@ -339,13 +339,13 @@ class HConvolution(object):
             self._convolve = clib.fftwpp_hconv1d_convolve
             self._delete = clib.fftwpp_hconv1d_delete
         elif self.dim == 2:
-            self.cptr = clib.fftwpp_create_hconv2d(c_int((shape[0] + 1) / 2),
+            self.cptr = clib.fftwpp_create_hconv2d(c_int((shape[0] + 1) // 2),
                                                    c_int(shape[1]))
             self._convolve = clib.fftwpp_hconv2d_convolve
             self._delete = clib.fftwpp_hconv2d_delete
         elif self.dim == 3:
-            self.cptr = clib.fftwpp_create_hconv3d(c_int((shape[0] + 1) / 2), 
-                                                   c_int((shape[1] + 1) / 2), 
+            self.cptr = clib.fftwpp_create_hconv3d(c_int((shape[0] + 1) // 2), 
+                                                   c_int((shape[1] + 1) // 2), 
                                                    c_int(shape[2]))
             self._convolve = clib.fftwpp_hconv3d_convolve
             self._delete = clib.fftwpp_hconv3d_delete
@@ -367,8 +367,8 @@ class HConvolution(object):
         self._convolve(self.cptr, f, g)
 
 class AutoConvolution(object):
-    """Implicitly zero-padded complex autoconvolution class.
-    FIXME: doc
+    """
+    Implicitly zero-padded complex autoconvolution class.
     """
     def __init__(self, shape):
 
