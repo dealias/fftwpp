@@ -33,11 +33,12 @@ def fftwpp_get_maxthreads():
 clib.fftwpp_create_conv1d.restype = c_void_p
 clib.fftwpp_create_conv1d.argtypes = [ c_int ]
 clib.fftwpp_create_conv1dAB.restype = c_void_p
-clib.fftwpp_create_conv1dAB.argtypes = [ c_int , c_int, c_int ]
+clib.fftwpp_create_conv1dAB.argtypes = [ c_int , c_int, c_int, c_int ]
 clib.fftwpp_conv1d_delete.argtypes = [ c_void_p ]
 clib.fftwpp_conv1d_convolve.argtypes = [ c_void_p,
                                          ndpointer(dtype = np.complex128),
                                          ndpointer(dtype = np.complex128) ]
+'''
 clib.fftwpp_conv1d_correlate.argtypes = [ c_void_p,
                                           ndpointer(dtype = np.complex128),
                                           ndpointer(dtype = np.complex128) ]
@@ -86,6 +87,7 @@ clib.fftwpp_hconv3d_delete.argtypes = [ c_void_p ]
 clib.fftwpp_hconv3d_convolve.argtypes = [ c_void_p,
                                           ndpointer(dtype = np.complex128),
                                           ndpointer(dtype = np.complex128) ]
+'''
 
 class Convolution(object):
     """Implicitly zero-padded complex convolution class.
@@ -116,9 +118,7 @@ class Convolution(object):
 
     >>> c = fftwpp.Convolution(f.shape)
     >>> c.convolve(f, g)
-    >>> norm = 1/(2*N)
-    >>> for i in range(len(f)): f[i] *= norm
-    
+
     The convolution is now in ``f``::
 
     >>> np.allclose(f, [  -1.  +0.j,   -5.  +2.j,  -13.  +9.j,  -26. +24.j, -45. +50.j,-71. +90.j, -105.+147.j, -148.+224.j])
@@ -171,7 +171,7 @@ class Convolution(object):
     ...             for k in range(len(f[i][j])):
     ...                     f[i][j][k]=complex(i+k,j+k)
     ...                     g[i][j][k]=complex(2*i+k,j+1+k)
-    ... 
+    ...
 
     At this point, both ``f`` and ``g`` have shape ``(N, N, N)``::
 
@@ -198,8 +198,9 @@ class Convolution(object):
         if self.dim == 1:
             self.cptr = clib.fftwpp_create_conv1d(*shape)
             self._convolve = clib.fftwpp_conv1d_convolve
-            self._correlate = clib.fftwpp_conv1d_correlate
+            #self._correlate = clib.fftwpp_conv1d_correlate
             self._delete = clib.fftwpp_conv1d_delete
+        '''
         elif self.dim == 2:
             self.cptr = clib.fftwpp_create_conv2d(*shape)
             self._convolve = clib.fftwpp_conv2d_convolve
@@ -212,6 +213,7 @@ class Convolution(object):
             self._delete = clib.fftwpp_conv3d_delete
         else:
             raise ValueError("invalid shape (length/dimension should be 1, 2, or 3)")
+        '''
 
     def __del__(self):
         self._delete(self.cptr)
@@ -237,7 +239,8 @@ class Convolution(object):
         assert g.shape == self.shape
 
         self._correlate(self.cptr, f, g)
-        
+
+'''
 class HConvolution(object):
     """Implicitly zero-padded complex Hermitian-symmetric convolution class.
 
@@ -271,7 +274,7 @@ class HConvolution(object):
     >>> c.convolve(f, g)
     >>> norm = 1/(3*N)
     >>> for i in range(len(f)): f[i] *= norm
-    
+
     The convolution is now in ``f``::
 
     >>> np.allclose(f, [2662.  +0.j, 2298. -11.j, 1937. -16.j, 1583.  -9.j, 1241. +13.j,  916. +53.j, 613.+114.j,  337.+199.j,   93.+311.j, -114.+453.j, -279.+628.j])
@@ -293,7 +296,7 @@ class HConvolution(object):
     ...     for j in range(len(f[i])):
     ...             f[i][j] = complex(i, j)
     ...             g[i][j] = complex(2 * i, j + 1)
-    ... 
+    ...
 
     Now, construct the convolution object and convolve::
 
@@ -329,7 +332,7 @@ class HConvolution(object):
 
         if isinstance(shape, int):
             shape = (shape,)
-            
+
         self.dim   = len(shape)
         self.shape = tuple(shape)
 
@@ -344,8 +347,8 @@ class HConvolution(object):
             self._convolve = clib.fftwpp_hconv2d_convolve
             self._delete = clib.fftwpp_hconv2d_delete
         elif self.dim == 3:
-            self.cptr = clib.fftwpp_create_hconv3d(c_int((shape[0] + 1) // 2), 
-                                                   c_int((shape[1] + 1) // 2), 
+            self.cptr = clib.fftwpp_create_hconv3d(c_int((shape[0] + 1) // 2),
+                                                   c_int((shape[1] + 1) // 2),
                                                    c_int(shape[2]))
             self._convolve = clib.fftwpp_hconv3d_convolve
             self._delete = clib.fftwpp_hconv3d_delete
@@ -377,7 +380,7 @@ class AutoConvolution(object):
 
         self.dim   = len(shape)
         self.shape = tuple(shape)
-        
+
         if self.dim == 1:
             self.cptr = clib.fftwpp_create_conv1dAB(shape[0], 1, 1)
             self._autoconvolve = clib.fftwpp_conv1d_autoconvolve
@@ -414,8 +417,8 @@ class AutoConvolution(object):
         """
         assert f.shape == self.shape
         self._autocorrelate(self.cptr, f)
+'''
 
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
-
+#if __name__ == "__main__":
+    #import doctest
+    #doctest.testmod()

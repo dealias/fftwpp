@@ -22,15 +22,15 @@ int main(int argc, char* argv[])
 {
   fftw::maxthreads=get_max_threads();
 
+#ifndef __SSE2__
+  fftw::effort |= FFTW_NO_SIMD;
+#endif
+
   size_t A=2; // Two inputs
   size_t B=1; // One output
 
   size_t L=8; // Length of input arrays
-  size_t M=16; // Minimal padded length for dealiasing via 1/2 padding
-
-#ifndef __SSE2__
-  fftw::effort |= FFTW_NO_SIMD;
-#endif
+  size_t M=15; // Minimal padded length for dealiasing via 1/2 padding
 
   // allocate arrays:
   Complex *f=ComplexAlign(L);

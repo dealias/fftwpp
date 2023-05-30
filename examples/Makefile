@@ -108,10 +108,10 @@ examplecconvsame: examplecconvsame.o $(EXTRA:=.o)
 exampleconv: exampleconv.o $(HYBRID:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-examplecconv2: examplecconv2.o $(EXTRA:=.o)
+exampleconv2: exampleconv2.o $(HYBRID:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-exampleconv2: exampleconv2.o $(EXTRA:=.o)
+examplecconv2: examplecconv2.o $(EXTRA:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 examplecconv3: examplecconv3.o $(EXTRA:=.o)

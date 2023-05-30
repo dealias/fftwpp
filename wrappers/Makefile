@@ -66,9 +66,10 @@ endif
 
 LDFLAGS += -lfftw3_omp -lfftw3 -lm -lstdc++
 
-FILES = fftw++ parallel convolution
+FILES = fftw++ parallel convolve
 
-all: _fftwpp.so cexample fexample
+#all: _fftwpp.so cexample fexample
+all: _fftwpp.so cexample
 
 fftw++.o: ../fftw++.cc ../fftw++.h
 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LDFLAGS)
@@ -76,7 +77,7 @@ fftw++.o: ../fftw++.cc ../fftw++.h
 parallel.o: ../parallel.cc ../parallel.h
 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LDFLAGS)
 
-convolution.o: ../convolution.cc ../convolution.h
+convolve.o: ../convolve.cc ../convolve.h
 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LDFLAGS)
 
 cfftw++.o: cfftw++.cc cfftw++.h
