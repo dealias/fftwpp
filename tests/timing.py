@@ -155,6 +155,8 @@ def default_outdir(p,T,I):
         outdir = "timingsh2"
     if p == "conv3" or p == "hybridconvh3":
         outdir = "timingsh3"
+    if p == "hybridconvr":
+        outdir = "timingsr1"
     if p == "tconv":
         outdir = "timings1t"
     if p == "tconv2":
