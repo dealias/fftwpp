@@ -44,7 +44,6 @@ void multNone(Complex **F, size_t n, Indices *indices,
 
 // This multiplication routine is for binary convolutions and takes
 // two Complex inputs of size n and outputs one Complex value.
-// F0[j] *= F1[j];
 void multbinary(Complex **F, size_t n, Indices *indices,
                 size_t threads)
 {
@@ -71,7 +70,6 @@ void multbinary(Complex **F, size_t n, Indices *indices,
 
 // This multiplication routine is for binary convolutions and takes
 // two real inputs of size n.
-// F0[j] *= F1[j];
 void realmultbinary(Complex **F, size_t n, Indices *indices,
                     size_t threads)
 {
@@ -93,6 +91,32 @@ void realmultbinary(Complex **F, size_t n, Indices *indices,
     n > 2*threshold,
     for(size_t j=0; j < n; ++j)
       F0[j] *= F1[j];
+    );
+}
+
+// This multiplication routine is for binary correlations and takes
+// two Complex inputs of size n and outputs one Complex value.
+void multcorrelation(Complex **F, size_t n, Indices *indices,
+                     size_t threads)
+{
+  Complex *F0=F[0];
+  Complex *F1=F[1];
+
+#if 0 // Transformed indices are available, if needed.
+  size_t N=indices->size;
+  fftBase *fft=indices->fft;
+  size_t r=indices->r;
+  for(size_t j=0; j < n; ++j) {
+    for(size_t d=0; d < N; ++d)
+      cout << indices->index[N-1-d] << ",";
+    cout << fft->index(r,j) << endl;
+  }
+#endif
+
+  PARALLELIF(
+    n > threshold,
+    for(size_t j=0; j < n; ++j)
+      F0[j] *= conj(F1[j]);
     );
 }
 
