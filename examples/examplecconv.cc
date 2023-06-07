@@ -43,8 +43,13 @@ int main(int argc, char* argv[])
 
   C.convolve(f,g);
 
+  double norm=0.5/m;
+  for(size_t i=0; i < m; i++)
+    f[i] *= norm;
+
   cout << "\noutput:" << endl;
-  for(size_t i=0; i < m; i++) cout << f[i] << endl;
+  for(size_t i=0; i < m; i++)
+    cout << f[i] << endl;
 
   deleteAlign(g);
   deleteAlign(f);
