@@ -365,10 +365,6 @@ class HConvolution(object):
 
         The convolution is performed in-place (*f* is over-written).
         """
-
-        assert f.shape == self.shape
-        assert g.shape == self.shape
-
         self._convolve(self.cptr, f, g)
 
 class AutoConvolution(object):

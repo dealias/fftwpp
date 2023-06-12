@@ -9,7 +9,7 @@ fftwpp.fftwpp_set_maxthreads(nthreads)
 
 ### 1D Code
 
-N = 7
+N = 4
 def init(f, g, mode="Default"):
     for k in range(len(f)):
         if k == 0 and mode == "Hermitian":
@@ -52,8 +52,8 @@ conv.autocorrelate(f)
 print(f)
 
 print("1D centered Hermitian-symmetric complex convolution:")
-hconv = fftwpp.HConvolution(f.shape)
 init(f, g, mode="Hermitian")
+hconv = fftwpp.HConvolution(2*f.shape[0]-1)
 hconv.convolve(f, g)
 print(f)
 

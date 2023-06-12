@@ -96,8 +96,8 @@ extern "C" {
   }
   
   // 1d Hermitian symmetric wrappers
-  HybridConvolutionHermitian *fftwpp_create_hconv1d(unsigned int nx) {
-    return new HybridConvolutionHermitian(nx);
+  HybridConvolutionHermitian *fftwpp_create_hconv1d(unsigned int Lx) {
+    return new HybridConvolutionHermitian(Lx);
   }
 
   void fftwpp_hconv1d_delete(HybridConvolutionHermitian *conv) {
@@ -106,7 +106,7 @@ extern "C" {
 
   void fftwpp_hconv1d_convolve(HybridConvolutionHermitian *hconv,
                                double __complex__ *a, double __complex__ *b) {
-    Complex *F[]={(Complex *) a,(Complex *) a};                     
+    Complex *F[]={(Complex *) a,(Complex *) b};
     hconv->convolve->convolve(F);
   }
 

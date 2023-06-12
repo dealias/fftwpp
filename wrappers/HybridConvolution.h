@@ -36,7 +36,7 @@ public:
   Convolution *convolve;
 
   HybridConvolutionHermitian(size_t L, multiplier mult=realmultbinary, size_t M=0, size_t A=2, size_t B=1, size_t threads=fftw::maxthreads) {
-    if(M == 0) M=3*ceil(L/2)-2*(L%2);
+    if(M == 0) M=3*ceilquotient(L,2)-2*(L%2);
     app=new Application(A,B,mult,threads);
     fft=new fftPadHermitian(L,M,*app);
     convolve=new Convolution(fft);

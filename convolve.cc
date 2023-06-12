@@ -113,11 +113,22 @@ void multcorrelation(Complex **F, size_t n, Indices *indices,
   }
 #endif
 
+#ifdef __SSE2__
+  PARALLELIF(
+    n > threshold,
+    for(size_t j=0; j < n; ++j) {
+      Complex *p=F0+j;
+      Complex *q=F1+j;
+      STORE(p,ZCMULT(LOAD(q),LOAD(p)));
+    }
+    );
+#else
   PARALLELIF(
     n > threshold,
     for(size_t j=0; j < n; ++j)
       F0[j] *= conj(F1[j]);
     );
+#endif
 }
 
 // Returns the smallest natural number greater than a positive number
