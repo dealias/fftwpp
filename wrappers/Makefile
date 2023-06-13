@@ -80,7 +80,7 @@ parallel.o: ../parallel.cc ../parallel.h
 convolve.o: ../convolve.cc ../convolve.h
 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LDFLAGS)
 
-cfftw++.o: cfftw++.cc cfftw++.h
+cfftw++.o: cfftw++.cc cfftw++.h HybridConvolution.h
 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LDFLAGS)
 
 cexample: cexample.c cfftw++.o $(FILES:=.o)
