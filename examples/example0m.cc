@@ -8,6 +8,7 @@
 using namespace std;
 using namespace utils;
 using namespace fftwpp;
+using namespace parallel;
 
 int main()
 {
@@ -41,14 +42,14 @@ int main()
   }
 
   // Timing test:
-  double t0=seconds();
+  cpuTimer c;
 
   for(size_t j=0; j < N; ++j) {
     Forward.fft(f);
     Backward.fftNormalized(f);
   }
 
-  double time=seconds()-t0;
+  double time=c.seconds();
 
   if(n*M < outlimit) {
     cout << endl << "back to input:" << endl;

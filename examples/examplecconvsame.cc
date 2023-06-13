@@ -10,6 +10,7 @@
 using namespace std;
 using namespace utils;
 using namespace fftwpp;
+using namespace parallel;
 
 double f0[]={0,1,2,3,4};
 

@@ -1,18 +1,18 @@
 #include "Complex.h"
-#include "convolution.h"
+#include "convolve.h"
 #include "Array.h"
 
 // Compile with:
-// g++ -I .. -fopenmp exampleconv.cc ../convolution.cc ../fftw++.cc -lfftw3 -lfftw3_omp
+// g++ -I .. -fopenmp exampleconv.cc ../convolve.cc ../fftw++.cc ../parallel.cc -lfftw3 -lfftw3_omp
 
 using namespace std;
 using namespace utils;
-using namespace Array;
 using namespace fftwpp;
+using namespace parallel;
 
-inline void init(Complex *f, Complex *g, size_t m)
+void init(Complex *f, Complex *g, size_t L)
 {
-  for(size_t k=0; k < m; k++) {
+  for(size_t k=0; k < L; k++) {
     f[k]=Complex(k,k+1);
     g[k]=Complex(k,2*k+1);
   }
@@ -22,30 +22,36 @@ int main(int argc, char* argv[])
 {
   fftw::maxthreads=get_max_threads();
 
-  // size of problem
-  size_t m=8;
-
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif
 
-  // 1d centered Hermitian-symmetric complex convolution
-  cout << "1D centered Hermitian-symmetric convolution:" << endl;
+  size_t A=2; // Two inputs
+  size_t B=1; // One output
+
+  size_t L=8; // Length of input arrays
+  size_t M=15; // Minimal padded length for dealiasing via 1/2 padding
 
   // allocate arrays:
-  Complex *f=ComplexAlign(m);
-  Complex *g=ComplexAlign(m);
+  Complex *f=ComplexAlign(L);
+  Complex *g=ComplexAlign(L);
+  Complex *F[]={f,g};
 
-  init(f,g,m);
+  cout << "1d non-centered complex convolution:" << endl;
+  init(f,g,L);
   cout << "\ninput:\nf\tg" << endl;
-  for(size_t i=0; i < m; i++)
+  for(size_t i=0; i < L; i++)
     cout << f[i] << "\t" << g[i] << endl;
 
-  ImplicitHConvolution C(m);
-  C.convolve(f,g);
+  Application app(A,B,multbinary,fftw::maxthreads);
+  fftPad fft(L,M,app);
+  Convolution C(&fft);
+
+  C.convolve(F);
 
   cout << "\noutput:" << endl;
-  for(size_t i=0; i < m; i++) cout << f[i] << endl;
+  for(size_t i=0; i < L; i++)
+    cout << f[i] << endl;
 
   deleteAlign(g);
   deleteAlign(f);

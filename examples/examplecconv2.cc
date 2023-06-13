@@ -9,6 +9,7 @@ using namespace std;
 using namespace utils;
 using namespace Array;
 using namespace fftwpp;
+using namespace parallel;
 
 // size of problem
 size_t mx=4;
@@ -45,6 +46,11 @@ int main(int argc, char* argv[])
 
   ImplicitConvolution2 C(mx,my);
   C.convolve(f,g);
+
+  double norm=0.25/(mx*my);
+  for(size_t i=0; i < mx; i++)
+    for(size_t j=0; j < my; j++)
+      f[i][j] *= norm;
 
   cout << "\noutput:" << endl << f;
 

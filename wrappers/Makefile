@@ -12,7 +12,7 @@ ifeq ($(shell $(CXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
 CXX=g++
 CC=gcc
 FC=gfortran
-CXXFLAGS+= -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
+CXXFLAGS+= -fopenmp -g -Wall -ansi -DNDEBUG -std=c++11 -fomit-frame-pointer \
 	-fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native
 CFLAGS += -fopenmp
 FFLAGS = -fopenmp
@@ -34,7 +34,7 @@ CXX=mpixlcxx_r
 CC=mpixlc_r
 FC=mpixlf90_r
 CXXFLAGS= -O3 -qsmp -I..
-CFLAGS= -O3 -qsmp 
+CFLAGS= -O3 -qsmp
 FFLGAS=-qsmp
 endif
 
@@ -66,27 +66,33 @@ endif
 
 LDFLAGS += -lfftw3_omp -lfftw3 -lm -lstdc++
 
-all: _fftwpp.so cexample fexample
+FILES = fftw++ parallel convolve
+
+#all: _fftwpp.so cexample fexample
+all: _fftwpp.so cexample
 
 fftw++.o: ../fftw++.cc ../fftw++.h
 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LDFLAGS)
 
-convolution.o: ../convolution.cc ../convolution.h fftw++.o
+parallel.o: ../parallel.cc ../parallel.h
 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LDFLAGS)
 
-cfftw++.o: cfftw++.cc cfftw++.h convolution.o fftw++.o
+convolve.o: ../convolve.cc ../convolve.h
 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LDFLAGS)
 
-cexample: cexample.c cfftw++.o convolution.o fftw++.o
+cfftw++.o: cfftw++.cc cfftw++.h HybridConvolution.h
+	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LDFLAGS)
+
+cexample: cexample.c cfftw++.o $(FILES:=.o)
 	$(CC) $(CFLAGS) -std=c99 -o $@ $^ $(LDFLAGS)
 
-fftwpp.o: fftwpp.f90
+fftwpp.o: fftwpp.f90 parallel.o
 	$(FC)  $(FFLAGS) -c -o $@ $< $(LDFLAGS)
 
-fexample: fexample.f90 fftwpp.o cfftw++.o convolution.o fftw++.o
+fexample: fexample.f90 fftwpp.o cfftw++.o $(FILES:=.o)
 	$(FC) $(FFLAGS) -o $@ $^ $(FIFLAGS) $(LDFLAGS)
 
-_fftwpp.so: fftw++.o cfftw++.o convolution.o
+_fftwpp.so: cfftw++.o $(FILES:=.o)
 	$(CXX) $(CXXFLAGS) -shared -o $@ $^ $(LDFLAGS)
 
 clean:
