@@ -5678,6 +5678,27 @@ void fftPadReal::init()
         Backward=&fftBase::backwardInner;
         FR="forwardInner";
         BR="backwardInner";
+
+        //double twopibyN=twopi/M;
+        double twopibyq=twopi/q;
+        Zetaqp0=ComplexAlign((n-1)*(p-1));
+        Zetaqp=Zetaqp0-p;
+        for(size_t r=1; r < n; ++r)
+          for(size_t t=1; t < p; ++t)
+            Zetaqp[(p-1)*r+t]=expi(r*t*twopibyq);
+
+        // L'=p, M'=q, m'=p, p'=1, q'=n
+        //if(S == C) {
+
+        //rcfftp1=new rcfft1d(p,(double *) H,G,threads);
+        //crfftp1=new crfft1d(p,G,(double *) H,threads);
+
+        fftp=new mfft1d(p,1,Cm, Cm,1, G,G,threads);
+        ifftp=new mfft1d(p,-1,Cm, Cm,1, G,G,threads);
+        //} else {
+        //  fftp=new mfft1d(p,1,C, Sm,1, G,G,threads);
+        //  ifftp=new mfft1d(p,-1,C, Sm,1, G,G,threads);
+        //}
     }
     if(repad())
       Pad=&fftBase::padSingle;
