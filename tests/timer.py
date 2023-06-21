@@ -42,6 +42,7 @@ def main():
       for T in Ts:
         time(args,d,True,T)
 
+
 def callTiming(args,program, erase,taskset,runtype=None):
   cmd=["timing.py"]
   cmdLine="timing.py"
@@ -77,7 +78,7 @@ def time(args,dim,Hermitian, T):
   old+=dimString
 
   taskset=os.getenv("TASKSET")
-  
+
   args=[f"-a{a}",f"-b{b}",f"-I{I}",f"-T{T}",f"-K{args.K}"]
   erase=[]
   if e:

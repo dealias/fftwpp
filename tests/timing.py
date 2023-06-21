@@ -13,6 +13,15 @@ import time
 def ceilquotient(a,b):
   return -(a//-b)
 
+def ceilpow2(n):
+  n-=1
+  n |= n >> 1;
+  n |= n >> 2;
+  n |= n >> 4;
+  n |= n >> 8;
+  n |= n >> 16;
+  n |= n >> 32;
+  return n+1;
 
 def forwardBackward(comment):
 
@@ -361,11 +370,14 @@ def main(argv):
 
     if outfile == "":
         if hybrid:
-            outfile = "hybrid"
+            if runtype == "explicit" or runtype == "explicito":
+                outfile = runtype
+            else:
+                outfile = "hybrid"
         else:
             outfile = runtype
 
-    if hybrid:
+    if hybrid and runtype != "explicit" and runtype != "explicito":
         optFile=outdir+os.sep+"hybridParams"
 
     goodruns = []
@@ -378,6 +390,8 @@ def main(argv):
         if rname == "":
             if hybrid:
                 rname = "Hybrid"
+                #if runtype == "explicit":
+                #    rname="explicit"
             else:
                 if runtype == "implicit":
                     rname = "Implicit"
@@ -416,7 +430,7 @@ def main(argv):
             if not appendtofile:
                 try:
                     os.remove(filename)
-                    if hybrid:
+                    if hybrid and runtype != "explicit" and runtype != "explicito":
                         os.remove(optFile)
                 except:
                     pass
@@ -576,7 +590,7 @@ def main(argv):
                     if(appendtofile):
                         with open(filename, "a") as myfile:
                             myfile.write(comment)
-                        if hybrid:
+                        if hybrid and runtype != "explicit" and runtype != "explicito":
                             with open(optFile,"a") as logfile:
                                 logfile.write(hybridParamsMessage)
                     else:
@@ -586,12 +600,16 @@ def main(argv):
                         else:
                             with open(filename, "w") as myfile:
                                 myfile.write(filenameMessage)
-                            if hybrid:
+                            if hybrid and runtype != "explicit" and runtype != "explicito":
                                 with open(optFile,"w") as logfile:
                                     logfile.write("# Optimal values for "+p+"\n")
                                     logfile.write(hybridParamsMessage)
                 if hybrid:
                     mcmd=cmd+["-L"+str(L)]+["-M"+str(M)]
+                    if runtype == "explicit":
+                        mcmd += ["-m"+str(ceilpow2(M)),"-I1"]
+                    elif runtype == "explicito":
+                        mcmd += ["-m"+str(ceilpow2(M)),"-I0"]
                 else:
                     mcmd=cmd+["-m" + str(m)]
 
@@ -628,7 +646,7 @@ def main(argv):
                         logfile.write(err.decode())
 
                     if (prc == 0): # did the process succeed?
-                        if hybrid:
+                        if hybrid and runtype != "explicit" and runtype != "explicito":
                             results = out.decode()
                             params=collectParams(results,L,M)
                             FB=forwardBackward(results)

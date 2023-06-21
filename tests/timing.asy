@@ -37,7 +37,7 @@ if(expl) {
   file fin=input(base+"/"+dir+"/explicit").line();
   real[][] a=fin.dimension(0,0);
   a=transpose(sort(a));
-  me=a[0]; e=a[1]; le=a[2]; he=a[3];
+  me=a[0]; e=a[1];// le=a[2]; he=a[3];
 }
 
 if(d == 1) {
@@ -46,29 +46,29 @@ if(d == 1) {
   if(explicito) {
     real[][] a=fin.dimension(0,0);
     a=transpose(sort(a));
-    mo=a[0]; o=a[1]; lo=a[2]; ho=a[3];
+    mo=a[0]; o=a[1];// lo=a[2]; ho=a[3];
   }
 }
-
+/*
 file fin=input(base+"/"+dir+"/implicit").line();
 bool implicit=!error(fin);
 if(implicit) {
   real[][] a=fin.dimension(0,0);
   a=transpose(sort(a));
-  mi=a[0]; i=a[1]; li=a[2]; hi=a[3];
+  mi=a[0]; i=a[1];// li=a[2]; hi=a[3];
 }
-
+*/
 file fin=input(base+"/"+dir+"/hybrid").line();
 real[][] a=fin.dimension(0,0);
 a=transpose(sort(a));
-mh=a[0]; h=a[1]; lh=a[2]; hh=a[3];
+mh=a[0]; h=a[1];// lh=a[2]; hh=a[3];
 
 file fin=input(base+"/"+dir+"/pruned",check=false).line();
 bool pruned=!error(fin);
 if(pruned) {
   real[][] a=fin.dimension(0,0);
   a=transpose(sort(a));
-  mp=a[0]; p=a[1]; lp=a[2]; hp=a[3];
+  mp=a[0]; p=a[1];// lp=a[2]; hp=a[3];
 }
 
 monoPen[0]=dashed;
@@ -96,8 +96,8 @@ if(expl) {
   real[] ne=f(me);
   me=g(me);
   e *= ne;
-  he *= ne;
-  le *= ne;
+  //he *= ne;
+  //le *= ne;
   if(drawerrorbars)
     errorbars(me,e,0*me,he-e,0*me,e-le,Pen(0));
   draw(graph(me,e,e > 0),Pentype(0),Label("explicit"+(explicito ? " (IP)" : ""),Pen(0)+Lp),mark0);
@@ -119,29 +119,29 @@ if(explicito) {
   real[] no=f(mo);
   mo=g(mo);
   o *= no;
-  ho *= no;
-  lo *= no;
+  //ho *= no;
+  //lo *= no;
   if(drawerrorbars)
     errorbars(mo,o,0*mo,ho-o,0*mo,o-lo,Pen(3));
   draw(graph(mo,o,o > 0),Pentype(3),Label("explicit (OP)",Pen(3)+Lp),mark3);
 }
-
+/*
 if(implicit) {
   real[] ni=f(mi);
   mi=g(mi);
   i *= ni;
-  hi *= ni;
-  li *= ni;
+  //hi *= ni;
+  //li *= ni;
   if(drawerrorbars)
     errorbars(mi,i,0*mi,hi-i,0*mi,i-li,Pen(2));
   draw(graph(mi,i,i > 0),Pentype(2),Label("implicit",Pen(2)+Lp),mark2);
 }
-
+*/
 real[] nh=f(mh);
 mh=g(mh);
 h *= nh;
-hh *= nh;
-lh *= nh;
+//hh *= nh;
+//lh *= nh;
 if(drawerrorbars)
   errorbars(mh,h,0*mh,hh-h,0*mh,h-lh,Pen(1));
 draw(graph(mh,h,h > 0),Pentype(1),Label("hybrid",Pen(1)+Lp),mark1);
