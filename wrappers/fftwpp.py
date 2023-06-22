@@ -78,6 +78,8 @@ clib.fftwpp_hconv2d_delete.argtypes = [ c_void_p ]
 clib.fftwpp_hconv2d_convolve.argtypes = [ c_void_p,
                                           ndpointer(dtype = np.complex128),
                                           ndpointer(dtype = np.complex128) ]
+clib.fftwpp_HermitianSymmetrizeX.argtypes = [ c_int, c_int, c_int,
+                                          ndpointer(dtype = np.complex128) ]
 clib.fftwpp_create_correlate3d.restype = c_void_p
 clib.fftwpp_create_correlate3d.argtypes = [ c_int , c_int, c_int]
 
@@ -100,6 +102,10 @@ clib.fftwpp_hconv3d_delete.argtypes = [ c_void_p ]
 clib.fftwpp_hconv3d_convolve.argtypes = [ c_void_p,
                                           ndpointer(dtype = np.complex128),
                                           ndpointer(dtype = np.complex128) ]
+clib.fftwpp_HermitianSymmetrizeXY.argtypes = [ c_int, c_int, c_int, c_int,
+                                               c_int,
+                                               ndpointer(dtype = np.complex128)
+                                              ]
 
 class Convolution(object):
     """Implicitly zero-padded complex convolution class.
@@ -340,22 +346,22 @@ class HConvolution(object):
         self.shape = tuple(shape)
 
         if self.dim == 1:
-            self.cptr = clib.fftwpp_create_hconv1d(c_int(shape[0]))
+            self.cptr = clib.fftwpp_create_hconv1d(c_int(2*shape[0]-1))
             self._convolve = clib.fftwpp_hconv1d_convolve
             self._delete = clib.fftwpp_hconv1d_delete
         elif self.dim == 2:
-            self.cptr = clib.fftwpp_create_hconv2d(c_int((shape[0] + 1) // 2),
-                                                   c_int(shape[1]))
+            self.cptr = clib.fftwpp_create_hconv2d(c_int(shape[0]),
+                                                   c_int(2*shape[1]-1))
             self._convolve = clib.fftwpp_hconv2d_convolve
             self._delete = clib.fftwpp_hconv2d_delete
         elif self.dim == 3:
-            self.cptr = clib.fftwpp_create_hconv3d(c_int((shape[0] + 1) // 2),
-                                                   c_int((shape[1] + 1) // 2),
-                                                   c_int(shape[2]))
+            self.cptr = clib.fftwpp_create_hconv3d(c_int(shape[0]),
+                                                   c_int(shape[1]),
+                                                   c_int(2*shape[2]-1))
             self._convolve = clib.fftwpp_hconv3d_convolve
             self._delete = clib.fftwpp_hconv3d_delete
         else:
-            raise ValueError("invalid shape (length/dimension should be 1, 2, or 3)")
+            raise ValueError("invalid shape (dimension should be 1, 2, or 3)")
 
     def __del__(self):
         self._delete(self.cptr)
@@ -365,6 +371,24 @@ class HConvolution(object):
 
         The convolution is performed in-place (*f* is over-written).
         """
+        if self.dim == 2:
+            Lx=f.shape[0]
+            Hx=int((Lx+1)/2)
+            Hy=f.shape[1]
+            x0=int(Lx/2)
+            clib.fftwpp_HermitianSymmetrizeX(Hx,Hy,x0,f)
+            clib.fftwpp_HermitianSymmetrizeX(Hx,Hy,x0,g)
+        elif self.dim == 3:
+            Lx=f.shape[0]
+            Hx=int((Lx+1)/2)
+            Ly=f.shape[1]
+            Hy=int((Ly+1)/2)
+            Hz=f.shape[2]
+            x0=int(Lx/2)
+            y0=int(Ly/2)
+            clib.fftwpp_HermitianSymmetrizeXY(Hx,Hy,Hz,x0,y0,f)
+            clib.fftwpp_HermitianSymmetrizeXY(Hx,Hy,Hz,x0,y0,g)
+
         self._convolve(self.cptr, f, g)
 
 class AutoConvolution(object):
@@ -396,7 +420,7 @@ class AutoConvolution(object):
             self._delete = clib.fftwpp_conv3d_delete
         else:
             raise ValueError("invalid shape (length/dimension should be 1, 2, or 3)")
-        
+
     def __del__(self):
         self._delete(self.cptr)
 

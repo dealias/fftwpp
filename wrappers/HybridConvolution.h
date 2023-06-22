@@ -59,9 +59,6 @@ public:
 
   HybridConvolution2(size_t Lx, size_t Ly, multiplier mult=multbinary, size_t Mx=0, size_t My=0, size_t A=2, size_t B=1, size_t threads=fftw::maxthreads)
   {
-    // M=3*(L+1)/2-2 // odd
-    // M = 3*L/2 // even
-    //3*ceil(L/2)-2*(L%2)
     if(Mx == 0) Mx=A*Lx-A+1;
     if(My == 0) My=A*Ly-A+1;
     appx=new Application(A, B, multNone, threads);
@@ -89,11 +86,13 @@ class HybridConvolutionHermitian2 {
 public:
   Convolution2 *convolve2;
 
-  HybridConvolutionHermitian2(size_t Lx, size_t Ly, multiplier mult=realmultbinary, size_t Mx=0, size_t My=0, size_t A=2, size_t B=1, size_t threads=fftw::maxthreads)
+  HybridConvolutionHermitian2(size_t Lx, size_t Ly,
+                              multiplier mult=realmultbinary, size_t Mx=0,
+                              size_t My=0, size_t A=2, size_t B=1,
+                              size_t threads=fftw::maxthreads)
   {
-    if(Mx == 0) Mx=3*ceil(Lx/2)-2*(Lx%2);
-    if(My == 0) My=3*ceil(Ly/2)-2*(Ly%2); 
-    //size_t Hx=ceilquotient(Lx,2);
+    if(Mx == 0) Mx=3*ceilquotient(Lx,2)-2*(Lx%2);
+    if(My == 0) My=3*ceilquotient(Ly,2)-2*(Ly%2);
     size_t Hy=ceilquotient(Ly,2);
     appx = new Application(A,B,multNone,threads);
     fftx = new fftPadCentered(Lx,Mx,*appx,Hy,Hy);
@@ -126,12 +125,8 @@ public:
     if(Mx == 0) Mx=A*Lx-A+1;
     if(My == 0) My=A*Ly-A+1;
     if(Mz == 0) Mz=A*Lz-A+1;
-    size_t Sy = 0;
-    size_t Sx = 0;
-    if(Sy == 0) Sy=Lz;
-    if(Sx == 0) Sx=Ly*Sy;
     appx = new Application(A, B, multNone, threads);
-    fftx = new fftPad(Lx, Mx, *appx, Sy == Lz ? Ly*Lz : Lz,Sx);
+    fftx = new fftPad(Lx, Mx, *appx, Ly*Lz);
     appy = new Application(A, B, multNone, *appx);
     ffty = new fftPad(Ly, My, *appy, Lz);
     appz = new Application(A, B, mult, *appy);
@@ -162,20 +157,14 @@ public:
 
   HybridConvolutionHermitian3(size_t Lx, size_t Ly, size_t Lz, multiplier mult=realmultbinary, size_t Mx=0, size_t My=0, size_t Mz=0, size_t A=2, size_t B=1, size_t threads=fftw::maxthreads)
   {
-    if(Mx == 0) Mx=3*ceil(Lx/2)-2*(Lx%2);
-    if(My == 0) My=3*ceil(Ly/2)-2*(Ly%2);
-    if(Mz == 0) Mz=3*ceil(Lz/2)-2*(Lz%2);
-    size_t Sy = 0;
-    size_t Sx = 0;
-    //size_t Hx=ceilquotient(Lx,2);
-    //size_t Hy=ceilquotient(Ly,2);
+    if(Mx == 0) Mx=3*ceilquotient(Lx,2)-2*(Lx%2);
+    if(My == 0) My=3*ceilquotient(Ly,2)-2*(Ly%2);
+    if(Mz == 0) Mz=3*ceilquotient(Lz,2)-2*(Lz%2);
     size_t Hz=ceilquotient(Lz,2);
-    if(Sy == 0) Sy=Hz;
-    if(Sx == 0) Sx=Ly*Sy;
     appx = new Application(A, B, multNone, threads);
-    fftx = new fftPadCentered(Lx, Mx, *appx, Sy == Hz ? Ly*Hz : Hz,Sx);
+    fftx = new fftPadCentered(Lx, Mx, *appx, Ly*Hz);
     appy = new Application(A, B, multNone, *appx);
-    ffty = new fftPadCentered(Ly, My, *appy, Hz, Sy);
+    ffty = new fftPadCentered(Ly, My, *appy, Hz);
     appz = new Application(A, B, mult, *appy);
     fftz = new fftPadHermitian(Lz, Mz, *appz);
     convolve3 = new Convolution3(fftx, ffty, fftz);
