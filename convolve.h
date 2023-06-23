@@ -426,14 +426,19 @@ public:
     return l;
   }
 
+  // Number of complex outputs per residue per copy
+  virtual size_t blocksize(size_t) {
+    return noutputs();
+  }
+
   // Number of outputs per iteration per copy
   virtual size_t noutputs(size_t r) {
     return l*(r == 0 ? D0 : D);
   }
 
   // Number of complex outputs per iteration
-  size_t complexOutputs(size_t r) {
-    return b*(r == 0 ? D0 : D);
+  virtual size_t complexOutputs(size_t r) {
+    return S*noutputs(r);
   }
 
   size_t workSizeV() {
@@ -810,6 +815,11 @@ public:
     exit(-1);
   }
 
+  // Number of complex outputs per iteration
+  size_t complexOutputs(size_t r) {
+    return b*(r == 0 ? D0 : D);
+  }
+
   size_t workSizeW() {
     return inplace ? 0 : B*D;
   }
@@ -936,11 +946,11 @@ public:
     return S*utils::ceilquotient(L,2);
   }
 
-  size_t workSizeW() {
-    return inplace ? 0 : q == 2 ? outputSize()/2 : outputSize();
+  virtual size_t outputSize() {
+    return q == 2 ? e : b*D;
   }
 
-  virtual bool conjugates() {
+  bool conjugates() {
     return false;
   }
 
@@ -952,14 +962,15 @@ public:
     return r > 1 ? D : r == 1 ? D0 : 1;
   }
 
-  // Number of outputs per iteration per copy
-  virtual size_t noutputs(size_t r) {
-    return l*((r == 0 || r == n/2) ? 1 : r == 1 ? D0 : D);
+  size_t blocksize(size_t r) {
+    if(r == 0) return e;
+    if(2*r == q) return e-1;
+    return l;
   }
 
-  // Number of complex outputs per iteration
-  size_t complexOutputs(size_t r) {
-    return noutputs(r);
+  // Number of outputs per iteration per copy
+  size_t noutputs(size_t r) {
+   return blocksize(r)*((r == 0 || 2*r == n) ? 1 : r == 1 ? D0 : D);
   }
 };
 
@@ -976,7 +987,6 @@ protected:
   size_t n;
   size_t R;
   size_t r;
-  size_t blocksize;
   Complex **F,**Fp;
   Complex *FpB;
   Complex **V;
@@ -1022,7 +1032,6 @@ public:
     Forward=fft->Forward;
     Backward=fft->Backward;
 
-    blocksize=fft->noutputs();
     R=fft->residueBlocks();
 
     scale=1.0/normalization();
@@ -1109,6 +1118,7 @@ public:
     size_t incr=fft->b;
     size_t stop=fft->complexOutputs(r);
     indices->r=r;
+    size_t blocksize=fft->blocksize(r);
     for(size_t d=0; d < stop; d += incr) {
       Complex *G[A];
       for(size_t a=0; a < A; ++a)

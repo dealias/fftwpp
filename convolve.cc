@@ -5628,9 +5628,10 @@ void fftPadReal::init()
     deleteAlign(G);
     dr=D0=R=n=1;
   } else {
-    l=m*p;
+    size_t P=p == 2 ? 1 : p;
+    l=m*P;
     b=S*l;
-    size_t d=C*D*p;
+    size_t d=C*D*P;
 
     Complex *G,*H;
     size_t size=b*D;
@@ -5695,9 +5696,9 @@ void fftPadReal::init()
 
         deleteAlign(K);
 
-        size_t P=ceilquotient(p,2);
-        fftmP1=new mfft1d(m,1,P-1, 1,m, G,H,threads);
-        ifftmP1=new mfft1d(m,-1,P-1, 1,m, H,G,threads);
+        size_t P1=ceilquotient(p,2)-1;
+        fftmP1=new mfft1d(m,1,P1, 1,m, G,H,threads);
+        ifftmP1=new mfft1d(m,-1,P1, 1,m, H,G,threads);
 
         fftp=new mfft1d(p,1,Cm, Cm,1, G,G,threads);
         ifftp=new mfft1d(p,-1,Cm, Cm,1, G,G,threads);
@@ -5710,7 +5711,7 @@ void fftPadReal::init()
     D0=(n-1)/2 % D;
     if(D0 == 0) D0=D;
     if(D0 != D) {
-      size_t x=D0*p;
+      size_t x=D0*P;
       fftm0=new mfft1d(m,1,x, 1,m, G,H,threads);
       ifftm0=new mfft1d(m,-1,x, 1,m, H,G,threads);
     } else
@@ -6375,6 +6376,7 @@ Convolution::~Convolution()
 void Convolution::convolveRaw(Complex **g)
 {
   if(q == 1) {
+    size_t blocksize=fft->blocksize(0);
     forward(g,F,0,0,A);
     (*mult)(F,blocksize,&indices,threads);
     backward(F,g,0,0,B,W);
@@ -6383,6 +6385,7 @@ void Convolution::convolveRaw(Complex **g)
       forward(g,F,0,0,A);
       size_t final=fft->n-1;
       for(size_t r=0; r < final; ++r) {
+        size_t blocksize=fft->blocksize(r);
         Complex *h[A];
         for(size_t a=0; a < A; ++a)
           h[a]=g[a]+r*blocksize;
@@ -6390,6 +6393,7 @@ void Convolution::convolveRaw(Complex **g)
         (*mult)(h,blocksize,&indices,threads);
       }
       indices.r=final;
+      size_t blocksize=fft->blocksize(final);
       (*mult)(F,blocksize,&indices,threads);
       backward(F,g,0,0,B);
     } else {
