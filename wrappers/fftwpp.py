@@ -371,6 +371,10 @@ class HConvolution(object):
 
         The convolution is performed in-place (*f* is over-written).
         """
+        # Enforce Hermitian symmetry on input
+        if self.dim == 1:
+            f[0]=f[0].real
+            g[0]=g[0].real
         if self.dim == 2:
             Lx=f.shape[0]
             Hx=int((Lx+1)/2)
