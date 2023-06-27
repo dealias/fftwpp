@@ -473,20 +473,24 @@ def hermitianTests(program, minS, testS):
 def realTests(program, minS, testS):
   assert program.real
   vals=[]
-  mvalues=[8,10,12]
+  mvalues=[2,4,8,10,12]
   for m in mvalues:
     vals+=collectTests(program, L=16, M=40, m=m, minS=minS, testS=testS)
-  mvalues=[4,8,16,17]
+  mvalues=[2,3,4,8,16,17]
   for m in mvalues:
     vals+=collectTests(program, L=8, M=48, m=m, minS=minS, testS=testS)
     vals+=collectTests(program, L=8, M=40, m=m, minS=minS, testS=testS)
     vals+=collectTests(program, L=4, M=16, m=m, minS=minS, testS=testS)
     vals+=collectTests(program, L=3, M=16, m=m, minS=minS, testS=testS)
-  mvalues=[4,8,16]
+  mvalues=[2,4,8,16]
   for m in mvalues:
     vals+=collectTests(program, L=8, M=64, m=m, minS=minS, testS=testS)
     vals+=collectTests(program, L=8, M=56, m=m, minS=minS, testS=testS)
     vals+=collectTests(program, L=8, M=32, m=m, minS=minS, testS=testS)
+
+  vals+=collectTests(program, L=9, M=27, m=3, minS=minS, testS=testS)
+  vals+=collectTests(program, L=9, M=81, m=3, minS=minS, testS=testS)
+
   return vals
 
 def checkOptimizer(program, L, M, T, options):
