@@ -6284,7 +6284,6 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
 
     ifftmP1->fft(F0+m,W+m);
 
-    cout << endl;
     PARALLELIF(
       pm1*(m-1) > threshold,
       for(size_t t=1; t < P; ++t) {
@@ -6295,7 +6294,23 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
           Ft[s] *= Zetar[s]; // Compensate for incorrect transform sign.
           //Ft[s] *= conj(Zetar[s]);
       });
+    if(p == 2*P) {
+      iffte->fft(F0+P*m,W+P*m);
 
+      size_t h=e-1;
+
+      Complex *Zetar=Zetaqm+m*n*P;
+      Complex *Wt=W+P*m;
+      Complex *Wth=Wt+h;
+
+      PARALLELIF(
+        h > threshold,
+      for(size_t s=0; s < h; ++s) {
+        Complex z=2.0*conj(Zetar[s])*Wt[s];
+        Wt[s] = z.re;
+        Wth[s] = z.im;
+      });
+    }
     crfftp->fft(W);
     PARALLELIF(
       pm1*m > threshold,
