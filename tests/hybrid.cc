@@ -28,8 +28,8 @@ int main(int argc, char *argv[])
 
   cout << endl << "Minimal Explicit:" << endl;
   // Minimal explicit padding
-  fftPad *fft0=Centered ? new fftPadCentered(L,M,C,S,M,1,1,1,app) :
-    new fftPad(L,M,C,S,M,1,1,1,app);
+  fftPad *fft0=Centered ? new fftPadCentered(L,M,C,S,M,1,1,app) :
+    new fftPad(L,M,C,S,M,1,1,app);
 
   double median0=fft0->report();
 
@@ -66,8 +66,8 @@ int main(int argc, char *argv[])
     for(size_t c=0; c < C; ++c)
       f[S*j+c]=Complex(j+1+c,j+2+c);
 
-  fftPad* fft2=Centered ? new fftPadCentered(L,fft->M,C,S,fft->M,1,1,1,app) :
-    new fftPad(L,fft->M,C,S,fft->M,1,1,1,app);
+  fftPad* fft2=Centered ? new fftPadCentered(L,fft->M,C,S,fft->M,1,1,app) :
+    new fftPad(L,fft->M,C,S,fft->M,1,1,app);
 
   Complex *F2=ComplexAlign(fft2->outputSize());
 

@@ -155,6 +155,9 @@ public:
 
   void checkParameters();
 
+  static void parameters(size_t L, size_t M, size_t m, bool centered,
+                         size_t &p, size_t& n, size_t& q);
+
   void common();
 
   void initZetaqm(size_t q, size_t m);
@@ -162,7 +165,7 @@ public:
   class OptBase {
   public:
     size_t counter;
-    size_t m,q,D;
+    size_t m,D;
     bool inplace;
     bool mForced;
     bool DForced;
@@ -172,7 +175,7 @@ public:
     double T;
 
     virtual double time(size_t L, size_t M, size_t C,
-                        size_t S, size_t m, size_t q,
+                        size_t S, size_t m,
                         size_t D, bool inplace, Application &app)=0;
 
     virtual bool valid(size_t m, size_t p, size_t q, size_t n, size_t D, size_t S)=0;
@@ -227,11 +230,10 @@ public:
     app(app), centered(centered) {checkParameters();}
 
   fftBase(size_t L, size_t M, size_t C, size_t S,
-          size_t m, size_t q, size_t D, bool inplace,
+          size_t m, size_t D, bool inplace,
           Application &app, bool centered=false) :
     ThreadBase(app.threads), L(L), M(M), C(C),  S(S == 0 ? C : S), m(m),
-    p(utils::ceilquotient(L,m)), q(q), D(D), inplace(inplace),
-    app(app), centered(centered) {
+    D(D), inplace(inplace), app(app), centered(centered) {
     checkParameters();
     this->app.D=D;
   }
@@ -484,8 +486,8 @@ public:
     }
 
     double time(size_t L, size_t M, size_t C, size_t S,
-                size_t m, size_t q,size_t D, bool inplace, Application &app) {
-      fftPad fft(L,M,C,S,m,q,D,inplace,app);
+                size_t m, size_t D, bool inplace, Application &app) {
+      fftPad fft(L,M,C,S,m,D,inplace,app);
       double threshold=DBL_MAX;
       return timePad(&fft,threshold);
     }
@@ -497,9 +499,9 @@ public:
 
   // Compute an fft padded to N=m*q >= M >= L
   fftPad(size_t L, size_t M, size_t C, size_t S,
-         size_t m, size_t q, size_t D, bool inplace,
+         size_t m, size_t D, bool inplace,
          Application &app, bool centered=false) :
-    fftBase(L,M,C,S,m,q,D,inplace,app,centered) {
+    fftBase(L,M,C,S,m,D,inplace,app,centered) {
     Opt opt;
     init();
     if(q > 1 && !opt.valid(m,p,q,n,D,this->S)) invalid();
@@ -515,7 +517,6 @@ public:
     m=opt.m;
     if(Explicit)
       M=m;
-    q=opt.q;
     D=opt.D;
     inplace=opt.inplace;
     init();
@@ -588,8 +589,8 @@ public:
     }
 
     double time(size_t L, size_t M, size_t C, size_t S,
-                size_t m, size_t q, size_t D, bool inplace, Application &app) {
-      fftPadCentered fft(L,M,C,S,m,q,D,inplace,app);
+                size_t m, size_t D, bool inplace, Application &app) {
+      fftPadCentered fft(L,M,C,S,m,D,inplace,app);
       double threshold=DBL_MAX;
       return timePad(&fft,threshold);
     }
@@ -597,9 +598,9 @@ public:
 
   // Compute an fft padded to N=m*q >= M >= L
   fftPadCentered(size_t L, size_t M, size_t C,
-                 size_t S, size_t m, size_t q,
+                 size_t S, size_t m,
                  size_t D, bool inplace, Application &app) :
-    fftPad(L,M,C,S,m,q,D,inplace,app,true) {
+    fftPad(L,M,C,S,m,D,inplace,app,true) {
     Opt opt;
     init();
     if(q > 1 && !opt.valid(m,p,q,n,D,this->S)) invalid();
@@ -614,7 +615,6 @@ public:
     m=opt.m;
     if(Explicit)
       M=m;
-    q=opt.q;
     D=opt.D;
     inplace=opt.inplace;
     fftPad::init();
@@ -699,16 +699,15 @@ public:
     }
 
     double time(size_t L, size_t M, size_t C, size_t,
-                size_t m, size_t q, size_t D, bool inplace, Application &app) {
-      fftPadHermitian fft(L,M,C,m,q,D,inplace,app);
+                size_t m, size_t D, bool inplace, Application &app) {
+      fftPadHermitian fft(L,M,C,m,D,inplace,app);
       return timePad(&fft,threshold);
     }
   };
 
   fftPadHermitian(size_t L, size_t M, size_t C,
-                  size_t m, size_t q, size_t D,
-                  bool inplace, Application &app) :
-    fftBase(L,M,C,C,m,q,D,inplace,app,true) {
+                  size_t m, size_t D, bool inplace, Application &app) :
+    fftBase(L,M,C,C,m,D,inplace,app,true) {
     Opt opt;
     init();
     if(q > 1 && !opt.valid(m,p,q,n,D,C)) invalid();
@@ -721,7 +720,6 @@ public:
     m=opt.m;
     if(Explicit)
       M=m;
-    q=opt.q;
     D=opt.D;
     inplace=opt.inplace;
     init();

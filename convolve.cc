@@ -257,10 +257,9 @@ void fftBase::OptBase::optloop(size_t& m, size_t L,
   // we consider. If inner == false, i is a counter starting at zero, and
   // itmax is maximum number of m values we consider before exiting optloop.
   while(i < itmax) {
-    size_t p=ceilquotient(L,m);
-    // P is the effective p value
-    size_t P=(centered && p == 2*(p/2)) || p == 2 ? (p/2) : p;
-    size_t n=ceilquotient(M,m*P);
+
+    size_t p,n,q;
+    parameters(L,M,m,centered,p,n,q);
 
     if(!Explicit && app.m >= 1 && app.m < M && centered && p%2 != 0) {
       cerr << "Odd values of p are incompatible with the centered and Hermitian routines." << endl;
@@ -271,10 +270,9 @@ void fftBase::OptBase::optloop(size_t& m, size_t L,
     // p must be a power of 2, 3, 5, or 7.
     // p must be even in the centered case.
     // p != q.
-    if(inner && (((!ispure(p) || p == P*n) && !mForced) || (centered && p%2 != 0)))
+    if(inner && (((!ispure(p) || p == q) && !mForced) || (centered && p%2 != 0)))
       i=m=nextpuresize(m+1);
     else {
-      size_t q=(inner ? P*n : ceilquotient(M,m));
       size_t Dstart=DForced ? app.D : 1;
       size_t Dstop=DForced ? app.D : n;
       size_t Dstop2=2*Dstop;
@@ -354,12 +352,11 @@ void fftBase::OptBase::check(size_t L, size_t M,
   //cout << "m=" << m << ", p=" << p << ", q=" << q << ", D=" << D << " I=" << inplace << endl;
   if(valid(m,p,q,n,D,S)) {
     if(useTimer) {
-      double t=time(L,M,C,S,m,q,D,inplace,app);
+      double t=time(L,M,C,S,m,D,inplace,app);
       if(showOptTimes)
         cout << "m=" << m << ", p=" << p << ", q=" << q << ", C=" << C << ", S=" << S << ", D=" << D << ", I=" << inplace << ": t=" << t*1.0e-9 << endl;
       if(t < T) {
         this->m=m;
-        this->q=q;
         this->D=D;
         this->inplace=inplace;
         T=t;
@@ -370,7 +367,6 @@ void fftBase::OptBase::check(size_t L, size_t M,
         mlist.push_back(m);
       if(counter == 1) {
         this->m=m;
-        this->q=q;
         this->D=D;
         this->inplace=inplace;
       }
@@ -378,12 +374,20 @@ void fftBase::OptBase::check(size_t L, size_t M,
   }
 }
 
+void fftBase::parameters(size_t L, size_t M, size_t m, bool centered,
+                         size_t &p, size_t& n, size_t& q)
+{
+  p=ceilquotient(L,m);
+  size_t P=(centered && p == 2*(p/2)) || p == 2 ? (p/2) : p; // effective p
+  n=ceilquotient(M,P*m);
+  q=P*n;
+}
+
 void fftBase::OptBase::scan(size_t L, size_t M, Application& app,
                             size_t C, size_t S, bool Explicit,
                             bool centered)
 {
   m=M;
-  q=1;
   D=1;
   inplace=false;
   T=DBL_MAX;
@@ -415,7 +419,9 @@ void fftBase::OptBase::scan(size_t L, size_t M, Application& app,
     }
   }
 
-  size_t p=ceilquotient(L,m);
+  size_t p,q,n;
+  parameters(L,M,m,centered,p,n,q);
+
   size_t mpL=m*p-L;
   cout << "Optimal padding: ";
   if(p == q)
@@ -461,15 +467,15 @@ void fftBase::checkParameters()
 
 void fftBase::common()
 {
+  parameters(L,M,m,centered,p,n,q);
+
   if(q*m < M) {
     cerr << "Invalid parameters: " << endl
          << " q=" << q << " m=" << m << " M=" << M << endl;
     exit(-1);
   }
-  p=ceilquotient(L,m);
   Cm=C*(size_t) m;
   Sm=S*(size_t) m;
-  n=q/p;
   M=m*q;
   Pad=&fftBase::padNone;
   Zetaqp=NULL;
@@ -510,7 +516,7 @@ void fftPad::init()
     deleteAlign(G);
     if(!inplace)
       deleteAlign(H);
-    dr=D=D0=R=n=1;
+    dr=D=D0=R=1;
     l=M;
     b=S*l;
   } else {
@@ -523,10 +529,8 @@ void fftPad::init()
     size_t p2=p/2;
 
     if(p == 2) {
-      n=q;
       P1=P=1;
     } else if(centered && p == 2*p2) {
-      n=q/p2;
       P=p2;
       P1=P+1;
     } else
@@ -634,7 +638,6 @@ void fftPad::init()
           }
         }
       } else { // p == 1
-        n=q;
         if(S == 1) {
           if(Overwrite()) {
             Forward=&fftBase::forward1All;
@@ -4466,7 +4469,7 @@ void fftPadHermitian::init()
     if(!inplace)
       deleteAlign(H);
     deleteAlign(G);
-    dr=D0=R=n=1;
+    dr=D0=R=1;
   } else {
     dr=Dr();
 
@@ -4489,7 +4492,6 @@ void fftPadHermitian::init()
       Backward=&fftBase::backwardInner;
       FR="forwardInner";
       BR="backwardInner";
-      n=q/p2;
 
       Zetaqp0=ComplexAlign((n-1)*p2);
       Zetaqp=Zetaqp0-p2-1;
@@ -4504,7 +4506,6 @@ void fftPadHermitian::init()
       fftp=new mfft1d(p2,1,Ce, Ce,1, G,G,threads);
       ifftp=new mfft1d(p2,-1,Ce, Ce,1, G,G,threads);
     } else { // p=2
-      n=q;
       if(C == 1) {
         Forward=&fftBase::forward2;
         Backward=&fftBase::backward2;
