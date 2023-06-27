@@ -5638,10 +5638,13 @@ void fftPadReal::init()
 
     G=ComplexAlign(size);
     H=inplace ? G : ComplexAlign(size);
-
-    rcfftm1=new rcfft1d(m,(double *) H,G,threads);
-    crfftm1=new crfft1d(m,G,(double *) H,threads);
-
+    if(p <= 2) {
+      rcfftm1=new rcfft1d(m,(double *) H,G,threads);
+      crfftm1=new crfft1d(m,G,(double *) H,threads);
+    } else {
+      rcfftm2=new mrcfft1d(m,1,2,1,1,1, (double *) H,G,threads);
+      crfftm2=new mcrfft1d(p,1,1,2,1,1, G,(double *) H,threads);
+    }
     if(S == 1) {
       fftm=new mfft1d(m,1,d, 1,m, G,H,threads);
       ifftm=new mfft1d(m,-1,d, 1,m, H,G,threads);
@@ -5952,7 +5955,6 @@ void fftPadReal::forward2(Complex *f, Complex *F, size_t r0, Complex *W)
 void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
 {
   if(W == NULL) W=F0;
-
   double *fr=(double *) f;
   Complex *W0=W;
   size_t dr0=dr;
@@ -5989,9 +5991,10 @@ void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
       for(size_t s=stop; s < m; ++s)
         Ft[s]=0.0;
       );
+
     rcfftp->fft(W);
 
-    rcfftm1->fft(W);
+    rcfftm2->fft(W,F0);
 
     for(size_t t=1; t < P; ++t) {
       size_t R=n*t;
@@ -6004,12 +6007,10 @@ void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
       //q/2 case
     }
 
-//    W += b;
     r0=1;
     dr0=D0-1;
-    fftmP1->fft(Wr+m,F0+m);
-//    fftm1=D0 == D ? fftm : fftm0;
-//    fftm1->fft(W0,F0);
+    fftmP1->fft(W+m,F0+m);
+
   } else if (r0 < n2) {
     fftm1=fftm;
 
@@ -6058,6 +6059,7 @@ void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
       });
     }
     fftm1->fft(W0,F0);
+
   } else {
     // 2*r0 == n
   }
