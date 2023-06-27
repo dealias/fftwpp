@@ -6001,11 +6001,23 @@ void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
         Ft[s] *= conj(Zetar[s]); //Compensate for incorrect transform sign.
         //Ft[s] *= Zetar[s];
     }
-    if(p == 2*P) {
-      //q/2 case
-    }
 
     fftmP1->fft(W+m,F0+m);
+
+    if(p == 2*P) {
+      size_t h=e-1;
+      Complex *Zetar=Zetaqm+m*n*P;
+      Complex *Ft=W+P*m;
+      double *Wt=Wr+2*P*m;
+      double *Wth=Wt+2*h;
+
+      PARALLELIF(
+        h > threshold,
+        for(size_t s=0; s < h; ++s)
+          Ft[s]=Zetar[s]*Complex(Wt[2*s],Wth[2*s]);
+        );
+      ffte->fft(W+P*m,F0+P*m);
+    }
 
   } else if (r0 < n2) {
     bool remainder=r0 == 1 && D0 != D;
