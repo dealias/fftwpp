@@ -6013,14 +6013,13 @@ void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
 
   } else if (r0 < n2) {
     fftm1=fftm;
-
   for(size_t d=0; d < dr0; ++d) {
     Complex *F=W+b*d;
     size_t r=r0+d;
     PARALLELIF(
       m > threshold,
       for(size_t s=0; s < m; ++s)
-        F[s]=f[s];
+        F[s]=fr[s];
       );
     Complex *Zetaqr=Zetaqp+pm1*r;
     PARALLELIF(
@@ -6028,13 +6027,13 @@ void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
       for(size_t t=1; t < pm1; ++t) {
         size_t mt=m*t;
         Complex *Ft=F+mt;
-        Complex *ft=f+mt;
+        double *ft=fr+mt;
         Complex Zeta=Zetaqr[t];
         for(size_t s=0; s < m; ++s)
           Ft[s]=Zeta*ft[s];
       });
     Complex *Ft=F+mpm1;
-    Complex *ft=f+mpm1;
+    double *ft=fr+mpm1;
     Complex Zeta=Zetaqr[pm1];
     PARALLELIF(
       stop > threshold,
@@ -6059,7 +6058,6 @@ void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
       });
     }
     fftm1->fft(W0,F0);
-
   } else {
     // 2*r0 == n
   }
