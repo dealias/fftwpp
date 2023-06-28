@@ -5744,12 +5744,24 @@ fftPadReal::~fftPadReal()
 //      delete rcfftm;
     }
   } else {
-    delete crfftm1;
-    delete rcfftm1;
 
     if(fftm0) {
       delete fftm0;
       delete ifftm0;
+    }
+
+    if(p > 2) {
+      delete rcfftm2;
+      delete crfftm2;
+      delete fftmP1;
+      delete ifftmP1;
+      delete rcfftp;
+      delete crfftp;
+      delete fftp;
+      delete ifftp;
+    } else {
+      delete crfftm1;
+      delete rcfftm1;
     }
 
     delete fftm;
