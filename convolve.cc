@@ -5698,13 +5698,26 @@ void fftPadReal::init()
         crfftp=new mcrfft1d(p,Cm, Cm,Cm, 1,1, K,R,threads);
 
         deleteAlign(K);
-
-        size_t P1=ceilquotient(p,2)-1;
-        fftmP1=new mfft1d(m,1,P1, 1,m, G,H,threads);
-        ifftmP1=new mfft1d(m,-1,P1, 1,m, H,G,threads);
+        size_t p2=ceilquotient(p,2);
+        size_t p2m1=p2-1;
+        fftmP1=new mfft1d(m,1,p2m1, 1,m, G,H,threads);
+        ifftmP1=new mfft1d(m,-1,p2m1, 1,m, H,G,threads);
 
         fftp=new mfft1d(p,1,Cm, Cm,1, G,G,threads);
         ifftp=new mfft1d(p,-1,Cm, Cm,1, G,G,threads);
+        if(n%2 == 0) {
+          Complex *G0=ComplexAlign(p2*m);
+          Complex *H0=inplace ? G : ComplexAlign(size);
+          size_t Cp2=C*p2;
+          fftmp2=new mfft1d(m,1,Cp2, 1,m, G0,H0,threads); // Currently ssumes S=1
+          ifftmp2=new mfft1d(m,-1,Cp2, 1,m, H0,G0,threads);
+
+          fftP=new mfft1d(p2,1,Cm, Cm,1, G0,G0,threads);
+          ifftP=new mfft1d(p2,-1,Cm, Cm,1, G0,G0,threads);
+          if(!inplace)
+            deleteAlign(H0);
+          deleteAlign(G0);
+        }
     }
     if(repad())
       Pad=&fftBase::padSingle;
@@ -5759,6 +5772,12 @@ fftPadReal::~fftPadReal()
       delete crfftp;
       delete fftp;
       delete ifftp;
+      if(n%2 == 0) {
+        delete fftP;
+        delete ifftP;
+        delete fftmp2;
+        delete ifftmp2;
+      }
     } else {
       delete crfftm1;
       delete rcfftm1;
@@ -6099,10 +6118,10 @@ void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
       Complex *FtPm=Ft+P*m;
       double *ft=fr+2*mt;
       double *ftm=ft+m;
-      Complex Zetar=Zetaqr[2*t];
+      Complex Zeta=Zetaqr[2*t];
       for(size_t s=0; s < m; ++s) {
-        Ft[s]=Zetar*ft[s];
-        FtPm[s]=Zetar*ftm[s];
+        Ft[s]=Zeta*ft[s];
+        FtPm[s]=Zeta*ftm[s];
       }
     }
     size_t mPm1=m*Pm1;
@@ -6110,18 +6129,33 @@ void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
     FtPm=Ft+P*m;
     ft=fr+2*mPm1;
     ftm=ft+m;
-    Complex Zetar=Zetaqr[2*Pm1];
+    Complex Zeta=Zetaqr[2*Pm1];
     for(size_t s=0; s < stop; ++s) {
-      Ft[s]=Zetar*ft[s];
-      FtPm[s]=Zetar*ftm[s];
+      Ft[s]=Zeta*ft[s];
+      FtPm[s]=Zeta*ftm[s];
     }
     for(size_t s=stop; s < m; ++s) {
-      Ft[s]=Zetar*ft[s];
+      Ft[s]=Zeta*ft[s];
       FtPm[s]=0.0;
     }
 
-  }
+    fftP->fft(W);// TODO, do both of these at once
+    fftP->fft(W+P*m);
 
+    for(size_t t=0; t < P; ++t) {
+      size_t mt=m*t;
+      size_t R=n*t+r0;
+      Complex *Ft=W+mt;
+      Complex *FtPm=Ft+P*m;
+      Complex *Zetar=Zetaqm+m*R;
+      Complex Zeta=Zetaqr[2*t+1];
+      for(size_t s=0; s < m; ++s) {
+        Ft[s] += Zeta*FtPm[s];
+        Ft[s] *= Zetar[s];
+      }
+    }
+    fftmp2->fft(W,F0);
+  }
 }
 
 void fftPadReal::backwardExplicit(Complex *F, Complex *f, size_t, Complex *W)
