@@ -6467,37 +6467,34 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
     }
   } else if(2*r0 == n){
     size_t p2=ceilquotient(p,2);
-    ifftmp2->fft(F0,W);
+    size_t p2m1=p2-1;
+    size_t p4=p2/2;
     Complex *Zetaqr=Zetaqp+pm1*r0;
+
+    ifftmp2->fft(F0,W);
 
     for(size_t t=0; t < p2; ++t) {
       size_t mt=m*t;
       size_t R=n*t+r0;
       Complex *Ft=W+mt;
       Complex *Zetar=Zetaqm+m*R;
-      for(size_t s=0; s < m; ++s) {
+      for(size_t s=1; s < m; ++s) {
         Ft[s] *= conj(Zetar[s]);
       }
     }
 
-    Complex Z1;
-    Complex Z2;
-    Complex cZ1;
-    Complex cZ2;
-    size_t p4=p2/2;
-
     Complex *Ft=W;
-    Complex *Fp2mt=W+(p2-1)*m;
+    Complex *Fp2mt=W+p2m1*m;
     Complex *Ftm=W+p2*m;
     Complex *Fpmt=W+(p-1)*m;
-    //Complex Zetat=conj(Zetaqr[2*t]);
-    //if(t == 0) Zetat=Complex(1,0); //Temp
-    Complex Zetap2mt=conj(Zetaqr[2*(p2-1)]);
+    Complex Zetap2mt=conj(Zetaqr[2*p2m1]);
+
     for(size_t s=0; s < m; ++s) {
-      Z1=Ft[s];
-      Z2=Fp2mt[s];
-      cZ1=conj(Z1);
-      cZ2=conj(Z2);
+      Complex Z1=Ft[s];
+      Complex Z2=Fp2mt[s];
+      Complex cZ1=conj(Z1);
+      Complex cZ2=conj(Z2);
+
       Ft[s]=Z1+cZ2;
       Fp2mt[s]=cZ1+Z2;
       Ftm[s]=(Z1-cZ2);
@@ -6506,17 +6503,16 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
     for(size_t t=1; t < p4; ++t) {
       size_t mt=m*t;
       Complex *Ft=W+mt;
-      Complex *Fp2mt=W+(p2-1-t)*m;
+      Complex *Fp2mt=W+(p2m1-t)*m;
       Complex *Ftm=W+(p2+t)*m;
       Complex *Fpmt=W+(p-1-t)*m;
       Complex Zetat=conj(Zetaqr[2*t]);
-      if(t == 0) Zetat=Complex(1,0); //Temp
-      Complex Zetap2mt=conj(Zetaqr[2*(p2-1-t)]);
+      Complex Zetap2mt=conj(Zetaqr[2*(p2m1-t)]);
       for(size_t s=0; s < m; ++s) {
-        Z1=Ft[s];
-        Z2=Fp2mt[s];
-        cZ1=conj(Z1);
-        cZ2=conj(Z2);
+        Complex Z1=Ft[s];
+        Complex Z2=Fp2mt[s];
+        Complex cZ1=conj(Z1);
+        Complex cZ2=conj(Z2);
         Ft[s]=Z1+cZ2;
         Fp2mt[s]=cZ1+Z2;
         Ftm[s]=Zetat*(Z1-cZ2);
@@ -6531,10 +6527,10 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
       Complex Zetat=conj(Zetaqr[2*p4]);
       Complex Zetap2mt=conj(Zetaqr[2*(p2-1-p4)]);
       for(size_t s=0; s < m; ++s) {
-        Z1=Ft[s];
-        Z2=Fp2mt[s];
-        cZ1=conj(Z1);
-        cZ2=conj(Z2);
+        Complex Z1=Ft[s];
+        Complex Z2=Fp2mt[s];
+        Complex cZ1=conj(Z1);
+        Complex cZ2=conj(Z2);
         Ft[s]=Z1+cZ2;
         Ftm[s]=Zetat*(Z1-cZ2);
       }
@@ -6543,7 +6539,16 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
     ifftp2->fft(W);// TODO: do both of these at once?
     ifftp2->fft(W+p2*m);
 
-    for(size_t t=0; t < p2; ++t) {
+    double *f2t=fr;
+    double *f2t1=f2t+m;
+    Ft=W;
+    Ftm=W+m*p2;
+    Complex Zetar1=Zetaqr[1];
+    for(size_t s=0; s < m; ++s) {
+      f2t[s] += real(Ft[s]);
+      f2t1[s] += realproduct(Ftm[s],Zetar1);
+    }
+    for(size_t t=1; t < p2; ++t) {
       size_t mt=m*t;
       double *f2t=fr+2*mt;
       double *f2t1=f2t+m;
@@ -6551,7 +6556,6 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
       Complex *Ftm=W+m*(p2+t);
       Complex Zetar=Zetaqr[2*t];
       Complex Zetar1=Zetaqr[2*t+1];
-      if(t == 0) Zetar=Complex(1,0); //Temp
       for(size_t s=0; s < m; ++s) {
         f2t[s] += realproduct(Ft[s],Zetar);
         f2t1[s] += realproduct(Ftm[s],Zetar1);
