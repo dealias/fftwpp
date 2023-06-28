@@ -5643,7 +5643,7 @@ void fftPadReal::init()
       crfftm1=new crfft1d(m,G,(double *) H,threads);
     } else {
       rcfftm2=new mrcfft1d(m,1,2,1,1,1, (double *) H,G,threads);
-      crfftm2=new mcrfft1d(p,1,1,2,1,1, G,(double *) H,threads);
+      crfftm2=new mcrfft1d(m,1,1,2,1,1, G,(double *) H,threads);
     }
     if(S == 1) {
       fftm=new mfft1d(m,1,d, 1,m, G,H,threads);
