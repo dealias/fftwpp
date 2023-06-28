@@ -838,16 +838,16 @@ class fftPadReal : public fftBase {
   //crfft1d *crfftm1;
   //fft1d *fftm1;
   //fft1d *ifftm1;
-  mfft1d *fftm,*fftm0,*fftmP1,*fftmp2;
-  mfft1d *ifftm,*ifftm0,*ifftmP1,*ifftmp2;
+  mfft1d *fftm,*fftm0,*fftmp2m1,*fftmp2;
+  mfft1d *ifftm,*ifftm0,*ifftmp2m1,*ifftmp2;
   fft1d *ffte;
   fft1d *iffte;
   mrcfft1d *rcfftp; // TODO: deallocate in destructor!
   mcrfft1d *crfftp;
   mfft1d *fftp;
   mfft1d *ifftp;
-  mfft1d *fftP;
-  mfft1d *ifftP;
+  mfft1d *fftp2;
+  mfft1d *ifftp2;
 public:
 
   class Opt : public OptBase {
