@@ -5706,14 +5706,15 @@ void fftPadReal::init()
         fftp=new mfft1d(p,1,Cm, Cm,1, G,G,threads);
         ifftp=new mfft1d(p,-1,Cm, Cm,1, G,G,threads);
         if(n%2 == 0) {
-          Complex *G0=ComplexAlign(p2*m);
-          Complex *H0=inplace ? G0 : ComplexAlign(size);
+          size_t size0=S*p2*m;
+          Complex *G0=ComplexAlign(size0);
+          Complex *H0=inplace ? G0 : ComplexAlign(size0);
           size_t Cp2=C*p2;
-          fftmp2=new mfft1d(m,1,Cp2, 1,m, G0,H0,threads); // Currently ssumes S=1
-          ifftmp2=new mfft1d(m,-1,Cp2, 1,m, H0,G0,threads);
+          fftmp2=new mfft1d(m,1,Cp2,1,m,G0,H0,threads); // Currently ssumes S=1
+          ifftmp2=new mfft1d(m,-1,Cp2,1,m,H0,G0,threads);
 
-          fftp2=new mfft1d(p2,1,Cm, Cm,1, G0,G0,threads);
-          ifftp2=new mfft1d(p2,-1,Cm, Cm,1, G0,G0,threads);
+          fftp2=new mfft1d(p2,1,Cm,Cm,1,G0,G0,threads);
+          ifftp2=new mfft1d(p2,-1,Cm,Cm,1,G0,G0,threads);
           if(!inplace)
             deleteAlign(H0);
           deleteAlign(G0);
@@ -6138,7 +6139,7 @@ void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
       FtPm[s]=0.0;
     }
 
-    fftp2->fft(W);// TODO, do both of these at once
+    fftp2->fft(W);// TODO: do both of these at once?
     fftp2->fft(W+p2*m);
 
     for(size_t t=0; t < p2; ++t) {
@@ -6484,6 +6485,8 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
     Complex cZ1;
     Complex cZ2;
     size_t p4=p2/2;
+
+
     for(size_t t=0; t < p4; ++t) {
       size_t mt=m*t;
       Complex *Ft=W+mt;
@@ -6521,7 +6524,7 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
       }
     }
 
-    ifftp2->fft(W);// TODO, do both of these at once
+    ifftp2->fft(W);// TODO: do both of these at once?
     ifftp2->fft(W+p2*m);
 
     for(size_t t=0; t < p2; ++t) {
