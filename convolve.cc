@@ -6079,8 +6079,47 @@ void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
         });
     }
     remainder ? fftm0->fft(W0,F0) : fftm->fft(W0,F0);
-  } else {
-    // 2*r0 == n
+  } else if (2*r0 == n){
+    size_t P=ceilquotient(p,2);
+    size_t Pm1=P-1;
+    Complex *Zetaqr=Zetaqp+pm1*r0;
+
+    Complex *Ft=W;
+    Complex *FtPm=Ft+P*m;
+    double *ft=fr;
+    double *ftm=ft+m;
+    for(size_t s=0; s < m; ++s) {
+      Ft[s]=ft[s];
+      FtPm[s]=ftm[s];
+    }
+
+    for(size_t t=1; t < Pm1; ++t) {
+      size_t mt=m*t;
+      Complex *Ft=W+mt;
+      Complex *FtPm=Ft+P*m;
+      double *ft=fr+2*mt;
+      double *ftm=ft+m;
+      Complex Zetar=Zetaqr[2*t];
+      for(size_t s=0; s < m; ++s) {
+        Ft[s]=Zetar*ft[s];
+        FtPm[s]=Zetar*ftm[s];
+      }
+    }
+    size_t mPm1=m*Pm1;
+    Ft=W+mPm1;
+    FtPm=Ft+P*m;
+    ft=fr+2*mPm1;
+    ftm=ft+m;
+    Complex Zetar=Zetaqr[2*Pm1];
+    for(size_t s=0; s < stop; ++s) {
+      Ft[s]=Zetar*ft[s];
+      FtPm[s]=Zetar*ftm[s];
+    }
+    for(size_t s=stop; s < m; ++s) {
+      Ft[s]=Zetar*ft[s];
+      FtPm[s]=0.0;
+    }
+
   }
 
 }
