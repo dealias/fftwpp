@@ -6147,7 +6147,7 @@ void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
         FtPm[s]=0.0;
       });
 
-    fftp2->fft(W);// TODO: do both of these at once?
+    fftp2->fft(W);
     fftp2->fft(W+p2*m);
     PARALLELIF(
       p2*m > threshold,
@@ -6578,7 +6578,7 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
         });
     }
 
-    ifftp2->fft(W);// TODO: do both of these at once?
+    ifftp2->fft(W);
     ifftp2->fft(W+p2*m);
 
     double *f2t=fr;
