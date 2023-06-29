@@ -6473,25 +6473,28 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
 
     ifftmp2->fft(F0,W);
 
-    for(size_t t=0; t < p2; ++t) {
-      size_t mt=m*t;
-      size_t R=n*t+r0;
-      Complex *Ft=W+mt;
-      Complex *Zetar=Zetaqm+m*R;
-      for(size_t s=1; s < m; ++s) {
-        Ft[s] *= conj(Zetar[s]);
-      }
-    }
-
     Complex *Ft=W;
     Complex *Fp2mt=W+p2m1*m;
     Complex *Ftm=W+p2*m;
     Complex *Fpmt=W+(p-1)*m;
     Complex Zetap2mt=conj(Zetaqr[2*p2m1]);
 
-    for(size_t s=0; s < m; ++s) {
-      Complex Z1=Ft[s];
-      Complex Z2=Fp2mt[s];
+    Complex *Zetar=Zetaqm+m*r0;
+    Complex *Zetar2=Zetaqm+m*(n*p2m1+r0);
+
+    Complex Z1=Ft[0];
+    Complex Z2=Fp2mt[0];
+    Complex cZ1=conj(Z1);
+    Complex cZ2=conj(Z2);
+
+    Ft[0]=Z1+cZ2;
+    Fp2mt[0]=cZ1+Z2;
+    Ftm[0]=(Z1-cZ2);
+    Fpmt[0]=-Zetap2mt*(cZ1-Z2);
+
+    for(size_t s=1; s < m; ++s) {
+      Complex Z1=conj(Zetar[s])*Ft[s];
+      Complex Z2=conj(Zetar2[s])*Fp2mt[s];
       Complex cZ1=conj(Z1);
       Complex cZ2=conj(Z2);
 
@@ -6508,9 +6511,23 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
       Complex *Fpmt=W+(pm1-t)*m;
       Complex Zetat=conj(Zetaqr[2*t]);
       Complex Zetap2mt=conj(Zetaqr[2*(p2m1-t)]);
-      for(size_t s=0; s < m; ++s) {
-        Complex Z1=Ft[s];
-        Complex Z2=Fp2mt[s];
+
+      Complex Z1=Ft[0];
+      Complex Z2=Fp2mt[0];
+      Complex cZ1=conj(Z1);
+      Complex cZ2=conj(Z2);
+      Ft[0]=Z1+cZ2;
+      Fp2mt[0]=cZ1+Z2;
+      Ftm[0]=Zetat*(Z1-cZ2);
+      Fpmt[0]=-Zetap2mt*(cZ1-Z2);
+
+      size_t R1=n*t+r0;
+      size_t R2=n*(p2m1-t)+r0;
+      Complex *Zetar=Zetaqm+m*R1;
+      Complex *Zetar2=Zetaqm+m*R2;
+      for(size_t s=1; s < m; ++s) {
+        Complex Z1=conj(Zetar[s])*Ft[s];
+        Complex Z2=conj(Zetar2[s])*Fp2mt[s];
         Complex cZ1=conj(Z1);
         Complex cZ2=conj(Z2);
         Ft[s]=Z1+cZ2;
@@ -6521,15 +6538,25 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
     }
     if(p2%2 == 1) {
       size_t mp4=m*p4;
-      size_t p2mp4=p2-p4-1;
+      size_t p2mp4m1=p2-p4-1;
       Complex *Ft=W+mp4;
-      Complex *Fp2mt=W+p2mp4*m;
+      Complex *Fp2mt=W+p2mp4m1*m;
       Complex *Ftm=W+(p2+p4)*m;
       Complex Zetat=conj(Zetaqr[2*p4]);
-      Complex Zetap2mt=conj(Zetaqr[2*p2mp4]);
-      for(size_t s=0; s < m; ++s) {
-        Complex Z1=Ft[s];
-        Complex Z2=Fp2mt[s];
+      Complex Zetap2mt=conj(Zetaqr[2*p2mp4m1]);
+
+      Complex Z1=Ft[0];
+      Complex Z2=Fp2mt[0];
+      Complex cZ1=conj(Z1);
+      Complex cZ2=conj(Z2);
+      Ft[0]=Z1+cZ2;
+      Ftm[0]=Zetat*(Z1-cZ2);
+
+      size_t R1=n*p4+r0;
+      Complex *Zetar=Zetaqm+m*R1;
+      for(size_t s=1; s < m; ++s) {
+        Complex Z1=conj(Zetar[s])*Ft[s];
+        Complex Z2=conj(Zetar[s])*Fp2mt[s];
         Complex cZ1=conj(Z1);
         Complex cZ2=conj(Z2);
         Ft[s]=Z1+cZ2;
