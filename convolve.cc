@@ -6023,7 +6023,8 @@ void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
 
     rcfftp->fft(W);
     rcfftm2->fft(W,F0);
-
+    PARALLELIF(
+      (p2-1)*(m-1) > threshold,
     for(size_t t=1; t < p2; ++t) {
       size_t R=n*t;
       Complex *Ft=W+m*t;
@@ -6031,7 +6032,7 @@ void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
       for(size_t s=1; s < m; ++s)
         Ft[s] *= conj(Zetar[s]); //Compensate for incorrect transform sign.
         //Ft[s] *= Zetar[s];
-    }
+    });
 
     fftmp2m1->fft(W+m,F0+m);
 
@@ -6107,11 +6108,14 @@ void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
     Complex *FtPm=Ft+p2*m;
     double *ft=fr;
     double *ftm=ft+m;
+    PARALLELIF(
+      m > threshold,
     for(size_t s=0; s < m; ++s) {
       Ft[s]=ft[s];
       FtPm[s]=ftm[s];
-    }
-
+    });
+    PARALLELIF(
+      (p2m1-1)*m > threshold,
     for(size_t t=1; t < p2m1; ++t) {
       size_t mt=m*t;
       Complex *Ft=W+mt;
@@ -6123,37 +6127,42 @@ void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
         Ft[s]=Zeta*ft[s];
         FtPm[s]=Zeta*ftm[s];
       }
-    }
+    });
     size_t mp2m1=m*p2m1;
     Ft=W+mp2m1;
     FtPm=Ft+p2*m;
     ft=fr+2*mp2m1;
     ftm=ft+m;
     Complex Zeta=Zetaqr[2*p2m1];
-    for(size_t s=0; s < stop; ++s) {
-      Ft[s]=Zeta*ft[s];
-      FtPm[s]=Zeta*ftm[s];
-    }
-    for(size_t s=stop; s < m; ++s) {
-      Ft[s]=Zeta*ft[s];
-      FtPm[s]=0.0;
-    }
+    PARALLELIF(
+      stop > threshold,
+      for(size_t s=0; s < stop; ++s) {
+        Ft[s]=Zeta*ft[s];
+        FtPm[s]=Zeta*ftm[s];
+      });
+    PARALLELIF(
+      m-stop > threshold,
+      for(size_t s=stop; s < m; ++s) {
+        Ft[s]=Zeta*ft[s];
+        FtPm[s]=0.0;
+      });
 
     fftp2->fft(W);// TODO: do both of these at once?
     fftp2->fft(W+p2*m);
-
-    for(size_t t=0; t < p2; ++t) {
-      size_t mt=m*t;
-      size_t R=n*t+r0;
-      Complex *Ft=W+mt;
-      Complex *FtPm=Ft+p2*m;
-      Complex *Zetar=Zetaqm+m*R;
-      Complex Zeta=Zetaqr[2*t+1];
-      for(size_t s=0; s < m; ++s) {
-        Ft[s] += Zeta*FtPm[s];
-        Ft[s] *= Zetar[s];
-      }
-    }
+    PARALLELIF(
+      p2*m > threshold,
+      for(size_t t=0; t < p2; ++t) {
+        size_t mt=m*t;
+        size_t R=n*t+r0;
+        Complex *Ft=W+mt;
+        Complex *FtPm=Ft+p2*m;
+        Complex *Zetar=Zetaqm+m*R;
+        Complex Zeta=Zetaqr[2*t+1];
+        for(size_t s=0; s < m; ++s) {
+          Ft[s] += Zeta*FtPm[s];
+          Ft[s] *= Zetar[s];
+        }
+      });
     fftmp2->fft(W,F0);
   }
 }
@@ -6370,7 +6379,7 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
     ifftmp2m1->fft(F0+m,W+m);
 
     PARALLELIF(
-      pm1*(m-1) > threshold,
+      (p2-1)*(m-1) > threshold,
       for(size_t t=1; t < p2; ++t) {
         size_t R=n*t;
         Complex *Ft=W+m*t;
@@ -6390,11 +6399,11 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
 
       PARALLELIF(
         h > threshold,
-      for(size_t s=0; s < h; ++s) {
-        Complex z=2.0*conj(Zetar[s])*Wt[s];
-        Wt[s] = z.re;
-        Wth[s] = z.im;
-      });
+        for(size_t s=0; s < h; ++s) {
+          Complex z=2.0*conj(Zetar[s])*Wt[s];
+          Wt[s] = z.re;
+          Wth[s] = z.im;
+        });
     }
     crfftp->fft(W);
     PARALLELIF(
@@ -6418,7 +6427,7 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
   } else if(r0 < n2) {
     bool remainder=r0 == 1 && D0 != D;
     size_t Dstop;
-   if(remainder) {
+    if(remainder) {
       ifftm0->fft(F0,W);
       Dstop=D0;
     } else {
@@ -6491,51 +6500,54 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
     Fp2mt[0]=cZ1+Z2;
     Ftm[0]=Z1-cZ2;
     Fpmt[0]=-Zetap2mt*(cZ1-Z2);
-
-    for(size_t s=1; s < m; ++s) {
-      Complex Z1=conj(Zetar[s])*Ft[s];
-      Complex Z2=conj(Zetar2[s])*Fp2mt[s];
-      Complex cZ1=conj(Z1);
-      Complex cZ2=conj(Z2);
-
-      Ft[s]=Z1+cZ2;
-      Fp2mt[s]=cZ1+Z2;
-      Ftm[s]=Z1-cZ2;
-      Fpmt[s]=-Zetap2mt*(cZ1-Z2);
-    }
-    for(size_t t=1; t < p4; ++t) {
-      size_t mt=m*t;
-      Complex *Ft=W+mt;
-      Complex *Fp2mt=W+(p2m1-t)*m;
-      Complex *Ftm=W+(p2+t)*m;
-      Complex *Fpmt=W+(pm1-t)*m;
-      Complex Zetat=conj(Zetaqr[2*t]);
-      Complex Zetap2mt=conj(Zetaqr[2*(p2m1-t)]);
-
-      Complex Z1=Ft[0];
-      Complex Z2=Fp2mt[0];
-      Complex cZ1=conj(Z1);
-      Complex cZ2=conj(Z2);
-      Ft[0]=Z1+cZ2;
-      Fp2mt[0]=cZ1+Z2;
-      Ftm[0]=Zetat*(Z1-cZ2);
-      Fpmt[0]=-Zetap2mt*(cZ1-Z2);
-
-      size_t R1=n*t+r0;
-      size_t R2=n*(p2m1-t)+r0;
-      Complex *Zetar=Zetaqm+m*R1;
-      Complex *Zetar2=Zetaqm+m*R2;
+    PARALLELIF(
+      m > threshold,
       for(size_t s=1; s < m; ++s) {
         Complex Z1=conj(Zetar[s])*Ft[s];
         Complex Z2=conj(Zetar2[s])*Fp2mt[s];
         Complex cZ1=conj(Z1);
         Complex cZ2=conj(Z2);
+
         Ft[s]=Z1+cZ2;
         Fp2mt[s]=cZ1+Z2;
-        Ftm[s]=Zetat*(Z1-cZ2);
+        Ftm[s]=Z1-cZ2;
         Fpmt[s]=-Zetap2mt*(cZ1-Z2);
-      }
-    }
+      });
+    PARALLELIF(
+      (p4-1)*(m-1) > threshold,
+      for(size_t t=1; t < p4; ++t) {
+        size_t mt=m*t;
+        Complex *Ft=W+mt;
+        Complex *Fp2mt=W+(p2m1-t)*m;
+        Complex *Ftm=W+(p2+t)*m;
+        Complex *Fpmt=W+(pm1-t)*m;
+        Complex Zetat=conj(Zetaqr[2*t]);
+        Complex Zetap2mt=conj(Zetaqr[2*(p2m1-t)]);
+
+        Complex Z1=Ft[0];
+        Complex Z2=Fp2mt[0];
+        Complex cZ1=conj(Z1);
+        Complex cZ2=conj(Z2);
+        Ft[0]=Z1+cZ2;
+        Fp2mt[0]=cZ1+Z2;
+        Ftm[0]=Zetat*(Z1-cZ2);
+        Fpmt[0]=-Zetap2mt*(cZ1-Z2);
+
+        size_t R1=n*t+r0;
+        size_t R2=n*(p2m1-t)+r0;
+        Complex *Zetar=Zetaqm+m*R1;
+        Complex *Zetar2=Zetaqm+m*R2;
+        for(size_t s=1; s < m; ++s) {
+          Complex Z1=conj(Zetar[s])*Ft[s];
+          Complex Z2=conj(Zetar2[s])*Fp2mt[s];
+          Complex cZ1=conj(Z1);
+          Complex cZ2=conj(Z2);
+          Ft[s]=Z1+cZ2;
+          Fp2mt[s]=cZ1+Z2;
+          Ftm[s]=Zetat*(Z1-cZ2);
+          Fpmt[s]=-Zetap2mt*(cZ1-Z2);
+        }
+      });
     if(p2%2 == 1) {
       size_t mp4=m*p4;
       size_t p2mp4m1=p2-p4-1;
@@ -6554,14 +6566,16 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
 
       size_t R1=n*p4+r0;
       Complex *Zetar=Zetaqm+m*R1;
-      for(size_t s=1; s < m; ++s) {
-        Complex Z1=conj(Zetar[s])*Ft[s];
-        Complex Z2=conj(Zetar[s])*Fp2mt[s];
-        Complex cZ1=conj(Z1);
-        Complex cZ2=conj(Z2);
-        Ft[s]=Z1+cZ2;
-        Ftm[s]=Zetat*(Z1-cZ2);
-      }
+      PARALLELIF(
+        m > threshold,
+        for(size_t s=1; s < m; ++s) {
+          Complex Z1=conj(Zetar[s])*Ft[s];
+          Complex Z2=conj(Zetar[s])*Fp2mt[s];
+          Complex cZ1=conj(Z1);
+          Complex cZ2=conj(Z2);
+          Ft[s]=Z1+cZ2;
+          Ftm[s]=Zetat*(Z1-cZ2);
+        });
     }
 
     ifftp2->fft(W);// TODO: do both of these at once?
@@ -6572,23 +6586,27 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
     Ft=W;
     Ftm=W+m*p2;
     Complex Zetar1=Zetaqr[1];
-    for(size_t s=0; s < m; ++s) {
-      f2t[s] += real(Ft[s]);
-      f2t1[s] += realproduct(Ftm[s],Zetar1);
-    }
-    for(size_t t=1; t < p2; ++t) {
-      size_t mt=m*t;
-      double *f2t=fr+2*mt;
-      double *f2t1=f2t+m;
-      Complex *Ft=W+mt;
-      Complex *Ftm=W+m*(p2+t);
-      Complex Zetar=Zetaqr[2*t];
-      Complex Zetar1=Zetaqr[2*t+1];
+    PARALLELIF(
+      m > threshold,
       for(size_t s=0; s < m; ++s) {
-        f2t[s] += realproduct(Ft[s],Zetar);
+        f2t[s] += real(Ft[s]);
         f2t1[s] += realproduct(Ftm[s],Zetar1);
-      }
-    }
+      });
+    PARALLELIF(
+      (p2-1)*m > threshold,
+      for(size_t t=1; t < p2; ++t) {
+        size_t mt=m*t;
+        double *f2t=fr+2*mt;
+        double *f2t1=f2t+m;
+        Complex *Ft=W+mt;
+        Complex *Ftm=W+m*(p2+t);
+        Complex Zetar=Zetaqr[2*t];
+        Complex Zetar1=Zetaqr[2*t+1];
+        for(size_t s=0; s < m; ++s) {
+          f2t[s] += realproduct(Ft[s],Zetar);
+          f2t1[s] += realproduct(Ftm[s],Zetar1);
+        }
+      });
   }
 }
 
