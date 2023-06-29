@@ -155,6 +155,9 @@ public:
 
   void checkParameters();
 
+  static void parameters(size_t L, size_t M, size_t m, bool centered,
+                         size_t &p, size_t& n, size_t& q);
+
   void common();
 
   void initZetaqm(size_t q, size_t m);
@@ -162,7 +165,7 @@ public:
   class OptBase {
   public:
     size_t counter;
-    size_t m,q,D;
+    size_t m,D;
     bool inplace;
     bool mForced;
     bool DForced;
@@ -172,7 +175,7 @@ public:
     double T;
 
     virtual double time(size_t L, size_t M, size_t C,
-                        size_t S, size_t m, size_t q,
+                        size_t S, size_t m,
                         size_t D, bool inplace, Application &app)=0;
 
     virtual bool valid(size_t m, size_t p, size_t q, size_t n, size_t D, size_t S)=0;
@@ -231,11 +234,10 @@ public:
     app(app), centered(centered) {checkParameters();}
 
   fftBase(size_t L, size_t M, size_t C, size_t S,
-          size_t m, size_t q, size_t D, bool inplace,
+          size_t m, size_t D, bool inplace,
           Application &app, bool centered=false) :
     ThreadBase(app.threads), L(L), M(M), C(C),  S(S == 0 ? C : S), m(m),
-    p(utils::ceilquotient(L,m)), q(q), D(D), inplace(inplace),
-    app(app), centered(centered) {
+    D(D), inplace(inplace), app(app), centered(centered) {
     checkParameters();
     this->app.D=D;
   }
@@ -388,10 +390,6 @@ public:
     return b*D;
   }
 
-  virtual size_t qReduced(size_t p, size_t q) {
-    return p == 2 ? q : q/p;
-  }
-
   virtual bool conjugates() {
     return D > 1 && (p <= 2 || (centered && p % 2 == 0));
   }
@@ -503,8 +501,8 @@ public:
     }
 
     double time(size_t L, size_t M, size_t C, size_t S,
-                size_t m, size_t q,size_t D, bool inplace, Application &app) {
-      fftPad fft(L,M,C,S,m,q,D,inplace,app);
+                size_t m, size_t D, bool inplace, Application &app) {
+      fftPad fft(L,M,C,S,m,D,inplace,app);
       double threshold=DBL_MAX;
       return timePad(&fft,threshold);
     }
@@ -517,16 +515,15 @@ public:
   fftPad(size_t L, size_t M, size_t C, size_t S,
          size_t m, size_t q, size_t D, bool inplace,
          Application &app, bool centered) :
-    fftBase(L,M,C,S,m,q,D,inplace,app) {}
+    fftBase(L,M,C,S,m,D,inplace,app) {}
 
   // Compute an fft padded to N=m*q >= M >= L
   fftPad(size_t L, size_t M, size_t C, size_t S,
-         size_t m, size_t q, size_t D, bool inplace,
-         Application &app) :
-    fftBase(L,M,C,S,m,q,D,inplace,app) {
+         size_t m, size_t D, bool inplace,
+         Application &app, bool centered=false) :
+    fftBase(L,M,C,S,m,D,inplace,app,centered) {
     Opt opt;
-    p=utils::ceilquotient(L,m);
-    n=qReduced(p,q);
+    parameters(L,M,m,centered,p,n,q);
     if(q > 1 && !opt.valid(m,p,q,n,D,this->S)) invalid();
     init();
   }
@@ -539,14 +536,11 @@ public:
     fftBase(L,M,app,C,S,Explicit,centered) {
     Opt opt=Opt(L,M,app,C,this->S,Explicit);
     m=opt.m;
-    if(Explicit)
-      M=m;
-    q=opt.q;
     D=opt.D;
     inplace=opt.inplace;
-//    n=opt.n;
-    p=utils::ceilquotient(L,m);
-    n=qReduced(p,q);
+    if(Explicit)
+      M=m;
+    parameters(L,M,m,centered,p,n,q);
     init();
   }
 
@@ -603,11 +597,6 @@ class fftPadCentered : public fftPad {
   Complex *ZetaShift;
 public:
 
-  size_t qReduced(size_t p, size_t q) {
-    size_t p2=p/2;
-    return p == 2*p2 ? q/p2 : q/p;
-  }
-
   class Opt : public OptBase {
   public:
     Opt() {}
@@ -626,8 +615,8 @@ public:
     }
 
     double time(size_t L, size_t M, size_t C, size_t S,
-                size_t m, size_t q, size_t D, bool inplace, Application &app) {
-      fftPadCentered fft(L,M,C,S,m,q,D,inplace,app);
+                size_t m, size_t D, bool inplace, Application &app) {
+      fftPadCentered fft(L,M,C,S,m,D,inplace,app);
       double threshold=DBL_MAX;
       return timePad(&fft,threshold);
     }
@@ -635,12 +624,11 @@ public:
 
   // Compute an fft padded to N=m*q >= M >= L
   fftPadCentered(size_t L, size_t M, size_t C,
-                 size_t S, size_t m, size_t q,
+                 size_t S, size_t m,
                  size_t D, bool inplace, Application &app) :
-    fftPad(L,M,C,S,m,q,D,inplace,app,true) {
+    fftPad(L,M,C,S,m,D,inplace,app,true) {
     Opt opt;
-    p=utils::ceilquotient(L,m);
-    n=qReduced(p,q);
+    parameters(L,M,m,centered,p,n,q);
     if(q > 1 && !opt.valid(m,p,q,n,D,this->S)) invalid();
     fftPad::init();
     init();
@@ -653,13 +641,11 @@ public:
     fftPad(L,M,C,S,app,true) {
     Opt opt=Opt(L,M,app,C,this->S,Explicit);
     m=opt.m;
-    if(Explicit)
-      M=m;
-    q=opt.q;
     D=opt.D;
     inplace=opt.inplace;
-    p=utils::ceilquotient(L,m);
-    n=qReduced(p,q);
+    if(Explicit)
+      M=m;
+    parameters(L,M,m,centered,p,n,q);
     fftPad::init();
     init();
   }
@@ -728,12 +714,6 @@ class fftPadHermitian : public fftBase {
   mfft1d *ifftp;
 public:
 
-  size_t qReduced(size_t p, size_t q) {
-    if(p == 1) return 1;
-    size_t p2=p/2;
-    return q/p2;
-  }
-
   class Opt : public OptBase {
   public:
     Opt() {}
@@ -752,19 +732,17 @@ public:
     }
 
     double time(size_t L, size_t M, size_t C, size_t,
-                size_t m, size_t q, size_t D, bool inplace, Application &app) {
-      fftPadHermitian fft(L,M,C,m,q,D,inplace,app);
+                size_t m, size_t D, bool inplace, Application &app) {
+      fftPadHermitian fft(L,M,C,m,D,inplace,app);
       return timePad(&fft,threshold);
     }
   };
 
   fftPadHermitian(size_t L, size_t M, size_t C,
-                  size_t m, size_t q, size_t D,
-                  bool inplace, Application &app) :
-    fftBase(L,M,C,C,m,q,D,inplace,app,true) {
+                  size_t m, size_t D, bool inplace, Application &app) :
+    fftBase(L,M,C,C,m,D,inplace,app,true) {
     Opt opt;
-    p=utils::ceilquotient(L,m);
-    n=qReduced(p,q);
+    parameters(L,M,m,centered,p,n,q);
     if(q > 1 && !opt.valid(m,p,q,n,D,C)) invalid();
     init();
   }
@@ -774,13 +752,11 @@ public:
     fftBase(L,M,app,C,C,Explicit,true) {
     Opt opt=Opt(L,M,app,C,C,Explicit);
     m=opt.m;
-    if(Explicit)
-      M=m;
-    q=opt.q;
     D=opt.D;
     inplace=opt.inplace;
-    p=utils::ceilquotient(L,m);
-    n=qReduced(p,q);
+    if(Explicit)
+      M=m;
+    parameters(L,M,m,centered,p,n,q);
     init();
   }
 
@@ -869,8 +845,8 @@ public:
     }
 
     double time(size_t L, size_t M, size_t C, size_t S,
-                size_t m, size_t q,size_t D, bool inplace, Application &app) {
-      fftPadReal fft(L,M,C,S,m,q,D,inplace,app);
+                size_t m, size_t D, bool inplace, Application &app) {
+      fftPadReal fft(L,M,C,S,m,D,inplace,app);
       double threshold=DBL_MAX;
       return timePad(&fft,threshold);
     }
@@ -881,12 +857,11 @@ public:
 
   // Compute an fft padded to N=m*q >= M >= L
   fftPadReal(size_t L, size_t M, size_t C, size_t S,
-         size_t m, size_t q, size_t D, bool inplace,
+         size_t m, size_t D, bool inplace,
          Application &app) :
-    fftBase(L,M,C,S,m,q,D,inplace,app) {
+    fftBase(L,M,C,S,m,D,inplace,app) {
     Opt opt;
-    p=utils::ceilquotient(L,m);
-    n=qReduced(p,q);
+    parameters(L,M,m,centered,p,n,q);
     if(q > 1 && !opt.valid(m,p,q,n,D,this->S)) invalid();
     init();
   }
@@ -899,13 +874,11 @@ public:
     fftBase(L,M,app,C,S,Explicit) {
     Opt opt=Opt(L,M,app,C,this->S,Explicit);
     m=opt.m;
-    if(Explicit)
-      M=m;
-    q=opt.q;
     D=opt.D;
     inplace=opt.inplace;
-    p=utils::ceilquotient(L,m);
-    n=qReduced(p,q);
+    if(Explicit)
+      M=m;
+    parameters(L,M,m,centered,p,n,q);
     init();
   }
 

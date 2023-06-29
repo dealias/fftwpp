@@ -75,26 +75,26 @@ extern "C" {
     conv->convolve->convolve(F);
   }
 
-  
+
   void fftwpp_conv1d_correlate(HybridConvolution *conv,
                                double __complex__ *a, double __complex__ *b) {
     Complex *F[]={(Complex *) a,(Complex *) b};
     conv->convolve->convolve(F);
-    
+
   }
 
   void fftwpp_conv1d_autoconvolve(HybridConvolution *conv,
                                   double __complex__ *a) {
-    Complex *F[]={(Complex *) a,(Complex *) a};                     
+    Complex *F[]={(Complex *) a,(Complex *) a};
     conv->convolve->convolve(F);
   }
 
   void fftwpp_conv1d_autocorrelate(HybridConvolution *conv,
                                    double __complex__ *a) {
-    Complex *F[]={(Complex *) a,(Complex *) a};                     
+    Complex *F[]={(Complex *) a,(Complex *) a};
     conv->convolve->convolve(F);
   }
-  
+
   // 1d Hermitian symmetric wrappers
   HybridConvolutionHermitian *fftwpp_create_hconv1d(unsigned int Lx) {
     return new HybridConvolutionHermitian(Lx);
@@ -112,7 +112,7 @@ extern "C" {
 
   // 2d non-centered complex convolution
   HybridConvolution2 *fftwpp_create_conv2d(unsigned int Lx,
-                                             unsigned int Ly) {
+                                           unsigned int Ly) {
     return new HybridConvolution2(Lx, Ly);
   }
 
@@ -124,8 +124,13 @@ extern "C" {
     delete pconv;
   }
 
+  void fftwpp_HermitianSymmetrizeX(unsigned int Hx, unsigned int Hy,
+                                   unsigned int x0, double __complex__ *f) {
+    HermitianSymmetrizeX(Hx,Hy,x0,(Complex *) f);
+  }
+
   void fftwpp_conv2d_convolve(HybridConvolution2 *conv,
-                              double __complex__ *a, double __complex__ *b) 
+                              double __complex__ *a, double __complex__ *b)
   {
     Complex *F[]={(Complex *) a,(Complex *) b};
     conv->convolve2->convolve(F);
@@ -150,9 +155,9 @@ extern "C" {
     conv->convolve2->convolve(F);
   }
   // 2d centered Hermitian-symmetric convolution
-  HybridConvolutionHermitian2 *fftwpp_create_hconv2d(unsigned int nx,
-                                               unsigned int ny) {
-    return new HybridConvolutionHermitian2(nx, ny);
+  HybridConvolutionHermitian2 *fftwpp_create_hconv2d(unsigned int Lx,
+                                               unsigned int Ly) {
+    return new HybridConvolutionHermitian2(Lx, Ly);
   }
 
   void fftwpp_hconv2d_delete(HybridConvolutionHermitian2 *hconv2) {
@@ -161,7 +166,7 @@ extern "C" {
 
   void fftwpp_hconv2d_convolve(HybridConvolutionHermitian2 *hconv2,
                                double __complex__ *a, double __complex__ *b) {
-    Complex *F[]={(Complex *) a,(Complex *) b}; 
+    Complex *F[]={(Complex *) a,(Complex *) b};
     hconv2->convolve2->convolve(F);
   }
 
@@ -178,6 +183,13 @@ extern "C" {
 
   void fftwpp_conv3d_delete(HybridConvolution3 *pconv) {
     delete pconv;
+  }
+
+  void fftwpp_HermitianSymmetrizeXY(unsigned int Hx, unsigned int Hy,
+                                    unsigned int Hz,
+                                   unsigned int x0, unsigned int y0,
+                                    double __complex__ *f) {
+    HermitianSymmetrizeXY(Hx,Hy,Hz,x0,y0,(Complex *) f);
   }
 
   void fftwpp_conv3d_convolve(HybridConvolution3 *pconv,

@@ -114,22 +114,11 @@ void multcorrelation(Complex **F, size_t n, Indices *indices,
   }
 #endif
 
-#ifdef __SSE2__
-  PARALLELIF(
-    n > threshold,
-    for(size_t j=0; j < n; ++j) {
-      Complex *p=F0+j;
-      Complex *q=F1+j;
-      STORE(p,ZCMULT(LOAD(q),LOAD(p)));
-    }
-    );
-#else
   PARALLELIF(
     n > threshold,
     for(size_t j=0; j < n; ++j)
       F0[j] *= conj(F1[j]);
     );
-#endif
 }
 
 // Returns the smallest natural number greater than a positive number
@@ -270,14 +259,10 @@ void fftBase::OptBase::optloop(size_t& m, size_t L,
   // If inner == true, i is an m value and itmax is the largest m value that
   // we consider. If inner == false, i is a counter starting at zero, and
   // itmax is maximum number of m values we consider before exiting optloop.
-  while(i <= itmax+1) {
-    size_t p=ceilquotient(L,m);
-    // P is the effective p value
-    size_t p2=p/2;
-    size_t P=(centered && p == 2*p2) || p == 2 ? p2 : p;
-    size_t n=ceilquotient(M,m*P);
-
-    if(!Explicit && app.m >= 1 && app.m < M && centered && 2*p2 != p) {
+  while(i < itmax) {
+    size_t p,n,q;
+    parameters(L,M,m,centered,p,n,q);
+    if(!Explicit && app.m >= 1 && app.m < M && centered && p%2 != 0) {
       cerr << "Odd values of p are incompatible with the centered and Hermitian routines." << endl;
       cerr << "Using explicit routines with m=" << M << ", D=1, and I=0 instead." << endl;
     }
@@ -286,10 +271,9 @@ void fftBase::OptBase::optloop(size_t& m, size_t L,
     // p must be a power of 2, 3, 5, or 7.
     // p must be even in the centered case.
     // p != q.
-    if(inner && (((!ispure(p) || p == P*n) && !mForced) || (centered && p%2 != 0)))
+    if(inner && (((!ispure(p) || p == q) && !mForced) || (centered && p%2 != 0)))
       i=m=nextpuresize(m+1);
     else {
-      size_t q=(inner ? P*n : ceilquotient(M,m));
       size_t Dstart=DForced ? app.D : 1;
       size_t Dstop=DForced ? app.D : maxD(n);
       size_t Dstop2=2*Dstop;
@@ -380,12 +364,11 @@ void fftBase::OptBase::check(size_t L, size_t M,
   //cout << "valid=" << valid(m,p,q,n,D,S) << endl << endl;
   if(valid(m,p,q,n,D,S)) {
     if(useTimer) {
-      double t=time(L,M,C,S,m,q,D,inplace,app);
+      double t=time(L,M,C,S,m,D,inplace,app);
       if(showOptTimes)
         cout << "m=" << m << ", p=" << p << ", q=" << q << ", C=" << C << ", S=" << S << ", D=" << D << ", I=" << inplace << ": t=" << t*1.0e-9 << endl;
       if(t < T) {
         this->m=m;
-        this->q=q;
         this->D=D;
         this->inplace=inplace;
         T=t;
@@ -396,7 +379,6 @@ void fftBase::OptBase::check(size_t L, size_t M,
         mlist.push_back(m);
       if(counter == 1) {
         this->m=m;
-        this->q=q;
         this->D=D;
         this->inplace=inplace;
       }
@@ -404,12 +386,20 @@ void fftBase::OptBase::check(size_t L, size_t M,
   }
 }
 
+void fftBase::parameters(size_t L, size_t M, size_t m, bool centered,
+                         size_t &p, size_t& n, size_t& q)
+{
+  p=ceilquotient(L,m);
+  size_t P=(centered && p == 2*(p/2)) || p == 2 ? (p/2) : p; // effective p
+  n=ceilquotient(M,P*m);
+  q=P*n;
+}
+
 void fftBase::OptBase::scan(size_t L, size_t M, Application& app,
                             size_t C, size_t S, bool Explicit,
                             bool centered)
 {
   m=M;
-  q=1;
   D=1;
   inplace=false;
   T=DBL_MAX;
@@ -441,7 +431,9 @@ void fftBase::OptBase::scan(size_t L, size_t M, Application& app,
     }
   }
 
-  size_t p=ceilquotient(L,m);
+  size_t p,q,n;
+  parameters(L,M,m,centered,p,n,q);
+
   size_t mpL=m*p-L;
   cout << "Optimal padding: ";
   if(p == q)
@@ -487,6 +479,8 @@ void fftBase::checkParameters()
 
 void fftBase::common()
 {
+  parameters(L,M,m,centered,p,n,q);
+
   if(q*m < M) {
     cerr << "Invalid parameters: " << endl
          << " q=" << q << " m=" << m << " M=" << M << endl;
@@ -534,7 +528,7 @@ void fftPad::init()
     deleteAlign(G);
     if(!inplace)
       deleteAlign(H);
-    dr=D=D0=R=n=1;
+    dr=D=D0=R=1;
     l=M;
     b=S*l;
   } else {
@@ -4481,7 +4475,7 @@ void fftPadHermitian::init()
     if(!inplace)
       deleteAlign(H);
     deleteAlign(G);
-    dr=D0=R=n=1;
+    dr=D0=R=1;
   } else {
     dr=Dr();
 

@@ -9,8 +9,14 @@ fftwpp.fftwpp_set_maxthreads(nthreads)
 
 ### 1D Code
 
-N = 4
-def init(f, g, mode="Default"):
+f=[]
+g=[]
+
+def init(N=8, mode="Default"):
+    global f,g
+    f = fftwpp.complex_align([N])
+    g = fftwpp.complex_align([N])
+
     for k in range(len(f)):
         if k == 0 and mode == "Hermitian":
             f[0] = complex(1, 0)
@@ -19,9 +25,7 @@ def init(f, g, mode="Default"):
             f[k] = complex(k, k + 1)
             g[k] = complex(k, 2 * k + 1)
 
-f = fftwpp.complex_align([N])
-g = fftwpp.complex_align([N])
-
+init()
 print("Input f:")
 print(f)
 print()
@@ -29,143 +33,121 @@ print("Input g:")
 print(g)
 print()
 
-init(f, g)
 print("1D non-centered complex convolution:")
 conv = fftwpp.Convolution(f.shape)
 conv.convolve(f, g)
 print(f)
 
-init(f, g)
+init()
 print("1D non-centered complex correlation:")
 conv.correlate(f, g)
 print(f)
 
-init(f, g)
+init()
 conv = fftwpp.AutoConvolution(f.shape)
 print("1D non-centered complex autoconvolution:")
 conv.autoconvolve(f)
 print(f)
 
-init(f, g)
+init()
 print("1D non-centered complex autocorrelation:")
 conv.autocorrelate(f)
 print(f)
 
 print("1D centered Hermitian-symmetric complex convolution:")
-init(f, g, mode="Hermitian")
-hconv = fftwpp.HConvolution(2*f.shape[0]-1)
-hconv.convolve(f, g)
+init(4, mode="Hermitian")
+hconv = fftwpp.HConvolution(f.shape)
+hconv.convolve(f,g)
 print(f)
 
 ### 2D Code
-def init2(f, g):
-    for a in range(f.shape[0]):
-        for b in range(f.shape[1]):
-            f[a][b] = complex(a, b)
-            g[a][b] = complex(2 * a, b + 1)
+def init2(Nx=4,Ny=4):
+    global f,g
+    f = fftwpp.complex_align([Nx,Ny])
+    g = fftwpp.complex_align([Nx,Ny])
+    for i in range(f.shape[0]):
+        for j in range(f.shape[1]):
+            f[i][j] = complex(i, j)
+            g[i][j] = complex(2*i, j + 1)
 
-mx = 4
-my = 4
-
-x = fftwpp.complex_align([mx, my])
-y = fftwpp.complex_align([mx, my])
-
-init2(x, y)
-
-print("Input x:")
-print(x)
+init2()
+print("Input f:")
+print(f)
 print()
-print("Input y:")
-print(y)
+print("Input g:")
+print(g)
 print()
 
-conv = fftwpp.Convolution(x.shape)
+conv = fftwpp.Convolution(f.shape)
 print("2D non-centered complex convolution:")
-conv.convolve(x, y)
-print(x)
+conv.convolve(f,g)
+print(f)
 print()
 
-init2(x, y)
-conv = fftwpp.Convolution(x.shape)
+init2()
+conv = fftwpp.Convolution(f.shape)
 print("2D non-centered complex correlation:")
-conv.correlate(x, y)
-print(x)
+conv.correlate(f,g)
+print(f)
 print()
 
-init2(x, y)
-conv = fftwpp.AutoConvolution(x.shape)
+init2()
+conv = fftwpp.AutoConvolution(f.shape)
 print("2D non-centered complex autoconvolution:")
-conv.autoconvolve(x)
-print(x)
+conv.autoconvolve(f)
+print(f)
 print()
 
-init2(x, y)
-conv = fftwpp.AutoConvolution(x.shape)
+init2()
+conv = fftwpp.AutoConvolution(f.shape)
 print("2D non-centered complex autocorrelation:")
-conv.autocorrelate(x)
-print(x)
+conv.autocorrelate(f)
+print(f)
 print()
 
-mx = 4
-my = 4
-
-hx = fftwpp.complex_align([2 * mx - 1, my])
-hy = fftwpp.complex_align([2 * mx - 1, my])
-
-init2(hx, hy)
+init2(7,4)
 print("2D centered Hermitian-symmetric convolution:")
-hconv2 = fftwpp.HConvolution(hx.shape)
-hconv2.convolve(hx, hy)
-print(hx)
-
+conv = fftwpp.HConvolution(f.shape)
+conv.convolve(f,g)
+print(f)
 
 ### 3D Code
 import fftwpp
 
 print("3D non-centered complex convolution:")
 
-mx = 4
-my = 4
-mz = 4
+def init3(Nx=4,Ny=4,Nz=4):
+    global f,g
+    f = fftwpp.complex_align([Nx,Ny,Nz])
+    g = fftwpp.complex_align([Nx,Ny,Nz])
+    for i in range(f.shape[0]):
+        for j in range(f.shape[1]):
+            for k in range(f.shape[2]):
+                f[i][j][k] = complex(i + k, j + k)
+                g[i][j][k] = complex(2 * i + k, j + 1 + k)
 
-x = fftwpp.complex_align([mx, my, mz])
-y = fftwpp.complex_align([mx, my, mz])
-
-def init3(f, g):
-    for a in range(f.shape[0]):
-        for b in range(f.shape[1]):
-            for c in range(f.shape[2]):
-                f[a][b][c] = complex(a + c, b + c)
-                g[a][b][c] = complex(2 * a + c, b + 1 + c)
-
-init3(x, y)
-
-conv = fftwpp.Convolution(x.shape)
-conv.convolve(x, y)
-print(x)
+init3()
+conv = fftwpp.Convolution(f.shape)
+conv.convolve(f,g)
+print(f)
 
 print()
 print("3D non-centered complex autoconvolution:")
-init3(x, y)
-conv = fftwpp.AutoConvolution(x.shape)
-conv.autoconvolve(x)
-print(x)
+init3()
+conv = fftwpp.AutoConvolution(f.shape)
+conv.autoconvolve(f)
+print(f)
 
 print()
 print("3D non-centered complex autocorrelation:")
-init3(x[::-1], y)
-conv.autocorrelate(x)
-print(x)
+init3()
+conv.autocorrelate(f)
+print(f)
 
 print()
 print("3D centered Hermitian-symmetric convolution:")
-mx = 4
-my = 4
-mz = 4
-hx = fftwpp.complex_align([2 * mx - 1, 2 * my - 1, mz])
-hy = fftwpp.complex_align([2 * mx - 1, 2 * my - 1, mz])
 
-init3(hx, hy)
-conv = fftwpp.HConvolution(hx.shape)
-conv.convolve(hx, hy)
-print(hx)
+init3(7,7,4)
+conv = fftwpp.HConvolution(f.shape)
+conv.convolve(f,g)
+print(f)
