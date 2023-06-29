@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
   fftPad ffty(Ly,My,appy,Lz,Sy);
   Application appz(A,B,multbinary,appy,mz,Dz,Iz);
   fftPad fftz(Lz,Mz,appz);
-  Convolution3 Convolve3(&fftx,&ffty,&fftz);
+  Convolution3 Convolve(&fftx,&ffty,&fftz);
 
   Complex **f=ComplexAlign(max(A,B),fftx.inputSize());
 
@@ -72,16 +72,19 @@ int main(int argc, char *argv[])
     C.convolve(h,f[0],f[1]);
   }
 
+  if(!Output && !testError)
+      Convolve.convolve(f);
+
   double sum=0.0;
   while(sum <= K || T.size() < minCount) {
     double t;
     if(normalized || testError) {
       cpuTimer c;
-      Convolve3.convolve(f);
+      Convolve.convolve(f);
       t=c.nanoseconds();
     } else {
       cpuTimer c;
-      Convolve3.convolveRaw(f);
+      Convolve.convolveRaw(f);
       t=c.nanoseconds();
     }
     T.push_back(t);

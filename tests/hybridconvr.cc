@@ -60,6 +60,9 @@ int main(int argc, char *argv[])
     C.convolve(h,F[0],F[1]);
   }
 
+  if(!Output && !testError)
+      Convolve.convolve((Complex **) f);
+
   double sum=0.0;
   while(sum <= K || T.size() < minCount) {
     double t;
