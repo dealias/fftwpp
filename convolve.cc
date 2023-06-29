@@ -6489,7 +6489,7 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
 
     Ft[0]=Z1+cZ2;
     Fp2mt[0]=cZ1+Z2;
-    Ftm[0]=(Z1-cZ2);
+    Ftm[0]=Z1-cZ2;
     Fpmt[0]=-Zetap2mt*(cZ1-Z2);
 
     for(size_t s=1; s < m; ++s) {
@@ -6500,7 +6500,7 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
 
       Ft[s]=Z1+cZ2;
       Fp2mt[s]=cZ1+Z2;
-      Ftm[s]=(Z1-cZ2);
+      Ftm[s]=Z1-cZ2;
       Fpmt[s]=-Zetap2mt*(cZ1-Z2);
     }
     for(size_t t=1; t < p4; ++t) {
