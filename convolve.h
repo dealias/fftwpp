@@ -962,7 +962,7 @@ public:
 
   size_t blocksize(size_t r) {
     if(r == 0) return p > 2 ? (p/2+1)*m : e;
-    if(2*r == q) return e-1;
+    if(2*r == n) return p > 2 ? (p/2)*m : e-1;
     return l;
   }
 
