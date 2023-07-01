@@ -6093,7 +6093,7 @@ void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
         });
     }
     remainder ? fftm0->fft(W0,F0) : fftm->fft(W0,F0);
-  } else if (2*r0 == n){
+  } else { // 2*r0 == n
     size_t p2=ceilquotient(p,2);
     size_t p2m1=p2-1;
     Complex *Zetaqr=Zetaqp+pm1*r0;
@@ -6468,7 +6468,7 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
           ft[s] += 2.0*realproduct(Zeta,Ft[s]);
         );
     }
-  } else if(2*r0 == n){
+  } else { //2*r0 == n
     size_t p2=ceilquotient(p,2);
     size_t p2m1=p2-1;
     size_t p4=p2/2;
