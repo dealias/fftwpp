@@ -6480,11 +6480,25 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
     Complex *Fp2mt=W+p2m1*m;
     Complex *Ftm=W+p2*m;
     Complex *Fpmt=W+(p-1)*m;
-    Complex Zetap2mt=conj(Zetaqr[2*p2m1]);
 
     Complex *Zetar=Zetaqm+m*r0;
     Complex *Zetar2=Zetaqm+m*(n*p2m1+r0);
 
+    Vec Zetap2mt_a=LOAD(Zetaqr+2*p2m1);
+    Vec X2=UNPACKL(-Zetap2mt_a,-Zetap2mt_a);
+    Vec Y2=UNPACKH(Zetap2mt_a,-Zetap2mt_a);
+
+    Vec Z1=LOAD(Ft);
+    Vec Z2=CONJ(LOAD(Fp2mt));
+    Vec A=Z1+Z2;
+    Vec B=Z1-Z2;
+
+    STORE(Ft,A);
+    STORE(Fp2mt,CONJ(A));
+    STORE(Ftm,B);
+    STORE(Fpmt,ZMULT(X2,Y2,CONJ(B)));
+    /*
+    Complex Zetap2mt=conj(Zetaqr[2*p2m1]);
     Complex Z1=Ft[0];
     Complex Z2=Fp2mt[0];
     Complex cZ1=conj(Z1);
@@ -6494,9 +6508,21 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
     Fp2mt[0]=cZ1+Z2;
     Ftm[0]=Z1-cZ2;
     Fpmt[0]=-Zetap2mt*(cZ1-Z2);
+    */
     PARALLELIF(
       m > threshold,
       for(size_t s=1; s < m; ++s) {
+        Vec Z1=ZCMULT(LOAD(Zetar+s),LOAD(Ft+s));
+        Vec Z2=ZCMULT(LOAD(Fp2mt+s),LOAD(Zetar2+s));
+        Vec A=Z1+Z2;
+        Vec B=Z1-Z2;
+
+        STORE(Ft+s,A);
+        STORE(Fp2mt+s,CONJ(A));
+        STORE(Ftm+s,B);
+        STORE(Fpmt+s,ZMULT(X2,Y2,CONJ(B)));
+
+        /*
         Complex Z1=conj(Zetar[s])*Ft[s];
         Complex Z2=conj(Zetar2[s])*Fp2mt[s];
         Complex cZ1=conj(Z1);
@@ -6506,15 +6532,38 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
         Fp2mt[s]=cZ1+Z2;
         Ftm[s]=Z1-cZ2;
         Fpmt[s]=-Zetap2mt*(cZ1-Z2);
+        */
       });
     PARALLELIF(
       (p4-1)*(m-1) > threshold,
       for(size_t t=1; t < p4; ++t) {
-        size_t mt=m*t;
-        Complex *Ft=W+mt;
+        Complex *Ft=W+m*t;
         Complex *Fp2mt=W+(p2m1-t)*m;
         Complex *Ftm=W+(p2+t)*m;
         Complex *Fpmt=W+(pm1-t)*m;
+
+
+        Vec Zetat_a=LOAD(Zetaqr+2*t);
+        Vec X1=UNPACKL(Zetat_a,Zetat_a);
+        Vec Y1=UNPACKH(-Zetat_a,Zetat_a);
+
+        Vec Zetap2mt_a=LOAD(Zetaqr+2*(p2m1-t));
+        Vec X2=UNPACKL(-Zetap2mt_a,-Zetap2mt_a);
+        Vec Y2=UNPACKH(Zetap2mt_a,-Zetap2mt_a);
+
+        Vec Z1=LOAD(Ft);
+        Vec Z2=CONJ(LOAD(Fp2mt));
+        Vec A=Z1+Z2;
+        Vec B=Z1-Z2;
+
+        STORE(Ft,A);
+        STORE(Fp2mt,CONJ(A));
+        STORE(Ftm,ZMULT(X1,Y1,B));
+        STORE(Fpmt,ZMULT(X2,Y2,CONJ(B)));
+
+        Complex *Zetar=Zetaqm+m*(n*t+r0);
+        Complex *Zetar2=Zetaqm+m*(n*(p2m1-t)+r0);
+        /*
         Complex Zetat=conj(Zetaqr[2*t]);
         Complex Zetap2mt=conj(Zetaqr[2*(p2m1-t)]);
 
@@ -6526,12 +6575,19 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
         Fp2mt[0]=cZ1+Z2;
         Ftm[0]=Zetat*(Z1-cZ2);
         Fpmt[0]=-Zetap2mt*(cZ1-Z2);
-
-        size_t R1=n*t+r0;
-        size_t R2=n*(p2m1-t)+r0;
-        Complex *Zetar=Zetaqm+m*R1;
-        Complex *Zetar2=Zetaqm+m*R2;
+        */
         for(size_t s=1; s < m; ++s) {
+          Vec Z1=ZCMULT(LOAD(Zetar+s),LOAD(Ft+s));
+          Vec Z2=ZCMULT(LOAD(Fp2mt+s),LOAD(Zetar2+s));
+          Vec A=Z1+Z2;
+          Vec B=Z1-Z2;
+
+          STORE(Ft+s,A);
+          STORE(Fp2mt+s,CONJ(A));
+          STORE(Ftm+s,ZMULT(X1,Y1,B));
+          STORE(Fpmt+s,ZMULT(X2,Y2,CONJ(B)));
+
+          /*
           Complex Z1=conj(Zetar[s])*Ft[s];
           Complex Z2=conj(Zetar2[s])*Fp2mt[s];
           Complex cZ1=conj(Z1);
@@ -6540,16 +6596,28 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
           Fp2mt[s]=cZ1+Z2;
           Ftm[s]=Zetat*(Z1-cZ2);
           Fpmt[s]=-Zetap2mt*(cZ1-Z2);
+          */
         }
       });
     if(p2%2 == 1) {
-      size_t mp4=m*p4;
-      size_t p2mp4m1=p2-p4-1;
-      Complex *Ft=W+mp4;
-      Complex *Fp2mt=W+p2mp4m1*m;
+      Complex *Ft=W+m*p4;
+      Complex *Fp2mt=W+(p2-p4-1)*m;
       Complex *Ftm=W+(p2+p4)*m;
+
+      Vec Zetat_a=LOAD(Zetaqr+2*p4);
+      Vec X1=UNPACKL(Zetat_a,Zetat_a);
+      Vec Y1=UNPACKH(-Zetat_a,Zetat_a);
+
+      Vec Z1=LOAD(Ft);
+      Vec Z2=CONJ(LOAD(Fp2mt));
+
+      STORE(Ft,Z1+Z2);
+      STORE(Ftm,ZMULT(X1,Y1,Z1-Z2));
+
+      Complex *Zetar=Zetaqm+m*(n*p4+r0);
+
+      /*
       Complex Zetat=conj(Zetaqr[2*p4]);
-      Complex Zetap2mt=conj(Zetaqr[2*p2mp4m1]);
 
       Complex Z1=Ft[0];
       Complex Z2=Fp2mt[0];
@@ -6557,18 +6625,24 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
       Complex cZ2=conj(Z2);
       Ft[0]=Z1+cZ2;
       Ftm[0]=Zetat*(Z1-cZ2);
-
-      size_t R1=n*p4+r0;
-      Complex *Zetar=Zetaqm+m*R1;
+      */
       PARALLELIF(
         m > threshold,
         for(size_t s=1; s < m; ++s) {
+          Vec Zetars=LOAD(Zetar+s);
+          Vec Z1=ZCMULT(Zetars,LOAD(Ft+s));
+          Vec Z2=ZCMULT(LOAD(Fp2mt+s),Zetars);
+
+          STORE(Ft+s,Z1+Z2);
+          STORE(Ftm+s,ZMULT(X1,Y1,Z1-Z2));
+          /*
           Complex Z1=conj(Zetar[s])*Ft[s];
           Complex Z2=conj(Zetar[s])*Fp2mt[s];
           Complex cZ1=conj(Z1);
           Complex cZ2=conj(Z2);
           Ft[s]=Z1+cZ2;
           Ftm[s]=Zetat*(Z1-cZ2);
+          */
         });
     }
 

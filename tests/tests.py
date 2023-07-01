@@ -478,6 +478,7 @@ def realTests(program, minS, testS):
     vals+=collectTests(program, L=16, M=40, m=m, minS=minS, testS=testS)
   mvalues=[2,3,4,8,16,17]
   for m in mvalues:
+    vals+=collectTests(program, L=64, M=512, m=m, minS=minS, testS=testS)
     vals+=collectTests(program, L=8, M=48, m=m, minS=minS, testS=testS)
     vals+=collectTests(program, L=8, M=40, m=m, minS=minS, testS=testS)
     vals+=collectTests(program, L=4, M=16, m=m, minS=minS, testS=testS)
