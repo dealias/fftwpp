@@ -944,14 +944,14 @@ public:
 
   size_t blocksize(size_t r, bool first=false) {
     if(r == 0) return (p > 2 && !first) ? (p % 2 ? (p/2)*m : (p/2-1)*m+e-1): e;
-    //if(r == 0) return (p > 2 && !first) ? (p % 2 ? (p/2+1)*m : (p/2)*m+e-1): e;
     if(2*r == n) return p > 2 ? (p/2)*m : e-1;
     return l;
   }
 
   // Number of outputs per iteration per copy
   size_t noutputs(size_t r) {
-   return blocksize(r)*((r == 0 || 2*r == n) ? 1 : r == 1 ? D0 : D);
+   if(r == 0) return p > 2 ? (p % 2 ? (p/2+1)*m : (p/2)*m+e-1): e;
+   return blocksize(r)*(2*r == n ? 1 : r == 1 ? D0 : D);
   }
 };
 
