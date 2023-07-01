@@ -424,8 +424,12 @@ public:
     return l;
   }
 
+  virtual size_t incr(size_t,bool=false) {
+    return b;
+  }
+
   // Number of complex outputs per residue per copy
-  virtual size_t blocksize(size_t) {
+  virtual size_t blocksize(size_t,bool=false) {
     return noutputs();
   }
 
@@ -933,8 +937,14 @@ public:
     return r > 1 ? D : r == 1 ? D0 : 1;
   }
 
-  size_t blocksize(size_t r) {
-    if(r == 0) return p > 2 ? (p/2+1)*m : e;
+  size_t incr(size_t r, bool first=false) {
+    if(r == 0 && first) return m;
+    return b;
+  }
+
+  size_t blocksize(size_t r, bool first=false) {
+    if(r == 0) return (p > 2 && !first) ? (p % 2 ? (p/2)*m : (p/2-1)*m+e-1): e;
+    //if(r == 0) return (p > 2 && !first) ? (p % 2 ? (p/2+1)*m : (p/2)*m+e-1): e;
     if(2*r == n) return p > 2 ? (p/2)*m : e-1;
     return l;
   }
@@ -1086,11 +1096,21 @@ public:
   }
 
   void operate(Complex **F, size_t r, Indices *indices) {
-    size_t incr=fft->b;
-    size_t stop=fft->complexOutputs(r);
+    size_t blocksize=fft->blocksize(r,true);
     indices->r=r;
-    size_t blocksize=fft->blocksize(r);
-    for(size_t d=0; d < stop; d += incr) {
+
+    Complex *G[A];
+    for(size_t a=0; a < A; ++a)
+      G[a]=F[a];
+    (*mult)(G,blocksize,indices,threads);
+    ++indices->r;
+
+    size_t incr0=fft->incr(r,true);
+    size_t incr=fft->incr(r);
+
+    size_t stop=fft->complexOutputs(r);
+    blocksize=fft->blocksize(r);
+    for(size_t d=incr0; d < stop; d += incr) {
       Complex *G[A];
       for(size_t a=0; a < A; ++a)
         G[a]=F[a]+d;
