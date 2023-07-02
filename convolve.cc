@@ -6095,36 +6095,37 @@ void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
     remainder ? fftm0->fft(W0,F0) : fftm->fft(W0,F0);
   } else { // 2*r0 == n
     size_t p2=ceilquotient(p,2);
+    size_t p2m=p2*m;
     size_t p2m1=p2-1;
     Complex *Zetaqr=Zetaqp+pm1*r0;
 
     Complex *Ft=W;
-    Complex *FtPm=Ft+p2*m;
+    Complex *FtPm=Ft+p2m;
     double *ft=fr;
     double *ftm=ft+m;
     PARALLELIF(
       m > threshold,
-    for(size_t s=0; s < m; ++s) {
-      Ft[s]=ft[s];
-      FtPm[s]=ftm[s];
-    });
+      for(size_t s=0; s < m; ++s) {
+        Ft[s]=ft[s];
+        FtPm[s]=ftm[s];
+      });
     PARALLELIF(
       (p2m1-1)*m > threshold,
-    for(size_t t=1; t < p2m1; ++t) {
-      size_t mt=m*t;
-      Complex *Ft=W+mt;
-      Complex *FtPm=Ft+p2*m;
-      double *ft=fr+2*mt;
-      double *ftm=ft+m;
-      Complex Zeta=Zetaqr[2*t];
-      for(size_t s=0; s < m; ++s) {
-        Ft[s]=Zeta*ft[s];
-        FtPm[s]=Zeta*ftm[s];
-      }
-    });
+      for(size_t t=1; t < p2m1; ++t) {
+        size_t mt=m*t;
+        Complex *Ft=W+mt;
+        Complex *FtPm=Ft+p2m;
+        double *ft=fr+2*mt;
+        double *ftm=ft+m;
+        Complex Zeta=Zetaqr[2*t];
+        for(size_t s=0; s < m; ++s) {
+          Ft[s]=Zeta*ft[s];
+          FtPm[s]=Zeta*ftm[s];
+        }
+      });
     size_t mp2m1=m*p2m1;
     Ft=W+mp2m1;
-    FtPm=Ft+p2*m;
+    FtPm=Ft+p2m;
     ft=fr+2*mp2m1;
     ftm=ft+m;
     Complex Zeta=Zetaqr[2*p2m1];
@@ -6147,14 +6148,16 @@ void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
       p2*m > threshold,
       for(size_t t=0; t < p2; ++t) {
         size_t mt=m*t;
-        size_t R=n*t+r0;
         Complex *Ft=W+mt;
-        Complex *FtPm=Ft+p2*m;
-        Complex *Zetar=Zetaqm+m*R;
+        Complex *FtPm=Ft+p2m;
+        Complex *Zetar=Zetaqm+m*(n*t+r0);
+        Vec Zetat=LOAD(Zetaqr+2*t+1);
+        Vec X=UNPACKL(Zetat,Zetat);
+        Vec Y=UNPACKH(Zetat,-Zetat);
         Complex Zeta=Zetaqr[2*t+1];
         for(size_t s=0; s < m; ++s) {
-          Ft[s] += Zeta*FtPm[s];
-          Ft[s] *= Zetar[s];
+          STORE(Ft+s,ZMULT(LOAD(Zetar+s),LOAD(Ft+s)+ZMULT(X,Y,LOAD(FtPm+s))));
+          //Ft[s]=Zetar[s]*(Ft[s]+Zeta*FtPm[s]);
         }
       });
     fftmp2->fft(W,F0);
@@ -6484,9 +6487,9 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
     Complex *Zetar=Zetaqm+m*r0;
     Complex *Zetar2=Zetaqm+m*(n*p2m1+r0);
 
-    Vec Zetap2mt_a=LOAD(Zetaqr+2*p2m1);
-    Vec X2=UNPACKL(-Zetap2mt_a,-Zetap2mt_a);
-    Vec Y2=UNPACKH(Zetap2mt_a,-Zetap2mt_a);
+    Vec Zetap2mt=LOAD(Zetaqr+2*p2m1);
+    Vec X2=UNPACKL(-Zetap2mt,-Zetap2mt);
+    Vec Y2=UNPACKH(Zetap2mt,-Zetap2mt);
 
     Vec Z1=LOAD(Ft);
     Vec Z2=CONJ(LOAD(Fp2mt));
@@ -6543,13 +6546,13 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
         Complex *Fpmt=W+(pm1-t)*m;
 
 
-        Vec Zetat_a=LOAD(Zetaqr+2*t);
-        Vec X1=UNPACKL(Zetat_a,Zetat_a);
-        Vec Y1=UNPACKH(-Zetat_a,Zetat_a);
+        Vec Zetat=LOAD(Zetaqr+2*t);
+        Vec X1=UNPACKL(Zetat,Zetat);
+        Vec Y1=UNPACKH(-Zetat,Zetat);
 
-        Vec Zetap2mt_a=LOAD(Zetaqr+2*(p2m1-t));
-        Vec X2=UNPACKL(-Zetap2mt_a,-Zetap2mt_a);
-        Vec Y2=UNPACKH(Zetap2mt_a,-Zetap2mt_a);
+        Vec Zetap2mt=LOAD(Zetaqr+2*(p2m1-t));
+        Vec X2=UNPACKL(-Zetap2mt,-Zetap2mt);
+        Vec Y2=UNPACKH(Zetap2mt,-Zetap2mt);
 
         Vec Z1=LOAD(Ft);
         Vec Z2=CONJ(LOAD(Fp2mt));
@@ -6604,9 +6607,9 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
       Complex *Fp2mt=W+(p2-p4-1)*m;
       Complex *Ftm=W+(p2+p4)*m;
 
-      Vec Zetat_a=LOAD(Zetaqr+2*p4);
-      Vec X1=UNPACKL(Zetat_a,Zetat_a);
-      Vec Y1=UNPACKH(-Zetat_a,Zetat_a);
+      Vec Zetat=LOAD(Zetaqr+2*p4);
+      Vec X1=UNPACKL(Zetat,Zetat);
+      Vec Y1=UNPACKH(-Zetat,Zetat);
 
       Vec Z1=LOAD(Ft);
       Vec Z2=CONJ(LOAD(Fp2mt));
