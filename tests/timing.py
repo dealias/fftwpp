@@ -211,6 +211,7 @@ def main(argv):
     dryrun = False
     #dryrun = True
 
+    fileExt=".txt"
 
     bset = 0
     dorun = True
@@ -371,14 +372,14 @@ def main(argv):
     if outfile == "":
         if hybrid:
             if runtype == "explicit" or runtype == "explicito":
-                outfile = runtype
+                outfile = runtype+fileExt
             else:
-                outfile = "hybrid"
+                outfile = "hybrid"+fileExt
         else:
-            outfile = runtype
+            outfile = runtype+fileExt
 
     if hybrid and runtype != "explicit" and runtype != "explicito":
-        optFile=outdir+os.sep+"hybridParams"
+        optFile=outdir+os.sep+"hybridParams"+fileExt
 
     goodruns = []
     badruns = []
@@ -422,7 +423,7 @@ def main(argv):
                 os.makedirs(outdir)
             except:
                 pass
-            with open(outdir + os.sep+"log", "a") as logfile:
+            with open(outdir + os.sep+"log"+fileExt, "a") as logfile:
                 #logfile.write(str(sys.argv))
                 #logfile.write("\n")
                 logfile.write("intial exponent: " + str(a) + "\n")
@@ -642,7 +643,7 @@ def main(argv):
                         print(err)
 
                     # copy the output and error to a log file.
-                    with open(outdir + os.sep+"log", "a") as logfile:
+                    with open(outdir + os.sep+"log"+fileExt, "a") as logfile:
                         logfile.write(" ".join(mcmd))
                         logfile.write("\n")
                         logfile.write(out.decode())
@@ -712,7 +713,7 @@ def main(argv):
                 pass
 
     if not dryrun:
-         with open(outdir + os.sep+"log", "a") as logfile:
+         with open(outdir + os.sep+"log"+fileExt, "a") as logfile:
             goodbads = ""
             if len(goodruns) > 0:
                 goodbads += "Successful runs:\n"
