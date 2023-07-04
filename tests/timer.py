@@ -11,6 +11,7 @@ def main():
   dimensions=[]
   S=args.S
   H=args.H
+  R=args.R
 
   one=args.one
   two=args.two
@@ -20,9 +21,9 @@ def main():
 
   if one or not123:
     dimensions.append(1)
-  if two or not123:
+  if (two or not123) and not R:
     dimensions.append(2)
-  if three or not123:
+  if (three or not123) and not R:
     dimensions.append(3)
 
   if threads == 0:
@@ -33,14 +34,18 @@ def main():
   else:
     Ts=[threads]
 
-  notSorH = not (S or H)
+  notSorHorR = not (S or H or R)
+
   for d in dimensions:
-    if S or notSorH:
+    if S or notSorHorR:
       for T in Ts:
-        time(args,d,False,T)
-    if H or notSorH:
+        time(args,d,False,False,T)
+    if H or notSorHorR:
       for T in Ts:
-        time(args,d,True,T)
+        time(args,d,True,False,T)
+    if R or notSorHorR:
+      for T in Ts:
+        time(args,1,False,True,T)
 
 
 def callTiming(args,program, erase,taskset,runtype=None):
@@ -58,7 +63,7 @@ def callTiming(args,program, erase,taskset,runtype=None):
   output=run(cmd,capture_output=True).stdout.decode();
   print(output,flush=True);
 
-def time(args,dim,Hermitian, T):
+def time(args,dim,Hermitian,real,T):
   a=args.a
   b=args.b
   I=args.I
@@ -71,6 +76,8 @@ def time(args,dim,Hermitian, T):
 
   if Hermitian:
     new += "h"
+  if real:
+    new += "r"
   else:
     old = "c"+old
 
@@ -83,30 +90,41 @@ def time(args,dim,Hermitian, T):
   erase=[]
   if e:
     erase.append("-e")
-
-  if runtype == "implicit":
-    callTiming(args,old,erase,taskset,runtype)
-  elif runtype == "explicit":
-    callTiming(args,old,erase,taskset,runtype)
-  elif runtype == "explicito":
-    if dim != 1:
-      print("explicito is only supported for 1 dimensional routines.")
-    else:
+  if not real:
+    if runtype == "implicit":
       callTiming(args,old,erase,taskset,runtype)
-  elif runtype == "hybrid":
-    callTiming(args,new,erase,taskset)
-    if Hermitian and I == 0:
+    elif runtype == "explicit":
+      callTiming(args,old,erase,taskset,runtype)
+    elif runtype == "explicito":
+      if dim != 1:
+        print("explicito is only supported for 1 dimensional routines.")
+      else:
+        callTiming(args,old,erase,taskset,runtype)
+    elif runtype == "hybrid":
+      callTiming(args,new,erase,taskset)
+      if Hermitian and I == 0:
+        callTiming(args,new,erase,taskset,"explicit")
+    elif runtype == None:
+      callTiming(args,old,erase,taskset,"implicit")
+      callTiming(args,old,erase,taskset,"explicit")
+      if dim == 1:
+        callTiming(args,old,erase,taskset,"explicito")
+      callTiming(args,new,erase,taskset)
+      if Hermitian and I == 0:
+        callTiming(args,new,erase,taskset,"explicit")
+    else:
+      print(f"runtype=\"{runtype}\" is invalid")
+  elif real:
+    if runtype == "explicit":
+      callTiming(args,new,erase,taskset,runtype)
+    elif runtype == "explicito":
+      callTiming(args,new,erase,taskset,runtype)
+    elif runtype == "hybrid":
+      callTiming(args,new,erase,taskset)
+    elif runtype == None:
       callTiming(args,new,erase,taskset,"explicit")
-  elif runtype == None:
-    callTiming(args,old,erase,taskset,"implicit")
-    callTiming(args,old,erase,taskset,"explicit")
-    if dim == 1:
-      callTiming(args,old,erase,taskset,"explicito")
-    callTiming(args,new,erase,taskset)
-    if Hermitian and I == 0:
-      callTiming(args,new,erase,taskset,"explicit")
-  else:
-    print(f"runtype=\"{runtype}\" is invalid")
+      callTiming(args,new,erase,taskset,"explicito")
+      callTiming(args,new,erase,taskset)
 
 
 def getArgs():
@@ -123,9 +141,11 @@ def getArgs():
   parser.add_argument("-b",help="End.", default=1, type=int)
   parser.add_argument("-e", help="Erase old data.", action="store_true")
   parser.add_argument("-H", help="Test Hermitian convolutions. Not specifying S or H is the same as specifying both.", action="store_true")
+
   parser.add_argument("-I",help="Interval. Checks powers of 2 when 0. Default is 0.", default=0, type=int)
   parser.add_argument("-K",help="Minimum time limit (seconds).", default=5, type=float)
   parser.add_argument("-r",help="runtype: implicit, explicit, or hybrid. Not specifying does all of them.", type=str)
+  parser.add_argument("-R", help="Test Real convolutions. Not specifying S or H is the same as specifying both.", action="store_true")
   parser.add_argument("-S", help="Test Standard convolutions. Not specifying S or H is the same as specifying both.",
                       action="store_true")
   parser.add_argument("-T",metavar='threads',help="Number of threads. Not specifying, runs T=1 and T=$OMP_NUM_THREADS", default=0, type=int)
