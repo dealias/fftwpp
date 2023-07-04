@@ -922,7 +922,8 @@ public:
   }
 
   virtual size_t outputSize() {
-    return q == 2 ? e : b*D;
+    if(n == 2) return p > 2 ? (p/2+1)*m : e;
+    return b*D;
   }
 
   bool conjugates() {
