@@ -815,13 +815,10 @@ class fftPadReal : public fftBase {
   crfft1d *crfftm1;
   mrcfft1d *rcfftm2;// TODO: deallocate in destructor!
   mcrfft1d *crfftm2;
-  //crfft1d *crfftm1;
-  //fft1d *fftm1;
-  //fft1d *ifftm1;
   mfft1d *fftm,*fftm0,*fftmp2m1,*fftmp2;
   mfft1d *ifftm,*ifftm0,*ifftmp2m1,*ifftmp2;
-  fft1d *ffte;
-  fft1d *iffte;
+  fft1d *ffth;
+  fft1d *iffth;
   mrcfft1d *rcfftp; // TODO: deallocate in destructor!
   mcrfft1d *crfftp;
   mfft1d *fftp;
