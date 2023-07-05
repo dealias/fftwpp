@@ -34,14 +34,14 @@ if(find(dir,"2-") >= 0) d=2;
 if(find(dir,"3-") >= 0) d=3;
 
 if(expl) {
-  file fin=input(base+"/"+dir+"/explicit").line();
+  file fin=input(base+"/"+dir+"/explicit.txt").line();
   real[][] a=fin.dimension(0,0);
   a=transpose(sort(a));
   me=a[0]; e=a[1];// le=a[2]; he=a[3];
 }
 
 if(d == 1) {
-  file fin=input(base+"/"+dir+"/explicito").line();
+  file fin=input(base+"/"+dir+"/explicito.txt").line();
   explicito=!error(fin);
   if(explicito) {
     real[][] a=fin.dimension(0,0);
@@ -58,7 +58,7 @@ if(implicit) {
   mi=a[0]; i=a[1];// li=a[2]; hi=a[3];
 }
 */
-file fin=input(base+"/"+dir+"/hybrid").line();
+file fin=input(base+"/"+dir+"/hybrid.txt").line();
 real[][] a=fin.dimension(0,0);
 a=transpose(sort(a));
 mh=a[0]; h=a[1];// lh=a[2]; hh=a[3];

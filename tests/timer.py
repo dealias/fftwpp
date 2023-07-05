@@ -85,6 +85,8 @@ def time(args,dim,Hermitian,real,T):
   old+=dimString
 
   taskset=os.getenv("TASKSET")
+  if T == 1 and taskset != None:
+    taskset="taskset -c 0"
 
   args=[f"-a{a}",f"-b{b}",f"-I{I}",f"-T{T}",f"-K{args.K}"]
   erase=[]
