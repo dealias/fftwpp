@@ -18,7 +18,7 @@
 #ifndef __Array_h__
 #define __Array_h__ 1
 
-#define __ARRAY_H_VERSION__ 1.56
+#define __ARRAY_H_VERSION__ 1.57
 
 // Defining NDEBUG improves optimization but disables argument checking.
 // Defining __NOARRAY2OPT inhibits special optimization of Array2[].
@@ -26,6 +26,7 @@
 #include <iostream>
 #include <sstream>
 #include <climits>
+#include <cstdint>
 #include <cstdlib>
 #include <cerrno>
 
