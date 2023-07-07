@@ -6033,8 +6033,7 @@ void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
       Complex *Ft=W+m*t;
       Complex *Zetar=Zetaqm+m*R;
       for(size_t s=1; s < m; ++s)
-        Ft[s] *= conj(Zetar[s]); //Compensate for incorrect transform sign.
-        //Ft[s] *= Zetar[s];
+        Ft[s] *= conj(Zetar[s]); // Compensate for conjugate transform sign.
     });
 
     fftmp2m1->fft(W+m,F0+m);
@@ -6046,14 +6045,14 @@ void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
       double *Wt=Wr+2*p2m;
       double *Wth=Wt+2*h;
 
+      Ft[0]=Complex(Wt[0],Wth[0]);
       PARALLELIF(
         h > threshold,
-        for(size_t s=0; s < h; ++s) {
+        for(size_t s=1; s < h; ++s) {
           size_t s2=2*s;
           Ft[s]=Zetar[s]*Complex(Wt[s2],Wth[s2]);
-        }
-        );
-      ffth->fft(W+p2m,F0+p2m);
+        });
+      ffth->fft(Ft,F0+p2m);
     }
 
   } else if (r0 < n2) {
@@ -6212,7 +6211,7 @@ void fftPadReal::backward1(Complex *F, Complex *f, size_t r0, Complex *W)
       PARALLELIF(
         L > threshold,
         for(size_t s=1; s < L; ++s)
-          fr[s] += 2.0*realConjProd(Zetar[s],U[s]);
+          fr[s] += 2.0*realProduct(Zetar[s],U[s]);
         );
     }
   } else {
@@ -6242,7 +6241,7 @@ void fftPadReal::backward1(Complex *F, Complex *f, size_t r0, Complex *W)
     PARALLELIF(
       stop-Lmh > threshold,
       for(size_t s=Lmh; s < stop; ++s) {
-        fr[s] += 2.0*realConjProd(Zetar[s],W[s]);
+        fr[s] += 2.0*realProduct(Zetar[s],W[s]);
       });
   }
 }
@@ -6285,14 +6284,14 @@ void fftPadReal::backward2(Complex *F, Complex *f, size_t r0, Complex *W)
       PARALLELIF(
         m > threshold,
         for(size_t s=1; s < m; ++s)
-          fr[s] += 2.0*realConjProd(Zetar[s],U[s]);
+          fr[s] += 2.0*realProduct(Zetar[s],U[s]);
         );
       Complex *Zetar2=ZetaqmS+Lm*r;
       Complex *Um=U-m;
       PARALLELIF(
         Lm > threshold,
         for(size_t s=m; s < L; ++s)
-          fr[s] += 2.0*realConjProd(Zetar2[s],Um[s]);
+          fr[s] += 2.0*realProduct(Zetar2[s],Um[s]);
         );
     }
   } else {
@@ -6385,8 +6384,7 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
         Complex *Ft=W+m*t;
         Complex *Zetar=Zetaqm+m*R;
         for(size_t s=1; s < m; ++s)
-          Ft[s] *= Zetar[s]; // Compensate for incorrect transform sign.
-          //Ft[s] *= conj(Zetar[s]);
+          Ft[s] *= Zetar[s]; // Compensate for conjugate transform sign.
       });
     if(p == 2*p2) {
       iffth->fft(F0+p2m,W+p2m);
@@ -6462,7 +6460,7 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
           Complex *Ft=F+mt;
           Complex Zeta=Zetaqr[t];
           for(size_t s=0; s < m; ++s)
-            ft[s] += 2.0*realConjProd(Zeta,Ft[s]);
+            ft[s] += 2.0*realProduct(Zeta,Ft[s]);
         });
       size_t mt=m*pm1;
       Complex *Ft=F+mt;
@@ -6471,7 +6469,7 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
       PARALLELIF(
         stop > threshold,
         for(size_t s=0; s < stop; ++s)
-          ft[s] += 2.0*realConjProd(Zeta,Ft[s]);
+          ft[s] += 2.0*realProduct(Zeta,Ft[s]);
         );
     }
   } else { //2*r0 == n
@@ -6525,12 +6523,13 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
     Ft=W+mp2m1;
     ft=fr+mp2m1;
     ftp2=ft+p2m;
-    Complex Zeta=2.0*conj(Zetaqr[p2m1]);
+    Complex Zeta=2.0*Zetaqr[p2m1];
+    Complex ZetaConj=conj(Zeta);
 
     PARALLELIF(
       stop > threshold,
       for(size_t s=0; s < stop; ++s) {
-        Complex Z=Zeta*Ft[s];
+        Complex Z=ZetaConj*Ft[s];
         ft[s] += Z.re;
         ftp2[s] += Z.im;
       });
@@ -6538,7 +6537,7 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
     PARALLELIF(
       m-stop > threshold,
       for(size_t s=stop; s < m; ++s)
-        ft[s] += realProd(Zeta,Ft[s]);
+        ft[s] += realProduct(ZetaConj,Ft[s]);
       );
   }
 }

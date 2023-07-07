@@ -245,17 +245,6 @@ inline size_t tpadding(size_t m)
 }
 
 // return real(z*w)
-inline double realProd(const Complex& z, const Complex& w)
-{
-  return z.re*w.re-z.im*w.im;
-}
-
-// return real(conj(z)*w)
-inline double realConjProd(const Complex& z, const Complex& w)
-{
-  return z.re*w.re+z.im*w.im;
-}
-
 }
 
 #endif
