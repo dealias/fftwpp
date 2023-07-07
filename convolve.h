@@ -424,12 +424,12 @@ public:
     return l;
   }
 
-  virtual size_t incr(size_t,bool=false) {
+  virtual size_t incr(size_t, bool=false) {
     return b;
   }
 
   // Number of complex outputs per residue per copy
-  virtual size_t blocksize(size_t,bool=false) {
+  virtual size_t blocksize(size_t, bool=false) {
     return noutputs();
   }
 
@@ -936,8 +936,7 @@ public:
   }
 
   size_t incr(size_t r, bool first=false) {
-    if(r == 0 && first) return m;
-    return b;
+    return r == 0 && first ? m : b;
   }
 
   size_t blocksize(size_t r, bool first=false) {
@@ -1097,10 +1096,7 @@ public:
     size_t blocksize=fft->blocksize(r,true);
     indices->r=r;
 
-    Complex *G[A];
-    for(size_t a=0; a < A; ++a)
-      G[a]=F[a];
-    (*mult)(G,blocksize,indices,threads);
+    (*mult)(F,blocksize,indices,threads);
     ++indices->r;
 
     size_t incr0=fft->incr(r,true);
