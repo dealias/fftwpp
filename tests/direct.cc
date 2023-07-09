@@ -128,6 +128,22 @@ void DirectHConvolution2::convolve(Complex *h, Complex *f, Complex *g,
   }
 }
 
+void DirectrConvolution2::convolve(double *h, double *f, double *g)
+{
+#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
+#pragma omp parallel for
+#endif
+  for(size_t i=0; i < mx; ++i) {
+    for(size_t j=0; j < my; ++j) {
+      double sum=0.0;
+      for(size_t k=0; k <= i; ++k)
+        for(size_t p=0; p <= j; ++p)
+          sum += f[Sx*k+p]*g[Sx*(i-k)+j-p];
+      h[i*my+j]=sum;
+    }
+  }
+}
+
 void DirectConvolution3::convolve(Complex *h, Complex *f, Complex *g)
 {
 #if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
@@ -193,6 +209,25 @@ void DirectHConvolution3::convolve(Complex *h, Complex *f, Complex *g,
           }
         }
         h[((xorigin+kx)*ny+yorigin+ky)*mz+kz]=sum;
+      }
+    }
+  }
+}
+
+void DirectrConvolution3::convolve(double *h, double *f, double *g)
+{
+#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
+#pragma omp parallel for
+#endif
+  for(size_t i=0; i < mx; ++i) {
+    for(size_t j=0; j < my; ++j) {
+      for(size_t k=0; k < mz; ++k) {
+        double sum=0.0;
+        for(size_t r=0; r <= i; ++r)
+          for(size_t p=0; p <= j; ++p)
+            for(size_t q=0; q <= k; ++q)
+              sum += f[r*Sx+p*Sy+q]*g[(i-r)*Sx+(j-p)*Sy+(k-q)];
+        h[i*myz+j*mz+k]=sum;
       }
     }
   }

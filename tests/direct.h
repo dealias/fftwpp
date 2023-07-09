@@ -67,6 +67,19 @@ public:
   void convolve(Complex *h, Complex *f, Complex *g, bool symmetrize=true);
 };
 
+// Out-of-place direct 2D real convolution.
+class DirectrConvolution2 {
+protected:
+  size_t mx,my; // x and y data lengths
+  size_t Sx; // x stride
+public:
+  DirectrConvolution2(size_t mx, size_t my,
+                     size_t Sx=0) : mx(mx), my(my) {
+    this->Sx=Sx ? Sx : my;
+  }
+
+  void convolve(double *h, double *f, double *g);
+};
 // Out-of-place direct 3D complex convolution.
 class DirectConvolution3 {
 protected:
@@ -102,6 +115,24 @@ public:
   }
 
   void convolve(Complex *h, Complex *f, Complex *g, bool symmetrize=true);
+};
+
+// Out-of-place direct 3D complex convolution.
+class DirectrConvolution3 {
+protected:
+  size_t mx,my,mz;
+  size_t Sx; // x stride
+  size_t Sy; // y stride
+  size_t myz;
+public:
+  DirectrConvolution3(size_t mx, size_t my, size_t mz,
+                     size_t Sx=0, size_t Sy=0) :
+    mx(mx), my(my), mz(mz), myz(my*mz) {
+    this->Sy=Sy ? Sy : mz;
+    this->Sx=Sx ? Sx : my*Sy;
+  }
+
+  void convolve(double *h, double *f, double *g);
 };
 
 // Out-of-place direct 1D Hermitian ternary convolution.
