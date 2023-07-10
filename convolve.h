@@ -332,12 +332,10 @@ public:
   {}
   virtual void forward1All(Complex *f, Complex *F0, size_t r0,
                            Complex *W) {}
-  virtual void forward1Many(Complex *f, Complex *F, size_t r,
-                            Complex *W) {}
+  virtual void forward1Many(Complex *f, Complex *F, size_t r, Complex *W) {}
   virtual void forward1ManyAll(Complex *f, Complex *F, size_t r,
                                Complex *W) {}
-  virtual void forward2(Complex *f, Complex *F0, size_t r0, Complex *W)
-  {}
+  virtual void forward2(Complex *f, Complex *F0, size_t r0, Complex *W) {}
   virtual void forward2All(Complex *f, Complex *F0, size_t r0,
                            Complex *W) {}
   virtual void forward2Many(Complex *f, Complex *F, size_t r,
@@ -419,23 +417,18 @@ public:
     return S*L;
   }
 
-  // Number of complex outputs per residue per copy
-  virtual size_t noutputs() {
-    return l;
-  }
-
   virtual size_t incr(size_t, bool=false) {
     return b;
   }
 
   // Number of complex outputs per residue per copy
-  virtual size_t blocksize(size_t, bool=false) {
-    return noutputs();
+  virtual size_t blocksize(size_t r, bool=false) {
+    return l;
   }
 
-  // Number of outputs per iteration per copy
+  // Number of complex outputs per iteration per copy
   virtual size_t noutputs(size_t r) {
-    return l*(r == 0 ? D0 : D);
+    return blocksize(r)*(r == 0 ? D0 : D);
   }
 
   // Number of complex outputs per iteration
@@ -786,13 +779,8 @@ public:
   void backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W);
 
   // Number of real outputs per residue per copy
-  size_t noutputs() {
+  size_t blocksize(size_t r, bool=false) {
     return m*(q == 1 ? 1 : p/2);
-  }
-
-  size_t noutputs(size_t r) {
-    std::cerr << "For Hermitian transforms, use noutputs() instead of noutputs(size_t r)." << std::endl;
-    exit(-1);
   }
 
   // Number of complex outputs per iteration
@@ -813,13 +801,15 @@ class fftPadReal : public fftBase {
   size_t e;
   rcfft1d *rcfftm1;
   crfft1d *crfftm1;
-  mrcfft1d *rcfftm2;// TODO: deallocate in destructor!
+  mrcfft1d *rcfftm;
+  mcrfft1d *crfftm;
+  mrcfft1d *rcfftm2;
   mcrfft1d *crfftm2;
   mfft1d *fftm,*fftm0,*fftmp2m1,*fftmp2;
   mfft1d *ifftm,*ifftm0,*ifftmp2m1,*ifftmp2;
-  fft1d *ffth;
-  fft1d *iffth;
-  mrcfft1d *rcfftp; // TODO: deallocate in destructor!
+  mfft1d *ffth;
+  mfft1d *iffth;
+  mrcfft1d *rcfftp;
   mcrfft1d *crfftp;
   mfft1d *fftp;
   mfft1d *ifftp;
@@ -895,17 +885,21 @@ public:
   // Explicitly pad to m.
   void padSingle(Complex *W);
 
-  /*
   // Explicitly pad C FFTs to m.
-  void padMany(Complex *W) {}
-  */
+  void padMany(Complex *W);
 
   void forwardExplicit(Complex *f, Complex *F, size_t, Complex *W);
   void backwardExplicit(Complex *F, Complex *f, size_t, Complex *W);
 
+  void forwardExplicitMany(Complex *f, Complex *F, size_t, Complex *W);
+  void backwardExplicitMany(Complex *F, Complex *f, size_t, Complex *W);
+
   // p=1 && C=1
   void forward1(Complex *f, Complex *F, size_t r0, Complex *W);
   void backward1(Complex *F, Complex *f, size_t r0, Complex *W);
+
+  void forward1Many(Complex *f, Complex *F, size_t r, Complex *W);
+  void backward1Many(Complex *F, Complex *f, size_t r, Complex *W);
 
   // p=2 && C=1
   void forward2(Complex *f, Complex *F, size_t r0, Complex *W);
@@ -919,7 +913,7 @@ public:
   }
 
   virtual size_t outputSize() {
-    if(n == 2) return p > 2 ? (p/2+1)*m : e;
+    if(n == 2) return p > 2 ? (p/2+1)*m*S : e*S;
     return b*D;
   }
 
@@ -939,13 +933,14 @@ public:
     return r == 0 && first ? m : b;
   }
 
+  // Number of complex outputs per residue per copy
   size_t blocksize(size_t r, bool first=false) {
     if(r == 0) return (p > 2 && !first) ? (p % 2 ? (p/2)*m : (p/2-1)*m+e-1): e;
     if(2*r == n) return p > 2 ? (p/2)*m : e-1;
     return l;
   }
 
-  // Number of outputs per iteration per copy
+  // Number of complex outputs per iteration per copy
   size_t noutputs(size_t r) {
    if(r == 0) return p > 2 ? (p % 2 ? (p/2+1)*m : (p/2)*m+e-1): e;
    return blocksize(r)*(2*r == n ? 1 : r == 1 ? D0 : D);

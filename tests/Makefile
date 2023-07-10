@@ -61,7 +61,7 @@ vpath %.cc ../
 
 FILES=conv cconv conv2 cconv2 conv3 cconv3 tconv tconv2 \
 	fft1 fft2 fft3 fft1r fft2r fft3r mfft1 mfft1r transpose \
-	hybrid hybridh hybridconv hybridconvh hybridconvr \
+	hybrid hybridh hybridr hybridconv hybridconvh hybridconvr \
 	hybridconv2 hybridconvh2 \
 	hybridconv3 hybridconvh3
 
@@ -85,6 +85,9 @@ hybrid: hybrid.o $(HYBRID:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 hybridh: hybridh.o $(HYBRID:=.o)
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
+hybridr: hybridr.o $(HYBRID:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 hybridconv: hybridconv.o $(HYBRID:=.o)

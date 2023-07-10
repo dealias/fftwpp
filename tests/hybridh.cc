@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
   cout << "M=" << M << endl;
 
 // Disable overwrite optimization for these tests.
-  Application app(1,2,multNone,fftw::maxthreads,mx,Dx,Ix);
+  Application app(2,1,multNone,fftw::maxthreads,mx,Dx,Ix);
 
   cout << endl << "Minimal Explicit:" << endl;
   // Minimal explicit padding
@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
   fft.pad(W0);
   double error=0.0, error2=0.0;
   double norm=0.0, norm2=0.0;
-  size_t noutputs=C*fft.noutputs();
+  size_t noutputs=C*fft.noutputs(0);
   for(size_t r=0; r < fft.R; r += fft.increment(r)) {
     fft.forward(f,F,r,W0);
     size_t D1=r == 0 ? fft.D0 : fft.D;
@@ -99,7 +99,8 @@ int main(int argc, char *argv[])
 
   if(Output) {
     cout << endl;
-    for(size_t j=0; j < C*fft2.noutputs(); ++j)
+    cout << "Explicit output:" << endl;
+    for(size_t j=0; j < C*fft2.noutputs(0); ++j)
       cout << j << ": " << F2r[j] << endl;
   }
 
