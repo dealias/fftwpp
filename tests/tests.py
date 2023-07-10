@@ -45,16 +45,17 @@ class Program:
     self.failedCases.append(case)
 
 class Options:
-  def __init__(self, tol, verbose, R, testS, printEverything, valid):
-    self.tol=tol
-    self.verbose=verbose
-    self.R=R
-    self.testS=testS
-    self.printEverything=printEverything
-    self.valid=valid
+  def __init__(self, args):
+    self.tol=args.t
+    self.verbose=args.v
+    self.R=args.R
+    self.testS=(args.S or args.All)
+    self.printEverything=args.p
+    self.valid=args.valid
+    self.vg=args.valgrind
 
 class Command:
-  def __init__(self, program, T, R, vals=None, L=None, M=None):
+  def __init__(self, program, T, vals=None, L=None, M=None, options=None):
     self.name=[program.name]
     self.extraArgs=[]
     if L is not None and M is not None:
@@ -106,13 +107,15 @@ class Command:
       self.extraArgs.append("-threshold")
       self.extraArgs.append("0")
     self.extraArgs.append("-E")
-    if R:
-      self.extraArgs.append("-R")
+    if options != None:
+      if options.R:
+        self.extraArgs.append("-R")
+      self.vg=["valgrind"] if options.vg else []
 
     if program.extraArgs != "":
       self.extraArgs.append(program.extraArgs)
 
-    self.list=self.name+self.L+self.M+self.m+self.D+self.I+self.S+self.C+self.T+self.extraArgs
+    self.list=self.vg+self.name+self.L+self.M+self.m+self.D+self.I+self.S+self.C+self.T+self.extraArgs
 
     self.case=" ".join(self.list)
 
@@ -182,6 +185,8 @@ def getArgs():
   parser.add_argument("-p",help="Print out everything.",action="store_true")
   parser.add_argument("-l",help="Show log of failed cases",
                       action="store_true")
+  parser.add_argument("--valgrind",help="Run tests under valgrind.",
+                      action="store_true")
   parser.add_argument("-v",help="Show the results of every test.",
                       action="store_true")
   return parser.parse_args()
@@ -238,6 +243,7 @@ def getPrograms(args):
 def test(programs, args):
   lenP=len(programs)
   T=0 if args.All else int(args.T)
+  vg=args.valgrind
 
   if lenP >= 1:
     passed=0
@@ -269,9 +275,7 @@ def test(programs, args):
       else:
         raise ValueError(f"{T} is an invalid number of threads.")
 
-      options=Options(float(args.t),args.v,args.R,args.S or args.All,args.p,args.valid)
-
-      iterate(p,Ts,options)
+      iterate(p,Ts,Options(args))
 
       ppassed=p.passed
       pfailed=p.failed
@@ -494,14 +498,10 @@ def realTests(program, minS, testS):
     vals+=collectTests(program, L=9, M=81, m=m, minS=minS, testS=testS)
     vals+=collectTests(program, L=36, M=72, m=m, minS=minS, testS=testS)
     vals+=collectTests(program, L=36, M=144, m=m, minS=minS, testS=testS)
-
-
-
   return vals
 
 def checkOptimizer(program, L, M, T, options):
-  R=options.R
-  cmd=Command(program,T,R,L=L,M=M)
+  cmd=Command(program,T,L=L,M=M,options=options)
 
   vp = subprocess.Popen(cmd.list, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
   vp.wait()
@@ -515,7 +515,7 @@ def checkOptimizer(program, L, M, T, options):
   if options.printEverything:
     print(f"{cmd.case}\n{output}\n")
 
-  if R:
+  if options.R:
     routines=findRoutines(output)
   else:
     routines=None
@@ -527,8 +527,7 @@ def checkOptimizer(program, L, M, T, options):
     errorSearch(program,output,cmd,options,routines,r"Backward Error")
 
 def check(program, vals, T, options):
-  R=options.R
-  cmd=Command(program,T,R,vals)
+  cmd=Command(program,T,vals,options=options)
 
   vp = subprocess.Popen(cmd.list, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
   vp.wait()
@@ -542,7 +541,7 @@ def check(program, vals, T, options):
   if options.printEverything:
     print(f"{cmd.case}\n{output}\n")
 
-  if R:
+  if options.R:
     routines=findRoutines(output)
   else:
     routines=None
