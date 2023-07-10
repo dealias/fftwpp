@@ -520,11 +520,17 @@ def checkOptimizer(program, L, M, T, options):
   else:
     routines=None
 
-  if program.mult:
-    errorSearch(program,output,cmd,options,routines,r"Error")
-  else:
-    errorSearch(program,output,cmd,options,routines,r"Forward Error")
-    errorSearch(program,output,cmd,options,routines,r"Backward Error")
+  testPassed=True
+  if options.vg:
+    testPassed=segFaultSearch(program,output,cmd,routines)
+
+  if testPassed:
+    if program.mult:
+      errorSearch(program,output,cmd,options,routines,r"Error")
+    else:
+      testPassed=errorSearch(program,output,cmd,options,routines,r"Forward Error")
+      if testPassed:
+        errorSearch(program,output,cmd,options,routines,r"Backward Error")
 
 def check(program, vals, T, options):
   cmd=Command(program,T,vals,options=options)
@@ -549,6 +555,9 @@ def check(program, vals, T, options):
   testPassed=True
   if options.valid:
     testPassed=invalidSearch(program,output,cmd,routines)
+
+  if options.vg:
+    testPassed=segFaultSearch(program,output,cmd,routines)
 
   if testPassed:
     if program.mult:
@@ -597,6 +606,20 @@ def invalidSearch(program, output, cmd, routines):
           break
       except Exception as e:
         evaluate(program,"f",f" Exception raised.\n\t{e}",cmd.case,routines)
+  return True
+
+def segFaultSearch(program, output, cmd, routines):
+  msg="ERROR SUMMARY"
+  try:
+    error=re.search(r"(?<="+msg+r": )(\d|\.|e|-|\+)*",output)
+    if error is not None:
+      error=error.group()
+      if int(error) > 0:
+        return evaluate(program,"f",msg+": "+error,cmd.case,routines)
+    else:
+      return evaluate(program,"f",msg+" not found.",cmd.case,routines)
+  except Exception as e:
+    return evaluate(program,"f",f" Exception raised.\n\t{e}",cmd.case,routines)
   return True
 
 def evaluate(program, result, message, case, routines, verbose=True):
