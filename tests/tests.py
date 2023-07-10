@@ -615,7 +615,8 @@ def segFaultSearch(program, output, cmd, routines):
     if error is not None:
       error=int(error.group())
       if error > 0:
-        return evaluate(program,"f",f"Valgrind found {error}s",cmd.case,routines)
+        s="s" if error > 1 else ""
+        return evaluate(program,"f",f"Valgrind found {error} error{s}",cmd.case,routines)
     else:
       return evaluate(program,"f","Valgrind error summary not found.",cmd.case,routines)
   except Exception as e:
