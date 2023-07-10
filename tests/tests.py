@@ -613,11 +613,11 @@ def segFaultSearch(program, output, cmd, routines):
   try:
     error=re.search(r"(?<="+msg+r": )(\d|\.|e|-|\+)*",output)
     if error is not None:
-      error=error.group()
-      if int(error) > 0:
-        return evaluate(program,"f",msg+": "+error,cmd.case,routines)
+      error=int(error.group())
+      if error > 0:
+        return evaluate(program,"f",f"Valgrind found {error}s",cmd.case,routines)
     else:
-      return evaluate(program,"f",msg+" not found.",cmd.case,routines)
+      return evaluate(program,"f","Valgrind error summary not found.",cmd.case,routines)
   except Exception as e:
     return evaluate(program,"f",f" Exception raised.\n\t{e}",cmd.case,routines)
   return True
