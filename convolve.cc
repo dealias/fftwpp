@@ -5672,10 +5672,17 @@ void fftPadReal::init()
             Pad=&fftBase::padMany;
         }
       } else if(p == 2) {
-        Forward=&fftBase::forward2;
-        Backward=&fftBase::backward2;
-        FR="forward2";
-        BR="backward2";
+        if(S == 1) {
+          Forward=&fftBase::forward2;
+          Backward=&fftBase::backward2;
+          FR="forward2";
+          BR="backward2";
+        } else {
+          Forward=&fftBase::forward2Many;
+          Backward=&fftBase::backward2Many;
+          FR="forward2Many";
+          BR="backward2Many";
+        }
         size_t Lm=L-m;
         double twopibyN=twopi/M;
         ZetaqmS0=ComplexAlign((q-1)*Lm);
@@ -6641,7 +6648,7 @@ void fftPadReal::backward1Many(Complex *F, Complex *f, size_t r, Complex *W)
         double *frhs=frh+Ss;
         Complex zeta=conj(Zetar[s]);
         for(size_t c=0; c < C; ++c) {
-          Complex z=2.0*zeta*Ws[c];
+          Complex z=2.0*zeta*Ws[c]; // Optimize
           frs[c] += z.re;
           frhs[c] += z.im;
         }
@@ -6767,6 +6774,167 @@ void fftPadReal::backward2(Complex *F, Complex *f, size_t r0, Complex *W)
         // t=0
         fr[s] += z.re;
         frh[s] += z.im;
+      });
+  }
+}
+
+void fftPadReal::backward2Many(Complex *F, Complex *f, size_t r, Complex *W)
+{
+  if(W == NULL) W=F;
+  double *fr=(double *) f;
+  double *Wr=(double *) W;
+
+  if(r == 0) {
+    crfftm->fft(F,Wr);
+    PARALLELIF(
+      m > threshold,
+      for(size_t s=0; s < m; ++s) {
+        size_t Ss=S*s;
+        double *Wrs=Wr+Ss;
+        double *frs=fr+Ss;
+        for(size_t c=0; c < C; ++c)
+          frs[c]=Wrs[c];
+      });
+    double *Wm=Wr-Sm;
+    PARALLELIF(
+      L-m > threshold,
+      for(size_t s=m; s < L; ++s) {
+        size_t Ss=S*s;
+        double *Wms=Wm+Ss;
+        double *frs=fr+Ss;
+        for(size_t c=0; c < C; ++c)
+          frs[c]=Wms[c];
+      });
+  } else if(2*r < q) {
+    size_t Lm=L-m;
+    ifftm->fft(F,W);
+    for(size_t c=0; c < C; ++c)
+      fr[c] += 2.0*W[c].re;
+    Complex *Zetar=Zetaqm+m*r;
+    PARALLELIF(
+      m > threshold,
+      for(size_t s=1; s < m; ++s) {
+        size_t Ss=S*s;
+        Complex *Ws=W+Ss;
+        double *frs=fr+Ss;
+        Complex zeta=Zetar[s];
+        for(size_t c=0; c < C; ++c) // TODO: Vectorize
+          frs[c] += 2.0*realProduct(zeta,Ws[c]);
+      });
+    Complex *Zetar2=ZetaqmS+Lm*r;
+    Complex *Wm=W-Sm;
+    PARALLELIF(
+      Lm > threshold,
+      for(size_t s=m; s < L; ++s) {
+        size_t Ss=S*s;
+        Complex *Wms=Wm+Ss;
+        double *frs=fr+Ss;
+        Complex zeta2=Zetar2[s];
+        for(size_t c=0; c < C; ++c) // TODO: Vectorize
+          frs[c] += 2.0*realProduct(zeta2,Wms[c]);
+      });
+  } else {
+    iffth->fft(F,W);
+    Complex *Zetar=Zetaqm+m*r;
+    size_t h=e-1;
+    size_t mh=m+h;
+    double *frh=fr+S*h;
+    double *frm=fr+Sm;
+    double *frhm=frh+Sm;
+    size_t stop1,stop2;
+
+    if(2*m == L) {
+      for(size_t c=0; c < C; ++c) {
+        Complex z0=2.0*W[c];
+        double Rez0=z0.re;
+        double Imz0=z0.im;
+        fr[c] += Rez0;
+        frm[c] -= Rez0;
+        frh[c] += Imz0;
+        frhm[c] -= Imz0;
+      }
+      stop1=h;
+      stop2=h;
+    } else if(mh < L) {
+      for(size_t c=0; c < C; ++c) {
+        Complex z0=2.0*W[c];
+        double Rez0=z0.re;
+        double Imz0=z0.im;
+        fr[c] += Rez0;
+        frm[c] -= Rez0;
+        frh[c] += Imz0;
+        frhm[c] -= Imz0;
+      }
+      stop1=L-mh;
+      stop2=h;
+    } else {
+      for(size_t c=0; c < C; ++c) {
+        Complex z0=2.0*W[c];
+        double Rez0=z0.re;
+        double Imz0=z0.im;
+        fr[c] += Rez0;
+        frm[c] -= Rez0;
+        frh[c] += Imz0;
+      }
+      stop1=1;
+      stop2=L-m;
+    }
+
+    PARALLELIF(
+      (stop1-1)*C > threshold,
+      for(size_t s=1; s < stop1; ++s) {
+        size_t Ss=S*s;
+        Complex *Ws=W+Ss;
+        double *frs=fr+Ss;
+        double *frhs=frh+Ss;
+        double *frms=frm+Ss;
+        double *frhms=frhm+Ss;
+        Complex zeta=conj(Zetar[s]);
+        for(size_t c=0; c < C; ++c) {
+          Complex z=2.0*zeta*Ws[c];
+          double Rez=z.re;
+          double Imz=z.im;
+          // t=0
+          frs[c] += Rez;
+          frhs[c] += Imz;
+          // t=1
+          frms[c] -= Rez;
+          frhms[c] -= Imz;
+        }
+      });
+    PARALLELIF(
+      (stop2-stop1)*C > threshold,
+      for(size_t s=stop1; s < stop2; ++s) {
+        size_t Ss=S*s;
+        Complex *Ws=W+Ss;
+        double *frs=fr+Ss;
+        double *frhs=frh+Ss;
+        double *frms=frm+Ss;
+        Complex zeta=conj(Zetar[s]);
+        for(size_t c=0; c < C; ++c) {
+          Complex z=2.0*zeta*Ws[c];
+          double Rez=z.re;
+          // t=0
+          frs[c] += Rez;
+          frhs[c] += z.im;
+          // t=1
+          frms[c] -= Rez;
+        }
+      });
+    PARALLELIF(
+      (h-stop2)*C > threshold,
+      for(size_t s=stop2; s < h; ++s) {
+        size_t Ss=S*s;
+        Complex *Ws=W+Ss;
+        double *frs=fr+Ss;
+        double *frhs=frh+Ss;
+        Complex zeta=conj(Zetar[s]);
+        for(size_t c=0; c < C; ++c) {
+          Complex z=2.0*zeta*Ws[c];
+          // t=0
+          frs[c] += z.re;
+          frhs[c] += z.im;
+        }
       });
   }
 }

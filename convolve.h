@@ -902,7 +902,7 @@ public:
   void backward1Many(Complex *F, Complex *f, size_t r, Complex *W);
 
   void forward2Many(Complex *f, Complex *F, size_t r, Complex *W);
-  //void backward2Many(Complex *F, Complex *f, size_t r, Complex *W);
+  void backward2Many(Complex *F, Complex *f, size_t r, Complex *W);
 
   // p=2 && C=1
   void forward2(Complex *f, Complex *F, size_t r0, Complex *W);
