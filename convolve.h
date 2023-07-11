@@ -779,13 +779,18 @@ public:
   void backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W);
 
   // Number of real outputs per residue per copy
-  size_t blocksize(size_t r, bool=false) {
+  size_t blocksize(size_t, bool=false) {
     return m*(q == 1 ? 1 : p/2);
   }
 
   // Number of complex outputs per iteration
-  size_t complexOutputs(size_t r) {
-    return b*(r == 0 ? D0 : D);
+  size_t complexOutputs(size_t) {
+    return 2*b;
+  }
+
+  // Number of real outputs per residue per copy
+  size_t noutputs(size_t) {
+    return blocksize(0);
   }
 
   size_t workSizeW() {
