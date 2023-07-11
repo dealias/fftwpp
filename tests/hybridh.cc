@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
   cout << "M=" << M << endl;
 
 // Disable overwrite optimization for these tests.
-  Application app(2,1,multNone,fftw::maxthreads,mx,Dx,Ix);
+  Application app(1,2,multNone,fftw::maxthreads,mx,Dx,Ix);
 
   cout << endl << "Minimal Explicit:" << endl;
   // Minimal explicit padding

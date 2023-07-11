@@ -155,7 +155,7 @@ def getArgs():
                       s or c or H or r is the same as specifying all of them",
                       action="store_true")
   parser.add_argument("-i","--identity", help="Test forward backward routines (hybrid.cc\
-                       and/or hybridh.cc). Only in 1D.",
+                       and/or hybridh.cc and/or hybridr.cc). Only in 1D.",
                       action="store_true")
   parser.add_argument("-1","--one", help="Test 1D Convolutions. Not specifying\
   										1 or 2 or 3 is the same as specifying all of them",
@@ -225,6 +225,8 @@ def getPrograms(args):
         programs.append(Program("hybridh",hermitian=True,mult=False))
     if rorNotSCHR:
       programs.append(Program("hybridconvr",real=True))
+#      if i:
+#        programs.append(Program("hybridr",real=True,mult=False))
 
   if Y or notXYZ:
     if SorNotSCHR:
