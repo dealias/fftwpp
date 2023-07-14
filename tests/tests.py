@@ -185,7 +185,7 @@ def getArgs():
   parser.add_argument("-p",help="Print out everything.",action="store_true")
   parser.add_argument("-l",help="Show log of failed cases",
                       action="store_true")
-  parser.add_argument("--valgrind",help="Run tests under valgrind.",
+  parser.add_argument("--valgrind",help="Run tests under valgrind. Requires valgrind to be installed. WARNING: using this flag results in much slower testing.",
                       action="store_true")
   parser.add_argument("-v",help="Show the results of every test.",
                       action="store_true")
@@ -611,19 +611,29 @@ def invalidSearch(program, output, cmd, routines):
   return True
 
 def segFaultSearch(program, output, cmd, routines):
-  msg="ERROR SUMMARY"
+  errSum="ERROR SUMMARY"
+  invRead="Invalid read"
+  invWrite="Invalid write"
   try:
-    error=re.search(r"(?<="+msg+r": )(\d|\.|e|-|\+)*",output)
+    error=re.search(r"(?<="+errSum+r": )(\d|\.|e|-|\+)*",output)
+    iR=re.search(invRead,output)
+    iW=re.search(invWrite,output)
+    if iR is not None:
+      if iW is not None:
+        return evaluate(program,"f",f"{invRead} and {invWrite.lower()}",cmd.case,routines)
+      return evaluate(program,"f",invRead,cmd.case,routines)
+    if iW is not None:
+      return evaluate(program,"f",invWrite,cmd.case,routines)
     if error is not None:
       error=int(error.group())
-      if error > 0:
+      if error == 0:
+        return True
+      elif error > 0:
         s="s" if error > 1 else ""
         return evaluate(program,"f",f"Valgrind found {error} error{s}",cmd.case,routines)
-    else:
-      return evaluate(program,"f","Valgrind error summary not found.",cmd.case,routines)
   except Exception as e:
     return evaluate(program,"f",f" Exception raised.\n\t{e}",cmd.case,routines)
-  return True
+  return evaluate(program,"f","tests.py does not recognize valgrind error.",cmd.case,routines)
 
 def evaluate(program, result, message, case, routines, verbose=True):
   boldPassedTest="\033[1mPassed Test:\033[0m"

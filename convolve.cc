@@ -410,7 +410,6 @@ void fftBase::OptBase::scan(size_t L, size_t M, Application& app,
   mForced=app.m >= 1;
   DForced=app.D > 0;
   counter=0;
-
   bool sR=showRoutines;
 
   showRoutines=false;
