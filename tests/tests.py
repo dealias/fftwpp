@@ -225,8 +225,8 @@ def getPrograms(args):
         programs.append(Program("hybridh",hermitian=True,mult=False))
     if rorNotSCHR:
       programs.append(Program("hybridconvr",real=True))
-#      if i:
-#        programs.append(Program("hybridr",real=True,mult=False))
+      if i:
+        programs.append(Program("hybridr",real=True,mult=False))
 
   if Y or notXYZ:
     if SorNotSCHR:
@@ -530,9 +530,10 @@ def checkOptimizer(program, L, M, T, options):
     if program.mult:
       errorSearch(program,output,cmd,options,routines,r"Error")
     else:
-      testPassed=errorSearch(program,output,cmd,options,routines,r"Forward Error")
-      if testPassed:
-        errorSearch(program,output,cmd,options,routines,r"Backward Error")
+      testPassed=errorSearch(program,output,cmd,options,routines,r"Backward Error")
+      if testPassed and not program.real:
+        # Forward error is not yet supported in real case
+        errorSearch(program,output,cmd,options,routines,r"Forward Error")
 
 def check(program, vals, T, options):
   cmd=Command(program,T,vals,options=options)
@@ -565,9 +566,10 @@ def check(program, vals, T, options):
     if program.mult:
       errorSearch(program,output,cmd,options,routines,r"Error")
     else:
-      testPassed=errorSearch(program,output,cmd,options,routines,r"Forward Error")
-      if testPassed:
-        errorSearch(program,output,cmd,options,routines,r"Backward Error")
+      testPassed=errorSearch(program,output,cmd,options,routines,r"Backward Error")
+      if testPassed and not program.real:
+        # Forward error is not yet supported in real case
+        errorSearch(program,output,cmd,options,routines,r"Forward Error")
 
 def errorSearch(program, output, cmd, options, routines, msg):
   try:

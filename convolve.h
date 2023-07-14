@@ -832,6 +832,7 @@ public:
     }
 
     bool valid(size_t m, size_t p, size_t q, size_t n, size_t D, size_t S) {
+      if(S > 1 && p > 2) return false; // TEMPORARY
       return (n%2 == 1 || (p%2 == 0 || p <= 2)) && (q%2 == 1 || m%2 == 0) &&
         (D == 1 || (S == 1 && ((D < (n-1)/2 && D % 2 == 0) || D == (n-1)/2)));
     }
