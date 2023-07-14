@@ -245,7 +245,6 @@ def getPrograms(args):
 def test(programs, args):
   lenP=len(programs)
   T=0 if args.All else int(args.T)
-  vg=args.valgrind
 
   if lenP >= 1:
     passed=0
@@ -319,12 +318,12 @@ def iterate(program, threads, options):
     for T in threads:
       checkOptimizer(program,vals[0].L,vals[0].M,T,options)
       for x in vals:
-        check(program,[x],T,options)
+        checkCase(program,[x],T,options)
     if not program.mult:
       vals=ParameterCollection(findTests(program,8,testS and not program.mult)).vals
       for x in vals:
         for T in threads:
-          check(program,[x],T,options)
+          checkCase(program,[x],T,options)
   else:
     if dim == 2:
       for y in vals:
@@ -332,7 +331,7 @@ def iterate(program, threads, options):
         xvals=ParameterCollection(findTests(program,minS,testS)).vals
         for x in xvals:
           for T in threads:
-            check(program,[x,y],T,options)
+            checkCase(program,[x,y],T,options)
 
     elif dim == 3:
       for z in vals:
@@ -343,7 +342,7 @@ def iterate(program, threads, options):
           xvals=ParameterCollection(findTests(program,y.L*y.S,testS)).vals
           for x in xvals:
             for T in threads:
-              check(program,[x,y,z],T,options)
+              checkCase(program,[x,y,z],T,options)
     else:
       exit("Dimension must be 1 2 or 3.")
 
@@ -504,40 +503,13 @@ def realTests(program, minS, testS):
 
 def checkOptimizer(program, L, M, T, options):
   cmd=Command(program,T,L=L,M=M,options=options)
+  check(program, cmd, T, options)
 
-  vp = subprocess.Popen(cmd.list, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
-  vp.wait()
-  prc = vp.returncode
-  output = ""
-
-  if prc == 0:
-    out, _ = vp.communicate()
-    output = out.rstrip().decode()
-
-  if options.printEverything:
-    print(f"{cmd.case}\n{output}\n")
-
-  if options.R:
-    routines=findRoutines(output)
-  else:
-    routines=None
-
-  testPassed=True
-  if options.vg:
-    testPassed=segFaultSearch(program,output,cmd,routines)
-
-  if testPassed:
-    if program.mult:
-      errorSearch(program,output,cmd,options,routines,r"Error")
-    else:
-      testPassed=errorSearch(program,output,cmd,options,routines,r"Backward Error")
-      if testPassed and not program.real:
-        # Forward error is not yet supported in real case
-        errorSearch(program,output,cmd,options,routines,r"Forward Error")
-
-def check(program, vals, T, options):
+def checkCase(program, vals, T, options):
   cmd=Command(program,T,vals,options=options)
+  check(program, cmd, T, options)
 
+def check(program, cmd, T, options):
   vp = subprocess.Popen(cmd.list, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
   vp.wait()
   prc = vp.returncode
