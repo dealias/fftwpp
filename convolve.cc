@@ -6134,11 +6134,7 @@ void fftPadReal::forward2(Complex *f, Complex *F, size_t r0, Complex *W)
     double *frhm=frh+m;
     size_t mh=m+h;
     size_t stop1, stop2;
-    if(2*m == L) {
-      stop1=h;
-      stop2=h;
-      W[0]=Complex(fr[0]-frm[0],frh[0]-frhm[0]);
-    } else if(mh < L) {
+    if(mh < L) {
       stop1=L-mh;
       stop2=h;
       W[0]=Complex(fr[0]-frm[0],frh[0]-frhm[0]);
@@ -6233,15 +6229,7 @@ void fftPadReal::forward2Many(Complex *f, Complex *F, size_t r, Complex *W)
     double *frhm=frh+Sm;
     size_t mh=m+h;
     size_t stop1, stop2;
-    if(2*m == L) {
-      stop1=h;
-      stop2=h;
-      PARALLELIF(
-        C > threshold,
-        for(size_t c=0; c < C; ++c)
-          W[c]=Complex(fr[c]-frm[c],frh[c]-frhm[c]);
-        );
-    } else if(mh < L) {
+    if(mh < L) {
       stop1=L-mh;
       stop2=h;
       PARALLELIF(
@@ -6731,11 +6719,7 @@ void fftPadReal::backward2(Complex *F, Complex *f, size_t r0, Complex *W)
     frm[0] -= Rez0;
     frh[0] += Imz0;
 
-    if(2*m == L) {
-      stop1=h;
-      stop2=h;
-      frhm[0] -= Imz0;
-    } else if(mh < L) {
+    if(mh < L) {
       stop1=L-mh;
       stop2=h;
       frhm[0] -= Imz0;
@@ -6843,19 +6827,7 @@ void fftPadReal::backward2Many(Complex *F, Complex *f, size_t r, Complex *W)
     double *frhm=frh+Sm;
     size_t stop1,stop2;
 
-    if(2*m == L) {
-      for(size_t c=0; c < C; ++c) {
-        Complex z0=2.0*W[c];
-        double Rez0=z0.re;
-        double Imz0=z0.im;
-        fr[c] += Rez0;
-        frm[c] -= Rez0;
-        frh[c] += Imz0;
-        frhm[c] -= Imz0;
-      }
-      stop1=h;
-      stop2=h;
-    } else if(mh < L) {
+    if(mh < L) {
       for(size_t c=0; c < C; ++c) {
         Complex z0=2.0*W[c];
         double Rez0=z0.re;
