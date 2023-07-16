@@ -5858,8 +5858,8 @@ void fftPadReal::forwardExplicit(Complex *f, Complex *F, size_t, Complex *W)
       Wr[s]=fr[s];
     );
   PARALLELIF(
-    M-L > threshold,
-    for(size_t s=L; s < M; ++s)
+    m-L > threshold,
+    for(size_t s=L; s < m; ++s)
       Wr[s]=0.0;
     );
   rcfftm1->fft(W,F);
@@ -5882,8 +5882,8 @@ void fftPadReal::forwardExplicitMany(Complex *f, Complex *F, size_t,
         Wrs[c]=frs[c];
     });
   PARALLELIF(
-    (M-L)*C > threshold,
-    for(size_t s=L; s < M; ++s) {
+    (m-L)*C > threshold,
+    for(size_t s=L; s < m; ++s) {
       double *Wrs=Wr+S*s;
       for(size_t c=0; c < C; ++c)
         Wrs[c]=0.0;
