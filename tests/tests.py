@@ -157,6 +157,8 @@ def getArgs():
   parser.add_argument("-i","--identity", help="Test forward backward routines (hybrid.cc\
                        and/or hybridh.cc and/or hybridr.cc). Only in 1D.",
                       action="store_true")
+  parser.add_argument("-i0","--identity0", help="Test forward backward routines and nothing else. Only in 1D.",
+                      action="store_true")
   parser.add_argument("-1","--one", help="Test 1D Convolutions. Not specifying\
   										1 or 2 or 3 is the same as specifying all of them",
   										action="store_true")
@@ -199,9 +201,12 @@ def getPrograms(args):
   H=args.H
   R=args.r
   i=args.identity or A
+  i0=args.identity0
   X=args.one
   Y=args.two
   Z=args.three
+
+  iori0=(i or i0)
 
   notSCHR=(not (S or C or H or R))
   notXYZ=(not (X or Y or Z))
@@ -212,21 +217,28 @@ def getPrograms(args):
   rorNotSCHR=(R or notSCHR)
   if X or notXYZ:
     if SorNotSCHR:
-      programs.append(Program("hybridconv"))
-      if i:
+      if iori0:
         programs.append(Program("hybrid",mult=False))
+      if not i0:
+        programs.append(Program("hybridconv"))
+
     if CorNotSCHR:
-      programs.append(Program("hybridconv",centered=True))
-      if i:
+      if iori0:
         programs.append(Program("hybrid",centered=True,mult=False))
+      if not i0:
+        programs.append(Program("hybridconv",centered=True))
+
     if HorNotSCHR:
-      programs.append(Program("hybridconvh",hermitian=True))
-      if i:
+      if iori0:
         programs.append(Program("hybridh",hermitian=True,mult=False))
+      if not i0:
+        programs.append(Program("hybridconvh",hermitian=True))
+
     if rorNotSCHR:
-      programs.append(Program("hybridconvr",real=True))
-      if i:
+      if iori0:
         programs.append(Program("hybridr",real=True,mult=False))
+      if not i0:
+        programs.append(Program("hybridconvr",real=True))
 
   if Y or notXYZ:
     if SorNotSCHR:
@@ -380,9 +392,7 @@ def collectTests(program, L, M, m, minS, testS, Dmin=0, Dmax=0, I0=True, I1=True
 
   Ss=[minS]
   if testS:
-    if dim == 2:
-      Ss+=[minS+2]
-    if dim == 3:
+    if dim > 1 or (not program.mult and C > 1):
       Ss+=[minS+2]
 
   Istart=0
