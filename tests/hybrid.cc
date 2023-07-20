@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 
   for(size_t j=0; j < L; ++j)
     for(size_t c=0; c < C; ++c)
-      f[S*j+c]=Complex(j+1+c,j+2+c);
+      f[S*j+c]=Complex(C*j+c+1,C*j+c+2);
 
   fftPad* fft2=Centered ? new fftPadCentered(L,fft->M,C,S,fft->M,1,1,app) :
     new fftPad(L,fft->M,C,S,fft->M,1,1,app);

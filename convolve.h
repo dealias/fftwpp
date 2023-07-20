@@ -229,11 +229,6 @@ public:
   }
 
   fftBase(size_t L, size_t M, size_t C, size_t S,
-          Application &app, bool centered=false) :
-    ThreadBase(app.threads), L(L), M(M), C(C),  S(S == 0 ? C : S),
-    app(app), centered(centered) {checkParameters();}
-
-  fftBase(size_t L, size_t M, size_t C, size_t S,
           size_t m, size_t D, bool inplace,
           Application &app, bool centered=false) :
     ThreadBase(app.threads), L(L), M(M), C(C),  S(S == 0 ? C : S), m(m),
@@ -243,10 +238,11 @@ public:
   }
 
   fftBase(size_t L, size_t M, Application& app,
-          size_t C=1, size_t S=0, bool Explicit=false,
-          bool centered=false) :
+          size_t C=1, size_t S=0, bool centered=false) :
     ThreadBase(app.threads), L(L), M(M), C(C), S(S == 0 ? C : S),
-    app(app), centered(centered) {checkParameters();}
+    app(app), centered(centered) {
+    checkParameters();
+  }
 
   virtual ~fftBase();
 
@@ -507,7 +503,7 @@ public:
 
   fftPad(size_t L, size_t M, size_t C, size_t S,
          Application &app, bool centered) :
-    fftBase(L,M,C,S,app,centered) {}
+    fftBase(L,M,app,C,S,centered) {}
 
   fftPad(size_t L, size_t M, size_t C, size_t S,
          size_t m, size_t q, size_t D, bool inplace,
@@ -530,7 +526,7 @@ public:
   // padded to at least M
   fftPad(size_t L, size_t M, Application& app,
          size_t C=1, size_t S=0, bool Explicit=false, bool centered=false) :
-    fftBase(L,M,app,C,S,Explicit,centered) {
+    fftBase(L,M,app,C,S,centered) {
     Opt opt=Opt(L,M,app,C,this->S,Explicit);
     m=opt.m;
     D=opt.D;
@@ -746,7 +742,7 @@ public:
 
   fftPadHermitian(size_t L, size_t M, Application& app,
                   size_t C=1, bool Explicit=false) :
-    fftBase(L,M,app,C,C,Explicit,true) {
+    fftBase(L,M,app,C,C,true) {
     Opt opt=Opt(L,M,app,C,C,Explicit);
     m=opt.m;
     D=opt.D;
@@ -808,8 +804,6 @@ class fftPadReal : public fftBase {
   crfft1d *crfftm1;
   mrcfft1d *rcfftm;
   mcrfft1d *crfftm;
-  mrcfft1d *rcfftm2;
-  mcrfft1d *crfftm2;
   mfft1d *fftm,*fftm0,*fftmp2m1,*fftmp2;
   mfft1d *ifftm,*ifftm0,*ifftmp2m1,*ifftmp2;
   mfft1d *ffth;
@@ -849,9 +843,6 @@ public:
     }
   };
 
-  fftPadReal(size_t L, size_t M, size_t C, size_t S, Application &app) :
-    fftBase(L,M,C,S,app) {}
-
   // Compute an fft padded to N=m*q >= M >= L
   fftPadReal(size_t L, size_t M, size_t C, size_t S,
          size_t m, size_t D, bool inplace,
@@ -868,8 +859,12 @@ public:
   // padded to at least M
   fftPadReal(size_t L, size_t M, Application& app,
          size_t C=1, size_t S=0, bool Explicit=false) :
-    fftBase(L,M,app,C,S,Explicit) {
+    fftBase(L,M,app,C,S) {
     Opt opt=Opt(L,M,app,C,this->S,Explicit);
+
+
+
+
     m=opt.m;
     D=opt.D;
     inplace=opt.inplace;
@@ -916,6 +911,9 @@ public:
 
   void forwardInner(Complex *f, Complex *F, size_t r0, Complex *W);
   void backwardInner(Complex *F, Complex *f, size_t r0, Complex *W);
+
+  void forwardInnerMany(Complex *f, Complex *F, size_t r, Complex *W);
+  //void backwardInnerMany(Complex *F, Complex *f, size_t r, Complex *W);
 
   size_t inputSize() {
     return S*utils::ceilquotient(L,2);

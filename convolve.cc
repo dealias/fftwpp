@@ -1,5 +1,4 @@
 // TODO: Parallelize L...m loops.
-//       Check G and H allocations when S > C.
 
 #include "convolve.h"
 #include "align.h"
@@ -5586,7 +5585,6 @@ void fftPadHermitian::backwardInner(Complex *F, Complex *f, size_t r,
 void fftPadReal::init()
 {
   common();
-  S=C; // Strides are not implemented for real transforms
   e=m/2+1;
   size_t Se=S*e;
   char const *FR;
@@ -5636,8 +5634,8 @@ void fftPadReal::init()
       rcfftm=new mrcfft1d(m,C, S,S, 1,1, (double *) H,G,threads);
       crfftm=new mcrfft1d(m,C, S,S, 1,1, G,(double *) H,threads);
     } else {
-      rcfftm2=new mrcfft1d(m,C, 2*S,S, 1,1, (double *) H,G,threads);
-      crfftm2=new mcrfft1d(m,C, S,2*S, 1,1, G,(double *) H,threads);
+      rcfftm=new mrcfft1d(m,C, 2*S,S, 1,1, (double *) H,G,threads);
+      crfftm=new mcrfft1d(m,C, S,2*S, 1,1, G,(double *) H,threads);
     }
     if(n > 2) {
       if(S == 1) {
@@ -5690,10 +5688,17 @@ void fftPadReal::init()
           for(size_t s=m; s < L; ++s)
             ZetaqmS[Lm*r+s]=expi(r*s*twopibyN);
       } else { // p > 2
-        Forward=&fftBase::forwardInner;
-        Backward=&fftBase::backwardInner;
-        FR="forwardInner";
-        BR="backwardInner";
+        if(S == 1) {
+          Forward=&fftBase::forwardInner;
+          Backward=&fftBase::backwardInner;
+          FR="forwardInner";
+          BR="backwardInner";
+        } else {
+          Forward=&fftBase::forwardInnerMany;
+          Backward=&fftBase::backwardInnerMany;
+          FR="forwardInnerMany";
+          BR="backwardInnerMany";
+        }
 
         double twopibyq=twopi/q;
         Zetaqp0=ComplexAlign((n-1)*(p-1));
@@ -5705,23 +5710,33 @@ void fftPadReal::init()
         Complex *K=ComplexAlign(Sm*(p/2+1));
         double *R=(double *) K;
 
-        rcfftp=new mrcfft1d(p,Cm, Sm,Sm, 1,1, R,K,threads);
-        crfftp=new mcrfft1d(p,Cm, Sm,Sm, 1,1, K,R,threads);
+        if(S == C) {
+          rcfftp=new mrcfft1d(p,Cm, Cm,Cm, 1,1, R,K,threads);
+          crfftp=new mcrfft1d(p,Cm, Cm,Cm, 1,1, K,R,threads);
+        } else {
+          rcfftp=new mrcfft1d(p,C, Sm,Sm, 1,1, R,K,threads);
+          crfftp=new mcrfft1d(p,C, Sm,Sm, 1,1, K,R,threads);
+        }
 
         deleteAlign(K);
         size_t p2=ceilquotient(p,2);
-        size_t p2m1=p2-1;
+        size_t p2m1=C*(p2-1);
         if(S == 1) {
           fftmp2m1=new mfft1d(m,1,p2m1, 1,m, G,H,threads);
           ifftmp2m1=new mfft1d(m,-1,p2m1, 1,m, H,G,threads);
         } else {
-          fftmp2m1=fftm;//new mfft1d(m,1,C, S,1, G,H,threads);
-          ifftmp2m1=ifftm;//new mfft1d(m,-1,C, S,1, H,G,threads);
+          fftmp2m1=new mfft1d(m,1,C, S,1, G,H,threads);
+          ifftmp2m1=new mfft1d(m,-1,C, S,1, H,G,threads);
         }
 
         if(n > 2) {
-          fftp=new mfft1d(p,1,Cm, Sm,1, G,G,threads);
-          ifftp=new mfft1d(p,-1,Cm, Sm,1, G,G,threads);
+          if(S == C) {
+            fftp=new mfft1d(p,1,Cm, Sm,1, G,G,threads);
+            ifftp=new mfft1d(p,-1,Cm, Sm,1, G,G,threads);
+          } else {
+            fftp=new mfft1d(p,1,C, Sm,1, G,G,threads);
+            ifftp=new mfft1d(p,-1,C, Sm,1, G,G,threads);
+          }
         }
         if(n%2 == 0) {
           size_t size0=S*p2*m;
@@ -5729,11 +5744,21 @@ void fftPadReal::init()
           Complex *H0=inplace ? G0 : ComplexAlign(size0);
           size_t Cp2=C*p2;
 
-          fftmp2=new mfft1d(m,1,Cp2, 1,m, G0,H0,threads);
-          ifftmp2=new mfft1d(m,-1,Cp2, 1,m, H0,G0,threads);
+          if(S == 1) {
+            fftmp2=new mfft1d(m,1,Cp2, 1,m, G0,H0,threads);
+            ifftmp2=new mfft1d(m,-1,Cp2, 1,m, H0,G0,threads);
+          } else {
+            fftmp2=new mfft1d(m,1,C, S,1, G,H,threads);
+            ifftmp2=new mfft1d(m,-1,C, S,1, H,G,threads);
+          }
 
-          fftp2=new mfft1d(p2,1,Cm, Sm,1, G0,G0,threads);
-          ifftp2=new mfft1d(p2,-1,Cm, Sm,1, G0,G0,threads);
+          if(S == C) {
+            fftp2=new mfft1d(p2,1,Cm, Sm,1, G0,G0,threads);
+            ifftp2=new mfft1d(p2,-1,Cm, Sm,1, G0,G0,threads);
+          } else {
+            fftp2=new mfft1d(p2,1,C, Sm,1, G0,G0,threads);
+            ifftp2=new mfft1d(p2,-1,C, Sm,1, G0,G0,threads);
+          }
           if(!inplace)
             deleteAlign(H0);
           deleteAlign(G0);
@@ -5782,8 +5807,6 @@ fftPadReal::~fftPadReal()
     }
 
     if(p > 2) {
-      delete rcfftm2;
-      delete crfftm2;
       delete fftmp2m1;
       delete ifftmp2m1;
       delete rcfftp;
@@ -5977,7 +6000,7 @@ void fftPadReal::forward1Many(Complex *f, Complex *F, size_t r, Complex *W)
 
   if(r == 0) {
     double *Wr=(double *) W;
-    bool repad=inplace || q == 2 || L%2;
+    bool repad=inplace || q == 2 || L%2 || S > C;
     // Make use of existing zero padding, respecting minimal alignment
     if(!repad) Wr += L*S;
     PARALLELIF(
@@ -6289,7 +6312,6 @@ void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
 {
   if(W == NULL) W=F0;
   double *fr=(double *) f;
-  Complex *W0=W;
 
   size_t n2=ceilquotient(n,2);
   size_t pm1=p-1;
@@ -6325,7 +6347,7 @@ void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
 
     rcfftp->fft(W);
 
-    rcfftm2->fft(W,F0);
+    rcfftm->fft(W,F0);
     PARALLELIF(
       (p2-1)*(m-1) > threshold,
     for(size_t t=1; t < p2; ++t) {
@@ -6402,7 +6424,7 @@ void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
             Ft[s] *= Zetar[s];
         });
     }
-    remainder ? fftm0->fft(W0,F0) : fftm->fft(W0,F0);
+    remainder ? fftm0->fft(W,F0) : fftm->fft(W,F0);
   } else { // 2*r0 == n
     size_t p2=ceilquotient(p,2);
     size_t p2m=p2*m;
@@ -6462,6 +6484,258 @@ void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
       });
 
     fftmp2->fft(W,F0);
+  }
+}
+
+void fftPadReal::forwardInnerMany(Complex *f, Complex *F, size_t r, Complex *W)
+{
+  if(W == NULL) W=F;
+  double *fr=(double *) f;
+
+  size_t n2=ceilquotient(n,2);
+  size_t pm1=p-1;
+
+  size_t stop=L-m*pm1;
+  size_t Smpm1=Sm*pm1;
+
+  if(r == 0) {
+    double *Wr=(double *) W;
+    size_t p2=ceilquotient(p,2);
+    PARALLELIF(
+      pm1*m*C > threshold,
+      for(size_t t=0; t < pm1; ++t) {
+        size_t Smt=Sm*t;
+        double *Wt=Wr+Smt;
+        double *ft=fr+Smt;
+        for(size_t s=0; s < m; ++s) {
+          size_t Ss=S*s;
+          double *Wts=Wt+Ss;
+          double *fts=ft+Ss;
+          for(size_t c=0; c < C; ++c)
+            Wts[c]=fts[c];
+        }});
+
+    double *Wt=Wr+Smpm1;
+    double *ft=fr+Smpm1;
+    PARALLELIF(
+      stop*C > threshold,
+      for(size_t s=0; s < stop; ++s) {
+        size_t Ss=S*s;
+        double *Wts=Wt+Ss;
+        double *fts=ft+Ss;
+        for(size_t c=0; c < C; ++c)
+          Wts[c]=fts[c];
+      });
+    PARALLELIF(
+      (m-stop)*C > threshold,
+      for(size_t s=stop; s < m; ++s) {
+        double *Wts=Wt+S*s;
+        for(size_t c=0; c < C; ++c)
+          Wts[c]=0.0;
+      });
+
+    if(S == C)
+      rcfftp->fft(W);
+    else
+      for(size_t s=0; s < m; ++s)
+        rcfftp->fft(W+S*s);
+
+    rcfftm->fft(W,F);
+
+    PARALLELIF(
+      (p2-1)*(m-1)*C > threshold,
+      for(size_t t=1; t < p2; ++t) {
+        size_t R=n*t;
+        Complex *Ft=W+Sm*t;
+        Complex *Zetar=Zetaqm+m*R;
+        for(size_t s=1; s < m; ++s) {
+          Complex *Fts=Ft+S*s;
+          Complex zeta=conj(Zetar[s]);  // Compensate for conjugate transform sign.
+          for(size_t c=0; c < C; ++c)
+            Fts[c] *= zeta;
+        }});
+
+    for(size_t t=1; t < p2; ++t) {
+      size_t Smt=Sm*t;
+      fftmp2m1->fft(W+Smt,F+Smt);
+    }
+
+    if(p == 2*p2) {
+      size_t h=e-1;
+      Complex *Zetar=Zetaqm+m*n*p2;
+      size_t p2Sm=p2*Sm;
+      Complex *Ft=W+p2Sm;
+      double *Wt=Wr+2*p2Sm;
+      double *Wth=Wt+2*S*h;
+
+      for(size_t c=0; c < C; ++c)
+        Ft[c]=Complex(Wt[c],Wth[c]);
+      PARALLELIF(
+        (h-1)*C > threshold,
+        for(size_t s=1; s < h; ++s) {
+          size_t Ss=S*s;
+          size_t sS2=2*Ss;
+          double *Wts2=Wt+sS2;
+          double *Wths2=Wth+sS2;
+          Complex *Fts=Ft+Ss;
+          Complex zeta=Zetar[s];
+          for(size_t c=0; c < C; ++c)
+            Fts[c]=zeta*Complex(Wts2[c],Wths2[c]);
+        });
+      ffth->fft(Ft,F+p2Sm);
+    }
+
+  } else if (r < n2) {
+    PARALLELIF(
+      m*C > threshold,
+      for(size_t s=0; s < m; ++s) {
+        size_t Ss=S*s;
+        Complex *Ws=W+Ss;
+        double *frs=fr+Ss;
+          for(size_t c=0; c < C; ++c)
+            Ws[c]=frs[c];
+      });
+    Complex *Zetaqr=Zetaqp+pm1*r;
+    PARALLELIF(
+      (pm1-1)*m*C > threshold,
+      for(size_t t=1; t < pm1; ++t) {
+        size_t Smt=Sm*t;
+        Complex *Wt=W+Smt;
+        double *ft=fr+Smt;
+        Complex Zeta=Zetaqr[t];
+        for(size_t s=0; s < m; ++s) {
+          size_t Ss=S*s;
+          Complex *Wts=Wt+Ss;
+          double *fts=ft+Ss;
+          for(size_t c=0; c < C; ++c)
+            Wts[c]=Zeta*fts[c];
+        }
+      });
+    Complex *Wt=W+Smpm1;
+    double *ft=fr+Smpm1;
+    Complex Zeta=Zetaqr[pm1];
+    PARALLELIF(
+      stop > threshold,
+      for(size_t s=0; s < stop; ++s) {
+        size_t Ss=S*s;
+        Complex *Wts=Wt+Ss;
+        double *fts=ft+Ss;
+        for(size_t c=0; c < C; ++c)
+          Wts[c]=Zeta*fts[c];
+      });
+    PARALLELIF(
+      (m-stop)*C > threshold,
+      for(size_t s=stop; s < m; ++s) {
+        Complex *Wts=Wt+S*s;
+        for(size_t c=0; c < C; ++c)
+          Wts[c]=0.0;
+      });
+
+    if(S == C)
+      fftp->fft(W);
+    else
+      for(size_t s=0; s < m; ++s)
+        fftp->fft(W+S*s);
+
+    PARALLELIF(
+      p*(m-1)*C > threshold,
+      for(size_t t=0; t < p; ++t) {
+        size_t R=n*t+r;
+        Complex *Wt=W+Sm*t;
+        Complex *Zetar=Zetaqm+m*R;
+        for(size_t s=1; s < m; ++s) {
+          Complex zeta=Zetar[s];
+          Complex *Wts=Wt+S*s;
+          for(size_t c=0; c < C; ++c)
+            Wts[c] *= zeta;
+        }
+      });
+    fftm->fft(W,F);
+  } else { // 2*r == n
+    size_t p2=ceilquotient(p,2);
+    size_t p2Sm=p2*Sm;
+    size_t p2m1=p2-1;
+    Complex *Zetaqr=Zetaqp+pm1*r;
+
+    double *frp2=fr+p2Sm;
+
+    PARALLELIF(
+      m*C > threshold,
+      for(size_t s=0; s < m; ++s) {
+        size_t Ss=S*s;
+        Complex *Ws=W+Ss;
+        double *frs=fr+Ss;
+        double *frp2s=frp2+Ss;
+        for(size_t c=0; c < C; ++c)
+          Ws[c]=Complex(frs[c],frp2s[c]);
+      });
+
+    PARALLELIF(
+      (p2m1-1)*m*C > threshold,
+      for(size_t t=1; t < p2m1; ++t) {
+        size_t Smt=Sm*t;
+        Complex *Wt=W+Smt;
+        double *ft=fr+Smt;
+        double *ftp2=ft+p2Sm;
+        Complex Zeta=Zetaqr[t];
+        for(size_t s=0; s < m; ++s) {
+          size_t Ss=S*s;
+          Complex *Wts=Wt+Ss;
+          double *fts=ft+Ss;
+          double *ftp2s=ftp2+Ss;
+          for(size_t c=0; c < C; ++c)
+            Wts[c]=Zeta*Complex(fts[c],ftp2s[c]);
+        }
+      });
+
+    size_t mp2m1=Sm*p2m1;
+    Complex *Wt=W+mp2m1;
+    double *ft=fr+mp2m1;
+    double *ftp2=ft+p2Sm;
+    Complex Zeta=Zetaqr[p2m1];
+
+    PARALLELIF(
+      stop*C > threshold,
+      for(size_t s=0; s < stop; ++s) {
+          size_t Ss=S*s;
+          Complex *Wts=Wt+Ss;
+          double *fts=ft+Ss;
+          double *ftp2s=ftp2+Ss;
+          for(size_t c=0; c < C; ++c)
+            Wts[c]=Zeta*Complex(fts[c],ftp2s[c]);
+      });
+
+    PARALLELIF(
+      (m-stop)*C > threshold,
+      for(size_t s=stop; s < m; ++s)
+        Wt[s]=Zeta*ft[s];
+      );
+
+    if(S == C)
+      fftp2->fft(W);
+    else
+      for(size_t s=0; s < m; ++s)
+        fftp2->fft(W+S*s);
+
+    PARALLELIF(
+      p2*(m-1)*C > threshold,
+      for(size_t t=0; t < p2; ++t) {
+        size_t Smt=Sm*t;
+        Complex *Wt=W+Smt;
+        Complex *Zetar=Zetaqm+m*(2*n*t+r);
+        for(size_t s=1; s < m; ++s) {
+          Complex zeta=Zetar[s];
+          size_t Ss=S*s;
+          Complex *Wts=Wt+Ss;
+          for(size_t c=0; c < C; ++c)
+            Wts[c] *= zeta;
+        }
+      });
+
+    for(size_t t=0; t < p2; ++t) {
+      size_t Smt=Sm*t;
+      fftmp2->fft(W+Smt,F+Smt);
+    }
   }
 }
 
@@ -6915,7 +7189,7 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
   if(W == NULL) W=F0;
 
   double *fr=(double *) f;
-  double *W0=(double *) W;
+  double *Wr=(double *) W;
 
   size_t n2=ceilquotient(n,2);
   size_t pm1=p-1;
@@ -6925,7 +7199,7 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
   if(r0 == 0) {
     size_t p2=ceilquotient(p,2);
     size_t p2m=p2*m;
-    crfftm2->fft(F0,W0);
+    crfftm->fft(F0,Wr);
 
     ifftmp2m1->fft(F0+m,W+m);
 
@@ -6961,13 +7235,13 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
       for(size_t t=0; t < pm1; ++t) {
         size_t mt=m*t;
         double *ft=fr+mt;
-        double *Ft=W0+mt;
+        double *Ft=Wr+mt;
         for(size_t s=0; s < m; ++s)
           ft[s]=Ft[s];
       });
     size_t mt=m*pm1;
     double *ft=fr+mt;
-    double *Ft=W0+mt;
+    double *Ft=Wr+mt;
     PARALLELIF(
       stop > threshold,
       for(size_t s=0; s < stop; ++s)
@@ -7024,7 +7298,7 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
           ft[s] += 2.0*realProduct(Zeta,Ft[s]);
         );
     }
-  } else { //2*r0 == n
+  } else { // 2*r0 == n
     size_t p2=ceilquotient(p,2);
     size_t p2m1=p2-1;
     size_t p2m=p2*m;

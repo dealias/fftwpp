@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
     f[c]=1+c;
   for(size_t j=1; j < H; ++j)
     for(size_t c=0; c < C; ++c)
-      f[C*j+c]=Complex(j+1+c,j+2+c);
+      f[C*j+c]=Complex(C*j+c+1,C*j+c+2);
 
   fftPadHermitian fft2(L,fft.M,C,fft.M,1,1,app);
 

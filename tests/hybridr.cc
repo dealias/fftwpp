@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 
   for(size_t j=0; j < L; ++j)
     for(size_t c=0; c < C; ++c)
-      f[S*j+c]=S*j+c;
+      f[S*j+c]=C*j+c+1;
 
   fftPadReal fft2(L,fft.M,C,S,fft.M,1,1,app);
 
