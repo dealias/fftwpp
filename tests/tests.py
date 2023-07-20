@@ -157,7 +157,7 @@ def getArgs():
   parser.add_argument("-i","--identity", help="Test forward backward routines (hybrid.cc\
                        and/or hybridh.cc and/or hybridr.cc). Only in 1D.",
                       action="store_true")
-  parser.add_argument("-i0","--identity0", help="Test forward backward routines and nothing else. Only in 1D.",
+  parser.add_argument("-I","--Identity", help="Test forward backward routines and nothing else. Only in 1D.",
                       action="store_true")
   parser.add_argument("-1","--one", help="Test 1D Convolutions. Not specifying\
   										1 or 2 or 3 is the same as specifying all of them",
@@ -201,12 +201,12 @@ def getPrograms(args):
   H=args.H
   R=args.r
   i=args.identity or A
-  i0=args.identity0
+  I=args.Identity
   X=args.one
   Y=args.two
   Z=args.three
 
-  iori0=(i or i0)
+  iorI=(i or I)
 
   notSCHR=(not (S or C or H or R))
   notXYZ=(not (X or Y or Z))
@@ -217,27 +217,27 @@ def getPrograms(args):
   rorNotSCHR=(R or notSCHR)
   if X or notXYZ:
     if SorNotSCHR:
-      if iori0:
+      if iorI:
         programs.append(Program("hybrid",mult=False))
-      if not i0:
+      if not I:
         programs.append(Program("hybridconv"))
 
     if CorNotSCHR:
-      if iori0:
+      if iorI:
         programs.append(Program("hybrid",centered=True,mult=False))
-      if not i0:
+      if not I:
         programs.append(Program("hybridconv",centered=True))
 
     if HorNotSCHR:
-      if iori0:
+      if iorI:
         programs.append(Program("hybridh",hermitian=True,mult=False))
-      if not i0:
+      if not I:
         programs.append(Program("hybridconvh",hermitian=True))
 
     if rorNotSCHR:
-      if iori0:
+      if iorI:
         programs.append(Program("hybridr",real=True,mult=False))
-      if not i0:
+      if not I:
         programs.append(Program("hybridconvr",real=True))
 
   if Y or notXYZ:
