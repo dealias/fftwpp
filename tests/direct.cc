@@ -16,6 +16,21 @@ void DirectConvolution::convolve(Complex *h, Complex *f, Complex *g)
   }
 }
 
+// Standard One Dimensional Direct Convolution
+void DirectConvolution::convolve(Complex *h, Complex *f, Complex *g, Complex *l)
+{
+#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
+#pragma omp parallel for
+#endif
+  for(size_t i=0; i < m; ++i) {
+    Complex sum=0.0;
+    for(size_t j=0; j <= i; ++j)
+      for(size_t k=0; k <= i-j; ++k)
+        sum += f[j]*g[k]*l[i-j-k];
+    h[i]=sum;
+  }
+}
+
 // Centered One Dimensional Direct Convolution
 void DirectConvolution::Cconvolve(Complex *h, Complex *f, Complex *g)
 {
