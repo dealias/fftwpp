@@ -22,6 +22,7 @@ int main(int argc, char *argv[])
   cout << "M=" << M << endl;
 
   if(S == 0) S=C;
+  S=C; // Strides are not implemented yet for real transforms
 
 // Disable overwrite optimization for these tests.
   Application app(1,2,multNone,fftw::maxthreads,mx,Dx,Ix);
@@ -61,7 +62,7 @@ int main(int argc, char *argv[])
 
   for(size_t j=0; j < L; ++j)
     for(size_t c=0; c < C; ++c)
-      f[S*j+c]=C*j+c+1;
+      f[S*j+c]=j+1;//C*j+c+1;
 
   fftPadReal fft2(L,fft.M,C,S,fft.M,1,1,app);
 
@@ -75,23 +76,25 @@ int main(int argc, char *argv[])
 //  double norm=0.0;
   double norm2=0.0;
   for(size_t r=0; r < fft.R; r += fft.increment(r)) {
-
     fft.forward((Complex *) f,F,r,W0);
-#if 0
+#if 1
     for(size_t k=0; k < fft.noutputs(r); ++k) {
-      if(Output && k%fft.m == 0) cout << endl;
+//      if(Output && k%fft.m == 0) cout << endl;
 
       for(size_t c=0; c < C; ++c) {
         size_t K=S*k+c;
-        size_t i=fft.Index(r,K);
-        error += abs2(F[K]-F2[i]);
-        norm += abs2(F2[i]);
+//        size_t i=fft.Index(r,K);
+//        error += abs2(F[K]-F2[i]);
+//        norm += abs2(F2[i]);
         if(Output)
-          cout << i << ": " << F[K] << endl;
+//          cout << i << ": " << F[K] << endl;
+          cout << K << ": " << F[K] << endl;
       }
     }
 #endif
     fft.backward(F,(Complex *) h,r,W0);
+    if(Output)
+      cout << endl;
   }
 
   if(Output) {
