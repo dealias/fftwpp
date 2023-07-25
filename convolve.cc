@@ -1,5 +1,4 @@
 // TODO: Parallelize L...m loops.
-// Why allocate K?
 // TODO: move S > C test to valid.
 
 #include "convolve.h"
@@ -5713,13 +5712,9 @@ void fftPadReal::init()
           for(size_t t=1; t < p; ++t)
             Zetaqp[(p-1)*r+t]=expi(r*t*twopibyq);
 
-        Complex *K=ComplexAlign(Sm*(p/2+1));
-        double *R=(double *) K;
+        rcfftp=new mrcfft1d(p,Cm, Cm,Cm, 1,1, (double *) G,G,threads);
+        crfftp=new mcrfft1d(p,Cm, Cm,Cm, 1,1, G,(double *) G,threads);
 
-        rcfftp=new mrcfft1d(p,Cm, Cm,Cm, 1,1, R,K,threads);
-        crfftp=new mcrfft1d(p,Cm, Cm,Cm, 1,1, K,R,threads);
-
-        deleteAlign(K);
         size_t p2=ceilquotient(p,2);
         size_t Cp2m1=C*(p2-1);
         if(S == 1) {
