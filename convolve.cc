@@ -2020,21 +2020,21 @@ void fftPad::backwardInnerMany(Complex *F, Complex *f, size_t r,
       pm1*m*C > threshold,
       for(size_t t=0; t < pm1; ++t) {
         Complex *ft=f+Sm*t;
-        Complex *Ft=W+Cm*t;
+        Complex *Ft=W+Sm*t;
         for(size_t s=0; s < m; ++s) {
           Complex *fts=ft+S*s;
-          Complex *Fts=Ft+C*s;
+          Complex *Fts=Ft+S*s;
           for(size_t c=0; c < C; ++c)
             fts[c]=Fts[c];
         }
       });
     Complex *ft=f+Sm*pm1;
-    Complex *Ft=W+Cm*pm1;
+    Complex *Ft=W+Sm*pm1;
     PARALLELIF(
       stop*C > threshold,
       for(size_t s=0; s < stop; ++s) {
         Complex *fts=ft+S*s;
-        Complex *Fts=Ft+C*s;
+        Complex *Fts=Ft+S*s;
         for(size_t c=0; c < C; ++c)
           fts[c]=Fts[c];
       });
