@@ -5584,7 +5584,7 @@ void fftPadHermitian::backwardInner(Complex *F, Complex *f, size_t r,
 void fftPadReal::init()
 {
   common();
-  if(p >= 2 && S > C) // TODO: move this test to valid.
+  if(p > 2 && S > C) // TODO: move this test to valid.
     inplace=false;
   e=m/2+1;
   size_t Se=S*e;
