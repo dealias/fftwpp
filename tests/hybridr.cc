@@ -22,7 +22,6 @@ int main(int argc, char *argv[])
   cout << "M=" << M << endl;
 
   if(S == 0) S=C;
-  S=C; // Strides are not implemented yet for real transforms
 
 // Disable overwrite optimization for these tests.
   Application app(1,2,multNone,fftw::maxthreads,mx,Dx,Ix);
@@ -78,6 +77,8 @@ int main(int argc, char *argv[])
   for(size_t r=0; r < fft.R; r += fft.increment(r)) {
     fft.forward((Complex *) f,F,r,W0);
 #if 1
+    if(Output)
+      cout << "r=" << r << endl;
     for(size_t k=0; k < fft.noutputs(r); ++k) {
 //      if(Output && k%fft.m == 0) cout << endl;
 
@@ -93,8 +94,6 @@ int main(int argc, char *argv[])
     }
 #endif
     fft.backward(F,(Complex *) h,r,W0);
-    if(Output)
-      cout << endl;
   }
 
   if(Output) {
