@@ -814,6 +814,7 @@ class fftPadReal : public fftBase {
   mfft1d *ifftp;
   mfft1d *fftp2;
   mfft1d *ifftp2;
+  Complex *V;
 public:
 
   class Opt : public OptBase {

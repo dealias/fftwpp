@@ -5583,8 +5583,6 @@ void fftPadHermitian::backwardInner(Complex *F, Complex *f, size_t r,
 void fftPadReal::init()
 {
   common();
-  if(p > 2 && S > C) // TODO: move this test to valid.
-    inplace=false;
   e=m/2+1;
   size_t Se=S*e;
   char const *FR;
@@ -5634,8 +5632,9 @@ void fftPadReal::init()
       rcfftm=new mrcfft1d(m,C, S,S, 1,1, (double *) H,G,threads);
       crfftm=new mcrfft1d(m,C, S,S, 1,1, G,(double *) H,threads);
     } else {
-      rcfftm=new mrcfft1d(m,C, 2*C,S, 2,1, (double *) H,G,threads);
-      crfftm=new mcrfft1d(m,C, S,2*C, 1,2, G,(double *) H,threads);
+      V=inplace && S > C ? ComplexAlign(outputSize()) : H;
+      rcfftm=new mrcfft1d(m,C, 2*C,S, 2,1, (double *) V,G,threads);
+      crfftm=new mcrfft1d(m,C, S,2*C, 1,2, G,(double *) V,threads);
     }
     if(n > 2) {
       if(S == 1) {
@@ -5652,8 +5651,8 @@ void fftPadReal::init()
         ffth=new mfft1d(h,1,C, S,S, 1,1, G,H,threads);
         iffth=new mfft1d(h,-1,C, S,S, 1,1, H,G,threads);
       } else {
-        ffth=new mfft1d(h,1,C, C,S, 1,1, G,H,threads);
-        iffth=new mfft1d(h,-1,C, S,C, 1,1, H,G,threads);
+        ffth=new mfft1d(h,1,C, C,S, 1,1, G,V,threads);
+        iffth=new mfft1d(h,-1,C, S,C, 1,1, V,G,threads);
       }
     }
 
@@ -5721,8 +5720,10 @@ void fftPadReal::init()
           fftmp2m1=new mfft1d(m,1,Cp2m1, 1,m, G,H,threads);
           ifftmp2m1=new mfft1d(m,-1,Cp2m1, 1,m, H,G,threads);
         } else {
-          fftmp2m1=new mfft1d(m,1,C, C,S, 1,1, G,H,threads);
-          ifftmp2m1=new mfft1d(m,-1,C, S,C, 1,1, H,G,threads);
+          fftmp2m1=new mfft1d(m,1,C, C,S, 1,1, G,V,threads);
+          ifftmp2m1=new mfft1d(m,-1,C, S,C, 1,1, V,G,threads);
+          if(!inplace || S == C)
+            V=NULL;
         }
 
         if(n > 2) {
@@ -5817,6 +5818,8 @@ fftPadReal::~fftPadReal()
         delete fftmp2;
         delete ifftmp2;
       }
+      if(inplace && S > C)
+        deleteAlign(V);
     } else {
       delete crfftm;
       delete rcfftm;
@@ -6307,6 +6310,7 @@ void fftPadReal::forward2Many(Complex *f, Complex *F, size_t r, Complex *W)
 void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
 {
   if(W == NULL) W=F0;
+
   double *fr=(double *) f;
 
   size_t n2=ceilquotient(n,2);
@@ -6485,7 +6489,8 @@ void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
 
 void fftPadReal::forwardInnerMany(Complex *f, Complex *F, size_t r, Complex *W)
 {
-  if(W == NULL) W=F;
+  if(W == NULL) W=r == 0 && V ? V : F;
+
   double *fr=(double *) f;
 
   size_t n2=ceilquotient(n,2);
@@ -7370,7 +7375,7 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
 
 void fftPadReal::backwardInnerMany(Complex *F, Complex *f, size_t r, Complex *W)
 {
-  if(W == NULL) W=F;
+  if(W == NULL) W=r == 0 && V ? V : F;
 
   double *fr=(double *) f;
   double *Wr=(double *) W; // TODO: Move
