@@ -5632,9 +5632,12 @@ void fftPadReal::init()
       rcfftm=new mrcfft1d(m,C, S,S, 1,1, (double *) H,G,threads);
       crfftm=new mcrfft1d(m,C, S,S, 1,1, G,(double *) H,threads);
     } else {
-      V=inplace && S > C ? ComplexAlign(outputSize()) : H;
-      rcfftm=new mrcfft1d(m,C, 2*C,S, 2,1, (double *) V,G,threads);
-      crfftm=new mcrfft1d(m,C, S,2*C, 1,2, G,(double *) V,threads);
+      if(S == 1) {
+        rcfftm=new mrcfft1d(m,C, 2,1, 2,1, (double *) H,G,threads);
+        crfftm=new mcrfft1d(m,C, 1,2, 1,2, G,(double *) H,threads);
+        V=H;
+      } else
+        V=inplace && S > C ? ComplexAlign(outputSize()) : H;
     }
     if(n > 2) {
       if(S == 1) {
@@ -5820,7 +5823,9 @@ fftPadReal::~fftPadReal()
       }
       if(inplace && S > C)
         deleteAlign(V);
-    } else {
+    }
+
+    if(S == 1 || p <= 2) {
       delete crfftm;
       delete rcfftm;
     }
