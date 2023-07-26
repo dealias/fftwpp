@@ -6348,6 +6348,7 @@ void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
     rcfftp->fft(W);
 
     rcfftm->fft(W,F0);
+
     PARALLELIF(
       (p2-1)*(m-1) > threshold,
     for(size_t t=1; t < p2; ++t) {
@@ -6534,7 +6535,6 @@ void fftPadReal::forwardInnerMany(Complex *f, Complex *F, size_t r, Complex *W)
       });
 
     rcfftp->fft(Wr);
-    rcfftm->fft(Wr,F);
 
     PARALLELIF(
       (p2-1)*(m-1)*C > threshold,
@@ -6550,7 +6550,7 @@ void fftPadReal::forwardInnerMany(Complex *f, Complex *F, size_t r, Complex *W)
         }
       });
 
-    for(size_t t=1; t < p2; ++t)
+    for(size_t t=0; t < p2; ++t)
       fftmp2m1->fft(W+Cm*t,F+Sm*t);
 
     if(p == 2*p2) {
@@ -7387,9 +7387,8 @@ void fftPadReal::backwardInnerMany(Complex *F, Complex *f, size_t r, Complex *W)
 
   if(r == 0) {
     size_t p2=ceilquotient(p,2);
-    crfftm->fft(F,Wr);
 
-    for(size_t t=1; t < p2; ++t)
+    for(size_t t=0; t < p2; ++t)
       ifftmp2m1->fft(F+Sm*t,W+Cm*t);
 
     PARALLELIF(
