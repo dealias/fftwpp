@@ -1,5 +1,5 @@
 // TODO: Parallelize L...m loops.
-// TODO: move S > C test to valid.
+// TODO: Fix inputSize etc.
 
 #include "convolve.h"
 #include "align.h"

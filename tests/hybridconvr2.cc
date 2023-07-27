@@ -14,8 +14,8 @@ size_t B=1; // number of outputs
 
 int main(int argc, char *argv[])
 {
-  Lx=Ly=4;  // input data length
-  Mx=My=8; // minimum padded length
+  Lx=Ly=8;  // input data length
+  Mx=My=16; // minimum padded length
 
   fftw::maxthreads=parallel::get_max_threads();
 
@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
   cout << "Mx=" << Mx << endl;
   cout << "My=" << My << endl;
 
-  if(Output || testError)
+  if(Output||testError)
     K=0;
   if(K == 0) minCount=1;
   cout << "K=" << K << endl << endl;
@@ -41,42 +41,42 @@ int main(int argc, char *argv[])
   vector<double> T;
 
   Application appx(A,B,multNone,fftw::maxthreads,mx,Dx,Ix);
-  fftPad fftx(Lx,Mx,appx,Ly,Sx);
+  fftPadReal fftx(Lx,Mx,appx,Ly,Sx);
   Application appy(A,B,multbinary,appx,my,Dy,Iy);
   fftPad ffty(Ly,My,appy);
   Convolution2 Convolve(&fftx,&ffty);
 
-  Complex **f=ComplexAlign(max(A,B),fftx.inputSize());
+  double **f=doubleAlign(max(A,B),Lx*Ly);//fftx.inputSize());
 
   for(size_t a=0; a < A; ++a) {
-    Complex *fa=f[a];
+    double *fa=f[a];
     for(size_t i=0; i < Lx; ++i) {
       for(size_t j=0; j < Ly; ++j) {
-        fa[Sx*i+j]=Output || testError ? Complex((1.0+a)*i,j+a) : 0.0;
+        fa[Sx*i+j]=Output || testError ? i+j+1 : 0.0;
       }
     }
   }
 
-  Complex *h=NULL;
+  double *h=NULL;
   if(testError) {
-    h=ComplexAlign(Lx*Ly);
-    DirectConvolution2<Complex> C(Lx,Ly,Sx);
+    h=doubleAlign(Lx*Ly);
+    DirectConvolution2<double> C(Lx,Ly);
     C.convolve(h,f[0],f[1]);
   }
 
   if(!Output && !testError)
-      Convolve.convolve(f);
+    Convolve.convolve((Complex **) f);
 
   double sum=0.0;
   while(sum <= K || T.size() < minCount) {
     double t;
     if(normalized || testError) {
       cpuTimer c;
-      Convolve.convolve(f);
+      Convolve.convolve((Complex **) f);
       t=c.nanoseconds();
     } else {
       cpuTimer c;
-      Convolve.convolveRaw(f);
+      Convolve.convolveRaw((Complex **) f);
       t=c.nanoseconds();
     }
     T.push_back(t);

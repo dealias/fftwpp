@@ -73,22 +73,6 @@ void DirectrConvolution::convolve(double *h, double *f, double *g)
   }
 }
 
-void DirectConvolution2::convolve(Complex *h, Complex *f, Complex *g)
-{
-#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
-#pragma omp parallel for
-#endif
-  for(size_t i=0; i < mx; ++i) {
-    for(size_t j=0; j < my; ++j) {
-      Complex sum=0.0;
-      for(size_t k=0; k <= i; ++k)
-        for(size_t p=0; p <= j; ++p)
-          sum += f[Sx*k+p]*g[Sx*(i-k)+j-p];
-      h[i*my+j]=sum;
-    }
-  }
-}
-
 void DirectHConvolution2::convolve(Complex *h, Complex *f, Complex *g,
                                    bool symmetrize)
 {

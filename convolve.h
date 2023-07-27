@@ -1396,15 +1396,13 @@ public:
   }
 
   void subconvolution(Complex **F, size_t rx, size_t offset=0) {
-    size_t D=rx == 0 ? fftx->D0 : fftx->D;
+    size_t blocksize=fftx->blocksize(rx);
     PARALLEL(
-      for(size_t i=0; i < lx; ++i) {
+      for(size_t i=0; i < blocksize; ++i) {
         size_t t=parallel::get_thread_num(threads);
         Convolution *cy=convolvey[t];
-        for(size_t d=0; d < D; ++d) {
-          cy->indices.index[0]=fftx->index(rx+d,i);
-          cy->convolveRaw(F,offset+(D*i+d)*Sx,&cy->indices);
-        }
+        cy->indices.index[0]=fftx->index(rx,i);
+        cy->convolveRaw(F,offset+i*Sx,&cy->indices);
       });
   }
 
@@ -1671,15 +1669,13 @@ public:
   }
 
   void subconvolution(Complex **F, size_t rx, size_t offset=0) {
-    size_t D=rx == 0 ? fftx->D0 : fftx->D;
+    size_t blocksize=fftx->blocksize(rx);
     PARALLEL(
-      for(size_t i=0; i < lx; ++i) {
+      for(size_t i=0; i < blocksize; ++i) {
         size_t t=parallel::get_thread_num(threads);
         Convolution2 *cyz=convolveyz[t];
-        for(size_t d=0; d < D; ++d) {
-          cyz->indices.index[1]=fftx->index(rx+d,i);
-          cyz->convolveRaw(F,offset+(D*i+d)*Sx,&cyz->indices);
-        }
+        cyz->indices.index[1]=fftx->index(rx,i);
+        cyz->convolveRaw(F,offset+i*Sx,&cyz->indices);
       });
   }
 

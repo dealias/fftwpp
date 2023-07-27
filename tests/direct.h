@@ -39,6 +39,7 @@ public:
 };
 
 // Out-of-place direct 2D complex convolution.
+template<class T>
 class DirectConvolution2 {
 protected:
   size_t mx,my; // x and y data lengths
@@ -49,7 +50,21 @@ public:
     this->Sx=Sx ? Sx : my;
   }
 
-  void convolve(Complex *h, Complex *f, Complex *g);
+  void convolve(T *h, T *f, T *g)
+  {
+#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
+#pragma omp parallel for
+#endif
+    for(size_t i=0; i < mx; ++i) {
+      for(size_t j=0; j < my; ++j) {
+        T sum=0.0;
+        for(size_t k=0; k <= i; ++k)
+          for(size_t p=0; p <= j; ++p)
+            sum += f[Sx*k+p]*g[Sx*(i-k)+j-p];
+        h[i*my+j]=sum;
+      }
+    }
+  }
 };
 
 // Out-of-place direct 2D Hermitian convolution.
