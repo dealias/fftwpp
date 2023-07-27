@@ -413,7 +413,7 @@ void fftBase::OptBase::scan(size_t L, size_t M, Application& app,
   bool sR=showRoutines;
 
   showRoutines=false;
-  size_t mStart=2;
+  size_t mStart=32;
   size_t itmax=3;
   opt(L,M,app,C,S,mStart,itmax,Explicit,centered,false);
 
