@@ -942,8 +942,10 @@ public:
 
   // Number of complex outputs per residue per copy
   size_t blocksize(size_t r, bool first=false) {
-    if(C > 1 && p > 2) return  (p % 2 ? (p/2+1)*m : (p/2)*m+e-1);
-    if(r == 0) return (p > 2 && !first) ? (p % 2 ? (p/2)*m : (p/2-1)*m+e-1): e;
+    if(r == 0) {
+      if (C > 1 && p > 2) return  (p % 2 ? (p/2+1)*m : (p/2)*m+e-1);
+      return (p > 2 && !first) ? (p % 2 ? (p/2)*m : (p/2-1)*m+e-1): e;
+    }
     if(2*r == n) return p > 2 ? (p/2)*m : e-1;
     return l;
   }
