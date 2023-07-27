@@ -166,6 +166,8 @@ def default_outdir(p,T,I):
         outdir = "timingsh3"
     if p == "hybridconvr":
         outdir = "timingsr1"
+    if p == "hybridconvr2":
+        outdir = "timingsr2"
     if p == "tconv":
         outdir = "timings1t"
     if p == "tconv2":
@@ -304,12 +306,15 @@ def main(argv):
     dimension=1
     hybrid = False
     hermitian = False
+    real = False
     ternary = False
 
-    if p == "cconv2" or p == "conv2" or p == "hybridconv2" or p == "hybridconvh2":
+    dim2routines=["cconv2","conv2","hybridconv2","hybridconvh2","hybridconvr2"]
+    dim3routines=["cconv3","conv3","hybridconv3","hybridconvh3"]
+    if p in dim2routines:
         dimension=2
 
-    if p == "cconv3" or p == "conv3" or p == "hybridconv3" or p == "hybridconvh3":
+    if p in dim3routines:
         dimension=3
 
     if p == "cconv":
@@ -328,6 +333,9 @@ def main(argv):
 
     if p == "hybridconvh" or p == "hybridconvh2" or p == "hybridconvh3":
         hermitian = True
+
+    if p == "hybridconvr" or p == "hybridconvr2":# or p == "hybridconvh3":
+        real = True
 
     if p == "conv2":
         hermitian = True
@@ -555,8 +563,9 @@ def main(argv):
             options=[]
             if hybrid:
               if dimension == 2:
-                Sx=(ceilquotient(L,2) if hermitian else L)+2
-                options.append(f'-Sx={Sx}')
+                if not real:
+                    Sx=(ceilquotient(L,2) if hermitian else L)+2
+                    options.append(f'-Sx={Sx}')
               if dimension == 3:
                 Sy=ceilquotient(L,2) if hermitian else L
                 if T == 1:
