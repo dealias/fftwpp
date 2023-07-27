@@ -5632,11 +5632,9 @@ void fftPadReal::init()
       rcfftm=new mrcfft1d(m,C, S,S, 1,1, (double *) H,G,threads);
       crfftm=new mcrfft1d(m,C, S,S, 1,1, G,(double *) H,threads);
     } else {
-      if(S == 1) {
-        rcfftm=new mrcfft1d(m,C, 2,1, 2,1, (double *) H,G,threads);
-        crfftm=new mcrfft1d(m,C, 1,2, 1,2, G,(double *) H,threads);
+      if(S == 1)
         V=H;
-      } else
+      else
         V=inplace && S > C ? ComplexAlign(outputSize()) : H;
     }
     if(n > 2) {
@@ -5718,10 +5716,10 @@ void fftPadReal::init()
         crfftp=new mcrfft1d(p,Cm, Cm,Cm, 1,1, G,(double *) G,threads);
 
         size_t p2=ceilquotient(p,2);
-        size_t Cp2m1=C*(p2-1);
+        size_t Cp2=C*(p2);
         if(S == 1) {
-          fftmp2m1=new mfft1d(m,1,Cp2m1, 1,m, G,H,threads);
-          ifftmp2m1=new mfft1d(m,-1,Cp2m1, 1,m, H,G,threads);
+          fftmp2m1=new mfft1d(m,1,Cp2, 1,m, G,H,threads);
+          ifftmp2m1=new mfft1d(m,-1,Cp2, 1,m, H,G,threads);
         } else {
           fftmp2m1=new mfft1d(m,1,C, C,S, 1,1, G,V,threads);
           ifftmp2m1=new mfft1d(m,-1,C, S,C, 1,1, V,G,threads);
@@ -5825,7 +5823,7 @@ fftPadReal::~fftPadReal()
         deleteAlign(V);
     }
 
-    if(S == 1 || p <= 2) {
+    if(p <= 2) {
       delete crfftm;
       delete rcfftm;
     }
@@ -6352,8 +6350,6 @@ void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
 
     rcfftp->fft(W);
 
-    rcfftm->fft(W,F0);
-
     PARALLELIF(
       (p2-1)*(m-1) > threshold,
     for(size_t t=1; t < p2; ++t) {
@@ -6364,7 +6360,7 @@ void fftPadReal::forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W)
         Ft[s] *= conj(Zetar[s]); // Compensate for conjugate transform sign.
     });
 
-    fftmp2m1->fft(W+m,F0+m);
+    fftmp2m1->fft(W,F0);
 
     if(p == 2*p2) {
       size_t h=e-1;
@@ -7208,9 +7204,8 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
   if(r0 == 0) {
     size_t p2=ceilquotient(p,2);
     size_t p2m=p2*m;
-    crfftm->fft(F0,Wr);
 
-    ifftmp2m1->fft(F0+m,W+m);
+    ifftmp2m1->fft(F0,W);
 
     PARALLELIF(
       (p2-1)*(m-1) > threshold,
