@@ -414,7 +414,7 @@ public:
   }
 
   // Number of complex outputs per residue per copy
-  virtual size_t blocksize(size_t r, bool=false) {
+  virtual size_t blocksize(size_t r) {
     return l;
   }
 
@@ -771,7 +771,7 @@ public:
   void backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W);
 
   // Number of real outputs per residue per copy
-  size_t blocksize(size_t, bool=false) {
+  size_t blocksize(size_t) {
     return m*(q == 1 ? 1 : p/2);
   }
 
@@ -933,7 +933,7 @@ public:
   }
 
   // Number of complex outputs per residue per copy
-  size_t blocksize(size_t r, bool first=false) {
+  size_t blocksize(size_t r) {
     if(r == 0) return p > 2 ? (p % 2 ? (p/2+1)*m : (p/2)*m+e-1): e;
     if(2*r == n) return p > 2 ? (p/2)*m : e-1;
     return l;
@@ -1087,7 +1087,7 @@ public:
   }
 
   void operate(Complex **F, size_t r, Indices *indices) {
-    size_t blocksize=fft->blocksize(r,true);
+    size_t blocksize=fft->blocksize(r);
     indices->r=r;
 
     (*mult)(F,blocksize,indices,threads);

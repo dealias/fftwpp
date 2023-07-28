@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
   }
 
   if(!Output && !testError)
-      Convolve.convolve(f);
+    Convolve.convolve(f);
 
   double sum=0.0;
   while(sum <= K || T.size() < minCount) {

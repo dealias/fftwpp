@@ -14,8 +14,8 @@ size_t B=1; // number of outputs
 
 int main(int argc, char *argv[])
 {
-  Lx=Ly=8;  // input data length
-  Mx=My=16; // minimum padded length
+  Lx=Ly=4;  // input data length
+  Mx=My=8; // minimum padded length
 
   fftw::maxthreads=parallel::get_max_threads();
 
@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
   cout << "Mx=" << Mx << endl;
   cout << "My=" << My << endl;
 
-  if(Output||testError)
+  if(Output || testError)
     K=0;
   if(K == 0) minCount=1;
   cout << "K=" << K << endl << endl;
