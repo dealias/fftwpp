@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
   fftPad ffty(Ly,My,appy);
   Convolution2 Convolve(&fftx,&ffty);
 
-  double **f=doubleAlign(max(A,B),Lx*Ly);//fftx.inputSize());
+  double **f=doubleAlign(max(A,B),Lx*Sx);
 
   for(size_t a=0; a < A; ++a) {
     double *fa=f[a];
@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
   double *h=NULL;
   if(testError) {
     h=doubleAlign(Lx*Ly);
-    DirectConvolution2<double> C(Lx,Ly);
+    DirectConvolution2<double> C(Lx,Ly,Sx);
     C.convolve(h,f[0],f[1]);
   }
 
