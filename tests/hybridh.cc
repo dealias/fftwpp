@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
 
   cout << endl << "Minimal Explicit:" << endl;
   // Minimal explicit padding
-  fftPadHermitian fft0(L,M,C,M,1,1,app);
+  fftPadHermitian fft0(L,M,app,C,M,1,1);
 
   double median0=fft0.report();
 
@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
     for(size_t c=0; c < C; ++c)
       f[C*j+c]=Complex(C*j+c+1,C*j+c+2);
 
-  fftPadHermitian fft2(L,fft.M,C,fft.M,1,1,app);
+  fftPadHermitian fft2(L,fft.M,app,C,fft.M,1,1);
 
   Complex *F2=ComplexAlign(fft2.outputSize());
   double *F2r=(double *) F2;

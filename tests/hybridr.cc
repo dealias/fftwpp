@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 
   cout << endl << "Minimal Explicit:" << endl;
   // Minimal explicit padding
-  fftPadReal fft0(L,M,C,S,M,1,1,app);
+  fftPadReal fft0(L,M,app,C,S,M,1,1);
 
   double median0=fft0.report();
 
@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
     for(size_t c=0; c < C; ++c)
       f[S*j+c]=j+1;//C*j+c+1;
 
-  fftPadReal fft2(L,fft.M,C,S,fft.M,1,1,app);
+  fftPadReal fft2(L,fft.M,app,C,S,fft.M,1,1);
 
   Complex *F2=ComplexAlign(fft2.outputSize());
 

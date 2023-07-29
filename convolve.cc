@@ -1,5 +1,4 @@
 // TODO: Parallelize L...m loops.
-// TODO: Revisit workSizeV allocation.
 
 #include "convolve.h"
 #include "align.h"
@@ -367,7 +366,7 @@ void fftBase::OptBase::check(size_t L, size_t M,
   //cout << "valid=" << valid(m,p,q,n,D,S) << endl << endl;
   if(valid(m,p,q,n,D,S)) {
     if(useTimer) {
-      double t=time(L,M,C,S,m,D,inplace,app);
+      double t=time(L,M,app,C,S,m,D,inplace);
       if(showOptTimes)
         cout << "m=" << m << ", p=" << p << ", q=" << q << ", C=" << C << ", S=" << S << ", D=" << D << ", I=" << inplace << ": t=" << t*1.0e-9 << endl;
       if(t < T) {

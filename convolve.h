@@ -174,9 +174,9 @@ public:
     double threshold;
     double T;
 
-    virtual double time(size_t L, size_t M, size_t C,
-                        size_t S, size_t m,
-                        size_t D, bool inplace, Application &app)=0;
+    virtual double time(size_t L, size_t M, Application &app,
+                        size_t C, size_t S, size_t m,
+                        size_t D, bool inplace)=0;
 
     virtual bool valid(size_t m, size_t p, size_t q, size_t n, size_t D, size_t S)=0;
 
@@ -228,20 +228,20 @@ public:
     exit(-1);
   }
 
-  fftBase(size_t L, size_t M, size_t C, size_t S,
-          size_t m, size_t D, bool inplace,
-          Application &app, bool centered=false) :
-    ThreadBase(app.threads), L(L), M(M), C(C),  S(S == 0 ? C : S), m(m),
-    D(D), inplace(inplace), app(app), centered(centered) {
-    checkParameters();
-    this->app.D=D;
-  }
-
   fftBase(size_t L, size_t M, Application& app,
           size_t C=1, size_t S=0, bool centered=false) :
     ThreadBase(app.threads), L(L), M(M), C(C), S(S == 0 ? C : S),
     app(app), centered(centered) {
     checkParameters();
+  }
+
+  fftBase(size_t L, size_t M, Application &app, size_t C, size_t S,
+          size_t m, size_t D, bool inplace,
+          bool centered=false) :
+    ThreadBase(app.threads), L(L), M(M), C(C),  S(S == 0 ? C : S), m(m),
+    D(D), inplace(inplace), app(app), centered(centered) {
+    checkParameters();
+    this->app.D=D;
   }
 
   virtual ~fftBase();
@@ -380,10 +380,6 @@ public:
     return m*q;
   }
 
-  virtual size_t outputSize() {
-    return b*D;
-  }
-
   virtual bool conjugates() {
     return D > 1 && (p <= 2 || (centered && p % 2 == 0));
   }
@@ -424,21 +420,27 @@ public:
     return wordSize()*S*inputLength();
   }
 
-  // Number of complex outputs per residue per copy
+  // Number of complex words in FFT output buffer
+  virtual size_t outputSize() {
+    return b*D;
+  }
+
+  // Number of complex FFT outputs per residue per copy
   virtual size_t blocksize(size_t r) {
     return l;
   }
 
-  // Number of complex outputs per iteration per copy
+  // Number of complex FFT outputs per iteration per copy
   virtual size_t noutputs(size_t r) {
     return blocksize(r)*(r == 0 ? D0 : D);
   }
 
-  // Number of complex outputs per iteration
+  // Number of complex FFT outputs per iteration
   virtual size_t complexOutputs(size_t r) {
     return S*noutputs(r);
   }
 
+  // Number of complex words in input accumulation array
   size_t workSizeV() {
     return nloops() == 1 || loop2() ? 0 : utils::ceilquotient(doubles(),2);
   }
@@ -500,33 +502,13 @@ public:
       return n;
     }
 
-    double time(size_t L, size_t M, size_t C, size_t S,
-                size_t m, size_t D, bool inplace, Application &app) {
-      fftPad fft(L,M,C,S,m,D,inplace,app);
+    double time(size_t L, size_t M, Application &app, size_t C, size_t S,
+                size_t m, size_t D, bool inplace) {
+      fftPad fft(L,M,app,C,S,m,D,inplace);
       double threshold=DBL_MAX;
       return timePad(&fft,threshold);
     }
   };
-
-  fftPad(size_t L, size_t M, size_t C, size_t S,
-         Application &app, bool centered) :
-    fftBase(L,M,app,C,S,centered) {}
-
-  fftPad(size_t L, size_t M, size_t C, size_t S,
-         size_t m, size_t q, size_t D, bool inplace,
-         Application &app, bool centered) :
-    fftBase(L,M,C,S,m,D,inplace,app) {}
-
-  // Compute an fft padded to N=m*q >= M >= L
-  fftPad(size_t L, size_t M, size_t C, size_t S,
-         size_t m, size_t D, bool inplace,
-         Application &app, bool centered=false) :
-    fftBase(L,M,C,S,m,D,inplace,app,centered) {
-    Opt opt;
-    parameters(L,M,m,centered,p,n,q);
-    if(q > 1 && !opt.valid(m,p,q,n,D,this->S)) invalid();
-    init();
-  }
 
   // Normal entry point.
   // Compute C ffts of length L with stride S >= C and distance 1
@@ -541,6 +523,16 @@ public:
     if(Explicit)
       M=m;
     parameters(L,M,m,centered,p,n,q);
+    init();
+  }
+
+  // Compute an fft padded to N=m*q >= M >= L
+  fftPad(size_t L, size_t M, Application &app, size_t C, size_t S,
+         size_t m, size_t D, bool inplace, bool centered=false) :
+    fftBase(L,M,app,C,S,m,D,inplace,centered) {
+    Opt opt;
+    parameters(L,M,m,centered,p,n,q);
+    if(q > 1 && !opt.valid(m,p,q,n,D,this->S)) invalid();
     init();
   }
 
@@ -614,31 +606,19 @@ public:
       return n;
     }
 
-    double time(size_t L, size_t M, size_t C, size_t S,
-                size_t m, size_t D, bool inplace, Application &app) {
-      fftPadCentered fft(L,M,C,S,m,D,inplace,app);
+    double time(size_t L, size_t M, Application &app, size_t C, size_t S,
+                size_t m, size_t D, bool inplace) {
+      fftPadCentered fft(L,M,app,C,S,m,D,inplace);
       double threshold=DBL_MAX;
       return timePad(&fft,threshold);
     }
   };
 
-  // Compute an fft padded to N=m*q >= M >= L
-  fftPadCentered(size_t L, size_t M, size_t C,
-                 size_t S, size_t m,
-                 size_t D, bool inplace, Application &app) :
-    fftPad(L,M,C,S,m,D,inplace,app,true) {
-    Opt opt;
-    parameters(L,M,m,centered,p,n,q);
-    if(q > 1 && !opt.valid(m,p,q,n,D,this->S)) invalid();
-    fftPad::init();
-    init();
-  }
-
   // Normal entry point.
   // Compute C ffts of length L and distance 1 padded to at least M
   fftPadCentered(size_t L, size_t M, Application& app,
                  size_t C=1, size_t S=0, bool Explicit=false) :
-    fftPad(L,M,C,S,app,true) {
+    fftPad(L,M,app,C,S,Explicit,true) {
     Opt opt=Opt(L,M,app,C,this->S,Explicit);
     m=opt.m;
     D=opt.D;
@@ -646,6 +626,17 @@ public:
     if(Explicit)
       M=m;
     parameters(L,M,m,centered,p,n,q);
+    fftPad::init();
+    init();
+  }
+
+  // Compute an fft padded to N=m*q >= M >= L
+  fftPadCentered(size_t L, size_t M, Application &app, size_t C, size_t S,
+                 size_t m, size_t D, bool inplace) :
+    fftPad(L,M,app,C,S,m,D,inplace,true) {
+    Opt opt;
+    parameters(L,M,m,centered,p,n,q);
+    if(q > 1 && !opt.valid(m,p,q,n,D,this->S)) invalid();
     fftPad::init();
     init();
   }
@@ -731,22 +722,14 @@ public:
       return n;
     }
 
-    double time(size_t L, size_t M, size_t C, size_t,
-                size_t m, size_t D, bool inplace, Application &app) {
-      fftPadHermitian fft(L,M,C,m,D,inplace,app);
+    double time(size_t L, size_t M, Application &app, size_t C, size_t,
+                size_t m, size_t D, bool inplace) {
+      fftPadHermitian fft(L,M,app,C,m,D,inplace);
       return timePad(&fft,threshold);
     }
   };
 
-  fftPadHermitian(size_t L, size_t M, size_t C,
-                  size_t m, size_t D, bool inplace, Application &app) :
-    fftBase(L,M,C,C,m,D,inplace,app,true) {
-    Opt opt;
-    parameters(L,M,m,centered,p,n,q);
-    if(q > 1 && !opt.valid(m,p,q,n,D,C)) invalid();
-    init();
-  }
-
+  // Normal entry point.
   fftPadHermitian(size_t L, size_t M, Application& app,
                   size_t C=1, bool Explicit=false) :
     fftBase(L,M,app,C,C,true) {
@@ -757,6 +740,15 @@ public:
     if(Explicit)
       M=m;
     parameters(L,M,m,centered,p,n,q);
+    init();
+  }
+
+  fftPadHermitian(size_t L, size_t M, Application &app, size_t C,
+                  size_t m, size_t D, bool inplace) :
+    fftBase(L,M,app,C,C,m,D,inplace,true) {
+    Opt opt;
+    parameters(L,M,m,centered,p,n,q);
+    if(q > 1 && !opt.valid(m,p,q,n,D,C)) invalid();
     init();
   }
 
@@ -786,17 +778,17 @@ public:
     return utils::ceilquotient(L,2);
   }
 
-  // Number of real outputs per residue per copy
+  // Number of real FFT outputs per residue per copy
   size_t blocksize(size_t) {
     return m*(q == 1 ? 1 : p/2);
   }
 
-  // Number of complex outputs per iteration
+  // Number of complex FFT outputs per iteration
   size_t complexOutputs(size_t) {
     return 2*b;
   }
 
-  // Number of real outputs per residue per copy
+  // Number of real FFT outputs per residue per copy
   size_t noutputs(size_t) {
     return blocksize(0);
   }
@@ -843,24 +835,13 @@ public:
       return n > 2 ? (n-1)/2 : 1;
     }
 
-    double time(size_t L, size_t M, size_t C, size_t S,
-                size_t m, size_t D, bool inplace, Application &app) {
-      fftPadReal fft(L,M,C,S,m,D,inplace,app);
+    double time(size_t L, size_t M, Application &app, size_t C, size_t S,
+                size_t m, size_t D, bool inplace) {
+      fftPadReal fft(L,M,app,C,S,m,D,inplace);
       double threshold=DBL_MAX;
       return timePad(&fft,threshold);
     }
   };
-
-  // Compute an fft padded to N=m*q >= M >= L
-  fftPadReal(size_t L, size_t M, size_t C, size_t S,
-         size_t m, size_t D, bool inplace,
-         Application &app) :
-    fftBase(L,M,C,S,m,D,inplace,app) {
-    Opt opt;
-    parameters(L,M,m,centered,p,n,q);
-    if(q > 1 && !opt.valid(m,p,q,n,D,this->S)) invalid();
-    init();
-  }
 
   // Normal entry point.
   // Compute C ffts of length L with stride S >= C and distance 1
@@ -869,16 +850,23 @@ public:
          size_t C=1, size_t S=0, bool Explicit=false) :
     fftBase(L,M,app,C,S) {
     Opt opt=Opt(L,M,app,C,this->S,Explicit);
-
-
-
-
     m=opt.m;
     D=opt.D;
     inplace=opt.inplace;
     if(Explicit)
       M=m;
     parameters(L,M,m,centered,p,n,q);
+    init();
+  }
+
+  // Compute an fft padded to N=m*q >= M >= L
+  fftPadReal(size_t L, size_t M, Application &app, size_t C, size_t S,
+             size_t m, size_t D, bool inplace) :
+
+    fftBase(L,M,app,C,S,m,D,inplace) {
+    Opt opt;
+    parameters(L,M,m,centered,p,n,q);
+    if(q > 1 && !opt.valid(m,p,q,n,D,this->S)) invalid();
     init();
   }
 
@@ -945,14 +933,14 @@ public:
     return r > 1 ? D : r == 1 ? D0 : 1;
   }
 
-  // Number of complex outputs per residue per copy
+  // Number of complex FFT outputs per residue per copy
   size_t blocksize(size_t r) {
     if(r == 0) return p > 2 ? (p % 2 ? (p/2+1)*m : (p/2)*m+e-1): e;
     if(2*r == n) return p > 2 ? (p/2)*m : e-1;
     return l;
   }
 
-  // Number of complex outputs per iteration per copy
+  // Number of complex FFT outputs per iteration per copy
   size_t noutputs(size_t r) {
    if(r == 0) return p > 2 ? (p % 2 ? (p/2+1)*m : (p/2)*m+e-1): e;
    return blocksize(r)*(2*r == n ? 1 : r == 1 ? D0 : D);
