@@ -804,8 +804,8 @@ class fftPadReal : public fftBase {
   crfft1d *crfftm1;
   mrcfft1d *rcfftm;
   mcrfft1d *crfftm;
-  mfft1d *fftm,*fftm0,*fftmp2m1,*fftmp2;
-  mfft1d *ifftm,*ifftm0,*ifftmp2m1,*ifftmp2;
+  mfft1d *fftm,*fftm0,*fftmr0,*fftmp2;
+  mfft1d *ifftm,*ifftm0,*ifftmr0,*ifftmp2;
   mfft1d *ffth;
   mfft1d *iffth;
   mrcfft1d *rcfftp;
