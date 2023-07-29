@@ -54,8 +54,8 @@ int main(int argc, char *argv[])
   if(median1 > 0)
     cout << "optimal ratio=" << median/median1 << endl;
 
-  double *f=doubleAlign(2*fft.inputSize());
-  double *h=doubleAlign(2*fft.inputSize());
+  double *f=doubleAlign(S*L);
+  double *h=doubleAlign(S*L);
   Complex *F=ComplexAlign(fft.outputSize());
   Complex *W0=ComplexAlign(fft.workSizeW());
 

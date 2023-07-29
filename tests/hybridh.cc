@@ -54,12 +54,12 @@ int main(int argc, char *argv[])
   if(median1 > 0)
     cout << "optimal ratio=" << median/median1 << endl;
 
-  Complex *f=ComplexAlign(fft.inputSize());
-  Complex *h=ComplexAlign(fft.inputSize());
+  size_t H=ceilquotient(L,2);
+
+  Complex *f=ComplexAlign(C*H);
+  Complex *h=ComplexAlign(C*H);
   Complex *F=ComplexAlign(fft.outputSize());
   Complex *W0=ComplexAlign(fft.workSizeW());
-
-  size_t H=ceilquotient(L,2);
 
   for(size_t c=0; c < C; ++c)
     f[c]=1+c;
@@ -109,8 +109,9 @@ int main(int argc, char *argv[])
   if(Output) {
     cout << endl;
     cout << "Inverse:" << endl;
-    for(size_t j=0; j < fft.inputSize(); ++j)
-      cout << h[j]*scale << endl;
+    for(size_t j=0; j < H; ++j)
+      for(size_t c=0; c < C; ++c)
+        cout << h[C*j+c]*scale << endl;
     cout << endl;
   }
 
@@ -127,10 +128,12 @@ int main(int argc, char *argv[])
     fft.backward(F,h,r,W0);
   }
 
-  for(size_t j=0; j < fft.inputSize(); ++j) {
-    error2 += abs2(h[j]*scale-f[j]);
-    norm2 += abs2(f[j]);
-  }
+  for(size_t j=0; j < H; ++j)
+    for(size_t c=0; c < C; ++c) {
+      size_t J=C*j+c;
+      error2 += abs2(h[J]*scale-f[J]);
+      norm2 += abs2(f[J]);
+    }
 
   if(norm > 0) error=sqrt(error/norm);
   if(norm2 > 0) error2=sqrt(error2/norm2);

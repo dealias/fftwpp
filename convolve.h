@@ -409,8 +409,19 @@ public:
     return nloops() == 2 && app.A > app.B && !Overwrite();
   }
 
-  virtual size_t inputSize() {
-    return S*L;
+  // Input data length
+  virtual size_t inputLength() {
+    return L;
+  }
+
+  // Number of doubles in an input word
+  virtual size_t wordSize() {
+    return 2;
+  }
+
+  // Number of doubles in input array
+  virtual size_t doubles() {
+    return wordSize()*S*inputLength();
   }
 
   // Number of complex outputs per residue per copy
@@ -429,7 +440,7 @@ public:
   }
 
   size_t workSizeV() {
-    return nloops() == 1 || loop2() ? 0 : inputSize();
+    return nloops() == 1 || loop2() ? 0 : utils::ceilquotient(doubles(),2);
   }
 
   virtual size_t workSizeW() {
@@ -770,6 +781,11 @@ public:
   void backward2Many(Complex *F, Complex *f, size_t r, Complex *W);
   void backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W);
 
+  // Length of input array
+  size_t inputLength() {
+    return utils::ceilquotient(L,2);
+  }
+
   // Number of real outputs per residue per copy
   size_t blocksize(size_t) {
     return m*(q == 1 ? 1 : p/2);
@@ -787,10 +803,6 @@ public:
 
   size_t workSizeW() {
     return inplace ? 0 : B*D;
-  }
-
-  size_t inputSize() {
-    return C*utils::ceilquotient(L,2);
   }
 };
 
@@ -911,11 +923,12 @@ public:
   void forwardInnerMany(Complex *f, Complex *F, size_t r, Complex *W);
   void backwardInnerMany(Complex *F, Complex *f, size_t r, Complex *W);
 
-  size_t inputSize() {
-    return S*utils::ceilquotient(L,2);
+  // Number of doubles in an input word
+  size_t wordSize() {
+    return 1;
   }
 
-  virtual size_t outputSize() {
+  size_t outputSize() {
     if(n == 2) return p > 2 ? (p/2+1)*m*S : e*S;
     return b*D;
   }
@@ -1071,12 +1084,13 @@ public:
 
   ~Convolution();
 
-  void normalize(Complex **f, size_t offset=0) {
-    size_t inputSize=fft->inputSize();
+  void normalize(Complex **h, size_t offset=0) {
+    size_t w=fft->wordSize();
+    size_t wL=w*L;
     for(size_t b=0; b < B; ++b) {
-      Complex *fb=f[b]+offset;
-      for(size_t i=0; i < inputSize; ++i)
-        fb[i] *= scale;
+      double *hb=(double *) (h[b]+offset);
+      for(size_t i=0; i < wL; ++i)
+        hb[i] *= scale;
     }
   }
 
@@ -1403,11 +1417,14 @@ public:
   }
 
   void normalize(Complex **h, size_t offset=0) {
+    size_t w=fftx->wordSize();
+    size_t wSx=w*Sx;
+    size_t wLy=w*ffty->inputLength();
     for(size_t b=0; b < B; ++b) {
-      Complex *hb=h[b]+offset;
+      double *hb=(double *) (h[b]+offset);
       for(size_t i=0; i < Lx; ++i) {
-        Complex *hbi=hb+Sx*i;
-        for(size_t j=0; j < Ly; ++j)
+        double *hbi=hb+wSx*i;
+        for(size_t j=0; j < wLy; ++j)
           hbi[j] *= scale;
       }
     }
@@ -1458,14 +1475,17 @@ public:
         }
 
         if(nloops > 1) {
+          size_t w=fftx->wordSize();
+          size_t wSx=w*Sx;
+          size_t wLy=w*ffty->inputLength();
           for(size_t b=0; b < B; ++b) {
-            Complex *fb=f[b]+offset;
-            Complex *hb=h0[b];
+            double *fb=(double *) (f[b]+offset);
+            double *hb=(double *) (h0[b]);
             for(size_t i=0; i < Lx; ++i) {
-              size_t Sxi=Sx*i;
-              Complex *fbi=fb+Sxi;
-              Complex *hbi=hb+Sxi;
-              for(size_t j=0; j < Ly; ++j)
+              size_t Sxi=wSx*i;
+              double *fbi=fb+Sxi;
+              double *hbi=hb+Sxi;
+              for(size_t j=0; j < wLy; ++j)
                 fbi[j]=hbi[j];
             }
           }
@@ -1686,13 +1706,17 @@ public:
   }
 
   void normalize(Complex **h, size_t offset=0) {
+    size_t w=fftx->wordSize();
+    size_t wSx=w*Sx;
+    size_t wSy=w*Sy;
+    size_t wLz=w*fftz->inputLength();
     for(size_t b=0; b < B; ++b) {
-      Complex *hb=h[b]+offset;
+      double *hb=(double *) (h[b]+offset);
       for(size_t i=0; i < Lx; ++i) {
-        Complex *hbi=hb+Sx*i;
+        double *hbi=hb+wSx*i;
         for(size_t j=0; j < Ly; ++j) {
-          Complex *hbij=hbi+Sy*j;
-          for(size_t k=0; k < Lz; ++k)
+          double *hbij=hbi+wSy*j;
+          for(size_t k=0; k < wLz; ++k)
             hbij[k] *= scale;
         }
       }
@@ -1744,18 +1768,22 @@ public:
         }
 
         if(nloops > 1) {
+          size_t w=fftx->wordSize();
+          size_t wSx=w*Sx;
+          size_t wSy=w*Sy;
+          size_t wLz=w*fftz->inputLength();
           for(size_t b=0; b < B; ++b) {
-            Complex *fb=f[b]+offset;
-            Complex *hb=h0[b];
+            double *fb=(double *) (f[b]+offset);
+            double *hb=(double *) (h0[b]);
             for(size_t i=0; i < Lx; ++i) {
-              size_t Sxi=Sx*i;
-              Complex *fbi=fb+Sxi;
-              Complex *hbi=hb+Sxi;
+              size_t Sxi=wSx*i;
+              double *fbi=fb+Sxi;
+              double *hbi=hb+Sxi;
               for(size_t j=0; j < Ly; ++j) {
-                size_t Syj=Sy*j;
-                Complex *fbij=fbi+Syj;
-                Complex *hbij=hbi+Syj;
-                for(size_t k=0; k < Lz; ++k)
+                size_t Syj=wSy*j;
+                double *fbij=fbi+Syj;
+                double *hbij=hbi+Syj;
+                for(size_t k=0; k < wLz; ++k)
                   fbij[k]=hbij[k];
               }
             }

@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
   fftPad ffty(Ly,My,appy);
   Convolution2 Convolve(&fftx,&ffty);
 
-  double **f=doubleAlign(max(A,B),Lx*Sx);
+  double **f=doubleAlign(max(A,B),Sx*Lx);
 
   for(size_t a=0; a < A; ++a) {
     double *fa=f[a];

@@ -1,5 +1,5 @@
 // TODO: Parallelize L...m loops.
-// TODO: Fix inputSize etc.
+// TODO: Revisit workSizeV allocation.
 
 #include "convolve.h"
 #include "align.h"
@@ -197,14 +197,14 @@ double time(fftBase *fft, double &threshold)
   size_t threads=fft->app.threads == 1 ? fft->app.maxthreads : 1;
 
   size_t N=max(fft->app.A,fft->app.B);
-  size_t inputSize=fft->inputSize();
-  Complex **f=ComplexAlign(N*threads,inputSize);
+  size_t doubles=fft->doubles();
+  Complex **f=(Complex **) doubleAlign(N*threads,doubles);
 
   // Initialize entire array to 0 to avoid overflow when timing.
   for(size_t t=0; t < threads; ++t) {
     for(size_t a=0; a < fft->app.A; ++a) {
-      Complex *fa=f[N*t+a];
-      for(size_t j=0; j < inputSize; ++j)
+      double *fa=(double *) (f[N*t+a]);
+      for(size_t j=0; j < doubles; ++j)
         fa[j]=0.0;
     }
   }
@@ -7652,7 +7652,6 @@ Convolution::~Convolution()
 }
 
 // g is an array of max(A,B) pointers to distinct data blocks
-// each of size fft->inputSize()
 void Convolution::convolveRaw(Complex **g)
 {
   if(q == 1) {
@@ -7703,11 +7702,11 @@ void Convolution::convolveRaw(Complex **g)
         }
 
         if(nloops > 1) {
-          size_t inputSize=fft->inputSize();
+          size_t wL=fft->wordSize()*fft->inputLength();
           for(size_t b=0; b < B; ++b) {
-            Complex *gb=g[b];
-            Complex *hb=h0[b];
-            for(size_t i=0; i < inputSize; ++i)
+            double *gb=(double *) (g[b]);
+            double *hb=(double *) (h0[b]);
+            for(size_t i=0; i < wL; ++i)
               gb[i]=hb[i];
           }
         }

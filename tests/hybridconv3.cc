@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
   fftPad fftz(Lz,Mz,appz);
   Convolution3 Convolve(&fftx,&ffty,&fftz);
 
-  Complex **f=ComplexAlign(max(A,B),fftx.inputSize());
+  Complex **f=ComplexAlign(max(A,B),Sx*Lx);
 
   for(size_t a=0; a < A; ++a) {
     Complex *fa=f[a];
