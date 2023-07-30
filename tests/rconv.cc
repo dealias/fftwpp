@@ -11,7 +11,6 @@ using namespace fftwpp;
 
 // Constants used for initialization and testing.
 const Complex I(0.0,1.0);
-const double E=exp(1.0);
 const Complex iF(sqrt(3.0),sqrt(7.0));
 const Complex iG(sqrt(5.0),sqrt(11.0));
 

@@ -5813,7 +5813,7 @@ fftPadReal::~fftPadReal()
       delete rcfftm;
     }
 
-    if(n > 2 || n%2 == 0) {
+    if(n > 2 || (S > 1 && n%2 == 0)) {
       delete fftm;
       delete ifftm;
     }
