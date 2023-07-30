@@ -350,7 +350,7 @@ public:
   void forwards(Complex *f);
 
   // F is an array of pointers to distinct data blocks each of size n.
-//  void convolve(Complex **F, Multiplier *mult);
+  void convolve(Complex **F, Multiplier *mult);
 
   void convolve(Complex *f, Complex *g);
 };
@@ -431,8 +431,8 @@ protected:
   size_t Ny;
 public:
   ExplicitRConvolution2(size_t nx, size_t ny,
-                       size_t mx, size_t my,
-                       Complex *f) :
+                        size_t mx, size_t my,
+                        Complex *f) :
     ExplicitPad2(nx,2*(ny/2+1),mx,my), Ny(ny) {
     Forwards=new rcfft2d(nx,ny,f);
     Backwards=new crfft2d(nx,ny,f);
@@ -448,7 +448,7 @@ public:
   void backwards(Complex *f);
 
   // F is an array of pointers to distinct data blocks each of size n.
-//  void convolve(Complex **F, Multiplier *mult);
+  void convolve(Complex **F, Multiplier *mult);
 
   void convolve(Complex *f, Complex *g);
 };

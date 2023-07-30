@@ -246,6 +246,10 @@ int main(int argc, char *argv[])
       exit(1);
     }
 
+    Multiplier *mult;
+    if(Normalized) mult=multbinary;
+    else mult=multbinaryUnNormalized;
+
     ExplicitConvolution2 C(nx,ny,mx,my,F[0],Pruned);
     cout << "threads=" << C.Threads() << endl << endl;;
 
@@ -253,7 +257,7 @@ int main(int argc, char *argv[])
     while(sum <= K || T.size() < minCount) {
       init(F,nxp,nyp,A);
       cpuTimer c;
-      C.convolve(F[0],F[1]);
+      C.convolve(F,mult);
       double t=c.nanoseconds();
       T.push_back(t);
       sum += t;

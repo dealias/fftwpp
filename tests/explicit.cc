@@ -189,6 +189,23 @@ void ExplicitConvolution2::forwards(Complex *f)
     Forwards->fft(f);
 }
 
+void ExplicitConvolution2::convolve(Complex **F, Multiplier *mult)
+{
+  const size_t A=2;
+  const size_t B=1;
+
+  for(size_t a=0; a < A; ++a) {
+    pad(F[a]);
+    backwards(F[a]);
+  }
+
+  size_t n=nx*ny;
+  (*mult)(F,n,n,threads);
+
+  for(size_t b=0; b < B; ++b)
+    forwards(F[b]);
+}
+
 void ExplicitConvolution2::convolve(Complex *f, Complex *g)
 {
   pad(f);
@@ -331,6 +348,22 @@ void ExplicitRConvolution2::forwards(Complex *f)
 void ExplicitRConvolution2::backwards(Complex *f)
 {
   Backwards->fft(f);
+}
+
+void ExplicitRConvolution2::convolve(Complex **F, Multiplier *mult)
+{
+  const size_t A=2;
+  const size_t B=1;
+
+  for(size_t a=0; a < A; ++a) {
+    pad((double *) (F[a]));
+    forwards(F[a]);
+  }
+
+  (*mult)(F,nx*ny/2,nx*Ny,threads);
+
+  for(size_t b=0; b < B; ++b)
+    backwards(F[b]);
 }
 
 void ExplicitRConvolution2::convolve(Complex *f, Complex *g)

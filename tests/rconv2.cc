@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
   fftw::maxthreads=parallel::get_max_threads();
 
   bool Output=false;
-//  bool Normalized=true;
+  bool Normalized=true;
 
   double K=1.0; // Time limit (seconds)
   size_t minCount=20;
@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
         Output=true;
         break;
       case 'u':
-//        Normalized=false;
+        Normalized=false;
         break;
       case 'm':
         mx=my=atoi(optarg);
@@ -120,6 +120,10 @@ int main(int argc, char *argv[])
 
   vector<double> T;
 
+  Multiplier *mult;
+  if(Normalized) mult=multbinary;
+  else mult=multbinaryUnNormalized;
+
   ExplicitRConvolution2 Convolve(nx,ny,mx,my,F[0]);
   cout << "threads=" << Convolve.Threads() << endl << endl;;
 
@@ -127,7 +131,8 @@ int main(int argc, char *argv[])
   while(sum <= K || T.size() < minCount) {
     init(F,2*nyp,mx,my,A);
     cpuTimer c;
-    Convolve.convolve(F[0],F[1]);
+    Convolve.convolve(F,mult);
+//    Convolve.convolve(F[0],F[1]);
     double t=c.nanoseconds();
     T.push_back(t);
     sum += t;
