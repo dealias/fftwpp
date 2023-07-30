@@ -164,7 +164,7 @@ def default_outdir(p,T,I):
         outdir = "timingsh2"
     if p == "conv3" or p == "hybridconvh3":
         outdir = "timingsh3"
-    if p == "hybridconvr":
+    if p == "rconv" or p == "hybridconvr":
         outdir = "timingsr1"
     if p == "hybridconvr2":
         outdir = "timingsr2"
@@ -379,14 +379,11 @@ def main(argv):
 
     if outfile == "":
         if hybrid:
-            if runtype == "explicit" or runtype == "explicito":
-                outfile = runtype+fileExt
-            else:
-                outfile = "hybrid"+fileExt
+            outfile = "hybrid"+fileExt
         else:
             outfile = runtype+fileExt
-
-    if hybrid and runtype != "explicit" and runtype != "explicito":
+    optFile=""
+    if hybrid:
         optFile=outdir+os.sep+"hybridParams"+fileExt
 
     goodruns = []
@@ -439,7 +436,7 @@ def main(argv):
             if not appendtofile:
                 try:
                     os.remove(filename)
-                    if hybrid and runtype != "explicit" and runtype != "explicito":
+                    if hybrid:
                         os.remove(optFile)
                 except:
                     pass
@@ -469,11 +466,10 @@ def main(argv):
 
         cmd.append("-S" + str(stats))
         cmd.append("-T" + str(T))
-        if hybrid:
-            if runtype == "explicito":
-                cmd.append("-I0")
-            elif runtype == "explicit":
-                cmd.append("-I1")
+        if runtype == "explicito":
+            cmd.append("-I0")
+        elif runtype == "explicit":
+            cmd.append("-I1")
         if hybrid:
             cmd.append("-R")
         if K > 0:
@@ -559,7 +555,6 @@ def main(argv):
                 M = 3*m-2
 
             print(str(i) + " m=" + str(m))
-
             options=[]
             if hybrid:
               if dimension == 2:
@@ -603,7 +598,7 @@ def main(argv):
                     if(appendtofile):
                         with open(filename, "a") as myfile:
                             myfile.write(comment)
-                        if hybrid and runtype != "explicit" and runtype != "explicito":
+                        if hybrid:
                             with open(optFile,"a") as logfile:
                                 logfile.write(hybridParamsMessage)
                     else:
@@ -613,7 +608,7 @@ def main(argv):
                         else:
                             with open(filename, "w") as myfile:
                                 myfile.write(filenameMessage)
-                            if hybrid and runtype != "explicit" and runtype != "explicito":
+                            if hybrid:
                                 with open(optFile,"w") as logfile:
                                     logfile.write("# Optimal values for "+p+"\n")
                                     logfile.write(hybridParamsMessage)
@@ -659,7 +654,7 @@ def main(argv):
                         logfile.write(err.decode())
 
                     if (prc == 0): # did the process succeed?
-                        if hybrid and runtype != "explicit" and runtype != "explicito":
+                        if hybrid:
                             results = out.decode()
                             params=collectParams(results,L,M)
                             FB=forwardBackward(results)

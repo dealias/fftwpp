@@ -74,10 +74,12 @@ def time(args,dim,Hermitian,real,T):
   new="hybridconv"
   old="conv"
 
+
   if Hermitian:
     new += "h"
-  if real:
+  elif real:
     new += "r"
+    old = "r"+old
   else:
     old = "c"+old
 
@@ -92,41 +94,30 @@ def time(args,dim,Hermitian,real,T):
   erase=[]
   if e:
     erase.append("-e")
-  if not real:
-    if runtype == "implicit":
-      callTiming(args,old,erase,taskset,runtype)
-    elif runtype == "explicit":
-      callTiming(args,old,erase,taskset,runtype)
-    elif runtype == "explicito":
-      if dim != 1:
-        print("explicito is only supported for 1 dimensional routines.")
-      else:
-        callTiming(args,old,erase,taskset,runtype)
-    elif runtype == "hybrid":
-      callTiming(args,new,erase,taskset)
-      if Hermitian and I == 0:
-        callTiming(args,new,erase,taskset,"explicit")
-    elif runtype == None:
-      callTiming(args,old,erase,taskset,"implicit")
-      callTiming(args,old,erase,taskset,"explicit")
-      if dim == 1:
-        callTiming(args,old,erase,taskset,"explicito")
-      callTiming(args,new,erase,taskset)
-      if Hermitian and I == 0:
-        callTiming(args,new,erase,taskset,"explicit")
+  if runtype == "implicit" and not real:
+    callTiming(args,old,erase,taskset,runtype)
+  elif runtype == "explicit":
+    callTiming(args,old,erase,taskset,runtype)
+  elif runtype == "explicito":
+    if dim != 1:
+      print("explicito is only supported for 1 dimensional routines.")
     else:
-      print(f"runtype=\"{runtype}\" is invalid")
-  elif real:
-    if runtype == "explicit":
-      callTiming(args,new,erase,taskset,runtype)
-    elif runtype == "explicito":
-      callTiming(args,new,erase,taskset,runtype)
-    elif runtype == "hybrid":
-      callTiming(args,new,erase,taskset)
-    elif runtype == None:
+      callTiming(args,old,erase,taskset,runtype)
+  elif runtype == "hybrid":
+    callTiming(args,new,erase,taskset)
+    if Hermitian and I == 0: # Why?
       callTiming(args,new,erase,taskset,"explicit")
-      callTiming(args,new,erase,taskset,"explicito")
-      callTiming(args,new,erase,taskset)
+  elif runtype == None:
+    if not real:
+      callTiming(args,old,erase,taskset,"implicit")
+    callTiming(args,old,erase,taskset,"explicit")
+    if dim == 1:
+      callTiming(args,old,erase,taskset,"explicito")
+    callTiming(args,new,erase,taskset)
+    if Hermitian and I == 0:
+      callTiming(args,new,erase,taskset,"explicit")
+  else:
+    print(f"runtype=\"{runtype}\" is invalid")
 
 
 def getArgs():
