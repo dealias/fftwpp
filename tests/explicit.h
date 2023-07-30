@@ -21,14 +21,8 @@ protected:
 public:
   ExplicitPad(size_t n, size_t m) : n(n), m(m) {}
 
-  void pad(Complex *f) {
-    PARALLELIF(
-      n-m > threshold,
-      for(size_t i=m; i < n; ++i) f[i]=0.0;
-      );
-  }
-
-  void pad(double *f) {
+  template<class T>
+  void pad(T *f) {
     PARALLELIF(
       n-m > threshold,
       for(size_t i=m; i < n; ++i) f[i]=0.0;
@@ -45,7 +39,8 @@ public:
                size_t mx, size_t my) :
     nx(nx), ny(ny), mx(mx), my(my) {}
 
-  void pad(Complex *f) {
+  template<class T>
+  void pad(T *f) {
     // zero pad upper block
     PARALLELIF(
       mx*ny > threshold,
@@ -426,6 +421,36 @@ public:
   void convolve(Complex *f, Complex *g, bool symmetrize=true) {
     convolve(&f,&g,symmetrize);
   }
+};
+
+// In-place explicitly dealiased 2D complex convolution.
+class ExplicitRConvolution2 : public ExplicitPad2 {
+protected:
+  rcfft2d *Forwards;
+  crfft2d *Backwards;
+  size_t Ny;
+public:
+  ExplicitRConvolution2(size_t nx, size_t ny,
+                       size_t mx, size_t my,
+                       Complex *f) :
+    ExplicitPad2(nx,2*(ny/2+1),mx,my), Ny(ny) {
+    Forwards=new rcfft2d(nx,ny,f);
+    Backwards=new crfft2d(nx,ny,f);
+    threads=Forwards->Threads();
+  }
+
+  ~ExplicitRConvolution2() {
+    delete Forwards;
+    delete Backwards;
+  }
+
+  void forwards(Complex *f);
+  void backwards(Complex *f);
+
+  // F is an array of pointers to distinct data blocks each of size n.
+//  void convolve(Complex **F, Multiplier *mult);
+
+  void convolve(Complex *f, Complex *g);
 };
 
 // In-place explicitly dealiased 3D complex convolution.

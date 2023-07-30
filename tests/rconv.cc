@@ -24,8 +24,8 @@ inline void init(Complex **F, size_t m, size_t A)
 {
   for(size_t a=0; a < A; ++a) {
     double *f=(double *) (F[a]);
-    for(size_t k=0; k < m; ++k)
-      f[k]=k+1+a;
+    for(size_t i=0; i < m; ++i)
+      f[i]=i+1+a;
   }
 }
 
