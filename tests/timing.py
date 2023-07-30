@@ -465,10 +465,11 @@ def main(argv):
 
         cmd.append("-S" + str(stats))
         cmd.append("-T" + str(T))
-        if runtype == "explicito":
-            cmd.append("-I0")
-        elif runtype == "explicit":
-            cmd.append("-I1")
+        if dimension == 1:
+            if runtype == "explicito":
+                cmd.append("-I0")
+            elif runtype == "explicit":
+                cmd.append("-I1")
         if hybrid:
             cmd.append("-R")
         if K > 0:
@@ -621,7 +622,6 @@ def main(argv):
                     mcmd=cmd+["-m" + str(m)]
 
                 mcmd += options
-
                 if dryrun:
                     #print mcmd
                     print(" ".join(mcmd))
