@@ -21,7 +21,7 @@ def main():
 
   if one or not123:
     dimensions.append(1)
-  if (two or not123) and not R:
+  if two or not123:
     dimensions.append(2)
   if (three or not123) and not R:
     dimensions.append(3)
@@ -45,7 +45,7 @@ def main():
         time(args,d,True,False,T)
     if R or notSorHorR:
       for T in Ts:
-        time(args,1,False,True,T)
+        time(args,d,False,True,T)
 
 
 def callTiming(args,program, erase,taskset,runtype=None):
@@ -70,7 +70,6 @@ def time(args,dim,Hermitian,real,T):
   e=args.e
   runtype=args.r
   dimString=str(dim) if dim > 1 else ""
-
   new="hybridconv"
   old="conv"
 

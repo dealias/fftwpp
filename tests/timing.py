@@ -166,7 +166,7 @@ def default_outdir(p,T,I):
         outdir = "timingsh3"
     if p == "rconv" or p == "hybridconvr":
         outdir = "timingsr1"
-    if p == "hybridconvr2":
+    if p == "rconv2" or p == "hybridconvr2":
         outdir = "timingsr2"
     if p == "tconv":
         outdir = "timings1t"
@@ -309,7 +309,7 @@ def main(argv):
     real = False
     ternary = False
 
-    dim2routines=["cconv2","conv2","hybridconv2","hybridconvh2","hybridconvr2"]
+    dim2routines=["cconv2","conv2","rconv2","hybridconv2","hybridconvh2","hybridconvr2"]
     dim3routines=["cconv3","conv3","hybridconv3","hybridconvh3"]
     if p in dim2routines:
         dimension=2
