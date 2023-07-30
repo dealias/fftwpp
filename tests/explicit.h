@@ -6,9 +6,9 @@
 namespace fftwpp {
 
 // Specialized mult routines for testing explicit convolutions:
-typedef void Multiplier(Complex **, size_t m,
+typedef void Multiplier(Complex **, size_t m, size_t n,
                         size_t threads);
-typedef void Realmultiplier(double **, size_t m,
+typedef void Realmultiplier(double **, size_t m, size_t n,
                             size_t threads);
 
 Multiplier multbinary,multbinaryUnNormalized;
@@ -22,6 +22,13 @@ public:
   ExplicitPad(size_t n, size_t m) : n(n), m(m) {}
 
   void pad(Complex *f) {
+    PARALLELIF(
+      n-m > threshold,
+      for(size_t i=m; i < n; ++i) f[i]=0.0;
+      );
+  }
+
+  void pad(double *f) {
     PARALLELIF(
       n-m > threshold,
       for(size_t i=m; i < n; ++i) f[i]=0.0;
@@ -267,6 +274,7 @@ public:
 
   // F is an array of pointers to distinct data blocks each of size n.
   void convolve(Complex **F, Realmultiplier *mult, double **G=NULL);
+//  void convolve(double **F, multiplier *mult, double **G=NULL);
 
 // Compute f (*) g, where f and g contain the m non-negative Fourier
 // components of real functions. Dealiasing is internally implemented via
@@ -276,6 +284,34 @@ public:
 // (contents not preserved). The output is returned in the first m elements
 // of f.
 //  void convolve(Complex *f, Complex *g);
+};
+
+// In-place explicitly dealiased 1D Hermitian convolution.
+class ExplicitRConvolution : public ExplicitPad {
+protected:
+  size_t n,m,np;
+  rcfft1d *rc;
+  crfft1d *cr;
+  size_t threads;
+public:
+  ExplicitRConvolution(size_t n, size_t m, Complex *u, Complex *v=NULL) :
+    ExplicitPad(n,m), n(n), m(m) {
+    np=n/2+1;
+    rc=new rcfft1d(n,(double *) u,v);
+    cr=new crfft1d(n,v,(double *) u);
+    threads=cr->Threads();
+  }
+
+  ~ExplicitRConvolution() {
+    delete cr;
+    delete rc;
+  }
+
+  void forwards(double *f, Complex *F);
+  void backwards(Complex *F, double *f);
+
+  // F is an array of pointers to distinct data blocks each of size n.
+  void convolve(Complex **F, Multiplier *mult, Complex **G=NULL);
 };
 
 // In-place explicitly dealiased 2D complex convolution.

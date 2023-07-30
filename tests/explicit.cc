@@ -7,12 +7,12 @@ namespace fftwpp {
 // This multiplication routine is for binary convolutions and takes two inputs
 // of size m.
 // F[0][j] *= F[1][j];
-void multbinary(Complex **F, size_t m, size_t threads)
+void multbinary(Complex **F, size_t m, size_t n, size_t threads)
 {
   Complex* F0=F[0];
   Complex* F1=F[1];
 
-  double ninv=1.0/m;
+  double ninv=1.0/n;
 
   PARALLELIF(
     m > threshold,
@@ -24,7 +24,7 @@ void multbinary(Complex **F, size_t m, size_t threads)
 // This multiplication routine is for binary Hermitian convolutions and takes
 // two inputs of size n.
 // F[0][j] *= F[1][j];
-void multbinary(double **F, size_t n, size_t threads)
+void multbinary(double **F, size_t m, size_t n, size_t threads)
 {
   double* F0=F[0];
   double* F1=F[1];
@@ -32,8 +32,8 @@ void multbinary(double **F, size_t n, size_t threads)
   double ninv=1.0/n;
 
   PARALLELIF(
-    n > 2*threshold,
-    for(size_t j=0; j < n; ++j)
+    m > 2*threshold,
+    for(size_t j=0; j < m; ++j)
       F0[j] *= ninv*F1[j];
     );
 }
@@ -41,14 +41,14 @@ void multbinary(double **F, size_t n, size_t threads)
 // This multiplication routine is for binary convolutions and takes two inputs
 // of size n.
 // F[0][j] *= F[1][j];
-void multbinaryUnNormalized(Complex **F, size_t n, size_t threads)
+void multbinaryUnNormalized(Complex **F, size_t m, size_t, size_t threads)
 {
   Complex* F0=F[0];
   Complex* F1=F[1];
 
   PARALLELIF(
-    n > threshold,
-    for(size_t j=0; j < n; ++j)
+    m > threshold,
+    for(size_t j=0; j < m; ++j)
       F0[j] *= F1[j];
     );
 }
@@ -56,14 +56,14 @@ void multbinaryUnNormalized(Complex **F, size_t n, size_t threads)
 // This multiplication routine is for binary Hermitian convolutions and takes
 // two inputs of size n.
 // F[0][j] *= F[1][j];
-void multbinaryUnNormalized(double **F, size_t n, size_t threads)
+void multbinaryUnNormalized(double **F, size_t m, size_t, size_t threads)
 {
   double* F0=F[0];
   double* F1=F[1];
 
   PARALLELIF(
-    n > 2*threshold,
-    for(size_t j=0; j < n; ++j)
+    m > 2*threshold,
+    for(size_t j=0; j < m; ++j)
       F0[j] *= F1[j];
     );
 }
@@ -90,7 +90,7 @@ void ExplicitConvolution::convolve(Complex **F, Multiplier *mult, Complex **G)
     backwards(F[a],G[a]);
   }
 
-  (*mult)(G,n,threads);
+  (*mult)(G,n,n,threads);
 
   for(size_t b=0; b < B; ++b)
     forwards(G[b],F[b]);
@@ -137,34 +137,39 @@ void ExplicitHConvolution::convolve(Complex **F, Realmultiplier *mult, double **
     backwards(F[a],G[a]);
   }
 
-  (*mult)(G,n,threads);
+  (*mult)(G,n,n,threads);
 
   for(size_t b=0; b < B; ++b)
     forwards(G[b],F[b]);
 }
 
-/*
-void ExplicitHConvolution::convolve(Complex *f, Complex *g)
+void ExplicitRConvolution::forwards(double *f, Complex *g)
 {
-  pad(f);
-  backwards(f);
-
-  pad(g);
-  backwards(g);
-
-  double *F=(double *) f;
-  double *G=(double *) g;
-
-  double ninv=1.0/n;
-  PARALLELIF(
-    n > threshold,
-    for(size_t k=0; k < n; ++k)
-      F[k] *= G[k]*ninv;
-    );
-
-  forwards(f);
+  rc->fft(f,g);
 }
-*/
+
+void ExplicitRConvolution::backwards(Complex *g, double *f)
+{
+  cr->fft(g,f);
+}
+
+void ExplicitRConvolution::convolve(Complex **F, Multiplier *mult, Complex **G)
+{
+  if(G == NULL) G=F;
+
+  const size_t A=2;
+  const size_t B=1;
+
+  for(size_t a=0; a < A; ++a) {
+    pad((double *) (F[a]));
+    forwards((double *) (F[a]),G[a]);
+  }
+
+  (*mult)(G,np,n,threads);
+
+  for(size_t b=0; b < B; ++b)
+    backwards(G[b],(double *) (F[b]));
+}
 
 void ExplicitConvolution2::backwards(Complex *f)
 {
