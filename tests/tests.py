@@ -490,6 +490,12 @@ def hermitianTests(program, minS, testS):
 def realTests(program, minS, testS):
   assert program.real
   vals=[]
+
+  mvalues=[2,4,8,16]
+  for m in mvalues:
+    vals+=collectTests(program, L=8, M=64, m=m, minS=minS, testS=testS)
+    vals+=collectTests(program, L=3, M=16, m=m, minS=minS, testS=testS)
+
   mvalues=[2,4,8,10]
   for m in mvalues:
     vals+=collectTests(program, L=16, M=40, m=m, minS=minS, testS=testS)
@@ -498,10 +504,7 @@ def realTests(program, minS, testS):
   for m in mvalues:
     vals+=collectTests(program, L=64, M=512, m=m, minS=minS, testS=testS)
 
-  mvalues=[2,4,8,16]
-  for m in mvalues:
-    vals+=collectTests(program, L=8, M=48, m=m, minS=minS, testS=testS)
-    vals+=collectTests(program, L=3, M=16, m=m, minS=minS, testS=testS)
+
   mvalues=[2,3,4,8,16]
   for m in mvalues:
     vals+=collectTests(program, L=8, M=40, m=m, minS=minS, testS=testS)
