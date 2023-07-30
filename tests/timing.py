@@ -325,9 +325,9 @@ def main(argv):
     if re.search("hybrid",p) is not None:
         hybrid=True
 
-    if p == "conv":
+    if p == "conv" or p == "conv2" or p == "conv3":
         hermitian = True
-        if(runtype == "pruned"):
+        if p == "conv" and runtype == "pruned":
             print(p + " has no pruned option")
             dorun = False
 
@@ -337,11 +337,10 @@ def main(argv):
     if p == "hybridconvr" or p == "hybridconvr2":# or p == "hybridconvh3":
         real = True
 
-    if p == "conv2":
-        hermitian = True
+    if p == "rconv" or p == "rconv2":
+        real = True
 
-    if p == "conv3":
-        hermitian = True
+
 
     if p == "tconv":
         ternary = True
@@ -455,7 +454,7 @@ def main(argv):
             sys.exit(1)
 
         if not hybrid and not "fft" in p:
-            if(runtype == "explicit" or runtype == "explicito"):
+            if((runtype == "explicit" or runtype == "explicito") and not real):
                 cmd.append("-e")
 
             if(runtype == "pruned"):
