@@ -35,6 +35,7 @@ int main(int argc, char *argv[])
   fftw::maxthreads=parallel::get_max_threads();
 
   bool Output=false;
+//  bool Normalized=true;
 
   double K=1.0; // Time limit (seconds)
   size_t minCount=20;
@@ -69,6 +70,9 @@ int main(int argc, char *argv[])
         break;
       case 'O':
         Output=true;
+        break;
+      case 'u':
+//        Normalized=false;
         break;
       case 'm':
         mx=my=atoi(optarg);
@@ -134,6 +138,8 @@ int main(int argc, char *argv[])
   T.clear();
 
   double *f=(double *) (F[0]);
+
+  cout << endl;
   if(Output) {
     cout << endl;
     for(size_t i=0; i < mx; i++) {
