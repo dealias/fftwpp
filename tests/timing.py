@@ -211,9 +211,10 @@ def main(argv):
     '''
 
     dryrun = False
-    #dryrun = True
 
-    fileExt=".txt"
+    # File extension for output files
+    fileExt=""
+
 
     bset = 0
     dorun = True
