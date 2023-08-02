@@ -5947,6 +5947,7 @@ void fftPadReal::forward1(Complex *f, Complex *F, size_t r0, Complex *W)
   } else {
     size_t h=e-1;
     Complex *Zetar=Zetaqm+m*r0;
+    double *frh=fr+h;
     size_t Lmh,stop;
     if(L <= h) {
       Lmh=0;
@@ -5955,12 +5956,12 @@ void fftPadReal::forward1(Complex *f, Complex *F, size_t r0, Complex *W)
     } else {
       Lmh=L-h;
       stop=h;
-      W[0]=Complex(fr[0],fr[h]);
+      W[0]=Complex(fr[0],frh[0]);
     }
     PARALLELIF(
       Lmh > threshold,
       for(size_t s=1; s < Lmh; ++s)
-        W[s]=Zetar[s]*Complex(fr[s],fr[s+h]);
+        W[s]=Zetar[s]*Complex(fr[s],frh[s]);
       );
     PARALLELIF(
       stop-Lmh > threshold,
