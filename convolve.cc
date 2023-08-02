@@ -412,7 +412,7 @@ void fftBase::OptBase::scan(size_t L, size_t M, Application& app,
   bool sR=showRoutines;
 
   showRoutines=false;
-  size_t mStart=32;
+  size_t mStart=2;
   size_t itmax=3;
   opt(L,M,app,C,S,mStart,itmax,Explicit,centered,false);
 
@@ -5947,7 +5947,6 @@ void fftPadReal::forward1(Complex *f, Complex *F, size_t r0, Complex *W)
   } else {
     size_t h=e-1;
     Complex *Zetar=Zetaqm+m*r0;
-    double *frh=fr+h;
     size_t Lmh,stop;
     if(L <= h) {
       Lmh=0;
@@ -5956,12 +5955,12 @@ void fftPadReal::forward1(Complex *f, Complex *F, size_t r0, Complex *W)
     } else {
       Lmh=L-h;
       stop=h;
-      W[0]=Complex(fr[0],frh[0]);
+      W[0]=Complex(fr[0],fr[h]);
     }
     PARALLELIF(
       Lmh > threshold,
       for(size_t s=1; s < Lmh; ++s)
-        W[s]=Zetar[s]*Complex(fr[s],frh[s]);
+        W[s]=Zetar[s]*Complex(fr[s],fr[s+h]);
       );
     PARALLELIF(
       stop-Lmh > threshold,

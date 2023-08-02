@@ -23,7 +23,7 @@ if(dir == "") dir=getstring("directory","timings1-T1");
 bool incremental=find(dir,"I1") >= 0;
 bool realConv=find(dir,"timingsr") >= 0;
 
-size(incremental ? 370.4pt : 181.5pt,185,IgnoreAspect);
+size(incremental || realConv ? 370.4pt : 181.5pt,185,IgnoreAspect);
 
 scale(incremental ? Linear : Log,Linear);
 
