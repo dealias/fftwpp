@@ -179,7 +179,7 @@ size_t nextpuresize(size_t m)
 
 // Returns true iff m is a power of 2 (assumes m > 0).
 bool ispow2(size_t m) {
-  return (m & m-1) == 0;
+  return (m & (m-1)) == 0;
 }
 
 // Returns true iff m is a power of 2, 3, 5, or 7 (assumes m > 0).
