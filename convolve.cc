@@ -261,17 +261,17 @@ void fftBase::OptBase::optloop(size_t& m, size_t L,
                                bool useTimer, bool Explicit,
                                size_t (*nextInnerSize)(size_t))
 {
-  size_t p,n,q;
-  parameters(L,M,m,centered,p,n,q);
-  bool inner=p > 2;
+
+  bool inner=ceilquotient(L,m) > 2;
   size_t i=(inner ? m : 0);
   // If inner == true, i is an m value and itmax is the largest m value that
   // we consider. If inner == false, i is a counter starting at zero, and
   // itmax is maximum number of m values we consider before exiting optloop.
 
   while(i < itmax) {
-
-    if(!Explicit && app.m >= 1 && app.m < M && centered && p%2 != 0) {
+    size_t p,n,q;
+    parameters(L,M,m,centered,p,n,q);
+    if(!Explicit && mForced && m < M && centered && p%2 != 0) {
       cerr << "Odd values of p are incompatible with the centered and Hermitian routines." << endl;
       cerr << "Using explicit routines with m=" << M << ", D=1, and I=0 instead." << endl;
     }
@@ -309,7 +309,6 @@ void fftBase::OptBase::optloop(size_t& m, size_t L,
         i++;
         if(i < itmax) {
           m=nextfftsize(m+1);
-          parameters(L,M,m,centered,p,n,q);
         }
       }
     }
