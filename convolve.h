@@ -199,11 +199,13 @@ public:
 
     // A function called by opt to iterate over m and D values
     // and call check.
-    // Inner is true if p > 2.
-    // If inner is false, ubound is the maximum number maximum number of
+    // We compute p=ceilquotient(L,m0).
+    // If p <= 2, ubound is the maximum number maximum number of
     // m values that are checked.
-    // If inner is true, ubound is the maximum size of m values that are
+    // If p > 2, ubound is the maximum size of m values that are
     // checked.
+    // nextInnerSize is the function for determining the next m
+    // value when p > 2.
     void optloop(size_t& m0, size_t L, size_t M,
                  Application& app, size_t C, size_t S,
                  bool centered, size_t ubound, bool useTimer,
