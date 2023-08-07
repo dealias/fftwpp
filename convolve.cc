@@ -177,10 +177,15 @@ size_t nextpuresize(size_t m)
   return min(M,ceilpow(7,m));
 }
 
-// Returns true iff m is a power of 2, 3, 5, or 7.
+// Returns true iff m is a power of 2 (assumes m > 0).
+bool ispow2(size_t m) {
+  return (m & m-1) == 0;
+}
+
+// Returns true iff m is a power of 2, 3, 5, or 7 (assumes m > 0).
 bool ispure(size_t m)
 {
-  if(m == ceilpow2(m))
+  if(ispow2(m))
     return true;
   if(m == ceilpow(3,m))
     return true;
@@ -253,17 +258,19 @@ void fftBase::OptBase::optloop(size_t& m, size_t L,
                                size_t M, Application& app,
                                size_t C, size_t S,
                                bool centered, size_t itmax,
-                               bool useTimer, bool Explicit, bool inner)
+                               bool useTimer, bool Explicit,
+                               size_t (*nextInnerSize)(size_t))
 {
-  size_t m0=m;
-  size_t m1=m;
+  size_t p,n,q;
+  parameters(L,M,m,centered,p,n,q);
+  bool inner=p > 2;
   size_t i=(inner ? m : 0);
   // If inner == true, i is an m value and itmax is the largest m value that
   // we consider. If inner == false, i is a counter starting at zero, and
   // itmax is maximum number of m values we consider before exiting optloop.
+
   while(i < itmax) {
-    size_t p,n,q;
-    parameters(L,M,m,centered,p,n,q);
+
     if(!Explicit && app.m >= 1 && app.m < M && centered && p%2 != 0) {
       cerr << "Odd values of p are incompatible with the centered and Hermitian routines." << endl;
       cerr << "Using explicit routines with m=" << M << ", D=1, and I=0 instead." << endl;
@@ -274,7 +281,7 @@ void fftBase::OptBase::optloop(size_t& m, size_t L,
     // p must be even in the centered case.
     // p != q.
     if(inner && (((!ispure(p) || p == q) && !mForced) || (centered && p%2 != 0)))
-      i=m=nextpuresize(m+1);
+      i=m=nextInnerSize(m+1);
     else {
       size_t Dstart=DForced ? app.D : 1;
       size_t Dstop=DForced ? app.D : maxD(n);
@@ -292,24 +299,17 @@ void fftBase::OptBase::optloop(size_t& m, size_t L,
       }
       if(mForced) break;
       if(inner) {
-        m=nextpuresize(m+1);
+        m=nextInnerSize(m+1);
         i=m;
       } else {
         if(ispure(m) and i < itmax) {
           m=nextfftsize(m+1);
           break;
         }
-        m1=m;
         i++;
-        if(i == itmax) {
-          m=nextpuresize(m0+1);
-        } else if(i == itmax + 1 && m0 >= M) {
-          m=ceilpow2(m0+1);
-        } else if(i >= itmax) {
-          m=nextfftsize(m1+1);
-          break;
-        } else {
-          m=nextfftsize(m1+1);
+        if(i < itmax) {
+          m=nextfftsize(m+1);
+          parameters(L,M,m,centered,p,n,q);
         }
       }
     }
@@ -322,16 +322,21 @@ void fftBase::OptBase::opt(size_t L, size_t M, Application& app,
                            bool Explicit, bool centered, bool useTimer)
 {
   if(!Explicit) {
+    size_t (*nextInnerSize)(size_t);
+    if(ispow2(L)) {
+      nextInnerSize =&ceilpow2;
+    } else {
+      nextInnerSize =&nextpuresize;
+    }
     size_t H=ceilquotient(L,2);
     if(mForced) {
       if(app.m >= H)
         optloop(app.m,L,M,app,C,S,centered,1,useTimer,false);
       else
-        optloop(app.m,L,M,app,C,S,centered,app.m+1,useTimer,false,true);
+        optloop(app.m,L,M,app,C,S,centered,app.m+1,useTimer,false,nextInnerSize);
     } else {
-      size_t m=nextfftsize(minsize);
-
-      optloop(m,L,M,app,C,S,centered,max(L/2,32),useTimer,false,true);
+      size_t m=nextInnerSize(minsize);
+      optloop(m,L,M,app,C,S,centered,max(H,33),useTimer,false,nextInnerSize);
 
       m=nextfftsize(H);
 
@@ -350,10 +355,21 @@ void fftBase::OptBase::opt(size_t L, size_t M, Application& app,
       }
       m=nextfftsize(max(M,m));
       optloop(m,L,M,app,C,S,centered,itmax,useTimer,false);
+
+      // Check next explict power of 2 (only when C==1)
+      size_t ceilpow2M=ceilpow2(M);
+      if(ceilpow2M > m && C == 1) {
+        m=ceilpow2M;
+        optloop(ceilpow2M,L,M,app,C,S,centered,1,useTimer,false);
+      }
     }
   } else {
     size_t m=nextfftsize(M);
     optloop(m,L,m,app,C,S,centered,itmax,useTimer,true);
+
+    size_t ceilpow2M=ceilpow2(M);
+    if(ceilpow2M > m && C == 1)
+      optloop(ceilpow2M,L,M,app,C,S,centered,1,useTimer,true);
   }
 }
 

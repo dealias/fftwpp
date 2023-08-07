@@ -207,7 +207,7 @@ public:
     void optloop(size_t& m0, size_t L, size_t M,
                  Application& app, size_t C, size_t S,
                  bool centered, size_t ubound, bool useTimer,
-                 bool Explicit, bool inner=false);
+                 bool Explicit, size_t(*nextInnerSize)(size_t)=NULL);
 
     // The default optimizer routine. Used by scan to iterate and check
     // different m values for a given geometry and application.
