@@ -336,7 +336,7 @@ void fftBase::OptBase::opt(size_t L, size_t M, Application& app,
         optloop(app.m,L,M,app,C,S,centered,app.m+1,useTimer,false,nextInnerSize);
     } else {
       size_t m=nextInnerSize(minsize);
-      optloop(m,L,M,app,C,S,centered,max(H,33),useTimer,false,nextInnerSize);
+      optloop(m,L,M,app,C,S,centered,H,useTimer,false,nextInnerSize);
 
       m=nextfftsize(H);
 
@@ -344,24 +344,30 @@ void fftBase::OptBase::opt(size_t L, size_t M, Application& app,
 
       size_t Mhalf=ceilquotient(M,2);
       if(L > Mhalf) {
-        m=nextfftsize(max(Mhalf,m));
+        m=nextfftsize(max(Mhalf,m+1));
         optloop(m,L,M,app,C,S,centered,itmax,useTimer,false);
 
-        m=nextfftsize(max(L,m));
+        m=nextfftsize(max(L,m+1));
         optloop(m,L,M,app,C,S,centered,itmax,useTimer,false);
       } else {
-        m=nextfftsize(max(min(L,Mhalf),m));
+        m=nextfftsize(max(L,m+1));
         optloop(m,L,M,app,C,S,centered,itmax,useTimer,false);
+        if(M > 16 && m < 16) {
+          m=16;
+          optloop(m,L,M,app,C,S,centered,1,useTimer,false);
+        }
+        if(M > 32 && m < 32) {
+          m=32;
+          optloop(m,L,M,app,C,S,centered,1,useTimer,false);
+        }
       }
       m=nextfftsize(max(M,m));
       optloop(m,L,M,app,C,S,centered,itmax,useTimer,false);
 
       // Check next explict power of 2 (only when C==1)
       size_t ceilpow2M=ceilpow2(M);
-      if(ceilpow2M > m && C == 1) {
-        m=ceilpow2M;
+      if(ceilpow2M > m && C == 1)
         optloop(ceilpow2M,L,M,app,C,S,centered,1,useTimer,false);
-      }
     }
   } else {
     size_t m=nextfftsize(M);
