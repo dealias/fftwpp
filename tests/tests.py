@@ -507,14 +507,14 @@ def realTests(program, minS, testS):
 
   # p = 1
   Ls=[8,3]
-  Ms=[16,64]
+  Ms=[16,24,64]
   for M in Ms:
     for L in Ls:
       vals+=collectTests(program, L=L, M=M, m=8, minS=minS, testS=testS)
 
   # p = 2
   Ls=[8,5]
-  Ms=[16,32]
+  Ms=[16,24,32]
   for M in Ms:
     for L in Ls:
       vals+=collectTests(program, L=L, M=M, m=4, minS=minS, testS=testS)
@@ -524,8 +524,12 @@ def realTests(program, minS, testS):
   M=16
   for L in Ls:
     vals+=collectTests(program, L=L, M=M, m=2, minS=minS, testS=testS)
+  Ls=[9,7]
+  M=63
+  for L in Ls:
+    vals+=collectTests(program, L=L, M=M, m=3, minS=minS, testS=testS)
   Ls=[16,13]
-  M=128
+  M=64
   for L in Ls:
     vals+=collectTests(program, L=L, M=M, m=4, minS=minS, testS=testS)
 
