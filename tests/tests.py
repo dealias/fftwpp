@@ -201,7 +201,7 @@ def getArgs():
   parser.add_argument("-p",help="Print out everything.",action="store_true")
   parser.add_argument("-l",help="Show log of failed cases",
                       action="store_true")
-  parser.add_argument("--valgrind",help="Run tests under valgrind. Requires valgrind to be installed. WARNING: using this flag results in much slower testing.",
+  parser.add_argument("--valgrind",help="Run tests under valgrind. Requires valgrind to be installed. Note: using this flag results in much slower testing.",
                       action="store_true")
   parser.add_argument("-v",help="Show the results of every test.",
                       action="store_true")
