@@ -505,31 +505,30 @@ def realTests(program, minS, testS):
   assert program.real
   vals=[]
 
-  mvalues=[2,4,8,16]
-  for m in mvalues:
-    vals+=collectTests(program, L=8, M=64, m=m, minS=minS, testS=testS)
-    vals+=collectTests(program, L=3, M=16, m=m, minS=minS, testS=testS)
+  # p = 1
+  Ls=[8,3]
+  Ms=[16,64]
+  for M in Ms:
+    for L in Ls:
+      vals+=collectTests(program, L=L, M=M, m=8, minS=minS, testS=testS)
 
-  mvalues=[2,4,8,10]
-  for m in mvalues:
-    vals+=collectTests(program, L=16, M=40, m=m, minS=minS, testS=testS)
+  # p = 2
+  Ls=[8,5]
+  Ms=[16,32]
+  for M in Ms:
+    for L in Ls:
+      vals+=collectTests(program, L=L, M=M, m=4, minS=minS, testS=testS)
 
-  mvalues=[2,4]
-  for m in mvalues:
-    vals+=collectTests(program, L=64, M=512, m=m, minS=minS, testS=testS)
+  # p > 2
+  Ls=[8,7]
+  M=16
+  for L in Ls:
+    vals+=collectTests(program, L=L, M=M, m=2, minS=minS, testS=testS)
+  Ls=[16,13]
+  M=128
+  for L in Ls:
+    vals+=collectTests(program, L=L, M=M, m=4, minS=minS, testS=testS)
 
-
-  mvalues=[2,3,4,8,16]
-  for m in mvalues:
-    vals+=collectTests(program, L=8, M=40, m=m, minS=minS, testS=testS)
-  mvalues=[2,4,8]
-  for m in mvalues:
-    vals+=collectTests(program, L=8, M=64, m=m, minS=minS, testS=testS)
-    vals+=collectTests(program, L=8, M=56, m=m, minS=minS, testS=testS)
-  mvalues=[3]
-  for m in mvalues:
-    vals+=collectTests(program, L=9, M=27, m=m, minS=minS, testS=testS)
-    vals+=collectTests(program, L=9, M=81, m=m, minS=minS, testS=testS)
   return vals
 
 def checkOptimizer(program, L, M, T, options):
