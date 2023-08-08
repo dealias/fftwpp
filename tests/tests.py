@@ -76,7 +76,15 @@ class Command:
         self.m=self.addParams("m",x.m,y.m,z.m)
         self.I=self.addParams("I",x.I,y.I,z.I)
         self.D=self.addParams("D",x.D,y.D,z.D)
-        self.S=["-Sx="+str(x.S),"-Sy="+str(y.S)]
+        self.S=[]
+        if program.hermitian:
+          if y.S != ceilquotient(z.L,2):
+            self.S+=["-Sy="+str(y.S)]
+        else:
+          if y.S != z.L:
+            self.S+=["-Sy="+str(y.S)]
+        if x.S != y.L*y.S:
+          self.S+=["-Sx="+str(x.S)]
         self.C=[]
       elif lenvals == 2:
         x,y = vals
@@ -85,7 +93,11 @@ class Command:
         self.m=self.addParams("m",x.m,y.m)
         self.I=self.addParams("I",x.I,y.I)
         self.D=self.addParams("D",x.D,y.D)
-        self.S=["-Sx="+str(x.S)]
+        self.S=[]
+        if program.hermitian and x.S != ceilquotient(y.L,2):
+          self.S+=["-Sx="+str(x.S)]
+        elif not program.hermitian and x.S != y.L:
+          self.S+=["-Sx="+str(x.S)]
         self.C=[]
       else:
         x=vals[0]
@@ -95,7 +107,9 @@ class Command:
         self.D=["-D="+str(x.D)]
         self.I=["-I="+str(x.I)]
         if not program.mult:
-          self.S=["-S"+str(x.S)]
+          self.S=[]
+          if x.S != x.C:
+            self.S=["-S"+str(x.S)]
           self.C=["-C"+str(x.C)]
         else:
           self.S=[]
