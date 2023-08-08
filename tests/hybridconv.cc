@@ -49,9 +49,9 @@ int main(int argc, char *argv[])
   Complex *h=NULL;
   if(testError) {
     h=ComplexAlign(L);
-    directconv C(L);
+    directconv<Complex> C(L);
     if(Centered)
-      C.Cconvolve(h,f[0],f[1]);
+      C.convolveC(h,f[0],f[1]);
     else
       C.convolve(h,f[0],f[1]);
   }

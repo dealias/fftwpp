@@ -4,15 +4,52 @@ namespace fftwpp {
 #define __direct_h__ 1
 
 // Out-of-place direct 1D complex convolution.
+template<class T>
 class directconv {
 protected:
   size_t m;
 public:
   directconv(size_t m) : m(m) {}
 
-  void convolve(Complex *h, Complex *f, Complex *g);
-  void Cconvolve(Complex *h, Complex *f, Complex *g);
-  void autoconvolve(Complex *h, Complex *f);
+  // Standard One Dimensional Direct Convolution
+  void convolve(T *h, T *f, T *g)
+  {
+  #if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
+  #pragma omp parallel for
+  #endif
+    for(size_t i=0; i < m; ++i) {
+      T sum=0.0;
+      for(size_t j=0; j <= i; ++j) sum += f[j]*g[i-j];
+      h[i]=sum;
+    }
+  }
+  void convolveC(T *h, T *f, T *g)
+  {
+  #if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
+  #pragma omp parallel for
+  #endif
+    for(size_t i=0; i < m/2; ++i) {
+      T sum=0.0;
+      for(size_t j=i+1; j < m; ++j) sum += f[j]*g[m+i-j];
+      h[i+(m+1)/2]=sum;
+    }
+    for(size_t i=m/2; i < m; ++i) {
+      T sum=0.0;
+      for(size_t j=0; j <= i; ++j) sum += f[j]*g[i-j];
+      h[i-m/2]=sum;
+    }
+  }
+  void autoconvolve(T *h, T *f)
+  {
+  #if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
+  #pragma omp parallel for
+  #endif
+    for(size_t i=0; i < m; ++i) {
+      T sum=0.0;
+      for(size_t j=0; j <= i; ++j) sum += f[j]*f[i-j];
+      h[i]=sum;
+    }
+  }
 };
 
 // Out-of-place direct 1D Hermitian convolution.
@@ -29,14 +66,6 @@ public:
   void convolve(Complex *h, Complex *f, Complex *g);
 };
 
-// Out-of-place direct 1D real convolution.
-class directconvr {
-protected:
-  size_t m;
-public:
-  directconvr(size_t m) : m(m) {}
-  void convolve(double *h, double *f, double *g);
-};
 
 // Out-of-place direct 2D complex convolution.
 template<class T>
