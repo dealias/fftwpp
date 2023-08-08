@@ -308,7 +308,7 @@ int main(int argc, char *argv[])
   }
 
   if(Direct) {
-    DirectConvolution C(m);
+    directconv C(m);
     if(A % 2 == 0 && A > 2)
       A=2;
     init(F,m,A);

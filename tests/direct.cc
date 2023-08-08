@@ -4,7 +4,7 @@
 namespace fftwpp {
 
 // Standard One Dimensional Direct Convolution
-void DirectConvolution::convolve(Complex *h, Complex *f, Complex *g)
+void directconv::convolve(Complex *h, Complex *f, Complex *g)
 {
 #if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #pragma omp parallel for
@@ -17,7 +17,7 @@ void DirectConvolution::convolve(Complex *h, Complex *f, Complex *g)
 }
 
 // Centered One Dimensional Direct Convolution
-void DirectConvolution::Cconvolve(Complex *h, Complex *f, Complex *g)
+void directconv::Cconvolve(Complex *h, Complex *f, Complex *g)
 {
 #if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #pragma omp parallel for
@@ -34,7 +34,7 @@ void DirectConvolution::Cconvolve(Complex *h, Complex *f, Complex *g)
   }
 }
 
-void DirectConvolution::autoconvolve(Complex *h, Complex *f)
+void directconv::autoconvolve(Complex *h, Complex *f)
 {
 #if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
 #pragma omp parallel for

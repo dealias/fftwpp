@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
   Complex *h=NULL;
   if(testError) {
     h=ComplexAlign(L);
-    DirectConvolution C(L);
+    directconv C(L);
     if(Centered)
       C.Cconvolve(h,f[0],f[1]);
     else

@@ -4,11 +4,11 @@ namespace fftwpp {
 #define __direct_h__ 1
 
 // Out-of-place direct 1D complex convolution.
-class DirectConvolution {
+class directconv {
 protected:
   size_t m;
 public:
-  DirectConvolution(size_t m) : m(m) {}
+  directconv(size_t m) : m(m) {}
 
   void convolve(Complex *h, Complex *f, Complex *g);
   void Cconvolve(Complex *h, Complex *f, Complex *g);
