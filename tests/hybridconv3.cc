@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
   Complex *h=NULL;
   if(testError) {
     h=ComplexAlign(Lx*Ly*Lz);
-    directconv3 C(Lx,Ly,Lz,Sx,Sy);
+    directconv3<Complex> C(Lx,Ly,Lz,Sx,Sy);
     C.convolve(h,f[0],f[1]);
   }
 

@@ -112,6 +112,7 @@ public:
 };
 
 // Out-of-place direct 3D complex convolution.
+template<class T>
 class directconv3 {
 protected:
   size_t mx,my,mz;
@@ -126,7 +127,24 @@ public:
     this->Sx=Sx ? Sx : my*Sy;
   }
 
-  void convolve(Complex *h, Complex *f, Complex *g);
+  void convolve(T *h, T *f, T *g)
+  {
+  #if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
+  #pragma omp parallel for
+  #endif
+    for(size_t i=0; i < mx; ++i) {
+      for(size_t j=0; j < my; ++j) {
+        for(size_t k=0; k < mz; ++k) {
+          T sum=0.0;
+          for(size_t r=0; r <= i; ++r)
+            for(size_t p=0; p <= j; ++p)
+              for(size_t q=0; q <= k; ++q)
+                sum += f[r*Sx+p*Sy+q]*g[(i-r)*Sx+(j-p)*Sy+(k-q)];
+          h[i*myz+j*mz+k]=sum;
+        }
+      }
+    }
+  }
 };
 
 // Out-of-place direct 3D Hermitian convolution.

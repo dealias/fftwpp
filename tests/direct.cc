@@ -3,7 +3,6 @@
 
 namespace fftwpp {
 
-
 void directconvh::convolve(Complex *h, Complex *f, Complex *g)
 {
 #if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
@@ -17,7 +16,6 @@ void directconvh::convolve(Complex *h, Complex *f, Complex *g)
     h[i]=sum;
   }
 }
-
 
 void directconvh2::convolve(Complex *h, Complex *f, Complex *g,
                                    bool symmetrize)
@@ -53,25 +51,6 @@ void directconvh2::convolve(Complex *h, Complex *f, Complex *g,
           }
         }
         h[(xorigin+kx)*my+ky]=sum;
-      }
-    }
-  }
-}
-
-void directconv3::convolve(Complex *h, Complex *f, Complex *g)
-{
-#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
-#pragma omp parallel for
-#endif
-  for(size_t i=0; i < mx; ++i) {
-    for(size_t j=0; j < my; ++j) {
-      for(size_t k=0; k < mz; ++k) {
-        Complex sum=0.0;
-        for(size_t r=0; r <= i; ++r)
-          for(size_t p=0; p <= j; ++p)
-            for(size_t q=0; q <= k; ++q)
-              sum += f[r*Sx+p*Sy+q]*g[(i-r)*Sx+(j-p)*Sy+(k-q)];
-        h[i*myz+j*mz+k]=sum;
       }
     }
   }
