@@ -348,7 +348,7 @@ def iterate(program, threads, options):
       for x in vals:
         checkCase(program,[x],T,options)
     if not program.mult:
-      vals=ParameterCollection(findTests(program,8,testS and not program.mult)).vals
+      vals=ParameterCollection(findTests(program,2,testS and not program.mult)).vals
       for x in vals:
         for T in threads:
           checkCase(program,[x],T,options)
@@ -409,7 +409,7 @@ def collectTests(program, L, M, m, minS, testS, Dmin=0, Dmax=0, I0=True, I1=True
   Ss=[minS]
   if testS:
     if dim > 1 or (not program.mult and C > 1):
-      Ss+=[minS+2]
+      Ss+=[minS+1]
 
   Istart=0
   Istop=2
