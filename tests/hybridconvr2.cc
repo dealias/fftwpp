@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
   double *h=NULL;
   if(testError) {
     h=doubleAlign(Lx*Ly);
-    DirectConvolution2<double> C(Lx,Ly,Sx);
+    directconv2<double> C(Lx,Ly,Sx);
     C.convolve(h,f[0],f[1]);
   }
 

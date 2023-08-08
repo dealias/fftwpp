@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
   }
 
   if(Direct) {
-    DirectHTConvolution C(m);
+    directconvhT C(m);
     init(e,f,g);
     Complex *h=ComplexAlign(m);
     cpuTimer c;

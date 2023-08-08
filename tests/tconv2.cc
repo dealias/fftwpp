@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
     Array2<Complex> e(nxp,my,0,0,align);
     Array2<Complex> f(nxp,my,0,0,align);
     Array2<Complex> g(nxp,my,0,0,align);
-    DirectHTConvolution2 C(mx,my);
+    directconvhT2 C(mx,my);
     init(e,f,g);
     cpuTimer c;
     C.convolve(h,e,f,g);

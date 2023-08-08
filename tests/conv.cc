@@ -333,7 +333,7 @@ int main(int argc, char *argv[])
   }
 
   if(Direct) {
-    DirectHConvolution C(m);
+    directconvh C(m);
     init(F,m,2);
     Complex *h=ComplexAlign(m);
     cpuTimer c;

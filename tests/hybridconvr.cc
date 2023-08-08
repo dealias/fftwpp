@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
         Fa[j]=fa[j];
     }
     h=doubleAlign(L);
-    DirectrConvolution C(L);
+    directconvr C(L);
     C.convolve(h,F[0],F[1]);
   }
 

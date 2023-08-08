@@ -294,7 +294,7 @@ int main(int argc, char *argv[])
 
   if(Direct) {
     array3<Complex> h(mx,my,mz,align);
-    DirectConvolution3 C(mx,my,mz);
+    directconv3 C(mx,my,mz);
     init(F,mx,my,mz,2);
     cpuTimer c;
     C.convolve(h,F[0],F[1]);

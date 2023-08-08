@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
   Complex *h=NULL;
   if(testError) {
     h=ComplexAlign(Lx*Ly);
-    DirectConvolution2<Complex> C(Lx,Ly,Sx);
+    directconv2<Complex> C(Lx,Ly,Sx);
     C.convolve(h,f[0],f[1]);
   }
 

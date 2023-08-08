@@ -345,7 +345,7 @@ int main(int argc, char *argv[])
 
     array3<Complex> h(nxp,nyp,mz,align);
 
-    DirectHConvolution3 C(mx,my,mz);
+    directconvh3 C(mx,my,mz);
     init(F,mx,my,mz,nxp,nyp,mz,A,true,true,true);
     cpuTimer c;
     C.convolve(h,F[0],F[1]);
