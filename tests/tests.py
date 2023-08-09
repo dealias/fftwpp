@@ -408,6 +408,7 @@ def collectTests(program, L, M, m, minS, Dmin=0, Dmax=0, I0=True, I1=True):
   vals=[]
 
   C=minS
+  notmult=not program.mult
   centered=program.centered
   hermitian=program.hermitian
   real=program.real
@@ -421,7 +422,7 @@ def collectTests(program, L, M, m, minS, Dmin=0, Dmax=0, I0=True, I1=True):
     Dstart=1
     Dstop=Dstart
   elif C > 1:
-    Dstart=2 if hermitian else 1
+    Dstart=2 if hermitian and notmult else 1
     Dstop=Dstart
   elif hermitian:
     Dstart=2
