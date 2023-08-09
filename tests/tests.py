@@ -528,8 +528,8 @@ def realTests(program, minS, testS):
   M=63
   for L in Ls:
     vals+=collectTests(program, L=L, M=M, m=3, minS=minS, testS=testS)
-  Ls=[16,13]
-  M=64
+  Ls=[24,21]
+  M=96
   for L in Ls:
     vals+=collectTests(program, L=L, M=M, m=4, minS=minS, testS=testS)
 

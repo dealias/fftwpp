@@ -7373,9 +7373,10 @@ void fftPadReal::backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W)
 
     PARALLELIF(
       m-stop > threshold,
-      for(size_t s=stop; s < m; ++s)
-        ft[s] += realProduct(ZetaConj,Wt[s]);
-      );
+      for(size_t s=stop; s < m; ++s) {
+        Complex Wts=Wt[s];
+        ft[s] += ZetaConj.re*Wts.re-ZetaConj.im*Wts.im;
+        });
   }
 }
 
@@ -7624,8 +7625,10 @@ void fftPadReal::backwardInnerMany(Complex *F, Complex *f, size_t r, Complex *W)
         size_t Ss=S*s;
         Complex *Wts=Wt+Ss;
         double *fts=ft+Ss;
-        for(size_t c=0; c < C; ++c)
-          fts[c] += realProduct(ZetaConj,Wts[c]);
+        for(size_t c=0; c < C; ++c) {
+          Complex Wtsc=Wts[c];
+          fts[c] += ZetaConj.re*Wtsc.re-ZetaConj.im*Wtsc.im;
+        }
       });
   }
 }
