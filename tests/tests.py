@@ -55,6 +55,7 @@ class Options:
     self.printEverything=args.p
     self.valid=args.valid
     self.vg=args.valgrind
+    self.d=args.d
 
 class Command:
   def __init__(self, program, T, vals=None, L=None, M=None, options=None):
@@ -203,6 +204,8 @@ def getArgs():
   parser.add_argument("-p",help="Print out everything.",action="store_true")
   parser.add_argument("-l",help="Show log of failed cases",
                       action="store_true")
+  parser.add_argument("-d",help="Check all 1D cases inside multidimensional convoltuions. Note: using this flag results in much slower testing.",
+                      action="store_true")
   parser.add_argument("--valgrind",help="Run tests under valgrind. Requires valgrind to be installed. Note: using this flag results in much slower testing.",
                       action="store_true")
   parser.add_argument("-v",help="Show the results of every test.",
@@ -343,14 +346,14 @@ def test(programs, args):
 def iterate(program, threads, options):
   dim=program.dim
   testS=options.testS
-  vals=ParameterCollection(findTests(program,1,inner=True)).vals
+  vals=ParameterCollection(findTests(program,1,options,inner=True)).vals
   if dim == 1:
     for T in threads:
       checkOptimizer(program,vals[0].L,vals[0].M,T,options)
       for x in vals:
         checkCase(program,[x],T,options)
     if not program.mult:
-      cols=[ParameterCollection(findTests(program,2,outer=True))]
+      cols=[ParameterCollection(findTests(program,2,options,outer=True))]
       if testS:
         cols+=[copy.deepcopy(cols[0])]
         updateStride(cols[1],3)
@@ -361,7 +364,7 @@ def iterate(program, threads, options):
             checkCase(program,[x],T,options)
   else:
     if dim == 2:
-      xcols=[ParameterCollection(findTests(program,2,outer=True))]
+      xcols=[ParameterCollection(findTests(program,2,options,outer=True))]
       if testS:
         xcols+=[copy.deepcopy(xcols[0])]
       lenxcols=len(xcols)
@@ -375,7 +378,7 @@ def iterate(program, threads, options):
               checkCase(program,[x,y],T,options)
 
     elif dim == 3:
-      ycol=ParameterCollection(findTests(program,2,outer=True))
+      ycol=ParameterCollection(findTests(program,2,options,outer=True))
       ycols=[ycol]
       xcols=[copy.deepcopy(ycol)]
       if testS:
@@ -485,93 +488,109 @@ def transformType(program, outer=False, inner=False):
   else:
     return "s"
 
-
-def findTests(program, minS, outer=False, inner=False):
+def findTests(program, minS, options,outer=False, inner=False):
   ttype=transformType(program, outer, inner)
   if ttype == "r":
-    return realTests(program, minS)
+    return realTests(program, minS, options)
   elif ttype == "H":
-    return hermitianTests(program, minS)
+    return hermitianTests(program, minS, options)
   elif ttype == "c":
-    return centeredTests(program, minS)
+    return centeredTests(program, minS, options)
   else:
-    return complexTests(program, minS)
+    return complexTests(program, minS, options)
 
-def complexTests(program, minS):
+def complexTests(program, minS, options):
+  details=(minS == 1 and program.dim > 1) or options.d
   vals=[]
   L=8
-  Mvalues=[2*L,ceilquotient(5*L,2)]
-  for M in Mvalues:
-    mvalues=[ceilquotient(L,4),ceilquotient(L,2),L,L+1,M]
-    for m in mvalues:
+  Ms=[2*L]
+  if details:
+    Ms+=[ceilquotient(5*L,2)]
+  for M in Ms:
+    ms=[L]
+    if details:
+      ms=[M,L+1]+ms+[ceilquotient(L,2),ceilquotient(L,4)]
+    for m in ms:
       vals+=collectTests(program, L=L, M=M, m=m, minS=minS)
   return vals
 
-def centeredTests(program, minS):
+def centeredTests(program, minS, options):
   assert program.centered
   vals=[]
-  Lvalues=[]
-  if program.dim == 1 and program.mult:
-    Lvalues=[7,8]
-  else:
-    Lvalues=[8]
-  for L in Lvalues:
+  details=(minS == 1 and program.dim > 1) or options.d
+
+  Ls=[8]
+  if details:
+    Ls+=[7]
+  for L in Ls:
     L2=ceilquotient(L,2)
-    Mvalues=[3*L2-2*(L%2),2*L,5*L2]
-    for M in Mvalues:
-      mvalues=[ceilquotient(L,4),L2,ceilquotient(L2+L,2),M]
-      for m in mvalues:
+    Ms=[3*L2-2*(L%2)]
+    if details:
+      Ms+=[2*L,5*L2]
+    for M in Ms:
+      ms=[L2]
+      if details:
+        ms=[ceilquotient(L,4),L2,ceilquotient(L2+L,2),M]
+      for m in ms:
         vals+=collectTests(program, L=L, M=M, m=m, minS=minS)
   return vals
 
-def hermitianTests(program, minS):
+def hermitianTests(program, minS, options):
   assert program.hermitian
   vals=[]
-  Lvalues=[]
-  if program.dim == 1 and program.mult:
-    Lvalues=[7,8]
-  else:
-    Lvalues=[8]
-  for L in Lvalues:
+  details=(minS == 1 and program.dim > 1) or options.d
+
+  Ls=[8]
+  if details:
+    Ls+=[7]
+  for L in Ls:
     L2=ceilquotient(L,2)
-    Mvalues=[3*L2-2*(L%2),2*L,5*L2]
-    for M in Mvalues:
-      mvalues=[L2,M]
-      if minS == 1:
-        mvalues=[ceilquotient(L,4)]+mvalues
-      for m in mvalues:
+    Ms=[3*L2-2*(L%2)]
+    if details:
+      Ms+=[2*L,5*L2]
+    for M in Ms:
+      ms=[L2]
+      if details:
+        ms=[M]+ms+[ceilquotient(L,4)]
+      for m in ms:
         vals+=collectTests(program, L=L, M=M, m=m, minS=minS)
   return vals
 
-def realTests(program, minS):
+def realTests(program, minS, options):
   assert program.real
   vals=[]
+  details=(minS == 1 and program.dim > 1) or options.d
 
   # p = 1
-  Ls=[8,3]
-  Ms=[16,24,64]
+  Ls=[8]
+  Ms=[16]
+  if details:
+    Ls+=[3]
+    Ms+=[24,64]
   for M in Ms:
     for L in Ls:
       vals+=collectTests(program, L=L, M=M, m=8, minS=minS)
-  # p = 2
-  Ls=[8,5]
-  Ms=[16,24,32]
-  for M in Ms:
+
+  if details:
+    # p = 2
+    Ls=[8,5]
+    Ms=[16,24,32]
+    for M in Ms:
+      for L in Ls:
+        vals+=collectTests(program, L=L, M=M, m=4, minS=minS)
+    # p > 2
+    Ls=[8,7]
+    M=16
+    for L in Ls:
+      vals+=collectTests(program, L=L, M=M, m=2, minS=minS)
+    Ls=[9,7]
+    M=63
+    for L in Ls:
+      vals+=collectTests(program, L=L, M=M, m=3, minS=minS)
+    Ls=[24,21]
+    M=96
     for L in Ls:
       vals+=collectTests(program, L=L, M=M, m=4, minS=minS)
-  # p > 2
-  Ls=[8,7]
-  M=16
-  for L in Ls:
-    vals+=collectTests(program, L=L, M=M, m=2, minS=minS)
-  Ls=[9,7]
-  M=63
-  for L in Ls:
-    vals+=collectTests(program, L=L, M=M, m=3, minS=minS)
-  Ls=[24,21]
-  M=96
-  for L in Ls:
-    vals+=collectTests(program, L=L, M=M, m=4, minS=minS)
 
   return vals
 
