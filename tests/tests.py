@@ -341,7 +341,7 @@ def test(programs, args):
 def iterate(program, threads, options):
   dim=program.dim
   testS=options.testS
-  vals=ParameterCollection(findTests(program,1,testS and not program.mult)).vals
+  vals=ParameterCollection(findTests(program,1,testS and not program.mult,inner=True)).vals
   if dim == 1:
     for T in threads:
       checkOptimizer(program,vals[0].L,vals[0].M,T,options)
@@ -356,7 +356,7 @@ def iterate(program, threads, options):
     if dim == 2:
       for y in vals:
         minS=(ceilquotient(y.L,2) if program.hermitian else y.L)
-        xvals=ParameterCollection(findTests(program,minS,testS)).vals
+        xvals=ParameterCollection(findTests(program,minS,testS,outer=True)).vals
         for x in xvals:
           for T in threads:
             checkCase(program,[x,y],T,options)
@@ -367,7 +367,7 @@ def iterate(program, threads, options):
         yvals=ParameterCollection(findTests(program,minSy,testS)).vals
         for y in yvals:
           minSy=y.S*y.L
-          xvals=ParameterCollection(findTests(program,y.L*y.S,testS)).vals
+          xvals=ParameterCollection(findTests(program,y.L*y.S,testS,outer=True)).vals
           for x in xvals:
             for T in threads:
               checkCase(program,[x,y,z],T,options)
@@ -445,12 +445,30 @@ def getDs(start, stop, pow2=False):
     result.append(stop)
   return result
 
-def findTests(program, minS, testS):
+def transformType(program, outer=False, inner=False):
   if program.real:
-    return realTests(program, minS, testS)
+    if outer or not program.mult:
+      return "r"
+    else:
+      return "s"
   elif program.hermitian:
-    return hermitianTests(program, minS, testS)
+    if inner or not program.mult:
+      return "H"
+    else:
+      return "c"
   elif program.centered:
+    return "c"
+  else:
+    return "s"
+
+
+def findTests(program, minS, testS, outer=False, inner=False):
+  ttype=transformType(program, outer, inner)
+  if ttype == "r":
+    return realTests(program, minS, testS)
+  elif ttype == "H":
+    return hermitianTests(program, minS, testS)
+  elif ttype == "c":
     return centeredTests(program, minS, testS)
   else:
     return complexTests(program, minS, testS)
@@ -511,14 +529,12 @@ def realTests(program, minS, testS):
   for M in Ms:
     for L in Ls:
       vals+=collectTests(program, L=L, M=M, m=8, minS=minS, testS=testS)
-
   # p = 2
   Ls=[8,5]
   Ms=[16,24,32]
   for M in Ms:
     for L in Ls:
       vals+=collectTests(program, L=L, M=M, m=4, minS=minS, testS=testS)
-
   # p > 2
   Ls=[8,7]
   M=16
