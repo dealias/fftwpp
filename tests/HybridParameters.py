@@ -138,7 +138,7 @@ class ParameterCollection():
       values.append(v.I)
     return values
 
-  # Returns a list of I values (respecting the order of self.val)
+  # Returns a list of t values (respecting the order of self.val)
   def t(self):
     values=[]
     for v in self.vals:

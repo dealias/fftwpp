@@ -5,6 +5,8 @@ import re
 import argparse
 import sys
 from HybridParameters import *
+import copy
+
 
 def main():
   args=getArgs()
@@ -341,44 +343,71 @@ def test(programs, args):
 def iterate(program, threads, options):
   dim=program.dim
   testS=options.testS
-  vals=ParameterCollection(findTests(program,1,testS and not program.mult,inner=True)).vals
+  vals=ParameterCollection(findTests(program,1,inner=True)).vals
   if dim == 1:
     for T in threads:
       checkOptimizer(program,vals[0].L,vals[0].M,T,options)
       for x in vals:
         checkCase(program,[x],T,options)
     if not program.mult:
-      vals=ParameterCollection(findTests(program,2,testS and not program.mult)).vals
-      for x in vals:
-        for T in threads:
-          checkCase(program,[x],T,options)
+      cols=[ParameterCollection(findTests(program,2,outer=True))]
+      if testS:
+        cols+=[copy.deepcopy(cols[0])]
+        updateStride(cols[1],3)
+      for S in range(len(cols)):
+        vals=cols[S].vals
+        for x in vals:
+          for T in threads:
+            checkCase(program,[x],T,options)
   else:
     if dim == 2:
+      xcols=[ParameterCollection(findTests(program,2,outer=True))]
+      if testS:
+        xcols+=[copy.deepcopy(xcols[0])]
+      lenxcols=len(xcols)
       for y in vals:
         minS=(ceilquotient(y.L,2) if program.hermitian else y.L)
-        xvals=ParameterCollection(findTests(program,minS,testS,outer=True)).vals
-        for x in xvals:
-          for T in threads:
-            checkCase(program,[x,y],T,options)
-
-    elif dim == 3:
-      for z in vals:
-        minSy=ceilquotient(z.L,2) if program.hermitian else z.L
-        yvals=ParameterCollection(findTests(program,minSy,testS)).vals
-        for y in yvals:
-          minSy=y.S*y.L
-          xvals=ParameterCollection(findTests(program,y.L*y.S,testS,outer=True)).vals
+        for S in range(lenxcols):
+          updateStride(xcols[S],minS+S)
+          xvals=xcols[S].vals
           for x in xvals:
             for T in threads:
-              checkCase(program,[x,y,z],T,options)
+              checkCase(program,[x,y],T,options)
+
+    elif dim == 3:
+      ycol=ParameterCollection(findTests(program,2,outer=True))
+      ycols=[ycol]
+      xcols=[copy.deepcopy(ycol)]
+      if testS:
+        ycols+=[copy.deepcopy(ycol)]
+        xcols+=[copy.deepcopy(ycol)]
+      lenycols=len(ycols)
+      lenxcols=len(xcols)
+      for z in vals:
+        minSy=ceilquotient(z.L,2) if program.hermitian else z.L
+        for Sy in range(lenycols):
+          updateStride(ycols[Sy],minSy+Sy)
+          yvals=ycols[Sy].vals
+          for y in yvals:
+            minSx=y.S*y.L
+            for Sx in range(lenxcols):
+              updateStride(xcols[Sx],minSx+Sx)
+              xvals=xcols[Sx].vals
+              for x in xvals:
+                for T in threads:
+                  checkCase(program,[x,y,z],T,options)
     else:
       exit("Dimension must be 1 2 or 3.")
 
-def collectTests(program, L, M, m, minS, testS, Dmin=0, Dmax=0, I0=True, I1=True):
+# Replace all strides in collection with value newS
+def updateStride(collection, newS):
+  for v in collection.vals:
+    v.S=newS
+
+def collectTests(program, L, M, m, minS, Dmin=0, Dmax=0, I0=True, I1=True):
   vals=[]
 
   C=minS
-  dim=program.dim
   centered=program.centered
   hermitian=program.hermitian
   real=program.real
@@ -406,11 +435,6 @@ def collectTests(program, L, M, m, minS, testS, Dmin=0, Dmax=0, I0=True, I1=True
 
   Ds=getDs(Dstart,Dstop)
 
-  Ss=[minS]
-  if testS:
-    if dim > 1 or (not program.mult and C > 1):
-      Ss+=[minS+1]
-
   Istart=0
   Istop=2
   if not I0:
@@ -418,10 +442,9 @@ def collectTests(program, L, M, m, minS, testS, Dmin=0, Dmax=0, I0=True, I1=True
   if not I1:
     Istop=1
 
-  for S in Ss:
-    for I in range(Istart,Istop):
-      for D in Ds:
-        vals.append(Parameters(L,M,m,p,q,C,S,D,I))
+  for I in range(Istart,Istop):
+    for D in Ds:
+      vals.append(Parameters(L,M,m,p,q,C,minS,D,I))
 
   return vals
 
@@ -462,28 +485,28 @@ def transformType(program, outer=False, inner=False):
     return "s"
 
 
-def findTests(program, minS, testS, outer=False, inner=False):
+def findTests(program, minS, outer=False, inner=False):
   ttype=transformType(program, outer, inner)
   if ttype == "r":
-    return realTests(program, minS, testS)
+    return realTests(program, minS)
   elif ttype == "H":
-    return hermitianTests(program, minS, testS)
+    return hermitianTests(program, minS)
   elif ttype == "c":
-    return centeredTests(program, minS, testS)
+    return centeredTests(program, minS)
   else:
-    return complexTests(program, minS, testS)
+    return complexTests(program, minS)
 
-def complexTests(program, minS, testS):
+def complexTests(program, minS):
   vals=[]
   L=8
   Mvalues=[2*L,ceilquotient(5*L,2)]
   for M in Mvalues:
     mvalues=[ceilquotient(L,4),ceilquotient(L,2),L,L+1,M]
     for m in mvalues:
-      vals+=collectTests(program, L=L, M=M, m=m, minS=minS, testS=testS)
+      vals+=collectTests(program, L=L, M=M, m=m, minS=minS)
   return vals
 
-def centeredTests(program, minS, testS):
+def centeredTests(program, minS):
   assert program.centered
   vals=[]
   Lvalues=[]
@@ -497,10 +520,10 @@ def centeredTests(program, minS, testS):
     for M in Mvalues:
       mvalues=[ceilquotient(L,4),L2,ceilquotient(L2+L,2),M]
       for m in mvalues:
-        vals+=collectTests(program, L=L, M=M, m=m, minS=minS, testS=testS)
+        vals+=collectTests(program, L=L, M=M, m=m, minS=minS)
   return vals
 
-def hermitianTests(program, minS, testS):
+def hermitianTests(program, minS):
   assert program.hermitian
   vals=[]
   Lvalues=[]
@@ -516,10 +539,10 @@ def hermitianTests(program, minS, testS):
       if minS == 1:
         mvalues=[ceilquotient(L,4)]+mvalues
       for m in mvalues:
-        vals+=collectTests(program, L=L, M=M, m=m, minS=minS, testS=testS)
+        vals+=collectTests(program, L=L, M=M, m=m, minS=minS)
   return vals
 
-def realTests(program, minS, testS):
+def realTests(program, minS):
   assert program.real
   vals=[]
 
@@ -528,26 +551,26 @@ def realTests(program, minS, testS):
   Ms=[16,24,64]
   for M in Ms:
     for L in Ls:
-      vals+=collectTests(program, L=L, M=M, m=8, minS=minS, testS=testS)
+      vals+=collectTests(program, L=L, M=M, m=8, minS=minS)
   # p = 2
   Ls=[8,5]
   Ms=[16,24,32]
   for M in Ms:
     for L in Ls:
-      vals+=collectTests(program, L=L, M=M, m=4, minS=minS, testS=testS)
+      vals+=collectTests(program, L=L, M=M, m=4, minS=minS)
   # p > 2
   Ls=[8,7]
   M=16
   for L in Ls:
-    vals+=collectTests(program, L=L, M=M, m=2, minS=minS, testS=testS)
+    vals+=collectTests(program, L=L, M=M, m=2, minS=minS)
   Ls=[9,7]
   M=63
   for L in Ls:
-    vals+=collectTests(program, L=L, M=M, m=3, minS=minS, testS=testS)
+    vals+=collectTests(program, L=L, M=M, m=3, minS=minS)
   Ls=[24,21]
   M=96
   for L in Ls:
-    vals+=collectTests(program, L=L, M=M, m=4, minS=minS, testS=testS)
+    vals+=collectTests(program, L=L, M=M, m=4, minS=minS)
 
   return vals
 
