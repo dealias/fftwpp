@@ -346,8 +346,8 @@ def test(programs, args):
 def iterate(program, threads, options):
   dim=program.dim
   testS=options.testS
-  vals=ParameterCollection(findTests(program,1,options,inner=True)).vals
   if dim == 1:
+    vals=ParameterCollection(findTests(program,1,options)).vals
     for T in threads:
       checkOptimizer(program,vals[0].L,vals[0].M,T,options)
       for x in vals:
@@ -363,6 +363,7 @@ def iterate(program, threads, options):
           for T in threads:
             checkCase(program,[x],T,options)
   else:
+    vals=ParameterCollection(findTests(program,1,options,inner=True)).vals
     if dim == 2:
       xcols=[ParameterCollection(findTests(program,2,options,outer=True))]
       if testS:
@@ -473,13 +474,14 @@ def getDs(start, stop, pow2=False):
   return result
 
 def transformType(program, outer=False, inner=False):
+  dim=program.dim
   if program.real:
-    if outer or not program.mult:
+    if dim == 1 or outer:
       return "r"
     else:
       return "s"
   elif program.hermitian:
-    if inner or not program.mult:
+    if dim == 1 or inner:
       return "H"
     else:
       return "c"
@@ -499,8 +501,11 @@ def findTests(program, minS, options,outer=False, inner=False):
   else:
     return complexTests(program, minS, options)
 
+def details(C,dim,d):
+  return ((C == 1 and dim > 1) or (dim == 1)) or d
+
 def complexTests(program, minS, options):
-  details=(minS == 1 and program.dim > 1) or options.d
+  det=details(minS,program.dim,options.d)
   vals=[]
   L=8
   Ms=[2*L]
@@ -508,7 +513,7 @@ def complexTests(program, minS, options):
     Ms+=[ceilquotient(5*L,2)]
   for M in Ms:
     ms=[L]
-    if details:
+    if det:
       ms=[M,L+1]+ms+[ceilquotient(L,2),ceilquotient(L,4)]
     for m in ms:
       vals+=collectTests(program, L=L, M=M, m=m, minS=minS)
@@ -517,19 +522,19 @@ def complexTests(program, minS, options):
 def centeredTests(program, minS, options):
   assert program.centered
   vals=[]
-  details=(minS == 1 and program.dim > 1) or options.d
+  det=details(minS,program.dim,options.d)
 
   Ls=[8]
-  if details:
+  if det:
     Ls+=[7]
   for L in Ls:
     L2=ceilquotient(L,2)
     Ms=[3*L2-2*(L%2)]
-    if details:
+    if det:
       Ms+=[2*L,5*L2]
     for M in Ms:
       ms=[L2]
-      if details:
+      if det:
         ms=[ceilquotient(L,4),L2,ceilquotient(L2+L,2),M]
       for m in ms:
         vals+=collectTests(program, L=L, M=M, m=m, minS=minS)
@@ -538,19 +543,19 @@ def centeredTests(program, minS, options):
 def hermitianTests(program, minS, options):
   assert program.hermitian
   vals=[]
-  details=(minS == 1 and program.dim > 1) or options.d
+  det=details(minS,program.dim,options.d)
 
   Ls=[8]
-  if details:
+  if det:
     Ls+=[7]
   for L in Ls:
     L2=ceilquotient(L,2)
     Ms=[3*L2-2*(L%2)]
-    if details:
+    if det:
       Ms+=[2*L,5*L2]
     for M in Ms:
       ms=[L2]
-      if details:
+      if det:
         ms=[M]+ms+[ceilquotient(L,4)]
       for m in ms:
         vals+=collectTests(program, L=L, M=M, m=m, minS=minS)
@@ -559,19 +564,19 @@ def hermitianTests(program, minS, options):
 def realTests(program, minS, options):
   assert program.real
   vals=[]
-  details=(minS == 1 and program.dim > 1) or options.d
+  det=details(minS,program.dim,options.d)
 
   # p = 1
   Ls=[8]
   Ms=[16]
-  if details:
+  if det:
     Ls+=[3]
     Ms+=[24,64]
   for M in Ms:
     for L in Ls:
       vals+=collectTests(program, L=L, M=M, m=8, minS=minS)
 
-  if details:
+  if det:
     # p = 2
     Ls=[8,5]
     Ms=[16,24,32]
