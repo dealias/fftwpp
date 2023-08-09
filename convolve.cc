@@ -5940,7 +5940,7 @@ void fftPadReal::forward1(Complex *f, Complex *F, size_t r0, Complex *W)
       );
     if(repad) {
       PARALLELIF(
-        L-m > threshold,
+        m-L > threshold,
         for(size_t s=L; s < m; ++s)
           Wr[s]=0.0;
         );
