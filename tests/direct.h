@@ -14,9 +14,6 @@ public:
   // Standard One Dimensional Direct Convolution
   void convolve(T *h, T *f, T *g)
   {
-  #if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
-  #pragma omp parallel for
-  #endif
     for(size_t i=0; i < m; ++i) {
       T sum=0.0;
       for(size_t j=0; j <= i; ++j) sum += f[j]*g[i-j];
@@ -25,9 +22,6 @@ public:
   }
   void convolveC(T *h, T *f, T *g)
   {
-  #if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
-  #pragma omp parallel for
-  #endif
     for(size_t i=0; i < m/2; ++i) {
       T sum=0.0;
       for(size_t j=i+1; j < m; ++j) sum += f[j]*g[m+i-j];
@@ -41,9 +35,6 @@ public:
   }
   void autoconvolve(T *h, T *f)
   {
-  #if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
-  #pragma omp parallel for
-  #endif
     for(size_t i=0; i < m; ++i) {
       T sum=0.0;
       for(size_t j=0; j <= i; ++j) sum += f[j]*f[i-j];
@@ -81,9 +72,6 @@ public:
 
   void convolve(T *h, T *f, T *g)
   {
-#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
-#pragma omp parallel for
-#endif
     for(size_t i=0; i < mx; ++i) {
       for(size_t j=0; j < my; ++j) {
         T sum=0.0;
@@ -129,9 +117,6 @@ public:
 
   void convolve(T *h, T *f, T *g)
   {
-  #if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
-  #pragma omp parallel for
-  #endif
     for(size_t i=0; i < mx; ++i) {
       for(size_t j=0; j < my; ++j) {
         for(size_t k=0; k < mz; ++k) {

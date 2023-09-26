@@ -5,9 +5,6 @@ namespace fftwpp {
 
 void directconvh::convolve(Complex *h, Complex *f, Complex *g)
 {
-#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
-#pragma omp parallel for
-#endif
   for(size_t i=0; i < m; ++i) {
     Complex sum=0.0;
     for(size_t j=0; j <= i; ++j) sum += f[j]*g[i-j];
@@ -31,9 +28,6 @@ void directconvh2::convolve(Complex *h, Complex *f, Complex *g,
   int ystart=1-(int) my;
   int xstop=mx;
   int ystop=my;
-#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
-#pragma omp parallel for
-#endif
   for(int kx=xstart; kx < xstop; ++kx) {
     for(int ky=0; ky < ystop; ++ky) {
       Complex sum=0.0;
@@ -74,9 +68,6 @@ void directconvh3::convolve(Complex *h, Complex *f, Complex *g,
   int xstop=mx;
   int ystop=my;
   int zstop=mz;
-#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
-#pragma omp parallel for
-#endif
   for(int kx=xstart; kx < xstop; ++kx) {
     for(int ky=ystart; ky < ystop; ++ky) {
       for(int kz=0; kz < zstop; ++kz) {
@@ -112,9 +103,6 @@ void directconvhT::convolve(Complex *h, Complex *e, Complex *f,
 {
   int stop=m;
   int start=1-m;
-#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
-#pragma omp parallel for
-#endif
   for(int k=0; k < stop; ++k) {
     Complex sum=0.0;
     for(int p=start; p < stop; ++p) {
@@ -145,9 +133,6 @@ void directconvhT2::convolve(Complex *h, Complex *e, Complex *f,
   int xstop=mx;
   int ystop=my;
   int ystart=1-(int) my;
-#if (!defined FFTWPP_SINGLE_THREAD) && defined _OPENMP
-#pragma omp parallel for
-#endif
   for(int kx=xstart; kx < xstop; ++kx) {
     for(int ky=0; ky < ystop; ++ky) {
       Complex sum=0.0;
