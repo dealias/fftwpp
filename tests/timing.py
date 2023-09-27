@@ -152,7 +152,7 @@ def max_m(p, RAM, runtype):
 
 def default_outdir(p,T,I):
     outdir=""
-    if p == "cconv" or p == "hybridconv":
+    if p == "cconv" or p == "hybridconv" or p == "directTest":
         outdir = "timings1"
     if p == "cconv2" or p == "hybridconv2":
         outdir = "timings2"
@@ -309,6 +309,7 @@ def main(argv):
     hermitian = False
     real = False
     ternary = False
+    direct = False
 
     dim2routines=["cconv2","conv2","rconv2","hybridconv2","hybridconvh2","hybridconvr2"]
     dim3routines=["cconv3","conv3","hybridconv3","hybridconvh3"]
@@ -317,6 +318,10 @@ def main(argv):
 
     if p in dim3routines:
         dimension=3
+
+    if p == "directTest":
+        direct = True
+        runtype="direct"
 
     if p == "cconv":
         if(runtype == "pruned"):
@@ -398,6 +403,8 @@ def main(argv):
                 rname = "Hybrid"
                 #if runtype == "explicit":
                 #    rname="explicit"
+            elif direct:
+                rname="Direct"
             else:
                 if runtype == "implicit":
                     rname = "Implicit"
@@ -454,7 +461,7 @@ def main(argv):
             print(path + str(p), "does not exist!")
             sys.exit(1)
 
-        if not hybrid and not "fft" in p:
+        if not hybrid and not direct and not "fft" in p:
             if((runtype == "explicit" or runtype == "explicito") and not real):
                 cmd.append("-e")
 
@@ -619,6 +626,8 @@ def main(argv):
                         mcmd += ["-m"+str(ceilpow2(M)),"-I1"]
                     elif runtype == "explicito":
                         mcmd += ["-m"+str(ceilpow2(M)),"-I0"]
+                elif direct:
+                    mcmd=cmd+["-L"+str(L)]
                 else:
                     mcmd=cmd+["-m" + str(m)]
 
