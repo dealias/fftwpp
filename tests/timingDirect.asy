@@ -126,10 +126,6 @@ legendlinelength=0.6cm;
 legendmargin=4;
 attach(legend(),point(NW),15SE+1N);
 
-real mean(real[] a){return sum(a)/a.length;};
-if(expl)
-  write("speedup="+(string)(mean(e)/mean(h)));
-
 if(!settings.xasy) {
   shipout(dir);
   currentpicture.erase();
