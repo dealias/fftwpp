@@ -71,7 +71,7 @@ void optionsHybrid(int argc, char *argv[], bool fft)
   };
 
   for (;;) {
-    int c=getopt_long_only(argc,argv,"hC:D:I:K:L:M:ctEORS:T:m:u",
+    int c=getopt_long_only(argc,argv,"ahC:D:I:K:L:M:ctEORS:T:m:u",
                            long_options,&option_index);
 
     if (c == -1) break;
@@ -178,6 +178,9 @@ void optionsHybrid(int argc, char *argv[], bool fft)
       case THRESHOLD:
         threshold=Atoi(optarg,0);
         parallel::lastThreads=0;
+        break;
+      case 'a':
+        accuracy=true;
         break;
       case 'c':
         Centered=true;

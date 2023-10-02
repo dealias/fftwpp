@@ -163,6 +163,7 @@ inline void usageGather()
 inline void usageHybrid(bool fft=false)
 {
   std::cerr << "Options: " << std::endl;
+  std::cerr << "-a\t\t accuracy test" << std::endl;
   std::cerr << "-c\t\t use centered tranforms (if possible)" << std::endl;
   std::cerr << "-h\t\t help" << std::endl;
   std::cerr << "-m n\t\t use subtransform size n" << std::endl;

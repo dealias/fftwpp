@@ -27,6 +27,7 @@ bool Centered=false;
 bool normalized=true;
 bool Tforced=false;
 bool showRoutines=false;
+bool accuracy=false;
 
 #ifdef __SSE2__
 const union uvec sse2_pm={

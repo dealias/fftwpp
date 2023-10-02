@@ -9,6 +9,10 @@ using namespace utils;
 using namespace Array;
 using namespace fftwpp;
 
+// Constants used for initialization and testing.
+const Complex iF(sqrt(3.0),sqrt(7.0));
+const Complex iG(sqrt(5.0),sqrt(11.0));
+
 size_t A=2; // number of inputs
 size_t B=1; // number of outputs
 
@@ -27,7 +31,9 @@ int main(int argc, char *argv[])
   cout << "L=" << L << endl;
   cout << "M=" << M << endl;
 
-  if(Output || testError)
+  bool single=Output || testError || accuracy;
+
+  if(single)
     K=0;
   if(K == 0) minCount=1;
   cout << "K=" << K << endl << endl;
@@ -40,14 +46,27 @@ int main(int argc, char *argv[])
   Convolution Convolve(fft);
 
   Complex **f=ComplexAlign(max(A,B),L);
-  for(size_t a=0; a < A; ++a) {
-    Complex *fa=f[a];
-    for(size_t j=0; j < L; ++j)
-      fa[j]=Output || testError ? Complex(j,(1.0+a)*j+1) : 0.0;
+  if(accuracy) {
+    for(size_t j=0; j < L; ++j) {
+      Complex factor=expi(j);
+      f[0][j]=iF*factor;
+      f[1][j]=iG*factor;
+    }
+  } else {
+    for(size_t a=0; a < A; ++a) {
+      Complex *fa=f[a];
+      for(size_t j=0; j < L; ++j)
+        fa[j]=Output || testError ? Complex(j,(1.0+a)*j+1) : 0.0;
+    }
   }
 
   Complex *h=NULL;
-  if(testError) {
+  if(accuracy) {
+    h=ComplexAlign(L);
+    // Exact solution for test case with two inputs
+    for(size_t j=0; j < L; ++j)
+      h[j]=iF*iG*(j+1)*expi(j);
+  } else if(testError) {
     h=ComplexAlign(L);
     directconv<Complex> C(L);
     if(Centered)
@@ -56,7 +75,7 @@ int main(int argc, char *argv[])
       C.convolve(h,f[0],f[1]);
   }
 
-  if(!Output && !testError)
+  if(!single)
       Convolve.convolve(f);
 
   double sum=0.0;
@@ -80,17 +99,17 @@ int main(int argc, char *argv[])
   cout << endl;
 
   if(Output) {
-    if(testError)
+    if(testError || accuracy)
       cout << "Hybrid:" << endl;
     for(size_t b=0; b < B; ++b)
       for(size_t j=0; j < L; ++j)
         cout << f[b][j] << endl;
   }
 
-  if(testError) {
+  if(testError || accuracy) {
     if(Output) {
       cout << endl;
-      cout << "Direct:" << endl;
+      cout << (accuracy ? "Exact" : "Direct:") << endl;
       for(size_t j=0; j < L; ++j)
         cout << h[j] << endl;
       cout << endl;
@@ -106,7 +125,8 @@ int main(int argc, char *argv[])
       norm += abs2(hj);
     }
     double relError=sqrt(err/norm);
-    cout << "Error: "<< relError << endl;
+    if(accuracy)
+      cout << "error: "<< relError << endl;
     deleteAlign(h);
   }
 

@@ -49,6 +49,7 @@ extern bool Centered;
 extern bool normalized;
 extern bool Tforced;
 extern bool showRoutines;
+extern bool accuracy;
 
 size_t nextfftsize(size_t m);
 
