@@ -623,9 +623,9 @@ def main(argv):
                 if hybrid:
                     mcmd=cmd+["-L"+str(L)]+["-M"+str(M)]
                     if runtype == "explicit":
-                        mcmd += ["-m"+str(ceilpow2(M)),"-I1"]
+                        mcmd += ["-m"+str(M),"-I1"]
                     elif runtype == "explicito":
-                        mcmd += ["-m"+str(ceilpow2(M)),"-I0"]
+                        mcmd += ["-m"+str(M),"-I0"]
                 elif direct:
                     mcmd=cmd+["-L"+str(L)]
                 else:

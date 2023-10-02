@@ -5,15 +5,13 @@ barfactor=10;
 bool drawerrorbars=true;
 drawerrorbars=false;
 
-real[] me,e,le,he;
-real[] mo,o,lo,ho;
-real[] mi,i,li,hi;
-real[] mh,h,lh,hh;
-real[] mp,p,lp,hp;
+real[] me,e;
+real[] mo,o;
+real[] mD,D;
 
 bool explicito=false;
 string base,dir;
-bool title=true;
+bool title=false;
 
 usersetting();
 
@@ -39,7 +37,8 @@ if(find(dir,"3-") >= 0) d=3;
 file fin=input(base+"/"+dir+"/direct").line();
 real[][] a=fin.dimension(0,0);
 a=transpose(sort(a));
-me=a[0]; e=a[1];// le=a[2]; he=a[3];
+mD=a[0]; D=a[1];// le=a[2]; he=a[3];
+
 
 if(expl) {
   file fin=input(base+"/"+dir+"/explicit").line();
@@ -48,16 +47,15 @@ if(expl) {
   me=a[0]; e=a[1];// le=a[2]; he=a[3];
 }
 
-if(d == 1 && false) {
-  file fin=input(base+"/"+dir+"/explicito").line();
-  explicito=!error(fin);
-  if(explicito) {
-    real[][] a=fin.dimension(0,0);
-    a=transpose(sort(a));
-    mo=a[0]; o=a[1];// lo=a[2]; ho=a[3];
-  }
+/*
+file fin=input(base+"/"+dir+"/explicito").line();
+explicito=!error(fin);
+if(explicito) {
+  real[][] a=fin.dimension(0,0);
+  a=transpose(sort(a));
+  mo=a[0]; o=a[1];// lo=a[2]; ho=a[3];
 }
-
+*/
 
 
 monoPen[0]=dashed;
@@ -80,38 +78,26 @@ real log2=log(2);
 real[] f(real[] m) {return log2/(1e-9*m*log(m));}
 real[] g(real[] x) {return x^(1/d);}
 
-draw(graph(me,e,e > 0),Pentype(0),Label("direct",Pen(0)+Lp),mark0);
+real[] nD=f(mD);
+mD=g(mD);
+D *= nD;
+draw(graph(mD,D,D > 0),Pentype(0),Label("direct",Pen(0)+Lp),mark0);
 
 if(expl) {
-  // error bars:
   real[] ne=f(me);
   me=g(me);
   e *= ne;
-  //he *= ne;
-  //le *= ne;
-  if(drawerrorbars)
-    errorbars(me,e,0*me,he-e,0*me,e-le,Pen(0));
-  draw(graph(me,e,e > 0),Pentype(0),Label("explicit"+(explicito ? " (IP)" : ""),Pen(0)+Lp),mark0);
+  draw(graph(me,e,e > 0),Pentype(1),Label("explicit"+(explicito ? " (IP)" : ""),Pen(1)+Lp),mark1);
 
 }
-
-if(explicito && false) {
+/*
+if(explicito) {
   real[] no=f(mo);
   mo=g(mo);
   o *= no;
-  //ho *= no;
-  //lo *= no;
-  if(drawerrorbars)
-    errorbars(mo,o,0*mo,ho-o,0*mo,o-lo,Pen(3));
-  draw(graph(mo,o,o > 0),Pentype(3),Label("explicit (OP)",Pen(3)+Lp),mark3);
+  draw(graph(mo,o,o > 0),Pentype(2),Label("explicit (OP)",Pen(2)+Lp),mark2);
 }
-real[] nh=f(mh);
-mh=g(mh);
-h *= nh;
-//hh *= nh;
-//lh *= nh;
-if(drawerrorbars)
-  errorbars(mh,h,0*mh,hh-h,0*mh,h-lh,Pen(1));
+*/
 
 if(title)
   label(dir,point(N),N);
