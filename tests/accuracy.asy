@@ -24,9 +24,9 @@ surface s=surface(f,(0,0),(x.length-1,y.length-1),x.length-1,y.length-1);
 real[] level=uniform(min(z)*(1-sqrtEpsilon),max(z)*(1+sqrtEpsilon),4);
 
 s.colors(palette(s.map(new real(triple v) {return find(level >= v.z);}),
-                 Rainbow()));
+                 Grayscale()));
 
-draw(s,meshpen=thick());
+draw(s,meshpen=thick(),nolight);
 
 
 /*
