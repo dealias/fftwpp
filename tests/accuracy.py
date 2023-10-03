@@ -18,7 +18,9 @@ def main():
   divisors=[2**(a-1-n) for n in range(0,a)]
   data.write(" ".join(str(1/d) for d in divisors))
   data.write(" 2\n")
-  for L in Ls:
+  for i in range(len(Ls)):
+    print(f"i={i+a}")
+    L=Ls[i]
     for d in divisors:
       m=max(L//d,2)
       err=findError(m,L)

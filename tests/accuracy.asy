@@ -39,7 +39,7 @@ triple m=currentpicture.userMin();
 triple M=currentpicture.userMax();
 triple target=0.5*(m+M);
 
-xaxis3("$\log_2(L)$",Bounds,InTicks(endlabel=false));
+xaxis3("$\log_2(L)$",Bounds,InTicks);
 yaxis3("$\log_2(m/L)$",Bounds,InTicks);
 zaxis3(rotate(90)*"$\hbox{error}(L,m) \times 10^{16}$",Bounds,InTicks);
 
