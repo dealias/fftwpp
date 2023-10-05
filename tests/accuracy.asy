@@ -32,3 +32,5 @@ triple target=0.5*(m+M);
 xaxis3(Label("$L$",deepgreen),Bounds,InTicks(Label(deepgreen)));
 yaxis3(Label("$m/L$",blue),Bounds,InTicks(Label(blue),beginlabel=false));
 zaxis3(rotate(90)*"$\hbox{error}(L,m) \times 10^{16}$",Bounds,InTicks);
+
+currentprojection.target=(m+M)/2;
