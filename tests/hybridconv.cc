@@ -125,8 +125,7 @@ int main(int argc, char *argv[])
       norm += abs2(hj);
     }
     double relError=sqrt(err/norm);
-    if(accuracy)
-      cout << "error: "<< relError << endl;
+    cout << "Error: "<< relError << endl;
     deleteAlign(h);
   }
 
