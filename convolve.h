@@ -472,6 +472,8 @@ public:
 typedef double timer(fftBase *fft, double& threshold);
 timer timePad;
 
+static const struct centeredConstructor {} noOptimize={};
+
 class fftPad : public fftBase {
 protected:
   fft1d *fftm1;
@@ -517,8 +519,8 @@ public:
   // Compute C ffts of length L with stride S >= C and distance 1
   // padded to at least M
   fftPad(size_t L, size_t M, Application& app,
-         size_t C=1, size_t S=0, bool Explicit=false, bool centered=false) :
-    fftBase(L,M,app,C,S,centered) {
+         size_t C=1, size_t S=0, bool Explicit=false) :
+    fftBase(L,M,app,C,S) {
     Opt opt=Opt(L,M,app,C,this->S,Explicit);
     m=opt.m;
     D=opt.D;
@@ -531,13 +533,22 @@ public:
 
   // Compute an fft padded to N=m*q >= M >= L
   fftPad(size_t L, size_t M, Application &app, size_t C, size_t S,
-         size_t m, size_t D, bool inplace, bool centered=false) :
-    fftBase(L,M,app,C,S,m,D,inplace,centered) {
+         size_t m, size_t D, bool inplace) :
+    fftBase(L,M,app,C,S,m,D,inplace) {
     Opt opt;
     parameters(L,M,m,centered,p,n,q);
     if(q > 1 && !opt.valid(m,p,q,n,D,this->S)) invalid();
     init();
   }
+
+  // Centered entry points: defer optimization
+  fftPad(size_t L, size_t M, Application &app, size_t C, size_t S,
+         centeredConstructor) :
+    fftBase(L,M,app,C,S,true) {}
+
+  fftPad(size_t L, size_t M, Application &app, size_t C, size_t S,
+         size_t m, size_t D, bool inplace, centeredConstructor) :
+    fftBase(L,M,app,C,S,m,D,inplace,true) {}
 
   ~fftPad();
 
@@ -621,7 +632,7 @@ public:
   // Compute C ffts of length L and distance 1 padded to at least M
   fftPadCentered(size_t L, size_t M, Application& app,
                  size_t C=1, size_t S=0, bool Explicit=false) :
-    fftPad(L,M,app,C,S,Explicit,true) {
+    fftPad(L,M,app,C,S,noOptimize) {
     Opt opt=Opt(L,M,app,C,this->S,Explicit);
     m=opt.m;
     D=opt.D;
@@ -636,7 +647,7 @@ public:
   // Compute an fft padded to N=m*q >= M >= L
   fftPadCentered(size_t L, size_t M, Application &app, size_t C, size_t S,
                  size_t m, size_t D, bool inplace) :
-    fftPad(L,M,app,C,S,m,D,inplace,true) {
+    fftPad(L,M,app,C,S,m,D,inplace,noOptimize) {
     Opt opt;
     parameters(L,M,m,centered,p,n,q);
     if(q > 1 && !opt.valid(m,p,q,n,D,this->S)) invalid();
