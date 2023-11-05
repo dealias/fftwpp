@@ -134,7 +134,7 @@ if(incremental) {
   b *= nb;
   //he *= ne;
   //le *= ne;
-  draw(graph(mb,b,b > 0),Pentype(3),Label("Optimal explicit",Pen(3)+Lp),mark0);
+  draw(graph(mb,b,b > 0),Pentype(3),Label("optimal explicit",Pen(3)+Lp),mark0);
 }
 
 if(explicito) {
