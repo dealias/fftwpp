@@ -17,28 +17,20 @@ def ceilquotient(a,b):
 def nextfftsize(m):
   N=ceilpow2(m)
   if m == N:
-    return m
+    return N
   ni=1
-  i=0
-  while ni < 7*m:
-    ni=7**i
-    i+=1
+  while ni < N:
     nj=ni
     j=0
-    while nj < 5*m:
-      nj=ni*5**j
-      j+=1
+    while nj < N:
       nk=nj
-      k=0
-      while nk < 3*m:
-        nk=nj*3**k
-        k+=1
+      while nk < N:
+        c+=1
         N=min(N,nk*ceilpow2(ceilquotient(m,nk)))
-      if N == m:
-        return N
+        nk*=3
+      nj*=5
+    ni*=7
   return N
-
-
 
 def usecmd(cmd):
   vp = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
