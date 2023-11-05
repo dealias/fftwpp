@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
         N0=atoi(optarg);
         break;
       case 'N':
-        nx=atoi(optarg);
+        N=atoi(optarg);
         break;
       case 'T':
         fftw::maxthreads=max(atoi(optarg),1);
@@ -153,7 +153,12 @@ int main(int argc, char *argv[])
   if(my == 0) my=mx;
   if(mz == 0) mz=mx;
 
-  nz=ny=nx;
+  if(N == 0) {
+    nx=cpadding(mx);
+    ny=cpadding(my);
+    nz=cpadding(mz);
+  } else
+    nx=ny=nz=N;
 
   cout << "nx=" << nx << ", ny=" << ny << ", nz=" << ny << endl;
   cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
