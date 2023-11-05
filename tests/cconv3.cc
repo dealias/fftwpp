@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptA:B:K:Om:x:y:z:n:T:uS:");
+    int c = getopt(argc,argv,"hdeiptA:B:K:Om:x:y:z:n:T:uS:N:");
     if (c == -1) break;
 
     switch (c) {
@@ -133,6 +133,9 @@ int main(int argc, char *argv[])
       case 'n':
         N0=atoi(optarg);
         break;
+      case 'N':
+        nx=atoi(optarg);
+        break;
       case 'T':
         fftw::maxthreads=max(atoi(optarg),1);
         break;
@@ -150,9 +153,7 @@ int main(int argc, char *argv[])
   if(my == 0) my=mx;
   if(mz == 0) mz=mx;
 
-  nx=cpadding(mx);
-  ny=cpadding(my);
-  nz=cpadding(mz);
+  nz=ny=nx;
 
   cout << "nx=" << nx << ", ny=" << ny << ", nz=" << ny << endl;
   cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
