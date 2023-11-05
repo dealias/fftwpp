@@ -1,7 +1,30 @@
 import collections
+import subprocess
+
+
+def ceilpow2(n):
+  n-=1
+  n |= n >> 1
+  n |= n >> 2
+  n |= n >> 4
+  n |= n >> 8
+  n |= n >> 16
+  n |= n >> 32
+  return n+1
 
 def ceilquotient(a,b):
   return -(a//-b)
+
+def usecmd(cmd):
+  vp = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
+  vp.wait()
+  prc = vp.returncode
+  output = ""
+
+  if prc == 0:
+    out, _ = vp.communicate()
+    output = out.rstrip().decode()
+  return output
 
 class ParameterCollection():
 # Holds a collection of Params for a given program

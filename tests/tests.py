@@ -4,9 +4,8 @@ import subprocess
 import re
 import argparse
 import sys
-from HybridParameters import *
+from utils import *
 import copy
-
 
 def main():
   args=getArgs()
@@ -608,14 +607,7 @@ def checkCase(program, vals, T, options):
   check(program, cmd, T, options)
 
 def check(program, cmd, T, options):
-  vp = subprocess.Popen(cmd.list, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
-  vp.wait()
-  prc = vp.returncode
-  output = ""
-
-  if prc == 0:
-    out, _ = vp.communicate()
-    output = out.rstrip().decode()
+  output=usecmd(cmd.list)
 
   if options.printEverything:
     print(f"{cmd.case}\n{output}\n")
@@ -640,6 +632,17 @@ def check(program, cmd, T, options):
       if testPassed and not program.real:
         # Forward error is not yet supported in real case
         errorSearch(program,output,cmd,options,routines,r"Forward Error")
+
+def usecmd(cmd):
+  vp = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
+  vp.wait()
+  prc = vp.returncode
+  output = ""
+
+  if prc == 0:
+    out, _ = vp.communicate()
+    output = out.rstrip().decode()
+  return output
 
 def errorSearch(program, output, cmd, options, routines, msg):
   try:
@@ -742,16 +745,6 @@ def findRoutines(output):
     return params
   except:
     return "Could not find routines used."
-
-def ceilpow2(n):
-  n-=1
-  n |= n >> 1;
-  n |= n >> 2;
-  n |= n >> 4;
-  n |= n >> 8;
-  n |= n >> 16;
-  n |= n >> 32;
-  return n+1;
 
 if __name__ == "__main__":
   main()
