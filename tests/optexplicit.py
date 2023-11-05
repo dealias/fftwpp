@@ -30,7 +30,6 @@ def main():
       cmdmN=cmd+[f"-m{m}",f"-N{N}"]
       output=usecmd(cmdmN)
       outlines = output.split('\n')
-
       itline = len(outlines)-1
       while itline >= 0:
           line = outlines[itline]
@@ -39,7 +38,10 @@ def main():
               timeSearch=re.search(r"((\d|\.)+)$",outlines[itline+1])
               if timeSearch is not None:
                 time=timeSearch[0]
-              data.append(f"{m}\t{N}\t{time}\n")
+              dataline=f"{m}\t{N}\t{time}\n"
+              data.append(dataline)
+              if args.v or True:
+                print(dataline)
               break
           itline -= 1
     print(f"Done m={m}")
@@ -55,12 +57,15 @@ def main():
       file.write(d)
 
 def getArgs():
-  parser = argparse.ArgumentParser(description="Perform timing tests on optimal cconv3 sizes.")
+  parser = argparse.ArgumentParser(description="Perform timing tests on cconv3 sizes.")
   parser.add_argument("-e", help="Erase previously stored data.",
                       action="store_true")
   parser.add_argument("-a",help="Start.", default=65, type=int)
   parser.add_argument("-b",help="End.", default=128, type=int)
-  parser.add_argument("-K",help="Number of seconds for each timing.", default=5.0, type=float)
+  parser.add_argument("-K",help="Number of seconds for each timing.",
+    default=5.0, type=float)
+  parser.add_argument("-v", help="Verbose output.",
+                      action="store_true")
   return parser.parse_args()
 
 if __name__ == "__main__":
