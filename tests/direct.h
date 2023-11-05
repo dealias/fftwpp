@@ -112,7 +112,7 @@ public:
                      size_t Sx=0, size_t Sy=0) :
     mx(mx), my(my), mz(mz), myz(my*mz) {
     this->Sy=Sy ? Sy : mz;
-    this->Sx=Sx ? Sx : my*Sy;
+    this->Sx=Sx ? Sx : my*this->Sy;
   }
 
   void convolve(T *h, T *f, T *g)
@@ -145,7 +145,7 @@ public:
                       size_t Sx=0, size_t Sy=0) :
     mx(mx), my(my), mz(mz), xcompact(xcompact), ycompact(ycompact) {
     this->Sy=Sy ? Sy : mz;
-    this->Sx=Sx ? Sx : (2*my-ycompact)*Sy;
+    this->Sx=Sx ? Sx : (2*my-ycompact)*this->Sy;
   }
 
   void convolve(Complex *h, Complex *f, Complex *g, bool symmetrize=true);
