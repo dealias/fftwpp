@@ -10,7 +10,7 @@ def main():
   args=getArgs()
   cmd=["./cconv3","-e","-T1", f"-K{args.K}"]
 
-  mstart=128#args.a
+  mstart=args.a
   mstop=args.b
   Nstart=2*mstart-1
   N=nextfftsize(Nstart)
