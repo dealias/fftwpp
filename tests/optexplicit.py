@@ -3,12 +3,16 @@
 # a timing script for FFTs and convolutions using OpenMP
 
 import re
+import os
 import argparse
 from utils import ceilpow2, usecmd, nextfftsize
 
 def main():
   args=getArgs()
   cmd=["./cconv3","-e","-T1", f"-K{args.K}"]
+
+  if os.getenv("TASKSET") != None:
+    cmd=["taskset","-c","0"]+cmd
 
   mstart=args.a
   mstop=args.b
