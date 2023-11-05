@@ -1,7 +1,6 @@
 import collections
 import subprocess
 
-
 def ceilpow2(n):
   n-=1
   n |= n >> 1
@@ -14,6 +13,32 @@ def ceilpow2(n):
 
 def ceilquotient(a,b):
   return -(a//-b)
+
+def nextfftsize(m):
+  N=ceilpow2(m)
+  if m == N:
+    return m
+  ni=1
+  i=0
+  while ni < 7*m:
+    ni=7**i
+    i+=1
+    nj=ni
+    j=0
+    while nj < 5*m:
+      nj=ni*5**j
+      j+=1
+      nk=nj
+      k=0
+      while nk < 3*m:
+        nk=nj*3**k
+        k+=1
+        N=min(N,nk*ceilpow2(ceilquotient(m,nk)))
+      if N == m:
+        return N
+  return N
+
+
 
 def usecmd(cmd):
   vp = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
