@@ -12,7 +12,6 @@ def main():
   with open("optexplicit.dat","r") as file:
     out=file.read()
   lines=out.split('\n')[:-1]
-  print(out)
   best=[[eval(i) for i in lines[2].split('\t')]]
 
   for k in range(3,len(lines)):
@@ -34,7 +33,7 @@ def main():
   with open("timings3-T1I1/explicitbest","w") as file:
     file.write(f"{lines[0]}\n")
     for b in best:
-      file.write(f"{b[0]}\t{b[2]}\n")
+      file.write(f"{b[0]**3}\t{b[2]}\n")
 
 def getArgs():
   parser = argparse.ArgumentParser(description="Find optimal cconv3 FFT sizes.")

@@ -6,6 +6,7 @@ bool drawerrorbars=true;
 drawerrorbars=false;
 
 real[] me,e,le,he;
+real[] mb,b;
 real[] mo,o,lo,ho;
 real[] mi,i,li,hi;
 real[] mh,h,lh,hh;
@@ -42,7 +43,12 @@ if(expl) {
   me=a[0]; e=a[1];// le=a[2]; he=a[3];
 }
 
-
+if(incremental) {
+  file fin=input(base+"/"+dir+"/explicitbest").line();
+  real[][] a=fin.dimension(0,0);
+  a=transpose(sort(a));
+  mb=a[0]; b=a[1];// le=a[2]; he=a[3];
+}
 
 if(d == 1) {
   file fin=input(base+"/"+dir+"/explicito").line();
@@ -106,7 +112,7 @@ if(expl) {
   //le *= ne;
   if(drawerrorbars)
     errorbars(me,e,0*me,he-e,0*me,e-le,Pen(0));
-  draw(graph(me,e,e > 0),Pentype(0),Label("explicit"+(explicito ? " (IP)" : ""),Pen(0)+Lp),mark0);
+  //draw(graph(me,e,e > 0),Pentype(0),Label("explicit"+(explicito ? " (IP)" : ""),Pen(0)+Lp),mark0);
 
 
   if(pruned) {
@@ -119,6 +125,16 @@ if(expl) {
       errorbars(mp,p,0*mp,hp-p,0*mp,p-lp,Pen(3));
     draw(graph(mp,p,p > 0),Pentype(3)+Dotted,Label(prunelabel,Pen(3)+Lp),mark3);
   }
+}
+
+if(incremental) {
+  // error bars:
+  real[] nb=f(mb);
+  mb=g(mb);
+  b *= nb;
+  //he *= ne;
+  //le *= ne;
+  draw(graph(mb,b,b > 0),Pentype(3),Label("Optimal explicit",Pen(3)+Lp),mark0);
 }
 
 if(explicito) {
@@ -165,7 +181,7 @@ yaxis("time/($"+sd+"L"+D+"\log_2 L$) (ns)",LeftRight,RightTicks("%#.1f"));
 
 legendlinelength=0.6cm;
 legendmargin=4;
-attach(legend(),point(NW),15SE+1N);
+attach(legend(),point(NE),15SW+1N);
 
 real mean(real[] a){return sum(a)/a.length;};
 if(expl)
