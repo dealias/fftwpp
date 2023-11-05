@@ -42,6 +42,7 @@ def main():
               data.append(f"{m}\t{N}\t{time}\n")
               break
           itline -= 1
+    print(f"Done m={m}")
 
   if args.e:
     with open("optexplicit.dat","w") as file:
