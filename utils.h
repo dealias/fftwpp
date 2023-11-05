@@ -232,7 +232,7 @@ inline size_t padding(size_t n)
 
 inline size_t cpadding(size_t m)
 {
-  return padding(2*m);
+  return padding(2*m-1);
 }
 
 inline size_t hpadding(size_t m)
