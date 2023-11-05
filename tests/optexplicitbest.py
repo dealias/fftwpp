@@ -26,11 +26,15 @@ def main():
         best[-1][2]=t
     except:
       pass
-  print(best)
-  with open("optexplicitbest.dat","w") as file:
-    file.write(f"{lines[0]}\n{lines[1]}\n")
+  try:
+    os.makedirs("timings3-T1I1")
+  except:
+      pass
+
+  with open("timings3-T1I1/explicitbest","w") as file:
+    file.write(f"{lines[0]}\n")
     for b in best:
-      file.write(f"{b[0]}\t{b[1]}\t{b[2]}\n")
+      file.write(f"{b[0]}\t{b[2]}\n")
 
 def getArgs():
   parser = argparse.ArgumentParser(description="Find optimal cconv3 FFT sizes.")
