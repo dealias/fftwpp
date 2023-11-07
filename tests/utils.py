@@ -21,11 +21,9 @@ def nextfftsize(m):
   ni=1
   while ni < N:
     nj=ni
-    j=0
     while nj < N:
       nk=nj
       while nk < N:
-        c+=1
         N=min(N,nk*ceilpow2(ceilquotient(m,nk)))
         nk*=3
       nj*=5
