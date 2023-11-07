@@ -128,21 +128,13 @@ void multcorrelation(Complex **F, size_t n, Indices *indices,
 // m of the form 2^a 3^b 5^c 7^d for some nonnegative integers a, b, c, and d.
 size_t nextfftsize(size_t m)
 {
-  if(m == ceilpow2(m))
+  size_t N=ceilpow2(m);
+  if(m == N)
     return m;
-  size_t N=SIZE_MAX;
-  size_t ni=1;
-  for(size_t i=0; ni < 7*m; ni=pow(7,i),++i) {
-    size_t nj=ni;
-    for(size_t j=0; nj < 5*m; nj=ni*pow(5,j),++j) {
-      size_t nk=nj;
-      for(size_t k=0; nk < 3*m; nk=nj*pow(3,k),++k) {
+  for(size_t ni=1; ni < N; ni *= 7)
+    for(size_t nj=ni; nj < N; nj *= 5)
+      for(size_t nk=nj; nk < N; nk *= 3)
         N=min(N,nk*ceilpow2(ceilquotient(m,nk)));
-      }
-      if(N == m)
-        return N;
-    }
-  }
   return N;
 }
 
