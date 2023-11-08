@@ -24,9 +24,21 @@ if(dir == "") dir=getstring("directory","timings1-T1");
 bool incremental=find(dir,"I1") >= 0;
 bool realConv=find(dir,"timingsr") >= 0;
 
-size(incremental || realConv ? 370.4pt : 181.5pt,185,IgnoreAspect);
+size(incremental || realConv ? 370.4pt : 181.5pt,
+     incremental ? 215 : 185,IgnoreAspect);
 
-scale(incremental ? Linear : Log,Linear);
+scaleT yscale;
+
+if(incremental) {
+  real log2(real x) {static real log2=log(2); return log(x)/log2;}
+  real pow2(real x) {return 2^x;}
+
+  yscale=scaleT(log2,pow2,logarithmic=true);
+  scale(Linear,yscale);
+} else
+  yscale=Linear;
+
+scale(incremental ? Linear : Log,yscale);
 
 string prunelabel="$y$-pruned";
 
@@ -134,7 +146,7 @@ if(incremental) {
   b *= nb;
   //he *= ne;
   //le *= ne;
-  draw(graph(mb,b,b > 0),Pentype(3),Label("optimal explicit",Pen(3)+Lp),mark0);
+  draw(graph(mb,b,b > 0),Pentype(3),Label("optimal explicit",Pen(3)+Lp),mark3);
 }
 
 if(explicito) {
