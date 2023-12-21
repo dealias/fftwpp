@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 
   vector<double> T;
 
-  Application appx(A,B,multNone,fftw::maxthreads,mx,Dx,Ix);
+  Application appx(A,B,multNone,fftw::maxthreads,true,mx,Dx,Ix);
   fftPadCentered fftx(Lx,Mx,appx,Sy == Hz ? Ly*Hz : Hz,Sx);
   Application appy(A,B,multNone,appx,my,Dy,Iy);
   fftPadCentered ffty(Ly,My,appy,Hz,Sy);

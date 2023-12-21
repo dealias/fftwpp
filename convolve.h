@@ -101,22 +101,25 @@ public:
   size_t A;
   size_t B;
   multiplier *mult;
+  size_t maxthreads;
+  bool overwrite;
   size_t m;
   size_t D;
   ptrdiff_t I;
-  size_t maxthreads;
 
   Application(size_t A, size_t B, multiplier *mult,
-              size_t threads=fftw::maxthreads,
+              size_t threads=fftw::maxthreads, bool overwrite=true,
               size_t m=0, size_t D=0, ptrdiff_t I=-1) :
-    ThreadBase(threads), A(A), B(B), mult(mult), m(m), D(D), I(I)
+    ThreadBase(threads), A(A), B(B), mult(mult), overwrite(overwrite),
+    m(m), D(D), I(I)
   {
     maxthreads=threads;
   }
 
   Application(size_t A, size_t B, multiplier *mult, Application &parent,
               size_t m=0, size_t D=0, ptrdiff_t I=-1) :
-    ThreadBase(1), A(A), B(B), mult(mult), m(m), D(D), I(I)
+    ThreadBase(1), A(A), B(B), mult(mult), overwrite(parent.overwrite),
+    m(m), D(D), I(I)
   {
     maxthreads=parent.maxthreads;
   }
@@ -405,7 +408,7 @@ public:
   }
 
   bool loop2() {
-    return nloops() == 2 && app.A > app.B && !Overwrite();
+    return nloops() == 2 && app.A > app.B && !overwrite;
   }
 
   // Input data length
@@ -454,10 +457,6 @@ public:
 
   size_t repad() {
     return !inplace && L < m;
-  }
-
-  bool Overwrite() {
-    return overwrite && app.A >= app.B;
   }
 
   virtual double time()=0;
@@ -1438,7 +1437,7 @@ public:
     for(size_t t=0; t < threads; ++t)
       convolvey[t]->indices.copy(indices,1);
 
-    if(fftx->Overwrite()) {
+    if(fftx->overwrite) {
       forward(f,F,0,0,A,offset);
       size_t final=fftx->n-1;
       for(size_t r=0; r < final; ++r)
@@ -1731,7 +1730,7 @@ public:
     for(size_t t=0; t < threads; ++t)
       convolveyz[t]->indices.copy(indices,2);
 
-    if(fftx->Overwrite()) {
+    if(fftx->overwrite) {
       forward(f,F,0,0,A,offset);
       size_t final=fftx->n-1;
       for(size_t r=0; r < final; ++r)

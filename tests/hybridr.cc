@@ -23,8 +23,7 @@ int main(int argc, char *argv[])
 
   if(S == 0) S=C;
 
-// Disable overwrite optimization for these tests.
-  Application app(1,2,multNone,fftw::maxthreads,mx,Dx,Ix);
+  Application app(1,1,multNone,fftw::maxthreads,true,mx,Dx,Ix);
 
   cout << endl << "Minimal Explicit:" << endl;
   // Minimal explicit padding
@@ -70,29 +69,19 @@ int main(int argc, char *argv[])
   fft2.forward((Complex *) f,F2);
 
   fft.pad(W0);
-//  double error=0.0;
   double error2=0.0;
-//  double norm=0.0;
   double norm2=0.0;
   for(size_t r=0; r < fft.R; r += fft.increment(r)) {
     fft.forward((Complex *) f,F,r,W0);
-#if 1
     if(Output)
       cout << "r=" << r << endl;
     for(size_t k=0; k < fft.noutputs(r); ++k) {
-//      if(Output && k%fft.m == 0) cout << endl;
-
       for(size_t c=0; c < C; ++c) {
         size_t K=S*k+c;
-//        size_t i=fft.Index(r,K);
-//        error += abs2(F[K]-F2[i]);
-//        norm += abs2(F2[i]);
         if(Output)
-//          cout << i << ": " << F[K] << endl;
           cout << K << ": " << F[K] << endl;
       }
     }
-#endif
     fft.backward(F,(Complex *) h,r,W0);
   }
 
@@ -117,18 +106,6 @@ int main(int argc, char *argv[])
     cout << endl;
   }
 
-  /*
-  for(size_t r=0; r < fft.R; r += fft.increment(r)) {
-    for(size_t k=0; k < fft.noutputs(r); ++k) {
-      for(size_t c=0; c < C; ++c) {
-        size_t K=S*k+c;
-        F[K]=F2[fft.Index(r,K)];
-      }
-    }
-    fft.backward(F,(Complex *) h,r,W0);
-  }
-  */
-
   for(size_t j=0; j < L; ++j) {
     for(size_t c=0; c < C; ++c) {
       size_t J=S*j+c;
@@ -137,14 +114,9 @@ int main(int argc, char *argv[])
     }
   }
 
-//  if(norm > 0) error=sqrt(error/norm);
   if(norm2 > 0) error2=sqrt(error2/norm2);
 
-  //double eps=1e-12;
-  //if(error > eps || error2 > eps)
-  //  cerr << endl << "WARNING: " << endl;
   cout << endl;
-//  cout << "Forward Error: " << error << endl;
   cout << "Backward Error: " << error2 << endl;
 
   return 0;

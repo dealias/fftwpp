@@ -24,8 +24,8 @@ int main(int argc, char *argv[])
   cout << "L=" << L << endl;
   cout << "M=" << M << endl;
 
-// Disable overwrite optimization for these tests.
-  Application app(1,2,multNone,fftw::maxthreads,mx,Dx,Ix);
+// Disable overwrite optimization to allow indexing transformed values.
+  Application app(1,1,multNone,fftw::maxthreads,false,mx,Dx,Ix);
 
   cout << endl << "Minimal Explicit:" << endl;
   // Minimal explicit padding
@@ -138,9 +138,6 @@ int main(int argc, char *argv[])
   if(norm > 0) error=sqrt(error/norm);
   if(norm2 > 0) error2=sqrt(error2/norm2);
 
-  //double eps=1e-12;
-  //if(error > eps || error2 > eps)
-  //  cerr << endl << "WARNING: " << endl;
   cout << endl;
   cout << "Forward Error: " << error << endl;
   cout << "Backward Error: " << error2 << endl;

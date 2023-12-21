@@ -570,7 +570,8 @@ void fftPad::init()
     G=ComplexAlign(size);
     H=inplace ? G : ComplexAlign(size);
 
-    overwrite=inplace && L == p*m && n == (centered ? 3 : p+1) && D == 1;
+    overwrite=inplace && L == p*m && n == (centered ? 3 : p+1) && D == 1 &&
+      app.A >= app.B && app.overwrite;
 
     if(S == 1) {
       fftm=new mfft1d(m,1,d, 1,m, G,H,threads);
@@ -586,7 +587,7 @@ void fftPad::init()
     if(p > 2) { // Implies L > 2m
       if(!centered) overwrite=false;
       if(S == 1) {
-        if(Overwrite()) {
+        if(overwrite) {
           Forward=&fftBase::forwardInnerAll;
           Backward=&fftBase::backwardInnerAll;
           FR="forwardInnerAll";
@@ -598,7 +599,7 @@ void fftPad::init()
           BR="backwardInner";
         }
       } else {
-        if(Overwrite()) {
+        if(overwrite) {
           Forward=&fftBase::forwardInnerManyAll;
           Backward=&fftBase::backwardInnerManyAll;
           FR="forwardInnerManyAll";
@@ -637,7 +638,7 @@ void fftPad::init()
         }
 
         if(S == 1) {
-          if(Overwrite()) {
+          if(overwrite) {
             Forward=&fftBase::forward2All;
             Backward=&fftBase::backward2All;
             FR="forward2All";
@@ -649,7 +650,7 @@ void fftPad::init()
             BR="backward2";
           }
         } else {
-          if(Overwrite()) {
+          if(overwrite) {
             Forward=&fftBase::forward2ManyAll;
             Backward=&fftBase::backward2ManyAll;
             FR="forward2ManyAll";
@@ -663,7 +664,7 @@ void fftPad::init()
         }
       } else { // p == 1
         if(S == 1) {
-          if(Overwrite()) {
+          if(overwrite) {
             Forward=&fftBase::forward1All;
             Backward=&fftBase::backward1All;
             FR="forward1All";
@@ -677,7 +678,7 @@ void fftPad::init()
           if(repad())
             Pad=&fftBase::padSingle;
         } else {
-          if(Overwrite()) {
+          if(overwrite) {
             Forward=&fftBase::forward1ManyAll;
             Backward=&fftBase::backward1ManyAll;
             FR="forward1ManyAll";
@@ -7662,7 +7663,7 @@ void Convolution::convolveRaw(Complex **g)
     (*mult)(F,blocksize,&indices,threads);
     backward(F,g,0,0,B,W);
   } else {
-    if(fft->Overwrite()) {
+    if(fft->overwrite) {
       forward(g,F,0,0,A);
       size_t final=fft->n-1;
       for(size_t r=0; r < final; ++r) {
