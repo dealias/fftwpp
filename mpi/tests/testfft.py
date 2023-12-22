@@ -1,4 +1,4 @@
-#!/usr/bin/python -u
+#!/usr/bin/env python3
 
 import sys # so that we can return a value at the end.
 import time
@@ -9,7 +9,7 @@ import getopt
 def main(argv):
 
     msg = "MPI FFT unit test"
-    print msg
+    print(msg)
 
     usage = "Usage:\n"\
             "./testfft.py\n"\
@@ -20,14 +20,14 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv,"sh")
     except getopt.GetoptError:
-        print "Error in arguments"
-        print usage
+        print("Error in arguments")
+        print(usage)
         sys.exit(2)
     for opt, arg in opts:
         if opt in ("-s"):
             shortrun = True
         if opt in ("-h"):
-            print usage
+            print(usage)
             sys.exit(0)
 
     ffttestlist = []
@@ -37,7 +37,7 @@ def main(argv):
     ffttestlist.append("testfft3r.py")
 
     logfile = 'testfft.log'
-    print "Log in " + logfile + "\n"
+    print("Log in " + logfile + "\n")
     log = open(logfile, 'w')
     log.write(msg)
     log.write("\n")
@@ -50,7 +50,7 @@ def main(argv):
         ntests += 1
         if not os.path.isfile(test):
             msg = "Error: "+ pname + "not present!"
-            print msg
+            print(msg)
             log = open(logfile, 'a')
             log.write(msg + "\n")
             log.close()
@@ -76,7 +76,7 @@ def main(argv):
             if (prc == 0): # did the process succeed?
                 msg = "\tpass"
                 try:
-                    print msg
+                    print(msg)
                 except:
                     pass
                 log = open(logfile, 'a')
@@ -86,19 +86,19 @@ def main(argv):
                 nfails += 1
                 msg = "\tFAILED!"
                 try:
-                    print msg
+                    print(msg)
                 except:
                     pass
                 log = open(logfile, 'a')
                 log.write(msg + "\n")
-                log.write("stderr:\n" + err + "\n")
+                log.write("stderr:\n" + err.decode() + "\n")
                 log.close()
 
     try:
-        print "\n", nfails, "failures out of", ntests, "tests." 
+        print("\n", nfails, "failures out of", ntests, "tests.")
 
         tend = time.time()
-        print "\nElapsed time (s):", tend - tstart
+        print("\nElapsed time (s):", tend - tstart)
 
         sys.exit(nfails)
     except:

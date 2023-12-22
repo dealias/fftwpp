@@ -3,7 +3,7 @@ MPICXX=mpic++
 endif
 
 IDIR=../
-UDIR=../tests/
+UDIR=../../tests/
 
 # GNU compiler
 ifeq ($(shell $(MPICXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
@@ -24,7 +24,7 @@ ifeq ($(shell $(MPICXX) -qversion 2>&1 | head -c 3),IBM)
 CXXFLAGS= -O5 -qsmp=speculative -qtune=qp -qipa -qarch=qp
 endif
 
-CXXFLAGS += $(DEFS) -I$(IDIR) -I$(UDIR)
+CXXFLAGS += $(DEFS) -I$(IDIR) -I$(UDIR) -I../../
 
 ifneq ($(strip $(FFTW_INCLUDE_PATH)),)
 CXXFLAGS += -I$(FFTW_INCLUDE_PATH)
@@ -50,7 +50,7 @@ LDFLAGS+= -lfftw3_omp -lfftw3 -lm
 
 MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
 
-vpath %.cc ../
+vpath %.cc ../:../../
 
 FFTW=fftw++
 FILES=gather gatheryz gatherxy transpose fft2 fft3 fft2r fft3r  \

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3 
 
 import sys # so that we can return a value at the end.
 import time
@@ -6,13 +6,12 @@ from subprocess import * # so that we can run commands
 import os.path
 import getopt
 import sys
-from testutils import Print
 
 def main(argv):
 
     msg = "MPI fft unit test"
     logfile = 'unittests.log'
-    Print(msg)
+    print(msg)
 
     usage = "Usage:\n"\
             "./testtranspose.py\n"\
@@ -23,20 +22,20 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv,"sh")
     except getopt.GetoptError:
-        print "Error in arguments"
-        print usage
+        print("Error in arguments")
+        print(usage)
         sys.exit(2)
     for opt, arg in opts:
         if opt in ("-s"):
             shortrun = True
         if opt in ("-h"):
-            print usage
+            print(usage)
             sys.exit(0)
 
     if(shortrun):
-        Print("Running short tests")
+        print("Running short tests")
     else:
-        Print("Running long tests")
+        print("Running long tests")
 
     testlist = []
     testlist.append("testgather.py")
@@ -44,7 +43,7 @@ def main(argv):
     testlist.append("testfft.py")
     testlist.append("testconvolution.py")
     
-    Print("Log in " + logfile + "\n")
+    print("Log in " + logfile + "\n")
     log = open(logfile, 'w')
     log.write(msg)
     log.write("\n")
@@ -57,7 +56,7 @@ def main(argv):
         ntests += 1
         if not os.path.isfile(test):
             msg = "Error: "+ pname + "not present!"
-            Print(msg)
+            print(msg)
             log = open(logfile, 'a')
             log.write(msg + "\n")
             log.close()
@@ -78,29 +77,30 @@ def main(argv):
             log.close()
             
             DEVNULL = open(os.devnull, 'wb')
-            proc=Popen(cmd,stdout=DEVNULL,stderr=PIPE,stdin=DEVNULL)
+            proc = Popen(cmd,stdout=DEVNULL,stderr=PIPE,stdin=DEVNULL)
             proc.wait() # sets the return code
 
             prc = proc.returncode
+            out, err = proc.communicate() # capture output
             if (prc == 0): # did the process succeed?
                 msg = "\t\tpass"
-                Print(msg)
+                print(msg)
                 log = open(logfile, 'a')
                 log.write(msg + "\n")
                 log.close()
             else:
                 msg = "\t\tFAILED!" 
-                Print(msg)
+                print(msg)
                 log = open(logfile, 'a')
                 log.write(msg + "\n")
-                log.write("stderr:\n" + err + "\n")
+                log.write("stderr:\n" + err.decode('utf8') + "\n")
                 log.close()
                 nfails += 1
 
-    print "\n", nfails, "failures out of", ntests, "tests." 
+    print("\n", nfails, "failures out of", ntests, "tests.")
 
     tend = time.time()
-    print "\nElapsed time (s):", tend - tstart
+    print("\nElapsed time (s):", tend - tstart)
 
     sys.exit(nfails)
 

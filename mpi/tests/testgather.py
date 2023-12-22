@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3 
 
 import sys # so that we can return a value at the end.
 import random # for randum number generators
@@ -21,14 +21,14 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv,"sh")
     except getopt.GetoptError:
-        print "Error in arguments"
-        print usage
+        print("Error in arguments")
+        print(usage)
         sys.exit(2)
     for opt, arg in opts:
         if opt in ("-s"):
             shortrun = True
         if opt in ("-h"):
-            print usage
+            print(usage)
             sys.exit(0)
             
     retval = 0
@@ -39,8 +39,8 @@ def main(argv):
     proglist.append("gatherxy")
 
     logfile = 'testgather.log' 
-    Print("MPI gather unit test")
-    Print("Log in " + logfile + "\n")
+    print("MPI gather unit test")
+    print("Log in " + logfile + "\n")
     log = open(logfile, 'w')
     log.close()
 
@@ -62,14 +62,14 @@ def main(argv):
     for progname in proglist:
         if not os.path.isfile(progname):
             msg = "Error: executable " + str(progname) + " not present!"
-            print msg
+            print(msg)
             log = open(logfile, 'a')
             log.write(msg)
             log.close()
             retval += 1
         else:
             msg = "Running " + str(progname)
-            Print(msg)
+            print(msg)
             log = open(logfile, 'a')
             log.write(msg)
             log.close()
@@ -87,7 +87,7 @@ def main(argv):
                             
         tstart = time.time()
         ntest = len(testcases)*len(Plist)
-        print "Running", ntest, "tests."
+        print("Running", ntest, "tests.")
 
         failcases = ""
         nfails = 0
@@ -96,7 +96,7 @@ def main(argv):
         
         for P in Plist:
             for args in testcases:
-                print "test", itest, "of", ntest, ":",
+                print("test", itest, "of", ntest, ":",)
                 itest += 1
                 rtest, cmd = runtest(progname, P, args, logfile, timeout)
                 if not rtest == 0:
@@ -107,15 +107,15 @@ def main(argv):
 
     try:
         if nfails > 0:
-            print "Failure cases:"
-            print failcases
+            print("Failure cases:")
+            print(failcases)
             retval += 1
-            print "\n", nfails, "failures out of", ntest, "tests." 
+            print("\n", nfails, "failures out of", ntest, "tests.")
     except:
         pass
 
     tend = time.time()
-    print "\nElapsed time (s):", tend - tstart
+    print("\nElapsed time (s):", tend - tstart)
 
     
 if __name__ == "__main__":
