@@ -4455,7 +4455,7 @@ void fftPadCentered::backwardInnerMany(Complex *F, Complex *f, size_t r,
 void fftPadHermitian::init()
 {
   common();
-  S=C; // Strides are not implemented for Hermitian transforms
+  S=C; // Stride gaps are not implemented for Hermitian transforms
   e=m/2+1;
   size_t Ce=C*e;
   char const *FR;

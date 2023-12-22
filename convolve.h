@@ -67,6 +67,7 @@ public:
   size_t size,maxsize;
   bool allocated;
   size_t r;
+  size_t offset;
 
   Indices() : index(NULL), maxsize(0) {}
 
@@ -441,8 +442,8 @@ public:
     return blocksize(r)*(r == 0 ? D0 : D);
   }
 
-  // Number of complex FFT outputs per iteration
-  virtual size_t complexOutputs(size_t r) {
+  // Number of complex FFT outputs per iteration, including stride.
+  virtual size_t span(size_t r) {
     return S*noutputs(r);
   }
 
@@ -796,14 +797,14 @@ public:
     return m*(q == 1 ? 1 : p/2);
   }
 
-  // Number of complex FFT outputs per iteration
-  size_t complexOutputs(size_t) {
-    return 2*b;
-  }
-
-  // Number of real FFT outputs per residue per copy
+  // Number of real FFT outputs per iteration per copy
   size_t noutputs(size_t) {
     return blocksize(0);
+  }
+
+  // Number of complex FFT outputs per iteration, including stride.
+  size_t span(size_t) {
+    return 2*b;
   }
 
   size_t workSizeW() {
@@ -1104,18 +1105,19 @@ public:
   void operate(Complex **F, size_t r, Indices *indices) {
     size_t blocksize=fft->blocksize(r);
     indices->r=r;
+    indices->offset=0;
 
     (*mult)(F,blocksize,indices,threads);
-    ++indices->r;
+    size_t stride=fft->S*fft->noutputs(0);
 
-    size_t incr=fft->b;
-    size_t stop=fft->complexOutputs(r);
-    for(size_t d=incr; d < stop; d += incr) {
+    size_t b=fft->b;
+    size_t stop=fft->span(r);
+    for(size_t d=1; b*d < stop; ++d) {
       Complex *G[A];
       for(size_t a=0; a < A; ++a)
-        G[a]=F[a]+d;
+        G[a]=F[a]+b*d;
+      indices->offset=stride*d;
       (*mult)(G,blocksize,indices,threads);
-      ++indices->r;
     }
   }
 

@@ -77,14 +77,14 @@ int main(int argc, char *argv[])
   fft.pad(W0);
   double error=0.0, error2=0.0;
   double norm=0.0, norm2=0.0;
-  size_t noutputs=C*fft.noutputs(0);
+  size_t stride=C*fft.noutputs(0);
   for(size_t r=0; r < fft.R; r += fft.increment(r)) {
     fft.forward(f,F,r,W0);
     size_t D1=r == 0 ? fft.D0 : fft.D;
     for(size_t d=0; d < D1; ++d) {
       double *Fr=(double *) (F+fft.b*d);
-      size_t offset=noutputs*d;
-      for(size_t k=0; k < noutputs; ++k) {
+      size_t offset=stride*d;
+      for(size_t k=0; k < stride; ++k) {
         size_t i=fft.Index(r,k+offset);
         error += abs2(Fr[k]-F2r[i]);
         norm += abs2(F2r[i]);
@@ -100,7 +100,8 @@ int main(int argc, char *argv[])
   if(Output) {
     cout << endl;
     cout << "Explicit output:" << endl;
-    for(size_t j=0; j < C*fft2.noutputs(0); ++j)
+    size_t stride=C*fft2.noutputs(0);
+    for(size_t j=0; j < stride; ++j)
       cout << j << ": " << F2r[j] << endl;
   }
 
@@ -119,8 +120,8 @@ int main(int argc, char *argv[])
     size_t D1=r == 0 ? fft.D0 : fft.D;
     for(size_t d=0; d < D1; ++d) {
       double *Fr=(double *) (F+fft.b*d);
-      size_t offset=noutputs*d;
-      for(size_t k=0; k < noutputs; ++k) {
+      size_t offset=stride*d;
+      for(size_t k=0; k < stride; ++k) {
         size_t K=k+offset;
         Fr[k]=F2r[fft.Index(r,K)];
       }

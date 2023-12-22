@@ -203,7 +203,7 @@ def getArgs():
   parser.add_argument("-p",help="Print out everything.",action="store_true")
   parser.add_argument("-l",help="Show log of failed cases",
                       action="store_true")
-  parser.add_argument("-d",help="Check all 1D cases inside multidimensional convoltuions. Note: using this flag results in much slower testing.",
+  parser.add_argument("-d",help="Check all 1D cases inside multidimensional convolutions. Note: using this flag results in much slower testing.",
                       action="store_true")
   parser.add_argument("--valgrind",help="Run tests under valgrind. Requires valgrind to be installed. Note: using this flag results in much slower testing.",
                       action="store_true")
