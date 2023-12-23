@@ -54,7 +54,7 @@ void multbinary(Complex **F, size_t n, Indices *indices,
   Complex *F0=F[0];
   Complex *F1=F[1];
 
-#if 0 // Transformed indices are available, if needed.
+#if 0 // Transformed indices are available. Requires overwrite=false.
   size_t N=indices->size;
   fftBase *fft=indices->fft;
   size_t r=indices->r;
