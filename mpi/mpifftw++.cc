@@ -1,5 +1,6 @@
+#include <unistd.h>
+
 #include "mpifftw++.h"
-#include "unistd.h"
 
 namespace fftwpp {
 
@@ -44,7 +45,7 @@ void fft3dMPI::ForwardWait0(Complex *out)
     unsigned int stride=d.z*d.Y;
     unsigned int stop=d.x*stride;
     PARALLEL(
-      for(unsigned int i=0; i < stop; i += stride) 
+      for(unsigned int i=0; i < stop; i += stride)
         yForward->fft(out+i);
       );
     Txy->ilocalize0(out);
@@ -66,13 +67,13 @@ void fft3dMPI::BackwardWait0(Complex *out)
   unsigned int stop=d.x*stride;
   if(Tyz) {
     PARALLEL(
-      for(unsigned int i=0; i < stop; i += stride) 
+      for(unsigned int i=0; i < stop; i += stride)
         yBackward->fft(out+i);
       );
     Tyz->ilocalize1(out);
   } else {
     PARALLEL(
-      for(unsigned int i=0; i < stop; i += stride) 
+      for(unsigned int i=0; i < stop; i += stride)
         yzBackward->fft(out+i);
       );
   }
@@ -121,7 +122,7 @@ void rcfft3dMPI::iForward(double *in, Complex *out)
     const unsigned int stride=dc.z*dc.Y;
     const unsigned int stop=dc.x*stride;
     PARALLEL(
-      for(unsigned int i=0; i < stop; i += stride) 
+      for(unsigned int i=0; i < stop; i += stride)
         yForward->fft(out+i);
       )
       Txy->ilocalize0(out);
@@ -135,7 +136,7 @@ void rcfft3dMPI::ForwardWait0(Complex *out)
     const unsigned int stride=dc.z*dc.Y;
     const unsigned int stop=dc.x*stride;
     PARALLEL(
-      for(unsigned int i=0; i < stop; i += stride) 
+      for(unsigned int i=0; i < stop; i += stride)
         yForward->fft(out+i);
       )
       Txy->ilocalize0(out);
@@ -151,11 +152,11 @@ void rcfft3dMPI::iBackward(Complex *in, double *out)
 void rcfft3dMPI::BackwardWait0(Complex *in, double *out)
 {
   Txy->wait();
-  
+
   const unsigned int stride=dc.z*dc.Y;
   const unsigned int stop=dc.x*stride;
   PARALLEL(
-    for(unsigned int i=0; i < stop; i += stride) 
+    for(unsigned int i=0; i < stop; i += stride)
       yBackward->fft(in+i);
     );
   if(Tyz) Tyz->ilocalize1(in);
@@ -184,22 +185,22 @@ void rcfft3dMPI::Shift(double *f)
   }
 }
 
-fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out) 
+fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out)
 {
   if(utils::Active == MPI_COMM_NULL)
     return Planner(F,in,out);
   fftw_plan plan;
   int rank;
   MPI_Comm_rank(utils::Active,&rank);
-  
+
   if(rank == 0) {
     int size;
     MPI_Comm_size(utils::Active,&size);
-    
+
     static bool Wise=false;
     bool learned=false;
     if(!Wise)
-      LoadWisdom();
+      loadWisdom();
     fftw::effort |= FFTW_WISDOM_ONLY;
     plan=F->Plan(in,out);
     fftw::effort &= !FFTW_WISDOM_ONLY;
@@ -242,7 +243,7 @@ fftw_plan MPIplanner(fftw *F, Complex *in, Complex *out)
         fftw_import_wisdom_from_string(inspiration);
       }
     }
-    if(learned) SaveWisdom();
+    if(learned) saveWisdom();
   } else {
     int flag=false;
     MPI_Status status;

@@ -1,6 +1,7 @@
 #include "Array.h"
 #include "mpifftw++.h"
 #include "utils.h"
+#include "timing.h"
 
 using namespace std;
 using namespace utils;
@@ -22,7 +23,7 @@ int main(int argc, char* argv[])
   int retval = 0; // success!
 
   unsigned int outlimit=100;
-  
+
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif
@@ -36,25 +37,25 @@ int main(int argc, char* argv[])
   int alltoall=-1; // Test for best alltoall routine
 
   bool inplace=false;
-  
+
   bool quiet=false;
   bool test=false;
   bool shift=false;
   unsigned int stats=0; // Type of statistics used in timing test.
-  
+
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
 
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
   if(rank != 0) opterr=0;
-#ifdef __GNUC__ 
+#ifdef __GNUC__
   optind=0;
-#endif  
+#endif
   for (;;) {
     int c = getopt(argc,argv,"hN:a:i:m:s:x:y:n:T:S:O:qt");
     if (c == -1) break;
-                
+
     switch (c) {
       case 0:
         break;
@@ -121,38 +122,41 @@ int main(int argc, char* argv[])
     fftw::maxthreads=1;
 
   defaultmpithreads=fftw::maxthreads;
-    
-  if(group.rank < group.size) { 
+
+  if(group.rank < group.size) {
     bool main=group.rank == 0;
+
+    utils::stopWatch *c=NULL;
     if(!quiet && main) {
-      cout << "Configuration: " 
-           << group.size << " nodes X " << fftw::maxthreads
+      c=new utils::stopWatch;
+      cout << "Configuration: "
+           << group.size << " nodes x " << fftw::maxthreads
            << " threads/node" << endl;
       cout << "Using MPI VERSION " << MPI_VERSION << endl;
       cout << "N=" << N << endl;
       cout << "nx=" << nx << ", ny=" << ny << endl;
-    } 
+    }
     bool showresult = nx*ny < outlimit;
 
     unsigned int nyp=ny/2+1;
-    
+
     split df(nx,ny,group.active);
     split dg(nx,nyp,group.active);
-  
+
     unsigned int dfY=inplace ? 2*dg.Y : df.Y;
-      
+
     array2<Complex> g(dg.x,dg.Y,ComplexAlign(dg.n));
     array2<double> f;
     if(inplace)
       f.Dimension(df.x,2*dg.Y,(double *) g());
     else
       f.Dimension(df.x,df.Y,doubleAlign(df.n));
-  
+
     // Create instance of FFT
     rcfft2dMPI rcfft(df,dg,f,g,mpiOptions(divisor,alltoall));
 
     if(!quiet && group.rank == 0)
-      cout << "Initialized after " << seconds() << " seconds." << endl;    
+      cout << "Initialized after " << c->seconds() << " seconds." << endl;
 
     if(test) {
       init(f,df);
@@ -161,7 +165,7 @@ int main(int argc, char* argv[])
         if(main) cout << "\nDistributed input:" << endl;
         show(f(),df.x,df.Y,group.active);
       }
-      
+
       split dfgather(nx,dfY,group.active);
       size_t align=sizeof(Complex);
       array2<Complex> ggather(nx,nyp,align);
@@ -172,7 +176,7 @@ int main(int argc, char* argv[])
         flocal.Dimension(nx,2*nyp,(double *) glocal());
       else
         flocal.Allocate(nx,ny,align);
-  
+
       rcfft2d localForward(nx,ny,flocal,glocal);
       crfft2d localBackward(nx,ny,glocal,flocal);
 
@@ -180,12 +184,12 @@ int main(int argc, char* argv[])
       gatherx(f(),fgather(),dfgather,1,group.active);
       if(!quiet && main)
         cout << endl << "Gathered input:\n" << fgather << endl;
-      
+
       if(shift)
         rcfft.Forward0(f,g);
       else
-        rcfft.Forward(f,g);      
-      
+        rcfft.Forward(f,g);
+
       if(!quiet && showresult) {
         if(main) cout << "\nDistributed output:" << endl;
         show(g(),dg.X,dg.y,group.active);
@@ -194,7 +198,7 @@ int main(int argc, char* argv[])
       gathery(g(),ggather(),dg,1,group.active);
       if(main && !quiet)
         cout << "\nGathered output:\n" << ggather << endl;
-      
+
       if(main) {
         if(shift)
           localForward.fft0(flocal,glocal);
@@ -219,7 +223,7 @@ int main(int argc, char* argv[])
       gatherx(f(),fgather(),dfgather,1,group.active);
       if(!quiet && main)
         cout << endl << "Gathered back to input:\n" << fgather << endl;
-      
+
       if(main) {
         if(shift)
           localBackward.fft0Normalized(glocal,flocal);
@@ -232,47 +236,52 @@ int main(int argc, char* argv[])
         cout << "dfgather.Y: " << dfgather.Y << endl;
         retval += checkerror(fgather(),flocal(),df.Y,df.X,dfgather.Y);
       }
-      
+
       if(!quiet && group.rank == 0) {
         cout << endl;
         if(retval == 0)
           cout << "pass" << endl;
         else
           cout << "FAIL" << endl;
-      }  
-  
+      }
+
     } else {
-      double *T=new double[N];
+      vector<double> T;
       init(f,df);
       for(unsigned int i=0; i < N; ++i) {
+        utils::stopWatch *c=NULL;
         if(shift) {
           init(f,df);
-          seconds();
+          if(main) c=new utils::stopWatch;
           rcfft.Forward0(f,g);
           rcfft.Backward0(g,f);
-          T[i]=0.5*seconds();
+          if(main)
+            T.push_back(0.5*c->nanoseconds());
           rcfft.Normalize(f);
         } else {
-          seconds();
+          if(main) c=new utils::stopWatch;
           rcfft.Forward(f,g);
           rcfft.Backward(g,f);
-          T[i]=0.5*seconds();
+          if(main)
+            T.push_back(0.5*c->nanoseconds());
           rcfft.Normalize(f);
         }
-      }    
-      if(main)
-	timings("FFT timing:",nx,T,N,stats);
-      delete [] T;
-        
+      }
+
+      if(main) {
+	timings("FFT timing:",nx,T.data(),T.size(),stats);
+        T.clear();
+      }
+
       if(!quiet && showresult)
         show(f(),df.x,dfY,0,0,df.x,df.Y,group.active);
     }
-  
+
     deleteAlign(g());
     if(!inplace)
       deleteAlign(f());
   }
-  
+
   MPI_Finalize();
 
   return retval;

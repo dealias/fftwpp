@@ -1,36 +1,36 @@
 #ifndef __mpitranspose_h__
 #define __mpitranspose_h__ 1
 
-/* 
+/*
    Globally transpose an N x M matrix of blocks of L words of type T.
    The out-of-place versions preserve inputs.
 
    Blocking in-place and out-of-place interfaces. Upper case letters denote
-   global dimensions; lower case letters denote distributed dimensions: 
-   
+   global dimensions; lower case letters denote distributed dimensions:
+
    To globally transpose without local transposition of output:
    localize0(in);      n x M -> N x m
    localize0(in,out);  n x M -> N x m
-   
+
    To globally transpose without local transposition of input:
    localize1(in);      N x m -> n x M
    localize1(in,out);  N x m -> n x M
-     
+
    Non-blocking interface for localize0 (and similarly for localize1):
-    
+
    ilocalize0(in);
    // User computation
    wait();
 
    Double non-blocking interface:
-    
+
    ilocalize0(in);
    // User computation 0 (typically longest)
    wait0();
-   // User computation 1      
+   // User computation 1
    wait1();
-*/  
-  
+*/
+
 #include <mpi.h>
 #include <cstring>
 #include <typeinfo>
@@ -88,30 +88,30 @@ void fill1_comm_sched(int *sched, int which_pe, int npes);
 
 #if MPI_VERSION < 3
 inline int MPI_Ialltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype,
-                         void *recvbuf, int recvcount, MPI_Datatype recvtype, 
+                         void *recvbuf, int recvcount, MPI_Datatype recvtype,
                          MPI_Comm comm, MPI_Request *)
 {
   return MPI_Alltoall(sendbuf,sendcount,sendtype,recvbuf,recvcount,recvtype,
                       comm);
 }
 inline void Wait(int count, MPI_Request *request, bool schedule)
-{ 
+{
   if(schedule)
     MPI_Waitall(count,request,MPI_STATUSES_IGNORE);
 }
 inline void Wait(MPI_Request *request)
-{ 
+{
 }
 #else
 inline void Wait(int count, MPI_Request *request, bool schedule)
-{ 
+{
   if(schedule)
     MPI_Waitall(count,request,MPI_STATUSES_IGNORE);
   else
     MPI_Wait(request,MPI_STATUS_IGNORE);
 }
 inline void Wait(MPI_Request *request)
-{ 
+{
   MPI_Wait(request,MPI_STATUS_IGNORE);
 }
 #endif
@@ -120,7 +120,7 @@ class localdimension {
 public:
   int n;
   int start;
-  
+
   localdimension(int N, int rank, int size) {
     n=utils::ceilquotient(N,size);
     start=n*rank;
@@ -154,7 +154,7 @@ inline int Ialltoall(void *sendbuf, int count, void *recvbuf,
                   srequest+index);
       }
     }
-  
+
     int offset=rank*count;
     copy((char *) sendbuf+offset,(char *) recvbuf+offset,count,threads);
     return 0;
@@ -172,7 +172,7 @@ private:
   MPI_Comm global;
   double latency;
   MPI_Comm block;
-  
+
   unsigned int n0,m0;
   unsigned int np,mp;
   int mlast,nlast,last;
@@ -202,28 +202,28 @@ private:
 public:
 
   mpiOptions Options() {return options;}
-  
+
   bool divisible(int size, unsigned int M, unsigned int N) {
     unsigned int usize=size;
     return usize <= N && usize <= M && N % usize == 0 && M % usize == 0;
   }
-  
+
   void poll(T *sendbuf, T *recvbuf, unsigned int N) {
     unsigned int sN=sizeof(T)*N;
     MPI_Alltoall(sendbuf == recvbuf ? MPI_IN_PLACE : sendbuf,
                  sN,MPI_BYTE,recvbuf,sN,MPI_BYTE,split);
   }
-  
+
   // Estimate typical bandwidth saturation message size
   double Latency() {
     if(size == 1) return 0.0;
     if(latency >= 0) return latency;
-    
+
     int b=sqrt(size)+0.5;
     MPI_Comm_split(communicator,rank/b,0,&split);
     MPI_Comm_size(split,&splitsize);
     MPI_Comm_rank(split,&splitrank);
-    
+
     unsigned int N1=2;
     unsigned int N2=10000;
     T send[N2*splitsize];
@@ -236,20 +236,19 @@ public:
     poll(send,recv,N2);
     for(unsigned int i=0; i < M; ++i) {
       MPI_Barrier(split);
-      double t0=utils::totalseconds();
+      utils::stopWatch S1;
       poll(send,recv,N1);
       MPI_Barrier(split);
-      double t1=utils::totalseconds();
+      T1 += S1.seconds();
+      utils::stopWatch S2;
       poll(send,recv,N2);
       MPI_Barrier(split);
-      double t2=utils::totalseconds();
-      T1 += t1-t0;
-      T2 += t2-t1;
+      T2 += S2.seconds();
     }
     latency=std::max(T1*(N2-N1)/(T2-T1)-N1,0.0)*sizeof(T);
     if(globalrank == 0 && options.verbose)
       std::cout << std::endl << "latency=" << latency << std::endl;
-    MPI_Comm_free(&split); 
+    MPI_Comm_free(&split);
     return latency;
   }
 
@@ -260,30 +259,30 @@ public:
     threads=options.threads;
     MPI_Comm_size(Communicator,&size);
     MPI_Comm_rank(Communicator,&rank);
-    
+
     MPI_Comm_rank(global,&globalrank);
-    
+
     n0=localdimension(N,0,size).n;
     nlast=std::min((int) utils::ceilquotient(N,n0),size)-1;
     np=localdimension(N,nlast,size).n;
-    
+
     m0=localdimension(M,0,size).n;
     mlast=std::min((int) utils::ceilquotient(M,m0),size)-1;
     mp=localdimension(M,mlast,size).n;
-    
+
     allocated=0;
     if(size == 1) {
       a=1;
       subblock=false;
       return;
     }
-    
+
     int Pbar=std::min(nlast+(n0 == np),mlast+(m0 == mp));
     size=std::max(nlast+1,mlast+1);
     MPI_Comm_split(Communicator,rank < size,0,&communicator);
-    
+
     bool Uniform=divisible(size,M,N);
-    
+
     int start=0,stop=Uniform ? 2 : 1;
     if(options.alltoall > stop) options.alltoall=stop;
     if(options.alltoall >= 0)
@@ -291,14 +290,14 @@ public:
     int Alltoall=1;
     if(options.a >= size)
       options.a=-1;
-      
+
     if(globalrank == 0 && options.verbose)
       std::cout << std::endl << "Initializing " << N << "x" << M
-                << " transpose of " << L*sizeof(T) << "-byte elements over " 
+                << " transpose of " << L*sizeof(T) << "-byte elements over "
                 << size << " processes." << std::endl;
-      
+
     int alimit;
-    
+
     if(options.a <= 0) {
       double latency=safetyfactor*Latency();
       if(globalrank == 0) {
@@ -319,12 +318,12 @@ public:
       MPI_Bcast(&alimit,1,MPI_UNSIGNED,0,global);
       MPI_Bcast(&options.a,1,MPI_INT,0,global);
     } else alimit=options.a+1;
-    
+
     int astart=options.a;
     if(alimit > astart+1 || stop-start >= 1) {
       if(globalrank == 0 && options.verbose)
         std::cout << std::endl << "Timing:" << std::endl;
-      
+
       double T0=DBL_MAX;
       for(int alltoall=start; alltoall <= stop; ++alltoall) {
         if(globalrank == 0 && options.verbose)
@@ -363,19 +362,19 @@ public:
       options.a=parm[0];
       options.alltoall=parm[1];
     }
-    
+
     a=options.a;
-    b=a > 1 || Uniform ? Pbar/a : Pbar+1; 
+    b=a > 1 || Uniform ? Pbar/a : Pbar+1;
     if(b == 1) {b=a; a=1;}
-    
+
     if(globalrank == 0 && options.verbose)
-      std::cout << std::endl << "Using alltoall=" << 
+      std::cout << std::endl << "Using alltoall=" <<
         options.alltoall << ", a=" << a << ", b=" << b << ":" << std::endl;
 
     uniform=Uniform && a*b == size;
     init(data);
   }
-  
+
   mpitranspose(){}
 
   // data and work are arrays of size max(n*M,N*m)*L.
@@ -388,7 +387,7 @@ public:
     options(options), global(global ? global : communicator), latency(-1) {
     setup(data,communicator);
   }
-  
+
   mpitranspose(unsigned int N, unsigned int M, unsigned int n, unsigned int m,
                unsigned int L, T *data, MPI_Comm communicator=MPI_COMM_WORLD,
                const mpiOptions& options=defaultmpiOptions,
@@ -397,7 +396,7 @@ public:
     options(options), global(global ? global : communicator), latency(-1) {
     setup(data,communicator);
   }
-    
+
   mpitranspose(unsigned int N, unsigned int M, unsigned int n,
                unsigned int m, T *data, T *work=NULL,
                MPI_Comm communicator=MPI_COMM_WORLD,
@@ -407,21 +406,21 @@ public:
     options(options), global(global ? global : communicator), latency(-1) {
     setup(data,communicator);
   }
-    
+
   double time(T *data) {
     double sum=0.0;
     unsigned int N=1;
     localize0(data); // Initialize communication buffers
-    double stop=utils::totalseconds()+testseconds;
+
     for(;;++N) {
       int end;
-      double start=rank == 0 ? utils::totalseconds() : 0.0;
+      utils::stopWatch *S=NULL;
+      if(rank == 0) S=new stopWatch;
       localize0(data);
       if(rank == 0) {
-        double t=utils::totalseconds();
-        double seconds=t-start;
-        sum += seconds;
-        end=t > stop;
+        double t=S->seconds();
+        sum += t;
+        end=sum > testseconds;
       }
       MPI_Bcast(&end,1,MPI_INT,0,communicator);
       if(end)
@@ -432,10 +431,10 @@ public:
 
   // Return size of request array
   int Size(int start) {return size-(rank >= start ? 1 : start);}
-  
+
   void init(T *data) {
     compact=uniform && options.alltoall == 2;
-    
+
     if(compact) work=data;
     else {
       if(work == NULL) {
@@ -443,17 +442,17 @@ public:
         Array::newAlign(work,allocated,sizeof(T));
       }
     }
-    
+
     subblock=a > 1 && rank < a*b;
-    
+
     if(uniform) {
       Tin1=new fftwpp::Transpose(b,n*a,m*L,data,work,threads);
       Tout1=new fftwpp::Transpose(n*a,b,m*L,data,work,threads);
     } else {
       Tin1=NULL;
-      Tout1=NULL;      
+      Tout1=NULL;
     }
-    
+
     if(subblock) {
       Tin2=new fftwpp::Transpose(a,n*b,m*L,data,work,threads);
       Tout2=new fftwpp::Transpose(n*b,a,m*L,data,work,threads);
@@ -461,26 +460,26 @@ public:
       Tin2=NULL;
       Tout2=NULL;
     }
-    
+
     if(uniform)
       splitv=communicator;
     else {
       last=std::min(nlast,mlast);
       MPI_Comm_split(communicator,rank < last,0,&splitv);
     }
-    
+
     if(a == 1) {
       split=split2=communicator;
       splitsize=split2size=size;
       splitrank=split2rank=rank;
     } else {
       MPI_Comm_split(communicator,rank < a*b,0,&block);
-      
+
       if(rank < a*b) {
         MPI_Comm_split(block,rank/b,0,&split);
         MPI_Comm_size(split,&splitsize);
         MPI_Comm_rank(split,&splitrank);
-      
+
         MPI_Comm_split(block,rank % b,0,&split2);
         MPI_Comm_size(split2,&split2size);
         MPI_Comm_rank(split2,&split2rank);
@@ -490,13 +489,13 @@ public:
         splitrank=split2rank=rank;
       }
     }
-    
+
     schedule=!options.alltoall || (!uniform && a > 1);
     if(schedule) {
       Request=new MPI_Request[2*(std::max(splitsize,split2size)-1)];
       if(!uniform)
         request=new MPI_Request[2*Size(a > 1 ? a*b : 0)];
-    
+
       if(uniform || subblock) {
         sched2=new int[split2size];
         fill1_comm_sched(sched2,split2rank,split2size);
@@ -510,45 +509,45 @@ public:
       if(!uniform)
         request=new MPI_Request[2*Size(last)+1];
     }
-    
+
     if(!uniform) {
       sched=new int[size];
       fill1_comm_sched(sched,rank,size);
     }
   }
-  
+
   void deallocate() {
     if(size == 1) return;
-    
+
     if(compact) work=NULL;
     else if(allocated) {
       Array::deleteAlign(work,allocated);
       work=NULL;
       allocated=0;
     }
-      
+
     if(schedule) {
       if(uniform || subblock) {
         delete [] sched1;
         delete [] sched2;
       }
     }
-    
+
     delete [] Request;
     if(!uniform) {
       delete [] sched;
       delete [] request;
     }
-    
+
     if(a > 1) {
       int final;
       MPI_Finalized(&final);
       if(!final) {
         if(rank < a*b) {
-          MPI_Comm_free(&split2); 
-          MPI_Comm_free(&split); 
+          MPI_Comm_free(&split2);
+          MPI_Comm_free(&split);
         }
-        MPI_Comm_free(&block); 
+        MPI_Comm_free(&block);
       }
     }
 
@@ -557,14 +556,14 @@ public:
     if(Tin1) delete Tin1;
     if(Tout1) delete Tout1;
   }
-  
+
   ~mpitranspose() {
     deallocate();
   }
-  
+
   int ni(int P) {return P < nlast ? n0 : (P == nlast ? np : 0);}
   int mi(int P) {return P < mlast ? m0 : (P == mlast ? mp : 0);}
-  
+
   void Ialltoallout(void* sendbuf, void *recvbuf, int start,
                     unsigned int threads) {
     MPI_Request *srequest=request+Size(start);
@@ -642,11 +641,11 @@ public:
       else {
         if(rank < last)
           Ialltoall(input,n*m*sizeof(T)*L,work,splitv,request+2*Size(last),NULL,threads);
-        Ialltoallin(input,work,last,threads);        
+        Ialltoallin(input,work,last,threads);
       }
     }
   }
-  
+
   void insync0() {
     if(size == 1 || rank >= size) return;
     if(uniform || subblock)
@@ -658,7 +657,7 @@ public:
         Wait(2*Size(last)+(rank < last ? 1 : 0),request,true);
     }
   }
-  
+
   void inphase1() {
     if(rank >= size) return;
     if(subblock) {
@@ -732,7 +731,7 @@ public:
       }
     }
   }
-  
+
 // outphase: n x M -> N x m
   void outphase0() {
     if(rank >= size) return;
@@ -776,7 +775,7 @@ public:
                 copyfromblock(src+j*ostride,dest+j*block,count,block,istride);
               );
           }
-          
+
           T *src2=input+mlast*block;
           T *dest2=work+mlast*istride;
           PARALLEL(
@@ -803,15 +802,15 @@ public:
     if(subblock)
       Ialltoall(work,n*m*sizeof(T)*a*L,output,split,Request,sched1,threads);
     else outphase();
-  }             
-  
+  }
+
   void outsync0() {
     if(rank >= size) return;
     if(subblock)
       Wait(2*(splitsize-1),Request,schedule);
     else outsync();
   }
-  
+
   void outphase() {
     if(size == 1 || rank >= size) return;
     // Outer transpose a x a matrix of N/a x M/a blocks over a processes
@@ -823,18 +822,18 @@ public:
         if(rank < last)
           Ialltoall(work,n*m*sizeof(T)*L,output,splitv,request+2*Size(last),
                     NULL,threads);
-        Ialltoallout(work,output,last,threads);        
+        Ialltoallout(work,output,last,threads);
       }
     }
     if(uniform || subblock)
       Ialltoall(work,n*m*sizeof(T)*(a > 1 ? b : a)*L,output,split2,Request,
                 sched2,threads);
   }
-  
+
   void outphase1() {
     if(subblock) outphase();
   }
-  
+
   void outsync() {
     if(size == 1 || rank >= size) return;
     if(!uniform) {
@@ -846,7 +845,7 @@ public:
     if(uniform || subblock)
       Wait(2*(split2size-1),Request,schedule);
   }
-  
+
   void outsync1() {
     if(subblock) outsync();
   }
@@ -860,7 +859,7 @@ public:
       inphase1();
     }
   }
-  
+
   void Wait1() {
     if(outflag)
       outsync1();
@@ -869,34 +868,34 @@ public:
       inpost();
     }
   }
-  
+
   void wait0() {
     if(overlap) Wait0();
   }
-  
+
   void wait1() {
     if(overlap) Wait1();
   }
-  
+
   void wait() {
     if(overlap) {
       Wait0();
       Wait1();
     }
   }
-  
+
   void localize0(T *in, T *out=0)
   {
     ilocalize0(in,out);
     wait();
   }
-  
+
   void localize1(T *in, T *out=0)
   {
     ilocalize1(in,out);
     wait();
   }
-  
+
   void ilocalize0(T *in, T *out=0)
   {
     if(!out) out=in;
@@ -921,7 +920,7 @@ public:
       Wait1();
     }
   }
-  
+
 };
 
 }

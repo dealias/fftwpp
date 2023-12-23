@@ -1,6 +1,7 @@
 #include "Array.h"
 #include "mpifftw++.h"
 #include "utils.h"
+#include "timing.h"
 
 using namespace std;
 using namespace utils;
@@ -24,7 +25,7 @@ inline void init(array3<double> f, split3 d)
 int main(int argc, char* argv[])
 {
   unsigned int outlimit=3000;
-  
+
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif
@@ -35,13 +36,13 @@ int main(int argc, char* argv[])
   unsigned int N=0;
   int divisor=0; // Test for best block divisor
   int alltoall=-1; // Test for best alltoall routine
-  
+
   unsigned int nx=4;
   unsigned int ny=0;
   unsigned int nz=0;
 
   bool inplace=false;
-  
+
   bool quiet=false;
   bool test=false;
   bool shift=false;
@@ -53,13 +54,13 @@ int main(int argc, char* argv[])
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
   if(rank != 0) opterr=0;
-#ifdef __GNUC__ 
+#ifdef __GNUC__
   optind=0;
-#endif  
+#endif
   for (;;) {
     int c = getopt(argc,argv,"S:hti:N:O:T:a:i:m:n:s:x:y:z:q");
     if (c == -1) break;
-                
+
     switch (c) {
       case 0:
         break;
@@ -123,20 +124,23 @@ int main(int argc, char* argv[])
     N=N0/nx/ny/nz;
     if(N < 10) N=10;
   }
-  
+
   unsigned int nzp=nz/2+1;
   MPIgroup group(MPI_COMM_WORLD,nx,ny);
 
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;
-  
+
   defaultmpithreads=fftw::maxthreads;
-    
+
   if(group.rank < group.size) {
     bool main=group.rank == 0;
+
+    utils::stopWatch *c=NULL;
     if(!quiet && main) {
-      cout << "Configuration: " 
-           << group.size << " nodes X " << fftw::maxthreads 
+      c=new utils::stopWatch;
+      cout << "Configuration: "
+           << group.size << " nodes x " << fftw::maxthreads
            << " threads/node" << endl;
       cout << "Using MPI VERSION " << MPI_VERSION << endl;
       cout << "nx=" << nx << ", ny=" << ny << ", nz=" << nz << ", nzp=" << nzp
@@ -144,29 +148,29 @@ int main(int argc, char* argv[])
     }
 
     bool showresult = nx*ny < outlimit;
-    
+
     split3 df(nx,ny,nz,group);
     split3 dg(nx,ny,nzp,group,true);
 
     unsigned int dfZ=inplace ? 2*dg.Z : df.Z;
 
     split3 dfgather(nx,ny,dfZ,group);
-        
+
     array3<Complex> g(dg.x,dg.y,dg.Z,ComplexAlign(dg.n));
     array3<double> f;
     if(inplace)
       f.Dimension(df.x,df.y,2*dg.Z,(double *) g());
     else
       f.Dimension(df.x,df.y,df.Z,doubleAlign(df.n));
-  
+
     rcfft3dMPI rcfft(df,dg,f,g,mpiOptions(divisor,alltoall));
 
     if(!quiet && group.rank == 0)
-      cout << "Initialized after " << seconds() << " seconds." << endl;    
-    
+      cout << "Initialized after " << c->seconds() << " seconds." << endl;
+
     if(test) {
       init(f,df);
-      
+
       if(!quiet && showresult) {
         if(main)
 	  cout << "\nDistributed input:" << endl;
@@ -183,7 +187,7 @@ int main(int argc, char* argv[])
         flocal.Dimension(nx,ny,2*nzp,(double *) glocal());
       else
         flocal.Allocate(nx,ny,nz,align);
-      
+
       rcfft3d localForward(nx,ny,nz,flocal,glocal);
       crfft3d localBackward(nx,ny,nz,glocal,flocal);
 
@@ -191,12 +195,12 @@ int main(int argc, char* argv[])
       gatherxy(f(), fgather(), dfgather, group.active);
       if(main && !quiet)
         cout << "Gathered input:\n" <<  fgather << endl;
-              
+
       if(shift)
         rcfft.Forward0(f,g);
       else
         rcfft.Forward(f,g);
-      
+
       if(main) {
         if(shift)
           localForward.fft0(flocal,glocal);
@@ -204,20 +208,20 @@ int main(int argc, char* argv[])
           localForward.fft(flocal,glocal);
         cout << endl;
       }
-        
+
       if(!quiet && showresult) {
         if(main)
 	  cout << "Distributed output:" << endl;
 	show(g(),dg.X,dg.y,dg.z,group.active);
       }
 
-      gatheryz(g(),ggather(),dg,group.active); 
+      gatheryz(g(),ggather(),dg,group.active);
       if(!quiet && main)
         cout << "Gathered output:\n" <<  ggather << endl;
 
-      if(!quiet && main) 
+      if(!quiet && main)
         cout << "Local output:\n" <<  glocal << endl;
-      
+
       if(main)
         retval += checkerror(glocal(),ggather(),dg.X*dg.Y*dg.Z);
 
@@ -240,16 +244,16 @@ int main(int argc, char* argv[])
       if(main) {
         if(shift)
           localBackward.fft0Normalized(glocal,flocal);
-        else 
+        else
           localBackward.fftNormalized(glocal,flocal);
       }
-      
-      if(!quiet && main) 
+
+      if(!quiet && main)
         cout << "Local back to input:\n" <<  flocal << endl;
-      
+
       if(main)
         retval += checkerror(flocal(),fgather(),df.Z,df.X*df.Y,dfgather.Z);
-      
+
       if(!quiet && group.rank == 0) {
         cout << endl;
         if(retval == 0)
@@ -260,36 +264,41 @@ int main(int argc, char* argv[])
 
     } else {
       if(main) cout << "N=" << N << endl;
-      double *T=new double[N];
 
+      vector<double> T;
       for(unsigned int i=0; i < N; ++i) {
         init(f,df);
+        utils::stopWatch *c=NULL;
         if(shift) {
-          seconds();
+          if(main) c=new utils::stopWatch;
           rcfft.Forward0(f,g);
           rcfft.Backward0(g,f);
-          T[i]=0.5*seconds();
+          if(main)
+            T.push_back(0.5*c->nanoseconds());
           rcfft.Normalize(f);
         } else {
-          seconds();
+          if(main) c=new utils::stopWatch;
           rcfft.Forward(f,g);
           rcfft.Backward(g,f);
-          T[i]=0.5*seconds();
+          if(main)
+            T.push_back(0.5*c->nanoseconds());
           rcfft.Normalize(f);
         }
       }
       if(!quiet && showresult)
         show(f(),df.x,df.y,dfZ,0,0,0,df.x,df.y,df.Z,group.active);
-        
-      if(main) timings("FFT timing:",nx,T,N,stats);
-      delete[] T;
+
+      if(main) {
+        timings("FFT timing:",nx,T.data(),T.size(),stats);
+        T.clear();
+      }
     }
-    
+
     deleteAlign(g());
     if(!inplace) deleteAlign(f());
   }
-  
+
   MPI_Finalize();
-  
+
   return retval;
 }

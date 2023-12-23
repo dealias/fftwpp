@@ -1,13 +1,14 @@
 #include "Array.h"
 #include "mpifftw++.h"
 #include "utils.h"
+#include "timing.h"
 
 using namespace std;
 using namespace utils;
 using namespace fftwpp;
 using namespace Array;
 
-inline void init(Complex *f, split d) 
+inline void init(Complex *f, split d)
 {
   unsigned int c=0;
   for(unsigned int i=0; i < d.x; ++i) {
@@ -18,13 +19,12 @@ inline void init(Complex *f, split d)
   }
 }
 
-
 int main(int argc, char* argv[])
 {
   int retval = 0; // success!
 
   unsigned int outlimit=100;
-  
+
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif
@@ -38,25 +38,25 @@ int main(int argc, char* argv[])
   int alltoall=-1; // Test for best alltoall routine
 
   bool inplace=true;
-  
+
   bool quiet=false;
   bool test=false;
-  
+
   unsigned int stats=0; // Type of statistics used in timing test.
-  
+
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
 
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
   if(rank != 0) opterr=0;
-#ifdef __GNUC__ 
+#ifdef __GNUC__
   optind=0;
-#endif  
+#endif
   for (;;) {
     int c = getopt(argc,argv,"hL:N:a:i:m:s:x:y:n:S:T:qt");
     if (c == -1) break;
-                
+
     switch (c) {
       case 0:
         break;
@@ -112,30 +112,32 @@ int main(int argc, char* argv[])
     N=N0/nx/ny;
     if(N < 10) N=10;
   }
-  
+
   MPIgroup group(MPI_COMM_WORLD,ny);
 
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;
-  
+
   defaultmpithreads=fftw::maxthreads;
 
-  if(group.rank < group.size) { 
+  if(group.rank < group.size) {
     bool main=group.rank == 0;
-  
+
+    utils::stopWatch *c=NULL;
     if(!quiet && main) {
-      cout << "Configuration: " 
-           << group.size << " nodes X " << fftw::maxthreads 
+      c=new utils::stopWatch;
+      cout << "Configuration: "
+           << group.size << " nodes x " << fftw::maxthreads
            << " threads/node" << endl;
       cout << "Using MPI VERSION " << MPI_VERSION << endl;
       cout << "N=" << N << endl;
       cout << "nx=" << nx << ", ny=" << ny << endl;
-    } 
+    }
 
     bool showresult = nx*ny < outlimit;
-    
+
     split d(nx,ny,group.active);
-  
+
     Complex *f=ComplexAlign(d.n);
     Complex *g=inplace ? f : ComplexAlign(d.n);
 
@@ -143,7 +145,7 @@ int main(int argc, char* argv[])
     fft2dMPI fft(d,f,g,mpiOptions(divisor,alltoall,defaultmpithreads,0));
 
     if(!quiet && group.rank == 0)
-      cout << "Initialized after " << seconds() << " seconds." << endl;    
+      cout << "Initialized after " << c->seconds() << " seconds." << endl;
 
     if(test) {
       init(f,d);
@@ -171,11 +173,11 @@ int main(int argc, char* argv[])
 	  cout << "\nDistributed output:" << endl;
         show(f,nx,d.y,group.active);
       }
-      
+
       array2<Complex> fgather(nx,ny,align);
-      
+
       gathery(g,fgather(),d,1,group.active);
-      
+
       MPI_Barrier(group.active);
       if(main) {
         localForward.fft(flocal);
@@ -221,24 +223,29 @@ int main(int argc, char* argv[])
           cout << "pass" << endl;
         else
           cout << "FAIL" << endl;
-      }  
-  
+      }
+
     } else {
       if(N > 0) {
-        double *T=new double[N];
+        vector<double> T;
         for(unsigned int i=0; i < N; ++i) {
           init(f,d);
-          seconds();
+          utils::stopWatch *c=NULL;
+          if(main) c=new utils::stopWatch;
           fft.Forward(f,g);
           fft.Backward(g,f);
-          T[i]=0.5*seconds();
+          if(main)
+            T.push_back(0.5*c->nanoseconds());
           fft.Normalize(f);
-        }    
+        }
+
+        if(main) {
+	  timings("FFT timing:",nx,T.data(),T.size(),stats);
+          T.clear();
+        }
+
         if(!quiet && showresult)
 	  show(f,d.X,d.y,group.active);
-        if(main)
-	  timings("FFT timing:",nx,T,N,stats);
-        delete [] T;
       }
     }
 
@@ -246,7 +253,7 @@ int main(int argc, char* argv[])
     if(!inplace)
       deleteAlign(g);
   }
-  
+
   MPI_Finalize();
 
   return retval;

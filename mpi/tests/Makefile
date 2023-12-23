@@ -7,11 +7,10 @@ UDIR=../../tests/
 
 # GNU compiler
 ifeq ($(shell $(MPICXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
-CXXFLAGS=-O3 -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
-	-fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native
-#For valgrind:
-#CXXFLAGS=-fopenmp -g -Wall -ansi -fomit-frame-pointer -fstrict-aliasing \
-#	 -ffast-math -msse2 -mfpmath=sse
+CXXFLAGS += -Ofast -g -Wall -DNDEBUG
+CXXFLAGS += -fopenmp
+CXXFLAGS += -fomit-frame-pointer -fstrict-aliasing -ffast-math
+CXXFLAGS += -march=native
 endif
 
 #Intel compiler
@@ -46,15 +45,13 @@ endif
 
 LDFLAGS+= -lfftw3_omp -lfftw3 -lm
 
-
-
 MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
 
 vpath %.cc ../:../../
 
-FFTW=fftw++
+FFTW=fftw++ parallel
 FILES=gather gatheryz gatherxy transpose fft2 fft3 fft2r fft3r  \
-	cconv2 conv2 cconv3 conv3 
+	cconv2 conv2 cconv3 conv3
 MPITRANSPOSE=mpitranspose
 MPIFFT=$(FFTW) $(MPITRANSPOSE) mpifftw++
 MPICONVOLUTION=$(MPIFFT) convolution mpiconvolution

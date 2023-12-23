@@ -2,51 +2,48 @@ ifndef MPICXX
 MPICXX=mpic++
 endif
 
-MPIDIR=../
-IDIR=../../
+IDIR=../
 UDIR=../../tests/
 
 # GNU compiler
 ifeq ($(shell $(MPICXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
- CXXFLAGS=-O3 -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
-	-fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native
-#For valgrind:
-# CXXFLAGS=-fopenmp -g -Wall -ansi -fomit-frame-pointer -fstrict-aliasing \
-# 	 -ffast-math -msse2 -mfpmath=sse
+CXXFLAGS += -Ofast -g -Wall -DNDEBUG
+CXXFLAGS += -fopenmp
+CXXFLAGS += -fomit-frame-pointer -fstrict-aliasing -ffast-math
+CXXFLAGS += -march=native
 endif
 
 #Intel compiler
 ifeq ($(shell $(MPICXX) --version 2>&1 | head -c 4),icpc)
 CXXFLAGS=-O3 -openmp -ipo -ansi-alias -malign-double -fp-model fast=2
-# note that the -fast option forces static linkage
 endif
 
 #IBM compiler
 ifeq ($(shell $(MPICXX) -qversion 2>&1 | head -c 3),IBM)
 CXXFLAGS= -O5 -qsmp=speculative -qtune=qp -qipa -qarch=qp
-#CXXFLAGS= -O5 -P -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp
 endif
 
-CXXFLAGS += $(DEFS)  -I$(MPIDIR) -I$(IDIR) -I$(UDIR)
+CXXFLAGS += $(DEFS) -I$(IDIR) -I$(UDIR) -I../../
 
 ifneq ($(strip $(FFTW_INCLUDE_PATH)),)
-CXXFLAGS+=-I$(FFTW_INCLUDE_PATH)
+CXXFLAGS += -I$(FFTW_INCLUDE_PATH)
 endif
 
 LDFLAGS=
+
 ifneq ($(strip $(FFTW_LIB_PATH)),)
 LDFLAGS+=-L$(FFTW_LIB_PATH)
 endif
-#LDFLAGS= -lfftw3_mpi -lfftw3 -lfftw3_threads -lm
+
 LDFLAGS+= -lfftw3_omp -lfftw3 -lm
 
 MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
 
-vpath %.cc ../
+vpath %.cc ../:../../
 vpath %.cc ../../
 
-FFTW=fftw++
-FILES= fft2rconv fft3rconv
+FFTW=fftw++ parallel
+FILES=fft2rconv fft3rconv
 UTILS=$(FFTW)
 MPITRANSPOSE=$(UTILS) mpitranspose
 MPIFFT=$(MPITRANSPOSE) mpifftw++
@@ -56,7 +53,7 @@ ALL=$(FILES) $(MPICONVOLUTION)
 
 all: $(FILES)
 
-%.o : %.cc %.h
+%.o : %.cc
 	$(MPICXX) $(CXXFLAGS) $(OPTS) -o $@ -c $<
 
 fft2rconv: fft2rconv.o $(MPIFFT:=.o) $(MPICONVOLUTION:=.o)

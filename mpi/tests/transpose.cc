@@ -2,6 +2,7 @@
 #include "mpiutils.h"
 #include "statistics.h"
 #include "align.h"
+#include "timing.h"
 
 using namespace std;
 using namespace utils;
@@ -16,7 +17,7 @@ int N=0;
 
 void init(Complex *data, unsigned int X, unsigned int y, unsigned int Z,
           int x0, int y0) {
-  for(unsigned int i=0; i < X; ++i) { 
+  for(unsigned int i=0; i < X; ++i) {
     for(unsigned int j=0; j < y; ++j) {
       for(unsigned int k=0; k < Z; ++k) {
         data[(y*i+j)*Z+k].re=x0+i;
@@ -53,30 +54,30 @@ int main(int argc, char **argv)
  int a=0; // Test for best block divisor
  int alltoall=-1; // Test for best alltoall routine
 
-  
+
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
 
   int stats=0;
 
   int size,rank;
-  
+
   MPI_Comm communicator=MPI_COMM_WORLD;
   MPI_Comm_size(communicator,&size);
   MPI_Comm_rank(communicator,&rank);
 
   bool main=rank == 0;
-  
+
   if(!main)
     opterr=0;
 
-#ifdef __GNUC__ 
+#ifdef __GNUC__
   optind=0;
-#endif  
+#endif
   for (;;) {
     int c=getopt(argc,argv,"hN:A:a:m:n:s:T:S:x:y:z:qt");
     if (c == -1) break;
-                
+
     switch (c) {
       case 0:
         break;
@@ -125,12 +126,12 @@ int main(int argc, char **argv)
 
   if(provided < MPI_THREAD_FUNNELED)
     defaultmpithreads=1;
-  
+
   if(rank == 0) {
     cout << "size=" << size << endl;
     cout << "threads=" << defaultmpithreads << endl;
   }
-  
+
   if(test) N=1;
   else if(N == 0) {
     N=N0/((unsigned long long) X*Y*Z);
@@ -140,7 +141,7 @@ int main(int argc, char **argv)
   int retval=0;
 
   split d(X,Y,communicator);
-  
+
   unsigned int x=d.x;
   unsigned int y=d.y;
   unsigned int y0=d.y0;
@@ -156,39 +157,39 @@ int main(int argc, char **argv)
   }
 
   Complex* data=ComplexAlign(max(X*y,x*Y)*Z);
-  
+
   init(data,X,y,Z,0,d.y0);
 
   //    show(data,X,y*Z,communicator);
-    
+
   mpitranspose<Complex> T(X,Y,x,y,Z,data,NULL,communicator,
 			  mpiOptions(a,alltoall,defaultmpithreads,!quiet));
   init(data,X,y,Z,0,y0);
   T.localize1(data);
-  
+
   //    show(data,x,Y*Z,communicator);
-    
+
   init(data,X,y,Z,0,y0);
-    
+
   statistics Sininit,Sinwait0,Sinwait1,Sin;
   statistics Soutinit,Soutwait0,Soutwait1,Sout;
 
   bool showoutput=!quiet && (test || (!X*Y < showlimit && N == 1));
 
   if(showoutput) {
-    if(main) 
+    if(main)
       cout << "\nInput:" << endl;
     show(data,X,y*Z,communicator);
   }
 
-    
+
   if(test) {
     if(main)
       cout << "\nDiagnostics and unit test.\n" << endl;
 
     init(data,X,y,Z,0,y0);
     if(showoutput) {
-      if(main) 
+      if(main)
 	cout << "Input:" << endl;
       show(data,X,y*Z,communicator);
     }
@@ -230,7 +231,7 @@ int main(int argc, char **argv)
 	if(wholedata[pos] != wholeoutput[pos])
 	  success=false;
       }
-                
+
       if(success == true) {
 	cout << "\nTest succeeded." << endl;
       } else {
@@ -244,32 +245,29 @@ int main(int argc, char **argv)
       cout << "\nSpeed test.\n" << endl;
 
     bool detailed=main && stats == -1;
-    double *Tp=NULL;
-    if(detailed)
-      Tp=new double[N];
-      
+    vector<double> Tp;
     init(data,X,y,Z,0,y0);
     T.localize0(data); // Initialize communication buffers
-      
+
     for(int k=0; k < N; ++k) {
       init(data,X,y,Z,0,y0);
-    
-      double begin=0.0, Tinit0=0.0, Tinit=0.0, Twait0=0.0, Twait1=0.0;
-      if(main) begin=totalseconds();
 
+      double begin=0.0, Tinit0=0.0, Tinit=0.0, Twait0=0.0, Twait1=0.0;
+      utils::stopWatch *W=NULL;
+      if(main) W=new stopWatch;
       T.inphase0();
-      if(main) Tinit0=totalseconds();
+      if(main) Tinit0=W->seconds();
       T.insync0();
-      if(main) Twait0=totalseconds();
+      if(main) Twait0=W->seconds();
       T.inphase1();
-      if(main) Tinit=totalseconds();
+      if(main) Tinit=W->seconds();
       T.insync1();
-      if(main) Twait1=totalseconds();
+      if(main) Twait1=W->seconds();
       T.inpost();
-        
+
       double tin=0.0;
       if(main) {
-	tin=totalseconds()-begin;
+	tin=W->seconds();
 	Sin.add(tin);
 	Sininit.add(Tinit0-begin);
 	Sinwait0.add(Twait0-Tinit0);
@@ -281,34 +279,34 @@ int main(int argc, char **argv)
 	show(data,x,Y*Z,communicator);
 	if(main) cout << endl;
       }
-        
-      if(main) begin=totalseconds();
+
+      if(main) begin=W->seconds();
       T.outphase0();
-      if(main) Tinit0=totalseconds();
+      if(main) Tinit0=W->seconds();
       T.outsync0();
-      if(main) Twait0=totalseconds();
+      if(main) Twait0=W->seconds();
       T.outphase1();
-      if(main) Tinit=totalseconds();
+      if(main) Tinit=W->seconds();
       T.outsync1();
-      if(main) Twait1=totalseconds();
-    
+      if(main) Twait1=W->seconds();
+
       if(main) {
-	double tout=totalseconds()-begin;
+	double tout=W->seconds()-begin;
 	if(detailed)
-	  Tp[k]=0.5*(tout+tin);
-          
+	  Tp.push_back(0.5*(tout+tin));
+
 	Sout.add(tout);
 	Soutinit.add(Tinit0-begin);
 	Soutwait0.add(Twait0-Tinit0);
 	Soutwait1.add(Twait1-Tinit);
       }
     }
-	
+
     if(detailed) {
-      timings("transpose",X,Tp,N,stats);
-      delete[] Tp;
+      timings("transpose",X,Tp.data(),Tp.size(),stats);
+      Tp.clear();
     }
-      
+
     if(showoutput) {
       if(main) cout << "\nOriginal:" << endl;
       show(data,X,y*Z,communicator);
@@ -327,9 +325,9 @@ int main(int argc, char **argv)
       Sout.output("Tout",X);
     }
   }
-  
+
   deleteAlign(data);
-  
+
   MPI_Finalize();
   return retval;
 }

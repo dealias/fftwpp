@@ -1,10 +1,17 @@
+// TODO: Add NORMALIZATION
+
 #include "mpiconvolution.h"
 #include "utils.h"
+#include "timing.h"
 
 using namespace std;
 using namespace utils;
 using namespace fftwpp;
 using namespace Array;
+
+unsigned int mx=4;
+unsigned int my=4;
+unsigned int mz=4;
 
 inline void init(Complex **F, const split3& d, unsigned int A=2,
                  bool xcompact=true, bool ycompact=true, bool zcompact=true)
@@ -17,7 +24,7 @@ inline void init(Complex **F, const split3& d, unsigned int A=2,
     array3<Complex> g(d.X,d.y,d.z,F[M+s]);
     double ffactor=S*factor;
     double gfactor=1.0/S*factor;
-    
+
     if(!xcompact) {
       for(unsigned int j=0; j < d.y; ++j) {
         for(unsigned int k=0; k < d.z; ++k) {
@@ -26,7 +33,7 @@ inline void init(Complex **F, const split3& d, unsigned int A=2,
         }
       }
     }
-    
+
     if(!ycompact) {
       for(unsigned int i=0; i < d.X; ++i) {
         for(unsigned int k=0; k < d.z; ++k) {
@@ -35,7 +42,7 @@ inline void init(Complex **F, const split3& d, unsigned int A=2,
         }
       }
     }
-    
+
     if(!zcompact && d.z0+d.z == d.Z) { // Last process
       for(unsigned int i=0; i < d.X; ++i) {
         for(unsigned int j=0; j < d.y; ++j) {
@@ -44,7 +51,7 @@ inline void init(Complex **F, const split3& d, unsigned int A=2,
         }
       }
     }
-    
+
     for(unsigned int i=!xcompact; i < d.X; ++i) {
       unsigned int ii=i-!xcompact;
       unsigned int jstart=!ycompact && d.y0 == 0;
@@ -61,24 +68,35 @@ inline void init(Complex **F, const split3& d, unsigned int A=2,
   }
 }
 
+inline void norm(Complex **F, unsigned int nx, unsigned int ny,
+                 unsigned int nzp,
+                 bool xcompact=true, bool ycompact=true, bool zcompact=true)
+{
+  array3<Complex> f(nx,ny,nzp,F[0]);
+  double norm=1.0/(27.0*mx*my*mz);
+  for(unsigned int i=!xcompact; i < nx; ++i) {
+    for(unsigned int j=!ycompact; j < ny; j++) {
+    for(unsigned int k=0; k < nzp; k++) {
+      f[i][j][k] *= norm;
+    }
+    }
+  }
+}
+
 int main(int argc, char* argv[])
 {
   // Number of iterations.
   unsigned int N0=1000000;
   unsigned int N=0;
-  
+
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
-#endif  
+#endif
   int retval=0;
 
   unsigned int A=2; // Number of independent inputs
   unsigned int B=1; // Number of outputs
-  
-  unsigned int mx=4;
-  unsigned int my=4;
-  unsigned int mz=4;
-  
+
   bool xcompact=true;
   bool ycompact=true;
   bool zcompact=true;
@@ -89,20 +107,20 @@ int main(int argc, char* argv[])
   bool quiet=false;
 
   int stats=0;
-  
+
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
 
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
   if(rank != 0) opterr=0;
-#ifdef __GNUC__ 
+#ifdef __GNUC__
   optind=0;
-#endif  
+#endif
   for (;;) {
     int c = getopt(argc,argv,"hitqA:B:N:a:m:s:x:y:z:n:T:S:X:Y:Z:");
     if (c == -1) break;
-                
+
     switch (c) {
       case 0:
         break;
@@ -173,7 +191,7 @@ int main(int argc, char* argv[])
 
   if(my == 0) my=mx;
   if(mz == 0) mz=mx;
-  
+
   if(N == 0) {
     N=N0/mx/my/mz;
     if(N < 10) N=10;
@@ -182,7 +200,7 @@ int main(int argc, char* argv[])
   unsigned int nx=2*mx-xcompact;
   unsigned int ny=2*my-ycompact;
   unsigned int nzp=mz+!zcompact;
-    
+
   int size;
   MPI_Comm_size(MPI_COMM_WORLD,&size);
   unsigned int x=ceilquotient(nx,size);
@@ -190,42 +208,44 @@ int main(int argc, char* argv[])
   unsigned int X2=mx+xcompact;
   unsigned int x2=ceilquotient(X2,size);
   bool allowpencil=nx*y == x*ny && X2*y == x2*ny;
-  
+
   MPIgroup group(MPI_COMM_WORLD,ny,nzp,allowpencil);
-  
+
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;
-  
+
   defaultmpithreads=fftw::maxthreads;
-    
+
   if(group.rank < group.size) {
     bool main=group.rank == 0;
+
+    utils::stopWatch *c=NULL;
     if(!quiet && main) {
-      seconds();
-      cout << "Configuration: " 
-           << group.size << " nodes X " << fftw::maxthreads 
+      c=new utils::stopWatch;
+      cout << "Configuration: "
+           << group.size << " nodes x " << fftw::maxthreads
            << " threads/node" << endl;
       cout << "Using MPI VERSION " << MPI_VERSION << endl;
     }
 
     // Dimensions of the data
     split3 d(nx,ny,nzp,group,true);
-    
+
     // Dimensions used in the MPI convolution
     split3 du(mx+xcompact,ny,my+ycompact,nzp,group,true);
 //    du.n=max(du.n,d.n2);
-    
+
     if(B != 1) {
       cerr << "Only B=1 is implemented" << endl;
       exit(1);
     }
-    
+
     Complex **F=new Complex*[A];
     for(unsigned int a=0; a < A; a++)
       F[a]=ComplexAlign(d.n);
-    
+
     realmultiplier *mult;
-    
+
     switch(A) {
       case 2: mult=multbinary; break;
       case 4: mult=multbinary2; break;
@@ -242,15 +262,15 @@ int main(int argc, char* argv[])
     }
 
     unsigned int outlimit=3000;
-    
+
     bool showresult = nx*ny*mz < outlimit;
-    
+
     ImplicitHConvolution3MPI C(mx,my,mz,xcompact,ycompact,zcompact,d,du,F[0],
                                mpiOptions(divisor,alltoall),A,B);
-    
+
     if(test) {
       init(F,d,A,xcompact,ycompact,zcompact);
-      
+
       if(!quiet && showresult) {
         if(main)
 	  cout << "Distributed input:" << endl;
@@ -260,7 +280,7 @@ int main(int argc, char* argv[])
           show(F[a],d.X,d.y,d.z,group.active);
         }
       }
-      
+
       if(!quiet && main) cout << "Gathered input:" << endl;
       Complex **F0=new Complex*[A];
       for(unsigned int a=0; a < A; a++) {
@@ -275,12 +295,13 @@ int main(int argc, char* argv[])
       }
 
       C.convolve(F,mult);
+      norm(F,d.X,d.y,d.z,xcompact,ycompact,zcompact);
 
       if(!quiet && showresult) {
         if(main) cout << "Distributed output: " << endl;
         show(F[0],d.X,d.y,d.z,group.active);
       }
-      
+
       Complex **F0out=new Complex*[B];
       if(main) {
         for(unsigned int b=0; b < B; b++)
@@ -298,6 +319,8 @@ int main(int argc, char* argv[])
       if(main) {
         ImplicitHConvolution3 Clocal(mx,my,mz,xcompact,ycompact,zcompact,A,B);
         Clocal.convolve(F0,mult);
+        norm(F0,nx,ny,nzp,xcompact,ycompact,zcompact);
+
         if(!quiet)
           cout << "Local output:" << endl;
         for(unsigned int b=0; b < B; b++) {
@@ -308,7 +331,7 @@ int main(int argc, char* argv[])
           retval += checkerror(F0[b],F0out[b],d.X*d.Y*d.Z);
         }
       }
-      
+
       if(main) {
         for(unsigned int a=0; a < A; a++)
           deleteAlign(F0[a]);
@@ -317,38 +340,42 @@ int main(int argc, char* argv[])
       }
       delete[] F0;
       delete[] F0out;
-      
+
     } else {
       if(!quiet && main)
-        cout << "Initialized after " << seconds() << " seconds." << endl;
+        cout << "Initialized after " << c->seconds() << " seconds." << endl;
 
       MPI_Barrier(group.active);
-      
-      double *T=new double[N];
+
+      vector<double> T;
       for(unsigned int i=0; i < N; ++i) {
         init(F,d,A,xcompact,ycompact,zcompact);
-        if(main) seconds();
+        utils::stopWatch *c;
+        if(main) c=new utils::stopWatch;
         C.convolve(F,mult);
-        if(main) T[i]=seconds();
+        if(main)
+          T.push_back(c->nanoseconds());
       }
-      if(main) 
-        timings("Implicit",mx,T,N,stats);
-      delete [] T;
-      
+      if(main) {
+        timings("Implicit",mx,T.data(),T.size(),stats);
+        T.clear();
+      }
+
       if(!quiet && showresult) {
         if(main) cout << "output: " << endl;
+        norm(F,d.X,d.y,d.z,xcompact,ycompact,zcompact);
         show(F[0],d.X,d.y,d.z,group.active);
       }
     }
-      
+
     for(unsigned int a=0; a < A; a++)
       deleteAlign(F[a]);
     delete[] F;
 
-    
+
   }
 
   MPI_Finalize();
-  
+
   return retval;
 }
