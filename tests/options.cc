@@ -1,17 +1,25 @@
 #include "convolve.h"
 #include "timing.h"
+#include "options.h"
 
 using namespace std;
 using namespace fftwpp;
 
-namespace fftwpp {
 size_t L,Lx,Ly,Lz;
 size_t M,Mx,My,Mz;
 size_t mx=0,my=0,mz=0;
 size_t Dx=0,Dy=0,Dz=0;
 size_t Sx=0,Sy=0;
 ptrdiff_t Ix=-1,Iy=-1,Iz=-1;
-}
+
+bool Output=false;
+bool testError=false;
+bool showOptTimes=false;
+bool Centered=false;
+bool normalized=true;
+bool Tforced=false;
+bool showRoutines=false;
+bool accuracy=false;
 
 double K=1.0; // Time limit (seconds)
 size_t minCount=20; // Minimum sample size for testing

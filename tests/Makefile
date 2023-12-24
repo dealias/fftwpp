@@ -59,7 +59,7 @@ MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
 
 vpath %.cc ../
 
-FILES=conv cconv conv2 cconv2 conv3 cconv3 tconv tconv2 rconv rconv2 \
+FILES=conv cconv conv2 cconv2 conv3 cconv3 rconv rconv2 \
 	fft1 fft2 fft3 fft1r fft2r fft3r mfft1 mfft1r transpose directTest\
 	hybrid hybridh hybridr hybridconv hybridconvh hybridconvr \
 	hybridconv2 hybridconvr2 hybridconvh2 \
@@ -133,12 +133,6 @@ conv3: conv3.o $(EXTRA:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 cconv3: cconv3.o $(EXTRA:=.o)
-	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
-
-tconv: tconv.o $(EXTRA:=.o)
-	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
-
-tconv2: tconv2.o $(EXTRA:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 fft1: fft1.o $(EXTRA:=.o)

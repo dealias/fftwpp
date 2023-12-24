@@ -4,6 +4,8 @@
 #include "explicit.h"
 #include "direct.h"
 #include "utils.h"
+#include "options.h"
+#include "options.h"
 
 using namespace std;
 using namespace utils;

@@ -4,6 +4,7 @@
 #include "explicit.h"
 #include "direct.h"
 #include "utils.h"
+#include "options.h"
 #include "Array.h"
 
 using namespace std;

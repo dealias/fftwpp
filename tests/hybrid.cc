@@ -1,4 +1,5 @@
 #include "convolve.h"
+#include "options.h"
 
 using namespace std;
 using namespace utils;

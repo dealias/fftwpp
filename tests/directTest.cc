@@ -3,6 +3,7 @@
 #include "convolve.h"
 #include "timing.h"
 #include "direct.h"
+#include "options.h"
 
 using namespace std;
 using namespace utils;

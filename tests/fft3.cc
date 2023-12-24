@@ -2,6 +2,7 @@
 #include "Array.h"
 #include "fftw++.h"
 #include "utils.h"
+#include "options.h"
 #include "timing.h"
 
 using namespace std;
