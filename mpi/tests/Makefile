@@ -11,6 +11,8 @@ CXXFLAGS += -Ofast -g -Wall -DNDEBUG
 CXXFLAGS += -fopenmp
 CXXFLAGS += -fomit-frame-pointer -fstrict-aliasing -ffast-math
 CXXFLAGS += -march=native
+#For valgrind:
+CXXFLAGS=-fopenmp -g -Wall -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse
 endif
 
 #Intel compiler
@@ -47,14 +49,16 @@ LDFLAGS+= -lfftw3_omp -lfftw3 -lm
 
 MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
 
-vpath %.cc ../:../../
+vpath %.cc ../:../../:../../tests
 
 FFTW=fftw++ parallel
 FILES=gather gatheryz gatherxy transpose fft2 fft3 fft2r fft3r  \
+	hybridconv2 \
 	cconv2 conv2 cconv3 conv3
 MPITRANSPOSE=mpitranspose
 MPIFFT=$(FFTW) $(MPITRANSPOSE) mpifftw++
 MPICONVOLUTION=$(MPIFFT) convolution mpiconvolution
+MPICONVOLVE=$(MPIFFT) convolve mpiconvolve options
 
 ALL=$(FILES) $(MPICONVOLUTION)
 
@@ -85,6 +89,9 @@ fft3: fft3.o $(MPIFFT:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
 fft3r: fft3r.o $(MPIFFT:=.o)
+	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
+
+hybridconv2: hybridconv2.o $(MPICONVOLVE:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
 cconv2: cconv2.o $(MPICONVOLUTION:=.o)

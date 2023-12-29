@@ -18,7 +18,7 @@ void ImplicitConvolution2MPI::convolve(Complex **F, multiplier *pmult,
     if(a > 0) U->wait();
     U->ilocalize1(u);
   }
-      
+
   T->wait();
   subconvolution(F,pmult,0,d.x,d.Y,offset);
   U->wait0();
@@ -29,7 +29,7 @@ void ImplicitConvolution2MPI::convolve(Complex **F, multiplier *pmult,
   U->wait1();
   subconvolution(U2,pmult,1,d.x,d.Y);
   T->wait();
-    
+
   for(unsigned int b=0; b < B; ++b) {
     Complex *f=F[b]+offset;
     Complex *u=U2[b];
@@ -40,7 +40,7 @@ void ImplicitConvolution2MPI::convolve(Complex **F, multiplier *pmult,
     xfftpad->reduce(f,u);
   }
 }
-  
+
 void ImplicitHConvolution2MPI::convolve(Complex **F, realmultiplier *pmult,
                                         bool symmetrize, unsigned int i,
                                         unsigned int offset)
@@ -65,8 +65,8 @@ void ImplicitHConvolution2MPI::convolve(Complex **F, realmultiplier *pmult,
     if(a > 0) U->wait1();
     U->ilocalize1(u);
   }
-  
-      
+
+
   T->wait();
   subconvolution(F,pmult,xfftpad->findex,d.x,d.Y,offset);
   U->wait0();
@@ -77,7 +77,7 @@ void ImplicitHConvolution2MPI::convolve(Complex **F, realmultiplier *pmult,
   U->wait1();
   subconvolution(U2,pmult,xfftpad->uindex,du.x,du.Y);
   T->wait();
-    
+
   for(unsigned int b=0; b < B; ++b) {
     Complex *f=F[b]+offset;
     Complex *u=U2[b];
@@ -92,7 +92,7 @@ void ImplicitHConvolution2MPI::convolve(Complex **F, realmultiplier *pmult,
 }
 
 void ImplicitConvolution3MPI::convolve(Complex **F, multiplier *pmult,
-                                       unsigned int i, unsigned int offset) 
+                                       unsigned int i, unsigned int offset)
 {
   for(unsigned int a=0; a < A; ++a) {
     Complex *f=F[a]+offset;
@@ -109,9 +109,9 @@ void ImplicitConvolution3MPI::convolve(Complex **F, multiplier *pmult,
       U->ilocalize1(u);
     }
   }
-      
+
   unsigned int stride=d.Y*d.z;
-    
+
   if(T) T->wait();
   subconvolution(F,pmult,0,d.x,stride,offset);
   if(U) {
@@ -124,7 +124,7 @@ void ImplicitConvolution3MPI::convolve(Complex **F, multiplier *pmult,
   }
   subconvolution(U3,pmult,1,d.x,stride);
   if(T) T->wait();
-    
+
   for(unsigned int b=0; b < B; ++b) {
     Complex *f=F[b]+offset;
     Complex *u=U3[b];
@@ -159,7 +159,7 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
   unsigned int dy=d.xy.y;
   unsigned int j0=y0 == 0 ? yextra : 0;
   unsigned int start=(yorigin > y0) ? yorigin-y0 : 0;
-  
+
   if(d.XYplane == NULL) {
     d.XYplane=new MPI_Comm;
     MPI_Comm_split(d.communicator,d.z0 == 0,0,d.XYplane);
@@ -180,7 +180,7 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
         for(unsigned int j=start[p]; j < stop; ++j)
           process[j]=p;
       }
-    
+
       for(unsigned int j=j0; j < dy; ++j)
         d.reflect[j]=process[2*yorigin-y0-j];
       for(int p=1; p < size; ++p) {
@@ -237,7 +237,7 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
         f[stride*(i+xextra)+d.z*j]=u[i];
     }
   }
-  
+
   if(nu < nx) deleteAlign(u);
 }
 
@@ -280,14 +280,14 @@ void ImplicitHConvolution3MPI::convolve(Complex **F, realmultiplier *pmult,
   }
   subconvolution(U3,pmult,xfftpad->uindex,du.x,du.Y*du.z);
   if(T) T->wait();
-    
+
   for(unsigned int b=0; b < B; ++b) {
     Complex *f=F[b]+offset;
     Complex *u=U3[b];
     if(U)
       U->ilocalize0(u);
     xfftpad->Forwards0(f);
-    if(U) 
+    if(U)
       U->wait();
     xfftpad->Forwards1(f,u);
     xfftpad->Forwards->fft(f);

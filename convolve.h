@@ -1351,7 +1351,7 @@ public:
       V[i]=utils::ComplexAlign(size);
   }
 
-  ~Convolution2() {
+  virtual ~Convolution2() {
     if(allocateF) {
       utils::deleteAlign(F[0]);
       delete [] F;
@@ -1376,15 +1376,24 @@ public:
     delete [] convolvey;
   }
 
-  void forward(Complex **f, Complex **F, size_t rx,
-               size_t start, size_t stop,
-               size_t offset=0) {
+  virtual void forward(Complex **f, Complex **F, size_t rx,
+                       size_t start, size_t stop,
+                       size_t offset=0) {
     for(size_t a=start; a < stop; ++a)
       (fftx->*Forward)(f[a]+offset,F[a],rx,W);
   }
 
-  void subconvolution(Complex **F, size_t rx, size_t offset=0) {
-    size_t blocksize=fftx->blocksize(rx);
+  virtual size_t stridex() {
+    return Sx;
+  }
+
+  virtual size_t blocksizex(size_t rx) {
+    return fftx->blocksize(rx);
+  }
+
+ void subconvolution(Complex **F, size_t rx, size_t offset=0) {
+    size_t blocksize=blocksizex(rx);
+    size_t Sx=stridex();
     PARALLEL(
       for(size_t i=0; i < blocksize; ++i) {
         size_t t=parallel::get_thread_num(threads);
@@ -1394,18 +1403,22 @@ public:
       });
   }
 
-  void backward(Complex **F, Complex **f, size_t rx,
-                size_t start, size_t stop,
-                size_t offset=0, Complex *W0=NULL) {
+  virtual void backward(Complex **F, Complex **f, size_t rx,
+                        size_t start, size_t stop,
+                        size_t offset=0, Complex *W0=NULL) {
     for(size_t b=start; b < stop; ++b)
       (fftx->*Backward)(F[b],f[b]+offset,rx,W0);
     if(W && W == W0) (fftx->*Pad)(W0);
   }
 
+  virtual size_t inputLengthy() {
+    return ffty->inputLength();
+  }
+
   void normalize(Complex **h, size_t offset=0) {
     size_t w=fftx->wordSize();
     size_t wSx=w*Sx;
-    size_t wLy=w*ffty->inputLength();
+    size_t wLy=w*inputLengthy();
     for(size_t b=0; b < B; ++b) {
       double *hb=(double *) (h[b]+offset);
       for(size_t i=0; i < Lx; ++i) {

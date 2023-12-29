@@ -10,7 +10,7 @@ CXXFLAGS+=-march=native
 #CXXFLAGS+= -fprofile-generate
 #CXXFLAGS+= -fprofile-use -fprofile-dir=.
 #For valgrind:
-#CXXFLAGS=-fopenmp -g -Wall -ansi -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse
+#CXXFLAGS=-fopenmp -g -Wall -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse
 endif
 
 #Clang compiler

@@ -19,7 +19,7 @@ void gatherx(const ftype *part, ftype *whole, const split d,
   const unsigned int Y=d.Y;
   const unsigned int x=d.x;
   const unsigned int x0=d.x0;
-  
+
   if(rank == 0) {
     // First copy rank 0's part into the whole
     int offset=x0*Y*Z;
@@ -27,7 +27,7 @@ void gatherx(const ftype *part, ftype *whole, const split d,
     int length=Y*Z;
     int stride=Y*Z;
     copyfromblock(part,whole+offset,count,length,stride);
-      
+
     for(int p=1; p < size; ++p) {
       unsigned int dims[2];
       MPI_Recv(&dims,2,MPI_UNSIGNED,p,0,communicator,MPI_STATUS_IGNORE);
@@ -71,7 +71,7 @@ void gathery(const ftype *part, ftype *whole, const split d,
   const unsigned int Y=d.Y;
   const unsigned int y=d.y;
   const unsigned int y0=d.y0;
-  
+
   if(rank == 0) {
     // First copy rank 0's part into the whole
     int offset=y0*Z;
@@ -79,7 +79,7 @@ void gathery(const ftype *part, ftype *whole, const split d,
     int length=y*Z;
     int stride=Y*Z;
     copyfromblock(part,whole+offset,count,length,stride);
-      
+
     for(int p=1; p < size; ++p) {
       unsigned int dims[2];
       MPI_Recv(&dims,2,MPI_UNSIGNED,p,0,communicator,MPI_STATUS_IGNORE);
@@ -125,7 +125,7 @@ void gatheryz(const ftype *part, ftype *whole, const split3& d,
   const unsigned int z=d.z;
   const unsigned int y0=d.xy.y0;
   const unsigned int z0=d.z0;
-  
+
   if(rank == 0) {
     // First copy rank 0's part into the whole
     const int count=y;
@@ -189,7 +189,7 @@ void gatherxy(const ftype *part,
   const unsigned int y=d.yz.x;
   const unsigned int x0=d.x0;
   const unsigned int y0=d.yz.x0;
-                
+
   if(rank == 0) {
     // First copy rank 0's part into the whole
     const int count=y;
@@ -255,7 +255,7 @@ int checkerror(const T *f, const T *control, unsigned int n, unsigned int M,
   }
 
   std::cout << "Maximum error: " << maxerr << std::endl;
-  if(maxerr <= 1e-12*norm) {
+  if(maxerr < 1e-12*norm) {
     std::cout << "Error ok." << std::endl;
     return 0;
   }
@@ -289,16 +289,16 @@ template<class ftype>
 void show(ftype *f, unsigned int nx, unsigned int ny,
           unsigned int x0, unsigned int y0,
           unsigned int x1, unsigned int y1, const MPI_Comm& communicator)
-          
-{  
+
+{
   int size,rank;
   MPI_Comm_size(communicator,&size);
   MPI_Comm_rank(communicator,&rank);
-  
+
   if(rank == 0) {
     std::cout << "process " << 0 << ":" <<  std::endl;
     show(f,nx,ny,x0,y0,x1,y1);
-    
+
     for(int p=1; p < size; p++) {
       unsigned int dims[6];
       MPI_Recv(&dims,6,MPI_UNSIGNED,p,0,communicator,MPI_STATUS_IGNORE);
@@ -312,7 +312,7 @@ void show(ftype *f, unsigned int nx, unsigned int ny,
         ftype *C=new ftype[n];
         MPI_Recv(C,sizeof(ftype)*n,MPI_BYTE,p,0,communicator,
                  MPI_STATUS_IGNORE);
-      
+
         show(C,nx,ny,x0,y0,x1,y1);
         delete [] C;
       }
@@ -325,11 +325,11 @@ void show(ftype *f, unsigned int nx, unsigned int ny,
       MPI_Send(f,n*sizeof(ftype),MPI_BYTE,0,0,communicator);
   }
 }
-  
+
 template<class ftype>
 void show(ftype *f, unsigned int nx, unsigned int ny,
           const MPI_Comm& communicator)
-{ 
+{
   show(f,nx,ny,0,0,nx,ny,communicator);
 }
 
@@ -363,11 +363,11 @@ void show(ftype *f,
   int size,rank;
   MPI_Comm_size(communicator,&size);
   MPI_Comm_rank(communicator,&rank);
-  
+
   if(rank == 0) {
     std::cout << "process " << 0 << ":" <<  std::endl;
     show(f,nx,ny,nz,x0,y0,z0,x1,y1,z1);
-    
+
     for(int p=1; p < size; p++) {
       unsigned int dims[9];
       MPI_Recv(&dims,9,MPI_UNSIGNED,p,0,communicator,MPI_STATUS_IGNORE);
@@ -380,7 +380,7 @@ void show(ftype *f,
         ftype *C=new ftype[n];
         MPI_Recv(C,n*sizeof(ftype),MPI_BYTE,p,0,communicator,
                  MPI_STATUS_IGNORE);
-      
+
         std::cout << "process " << p << ":" <<  std::endl;
         show(C,nx,ny,nz,x0,y0,z0,x1,y1,z1);
         delete [] C;
@@ -398,7 +398,7 @@ void show(ftype *f,
 template<class ftype>
 void show(ftype *f, unsigned int nx, unsigned int ny, unsigned int nz,
           const MPI_Comm& communicator)
-{ 
+{
   show(f,nx,ny,nz,0,0,0,nx,ny,nz,communicator);
 }
 
