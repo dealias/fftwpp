@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
   bool Normalized=true;
 
   double K=1.0; // Time limit (seconds)
-  size_t minCount=20;
+  size_t N=20;
 
   fftw::maxthreads=parallel::get_max_threads();
 
@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
   cout << "nx=" << nx << ", ny=" << ny << endl;
   cout << "mx=" << mx << ", my=" << my << endl;
 
-  if(K == 0) minCount=1;
+  if(K == 0) N=1;
   cout << "K=" << K << endl;
   K *= 1.0e9;
 
@@ -219,7 +219,7 @@ int main(int argc, char *argv[])
     }
 
     double sum=0.0;
-    while(sum <= K || T.size() < minCount) {
+    while(sum <= K || T.size() < N) {
       init(F,mx,my,nxp,nyp,A,xcompact,ycompact);
       cpuTimer c;
       C.convolve(F,mult);
@@ -265,7 +265,7 @@ int main(int argc, char *argv[])
     cout << "threads=" << C.Threads() << endl << endl;
 
     double sum=0.0;
-    while(sum <= K || T.size() < minCount) {
+    while(sum <= K || T.size() < N) {
       init(F,mx,my,nxp,nyp,A,true,true);
       cpuTimer c;
       C.convolve(F,F+M);

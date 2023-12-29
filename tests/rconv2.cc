@@ -14,7 +14,6 @@ using namespace fftwpp;
 
 // Number of iterations.
 size_t N0=10000000;
-size_t N=0;
 size_t nx=0;
 size_t ny=0;
 size_t mx=4;
@@ -39,7 +38,7 @@ int main(int argc, char *argv[])
   bool Normalized=true;
 
   double K=1.0; // Time limit (seconds)
-  size_t minCount=20;
+  size_t N=20;
 
   size_t A=2;
   size_t B=1;
@@ -105,7 +104,7 @@ int main(int argc, char *argv[])
   cout << "nx=" << nx << ", ny=" << ny << endl;
   cout << "mx=" << mx << ", my=" << my << endl;
 
-  if(K == 0) minCount=1;
+  if(K == 0) N=1;
   cout << "K=" << K << endl;
   K *= 1.0e9;
 
@@ -129,7 +128,7 @@ int main(int argc, char *argv[])
   cout << "threads=" << Convolve.Threads() << endl << endl;;
 
   double sum=0.0;
-  while(sum <= K || T.size() < minCount) {
+  while(sum <= K || T.size() < N) {
     init(F,2*nyp,mx,my,A);
     cpuTimer c;
     Convolve.convolve(F,mult);

@@ -11,8 +11,7 @@ using namespace Array;
 using namespace fftwpp;
 
 // Number of iterations.
-size_t N0=10000000;
-size_t N=0;
+size_t N=10000000;
 size_t mx=4;
 size_t my=4;
 size_t mz=4;
@@ -50,7 +49,7 @@ int main(int argc, char *argv[])
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hN:m:x:y:z:n:T:S:i:d");
+    int c = getopt(argc,argv,"h:m:x:y:z:T:S:i:d");
     if (c == -1) break;
 
     switch (c) {
@@ -70,9 +69,6 @@ int main(int argc, char *argv[])
         break;
       case 'z':
         mz=atoi(optarg);
-        break;
-      case 'n':
-        N0=atoi(optarg);
         break;
       case 'T':
         fftw::maxthreads=max(atoi(optarg),1);

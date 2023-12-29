@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
   bool Inplace=true;
 
   double K=1.0; // Time limit (seconds)
-  size_t minCount=20;
+  size_t N=20;
   size_t m=4; // Problem size
 
   int stats=MEDIAN; // Type of statistics used in timing test.
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
   cout << "n=" << n << endl;
   cout << "m=" << m << endl;
 
-  if(K == 0) minCount=1;
+  if(K == 0) N=1;
   cout << "K=" << K << endl;
   K *= 1.0e9;
 
@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
 
   ExplicitRConvolution Convolve(n,m,F[0],G[0]);
   double sum=0.0;
-  while(sum <= K || T.size() < minCount) {
+  while(sum <= K || T.size() < N) {
     init(F,m,A);
     cpuTimer c;
     Convolve.convolve(F,mult,G);

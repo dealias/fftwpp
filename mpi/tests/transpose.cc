@@ -11,15 +11,14 @@ using namespace utils;
 //unsigned int defaultmpithreads=1;
 //}
 
-const unsigned int showlimit=1024;
-unsigned int N0=1000000;
-int N=0;
+const size_t showlimit=1024;
+size_t N=1000000;
 
-void init(Complex *data, unsigned int X, unsigned int y, unsigned int Z,
+void init(Complex *data, size_t X, size_t y, size_t Z,
           int x0, int y0) {
-  for(unsigned int i=0; i < X; ++i) {
-    for(unsigned int j=0; j < y; ++j) {
-      for(unsigned int k=0; k < Z; ++k) {
+  for(size_t i=0; i < X; ++i) {
+    for(size_t j=0; j < y; ++j) {
+      for(size_t k=0; k < Z; ++k) {
         data[(y*i+j)*Z+k].re=x0+i;
         data[(y*i+j)*Z+k].im=y0+j;
       }
@@ -50,7 +49,7 @@ int main(int argc, char **argv)
   bool test=false;
   bool quiet=false;
 
- unsigned int X=8, Y=8, Z=1;
+ size_t X=8, Y=8, Z=1;
  int a=0; // Test for best block divisor
  int alltoall=-1; // Test for best alltoall routine
 
@@ -75,14 +74,11 @@ int main(int argc, char **argv)
   optind=0;
 #endif
   for (;;) {
-    int c=getopt(argc,argv,"hN:A:a:m:n:s:T:S:x:y:z:qt");
+    int c=getopt(argc,argv,"h:A:a:m:N:s:T:S:x:y:z:qt");
     if (c == -1) break;
 
     switch (c) {
       case 0:
-        break;
-      case 'N':
-        N=atoi(optarg);
         break;
       case 's':
         alltoall=atoi(optarg);
@@ -114,8 +110,8 @@ int main(int argc, char **argv)
       case 'q':
         quiet=true;
         break;
-      case 'n':
-        N0=atoi(optarg);
+      case 'N':
+        N=atoi(optarg);
         break;
       case 'h':
       default:
@@ -133,18 +129,14 @@ int main(int argc, char **argv)
   }
 
   if(test) N=1;
-  else if(N == 0) {
-    N=N0/((unsigned long long) X*Y*Z);
-    N=max(N,20);
-  }
 
   int retval=0;
 
   split d(X,Y,communicator);
 
-  unsigned int x=d.x;
-  unsigned int y=d.y;
-  unsigned int y0=d.y0;
+  size_t x=d.x;
+  size_t y=d.y;
+  size_t y0=d.y0;
 
   if(main) {
     cout << "size=" << size << endl;
@@ -226,8 +218,8 @@ int main(int argc, char **argv)
       }
 
       bool success=true;
-      const unsigned int stop=X*Y*Z;
-      for(unsigned int pos=0; pos < stop; ++pos) {
+      const size_t stop=X*Y*Z;
+      for(size_t pos=0; pos < stop; ++pos) {
 	if(wholedata[pos] != wholeoutput[pos])
 	  success=false;
       }
@@ -249,7 +241,7 @@ int main(int argc, char **argv)
     init(data,X,y,Z,0,y0);
     T.localize0(data); // Initialize communication buffers
 
-    for(int k=0; k < N; ++k) {
+    for(size_t k=0; k < N; ++k) {
       init(data,X,y,Z,0,y0);
 
       double begin=0.0, Tinit0=0.0, Tinit=0.0, Twait0=0.0, Twait1=0.0;

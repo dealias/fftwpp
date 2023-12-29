@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 
   if(Output || testError)
     K=0;
-  if(K == 0) minCount=1;
+  if(K == 0) N=1;
   cout << "K=" << K << endl << endl;
   K *= 1.0e9;
 
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
       Convolve.convolve((Complex **) f);
 
   double sum=0.0;
-  while(sum <= K || T.size() < minCount) {
+  while(sum <= K || T.size() < N) {
     double t;
     if(normalized || testError) {
       cpuTimer c;

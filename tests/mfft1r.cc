@@ -25,15 +25,12 @@ int main(int argc, char *argv[])
   fftw::maxthreads=parallel::get_max_threads();
 
   // Number of iterations.
-  size_t N0=10000000;
+  size_t N=10000000;
 
-  size_t N=0;
-  size_t mx=4;
+    size_t mx=4;
   size_t my=4;
 
   size_t stats=0; // Type of statistics used in timing test.
-
-  bool Nset = false;
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
@@ -43,14 +40,10 @@ int main(int argc, char *argv[])
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hN:m:x:y:n:T:S:");
+    int c = getopt(argc,argv,"hm:x:y:N:T:S:");
     if (c == -1) break;
     switch (c) {
       case 0:
-        break;
-      case 'N':
-        Nset = true;
-        N=atoi(optarg);
         break;
       case 'm':
         mx=my=atoi(optarg);
@@ -61,8 +54,8 @@ int main(int argc, char *argv[])
       case 'y':
         my=atoi(optarg);
         break;
-      case 'n':
-        N0=atoi(optarg);
+      case 'N':
+        N=atoi(optarg);
         break;
       case 'T':
         fftw::maxthreads=max(atoi(optarg),1);
@@ -84,10 +77,6 @@ int main(int argc, char *argv[])
   cout << "np=" << np << endl;
   size_t M=my;
 
-  if(!Nset) {
-    N=N0/mx/my;
-    if(N < 10) N=10;
-  }
   cout << "N=" << N << endl;
 
   size_t align=ALIGNMENT;

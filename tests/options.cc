@@ -22,7 +22,7 @@ bool showRoutines=false;
 bool accuracy=false;
 
 double K=1.0; // Time limit (seconds)
-size_t minCount=20; // Minimum sample size for testing
+size_t N=20;  // Minimum sample size for testing
 size_t C=1;
 size_t S=0;
 int stats=MEDIAN;
@@ -79,7 +79,7 @@ void optionsHybrid(int argc, char *argv[], bool fft, bool mpi)
   };
 
   for (;;) {
-    int c=getopt_long_only(argc,argv,"ahC:D:I:K:L:M:ctEORS:T:m:u",
+    int c=getopt_long_only(argc,argv,"ahC:D:I:K:L:M:N:ctEORS:T:m:u",
                            long_options,&option_index);
 
     if (c == -1) break;
@@ -160,6 +160,9 @@ void optionsHybrid(int argc, char *argv[], bool fft, bool mpi)
         break;
       case mZ:
         mz=Atoi(optarg,0);
+        break;
+      case 'N':
+        N=atoi(optarg);
         break;
       case 'O':
         Output=true;

@@ -5,12 +5,12 @@
 #include "seconds.h"
 #include "Complex.h"
 
-extern double K;       // Time limit (seconds) for testing
-extern size_t minCount; // Minimum sample size for testing
+extern double K;  // Time limit (seconds) for testing
+extern size_t N;  // Minimum sample size for testing
 
-extern size_t C; // number of padded FFTs to compute
-extern size_t S; // stride between padded FFTs
-extern int stats;      // type of statistics used in timing test
+extern size_t C;  // number of padded FFTs to compute
+extern size_t S;  // stride between padded FFTs
+extern int stats; // type of statistics used in timing test
 
 #ifdef _WIN32
 #include "getopt.h"
@@ -178,9 +178,11 @@ inline void usageHybrid(bool fft=false, bool mpi=false)
   std::cerr << "-O\t\t output result (sets K=0)" << std::endl;
   std::cerr << "-R\t\t show which forward and backward routines are used" << std::endl;
   if(mpi)
-    std::cerr << "-K t\t\t number of iterations" << std::endl;
-  else
+    std::cerr << "-N t\t\t number of iterations" << std::endl;
+  else {
+    std::cerr << "-N t\t\t minimum number of iterations" << std::endl;
     std::cerr << "-K t\t\t time limit (seconds)" << std::endl;
+  }
   std::cerr << "-L n\t\t number n of physical data values" << std::endl;
   std::cerr << "-M n\t\t minimal number n of padded data values" << std::endl;
   if(fft)

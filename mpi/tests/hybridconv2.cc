@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
       cout << "Mx=" << Mx << endl;
       cout << "My=" << My << endl;
 
-      cout << "K=" << K << endl;
+      cout << "N=" << N << endl;
     }
 
     params P;
@@ -165,7 +165,7 @@ int main(int argc, char* argv[])
       MPI_Barrier(group.active);
 
       vector<double> T;
-      for(unsigned int i=0; i < K; ++i) {
+      for(size_t i=0; i < N; ++i) {
         utils::stopWatch *c;
         if(main) c=new utils::stopWatch;
         Convolve.convolve(f);

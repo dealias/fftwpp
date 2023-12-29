@@ -14,7 +14,6 @@ using namespace fftwpp;
 
 // Number of iterations.
 size_t N0=10000000;
-size_t N=0;
 size_t nx=0;
 size_t ny=0;
 size_t nz=0;
@@ -66,7 +65,7 @@ int main(int argc, char *argv[])
   bool Pruned=false;
 
   double K=1.0; // Time limit (seconds)
-  size_t minCount=20;
+  size_t N=20;
 
   size_t A=2; // Number of independent inputs
   size_t B=1; // Number of independent outputs
@@ -164,7 +163,7 @@ int main(int argc, char *argv[])
   cout << "nx=" << nx << ", ny=" << ny << ", nz=" << ny << endl;
   cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
 
-  if(K == 0) minCount=1;
+  if(K == 0) N=1;
   cout << "K=" << K << endl;
   K *= 1.0e9;
 
@@ -218,7 +217,7 @@ int main(int argc, char *argv[])
     ImplicitConvolution3 C(mx,my,mz,A,B);
     cout << "Using " << C.Threads() << " threads."<< endl;
     double sum=0.0;
-    while(sum <= K || T.size() < minCount) {
+    while(sum <= K || T.size() < N) {
       init(F,mx,my,mz,A);
       cpuTimer c;
       C.convolve(F,mult);
@@ -260,7 +259,7 @@ int main(int argc, char *argv[])
     ExplicitConvolution3 C(nx,ny,nz,mx,my,mz,f,Pruned);
 
     double sum=0.0;
-    while(sum <= K || T.size() < minCount) {
+    while(sum <= K || T.size() < N) {
       init(F,nxp,nyp,nzp,A);
       cpuTimer c;
       C.convolve(F[0],F[1]);
