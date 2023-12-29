@@ -170,7 +170,7 @@ int main(int argc, char* argv[])
       for(size_t i=0; i < N; ++i) {
         utils::stopWatch *c;
         if(main) c=new utils::stopWatch;
-        Convolve.convolve(f);
+        Convolve.convolveRaw(f);
         if(main)
           T.push_back(c->nanoseconds());
       }
@@ -179,9 +179,6 @@ int main(int argc, char* argv[])
         timings("Hybrid",d.X,T.data(),T.size(),stats);
         T.clear();
       }
-
-      if(Output)
-        show(f[0],d.X,d.y,group.active);
     }
 
     deleteAlign(f[0]); delete f;
