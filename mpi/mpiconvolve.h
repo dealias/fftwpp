@@ -45,13 +45,11 @@ public:
                      MPI_Comm& global) {
     global=global ? global : d.communicator;
     size_t C=std::max(A,B);
-    T=new utils::mpitranspose<Complex> *[A];
-    for(size_t a=0; a < C; ++a) {
+    T=new utils::mpitranspose<Complex> *[C];
+    for(size_t a=0; a < C; ++a)
       T[a]=new utils::mpitranspose<Complex>(d.X,d.Y,d.x,d.y,1,
                                             F[a],work,
                                             d.communicator,mpioptions,global);
-    }
-
     d.Deactivate();
   }
 
