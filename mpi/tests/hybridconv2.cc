@@ -30,6 +30,8 @@ int main(int argc, char* argv[])
 
   optionsHybrid(argc,argv,false,true);
 
+  if(quiet) Output=false;
+
   if(Sx == 0) Sx=Ly;
 
   int provided;
@@ -66,14 +68,14 @@ int main(int argc, char* argv[])
       cout << "N=" << N << endl;
     }
 
-    params P;
-
     Application appx(A,B,multNone,fftw::maxthreads,false,mx,Dx,Ix);
     Application appy(A,B,multbinary,appx,my,Dy,Iy);
 
     split d(Lx,Ly,group.active);
 
     setMPIplanner();
+
+    params P;
 
     if(main) {
       fftPad fftx(Lx,Mx,appx,d.y);
@@ -107,7 +109,7 @@ int main(int argc, char* argv[])
 
     if(Output || testError) {
 
-      if(!quiet && Output) {
+      if(Output) {
         for(unsigned int a=0; a < A; ++a) {
           if(main)
             cout << "\nDistributed input " << a  << ":"<< endl;
@@ -119,7 +121,7 @@ int main(int argc, char* argv[])
       for(unsigned int a=0; a < A; ++a) {
         flocal[a]=ComplexAlign(d.X*d.Y);
         gathery(f[a],flocal[a],d,1,group.active);
-        if(!quiet && main)  {
+        if(main && Output)  {
           cout << "\nGathered input " << a << ":" << endl;
           Array2<Complex> flocala(d.X,d.Y,flocal[a]);
           cout << flocala << endl;
@@ -131,7 +133,7 @@ int main(int argc, char* argv[])
       Complex *foutgather=ComplexAlign(d.X*d.Y);
       gathery(f[0],foutgather,d,1,group.active);
 
-      if(!quiet && Output) {
+      if(Output) {
         if(main)
           cout << "Distributed output:" << endl;
         show(f[0],d.X,d.y,group.active);
@@ -143,7 +145,7 @@ int main(int argc, char* argv[])
         Convolution2 Convolve(&fftx,&ffty);
         Convolve.convolve(flocal);
 
-        if(!quiet) {
+        if(Output) {
           cout << "Local output:" << endl;
           Array2<Complex> flocal0(d.X,d.Y,flocal[0]);
           cout << flocal0 << endl;
@@ -178,9 +180,8 @@ int main(int argc, char* argv[])
         T.clear();
       }
 
-      if(!quiet && Output) {
+      if(Output)
         show(f[0],d.X,d.y,group.active);
-      }
     }
 
     deleteAlign(f[0]); delete f;
