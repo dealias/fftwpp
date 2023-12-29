@@ -12,7 +12,7 @@ CXXFLAGS += -fopenmp
 CXXFLAGS += -fomit-frame-pointer -fstrict-aliasing -ffast-math
 CXXFLAGS += -march=native
 #For valgrind:
-CXXFLAGS=-fopenmp -g -Wall -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse
+#CXXFLAGS=-fopenmp -g -Wall -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse
 endif
 
 #Intel compiler
