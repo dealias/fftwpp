@@ -58,7 +58,7 @@ FILES=gather gatheryz gatherxy transpose fft2 fft3 fft2r fft3r  \
 MPITRANSPOSE=mpitranspose
 MPIFFT=$(FFTW) $(MPITRANSPOSE) mpifftw++
 MPICONVOLUTION=$(MPIFFT) convolution mpiconvolution
-MPICONVOLVE=$(MPIFFT) convolve mpiconvolve options
+MPICONVOLVE=$(MPIFFT) convolve options
 
 ALL=$(FILES) $(MPICONVOLUTION)
 
