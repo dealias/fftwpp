@@ -46,7 +46,8 @@ inline T pow(T x, size_t y)
   }
 }
 
-extern void optionsHybrid(int argc, char* argv[], bool fft=false);
+extern void optionsHybrid(int argc, char* argv[], bool fft=false,
+                          bool mpi=false);
 
 inline void usageCommon(int n)
 {
@@ -160,7 +161,7 @@ inline void usageGather()
   std::cerr << "-q\t\t quiet" << std::endl;
 }
 
-inline void usageHybrid(bool fft=false)
+inline void usageHybrid(bool fft=false, bool mpi=false)
 {
   std::cerr << "Options: " << std::endl;
   std::cerr << "-a\t\t accuracy test" << std::endl;
@@ -176,7 +177,10 @@ inline void usageHybrid(bool fft=false)
   std::cerr << "-I\t\t (0=out-of-place, 1=in-place) FFTs [by default I=1 only for multiple FFTs]" << std::endl;
   std::cerr << "-O\t\t output result (sets K=0)" << std::endl;
   std::cerr << "-R\t\t show which forward and backward routines are used" << std::endl;
-  std::cerr << "-K t\t\t time limit (seconds)" << std::endl;
+  if(mpi)
+    std::cerr << "-K t\t\t number of iterations" << std::endl;
+  else
+    std::cerr << "-K t\t\t time limit (seconds)" << std::endl;
   std::cerr << "-L n\t\t number n of physical data values" << std::endl;
   std::cerr << "-M n\t\t minimal number n of padded data values" << std::endl;
   if(fft)

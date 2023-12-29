@@ -39,7 +39,7 @@ size_t Atoi(char *optarg, size_t min=1)
   return val;
 }
 
-void optionsHybrid(int argc, char *argv[], bool fft)
+void optionsHybrid(int argc, char *argv[], bool fft, bool mpi)
 {
 #ifdef __GNUC__
   optind=0;
@@ -201,7 +201,7 @@ void optionsHybrid(int argc, char *argv[], bool fft)
         break;
       case 'h':
       default:
-        usageHybrid(fft);
+        usageHybrid(fft,mpi);
         exit(1);
     }
   }

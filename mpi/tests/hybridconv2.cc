@@ -11,8 +11,6 @@ using namespace Array;
 size_t A=2; // number of inputs
 size_t B=1; // number of outputs
 
-size_t N=1; // TEMP
-
 int main(int argc, char* argv[])
 {
   int divisor=0; // Test for best block divisor
@@ -30,11 +28,7 @@ int main(int argc, char* argv[])
   int retval=0;
   bool quiet=false;
 
-  optionsHybrid(argc,argv);
-
-  if(Output || testError)
-    K=0;
-  if(K == 0) minCount=1;
+  optionsHybrid(argc,argv,false,true);
 
   if(Sx == 0) Sx=Ly;
 
@@ -63,13 +57,13 @@ int main(int argc, char* argv[])
       cout << "Using MPI VERSION " << MPI_VERSION << endl;
 
       cout << endl;
-      cout << "K=" << K << endl << endl;
-      K *= 1.0e9;
 
       cout << "Lx=" << Lx << endl;
       cout << "Ly=" << Ly << endl;
       cout << "Mx=" << Mx << endl;
       cout << "My=" << My << endl;
+
+      cout << "K=" << K << endl;
     }
 
     params P;
@@ -171,7 +165,7 @@ int main(int argc, char* argv[])
       MPI_Barrier(group.active);
 
       vector<double> T;
-      for(unsigned int i=0; i < N; ++i) {
+      for(unsigned int i=0; i < K; ++i) {
         utils::stopWatch *c;
         if(main) c=new utils::stopWatch;
         Convolve.convolve(f);
