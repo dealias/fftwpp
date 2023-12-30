@@ -32,8 +32,6 @@ int main(int argc, char* argv[])
 
   if(quiet) Output=false;
 
-  if(Sx == 0) Sx=Ly;
-
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
 
@@ -73,8 +71,6 @@ int main(int argc, char* argv[])
 
     split d(Lx,Ly,group.active);
 
-    setMPIplanner();
-
     params P;
 
     if(main) {
@@ -86,14 +82,13 @@ int main(int argc, char* argv[])
 
     MPI_Bcast(&P,sizeof(params),MPI_BYTE,0,d.communicator);
 
-    split D(P.x.l*P.x.D,Sx,d.communicator);
-
-    D.Activate();
+    d.Activate();
 
     fftPad fftx(Lx,Mx,appx,d.y,d.y,P.x.m,P.x.D,P.x.I);
     fftPad ffty(Ly,My,appy,1,1,    P.y.m,P.y.D,P.y.I);
 
-    Convolution2MPI Convolve(&fftx,&ffty,D,mpiOptions(divisor,alltoall));
+    Convolution2MPI Convolve(&fftx,&ffty,d.communicator,
+                             mpiOptions(divisor,alltoall));
 
     Complex **f=ComplexAlign(max(A,B),d.n);
 
@@ -140,7 +135,7 @@ int main(int argc, char* argv[])
       }
 
       if(main) {
-        fftPad fftx(Lx,Mx,appx,Ly,Sx);
+        fftPad fftx(Lx,Mx,appx,Ly);
         fftPad ffty(Ly,My,appy);
         Convolution2 Convolve(&fftx,&ffty);
         Convolve.convolve(flocal);

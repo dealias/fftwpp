@@ -29,6 +29,22 @@ public:
   param y;
 };
 
+// Return the output buffer decomposition
+utils::split outputSplit(fftBase *fftx, fftBase *ffty, const MPI_Comm &communicator) {
+  return utils::split(fftx->l*fftx->D,ffty->L,communicator);
+}
+
+// Return the minimum buffer size for the transpose
+size_t bufferSize(fftBase *fftx, fftBase *ffty, const MPI_Comm &communicator) {
+  return outputSplit(fftx,ffty,communicator).n;
+}
+
+// Allocate the outputBuffer;
+Complex **outputBuffer(fftBase *fftx, fftBase *ffty, const MPI_Comm &communicator) {
+  return utils::ComplexAlign(std::max(fftx->app.A,fftx->app.B),
+                             bufferSize(fftx,ffty,communicator));
+}
+
 // In-place implicitly dealiased 2D complex convolution.
 class Convolution2MPI : public Convolution2 {
 protected:
@@ -48,22 +64,13 @@ public:
     d.Deactivate();
   }
 
-  Convolution2MPI(fftBase *fftx, fftBase *ffty, const utils::split& d,
+  Convolution2MPI(fftBase *fftx, fftBase *ffty,
+                  const MPI_Comm& communicator,
                   utils::mpiOptions mpi=utils::defaultmpiOptions,
-                  Complex *W=NULL, Complex *V=NULL,
-                  MPI_Comm global=0, bool toplevel=true) :
-    Convolution2(fftx,ffty,
-                 utils::ComplexAlign(std::max(fftx->app.A,fftx->app.B),d.n),
-                 W,V), d(d) {
-    inittranspose(mpi,NULL,global);
-    allocateF=true;
-  }
-
-  Convolution2MPI(fftBase *fftx, fftBase *ffty, const utils::split& d,
-                  Complex **F, utils::mpiOptions mpi=utils::defaultmpiOptions,
-                  Complex *W=NULL, Complex *V=NULL,
-                  MPI_Comm global=0, bool toplevel=true) :
-    Convolution2(fftx,ffty,F,W,V), d(d) {
+                  Complex **F=NULL, Complex *W=NULL, Complex *V=NULL,
+                  MPI_Comm global=0) :
+    Convolution2(fftx,ffty,F ? F : AllocateF(fftx,ffty,communicator),W,V),
+    d(outputSplit(fftx,ffty,communicator)) {
     inittranspose(mpi,NULL,global);
   }
 
@@ -71,6 +78,12 @@ public:
     size_t C=std::max(A,B);
     for(size_t a=0; a < C; ++a)
       delete T[a];
+  }
+
+  Complex **AllocateF(fftBase *fftx, fftBase *ffty,
+                      const MPI_Comm &communicator) {
+    allocateF=true;
+    return outputBuffer(fftx,ffty,communicator);
   }
 
   void forward(Complex **f, Complex **F, size_t rx,
