@@ -90,11 +90,11 @@ int main(int argc, char* argv[])
     Convolution2MPI Convolve(&fftx,&ffty,d.communicator,
                              mpiOptions(divisor,alltoall));
 
-    Complex **f=ComplexAlign(max(A,B),d.n);
+    Complex **f=ComplexAlign(max(A,B),Lx*d.y);
 
     for(size_t a=0; a < A; ++a) {
       Complex *fa=f[a];
-      for(size_t i=0; i < d.X; ++i) {
+      for(size_t i=0; i < Lx; ++i) {
         for(size_t j=0; j < d.y; ++j) {
           unsigned int J=d.y0+j;
           fa[d.y*i+j]=Output || testError ? Complex((1.0+a)*i,J+a) : 0.0;
@@ -108,30 +108,30 @@ int main(int argc, char* argv[])
         for(unsigned int a=0; a < A; ++a) {
           if(main)
             cout << "\nDistributed input " << a  << ":"<< endl;
-          show(f[a],d.X,d.y,group.active);
+          show(f[a],Lx,d.y,group.active);
         }
       }
 
       Complex **flocal=new Complex *[A];
       for(unsigned int a=0; a < A; ++a) {
-        flocal[a]=ComplexAlign(d.X*d.Y);
+        flocal[a]=ComplexAlign(Lx*Ly);
         gathery(f[a],flocal[a],d,1,group.active);
         if(main && Output)  {
           cout << "\nGathered input " << a << ":" << endl;
-          Array2<Complex> flocala(d.X,d.Y,flocal[a]);
+          Array2<Complex> flocala(Lx,Ly,flocal[a]);
           cout << flocala << endl;
         }
       }
 
       Convolve.convolve(f);
 
-      Complex *foutgather=ComplexAlign(d.X*d.Y);
+      Complex *foutgather=ComplexAlign(Lx*Ly);
       gathery(f[0],foutgather,d,1,group.active);
 
       if(Output) {
         if(main)
           cout << "Distributed output:" << endl;
-        show(f[0],d.X,d.y,group.active);
+        show(f[0],Lx,d.y,group.active);
       }
 
       if(main) {
@@ -142,10 +142,10 @@ int main(int argc, char* argv[])
 
         if(Output) {
           cout << "Local output:" << endl;
-          Array2<Complex> flocal0(d.X,d.Y,flocal[0]);
+          Array2<Complex> flocal0(Lx,Ly,flocal[0]);
           cout << flocal0 << endl;
         }
-        retval += checkerror(flocal[0],foutgather,d.X*d.Y);
+        retval += checkerror(flocal[0],foutgather,Lx*Ly);
       }
 
       deleteAlign(foutgather);
@@ -171,7 +171,7 @@ int main(int argc, char* argv[])
       }
 
       if(main) {
-        timings("Hybrid",d.X*d.Y,T.data(),T.size(),stats);
+        timings("Hybrid",Lx*Ly,T.data(),T.size(),stats);
         T.clear();
       }
     }
