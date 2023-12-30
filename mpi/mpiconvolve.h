@@ -83,8 +83,10 @@ public:
                size_t offset=0) {
     for(size_t a=start; a < stop; ++a) {
       (fftx->*Forward)(f[a]+offset,F[a],rx,W);
-      T[a]->localize1(F[a]);
+      T[a]->ilocalize1(F[a]);
     }
+    for(size_t a=start; a < stop; ++a)
+      T[a]->wait();
   }
 
   virtual size_t stridex() {
@@ -98,8 +100,10 @@ public:
   void backward(Complex **F, Complex **f, size_t rx,
                 size_t start, size_t stop,
                 size_t offset=0, Complex *W0=NULL) {
+    for(size_t b=start; b < stop; ++b)
+      T[b]->ilocalize0(F[b]);
     for(size_t b=start; b < stop; ++b) {
-      T[b]->localize0(F[b]);
+      T[b]->wait();
       (fftx->*Backward)(F[b],f[b]+offset,rx,W0);
     }
     if(W && W == W0) (fftx->*Pad)(W0);
