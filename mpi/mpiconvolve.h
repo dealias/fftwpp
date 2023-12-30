@@ -29,11 +29,6 @@ public:
   param y;
 };
 
-// Return the minimum buffer size for the transpose
-size_t bufferSize(fftBase *fftx, fftBase *ffty, const utils::split &d) {
-  return utils::split(fftx->l*fftx->D,ffty->l*ffty->D,d.communicator).n;
-}
-
 // In-place implicitly dealiased 2D complex convolution.
 class Convolution2MPI : public Convolution2 {
 protected:
@@ -58,8 +53,8 @@ public:
                   Complex *W=NULL, Complex *V=NULL,
                   MPI_Comm global=0, bool toplevel=true) :
     Convolution2(fftx,ffty,
-                 utils::ComplexAlign(fftx->app.A,bufferSize(fftx,ffty,d)),W,V),
-    d(d) {
+                 utils::ComplexAlign(std::max(fftx->app.A,fftx->app.B),d.n),
+                 W,V), d(d) {
     inittranspose(mpi,NULL,global);
     allocateF=true;
   }
