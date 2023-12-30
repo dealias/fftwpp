@@ -20,14 +20,8 @@ using namespace Array;
 
 namespace fftwpp {
 
-bool Output=false;
-bool testError=false;
 bool showOptTimes=false;
-bool Centered=false;
-bool normalized=true;
-bool Tforced=false;
 bool showRoutines=false;
-bool accuracy=false;
 
 #ifdef __SSE2__
 const union uvec sse2_pm={

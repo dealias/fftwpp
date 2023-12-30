@@ -12,9 +12,6 @@ extern ptrdiff_t Ix,Iy,Iz;          // inplace flags
 
 extern bool Output;
 extern bool testError;
-extern bool showOptTimes;
 extern bool Centered;
 extern bool normalized;
-extern bool Tforced;
-extern bool showRoutines;
 extern bool accuracy;

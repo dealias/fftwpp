@@ -31,6 +31,9 @@ namespace fftwpp {
 
 extern const double twopi;
 
+extern bool showOptTimes;
+extern bool showRoutines;
+
 // Constants used for initialization and testing.
 const Complex I(0.0,1.0);
 

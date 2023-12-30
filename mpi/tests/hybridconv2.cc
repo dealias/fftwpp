@@ -176,7 +176,7 @@ int main(int argc, char* argv[])
       }
 
       if(main) {
-        timings("Hybrid",d.X,T.data(),T.size(),stats);
+        timings("Hybrid",d.X*d.Y,T.data(),T.size(),stats);
         T.clear();
       }
     }

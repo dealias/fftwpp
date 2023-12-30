@@ -14,11 +14,9 @@ ptrdiff_t Ix=-1,Iy=-1,Iz=-1;
 
 bool Output=false;
 bool testError=false;
-bool showOptTimes=false;
 bool Centered=false;
 bool normalized=true;
 bool Tforced=false;
-bool showRoutines=false;
 bool accuracy=false;
 
 double K=1.0; // Time limit (seconds)
