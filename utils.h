@@ -178,7 +178,7 @@ inline void usageHybrid(bool fft=false, bool mpi=false)
   std::cerr << "-O\t\t output result (sets K=0)" << std::endl;
   std::cerr << "-R\t\t show which forward and backward routines are used" << std::endl;
   if(mpi)
-    std::cerr << "-N t\t\t number of iterations" << std::endl;
+    std::cerr << "-N n\t\t number of iterations" << std::endl;
   else {
     std::cerr << "-N t\t\t minimum number of iterations" << std::endl;
     std::cerr << "-K t\t\t time limit (seconds)" << std::endl;
