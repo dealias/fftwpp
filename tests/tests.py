@@ -554,7 +554,7 @@ def hermitianTests(program, minS, options):
       Ms+=[2*L,5*L2]
     for M in Ms:
       ms=[L2]
-      if det:
+      if det and minS == 1:
         ms=[M]+ms+[ceilquotient(L,4)]
       for m in ms:
         vals+=collectTests(program, L=L, M=M, m=m, minS=minS)
