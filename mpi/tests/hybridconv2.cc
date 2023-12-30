@@ -93,9 +93,7 @@ int main(int argc, char* argv[])
     fftPad fftx(Lx,Mx,appx,d.y,d.y,P.x.m,P.x.D,P.x.I);
     fftPad ffty(Ly,My,appy,1,1,    P.y.m,P.y.D,P.y.I);
 
-    Complex **F=ComplexAlign(max(A,B),D.n);
-
-    Convolution2MPI Convolve(&fftx,&ffty,D,F,mpiOptions(divisor,alltoall));
+    Convolution2MPI Convolve(&fftx,&ffty,D,mpiOptions(divisor,alltoall));
 
     Complex **f=ComplexAlign(max(A,B),d.n);
 
