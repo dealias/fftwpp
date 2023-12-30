@@ -1394,7 +1394,7 @@ public:
     return fftx->blocksize(rx);
   }
 
- void subconvolution(Complex **F, size_t rx, size_t offset=0) {
+  void subconvolution(Complex **F, size_t rx, size_t offset=0) {
     size_t blocksize=blocksizex(rx);
     size_t Sx=stridex();
     PARALLEL(

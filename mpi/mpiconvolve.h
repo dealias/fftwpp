@@ -38,7 +38,7 @@ size_t bufferSize(fftBase *fftx, fftBase *ffty, const utils::split &d) {
 class Convolution2MPI : public Convolution2 {
 protected:
   utils::split d;
-  utils::mpitranspose<Complex> **T;
+  utils::mpitranspose<Complex> **T,**R;
 public:
 
   void inittranspose(const utils::mpiOptions& mpioptions, Complex *work,
@@ -57,7 +57,6 @@ public:
                   utils::mpiOptions mpi=utils::defaultmpiOptions,
                   Complex *W=NULL, Complex *V=NULL,
                   MPI_Comm global=0, bool toplevel=true) :
-    // TODO: handle mpi options.
     Convolution2(fftx,ffty,
                  utils::ComplexAlign(fftx->app.A,bufferSize(fftx,ffty,d)),W,V),
     d(d) {
@@ -84,10 +83,8 @@ public:
                size_t offset=0) {
     for(size_t a=start; a < stop; ++a) {
       (fftx->*Forward)(f[a]+offset,F[a],rx,W);
-      T[a]->ilocalize1(F[a]);
+      T[a]->localize1(F[a]);
     }
-    for(size_t a=start; a < stop; ++a)
-      T[a]->wait();
   }
 
   virtual size_t stridex() {
@@ -101,10 +98,8 @@ public:
   void backward(Complex **F, Complex **f, size_t rx,
                 size_t start, size_t stop,
                 size_t offset=0, Complex *W0=NULL) {
-    for(size_t b=start; b < stop; ++b)
-      T[b]->ilocalize0(F[b]);
     for(size_t b=start; b < stop; ++b) {
-      T[b]->wait();
+      T[b]->localize0(F[b]);
       (fftx->*Backward)(F[b],f[b]+offset,rx,W0);
     }
     if(W && W == W0) (fftx->*Pad)(W0);

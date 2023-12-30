@@ -17,7 +17,7 @@ mpiOptions defaultmpiOptions;
 
    The algorithm here is based upon the one described in:
    J. A. M. Schreuder, "Constructing timetables for sport
-   competitions," Mathematical Programming Study 13, pp. 58-67 (1980). 
+   competitions," Mathematical Programming Study 13, pp. 58-67 (1980).
    In a sport competition, you have N teams and want every team to
    play every other team in as short a time as possible (maximum overlap
    between games).  This timetabling problem is therefore identical
@@ -50,7 +50,7 @@ void fill1_comm_sched(int *sched, int which_pe, int npes)
       i = (pe - which_pe + (n - 1)) % (n - 1);
       if (i < n/2)
         sched[s++] = (pe + i) % (n - 1);
-               
+
       i = (which_pe - pe + (n - 1)) % (n - 1);
       if (i < n/2)
         sched[s++] = (pe - i + (n - 1)) % (n - 1);
