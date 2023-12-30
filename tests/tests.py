@@ -6,6 +6,7 @@ import argparse
 import sys
 from utils import *
 import copy
+from os.path import sep
 
 def main():
   args=getArgs()
@@ -55,11 +56,26 @@ class Options:
     self.valid=args.valid
     self.vg=args.valgrind
     self.d=args.d
+    self.mpi=args.mpi
 
 class Command:
-  def __init__(self, program, T, vals=None, L=None, M=None, options=None):
+  def __init__(self, program, T, options, vals=None, L=None, M=None, nodes=0):
     self.name=[program.name]
     self.extraArgs=[]
+    self.mpi=[]
+
+    if options.R:
+      self.extraArgs.append("-R")
+
+    path=""
+    if options.mpi and nodes !=0:
+        self.mpi=["mpiexec","-n",str(nodes)]
+        path=".."+sep+"mpi"+sep+"tests"+sep # Careful: This assumes the relative location of mpi test code
+
+    self.name=[path+program.name]
+    self.vg=["valgrind"] if options.vg else []
+
+
     if L is not None and M is not None:
       self.L=["-L="+str(L)]
       self.M=["-M="+str(M)]
@@ -123,15 +139,12 @@ class Command:
       self.extraArgs.append("-threshold")
       self.extraArgs.append("0")
     self.extraArgs.append("-E")
-    if options != None:
-      if options.R:
-        self.extraArgs.append("-R")
-      self.vg=["valgrind"] if options.vg else []
+
 
     if program.extraArgs != "":
       self.extraArgs.append(program.extraArgs)
 
-    self.list=self.vg+self.name+self.L+self.M+self.m+self.D+self.I+self.S+self.C+self.T+self.extraArgs
+    self.list=self.vg+self.mpi+self.name+self.L+self.M+self.m+self.D+self.I+self.S+self.C+self.T+self.extraArgs
 
     self.case=" ".join(self.list)
 
@@ -195,6 +208,8 @@ def getArgs():
                       (1, 2 or 3) and/or convolution type (s, c or H) is\
                       specified then perform all tests in that dimension and/or\
                       type.",
+                      action="store_true")
+  parser.add_argument("--mpi", help="Test mpi.",
                       action="store_true")
   parser.add_argument("-V", "--valid", help="Check tests to see if they're valid.",
                       action="store_true")
@@ -277,6 +292,7 @@ def getPrograms(args):
 def test(programs, args):
   lenP=len(programs)
   T=0 if args.All else int(args.T)
+  mpi=args.mpi
 
   if lenP >= 1:
     passed=0
@@ -289,7 +305,9 @@ def test(programs, args):
       name=p.name
       if p.extraArgs:
         name+=" "+p.extraArgs
-      if T == 0:
+      if mpi:
+        Ts=[1,2]
+      elif T == 0:
         omp = 'echo $OMP_NUM_THREADS'
         OMP_NUM_THREADS=str(subprocess.check_output(omp, shell=True))
         Tnum=re.search(r"\d+",OMP_NUM_THREADS)
@@ -345,6 +363,7 @@ def test(programs, args):
 def iterate(program, threads, options):
   dim=program.dim
   testS=options.testS
+  mpi=options.mpi
   if dim == 1:
     vals=ParameterCollection(findTests(program,1,options)).vals
     for T in threads:
@@ -364,6 +383,9 @@ def iterate(program, threads, options):
   else:
     vals=ParameterCollection(findTests(program,1,options,inner=True)).vals
     if dim == 2:
+      nodevals=[0]
+      if mpi and not program.hermitian: # HERMITIAN NOT IMPLEMENTED
+        nodevals=[1,2]
       xcols=[ParameterCollection(findTests(program,2,options,outer=True))]
       if testS:
         xcols+=[copy.deepcopy(xcols[0])]
@@ -375,7 +397,8 @@ def iterate(program, threads, options):
           xvals=xcols[S].vals
           for x in xvals:
             for T in threads:
-              checkCase(program,[x,y],T,options)
+              for nodes in nodevals:
+                checkCase(program,[x,y],T,options,nodes)
 
     elif dim == 3:
       ycol=ParameterCollection(findTests(program,2,options,outer=True))
@@ -599,11 +622,11 @@ def realTests(program, minS, options):
   return vals
 
 def checkOptimizer(program, L, M, T, options):
-  cmd=Command(program,T,L=L,M=M,options=options)
+  cmd=Command(program,T,options,L=L,M=M)
   check(program, cmd, T, options)
 
-def checkCase(program, vals, T, options):
-  cmd=Command(program,T,vals,options=options)
+def checkCase(program, vals, T, options, nodes=0):
+  cmd=Command(program,T,options,vals,nodes=nodes)
   check(program, cmd, T, options)
 
 def check(program, cmd, T, options):

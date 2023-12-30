@@ -254,12 +254,13 @@ int checkerror(const T *f, const T *control, unsigned int n, unsigned int M,
     }
   }
 
-  std::cout << "Maximum error: " << maxerr << std::endl;
-  if(maxerr < 1e-12*norm) {
-    std::cout << "Error ok." << std::endl;
+  double error= norm > 0 ? maxerr/norm : maxerr;
+
+  std::cout << std::endl << "Error: " << error << std::endl;
+  if(error < 1e-12) {
     return 0;
   }
-  std::cout << "CAUTION! Large error!" << std::endl;
+  std::cout << std::endl << "CAUTION! Large error!" << std::endl;
   return 1;
 }
 
