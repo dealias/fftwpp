@@ -34,7 +34,7 @@ endif
 
 #Intel compiler
 ifeq ($(shell $(CXX) -v 2>&1 | head -c 4),icpc)
-CXXFLAGS=-O3 -openmp -ansi-alias -malign-double -fp-model fast=2
+CXXFLAGS=-O3 -qopenmp -ansi-alias -malign-double -fp-model fast=2
 endif
 
 #IBM compiler
