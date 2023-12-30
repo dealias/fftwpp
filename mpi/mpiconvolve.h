@@ -49,7 +49,7 @@ Complex **outputBuffer(fftBase *fftx, fftBase *ffty, const MPI_Comm &communicato
 class Convolution2MPI : public Convolution2 {
 protected:
   utils::split d;
-  utils::mpitranspose<Complex> **T,**R;
+  utils::mpitranspose<Complex> **T;
 public:
 
   void inittranspose(const utils::mpiOptions& mpioptions, Complex *work,
