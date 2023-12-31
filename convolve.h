@@ -1479,7 +1479,7 @@ public:
         if(nloops > 1) {
           size_t w=fftx->wordSize();
           size_t wSx=w*Sx;
-          size_t wLy=w*ffty->inputLength();
+          size_t wLy=w*inputLengthy();
           for(size_t b=0; b < B; ++b) {
             double *fb=(double *) (f[b]+offset);
             double *hb=(double *) (h0[b]);
