@@ -1386,12 +1386,12 @@ public:
       (fftx->*Forward)(f[a]+offset,F[a],rx,W);
   }
 
-  virtual size_t stridex() {
-    return Sx;
-  }
-
   virtual size_t blocksizex(size_t rx) {
     return fftx->blocksize(rx);
+  }
+
+  virtual size_t stridex() {
+    return Sx;
   }
 
   void subconvolution(Complex **F, size_t rx, size_t offset=0) {
@@ -1538,7 +1538,8 @@ public:
   //    call fftx->pad() if W changed between calls to convolve()
   // V: optional work array of size B*fftx->workSizeV()
   Convolution3(fftBase *fftx, fftBase *ffty, fftBase *fftz,
-               Complex **F=NULL, Complex *W=NULL, Complex *V=NULL) :
+               Complex **F=NULL, Complex *W=NULL, Complex *V=NULL,
+               bool mpi=false) :
     ThreadBase(fftx->Threads()), fftx(fftx), ffty(ffty), fftz(fftz),
     A(fftx->app.A), B(fftx->app.B), mult(fftx->app.mult),
     W(W), allocateF(false), allocateW(false) {
@@ -1549,17 +1550,30 @@ public:
     }
 
     this->convolveyz=new Convolution2*[threads];
-    for(size_t t=0; t < threads; ++t)
-      this->convolveyz[t]=new Convolution2(ffty,fftz);
+    if(!mpi)
+      for(size_t t=0; t < threads; ++t)
+        this->convolveyz[t]=new Convolution2(ffty,fftz);
 
-    init(F,V);
+    init(F,V,mpi);
   }
 
   double normalization() {
     return fftx->normalization()*convolveyz[0]->normalization();
   }
 
-  void init(Complex **F=NULL, Complex *V=NULL) {
+  void checkStrides() {
+    if(Sx < Ly*Sy) {
+      std::cerr << "Sx cannot be less than Ly*Sy" << std::endl;
+      exit(-1);
+    }
+
+    if(fftx->C != (Sy == Lz ? Ly*Lz : Lz)) {
+      std::cerr << "fftx->C is invalid" << std::endl;
+      exit(-1);
+    }
+  }
+
+  void init(Complex **F, Complex *V, bool mpi) {
     Forward=fftx->Forward;
     Backward=fftx->Backward;
 
@@ -1577,7 +1591,6 @@ public:
     nx=fftx->n;
     Rx=fftx->R;
     lx=fftx->l;
-    scale=1.0/normalization();
 
     Lx=fftx->L;
     Ly=ffty->L;
@@ -1586,14 +1599,9 @@ public:
     Sx=fftx->S;
     Sy=ffty->S;
 
-    if(Sx < Ly*Sy) {
-      std::cerr << "Sx cannot be less than Ly*Sy" << std::endl;
-      exit(-1);
-    }
-
-    if(fftx->C != (Sy == Lz ? Ly*Lz : Lz)) {
-      std::cerr << "fftx->C is invalid" << std::endl;
-      exit(-1);
+    if(!mpi) {
+      scale=1.0/normalization();
+      checkStrides();
     }
 
     Pad=fftx->Pad;
@@ -1661,9 +1669,9 @@ public:
     delete [] convolveyz;
   }
 
-  void forward(Complex **f, Complex **F, size_t rx,
-               size_t start, size_t stop,
-               size_t offset=0) {
+  virtual void forward(Complex **f, Complex **F, size_t rx,
+                       size_t start, size_t stop,
+                       size_t offset=0) {
     for(size_t a=start; a < stop; ++a) {
       if(Sy == Lz)
         (fftx->*Forward)(f[a]+offset,F[a],rx,W);
@@ -1678,8 +1686,17 @@ public:
     }
   }
 
+  virtual size_t blocksizex(size_t rx) {
+    return fftx->blocksize(rx);
+  }
+
+  virtual size_t stridex() {
+    return Sx;
+  }
+
   void subconvolution(Complex **F, size_t rx, size_t offset=0) {
-    size_t blocksize=fftx->blocksize(rx);
+    size_t blocksize=blocksizex(rx);
+    size_t Sx=stridex();
     PARALLEL(
       for(size_t i=0; i < blocksize; ++i) {
         size_t t=parallel::get_thread_num(threads);
@@ -1689,9 +1706,9 @@ public:
       });
   }
 
-  void backward(Complex **F, Complex **f, size_t rx,
-                size_t start, size_t stop,
-                size_t offset=0, Complex *W0=NULL) {
+  virtual void backward(Complex **F, Complex **f, size_t rx,
+                        size_t start, size_t stop,
+                        size_t offset=0, Complex *W0=NULL) {
     for(size_t b=start; b < stop; ++b) {
       if(Sy == Lz)
         (fftx->*Backward)(F[b],f[b]+offset,rx,W0);
@@ -1707,16 +1724,25 @@ public:
     if(W && W == W0) (fftx->*Pad)(W0);
   }
 
+  virtual size_t inputLengthy() {
+    return ffty->inputLength();
+  }
+
+  virtual size_t inputLengthz() {
+    return fftz->inputLength();
+  }
+
   void normalize(Complex **h, size_t offset=0) {
     size_t w=fftx->wordSize();
     size_t wSx=w*Sx;
     size_t wSy=w*Sy;
-    size_t wLz=w*fftz->inputLength();
+    size_t ly=inputLengthy();
+    size_t wLz=w*inputLengthz();
     for(size_t b=0; b < B; ++b) {
       double *hb=(double *) (h[b]+offset);
       for(size_t i=0; i < Lx; ++i) {
         double *hbi=hb+wSx*i;
-        for(size_t j=0; j < Ly; ++j) {
+        for(size_t j=0; j < ly; ++j) {
           double *hbij=hbi+wSy*j;
           for(size_t k=0; k < wLz; ++k)
             hbij[k] *= scale;
@@ -1773,7 +1799,8 @@ public:
           size_t w=fftx->wordSize();
           size_t wSx=w*Sx;
           size_t wSy=w*Sy;
-          size_t wLz=w*fftz->inputLength();
+          size_t ly=inputLengthy();
+          size_t wLz=w*inputLengthz();
           for(size_t b=0; b < B; ++b) {
             double *fb=(double *) (f[b]+offset);
             double *hb=(double *) (h0[b]);
@@ -1781,7 +1808,7 @@ public:
               size_t Sxi=wSx*i;
               double *fbi=fb+Sxi;
               double *hbi=hb+Sxi;
-              for(size_t j=0; j < Ly; ++j) {
+              for(size_t j=0; j < ly; ++j) {
                 size_t Syj=wSy*j;
                 double *fbij=fbi+Syj;
                 double *hbij=hbi+Syj;

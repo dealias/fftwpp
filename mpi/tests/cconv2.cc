@@ -268,7 +268,7 @@ int main(int argc, char* argv[])
       }
 
       if(main) {
-        timings("Implicit",mx,T.data(),T.size(),stats);
+        timings("Implicit",mx*my,T.data(),T.size(),stats);
         T.clear();
       }
 

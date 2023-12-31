@@ -315,7 +315,7 @@ int main(int argc, char* argv[])
         MPI_Barrier(group.active);
       }
       if(main) {
-        timings("Implicit",mx,T.data(),T.size(),stats);
+        timings("Implicit",mx*my*mz,T.data(),T.size(),stats);
         T.clear();
       }
       if(!quiet && showresult) {
