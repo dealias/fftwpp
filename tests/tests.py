@@ -385,7 +385,7 @@ def iterate(program, threads, options):
     if dim == 2:
       nodevals=[0]
       if mpi and not program.hermitian: # HERMITIAN NOT IMPLEMENTED
-        nodevals=[1,2]
+        nodevals=[1,2,8]
       xcols=[ParameterCollection(findTests(program,2,options,outer=True))]
       if testS:
         xcols+=[copy.deepcopy(xcols[0])]
@@ -759,6 +759,7 @@ def printResults(resultMessage, message, case, routines, verbose):
     if routines is not None:
       print(routines)
     print()
+    sys.stdout.flush()
 
 def findRoutines(output):
   try:
