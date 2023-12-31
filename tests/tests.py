@@ -399,6 +399,9 @@ def iterate(program, threads, options):
                 checkCase(program,[x,y],T,options,nodes)
 
     elif dim == 3:
+      nodevals=[0]
+      if mpi and not program.hermitian: # HERMITIAN NOT IMPLEMENTED
+        nodevals=[1,2,8]
       ycol=ParameterCollection(findTests(program,2,options,outer=True))
       ycols=[ycol]
       xcols=[copy.deepcopy(ycol)]
@@ -419,7 +422,8 @@ def iterate(program, threads, options):
               xvals=xcols[Sx].vals
               for x in xvals:
                 for T in threads:
-                  checkCase(program,[x,y,z],T,options)
+                  for nodes in nodevals:
+                    checkCase(program,[x,y,z],T,options,nodes)
     else:
       exit("Dimension must be 1 2 or 3.")
 
