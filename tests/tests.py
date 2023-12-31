@@ -383,7 +383,7 @@ def iterate(program, threads, options):
     if dim == 2:
       nodevals=[0]
       if mpi and not program.hermitian: # HERMITIAN NOT IMPLEMENTED
-        nodevals=[1,2,8]
+        nodevals=[1,2,4]
       xcols=[ParameterCollection(findTests(program,2,options,outer=True))]
       if testS:
         xcols+=[copy.deepcopy(xcols[0])]
@@ -401,7 +401,7 @@ def iterate(program, threads, options):
     elif dim == 3:
       nodevals=[0]
       if mpi and not program.hermitian: # HERMITIAN NOT IMPLEMENTED
-        nodevals=[1,2,8]
+        nodevals=[1,2,4]
       ycol=ParameterCollection(findTests(program,2,options,outer=True))
       ycols=[ycol]
       xcols=[copy.deepcopy(ycol)]
