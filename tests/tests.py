@@ -305,9 +305,7 @@ def test(programs, args):
       name=p.name
       if p.extraArgs:
         name+=" "+p.extraArgs
-      if mpi:
-        Ts=[1,2]
-      elif T == 0:
+      if T == 0:
         omp = 'echo $OMP_NUM_THREADS'
         OMP_NUM_THREADS=str(subprocess.check_output(omp, shell=True))
         Tnum=re.search(r"\d+",OMP_NUM_THREADS)
