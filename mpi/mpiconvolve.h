@@ -16,6 +16,8 @@ public:
   size_t I;
   size_t l;
 
+  param() : m(0), D(0), I(0), l(0) {}
+
   void init(fftBase &fft) {
     m=fft.m;
     D=fft.D;
