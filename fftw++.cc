@@ -17,7 +17,7 @@ string wisdomName="wisdom3.txt";
 ostringstream wisdomTemp;
 size_t fftw::maxthreads=1;
 
-char *inspiration=NULL;
+char *epiphany=NULL;
 
 fftw_plan (*fftw::planner)(fftw *f, Complex *in, Complex *out)=Planner;
 
@@ -46,11 +46,11 @@ void loadWisdom()
   }
 }
 
-void motivate() {
-  if(inspiration) {
-    fftw_import_wisdom_from_string(inspiration);
-    fftw_free(inspiration);
-    inspiration=NULL;
+void recall() {
+  if(epiphany) {
+    fftw_import_wisdom_from_string(epiphany);
+    fftw_free(epiphany);
+    epiphany=NULL;
   }
 }
 
@@ -60,7 +60,7 @@ void saveWisdom()
     fftw_forget_wisdom();
     Wise=false;
     loadWisdom();
-    motivate();
+    recall();
     char *wisdom=fftw_export_wisdom_to_string();
     ofstream ofWisdom;
     ofWisdom.open(wisdomTemp.str().c_str());
@@ -82,8 +82,8 @@ fftw_plan Planner(fftw *F, Complex *in, Complex *out)
     char *experience=fftw_export_wisdom_to_string();
     fftw_forget_wisdom();
     plan=F->Plan(in,out);
-    motivate();
-    inspiration=fftw_export_wisdom_to_string();
+    recall();
+    epiphany=fftw_export_wisdom_to_string();
     fftw_import_wisdom_from_string(experience);
     fftw_free(experience);
     static bool first=true;
