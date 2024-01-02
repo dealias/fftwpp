@@ -46,6 +46,7 @@ int main(int argc, char* argv[])
   bool allowpencil=Lx*y == x*Ly;
 
   MPIgroup group(MPI_COMM_WORLD,Ly,Lz,allowpencil);
+
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;
 
@@ -90,8 +91,6 @@ int main(int argc, char* argv[])
       fftPad fftz(Lz,Mz,appz);
       P.z.init(&fftz);
     }
-
-    fftwpp::synchronizeWisdom(group.active);
 
     MPI_Bcast(&P,sizeof(params),MPI_BYTE,0,d.communicator);
 
