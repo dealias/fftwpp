@@ -17,6 +17,8 @@ string wisdomName="wisdom3.txt";
 ostringstream wisdomTemp;
 size_t fftw::maxthreads=1;
 
+char *inspiration=NULL;
+
 fftw_plan (*fftw::planner)(fftw *f, Complex *in, Complex *out)=Planner;
 
 const char *fftw::oddshift="Shift is not implemented for odd nx";
@@ -27,9 +29,10 @@ Mfft1d::Table Mfft1d::threadtable;
 Mrcfft1d::Table Mrcfft1d::threadtable;
 Mcrfft1d::Table Mcrfft1d::threadtable;
 
+static bool Wise=false;
+
 void loadWisdom()
 {
-  static bool Wise=false;
   if(!Wise) {
     wisdomTemp << wisdomName << "_" << getpid();
     ifstream ifWisdom;
@@ -43,9 +46,21 @@ void loadWisdom()
   }
 }
 
+void motivate() {
+  if(inspiration) {
+    fftw_import_wisdom_from_string(inspiration);
+    fftw_free(inspiration);
+    inspiration=NULL;
+  }
+}
+
 void saveWisdom()
 {
   if(fftw::wiser) {
+    fftw_forget_wisdom();
+    Wise=false;
+    loadWisdom();
+    motivate();
     char *wisdom=fftw_export_wisdom_to_string();
     ofstream ofWisdom;
     ofWisdom.open(wisdomTemp.str().c_str());
@@ -64,7 +79,13 @@ fftw_plan Planner(fftw *F, Complex *in, Complex *out)
   fftw_plan plan=F->Plan(in,out);
   fftw::effort &= ~FFTW_WISDOM_ONLY;
   if(!plan) {
+    char *experience=fftw_export_wisdom_to_string();
+    fftw_forget_wisdom();
     plan=F->Plan(in,out);
+    motivate();
+    inspiration=fftw_export_wisdom_to_string();
+    fftw_import_wisdom_from_string(experience);
+    fftw_free(experience);
     static bool first=true;
     if(first) {
       atexit(saveWisdom);

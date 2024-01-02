@@ -74,20 +74,16 @@ int main(int argc, char* argv[])
     params P;
 
     if(main) {
-      fftPad fftx(Lx,Mx,appx,d.y);
-      P.x.init(fftx);
-      fftPad ffty(Ly,My,appy);
-      P.y.init(ffty);
+      P.x.init(new fftPad(Lx,Mx,appx,d.y));
+      P.y.init(new fftPad(Ly,My,appy));
     }
 
-    MPI_Bcast(&P,sizeof(params),MPI_BYTE,0,d.communicator);
-
-    d.Activate();
+    MPI_Bcast(&P,sizeof(params),MPI_BYTE,0,group.active);
 
     fftPad fftx(Lx,Mx,appx,d.y,d.y,P.x.m,P.x.D,P.x.I);
     fftPad ffty(Ly,My,appy,1,1,    P.y.m,P.y.D,P.y.I);
 
-    Convolution2MPI Convolve(&fftx,&ffty,d.communicator,
+    Convolution2MPI Convolve(&fftx,&ffty,group.active,
                              mpiOptions(divisor,alltoall));
 
     Complex **f=ComplexAlign(max(A,B),Lx*d.y);

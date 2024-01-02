@@ -23,7 +23,6 @@ public:
                                        d.communicator,mpioptions,global);
     U=new utils::mpitranspose<Complex>(d.X,d.Y,d.x,d.y,1,u2,work,
                                        d.communicator,T->Options(),global);
-    d.Deactivate();
   }
 
   void synchronizeWisdom(unsigned int threads) {
@@ -44,7 +43,7 @@ public:
                           Complex *work=NULL, MPI_Comm global=0,
                           bool toplevel=true) :
     ImplicitConvolution2(mx,my,u1,u2,A,B,threads,
-                         convolveOptions(d.x,d.y,d.Activate(),mpi,toplevel)),
+                         convolveOptions(d.x,d.y,d.n,mpi,toplevel)),
     d(d) {
     synchronizeWisdom(threads);
     inittranspose(mpi,work,global);
@@ -58,7 +57,7 @@ public:
                           Complex *work=NULL, MPI_Comm global=0,
                           bool toplevel=true) :
     ImplicitConvolution2(mx,my,A,B,threads,
-                         convolveOptions(d.x,d.y,d.Activate(),mpi,toplevel)),
+                         convolveOptions(d.x,d.y,d.n,mpi,toplevel)),
     d(d) {
     synchronizeWisdom(threads);
     inittranspose(mpi,work,global);
@@ -95,7 +94,6 @@ public:
                                        d.communicator,mpi,global);
     U=new utils::mpitranspose<Complex>(du.X,du.Y,du.x,du.y,1,u2,work,
                                        du.communicator,mpi,global);
-    du.Deactivate();
   }
 
  void synchronizeWisdom(unsigned int threads) {
@@ -117,7 +115,7 @@ public:
                            Complex *work=NULL, MPI_Comm global=0,
                            bool toplevel=true) :
     ImplicitHConvolution2(mx,my,u1,u2,A,B,threads,
-                          convolveOptions(d.x,d.y,du.Activate(),mpi,toplevel)),
+                          convolveOptions(d.x,d.y,du.n,mpi,toplevel)),
     d(d), du(du) {
     synchronizeWisdom(threads);
     inittranspose(f,mpi,work,global);
@@ -133,7 +131,7 @@ public:
                            Complex *work=NULL, MPI_Comm global=0,
                            bool toplevel=true) :
     ImplicitHConvolution2(mx,my,xcompact,ycompact,u1,u2,A,B,threads,
-                          convolveOptions(d.x,d.y,du.Activate(),mpi,toplevel)),
+                          convolveOptions(d.x,d.y,du.n,mpi,toplevel)),
     d(d), du(du) {
     synchronizeWisdom(threads);
     inittranspose(f,mpi,work,global);
@@ -148,7 +146,7 @@ public:
                            Complex *work=NULL, MPI_Comm global=0,
                            bool toplevel=true) :
     ImplicitHConvolution2(mx,my,true,true,A,B,threads,
-                          convolveOptions(d.x,d.y,du.Activate(),mpi,toplevel)),
+                          convolveOptions(d.x,d.y,du.n,mpi,toplevel)),
     d(d), du(du) {
     synchronizeWisdom(threads);
     inittranspose(f,mpi,work,global);
@@ -164,7 +162,7 @@ public:
                            Complex *work=NULL, MPI_Comm global=0,
                            bool toplevel=true) :
     ImplicitHConvolution2(mx,my,xcompact,ycompact,A,B,threads,
-                          convolveOptions(d.x,d.y,du.Activate(),mpi,toplevel)),
+                          convolveOptions(d.x,d.y,du.n,mpi,toplevel)),
     d(d), du(du) {
     synchronizeWisdom(threads);
     inittranspose(f,mpi,work,global);
@@ -205,7 +203,6 @@ public:
     } else {
       T=U=NULL;
     }
-    d.Deactivate();
   }
 
   void initMPI(const utils::mpiOptions& mpi, Complex *work, Complex *work2,
@@ -242,7 +239,7 @@ public:
                           Complex *work=NULL, Complex *work2=NULL,
                           MPI_Comm global=0) :
     ImplicitConvolution3(mx,my,mz,u1,u2,u3,A,B,threads,
-                         convolveOptions(d.xy.y,d.z,d.n2,d.Activate(),mpi)),
+                         convolveOptions(d.xy.y,d.z,d.n2,d.n,mpi)),
     d(d) {
     initMPI(mpi,work,work2,global,threads);
   }
@@ -255,7 +252,7 @@ public:
                           Complex *work=NULL, Complex *work2=NULL,
                           MPI_Comm global=0) :
     ImplicitConvolution3(mx,my,mz,A,B,threads,
-                         convolveOptions(d.xy.y,d.z,d.n2,d.Activate(),mpi)),
+                         convolveOptions(d.xy.y,d.z,d.n2,d.n,mpi)),
     d(d) {
     initMPI(mpi,work,work2,global,threads);
   }
@@ -297,7 +294,6 @@ public:
       U=new utils::mpitranspose<Complex>(du.X,du.Y,du.x,du.xy.y,du.z,u3,work,
                                          du.xy.communicator,mpi,global);
     } else {T=U=NULL;}
-    du.Deactivate();
   }
 
   void initMPI(Complex *f, const utils::mpiOptions& mpi,
@@ -337,7 +333,7 @@ public:
                            Complex *work=NULL, Complex *work2=NULL,
                            MPI_Comm global=0) :
     ImplicitHConvolution3(mx,my,mz,u1,u2,u3,A,B,threads,
-                          convolveOptions(d.xy.y,d.z,du.n2,du.Activate(),mpi)),
+                          convolveOptions(d.xy.y,d.z,du.n2,du.n,mpi)),
     d(d), du(du) {
     initMPI(f,mpi,work,work2,global,threads);
   }
@@ -353,7 +349,7 @@ public:
                            MPI_Comm global=0) :
     ImplicitHConvolution3(mx,my,mz,xcompact,ycompact,zcompact,u1,u2,u3,A,B,
                           threads,convolveOptions(d.xy.y,d.z,du.n2,
-                                                  du.Activate(),mpi)),
+                                                  du.n,mpi)),
     d(d), du(du) {
     initMPI(f,mpi,work,work2,global,threads);
   }
@@ -368,7 +364,7 @@ public:
                            MPI_Comm global=0) :
     ImplicitHConvolution3(mx,my,mz,true,true,true,A,B,threads,
                           convolveOptions(d.xy.y,d.z,du.n2,
-                                          du.Activate(),mpi)), d(d), du(du) {
+                                          du.n,mpi)), d(d), du(du) {
     initMPI(f,mpi,work,work2,global,threads);
   }
 
@@ -383,7 +379,7 @@ public:
                            MPI_Comm global=0) :
     ImplicitHConvolution3(mx,my,mz,xcompact,ycompact,zcompact,A,B,threads,
                           convolveOptions(d.xy.y,d.z,du.n2,
-                                          du.Activate(),mpi)), d(d), du(du) {
+                                          du.n,mpi)), d(d), du(du) {
     initMPI(f,mpi,work,work2,global,threads);
   }
 

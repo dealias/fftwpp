@@ -45,7 +45,6 @@ public:
   utils::mpitranspose<Complex> *T;
 
   void init(Complex *in, Complex *out, const utils::mpiOptions& options) {
-    d.Activate();
     out=CheckAlign(in,out);
     inplace=(in == out);
 
@@ -64,8 +63,6 @@ public:
       xForward=new mfft1d(d.X,sign,d.y,1,d.X,out,out,threads);
       xBackward=new mfft1d(d.X,-sign,d.y,1,d.X,in,out,threads);
     }
-
-    d.Deactivate();
   }
 
   fft2dMPI(const utils::split& d, Complex *in,
@@ -161,7 +158,6 @@ public:
 
   void init(Complex *in, Complex *out, const utils::mpiOptions& xy,
             const utils::mpiOptions &yz) {
-    d.Activate();
     multithread(d.x);
     out=CheckAlign(in,out);
     inplace=(in == out);
@@ -186,8 +182,6 @@ public:
     unsigned int M=d.xy.y*d.z;
     xForward=new mfft1d(d.X,sign,M,M,1,out,out,threads);
     xBackward=new mfft1d(d.X,-sign,M,M,1,in,out,threads);
-
-    d.Deactivate();
   }
 
   fft3dMPI(const utils::split3& d, Complex *in, Complex *out,
@@ -309,7 +303,6 @@ public:
   utils::mpitranspose<Complex> *T;
 
   void init(double *in, Complex *out, const utils::mpiOptions& options) {
-    dc.Activate();
     out=CheckAlign((Complex *) in,out);
     inplace=((Complex *) in == out);
 
@@ -328,7 +321,6 @@ public:
 
     xForward=new mfft1d(dc.X,-1,dc.y,dc.y,1,out,out,threads);
     xBackward=new mfft1d(dc.X,1,dc.y,dc.y,1,out,out,threads);
-    dc.Deactivate();
   }
 
   rcfft2dMPI(const utils::split& dr, const utils::split& dc, double *in,
@@ -455,7 +447,6 @@ public:
 
   void init(double *in, Complex *out, const utils::mpiOptions& xy,
             const utils::mpiOptions &yz) {
-    dc.Activate();
     multithread(dc.x);
     out=CheckAlign((Complex *) in,out);
     inplace=((Complex *) in == out);
@@ -478,8 +469,6 @@ public:
     M=dc.xy.y*dc.z;
     xForward=new mfft1d(dc.X,-1,M,M,1,out,out,threads);
     xBackward=new mfft1d(dc.X,1,M,M,1,out,out,threads);
-
-    dc.Deactivate();
   }
 
   rcfft3dMPI(const utils::split3& dr, const utils::split3& dc, double *in,

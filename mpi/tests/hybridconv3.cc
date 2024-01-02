@@ -84,16 +84,16 @@ int main(int argc, char* argv[])
 
     if(main) {
       fftPad fftx(Lx,Mx,appx,d.y*d.z);
-      P.x.init(fftx);
+      P.x.init(&fftx);
       fftPad ffty(Ly,My,appy,d.z);
-      P.y.init(ffty);
+      P.y.init(&ffty);
       fftPad fftz(Lz,Mz,appz);
-      P.z.init(fftz);
+      P.z.init(&fftz);
     }
 
-    MPI_Bcast(&P,sizeof(params),MPI_BYTE,0,d.communicator);
+    fftwpp::synchronizeWisdom(group.active);
 
-    d.Activate();
+    MPI_Bcast(&P,sizeof(params),MPI_BYTE,0,d.communicator);
 
     fftPad fftx(Lx,Mx,appx,d.y*d.z,d.y*d.z,P.x.m,P.x.D,P.x.I);
     fftPad ffty(Ly,My,appy,d.z,d.z,        P.y.m,P.y.D,P.y.I);

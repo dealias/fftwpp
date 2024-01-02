@@ -5,24 +5,21 @@
 
 namespace utils {
 
-extern MPI_Comm Active;
-void setMPIplanner();
-
 class MPIgroup {
-public:  
+public:
   int rank,size;
-  MPI_Comm active;                     // active communicator 
+  MPI_Comm active;                     // active communicator
   MPI_Comm communicator,communicator2; // 3D transpose communicators
-  
+
   void init(const MPI_Comm& comm) {
     MPI_Comm_rank(comm,&rank);
     MPI_Comm_size(comm,&size);
   }
-  
+
   void activate(const MPI_Comm& comm) {
     MPI_Comm_split(comm,rank < size,0,&active);
   }
-  
+
 // Distribute X.
   MPIgroup(const MPI_Comm& comm, unsigned int X) {
     init(comm);
@@ -31,7 +28,7 @@ public:
     activate(comm);
     communicator=communicator2=MPI_COMM_NULL;
   }
-  
+
 // Distribute first X, then (if allowpencil=true) Y.
   MPIgroup(const MPI_Comm& comm, unsigned int X, unsigned int Y,
            bool allowPencil=true) {
@@ -39,14 +36,14 @@ public:
     unsigned int x=ceilquotient(X,size);
     unsigned int y=allowPencil ? ceilquotient(Y,size*x/X) : Y;
     size=ceilquotient(X,x)*ceilquotient(Y,y);
-    
+
     activate(comm);
     if(rank < size) {
       int major=ceilquotient(size,X);
       int p=rank % major;
       int q=rank / major;
-  
-      /* Split nodes into row and columns */ 
+
+      /* Split nodes into row and columns */
       MPI_Comm_split(active,p,q,&communicator);
       MPI_Comm_split(active,q,p,&communicator2);
     }
@@ -81,32 +78,22 @@ public:
     : X(X), Y(Y), communicator(communicator) {
     int size;
     int rank;
-      
+
     MPI_Comm_rank(communicator,&rank);
     MPI_Comm_size(communicator,&size);
-    
+
     localdimension xdim(X,rank,size);
     localdimension ydim(Y,rank,size);
-    
+
     x=xdim.n;
     y=ydim.n;
-    
+
     x0=xdim.start;
     y0=ydim.start;
 
     n=std::max(X*y,x*Y);
   }
 
-  int Activate() const {
-    Active=communicator;
-    setMPIplanner();
-    return n;
-  }
-
-  void Deactivate() const {
-    Active=MPI_COMM_NULL;
-  }
-  
   void show() {
     std::cout << "X=" << X << "\tY=" <<Y << std::endl;
     std::cout << "x=" << x << "\ty=" <<y << std::endl;
@@ -151,32 +138,23 @@ public:
     n2=yz.n;
     n=std::max(xy.n*z,x*n2);
   }
-  
+
   split3(unsigned int X, unsigned int Y, unsigned int Z,
          const MPIgroup& group, bool spectral=false) :
     X(X), Y(Y), Y2(Y), Z(Z), communicator(group.active), XYplane(NULL) {
     init(group,spectral);
   }
-    
+
   split3(unsigned int X, unsigned int Y, unsigned int Y2, unsigned int Z,
-         const MPIgroup& group, bool spectral=false) : 
+         const MPIgroup& group, bool spectral=false) :
     X(X), Y(Y), Y2(Y2), Z(Z), communicator(group.active), XYplane(NULL) {
     init(group,spectral);
-  }
-  
-  int Activate() const {
-    xy.Activate();
-    return n;
-  }
-
-  void Deactivate() const {
-    xy.Deactivate();
   }
 
   ~split3() {
     if(XYplane && z0 == 0) delete [] reflect;
   }
-  
+
   void show() {
     std::cout << "X=" << X << "\tY=" << Y << "\tZ=" << Z << std::endl;
     std::cout << "x=" << x << "\ty=" << y << "\tz=" << z << std::endl;

@@ -18,11 +18,11 @@ public:
 
   param() : m(0), D(0), I(0), l(0) {}
 
-  void init(fftBase &fft) {
-    m=fft.m;
-    D=fft.D;
-    I=fft.inplace;
-    l=fft.l;
+  void init(fftBase *fft) {
+    m=fft->m;
+    D=fft->D;
+    I=fft->inplace;
+    l=fft->l;
   }
 };
 
@@ -82,7 +82,6 @@ public:
       T[a]=new utils::mpitranspose<Complex>(d.X,d.Y,d.x,d.y,1,
                                             F[a],NULL,
                                             d.communicator,mpi,d.communicator);
-    d.Deactivate();
   }
 
   Convolution2MPI(fftBase *fftx, fftBase *ffty,
@@ -161,7 +160,6 @@ public:
                                               mpi,d.communicator);
     } else
       T=NULL;
-    d.Deactivate();
   }
 
   void initMPI(const utils::mpiOptions& mpi, unsigned int Threads) {
