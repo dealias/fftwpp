@@ -143,5 +143,8 @@ int main(int argc, char *argv[])
     cout << "Error: "<< relError << endl;
     deleteAlign(h);
   }
+
+  deleteAlign(f[0]); delete f;
+
   return 0;
 }

@@ -130,5 +130,7 @@ int main(int argc, char *argv[])
     deleteAlign(h);
   }
 
+  deleteAlign(f[0]); delete f;
+
   return 0;
 }

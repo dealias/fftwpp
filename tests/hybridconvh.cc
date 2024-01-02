@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
   cout << "L=" << L << endl;
   cout << "M=" << M << endl;
 
-  if(Output||testError)
+  if(Output || testError)
     K=0;
   if(K == 0) N=1;
   cout << "K=" << K << endl << endl;
@@ -116,6 +116,8 @@ int main(int argc, char *argv[])
     cout << "Error: "<< relError << endl;
     deleteAlign(h);
   }
+
+  deleteAlign(f[0]); delete f;
 
   return 0;
 }

@@ -74,8 +74,10 @@ int main(int argc, char* argv[])
     params P;
 
     if(main) {
-      P.x.init(new fftPad(Lx,Mx,appx,d.y));
-      P.y.init(new fftPad(Ly,My,appy));
+      fftPad fftx(Lx,Mx,appx,d.y);
+      P.x.init(&fftx);
+      fftPad ffty(Ly,My,appy);
+      P.y.init(&ffty);
     }
 
     MPI_Bcast(&P,sizeof(params),MPI_BYTE,0,group.active);
