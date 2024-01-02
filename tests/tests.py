@@ -6,7 +6,6 @@ import argparse
 import sys
 from utils import *
 import copy
-from os.path import sep
 
 def main():
   args=getArgs()
@@ -67,12 +66,10 @@ class Command:
     if options.R:
       self.extraArgs.append("-R")
 
-    path=""
     if options.mpi and nodes !=0:
         self.mpi=["mpiexec","-n",str(nodes)]
-        path=".."+sep+"mpi"+sep+"tests"+sep # Careful: This assumes the relative location of mpi test code
 
-    self.name=[path+program.name]
+    self.name=[program.name]
     self.vg=["valgrind"] if options.vg else []
 
 
