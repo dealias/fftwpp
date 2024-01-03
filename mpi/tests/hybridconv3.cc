@@ -181,7 +181,7 @@ int main(int argc, char* argv[])
       for(size_t i=0; i < N; ++i) {
         utils::stopWatch *c;
         if(main) c=new utils::stopWatch;
-        Convolve.convolve(f);
+        Convolve.convolveRaw(f);
         if(main)
           T.push_back(c->nanoseconds());
       }
