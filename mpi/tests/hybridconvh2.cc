@@ -95,8 +95,8 @@ int main(int argc, char* argv[])
     for(size_t a=0; a < A; ++a) {
       Complex *fa=f[a];
       for(size_t i=0; i < Lx; ++i) {
+        int I=Lx % 2 ? i : i-1;
         for(size_t j=0; j < d.y; ++j) {
-          int I=Lx % 2 ? i : -1+i;
           unsigned int J=d.y0+j;
           fa[d.y*i+j]=Output || testError ? Complex((a+1.0)*I,J+a) : 0.0;
         }

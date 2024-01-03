@@ -1,7 +1,6 @@
 #pragma once
 
 #include <mpi.h>
-#include <vector>
 
 #include "convolve.h"
 #include "mpifftw++.h"
@@ -34,36 +33,36 @@ public:
 };
 
 // Return the output buffer decomposition
-utils::split outputSplit(fftBase *fftx, fftBase *ffty, const MPI_Comm &communicator) {
+inline utils::split outputSplit(fftBase *fftx, fftBase *ffty, const MPI_Comm &communicator) {
   return utils::split(fftx->l*fftx->D,ffty->inputLength(),communicator);
 }
 
-utils::split3 outputSplit(fftBase *fftx, fftBase *ffty, fftBase *fftz, const utils::MPIgroup &group, bool spectral=false) {
+inline utils::split3 outputSplit(fftBase *fftx, fftBase *ffty, fftBase *fftz, const utils::MPIgroup &group, bool spectral=false) {
   return utils::split3(fftx->l*fftx->D,ffty->inputLength(),fftz->inputLength(),
                        group,spectral);
 }
 
 // Return the minimum buffer size for the transpose
-size_t bufferSize(fftBase *fftx, fftBase *ffty,
+inline size_t bufferSize(fftBase *fftx, fftBase *ffty,
                   const MPI_Comm &communicator) {
   return outputSplit(fftx,ffty,communicator).n;
 }
 
 // Return the minimum buffer size for the transpose
-size_t bufferSize(fftBase *fftx, fftBase *ffty, fftBase *fftz,
+inline size_t bufferSize(fftBase *fftx, fftBase *ffty, fftBase *fftz,
                   const utils::MPIgroup &group) {
   return outputSplit(fftx,ffty,fftz,group).n;
 }
 
 // Allocate the outputBuffer;
-Complex **outputBuffer(fftBase *fftx, fftBase *ffty,
+inline Complex **outputBuffer(fftBase *fftx, fftBase *ffty,
                        const MPI_Comm &communicator) {
   return utils::ComplexAlign(std::max(fftx->app.A,fftx->app.B),
                              bufferSize(fftx,ffty,communicator));
 }
 
 // Allocate the outputBuffer;
-Complex **outputBuffer(fftBase *fftx, fftBase *ffty, fftBase *fftz,
+inline Complex **outputBuffer(fftBase *fftx, fftBase *ffty, fftBase *fftz,
                        const utils::MPIgroup &group) {
   return utils::ComplexAlign(std::max(fftx->app.A,fftx->app.B),
                              bufferSize(fftx,ffty,fftz,group));
@@ -259,5 +258,8 @@ inline void HermitianSymmetrizeX(const utils::split& d, Complex *f,
   }
 
 }
+
+void HermitianSymmetrizeXY(utils::split3& d, Complex *f, Complex *u=NULL,
+                           size_t threads=fftw::maxthreads);
 
 } // namespace fftwpp
