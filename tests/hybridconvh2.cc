@@ -50,14 +50,14 @@ int main(int argc, char *argv[])
   fftPadHermitian ffty(Ly,My,appy);
   Convolution2 Convolve(&fftx,&ffty);
 
-  Complex **f=ComplexAlign(max(A,B),Sx*Lx);
+  Complex **f=ComplexAlign(max(A,B),Lx*Sx);
 
   for(size_t a=0; a < A; ++a) {
     Complex *fa=f[a];
     for(size_t i=0; i < Lx; ++i) {
       for(size_t j=0; j < Hy; ++j) {
         int I=Lx % 2 ? i : -1+i;
-        fa[Sx*i+j]=Output || testError ? Complex((a+1)*I,j+a) : 0.0;
+        fa[Sx*i+j]=Output || testError ? Complex((a+1.0)*I,j+a) : 0.0;
       }
     }
     HermitianSymmetrizeX(Hx,Hy,Lx/2,fa,Sx);

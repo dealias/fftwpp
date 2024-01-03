@@ -35,11 +35,12 @@ public:
 
 // Return the output buffer decomposition
 utils::split outputSplit(fftBase *fftx, fftBase *ffty, const MPI_Comm &communicator) {
-  return utils::split(fftx->l*fftx->D,ffty->L,communicator);
+  return utils::split(fftx->l*fftx->D,ffty->inputLength(),communicator);
 }
 
 utils::split3 outputSplit(fftBase *fftx, fftBase *ffty, fftBase *fftz, const utils::MPIgroup &group, bool spectral=false) {
-  return utils::split3(fftx->l*fftx->D,ffty->L,fftz->L,group,spectral);
+  return utils::split3(fftx->l*fftx->D,ffty->inputLength(),fftz->inputLength(),
+                       group,spectral);
 }
 
 // Return the minimum buffer size for the transpose
@@ -240,5 +241,23 @@ public:
   }
 
 };
+
+inline void HermitianSymmetrizeX(const utils::split& d, Complex *f,
+                                 size_t threads=fftw::maxthreads)
+{
+  size_t Hx=utils::ceilquotient(d.X,2);
+  if(d.y0 == 0)
+    HermitianSymmetrizeX(Hx,d.y,d.X/2,f);
+  else
+  // Zero out Nyquist modes
+  if(d.X/2 == Hx) {
+    PARALLELIF(
+      d.y > threshold,
+    for(size_t j=0; j < d.y; ++j)
+      f[j]=0.0;
+      );
+  }
+
+}
 
 } // namespace fftwpp

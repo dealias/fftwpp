@@ -357,7 +357,7 @@ int main(int argc, char* argv[])
           T.push_back(c->nanoseconds());
       }
       if(main) {
-        timings("Implicit",mx,T.data(),T.size(),stats);
+        timings("Implicit",(2*mx-1)*(2*my-1)*(2*mz-1),T.data(),T.size(),stats);
         T.clear();
       }
 

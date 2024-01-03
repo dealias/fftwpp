@@ -52,6 +52,7 @@ vpath %.cc ../:../../:../../tests
 FFTW=fftw++ parallel
 FILES=gather gatheryz gatherxy transpose fft2 fft3 fft2r fft3r  \
 	hybridconv2 hybridconv3 \
+	hybridconvh2 \
 	cconv2 conv2 cconv3 conv3
 MPITRANSPOSE=mpitranspose
 MPIFFT=$(FFTW) $(MPITRANSPOSE) mpifftw++
@@ -90,6 +91,9 @@ fft3r: fft3r.o $(MPIFFT:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
 hybridconv2: hybridconv2.o $(MPICONVOLVE:=.o)
+	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
+
+hybridconvh2: hybridconvh2.o $(MPICONVOLVE:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
 hybridconv3: hybridconv3.o $(MPICONVOLVE:=.o)

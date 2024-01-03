@@ -379,7 +379,7 @@ def iterate(program, threads, options):
     vals=ParameterCollection(findTests(program,1,options,inner=True)).vals
     if dim == 2:
       nodevals=[0]
-      if mpi and not program.hermitian: # HERMITIAN NOT IMPLEMENTED
+      if mpi:
         nodevals=[1,2,4]
       xcols=[ParameterCollection(findTests(program,2,options,outer=True))]
       if testS:
