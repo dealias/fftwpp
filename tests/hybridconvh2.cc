@@ -55,8 +55,8 @@ int main(int argc, char *argv[])
   for(size_t a=0; a < A; ++a) {
     Complex *fa=f[a];
     for(size_t i=0; i < Lx; ++i) {
+      int I=Lx % 2 ? i : -1+i;
       for(size_t j=0; j < Hy; ++j) {
-        int I=Lx % 2 ? i : -1+i;
         fa[Sx*i+j]=Output || testError ? Complex((a+1.0)*I,j+a) : 0.0;
       }
     }

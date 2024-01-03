@@ -61,12 +61,12 @@ int main(int argc, char *argv[])
   for(size_t a=0; a < A; ++a) {
     Complex *fa=f[a];
     for(size_t i=0; i < Lx; ++i) {
+      int I=Lx % 2 ? i : i-1;
       for(size_t j=0; j < Ly; ++j) {
+        int J=Ly % 2 ? j : j-1;
         for(size_t k=0; k < Hz; ++k) {
-          int I=Lx % 2 ? i : -1+i;
-          int J=Ly % 2 ? j : -1+j;
           fa[Sx*i+Sy*j+k]=Output || testError ?
-            Complex((1.0+a)*I+k,J+a+k) : 0.0;
+            Complex((a+1.0)*I+k,J+a+k) : 0.0;
         }
       }
     }
