@@ -19,7 +19,7 @@ using namespace fftwpp;
 void init(Complex *f,
 	  unsigned int N0, unsigned int N1, unsigned int N2,
 	  unsigned int m0, unsigned int m1, unsigned int m2,
-	  unsigned int local_0_start, unsigned int local_n0) 
+	  unsigned int local_0_start, unsigned int local_n0)
 {
   // Load everything with zeros.
   for(unsigned int i=0; i < local_n0; ++i) {
@@ -33,8 +33,8 @@ void init(Complex *f,
   unsigned int local_0_stop=local_0_start+local_n0;
   for(unsigned int ii=local_0_start; ii < local_0_stop; ++ii) {
     if(ii < m0) {
-      // The logical index: 
-      unsigned int i=ii-local_0_start; 
+      // The logical index:
+      unsigned int i=ii-local_0_start;
       for(unsigned int j=0; j < m1; j++) {
 	for(unsigned int k=0; k < m2; k++) {
 	  f[i*N1*N2+j*N2+k]=ii+k*k+I*j ;
@@ -58,7 +58,7 @@ void unpad_local(const Complex *f, Complex *f_nopad,
 }
 
 void convolve(Complex *f, Complex *g, double norm,
-	      int num, fftw_plan fplan, fftw_plan iplan) 
+	      int num, fftw_plan fplan, fftw_plan iplan)
 {
   fftw_mpi_execute_dft(fplan,(fftw_complex *) f,(fftw_complex *) f);
   fftw_mpi_execute_dft(fplan,(fftw_complex *) g,(fftw_complex *) g);
@@ -84,29 +84,29 @@ int main(int argc, char **argv)
   int m=4;
   int stats=0;
 
-#ifdef __GNUC__	
+#ifdef __GNUC__
   optind=0;
-#endif	
+#endif
   for(; ; ) {
     int c=getopt(argc,argv,"N: m: S: T: e");
     if(c == -1) break;
-    
+
     switch(c) {
-      case 0: 
+      case 0:
         break;
-      case 'N': 
+      case 'N':
         N=atoi(optarg);
         break;
-      case 'm': 
+      case 'm':
         m=atoi(optarg);
         break;
-      case 'S': 
+      case 'S':
         stats=atoi(optarg);
         break;
-      case 'T': 
+      case 'T':
         threads=atoi(optarg);
         break;
-      case 'e': 
+      case 'e':
 	// For compatibility reasons with -e option in OpenMP version.
 	break;
  }
@@ -124,18 +124,18 @@ int main(int argc, char **argv)
     N=N0/m0/m1/m2;
     if(N < 20) N=20;
 }
-  
+
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
-  
+
   threads_ok=provided >= MPI_THREAD_FUNNELED;
-    
+
   if(threads_ok)
     fftw_init_threads();
 
   fftw_mpi_init();
 
-  if(threads_ok) 
+  if(threads_ok)
     fftw_plan_with_nthreads(threads);
 
   int rank;
@@ -144,21 +144,21 @@ int main(int argc, char **argv)
   if(threads_ok && rank == 0) {
     cout << "Threads ok!" << endl;
 }
-  
-  
+
+
   /* get local data size and allocate */
   ptrdiff_t local_n0;
   ptrdiff_t local_0_start;
   ptrdiff_t alloc_local=fftw_mpi_local_size_3d(N0,N1,N2,MPI_COMM_WORLD,
 						 &local_n0,&local_0_start);
-  
+
   ptrdiff_t local_n1,local_1_start;
   int transize=fftw_mpi_local_size_3d_transposed(N0,N1,N2,MPI_COMM_WORLD,
 						 &local_n0,&local_0_start,
 						 &local_n1,&local_1_start);
   Complex *f=ComplexAlign(alloc_local);
   Complex *g=ComplexAlign(alloc_local);
-  
+
   /* create plan for in-place DFT */
   fftw_plan fplan=fftw_mpi_plan_dft_3d(N0,N1,N2,(fftw_complex *) f,
                                     (fftw_complex *) f,MPI_COMM_WORLD,
@@ -179,11 +179,11 @@ int main(int argc, char **argv)
    (local_0_start < m0) ? m0-local_0_start : 0;
     if(local_m0 > local_n0)
       local_m0=local_n0;
-    
+
     unsigned int n_nopad=local_m0*m1*m2;
     Complex *f_nopad=ComplexAlign(n_nopad);
     Complex *g_nopad=ComplexAlign(n_nopad);
-    
+
     if(rank == 0)
       cout << "input f: " << endl;
     unpad_local(f,f_nopad,N1,N2,local_m0,m1,m2);
@@ -204,16 +204,16 @@ int main(int argc, char **argv)
     deleteAlign(g_nopad);
     deleteAlign(f_nopad);
 }
-  
+
   if(N > 0) {
     double *T=new double[N];
     for(int i=0; i < N; ++i) {
       init(f,N0,N1,N2,m0,m1,m2,local_0_start,local_n0);
       init(g,N0,N1,N2,m0,m1,m2,local_0_start,local_n0);
-      seconds();
+      cpuTimer c;
       convolve(f,g,overN,transize,fplan,iplan);
-      T[i]=seconds();
- }  
+      T[i]=c.seconds();
+ }
     if(rank == 0)
       timings("Explicit",m,T,N,stats);
 }

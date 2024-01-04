@@ -2,8 +2,9 @@
 #include <Complex.h>
 #include <fftw3-mpi.h>
 #include <iostream>
-#include "getopt.h"
+#include <iostream>
 #include "seconds.h"
+#include "utils.h"
 #include "timing.h"
 #include "cmult-sse2.h"
 #include "exmpiutils.h"
@@ -57,7 +58,7 @@ void show3c(const fftw_complex *F, unsigned int N0, unsigned int N1,
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   int size;
   MPI_Comm_size(MPI_COMM_WORLD, &size);
-  
+
   for(int r=0; r < size; ++r) {
     MPI_Barrier(MPI_COMM_WORLD);
     if(r == rank) {
@@ -82,13 +83,13 @@ int main(int argc, char **argv)
   int m=4;
   int nthreads=1; // Number of threads
   int stats=0;
-#ifdef __GNUC__	
+#ifdef __GNUC__
   optind=0;
-#endif	
+#endif
   for (;;) {
     int c=getopt(argc,argv,"N:m:T:S:e");
     if (c == -1) break;
-    
+
     switch (c) {
       case 0:
         break;
@@ -132,7 +133,7 @@ int main(int argc, char **argv)
   fftw_init_threads();
   fftw_mpi_init();
   fftw_plan_with_nthreads(nthreads);
-  
+
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
@@ -143,69 +144,69 @@ int main(int argc, char **argv)
     fftw_mpi_local_size_3d_transposed(N0,N1,N2p,MPI_COMM_WORLD,
                                       &local_n0,&local_0_start,
                                       &local_n1,&local_1_start);
-  
+
   fftw_complex *F=(fftw_complex *) ComplexAlign(alloc_local);
   double* f=(double *) F;
-  
+
   fftw_plan rcplan=fftw_mpi_plan_dft_r2c_3d(N0,N1,N2,f,F,MPI_COMM_WORLD,
 					    FFTW_MEASURE |
 					    FFTW_MPI_TRANSPOSED_OUT);
-  
+
   fftw_plan crplan=fftw_mpi_plan_dft_c2r_3d(N0,N1,N2,F,f,MPI_COMM_WORLD,
 					    FFTW_MEASURE |
 					    FFTW_MPI_TRANSPOSED_IN);
 
   unsigned int outlimit=3000;
-  
+
   Transpose *TXyZ,*TyXZ;
   TXyZ=new Transpose(N0,local_n1,N2p,F,F,nthreads);
   TyXZ=new Transpose(local_n1,N0,N2p,F,F,nthreads);
-  
+
   if(N0*N1*N1 < outlimit) {
     if(rank == 0)
       cout << "input:" << endl;
     init3r(f,local_n0,local_0_start,N1,N2);
     show3r(f,local_n0,N1,N2);
-    
+
     fftw_mpi_execute_dft_r2c(rcplan,f,F);
     TyXZ->transpose(F);
-    
+
     if(rank == 0)
       cout << "output:" << endl;
     show3c(F,N0,local_n1,N2p);
-    
+
     TXyZ->transpose(f);
     fftw_mpi_execute_dft_c2r(crplan,F,f);
-    
+
     double norm=1.0/(N0*N1*N2);
     for(unsigned int i=0; i < local_n0; ++i)
       for(unsigned int j=0; j < N1; ++j)
         for(unsigned int k=0; k < N2; ++k)
           f[(i*N1+j)*(2*(N2/2+1))+k] *= norm;
-    
+
     if(rank == 0)
       cout << "back to input:" << endl;
     show3r(f,local_n0,N1,N2);
   }
-  
+
   if(N > 0) {
     double *T=new double[N];
     for(int i=0; i < N; ++i) {
       init3r(f,local_n0,local_0_start,N1,N2);
-      seconds();
+      cpuTimer c;
       fftw_mpi_execute_dft_r2c(rcplan,f,F);
       TyXZ->transpose(F);
       TXyZ->transpose(F);
       fftw_mpi_execute_dft_c2r(crplan,F,f);
-      T[i]=0.5*seconds();
-    }  
+      T[i]=0.5*c.seconds();
+    }
     if(rank == 0)
       timings("FFT",m,T,N,stats);
     delete[] T;
   }
-  
+
   deleteAlign(F);
-  
+
   fftw_destroy_plan(rcplan);
   fftw_destroy_plan(crplan);
 

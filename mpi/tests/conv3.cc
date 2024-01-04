@@ -1,5 +1,3 @@
-// TODO: Add NORMALIZATION
-
 #include "mpiconvolution.h"
 #include "utils.h"
 #include "timing.h"

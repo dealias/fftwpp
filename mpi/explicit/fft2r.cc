@@ -73,13 +73,13 @@ int main(int argc, char **argv)
   int m=4;
   int nthreads=1; // Number of threads
   int stats=0;
-#ifdef __GNUC__	
+#ifdef __GNUC__
   optind=0;
-#endif	
+#endif
   for (;;) {
     int c=getopt(argc,argv,"N:m:T:S:e");
     if (c == -1) break;
-    
+
     switch (c) {
       case 0:
         break;
@@ -113,7 +113,7 @@ int main(int argc, char **argv)
     N=N0/m0/m1;
     if(N < 20) N=20;
   }
-  
+
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
   if(provided < MPI_THREAD_FUNNELED)
@@ -121,7 +121,7 @@ int main(int argc, char **argv)
   fftw_init_threads();
   fftw_mpi_init();
   fftw_plan_with_nthreads(nthreads);
-  
+
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
 
@@ -135,24 +135,24 @@ int main(int argc, char **argv)
     fftw_mpi_local_size_2d_transposed(N0,N1p,MPI_COMM_WORLD,
                                       &local_n0,&local_0_start,
                                       &local_n1,&local_1_start);
-  
+
   fftw_complex *F=(fftw_complex *) ComplexAlign(alloc_local);
   double* f=(double *) F;
-  
+
   fftw_plan rcplan=fftw_mpi_plan_dft_r2c_2d(N0,N1,f,F,MPI_COMM_WORLD,
 					    FFTW_MEASURE |
 					    FFTW_MPI_TRANSPOSED_OUT);
-  
+
   fftw_plan crplan=fftw_mpi_plan_dft_c2r_2d(N0,N1,F,f,MPI_COMM_WORLD,
 					    FFTW_MEASURE |
 					    FFTW_MPI_TRANSPOSED_IN);
 
   unsigned int outlimit=3000;
-  
+
   Transpose *TXy,*TyX;
   TXy=new Transpose(N0,local_n1,1,F,F,nthreads);
   TyX=new Transpose(local_n1,N0,1,F,F,nthreads);
-    
+
   if(N0*N1 < outlimit) {
     if(rank == 0)
       cout << "input:" << endl;
@@ -160,21 +160,21 @@ int main(int argc, char **argv)
     show2r(f,local_n0,N1);
     if(rank == 0)
       cout << "output:" << endl;
-    
+
     fftw_mpi_execute_dft_r2c(rcplan,f,F);
     TyX->transpose(F);
     show2c(F,N0,local_n1);
-    
+
     TXy->transpose(F);
     if(rank == 0)
       cout << "back to input:" << endl;
     fftw_mpi_execute_dft_c2r(crplan,F,f);
-    
+
     double norm=1.0/(N0*N1);
     for(unsigned int i=0; i < local_n0; ++i)
       for(unsigned int j=0; j < N1; ++j)
         f[i*(2*(N1/2+1))+j] *= norm;
-    
+
     show2r(f,local_n0,N1);
   }
 
@@ -182,20 +182,20 @@ int main(int argc, char **argv)
     double *T=new double[N];
     for(int i=0; i < N; ++i) {
       init2r(f,local_n0,local_0_start,N1);
-      seconds();
+      cpuTimer c;
       fftw_mpi_execute_dft_r2c(rcplan,f,F);
       TyX->transpose(F);
       TXy->transpose(F);
       fftw_mpi_execute_dft_c2r(crplan,F,f);
-      T[i]=0.5*seconds();
-    }  
+      T[i]=0.5*c.seconds();
+    }
     if(rank == 0)
       timings("FFT",m,T,N,stats);
     delete[] T;
   }
-  
+
   deleteAlign(F);
-  
+
   fftw_destroy_plan(rcplan);
   fftw_destroy_plan(crplan);
 

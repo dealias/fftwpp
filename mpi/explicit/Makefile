@@ -2,13 +2,15 @@ ifndef MPICXX
 MPICXX=mpic++
 endif
 
-IDIR=../../
+IDIR=../
 UDIR=../../tests/
 
 # GNU compiler
 ifeq ($(shell $(MPICXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
-CXXFLAGS=-O3 -fopenmp -g -Wall -ansi -DNDEBUG -fomit-frame-pointer \
-	-fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native
+CXXFLAGS += -Ofast -g -Wall -DNDEBUG
+CXXFLAGS += -fopenmp
+CXXFLAGS += -fomit-frame-pointer -fstrict-aliasing -ffast-math
+CXXFLAGS += -march=native
 #For valgrind:
 #CXXFLAGS=-fopenmp -g -Wall -ansi -fomit-frame-pointer -fstrict-aliasing \
 #	 -ffast-math -msse2 -mfpmath=sse
@@ -16,7 +18,7 @@ endif
 
 #Intel compiler
 ifeq ($(shell $(MPICXX) --version 2>&1 | head -c 4),icpc)
-CXXFLAGS=-O3 -openmp -ipo -ansi-alias -malign-double -fp-model fast=2
+CXXFLAGS=-O3 -qopenmp -ipo -ansi-alias -malign-double -fp-model fast=2
 endif
 
 #IBM compiler
@@ -24,7 +26,7 @@ ifeq ($(shell $(MPICXX) -qversion 2>&1 | head -c 3),IBM)
 CXXFLAGS= -O5 -qsmp=speculative -qtune=qp -qipa -qarch=qp
 endif
 
-CXXFLAGS += $(DEFS) -I$(IDIR) -I$(UDIR)
+CXXFLAGS += $(DEFS) -I$(IDIR) -I$(UDIR) -I ../../
 
 ifneq ($(strip $(FFTW_INCLUDE_PATH)),)
 CXXFLAGS += -I$(FFTW_INCLUDE_PATH)
@@ -52,7 +54,7 @@ vpath %.cc ../../
 
 
 FILES=fft2 fft3 fft2r fft3r cconv2 cconv3 transpose
-EXTRA=exmpiutils fftw++
+EXTRA=exmpiutils fftw++ parallel
 ALL=$(FILES) $(EXTRA)
 
 all: $(FILES)

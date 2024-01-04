@@ -15,7 +15,7 @@ using namespace utils;
 
 void init(Complex *data, unsigned int X, unsigned int y, unsigned int Z,
           int x0, int y0) {
-  for(unsigned int i=0; i < X; ++i) { 
+  for(unsigned int i=0; i < X; ++i) {
     for(unsigned int j=0; j < y; ++j) {
       for(unsigned int k=0; k < Z; ++k) {
         data[(y*i+j)*Z+k].re=x0+i;
@@ -67,13 +67,13 @@ int main(int argc, char **argv)
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
   if(rank != 0) opterr=0;
-#ifdef __GNUC__ 
+#ifdef __GNUC__
   optind=0;
-#endif  
+#endif
   for (;;) {
     int c=getopt(argc,argv,"hLN:A:Im:n:OS:T:x:y:z:qt");
     if (c == -1) break;
-                
+
     switch (c) {
       case 0:
         break;
@@ -124,12 +124,12 @@ int main(int argc, char **argv)
 
   int size;
   MPI_Comm_size(MPI_COMM_WORLD,&size);
-  
+
   if(rank == 0) {
     cout << "size=" << size << endl;
     cout << "threads=" << defaultmpithreads << endl;
   }
-  
+
   if(test) N=1;
   else if(N == 0) {
     N=N0/((unsigned long long) X*Y*Z);
@@ -141,9 +141,9 @@ int main(int argc, char **argv)
   Complex *data;
   ptrdiff_t x,x0;
   ptrdiff_t y,y0;
-  
+
   fftw_mpi_init();
-  
+
   /* get local data size and allocate */
   ptrdiff_t NN[2]={Y,X};
   unsigned int block=ceilquotient(Y,size);
@@ -159,9 +159,9 @@ int main(int argc, char **argv)
     cout << "Z=" << Z << endl;
     cout << "N=" << N << endl;
   }
-  
+
   data=ComplexAlign(alloc);
-  
+
   fftw_plan inplan=fftw_mpi_plan_many_transpose(Y,X,2*Z,block,0,
                                                 (double*) data,(double*) data,
                                                 MPI_COMM_WORLD,
@@ -181,14 +181,14 @@ int main(int argc, char **argv)
   double *Tout=new double[N];
 
   for(unsigned int i=0; i < N; ++i) {
-    seconds();
+    cpuTimer cin;
     fftw_execute(inplan);
-    Tin[i]=seconds();
+    Tin[i]=cin.seconds();
 
-    seconds();
+    cpuTimer cout;
     fftw_execute(outplan);
-    Tout[i]=seconds();
-    
+    Tout[i]=cout.seconds();
+
   }
 
   if(rank == 0) {
@@ -215,7 +215,7 @@ int main(int argc, char **argv)
 
   delete[] Tout;
   delete[] Tin;
-  
+
   if(showoutput) {
     if(outtranspose) {
       if(rank == 0) cout << "\nOutput:\n" << endl;
@@ -228,7 +228,7 @@ int main(int argc, char **argv)
 
   fftw_destroy_plan(inplan);
   fftw_destroy_plan(outplan);
-  
+
   MPI_Finalize();
   return retval;
 }
