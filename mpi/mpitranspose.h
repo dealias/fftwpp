@@ -46,7 +46,6 @@
 namespace utils {
 
 extern double safetyfactor; // For conservative latency estimate.
-extern bool overlap; // Allow overlapped communication.
 extern double testseconds; // Limit for transpose timing tests
 extern mpiOptions defaultmpiOptions;
 
@@ -199,6 +198,11 @@ private:
   bool subblock;
   bool compact;
   bool schedule;
+  bool overlap;
+
+  static bool allowOverlap;  // Allow overlapping of computation with I/O?
+  static double safetyfactor;
+  static double testseconds;
 public:
 
   mpiOptions Options() {return options;}
@@ -256,6 +260,7 @@ public:
     if(N < n) Array::ArrayExit("N must be >= n");
     if(M < m) Array::ArrayExit("M must be >= m");
 
+    overlap=false;
     threads=options.threads;
     MPI_Comm_size(Communicator,&size);
     MPI_Comm_rank(Communicator,&rank);
@@ -375,7 +380,7 @@ public:
     init(data);
   }
 
-  mpitranspose(){}
+//  mpitranspose(){}
 
   // data and work are arrays of size max(n*M,N*m)*L.
   mpitranspose(unsigned int N, unsigned int M, unsigned int n, unsigned int m,
@@ -869,35 +874,40 @@ public:
     }
   }
 
-  void wait0() {
-    if(overlap) Wait0();
-  }
-
-  void wait1() {
-    if(overlap) Wait1();
-  }
-
-  void wait() {
-    if(overlap) {
-      Wait0();
-      Wait1();
-    }
-  }
-
   void localize0(T *in, T *out=0)
   {
     ilocalize0(in,out);
-    wait();
+    Wait0();
+    Wait1();
   }
 
   void localize1(T *in, T *out=0)
   {
     ilocalize1(in,out);
-    wait();
+    Wait0();
+    Wait1();
+  }
+
+  void wait0() {
+    if(overlap)
+      Wait0();
+  }
+
+  void wait1() {
+    if(overlap) {
+      Wait1();
+      overlap=false;
+    }
+  }
+
+  void wait() {
+    wait0();
+    wait1();
   }
 
   void ilocalize0(T *in, T *out=0)
   {
+    overlap=allowOverlap;
     if(!out) out=in;
     input=in;
     output=out;
@@ -910,6 +920,7 @@ public:
   }
   void ilocalize1(T *in, T *out=0)
   {
+    overlap=allowOverlap;
     if(!out) out=in;
     input=in;
     output=out;
@@ -922,6 +933,15 @@ public:
   }
 
 };
+
+template<class T>
+double mpitranspose<T>::safetyfactor=2.0;
+
+template<class T>
+double mpitranspose<T>::testseconds=0.2;
+
+template<class T>
+bool mpitranspose<T>::allowOverlap=true;
 
 }
 

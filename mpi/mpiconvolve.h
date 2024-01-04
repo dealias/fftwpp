@@ -73,15 +73,25 @@ class Convolution2MPI : public Convolution2 {
 protected:
   utils::split d;
   utils::mpitranspose<Complex> **T;
+  size_t overwrite;
+  bool overlap;
 public:
 
   void inittranspose(const utils::mpiOptions& mpi) {
-    size_t C=std::max(A,B);
-    T=new utils::mpitranspose<Complex> *[C];
-    for(size_t a=0; a < C; ++a)
-      T[a]=new utils::mpitranspose<Complex>(d.X,d.Y,d.x,d.y,1,
-                                            F[a],NULL,
-                                            d.communicator,mpi,d.communicator);
+    overwrite=fftx->overwrite ? fftx->n-1 : 0;
+    overlap=overwrite ? false : fftx->loop2();
+
+    if(d.y < d.Y) {
+      size_t C=std::max(A,B);
+      T=new utils::mpitranspose<Complex> *[C];
+      for(size_t a=0; a < C; ++a)
+        T[a]=new utils::mpitranspose<Complex>(d.X,d.Y,d.x,d.y,1,
+                                              F[a],NULL,
+                                              d.communicator,mpi,d.communicator);
+    } else {
+      overlap=false;
+      T=NULL;
+    }
   }
 
   Convolution2MPI(fftBase *fftx, fftBase *ffty,
@@ -94,9 +104,12 @@ public:
   }
 
   virtual ~Convolution2MPI() {
-    size_t C=std::max(A,B);
-    for(size_t a=0; a < C; ++a)
-      delete T[a];
+    if(T) {
+      size_t C=std::max(A,B);
+      for(size_t a=0; a < C; ++a)
+        delete T[a];
+      delete [] T;
+    }
   }
 
   Complex **AllocateF(fftBase *fftx, fftBase *ffty,
@@ -108,12 +121,21 @@ public:
   void forward(Complex **f, Complex **F, size_t rx,
                size_t start, size_t stop,
                size_t offset=0) {
+    size_t incr=Sx*lx;
     for(size_t a=start; a < stop; ++a) {
       (fftx->*Forward)(f[a]+offset,F[a],rx,W);
-      T[a]->ilocalize1(F[a]);
+      if(T) {
+        if(overlap && rx == 0)
+          T[a]->localize1(F[a]);
+        else
+          T[a]->ilocalize1(F[a]);
+        for(size_t r=0; r < overwrite; ++r)
+          T[a]->localize1(f[a]+offset+incr*r);
+      }
     }
-    for(size_t a=start; a < stop; ++a)
-      T[a]->wait();
+    if(overlap && rx != 0)
+      for(size_t a=start; a < stop; ++a)
+        T[a]->wait();
   }
 
   virtual size_t stridex() {
@@ -127,10 +149,19 @@ public:
   void backward(Complex **F, Complex **f, size_t rx,
                 size_t start, size_t stop,
                 size_t offset=0, Complex *W0=NULL) {
-    for(size_t b=start; b < stop; ++b)
-      T[b]->ilocalize0(F[b]);
+    size_t incr=Sx*lx;
+    if(T)
+      for(size_t b=start; b < stop; ++b) {
+        if(overlap && rx == 0)
+          T[b]->ilocalize0(F[b]);
+        else
+          T[b]->localize0(F[b]);
+        for(size_t r=0; r < overwrite; ++r)
+          T[b]->localize0(f[b]+offset+incr*r);
+      }
     for(size_t b=start; b < stop; ++b) {
-      T[b]->wait();
+      if(overlap && rx == 0)
+        T[b]->wait();
       (fftx->*Backward)(F[b],f[b]+offset,rx,W0);
     }
     if(W && W == W0) (fftx->*Pad)(W0);
@@ -147,10 +178,15 @@ class Convolution3MPI : public Convolution3 {
 protected:
   utils::split3 d;
   utils::mpitranspose<Complex> **T;
+  size_t overwrite;
+  bool overlap;
 public:
 
   void inittranspose(const utils::mpiOptions& mpi) {
     if(d.xy.y < d.Y) {
+      overwrite=fftx->overwrite ? fftx->n-1 : 0;
+      overlap=overwrite ? false : fftx->loop2();
+
       size_t C=std::max(A,B);
       T=new utils::mpitranspose<Complex> *[C];
       for(size_t a=0; a < C; ++a)
@@ -158,8 +194,10 @@ public:
                                               F[a],NULL,
                                               d.xy.communicator,
                                               mpi,d.communicator);
-    } else
+    } else {
+      overlap=false;
       T=NULL;
+    }
   }
 
   void initMPI(const utils::mpiOptions& mpi, unsigned int Threads) {
@@ -187,6 +225,7 @@ public:
       size_t C=std::max(A,B);
       for(size_t a=0; a < C; ++a)
         delete T[a];
+      delete [] T;
     }
   }
 
@@ -199,12 +238,19 @@ public:
   void forward(Complex **f, Complex **F, size_t rx,
                size_t start, size_t stop,
                size_t offset=0) {
+    size_t incr=Sx*lx;
     for(size_t a=start; a < stop; ++a) {
       (fftx->*Forward)(f[a]+offset,F[a],rx,W);
-      if(T)
-        T[a]->ilocalize1(F[a]);
+      if(T) {
+        if(overlap && rx == 0)
+          T[a]->localize1(F[a]);
+        else
+          T[a]->ilocalize1(F[a]);
+        for(size_t r=0; r < overwrite; ++r)
+          T[a]->localize1(f[a]+offset+incr*r);
+      }
     }
-    if(T)
+    if(overlap && rx != 0)
       for(size_t a=start; a < stop; ++a)
         T[a]->wait();
   }
@@ -220,11 +266,18 @@ public:
   void backward(Complex **F, Complex **f, size_t rx,
                 size_t start, size_t stop,
                 size_t offset=0, Complex *W0=NULL) {
+    size_t incr=Sx*lx;
     if(T)
-      for(size_t b=start; b < stop; ++b)
-        T[b]->ilocalize0(F[b]);
+      for(size_t b=start; b < stop; ++b) {
+        if(overlap && rx == 0)
+          T[b]->ilocalize0(F[b]);
+        else
+          T[b]->localize0(F[b]);
+        for(size_t r=0; r < overwrite; ++r)
+          T[b]->localize0(f[b]+offset+incr*r);
+      }
     for(size_t b=start; b < stop; ++b) {
-      if(T)
+      if(overlap && rx == 0)
         T[b]->wait();
       (fftx->*Backward)(F[b],f[b]+offset,rx,W0);
     }

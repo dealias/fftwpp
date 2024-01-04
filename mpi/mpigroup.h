@@ -108,7 +108,7 @@ public:
 // yz transposed matrix is x * Y * z allocated n2 words [omit for slab]
 // xy transposed matrix is X * xy.y * z allocated n words
 //
-// If spectral=true, for convenience rename xy.y to y and xy.y0 to y0.
+// If xy=true, for convenience rename xy.y to y and xy.y0 to y0.
 class split3 {
 public:
   unsigned int n;             // Total storage (words) for xy transpose
@@ -121,14 +121,14 @@ public:
   MPI_Comm *XYplane;          // Used by HermitianSymmetrizeXYMPI
   int *reflect;               // Used by HermitianSymmetrizeXYMPI
   split3() {}
-  void init(const MPIgroup& group, bool spectral) {
-    xy=split(X,Y,group.communicator);
+  void init(const MPIgroup& group, bool xy) {
+    this->xy=split(X,Y,group.communicator);
     yz=split(Y2,Z,group.communicator2);
-    x=xy.x;
-    x0=xy.x0;
-    if(spectral) {
-      y=xy.y;
-      y0=xy.y0;
+    x=this->xy.x;
+    x0=this->xy.x0;
+    if(xy) {
+      y=this->xy.y;
+      y0=this->xy.y0;
     } else {
       y=yz.x;
       y0=yz.x0;
@@ -136,19 +136,19 @@ public:
     z=yz.y;
     z0=yz.y0;
     n2=yz.n;
-    n=std::max(xy.n*z,x*n2);
+    n=std::max(this->xy.n*z,x*n2);
   }
 
   split3(unsigned int X, unsigned int Y, unsigned int Z,
-         const MPIgroup& group, bool spectral=false) :
+         const MPIgroup& group, bool xy=false) :
     X(X), Y(Y), Y2(Y), Z(Z), communicator(group.active), XYplane(NULL) {
-    init(group,spectral);
+    init(group,xy);
   }
 
   split3(unsigned int X, unsigned int Y, unsigned int Y2, unsigned int Z,
-         const MPIgroup& group, bool spectral=false) :
+         const MPIgroup& group, bool xy=false) :
     X(X), Y(Y), Y2(Y2), Z(Z), communicator(group.active), XYplane(NULL) {
-    init(group,spectral);
+    init(group,xy);
   }
 
   ~split3() {
