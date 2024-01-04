@@ -185,9 +185,7 @@ public:
   void inittranspose(const utils::mpiOptions& mpi) {
     if(d.xy.y < d.Y) {
       overwrite=fftx->overwrite ? fftx->n-1 : 0;
-      std::cout << "overwrite=" << overwrite << std::endl;
       overlap=overwrite ? false : fftx->loop2();
-      std::cout << "overlap=" << overlap << std::endl;
 
       size_t C=std::max(A,B);
       T=new utils::mpitranspose<Complex> *[C];
