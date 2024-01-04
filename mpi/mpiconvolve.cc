@@ -68,11 +68,13 @@ void HermitianSymmetrizeXY(split3& d, Complex *f, Complex *u, size_t threads)
   if(d.z0 != 0) return;
   MPI_Comm_rank(*d.XYplane,&rank);
 
-  bool allocateu=false;
-  if(!u) {
-    u=ComplexAlign(nx);
+  bool allocateu;
+  if(u)
+    allocateu=false;
+  else {
     allocateu=true;
-  } allocateu=false;
+    u=ComplexAlign(nx);
+  }
 
   unsigned int stride=dy*d.z;
   for(unsigned int j=start; j < dy; ++j) {
@@ -90,7 +92,7 @@ void HermitianSymmetrizeXY(split3& d, Complex *f, Complex *u, size_t threads)
             f[N]=u[i];
           else {
             if(rank == 0)
-              std::cerr << "Invalid index in HermitianSymmetrizeXYMPI."
+              std::cerr << "Invalid index in HermitianSymmetrizeXY."
                         << std::endl;
             exit(-3);
           }
@@ -135,7 +137,8 @@ void HermitianSymmetrizeXY(split3& d, Complex *f, Complex *u, size_t threads)
       });
   }
 
-  if(allocateu) deleteAlign(u);
+  if(allocateu)
+    deleteAlign(u);
 }
 
 }
