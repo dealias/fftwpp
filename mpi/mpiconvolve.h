@@ -125,10 +125,10 @@ public:
     for(size_t a=start; a < stop; ++a) {
       (fftx->*Forward)(f[a]+offset,F[a],rx,W);
       if(T) {
-        if(overlap && rx == 0)
-          T[a]->localize1(F[a]);
-        else
+        if(overlap && rx != 0)
           T[a]->ilocalize1(F[a]);
+        else
+          T[a]->localize1(F[a]);
         for(size_t r=0; r < overwrite; ++r)
           T[a]->localize1(f[a]+offset+incr*r);
       }
@@ -185,7 +185,9 @@ public:
   void inittranspose(const utils::mpiOptions& mpi) {
     if(d.xy.y < d.Y) {
       overwrite=fftx->overwrite ? fftx->n-1 : 0;
+      std::cout << "overwrite=" << overwrite << std::endl;
       overlap=overwrite ? false : fftx->loop2();
+      std::cout << "overlap=" << overlap << std::endl;
 
       size_t C=std::max(A,B);
       T=new utils::mpitranspose<Complex> *[C];
@@ -242,10 +244,10 @@ public:
     for(size_t a=start; a < stop; ++a) {
       (fftx->*Forward)(f[a]+offset,F[a],rx,W);
       if(T) {
-        if(overlap && rx == 0)
-          T[a]->localize1(F[a]);
-        else
+        if(overlap && rx != 0)
           T[a]->ilocalize1(F[a]);
+        else
+          T[a]->localize1(F[a]);
         for(size_t r=0; r < overwrite; ++r)
           T[a]->localize1(f[a]+offset+incr*r);
       }
