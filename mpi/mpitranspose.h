@@ -874,20 +874,6 @@ public:
     }
   }
 
-  void localize0(T *in, T *out=0)
-  {
-    ilocalize0(in,out);
-    Wait0();
-    Wait1();
-  }
-
-  void localize1(T *in, T *out=0)
-  {
-    ilocalize1(in,out);
-    Wait0();
-    Wait1();
-  }
-
   void wait0() {
     if(overlap)
       Wait0();
@@ -903,6 +889,18 @@ public:
   void wait() {
     wait0();
     wait1();
+  }
+
+  void localize0(T *in, T *out=0)
+  {
+    ilocalize0(in,out);
+    wait();
+  }
+
+  void localize1(T *in, T *out=0)
+  {
+    ilocalize1(in,out);
+    wait();
   }
 
   void ilocalize0(T *in, T *out=0)
