@@ -47,6 +47,7 @@ int main(int argc, char *argv[])
   Convolution Convolve(fft);
 
   Complex **f=ComplexAlign(max(A,B),L);
+
   if(accuracy) {
     for(size_t j=0; j < L; ++j) {
       Complex factor=expi(j);
@@ -130,7 +131,7 @@ int main(int argc, char *argv[])
     deleteAlign(h);
   }
 
-  deleteAlign(f[0]); delete f;
+  deleteAlign(f[0]); delete [] f;
 
   return 0;
 }

@@ -105,7 +105,7 @@ inline Complex *ComplexAlign(size_t size)
 }
 
 // Return a contiguous array v of n aligned buffers of length size.
-// Deallocate with deleteAlign(v[0]); delete v;
+// Deallocate with deleteAlign(v[0]); delete [] v;
 inline Complex **ComplexAlign(size_t n, size_t size)
 {
   if(n == 0 || size == 0) return NULL;
@@ -125,7 +125,7 @@ inline double *doubleAlign(size_t size)
 }
 
 // Return a contiguous array v of n aligned buffers of length size.
-// Deallocate with deleteAlign(v[0]); delete v;
+// Deallocate with deleteAlign(v[0]); delete [] v;
 inline double **doubleAlign(size_t n, size_t size)
 {
   if(n == 0 || size == 0) return NULL;

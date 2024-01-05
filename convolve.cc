@@ -7643,9 +7643,6 @@ Convolution::~Convolution()
     utils::deleteAlign(F[0]);
     delete [] F;
   }
-
-  if(allocate)
-    delete fft;
 }
 
 // g is an array of max(A,B) pointers to distinct data blocks

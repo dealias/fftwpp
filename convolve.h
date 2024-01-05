@@ -966,7 +966,6 @@ protected:
   Complex *W;
   Complex *H;
   Complex *W0;
-  bool allocate;
   bool allocateF;
   bool allocateV;
   bool allocateW;
@@ -985,7 +984,7 @@ public:
   //   (only needed for inplace usage)
   Convolution(fftBase *fft, Complex **F=NULL, Complex *W=NULL, Complex *V=NULL)
     : ThreadBase(fft->Threads()), fft(fft), A(fft->app.A), B(fft->app.B),
-      mult(fft->app.mult), W(W), allocate(false) {
+      mult(fft->app.mult), W(W) {
     init(F,V);
   }
 
@@ -1073,8 +1072,7 @@ public:
   ~Convolution();
 
   void normalize(Complex **h, size_t offset=0) {
-    size_t w=fft->wordSize();
-    size_t wL=w*L;
+    size_t wL=fft->wordSize()*fft->inputLength();
     for(size_t b=0; b < B; ++b) {
       double *hb=(double *) (h[b]+offset);
       for(size_t i=0; i < wL; ++i)
@@ -1644,7 +1642,7 @@ public:
       V[i]=utils::ComplexAlign(size);
   }
 
-  ~Convolution3() {
+  virtual ~Convolution3() {
     if(allocateF) {
       utils::deleteAlign(F[0]);
       delete [] F;

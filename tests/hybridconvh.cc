@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
     if(Output || testError) {
       fa[0]=1.0+a;
       for(size_t j=1; j < H; ++j)
-        fa[j]=Complex(j,(1.0+a)*j+1);
+        fa[j]=Complex(j,(a+1.0)*j+1);
     } else
       for(size_t j=0; j < H; ++j)
         fa[j]=0.0;
@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
     deleteAlign(h);
   }
 
-  deleteAlign(f[0]); delete f;
+  deleteAlign(f[0]); delete [] f;
 
   return 0;
 }
