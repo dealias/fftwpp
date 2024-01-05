@@ -16,7 +16,7 @@ using namespace fftwpp;
 // compile with
 // mpicxx -o cconv2 cconv2.cc -lfftw3_mpi -lfftw3 -lm
 
-void init(Complex* f, unsigned int N0, unsigned int N1,
+void init(Complex* f, int a, unsigned int N0, unsigned int N1,
 	  unsigned int m0, unsigned int m1,
 	  unsigned int local_0_start, unsigned int local_n0)
 {
@@ -33,7 +33,7 @@ void init(Complex* f, unsigned int N0, unsigned int N1,
       // The logical index:
       unsigned int i=ii-local_0_start;
       for(unsigned int j=0; j < m1; j++) {
-	f[i*N1+j]=ii+I*j;
+	f[i*N1+j]=Complex((a+1.0)*ii,j+a);
      }
    }
  }
@@ -171,8 +171,8 @@ int main(int argc, char **argv)
 
   unsigned int outlimit=256;
   if(m0*m1 < outlimit) {
-    init(f,N0,N1,m0,m1,local_0_start,local_n0);
-    init(g,N0,N1,m0,m1,local_0_start,local_n0);
+    init(f,0,N0,N1,m0,m1,local_0_start,local_n0);
+    init(g,1,N0,N1,m0,m1,local_0_start,local_n0);
     Complex* f_nopad=ComplexAlign(m0*m1);
     Complex* g_nopad=ComplexAlign(m0*m1);
     unpad_local(f,f_nopad,
@@ -205,8 +205,8 @@ int main(int argc, char **argv)
     double *T=new double[N];
 
     for(int i=0; i < N; ++i) {
-      init(f,N0,N1,m0,m1,local_0_start,local_n0);
-      init(g,N0,N1,m0,m1,local_0_start,local_n0);
+      init(f,0,N0,N1,m0,m1,local_0_start,local_n0);
+      init(g,1,N0,N1,m0,m1,local_0_start,local_n0);
       cpuTimer c;
       convolve(f,g,overN,transize,fplan,iplan);
       T[i]=c.seconds();

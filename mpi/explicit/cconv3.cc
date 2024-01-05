@@ -16,7 +16,7 @@ using namespace fftwpp;
 // compile with
 // mpicxx -o cconv3 cconv3.cc -lfftw3_mpi -lfftw3 -lm
 
-void init(Complex *f,
+void init(Complex *f, unsigned int a,
 	  unsigned int N0, unsigned int N1, unsigned int N2,
 	  unsigned int m0, unsigned int m1, unsigned int m2,
 	  unsigned int local_0_start, unsigned int local_n0)
@@ -37,11 +37,11 @@ void init(Complex *f,
       unsigned int i=ii-local_0_start;
       for(unsigned int j=0; j < m1; j++) {
 	for(unsigned int k=0; k < m2; k++) {
-	  f[i*N1*N2+j*N2+k]=ii+k*k+I*j ;
+	  f[i*N1*N2+j*N2+k]=Complex((a+1.0)*ii+k,j+a+k);
 	}
-   }
- }
-}
+      }
+    }
+  }
 }
 
 void unpad_local(const Complex *f, Complex *f_nopad,
@@ -172,8 +172,8 @@ int main(int argc, char **argv)
   unsigned int outlimit=1000;
 
   if(N0*N1*N2 < outlimit) {
-    init(f,N0,N1,N2,m0,m1,m2,local_0_start,local_n0);
-    init(g,N0,N1,N2,m0,m1,m2,local_0_start,local_n0);
+    init(f,0,N0,N1,N2,m0,m1,m2,local_0_start,local_n0);
+    init(g,1,N0,N1,N2,m0,m1,m2,local_0_start,local_n0);
 
     int local_m0 =
    (local_0_start < m0) ? m0-local_0_start : 0;
@@ -208,8 +208,8 @@ int main(int argc, char **argv)
   if(N > 0) {
     double *T=new double[N];
     for(int i=0; i < N; ++i) {
-      init(f,N0,N1,N2,m0,m1,m2,local_0_start,local_n0);
-      init(g,N0,N1,N2,m0,m1,m2,local_0_start,local_n0);
+      init(f,0,N0,N1,N2,m0,m1,m2,local_0_start,local_n0);
+      init(g,1,N0,N1,N2,m0,m1,m2,local_0_start,local_n0);
       cpuTimer c;
       convolve(f,g,overN,transize,fplan,iplan);
       T[i]=c.seconds();
