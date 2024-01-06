@@ -20,7 +20,7 @@ convolution, dealias, implicit dealiasing, C++, header, class, wrapper, transfor
 <A href="http://sourceforge.net/projects/fftwpp" target="_top">FFTW++</A>
 is a C++ header/MPI transpose for Version 3 of the highly optimized 
 <a href="http://www.fftw.org">FFTW</a> Fourier Transform library.
-Version 2.06 is now available for
+Version 3.00 of FFTW++ is now available for
 <A href="http://sourceforge.net/projects/fftwpp" target="_top">download<A>.
 See recent <a href="https://sourceforge.net/projects/fftwpp/files/stats/timeline">download statistics.</a>
 
@@ -35,8 +35,8 @@ As with the FFTW3 library, in-place and out-of-place multithreaded
 transforms of arbitrary size are supported.
 
 <P>
-Implicit dealiasing of standard and centered Hermitian convolutions is
-also implemented; in 2D and 3D this implicit zero-padding substantially
+Hybrid dealiasing of standard and centered Hermitian convolutions is
+also implemented: in 2D and 3D implicit zero-padding substantially
 reduces memory usage and computation time. See
 <a href="http://www.math.ualberta.ca/~bowman/publications/dealias.pdf">
 Efficient Dealiased Convolutions without Padding</a>
@@ -46,8 +46,13 @@ Computing, <B>33:1</B>, 386-406 (2011) and
 Multithreaded Implicitly Dealiased Convolutions</a>
 by Malcolm Roberts and John C. Bowman, Journal of Computational
 Physics <B>356</B>, 98-114 (2017).
+<a href="http://www.math.ualberta.ca/~bowman/publications/hybrid.pdf">
+Hybrid Dealiasing of Complex Convolutions<a>, by Noel Murasko and
+John C. Bowman, SIAM Journal on Scientific Computing (2024), in press:
+[arXiv:2303.17510](https://arxiv.org/abs/2303.17510).
+
 <P>
-On distributed memory architectures, FFTW++ relies on the adaptive hybrid
+On distributed memory architectures, FFTW++ relies on the adaptive
 OpenMP/MPI transpose routine described in
 <a href="http://www.math.ualberta.ca/~bowman/publications/transpose.pdf">
 Adaptive Matrix Transpose Algorithms for Distributed Multicore Processors,</a>
@@ -62,7 +67,7 @@ in 2D and 3D; see fftw++.h for details.
 <P>
 FFTW++ can also exploit the high-performance
 <a href=http://www.math.ualberta.ca/~bowman/Array>Array</a> class (version
-1.51 or higher), designed for scientific computing. The
+1.56 or higher), designed for scientific computing. The
 arrays in that package do memory bounds checking in debugging mode, but can
 be optimized by specifying the -DNDEBUG compilation option (1D arrays
 optimize completely to pointer operations).
@@ -97,20 +102,26 @@ class:
 <a HREF="example3.cc">3D complex</a>
 <a HREF="example3r.cc">3D real-to-complex</a>
 
-<P>Implicitly dealiased convolutions:
+<P>Hybrid dealiased convolutions:
 <P>
-<a HREF="examplecconv.cc">1D complex convolution example</a>
+<a HREF="exampleconv.cc">1D complex convolution example</a>
 <BR>
-<a HREF="exampleconv.cc">1D Hermitian convolution example</a>
+<a HREF="exampleconvh.cc">1D Hermitian convolution example</a>
+<BR>
+<a HREF="exampleconvr.cc">1D real convolution example</a>
 <P>
-<a HREF="examplecconv2.cc">2D complex convolution example</a>
+<a HREF="exampleconv2.cc">2D complex convolution example</a>
 <BR>
-<a HREF="exampleconv2.cc">2D Hermitian convolution example</a>
+<a HREF="exampleconvh2.cc">2D Hermitian convolution example</a>
+<BR>
+<a HREF="exampleconvr2.cc">2D real convolution example</a>
 <BR>
 <P>
-<a HREF="examplecconv3.cc">3D complex convolution example</a>
+<a HREF="exampleconv3.cc">3D complex convolution example</a>
 <BR>
-<a HREF="exampleconv3.cc">3D Hermitian convolution example</a>
+<a HREF="exampleconvh3.cc">3D Hermitian convolution example</a>
+<BR>
+<a HREF="exampleconvr3.cc">3D real convolution example</a>
 
 <P>
 <HR>
