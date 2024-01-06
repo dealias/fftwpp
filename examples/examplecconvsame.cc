@@ -33,7 +33,7 @@ public:
   }
 };
 
-static void multbinarysame(Complex **F, size_t m,
+static void multBinarysame(Complex **F, size_t m,
                            const size_t indexsize,
                            const size_t *index,
                            size_t r, size_t threads)
@@ -122,7 +122,7 @@ int main(int argc, char* argv[])
   for(size_t i=0; i < m; i++)
     cout << f[i] << "\t" << g[i] << endl;
 
-  C.convolve(F,multbinarysame);
+  C.convolve(F,multBinarysame);
 
   cout << "\noutput:" << endl;
   for(size_t i=0; i < m; i++) cout << f[i] << endl;

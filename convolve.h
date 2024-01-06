@@ -80,7 +80,7 @@ typedef void multiplier(Complex **F, size_t n,
                         Indices *indices, size_t threads);
 
 // Multiplication routines for binary convolutions that take two inputs.
-multiplier multNone,multbinary,realmultbinary,multcorrelation;
+multiplier multNone,multBinary,realMultBinary,multcorrelation;
 
 class Application : public ThreadBase
 {

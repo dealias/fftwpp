@@ -192,11 +192,11 @@ int main(int argc, char *argv[])
     multiplier *mult;
 
     switch(A) {
-      case 2: mult=multbinary; break;
-      case 4: mult=multbinary2; break;
-      case 6: mult=multbinary3; break;
-      case 8: mult=multbinary4; break;
-      case 16: mult=multbinary8; break;
+      case 2: mult=multBinary; break;
+      case 4: mult=multBinary2; break;
+      case 6: mult=multBinary3; break;
+      case 8: mult=multBinary4; break;
+      case 16: mult=multBinary8; break;
       default: cout << "Multiplication for A=" << A
                     << " is not yet implemented" << endl; exit(1);
     }
@@ -247,8 +247,8 @@ int main(int argc, char *argv[])
     }
 
     Multiplier *mult;
-    if(Normalized) mult=multbinary;
-    else mult=multbinaryUnNormalized;
+    if(Normalized) mult=multBinary;
+    else mult=multBinaryUnNormalized;
 
     ExplicitConvolution2 C(nx,ny,mx,my,F[0],Pruned);
     cout << "threads=" << C.Threads() << endl << endl;;

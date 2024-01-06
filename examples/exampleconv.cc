@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
   for(size_t i=0; i < L; i++)
     cout << f[i] << "\t" << g[i] << endl;
 
-  Application app(A,B,multbinary,fftw::maxthreads);
+  Application app(A,B,multBinary,fftw::maxthreads);
   fftPad fft(L,M,app);
   Convolution C(&fft);
 

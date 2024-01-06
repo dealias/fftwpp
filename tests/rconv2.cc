@@ -121,8 +121,8 @@ int main(int argc, char *argv[])
   vector<double> T;
 
   Multiplier *mult;
-  if(Normalized) mult=multbinary;
-  else mult=multbinaryUnNormalized;
+  if(Normalized) mult=multBinary;
+  else mult=multBinaryUnNormalized;
 
   ExplicitRConvolution2 Convolve(nx,ny,mx,my,F[0]);
   cout << "threads=" << Convolve.Threads() << endl << endl;;

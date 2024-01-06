@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
   for(unsigned int i=0; i < H; i++)
     cout << f[i] << "\t" << g[i] << endl;
 
-  Application app(A,B,realmultbinary,fftw::maxthreads);
+  Application app(A,B,realMultBinary,fftw::maxthreads);
   fftPadHermitian fft(L,M,app);
   Convolution C(&fft);
 

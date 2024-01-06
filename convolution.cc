@@ -434,7 +434,7 @@ void ImplicitHConvolution::posttransform(Complex *F, const Complex& w,
   }
 }
 
-void ImplicitHConvolution::convolve(Complex **F, realmultiplier *pmult,
+void ImplicitHConvolution::convolve(Complex **F, realMultiplier *pmult,
                                     size_t i, size_t offset)
 {
   if(indexsize >= 1) index[indexsize-1]=i;
@@ -1304,7 +1304,7 @@ inline size_t innerindex(size_t j, int r) {return 2*j+r;}
 // This multiplication routine is for binary convolutions and takes two inputs
 // of size m.
 // F[0][j] *= F[1][j];
-void multbinary(Complex **F, size_t m,
+void multBinary(Complex **F, size_t m,
                 const size_t indexsize,
                 const size_t *index,
                 size_t r, size_t threads)
@@ -1372,7 +1372,7 @@ inline size_t innerindex(size_t j, int r, size_t m) {
 // This multiplication routine is for binary Hermitian convolutions and takes
 // two inputs.
 // F[0][j] *= F[1][j];
-void multbinary(double **F, size_t m,
+void multBinary(double **F, size_t m,
                 const size_t indexsize,
                 const size_t *index,
                 size_t r, size_t threads)
@@ -1411,7 +1411,7 @@ void multbinary(double **F, size_t m,
 }
 
 // F[0][j]=F[0][j]*F[2][j]+F[1][j]*F[3][j]
-void multbinary2(Complex **F, size_t m,
+void multBinary2(Complex **F, size_t m,
                  const size_t indexsize,
                  const size_t *index,
                  size_t r, size_t threads)
@@ -1440,7 +1440,7 @@ void multbinary2(Complex **F, size_t m,
 }
 
 // F[0][j]=F[0][j]*F[2][j]+F[1][j]*F[3][j]
-void multbinary2(double **F, size_t m,
+void multBinary2(double **F, size_t m,
                  const size_t indexsize,
                  const size_t *index,
                  size_t r, size_t threads)
@@ -1471,7 +1471,7 @@ void multbinary2(double **F, size_t m,
 }
 
 // F[0][j]=F[0][j]*F[3][j]+F[1][j]*F[4][j]+F[2][j]*F[5][j];
-void multbinary3(Complex **F, size_t m,
+void multBinary3(Complex **F, size_t m,
                  const size_t indexsize,
                  const size_t *index,
                  size_t r, size_t threads)
@@ -1505,7 +1505,7 @@ void multbinary3(Complex **F, size_t m,
 }
 
 // F[0][j]=F[0][j]*F[4][j]+F[1][j]*F[5][j]+F[2][j]*F[6][j]+F[3][j]*F[7][j];
-void multbinary4(Complex **F, size_t m,
+void multBinary4(Complex **F, size_t m,
                  const size_t indexsize,
                  const size_t *index,
                  size_t r, size_t threads)
@@ -1543,7 +1543,7 @@ void multbinary4(Complex **F, size_t m,
 
 // F[0][j]=F[0][j]*F[8][j]+F[1][j]*F[9][j]+F[2][j]*F[10][j]+F[3][j]*F[11][j]+
 //         F[4][j]*F[12][j]+F[5][j]*F[13][j]+F[6][j]*F[14][j]+F[7][j]*F[15][j];
-void multbinary8(Complex **F, size_t m,
+void multBinary8(Complex **F, size_t m,
                  const size_t indexsize,
                  const size_t *index,
                  size_t r, size_t threads)

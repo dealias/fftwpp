@@ -20,7 +20,7 @@ void init(Complex *f, Complex *g, size_t m)
   }
 }
 
-void multbinaryfull(Complex **F, size_t m,
+void multBinaryfull(Complex **F, size_t m,
                     const size_t indexsize,
                     const size_t *index,
                     size_t r, size_t threads)
@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
   for(size_t i=0; i < m; i++)
     cout << f[i] << "\t" << g[i] << endl;
 
-  C.convolve(F,multbinaryfull);
+  C.convolve(F,multBinaryfull);
 
   cout << "\noutput:" << endl;
   for(size_t i=0; i < m; i++) cout << f[i] << endl;

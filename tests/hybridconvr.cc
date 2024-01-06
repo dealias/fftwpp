@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 
   vector<double> T;
 
-  Application app(A,B,multbinary,fftw::maxthreads,true,true,mx,Dx,Ix);
+  Application app(A,B,multBinary,fftw::maxthreads,true,true,mx,Dx,Ix);
   fftBase *fft=new fftPadReal(L,M,app);
   Convolution Convolve(fft);
 

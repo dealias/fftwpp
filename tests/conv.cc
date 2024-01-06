@@ -25,8 +25,8 @@ void multA(double **F, size_t m,
            size_t r, size_t threads)
 {
   switch(A) {
-    case 2: multbinary(F,m,indexsize,index,r,threads); break;
-    case 4: multbinary2(F,m,indexsize,index,r,threads); break;
+    case 2: multBinary(F,m,indexsize,index,r,threads); break;
+    case 4: multBinary2(F,m,indexsize,index,r,threads); break;
     default:
       cerr << "A=" << A << " is not yet implemented" << endl;
       exit(1);
@@ -255,11 +255,11 @@ int main(int argc, char *argv[])
       exit(1);
     }
 
-    realmultiplier *mult=0;
+    realMultiplier *mult=0;
     if(B == 1) {
       switch(A) {
-        case 2: mult=multbinary; break;
-        case 4: mult=multbinary2; break;
+        case 2: mult=multBinary; break;
+        case 4: mult=multBinary2; break;
         default: mult=multA;
       }
     } else
@@ -306,8 +306,8 @@ int main(int argc, char *argv[])
   if(Explicit) {
     ExplicitHConvolution C(n,m,f,g);
     Realmultiplier *mult;
-    if(Normalized) mult=multbinary;
-    else mult=multbinaryUnNormalized;
+    if(Normalized) mult=multBinary;
+    else mult=multBinaryUnNormalized;
 ;
     double sum=0.0;
     while(sum <= K || T.size() < N) {

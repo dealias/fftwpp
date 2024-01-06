@@ -37,8 +37,8 @@ void multA(Complex **F, size_t m,
            size_t r, size_t threads)
 {
   switch(A) {
-    case 2: multbinary(F,m,indexsize,index,r,threads); break;
-    case 4: multbinary2(F,m,indexsize,index,r,threads); break;
+    case 2: multBinary(F,m,indexsize,index,r,threads); break;
+    case 4: multBinary2(F,m,indexsize,index,r,threads); break;
     default:
       cerr << "A=" << A << " is not yet implemented" << endl;
       exit(1);
@@ -149,8 +149,8 @@ int main(int argc, char *argv[])
   vector<double> T;
 
   Multiplier *mult;
-  if(Normalized) mult=multbinary;
-  else mult=multbinaryUnNormalized;
+  if(Normalized) mult=multBinary;
+  else mult=multBinaryUnNormalized;
 
   ExplicitRConvolution Convolve(n,m,F[0],G[0]);
   double sum=0.0;

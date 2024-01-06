@@ -86,7 +86,7 @@ typedef void multiplier(Complex **, size_t m,
                         const size_t indexsize,
                         const size_t *index,
                         size_t r, size_t threads);
-typedef void realmultiplier(double **, size_t m,
+typedef void realMultiplier(double **, size_t m,
                             const size_t indexsize,
                             const size_t *index,
                             size_t r, size_t threads);
@@ -95,16 +95,16 @@ typedef void realmultiplier(double **, size_t m,
 
 multiplier multautoconvolution;
 multiplier multautocorrelation;
-multiplier multbinary;
+multiplier multBinary;
 multiplier multcorrelation;
-multiplier multbinary2;
-multiplier multbinary3;
-multiplier multbinary4;
-multiplier multbinary8;
+multiplier multBinary2;
+multiplier multBinary3;
+multiplier multBinary4;
+multiplier multBinary8;
 
-realmultiplier multbinary;
-realmultiplier multbinary2;
-realmultiplier multadvection2;
+realMultiplier multBinary;
+realMultiplier multBinary2;
+realMultiplier multadvection2;
 
 struct general {};
 struct pretransform1 {};
@@ -242,7 +242,7 @@ public:
   // Binary convolution:
   void convolve(Complex *f, Complex *g) {
     Complex *F[]={f,g};
-    convolve(F,multbinary);
+    convolve(F,multBinary);
   }
 
   // Binary correlation:
@@ -398,7 +398,7 @@ public:
 
   // F is an array of A pointers to distinct data blocks each of size m,
   // shifted by offset (contents not preserved).
-  void convolve(Complex **F, realmultiplier *pmult, size_t i=0,
+  void convolve(Complex **F, realMultiplier *pmult, size_t i=0,
                 size_t offset=0);
 
   void pretransform(Complex *F, Complex *f1c, Complex *U);
@@ -407,7 +407,7 @@ public:
   // Binary convolution:
   void convolve(Complex *f, Complex *g) {
     Complex *F[]={f,g};
-    convolve(F,multbinary);
+    convolve(F,multBinary);
   }
 };
 
@@ -715,7 +715,7 @@ public:
   // Binary convolution:
   void convolve(Complex *f, Complex *g) {
     Complex *F[]={f,g};
-    convolve(F,multbinary);
+    convolve(F,multBinary);
   }
 
   // Binary correlation:
@@ -950,7 +950,7 @@ public:
     }
   }
 
-  void subconvolution(Complex **F, realmultiplier *pmult,
+  void subconvolution(Complex **F, realMultiplier *pmult,
                       IndexFunction indexfunction,
                       size_t M, size_t stride,
                       size_t offset=0) {
@@ -975,7 +975,7 @@ public:
 
   // F is a pointer to A distinct data blocks each of size
   // (2mx-xcompact)*(my+!ycompact), shifted by offset (contents not preserved).
-  virtual void convolve(Complex **F, realmultiplier *pmult,
+  virtual void convolve(Complex **F, realMultiplier *pmult,
                         bool symmetrize=true, size_t i=0,
                         size_t offset=0) {
     if(!toplevel) {
@@ -998,7 +998,7 @@ public:
   // Binary convolution:
   void convolve(Complex *f, Complex *g, bool symmetrize=true) {
     Complex *F[]={f,g};
-    convolve(F,multbinary,symmetrize);
+    convolve(F,multBinary,symmetrize);
   }
 };
 
@@ -1176,7 +1176,7 @@ public:
   // Binary convolution:
   void convolve(Complex *f, Complex *g) {
     Complex *F[]={f,g};
-    convolve(F,multbinary);
+    convolve(F,multBinary);
   }
 
   // Binary correlation:
@@ -1358,7 +1358,7 @@ public:
     }
   }
 
-  void subconvolution(Complex **F, realmultiplier *pmult,
+  void subconvolution(Complex **F, realMultiplier *pmult,
                       IndexFunction indexfunction,
                       size_t M, size_t stride,
                       size_t offset=0) {
@@ -1386,7 +1386,7 @@ public:
   // F is a pointer to A distinct data blocks each of size
   // (2mx-compact)*(2my-ycompact)*(mz+!zcompact), shifted by offset
   // (contents not preserved).
-  virtual void convolve(Complex **F, realmultiplier *pmult,
+  virtual void convolve(Complex **F, realMultiplier *pmult,
                         bool symmetrize=true, size_t i=0,
                         size_t offset=0) {
     if(!toplevel) {
@@ -1409,7 +1409,7 @@ public:
   // Binary convolution:
   void convolve(Complex *f, Complex *g, bool symmetrize=true) {
     Complex *F[]={f,g};
-    convolve(F,multbinary,symmetrize);
+    convolve(F,multBinary,symmetrize);
   }
 };
 

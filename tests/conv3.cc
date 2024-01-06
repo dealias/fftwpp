@@ -239,10 +239,10 @@ int main(int argc, char *argv[])
     ImplicitHConvolution3 C(mx,my,mz,xcompact,ycompact,zcompact,A,B);
     cout << "threads=" << C.Threads() << endl << endl;
 
-    realmultiplier *mult;
+    realMultiplier *mult;
     switch(A) {
-      case 2: mult=multbinary; break;
-      case 4: mult=multbinary2; break;
+      case 2: mult=multBinary; break;
+      case 4: mult=multBinary2; break;
       default: cerr << "A=" << A << " is not yet implemented" << endl; exit(1);
     }
 

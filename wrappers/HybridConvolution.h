@@ -15,7 +15,7 @@ class HybridConvolution {
 public:
   Convolution *convolve;
 
-  HybridConvolution(size_t L, multiplier mult=multbinary, size_t M=0, size_t A=2, size_t B=1, size_t threads=fftw::maxthreads) {
+  HybridConvolution(size_t L, multiplier mult=multBinary, size_t M=0, size_t A=2, size_t B=1, size_t threads=fftw::maxthreads) {
     if(M == 0) M=A*L-A+1;
     app=new Application(A,B,mult,threads);
     fft=new fftPad(L,M,*app);
@@ -35,7 +35,7 @@ class HybridConvolutionHermitian {
 public:
   Convolution *convolve;
 
-  HybridConvolutionHermitian(size_t L, multiplier mult=realmultbinary, size_t M=0, size_t A=2, size_t B=1, size_t threads=fftw::maxthreads) {
+  HybridConvolutionHermitian(size_t L, multiplier mult=realMultBinary, size_t M=0, size_t A=2, size_t B=1, size_t threads=fftw::maxthreads) {
     if(M == 0) M=3*ceilquotient(L,2)-2*(L%2);
     app=new Application(A,B,mult,threads);
     fft=new fftPadHermitian(L,M,*app);
@@ -57,7 +57,7 @@ class HybridConvolution2 {
 public:
   Convolution2 *convolve2;
 
-  HybridConvolution2(size_t Lx, size_t Ly, multiplier mult=multbinary, size_t Mx=0, size_t My=0, size_t A=2, size_t B=1, size_t threads=fftw::maxthreads)
+  HybridConvolution2(size_t Lx, size_t Ly, multiplier mult=multBinary, size_t Mx=0, size_t My=0, size_t A=2, size_t B=1, size_t threads=fftw::maxthreads)
   {
     if(Mx == 0) Mx=A*Lx-A+1;
     if(My == 0) My=A*Ly-A+1;
@@ -87,7 +87,7 @@ public:
   Convolution2 *convolve2;
 
   HybridConvolutionHermitian2(size_t Lx, size_t Ly,
-                              multiplier mult=realmultbinary, size_t Mx=0,
+                              multiplier mult=realMultBinary, size_t Mx=0,
                               size_t My=0, size_t A=2, size_t B=1,
                               size_t threads=fftw::maxthreads)
   {
@@ -120,7 +120,7 @@ class HybridConvolution3 {
 public:
   Convolution3 *convolve3;
 
-  HybridConvolution3(size_t Lx, size_t Ly, size_t Lz,  multiplier mult=multbinary, size_t Mx=0, size_t My=0, size_t Mz=0, size_t A=2, size_t B=1, size_t threads=fftw::maxthreads)
+  HybridConvolution3(size_t Lx, size_t Ly, size_t Lz,  multiplier mult=multBinary, size_t Mx=0, size_t My=0, size_t Mz=0, size_t A=2, size_t B=1, size_t threads=fftw::maxthreads)
   {
     if(Mx == 0) Mx=A*Lx-A+1;
     if(My == 0) My=A*Ly-A+1;
@@ -155,7 +155,7 @@ class HybridConvolutionHermitian3 {
 public:
   Convolution3 *convolve3;
 
-  HybridConvolutionHermitian3(size_t Lx, size_t Ly, size_t Lz, multiplier mult=realmultbinary, size_t Mx=0, size_t My=0, size_t Mz=0, size_t A=2, size_t B=1, size_t threads=fftw::maxthreads)
+  HybridConvolutionHermitian3(size_t Lx, size_t Ly, size_t Lz, multiplier mult=realMultBinary, size_t Mx=0, size_t My=0, size_t Mz=0, size_t A=2, size_t B=1, size_t threads=fftw::maxthreads)
   {
     if(Mx == 0) Mx=3*ceilquotient(Lx,2)-2*(Lx%2);
     if(My == 0) My=3*ceilquotient(Ly,2)-2*(Ly%2);

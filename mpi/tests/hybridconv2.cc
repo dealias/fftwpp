@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
     }
 
     Application appx(A,B,multNone,fftw::maxthreads,true,true,mx,Dx,Ix);
-    Application appy(A,B,multbinary,appx,my,Dy,Iy);
+    Application appy(A,B,multBinary,appx,my,Dy,Iy);
 
     split d(Lx,Ly,group.active);
 

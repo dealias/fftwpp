@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
   fftPad fftx(Lx,Mx,appx,Sy == Lz ? Ly*Lz : Lz,Sx);
   Application appy(A,B,multNone,appx,my,Dy,Iy);
   fftPad ffty(Ly,My,appy,Lz,Sy);
-  Application appz(A,B,multbinary,appy,mz,Dz,Iz);
+  Application appz(A,B,multBinary,appy,mz,Dz,Iz);
   fftPad fftz(Lz,Mz,appz);
   Convolution3 Convolve(&fftx,&ffty,&fftz);
 

@@ -76,7 +76,7 @@ public:
   // Binary convolution:
   void convolve(Complex *f, Complex *g) {
     Complex *F[]={f,g};
-    convolve(F,multbinary);
+    convolve(F,multBinary);
   }
 };
 
@@ -175,13 +175,13 @@ public:
 
   // F is a pointer to A distinct data blocks each of size
   // (2mx-xcompact)*d.y, shifted by offset (contents not preserved).
-  void convolve(Complex **F, realmultiplier *pmult, bool symmetrize=true,
+  void convolve(Complex **F, realMultiplier *pmult, bool symmetrize=true,
                 unsigned int i=0, unsigned int offset=0);
 
   // Binary convolution:
   void convolve(Complex *f, Complex *g, bool symmetrize=true) {
     Complex *F[]={f,g};
-    convolve(F,multbinary,symmetrize);
+    convolve(F,multBinary,symmetrize);
   }
 };
 
@@ -272,7 +272,7 @@ public:
   // Binary convolution:
   void convolve(Complex *f, Complex *g) {
     Complex *F[]={f,g};
-    convolve(F,multbinary);
+    convolve(F,multBinary);
   }
 };
 
@@ -396,13 +396,13 @@ public:
 
   // F is a pointer to A distinct data blocks each of size
   // (2mx-xcompact)*d.y*d.z, shifted by offset (contents not preserved).
-  void convolve(Complex **F, realmultiplier *pmult, bool symmetrize=true,
+  void convolve(Complex **F, realMultiplier *pmult, bool symmetrize=true,
                 unsigned int i=0, unsigned int offset=0);
 
   // Binary convolution:
   void convolve(Complex *f, Complex *g, bool symmetrize=true) {
     Complex *F[]={f,g};
-    convolve(F,multbinary,symmetrize);
+    convolve(F,multBinary,symmetrize);
   }
 };
 

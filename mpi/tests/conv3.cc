@@ -242,11 +242,11 @@ int main(int argc, char* argv[])
     for(unsigned int a=0; a < A; a++)
       F[a]=ComplexAlign(d.n);
 
-    realmultiplier *mult;
+    realMultiplier *mult;
 
     switch(A) {
-      case 2: mult=multbinary; break;
-      case 4: mult=multbinary2; break;
+      case 2: mult=multBinary; break;
+      case 4: mult=multBinary2; break;
       default: if(main) cout << "A=" << A << " is not yet implemented" << endl;
         exit(1);
     }

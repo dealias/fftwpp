@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
     }
 
     Application appx(A,B,multNone,fftw::maxthreads,true,true,mx,Dx,Ix);
-    Application appy(A,B,realmultbinary,appx,my,Dy,Iy);
+    Application appy(A,B,realMultBinary,appx,my,Dy,Iy);
 
     split d(Lx,Hy,group.active);
 

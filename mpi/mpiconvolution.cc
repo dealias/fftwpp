@@ -41,7 +41,7 @@ void ImplicitConvolution2MPI::convolve(Complex **F, multiplier *pmult,
   }
 }
 
-void ImplicitHConvolution2MPI::convolve(Complex **F, realmultiplier *pmult,
+void ImplicitHConvolution2MPI::convolve(Complex **F, realMultiplier *pmult,
                                         bool symmetrize, unsigned int i,
                                         unsigned int offset)
 {
@@ -241,7 +241,7 @@ void HermitianSymmetrizeXYMPI(unsigned int mx, unsigned int my,
   if(nu < nx) deleteAlign(u);
 }
 
-void ImplicitHConvolution3MPI::convolve(Complex **F, realmultiplier *pmult,
+void ImplicitHConvolution3MPI::convolve(Complex **F, realMultiplier *pmult,
                                         bool symmetrize, unsigned int i,
                                         unsigned int offset)
 {

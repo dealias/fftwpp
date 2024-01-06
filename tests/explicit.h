@@ -11,8 +11,8 @@ typedef void Multiplier(Complex **, size_t m, size_t n,
 typedef void Realmultiplier(double **, size_t m, size_t n,
                             size_t threads);
 
-Multiplier multbinary,multbinaryUnNormalized;
-Realmultiplier multbinary,multbinaryUnNormalized;
+Multiplier multBinary,multBinaryUnNormalized;
+Realmultiplier multBinary,multBinaryUnNormalized;
 
 class ExplicitPad : public ThreadBase {
 protected:

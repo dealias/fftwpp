@@ -42,7 +42,7 @@ void multNone(Complex **F, size_t n, Indices *indices,
 
 // This multiplication routine is for binary convolutions and takes
 // two Complex inputs of size n and outputs one Complex value.
-void multbinary(Complex **F, size_t n, Indices *indices,
+void multBinary(Complex **F, size_t n, Indices *indices,
                 size_t threads)
 {
   Complex *F0=F[0];
@@ -68,7 +68,7 @@ void multbinary(Complex **F, size_t n, Indices *indices,
 
 // This multiplication routine is for binary convolutions and takes
 // two real inputs of size n.
-void realmultbinary(Complex **F, size_t n, Indices *indices,
+void realMultBinary(Complex **F, size_t n, Indices *indices,
                     size_t threads)
 {
   double *F0=(double *) F[0];

@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
   fftPadCentered fftx(Lx,Mx,appx,Sy == Hz ? Ly*Hz : Hz,Sx);
   Application appy(A,B,multNone,appx,my,Dy,Iy);
   fftPadCentered ffty(Ly,My,appy,Hz,Sy);
-  Application appz(A,B,realmultbinary,appy,mz,Dz,Iz);
+  Application appz(A,B,realMultBinary,appy,mz,Dz,Iz);
   fftPadHermitian fftz(Lz,Mz,appz);
   Convolution3 Convolve(&fftx,&ffty,&fftz);
 

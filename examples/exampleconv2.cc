@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
 
   Application appx(A,B,multNone,fftw::maxthreads);
   fftPad fftx(Lx,Mx,appx,Ly);
-  Application appy(A,B,multbinary,appx);
+  Application appy(A,B,multBinary,appx);
   fftPad ffty(Ly,My,appy);
   Convolution2 C(&fftx,&ffty);
 

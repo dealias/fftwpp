@@ -7,7 +7,7 @@ namespace fftwpp {
 // This multiplication routine is for binary convolutions and takes two inputs
 // of size m.
 // F[0][j] *= F[1][j];
-void multbinary(Complex **F, size_t m, size_t n, size_t threads)
+void multBinary(Complex **F, size_t m, size_t n, size_t threads)
 {
   Complex* F0=F[0];
   Complex* F1=F[1];
@@ -24,7 +24,7 @@ void multbinary(Complex **F, size_t m, size_t n, size_t threads)
 // This multiplication routine is for binary Hermitian convolutions and takes
 // two inputs of size n.
 // F[0][j] *= F[1][j];
-void multbinary(double **F, size_t m, size_t n, size_t threads)
+void multBinary(double **F, size_t m, size_t n, size_t threads)
 {
   double* F0=F[0];
   double* F1=F[1];
@@ -41,7 +41,7 @@ void multbinary(double **F, size_t m, size_t n, size_t threads)
 // This multiplication routine is for binary convolutions and takes two inputs
 // of size n.
 // F[0][j] *= F[1][j];
-void multbinaryUnNormalized(Complex **F, size_t m, size_t, size_t threads)
+void multBinaryUnNormalized(Complex **F, size_t m, size_t, size_t threads)
 {
   Complex* F0=F[0];
   Complex* F1=F[1];
@@ -56,7 +56,7 @@ void multbinaryUnNormalized(Complex **F, size_t m, size_t, size_t threads)
 // This multiplication routine is for binary Hermitian convolutions and takes
 // two inputs of size n.
 // F[0][j] *= F[1][j];
-void multbinaryUnNormalized(double **F, size_t m, size_t, size_t threads)
+void multBinaryUnNormalized(double **F, size_t m, size_t, size_t threads)
 {
   double* F0=F[0];
   double* F1=F[1];

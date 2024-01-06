@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
 
   vector<double> T;
 
-  Application app(A,B,realmultbinary,fftw::maxthreads,true,true,mx,Dx,Ix);
+  Application app(A,B,realMultBinary,fftw::maxthreads,true,true,mx,Dx,Ix);
   fftPadHermitian fft(L,M,app);
   Convolution Convolve(&fft);
 

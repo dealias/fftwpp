@@ -61,8 +61,8 @@ void multA(Complex **F, size_t m,
            size_t r, size_t threads)
 {
   switch(A) {
-    case 2: multbinary(F,m,indexsize,index,r,threads); break;
-    case 4: multbinary2(F,m,indexsize,index,r,threads); break;
+    case 2: multBinary(F,m,indexsize,index,r,threads); break;
+    case 4: multBinary2(F,m,indexsize,index,r,threads); break;
     default:
       cerr << "A=" << A << " is not yet implemented" << endl;
       exit(1);
@@ -213,11 +213,11 @@ int main(int argc, char *argv[])
       case 1:
         switch(A) {
           case 1: mult=multautoconvolution; break;
-          case 2: mult=multbinary; break;
-          case 4: mult=multbinary2; break;
-          case 6: mult=multbinary3; break;
-          case 8: mult=multbinary4; break;
-          case 16: mult=multbinary8; break;
+          case 2: mult=multBinary; break;
+          case 4: mult=multBinary2; break;
+          case 6: mult=multBinary3; break;
+          case 8: mult=multBinary4; break;
+          case 16: mult=multBinary8; break;
           default:
             cerr << "A=" << A << ", B=" << B << " is not yet implemented"
                  << endl;
@@ -279,8 +279,8 @@ int main(int argc, char *argv[])
     }
 
     Multiplier *mult;
-    if(Normalized) mult=multbinary;
-    else mult=multbinaryUnNormalized;
+    if(Normalized) mult=multBinary;
+    else mult=multBinaryUnNormalized;
 ;
     ExplicitConvolution C(n,m,F[0],G[0]);
     double sum=0.0;
