@@ -5,18 +5,6 @@
 #include <stdlib.h>
 #include "Complex.h"
 #include "exmpiutils.h"
-#include "cmult-sse2.h"
-
-#ifdef __SSE2__
-namespace fftwpp {
-  const union uvec sse2_pm = {
-    { 0x00000000,0x00000000,0x00000000,0x80000000 }
-  };
-  const union uvec sse2_mm = {
-    { 0x00000000,0x80000000,0x00000000,0x80000000 }
-  };
-}
-#endif
 
 void show(Complex *f, int local_0_start, int local_n0, 
 	  int N1, int m0, int m1, int A)
