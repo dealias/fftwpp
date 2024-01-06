@@ -122,10 +122,11 @@ public:
                size_t start, size_t stop,
                size_t offset=0) {
     size_t incr=Sx*lx;
+    size_t cutoff=overlap && rx != 0 ? ((B-C)/C+1)*C : 0;
     for(size_t a=start; a < stop; ++a) {
       (fftx->*Forward)(f[a]+offset,F[a],rx,W);
       if(T) {
-        if(overlap && rx != 0)
+        if(a < cutoff)
           T[a]->ilocalize1(F[a]);
         else
           T[a]->localize1(F[a]);
