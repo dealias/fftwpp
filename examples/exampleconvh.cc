@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
 
   size_t L=2*H-1;
 
-  cout << "1D centered Hermitian-symmetric convolution:" << endl;
+  cout << "1D Hermitian-symmetric convolution:" << endl;
 
   // allocate arrays:
   Complex *f=ComplexAlign(H);

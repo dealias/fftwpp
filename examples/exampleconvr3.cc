@@ -3,7 +3,7 @@
 #include "Array.h"
 
 // Compile with:
-// g++ -I .. -Ofast -fopenmp exampleconv2.cc ../convolve.cc ../fftw++.cc ../parallel.cc -lfftw3 -lfftw3_omp
+// g++ -I .. -Ofast -fopenmp exampleconvr3.cc ../convolve.cc ../fftw++.cc ../parallel.cc -lfftw3 -lfftw3_omp
 
 using namespace std;
 using namespace utils;
@@ -11,14 +11,17 @@ using namespace Array;
 using namespace fftwpp;
 using namespace parallel;
 
-inline void init(array2<Complex>& f, array2<Complex>& g)
+inline void init(array3<double>& f, array3<double>& g)
 {
   size_t Lx=f.Nx();
   size_t Ly=f.Ny();
+  size_t Lz=f.Ny();
   for(size_t i=0; i < Lx; ++i) {
     for(size_t j=0; j < Ly; ++j) {
-      f[i][j]=Complex(i+1,j+3);
-      g[i][j]=Complex(i+2,2*j+3);
+      for(size_t k=0; k < Lz; ++k) {
+        f[i][j][k]=i+j+1;
+        g[i][j][k]=i+2*j+k+1;
+      }
     }
   }
 }
@@ -36,15 +39,17 @@ int main(int argc, char* argv[])
 
   size_t Lx=4; // Length of input arrays in x direction
   size_t Ly=4; // Length of input arrays in y direction
+  size_t Lz=4; // Length of input arrays in z direction
   size_t Mx=7; // Minimal padded length for dealiasing via 1/2 padding
   size_t My=7; // Minimal padded length for dealiasing via 1/2 padding
+  size_t Mz=7; // Minimal padded length for dealiasing via 1/2 padding
 
-  cout << "2D complex convolution:" << endl;
+  cout << "3D real convolution:" << endl;
 
-  size_t align=sizeof(Complex);
-  array2<Complex> f(Lx,Ly,align);
-  array2<Complex> g(Lx,Ly,align);
-  Complex *F[]={f,g};
+  size_t align=sizeof(double);
+  array3<double> f(Lx,Ly,Lz,align);
+  array3<double> g(Lx,Ly,Lz,align);
+  double *F[]={f,g};
 
   init(f,g);
 
@@ -53,12 +58,14 @@ int main(int argc, char* argv[])
   cout << "g:" << endl << g;
 
   Application appx(A,B,multNone,fftw::maxthreads);
-  fftPad fftx(Lx,Mx,appx,Ly);
-  Application appy(A,B,multBinary,appx);
-  fftPad ffty(Ly,My,appy);
-  Convolution2 C(&fftx,&ffty);
+  fftPadReal fftx(Lx,Mx,appx,Ly*Lz);
+  Application appy(A,B,multNone,appx);
+  fftPad ffty(Ly,My,appy,Lz);
+  Application appz(A,B,multBinary,appy);
+  fftPad fftz(Lz,Mz,appz);
+  Convolution3 C(&fftx,&ffty,&fftz);
 
-  C.convolve(F);
+  C.convolve((Complex **) F);
 
   cout << "\noutput:" << endl << f;
 

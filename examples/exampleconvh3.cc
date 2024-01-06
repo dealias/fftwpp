@@ -47,7 +47,7 @@ int main(int argc, char* argv[])
   size_t My=10;     // Minimal padded length for dealiasing via 2/3 padding
   size_t Mz=10;     // Minimal padded length for dealiasing via 2/3 padding
 
-  cout << "2D non-centered complex convolution:" << endl;
+  cout << "3D Hermitian-symmetric convolution:" << endl;
 
   size_t align=sizeof(Complex);
   array3<Complex> f(Lx,Ly,Hz,align);

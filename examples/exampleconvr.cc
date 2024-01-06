@@ -2,18 +2,18 @@
 #include "convolve.h"
 
 // Compile with:
-// g++ -I .. -Ofast -fopenmp exampleconv.cc ../convolve.cc ../fftw++.cc ../parallel.cc -lfftw3 -lfftw3_omp
+// g++ -I .. -Ofast -fopenmp exampleconvr.cc ../convolve.cc ../fftw++.cc ../parallel.cc -lfftw3 -lfftw3_omp
 
 using namespace std;
 using namespace utils;
 using namespace fftwpp;
 using namespace parallel;
 
-void init(Complex *f, Complex *g, size_t L)
+void init(double *f, double *g, size_t L)
 {
   for(size_t i=0; i < L; ++i) {
-    f[i]=Complex(i+1,i+3);
-    g[i]=Complex(i+2,2*i+3);
+    f[i]=i+1;
+    g[i]=i+2;
   }
 }
 
@@ -32,11 +32,11 @@ int main(int argc, char* argv[])
   size_t M=15; // Minimal padded length for dealiasing via 1/2 padding
 
   // allocate arrays:
-  Complex *f=ComplexAlign(L);
-  Complex *g=ComplexAlign(L);
-  Complex *F[]={f,g};
+  double *f=doubleAlign(L);
+  double *g=doubleAlign(L);
+  double *F[]={f,g};
 
-  cout << "1D complex convolution:" << endl;
+  cout << "1D real convolution:" << endl;
   init(f,g,L);
 
   cout << "\ninput:\nf\tg" << endl;
@@ -44,10 +44,10 @@ int main(int argc, char* argv[])
     cout << f[i] << "\t" << g[i] << endl;
 
   Application app(A,B,multBinary,fftw::maxthreads);
-  fftPad fft(L,M,app);
+  fftPadReal fft(L,M,app);
   Convolution C(&fft);
 
-  C.convolve(F);
+  C.convolve((Complex **) F);
 
   cout << "\noutput:" << endl;
   for(size_t i=0; i < L; i++)

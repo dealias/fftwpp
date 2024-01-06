@@ -51,6 +51,7 @@ FILES=example0 example0r example0m example0mr \
 	example1 example1r example2 example2r example3 example3r \
 	exampleconv exampleconv2 exampleconv3 \
 	exampleconvh exampleconvh2 exampleconvh3 \
+	exampleconvr exampleconvr2 exampleconvr3 \
 	examplecconv2 examplecconv3 exampletranspose \
 	examplecconvfull examplecconvsame optimal
 
@@ -109,16 +110,25 @@ exampleconv: exampleconv.o $(HYBRID:=.o)
 exampleconvh: exampleconvh.o $(HYBRID:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
+exampleconvr: exampleconvr.o $(HYBRID:=.o)
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
 exampleconv2: exampleconv2.o $(HYBRID:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 exampleconvh2: exampleconvh2.o $(HYBRID:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
+exampleconvr2: exampleconvr2.o $(HYBRID:=.o)
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
 exampleconv3: exampleconv3.o $(HYBRID:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 exampleconvh3: exampleconvh3.o $(HYBRID:=.o)
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
+exampleconvr3: exampleconvr3.o $(HYBRID:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 examplecconv2: examplecconv2.o $(EXTRA:=.o)

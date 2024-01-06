@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
   size_t My=7; // Minimal padded length for dealiasing via 1/2 padding
   size_t Mz=7; // Minimal padded length for dealiasing via 1/2 padding
 
-  cout << "2D non-centered complex convolution:" << endl;
+  cout << "3D complex convolution:" << endl;
 
   size_t align=sizeof(Complex);
   array3<Complex> f(Lx,Ly,Lz,align);
