@@ -1,5 +1,5 @@
 /* Fast Fourier transform C++ header class for the FFTW3 Library
-   Copyright (C) 2004-2022
+   Copyright (C) 2004-2024
    John C. Bowman, University of Alberta
    Malcolm Roberts, University of Strasbourg
 
@@ -20,7 +20,7 @@
 #ifndef __fftwpp_h__
 #define __fftwpp_h__ 1
 
-#define __FFTWPP_H_VERSION__ 2.11
+#define __FFTWPP_H_VERSION__ 3.00
 
 #include <cstdlib>
 #include <fstream>

@@ -1,3 +1,7 @@
+#pragma once
+
+#include "convolve.h"
+
 namespace fftwpp {
 
 #ifndef __direct_h__
@@ -150,31 +154,6 @@ public:
 
   void convolve(Complex *h, Complex *f, Complex *g, bool symmetrize=true);
 };
-
-
-// Out-of-place direct 1D Hermitian ternary convolution.
-class directconvhT {
-protected:
-  size_t m;
-public:
-  directconvhT(size_t m) : m(m) {}
-
-  void convolve(Complex *h, Complex *e, Complex *f, Complex *g);
-};
-
-// Out-of-place direct 2D Hermitian ternary convolution.
-class directconvhT2 {
-protected:
-  size_t mx,my;
-public:
-  directconvhT2(size_t mx, size_t my) : mx(mx), my(my)
-  {}
-
-  void convolve(Complex *h, Complex *e, Complex *f, Complex *g,
-                bool symmetrize=true);
-};
-
-
 
 #endif
 

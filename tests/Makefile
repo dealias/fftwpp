@@ -59,30 +59,19 @@ MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
 
 vpath %.cc ../
 
-FILES=conv cconv conv2 cconv2 conv3 cconv3 rconv rconv2 \
-	fft1 fft2 fft3 fft1r fft2r fft3r mfft1 mfft1r transpose directTest\
+FILES=fft1 fft2 fft3 fft1r fft2r fft3r mfft1 mfft1r transpose directTest\
 	hybrid hybridh hybridr hybridconv hybridconvh hybridconvr \
 	hybridconv2 hybridconvr2 hybridconvh2 \
 	hybridconv3 hybridconvh3
 
 FFTW=fftw++ parallel
-EXTRA=$(FFTW) convolution explicit direct
 HYBRID=$(FFTW) convolve direct options
-ALL=$(FILES) $(EXTRA) $(HYBRID)
+ALL=$(FILES) $(HYBRID)
 
 all: $(FILES)
 
 %.o : %.cc
 	$(CXX) $(CXXFLAGS) -o $@ -c $<
-
-conv: conv.o $(EXTRA:=.o)
-	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
-
-rconv: rconv.o $(EXTRA:=.o)
-	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
-
-cconv: cconv.o $(EXTRA:=.o)
-	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 hybrid: hybrid.o $(HYBRID:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
@@ -120,51 +109,36 @@ hybridconvh3: hybridconvh3.o $(HYBRID:=.o)
 directTest: directTest.o $(HYBRID:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-conv2: conv2.o $(EXTRA:=.o)
+fft1: fft1.o $(FFTW:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-rconv2: rconv2.o $(EXTRA:=.o)
+fft2: fft2.o $(FFTW:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-cconv2: cconv2.o $(EXTRA:=.o)
+fft3: fft3.o $(FFTW:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-conv3: conv3.o $(EXTRA:=.o)
+fft1r: fft1r.o $(FFTW:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-cconv3: cconv3.o $(EXTRA:=.o)
+fft2r: fft2r.o $(FFTW:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-fft1: fft1.o $(EXTRA:=.o)
+fft3r: fft3r.o $(FFTW:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-fft2: fft2.o $(EXTRA:=.o)
+mfft1: mfft1.o $(FFTW:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-fft3: fft3.o $(EXTRA:=.o)
+mfft1r: mfft1r.o $(FFTW:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-fft1r: fft1r.o $(EXTRA:=.o)
-	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
-
-fft2r: fft2r.o $(EXTRA:=.o)
-	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
-
-fft3r: fft3r.o $(EXTRA:=.o)
-	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
-
-mfft1: mfft1.o $(EXTRA:=.o)
-	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
-
-mfft1r: mfft1r.o $(EXTRA:=.o)
-	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
-
-transpose: transpose.o $(EXTRA:=.o)
+transpose: transpose.o $(FFTW:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 .PHONY: clean
 clean:  FORCE
-	rm -rf $(ALL) $(EXTRA) $(HYBRID) $(ALL:=.o) $(ALL:=.d)
+	rm -rf $(ALL) $(FFTW) $(HYBRID) $(ALL:=.o) $(ALL:=.d)
 
 .SUFFIXES: .c .cc .o .d
 %.o: %.cc

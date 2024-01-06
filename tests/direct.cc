@@ -1,4 +1,3 @@
-#include "convolution.h"
 #include "direct.h"
 
 namespace fftwpp {
@@ -15,7 +14,7 @@ void directconvh::convolve(Complex *h, Complex *f, Complex *g)
 }
 
 void directconvh2::convolve(Complex *h, Complex *f, Complex *g,
-                                   bool symmetrize)
+                            bool symmetrize)
 {
   size_t xorigin=mx-xcompact;
 
@@ -51,7 +50,7 @@ void directconvh2::convolve(Complex *h, Complex *f, Complex *g,
 }
 
 void directconvh3::convolve(Complex *h, Complex *f, Complex *g,
-                                   bool symmetrize)
+                            bool symmetrize)
 {
   size_t xorigin=mx-xcompact;
   size_t yorigin=my-ycompact;
@@ -93,70 +92,6 @@ void directconvh3::convolve(Complex *h, Complex *f, Complex *g,
           }
         }
         h[((xorigin+kx)*ny+yorigin+ky)*mz+kz]=sum;
-      }
-    }
-  }
-}
-
-void directconvhT::convolve(Complex *h, Complex *e, Complex *f,
-                                   Complex *g)
-{
-  int stop=m;
-  int start=1-m;
-  for(int k=0; k < stop; ++k) {
-    Complex sum=0.0;
-    for(int p=start; p < stop; ++p) {
-      Complex E=(p >= 0) ? e[p] : conj(e[-p]);
-      for(int q=start; q < stop; ++q) {
-        int r=k-p-q;
-        if(r >= start && r < stop)
-          sum += E*
-            ((q >= 0) ? f[q] : conj(f[-q]))*
-            ((r >= 0) ? g[r] : conj(g[-r]));
-      }
-    }
-    h[k]=sum;
-  }
-}
-
-void directconvhT2::convolve(Complex *h, Complex *e, Complex *f,
-                                    Complex *g, bool symmetrize)
-{
-  if(symmetrize) {
-    HermitianSymmetrizeX(mx,my,mx-1,e);
-    HermitianSymmetrizeX(mx,my,mx-1,f);
-    HermitianSymmetrizeX(mx,my,mx-1,g);
-  }
-
-  size_t xorigin=mx-1;
-  int xstart=-(int) xorigin;
-  int xstop=mx;
-  int ystop=my;
-  int ystart=1-(int) my;
-  for(int kx=xstart; kx < xstop; ++kx) {
-    for(int ky=0; ky < ystop; ++ky) {
-      Complex sum=0.0;
-      for(int px=xstart; px < xstop; ++px) {
-        for(int py=ystart; py < ystop; ++py) {
-          Complex E=(py >= 0) ? e[(xorigin+px)*my+py] :
-            conj(e[(xorigin-px)*my-py]);
-          for(int qx=xstart; qx < xstop; ++qx) {
-            for(int qy=ystart; qy < ystop; ++qy) {
-              int rx=kx-px-qx;
-              if(rx >= xstart && rx < xstop) {
-                int ry=ky-py-qy;
-                if(ry >= ystart && ry < ystop) {
-                  sum += E *
-                    ((qy >= 0) ? f[(xorigin+qx)*my+qy] :
-                     conj(f[(xorigin-qx)*my-qy])) *
-                    ((ry >= 0) ? g[(xorigin+rx)*my+ry] :
-                     conj(g[(xorigin-rx)*my-ry]));
-                }
-              }
-            }
-          }
-        }
-        h[(xorigin+kx)*my+ky]=sum;
       }
     }
   }
