@@ -65,7 +65,7 @@ module fftwpp
        type(c_ptr), intent(in), value :: p, f, g
      end subroutine hconv1d_convolve
   end interface
-  
+
   interface
      subroutine hconv1d_convolve_dot(p, f, g) &
           bind(c, name = 'fftwpp_hconv1d_convolve_dotf')
@@ -186,7 +186,7 @@ module fftwpp
        type(c_ptr), intent(in), value :: p,f,g
      end subroutine hconv3d_convolve
   end interface
-  
+
   interface
      subroutine delete_hconv3d(p) &
           bind(c, name = 'fftwpp_hconv3d_delete')
@@ -194,6 +194,35 @@ module fftwpp
        implicit none
        type(c_ptr), intent(in), value  :: p
      end subroutine delete_hconv3d
+  end interface
+
+  interface
+     subroutine fftwpp_HermitianSymmetrize(p) &
+          bind(c, name = 'fftwpp_HermitianSymmetrize')
+       use iso_c_binding
+       implicit none
+       type(c_ptr), intent(in), value  :: p
+     end subroutine fftwpp_HermitianSymmetrize
+  end interface
+
+  interface
+     subroutine fftwpp_HermitianSymmetrizeX(Hx, Hy, x0, p) &
+          bind(c, name = 'fftwpp_HermitianSymmetrizeX')
+       use iso_c_binding
+       implicit none
+       integer(c_int), intent(in), value  :: Hx, Hy, x0
+       type(c_ptr), intent(in), value  :: p
+     end subroutine fftwpp_HermitianSymmetrizeX
+  end interface
+
+  interface
+     subroutine fftwpp_HermitianSymmetrizeXY(Hx, Hy, Hz, x0, y0, p) &
+          bind(c, name = 'fftwpp_HermitianSymmetrizeXY')
+       use iso_c_binding
+       implicit none
+       integer(c_int), intent(in), value  :: Hx, Hy, Hz, x0, y0
+       type(c_ptr), intent(in), value  :: p
+     end subroutine fftwpp_HermitianSymmetrizeXY
   end interface
 
 end module fftwpp

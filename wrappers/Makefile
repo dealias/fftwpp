@@ -68,8 +68,7 @@ LDFLAGS += -lfftw3_omp -lfftw3 -lm -lstdc++
 
 FILES = fftw++ parallel convolve
 
-#all: _fftwpp.so cexample fexample
-all: _fftwpp.so cexample
+all: _fftwpp.so cexample fexample
 
 fftw++.o: ../fftw++.cc ../fftw++.h
 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LDFLAGS)

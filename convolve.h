@@ -1136,6 +1136,12 @@ public:
 
 };
 
+// Enforce 1D Hermiticity using specified (x >= 0) data.
+inline void HermitianSymmetrize(Complex *f)
+{
+  f[0].im=0.0;
+}
+
 // Enforce 2D Hermiticity using specified (x >= 0,y=0) data.
 inline void HermitianSymmetrizeX(size_t Hx, size_t Hy,
                                  size_t x0, Complex *f,

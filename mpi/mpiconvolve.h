@@ -294,6 +294,7 @@ public:
 
 };
 
+// Enforce 2D Hermiticity using specified (x >= 0,y=0) data.
 inline void HermitianSymmetrizeX(const utils::split& d, Complex *f,
                                  size_t threads=fftw::maxthreads)
 {
@@ -312,6 +313,8 @@ inline void HermitianSymmetrizeX(const utils::split& d, Complex *f,
 
 }
 
+// Enforce 3D Hermiticity using specified (x >= 0,y=0,z=0) and (x,y > 0,z=0).
+// data.
 void HermitianSymmetrizeXY(utils::split3& d, Complex *f, Complex *u=NULL,
                            size_t threads=fftw::maxthreads);
 

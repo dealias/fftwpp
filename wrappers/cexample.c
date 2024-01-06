@@ -2,47 +2,37 @@
 #include<complex.h>
 #include "cfftw++.h"
 
-void init(double complex *f, double complex *g, unsigned int m)
+void init(double complex *f, double complex *g, size_t m)
 {
-  for(unsigned int k=0; k < m; k++) {
+  for(size_t k=0; k < m; k++) {
     f[k] = k + (k + 1) * I;
     g[k] = k + (2 * k + 1) * I;
   }
 }
 
-void show(double complex *f, unsigned int m)
+void show(double complex *f, size_t m)
 {
-  for(unsigned int k=0; k < m; k++)
+  for(size_t k=0; k < m; k++)
     printf("(%.2f,%.2f)\n", creal(f[k]), cimag(f[k]));
 }
 
 void init2(double complex* f, double complex* g,
-	   unsigned int mx, unsigned int my)
+	   size_t mx, size_t my)
 {
-  for(unsigned int i=0; i < mx; ++i) {
-    for(unsigned int j=0; j < my; j++) {
+  for(size_t i=0; i < mx; ++i) {
+    for(size_t j=0; j < my; j++) {
       f[i*my+j]=i+j*I;
       g[i*my+j]=2*i+(j+1)*I;
     }
   }
 }
 
-void initM2(double complex* f, double complex* g,
-	    unsigned int mx, unsigned int my,
-	    unsigned int M)
-{
-  unsigned int stride=mx*my;
-  for(unsigned int s=0; s < M; ++s)
-    init2(f+s*stride,g+s*stride,mx,my);
-}
-
-
 void show2(double complex* f,
-	   unsigned int mx, unsigned int my)
+	   size_t mx, size_t my)
 {
-  int i,j,pos=0;
-  for(i=0; i < mx; i++) {
-    for(j=0; j < my; j++) {
+  size_t pos=0;
+  for(size_t i=0; i < mx; i++) {
+    for(size_t j=0; j < my; j++) {
       printf("(%.1f,%.1f) ", creal(f[pos]), cimag(f[pos]));
       pos++;
     }
@@ -51,12 +41,12 @@ void show2(double complex* f,
 }
 
 void init3(double complex *f, double complex *g,
-	   unsigned int mx, unsigned int my, unsigned int mz)
+	   size_t mx, size_t my, size_t mz)
 {
-  int pos=0;
-  for(unsigned int i=0; i < mx; ++i) {
-    for(unsigned int j=0; j < my; j++) {
-      for(unsigned int k=0; k < mz; k++) {
+  size_t pos=0;
+  for(size_t i=0; i < mx; ++i) {
+    for(size_t j=0; j < my; j++) {
+      for(size_t k=0; k < mz; k++) {
 	f[pos]=(i+k) +I*(j+k);
 	g[pos]=(2*i+k)+I*(j+1+k);
 	pos++;
@@ -66,12 +56,12 @@ void init3(double complex *f, double complex *g,
 }
 
 void show3(double complex *f,
-	   unsigned int mx, unsigned int my, unsigned int mz)
+	   size_t mx, size_t my, size_t mz)
 {
-  int pos=0;
-  for(unsigned int i=0; i < mx; ++i) {
-    for(unsigned int j=0; j < my; j++) {
-      for(unsigned int k=0; k < mz; k++) {
+  size_t pos=0;
+  for(size_t i=0; i < mx; ++i) {
+    for(size_t j=0; j < my; j++) {
+      for(size_t k=0; k < mz; k++) {
 	printf("(%.0f,%.0f) ", creal(f[pos]), cimag(f[pos]));
 	pos++;
       }
@@ -81,36 +71,13 @@ void show3(double complex *f,
   }
 }
 
-void initM3(double complex* f, double complex* g,
-	    unsigned int mx, unsigned int my, unsigned int mz,
-	    unsigned int M)
-{
-  unsigned int stride=mx*my*mz;
-  for(unsigned int s=0; s < M; ++s)
-    init3(f+s*stride,g+s*stride,mx,my,mz);
-}
-
-void initMpointers(double complex *f, double complex *F[],
-	   unsigned int M, unsigned int stride)
-{
-  for(unsigned int s=0; s < M; ++s)
-      F[s]=(double complex*) f+s*stride;
-}
-
-void normalize(double complex *f, unsigned int N, double overM)
-{
-  for(unsigned int i=0; i < N; ++i)
-    f[i] *= overM;
-}
-
-
 int main()
 {
   printf("Example of calling fftw++ convolutions from C:\n");
 
-  unsigned int nthreads=2;
+  size_t nthreads=2;
 
-  unsigned int M=2; /* dimension of dot product */
+  size_t M=2; /* dimension of dot product */
   double overM=1.0/(double) M;
 
   double complex *pf[M];
@@ -122,24 +89,23 @@ int main()
 
   {
     printf("Complex, non-centered 1D example:\n");
-    unsigned int nx = 8;
+    size_t L = 8;
 
-    HybridConvolution *cconv = fftwpp_create_conv1d(nx);
+    HybridConvolution *cconv = fftwpp_create_conv1d(L);
 
-    double complex *f = create_complexAlign(nx);
-    double complex *g = create_complexAlign(nx);
+    double complex *f = create_complexAlign(L);
+    double complex *g = create_complexAlign(L);
 
-    init(f, g, nx); /* set the input data */
+    init(f, g, L); /* set the input data */
     printf("Input f:\n");
-    show(f, nx);
+    show(f, L);
     printf("Input g:\n");
-    show(g, nx);
+    show(g, L);
 
     fftwpp_conv1d_convolve(cconv, f, g);
-    //fftwpp_conv1d_correlate(cconv, f, g);
 
     printf("Output f:\n");
-    show(f, nx);
+    show(f, L);
 
     delete_complexAlign(g);
     delete_complexAlign(f);
@@ -148,26 +114,27 @@ int main()
     printf("\n");
   }
 
-#if 0
   {
-    printf("Complex, Hermitian-symmetric, centered 1D example:\n");
-    unsigned int nx = 8;
+    printf("Complex, Hermitian-symmetric 1D example:\n");
+    size_t H = 4;
 
-    ImplicitHConvolution *hconv = fftwpp_create_hconv1d(nx);
+    size_t L = 2*H-1;
+    HybridConvolutionHermitian *hconv = fftwpp_create_hconv1d(L);
 
-    double complex *f = create_complexAlign(nx);
-    double complex *g = create_complexAlign(nx);
+    double complex *f = create_complexAlign(H);
+    double complex *g = create_complexAlign(H);
 
-    init(f, g, nx); /* set the input data */
+    init(f, g, H); /* set the input data */
+    fftwpp_HermitianSymmetrize(f);
     printf("Input f:\n");
-    show(f, nx);
+    show(f, H);
     printf("Input g:\n");
-    show(g, nx);
+    show(g, H);
 
     fftwpp_hconv1d_convolve(hconv, f, g);
 
     printf("Output f:\n");
-    show(f, nx);
+    show(f, H);
 
     delete_complexAlign(g);
     delete_complexAlign(f);
@@ -178,24 +145,24 @@ int main()
 
   {
     printf("Complex, non-centered 2D example:\n");
-    unsigned int nx = 4;
-    unsigned int ny = 4;
+    size_t Lx = 4;
+    size_t Ly = 4;
 
-    ImplicitConvolution2 *cconv2 = fftwpp_create_conv2d(nx, ny );
+    HybridConvolution2 *cconv2 = fftwpp_create_conv2d(Lx, Ly );
 
-    double complex *f = create_complexAlign(nx * ny);
-    double complex *g = create_complexAlign(nx * ny);
+    double complex *f = create_complexAlign(Lx * Ly);
+    double complex *g = create_complexAlign(Lx * Ly);
 
-    init2(f, g, nx, ny); /* set the input data */
+    init2(f, g, Lx, Ly); /* set the input data */
     printf("Input f:\n");
-    show2(f, nx, ny);
+    show2(f, Lx, Ly);
     printf("Input g:\n");
-    show2(g, nx, ny);
+    show2(g, Lx, Ly);
 
     fftwpp_conv2d_convolve(cconv2, f, g);
 
     printf("Output f:\n");
-    show2(f, nx, ny);
+    show2(f, Lx, Ly);
 
     delete_complexAlign(g);
     delete_complexAlign(f);
@@ -206,25 +173,30 @@ int main()
 
   {
     printf("Complex, Hermitian-symmertic, centered 2D example:\n");
-    unsigned int nx = 4;
-    unsigned int ny = 4;
+    size_t Hx = 4;
+    size_t Hy = 4;
 
-    ImplicitHConvolution2 *hconv2 = fftwpp_create_hconv2d(nx, ny );
+    size_t Lx = 2 * Hx - 1;
+    size_t Ly = 2 * Hy - 1;
+    HybridConvolutionHermitian2 *hconv2 = fftwpp_create_hconv2d(Lx, Ly);
 
-    unsigned int nxp = 2 * nx - 1;
-    double complex *f = create_complexAlign(nxp * ny);
-    double complex *g = create_complexAlign(nxp * ny);
+    double complex *f = create_complexAlign(Lx * Hy);
+    double complex *g = create_complexAlign(Lx * Hy);
 
-    init2(f, g, nxp, ny); /* set the input data */
+    init2(f, g, Lx, Hy); /* set the input data */
     printf("Input f:\n");
-    show2(f, nxp, ny);
+    show2(f, Lx, Hy);
     printf("Input g:\n");
-    show2(g, nxp, ny);
+    show2(g, Lx, Hy);
+
+    size_t x0=Lx/2;
+    fftwpp_HermitianSymmetrizeX(Hx,Hy,x0,f);
+    fftwpp_HermitianSymmetrizeX(Hx,Hy,x0,g);
 
     fftwpp_hconv2d_convolve(hconv2, f, g);
 
     printf("Output f:\n");
-    show2(f, nxp, ny);
+    show2(f, Lx, Hy);
 
     delete_complexAlign(g);
     delete_complexAlign(f);
@@ -235,55 +207,25 @@ int main()
 
   {
     printf("Complex, non-centered 3D example:\n");
-    unsigned int nx = 4;
-    unsigned int ny = 4;
-    unsigned int nz = 4;
+    size_t Lx = 4;
+    size_t Ly = 4;
+    size_t Lz = 4;
 
-    ImplicitConvolution3 *cconv3 = fftwpp_create_conv3d(nx, ny, nz);
+    HybridConvolution3 *cconv3 = fftwpp_create_conv3d(Lx, Ly, Lz);
 
-    double complex *f = create_complexAlign(nx * ny * nz);
-    double complex *g = create_complexAlign(nx * ny * nz);
+    double complex *f = create_complexAlign(Lx * Ly * Lz);
+    double complex *g = create_complexAlign(Lx * Ly * Lz);
 
-    init3(f, g, nx, ny, nz); /* set the input data */
+    init3(f, g, Lx, Ly, Lz); /* set the input data */
     printf("Input f:\n");
-    show3(f, nx, ny, nz);
+    show3(f, Lx, Ly, Lz);
     printf("Input g:\n");
-    show3(g, nx, ny, nz);
+    show3(g, Lx, Ly, Lz);
 
     fftwpp_conv3d_convolve(cconv3, f, g);
 
     printf("Output f:\n");
-    show3(f, nx, ny, nz);
-
-    delete_complexAlign(g);
-    delete_complexAlign(f);
-
-    fftwpp_conv3d_delete(cconv3);
-    printf("\n");
-  }
-
-
-  {
-    printf("Complex, non-centered 3D example:\n");
-    unsigned int nx = 4;
-    unsigned int ny = 4;
-    unsigned int nz = 4;
-
-    ImplicitConvolution3 *cconv3 = fftwpp_create_conv3d(nx, ny, nz);
-
-    double complex *f = create_complexAlign(nx * ny * nz);
-    double complex *g = create_complexAlign(nx * ny * nz);
-
-    init3(f, g, nx, ny, nz); /* set the input data */
-    printf("Input f:\n");
-    show3(f, nx, ny, nz);
-    printf("Input g:\n");
-    show3(g, nx, ny, nz);
-
-    fftwpp_conv3d_convolve(cconv3, f, g);
-
-    printf("Output f:\n");
-    show3(f, nx, ny, nz);
+    show3(f, Lx, Ly, Lz);
 
     delete_complexAlign(g);
     delete_complexAlign(f);
@@ -294,28 +236,34 @@ int main()
 
   {
     printf("Complex, Hermitian-symmetric, centered 3D example:\n");
-    unsigned int nx = 4;
-    unsigned int ny = 4;
-    unsigned int nz = 4;
+    size_t Hx = 4;
+    size_t Hy = 4;
+    size_t Hz = 4;
 
-    ImplicitHConvolution3 *hconv3 = fftwpp_create_hconv3d(nx, ny, nz);
+    size_t Lx = 2 * Hx - 1;
+    size_t Ly = 2 * Hy - 1;
+    size_t Lz = 2 * Hz - 1;
 
-    unsigned int nxp = 2 * nx - 1;
-    unsigned int nyp = 2 * ny - 1;
+    HybridConvolutionHermitian3 *hconv3 = fftwpp_create_hconv3d(Lx, Ly, Lz);
 
-    double complex *f = create_complexAlign(nxp * nyp * nz);
-    double complex *g = create_complexAlign(nxp * nyp * nz);
+    double complex *f = create_complexAlign(Lx * Ly * Hz);
+    double complex *g = create_complexAlign(Lx * Ly * Hz);
 
-    init3(f, g, nxp, nyp, nz); /* set the input data */
+    init3(f, g, Lx, Ly, Hz); /* set the input data */
     printf("Input f:\n");
-    show3(f, nxp, nyp, nz);
+    show3(f, Lx, Ly, Hz);
     printf("Input g:\n");
-    show3(g, nxp, nyp, nz);
+    show3(g, Lx, Ly, Hz);
+
+    size_t x0=Lx/2;
+    size_t y0=Ly/2;
+    fftwpp_HermitianSymmetrizeXY(Hx,Hy,Hz,x0,y0,f);
+    fftwpp_HermitianSymmetrizeXY(Hx,Hy,Hz,x0,y0,g);
 
     fftwpp_hconv3d_convolve(hconv3, f, g);
 
     printf("Output f:\n");
-    show3(f, nxp, nyp, nz);
+    show3(f, Lx, Ly, Hz);
 
     delete_complexAlign(g);
     delete_complexAlign(f);
@@ -323,5 +271,5 @@ int main()
     fftwpp_hconv3d_delete(hconv3);
     printf("\n");
   }
-#endif
+
 }

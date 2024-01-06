@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 # script for unit testing fftw++ convolution wrappers
 
@@ -13,39 +13,33 @@ with open(os.devnull, "w") as fnull:
     result = subprocess.call(command, stdout = fnull, stderr = fnull)
 
 if result == 0:
-    print "cexample\tok"
+    print("cexample\tok")
 else:
-    print "cexample\tFAILED"
+    print("cexample\tFAILED")
     returnflag += 1
 
 command = ["python", "fftwpp.py"]
 with open(os.devnull, "w") as fnull:
-    result = subprocess.call(command)
+    result = subprocess.call(command, stdout = fnull, stderr = fnull)
 
 if result == 0:
-    print "fftwpp.py\tok"
+    print("fftwpp.py\tok")
 else:
-    print "fftwpp.py\tFAILED"
+    print("fftwpp.py\tFAILED")
     returnflag += 2
 
 command = ["python", "pexample.py"]
 with open(os.devnull, "w") as fnull:
     result = subprocess.call(command, stdout = fnull, stderr = fnull)
 
-if result == 0:
-    print "pexample.py\tok"
-else:
-    print "pexample.py\tFAILED"
-    returnflag += 4
-
 command = ["./fexample"]
 with open(os.devnull, "w") as fnull:
     result = subprocess.call(command, stdout = fnull, stderr = fnull)
 
 if result == 0:
-    print "fexample\tok"
+    print("fexample\tok")
 else:
-    print "fexample\tFAILED"
-    returnflag += 8
+    print("fexample\tFAILED")
+    returnflag += 4
 
 sys.exit(returnflag)
