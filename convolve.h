@@ -1032,7 +1032,6 @@ public:
 
       nloops=fft->nloops();
       loop2=fft->loop2();
-      size_t extra;
       if(loop2) {
         r=fft->increment(0);
         Fp=new Complex*[A];
@@ -1044,12 +1043,9 @@ public:
         for(size_t b=0; b < B; b += C)
           for(size_t c=b; c < B; c++)
             Fp[C+c]=this->F[c];
+      }
 
-        extra=1;
-      } else
-        extra=0;
-
-      if(A > B+extra && !fft->inplace && workSizeW <= outputSize) {
+      if(!loop2 && A > B && !fft->inplace && workSizeW <= outputSize) {
         W0=this->F[B];
         Pad=&fftBase::padNone;
       } else
