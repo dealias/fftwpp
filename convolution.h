@@ -20,7 +20,7 @@
 #include "Complex.h"
 #include "fftw++.h"
 #include "cmult-sse2.h"
-#include "transposeoptions.h"
+#include "mpi/transposeoptions.h"
 
 namespace fftwpp {
 

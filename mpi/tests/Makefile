@@ -52,14 +52,12 @@ vpath %.cc ../:../../:../../tests
 FFTW=fftw++ parallel
 FILES=gather gatheryz gatherxy transpose fft2 fft3 fft2r fft3r  \
 	hybridconv2 hybridconv3 \
-	hybridconvh2 hybridconvh3 \
-	cconv2 conv2 cconv3 conv3
+	hybridconvh2 hybridconvh3
 MPITRANSPOSE=mpitranspose
 MPIFFT=$(FFTW) $(MPITRANSPOSE) mpifftw++
-MPICONVOLUTION=$(MPIFFT) convolution mpiconvolution
 MPICONVOLVE=$(MPIFFT) convolve mpiconvolve options
 
-ALL=$(FILES) $(MPICONVOLUTION) $(MPICONVOLVE)
+ALL=$(FILES) $(MPICONVOLVE)
 
 all: $(FILES)
 
@@ -100,18 +98,6 @@ hybridconv3: hybridconv3.o $(MPICONVOLVE:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
 hybridconvh3: hybridconvh3.o $(MPICONVOLVE:=.o)
-	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
-
-cconv2: cconv2.o $(MPICONVOLUTION:=.o)
-	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
-
-conv2: conv2.o $(MPICONVOLUTION:=.o)
-	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
-
-cconv3: cconv3.o $(MPICONVOLUTION:=.o)
-	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
-
-conv3: conv3.o $(MPICONVOLUTION:=.o)
 	$(MPICXX) $(CXXFLAGS) $(OPTS) $^ $(LDFLAGS) -o $@
 
 clean:  FORCE

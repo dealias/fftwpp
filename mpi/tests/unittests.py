@@ -41,7 +41,6 @@ def main(argv):
     testlist.append("testgather.py")
     testlist.append("testtranspose.py")
     testlist.append("testfft.py")
-    testlist.append("testconvolution.py")
     
     print("Log in " + logfile + "\n")
     log = open(logfile, 'w')

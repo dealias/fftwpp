@@ -32,13 +32,9 @@ ifneq ($(strip $(FFTW_INCLUDE_PATH)),)
 CXXFLAGS+=-I$(FFTW_INCLUDE_PATH)
 endif
 
-LDFLAGS=
 ifneq ($(strip $(FFTW_LIB_PATH)),)
 LDFLAGS+=-L$(FFTW_LIB_PATH)
 endif
-
-
-
 
 #LDFLAGS=-lfftw3_threads -lfftw3 -lm
 LDFLAGS+=-lfftw3_omp -lfftw3 -lm
@@ -52,13 +48,11 @@ FILES=example0 example0r example0m example0mr \
 	exampleconv exampleconv2 exampleconv3 \
 	exampleconvh exampleconvh2 exampleconvh3 \
 	exampleconvr exampleconvr2 exampleconvr3 \
-	examplecconv2 examplecconv3 exampletranspose \
-	examplecconvfull examplecconvsame optimal
+	exampletranspose optimal
 
 FFTW=fftw++ parallel
-EXTRA=$(FFTW) convolution
 HYBRID=$(FFTW) convolve
-ALL=$(FILES) $(EXTRA) $(HYBRID)
+ALL=$(FILES) $(HYBRID)
 
 all: $(FILES)
 
@@ -98,12 +92,6 @@ example3r: example3r.o $(FFTW:=.o)
 exampletranspose: exampletranspose.o $(FFTW:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
-examplecconvfull: examplecconvfull.o $(EXTRA:=.o)
-	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
-
-examplecconvsame: examplecconvsame.o $(EXTRA:=.o)
-	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
-
 exampleconv: exampleconv.o $(HYBRID:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
@@ -129,12 +117,6 @@ exampleconvh3: exampleconvh3.o $(HYBRID:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 exampleconvr3: exampleconvr3.o $(HYBRID:=.o)
-	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
-
-examplecconv2: examplecconv2.o $(EXTRA:=.o)
-	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
-
-examplecconv3: examplecconv3.o $(EXTRA:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 optimal: optimal.o $(FFTW:=.o)

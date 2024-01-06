@@ -53,7 +53,7 @@ MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
 vpath %.cc ../../
 
 
-FILES=fft2 fft3 fft2r fft3r cconv2 cconv3 transpose
+FILES=fft2 fft3 fft2r fft3r transpose
 EXTRA=exmpiutils fftw++ parallel
 ALL=$(FILES) $(EXTRA)
 
@@ -72,12 +72,6 @@ fft2r: fft2r.o $(EXTRA:=.o)
 	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 fft3r: fft3r.o $(EXTRA:=.o)
-	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
-
-cconv2: cconv2.o $(EXTRA:=.o)
-	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
-
-cconv3: cconv3.o $(EXTRA:=.o)
 	$(MPICXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 transpose: transpose.o $(EXTRA:=.o)
