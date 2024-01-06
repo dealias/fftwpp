@@ -44,11 +44,6 @@ typedef std::complex<double> Complex;
 
 namespace fftwpp {
 
-// Obsolete names:
-#define FFTWComplex ComplexAlign
-#define FFTWdouble doubleAlign
-#define FFTWdelete deleteAlign
-
 // Return the memory alignment used by FFTW.
 // Use of this function requires applying patches/fftw-3.3.8-alignment.patch
 // to the FFTW source, recompiling, and reinstalling the FFW library.

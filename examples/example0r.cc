@@ -17,8 +17,8 @@ int main()
 
   size_t n=4;
   size_t np=n/2+1;
-  double *f=FFTWdouble(n);
-  Complex *g=FFTWComplex(np);
+  double *f=doubleAlign(n);
+  Complex *g=ComplexAlign(np);
 
   rcfft1d Forward(n,f,g);
   crfft1d Backward(n,g,f);
