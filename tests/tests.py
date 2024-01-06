@@ -14,7 +14,7 @@ def main():
 
 class Program:
   def __init__(self, name, dim=1, mult=True, centered=False, hermitian=False, real=False):
-    self.name=name
+    self.name="./"+name
     self.dim=dim
     self.mult=mult
     self.centered=centered or hermitian
