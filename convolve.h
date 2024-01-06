@@ -1,5 +1,5 @@
-/* General implicitly dealiased convolution routines.
-   Copyright (C) 2021 John C. Bowman and Noel Murasko, Univ. of Alberta
+/* Hybrid dealiased convolution routines.
+   Copyright (C) 2024 John C. Bowman and Noel Murasko, Univ. of Alberta
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -848,7 +848,7 @@ public:
   // Compute C ffts of length L with stride S >= C and distance 1
   // padded to at least M
   fftPadReal(size_t L, size_t M, Application& app,
-         size_t C=1, size_t S=0, bool Explicit=false) :
+             size_t C=1, size_t S=0, bool Explicit=false) :
     fftBase(L,M,app,C,S) {
     Opt opt=Opt(L,M,app,C,this->S,Explicit);
     m=opt.m;
@@ -943,8 +943,8 @@ public:
 
   // Number of complex FFT outputs per iteration per copy
   size_t noutputs(size_t r) {
-   if(r == 0) return p > 2 ? (p % 2 ? (p/2+1)*m : (p/2)*m+e-1): e;
-   return blocksize(r)*(2*r == n ? 1 : r == 1 ? D0 : D);
+    if(r == 0) return p > 2 ? (p % 2 ? (p/2+1)*m : (p/2)*m+e-1): e;
+    return blocksize(r)*(2*r == n ? 1 : r == 1 ? D0 : D);
   }
 };
 
@@ -1148,8 +1148,8 @@ inline void HermitianSymmetrizeX(size_t Hx, size_t Hy,
   size_t stop=Hx*Sx;
   PARALLELIF(
     Hx > threshold,
-  for(size_t i=Sx; i < stop; i += Sx)
-    *(F-i)=conj(F[i]);
+    for(size_t i=Sx; i < stop; i += Sx)
+      *(F-i)=conj(F[i]);
     );
 
   F[0].im=0.0;
@@ -1158,8 +1158,8 @@ inline void HermitianSymmetrizeX(size_t Hx, size_t Hy,
   if(x0 == Hx) {
     PARALLELIF(
       Hy > threshold,
-    for(size_t j=0; j < Hy; ++j)
-      f[j]=0.0;
+      for(size_t j=0; j < Hy; ++j)
+        f[j]=0.0;
       );
   }
 }
@@ -1184,8 +1184,8 @@ inline void HermitianSymmetrizeXY(size_t Hx, size_t Hy,
   size_t stop=Hx*Sx;
   PARALLELIF(
     Hx > threshold,
-  for(size_t i=Sx; i < stop; i += Sx)
-    *(F-i)=conj(F[i]);
+    for(size_t i=Sx; i < stop; i += Sx)
+      *(F-i)=conj(F[i]);
     );
 
   F[0].im=0.0;
