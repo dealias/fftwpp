@@ -442,27 +442,28 @@ void fftBase::OptBase::scan(size_t L, size_t M, Application& app,
 
   size_t p,q,n;
   parameters(L,M,m,centered,p,n,q);
-
-  size_t mpL=m*p-L;
-  cout << "Optimal padding: ";
-  if(p == q)
-    cout << "Explicit" << endl;
-  else if(mpL > 0)
-    cout << "Hybrid" << endl;
-  else
-    cout << "Implicit" << endl;
-  cout << "m=" << m << endl;
-  cout << "p=" << p << endl;
-  cout << "q=" << q << endl;
-  cout << "C=" << C << endl;
-  cout << "S=" << S << endl;
-  cout << "D=" << D << endl;
-  cout << "I=" << inplace << endl;
-  cout << "threads=" << app.threads << endl;
-  cout << endl;
-  cout << "Padding: " << mpL << endl;
-
   showRoutines=sR;
+
+  if(app.verbose) {
+    size_t mpL=m*p-L;
+    cout << "Optimal padding: ";
+    if(p == q)
+      cout << "Explicit" << endl;
+    else if(mpL > 0)
+      cout << "Hybrid" << endl;
+    else
+      cout << "Implicit" << endl;
+    cout << "m=" << m << endl;
+    cout << "p=" << p << endl;
+    cout << "q=" << q << endl;
+    cout << "C=" << C << endl;
+    cout << "S=" << S << endl;
+    cout << "D=" << D << endl;
+    cout << "I=" << inplace << endl;
+    cout << "threads=" << app.threads << endl;
+    cout << endl;
+    cout << "Padding: " << mpL << endl;
+  }
 }
 
 fftBase::~fftBase()

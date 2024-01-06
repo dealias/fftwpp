@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
       cout << "N=" << N << endl;
     }
 
-    Application appx(A,B,multNone,fftw::maxthreads,true,mx,Dx,Ix);
+    Application appx(A,B,multNone,fftw::maxthreads,true,true,mx,Dx,Ix);
     Application appy(A,B,realmultbinary,appx,my,Dy,Iy);
 
     split d(Lx,Hy,group.active);

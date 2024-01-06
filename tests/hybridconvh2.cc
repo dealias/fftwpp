@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
 
   vector<double> T;
 
-  Application appx(A,B,multNone,fftw::maxthreads,true,mx,Dx,Ix);
+  Application appx(A,B,multNone,fftw::maxthreads,true,true,mx,Dx,Ix);
   fftPadCentered fftx(Lx,Mx,appx,Hy,Sx);
   Application appy(A,B,realmultbinary,appx,my,Dy,Iy);
   fftPadHermitian ffty(Ly,My,appy);

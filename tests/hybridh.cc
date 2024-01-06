@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
   cout << "M=" << M << endl;
 
 // Disable overwrite optimization to allow indexing transformed values.
-  Application app(1,1,multNone,fftw::maxthreads,false,mx,Dx,Ix);
+  Application app(1,1,multNone,fftw::maxthreads,false,true,mx,Dx,Ix);
 
   cout << endl << "Minimal Explicit:" << endl;
   // Minimal explicit padding
