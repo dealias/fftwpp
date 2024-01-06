@@ -49,8 +49,9 @@ vpath %.cc ../
 
 FILES=example0 example0r example0m example0mr \
 	example1 example1r example2 example2r example3 example3r \
-	exampleconv exampleconvh examplecconv2 exampleconv2 \
-	examplecconv3 exampletranspose \
+	exampleconv exampleconv2 exampleconv3 \
+	exampleconvh exampleconvh2 exampleconvh3 \
+	examplecconv2 examplecconv3 exampletranspose \
 	examplecconvfull examplecconvsame optimal
 
 FFTW=fftw++ parallel
@@ -111,13 +112,19 @@ exampleconvh: exampleconvh.o $(HYBRID:=.o)
 exampleconv2: exampleconv2.o $(HYBRID:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
+exampleconvh2: exampleconvh2.o $(HYBRID:=.o)
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
+exampleconv3: exampleconv3.o $(HYBRID:=.o)
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
+exampleconvh3: exampleconvh3.o $(HYBRID:=.o)
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
 examplecconv2: examplecconv2.o $(EXTRA:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 examplecconv3: examplecconv3.o $(EXTRA:=.o)
-	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
-
-exampleconv3: exampleconv3.o $(EXTRA:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 optimal: optimal.o $(FFTW:=.o)

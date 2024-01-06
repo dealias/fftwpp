@@ -1,9 +1,8 @@
 #include "Complex.h"
 #include "convolve.h"
-#include "Array.h"
 
 // Compile with:
-// g++ -I .. -fopenmp exampleconv.cc ../convolve.cc ../fftw++.cc ../parallel.cc -lfftw3 -lfftw3_omp
+// g++ -I .. -Ofast -fopenmp exampleconv.cc ../convolve.cc ../fftw++.cc ../parallel.cc -lfftw3 -lfftw3_omp
 
 using namespace std;
 using namespace utils;
@@ -12,9 +11,9 @@ using namespace parallel;
 
 void init(Complex *f, Complex *g, size_t L)
 {
-  for(size_t k=0; k < L; k++) {
-    f[k]=Complex(k,k+1);
-    g[k]=Complex(k,2*k+1);
+  for(size_t i=0; i < L; ++i) {
+    f[i]=Complex(i+1,i+3);
+    g[i]=Complex(i+2,2*i+3);
   }
 }
 
@@ -39,6 +38,7 @@ int main(int argc, char* argv[])
 
   cout << "1d non-centered complex convolution:" << endl;
   init(f,g,L);
+
   cout << "\ninput:\nf\tg" << endl;
   for(size_t i=0; i < L; i++)
     cout << f[i] << "\t" << g[i] << endl;

@@ -126,8 +126,8 @@ class Convolution(object):
     >>> g=fftwpp.complex_align([N,N])
     >>> for i in range(len(f)):
     ...   for j in range(len(f[i])):
-    ...     f[i][j]=complex(i+1,j+3);
-    ...     g[i][j]=complex(i+2,2*j+3);
+    ...     f[i][j]=complex(i+1,j+3)
+    ...     g[i][j]=complex(i+2,2*j+3)
 
     At this point, both ``f`` and ``g`` have shape ``(N,N)``::
 
@@ -155,8 +155,8 @@ class Convolution(object):
     >>> for i in range(len(f)):
     ...   for j in range(len(f[i])):
     ...     for k in range(len(f[i][j])):
-    ...       f[i][j][k]=complex(i+1,j+3+k);
-    ...       g[i][j][k]=complex(i+k+1,2*j+3+k);
+    ...       f[i][j][k]=complex(i+1,j+3+k)
+    ...       g[i][j][k]=complex(i+k+1,2*j+3+k)
     ...
 
     At this point, both ``f`` and ``g`` have shape ``(N,N,N)``::
@@ -255,8 +255,8 @@ class HConvolution(object):
     >>> g=fftwpp.complex_align([2*Nx-1,Ny])
     >>> for i in range(len(f)):
     ...   for j in range(len(f[i])):
-    ...     f[i][j]=complex(i+1,j+3);
-    ...     g[i][j]=complex(i+2,2*j+3);
+    ...     f[i][j]=complex(i+1,j+3)
+    ...     g[i][j]=complex(i+2,2*j+3)
 
     Now, construct the convolution object and convolve::
 
@@ -281,8 +281,8 @@ class HConvolution(object):
     >>> for i in range(len(f)):
     ...   for j in range(len(f[i])):
     ...     for k in range(len(f[i][j])):
-    ...       f[i][j][k]=complex(i+1,j+3+k);
-    ...       g[i][j][k]=complex(i+k+1,2*j+3+k);
+    ...       f[i][j][k]=complex(i+1,j+3+k)
+    ...       g[i][j][k]=complex(i+k+1,2*j+3+k)
 
     Now, construct the convolution object and convolve::
 

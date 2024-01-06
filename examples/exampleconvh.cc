@@ -1,9 +1,8 @@
 #include "Complex.h"
 #include "convolve.h"
-#include "Array.h"
 
 // Compile with:
-// g++ -I .. -fopenmp exampleconv.cc ../convolve.cc ../fftw++.cc -lfftw3 -lfftw3_omp
+// g++ -I .. -Ofast -fopenmp exampleconvh.cc ../convolve.cc ../fftw++.cc ../parallel.cc -lfftw3 -lfftw3_omp
 
 using namespace std;
 using namespace utils;
@@ -12,11 +11,9 @@ using namespace parallel;
 
 inline void init(Complex *f, Complex *g, unsigned int H)
 {
-  f[0]=Complex(1,0);
-  g[0]=Complex(2,0);
-  for(unsigned int k=1; k < H; k++) {
-    f[k]=Complex(k,k+1);
-    g[k]=Complex(k,2*k+1);
+  for(size_t i=0; i < H; ++i) {
+    f[i]=Complex(i+1,i+3);
+    g[i]=Complex(i+2,2*i+3);
   }
 }
 
@@ -27,24 +24,26 @@ int main(int argc, char* argv[])
   size_t A=2; // Two inputs
   size_t B=1; // One output
 
-  size_t L=7; // Length of input arrays
-  size_t M=10; // Minimal padded length for dealiasing via 1/2 padding
+  size_t H=4; // Length of input arrays
+  size_t M=10; // Minimal padded length for dealiasing via 2/3 padding
 
 #ifndef __SSE2__
   fftw::effort |= FFTW_NO_SIMD;
 #endif
 
-  // 1d centered Hermitian-symmetric complex convolution
+  size_t L=2*H-1;
+
   cout << "1D centered Hermitian-symmetric convolution:" << endl;
 
   // allocate arrays:
-  size_t H=ceilquotient(L,2);
-
   Complex *f=ComplexAlign(H);
   Complex *g=ComplexAlign(H);
   Complex *F[]={f,g};
 
   init(f,g,H);
+  HermitianSymmetrize(f);
+  HermitianSymmetrize(g);
+
   cout << "\ninput:\nf\tg" << endl;
   for(unsigned int i=0; i < H; i++)
     cout << f[i] << "\t" << g[i] << endl;
