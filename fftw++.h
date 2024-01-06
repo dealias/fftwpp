@@ -20,7 +20,7 @@
 #ifndef __fftwpp_h__
 #define __fftwpp_h__ 1
 
-#define __FFTWPP_H_VERSION__ 3.00
+#define __FFTWPP_H_VERSION__ 3.01
 
 #include <cstdlib>
 #include <fstream>
