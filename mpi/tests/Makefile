@@ -59,7 +59,7 @@ MPIFFT=$(FFTW) $(MPITRANSPOSE) mpifftw++
 MPICONVOLUTION=$(MPIFFT) convolution mpiconvolution
 MPICONVOLVE=$(MPIFFT) convolve mpiconvolve options
 
-ALL=$(FILES) $(MPICONVOLUTION)
+ALL=$(FILES) $(MPICONVOLUTION) $(MPICONVOLVE)
 
 all: $(FILES)
 
