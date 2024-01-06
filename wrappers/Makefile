@@ -68,7 +68,7 @@ LDFLAGS += -lfftw3_omp -lfftw3 -lm -lstdc++
 
 FILES = fftw++ parallel convolve
 
-all: _fftwpp.so cexample fexample
+all: lib_fftwpp.so cexample fexample
 
 fftw++.o: ../fftw++.cc ../fftw++.h
 	$(CXX) $(CXXFLAGS) -c -o $@ $< $(LDFLAGS)
@@ -91,7 +91,7 @@ fftwpp.o: fftwpp.f90 parallel.o
 fexample: fexample.f90 fftwpp.o cfftw++.o $(FILES:=.o)
 	$(FC) $(FFLAGS) -o $@ $^ $(FIFLAGS) $(LDFLAGS)
 
-_fftwpp.so: cfftw++.o $(FILES:=.o)
+lib_fftwpp.so: cfftw++.o $(FILES:=.o)
 	$(CXX) $(CXXFLAGS) -shared -o $@ $^ $(LDFLAGS)
 
 clean:

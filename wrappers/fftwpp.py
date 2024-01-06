@@ -23,7 +23,7 @@ __all__=['Convolution' ,'HConvolution']
 
 # Load fftwpp shared library
 base=os.path.dirname(os.path.abspath(__file__))
-clib=CDLL(os.path.join(base,'_fftwpp.so'))
+clib=CDLL(os.path.join(base,'lib_fftwpp.so'))
 
 def fftwpp_set_maxthreads(nthreads):
     clib.set_fftwpp_maxthreads(nthreads)
