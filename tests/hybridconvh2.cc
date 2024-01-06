@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
     for(size_t i=0; i < Lx; ++i) {
       int I=Lx % 2 ? i : -1+i;
       for(size_t j=0; j < Hy; ++j) {
-        fa[Sx*i+j]=Output || testError ? Complex((a+1.0)*I,j+a) : 0.0;
+        fa[Sx*i+j]=Output || testError ? Complex(I+a+1,(a+1)*j+3) : 0.0;
       }
     }
     HermitianSymmetrizeX(Hx,Hy,Lx/2,fa,Sx);

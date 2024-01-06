@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
       for(size_t j=0; j < Ly; ++j) {
         for(size_t k=0; k < Lz; ++k) {
           fa[Sx*i+Sy*j+k]=Output || testError ?
-            Complex((1.0+a)*i+k,j+k+a) : 0.0;
+            Complex(i+a*k+1,(a+1)*j+3+k) : 0.0;
         }
       }
     }

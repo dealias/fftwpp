@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
   for(size_t a=0; a < A; ++a) {
     double *fa=f[a];
     for(size_t j=0; j < L; ++j)
-      fa[j]=Output || testError ? j+1+a : 0.0;
+      fa[j]=Output || testError ? j+a+1 : 0.0;
   }
 
   double *h=NULL;

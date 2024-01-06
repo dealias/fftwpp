@@ -4,16 +4,16 @@
 
 void init(double complex *f, double complex *g, size_t m)
 {
-  for(size_t k=0; k < m; k++) {
-    f[k] = k + (k + 1) * I;
-    g[k] = k + (2 * k + 1) * I;
+  for(size_t i=0; i < m; i++) {
+    f[i]=i+1+I*(i+3);
+    g[i]=i+2+I*(2*i+3);
   }
 }
 
 void show(double complex *f, size_t m)
 {
-  for(size_t k=0; k < m; k++)
-    printf("(%.2f,%.2f)\n", creal(f[k]), cimag(f[k]));
+  for(size_t i=0; i < m; i++)
+    printf("(%.2f,%.2f)\n", creal(f[i]), cimag(f[i]));
 }
 
 void init2(double complex* f, double complex* g,
@@ -21,8 +21,8 @@ void init2(double complex* f, double complex* g,
 {
   for(size_t i=0; i < mx; ++i) {
     for(size_t j=0; j < my; j++) {
-      f[i*my+j]=i+j*I;
-      g[i*my+j]=2*i+(j+1)*I;
+      f[i*my+j]=i+1+I*(j+3);
+      g[i*my+j]=(i+2)+I*(2*j+3);
     }
   }
 }
@@ -47,8 +47,8 @@ void init3(double complex *f, double complex *g,
   for(size_t i=0; i < mx; ++i) {
     for(size_t j=0; j < my; j++) {
       for(size_t k=0; k < mz; k++) {
-	f[pos]=(i+k) +I*(j+k);
-	g[pos]=(2*i+k)+I*(j+1+k);
+	f[pos]=i+1+I*(j+3+k);
+	g[pos]=i+k+1+I*(2*j+3+k);
 	pos++;
       }
     }
@@ -126,6 +126,7 @@ int main()
 
     init(f, g, H); /* set the input data */
     fftwpp_HermitianSymmetrize(f);
+
     printf("Input f:\n");
     show(f, H);
     printf("Input g:\n");
@@ -184,14 +185,14 @@ int main()
     double complex *g = create_complexAlign(Lx * Hy);
 
     init2(f, g, Lx, Hy); /* set the input data */
+    size_t x0=Lx/2;
+    fftwpp_HermitianSymmetrizeX(Hx,Hy,x0,f);
+    fftwpp_HermitianSymmetrizeX(Hx,Hy,x0,g);
+
     printf("Input f:\n");
     show2(f, Lx, Hy);
     printf("Input g:\n");
     show2(g, Lx, Hy);
-
-    size_t x0=Lx/2;
-    fftwpp_HermitianSymmetrizeX(Hx,Hy,x0,f);
-    fftwpp_HermitianSymmetrizeX(Hx,Hy,x0,g);
 
     fftwpp_hconv2d_convolve(hconv2, f, g);
 
@@ -250,15 +251,15 @@ int main()
     double complex *g = create_complexAlign(Lx * Ly * Hz);
 
     init3(f, g, Lx, Ly, Hz); /* set the input data */
-    printf("Input f:\n");
-    show3(f, Lx, Ly, Hz);
-    printf("Input g:\n");
-    show3(g, Lx, Ly, Hz);
-
     size_t x0=Lx/2;
     size_t y0=Ly/2;
     fftwpp_HermitianSymmetrizeXY(Hx,Hy,Hz,x0,y0,f);
     fftwpp_HermitianSymmetrizeXY(Hx,Hy,Hz,x0,y0,g);
+
+    printf("Input f:\n");
+    show3(f, Lx, Ly, Hz);
+    printf("Input g:\n");
+    show3(g, Lx, Ly, Hz);
 
     fftwpp_hconv3d_convolve(hconv3, f, g);
 

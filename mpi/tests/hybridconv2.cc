@@ -95,7 +95,7 @@ int main(int argc, char* argv[])
       for(size_t i=0; i < Lx; ++i) {
         for(size_t j=0; j < d.y; ++j) {
           unsigned int J=d.y0+j;
-          fa[d.y*i+j]=Output || testError ? Complex((a+1.0)*i,J+a) : 0.0;
+          fa[d.y*i+j]=Output || testError ? Complex(i+a+1,(a+1)*J+3) : 0.0;
         }
       }
     }

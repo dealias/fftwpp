@@ -232,8 +232,8 @@ contains
     integer(c_int), intent(in) :: m
     complex(C_DOUBLE_COMPLEX), pointer, intent(inout) :: f(:), g(:)
     do i = 0 ,m - 1
-       f(i + 1) = cmplx(i, i + 1)
-       g(i + 1) = cmplx(i, 2 * i + 1)
+       f(i+1)=cmplx(i+1,i+3)
+       g(i+1)=cmplx(i+2,2*i+3)
     end do
   end subroutine init
 
@@ -245,8 +245,8 @@ contains
     complex(C_DOUBLE_COMPLEX), pointer, intent(inout) :: f(:,:), g(:,:)
     do j = 0, Ly - 1
        do i = 0, Lx - 1
-          f(j + 1, i + 1) = cmplx(i, j)
-          g(j + 1, i + 1) = cmplx(2 * i, j + 1)
+          f(j+1,i+1)=cmplx(i+1,j+3);
+          g(j+1,i+1)=cmplx(i+2,2*j+3);
        end do
     end do
   end subroutine init2
@@ -260,8 +260,8 @@ contains
     do k = 0, Lz - 1
        do j = 0, Ly - 1
           do i = 0, Lx - 1
-             f(k + 1, j + 1, i + 1) = cmplx(i + k, j + k)
-             g(k + 1, j + 1, i + 1) = cmplx(2 * i + k, j + 1 + k)
+             f(k+1,j+1,i+1)=cmplx(i+1,j+3+k);
+             g(k+1,j+1,i+1)=cmplx(i+k+1,2*j+3+k);
           end do
        end do
     end do

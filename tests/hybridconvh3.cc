@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
         int J=Ly % 2 ? j : j-1;
         for(size_t k=0; k < Hz; ++k) {
           fa[Sx*i+Sy*j+k]=Output || testError ?
-            Complex((a+1.0)*I+k,J+a+k) : 0.0;
+            Complex(I+a*k+1,(a+1)*J+3+k) : 0.0;
         }
       }
     }

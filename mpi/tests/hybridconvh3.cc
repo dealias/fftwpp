@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
           for(size_t k=0; k < d.z; ++k) {
             size_t K=d.z0+k;
             fa[d.y*d.z*i+d.z*j+k]=Output || testError ?
-              Complex((a+1.0)*I+K,J+K+a) : 0.0;
+              Complex(I+a*K+1,(a+1)*J+3+K) : 0.0;
           }
         }
       }

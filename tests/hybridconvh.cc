@@ -46,13 +46,9 @@ int main(int argc, char *argv[])
   Complex **f=ComplexAlign(max(A,B),H);
   for(size_t a=0; a < A; ++a) {
     Complex *fa=f[a];
-    if(Output || testError) {
-      for(size_t j=0; j < H; ++j)
-        fa[j]=Complex(j,(a+1.0)*j+1);
-      HermitianSymmetrize(fa);
-    } else
-      for(size_t j=0; j < H; ++j)
-        fa[j]=0.0;
+    for(size_t j=0; j < H; ++j)
+      fa[j]=Output || testError ? Complex(j+a+1,(a+1)*j+3) : 0.0;
+    HermitianSymmetrize(fa);
   }
 
   Complex *h=NULL;
