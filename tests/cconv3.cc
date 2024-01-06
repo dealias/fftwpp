@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
   bool Normalized=true;
   bool Pruned=false;
 
-  double K=1.0; // Time limit (seconds)
+  double s=1.0; // Time limit (seconds)
   size_t N=20;
 
   size_t A=2; // Number of independent inputs
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptA:B:K:Om:x:y:z:n:T:uS:N:");
+    int c = getopt(argc,argv,"hdeiptA:B:s:Om:x:y:z:n:T:uS:N:");
     if (c == -1) break;
 
     switch (c) {
@@ -109,8 +109,8 @@ int main(int argc, char *argv[])
       case 'B':
         B=atoi(optarg);
         break;
-      case 'K':
-        K=atof(optarg);
+      case 's':
+        s=atof(optarg);
         break;
       case 'O':
         Output=true;
@@ -163,9 +163,9 @@ int main(int argc, char *argv[])
   cout << "nx=" << nx << ", ny=" << ny << ", nz=" << ny << endl;
   cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
 
-  if(K == 0) N=1;
-  cout << "K=" << K << endl;
-  K *= 1.0e9;
+  if(s == 0) N=1;
+  cout << "s=" << s << endl;
+  s *= 1.0e9;
 
   size_t align=ALIGNMENT;
 
@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
     ImplicitConvolution3 C(mx,my,mz,A,B);
     cout << "Using " << C.Threads() << " threads."<< endl;
     double sum=0.0;
-    while(sum <= K || T.size() < N) {
+    while(sum <= s || T.size() < N) {
       init(F,mx,my,mz,A);
       cpuTimer c;
       C.convolve(F,mult);
@@ -259,7 +259,7 @@ int main(int argc, char *argv[])
     ExplicitConvolution3 C(nx,ny,nz,mx,my,mz,f,Pruned);
 
     double sum=0.0;
-    while(sum <= K || T.size() < N) {
+    while(sum <= s || T.size() < N) {
       init(F,nxp,nyp,nzp,A);
       cpuTimer c;
       C.convolve(F[0],F[1]);

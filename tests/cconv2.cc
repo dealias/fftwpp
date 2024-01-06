@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
   bool Normalized=true;
   bool Pruned=false;
 
-  size_t K=1.0; // Time limit (seconds)
+  size_t s=1.0; // Time limit (seconds)
   size_t N=20;
 
   size_t A=2;
@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptA:B:K:Om:x:y:n:T:uS:");
+    int c = getopt(argc,argv,"hdeiptA:B:s:Om:x:y:n:T:uS:");
     if (c == -1) break;
 
     switch (c) {
@@ -112,8 +112,8 @@ int main(int argc, char *argv[])
       case 'B':
         B=atoi(optarg);
         break;
-      case 'K':
-        K=atof(optarg);
+      case 's':
+        s=atof(optarg);
         break;
       case 'O':
         Output=true;
@@ -152,9 +152,9 @@ int main(int argc, char *argv[])
   cout << "nx=" << nx << ", ny=" << ny << endl;
   cout << "mx=" << mx << ", my=" << my << endl;
 
-  if(K == 0) N=1;
-  cout << "K=" << K << endl;
-  K *= 1.0e9;
+  if(s == 0) N=1;
+  cout << "s=" << s << endl;
+  s *= 1.0e9;
 
   size_t align=ALIGNMENT;
   array2<Complex> h0;
@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
     cout << "threads=" << C.Threads() << endl << endl;;
 
     double sum=0.0;
-    while(sum <= K || T.size() < N) {
+    while(sum <= s || T.size() < N) {
       init(F,mx,my,A);
       cpuTimer c;
       C.convolve(F,mult);
@@ -254,7 +254,7 @@ int main(int argc, char *argv[])
     cout << "threads=" << C.Threads() << endl << endl;;
 
     double sum=0.0;
-    while(sum <= K || T.size() < N) {
+    while(sum <= s || T.size() < N) {
       init(F,nxp,nyp,A);
       cpuTimer c;
       C.convolve(F,mult);

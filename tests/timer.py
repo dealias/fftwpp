@@ -89,7 +89,7 @@ def time(args,dim,Hermitian,real,T):
   if T == 1 and taskset != None:
     taskset="taskset -c 0"
 
-  args=[f"-a{a}",f"-b{b}",f"-I{I}",f"-T{T}",f"-K{args.K}"]
+  args=[f"-a{a}",f"-b{b}",f"-I{I}",f"-T{T}",f"-s{args.s}"]
   erase=[]
   if e:
     erase.append("-e")
@@ -135,7 +135,7 @@ def getArgs():
   parser.add_argument("-H", help="Test Hermitian convolutions. Not specifying S or H is the same as specifying both.", action="store_true")
 
   parser.add_argument("-I",help="Interval. Checks powers of 2 when 0. Default is 0.", default=0, type=int)
-  parser.add_argument("-K",help="Minimum time limit (seconds).", default=5, type=float)
+  parser.add_argument("-s",help="Minimum time limit (seconds).", default=5, type=float)
   parser.add_argument("-r",help="runtype: implicit, explicit, or hybrid. Not specifying does all of them.", type=str)
   parser.add_argument("-R", help="Test Real convolutions. Not specifying S or H is the same as specifying both.", action="store_true")
   parser.add_argument("-S", help="Test Standard convolutions. Not specifying S or H is the same as specifying both.",

@@ -83,12 +83,12 @@ int main(int argc, char *argv[])
       if(Output && k%fft->m == 0) cout << endl;
 
       for(size_t c=0; c < C; ++c) {
-        size_t K=S*k+c;
-        size_t i=fft->Index(r,K);
-        error += abs2(F[K]-F2[i]);
+        size_t s=S*k+c;
+        size_t i=fft->Index(r,s);
+        error += abs2(F[s]-F2[i]);
         norm += abs2(F2[i]);
         if(Output)
-          cout << i << ": " << F[K] << endl;
+          cout << i << ": " << F[s] << endl;
       }
     }
     fft->backward(F,h,r,W0);
@@ -121,8 +121,8 @@ int main(int argc, char *argv[])
   for(size_t r=0; r < fft->R; r += fft->increment(r)) {
     for(size_t k=0; k < fft->noutputs(r); ++k) {
       for(size_t c=0; c < C; ++c) {
-        size_t K=S*k+c;
-        F[K]=F2[fft->Index(r,K)];
+        size_t s=S*k+c;
+        F[s]=F2[fft->Index(r,s)];
       }
     }
     fft->backward(F,h,r,W0);

@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
   bool Output=false;
   bool Normalized=true;
 
-  double K=1.0; // Time limit (seconds)
+  double s=1.0; // Time limit (seconds)
   size_t N=20;
 
   fftw::maxthreads=parallel::get_max_threads();
@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hdeipA:B:K:Om:x:y:n:T:uS:X:Y:");
+    int c = getopt(argc,argv,"hdeipA:B:s:Om:x:y:n:T:uS:X:Y:");
     if (c == -1) break;
 
     switch (c) {
@@ -124,8 +124,8 @@ int main(int argc, char *argv[])
       case 'B':
         B=atoi(optarg);
         break;
-      case 'K':
-        K=atof(optarg);
+      case 's':
+        s=atof(optarg);
         break;
       case 'O':
         Output=true;
@@ -171,9 +171,9 @@ int main(int argc, char *argv[])
   cout << "nx=" << nx << ", ny=" << ny << endl;
   cout << "mx=" << mx << ", my=" << my << endl;
 
-  if(K == 0) N=1;
-  cout << "K=" << K << endl;
-  K *= 1.0e9;
+  if(s == 0) N=1;
+  cout << "s=" << s << endl;
+  s *= 1.0e9;
 
   size_t align=ALIGNMENT;
 
@@ -219,7 +219,7 @@ int main(int argc, char *argv[])
     }
 
     double sum=0.0;
-    while(sum <= K || T.size() < N) {
+    while(sum <= s || T.size() < N) {
       init(F,mx,my,nxp,nyp,A,xcompact,ycompact);
       cpuTimer c;
       C.convolve(F,mult);
@@ -265,7 +265,7 @@ int main(int argc, char *argv[])
     cout << "threads=" << C.Threads() << endl << endl;
 
     double sum=0.0;
-    while(sum <= K || T.size() < N) {
+    while(sum <= s || T.size() < N) {
       init(F,mx,my,nxp,nyp,A,true,true);
       cpuTimer c;
       C.convolve(F,F+M);

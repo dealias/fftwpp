@@ -78,9 +78,9 @@ int main(int argc, char *argv[])
       cout << "r=" << r << endl;
     for(size_t k=0; k < fft.noutputs(r); ++k) {
       for(size_t c=0; c < C; ++c) {
-        size_t K=S*k+c;
+        size_t s=S*k+c;
         if(Output)
-          cout << K << ": " << F[K] << endl;
+          cout << s << ": " << F[s] << endl;
       }
     }
     fft.backward(F,(Complex *) h,r,W0);

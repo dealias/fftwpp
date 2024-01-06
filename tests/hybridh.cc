@@ -123,8 +123,8 @@ int main(int argc, char *argv[])
       double *Fr=(double *) (F+fft.b*d);
       size_t offset=stride*d;
       for(size_t k=0; k < stride; ++k) {
-        size_t K=k+offset;
-        Fr[k]=F2r[fft.Index(r,K)];
+        size_t s=k+offset;
+        Fr[k]=F2r[fft.Index(r,s)];
       }
     }
     fft.backward(F,h,r,W0);

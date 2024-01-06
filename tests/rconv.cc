@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
   bool Normalized=true;
   bool Inplace=true;
 
-  double K=1.0; // Time limit (seconds)
+  double s=1.0; // Time limit (seconds)
   size_t N=20;
   size_t m=4; // Problem size
 
@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptA:B:I:K:Om:n:uS:T:");
+    int c = getopt(argc,argv,"hdeiptA:B:I:s:Om:n:uS:T:");
     if (c == -1) break;
 
     switch (c) {
@@ -91,8 +91,8 @@ int main(int argc, char *argv[])
       case 'B':
         B=atoi(optarg);
         break;
-      case 'K':
-        K=atof(optarg);
+      case 's':
+        s=atof(optarg);
         break;
       case 'O':
         Output=true;
@@ -124,9 +124,9 @@ int main(int argc, char *argv[])
   cout << "n=" << n << endl;
   cout << "m=" << m << endl;
 
-  if(K == 0) N=1;
-  cout << "K=" << K << endl;
-  K *= 1.0e9;
+  if(s == 0) N=1;
+  cout << "s=" << s << endl;
+  s *= 1.0e9;
 
   if(B < 1)
     B=1;
@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
 
   ExplicitRConvolution Convolve(n,m,F[0],G[0]);
   double sum=0.0;
-  while(sum <= K || T.size() < N) {
+  while(sum <= s || T.size() < N) {
     init(F,m,A);
     cpuTimer c;
     Convolve.convolve(F,mult,G);

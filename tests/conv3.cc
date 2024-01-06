@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
   bool Output=false;
   bool Normalized=true;
 
-  double K=1.0; // Time limit (seconds)
+  double s=1.0; // Time limit (seconds)
   size_t N=20;
 
   size_t A=2; // Number of independent inputs
@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hdeipA:B:K:Om:x:y:z:n:T:uS:X:Y:Z:");
+    int c = getopt(argc,argv,"hdeipA:B:s:Om:x:y:z:n:T:uS:X:Y:Z:");
     if (c == -1) break;
 
     switch (c) {
@@ -145,8 +145,8 @@ int main(int argc, char *argv[])
       case 'B':
         B=atoi(optarg);
         break;
-      case 'K':
-        K=atof(optarg);
+      case 's':
+        s=atof(optarg);
         break;
       case 'O':
         Output=true;
@@ -200,9 +200,9 @@ int main(int argc, char *argv[])
   cout << "nx=" << nx << ", ny=" << ny << ", nz=" << ny << endl;
   cout << "mx=" << mx << ", my=" << my << ", mz=" << mz << endl;
 
-  if(K == 0) N=1;
-  cout << "K=" << K << endl;
-  K *= 1.0e9;
+  if(s == 0) N=1;
+  cout << "s=" << s << endl;
+  s *= 1.0e9;
 
   size_t align=ALIGNMENT;
   nxp=Explicit ? nx : 2*mx-xcompact;
@@ -247,7 +247,7 @@ int main(int argc, char *argv[])
     }
 
     double sum=0.0;
-    while(sum <= K || T.size() < N) {
+    while(sum <= s || T.size() < N) {
       init(F,mx,my,mz,nxp,nyp,nzp,A,xcompact,ycompact,zcompact);
       cpuTimer c;
       C.convolve(F,mult);
@@ -298,7 +298,7 @@ int main(int argc, char *argv[])
     array3<Complex> g(nxp,nyp,nzp,F[1]);
 
     double sum=0.0;
-    while(sum <= K || T.size() < N) {
+    while(sum <= s || T.size() < N) {
       cpuTimer c;
       f=0.0;
       g=0.0;

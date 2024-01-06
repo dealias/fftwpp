@@ -30,10 +30,10 @@ int main(int argc, char *argv[])
   cout << "M=" << M << endl;
 
   if(Output || testError)
-    K=0;
-  if(K == 0) N=1;
-  cout << "K=" << K << endl << endl;
-  K *= 1.0e9;
+    s=0;
+  if(s == 0) N=1;
+  cout << "s=" << s << endl << endl;
+  s *= 1.0e9;
 
   size_t H=ceilquotient(L,2);
 
@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
       Convolve.convolve(f);
 
   double sum=0.0;
-  while(sum <= K || T.size() < N) {
+  while(sum <= s || T.size() < N) {
     double t;
     if(normalized || testError) {
       cpuTimer c;

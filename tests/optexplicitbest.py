@@ -41,7 +41,7 @@ def getArgs():
                       action="store_true")
   parser.add_argument("-a",help="Start.", default=65, type=int)
   parser.add_argument("-b",help="End.", default=128, type=int)
-  parser.add_argument("-K",help="Number of seconds for each timing.",
+  parser.add_argument("-s",help="Number of seconds for each timing.",
     default=5.0, type=float)
   parser.add_argument("-v", help="Verbose output.",
                       action="store_true")
