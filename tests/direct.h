@@ -70,7 +70,7 @@ protected:
   size_t Sx; // x stride
 public:
   directconv2(size_t mx, size_t my,
-                     size_t Sx=0) : mx(mx), my(my) {
+              size_t Sx=0) : mx(mx), my(my) {
     this->Sx=Sx ? Sx : my;
   }
 
@@ -96,7 +96,7 @@ protected:
   size_t Sx; // x stride
 public:
   directconvh2(size_t mx, size_t my, bool xcompact=true,
-                      size_t Sx=0) : mx(mx), my(my), xcompact(xcompact) {
+               size_t Sx=0) : mx(mx), my(my), xcompact(xcompact) {
     this->Sx=Sx ? Sx : my;
   }
 
@@ -113,7 +113,7 @@ protected:
   size_t myz;
 public:
   directconv3(size_t mx, size_t my, size_t mz,
-                     size_t Sx=0, size_t Sy=0) :
+              size_t Sx=0, size_t Sy=0) :
     mx(mx), my(my), mz(mz), myz(my*mz) {
     this->Sy=Sy ? Sy : mz;
     this->Sx=Sx ? Sx : my*this->Sy;
@@ -145,8 +145,8 @@ protected:
   size_t Sy; // y stride
 public:
   directconvh3(size_t mx, size_t my, size_t mz,
-                      bool xcompact=true, bool ycompact=true,
-                      size_t Sx=0, size_t Sy=0) :
+               bool xcompact=true, bool ycompact=true,
+               size_t Sx=0, size_t Sy=0) :
     mx(mx), my(my), mz(mz), xcompact(xcompact), ycompact(ycompact) {
     this->Sy=Sy ? Sy : mz;
     this->Sx=Sx ? Sx : (2*my-ycompact)*this->Sy;

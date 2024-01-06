@@ -49,9 +49,9 @@ int main(int argc, char **argv)
   bool test=false;
   bool quiet=false;
 
- size_t X=8, Y=8, Z=1;
- int a=0; // Test for best block divisor
- int alltoall=-1; // Test for best alltoall routine
+  size_t X=8, Y=8, Z=1;
+  int a=0; // Test for best block divisor
+  int alltoall=-1; // Test for best alltoall routine
 
 
   int provided;
@@ -155,7 +155,7 @@ int main(int argc, char **argv)
   //    show(data,X,y*Z,communicator);
 
   mpitranspose<Complex> T(X,Y,x,y,Z,data,NULL,communicator,
-			  mpiOptions(a,alltoall,defaultmpithreads,!quiet));
+                          mpiOptions(a,alltoall,defaultmpithreads,!quiet));
   init(data,X,y,Z,0,y0);
   T.localize1(data);
 
@@ -182,7 +182,7 @@ int main(int argc, char **argv)
     init(data,X,y,Z,0,y0);
     if(showoutput) {
       if(main)
-	cout << "Input:" << endl;
+        cout << "Input:" << endl;
       show(data,X,y*Z,communicator);
     }
 
@@ -205,7 +205,7 @@ int main(int argc, char **argv)
 
     if(showoutput) {
       if(main)
-	cout << "\nOutput:" << endl;
+        cout << "\nOutput:" << endl;
       show(data,X,y*Z,communicator);
     }
 
@@ -213,22 +213,22 @@ int main(int argc, char **argv)
 
     if(main) {
       if(showoutput) {
-	cout << "\nGathered output data:" << endl;
-	show(wholeoutput,X,Y,0,0,X,Y);
+        cout << "\nGathered output data:" << endl;
+        show(wholeoutput,X,Y,0,0,X,Y);
       }
 
       bool success=true;
       const size_t stop=X*Y*Z;
       for(size_t pos=0; pos < stop; ++pos) {
-	if(wholedata[pos] != wholeoutput[pos])
-	  success=false;
+        if(wholedata[pos] != wholeoutput[pos])
+          success=false;
       }
 
       if(success == true) {
-	cout << "\nTest succeeded." << endl;
+        cout << "\nTest succeeded." << endl;
       } else {
-	cout << "\nERROR: TEST FAILED!" << endl;
-	++retval;
+        cout << "\nERROR: TEST FAILED!" << endl;
+        ++retval;
       }
 
     }
@@ -259,17 +259,17 @@ int main(int argc, char **argv)
 
       double tin=0.0;
       if(main) {
-	tin=W->seconds();
-	Sin.add(tin);
-	Sininit.add(Tinit0-begin);
-	Sinwait0.add(Twait0-Tinit0);
-	Sinwait1.add(Twait1-Tinit);
+        tin=W->seconds();
+        Sin.add(tin);
+        Sininit.add(Tinit0-begin);
+        Sinwait0.add(Twait0-Tinit0);
+        Sinwait1.add(Twait1-Tinit);
       }
 
       if(showoutput) {
-	if(main) cout << "Transpose:" << endl;
-	show(data,x,Y*Z,communicator);
-	if(main) cout << endl;
+        if(main) cout << "Transpose:" << endl;
+        show(data,x,Y*Z,communicator);
+        if(main) cout << endl;
       }
 
       if(main) begin=W->seconds();
@@ -283,14 +283,14 @@ int main(int argc, char **argv)
       if(main) Twait1=W->seconds();
 
       if(main) {
-	double tout=W->seconds()-begin;
-	if(detailed)
-	  Tp.push_back(0.5*(tout+tin));
+        double tout=W->seconds()-begin;
+        if(detailed)
+          Tp.push_back(0.5*(tout+tin));
 
-	Sout.add(tout);
-	Soutinit.add(Tinit0-begin);
-	Soutwait0.add(Twait0-Tinit0);
-	Soutwait1.add(Twait1-Tinit);
+        Sout.add(tout);
+        Soutinit.add(Tinit0-begin);
+        Soutwait0.add(Twait0-Tinit0);
+        Soutwait1.add(Twait1-Tinit);
       }
     }
 

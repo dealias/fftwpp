@@ -8,8 +8,8 @@ using namespace fftwpp;
 using namespace Array;
 
 inline void init(Complex *f, unsigned int nx, unsigned int ny, unsigned int x0,
-                 unsigned int y0, unsigned int x, unsigned int y, 
-                 unsigned int nz, bool transposed) 
+                 unsigned int y0, unsigned int x, unsigned int y,
+                 unsigned int nz, bool transposed)
 {
   if(!transposed) {
     for(unsigned int i=0; i < x; ++i) {
@@ -39,25 +39,25 @@ unsigned int outlimit=100;
 int main(int argc, char* argv[])
 {
   int retval=0; // success!
-  
+
   bool quiet=false;
   unsigned int mx=4;
   unsigned int my=4;
   unsigned int mz=1;
-  
+
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
 
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
   if(rank != 0) opterr=0;
-#ifdef __GNUC__ 
+#ifdef __GNUC__
   optind=0;
-#endif  
+#endif
   for (;;) {
     int c=getopt(argc,argv,"hm:x:y:z:q");
     if (c == -1) break;
-    
+
     switch (c) {
       case 0:
         break;
@@ -85,15 +85,15 @@ int main(int argc, char* argv[])
   }
 
   if(my == 0) my=mx;
-  
+
   MPIgroup group(MPI_COMM_WORLD,mx);
 
   // If the process is unused, then do nothing.
-  if(group.rank < group.size) { 
+  if(group.rank < group.size) {
     bool main=group.rank == 0;
 
     split d(mx,my,group. active);
-    
+
     Complex *f=ComplexAlign(d.n*mz);
 
     init(f,d.X,d.Y,d.x0,d.y0,d.x,d.y,mz,false);
@@ -108,10 +108,10 @@ int main(int argc, char* argv[])
         }
       }
     }
-    
+
     array3<Complex> localf(mx,my,mz);
     localf=0.0;
-    
+
     gatherx(f,localf(),d,mz,group.active);
     if(main) {
       if(!quiet) {
@@ -162,7 +162,7 @@ int main(int argc, char* argv[])
         }
       }
     }
-        
+
     localf=0.0;
     gathery(f,localf(),d,mz,group.active);
     if(main) {
@@ -180,7 +180,7 @@ int main(int argc, char* argv[])
           cout << localf0 << endl;
         }
       }
-        
+
       //cout << "Comparison:\n"  << endl;
       bool same=true;
       for(unsigned int i=0; i < d.X; ++i) {
@@ -199,7 +199,7 @@ int main(int argc, char* argv[])
         retval += 1;
       }
     }
-      
+
     MPI_Barrier(group.active);
   }
 
@@ -211,8 +211,8 @@ int main(int argc, char* argv[])
       cout << "Test FAILED!!!" << endl;
     }
   }
-  
+
   MPI_Finalize();
-  
+
   return retval;
 }

@@ -523,9 +523,9 @@ struct keyless {
   bool operator()(const keytype& a, const keytype& b) const {
     return a.nx < b.nx || (a.nx == b.nx &&
                            (a.M < b.M || (a.M == b.M &&
-                                              (a.threads < b.threads ||
-                                               (a.threads == b.threads &&
-                                                a.inplace < b.inplace)))));
+                                          (a.threads < b.threads ||
+                                           (a.threads == b.threads &&
+                                            a.inplace < b.inplace)))));
   }
 };
 
@@ -979,9 +979,9 @@ public:
     init((Complex *) in,out,threads,threadtable);
   }
 
-  void Normalize(Complex *out) {
-    fftw::Normalize<Complex>(nx/2+1,M,ostride,odist,out);
-  }
+    void Normalize(Complex *out) {
+      fftw::Normalize<Complex>(nx/2+1,M,ostride,odist,out);
+    }
 
   void fftNormalized(double *in, Complex *out=NULL) {
     fftw::fftNormalized<double,Complex>(nx/2+1,M,ostride,odist,in,out);
@@ -1077,9 +1077,9 @@ public:
     init(in,(Complex *) out,threads,threadtable);
   }
 
-  void Normalize(double *out) {
-    fftw::Normalize<double>(nx,M,ostride,odist,out);
-  }
+    void Normalize(double *out) {
+      fftw::Normalize<double>(nx,M,ostride,odist,out);
+    }
 
   void fftNormalized(Complex *in, double *out=NULL) {
     fftw::fftNormalized<Complex,double>(nx,M,ostride,odist,in,out);

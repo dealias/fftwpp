@@ -269,7 +269,7 @@ int main(int argc, char* argv[])
       }
 
       if(main) {
-	timings("FFT timing:",nx,T.data(),T.size(),stats);
+        timings("FFT timing:",nx,T.data(),T.size(),stats);
         T.clear();
       }
 

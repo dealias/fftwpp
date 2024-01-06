@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
   }
 
   if(!Output && !testError)
-      Convolve.convolve(f);
+    Convolve.convolve(f);
 
   double sum=0.0;
   while(sum <= s || T.size() < N) {
@@ -133,12 +133,12 @@ int main(int argc, char *argv[])
 
     // Assumes B=1
     for(size_t i=0; i < Lx; ++i)
-        for(size_t j=0; j < Ly; ++j)
-          for(size_t k=0; k < Lz; ++k){
-            Complex hijk=h[Lz*(Ly*i+j)+k];
-            err += abs2(f[0][Sx*i+Sy*j+k]-hijk);
-            norm += abs2(hijk);
-          }
+      for(size_t j=0; j < Ly; ++j)
+        for(size_t k=0; k < Lz; ++k){
+          Complex hijk=h[Lz*(Ly*i+j)+k];
+          err += abs2(f[0][Sx*i+Sy*j+k]-hijk);
+          norm += abs2(hijk);
+        }
     double relError=sqrt(err/norm);
     cout << "Error: "<< relError << endl;
     deleteAlign(h);

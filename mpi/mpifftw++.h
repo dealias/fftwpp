@@ -455,9 +455,9 @@ public:
                                          out,dc.xy.communicator,xy,
                                          dc.communicator);
     Tyz=dc.yz.x < dc.Y ?
-                  new utils::mpitranspose<Complex>(dc.Y,dc.Z,dc.yz.x,dc.z,1,
-                                                   out,dc.yz.communicator,yz,
-                                                   dc.communicator) : NULL;
+      new utils::mpitranspose<Complex>(dc.Y,dc.Z,dc.yz.x,dc.z,1,
+                                       out,dc.yz.communicator,yz,
+                                       dc.communicator) : NULL;
     unsigned int M=dr.x*dr.yz.x;
     size_t cdist=dr.Z/2+1;
     zForward=new mrcfft1d(dr.Z,M,1,1,rdist,cdist,in,out,threads);
@@ -475,17 +475,17 @@ public:
              Complex *out, const utils::mpiOptions& xy,
              const utils::mpiOptions& yz) :
     fftw(dr.x*dr.yz.x*realsize(dr.Z,Inplace(in,out)),-1,xy.threads,
-                               dr.X*dr.Y*dr.Z),
-         dr(dr), dc(dc), rdist(realsize(dr.Z,Inplace(in,out))) {
+         dr.X*dr.Y*dr.Z),
+    dr(dr), dc(dc), rdist(realsize(dr.Z,Inplace(in,out))) {
     init(in,out,xy,yz);
   }
 
   rcfft3dMPI(const utils::split3& dr, const utils::split3& dc, double *in,
              Complex *out,
              const utils::mpiOptions& xy=utils::defaultmpiOptions) :
-         fftw(dr.x*dr.yz.x*realsize(dr.Z,Inplace(in,out)),-1,xy.threads,
-              dr.X*dr.Y*dr.Z),
-         dr(dr), dc(dc), rdist(realsize(dr.Z,Inplace(in,out))) {
+    fftw(dr.x*dr.yz.x*realsize(dr.Z,Inplace(in,out)),-1,xy.threads,
+         dr.X*dr.Y*dr.Z),
+    dr(dr), dc(dc), rdist(realsize(dr.Z,Inplace(in,out))) {
     init(in,out,xy,xy);
   }
 

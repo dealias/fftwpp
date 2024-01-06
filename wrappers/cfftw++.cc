@@ -108,7 +108,7 @@ extern "C" {
 
   // 2d centered Hermitian-symmetric convolution
   HybridConvolutionHermitian2 *fftwpp_create_hconv2d(size_t Lx,
-                                               size_t Ly) {
+                                                     size_t Ly) {
     return new HybridConvolutionHermitian2(Lx, Ly);
   }
 
@@ -124,8 +124,8 @@ extern "C" {
 
   // 3d non-centered complex convolution
   HybridConvolution3 *fftwpp_create_conv3d(size_t Lx,
-                                             size_t Ly,
-                                             size_t Lz) {
+                                           size_t Ly,
+                                           size_t Lz) {
     return new HybridConvolution3(Lx, Ly, Lz);
   }
 
@@ -148,8 +148,8 @@ extern "C" {
 
   // 3d non-centered complex convolution
   HybridConvolutionHermitian3 *fftwpp_create_hconv3d(size_t nx,
-                                               size_t ny,
-                                               size_t nz) {
+                                                     size_t ny,
+                                                     size_t nz) {
     return new HybridConvolutionHermitian3(nx, ny, nz);
   }
 

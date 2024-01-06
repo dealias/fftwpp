@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
   }
 
   if(!single)
-      Convolve.convolve(f);
+    Convolve.convolve(f);
 
   double sum=0.0;
   while(sum <= s || T.size() < N) {

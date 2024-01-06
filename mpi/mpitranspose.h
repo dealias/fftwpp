@@ -2,33 +2,33 @@
 #define __mpitranspose_h__ 1
 
 /*
-   Globally transpose an N x M matrix of blocks of L words of type T.
-   The out-of-place versions preserve inputs.
+  Globally transpose an N x M matrix of blocks of L words of type T.
+  The out-of-place versions preserve inputs.
 
-   Blocking in-place and out-of-place interfaces. Upper case letters denote
-   global dimensions; lower case letters denote distributed dimensions:
+  Blocking in-place and out-of-place interfaces. Upper case letters denote
+  global dimensions; lower case letters denote distributed dimensions:
 
-   To globally transpose without local transposition of output:
-   localize0(in);      n x M -> N x m
-   localize0(in,out);  n x M -> N x m
+  To globally transpose without local transposition of output:
+  localize0(in);      n x M -> N x m
+  localize0(in,out);  n x M -> N x m
 
-   To globally transpose without local transposition of input:
-   localize1(in);      N x m -> n x M
-   localize1(in,out);  N x m -> n x M
+  To globally transpose without local transposition of input:
+  localize1(in);      N x m -> n x M
+  localize1(in,out);  N x m -> n x M
 
-   Non-blocking interface for localize0 (and similarly for localize1):
+  Non-blocking interface for localize0 (and similarly for localize1):
 
-   ilocalize0(in);
-   // User computation
-   wait();
+  ilocalize0(in);
+  // User computation
+  wait();
 
-   Double non-blocking interface:
+  Double non-blocking interface:
 
-   ilocalize0(in);
-   // User computation 0 (typically longest)
-   wait0();
-   // User computation 1
-   wait1();
+  ilocalize0(in);
+  // User computation 0 (typically longest)
+  wait0();
+  // User computation 1
+  wait1();
 */
 
 #include <mpi.h>

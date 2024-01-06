@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 {
   fftw::maxthreads=parallel::get_max_threads();
 
-    size_t mx=4;
+  size_t mx=4;
   size_t my=4;
 
   int stats=0; // Type of statistics used in timing test.

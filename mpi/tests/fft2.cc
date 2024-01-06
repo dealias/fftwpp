@@ -170,7 +170,7 @@ int main(int argc, char* argv[])
 
       if(!quiet && showresult) {
         if(main)
-	  cout << "\nDistributed output:" << endl;
+          cout << "\nDistributed output:" << endl;
         show(f,nx,d.y,group.active);
       }
 
@@ -240,12 +240,12 @@ int main(int argc, char* argv[])
         }
 
         if(main) {
-	  timings("FFT timing:",nx,T.data(),T.size(),stats);
+          timings("FFT timing:",nx,T.data(),T.size(),stats);
           T.clear();
         }
 
         if(!quiet && showresult)
-	  show(f,d.X,d.y,group.active);
+          show(f,d.X,d.y,group.active);
       }
     }
 

@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
   // Number of iterations.
   size_t N=10000000;
 
-    size_t mx=4;
+  size_t mx=4;
   size_t my=4;
 
   size_t stats=0; // Type of statistics used in timing test.

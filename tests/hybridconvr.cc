@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
   }
 
   if(!Output && !testError)
-      Convolve.convolve((Complex **) f);
+    Convolve.convolve((Complex **) f);
 
   double sum=0.0;
   while(sum <= s || T.size() < N) {

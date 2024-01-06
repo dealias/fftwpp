@@ -28,14 +28,14 @@ namespace fftwpp { extern "C" {
   typedef struct HybridConvolution HybridConvolution;
   HybridConvolution *fftwpp_create_conv1d(size_t nx);
   HybridConvolution *fftwpp_create_conv1d_dot(size_t m,
-                                                size_t M);
+                                              size_t M);
   HybridConvolution *fftwpp_create_conv1d_work(size_t m,
-                                                 double __complex__ *u,
-                                                 double __complex__ *v);
+                                               double __complex__ *u,
+                                               double __complex__ *v);
   HybridConvolution *fftwpp_create_conv1d_work_dot(size_t m,
-                                                     double __complex__ *u,
-                                                     double __complex__ *v,
-                                                     size_t M);
+                                                   double __complex__ *u,
+                                                   double __complex__ *v,
+                                                   size_t M);
   void fftwpp_conv1d_convolve(HybridConvolution *conv,
                               double __complex__ *a, double __complex__  *b);
 
@@ -51,16 +51,16 @@ namespace fftwpp { extern "C" {
   typedef struct HybridConvolutionHermitian HybridConvolutionHermitian;
   HybridConvolutionHermitian *fftwpp_create_hconv1d(size_t m);
   HybridConvolutionHermitian *fftwpp_create_hconv1d_dot(size_t m,
-                                                  size_t M);
+                                                        size_t M);
   HybridConvolutionHermitian *fftwpp_create_hconv1d_work(size_t m,
-                                                   double __complex__ *u,
-                                                   double __complex__ *v,
-                                                   double __complex__ *w);
+                                                         double __complex__ *u,
+                                                         double __complex__ *v,
+                                                         double __complex__ *w);
   HybridConvolutionHermitian *fftwpp_create_hconv1d_work_dot(size_t m,
-                                                       double __complex__ *u,
-                                                       double __complex__ *v,
-                                                       double __complex__ *w,
-                                                       size_t M);
+                                                             double __complex__ *u,
+                                                             double __complex__ *v,
+                                                             double __complex__ *w,
+                                                             size_t M);
   void fftwpp_hconv1d_convolve(HybridConvolutionHermitian *conv,
                                double __complex__ *a, double __complex__  *b);
   void fftwpp_hconv1d_convolve_dot(HybridConvolutionHermitian *conv,
@@ -75,20 +75,20 @@ namespace fftwpp { extern "C" {
   typedef struct HybridConvolution2 HybridConvolution2;
   HybridConvolution2 *fftwpp_create_conv2d(size_t mx, size_t my);
   HybridConvolution2 *fftwpp_create_conv2d_dot(size_t mx, size_t my,
-                                                 size_t M);
+                                               size_t M);
   HybridConvolution2 *fftwpp_create_conv2d_work(size_t mx,
-                                                  size_t my,
-                                                  double __complex__ *u1,
-                                                  double __complex__ *v1,
-                                                  double __complex__ *u2,
-                                                  double __complex__ *v2);
+                                                size_t my,
+                                                double __complex__ *u1,
+                                                double __complex__ *v1,
+                                                double __complex__ *u2,
+                                                double __complex__ *v2);
   HybridConvolution2 *fftwpp_create_conv2d_work_dot(size_t mx,
-                                                      size_t my,
-                                                      double __complex__ *u1,
-                                                      double __complex__ *v1,
-                                                      double __complex__ *u2,
-                                                      double __complex__ *v2,
-                                                      size_t M);
+                                                    size_t my,
+                                                    double __complex__ *u1,
+                                                    double __complex__ *v1,
+                                                    double __complex__ *u2,
+                                                    double __complex__ *v2,
+                                                    size_t M);
 
   void fftwpp_conv2d_convolve(HybridConvolution2 *conv,
                               double __complex__ *a, double __complex__ *b);
@@ -102,23 +102,23 @@ namespace fftwpp { extern "C" {
   typedef struct HybridConvolutionHermitian2 HybridConvolutionHermitian2;
   HybridConvolutionHermitian2 *fftwpp_create_hconv2d(size_t mx, size_t my);
   HybridConvolutionHermitian2 *fftwpp_create_hconv2d_dot(size_t mx,
-                                                   size_t my,
-                                                   size_t M);
+                                                         size_t my,
+                                                         size_t M);
   HybridConvolutionHermitian2 *fftwpp_create_hconv2d_work(size_t mx,
-                                                    size_t my,
-                                                    double __complex__ *u1,
-                                                    double __complex__ *v1,
-                                                    double __complex__ *w1,
-                                                    double __complex__ *u2,
-                                                    double __complex__ *v2);
+                                                          size_t my,
+                                                          double __complex__ *u1,
+                                                          double __complex__ *v1,
+                                                          double __complex__ *w1,
+                                                          double __complex__ *u2,
+                                                          double __complex__ *v2);
   HybridConvolutionHermitian2 *fftwpp_create_hconv2d_work_dot(size_t mx,
-                                                        size_t my,
-                                                        double __complex__ *u1,
-                                                        double __complex__ *v1,
-                                                        double __complex__ *w1,
-                                                        double __complex__ *u2,
-                                                        double __complex__ *v2,
-                                                        size_t M);
+                                                              size_t my,
+                                                              double __complex__ *u1,
+                                                              double __complex__ *v1,
+                                                              double __complex__ *w1,
+                                                              double __complex__ *u2,
+                                                              double __complex__ *v2,
+                                                              size_t M);
   void fftwpp_hconv2d_convolve(HybridConvolutionHermitian2 *conv,
                                double __complex__ *a, double __complex__ *b);
   void fftwpp_hconv2d_convolve_dot(HybridConvolutionHermitian2 *conv,
@@ -132,20 +132,20 @@ namespace fftwpp { extern "C" {
 // 3d complex non-centered convolution
   typedef struct HybridConvolution3 HybridConvolution3;
   HybridConvolution3 *fftwpp_create_conv3d(size_t mx, size_t my,
-                                             size_t mz);
+                                           size_t mz);
   HybridConvolution3 *fftwpp_create_conv3d_work(size_t mx,
-                                                  size_t my,
-                                                  size_t mz,
-                                                  double __complex__ *u1,
-                                                  double __complex__ *v1,
-                                                  double __complex__ *u2,
-                                                  double __complex__ *v2,
-                                                  double __complex__ *u3,
-                                                  double __complex__ *v3);
+                                                size_t my,
+                                                size_t mz,
+                                                double __complex__ *u1,
+                                                double __complex__ *v1,
+                                                double __complex__ *u2,
+                                                double __complex__ *v2,
+                                                double __complex__ *u3,
+                                                double __complex__ *v3);
   HybridConvolution3 *fftwpp_create_conv3d_dot(size_t mx,
-                                                 size_t my,
-                                                 size_t mz,
-                                                 size_t M);
+                                               size_t my,
+                                               size_t mz,
+                                               size_t M);
   void fftwpp_conv3d_convolve(HybridConvolution3 *conv,
                               double __complex__ *a, double __complex__ *b);
   void fftwpp_conv3d_convolve_dot(HybridConvolution3 *conv,
@@ -157,32 +157,32 @@ namespace fftwpp { extern "C" {
   // 3d Hermitian-symmetric centered convolution
   typedef struct HybridConvolutionHermitian3 HybridConvolutionHermitian3;
   HybridConvolutionHermitian3 *fftwpp_create_hconv3d(size_t mx, size_t my,
-                                               size_t mz);
+                                                     size_t mz);
   HybridConvolutionHermitian3 *fftwpp_create_hconv3d_dot(size_t mx,
-                                                   size_t my,
-                                                   size_t mz,
-                                                   size_t M);
+                                                         size_t my,
+                                                         size_t mz,
+                                                         size_t M);
   HybridConvolutionHermitian3 *fftwpp_create_hconv3d_work(size_t mx,
-                                                    size_t my,
-                                                    size_t mz,
-                                                    double __complex__ *u1,
-                                                    double __complex__ *v1,
-                                                    double __complex__ *w1,
-                                                    double __complex__ *u2,
-                                                    double __complex__ *v2,
-                                                    double __complex__ *u3,
-                                                    double __complex__ *v3);
+                                                          size_t my,
+                                                          size_t mz,
+                                                          double __complex__ *u1,
+                                                          double __complex__ *v1,
+                                                          double __complex__ *w1,
+                                                          double __complex__ *u2,
+                                                          double __complex__ *v2,
+                                                          double __complex__ *u3,
+                                                          double __complex__ *v3);
   HybridConvolutionHermitian3 *fftwpp_create_hconv3d_work_dot(size_t mx,
-                                                        size_t my,
-                                                        size_t mz,
-                                                        double __complex__ *u1,
-                                                        double __complex__ *v1,
-                                                        double __complex__ *w1,
-                                                        double __complex__ *u2,
-                                                        double __complex__ *v2,
-                                                        double __complex__ *u3,
-                                                        double __complex__ *v3,
-                                                        size_t M);
+                                                              size_t my,
+                                                              size_t mz,
+                                                              double __complex__ *u1,
+                                                              double __complex__ *v1,
+                                                              double __complex__ *w1,
+                                                              double __complex__ *u2,
+                                                              double __complex__ *v2,
+                                                              double __complex__ *u3,
+                                                              double __complex__ *v3,
+                                                              size_t M);
   void fftwpp_hconv3d_convolve(HybridConvolutionHermitian3 *conv,
                                double __complex__ *a, double __complex__ *b);
   void fftwpp_hconv3d_convolve_dot(HybridConvolutionHermitian3 *conv,

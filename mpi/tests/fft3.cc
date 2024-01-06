@@ -280,12 +280,12 @@ int main(int argc, char* argv[])
         }
 
         if(main) {
-	  timings("FFT timing:",nx,T.data(),T.size(),stats);
+          timings("FFT timing:",nx,T.data(),T.size(),stats);
           T.clear();
         }
 
         if(!quiet && showresult) {
-	  show(G[0],d.x,d.y,d.Z,group.active);
+          show(G[0],d.x,d.y,d.Z,group.active);
         }
 
         for(unsigned int m=0; m < M; ++m) {

@@ -46,35 +46,35 @@ void optionsHybrid(int argc, char *argv[], bool fft, bool mpi)
   enum Parameters {LXYZ=256,LX,LY,LZ,MXYZ,MX,MY,MZ,SX,SY,mXYZ,mX,mY,mZ,
     DXYZ,DX,DY,DZ,IXYZ,IX,IY,IZ,T,THRESHOLD};
 
-    int option_index = 0;
+  int option_index = 0;
   static struct option long_options[] =
-  {
-    {"L", 1, 0, LXYZ},
-    {"Lx", 1, 0, LX},
-    {"Ly", 1, 0, LY},
-    {"Lz", 1, 0, LZ},
-    {"M", 1, 0, MXYZ},
-    {"Mx", 1, 0, MX},
-    {"My", 1, 0, MY},
-    {"Mz", 1, 0, MZ},
-    {"Sx", 1, 0, SX},
-    {"Sy", 1, 0, SY},
-    {"m", 1, 0, mXYZ},
-    {"mx", 1, 0, mX},
-    {"my", 1, 0, mY},
-    {"mz", 1, 0, mZ},
-    {"D", 1, 0, DXYZ},
-    {"Dx", 1, 0, DX},
-    {"Dy", 1, 0, DY},
-    {"Dz", 1, 0, DZ},
-    {"I", 1, 0, IXYZ},
-    {"Ix", 1, 0, IX},
-    {"Iy", 1, 0, IY},
-    {"Iz", 1, 0, IZ},
-    {"T", 1, 0, T},
-    {"threshold", 1, 0, THRESHOLD},
-    {0, 0, 0, 0}
-  };
+    {
+      {"L", 1, 0, LXYZ},
+      {"Lx", 1, 0, LX},
+      {"Ly", 1, 0, LY},
+      {"Lz", 1, 0, LZ},
+      {"M", 1, 0, MXYZ},
+      {"Mx", 1, 0, MX},
+      {"My", 1, 0, MY},
+      {"Mz", 1, 0, MZ},
+      {"Sx", 1, 0, SX},
+      {"Sy", 1, 0, SY},
+      {"m", 1, 0, mXYZ},
+      {"mx", 1, 0, mX},
+      {"my", 1, 0, mY},
+      {"mz", 1, 0, mZ},
+      {"D", 1, 0, DXYZ},
+      {"Dx", 1, 0, DX},
+      {"Dy", 1, 0, DY},
+      {"Dz", 1, 0, DZ},
+      {"I", 1, 0, IXYZ},
+      {"Ix", 1, 0, IX},
+      {"Iy", 1, 0, IY},
+      {"Iz", 1, 0, IZ},
+      {"T", 1, 0, T},
+      {"threshold", 1, 0, THRESHOLD},
+      {0, 0, 0, 0}
+    };
 
   for (;;) {
     int c=getopt_long_only(argc,argv,"ahC:D:I:s:L:M:N:ctEORS:T:m:u",

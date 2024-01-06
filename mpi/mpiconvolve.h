@@ -44,26 +44,26 @@ inline utils::split3 outputSplit(fftBase *fftx, fftBase *ffty, fftBase *fftz, co
 
 // Return the minimum buffer size for the transpose
 inline size_t bufferSize(fftBase *fftx, fftBase *ffty,
-                  const MPI_Comm &communicator) {
+                         const MPI_Comm &communicator) {
   return outputSplit(fftx,ffty,communicator).n;
 }
 
 // Return the minimum buffer size for the transpose
 inline size_t bufferSize(fftBase *fftx, fftBase *ffty, fftBase *fftz,
-                  const utils::MPIgroup &group) {
+                         const utils::MPIgroup &group) {
   return outputSplit(fftx,ffty,fftz,group).n;
 }
 
 // Allocate the outputBuffer;
 inline Complex **outputBuffer(fftBase *fftx, fftBase *ffty,
-                       const MPI_Comm &communicator) {
+                              const MPI_Comm &communicator) {
   return utils::ComplexAlign(std::max(fftx->app.A,fftx->app.B),
                              bufferSize(fftx,ffty,communicator));
 }
 
 // Allocate the outputBuffer;
 inline Complex **outputBuffer(fftBase *fftx, fftBase *ffty, fftBase *fftz,
-                       const utils::MPIgroup &group) {
+                              const utils::MPIgroup &group) {
   return utils::ComplexAlign(std::max(fftx->app.A,fftx->app.B),
                              bufferSize(fftx,ffty,fftz,group));
 }
@@ -135,8 +135,8 @@ public:
       }
     }
     size_t Stop=std::min(stop,cutoff);
-      for(size_t a=start; a < Stop; ++a)
-        T[a]->wait();
+    for(size_t a=start; a < Stop; ++a)
+      T[a]->wait();
   }
 
   virtual size_t stridex() {
@@ -253,8 +253,8 @@ public:
       }
     }
     size_t Stop=std::min(stop,cutoff);
-      for(size_t a=start; a < Stop; ++a)
-        T[a]->wait();
+    for(size_t a=start; a < Stop; ++a)
+      T[a]->wait();
   }
 
   virtual size_t stridex() {
@@ -304,14 +304,14 @@ inline void HermitianSymmetrizeX(const utils::split& d, Complex *f,
   if(d.y0 == 0)
     HermitianSymmetrizeX(Hx,d.y,d.X/2,f);
   else
-  // Zero out Nyquist modes
-  if(d.X/2 == Hx) {
-    PARALLELIF(
-      d.y > threshold,
-    for(size_t j=0; j < d.y; ++j)
-      f[j]=0.0;
-      );
-  }
+    // Zero out Nyquist modes
+    if(d.X/2 == Hx) {
+      PARALLELIF(
+        d.y > threshold,
+        for(size_t j=0; j < d.y; ++j)
+          f[j]=0.0;
+        );
+    }
 
 }
 

@@ -10,7 +10,7 @@ using namespace Array;
 inline void init(Complex *f,
                  unsigned int X, unsigned int Y, unsigned int Z,
                  unsigned int x0, unsigned int y0, unsigned int z0,
-                 unsigned int x, unsigned int y, unsigned int z) 
+                 unsigned int x, unsigned int y, unsigned int z)
 {
   unsigned int c=0;
   for(unsigned int i=0; i < x; ++i) {
@@ -36,20 +36,20 @@ int main(int argc, char* argv[])
   unsigned int mx=4;
   unsigned int my=4;
   unsigned int mz=4;
-  
+
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
 
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
   if(rank != 0) opterr=0;
-#ifdef __GNUC__ 
+#ifdef __GNUC__
   optind=0;
-#endif  
+#endif
   for (;;) {
     int c=getopt(argc,argv,"hm:x:y:z:q");
     if (c == -1) break;
-                
+
     switch (c) {
       case 0:
         break;
@@ -79,12 +79,12 @@ int main(int argc, char* argv[])
   if(mx == 0) mx=4;
   if(my == 0) my=mx;
   if(mz == 0) mz=mx;
-  
+
   MPIgroup group(MPI_COMM_WORLD,mx,my);
 
   // If the process is unused, then do nothing.
   if(group.rank < group.size) {
-    
+
     bool main=group.rank == 0;
 
     split3 d(mx,my,mz,group);
@@ -92,15 +92,15 @@ int main(int argc, char* argv[])
     unsigned int localsize=d.x*d.y*d.Z;
     Complex *pF=ComplexAlign(localsize);
     Array3<Complex> F0(d.x,d.y,d.Z,pF);
-     
+
     init(F0(),d.X,d.Y,d.Z,d.x0,d.y0,d.z0,d.x,d.y,d.z);
     //F0.Load(group.rank);
-    
+
     if(!quiet){
       if(main) cout << "\ninput:" << endl;
       //show(F0(),d.x,d.y,d.Z,group.active);
     }
-    
+
     if(!quiet) {
       // if(group.rank == 1) {
       //         cout << "process " << group.rank << endl;
@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
       cout << F0 << endl;
 //      d.show();
     }
-    
+
     if(!quiet && main)
       cout << "Gathering... " << endl;
     // Local array for transpose=0

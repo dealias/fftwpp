@@ -173,7 +173,7 @@ int main(int argc, char* argv[])
 
       if(!quiet && showresult) {
         if(main)
-	  cout << "\nDistributed input:" << endl;
+          cout << "\nDistributed input:" << endl;
         show(f(),dfgather.x,dfgather.y,dfgather.Z,group.active);
       }
 
@@ -211,8 +211,8 @@ int main(int argc, char* argv[])
 
       if(!quiet && showresult) {
         if(main)
-	  cout << "Distributed output:" << endl;
-	show(g(),dg.X,dg.y,dg.z,group.active);
+          cout << "Distributed output:" << endl;
+        show(g(),dg.X,dg.y,dg.z,group.active);
       }
 
       gatheryz(g(),ggather(),dg,group.active);
@@ -233,8 +233,8 @@ int main(int argc, char* argv[])
 
       if(!quiet && showresult) {
         if(main)
-	  cout << "Distributed back to input:" << endl;
-	show(f(),dfgather.x,dfgather.y,dfgather.Z,group.active);
+          cout << "Distributed back to input:" << endl;
+        show(f(),dfgather.x,dfgather.y,dfgather.Z,group.active);
       }
 
       gatherxy(f(),fgather(),dfgather,group.active);
