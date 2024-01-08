@@ -1,3 +1,5 @@
+#include <getopt.h>
+
 #include "Complex.h"
 #include "Array.h"
 #include "fftw++.h"

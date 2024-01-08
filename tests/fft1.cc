@@ -1,3 +1,4 @@
+#include <getopt.h>
 #include <iostream>
 
 #include "Complex.h"
