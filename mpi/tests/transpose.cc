@@ -1,3 +1,5 @@
+#include <getopt.h>
+
 #include "mpitranspose.h"
 #include "mpiutils.h"
 #include "statistics.h"

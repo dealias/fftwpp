@@ -17,12 +17,13 @@ endif
 
 #Intel compiler
 ifeq ($(shell $(MPICXX) --version 2>&1 | head -c 4),icpc)
-CXXFLAGS=-O3 -qopenmp -ipo -ansi-alias -malign-double -fp-model fast=2
+CXXFLAGS += -O3 -qopenmp -ipo -ansi-alias -malign-double -fp-model fast=2
+LDFLAGS += -lmpi -lmpi_cxx
 endif
 
 #IBM compiler
 ifeq ($(shell $(MPICXX) -qversion 2>&1 | head -c 3),IBM)
-CXXFLAGS= -O5 -qsmp=speculative -qtune=qp -qipa -qarch=qp
+CXXFLAGS += -O5 -qsmp=speculative -qtune=qp -qipa -qarch=qp
 endif
 
 CXXFLAGS += $(DEFS) -I$(IDIR) -I$(UDIR) -I../../
@@ -32,18 +33,18 @@ CXXFLAGS += -I$(FFTW_INCLUDE_PATH)
 endif
 
 ifneq ($(strip $(MPI_INCLUDE_PATH)),)
-CXXFLAGS+=-I$(MPI_INCLUDE_PATH)
+CXXFLAGS += -I$(MPI_INCLUDE_PATH)
 endif
 
 ifneq ($(strip $(FFTW_LIB_PATH)),)
-LDFLAGS+=-L$(FFTW_LIB_PATH)
+LDFLAGS += -L$(FFTW_LIB_PATH)
 endif
 
 ifneq ($(strip $(MPI_LIB_PATH)),)
-LDFLAGS+=-L$(MPI_LIB_PATH)
+LDFLAGS += -L$(MPI_LIB_PATH)
 endif
 
-LDFLAGS+= -lfftw3_omp -lfftw3 -lm
+LDFLAGS += -lfftw3_omp -lfftw3 -lm
 
 MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
 

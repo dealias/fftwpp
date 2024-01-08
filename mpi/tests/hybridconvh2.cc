@@ -1,3 +1,5 @@
+#include <getopt.h>
+
 #include "mpiconvolve.h"
 #include "utils.h"
 #include "timing.h"
@@ -28,17 +30,18 @@ int main(int argc, char* argv[])
   int retval=0;
   bool quiet=false;
 
-  optionsHybrid(argc,argv,false,true);
-
-  size_t Hy=ceilquotient(Ly,2);
-
-  if(quiet) Output=false;
-
   int provided;
   MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
 
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+  if(rank != 0) opterr=0;
+
+  optionsHybrid(argc,argv,false,true);
+
+  size_t Hy=ceilquotient(Ly,2);
+
+  if(quiet) Output=false;
 
   MPIgroup group(MPI_COMM_WORLD,Hy);
 

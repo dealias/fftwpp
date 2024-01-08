@@ -1,3 +1,5 @@
+#include <getopt.h>
+
 #include "Array.h"
 #include "mpifftw++.h"
 #include "utils.h"
