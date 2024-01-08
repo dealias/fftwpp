@@ -7,8 +7,9 @@ import sys
 from utils import *
 import copy
 
-def main():
+def main(mpi=False):
   args=getArgs()
+  args.mpi=mpi
   programs=getPrograms(args)
   test(programs, args)
 
@@ -206,8 +207,6 @@ def getArgs():
                       specified then perform all tests in that dimension and/or\
                       type.",
                       action="store_true")
-  parser.add_argument("--mpi", help="Test mpi.",
-                      action="store_true")
   parser.add_argument("-V", "--valid", help="Check tests to see if they're valid.",
                       action="store_true")
   parser.add_argument("-t",metavar='tolerance',help="Error tolerance. Default is 1e-12.",
@@ -245,30 +244,32 @@ def getPrograms(args):
   CorNotSCHR=(C or notSCHR)
   HorNotSCHR=(H or notSCHR)
   rorNotSCHR=(R or notSCHR)
-  if X or notXYZ:
-    if SorNotSCHR:
-      if iorI:
-        programs.append(Program("hybrid",mult=False))
-      if not I:
-        programs.append(Program("hybridconv"))
 
-    if CorNotSCHR:
-      if iorI:
-        programs.append(Program("hybrid",centered=True,mult=False))
-      if not I:
-        programs.append(Program("hybridconv",centered=True))
+  if not args.mpi:
+    if X or notXYZ:
+      if SorNotSCHR:
+        if iorI:
+          programs.append(Program("hybrid",mult=False))
+        if not I:
+          programs.append(Program("hybridconv"))
 
-    if HorNotSCHR:
-      if iorI:
-        programs.append(Program("hybridh",hermitian=True,mult=False))
-      if not I:
-        programs.append(Program("hybridconvh",hermitian=True))
+      if CorNotSCHR:
+        if iorI:
+          programs.append(Program("hybrid",centered=True,mult=False))
+        if not I:
+          programs.append(Program("hybridconv",centered=True))
 
-    if rorNotSCHR:
-      if iorI:
-        programs.append(Program("hybridr",real=True,mult=False))
-      if not I:
-        programs.append(Program("hybridconvr",real=True))
+      if HorNotSCHR:
+        if iorI:
+          programs.append(Program("hybridh",hermitian=True,mult=False))
+        if not I:
+          programs.append(Program("hybridconvh",hermitian=True))
+
+      if rorNotSCHR:
+        if iorI:
+          programs.append(Program("hybridr",real=True,mult=False))
+        if not I:
+          programs.append(Program("hybridconvr",real=True))
 
   if Y or notXYZ:
     if SorNotSCHR:
