@@ -61,8 +61,8 @@ vpath %.cc ../
 
 FILES=fft1 fft2 fft3 fft1r fft2r fft3r mfft1 mfft1r transpose directTest\
 	hybrid hybridh hybridr hybridconv hybridconvh hybridconvr \
-	hybridconv2 hybridconvr2 hybridconvh2 \
-	hybridconv3 hybridconvh3
+	hybridconv2 hybridconvh2 hybridconvr2 \
+	hybridconv3 hybridconvh3 hybridconvr3
 
 FFTW=fftw++ parallel
 HYBRID=$(FFTW) convolve direct options
@@ -104,6 +104,9 @@ hybridconv3: hybridconv3.o $(HYBRID:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 hybridconvh3: hybridconvh3.o $(HYBRID:=.o)
+	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
+hybridconvr3: hybridconvr3.o $(HYBRID:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 directTest: directTest.o $(HYBRID:=.o)
