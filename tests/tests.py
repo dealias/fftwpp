@@ -284,6 +284,8 @@ def getPrograms(args):
       programs.append(Program("hybridconv3",dim=3))
     if HorNotSCHR:
       programs.append(Program("hybridconvh3",dim=3,hermitian=True))
+    if rorNotSCHR:
+      programs.append(Program("hybridconvr3",dim=3,real=True))
 
   return programs
 
