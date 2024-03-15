@@ -51,11 +51,10 @@ public:
   fftBase *fft;
   size_t *index;
   size_t size,maxsize;
-  bool allocated;
   size_t r;
   size_t offset;
 
-  Indices() : index(NULL), maxsize(0) {}
+  Indices() : index(NULL), maxsize(0), offset(0) {}
 
   void copy(Indices *indices, size_t size0) {
     size=indices ? indices->size : size0;
