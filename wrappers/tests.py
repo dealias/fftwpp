@@ -20,17 +20,13 @@ else:
 
 command = ["python", "fftwpp.py"]
 with open(os.devnull, "w") as fnull:
-    result = subprocess.call(command, stdout = fnull, stderr = fnull)
+    result = subprocess.call(command)
 
 if result == 0:
     print("fftwpp.py\tok")
 else:
     print("fftwpp.py\tFAILED")
     returnflag += 2
-
-command = ["python", "pexample.py"]
-with open(os.devnull, "w") as fnull:
-    result = subprocess.call(command, stdout = fnull, stderr = fnull)
 
 command = ["./fexample"]
 with open(os.devnull, "w") as fnull:
