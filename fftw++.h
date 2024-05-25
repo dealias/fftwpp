@@ -1004,7 +1004,7 @@ public:
 //   ostride is the spacing between the elements of each Complex vector;
 //   idist is the spacing between the first elements of the real vectors;
 //   odist is the spacing between the first elements of the Complex vectors;
-//   in contains the n real values stored as a Complex array;
+//   in contains the n real values;
 //   out contains the first n/2+1 Complex Fourier values.
 //
 class mrcfft1d {
@@ -1099,10 +1099,12 @@ public:
 //   Backward.fft(out);
 //
 // Notes:
-//   stride is the spacing between the elements of each Complex vector;
-//   dist is the spacing between the first elements of the vectors;
+//   istride is the spacing between the elements of each Complex vector;
+//   ostride is the spacing between the elements of each real vector;
+//   idist is the spacing between the first elements of the Complex vectors;
+//   odist is the spacing between the first elements of the real vectors;
 //   in contains the first n/2+1 Complex Fourier values;
-//   out contains the n real values stored as a Complex array.
+//   out contains the n real values.
 //
 class mcrfft1d {
   bool single;
