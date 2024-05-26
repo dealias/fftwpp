@@ -1,3 +1,7 @@
+#define OUTPUT 0
+
+int K=100;
+
 #include "Array.h"
 #include "fftw++.h"
 
@@ -13,31 +17,34 @@ int main()
 
   fftw::maxthreads=get_max_threads();
 
-  size_t nx=4, ny=4;
-  size_t nyp=ny/2+1;
+  if(OUTPUT) K=1;
+
+  size_t nx=2048;
+  size_t ny=nx;
+  size_t nxp=nx/2+1;
   size_t align=sizeof(Complex);
 
-  cout << "Out-of-place transforms:" << endl;
+  size_t cstride=ny+1;
+  size_t rstride=2*cstride;
+  size_t cdist=1;
+  size_t rdist=1;
+  size_t M=ny;
 
-  array2<Complex> g(nx,nyp,align);
-
-#define INPLACE 1
+#define INPLACE 0
 
 #if INPLACE
-  double *F=(double *) g();
-  double *f=F;
+  array2<double> F(2*nxp,rstride,align);
+  array2<Complex> g(nxp,cstride,(Complex *)F());
+//  double *F=(double *) g();
+  cout << "In-place transform" << endl;
 #else
-  array2<double> F(nx,ny,align);
-  double *f=(double *) F();
+  array2<double> F(nx,rstride,align);
+  array2<Complex> g(nxp,cstride);
+  cout << "Out-of-place transform" << endl;
 #endif
+  double *f=(double *) F();
 
-  size_t rstride=1;
-  size_t cstride=1;
-  size_t rdist=ny;
-  size_t cdist=nyp;
-  size_t M=nx;
-
-  mrcfft1d Forward(ny, // length of transform
+  mrcfft1d Forward(nx, // length of transform
                    M,  // number of transforms
                    rstride,
                    cstride,
@@ -45,7 +52,7 @@ int main()
                    cdist,
                    F,  // input array
                    g); // output array
-  mcrfft1d Backward(ny, // length of transform
+  mcrfft1d Backward(nx, // length of transform
                     M,  // number of transforms
                     cstride,
                     rstride,
@@ -57,28 +64,45 @@ int main()
   // Initialize data:
   for(size_t i=0; i < nx; i++)
     for(size_t j=0; j < ny; j++)
-      f[rdist*i+j]=i+j;
+      f[rstride*i+rdist*j]=i+j;
 
+#if OUTPUT
   cout << endl << "input:" << endl;
 
-  for(size_t i=0; i < nx; i++) {
-    for(size_t j=0; j < ny; j++)
-      cout << f[rdist*i+j] << " ";
+  for(size_t j=0; j < ny; j++) {
+    for(size_t i=0; i < nx; i++) {
+      cout << f[rstride*i+rdist*j] << " ";
+    }
     cout << endl;
   }
+#endif
 
-  Forward.fft(f,g);
+  for(int i=0; i < K; ++i)
+    Forward.fft(f,g);
 
-  cout << endl << "output:" << endl << g;
+#if OUTPUT
+  cout << endl << "output:" << endl;
 
-  Backward.fftNormalized(g,f);
+  for(size_t j=0; j < ny; j++) {
+    for(size_t i=0; i < nxp; i++) {
+      cout << g(cstride*i+cdist*j) << " ";
+    }
+    cout << endl;
+  }
+#endif
 
+  for(int i=0; i < K; ++i)
+    Backward.fftNormalized(g,f);
+
+#if OUTPUT
   cout << endl << "back to input:" << endl;
 
-  for(size_t i=0; i < nx; i++) {
-    for(size_t j=0; j < ny; j++)
-      cout << f[rdist*i+j] << " ";
+  for(size_t j=0; j < ny; j++) {
+    for(size_t i=0; i < nx; i++) {
+      cout << f[rstride*i+rdist*j] << " ";
+    }
     cout << endl;
   }
+#endif
 
 }
