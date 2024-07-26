@@ -283,7 +283,7 @@ public:
   virtual void backwardExplicitManySlow(Complex *F, Complex *f, size_t r,
                                         Complex *W) {}
 
-  // Return transformed index for residue r at position I
+  // Return transformed index for residue r at position i
   size_t index(size_t r, size_t i) {
     if(q == 1) return i;
     size_t s=i%m;
