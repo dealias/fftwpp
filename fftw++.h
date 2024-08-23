@@ -658,7 +658,7 @@ public:
     }
   }
 
-  bool time(Complex *in, Complex *out) {
+  bool time0(Complex *in, Complex *out) {
     utils::statistics S(true),ST(true);
     utils::statistics medianS(true),medianST(true);
 
@@ -692,6 +692,13 @@ public:
     return S.median() <= ST.median();
   }
 
+  bool time(Complex *in, Complex *out) {
+    bool alloc=!in;
+    if(alloc) in=utils::ComplexAlign((doubles+1)/2);
+    bool result=time0(in,out);
+    if(alloc) Array::deleteAlign(in,(doubles+1)/2);
+    return result;
+  }
 
   fftw_plan Plan(int Q, fftw_complex *in, fftw_complex *out) {
     return fftw_plan_many_dft(1,&nx,Q,in,NULL,istride,idist,
