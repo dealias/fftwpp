@@ -14,7 +14,7 @@ int main()
 {
   cout << "Multiple 1D complex to complex in-place FFTs" << endl;
 
-  fftw::maxthreads=4;
+  fftw::maxthreads=get_max_threads();
 
   size_t M=10; // Number of FFTs performed
   size_t n=8; // Length of FFT
