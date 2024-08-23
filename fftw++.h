@@ -255,7 +255,7 @@ public:
 
   static void planThreads(size_t threads) {
 #ifndef FFTWPP_SINGLE_THREAD
-    omp_set_num_threads(threads);
+    omp_set_num_threads(fftw::maxthreads);
     fftw_plan_with_nthreads(threads);
 #endif
   }
