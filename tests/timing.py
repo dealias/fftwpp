@@ -24,7 +24,7 @@ def forwardBackward(comment):
 
 def getParam(name, comment):
   try:
-    param=re.findall(r"(?<="+name+"=)\d+",comment)
+    param=re.findall(r"(?<="+name+r"=)\d+",comment)
     l=len(param)
     xyz=["x","y","z"] if l > 1 else [""]
     for i in range(l):
@@ -469,7 +469,10 @@ def main(argv):
         if hybrid:
             cmd.append("-R")
         if s > 0:
-            cmd.append("-s" + str(s))
+            if hybrid:
+                cmd.append("-s" + str(s))
+            else:
+                cmd.append("-K" + str(s))
         cmd.append("-u")
 
         # Add the extra arguments to the program being timed.
@@ -556,6 +559,9 @@ def main(argv):
               if dimension == 2:
                 if not real:
                     Sx=(ceilquotient(L,2) if hermitian else L)+2
+                    options.append(f'-Sx={Sx}')
+                else:
+                    Sx=L+4
                     options.append(f'-Sx={Sx}')
               if dimension == 3:
                 Sy=ceilquotient(L,2) if hermitian else L

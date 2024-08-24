@@ -127,7 +127,8 @@ def getArgs():
   parser.add_argument("-2","--two", help="Time 2D Convolutions. Not specifying\
                       1 or 2 or 3 is the same as specifying all of them",
                       action="store_true")
-  parser.add_argument("-3","--three", help="Time 3D Convolutions. Not specifying\ 1 or 2 or 3 is the same as specifying all of them",
+  parser.add_argument("-3","--three", help="Time 3D Convolutions. Not specifying\
+                      1 or 2 or 3 is the same as specifying all of them",
                       action="store_true")
   parser.add_argument("-a",help="Start.", default=1, type=int)
   parser.add_argument("-b",help="End.", default=1, type=int)
