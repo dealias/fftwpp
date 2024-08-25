@@ -381,6 +381,7 @@ void ExplicitRConvolution2::convolve(Complex *f, Complex *g)
     for(size_t k=0; k < m; ++k)
       STORE(f+k,Ninv*ZMULT(LOAD(f+k),LOAD(g+k)));
     );
+
   backwards(f);
 }
 
@@ -481,6 +482,51 @@ void ExplicitHConvolution3::convolve(Complex **F, Complex **G, bool symmetrize)
   }
 
   forwards(F[0]);
+}
+
+void ExplicitRConvolution3::forwards(Complex *f)
+{
+  Forwards->fft(f);
+}
+
+void ExplicitRConvolution3::backwards(Complex *f)
+{
+  Backwards->fft(f);
+}
+
+void ExplicitRConvolution3::convolve(Complex **F, Multiplier *mult)
+{
+  const size_t A=2;
+  const size_t B=1;
+
+  for(size_t a=0; a < A; ++a) {
+    pad((double *) (F[a]));
+    forwards(F[a]);
+  }
+
+  (*mult)(F,nx*ny*nz/2,nx*ny*Nz,threads);
+
+  for(size_t b=0; b < B; ++b)
+    backwards(F[b]);
+}
+
+void ExplicitRConvolution3::convolve(Complex *f, Complex *g)
+{
+  pad((double *) f);
+  forwards(f);
+
+  pad((double *) g);
+  forwards(g);
+
+  Vec Ninv=LOAD2(1.0/(nx*ny*Nz));
+  size_t m=nx*ny*nz/2;
+  PARALLELIF(
+    m > threshold,
+    for(size_t k=0; k < m; ++k)
+      STORE(f+k,Ninv*ZMULT(LOAD(f+k),LOAD(g+k)));
+    );
+
+  backwards(f);
 }
 
 void ExplicitHTConvolution::backwards(Complex *f)

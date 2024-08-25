@@ -155,7 +155,8 @@ public:
                size_t mx, size_t my, size_t mz) :
     nx(nx), ny(ny), nz(nz), mx(mx), my(my), mz(mz) {}
 
-  void pad(Complex *f) {
+  template<class T>
+  void pad(T *f) {
     PARALLEL(
       for(size_t i=0; i < mx; ++i) {
         size_t nyi=ny*i;
@@ -447,7 +448,7 @@ public:
   void forwards(Complex *f);
   void backwards(Complex *f);
 
-  // F is an array of pointers to distinct data blocks each of size n.
+  // F is an array of pointers to distinct data blocks of the same size.
   void convolve(Complex **F, Multiplier *mult);
 
   void convolve(Complex *f, Complex *g);
@@ -537,6 +538,36 @@ public:
   void convolve(Complex *f, Complex *g, bool symmetrize=true) {
     convolve(&f,&g,symmetrize);
   }
+};
+
+// In-place explicitly dealiased 3D complex convolution.
+class ExplicitRConvolution3 : public ExplicitPad3 {
+protected:
+  rcfft3d *Forwards;
+  crfft3d *Backwards;
+  size_t Nz;
+public:
+  ExplicitRConvolution3(size_t nx, size_t ny, size_t nz,
+                        size_t mx, size_t my, size_t mz,
+                        Complex *f) :
+    ExplicitPad3(nx,ny,2*(nz/2+1),mx,my,mz), Nz(nz) {
+    Forwards=new rcfft3d(nx,ny,nz,f);
+    Backwards=new crfft3d(nx,ny,nz,f);
+    threads=Forwards->Threads();
+  }
+
+  ~ExplicitRConvolution3() {
+    delete Forwards;
+    delete Backwards;
+  }
+
+  void backwards(Complex *f);
+  void forwards(Complex *f);
+
+  // F is an array of pointers to distinct data blocks of the same size.
+  void convolve(Complex **F, Multiplier *mult);
+
+  void convolve(Complex *f, Complex *g);
 };
 
 // In-place explicitly dealiased Hermitian ternary convolution.

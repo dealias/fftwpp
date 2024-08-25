@@ -13,7 +13,7 @@ int main()
 
   fftw::maxthreads=get_max_threads();
 
-  size_t nx=4, ny=4;
+  size_t nx=8, ny=8;
   size_t nyp=ny/2+1;
   size_t align=sizeof(Complex);
 
