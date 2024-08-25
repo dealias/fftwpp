@@ -469,10 +469,7 @@ def main(argv):
         if hybrid:
             cmd.append("-R")
         if s > 0:
-            if hybrid:
-                cmd.append("-s" + str(s))
-            else:
-                cmd.append("-K" + str(s))
+            cmd.append("-s" + str(s))
         cmd.append("-u")
 
         # Add the extra arguments to the program being timed.
@@ -561,7 +558,7 @@ def main(argv):
                     Sx=(ceilquotient(L,2) if hermitian else L)+2
                     options.append(f'-Sx={Sx}')
                 else:
-                    Sx=L+4
+                    Sx=L+2
                     options.append(f'-Sx={Sx}')
               if dimension == 3:
                 Sy=ceilquotient(L,2) if hermitian else L
