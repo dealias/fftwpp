@@ -156,6 +156,8 @@ def default_outdir(p,T,I):
         outdir = "timingsr1"
     if p == "rconv2" or p == "hybridconvr2":
         outdir = "timingsr2"
+    if p == "rconv3" or p == "hybridconvr3":
+        outdir = "timingsr3"
     if p == "tconv":
         outdir = "timings1t"
     if p == "tconv2":
@@ -179,7 +181,7 @@ def main(argv):
     -a<start>
     -b<stop>
     -I<increment (if not testing powers of 2)>
-    -p<hybridconv,hybridconv2,hybridconv3,hybridconvh,hybridconvh2,hybridconvh3,cconv,cconv2,cconv3,conv,conv2,conv3,tconv,tconv2>
+    -p<hybridconv,hybridconv2,hybridconv3,hybridconvh,hybridconvh2,hybridconvh3,hybridconvr, hybridconvr2, hybridconvr3, cconv,cconv2,cconv3,conv,conv2,conv3,rconv, rconv2, rconv3, tconv,tconv2>
     -T<number of threads>
     -A<quoted arg list for timed program>
     -B<pre-commands (eg srun)>
@@ -300,7 +302,7 @@ def main(argv):
     direct = False
 
     dim2routines=["cconv2","conv2","rconv2","hybridconv2","hybridconvh2","hybridconvr2"]
-    dim3routines=["cconv3","conv3","hybridconv3","hybridconvh3"]
+    dim3routines=["cconv3","conv3","rconv3","hybridconv3","hybridconvh3","hybridconvr3"]
     if p in dim2routines:
         dimension=2
 
@@ -328,12 +330,11 @@ def main(argv):
     if p == "hybridconvh" or p == "hybridconvh2" or p == "hybridconvh3":
         hermitian = True
 
-    if p == "hybridconvr" or p == "hybridconvr2":# or p == "hybridconvh3":
+    if p == "hybridconvr" or p == "hybridconvr2" or p == "hybridconvh3":
         real = True
 
-    if p == "rconv" or p == "rconv2":
+    if p == "rconv" or p == "rconv2" or p == "rconv3":
         real = True
-
 
 
     if p == "tconv":
@@ -659,9 +660,11 @@ def main(argv):
                             params=collectParams(results,L,M)
                             FB=forwardBackward(results)
                             with open(optFile, "a") as logfile:
-                                logfile.write("#\n# "+" ".join(mcmd)+"\n")
+                                logfile.write(f"#\n# {time.strftime("%Y-%m-%d  %H:%M:%S-%Z")}\n")
+                                logfile.write("# "+" ".join(mcmd)+"\n")
                                 logfile.write(params)
                                 logfile.write(FB+"\n")
+
 
                         outlines = out.decode().split('\n')
                         itline = 0
