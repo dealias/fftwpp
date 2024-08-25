@@ -262,8 +262,8 @@ void fftBase::OptBase::optloop(size_t& m, size_t L,
       size_t Dstop=DForced ? app.D : maxD(n);
       size_t Dstop2=2*Dstop;
 
-      // Check inplace and out-of-place unless C > 1.
-      size_t Istart=app.I == -1 ? C > 1 : app.I;
+      // Check in-place and out-of-place unless C > 1 and input not real.
+      size_t Istart=app.I == -1 ? C > 1 && !real() : app.I;
 
       size_t Istop=app.I == -1 ? 2 : app.I+1;
 

@@ -173,6 +173,8 @@ public:
 
     virtual size_t maxD(size_t n)=0;
 
+    virtual bool real() {return false;}
+
     // Called by the optimizer to record the time to complete an application
     // for a given value of m.
     void check(size_t L, size_t M,
@@ -834,6 +836,8 @@ public:
     size_t maxD(size_t n) {
       return n > 2 ? (n-1)/2 : 1;
     }
+
+    bool real() {return true;}
 
     double time(size_t L, size_t M, Application &app, size_t C, size_t S,
                 size_t m, size_t D, bool inplace) {
