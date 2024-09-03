@@ -1676,16 +1676,17 @@ public:
   virtual void forward(Complex **f, Complex **F, size_t rx,
                        size_t start, size_t stop,
                        size_t offset=0) {
-    for(size_t a=start; a < stop; ++a) {
-      if(Sy == Lz)
+    if(Sy == Lz) {
+      for(size_t a=start; a < stop; ++a)
         (fftx->*Forward)(f[a]+offset,F[a],rx,W);
-      else {
-        Complex *fa=f[a]+offset;
+    } else {
+      size_t w=fftx->wordSize();
+      size_t wSy=w*Sy;
+      for(size_t a=start; a < stop; ++a) {
+        double *fa=(double *) (f[a]+offset);
         Complex *Fa=F[a];
-        for(size_t j=0; j < Ly; ++j) {
-          size_t Syj=Sy*j;
-          (fftx->*Forward)(fa+Syj,Fa+Syj,rx,W);
-        }
+        for(size_t j=0; j < Ly; ++j)
+          (fftx->*Forward)((Complex *)(fa+wSy*j),Fa+Sy*j,rx,W);
       }
     }
   }
@@ -1713,16 +1714,17 @@ public:
   virtual void backward(Complex **F, Complex **f, size_t rx,
                         size_t start, size_t stop,
                         size_t offset=0, Complex *W0=NULL) {
-    for(size_t b=start; b < stop; ++b) {
-      if(Sy == Lz)
+    if(Sy == Lz) {
+      for(size_t b=start; b < stop; ++b)
         (fftx->*Backward)(F[b],f[b]+offset,rx,W0);
-      else {
+    } else {
+      size_t w=fftx->wordSize();
+      size_t wSy=w*Sy;
+      for(size_t b=start; b < stop; ++b) {
         Complex *Fb=F[b];
-        Complex *fb=f[b]+offset;
-        for(size_t j=0; j < Ly; ++j) {
-          size_t Syj=Sy*j;
-          (fftx->*Backward)(Fb+Syj,fb+Syj,rx,W0);
-        }
+        double *fb=(double *) (f[b]+offset);
+        for(size_t j=0; j < Ly; ++j)
+          (fftx->*Backward)(Fb+Sy*j,(Complex *)(fb+wSy*j),rx,W0);
       }
     }
     if(W && W == W0) (fftx->*Pad)(W0);
