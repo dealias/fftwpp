@@ -330,7 +330,7 @@ def main(argv):
     if p == "hybridconvh" or p == "hybridconvh2" or p == "hybridconvh3":
         hermitian = True
 
-    if p == "hybridconvr" or p == "hybridconvr2" or p == "hybridconvh3":
+    if p == "hybridconvr" or p == "hybridconvr2" or p == "hybridconvr3":
         real = True
 
     if p == "rconv" or p == "rconv2" or p == "rconv3":
@@ -562,14 +562,20 @@ def main(argv):
                     Sx=L+2
                     options.append(f'-Sx={Sx}')
               if dimension == 3:
-                Sy=ceilquotient(L,2) if hermitian else L
-                if T == 1:
-                  Sy += 2
-                options.append(f'-Sy={Sy}')
-                Sx=Sy*L+2
-                if T > 1:
-                  Sx += 2
-                options.append(f'-Sx={Sx}')
+                if not real:
+                    Sy=ceilquotient(L,2) if hermitian else L
+                    if T == 1:
+                      Sy += 2
+                    options.append(f'-Sy={Sy}')
+                    Sx=Sy*L+2
+                    if T > 1:
+                      Sx += 2
+                    options.append(f'-Sx={Sx}')
+                else:
+                    Sy=L
+                    options.append(f'-Sy={Sy}')
+                    Sx=Sy*L*2+4
+                    options.append(f'-Sx={Sx}')
             elif hermitian:
               if dimension == 2:
                 options.append('-X1')
