@@ -434,7 +434,7 @@ void fftBase::OptBase::scan(size_t L, size_t M, Application& app,
 
   if(app.verbose) {
     size_t mpL=m*p-L;
-    cout << "Optimal padding: ";
+    cout << endl << "Optimal padding: ";
     if(p == q)
       cout << "Explicit" << endl;
     else if(mpL > 0)
@@ -449,7 +449,6 @@ void fftBase::OptBase::scan(size_t L, size_t M, Application& app,
     cout << "D=" << D << endl;
     cout << "I=" << inplace << endl;
     cout << "threads=" << app.threads << endl;
-    cout << endl;
     cout << "Padding: " << mpL << endl;
   }
 }
@@ -698,7 +697,6 @@ void fftPad::init()
   }
   if(showRoutines && (q != 1 || !centered)) {
     char const* cent=centered ? "Centered" : "";
-    cout << endl;
     cout << "Forwards Routine: " << "fftPad" << cent << "::" << FR << endl;
     cout << "Backwards Routine: " << "fftPad" << cent << "::" << BR << endl;
   }
@@ -2139,7 +2137,7 @@ void fftPadCentered::init()
       }
     }
     if(showRoutines) {
-      cout << endl << "Forwards Routine: " << "fftPadCentered::" << FR << endl;
+      cout << "Forwards Routine: " << "fftPadCentered::" << FR << endl;
       cout << "Backwards Routine: " << "fftPadCentered::" << BR << endl;
     }
   }
@@ -4556,7 +4554,7 @@ void fftPadHermitian::init()
     initZetaqm(p == 2 ? q/2+1 : q,m);
   }
   if(showRoutines) {
-    cout << endl << "Forwards Routine: " << "fftPadHermitian::" << FR << endl;
+    cout << "Forwards Routine: " << "fftPadHermitian::" << FR << endl;
     cout << "Backwards Routine: " << "fftPadHermitian::" << BR << endl;
   }
 }
@@ -5774,7 +5772,7 @@ void fftPadReal::init()
   }
 
   if(showRoutines) {
-    cout << endl << "Forwards Routine: " << "fftPadReal::" << FR << endl;
+    cout << "Forwards Routine: " << "fftPadReal::" << FR << endl;
     cout << "Backwards Routine: " << "fftPadReal::" << BR << endl;
   }
 }
