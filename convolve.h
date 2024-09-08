@@ -1565,13 +1565,17 @@ public:
     return fftx->normalization()*convolveyz[0]->normalization();
   }
 
+  bool contiguous() {
+    return Sy == Lz || fftx->wordSize() != 2;
+  }
+
   void checkStrides() {
     if(Sx < Ly*Sy) {
       std::cerr << "Sx cannot be less than Ly*Sy" << std::endl;
       exit(-1);
     }
 
-    if(fftx->C != (Sy == Lz ? Ly*Lz : Lz)) {
+    if(fftx->C != (contiguous() ? Ly*Sy : Lz)) {
       std::cerr << "fftx->C is invalid" << std::endl;
       exit(-1);
     }
@@ -1676,10 +1680,10 @@ public:
   virtual void forward(Complex **f, Complex **F, size_t rx,
                        size_t start, size_t stop,
                        size_t offset=0) {
-    if(Sy == Lz) {
+    if(contiguous())
       for(size_t a=start; a < stop; ++a)
         (fftx->*Forward)(f[a]+offset,F[a],rx,W);
-    } else {
+    else {
       size_t w=fftx->wordSize();
       size_t wSy=w*Sy;
       for(size_t a=start; a < stop; ++a) {
@@ -1714,10 +1718,10 @@ public:
   virtual void backward(Complex **F, Complex **f, size_t rx,
                         size_t start, size_t stop,
                         size_t offset=0, Complex *W0=NULL) {
-    if(Sy == Lz) {
+    if(contiguous())
       for(size_t b=start; b < stop; ++b)
         (fftx->*Backward)(F[b],f[b]+offset,rx,W0);
-    } else {
+    else {
       size_t w=fftx->wordSize();
       size_t wSy=w*Sy;
       for(size_t b=start; b < stop; ++b) {
