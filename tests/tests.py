@@ -182,9 +182,10 @@ def getArgs():
                       s or c or H or r is the same as specifying all of them",
                       action="store_true")
   parser.add_argument("-i","--identity", help="Test forward backward routines (hybrid.cc\
-                       and/or hybridh.cc and/or hybridr.cc). Only in 1D.",
+                       and/or hybridh.cc and/or hybridr.cc). Only in 1D. This tests the forward backward routines in addition to the convolution routines. To test forward backward routines without convolutions, use -I.",
                       action="store_true")
-  parser.add_argument("-I","--Identity", help="Test forward backward routines and nothing else. Only in 1D.",
+  parser.add_argument("-I","--Identity", help="Test forward backward routines (hybrid.cc\
+                       and/or hybridh.cc and/or hybridr.cc) without testing convolution routines as well. Only in 1D.",
                       action="store_true")
   parser.add_argument("-1","--one", help="Test 1D Convolutions. Not specifying\
   										1 or 2 or 3 is the same as specifying all of them",
