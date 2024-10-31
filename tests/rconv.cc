@@ -133,18 +133,25 @@ int main(int argc, char *argv[])
 
   size_t C=max(A,B);
   size_t np=n/2+1;
-  Complex *f=ComplexAlign(C*np);
-  Complex *g=Inplace ? f : ComplexAlign(C*np);
+  Complex *f=ComplexAlign(C*m);
+  Complex *f0=ComplexAlign(C*np);
+  Complex *g0=Inplace ? f0 : ComplexAlign(C*np);
 
   Complex **F=new Complex *[C];
   Complex **G=Inplace ? F : new Complex *[C];
 
-  for(size_t s=0; s < C; ++s)
-    F[s]=f+s*np;
+  Complex **F0=new Complex *[C];
+  Complex **G0=Inplace ? F0 : new Complex *[C];
+
+  for(size_t s=0; s < C; ++s) {
+    F[s]=f+s*m;
+    F0[s]=f0+s*np;
+  }
 
   if(!Inplace)
-    for(size_t s=0; s < C; ++s)
-      G[s]=g+s*np;
+    for(size_t s=0; s < C; ++s) {
+      G0[s]=g0+s*np;
+    }
 
   vector<double> T;
 
@@ -157,7 +164,19 @@ int main(int argc, char *argv[])
   while(sum <= s || T.size() < N) {
     init(F,m,A);
     cpuTimer c;
-    Convolve.convolve(F,mult,G);
+    for(size_t a=0; a < A; ++a) {
+      double *f=(double *) (F[a]);
+      double *f0=(double *) (F0[a]);
+      for(size_t i=0; i < m; ++i)
+        f0[i]=f[i];
+    }
+    Convolve.convolve(F0,mult,G0);
+    for(size_t b=0; b < B; ++b) {
+      double *f=(double *) (F[b]);
+      double *f0=(double *) (F0[b]);
+      for(size_t i=0; i < m; ++i)
+        f[i]=f0[i];
+    }
     double t=c.nanoseconds();
     T.push_back(t);
     sum += t;
@@ -175,6 +194,9 @@ int main(int argc, char *argv[])
     }
 
   cout << endl;
+
+  delete [] F0;
+  deleteAlign(f0);
 
   delete [] F;
   deleteAlign(f);
