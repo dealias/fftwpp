@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
   Complex *g0=Inplace ? f0 : ComplexAlign(C*np);
 
   Complex **F=new Complex *[C];
-  Complex **G=Inplace ? F : new Complex *[C];
+  //Complex **G=Inplace ? F : new Complex *[C];
 
   Complex **F0=new Complex *[C];
   Complex **G0=Inplace ? F0 : new Complex *[C];
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
   if(Normalized) mult=multBinary;
   else mult=multBinaryUnNormalized;
 
-  ExplicitRConvolution Convolve(n,m,F[0],G[0]);
+  ExplicitRConvolution Convolve(n,m,F0[0],G0[0]);
   double sum=0.0;
   while(sum <= s || T.size() < N) {
     init(F,m,A);
