@@ -21,15 +21,14 @@ size_t mx=4;
 size_t my=0;
 size_t mz=0;
 
-inline void init(Complex **F, size_t ny, size_t nz, size_t mx, size_t my, size_t mz,
-                 size_t A)
+inline void init(double **F, size_t mx, size_t my, size_t mz, size_t A)
 {
   for(size_t a=0; a < A; ++a) {
     double *fa=(double *) (F[a]);
     for(size_t i=0; i < mx; ++i) {
       for(size_t j=0; j < my; ++j) {
         for(size_t k=0; k < mz; ++k) {
-          fa[nz*(ny*i+j)+k]=i+(a+1)*j+a*k+1;
+          fa[mz*(my*i+j)+k]=i+(a+1)*j+a*k+1;
         }
       }
     }
@@ -126,11 +125,18 @@ int main(int argc, char *argv[])
   size_t nzp=nz/2+1;
 
   // Allocate input/ouput memory and set up pointers
-  Complex **F=new Complex *[A];
-  size_t size=nx*ny*nzp;
-  Complex *F0=ComplexAlign(C*size);
-  for(size_t a=0; a < A; ++a)
-    F[a]=F0+size*a;
+  size_t size=mx*my*mz;
+  size_t Size=nx*ny*nzp;
+  double *f=doubleAlign(C*size);
+  Complex *f0=ComplexAlign(C*Size);
+
+  double **F=new double *[C];
+  Complex **F0=new Complex *[C];
+
+  for(size_t c=0; c < C; ++c) {
+    F[c]=f+size*c;
+    F0[c]=f0+Size*c;
+  }
 
   vector<double> T;
 
@@ -138,15 +144,30 @@ int main(int argc, char *argv[])
   if(Normalized) mult=multBinary;
   else mult=multBinaryUnNormalized;
 
-  ExplicitRConvolution3 Convolve(nx,ny,nz,mx,my,mz,F[0]);
+  ExplicitRConvolution3 Convolve(nx,ny,nz,mx,my,mz,F0[0]);
   cout << "threads=" << Convolve.Threads() << endl << endl;;
 
   double sum=0.0;
   while(sum <= s || T.size() < N) {
-    init(F,ny,2*nzp,mx,my,mz,A);
+    init(F,mx,my,mz,A);
     cpuTimer c;
-    Convolve.convolve(F,mult);
-//    Convolve.convolve(F[0],F[1]);
+    for(size_t a=0; a < A; ++a) {
+      double *f=F[a];
+      double *f0=(double *) (F0[a]);
+      for(size_t i=0; i < mx; ++i)
+        for(size_t j=0; j < my; ++j)
+          for(size_t k=0; k < mz; ++k)
+            f0[2*nzp*(ny*i+j)+k]=f[mz*(my*i+j)+k];
+    }
+    Convolve.convolve(F0,mult);
+    for(size_t b=0; b < B; ++b) {
+      double *f=F[b];
+      double *f0=(double *) (F0[b]);
+      for(size_t i=0; i < mx; ++i)
+        for(size_t j=0; j < my; ++j)
+          for(size_t k=0; k < mz; ++k)
+            f[mz*(my*i+j)+k]=f0[2*nzp*(ny*i+j)+k];
+    }
     double t=c.nanoseconds();
     T.push_back(t);
     sum += t;
@@ -156,15 +177,12 @@ int main(int argc, char *argv[])
   timings("Explicit",mx*my*mz,T.data(),T.size(),stats);
   T.clear();
 
-  double *f=(double *) (F[0]);
-
   cout << endl;
-
   if(Output) {
-    for(size_t i=0; i < mx; i++) {
-      for(size_t j=0; j < my; j++) {
-        for(size_t k=0; k < mz; k++)
-          cout << f[2*nzp*(ny*i+j)+k] << " ";
+    for(size_t i=0; i < mx; ++i) {
+      for(size_t j=0; j < my; ++j) {
+        for(size_t k=0; k < mz; ++k)
+          cout << f[mz*(my*i+j)+k] << " ";
         cout << endl;
       }
       cout << endl;
@@ -172,8 +190,11 @@ int main(int argc, char *argv[])
   } else
     cout << f[0] << endl;
 
-  deleteAlign(F[0]);
+  delete [] F0;
+  deleteAlign(f0);
+
   delete [] F;
+  deleteAlign(f);
 
   return 0;
 }
