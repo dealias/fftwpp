@@ -115,9 +115,10 @@ int main(int argc, char *argv[])
   size_t nyp=ny/2+1;
   // Allocate input/ouput memory and set up pointers
   Complex **F=new Complex *[A];
+  size_t size=nx*nyp;
+  Complex *F0=ComplexAlign(C*size);
   for(size_t a=0; a < A; ++a)
-    F[a]=ComplexAlign(C*nx*nyp);
-
+    F[a]=F0+size*a;
   vector<double> T;
 
   Multiplier *mult;
@@ -156,8 +157,7 @@ int main(int argc, char *argv[])
   } else
     cout << f[0] << endl;
 
-  for(size_t a=0; a < A; ++a)
-    deleteAlign(F[a]);
+  deleteAlign(F[0]);
   delete [] F;
 
   return 0;

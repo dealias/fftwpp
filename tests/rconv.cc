@@ -138,7 +138,6 @@ int main(int argc, char *argv[])
   Complex *g0=Inplace ? f0 : ComplexAlign(C*np);
 
   Complex **F=new Complex *[C];
-  //Complex **G=Inplace ? F : new Complex *[C];
 
   Complex **F0=new Complex *[C];
   Complex **G0=Inplace ? F0 : new Complex *[C];
