@@ -20,10 +20,10 @@ bool Test=false;
 size_t A=2; // number of inputs
 size_t B=1; // number of outputs
 
-inline void init(Complex **F, size_t m, size_t A)
+inline void init(double **F, size_t m, size_t A)
 {
   for(size_t a=0; a < A; ++a) {
-    double *f=(double *) (F[a]);
+    double *f=F[a];
     for(size_t i=0; i < m; ++i)
       f[i]=i+1+a;
   }
@@ -133,23 +133,22 @@ int main(int argc, char *argv[])
 
   size_t C=max(A,B);
   size_t np=n/2+1;
-  Complex *f=ComplexAlign(C*m);
+  double *f=doubleAlign(C*m);
   Complex *f0=ComplexAlign(C*np);
   Complex *g0=Inplace ? f0 : ComplexAlign(C*np);
 
-  Complex **F=new Complex *[C];
-
+  double **F=new double *[C];
   Complex **F0=new Complex *[C];
   Complex **G0=Inplace ? F0 : new Complex *[C];
 
-  for(size_t s=0; s < C; ++s) {
-    F[s]=f+s*m;
-    F0[s]=f0+s*np;
+  for(size_t c=0; c < C; ++c) {
+    F[c]=f+m*c;
+    F0[c]=f0+np*c;
   }
 
   if(!Inplace)
-    for(size_t s=0; s < C; ++s) {
-      G0[s]=g0+s*np;
+    for(size_t c=0; c < C; ++c) {
+      G0[c]=g0+np*c;
     }
 
   vector<double> T;
@@ -164,7 +163,7 @@ int main(int argc, char *argv[])
     init(F,m,A);
     cpuTimer c;
     for(size_t a=0; a < A; ++a) {
-      double *f=(double *) (F[a]);
+      double *f=F[a];
       double *f0=(double *) (F0[a]);
       for(size_t i=0; i < m; ++i)
         f0[i]=f[i];
