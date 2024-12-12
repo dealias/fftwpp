@@ -95,7 +95,8 @@ int main(int argc, char *argv[])
         }
       }
     }
-    fft.backward(F,h,r,W0);
+    if(Output)
+      fft.backward(F,h,r,W0);
   }
 
   if(Output) {

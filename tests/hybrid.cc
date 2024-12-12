@@ -91,7 +91,8 @@ int main(int argc, char *argv[])
           cout << i << ": " << F[s] << endl;
       }
     }
-    fft->backward(F,h,r,W0);
+    if(Output)
+      fft->backward(F,h,r,W0);
   }
 
   if(Output) {
@@ -111,8 +112,7 @@ int main(int argc, char *argv[])
     cout << "Inverse:" << endl;
     for(size_t j=0; j < L; ++j) {
       for(size_t c=0; c < C; ++c) {
-        size_t J=S*j+c;
-        cout << h[J]*scale << endl;
+        cout << h[S*j+c]*scale << endl;
       }
     }
     cout << endl;
