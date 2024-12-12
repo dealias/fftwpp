@@ -70,28 +70,34 @@ int main(int argc, char *argv[])
   fft2.forward((Complex *) f,F2);
 
   fft.pad(W0);
-  double error2=0.0;
-  double norm2=0.0;
+  double error=0.0, error2=0.0;
+  double norm=0.0, norm2=0.0;
+  size_t H=M/2+1;
   for(size_t r=0; r < fft.R; r += fft.increment(r)) {
     fft.forward((Complex *) f,F,r,W0);
-    if(Output)
-      cout << "r=" << r << endl;
     for(size_t k=0; k < fft.noutputs(r); ++k) {
+      if(Output && k%fft.m == 0) cout << endl;
       for(size_t c=0; c < C; ++c) {
         size_t s=S*k+c;
+        size_t i=fft.Index(r,s);
+        Complex val=(i <= H) ? F2[i] : conj(F2[M-i]);
+        error += abs2(F[s]-val);
+        norm += abs2(val);
         if(Output)
-          cout << s << ": " << F[s] << endl;
+          cout << i << ": " << F[s] << endl;
       }
     }
-    fft.backward(F,(Complex *) h,r,W0);
+    if(Output)
+      fft.backward(F,(Complex *) h,r,W0);
   }
 
   if(Output) {
     cout << endl;
+    cout << "Explicit output:" << endl;
     for(size_t j=0; j < fft2.noutputs(0); ++j)
       for(size_t c=0; c < C; ++c) {
-        size_t J=S*j+c;
-        cout << J << ": " << F2[J] << endl;
+        size_t i=S*j+c;
+        cout << i << ": " << F2[i] << endl;
       }
   }
 
@@ -107,6 +113,17 @@ int main(int argc, char *argv[])
     cout << endl;
   }
 
+  for(size_t r=0; r < fft.R; r += fft.increment(r)) {
+    for(size_t k=0; k < fft.noutputs(r); ++k) {
+      for(size_t c=0; c < C; ++c) {
+        size_t s=S*k+c;
+        size_t i=fft.Index(r,s);
+        F[s]=(i <= H) ? F2[i] : conj(F2[M-i]);
+      }
+    }
+    fft.backward(F,(Complex *) h,r,W0);
+  }
+
   for(size_t j=0; j < L; ++j) {
     for(size_t c=0; c < C; ++c) {
       size_t J=S*j+c;
@@ -115,9 +132,11 @@ int main(int argc, char *argv[])
     }
   }
 
+  if(norm > 0) error=sqrt(error/norm);
   if(norm2 > 0) error2=sqrt(error2/norm2);
 
   cout << endl;
+  cout << "Forward Error: " << error << endl;
   cout << "Backward Error: " << error2 << endl;
 
   return 0;

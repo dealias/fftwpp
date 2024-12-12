@@ -286,7 +286,7 @@ public:
                                         Complex *W) {}
 
   // Return transformed index for residue r at position i
-  size_t index(size_t r, size_t i) {
+  virtual size_t index(size_t r, size_t i) {
     if(q == 1) return i;
     size_t s=i%m;
     size_t u;
@@ -948,6 +948,36 @@ public:
   size_t noutputs(size_t r) {
     if(r == 0) return p > 2 ? (p % 2 ? (p/2+1)*m : (p/2)*m+e-1): e;
     return blocksize(r)*(2*r == n ? 1 : r == 1 ? D0 : D);
+  }
+
+    // Return transformed index for residue r at position i
+  size_t index(size_t r, size_t i) {
+    if(q == 1) return i;
+    if(D > 1) {
+      std::cerr << "Indexing for D > 1 not yet implemented for real transforms"
+                << std::endl;
+      exit(-1);
+    }
+    size_t s=i%m;
+    if(p <= 2) {
+      if(r == 0) {
+        return q*i;
+      } else if(2*r == q) {
+        return q*m-(q*2*i+r);
+      }
+    } else { // Inner loop
+      size_t u=(i/m)%p;
+      if(r == 0) {
+        if(u == 0)
+          return s == 0 ? 0 : q*(m-s);
+        if(2*u == p)
+          return q*m-(q*2*s+u*n);
+        return s == 0 ? u*n : q*m-(q*s-u*n);
+      } else if(2*r == n)
+        return q*m-(q*s+2*u*n+r);
+    }
+
+    return q*(m-s)-r;
   }
 };
 

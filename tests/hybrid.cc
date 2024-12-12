@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 
   for(size_t j=0; j < L; ++j)
     for(size_t c=0; c < C; ++c)
-      f[S*j+c]=Complex(C*j+c+1,C*j+c+2);
+      f[S*j+c]=Complex(C*j+c+1,0);//C*j+c+2);
 
   fftPad* fft2=Centered ? new fftPadCentered(L,fft->M,app,C,S,fft->M,1,1) :
     new fftPad(L,fft->M,app,C,S,fft->M,1,1);
@@ -81,7 +81,6 @@ int main(int argc, char *argv[])
     fft->forward(f,F,r,W0);
     for(size_t k=0; k < fft->noutputs(r); ++k) {
       if(Output && k%fft->m == 0) cout << endl;
-
       for(size_t c=0; c < C; ++c) {
         size_t s=S*k+c;
         size_t i=fft->Index(r,s);
