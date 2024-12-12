@@ -968,8 +968,6 @@ public:
     } else { // Inner loop
       size_t u=(i/m)%p;
       if(r == 0) {
-        if(u == 0)
-          return s == 0 ? 0 : q*(m-s);
         if(2*u == p)
           return q*m-(q*2*s+u*n);
         return s == 0 ? u*n : q*m-(q*s-u*n);
