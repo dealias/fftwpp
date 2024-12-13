@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
   directconv<Complex> C(L);
 
   double sum=0.0;
-  while(sum <= s || T.size() < N) {
+  while(sum < s || T.size() < N) {
     double t;
     cpuTimer c;
     C.convolve(h,f[0],f[1]);
