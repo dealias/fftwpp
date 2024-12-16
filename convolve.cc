@@ -195,20 +195,24 @@ double time(fftBase *fft, double &threshold)
   statistics Stats(true);
   statistics medianStats(false);
   double eps=0.02;
-
+  double time;
   do {
+
     if(threads > 1) {
       cpuTimer C;
 #pragma omp parallel for num_threads(threads)
       for(size_t t=0; t < threads; ++t)
         Convolve[t]->convolveRaw(f+N*t);
-      Stats.add(C.nanoseconds());
+      time=C.nanoseconds();
+      Stats.add(time);
     } else {
       Convolution *Convolve0=Convolve[0];
       cpuTimer C;
       Convolve0->convolveRaw(f);
-      Stats.add(C.nanoseconds());
+      time=C.nanoseconds();
+      Stats.add(time);
     }
+    if(time == 0) return 0;
     if(Stats.min() >= 2.0*threshold) break;
     if(Stats.count() >= 4 && Stats.min() >= threshold) break;
     medianStats.add(Stats.median());
@@ -236,14 +240,13 @@ void fftBase::OptBase::optloop(size_t& m, size_t L,
                                bool useTimer, bool Explicit,
                                size_t (*nextInnerSize)(size_t))
 {
-
   bool inner=ceilquotient(L,m) > 2;
   size_t i=(inner ? m : 0);
   // If inner == true, i is an m value and itmax is the largest m value that
   // we consider. If inner == false, i is a counter starting at zero, and
   // itmax is maximum number of m values we consider before exiting optloop.
 
-  while(i < itmax) {
+  while(i < itmax && T > 0) {
     size_t p,n,q;
     parameters(L,M,m,centered,p,n,q);
     if(!Explicit && mForced && m < M && centered && p%2 != 0) {
@@ -269,7 +272,7 @@ void fftBase::OptBase::optloop(size_t& m, size_t L,
 
       for(size_t D=Dstart; D < Dstop2; D *= 2) {
         if(D > Dstop) D=Dstop;
-        for(size_t inplace=Istart; inplace < Istop; ++inplace)
+        for(size_t inplace=Istart; inplace < Istop && T > 0; ++inplace)
           check(L,M,C,S,m,p,q,n,D,inplace,app,useTimer);
       }
       if(mForced) break;
@@ -365,7 +368,12 @@ void fftBase::OptBase::check(size_t L, size_t M,
       double t=time(L,M,app,C,S,m,D,inplace);
       if(showOptTimes)
         cout << "m=" << m << ", p=" << p << ", q=" << q << ", C=" << C << ", S=" << S << ", D=" << D << ", I=" << inplace << ": t=" << t*1.0e-9 << endl;
-      if(t < T) {
+      if(t == 0) {
+        this->m=M;
+        this->D=1;
+        this->inplace=0;
+        T=t;
+      } else if(t < T) {
         this->m=m;
         this->D=D;
         this->inplace=inplace;
