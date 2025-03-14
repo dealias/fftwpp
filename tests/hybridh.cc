@@ -6,9 +6,6 @@ using namespace utils;
 using namespace Array;
 using namespace fftwpp;
 
-size_t A=2; // number of inputs
-size_t B=1; // number of outputs
-
 int main(int argc, char *argv[])
 {
   L=511; // input data length
