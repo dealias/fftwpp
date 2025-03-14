@@ -2837,7 +2837,7 @@ void fftPadCentered::backward2ManyAll(Complex *F, Complex *f, size_t,
       Vec Xm=UNPACKL(Zetam,Zetam);
       Vec Ym=UNPACKH(Zetam,-Zetam);
       Vec X=UNPACKL(Zeta,Zeta);
-      Vec Y=UNPACKH(-Zeta,Zeta);
+      Vec Y=UNPACKH(Zeta,-Zeta);
       for(size_t c=0; c < C; ++c) {
         Complex *v0c=v0+c;
         Complex *v1c=v1+c;
@@ -2845,7 +2845,7 @@ void fftPadCentered::backward2ManyAll(Complex *F, Complex *f, size_t,
         Vec V1=LOAD(v1c);
         Vec V2=LOAD(v2+c);
         STORE(v0c,V0+ZMULT2(Xm,Ym,V1,V2));
-        STORE(v1c,V0+ZMULT2(X,Y,V1,V2));
+        STORE(v1c,V0+ZMULT2(X,Y,V2,V1));
       }
     });
 }
