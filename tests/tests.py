@@ -300,8 +300,7 @@ def test(programs, args):
   T=0 if args.All else int(args.T)
   mpi=args.mpi
 
-  tested_routines=[]
-  untested_routines=[]
+  untested_routines=False
 
   if lenP >= 1:
     passed=0
@@ -335,19 +334,6 @@ def test(programs, args):
 
       iterate(p,Ts,Options(args))
 
-      with open('forwardRoutines.yaml') as file:
-        forwardRoutines_dict=yaml.safe_load(file)
-
-      tested_p,untested_p=getUntestedRoutines(p)
-
-      for routine in tested_p:
-        if routine not in tested_routines:
-          tested_routines.append(routine)
-
-      for routine in untested_p:
-        if routine not in untested_routines:
-          untested_routines.append(routine)
-
       ppassed=p.passed
       pfailed=p.failed
       pwarnings=p.warnings
@@ -358,6 +344,22 @@ def test(programs, args):
 
       print(f"Finished testing {name}.")
       print(f"Out of {ptotal} tests, {ppassed} passed{warningText} {pfailed} failed.\n")
+
+      with open('forwardRoutines.yaml') as file:
+        forwardRoutines_dict=yaml.safe_load(file)
+
+      tested_p,untested_p=getUntestedRoutines(p,args.d)
+
+      if len(untested_p)>0:
+        untested_routines=True
+        print("Untested routines:")
+        for routine in untested_p:
+          print(routine)
+        print("\nTested routines:")
+        for routine in tested_p:
+          print(routine)
+        print()
+
       if lenP > 1:
         print("***************\n")
       total+=ptotal
@@ -378,14 +380,8 @@ def test(programs, args):
         print(case+";")
       print()
 
-    if len(untested_routines)>0:
-      print("Untested routines:")
-      for routine in untested_routines:
-        print(routine)
-      print("\nTested routines:")
-      for routine in tested_routines:
-        print(routine)
-      print("\nWarning! There are untested routines!\n")
+    if untested_routines:
+      print("Warning! There are untested routines!\n")
   else:
     print("No programs to test.\n")
 
@@ -410,7 +406,7 @@ def iterate(program, threads, options):
           for T in threads:
             checkCase(program,[x],T,options)
   else:
-    vals=ParameterCollection(findTests(program,1,options,inner=True)).vals
+    vals=ParameterCollection(findTests(program,1,options,inner=True,details=options.d)).vals
     if dim == 2:
       nodevals=[0]
       if mpi:
@@ -433,12 +429,13 @@ def iterate(program, threads, options):
       nodevals=[0]
       if mpi:
         nodevals=[1,2,4]
-      ycol=ParameterCollection(findTests(program,2,options,outer=True))
+      ycol=ParameterCollection(findTests(program,2,options,outer=True,details=options.d))
       ycols=[ycol]
-      xcols=[copy.deepcopy(ycol)]
+      xcol=ParameterCollection(findTests(program,2,options,outer=True))
+      xcols=[xcol]
       if testS:
         ycols+=[copy.deepcopy(ycol)]
-        xcols+=[copy.deepcopy(ycol)]
+        xcols+=[copy.deepcopy(xcol)]
       lenycols=len(ycols)
       lenxcols=len(xcols)
       for z in vals:
@@ -545,22 +542,22 @@ def transformType(program, outer=False, inner=False):
   else:
     return "s"
 
-def findTests(program, minS, options,outer=False, inner=False):
+def findTests(program, minS, options, outer=False, inner=False, details=True):
   ttype=transformType(program, outer, inner)
   if ttype == "r":
-    return realTests(program, minS, options)
+    return realTests(program, minS, details)
   elif ttype == "H":
-    return hermitianTests(program, minS, options)
+    return hermitianTests(program, minS, details)
   elif ttype == "c":
-    return centeredTests(program, minS, options)
+    return centeredTests(program, minS, details)
   else:
-    return complexTests(program, minS, options)
+    return complexTests(program, minS, details)
 
 def details(C,dim,d):
   return ((C == 1 and dim > 1) or (dim == 1)) or d
 
-def complexTests(program, minS, options):
-  det=details(minS,program.dim,options.d)
+def complexTests(program, minS, d):
+  det=details(minS,program.dim,d)
   vals=[]
   L=8
   Ms=[2*L]
@@ -574,10 +571,10 @@ def complexTests(program, minS, options):
       vals+=collectTests(program, L=L, M=M, m=m, minS=minS)
   return vals
 
-def centeredTests(program, minS, options):
+def centeredTests(program, minS, d):
   assert program.centered
   vals=[]
-  det=details(minS,program.dim,options.d)
+  det=details(minS,program.dim,d)
 
   Ls=[8]
   if det:
@@ -586,7 +583,7 @@ def centeredTests(program, minS, options):
     L2=ceilquotient(L,2)
     Ms=[3*L2-2*(L%2)]
     if det:
-      Ms+=[2*L,5*L2]
+      Ms+=[3*L2-2*(L%2)+1,2*L,5*L2]
     for M in Ms:
       ms=[L2]
       if det:
@@ -595,10 +592,10 @@ def centeredTests(program, minS, options):
         vals+=collectTests(program, L=L, M=M, m=m, minS=minS)
   return vals
 
-def hermitianTests(program, minS, options):
+def hermitianTests(program, minS, d):
   assert program.hermitian
   vals=[]
-  det=details(minS,program.dim,options.d)
+  det=details(minS,program.dim,d)
 
   Ls=[8]
   if det:
@@ -616,14 +613,17 @@ def hermitianTests(program, minS, options):
         vals+=collectTests(program, L=L, M=M, m=m, minS=minS)
   return vals
 
-def realTests(program, minS, options):
+def realTests(program, minS, d):
   assert program.real
   vals=[]
-  det=details(minS,program.dim,options.d)
+  det=details(minS,program.dim,d)
 
   # p = 1
   Ls=[8]
   Ms=[16]
+  # Explicit test
+  vals+=collectTests(program, L=Ls[0], M=Ms[0], m=Ms[0], minS=minS)
+
   if det:
     Ls+=[3]
     Ms+=[24,64]
@@ -802,16 +802,19 @@ def findRoutines(output):
   except:
     return "Could not find routines used."
 
-def getUntestedRoutines(program):
+def getUntestedRoutines(program,d):
 
   with open('forwardRoutines.yaml') as file:
         forwardRoutines_dict=yaml.safe_load(file)
 
   if program.hermitian:
     if program.mult == True:
-      known_routines=forwardRoutines_dict["Hermitian"]["forwardRoutines"]
-      if program.dim > 1:
-        known_routines+=forwardRoutines_dict["Centered"]["forwardManyRoutines"]
+      if program.dim == 1:
+        known_routines=forwardRoutines_dict["Hermitian"]["forwardRoutines"]
+      else:
+        known_routines=forwardRoutines_dict["Centered"]["forwardManyRoutines"]
+        if d:
+          known_routines+=forwardRoutines_dict["Hermitian"]["forwardRoutines"]
     else:
       if program.dim == 1:
         known_routines=forwardRoutines_dict["Hermitian"]["forwardRoutines"]
@@ -833,9 +836,10 @@ def getUntestedRoutines(program):
         known_routines=forwardRoutines_dict["Real"]["forwardRoutines"]
       else:
         known_routines=forwardRoutines_dict["Real"]["forwardManyRoutines"]
-        known_routines+=forwardRoutines_dict["Standard"]["forwardRoutines"]
-        if program.dim > 2:
-          known_routines+=forwardRoutines_dict["Standard"]["forwardManyRoutines"]
+        if d:
+          known_routines+=forwardRoutines_dict["Standard"]["forwardRoutines"]
+          if program.dim > 2:
+            known_routines+=forwardRoutines_dict["Standard"]["forwardManyRoutines"]
     else:
       if program.dim == 1:
         known_routines=forwardRoutines_dict["Real"]["forwardRoutines"]
@@ -843,9 +847,12 @@ def getUntestedRoutines(program):
         known_routines=forwardRoutines_dict["Real"]["forwardManyRoutines"]
   else:
     if program.mult == True:
-      known_routines=forwardRoutines_dict["Standard"]["forwardRoutines"]
-      if program.dim > 1:
-        known_routines+=forwardRoutines_dict["Standard"]["forwardManyRoutines"]
+      if program.dim == 1:
+        known_routines=forwardRoutines_dict["Standard"]["forwardRoutines"]
+      else:
+        known_routines=forwardRoutines_dict["Standard"]["forwardManyRoutines"]
+        if d:
+          known_routines+=forwardRoutines_dict["Standard"]["forwardRoutines"]
     else:
       if program.dim == 1:
         known_routines=forwardRoutines_dict["Standard"]["forwardRoutines"]
