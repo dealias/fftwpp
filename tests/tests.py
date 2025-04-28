@@ -53,8 +53,6 @@ class Program:
     if FR not in self.forwardRoutines:
         self.forwardRoutines.append(FR)
 
-
-
 class Options:
   def __init__(self, args):
     self.tol=args.t
@@ -800,31 +798,18 @@ def getUntestedRoutines(program,d):
   with open('forwardRoutines.yaml') as file:
         forwardRoutines_dict=yaml.safe_load(file)
 
-  if program.hermitian:
-    if program.mult == True:
+  if program.mult == True:
+    if program.hermitian:
       if program.dim == 1:
         known_routines=forwardRoutines_dict["Hermitian"]["forwardRoutines"]
       else:
         known_routines=forwardRoutines_dict["Centered"]["forwardManyRoutines"]
         if d:
           known_routines+=forwardRoutines_dict["Hermitian"]["forwardRoutines"]
-    else:
-      if program.dim == 1:
-        known_routines=forwardRoutines_dict["Hermitian"]["forwardRoutines"]
-      else:
-        known_routines=forwardRoutines_dict["Hermitian"]["forwardManyRoutines"]
 
-  elif program.centered:
-    if program.mult == True:
+    elif program.centered:
       known_routines=forwardRoutines_dict["Centered"]["forwardRoutines"]
-    else:
-      if program.dim == 1:
-        known_routines=forwardRoutines_dict["Centered"]["forwardRoutines"]
-      else:
-        known_routines=forwardRoutines_dict["Centered"]["forwardManyRoutines"]
-
-  elif program.real:
-    if program.mult == True:
+    elif program.real:
       if program.dim == 1:
         known_routines=forwardRoutines_dict["Real"]["forwardRoutines"]
       else:
@@ -835,22 +820,13 @@ def getUntestedRoutines(program,d):
             known_routines+=forwardRoutines_dict["Standard"]["forwardManyRoutines"]
     else:
       if program.dim == 1:
-        known_routines=forwardRoutines_dict["Real"]["forwardRoutines"]
-      else:
-        known_routines=forwardRoutines_dict["Real"]["forwardManyRoutines"]
-  else:
-    if program.mult == True:
-      if program.dim == 1:
         known_routines=forwardRoutines_dict["Standard"]["forwardRoutines"]
       else:
         known_routines=forwardRoutines_dict["Standard"]["forwardManyRoutines"]
         if d:
           known_routines+=forwardRoutines_dict["Standard"]["forwardRoutines"]
-    else:
-      if program.dim == 1:
-        known_routines=forwardRoutines_dict["Standard"]["forwardRoutines"]
-      else:
-        known_routines=forwardRoutines_dict["Standard"]["forwardManyRoutines"]
+  else:
+    known_routines=[]
 
   known_routines=set(known_routines)
 
