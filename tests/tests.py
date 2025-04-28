@@ -6,6 +6,7 @@ import argparse
 import sys
 from utils import *
 import copy
+import yaml
 
 def main(mpi=False):
   args=getArgs()
@@ -31,6 +32,8 @@ class Program:
     self.warningCases=[]
     self.failedCases=[]
 
+    self.forwardRoutines=[]
+
   def passTest(self):
     self.passed+=1
     self.total+=1
@@ -46,11 +49,16 @@ class Program:
     self.total+=1
     self.failedCases.append(case)
 
+  def addFR(self, FR):
+    if FR not in self.forwardRoutines:
+        self.forwardRoutines.append(FR)
+
+
+
 class Options:
   def __init__(self, args):
     self.tol=args.t
     self.verbose=args.v
-    self.R=args.R
     self.testS=(args.S or args.All)
     self.printEverything=args.p
     self.valid=args.valid
@@ -64,8 +72,7 @@ class Command:
     self.extraArgs=[]
     self.mpi=[]
 
-    if options.R:
-      self.extraArgs.append("-R")
+    self.extraArgs.append("-R")
 
     if options.mpi and nodes !=0:
         self.mpi=["mpiexec","-n",str(nodes)]
@@ -199,8 +206,6 @@ def getArgs():
   parser.add_argument("-T",metavar='threads',help="Number of threads to use in timing. If set to\
                       0, tests over 1 and OMP_NUM_THREADS (which must be set as an environment variable). Default is 1.",
                       default=1)
-  parser.add_argument("-R", help="Find routines used in output.",
-                      action="store_true")
   parser.add_argument("-S", help="Test different strides.",
                       action="store_true")
   parser.add_argument("-A","--All", help="Perform all tests. If the dimension\
@@ -295,6 +300,9 @@ def test(programs, args):
   T=0 if args.All else int(args.T)
   mpi=args.mpi
 
+  tested_routines=[]
+  untested_routines=[]
+
   if lenP >= 1:
     passed=0
     failed=0
@@ -327,6 +335,19 @@ def test(programs, args):
 
       iterate(p,Ts,Options(args))
 
+      with open('forwardRoutines.yaml') as file:
+        forwardRoutines_dict=yaml.safe_load(file)
+
+      tested_p,untested_p=getUntestedRoutines(p)
+
+      for routine in tested_p:
+        if routine not in tested_routines:
+          tested_routines.append(routine)
+
+      for routine in untested_p:
+        if routine not in untested_routines:
+          untested_routines.append(routine)
+
       ppassed=p.passed
       pfailed=p.failed
       pwarnings=p.warnings
@@ -356,6 +377,15 @@ def test(programs, args):
       for case in failedCases:
         print(case+";")
       print()
+
+    if len(untested_routines)>0:
+      print("Untested routines:")
+      for routine in untested_routines:
+        print(routine)
+      print("\nTested routines:")
+      for routine in tested_routines:
+        print(routine)
+      print("\nWarning! There are untested routines!\n")
   else:
     print("No programs to test.\n")
 
@@ -638,10 +668,10 @@ def check(program, cmd, T, options):
   if options.printEverything:
     print(f"{cmd.case}\n{output}\n")
 
-  if options.R:
-    routines=findRoutines(output)
-  else:
-    routines=None
+  FR,BR=findRoutines(output)
+  routines="\t"+"\t\t".join(FR)+"\n\t"+"\t\t".join(BR)
+  for routine in FR:
+    program.addFR(routine)
 
   testPassed=True
   if options.valid:
@@ -768,10 +798,66 @@ def findRoutines(output):
   try:
     FR=re.findall(r"(?<=Forwards Routine: )\S+",output)
     BR=re.findall(r"(?<=Backwards Routine: )\S+",output)
-    params="\t"+"\t\t".join(FR)+"\n\t"+"\t\t".join(BR)
-    return params
+    return FR,BR
   except:
     return "Could not find routines used."
+
+def getUntestedRoutines(program):
+
+  with open('forwardRoutines.yaml') as file:
+        forwardRoutines_dict=yaml.safe_load(file)
+
+  if program.hermitian:
+    if program.mult == True:
+      known_routines=forwardRoutines_dict["Hermitian"]["forwardRoutines"]
+      if program.dim > 1:
+        known_routines+=forwardRoutines_dict["Centered"]["forwardManyRoutines"]
+    else:
+      if program.dim == 1:
+        known_routines=forwardRoutines_dict["Hermitian"]["forwardRoutines"]
+      else:
+        known_routines=forwardRoutines_dict["Hermitian"]["forwardManyRoutines"]
+
+  elif program.centered:
+    if program.mult == True:
+      known_routines=forwardRoutines_dict["Centered"]["forwardRoutines"]
+    else:
+      if program.dim == 1:
+        known_routines=forwardRoutines_dict["Centered"]["forwardRoutines"]
+      else:
+        known_routines=forwardRoutines_dict["Centered"]["forwardManyRoutines"]
+
+  elif program.real:
+    if program.mult == True:
+      if program.dim == 1:
+        known_routines=forwardRoutines_dict["Real"]["forwardRoutines"]
+      else:
+        known_routines=forwardRoutines_dict["Real"]["forwardManyRoutines"]
+        known_routines+=forwardRoutines_dict["Standard"]["forwardRoutines"]
+        if program.dim > 2:
+          known_routines+=forwardRoutines_dict["Standard"]["forwardManyRoutines"]
+    else:
+      if program.dim == 1:
+        known_routines=forwardRoutines_dict["Real"]["forwardRoutines"]
+      else:
+        known_routines=forwardRoutines_dict["Real"]["forwardManyRoutines"]
+  else:
+    if program.mult == True:
+      known_routines=forwardRoutines_dict["Standard"]["forwardRoutines"]
+      if program.dim > 1:
+        known_routines+=forwardRoutines_dict["Standard"]["forwardManyRoutines"]
+    else:
+      if program.dim == 1:
+        known_routines=forwardRoutines_dict["Standard"]["forwardRoutines"]
+      else:
+        known_routines=forwardRoutines_dict["Standard"]["forwardManyRoutines"]
+
+  known_routines=set(known_routines)
+
+  tested_routines=known_routines.intersection(program.forwardRoutines)
+  untested_routines=known_routines.difference(program.forwardRoutines)
+
+  return list(tested_routines), list(untested_routines)
 
 if __name__ == "__main__":
   main()

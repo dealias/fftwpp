@@ -1,0 +1,60 @@
+---
+Standard:
+
+  forwardRoutines:
+    - fftPad::forwardExplicit
+    - fftPad::forward1All
+    - fftPad::forward1
+    - fftPad::forward2
+    - fftPad::forwardInner
+
+  forwardManyRoutines:
+    - fftPad::forwardExplicitMany
+    - fftPad::forward1ManyAll
+    - fftPad::forward1Many
+    - fftPad::forward2ManyAll
+    - fftPad::forward2Many
+    - fftPad::forwardInnerMany
+
+Centered:
+
+  forwardRoutines:
+    - fftPadCentered::forwardExplicitFast
+    - fftPadCentered::forwardExplicitSlow
+    - fftPadCentered::forward2All
+    - fftPadCentered::forward2
+    - fftPadCentered::forwardInnerAll
+    - fftPadCentered::forwardInner
+
+  forwardManyRoutines:
+    - fftPadCentered::forwardExplicitManyFast
+    - fftPadCentered::forwardExplicitManySlow
+    - fftPadCentered::forward2ManyAll
+    - fftPadCentered::forward2Many
+    - fftPadCentered::forwardInnerManyAll
+    - fftPadCentered::forwardInnerMany
+
+Hermitian:
+
+  forwardRoutines:
+    - fftPadHermitian::forwardExplicit
+    - fftPadHermitian::forward2
+    - fftPadHermitian::forwardInner
+
+  forwardManyRoutines:
+    - fftPadHermitian::forwardExplicitMany
+    - fftPadHermitian::forward2Many
+
+Real:
+
+  forwardRoutines:
+    - fftPadReal::forwardExplicit
+    - fftPadReal::forward1
+    - fftPadReal::forward2
+    - fftPadReal::forwardInner
+
+  forwardManyRoutines:
+    - fftPadReal::forwardExplicitMany
+    - fftPadReal::forward1Many
+    - fftPadReal::forward2Many
+    - fftPadReal::forwardInnerMany
