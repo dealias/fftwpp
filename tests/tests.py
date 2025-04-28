@@ -355,9 +355,9 @@ def test(programs, args):
         print("Untested routines:")
         for routine in untested_p:
           print(routine)
-        print("\nTested routines:")
-        for routine in tested_p:
-          print(routine)
+        # print("\nTested routines:")
+        # for routine in tested_p:
+        #   print(routine)
         print()
 
       if lenP > 1:
