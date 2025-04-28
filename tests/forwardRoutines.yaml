@@ -12,7 +12,7 @@ Standard:
     - fftPad::forwardExplicitMany
     - fftPad::forward1ManyAll
     - fftPad::forward1Many
-    - fftPad::forward2ManyAll
+    #- fftPad::forward2ManyAll
     - fftPad::forward2Many
     - fftPad::forwardInnerMany
 

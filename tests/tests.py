@@ -195,13 +195,13 @@ def getArgs():
                        and/or hybridh.cc and/or hybridr.cc) without testing convolution routines as well. Only in 1D.",
                       action="store_true")
   parser.add_argument("-1","--one", help="Test 1D Convolutions. Not specifying\
-  										1 or 2 or 3 is the same as specifying all of them",
+  										1 or 2 or 3 is the same as specifying all of them.",
   										action="store_true")
   parser.add_argument("-2","--two", help="Test 2D Convolutions. Not specifying\
-  										1 or 2 or 3 is the same as specifying all of them",
+  										1 or 2 or 3 is the same as specifying all of them. By default, only the outermost transforms (in the x-direction) are tested exhaustively. To test all possible subtransforms (in the y-direction), use the -d flag.",
   										action="store_true")
   parser.add_argument("-3","--three", help="Test 3D Convolutions. Not specifying\
-  										1 or 2 or 3 is the same as specifying all of them",
+  										1 or 2 or 3 is the same as specifying all of them. By default, only the outermost transforms (in the x-direction) are tested exhaustively. To test all possible subtransforms (in the y-direction and z-direction), use the -d flag.",
   										action="store_true")
   parser.add_argument("-T",metavar='threads',help="Number of threads to use in timing. If set to\
                       0, tests over 1 and OMP_NUM_THREADS (which must be set as an environment variable). Default is 1.",
@@ -220,7 +220,7 @@ def getArgs():
   parser.add_argument("-p",help="Print out everything.",action="store_true")
   parser.add_argument("-l",help="Show log of failed cases",
                       action="store_true")
-  parser.add_argument("-d",help="Check all 1D cases inside multidimensional convolutions. Note: using this flag results in much slower testing.",
+  parser.add_argument("-d",help="Check all subtransforms inside multidimensional convolutions. Note: using this flag results in much slower testing.",
                       action="store_true")
   parser.add_argument("--valgrind",help="Run tests under valgrind. Requires valgrind to be installed. Note: using this flag results in much slower testing.",
                       action="store_true")
@@ -390,13 +390,13 @@ def iterate(program, threads, options):
   testS=options.testS
   mpi=options.mpi
   if dim == 1:
-    vals=ParameterCollection(findTests(program,1,options)).vals
+    vals=ParameterCollection(findTests(program,1,options,details=True)).vals
     for T in threads:
       checkOptimizer(program,vals[0].L,vals[0].M,T,options)
       for x in vals:
         checkCase(program,[x],T,options)
     if not program.mult:
-      cols=[ParameterCollection(findTests(program,2,options,outer=True))]
+      cols=[ParameterCollection(findTests(program,2,options,outer=True,details=True))]
       if testS:
         cols+=[copy.deepcopy(cols[0])]
         updateStride(cols[1],3)
@@ -411,7 +411,7 @@ def iterate(program, threads, options):
       nodevals=[0]
       if mpi:
         nodevals=[1,2,4]
-      xcols=[ParameterCollection(findTests(program,2,options,outer=True))]
+      xcols=[ParameterCollection(findTests(program,2,options,outer=True,details=True))]
       if testS:
         xcols+=[copy.deepcopy(xcols[0])]
       lenxcols=len(xcols)
@@ -431,7 +431,7 @@ def iterate(program, threads, options):
         nodevals=[1,2,4]
       ycol=ParameterCollection(findTests(program,2,options,outer=True,details=options.d))
       ycols=[ycol]
-      xcol=ParameterCollection(findTests(program,2,options,outer=True))
+      xcol=ParameterCollection(findTests(program,2,options,outer=True,details=True))
       xcols=[xcol]
       if testS:
         ycols+=[copy.deepcopy(ycol)]
@@ -553,15 +553,11 @@ def findTests(program, minS, options, outer=False, inner=False, details=True):
   else:
     return complexTests(program, minS, details)
 
-def details(C,dim,d):
-  return ((C == 1 and dim > 1) or (dim == 1)) or d
-
-def complexTests(program, minS, d):
-  det=details(minS,program.dim,d)
+def complexTests(program, minS, det):
   vals=[]
   L=8
   Ms=[2*L]
-  if details:
+  if det:
     Ms+=[ceilquotient(5*L,2)]
   for M in Ms:
     ms=[L]
@@ -571,10 +567,9 @@ def complexTests(program, minS, d):
       vals+=collectTests(program, L=L, M=M, m=m, minS=minS)
   return vals
 
-def centeredTests(program, minS, d):
+def centeredTests(program, minS, det):
   assert program.centered
   vals=[]
-  det=details(minS,program.dim,d)
 
   Ls=[8]
   if det:
@@ -592,10 +587,9 @@ def centeredTests(program, minS, d):
         vals+=collectTests(program, L=L, M=M, m=m, minS=minS)
   return vals
 
-def hermitianTests(program, minS, d):
+def hermitianTests(program, minS, det):
   assert program.hermitian
   vals=[]
-  det=details(minS,program.dim,d)
 
   Ls=[8]
   if det:
@@ -613,10 +607,9 @@ def hermitianTests(program, minS, d):
         vals+=collectTests(program, L=L, M=M, m=m, minS=minS)
   return vals
 
-def realTests(program, minS, d):
+def realTests(program, minS, det):
   assert program.real
   vals=[]
-  det=details(minS,program.dim,d)
 
   # p = 1
   Ls=[8]
