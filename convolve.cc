@@ -2126,7 +2126,8 @@ void fftPadCentered::backwardExplicitManyFast(Complex *F, Complex *f,
 void fftPadCentered::initShift()
 {
   ZetaShift=ComplexAlign(M);
-  double factor=L/2*twopi/M;
+  size_t H=L/2;
+  double factor=H*twopi/M;
   for(size_t r=0; r < q; ++r) {
     Complex *Zetar=ZetaShift+r;
     PARALLELIF(
