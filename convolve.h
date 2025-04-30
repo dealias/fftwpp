@@ -565,9 +565,7 @@ public:
   void forward1Many(Complex *f, Complex *F, size_t r, Complex *W);
   void forward1ManyAll(Complex *f, Complex *F, size_t r, Complex *W);
   void forward2(Complex *f, Complex *F0, size_t r0, Complex *W);
-  void forward2All(Complex *f, Complex *F0, size_t r0, Complex *W);
   void forward2Many(Complex *f, Complex *F, size_t r, Complex *W);
-  void forward2ManyAll(Complex *f, Complex *F, size_t r, Complex *W);
   void forwardInner(Complex *f, Complex *F0, size_t r0, Complex *W);
   void forwardInnerMany(Complex *f, Complex *F, size_t r, Complex *W);
 
@@ -580,9 +578,7 @@ public:
   void backward1Many(Complex *F, Complex *f, size_t r, Complex *W);
   void backward1ManyAll(Complex *F, Complex *f, size_t r, Complex *W);
   void backward2(Complex *F0, Complex *f, size_t r0, Complex *W);
-  void backward2All(Complex *F0, Complex *f, size_t r0, Complex *W);
   void backward2Many(Complex *F, Complex *f, size_t r, Complex *W);
-  void backward2ManyAll(Complex *F, Complex *f, size_t r, Complex *W);
   void backwardInner(Complex *F0, Complex *f, size_t r0, Complex *W);
   void backwardInnerMany(Complex *F, Complex *f, size_t r, Complex *W);
 };
