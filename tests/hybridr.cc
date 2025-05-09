@@ -1,3 +1,5 @@
+#include <cassert>
+
 #include "convolve.h"
 #include "options.h"
 
@@ -65,14 +67,16 @@ int main(int argc, char *argv[])
 
   fftPadReal fft2(L,fft.M,app,C,S,fft.M,1,1);
 
-  Complex *F2=ComplexAlign(fft2.outputSize());
+  size_t H=fft2.outputSize();
+  Complex *F2=ComplexAlign(H);
 
   fft2.forward((Complex *) f,F2);
 
   fft.pad(W0);
   double error=0.0, error2=0.0;
   double norm=0.0, norm2=0.0;
-  size_t H=M/2+1;
+  size_t mq=fft.paddedSize();
+
   for(size_t r=0; r < fft.R; r += fft.increment(r)) {
     fft.forward((Complex *) f,F,r,W0);
     for(size_t k=0; k < fft.noutputs(r); ++k) {
@@ -80,7 +84,8 @@ int main(int argc, char *argv[])
       for(size_t c=0; c < C; ++c) {
         size_t s=S*k+c;
         size_t i=fft.Index(r,s);
-        Complex val=(i <= H) ? F2[i] : conj(F2[M-i]);
+        assert(mq >= i && mq-i < H); // TODO: prove that this can't happen!
+        Complex val=(i < H) ? F2[i] : conj(F2[mq-i]);
         error += abs2(F[s]-val);
         norm += abs2(val);
         if(Output)
@@ -118,7 +123,7 @@ int main(int argc, char *argv[])
       for(size_t c=0; c < C; ++c) {
         size_t s=S*k+c;
         size_t i=fft.Index(r,s);
-        F[s]=(i <= H) ? F2[i] : conj(F2[M-i]);
+        F[s]=(i < H) ? F2[i] : conj(F2[mq-i]);
       }
     }
     fft.backward(F,(Complex *) h,r,W0);

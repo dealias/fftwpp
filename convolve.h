@@ -371,7 +371,7 @@ public:
     return M;
   }
 
-  virtual size_t paddedSize() {
+  size_t paddedSize() {
     return m*q;
   }
 
@@ -949,10 +949,14 @@ public:
     // Return transformed index for residue r at position i
   size_t index(size_t r, size_t i) {
     if(q == 1) return i;
-    if(D > 1) {
-      std::cerr << "Indexing for D > 1 not yet implemented for real transforms"
+    if(D > 1 || C > 1 || p > 2) {
+      static bool first=true;
+      if(first) {
+      std::cerr << "Warning: Indexing for D > 1 and C > 1 and p > 2 not yet implemented for real transforms"
                 << std::endl;
-      exit(-1);
+//      exit(-1);
+      first=false;
+      }
     }
     size_t s=i%m;
     if(p <= 2) {
@@ -961,7 +965,7 @@ public:
       } else if(2*r == q) {
         return q*m-(q*2*i+r);
       }
-    } else { // Inner loop
+    } else { // Inner loop: FIXME
       size_t u=(i/m)%p;
       if(r == 0) {
         if(2*u == p)
@@ -970,7 +974,6 @@ public:
       } else if(2*r == n)
         return q*m-(q*s+2*u*n+r);
     }
-
     return q*(m-s)-r;
   }
 };
