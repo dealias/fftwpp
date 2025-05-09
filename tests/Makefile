@@ -143,6 +143,9 @@ mfft1r: mfft1r.o $(FFTW:=.o)
 transpose: transpose.o $(FFTW:=.o)
 	$(CXX) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
+check:	all
+	@tests.py
+
 .PHONY: clean
 clean:  FORCE
 	rm -rf $(ALL) $(FFTW) $(HYBRID) $(ALL:=.o) $(ALL:=.d)
