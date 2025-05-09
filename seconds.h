@@ -98,4 +98,14 @@ public:
 
 }
 
+// POSIX--style rename that allows overwriting
+inline int renameOverwrite(const char *oldpath, const char *newpath) {
+#if defined(_WIN32)
+  return MoveFileExA(oldpath,newpath,
+                     MOVEFILE_REPLACE_EXISTING | MOVEFILE_COPY_ALLOWED);
+#else
+  return rename(oldpath,newpath);
+#endif
+}
+
 #endif

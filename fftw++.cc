@@ -67,7 +67,7 @@ void saveWisdom()
     ofWisdom << wisdom;
     fftw_free(wisdom);
     ofWisdom.close();
-    rename(wisdomTemp.str().c_str(),wisdomName.c_str());
+    renameOverwrite(wisdomTemp.str().c_str(),wisdomName.c_str());
     fftw::wiser=false;
   }
 }
