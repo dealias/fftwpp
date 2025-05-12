@@ -58,6 +58,7 @@ class Options:
     self.tol=args.t
     self.verbose=args.v
     self.testS=(args.S or args.All)
+    self.R=args.R
     self.printEverything=args.p
     self.valid=args.valid
     self.vg=args.valgrind
@@ -201,6 +202,8 @@ def getArgs():
   parser.add_argument("-3","--three", help="Test 3D Convolutions. Not specifying\
   										1 or 2 or 3 is the same as specifying all of them. By default, only the outermost transforms (in the x-direction) are tested exhaustively. To test all possible subtransforms (in the y-direction and z-direction), use the -d flag.",
   										action="store_true")
+  parser.add_argument("-R", help="Show routines used in output.",
+                      action="store_true")
   parser.add_argument("-T",metavar='threads',help="Number of threads to use in timing. If set to\
                       0, tests over 1 and OMP_NUM_THREADS (which must be set as an environment variable). Default is 1.",
                       default=1)
@@ -660,9 +663,13 @@ def check(program, cmd, T, options):
     print(f"{cmd.case}\n{output}\n")
 
   FR,BR=findRoutines(output)
-  routines="\t"+"\t\t".join(FR)+"\n\t"+"\t\t".join(BR)
   for routine in FR:
     program.addFR(routine)
+
+  routines=""
+  if options.R:
+    routines="\t"+"\t\t".join(FR)+"\n\t"+"\t\t".join(BR)
+
 
   testPassed=True
   if options.valid:
