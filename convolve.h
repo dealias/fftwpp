@@ -952,7 +952,7 @@ public:
     if(D > 1 || C > 1 || p > 2) {
       static bool first=true;
       if(first) {
-      std::cerr << "Warning: Indexing for D > 1 and C > 1 and p > 2 not yet implemented for real transforms"
+      std::cerr << "Warning: Indexing for D > 1 and C > 1 not yet implemented for real transforms"
                 << std::endl;
 //      exit(-1);
       first=false;
@@ -973,6 +973,8 @@ public:
         return s == 0 ? u*n : q*m-(q*s-u*n);
       } else if(2*r == n)
         return q*m-(q*s+2*u*n+r);
+      else
+        return q*(m-s)-(u*n+r);
     }
     return q*(m-s)-r;
   }
