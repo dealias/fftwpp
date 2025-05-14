@@ -314,11 +314,6 @@ public:
     return q*s+n*u+r;
   }
 
-  size_t Index(size_t r, size_t I) {
-    size_t i=I/S;
-    return S*(index(r,i)-i)+I;
-  }
-
   virtual void forward1(Complex *f, Complex *F0, size_t r0, Complex *W)
   {}
   virtual void forward1All(Complex *f, Complex *F0, size_t r0,
@@ -946,18 +941,9 @@ public:
     return blocksize(r)*(2*r == n ? 1 : r == 1 ? D0 : D);
   }
 
-    // Return transformed index for residue r at position i
+  // Return transformed index for residue r at position i
   size_t index(size_t r, size_t i) {
     if(q == 1) return i;
-    if(C > 1) {
-      static bool first=true;
-      if(first) {
-      std::cerr << "Warning: Indexing for C > 1 not yet implemented for real transforms"
-                << std::endl;
-//      exit(-1);
-      first=false;
-      }
-    }
     size_t s=i%m;
     size_t P=p == 2 ? 1 : p;
     r += i/(P*m);
@@ -967,7 +953,7 @@ public:
       } else if(2*r == q) {
         return q*m-(q*2*i+r);
       }
-    } else { // Inner loop: FIXME
+    } else {
       size_t u=(i/m)%p;
       if(r == 0) {
         if(2*u == p)

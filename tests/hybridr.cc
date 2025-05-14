@@ -63,12 +63,13 @@ int main(int argc, char *argv[])
 
   for(size_t j=0; j < L; ++j)
     for(size_t c=0; c < C; ++c)
-      f[S*j+c]=j+1;//C*j+c+1;
+//      f[S*j+c]=j+1;
+      f[S*j+c]=C*j+c+1;
 
   fftPadReal fft2(L,fft.M,app,C,S,fft.M,1,1);
 
-  size_t H=fft2.outputSize();
-  Complex *F2=ComplexAlign(H);
+  size_t H=fft2.outputSize()/C;
+  Complex *F2=ComplexAlign(H*C);
 
   fft2.forward((Complex *) f,F2);
 
@@ -83,13 +84,13 @@ int main(int argc, char *argv[])
       if(Output && k%fft.m == 0) cout << endl;
       for(size_t c=0; c < C; ++c) {
         size_t s=S*k+c;
-        size_t i=fft.Index(r,s);
+        size_t i=fft.index(r,k);
         assert(mq >= i && mq-i < H); // TODO: prove that this can't happen!
-        Complex val=(i < H) ? F2[i] : conj(F2[mq-i]);
+        Complex val=(i < H) ? F2[S*i+c] : conj(F2[S*(mq-i)+c]);
         error += abs2(F[s]-val);
         norm += abs2(val);
         if(Output)
-          cout << i << ": " << F[s] << endl;
+          cout << S*i+c << ": " << F[s] << " " << val << endl;
       }
     }
     if(Output)
@@ -122,8 +123,8 @@ int main(int argc, char *argv[])
     for(size_t k=0; k < fft.noutputs(r); ++k) {
       for(size_t c=0; c < C; ++c) {
         size_t s=S*k+c;
-        size_t i=fft.Index(r,s);
-        F[s]=(i < H) ? F2[i] : conj(F2[mq-i]);
+        size_t i=fft.index(r,k);
+        F[s]=(i < H) ? F2[S*i+c] : conj(F2[S*(mq-i)+c]);
       }
     }
     fft.backward(F,(Complex *) h,r,W0);

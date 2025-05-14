@@ -81,13 +81,13 @@ int main(int argc, char *argv[])
     fft->forward(f,F,r,W0);
     for(size_t k=0; k < fft->noutputs(r); ++k) {
       if(Output && k%fft->m == 0) cout << endl;
-      for(size_t c=0; c < C; ++c) {
-        size_t s=S*k+c;
-        size_t i=fft->Index(r,s);
-        error += abs2(F[s]-F2[i]);
-        norm += abs2(F2[i]);
-        if(Output)
-          cout << i << ": " << F[s] << endl;
+        size_t i=fft->index(r,k);
+        for(size_t c=0; c < C; ++c) {
+          Complex val=F2[S*i+c];
+          error += abs2(F[S*k+c]-val);
+          norm += abs2(val);
+          if(Output)
+            cout << i << ": " << F[S*k+c] << endl;
       }
     }
     if(Output)
@@ -119,10 +119,9 @@ int main(int argc, char *argv[])
 
   for(size_t r=0; r < fft->R; r += fft->increment(r)) {
     for(size_t k=0; k < fft->noutputs(r); ++k) {
-      for(size_t c=0; c < C; ++c) {
-        size_t s=S*k+c;
-        F[s]=F2[fft->Index(r,s)];
-      }
+      size_t i=fft->index(r,k);
+      for(size_t c=0; c < C; ++c)
+        F[S*k+c]=F2[S*i+c];
     }
     fft->backward(F,h,r,W0);
   }
