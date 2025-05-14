@@ -102,9 +102,9 @@ int main(int argc, char *argv[])
   if(Output) {
     cout << endl;
     cout << "Explicit output:" << endl;
-    size_t stride=C*fft2.noutputs(0);
-    for(size_t j=0; j < stride; ++j)
-      cout << j << ": " << F2r[j] << endl;
+    for(size_t j=0; j < fft2.noutputs(0); ++j)
+      for(size_t c=0; c < C; ++c)
+        cout << j << ": " << F2r[C*j+c] << endl;
   }
 
   double scale=1.0/fft.normalization();

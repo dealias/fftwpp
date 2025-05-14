@@ -98,10 +98,8 @@ int main(int argc, char *argv[])
     cout << endl;
     cout << "Explicit output:" << endl;
     for(size_t j=0; j < fft2->noutputs(0); ++j)
-      for(size_t c=0; c < C; ++c) {
-        size_t J=S*j+c;
-        cout << J << ": " << F2[J] << endl;
-      }
+      for(size_t c=0; c < C; ++c)
+        cout << j << ": " << F2[S*j+c] << endl;
   }
 
   double scale=1.0/fft->normalization();

@@ -82,15 +82,14 @@ int main(int argc, char *argv[])
     fft.forward((Complex *) f,F,r,W0);
     for(size_t k=0; k < fft.noutputs(r); ++k) {
       if(Output && k%fft.m == 0) cout << endl;
+      size_t i=fft.index(r,k);
       for(size_t c=0; c < C; ++c) {
-        size_t s=S*k+c;
-        size_t i=fft.index(r,k);
         assert(mq >= i && mq-i < H); // TODO: prove that this can't happen!
         Complex val=(i < H) ? F2[S*i+c] : conj(F2[S*(mq-i)+c]);
-        error += abs2(F[s]-val);
+        error += abs2(F[S*k+c]-val);
         norm += abs2(val);
         if(Output)
-          cout << S*i+c << ": " << F[s] << " " << val << endl;
+          cout << i << ": " << F[S*k+c] << " " << val << endl;
       }
     }
     if(Output)
@@ -101,10 +100,8 @@ int main(int argc, char *argv[])
     cout << endl;
     cout << "Explicit output:" << endl;
     for(size_t j=0; j < fft2.noutputs(0); ++j)
-      for(size_t c=0; c < C; ++c) {
-        size_t i=S*j+c;
-        cout << i << ": " << F2[i] << endl;
-      }
+      for(size_t c=0; c < C; ++c)
+        cout << j << ": " << F2[S*j+c] << endl;
   }
 
   double scale=1.0/fft.normalization();
@@ -121,11 +118,9 @@ int main(int argc, char *argv[])
 
   for(size_t r=0; r < fft.R; r += fft.increment(r)) {
     for(size_t k=0; k < fft.noutputs(r); ++k) {
-      for(size_t c=0; c < C; ++c) {
-        size_t s=S*k+c;
-        size_t i=fft.index(r,k);
-        F[s]=(i < H) ? F2[S*i+c] : conj(F2[S*(mq-i)+c]);
-      }
+      size_t i=fft.index(r,k);
+      for(size_t c=0; c < C; ++c)
+        F[S*k+c]=(i < H) ? F2[S*i+c] : conj(F2[S*(mq-i)+c]);
     }
     fft.backward(F,(Complex *) h,r,W0);
   }
