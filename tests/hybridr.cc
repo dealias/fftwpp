@@ -68,8 +68,8 @@ int main(int argc, char *argv[])
 
   fftPadReal fft2(L,fft.M,app,C,S,fft.M,1,1);
 
-  size_t H=fft2.outputSize()/C;
-  Complex *F2=ComplexAlign(H*C);
+  Complex *F2=ComplexAlign(fft2.outputSize());
+  size_t H=fft2.noutputs(0);
 
   fft2.forward((Complex *) f,F2);
 
