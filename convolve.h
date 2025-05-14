@@ -949,16 +949,18 @@ public:
     // Return transformed index for residue r at position i
   size_t index(size_t r, size_t i) {
     if(q == 1) return i;
-    if(D > 1 || C > 1) {
+    if(C > 1) {
       static bool first=true;
       if(first) {
-      std::cerr << "Warning: Indexing for D > 1 and C > 1 not yet implemented for real transforms"
+      std::cerr << "Warning: Indexing for C > 1 not yet implemented for real transforms"
                 << std::endl;
 //      exit(-1);
       first=false;
       }
     }
     size_t s=i%m;
+    size_t P=p == 2 ? 1 : p;
+    r += i/(P*m);
     if(p <= 2) {
       if(r == 0) {
         return q*i;
