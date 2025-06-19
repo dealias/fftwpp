@@ -1,5 +1,5 @@
 /* Hybrid dealiased convolution routines.
-   Copyright (C) 2024 John C. Bowman and Noel Murasko, Univ. of Alberta
+   Copyright (C) 2024-5 John C. Bowman and Noel Murasko, Univ. of Alberta
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -1415,14 +1415,19 @@ public:
     return Sx;
   }
 
+  virtual size_t indexBase() {
+    return 0;
+  }
+
   void subconvolution(Complex **F, size_t rx, size_t offset=0) {
     size_t blocksize=blocksizex(rx);
     size_t Sx=stridex();
+    size_t base=indexBase();
     PARALLEL(
       for(size_t i=0; i < blocksize; ++i) {
         size_t t=parallel::get_thread_num(threads);
         Convolution *cy=convolvey[t];
-        cy->indices.index[0]=fftx->index(rx,i);
+        cy->indices.index[0]=fftx->index(rx,i+base);
         cy->convolveRaw(F,offset+i*Sx,&cy->indices);
       });
   }
@@ -1720,14 +1725,19 @@ public:
     return Sx;
   }
 
+  virtual size_t indexBase() {
+    return 0;
+  }
+
   void subconvolution(Complex **F, size_t rx, size_t offset=0) {
     size_t blocksize=blocksizex(rx);
     size_t Sx=stridex();
+    size_t base=indexBase();
     PARALLEL(
       for(size_t i=0; i < blocksize; ++i) {
         size_t t=parallel::get_thread_num(threads);
         Convolution2 *cyz=convolveyz[t];
-        cyz->indices.index[1]=fftx->index(rx,i);
+        cyz->indices.index[1]=fftx->index(rx,i+base);
         cyz->convolveRaw(F,offset+i*Sx,&cyz->indices);
       });
   }

@@ -139,12 +139,16 @@ public:
       T[a]->wait();
   }
 
-  virtual size_t stridex() {
+  size_t stridex() {
     return d.Y;
   }
 
-  virtual size_t blocksizex(size_t rx) {
+  size_t blocksizex(size_t rx) {
     return d.x;
+  }
+
+  size_t indexBase() {
+    return d.x0;
   }
 
   void backward(Complex **F, Complex **f, size_t rx,
@@ -257,12 +261,16 @@ public:
       T[a]->wait();
   }
 
-  virtual size_t stridex() {
+  size_t stridex() {
     return d.Y*d.z;
   }
 
-  virtual size_t blocksizex(size_t rx) {
+  size_t blocksizex(size_t rx) {
     return d.x;
+  }
+
+  size_t indexBase() {
+    return d.x0;
   }
 
   void backward(Complex **F, Complex **f, size_t rx,
