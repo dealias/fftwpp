@@ -833,7 +833,18 @@ def getUntestedRoutines(program,d):
         if d:
           known_routines+=forwardRoutines_dict["Standard"]["forwardRoutines"]
   else:
-    known_routines=[]
+    if program.hermitian:
+      known_routines=forwardRoutines_dict["Hermitian"]["forwardRoutines"]
+      known_routines+=forwardRoutines_dict["Hermitian"]["forwardManyRoutines"]
+    elif program.centered:
+      known_routines=forwardRoutines_dict["Centered"]["forwardRoutines"]
+      known_routines+=forwardRoutines_dict["Centered"]["forwardManyRoutines"]
+    elif program.real:
+      known_routines=forwardRoutines_dict["Real"]["forwardRoutines"]
+      known_routines+=forwardRoutines_dict["Real"]["forwardManyRoutines"]
+    else:
+      known_routines=forwardRoutines_dict["Standard"]["forwardRoutines"]
+      known_routines+=forwardRoutines_dict["Standard"]["forwardManyRoutines"]
 
   known_routines=set(known_routines)
 
