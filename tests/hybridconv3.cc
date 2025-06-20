@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
   if(Sy == 0) Sy=Lz;
   if(Sx == 0) Sx=Ly*Sy;
 
-  Application appx(A,B,multNone,fftw::maxthreads,true,true,mx,Dx,Ix);
+  Application appx(A,B,multNone,fftw::maxthreads,true,mx,Dx,Ix);
   fftPad fftx(Lx,Mx,appx,Sy == Lz ? Ly*Sy : Lz,Sx);
   Application appy(A,B,multNone,appx,my,Dy,Iy);
   fftPad ffty(Ly,My,appy,Lz,Sy);

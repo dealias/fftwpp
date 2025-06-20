@@ -87,7 +87,6 @@ public:
   size_t A;
   size_t B;
   multiplier *mult;
-  bool overwrite;
   bool verbose;
   size_t m;
   size_t D;
@@ -95,18 +94,18 @@ public:
   size_t maxthreads;
 
   Application(size_t A, size_t B, multiplier *mult,
-              size_t threads=fftw::maxthreads, bool overwrite=true,
+              size_t threads=fftw::maxthreads,
               bool verbose=false, size_t m=0, size_t D=0, ptrdiff_t I=-1) :
-    ThreadBase(threads), A(A), B(B), mult(mult), overwrite(overwrite),
-    verbose(verbose), m(m), D(D), I(I)
+    ThreadBase(threads), A(A), B(B), mult(mult), verbose(verbose),
+    m(m), D(D), I(I)
   {
     maxthreads=threads;
   }
 
   Application(size_t A, size_t B, multiplier *mult, Application &parent,
               size_t m=0, size_t D=0, ptrdiff_t I=-1) :
-    ThreadBase(1), A(A), B(B), mult(mult), overwrite(parent.overwrite),
-    verbose(parent.verbose), m(m), D(D), I(I)
+    ThreadBase(1), A(A), B(B), mult(mult), verbose(parent.verbose),
+    m(m), D(D), I(I)
   {
     maxthreads=parent.maxthreads;
   }

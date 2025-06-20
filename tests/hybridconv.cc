@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
 
   vector<double> T;
 
-  Application app(A,B,multBinary,fftw::maxthreads,true,true,mx,Dx,Ix);
+  Application app(A,B,multBinary,fftw::maxthreads,true,mx,Dx,Ix);
   fftPad *fft=Centered ? new fftPadCentered(L,M,app) : new fftPad(L,M,app);
   Convolution Convolve(fft);
 

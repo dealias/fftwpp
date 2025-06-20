@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
   cout << "L=" << L << endl;
   cout << "M=" << M << endl;
 
-  Application app(1,1,multNone,fftw::maxthreads,true,true,mx,Dx,Ix);
+  Application app(1,1,multNone,fftw::maxthreads,true,mx,Dx,Ix);
 
   cout << endl << "Minimal Explicit:" << endl;
   // Minimal explicit padding

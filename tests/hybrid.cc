@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
 
   if(S == 0) S=C;
 
-  Application app(1,1,multNone,fftw::maxthreads,true,true,mx,Dx,Ix);
+  Application app(1,1,multNone,fftw::maxthreads,true,mx,Dx,Ix);
 
   cout << endl << "Minimal Explicit:" << endl;
   // Minimal explicit padding
