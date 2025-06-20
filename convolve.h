@@ -288,11 +288,14 @@ public:
   // Return transformed index for residue r at position i
   virtual size_t index(size_t r, size_t i) {
     if(q == 1) return i;
+    size_t P=utils::ceilquotient(p,2);
+    if(overwrite && centered && r == 2) {
+      if(i < m) i=(i-1) % m;
+      if(p > 2) i=(i+m)%(P*m);
+    }
     size_t s=i%m;
     size_t u;
-    size_t P;
     if(D > 1 && ((centered && p % 2 == 0) || p <= 2)) {
-      P=utils::ceilquotient(p,2);
       u=(i/m)%P;
       size_t offset=r == 0 && i >= P*m && D0 % 2 == 1 ? 1 : 0;
       double incr=(i+P*m*offset)/(2*P*m);
