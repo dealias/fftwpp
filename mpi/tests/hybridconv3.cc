@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
       cout << "N=" << N << endl;
     }
 
-    Application appx(A,B,multNone,fftw::maxthreads,true,true,mx,Dx,Ix);
+    Application appx(A,B,multNone,fftw::maxthreads,true,mx,Dx,Ix);
     Application appy(A,B,multNone,appx,my,Dy,Iy);
     Application appz(A,B,multBinary,appy,mz,Dz,Iz);
 
