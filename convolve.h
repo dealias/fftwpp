@@ -1120,15 +1120,14 @@ public:
     indices->offset=0;
 
     (*mult)(F,blocksize,indices,threads);
-    size_t stride=fft->S*fft->noutputs(0);
 
     size_t b=fft->b;
     size_t stop=fft->span(r);
-    for(size_t d=1; b*d < stop; ++d) {
+    for(size_t d=b; d < stop; d += b) {
       Complex *G[A];
       for(size_t a=0; a < A; ++a)
-        G[a]=F[a]+b*d;
-      indices->offset=stride*d;
+        G[a]=F[a]+d;
+      indices->offset=d;
       (*mult)(G,blocksize,indices,threads);
     }
   }
