@@ -93,6 +93,13 @@ public:
   ptrdiff_t I;
   size_t maxthreads;
 
+  void check() {
+    if(m == 1) {
+      std::cerr << std::endl << "WARNING: m=1 changed to m=0 to force optimization." << std::endl;
+      m=0;
+    }
+  }
+
   Application(size_t A, size_t B, multiplier *mult,
               size_t threads=fftw::maxthreads,
               bool verbose=false, size_t m=0, size_t D=0, ptrdiff_t I=-1) :
@@ -100,6 +107,7 @@ public:
     m(m), D(D), I(I)
   {
     maxthreads=threads;
+    check();
   }
 
   Application(size_t A, size_t B, multiplier *mult, Application &parent,
@@ -108,6 +116,7 @@ public:
     m(m), D(D), I(I)
   {
     maxthreads=parent.maxthreads;
+    check();
   }
 };
 
