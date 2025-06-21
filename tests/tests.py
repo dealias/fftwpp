@@ -74,7 +74,7 @@ class Command:
     self.extraArgs.append("-R")
 
     if options.mpi and nodes !=0:
-        self.mpi=["mpiexec","-n",str(nodes)]
+      self.mpi=["mpiexec","-n",str(nodes)]
 
     self.name=[program.name]
     self.vg=["valgrind"] if options.vg else []
@@ -301,14 +301,14 @@ def test(programs, args):
   T=0 if args.All else int(args.T)
   mpi=args.mpi
 
-  untested_routines=False
-
   if lenP >= 1:
     passed=0
     failed=0
     warnings=0
     total=0
     failedCases=[]
+    untested_routines=False
+    forwardRoutinesNotFound=False
 
     for p in programs:
       name=p.name
@@ -346,20 +346,20 @@ def test(programs, args):
       print(f"Finished testing {name}.")
       print(f"Out of {ptotal} tests, {ppassed} passed{warningText} {pfailed} failed.\n")
 
-      with open('forwardRoutines.yaml') as file:
-        forwardRoutines_dict=yaml.safe_load(file)
+      try:
+        with open('forwardRoutines.yaml') as file:
+          forwardRoutines_dict=yaml.safe_load(file)
+        tested_p,untested_p=getUntestedRoutines(p,args.d)
 
-      tested_p,untested_p=getUntestedRoutines(p,args.d)
+        if len(untested_p)>0:
+          untested_routines=True
+          print("Untested routines:")
+          for routine in untested_p:
+            print(routine)
+          print()
 
-      if len(untested_p)>0:
-        untested_routines=True
-        print("Untested routines:")
-        for routine in untested_p:
-          print(routine)
-        # print("\nTested routines:")
-        # for routine in tested_p:
-        #   print(routine)
-        print()
+      except FileNotFoundError:
+        forwardRoutinesNotFound=True
 
       if lenP > 1:
         print("***************\n")
@@ -383,6 +383,8 @@ def test(programs, args):
 
     if untested_routines:
       print("Warning! There are untested routines!\n")
+    elif forwardRoutinesNotFound:
+      print("Could not check for untested routines: 'forwardRoutines.yaml' not found.")
   else:
     print("No programs to test.\n")
 
