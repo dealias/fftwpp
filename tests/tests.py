@@ -299,7 +299,6 @@ def getPrograms(args):
 def test(programs, args):
   lenP=len(programs)
   T=0 if args.All else int(args.T)
-  mpi=args.mpi
 
   if lenP >= 1:
     passed=0
@@ -347,9 +346,7 @@ def test(programs, args):
       print(f"Out of {ptotal} tests, {ppassed} passed{warningText} {pfailed} failed.\n")
 
       try:
-        with open('forwardRoutines.yaml') as file:
-          forwardRoutines_dict=yaml.safe_load(file)
-        tested_p,untested_p=getUntestedRoutines(p,args.d)
+        untested_p=getUntestedRoutines(p,args.d)
 
         if len(untested_p)>0:
           untested_routines=True
@@ -393,13 +390,13 @@ def iterate(program, threads, options):
   testS=options.testS
   mpi=options.mpi
   if dim == 1:
-    vals=ParameterCollection(findTests(program,1,options,details=True)).vals
+    vals=ParameterCollection(findTests(program,1,details=True)).vals
     for T in threads:
       checkOptimizer(program,vals[0].L,vals[0].M,T,options)
       for x in vals:
         checkCase(program,[x],T,options)
     if not program.mult:
-      cols=[ParameterCollection(findTests(program,2,options,outer=True,details=True))]
+      cols=[ParameterCollection(findTests(program,2,outer=True,details=True))]
       if testS:
         cols+=[copy.deepcopy(cols[0])]
         updateStride(cols[1],3)
@@ -409,12 +406,12 @@ def iterate(program, threads, options):
           for T in threads:
             checkCase(program,[x],T,options)
   else:
-    vals=ParameterCollection(findTests(program,1,options,inner=True,details=options.d)).vals
+    vals=ParameterCollection(findTests(program,1,inner=True,details=options.d)).vals
     if dim == 2:
       nodevals=[0]
       if mpi:
         nodevals=[1,2,4]
-      xcols=[ParameterCollection(findTests(program,2,options,outer=True,details=True))]
+      xcols=[ParameterCollection(findTests(program,2,outer=True,details=True))]
       if testS:
         xcols+=[copy.deepcopy(xcols[0])]
       lenxcols=len(xcols)
@@ -432,9 +429,9 @@ def iterate(program, threads, options):
       nodevals=[0]
       if mpi:
         nodevals=[1,2,4]
-      ycol=ParameterCollection(findTests(program,2,options,outer=True,details=options.d))
+      ycol=ParameterCollection(findTests(program,2,outer=True,details=options.d))
       ycols=[ycol]
-      xcol=ParameterCollection(findTests(program,2,options,outer=True,details=True))
+      xcol=ParameterCollection(findTests(program,2,outer=True,details=True))
       xcols=[xcol]
       if testS:
         ycols+=[copy.deepcopy(ycol)]
@@ -472,7 +469,7 @@ def collectTests(program, L, M, m, minS, Dmin=0, Dmax=0, I0=True, I1=True):
   hermitian=program.hermitian
   real=program.real
 
-  p,q,n=getpqn(centered, hermitian, real, L, M, m)
+  p,q,n=getpqn(centered, hermitian, L, M, m)
 
   if Dmax == 0:
     Dmax=n
@@ -508,7 +505,7 @@ def collectTests(program, L, M, m, minS, Dmin=0, Dmax=0, I0=True, I1=True):
 
   return vals
 
-def getpqn(centered, hermitian, real, L, M, m):
+def getpqn(centered, hermitian, L, M, m):
   p=ceilquotient(L,m)
   if ((centered or hermitian) and p%2==0) or p == 2:
     P=p//2
@@ -545,7 +542,7 @@ def transformType(program, outer=False, inner=False):
   else:
     return "s"
 
-def findTests(program, minS, options, outer=False, inner=False, details=True):
+def findTests(program, minS, outer=False, inner=False, details=True):
   ttype=transformType(program, outer, inner)
   if ttype == "r":
     return realTests(program, minS, details)
@@ -652,13 +649,13 @@ def realTests(program, minS, det):
 
 def checkOptimizer(program, L, M, T, options):
   cmd=Command(program,T,options,L=L,M=M)
-  check(program, cmd, T, options)
+  check(program, cmd, options)
 
 def checkCase(program, vals, T, options, nodes=0):
   cmd=Command(program,T,options,vals,nodes=nodes)
-  check(program, cmd, T, options)
+  check(program, cmd, options)
 
-def check(program, cmd, T, options):
+def check(program, cmd, options):
   output=usecmd(cmd.list)
 
   if options.printEverything:
@@ -805,7 +802,7 @@ def findRoutines(output):
 def getUntestedRoutines(program,d):
 
   with open('forwardRoutines.yaml') as file:
-        forwardRoutines_dict=yaml.safe_load(file)
+    forwardRoutines_dict=yaml.safe_load(file)
 
   if program.mult == True:
     if program.hermitian:
@@ -850,10 +847,11 @@ def getUntestedRoutines(program,d):
 
   known_routines=set(known_routines)
 
-  tested_routines=known_routines.intersection(program.forwardRoutines)
+  #tested_routines=known_routines.intersection(program.forwardRoutines)
+
   untested_routines=known_routines.difference(program.forwardRoutines)
 
-  return list(tested_routines), list(untested_routines)
+  return list(untested_routines)
 
 if __name__ == "__main__":
   main()
