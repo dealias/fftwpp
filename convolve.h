@@ -306,7 +306,7 @@ public:
     if(D > 1 && ((centered && p % 2 == 0) || p <= 2)) {
       u=(i/m)%P;
       size_t offset=r == 0 && i >= P*m && D0 % 2 == 1 ? 1 : 0;
-      double incr=(i+P*m*offset)/(2*P*m);
+      size_t incr=(i+P*m*offset)/(2*P*m);
       r += incr;
       if(i/(P*m)-2*incr+offset == 1) {
         if((!centered && p == 2) || (r > 0 && u == 0))
