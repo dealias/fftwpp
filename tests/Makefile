@@ -26,7 +26,7 @@ endif
 
 #Apple Clang compiler
 ifeq ($(shell $(CXX) -v 2>&1 | head -n 1 | head -c 11),Apple clang)
-CXXFLAGS += -Ofast -g -Wall -DNDEBUG
+CXXFLAGS += -O3 -ffast-math -g -Wall -DNDEBUG
 CXXFLAGS += -fomit-frame-pointer -fstrict-aliasing -ffast-math
 #CXXFLAGS += -msse2 -mfpmath=sse -march=native
 CXXFLAGS += -I/opt/local/include -I/opt/local/include/libomp -Xpreprocessor -fopenmp
