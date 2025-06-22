@@ -4943,8 +4943,6 @@ void fftPadHermitian::backward2Many(Complex *F, Complex *f, size_t r,
     Complex *G=F+b;
     Complex *V=W == F ? G : W+B;
 
-    Complex We[C];
-
     rcfftm->fft(G,V);
 
     PARALLELIF(
@@ -7484,7 +7482,10 @@ Convolution::~Convolution()
   if(allocateW)
     deleteAlign(W);
 
+  delete [] g;
+
   if(q > 1) {
+    delete [] G;
 
     if(loop2)
       delete [] Fp;
@@ -7514,14 +7515,15 @@ void Convolution::convolveRaw(Complex **g)
   } else {
     if(fft->overwrite) {
       forward(g,F,0,0,A);
+      indices.r=0;
+      (*mult)(g,fft->blocksize(0),&indices,threads);
       size_t final=fft->n-1;
-      for(size_t r=0; r < final; ++r) {
+      for(size_t r=1; r < final; ++r) {
         size_t blocksize=fft->blocksize(r);
-        Complex *h[A];
         for(size_t a=0; a < A; ++a)
-          h[a]=g[a]+r*blocksize;
+          G[a]=g[a]+r*blocksize;
         indices.r=r;
-        (*mult)(h,blocksize,&indices,threads);
+        (*mult)(G,blocksize,&indices,threads);
       }
       indices.r=final;
       size_t blocksize=fft->blocksize(final);
@@ -7577,8 +7579,6 @@ void Convolution::convolveRaw(Complex **f, Indices *indices2)
 
 void Convolution::convolveRaw(Complex **f, size_t offset)
 {
-  Complex *G[A];
-  Complex **g=G;
   for(size_t a=0; a < A; ++a)
     g[a]=f[a]+offset;
   convolveRaw(g);

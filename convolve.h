@@ -993,6 +993,7 @@ protected:
   size_t R;
   size_t r;
   Complex **F,**Fp;
+  Complex **G,**g;
   Complex *FpB;
   Complex **V;
   Complex *W;
@@ -1045,11 +1046,13 @@ public:
     size_t N=std::max(A,B);
     allocateF=!F;
     this->F=allocateF ? utils::ComplexAlign(N,outputSize) : F;
+    g=new Complex*[A];
 
     allocateW=!W && !fft->inplace;
     W=allocateW ? utils::ComplexAlign(workSizeW) : NULL;
 
     if(q > 1) {
+      G=new Complex*[A];
       allocateV=false;
       if(V) {
         this->V=new Complex*[B];
@@ -1124,7 +1127,6 @@ public:
     size_t b=fft->b;
     size_t stop=fft->span(r);
     for(size_t d=b; d < stop; d += b) {
-      Complex *G[A];
       for(size_t a=0; a < A; ++a)
         G[a]=F[a]+d;
       indices->offset=d;

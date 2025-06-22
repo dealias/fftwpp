@@ -5,7 +5,7 @@ ifeq ($(shell $(CXX) -v 2>&1 | tail -n 1 | head -c 3),gcc)
 CXXFLAGS += -Ofast -g -Wall -DNDEBUG
 CXXFLAGS += -fopenmp
 CXXFLAGS += -fomit-frame-pointer -fstrict-aliasing -ffast-math
-CXXFLAGS += -march=native
+CXXFLAGS += -march=native -Werror=vla
 #CXXFLAGS += -flto
 #CXXFLAGS += -fprofile-generate
 #CXXFLAGS += -fprofile-use -fprofile-dir=.
@@ -16,12 +16,12 @@ endif
 
 #Clang compiler
 ifeq ($(shell $(CXX) -v 2>&1 | head -n 1 | head -c 5),clang)
-CXXFLAGS += -Ofast -g -Wall -DNDEBUG
+CXXFLAGS += -O3 -ffast-math -g -Wall -DNDEBUG
 CXXFLAGS += -fomit-frame-pointer -fstrict-aliasing -ffast-math
 CXXFLAGS += -msse2 -mfpmath=sse -march=native
 LDFLAGS += -lfftw3_omp
-#Thread nonsense
-#CXXFLAGS += -I/opt/local/include/libomp -Xpreprocessor -fopenmp
+CXXFLAGS += -fopenmp
+#CXXFLAGS += -I/opt/local/include/libomp -Xpreprocessor
 endif
 
 #Apple Clang compiler
