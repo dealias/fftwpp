@@ -1150,9 +1150,9 @@ public:
 
   void convolveRaw(Complex **f);
   void convolveRaw(Complex **f, Indices *indices);
-
   void convolveRaw(Complex **f, size_t offset);
   void convolveRaw(Complex **f, size_t offset, Indices *indices);
+  void convolveRaw(double **f) {convolveRaw((Complex **) f);}
 
   void convolve(Complex **f) {
     convolveRaw(f);
@@ -1162,7 +1162,7 @@ public:
     convolveRaw(f,offset);
     normalize(f,offset);
   }
-
+  void convolve(double **f) {convolve((Complex **) f);}
 };
 
 // Enforce 1D Hermiticity using specified (x >= 0) data.
@@ -1534,9 +1534,16 @@ public:
     }
   }
 
+  void convolveRaw(double **f, size_t offset=0, Indices *indices=NULL) {
+    convolveRaw((Complex **) f,offset,indices);
+  }
+
   void convolve(Complex **f, size_t offset=0) {
     convolveRaw(f,offset);
     normalize(f,offset);
+  }
+  void convolve(double **f, size_t offset=0) {
+    convolve((Complex **) f,offset);
   }
 };
 
@@ -1871,9 +1878,17 @@ public:
     }
   }
 
+  void convolveRaw(double **f, size_t offset=0, Indices *indices=NULL) {
+    convolveRaw((Complex **) f,offset,indices);
+  }
+
   void convolve(Complex **f, size_t offset=0) {
     convolveRaw(f,offset);
     normalize(f,offset);
+  }
+
+  void convolve(double **f, size_t offset=0) {
+    convolve((Complex **) f,offset);
   }
 };
 

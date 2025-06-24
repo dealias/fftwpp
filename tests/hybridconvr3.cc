@@ -73,18 +73,18 @@ int main(int argc, char *argv[])
   }
 
   if(!Output && !testError)
-    Convolve.convolve((Complex **) f);
+    Convolve.convolve(f);
 
   double sum=0.0;
   while(sum < s || T.size() < N) {
     double t;
     if(normalized || testError) {
       cpuTimer c;
-      Convolve.convolve((Complex **) f);
+      Convolve.convolve(f);
       t=c.nanoseconds();
     } else {
       cpuTimer c;
-      Convolve.convolveRaw((Complex **) f);
+      Convolve.convolveRaw(f);
       t=c.nanoseconds();
     }
     T.push_back(t);
