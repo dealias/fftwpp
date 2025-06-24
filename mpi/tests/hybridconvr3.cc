@@ -18,8 +18,8 @@ int main(int argc, char* argv[])
   int divisor=0; // Test for best block divisor
   int alltoall=-1; // Test for best alltoall routine
 
-  Lx=Ly=7;  // input data length
-  Mx=My=10; // minimum padded length
+  Lx=Ly=Lz=4;  // input data length
+  Mx=My=Mz=8; // minimum padded length
 
   fftw::maxthreads=parallel::get_max_threads();
 
@@ -39,11 +39,16 @@ int main(int argc, char* argv[])
 
   optionsHybrid(argc,argv,false,true);
 
-  size_t Hy=ceilquotient(Ly,2);
-
   if(quiet) Output=false;
 
-  MPIgroup group(MPI_COMM_WORLD,Hy);
+  int size;
+  MPI_Comm_size(MPI_COMM_WORLD,&size);
+
+  unsigned int x=ceilquotient(Lx,size);
+  unsigned int y=ceilquotient(Ly,size);
+  bool allowpencil=Lx*y == x*Ly;
+
+  MPIgroup group(MPI_COMM_WORLD,Ly,Lz,allowpencil);
 
   if(group.size > 1 && provided < MPI_THREAD_FUNNELED)
     fftw::maxthreads=1;
@@ -65,47 +70,53 @@ int main(int argc, char* argv[])
 
       cout << "Lx=" << Lx << endl;
       cout << "Ly=" << Ly << endl;
+      cout << "Lz=" << Lz << endl;
       cout << "Mx=" << Mx << endl;
       cout << "My=" << My << endl;
+      cout << "Mz=" << Mz << endl;
 
       cout << "N=" << N << endl;
     }
 
     Application appx(A,B,multNone,fftw::maxthreads,true,mx,Dx,Ix);
-    Application appy(A,B,realMultBinary,appx,my,Dy,Iy);
+    Application appy(A,B,multNone,appx,my,Dy,Iy);
+    Application appz(A,B,multBinary,appy,mz,Dz,Iz);
 
-    split d(Lx,Hy,group.active);
+    split3 d(Lx,Ly,Lz,group,true);
 
     params P;
 
     if(main) {
-      fftPadCentered fftx(Lx,Mx,appx,d.y);
+      fftPadReal fftx(Lx,Mx,appx,d.y*d.z);
       P.x.init(&fftx);
-      fftPadHermitian ffty(Ly,My,appy);
+      fftPad ffty(Ly,My,appy,d.z);
       P.y.init(&ffty);
+      fftPad fftz(Lz,Mz,appz);
+      P.z.init(&fftz);
     }
 
-    MPI_Bcast(&P,sizeof(params),MPI_BYTE,0,group.active);
+    MPI_Bcast(&P,sizeof(params),MPI_BYTE,0,d.communicator);
 
-    fftPadCentered fftx(Lx,Mx,appx,d.y,d.y,P.x.m,P.x.D,P.x.I);
-    fftPadHermitian ffty(Ly,My,appy,1,     P.y.m,P.y.D,P.y.I);
+    fftPadReal fftx(Lx,Mx,appx,d.y*d.z,d.y*d.z,P.x.m,P.x.D,P.x.I);
+    fftPad ffty(Ly,My,appy,d.z,d.z,        P.y.m,P.y.D,P.y.I);
+    fftPad fftz(Lz,Mz,appz,1,1,            P.z.m,P.z.D,P.z.I);
 
-    Convolution2MPI Convolve(&fftx,&ffty,group.active,
+    Convolution3MPI Convolve(&fftx,&ffty,&fftz,group,
                              mpiOptions(divisor,alltoall));
 
-    Complex **f=ComplexAlign(max(A,B),Lx*d.y);
+    double **f=doubleAlign(max(A,B),Lx*d.y*d.z);
 
     for(size_t a=0; a < A; ++a) {
-      Complex *fa=f[a];
+      double *fa=f[a];
       for(size_t i=0; i < Lx; ++i) {
-        int I=Lx % 2 ? i : i-1;
         for(size_t j=0; j < d.y; ++j) {
-          unsigned int J=d.y0+j;
-          fa[d.y*i+j]=Output || testError ? Complex(I+a+1,(a+1)*J+3) : 0.0;
+          size_t J=d.y0+j;
+          for(size_t k=0; k < d.z; ++k) {
+            size_t K=d.z0+k;
+            fa[d.y*d.z*i+d.z*j+k]=Output || testError ? i+(a+1)*J+a*K+1 : 0.0;
+          }
         }
       }
-
-      HermitianSymmetrizeX(d,fa);
     }
 
     if(Output || testError) {
@@ -114,44 +125,45 @@ int main(int argc, char* argv[])
         for(unsigned int a=0; a < A; ++a) {
           if(main)
             cout << "\nDistributed input " << a  << ":" << endl;
-          show(f[a],Lx,d.y,group.active);
+          show(f[a],Lx,d.y,d.z,group.active);
         }
       }
 
-      Complex **flocal=new Complex *[A];
+      double **flocal=new double *[A];
       for(unsigned int a=0; a < A; ++a) {
-        flocal[a]=ComplexAlign(Lx*Hy);
-        gathery(f[a],flocal[a],d,1,group.active);
+        flocal[a]=doubleAlign(Lx*Ly*Lz);
+        gatheryz(f[a],flocal[a],d,group.active);
         if(main && Output)  {
           cout << "\nGathered input " << a << ":" << endl;
-          Array2<Complex> flocala(Lx,Hy,flocal[a]);
+          Array3<double> flocala(Lx,Ly,Lz,flocal[a]);
           cout << flocala << endl;
         }
       }
 
       Convolve.convolve(f);
 
-      Complex *foutgather=ComplexAlign(Lx*Hy);
-      gathery(f[0],foutgather,d,1,group.active);
+      double *foutgather=doubleAlign(Lx*Ly*Lz);
+      gatheryz(f[0],foutgather,d,group.active);
 
       if(Output) {
         if(main)
           cout << "Distributed output:" << endl;
-        show(f[0],Lx,d.y,group.active);
+        show(f[0],Lx,d.y,d.z,group.active);
       }
 
       if(main) {
-        fftPadCentered fftx(Lx,Mx,appx,Hy);
-        fftPadHermitian ffty(Ly,My,appy);
-        Convolution2 Convolve(&fftx,&ffty);
+        fftPadReal fftx(Lx,Mx,appx,Ly*Lz);
+        fftPad ffty(Ly,My,appy,Lz);
+        fftPad fftz(Lz,Mz,appz);
+        Convolution3 Convolve(&fftx,&ffty,&fftz);
         Convolve.convolve(flocal);
 
         if(Output) {
           cout << "Local output:" << endl;
-          Array2<Complex> flocal0(Lx,Hy,flocal[0]);
+          Array3<double> flocal0(Lx,Ly,Lz,flocal[0]);
           cout << flocal0 << endl;
         }
-        retval += checkerror(flocal[0],foutgather,Lx*Hy);
+        retval += checkerror(flocal[0],foutgather,Lx*Ly*Lz);
       }
 
       deleteAlign(foutgather);
@@ -177,7 +189,7 @@ int main(int argc, char* argv[])
       }
 
       if(main) {
-        timings("Hybrid",Lx*Hy,T.data(),T.size(),stats);
+        timings("Hybrid",Lx*Ly*Lz,T.data(),T.size(),stats);
         T.clear();
       }
     }

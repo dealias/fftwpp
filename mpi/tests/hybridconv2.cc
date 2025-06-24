@@ -108,7 +108,7 @@ int main(int argc, char* argv[])
       if(Output) {
         for(unsigned int a=0; a < A; ++a) {
           if(main)
-            cout << "\nDistributed input " << a  << ":"<< endl;
+            cout << "\nDistributed input " << a  << ":" << endl;
           show(f[a],Lx,d.y,group.active);
         }
       }
