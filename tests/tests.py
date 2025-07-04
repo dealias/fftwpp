@@ -322,16 +322,15 @@ def test(programs, args):
         else:
           sys.exit("Could not find OMP_NUM_THREADS environment variable for T=0 option.")
         Ts=[1,Tnum]
-        print(f"Testing {name} with 1 and {Tnum} threads.\n")
-      elif T == 1:
-        print(f"Testing {name} with 1 thread.\n")
-        Ts=[1]
-      elif T > 1:
-        print(f"Testing {name} with {T} threads.\n")
+      elif T >= 1:
         Ts=[T]
       else:
         raise ValueError(f"{T} is an invalid number of threads.")
 
+      iterate(p,Ts,Options(args),dryrun=True)
+      s="s" if len(Ts) > 1 or Ts[0] > 1 else ""
+      print(f"Testing {p.total} cases of {name} with {readable_list(Ts)} thread{s}.\n")
+      p.total=0
       iterate(p,Ts,Options(args))
 
       ppassed=p.passed
@@ -342,8 +341,7 @@ def test(programs, args):
       s="s" if pwarnings > 1 else ""
       warningText=f" with {pwarnings} warning{s}," if pwarnings > 0 else ","
 
-      print(f"Finished testing {name}.")
-      print(f"Out of {ptotal} tests, {ppassed} passed{warningText} {pfailed} failed.\n")
+      print(f"Finished: {ppassed} tests passed{warningText} {pfailed} failed.\n")
 
       try:
         untested_p=getUntestedRoutines(p,args.d)
@@ -385,16 +383,16 @@ def test(programs, args):
   else:
     print("No programs to test.\n")
 
-def iterate(program, threads, options):
+def iterate(program, threads, options, dryrun=False):
   dim=program.dim
   testS=options.testS
   mpi=options.mpi
   if dim == 1:
     vals=ParameterCollection(findTests(program,1,details=True)).vals
     for T in threads:
-      checkOptimizer(program,vals[0].L,vals[0].M,T,options)
+      checkOptimizer(program,vals[0].L,vals[0].M,T,options,dryrun=dryrun)
       for x in vals:
-        checkCase(program,[x],T,options)
+        checkCase(program,[x],T,options,dryrun=dryrun)
     if not program.mult:
       cols=[ParameterCollection(findTests(program,2,outer=True,details=True))]
       if testS:
@@ -404,7 +402,7 @@ def iterate(program, threads, options):
         vals=cols[S].vals
         for x in vals:
           for T in threads:
-            checkCase(program,[x],T,options)
+            checkCase(program,[x],T,options,dryrun=dryrun)
   else:
     vals=ParameterCollection(findTests(program,1,inner=True,details=options.d)).vals
     if dim == 2:
@@ -423,7 +421,7 @@ def iterate(program, threads, options):
           for x in xvals:
             for T in threads:
               for nodes in nodevals:
-                checkCase(program,[x,y],T,options,nodes)
+                checkCase(program,[x,y],T,options,nodes,dryrun=dryrun)
 
     elif dim == 3:
       nodevals=[0]
@@ -451,7 +449,7 @@ def iterate(program, threads, options):
               for x in xvals:
                 for T in threads:
                   for nodes in nodevals:
-                    checkCase(program,[x,y,z],T,options,nodes)
+                    checkCase(program,[x,y,z],T,options,nodes,dryrun=dryrun)
     else:
       exit("Dimension must be 1 2 or 3.")
 
@@ -459,6 +457,14 @@ def iterate(program, threads, options):
 def updateStride(collection, newS):
   for v in collection.vals:
     v.S=newS
+
+def readable_list(seq):
+    """Return a grammatically correct human readable string (with an Oxford comma)."""
+    # Ref: https://stackoverflow.com/a/53981846/
+    seq = [str(s) for s in seq]
+    if len(seq) < 3:
+        return ' and '.join(seq)
+    return ', '.join(seq[:-1]) + ', and ' + seq[-1]
 
 def collectTests(program, L, M, m, minS, Dmin=0, Dmax=0, I0=True, I1=True):
   vals=[]
@@ -647,13 +653,19 @@ def realTests(program, minS, det):
 
   return vals
 
-def checkOptimizer(program, L, M, T, options):
-  cmd=Command(program,T,options,L=L,M=M)
-  check(program, cmd, options)
+def checkOptimizer(program, L, M, T, options, dryrun=False):
+  if not dryrun:
+    cmd=Command(program,T,options,L=L,M=M)
+    check(program, cmd, options)
+  else:
+    program.total+=1
 
-def checkCase(program, vals, T, options, nodes=0):
-  cmd=Command(program,T,options,vals,nodes=nodes)
-  check(program, cmd, options)
+def checkCase(program, vals, T, options, nodes=0, dryrun=False):
+  if not dryrun:
+    cmd=Command(program,T,options,vals,nodes=nodes)
+    check(program, cmd, options)
+  else:
+    program.total+=1
 
 def check(program, cmd, options):
   output=usecmd(cmd.list)
