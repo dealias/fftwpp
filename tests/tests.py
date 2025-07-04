@@ -55,7 +55,7 @@ class Program:
 
 class Options:
   def __init__(self, args):
-    self.tol=args.t
+    self.tol=float(args.t)
     self.verbose=args.v
     self.testS=(args.S or args.All)
     self.R=args.R
