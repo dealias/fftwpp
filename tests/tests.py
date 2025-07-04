@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from math import ceil, floor, isclose, inf
 import subprocess
 import re
 import argparse
@@ -7,6 +8,7 @@ import sys
 from utils import *
 import copy
 import yaml
+import time
 
 def main(mpi=False):
   args=getArgs()
@@ -29,24 +31,26 @@ class Program:
     self.passed=0
     self.warnings=0
     self.total=0
+    self.time_messages=0
+
     self.warningCases=[]
     self.failedCases=[]
 
     self.forwardRoutines=[]
 
+    self.estimatedtime=inf
+    self.progress=Progress()
+
   def passTest(self):
     self.passed+=1
-    self.total+=1
 
   def warningTest(self, case):
     self.passed+=1
     self.warnings+=1
-    self.total+=1
     self.warningCases.append(case)
 
   def failTest(self,case):
     self.failed+=1
-    self.total+=1
     self.failedCases.append(case)
 
   def addFR(self, FR):
@@ -64,6 +68,7 @@ class Options:
     self.vg=args.valgrind
     self.d=args.d
     self.mpi=args.mpi
+    self.hide_progress=args.hide_progress or self.printEverything
 
 class Command:
   def __init__(self, program, T, options, vals=None, L=None, M=None, nodes=0):
@@ -78,7 +83,6 @@ class Command:
 
     self.name=[program.name]
     self.vg=["valgrind"] if options.vg else []
-
 
     if L is not None and M is not None:
       self.L=["-L="+str(L)]
@@ -173,6 +177,32 @@ class Command:
         cmd=["-"+pname+"x="+str(px), "-"+pname+"y="+str(py)]
     return cmd
 
+class Progress:
+  def __init__(self):
+    self.n = 0
+    self.mean = 0.0
+    self.estimatedtime=inf
+    self.total_tests=0
+    self.untimed_tests=0
+    self.min_tests_for_time_estimate=100
+
+  def update(self, x):
+    self.n += 1
+    delta = x - self.mean
+    self.mean += delta / self.n
+
+  def report(self):
+    approximate_time=""
+    if self.n > self.min_tests_for_time_estimate:
+      self.estimatedtime=ceil(min(self.estimatedtime,(self.total_tests-self.n)*self.mean))
+      approximate_time=f" (approximately {seconds_to_readable_time(self.estimatedtime)} remaining)"
+
+    print(f"\rProgress: {self.n+self.untimed_tests}/{self.total_tests}{approximate_time}.\033[K", end="")
+
+    if self.total_tests-self.n <= self.untimed_tests:
+      print("\r\033[K",end="")
+
+
 def getArgs():
   parser = argparse.ArgumentParser(description="Perform Unit Tests on convolutions with hybrid dealiasing.")
   parser.add_argument("-s", help="Test Standard convolutions. Not specifying\
@@ -218,7 +248,7 @@ def getArgs():
                       action="store_true")
   parser.add_argument("-t",metavar='tolerance',help="Error tolerance. Default is 1e-12.",
                       default=1e-12)
-  parser.add_argument("-p",help="Print out everything.",action="store_true")
+  parser.add_argument("-p",help="Print out everything. This automatically turns on --hide_progress.",action="store_true")
   parser.add_argument("-l",help="Show log of failed cases",
                       action="store_true")
   parser.add_argument("-d",help="Check all subtransforms inside multidimensional convolutions. Note: using this flag results in much slower testing.",
@@ -226,6 +256,8 @@ def getArgs():
   parser.add_argument("--valgrind",help="Run tests under valgrind. Requires valgrind to be installed. Note: using this flag results in much slower testing.",
                       action="store_true")
   parser.add_argument("-v",help="Show the results of every test.",
+                      action="store_true")
+  parser.add_argument("--hide_progress", help="Hide test progress information.",
                       action="store_true")
   return parser.parse_args()
 
@@ -330,7 +362,8 @@ def test(programs, args):
       iterate(p,Ts,Options(args),dryrun=True)
       s="s" if len(Ts) > 1 or Ts[0] > 1 else ""
       print(f"Testing {p.total} cases of {name} with {readable_list(Ts)} thread{s}.\n")
-      p.total=0
+
+      p.progress.total_tests=p.total
       iterate(p,Ts,Options(args))
 
       ppassed=p.passed
@@ -465,6 +498,47 @@ def readable_list(seq):
     if len(seq) < 3:
         return ' and '.join(seq)
     return ', '.join(seq[:-1]) + ', and ' + seq[-1]
+
+def seconds_to_readable_time(seconds: float) -> str:
+    if seconds < 0:
+        raise ValueError("Seconds must be non-negative.")
+
+    total_minutes = seconds / 60
+    total_hours = seconds / 3600
+
+    if total_hours >= 1:
+        # Round to the nearest minute, then break into hours and minutes
+        rounded_minutes = round(seconds / 60)
+        hours = rounded_minutes // 60
+        minutes = rounded_minutes % 60
+
+        parts = []
+        parts.append(f"{hours} hour{'s' if hours != 1 else ''}")
+        if minutes > 0:
+            parts.append(f"{minutes} minute{'s' if minutes != 1 else ''}")
+        return ", ".join(parts)
+
+    elif total_minutes > 3:
+        rounded_minutes = round(total_minutes)
+        return f"{rounded_minutes} minute{'s' if rounded_minutes != 1 else ''}"
+
+    else:
+        # For ≤ 5 minutes, show minutes + seconds
+        minutes = floor(seconds / 60)
+        remaining_seconds = seconds - minutes * 60
+
+        parts = []
+        if minutes == 1:
+            parts.append("1 minute")
+        elif minutes > 0:
+            parts.append(f"{minutes} minutes")
+
+        if isclose(remaining_seconds, 1.0, abs_tol=1e-9):
+            parts.append("1 second")
+        elif remaining_seconds > 0:
+            parts.append(f"{round(remaining_seconds):d} seconds")
+
+        return ", ".join(parts) if parts else "0 seconds"
 
 def collectTests(program, L, M, m, minS, Dmin=0, Dmax=0, I0=True, I1=True):
   vals=[]
@@ -657,21 +731,28 @@ def checkOptimizer(program, L, M, T, options, dryrun=False):
   if not dryrun:
     cmd=Command(program,T,options,L=L,M=M)
     check(program, cmd, options)
+    program.progress.untimed_tests += 1
+    program.progress.report()
   else:
     program.total+=1
 
 def checkCase(program, vals, T, options, nodes=0, dryrun=False):
   if not dryrun:
-    cmd=Command(program,T,options,vals,nodes=nodes)
-    check(program, cmd, options)
+    if not options.hide_progress:
+      t0 = time.time()
+      cmd=Command(program,T,options,vals,nodes=nodes)
+      check(program, cmd, options)
+      t1 = time.time()
+      program.progress.update(t1-t0)
+      program.progress.report()
+    else:
+      cmd=Command(program,T,options,vals,nodes=nodes)
+      check(program, cmd, options)
   else:
     program.total+=1
 
 def check(program, cmd, options):
   output=usecmd(cmd.list)
-
-  if options.printEverything:
-    print(f"{cmd.case}\n{output}\n")
 
   FR,BR=findRoutines(output)
   for routine in FR:
@@ -681,22 +762,24 @@ def check(program, cmd, options):
   if options.R:
     routines="\t"+"\t\t".join(FR)+"\n\t"+"\t\t".join(BR)
 
-
   testPassed=True
   if options.valid:
-    testPassed=invalidSearch(program,output,cmd,routines)
+    testPassed=invalidSearch(program,output,cmd,routines,options)
 
   if options.vg:
-    testPassed=segFaultSearch(program,output,cmd,routines)
+    testPassed=segFaultSearch(program,output,cmd,routines,options)
 
   if testPassed:
     if program.mult:
-      errorSearch(program,output,cmd,options,routines,r"Error")
+      testPassed=errorSearch(program,output,cmd,options,routines,r"Error")
     else:
-      testPassed=errorSearch(program,output,cmd,options,routines,r"Backward Error")
-      if testPassed and not program.real:
-        # Forward error is not yet supported in real case
+      testPassed=errorSearch(program,output,cmd,options,routines,r"Backward Error",pass_test=False)
+      if testPassed:
         errorSearch(program,output,cmd,options,routines,r"Forward Error")
+
+  if options.printEverything:# or not testPassed:
+    print(f"{cmd.case}\n{output}\n")
+
 
 def usecmd(cmd):
   vp = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
@@ -709,32 +792,32 @@ def usecmd(cmd):
     output = out.rstrip().decode()
   return output
 
-def errorSearch(program, output, cmd, options, routines, msg):
+def errorSearch(program, output, cmd, options, routines, msg, pass_test=True):
   try:
     error=re.search(r"(?<="+msg+r": )(\w|\d|\.|e|-|\+)*",output)
     if error is not None:
       error=error.group()
       if float(error) > options.tol or error == "nan" or error == "-nan" or error == "inf":
-        return evaluate(program,"f",msg+": "+error,cmd.case,routines)
+        return evaluate(program,"f",msg+": "+error,cmd.case,routines,options)
       else:
         warning=re.search(r"(?<=WARNING: )(\S| )*",output)
         if warning is not None:
-          return evaluate(program,"w",warning.group(),cmd.case,routines)
+          return evaluate(program,"w",warning.group(),cmd.case,routines,options)
         else:
-          return evaluate(program,"p",msg+": "+error,cmd.case,routines,options.verbose)
+          return evaluate(program,"p",msg+": "+error,cmd.case,routines,options,options.verbose, pass_test=pass_test)
     else:
-      return evaluate(program,"f",msg+" not found.",cmd.case,routines)
+      return evaluate(program,"f",msg+" not found.",cmd.case,routines,options)
   except Exception as e:
-    return evaluate(program,"f",f" Exception raised.\n\t{e}",cmd.case,routines)
+    return evaluate(program,"f",f" Exception raised.\n\t{e}",cmd.case,routines,options)
 
-def invalidSearch(program, output, cmd, routines):
+def invalidSearch(program, output, cmd, routines,options):
   msg="Optimizer found no valid cases with specified parameters."
   try:
     invalidTest=re.search(msg,output)
     if invalidTest is not None:
-      return evaluate(program,"w",msg,cmd.case,routines)
+      return evaluate(program,"w",msg,cmd.case,routines,options)
   except Exception as e:
-    return evaluate(program,"f",f" Exception raised.\n\t{e}",cmd.case,routines)
+    return evaluate(program,"f",f" Exception raised.\n\t{e}",cmd.case,routines,options)
 
   if program.dim == 1:
     # optimization parameters
@@ -744,13 +827,13 @@ def invalidSearch(program, output, cmd, routines):
       try:
         invalidTest=re.search(msg,output)
         if invalidTest is None:
-          evaluate(program,"w",msg+" not found.",cmd.case,routines)
+          evaluate(program,"w",msg+" not found.",cmd.case,routines,options)
           break
       except Exception as e:
-        evaluate(program,"f",f" Exception raised.\n\t{e}",cmd.case,routines)
+        evaluate(program,"f",f" Exception raised.\n\t{e}",cmd.case,routines,options)
   return True
 
-def segFaultSearch(program, output, cmd, routines):
+def segFaultSearch(program, output, cmd, routines,options):
   errSum="ERROR SUMMARY"
   invRead="Invalid read"
   invWrite="Invalid write"
@@ -760,41 +843,44 @@ def segFaultSearch(program, output, cmd, routines):
     iW=re.search(invWrite,output)
     if iR is not None:
       if iW is not None:
-        return evaluate(program,"f",f"{invRead} and {invWrite.lower()}",cmd.case,routines)
-      return evaluate(program,"f",invRead,cmd.case,routines)
+        return evaluate(program,"f",f"{invRead} and {invWrite.lower()}",cmd.case,routines,options)
+      return evaluate(program,"f",invRead,cmd.case,routines,options)
     if iW is not None:
-      return evaluate(program,"f",invWrite,cmd.case,routines)
+      return evaluate(program,"f",invWrite,cmd.case,routines,options)
     if error is not None:
       error=int(error.group())
       if error == 0:
         return True
       elif error > 0:
         s="s" if error > 1 else ""
-        return evaluate(program,"f",f"Valgrind found {error} error{s}",cmd.case,routines)
+        return evaluate(program,"f",f"Valgrind found {error} error{s}",cmd.case,routines,options)
   except Exception as e:
-    return evaluate(program,"f",f" Exception raised.\n\t{e}",cmd.case,routines)
-  return evaluate(program,"f","tests.py does not recognize valgrind error.",cmd.case,routines)
+    return evaluate(program,"f",f" Exception raised.\n\t{e}",cmd.case,routines,options)
+  return evaluate(program,"f","tests.py does not recognize valgrind error.",cmd.case,routines,options)
 
-def evaluate(program, result, message, case, routines, verbose=True):
+def evaluate(program, result, message, case, routines, options, verbose=True,pass_test=True):
   boldPassedTest="\033[1mPassed Test:\033[0m"
   boldFailedTest="\033[1mFailed Test:\033[0m"
   boldWarning="\033[1mWARNING:\033[0m"
   if result=="p":
-    program.passTest()
-    printResults(boldPassedTest, message, case, routines, verbose)
+    if pass_test:
+      program.passTest()
+    printResults(boldPassedTest, message, case, routines, options, verbose)
     return True
   elif result=="w":
     program.warningTest(case)
-    printResults(boldWarning, message, case, routines, verbose)
+    printResults(boldWarning, message, case, routines, options, verbose)
     return False
   elif result=="f":
     program.failTest(case)
-    printResults(boldFailedTest, message, case, routines, verbose)
+    printResults(boldFailedTest, message, case, routines, options, verbose)
     return False
   else:
     sys.exit("In evaluate, result must either be 'p', 'w', or 'f'.")
 
-def printResults(resultMessage, message, case, routines, verbose):
+def printResults(resultMessage, message, case, routines, options, verbose):
+  if not options.hide_progress:
+      print("\r\033[K",end="")
   if verbose:
     print("\t"+resultMessage+" "+message)
     print("\t"+case)
@@ -858,8 +944,6 @@ def getUntestedRoutines(program,d):
       known_routines+=forwardRoutines_dict["Standard"]["forwardManyRoutines"]
 
   known_routines=set(known_routines)
-
-  #tested_routines=known_routines.intersection(program.forwardRoutines)
 
   untested_routines=known_routines.difference(program.forwardRoutines)
 
