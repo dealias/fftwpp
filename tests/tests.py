@@ -184,7 +184,7 @@ class Progress:
     self.estimatedtime=inf
     self.total_tests=0
     self.untimed_tests=0
-    self.min_tests_for_time_estimate=10
+    self.min_tests_for_time_estimate=5
     self.time_for_estimate=2
 
   def update(self, x):
