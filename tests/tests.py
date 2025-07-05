@@ -184,7 +184,8 @@ class Progress:
     self.estimatedtime=inf
     self.total_tests=0
     self.untimed_tests=0
-    self.min_tests_for_time_estimate=100
+    self.min_tests_for_time_estimate=10
+    self.time_for_estimate=2
 
   def update(self, x):
     self.n += 1
@@ -193,7 +194,7 @@ class Progress:
 
   def report(self):
     approximate_time=""
-    if self.n > self.min_tests_for_time_estimate:
+    if self.n*self.mean > self.time_for_estimate and self.n > self.min_tests_for_time_estimate:
       self.estimatedtime=ceil(min(self.estimatedtime,(self.total_tests-self.n)*self.mean))
       approximate_time=f" (approximately {seconds_to_readable_time(self.estimatedtime)} remaining)"
 
@@ -201,6 +202,7 @@ class Progress:
 
     if self.total_tests-self.n <= self.untimed_tests:
       print("\r\033[K",end="")
+
 
 
 def getArgs():
