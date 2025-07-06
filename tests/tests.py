@@ -212,7 +212,7 @@ def getArgs():
                       default=1)
   parser.add_argument("-S", help="Test different strides.",
                       action="store_true")
-  parser.add_argument("-A","--All", help="Perform all tests. If the dimension\
+  parser.add_argument("-A","--All", help="Perform 'all' tests. Equivalent to specifying '-i -T0 -S'. If the dimension\
                       (1, 2 or 3) and/or convolution type (s, c or H) is\
                       specified then perform all tests in that dimension and/or\
                       type.",
