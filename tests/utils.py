@@ -1,5 +1,6 @@
 import collections
 import subprocess
+from math import ceil, floor, isclose, inf
 
 def ceilpow2(n):
   n-=1
@@ -40,6 +41,92 @@ def usecmd(cmd):
     out, _ = vp.communicate()
     output = out.rstrip().decode()
   return output
+
+def readable_list(seq):
+    """Return a grammatically correct human readable string (with an Oxford comma)."""
+    # Ref: https://stackoverflow.com/a/53981846/
+    seq = [str(s) for s in seq]
+    if len(seq) < 3:
+        return ' and '.join(seq)
+    return ', '.join(seq[:-1]) + ', and ' + seq[-1]
+
+def seconds_to_readable_time(seconds):
+    if seconds < 0:
+        raise ValueError("Seconds must be non-negative.")
+
+    total_minutes = seconds / 60
+    total_hours = seconds / 3600
+    total_days = seconds / 86400
+
+    if total_days >= 1:
+        # Round to nearest hour and convert to days + hours
+        rounded_hours = round(seconds / 3600)
+        days = rounded_hours // 24
+        hours = rounded_hours % 24
+
+        parts = [f"{days} day{'s' if days != 1 else ''}"]
+        if hours > 0:
+            parts.append(f"{hours} hour{'s' if hours != 1 else ''}")
+        return ", ".join(parts)
+
+    elif total_hours >= 1:
+        # Round to nearest minute and convert to hours + minutes
+        rounded_minutes = round(seconds / 60)
+        hours = rounded_minutes // 60
+        minutes = rounded_minutes % 60
+
+        parts = [f"{hours} hour{'s' if hours != 1 else ''}"]
+        if minutes > 0:
+            parts.append(f"{minutes} minute{'s' if minutes != 1 else ''}")
+        return ", ".join(parts)
+
+    elif total_minutes > 5:
+        rounded_minutes = round(total_minutes)
+        return f"{rounded_minutes} minute{'s' if rounded_minutes != 1 else ''}"
+
+    else:
+        # For ≤ 5 minutes, show minutes + seconds (to 2 decimals)
+        minutes = floor(seconds / 60)
+        remaining_seconds = seconds - minutes * 60
+
+        parts = []
+        if minutes == 1:
+            parts.append("1 minute")
+        elif minutes > 0:
+            parts.append(f"{minutes} minutes")
+
+        if isclose(remaining_seconds, 1.0, abs_tol=1e-9):
+            parts.append("1 second")
+        elif remaining_seconds > 0:
+            parts.append(f"{round(remaining_seconds):d} seconds")
+
+        return ", ".join(parts) if parts else "0 seconds"
+
+class Progress:
+  def __init__(self):
+    self.n = 0
+    self.mean = 0.0
+    self.estimatedtime=inf
+    self.total_tests=0
+    self.untimed_tests=0
+    self.min_tests_for_time_estimate=5
+    self.time_for_estimate=2
+
+  def update(self, x):
+    self.n += 1
+    delta = x - self.mean
+    self.mean += delta / self.n
+
+  def report(self):
+    approximate_time=""
+    if self.n*self.mean > self.time_for_estimate and self.n > self.min_tests_for_time_estimate:
+      self.estimatedtime=ceil(min(self.estimatedtime,(self.total_tests-self.n)*self.mean))
+      approximate_time=f" (approximately {seconds_to_readable_time(self.estimatedtime)} remaining)"
+
+    print(f"\rProgress: {self.n+self.untimed_tests}/{self.total_tests}{approximate_time}.\033[K", end="")
+
+    if self.total_tests-self.n <= self.untimed_tests:
+      print("\r\033[K",end="")
 
 class ParameterCollection():
 # Holds a collection of Params for a given program

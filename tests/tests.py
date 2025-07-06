@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-from math import ceil, floor, isclose, inf
 import subprocess
 import re
 import argparse
@@ -176,34 +175,6 @@ class Command:
       else:
         cmd=["-"+pname+"x="+str(px), "-"+pname+"y="+str(py)]
     return cmd
-
-class Progress:
-  def __init__(self):
-    self.n = 0
-    self.mean = 0.0
-    self.estimatedtime=inf
-    self.total_tests=0
-    self.untimed_tests=0
-    self.min_tests_for_time_estimate=5
-    self.time_for_estimate=2
-
-  def update(self, x):
-    self.n += 1
-    delta = x - self.mean
-    self.mean += delta / self.n
-
-  def report(self):
-    approximate_time=""
-    if self.n*self.mean > self.time_for_estimate and self.n > self.min_tests_for_time_estimate:
-      self.estimatedtime=ceil(min(self.estimatedtime,(self.total_tests-self.n)*self.mean))
-      approximate_time=f" (approximately {seconds_to_readable_time(self.estimatedtime)} remaining)"
-
-    print(f"\rProgress: {self.n+self.untimed_tests}/{self.total_tests}{approximate_time}.\033[K", end="")
-
-    if self.total_tests-self.n <= self.untimed_tests:
-      print("\r\033[K",end="")
-
-
 
 def getArgs():
   parser = argparse.ArgumentParser(description="Perform Unit Tests on convolutions with hybrid dealiasing.")
@@ -492,55 +463,6 @@ def iterate(program, threads, options, dryrun=False):
 def updateStride(collection, newS):
   for v in collection.vals:
     v.S=newS
-
-def readable_list(seq):
-    """Return a grammatically correct human readable string (with an Oxford comma)."""
-    # Ref: https://stackoverflow.com/a/53981846/
-    seq = [str(s) for s in seq]
-    if len(seq) < 3:
-        return ' and '.join(seq)
-    return ', '.join(seq[:-1]) + ', and ' + seq[-1]
-
-def seconds_to_readable_time(seconds: float) -> str:
-    if seconds < 0:
-        raise ValueError("Seconds must be non-negative.")
-
-    total_minutes = seconds / 60
-    total_hours = seconds / 3600
-
-    if total_hours >= 1:
-        # Round to the nearest minute, then break into hours and minutes
-        rounded_minutes = round(seconds / 60)
-        hours = rounded_minutes // 60
-        minutes = rounded_minutes % 60
-
-        parts = []
-        parts.append(f"{hours} hour{'s' if hours != 1 else ''}")
-        if minutes > 0:
-            parts.append(f"{minutes} minute{'s' if minutes != 1 else ''}")
-        return ", ".join(parts)
-
-    elif total_minutes > 3:
-        rounded_minutes = round(total_minutes)
-        return f"{rounded_minutes} minute{'s' if rounded_minutes != 1 else ''}"
-
-    else:
-        # For ≤ 5 minutes, show minutes + seconds
-        minutes = floor(seconds / 60)
-        remaining_seconds = seconds - minutes * 60
-
-        parts = []
-        if minutes == 1:
-            parts.append("1 minute")
-        elif minutes > 0:
-            parts.append(f"{minutes} minutes")
-
-        if isclose(remaining_seconds, 1.0, abs_tol=1e-9):
-            parts.append("1 second")
-        elif remaining_seconds > 0:
-            parts.append(f"{round(remaining_seconds):d} seconds")
-
-        return ", ".join(parts) if parts else "0 seconds"
 
 def collectTests(program, L, M, m, minS, Dmin=0, Dmax=0, I0=True, I1=True):
   vals=[]
