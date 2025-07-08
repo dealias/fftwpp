@@ -219,7 +219,7 @@ int main(int argc, char *argv[])
     }
 
     double sum=0.0;
-    while(sum <= s || T.size() < N) {
+    while(sum < s || T.size() < N) {
       init(F,mx,my,nxp,nyp,A,xcompact,ycompact);
       cpuTimer c;
       C.convolve(F,mult);
@@ -265,7 +265,7 @@ int main(int argc, char *argv[])
     cout << "threads=" << C.Threads() << endl << endl;
 
     double sum=0.0;
-    while(sum <= s || T.size() < N) {
+    while(sum < s || T.size() < N) {
       init(F,mx,my,nxp,nyp,A,true,true);
       cpuTimer c;
       C.convolve(F,F+M);

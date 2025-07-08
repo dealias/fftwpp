@@ -4,7 +4,6 @@
 #include "explicit.h"
 #include "direct.h"
 #include "utils.h"
-#include "options.h"
 #include "Array.h"
 
 using namespace std;
@@ -122,7 +121,8 @@ int main(int argc, char *argv[])
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hdeipA:B:s:Om:x:y:z:n:T:uS:X:Y:Z:");
+    int c = getopt_long(argc,argv,"hdeipA:B:s:Om:x:y:z:n:T:uS:X:Y:Z:",
+                        NULL,NULL);
     if (c == -1) break;
 
     switch (c) {
@@ -247,7 +247,7 @@ int main(int argc, char *argv[])
     }
 
     double sum=0.0;
-    while(sum <= s || T.size() < N) {
+    while(sum < s || T.size() < N) {
       init(F,mx,my,mz,nxp,nyp,nzp,A,xcompact,ycompact,zcompact);
       cpuTimer c;
       C.convolve(F,mult);
@@ -298,7 +298,7 @@ int main(int argc, char *argv[])
     array3<Complex> g(nxp,nyp,nzp,F[1]);
 
     double sum=0.0;
-    while(sum <= s || T.size() < N) {
+    while(sum < s || T.size() < N) {
       cpuTimer c;
       f=0.0;
       g=0.0;

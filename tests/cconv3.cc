@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
     ImplicitConvolution3 C(mx,my,mz,A,B);
     cout << "Using " << C.Threads() << " threads."<< endl;
     double sum=0.0;
-    while(sum <= s || T.size() < N) {
+    while(sum < s || T.size() < N) {
       init(F,mx,my,mz,A);
       cpuTimer c;
       C.convolve(F,mult);
@@ -259,7 +259,7 @@ int main(int argc, char *argv[])
     ExplicitConvolution3 C(nx,ny,nz,mx,my,mz,f,Pruned);
 
     double sum=0.0;
-    while(sum <= s || T.size() < N) {
+    while(sum < s || T.size() < N) {
       init(F,nxp,nyp,nzp,A);
       cpuTimer c;
       C.convolve(F[0],F[1]);

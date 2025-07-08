@@ -266,7 +266,7 @@ int main(int argc, char *argv[])
       mult=multA;
 
     double sum=0.0;
-    while(sum <= s || T.size() < N) {
+    while(sum < s || T.size() < N) {
       init(F,m,A);
       cpuTimer c;
       C.convolve(F,mult);
@@ -310,7 +310,7 @@ int main(int argc, char *argv[])
     else mult=multBinaryUnNormalized;
 ;
     double sum=0.0;
-    while(sum <= s || T.size() < N) {
+    while(sum < s || T.size() < N) {
       init(F,m,2);
       cpuTimer c;
       C.convolve(F,mult,G);

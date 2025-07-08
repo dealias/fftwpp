@@ -4,8 +4,6 @@
 #include "explicit.h"
 #include "direct.h"
 #include "utils.h"
-#include "options.h"
-#include "options.h"
 
 using namespace std;
 using namespace utils;
@@ -101,7 +99,8 @@ int main(int argc, char *argv[])
   optind=0;
 #endif
   for (;;) {
-    int c = getopt(argc,argv,"hdeiptA:B:I:s:Om:n:uS:T:");
+    int c = getopt_long(argc,argv,"hdeiptA:B:I:s:Om:n:uS:T:",
+                        NULL,NULL);
     if (c == -1) break;
 
     switch (c) {
@@ -235,7 +234,7 @@ int main(int argc, char *argv[])
     }
 
     double sum=0.0;
-    while(sum <= s || T.size() < N) {
+    while(sum < s || T.size() < N) {
       init(F,m,A);
       cpuTimer c;
       C.convolve(F,mult);
@@ -284,7 +283,7 @@ int main(int argc, char *argv[])
 ;
     ExplicitConvolution C(n,m,F[0],G[0]);
     double sum=0.0;
-    while(sum <= s || T.size() < N) {
+    while(sum < s || T.size() < N) {
       init(F,m,A);
       cpuTimer c;
       C.convolve(F,mult,G);
@@ -313,17 +312,22 @@ int main(int argc, char *argv[])
     directconv<Complex> C(m);
     if(A % 2 == 0 && A > 2)
       A=2;
-    init(F,m,A);
     Complex *h=ComplexAlign(m);
-    cpuTimer c;
-    if(A == 2)
-      C.convolve(h,F[0],F[1]);
-    if(A == 1)
-      C.autoconvolve(h,F[0]);
-    T[0]=c.nanoseconds();
+    double sum=0.0;
+    while(sum < s || T.size() < N) {
+      init(F,m,A);
+      cpuTimer c;
+      if(A == 2)
+        C.convolve(h,F[0],F[1]);
+      else if(A == 1)
+        C.autoconvolve(h,F[0]);
+      double t=c.nanoseconds();
+      T.push_back(t);
+      sum += t;
+    }
 
     cout << endl;
-    timings("Direct",m,T.data(),1);
+    timings("Direct",m,T.data(),T.size(),stats);
 
     if(Output)
       for(size_t i=0; i < m; i++)

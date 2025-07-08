@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
     Convolve.convolve((Complex **) f);
 
   double sum=0.0;
-  while(sum <= s || T.size() < N) {
+  while(sum < s || T.size() < N) {
     double t;
     if(normalized || testError) {
       cpuTimer c;

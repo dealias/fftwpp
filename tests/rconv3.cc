@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
   cout << "threads=" << Convolve.Threads() << endl << endl;;
 
   double sum=0.0;
-  while(sum <= s || T.size() < N) {
+  while(sum < s || T.size() < N) {
     init(F,mx,my,mz,A);
     cpuTimer c;
     for(size_t a=0; a < A; ++a) {

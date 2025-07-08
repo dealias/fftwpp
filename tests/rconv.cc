@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
 
   ExplicitRConvolution Convolve(n,m,F0[0],G0[0]);
   double sum=0.0;
-  while(sum <= s || T.size() < N) {
+  while(sum < s || T.size() < N) {
     init(F,m,A);
     cpuTimer c;
     for(size_t a=0; a < A; ++a) {
