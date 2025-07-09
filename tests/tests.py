@@ -4,7 +4,7 @@ import subprocess
 import re
 import argparse
 import sys
-from utils import *
+from utils import ceilpow2, ceilquotient, usecmd, readable_list, Progress, ParameterCollection, Parameters
 import copy
 import yaml
 import time
@@ -37,7 +37,7 @@ class Program:
 
     self.forwardRoutines=[]
 
-    self.estimatedtime=inf
+    self.estimatedtime=float('inf')
     self.progress=Progress()
 
   def passTest(self):
@@ -704,17 +704,6 @@ def check(program, cmd, options):
   if options.printEverything:# or not testPassed:
     print(f"{cmd.case}\n{output}\n")
 
-
-def usecmd(cmd):
-  vp = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
-  vp.wait()
-  prc = vp.returncode
-  output = ""
-
-  if prc == 0:
-    out, _ = vp.communicate()
-    output = out.rstrip().decode()
-  return output
 
 def errorSearch(program, output, cmd, options, routines, msg, pass_test=True):
   try:

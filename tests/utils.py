@@ -1,6 +1,7 @@
 import collections
 import subprocess
-from math import ceil, floor, isclose, inf
+from math import ceil, floor, isclose
+import time
 
 def ceilpow2(n):
   n-=1
@@ -32,15 +33,19 @@ def nextfftsize(m):
   return N
 
 def usecmd(cmd):
-  vp = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
-  vp.wait()
-  prc = vp.returncode
-  output = ""
-
-  if prc == 0:
+  try:
+    t0=time.time()
+    vp = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     out, _ = vp.communicate()
-    output = out.rstrip().decode()
-  return output
+    prc = vp.returncode
+    output = out.rstrip().decode() if out else ""
+    if prc == 0:
+        return output
+    else:
+        return output
+
+  except Exception as e:
+    return f"Error running command: {e}"
 
 def readable_list(seq):
     """Return a grammatically correct human readable string (with an Oxford comma)."""
@@ -106,7 +111,7 @@ class Progress:
   def __init__(self):
     self.n = 0
     self.mean = 0.0
-    self.estimatedtime=inf
+    self.estimatedtime=float('inf')
     self.total_tests=0
     self.untimed_tests=0
     self.min_tests_for_time_estimate=5
