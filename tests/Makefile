@@ -11,7 +11,6 @@ CXXFLAGS += -march=native -Werror=vla
 #CXXFLAGS += -fprofile-use -fprofile-dir=.
 #For valgrind:
 #CXXFLAGS=-fopenmp -g -Wall -fomit-frame-pointer -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse
-LDFLAGS += -lfftw3_omp
 endif
 
 #Clang compiler
@@ -19,32 +18,28 @@ ifeq ($(shell $(CXX) -v 2>&1 | head -n 1 | head -c 5),clang)
 CXXFLAGS += -O3 -ffast-math -g -Wall -DNDEBUG
 CXXFLAGS += -fomit-frame-pointer -fstrict-aliasing -ffast-math
 CXXFLAGS += -msse2 -mfpmath=sse -march=native
-LDFLAGS += -lfftw3_omp
 CXXFLAGS += -fopenmp
 #CXXFLAGS += -I/opt/local/include/libomp -Xpreprocessor
 endif
 
-#Apple Clang compiler
+#Apple Clang compiler #sudo port install fftw-3 +openmp
 ifeq ($(shell $(CXX) -v 2>&1 | head -n 1 | head -c 11),Apple clang)
 CXXFLAGS += -O3 -ffast-math -g -Wall -DNDEBUG
 CXXFLAGS += -fomit-frame-pointer -fstrict-aliasing -ffast-math
 #CXXFLAGS += -msse2 -mfpmath=sse -march=native
 CXXFLAGS += -I/opt/local/include -I/opt/local/include/libomp -Xpreprocessor -fopenmp
 LDFLAGS += -L/opt/local/lib -L/opt/local/lib/libomp -lomp
-LDFLAGS += -lfftw3_threads
 endif
 
 #Intel compiler
 ifeq ($(shell $(CXX) --version 2>&1 | head -c 4),icpc)
 CXXFLAGS += -O3 -qopenmp -ansi-alias -malign-double -fp-model fast=2
 LDFLAGS += -lmpi -lmpi_cxx
-LDFLAGS += -lfftw3_omp
 endif
 
 #IBM compiler
 ifeq ($(shell $(CXX) -qversion 2>&1 | head -c 3),IBM)
 CXXFLAGS += -O5 -P -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp
-LDFLAGS += -lfftw3_omp
 endif
 
 CXXFLAGS += $(DEFS) -I$(IDIR) -std=c++11
@@ -57,7 +52,7 @@ endif
 ifneq ($(strip $(FFTW_LIB_PATH)),)
 LDFLAGS += -L$(FFTW_LIB_PATH)
 endif
-LDFLAGS += -lfftw3 -lm
+LDFLAGS += -lfftw3 -lfftw3_omp -lm
 
 MAKEDEPEND=$(CXXFLAGS) -O0 -M -DDEPEND
 
