@@ -1,16 +1,19 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.15)
 
-project( fftwpp_examples LANGUAGES CXX )
+project( fftwpp_tests LANGUAGES CXX )
 
-find_package(OpenMP REQUIRED)
+# C++ standard
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(PkgConfig REQUIRED)
 pkg_search_module(FFTW REQUIRED fftw3 IMPORTED_TARGET)
 include_directories(PkgConfig::FFTW)
-link_libraries     (PkgConfig::FFTW)
+link_libraries(PkgConfig::FFTW)
 
 set( fft_list
   example0
+  example0r
   example0m
   example0mr
   example1
@@ -19,55 +22,100 @@ set( fft_list
   example2r
   example3
   example3r
+  exampletranspose
   optimal
-  )
+)
 
 set( conv_list
   exampleconv
-  exampleconvh
-  exampleconvr
   exampleconv2
-  exampleconvh2
-  exampleconvr2
   exampleconv3
+  exampleconvh
+  exampleconvh2
   exampleconvh3
+  exampleconvr
+  exampleconvr2
   exampleconvr3
-  exampletranspose
-  )
+)
 
-set( sample_list ${fft_list} ${conv_list})
+include_directories(${CMAKE_SOURCE_DIR}/../)
 
-if ( CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" )
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -g -Wall -DNDEBUG -fomit-frame-pointer \
-	-fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native -fopenmp")
-elseif( CMAKE_CXX_COMPILER_ID STREQUAL "Intel" )
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -qopenmp -ansi-alias -malign-double -fp-model fast=2")
-elseif( CMAKE_CXX_COMPILER_ID STREQUAL "XL" )
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O5 -P -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp")
-endif()
+if ( CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR
+      CMAKE_CXX_COMPILER_ID STREQUAL "Clang" )
+  add_compile_options(-Ofast -g -Wall -DNDEBUG -fomit-frame-pointer
+    -fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native -fopenmp)
+  if ( CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    message(STATUS "Using GNU compiler flags")
+  else()
+    message(STATUS "Using Clang compiler flags")
+  endif()
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+  message(STATUS "Using Apple Clang compiler flags")
 
-add_library( fftw++ OBJECT ../fftw++.cc )
-add_library( convolve OBJECT ../convolve.cc )
-add_library( parallel OBJECT ../parallel.cc )
-
-foreach( sample ${sample_list} )
-
-  add_executable( ${sample} ${sample}.cc )
-
-  target_include_directories(${sample} SYSTEM PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/../
-    ${FFTW_INCLUDE_DIRS})
-
-  if (${sample} IN_LIST conv_list)
-    target_link_libraries( ${sample} PUBLIC convolve parallel )
+  if(EXISTS "/opt/local/lib" AND EXISTS "/opt/local/lib/libomp")
+  message(STATUS "Using OpenMP via MacPorts")
+  # Provide OpenMP hints BEFORE find_package()
+  set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp")
+  set(OpenMP_CXX_LIB_NAMES "omp")
+  set(OpenMP_omp_LIBRARY "omp")
+  link_directories(/opt/local/lib /opt/local/lib/libomp)
+  include_directories(/opt/local/include /opt/local/include/libomp)
   endif()
 
-  target_link_libraries( ${sample} PUBLIC
-    OpenMP::OpenMP_CXX
-    PkgConfig::FFTW
-    "-lfftw3_omp"
-    parallel
-    fftw++)
-  # NB: FFTW is missing the fftw3_omp link in the package config file, so we add it manually.
+  add_compile_options(
+    -O3 -ffast-math -g -Wall -DNDEBUG
+    -fomit-frame-pointer -fstrict-aliasing
+  )
 
-endforeach( sample )
+elseif( CMAKE_CXX_COMPILER_ID STREQUAL "Intel" )
+  message(STATUS "Using Intel compiler flags")
+  add_compile_options(-O3 -qopenmp -ansi-alias -malign-double -fp-model fast=2)
+
+elseif( CMAKE_CXX_COMPILER_ID STREQUAL "XL" )
+  message(STATUS "Using XL compiler flags")
+  add_compile_options(-O5 -P -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp)
+
+endif()
+
+set( lib_list fftw++ parallel )
+foreach( libname ${lib_list} )
+  add_library( ${libname} OBJECT ../${libname}.cc )
+endforeach()
+
+set( lib_convtest_list convolve )
+foreach( libname ${lib_convtest_list} )
+  add_library( ${libname} OBJECT ../${libname}.cc )
+  target_include_directories( ${libname} PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/../ )
+endforeach()
+
+# Find OpenMP properly
+find_package(OpenMP REQUIRED)
+
+if(OPENMP_FOUND)
+  message(STATUS "OpenMP found")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_CXX_FLAGS}")
+else()
+  message(FATAL_ERROR "OpenMP not found")
+endif()
+
+set(FFTW_LIBS fftw3 fftw3_omp m ${OpenMP_CXX_LIBRARIES})
+
+set(FFTW_SOURCES ../fftw++.cc ../parallel.cc)
+set(HYBRID_SOURCES ${FFTW_SOURCES} ../convolve.cc)
+
+add_library(fftw_helpers STATIC ${FFTW_SOURCES})
+
+add_library(hybrid_helpers STATIC ${HYBRID_SOURCES})
+target_link_libraries(hybrid_helpers PRIVATE fftw_helpers)
+
+foreach(fft IN LISTS fft_list)
+  add_executable(${fft} ${fft}.cc)
+  target_link_libraries(${fft} PRIVATE fftw_helpers ${FFTW_LIBS})
+endforeach()
+
+foreach(conv IN LISTS conv_list)
+  add_executable(${conv} ${conv}.cc)
+  target_link_libraries(${conv} PRIVATE hybrid_helpers ${FFTW_LIBS})
+endforeach()
