@@ -8,7 +8,7 @@ program fexample
   integer(c_int) :: Lx, Ly, Lz
   integer(c_int) :: Hx, Hy, Hz
   integer(c_int) :: x0, y0
-  integer(c_int) ::  i, j, k
+  integer(c_int) :: k
 
   integer :: returnflag
 

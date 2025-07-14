@@ -77,14 +77,6 @@ int main()
 
   size_t nthreads=2;
 
-  size_t M=2; /* dimension of dot product */
-  double overM=1.0/(double) M;
-
-  double complex *pf[M];
-  double complex *pg[M];
-
-  int returnflag=0;
-
   set_fftwpp_maxthreads(nthreads);
 
   {
