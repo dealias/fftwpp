@@ -95,6 +95,8 @@ Either a 1D ("slab") and 2D ("pencil") data decomposition is used for the three-
 
 `hybridconvh2.cc` and `hybridconvh3.cc` demonstrate two- and three-dimensional Hermitian-symmetric centered convolutions.
 
+`hybridconvr2.cc` and `hybridconvr3.cc` demonstrate two- and three-dimensional real convolutions.
+
 `fft2.cc` and `fft2r.cc` demonstrate two-dimensional MPI/OpenMP FFTs using a 1D data decomposition, for complex and real data, respectively.
 
 `fft3.cc` and `fft3r.cc` demonstrate three-dimensional MPI/OpenMP FFTs for complex and real data, respectively.
@@ -124,6 +126,8 @@ The following programs are provided in `tests/`, along with various timing and e
 
 - 3D Hermitian convolution test: `hybridconvh3`
 
+- 3D real convolution test: `hybridconvr3`
+
 - 1D FFT: `fft1`
 
 - 1D real FFT: `fft1r`
@@ -142,8 +146,12 @@ The following programs are provided in `tests/`, along with various timing and e
 
 ### Availability and License
 
-To compile from Git developmental source code:
+To compile the examples from the Git developmental source code:
 `git clone https://github.com/dealias/fftwpp`
+`cd fftwpp`
+`cmake .`
+`cd examples`
+`make`
 
 All source files in the FFTW++ project, unless explicitly noted otherwise, are released under version 3 (or later) of the GNU Lesser General Public License (see the files LICENSE.LESSER and LICENSE in the top-level source directory).
 
