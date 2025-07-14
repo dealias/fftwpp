@@ -15,7 +15,8 @@ Implicit dealiasing of standard and centered Hermitian convolutions is also impl
 
 - _Multithreaded implicitly dealiased convolutions_, Malcolm Roberts and John C. Bowman. Journal of Computational Physics, 356, 98-114 (2018): http://www.math.ualberta.ca/~bowman/publications/dealias2.pdf
 
-- _Hybrid Dealiasing of Complex Convolutions_, Noel Murasko and John C. Bowman.SIAM Journal on Scientific Computing (2024), in press: [arXiv:2303.17510](https://arxiv.org/abs/2303.17510)
+- _Hybrid Dealiasing of Complex Convolutions_, Noel Murasko and John
+C. Bowman.SIAM Journal on Scientific Computing, 46:3, B159-B178 (2024): https://doi.org/10.1137/23M1552073
 
 Convenient optional shift routines that place the Fourier origin in the logical center of the domain are provided for centered complex-to-real transforms in 2D and 3D; see `fftw++.h` for details.
 
@@ -147,11 +148,13 @@ The following programs are provided in `tests/`, along with various timing and e
 ### Availability and License
 
 To compile the examples from the Git developmental source code:
-`git clone https://github.com/dealias/fftwpp`
-`cd fftwpp`
-`cmake .`
-`cd examples`
-`make`
+```
+git clone https://github.com/dealias/fftwpp
+cd fftwpp
+cmake .
+cd examples
+make
+```
 
 All source files in the FFTW++ project, unless explicitly noted otherwise, are released under version 3 (or later) of the GNU Lesser General Public License (see the files LICENSE.LESSER and LICENSE in the top-level source directory).
 
