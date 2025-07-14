@@ -1,69 +1,89 @@
 cmake_minimum_required(VERSION 3.11)
 
-project( fftwpp_examples LANGUAGES CXX C Fortran )
+project( fftw++_wrappers LANGUAGES CXX C Fortran )
 
-find_package(OpenMP REQUIRED)
-
-find_package(PkgConfig REQUIRED)
-pkg_search_module(FFTW REQUIRED fftw3 IMPORTED_TARGET)
-link_libraries     (PkgConfig::FFTW)
-
-# TODO: set C and FORTRAN flags
-if ( CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" )
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -g -Wall -DNDEBUG -fomit-frame-pointer \
-	-fstrict-aliasing -ffast-math -msse2 -mfpmath=sse -march=native -fopenmp")
-elseif( CMAKE_CXX_COMPILER_ID STREQUAL "Intel" )
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -qopenmp -ansi-alias -malign-double -fp-model fast=2")
-elseif( CMAKE_CXX_COMPILER_ID STREQUAL "XL" )
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O5 -P -qsmp -qalign -qarch -qtune -qcache -qipa -qarch=qp")
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+  get_filename_component(mpi_directory "${CMAKE_CURRENT_SOURCE_DIR}" DIRECTORY)
+  get_filename_component(fftwpp_directory "${mpi_directory}" DIRECTORY)
+  message(FATAL_ERROR "FFTW++ must be built from top-level directory, not the wrappers directory. From ${fftwpp_directory} use\ncmake .")
+else()
+  message(STATUS "Building fftw wrappers.")
 endif()
 
-add_library( fftw++ OBJECT ../fftw++.cc )
-set_property(TARGET fftw++ PROPERTY POSITION_INDEPENDENT_CODE ON)
-add_library( convolve OBJECT ../convolve.cc )
-set_property(TARGET convolve PROPERTY POSITION_INDEPENDENT_CODE ON)
-add_library( parallel OBJECT ../parallel.cc )
-set_property(TARGET parallel PROPERTY POSITION_INDEPENDENT_CODE ON)
+# TODO: set C and FORTRAN flags
+
+# C flags
+if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+    message(STATUS "C Compiler: GNU")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
+
+elseif(CMAKE_C_COMPILER_ID STREQUAL "Intel")
+    message(STATUS "C Compiler: Intel")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -openmp -Ofast")
+
+elseif(CMAKE_C_COMPILER_ID MATCHES "XL")
+    message(STATUS "C Compiler: IBM XL")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -qsmp")
+else()
+    message(WARNING "Unknown C compiler — using default flags")
+endif()
+
+# FORTRAN flags
+if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+    message(STATUS "FORTRAN Compiler: GNU")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fopenmp")
+
+elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
+    message(STATUS "FORTRAN Compiler: Intel")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -openmp")
+
+elseif(CMAKE_Fortran_COMPILER_ID MATCHES "XL")
+    message(STATUS "FORTRAN Compiler: IBM XL")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -qsmp")
+else()
+    message(WARNING "Unknown FORTRAN compiler — using default flags")
+endif()
+
 
 set_source_files_properties( cfftw++.cc LANGUAGES C )
 add_library( cfftw++ OBJECT cfftw++.cc )
 set_property( TARGET cfftw++ PROPERTY POSITION_INDEPENDENT_CODE ON )
 target_include_directories( cfftw++ SYSTEM PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/../ )
-
 add_library( _fftwpp SHARED cfftw++.cc )
+
 target_include_directories( _fftwpp SYSTEM PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/../ )
-set_source_files_properties( cexample.c LANGUAGES C )
 target_link_libraries( _fftwpp PUBLIC
-  OpenMP::OpenMP_CXX
-  PkgConfig::FFTW
-  "-lfftw3_omp"
-  parallel
   fftw++
-  convolve)
+  convolve
+  parallel
+  ${FFTW_LIB}
+  ${FFTW_OMP_LIB}
+)
 
 add_executable( cexample cexample.c )
 set_source_files_properties( cexample.c LANGUAGES C )
+set_target_properties(${cexample} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${wrappers_directory}")
 target_link_libraries( cexample PUBLIC
-  OpenMP::OpenMP_CXX
-  PkgConfig::FFTW
-  "-lfftw3_omp"
-  cfftw++
   fftw++
+  convolve
   parallel
-  convolve )
+  cfftw++
+  ${FFTW_LIB}
+  ${FFTW_OMP_LIB}
+)
 
 add_library( fftwpp SHARED fftwpp.f90 )
-set_source_files_properties( fftwpp.f90 LANGUAGES Fortran )
 target_include_directories( fftwpp SYSTEM PUBLIC ${FFTW_INCLUDEDIR} )
 
 add_executable( fexample fexample.f90 )
 set_source_files_properties( fexample.f90 LANGUAGES Fortran )
+set_target_properties(fexample PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${wrappers_directory}")
 target_link_libraries( fexample PUBLIC
-  OpenMP::OpenMP_Fortran
-  ${FFTW_LDFLAGS}
-  "-lfftw3_omp"
   fftwpp
-  cfftw++
   fftw++
+  convolve
   parallel
-  convolve)
+  cfftw++
+  ${FFTW_LIB}
+  ${FFTW_OMP_LIB}
+)

@@ -2,11 +2,14 @@ cmake_minimum_required(VERSION 3.15)
 
 project( fftw++ LANGUAGES CXX )
 
+option(WRAPPERS "Build FORTRAN and C wrapper examples." OFF)
+
 # C++ standard
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_library(FFTW_LIB fftw3 REQUIRED)
+find_library(FFTW_OMP_LIB fftw3_omp REQUIRED)
 find_path(FFTW_INCLUDE_DIR fftw3.h REQUIRED)
 include_directories(${FFTW_INCLUDE_DIR})
 
@@ -25,13 +28,13 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
   message(STATUS "Using Apple Clang compiler flags")
 
   if(EXISTS "/opt/local/lib" AND EXISTS "/opt/local/lib/libomp")
-  message(STATUS "Using OpenMP via MacPorts")
-  # Provide OpenMP hints BEFORE find_package()
-  set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp")
-  set(OpenMP_CXX_LIB_NAMES "omp")
-  set(OpenMP_omp_LIBRARY "omp")
-  link_directories(/opt/local/lib /opt/local/lib/libomp)
-  include_directories(/opt/local/include /opt/local/include/libomp)
+    message(STATUS "Using OpenMP via MacPorts")
+    # Provide OpenMP hints BEFORE find_package()
+    set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp")
+    set(OpenMP_CXX_LIB_NAMES "omp")
+    set(OpenMP_omp_LIBRARY "omp")
+    link_directories(/opt/local/lib /opt/local/lib/libomp)
+    include_directories(/opt/local/include /opt/local/include/libomp)
   endif()
 
   add_compile_options(
@@ -52,11 +55,13 @@ endif()
 set( lib_list fftw++ parallel )
 foreach( libname ${lib_list} )
   add_library( ${libname} OBJECT ${libname}.cc )
+  set_property(TARGET ${libname} PROPERTY POSITION_INDEPENDENT_CODE ON)
 endforeach()
 
 set( lib_convtest_list convolve )
 foreach( libname ${lib_convtest_list} )
   add_library( ${libname} OBJECT ${libname}.cc )
+  set_property(TARGET ${libname} PROPERTY POSITION_INDEPENDENT_CODE ON)
   target_include_directories( ${libname} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/ )
 endforeach()
@@ -79,23 +84,32 @@ else()
   message(FATAL_ERROR "OpenMP not found")
 endif()
 
-set(FFTW_LIBS fftw3 fftw3_omp m ${OpenMP_CXX_LIBRARIES})
+set(FFTW_LIBS fftw3 fftw3_omp m ${OpenMP_CXX_LIBRARIES} CACHE INTERNAL "FFTW libraries")
+set(FFTW_LIBS fftw3 fftw3_omp m ${OpenMP_CXX_LIBRARIES} CACHE INTERNAL "FFTW libraries")
 
 set(FFTW_SOURCES fftw++.cc parallel.cc)
 set(HYBRID_SOURCES ${FFTW_SOURCES} convolve.cc tests/direct.cc tests/options.cc)
 
 add_library(fftw_helpers STATIC ${FFTW_SOURCES})
-
 add_library(hybrid_helpers STATIC ${HYBRID_SOURCES})
-target_link_libraries(hybrid_helpers PRIVATE fftw_helpers)
+
+target_link_libraries(fftw_helpers PRIVATE ${FFTW_LIB})
+target_link_libraries(hybrid_helpers PRIVATE fftw_helpers ${FFTW_LIB})
 
 set(tests_directory "${CMAKE_BINARY_DIR}/tests")
 file(MAKE_DIRECTORY "${tests_directory}")
+add_subdirectory(tests)
+
 set(examples_directory "${CMAKE_BINARY_DIR}/examples")
 file(MAKE_DIRECTORY "${examples_directory}")
-
-add_subdirectory(tests)
 add_subdirectory(examples)
+
+if(WRAPPERS)
+  set(wrappers_directory "${CMAKE_BINARY_DIR}/wrappers")
+  file(MAKE_DIRECTORY "${wrappers_directory}")
+  add_subdirectory(wrappers)
+endif()
+
 
 find_package(MPI)
 
