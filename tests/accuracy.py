@@ -42,7 +42,7 @@ def findError(m,L,T=1,D=1,I=1):
     out, _ = vp.communicate()
     output = out.rstrip().decode()
 
-  errorSearch=re.search(r"(?<=error: )(\w|\d|\.|e|-|\+)*",output)
+  errorSearch=re.search(r"(?<=Error: )(\w|\d|\.|e|-|\+)*",output)
   if errorSearch is not None:
     return float(errorSearch.group())
   else:
