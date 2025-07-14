@@ -33,14 +33,10 @@ int main(int argc, char *argv[])
 
   fout << "# length\tmean\tstdev" << endl;
 
-  size_t pow2=1;
-  for(size_t i=0; pow2 <= N; ++i, pow2 *= 2) {
-    size_t pow23=pow2;
-    for(size_t j=0; pow23 <= N; ++j, pow23 *= 3) {
-      size_t pow235=pow23;
-      for(size_t k=0; pow235 <= N; ++k, pow235 *= 5) {
-        size_t n=pow235;
-        for(size_t l=0; n <= N; ++l, n *= 7) {
+  for(size_t pow2=1; pow2 <= N; pow2 *= 2) {
+    for(size_t pow23=pow2; pow23 <= N; pow23 *= 3) {
+      for(size_t pow235=pow23; pow235 <= N; pow235 *= 5) {
+        for(size_t n=pow235; n <= N; n *= 7) {
 
           utils::statistics S;
           size_t K=1;
