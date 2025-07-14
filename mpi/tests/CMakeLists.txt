@@ -10,10 +10,6 @@ else()
   message(STATUS "Building MPI tests.")
 endif()
 
-# C++ standard
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 set( fft_list
   gather
   gatheryz

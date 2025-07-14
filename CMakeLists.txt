@@ -6,10 +6,11 @@ project( fftw++ LANGUAGES CXX )
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(PkgConfig REQUIRED)
-pkg_search_module(FFTW REQUIRED fftw3 IMPORTED_TARGET)
-include_directories(PkgConfig::FFTW)
-link_libraries(PkgConfig::FFTW)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "findFFTW")
+
+find_package(FFTW REQUIRED)
+include_directories(${FFTW3_INCLUDE_DIRS})
+link_libraries(${FFTW3_LIBRARIES})
 
 include_directories(${CMAKE_SOURCE_DIR}/)
 
@@ -113,6 +114,9 @@ if(MPI_FOUND)
 
   set(mpi_tests_directory "${CMAKE_BINARY_DIR}/mpi/tests")
   file(MAKE_DIRECTORY "${mpi_tests_directory}")
-
   add_subdirectory(mpi/tests)
+
+  set(mpi_fftw_directory "${CMAKE_BINARY_DIR}/mpi/fftw")
+  file(MAKE_DIRECTORY "${mpi_fftw_directory}")
+  add_subdirectory(mpi/fftw)
 endif()
