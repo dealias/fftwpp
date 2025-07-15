@@ -92,6 +92,10 @@ Science, Springer Proceedings in Mathematics & Statistics 117,
 
 Either a 1D ("slab") and 2D ("pencil") data decomposition is used for the three-dimensional convolutions, depending on the number of processors.
 
+#### MPI tests and examples
+
+The following MPI test and example programs are in the mpi/tests directory.
+
 `hybridconv2.cc` and `hybridconv3.cc` demonstrate two- and three-dimensional complex convolutions.
 
 `hybridconvh2.cc` and `hybridconvh3.cc` demonstrate two- and three-dimensional Hermitian-symmetric centered convolutions.
@@ -104,7 +108,9 @@ Either a 1D ("slab") and 2D ("pencil") data decomposition is used for the three-
 
 `timing.py` is a script which performs timing tests for MPI-based convolutions.
 
-The directory mpi/explicit is used for comparing our adaptive distributed transpose against FFTW's parallel MPI transpose.
+#### fftw MPI benchmarks
+
+The directory mpi/fftw is used for comparing our adaptive distributed transpose against FFTW's parallel MPI transpose.
 
 
 ### Test Programs
@@ -147,14 +153,33 @@ The following programs are provided in `tests/`, along with various timing and e
 
 ### Availability and License
 
-To compile the examples from the Git developmental source code:
+To compile the examples and tests from the Git developmental source code:
+
 ```
 git clone https://github.com/dealias/fftwpp
 cd fftwpp
 cmake .
-cd examples
 make
 ```
+
+The [example programs](#examples) and [test programs](#test-programs) will be compiled in the examples and tests directories respectively.
+
+The following boolean CMake build options are available:
+
+- `TESTS` Build [tests](#test-programs). Default: ON.
+- `EXAMPLES` Build [examples](#examples). Default: ON.
+- `WRAPPERS` Build [Fortran and C wrappers](#wrappers). Default: OFF.
+- `MPI_TESTS` Build [MPI tests and examples](#mpi-tests-and-examples). Default: OFF.
+- `MPI_FFTW` Build [fftw MPI benchmarks](#fftw-mpi-benchmarks). Default: OFF.
+
+To set the build options, pass `-D<option>=<value>` to the `cmake` command. For example, to compile only the MPI programs one may use.
+
+```
+cmake -DTESTS=OFF -DEXAMPLES=OFF -DMPI_TESTS=ON -DMPI_FFTW=ON .
+make
+```
+
+To remove all 
 
 All source files in the FFTW++ project, unless explicitly noted otherwise, are released under version 3 (or later) of the GNU Lesser General Public License (see the files LICENSE.LESSER and LICENSE in the top-level source directory).
 
