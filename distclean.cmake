@@ -71,6 +71,9 @@ SET(DEL ${TOPDIRECTORIES}
         ${CMAKETESTFILES}
 )
 
+FILE(GLOB CMAKEFILES_NESTED "${TOPDIR}/*/CMakeFiles")
+SET(DEL ${DEL} ${CMAKEFILES_NESTED})
+
 # If we are not in the build dir, delete that as well
 IF(NOT (${BASEDIR} STREQUAL "build"))
     FILE(GLOB BUILD "${TOPDIR}/build")
