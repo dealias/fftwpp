@@ -6,8 +6,6 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   get_filename_component(mpi_directory "${CMAKE_CURRENT_SOURCE_DIR}" DIRECTORY)
   get_filename_component(fftwpp_directory "${mpi_directory}" DIRECTORY)
   message(FATAL_ERROR "FFTW++ must be built from top-level directory, not the wrappers directory. From ${fftwpp_directory} use\ncmake .")
-else()
-  message(STATUS "Building fftw wrappers.")
 endif()
 
 # TODO: set C and FORTRAN flags

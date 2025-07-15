@@ -4,8 +4,6 @@ project( fftw++_tests LANGUAGES CXX )
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   get_filename_component(fftwpp_directory "${CMAKE_CURRENT_SOURCE_DIR}" DIRECTORY)
   message(FATAL_ERROR "FFTW++ must be built from toplevel directory, not the tests directory. From ${fftwpp_directory} use\ncmake .")
-else()
-  message(STATUS "Building tests.")
 endif()
 
 set( fft_list
