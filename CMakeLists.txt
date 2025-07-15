@@ -134,3 +134,8 @@ if(MPI_FOUND)
 
   add_subdirectory(mpi/fftw)
 endif()
+
+add_custom_target(distclean
+  COMMAND ${CMAKE_MAKE_PROGRAM} clean
+  COMMAND ${CMAKE_COMMAND} -P  ${CMAKE_SOURCE_DIR}/distclean.cmake
+)
