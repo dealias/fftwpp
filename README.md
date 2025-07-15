@@ -171,15 +171,16 @@ The following boolean CMake build options are available:
 - `WRAPPERS` Build [Fortran and C wrappers](#wrappers). Default: OFF.
 - `MPI_TESTS` Build [MPI tests and examples](#mpi-tests-and-examples). Default: OFF.
 - `MPI_FFTW` Build [fftw MPI benchmarks](#fftw-mpi-benchmarks). Default: OFF.
+- `ALL` Build everything (equivalent to turning all other flags ON). Default: OFF.
 
-To set the build options, pass `-D<option>=<value>` to the `cmake` command. For example, to compile only the MPI programs one may use.
+To set the build options, pass `-D<option>=<value>` to the `cmake` command. For example, to compile only the MPI programs one may use
 
 ```
 cmake -DTESTS=OFF -DEXAMPLES=OFF -DMPI_TESTS=ON -DMPI_FFTW=ON .
 make
 ```
 
-To remove all 
+To remove all files from a CMake build, run `make distclean` from the top-level directory. It is recommended to do this before changing any of the boolean flags listed above.
 
 All source files in the FFTW++ project, unless explicitly noted otherwise, are released under version 3 (or later) of the GNU Lesser General Public License (see the files LICENSE.LESSER and LICENSE in the top-level source directory).
 
