@@ -71,8 +71,10 @@ SET(DEL ${TOPDIRECTORIES}
         ${CMAKETESTFILES}
 )
 
+# Delete CMakeFiles directories (specific to this project)
 FILE(GLOB CMAKEFILES_NESTED "${TOPDIR}/*/CMakeFiles")
-SET(DEL ${DEL} ${CMAKEFILES_NESTED})
+FILE(GLOB CMAKEFILES_NESTED_NESTED "${TOPDIR}/*/*/CMakeFiles")
+SET(DEL ${DEL} ${CMAKEFILES_NESTED} ${CMAKEFILES_NESTED_NESTED})
 
 # If we are not in the build dir, delete that as well
 IF(NOT (${BASEDIR} STREQUAL "build"))
