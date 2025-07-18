@@ -8,7 +8,6 @@
  * Malcolm Roberts <malcolm.i.w.roberts@gmail.com>
  * Robert Joseph George <rjoseph1@ualberta.ca>
  * John C. Bowman <bowman@ualberta.ca>
- * Noel Murasko <murasko@ualbert.ca>
  */
 
 #include "Complex.h"
