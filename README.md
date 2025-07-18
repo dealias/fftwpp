@@ -169,14 +169,14 @@ The following boolean CMake build options are available:
 - `TESTS` Build [tests](#test-programs). Default: ON.
 - `EXAMPLES` Build [examples](#examples). Default: ON.
 - `WRAPPERS` Build [Fortran and C wrappers](#wrappers). Default: OFF.
-- `MPI_TESTS` Build [MPI tests and examples](#mpi-tests-and-examples). Default: OFF.
-- `MPI_FFTW` Build [fftw MPI benchmarks](#fftw-mpi-benchmarks). Default: OFF.
+- `MPI` Build [MPI tests and examples](#mpi-tests-and-examples). Default: OFF.
+- `MPI_FFTW` Build [old fftw MPI benchmarks](#old-fftw-mpi-benchmarks). Default: OFF.
 - `ALL` Build everything (equivalent to turning all other flags ON). Default: OFF.
 
-To set the build options, pass `-D<option>=<value>` to the `cmake` command. For example, to compile only the MPI programs one may use
+To set the build options, pass `-D<option>=<value>` to the `cmake` command. For example, to compile only the MPI code one may use
 
 ```
-cmake -DTESTS=OFF -DEXAMPLES=OFF -DMPI_TESTS=ON -DMPI_FFTW=ON .
+cmake -DTESTS=OFF -DEXAMPLES=OFF -DMPI=ON
 make
 ```
 

@@ -5,7 +5,7 @@ project( fftw++_mpi_fftw LANGUAGES CXX )
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   get_filename_component(mpi_directory "${CMAKE_CURRENT_SOURCE_DIR}" DIRECTORY)
   get_filename_component(fftwpp_directory "${mpi_directory}" DIRECTORY)
-  message(FATAL_ERROR "FFTW++ must be built from top-level directory, not the mpi/fftw directory. From ${fftwpp_directory} use\ncmake .")
+  message(FATAL_ERROR "FFTW++ must be built from top-level directory, not the mpi/fftw directory. From ${fftwpp_directory} use\ncmake -DMPI_FFTW=ON .")
 endif()
 
 set( fft_list

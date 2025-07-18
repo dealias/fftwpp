@@ -6,7 +6,7 @@ option(TESTS "Build tests." ON)
 option(EXAMPLES "Build examples." ON)
 
 option(WRAPPERS "Building Fortran and C wrappers." OFF)
-option(MPI_TESTS "Build MPI tests and examples." OFF)
+option(MPI "Build MPI tests and examples." OFF)
 option(MPI_FFTW "Build fftw MPI benchmarks." OFF)
 option(ALL "Build everything." OFF)
 
@@ -129,7 +129,7 @@ else()
   message(STATUS "Skipping Fortran and C wrappers.")
 endif()
 
-if(MPI_TESTS OR MPI_FFTW OR ALL)
+if(MPI OR MPI_FFTW OR ALL)
   find_package(MPI REQUIRED)
 
   include_directories(${CMAKE_SOURCE_DIR}/mpi ${CMAKE_SOURCE_DIR}/tests)
@@ -142,7 +142,7 @@ if(MPI_TESTS OR MPI_FFTW OR ALL)
   add_library(hybrid_mpi_helpers STATIC ${HYBRID_MPI_SOURCES})
   target_link_libraries(hybrid_mpi_helpers PRIVATE fftw_mpi_helpers)
 
-  if(MPI_TESTS OR ALL)
+  if(MPI OR ALL)
     message(STATUS "Building MPI tests and examples.")
     set(mpi_tests_directory "${CMAKE_BINARY_DIR}/mpi/tests")
     file(MAKE_DIRECTORY "${mpi_tests_directory}")
