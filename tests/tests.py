@@ -4,7 +4,7 @@ import subprocess
 import re
 import argparse
 import sys
-from utils import ceilpow2, ceilquotient, usecmd, readable_list, Progress, ParameterCollection, Parameters
+from utils import ceilpow2, ceilquotient, usecmd, supports_ansi,readable_list, Progress, ParameterCollection, Parameters
 import copy
 import yaml
 import time
@@ -67,7 +67,8 @@ class Options:
     self.vg=args.valgrind
     self.d=args.d
     self.mpi=args.mpi
-    self.hide_progress=args.hide_progress or self.printEverything
+    self.supports_ansi=supports_ansi()
+    self.hide_progress=not self.supports_ansi or args.hide_progress or self.printEverything
 
 class Command:
   def __init__(self, program, T, options, vals=None, L=None, M=None, nodes=0):
@@ -230,7 +231,7 @@ def getArgs():
                       action="store_true")
   parser.add_argument("-v",help="Show the results of every test.",
                       action="store_true")
-  parser.add_argument("--hide_progress", help="Hide test progress information.",
+  parser.add_argument("--hide_progress", help="Hide test progress information. Default is usually False. This flag is always set to True if it is detected that ANSI escape codes are unsupported.",
                       action="store_true")
   return parser.parse_args()
 
@@ -304,7 +305,7 @@ def getPrograms(args):
 def test(programs, args):
   lenP=len(programs)
   T=0 if args.All else int(args.T)
-
+  options=Options(args)
   if lenP >= 1:
     passed=0
     failed=0
@@ -332,12 +333,12 @@ def test(programs, args):
       else:
         raise ValueError(f"{T} is an invalid number of threads.")
 
-      iterate(p,Ts,Options(args),dryrun=True)
+      iterate(p,Ts,options,dryrun=True)
       s="s" if len(Ts) > 1 or Ts[0] > 1 else ""
       print(f"Testing {p.total} cases of {name} with {readable_list(Ts)} thread{s}.\n")
 
       p.progress.total_tests=p.total
-      iterate(p,Ts,Options(args))
+      iterate(p,Ts,options)
 
       ppassed=p.passed
       pfailed=p.failed
@@ -655,8 +656,9 @@ def checkOptimizer(program, L, M, T, options, dryrun=False):
   if not dryrun:
     cmd=Command(program,T,options,L=L,M=M)
     check(program, cmd, options)
-    program.progress.untimed_tests += 1
-    program.progress.report()
+    if not options.hide_progress:
+      program.progress.untimed_tests += 1
+      program.progress.report()
   else:
     program.total+=1
 
@@ -772,21 +774,28 @@ def segFaultSearch(program, output, cmd, routines,options):
   return evaluate(program,"f","tests.py does not recognize valgrind error.",cmd.case,routines,options)
 
 def evaluate(program, result, message, case, routines, options, verbose=True,pass_test=True):
-  boldPassedTest="\033[1mPassed Test:\033[0m"
-  boldFailedTest="\033[1mFailed Test:\033[0m"
-  boldWarning="\033[1mWARNING:\033[0m"
+
+  PassedMessage="Passed Test:"
+  FailedMessage="Failed Test:"
+  WarningMessage="WARNING:"
+
+  if options.supports_ansi:
+    PassedMessage="\033[1;32m"+PassedMessage+"\033[0m"
+    FailedMessage="\033[1;31m"+FailedMessage+"\033[0m"
+    WarningMessage="\033[1;33m"+WarningMessage+"\033[0m"
+
   if result=="p":
     if pass_test:
       program.passTest()
-    printResults(boldPassedTest, message, case, routines, options, verbose)
+    printResults(PassedMessage, message, case, routines, options, verbose)
     return True
   elif result=="w":
     program.warningTest(case)
-    printResults(boldWarning, message, case, routines, options, verbose)
+    printResults(WarningMessage, message, case, routines, options, verbose)
     return False
   elif result=="f":
     program.failTest(case)
-    printResults(boldFailedTest, message, case, routines, options, verbose)
+    printResults(FailedMessage, message, case, routines, options, verbose)
     return False
   else:
     sys.exit("In evaluate, result must either be 'p', 'w', or 'f'.")

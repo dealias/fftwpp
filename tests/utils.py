@@ -1,3 +1,5 @@
+import sys
+import os
 import collections
 import subprocess
 from math import ceil, floor, isclose
@@ -54,6 +56,14 @@ def readable_list(seq):
     if len(seq) < 3:
         return ' and '.join(seq)
     return ', '.join(seq[:-1]) + ', and ' + seq[-1]
+
+def supports_ansi():
+    if not sys.stdout.isatty():
+        return False
+    term = os.environ.get('TERM', '')
+    if 'xterm' in term or 'screen' in term or 'linux' in term:
+        return True
+    return False
 
 def seconds_to_readable_time(seconds):
     if seconds < 0:
