@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.15)
+
 # This CMake script will delete build directories and files to bring the
 # package back to it's distribution state
 
