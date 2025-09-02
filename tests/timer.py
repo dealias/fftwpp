@@ -134,10 +134,10 @@ def getArgs():
   parser.add_argument("-H", help="Test Hermitian convolutions. Not specifying S or H is the same as specifying both.", action="store_true")
 
   parser.add_argument("-I",help="Interval. Checks powers of 2 when 0. Default is 0.", default=0, type=int)
-  parser.add_argument("-s",help="Minimum time limit (seconds).", default=5, type=float)
+  parser.add_argument("-s",help="Minimum time limit (seconds). Default is 5.", default=5, type=float)
   parser.add_argument("-r",help="runtype: implicit, explicit, or hybrid. Not specifying does all of them.", type=str)
-  parser.add_argument("-R", help="Test Real convolutions. Not specifying S or H is the same as specifying both.", action="store_true")
-  parser.add_argument("-S", help="Test Standard convolutions. Not specifying S or H is the same as specifying both.",
+  parser.add_argument("-R", help="Test Real convolutions. Not specifying S, H, or R is the same as specifying both.", action="store_true")
+  parser.add_argument("-S", help="Test Standard convolutions. Not specifying S, H, or R is the same as specifying both.",
                       action="store_true")
   parser.add_argument("-T",metavar='threads',help="Number of threads. Not specifying, runs T=1 and T=$OMP_NUM_THREADS", default=0, type=int)
   return parser.parse_args()
