@@ -17,16 +17,17 @@ string base,dir;
 bool title=true;
 
 usersetting();
-
 if(base == "") base=getstring("base directory",".");
 if(dir == "") dir=getstring("directory","timings1-T1");
 
 bool incremental=find(dir,"I1") >= 0;
 bool realConv=find(dir,"timingsr") >= 0;
 
-size(incremental || realConv ? 370.4pt : 181.5pt,
-     incremental ? 215 : 185,IgnoreAspect);
+// size(incremental || realConv ? 370.4pt : 181.5pt,
+//      incremental ? 215 : 185,IgnoreAspect);
 
+size(incremental ? 370.4pt : 181.5pt,
+     incremental ? 215 : 185,IgnoreAspect);
 scaleT yscale;
 
 if(incremental) {
@@ -80,7 +81,6 @@ if(!realConv) {
     mi=a[0]; i=a[1];// li=a[2]; hi=a[3];
   }
 }
-
 
 file fin=input(base+"/"+dir+"/hybrid").line();
 real[][] a=fin.dimension(0,0);
