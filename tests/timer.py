@@ -4,8 +4,11 @@ import sys, getopt, os
 import argparse
 from subprocess import *
 import re
+import time
 
 def main():
+  print("sys.argv =", sys.argv)
+  t0=time.time()
   args=getArgs()
   threads=args.T
   dimensions=[]
@@ -39,14 +42,21 @@ def main():
   for d in dimensions:
     if S or notSorHorR:
       for T in Ts:
-        time(args,d,False,False,T)
+        gettime(args,d,False,False,T)
     if H or notSorHorR:
       for T in Ts:
-        time(args,d,True,False,T)
+        gettime(args,d,True,False,T)
     if R or notSorHorR:
       for T in Ts:
-        time(args,d,False,True,T)
-
+        gettime(args,d,False,True,T)
+  elapsed=time.time()-t0
+  if args.email:
+    try:
+      from utils import seconds_to_readable_time, send_email
+      send_email(f"Timing tests finished after {seconds_to_readable_time(elapsed)}.",f"{" ".join(sys.argv)}")
+      print("Email sent.")
+    except:
+      print("Could not send email.")
 
 def callTiming(args,program, erase,taskset,runtype=None):
   cmd=["timing.py"]
@@ -63,7 +73,7 @@ def callTiming(args,program, erase,taskset,runtype=None):
   output=run(cmd,capture_output=True).stdout.decode();
   print(output,flush=True);
 
-def time(args,dim,Hermitian,real,T):
+def gettime(args,dim,Hermitian,real,T):
   a=args.a
   b=args.b
   I=args.I
@@ -140,6 +150,7 @@ def getArgs():
   parser.add_argument("-S", help="Test Standard convolutions. Not specifying S, H, or R is the same as specifying both.",
                       action="store_true")
   parser.add_argument("-T",metavar='threads',help="Number of threads. Not specifying, runs T=1 and T=$OMP_NUM_THREADS", default=0, type=int)
+  parser.add_argument("--email",help="Send email when finished. Requires .env to be set.", action="store_true")
   return parser.parse_args()
 
 if __name__ == "__main__":

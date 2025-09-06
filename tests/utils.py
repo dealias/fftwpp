@@ -117,6 +117,31 @@ def seconds_to_readable_time(seconds):
 
         return ", ".join(parts) if parts else "0 seconds"
 
+def send_email(subject:str,content:str):
+    import smtplib
+    from email.message import EmailMessage
+    from dotenv import load_dotenv
+    # Load credentials and settings from .env
+    load_dotenv()
+    SMTP_SERVER = os.getenv("SMTP_SERVER")
+    SMTP_PORT   = int(os.getenv("SMTP_PORT", 587))
+    SMTP_USER   = os.getenv("SMTP_USER")
+    SMTP_PASS   = os.getenv("SMTP_PASS")
+    TO_EMAIL    = os.getenv("TO_EMAIL")
+
+    msg = EmailMessage()
+    msg["From"] = SMTP_USER
+    msg["To"] = TO_EMAIL
+    msg["Subject"] = subject
+    msg.set_content(content)
+
+    with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+        server.starttls()
+        server.login(SMTP_USER, SMTP_PASS)
+        server.send_message(msg)
+
+
+
 class Progress:
   def __init__(self):
     self.n = 0
