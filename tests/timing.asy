@@ -7,12 +7,14 @@ drawerrorbars=false;
 
 real[] me,e,le,he;
 real[] mb,b;
+real[] mhe; he;
 real[] mo,o,lo,ho;
 real[] mi,i,li,hi;
 real[] mh,h,lh,hh;
 real[] mp,p,lp,hp;
 
 bool explicito=false;
+bool hybridexplicit=false;
 string base,dir;
 bool title=true;
 
@@ -22,7 +24,6 @@ if(dir == "") dir=getstring("directory","timings1-T1");
 
 bool incremental=find(dir,"I1") >= 0;
 bool realConv=find(dir,"timingsr") >= 0;
-
 // size(incremental || realConv ? 370.4pt : 181.5pt,
 //      incremental ? 215 : 185,IgnoreAspect);
 
@@ -79,6 +80,15 @@ if(!realConv) {
     real[][] a=fin.dimension(0,0);
     a=transpose(sort(a));
     mi=a[0]; i=a[1];// li=a[2]; hi=a[3];
+  }
+}
+if(d > 1 && realConv) {
+  file fin=input(base+"/"+dir+"/hybridexplicit").line();
+  hybridexplicit=!error(fin);
+  if(hybridexplicit) {
+    real[][] a=fin.dimension(0,0);
+    a=transpose(sort(a));
+    mhe=a[0]; he=a[1];
   }
 }
 
@@ -173,6 +183,18 @@ if(!realConv) {
     draw(graph(mi,i,i > 0),Pentype(2),Label("implicit",Pen(2)+Lp),mark2);
   }
 }
+
+if(hybridexplicit) {
+  real[] nhe=f(mhe);
+  mhe=g(mhe);
+  he *= nhe;
+  //ho *= no;
+  //lo *= no;
+  // if(drawerrorbars)
+  //   errorbars(mhe,o,0*mhe,ho-o,0*mhe,o-lo,Pen(3));
+  draw(graph(mhe,he,he > 0),Pentype(2),Label("Decomposed explicit",Pen(2)+Lp),mark2);
+}
+
 real[] nh=f(mh);
 mh=g(mh);
 h *= nh;

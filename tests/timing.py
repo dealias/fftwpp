@@ -371,17 +371,17 @@ def main(argv):
         b = max_m(p, RAM, runtype)
         print("max value of b with ram provided:", b)
 
+    optFile=""
     if outfile == "":
         if hybrid:
             if runtype == "explicit":
                 outfile = "hybridexplicit"+fileExt
+                optFile=outdir+os.sep+"hybridExplicitParams"+fileExt
             else:
                 outfile = "hybrid"+fileExt
+                optFile=outdir+os.sep+"hybridParams"+fileExt
         else:
             outfile = runtype+fileExt
-    optFile=""
-    if hybrid:
-        optFile=outdir+os.sep+"hybridParams"+fileExt
 
     goodruns = []
     badruns = []
