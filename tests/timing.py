@@ -373,7 +373,10 @@ def main(argv):
 
     if outfile == "":
         if hybrid:
-            outfile = "hybrid"+fileExt
+            if runtype == "explicit":
+                outfile = "hybridexplicit"+fileExt
+            else:
+                outfile = "hybrid"+fileExt
         else:
             outfile = runtype+fileExt
     optFile=""

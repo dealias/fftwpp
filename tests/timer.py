@@ -7,7 +7,6 @@ import re
 import time
 
 def main():
-  print("sys.argv =", sys.argv)
   t0=time.time()
   args=getArgs()
   threads=args.T
@@ -66,7 +65,10 @@ def callTiming(args,program, erase,taskset,runtype=None):
     cmdLine+=f" -B\"{taskset}\""
   cmd+=[f"-p{program}"]+args+erase
   cmdLine+=f" -p{program} "+" ".join(args+erase)
-  if runtype != None:
+  if runtype == "hybridexplicit":
+    cmd+=[f"-rexplicit"]
+    cmdLine+=f" -rexplicit"
+  elif runtype != None:
     cmd+=[f"-r{runtype}"]
     cmdLine+=f" -r{runtype}"
   print(cmdLine,flush=True)
@@ -82,7 +84,6 @@ def gettime(args,dim,Hermitian,real,T):
   dimString=str(dim) if dim > 1 else ""
   new="hybridconv"
   old="conv"
-
 
   if Hermitian:
     new += "h"
@@ -114,6 +115,11 @@ def gettime(args,dim,Hermitian,real,T):
     callTiming(args,new,erase,taskset)
     if Hermitian and I == 0: # Why?
       callTiming(args,new,erase,taskset,"explicit")
+  elif runtype == "hybridexplicit":
+    if dim == 1:
+      print("hybridexplicit is only supported for 2 and 3 dimensional routines.")
+      exit()
+    callTiming(args,new,erase,taskset,"hybridexplicit")
   elif runtype == None:
     if not real:
       callTiming(args,old,erase,taskset,"implicit")
