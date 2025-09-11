@@ -44,7 +44,7 @@ scale(incremental ? Linear : Log,yscale);
 
 string prunelabel="$y$-pruned";
 
-bool expl=true;
+bool expl=!(realConv && incremental);
 
 real d=1;
 if(find(dir,"2-") >= 0) d=2;
@@ -57,7 +57,7 @@ if(expl) {
   me=a[0]; e=a[1];// le=a[2]; he=a[3];
 }
 
-if(incremental) {
+if(incremental && !realConv) {
   file fin=input(base+"/"+dir+"/explicitbest").line();
   real[][] a=fin.dimension(0,0);
   a=transpose(sort(a));

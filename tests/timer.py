@@ -117,7 +117,8 @@ def gettime(args,dim,Hermitian,real,T):
   elif runtype == None:
     if not real:
       callTiming(args,old,erase,taskset,"implicit")
-    callTiming(args,old,erase,taskset,"explicit")
+    if I == 0 or not real:
+      callTiming(args,old,erase,taskset,"explicit")
     if dim == 1:
       callTiming(args,old,erase,taskset,"explicito")
     callTiming(args,new,erase,taskset)
