@@ -154,9 +154,9 @@ def default_outdir(p,T,I):
         outdir = "timingsh3"
     if p == "rconv" or p == "hybridconvr":
         outdir = "timingsr1"
-    if p == "rconv2" or p == "hybridconvr2":
+    if p == "rconv2" or p == "hybridconvr2" or p == "hybridconvroe2":
         outdir = "timingsr2"
-    if p == "rconv3" or p == "hybridconvr3":
+    if p == "rconv3" or p == "hybridconvr3" or p == "hybridconvroe3":
         outdir = "timingsr3"
     if p == "tconv":
         outdir = "timings1t"
@@ -300,9 +300,11 @@ def main(argv):
     real = False
     ternary = False
     direct = False
+    roe=False
 
-    dim2routines=["cconv2","conv2","rconv2","hybridconv2","hybridconvh2","hybridconvr2"]
-    dim3routines=["cconv3","conv3","rconv3","hybridconv3","hybridconvh3","hybridconvr3"]
+    dim2routines=["cconv2","conv2","rconv2","hybridconv2","hybridconvh2","hybridconvr2","hybridconvroe2"]
+    dim3routines=["cconv3","conv3","rconv3","hybridconv3","hybridconvh3","hybridconvr3","hybridconvroe3"]
+
     if p in dim2routines:
         dimension=2
 
@@ -320,6 +322,9 @@ def main(argv):
 
     if re.search("hybrid",p) is not None:
         hybrid=True
+
+    if p in ["hybridconvroe2", "hybridconvroe3"]:
+        roe=True
 
     if p == "conv" or p == "conv2" or p == "conv3":
         hermitian = True
@@ -374,9 +379,9 @@ def main(argv):
     optFile=""
     if outfile == "":
         if hybrid:
-            if runtype == "explicit":
-                outfile = "hybridexplicit"+fileExt
-                optFile=outdir+os.sep+"hybridExplicitParams"+fileExt
+            if roe:
+                outfile="hybridroe"+fileExt
+                optFile=outdir+os.sep+"hybridroeParams"+fileExt
             else:
                 outfile = "hybrid"+fileExt
                 optFile=outdir+os.sep+"hybridParams"+fileExt
@@ -621,15 +626,12 @@ def main(argv):
                                 with open(optFile,"w") as logfile:
                                     logfile.write("# Optimal values for "+p+"\n")
                                     logfile.write(hybridParamsMessage)
+                # mcmd=cmd
                 if hybrid:
                     mcmd=cmd+["-L"+str(L)]+["-M"+str(M)]
-                    if runtype == "explicit":
-                        mcmd += ["-m"+str(M)]
-                    elif runtype == "explicito":
-                        mcmd += ["-m"+str(M),"-I0"]
                 elif direct:
                     mcmd=cmd+["-L"+str(L)]
-                else:
+                elif not roe:
                     mcmd=cmd+["-m" + str(m)]
 
                 mcmd += options

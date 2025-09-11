@@ -45,11 +45,11 @@ int main(int argc, char *argv[])
   if(Sx == 0) Sx=Ly*Sy;
 
   Application appx(A,B,multNone,fftw::maxthreads,true,mx,Dx,Ix);
-  fftPadReal fftx(Lx,Mx,appx,Ly*Sy,Sx);
+  fftPadReal fftx(Lx,Mx,appx,Ly*Sy,Sx,true);
   Application appy(A,B,multNone,appx,my,Dy,Iy);
-  fftPad ffty(Ly,My,appy,Lz,Sy);
+  fftPad ffty(Ly,My,appy,Lz,Sy,true);
   Application appz(A,B,multBinary,appy,mz,Dz,Iz);
-  fftPad fftz(Lz,Mz,appz);
+  fftPad fftz(Lz,Mz,appz,1,0,true);
   Convolution3 Convolve(&fftx,&ffty,&fftz);
 
   double **f=doubleAlign(max(A,B),Lx*Sx);

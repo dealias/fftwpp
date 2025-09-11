@@ -65,10 +65,7 @@ def callTiming(args,program, erase,taskset,runtype=None):
     cmdLine+=f" -B\"{taskset}\""
   cmd+=[f"-p{program}"]+args+erase
   cmdLine+=f" -p{program} "+" ".join(args+erase)
-  if runtype == "hybridexplicit":
-    cmd+=[f"-rexplicit"]
-    cmdLine+=f" -rexplicit"
-  elif runtype != None:
+  if runtype != None:
     cmd+=[f"-r{runtype}"]
     cmdLine+=f" -r{runtype}"
   print(cmdLine,flush=True)
@@ -113,13 +110,10 @@ def gettime(args,dim,Hermitian,real,T):
       callTiming(args,old,erase,taskset,runtype)
   elif runtype == "hybrid":
     callTiming(args,new,erase,taskset)
+    if real and dim >= 2:
+      callTiming(args,new[:-1]+"roe"+dimString,erase,taskset)
     if Hermitian and I == 0: # Why?
       callTiming(args,new,erase,taskset,"explicit")
-  elif runtype == "hybridexplicit":
-    if dim == 1:
-      print("hybridexplicit is only supported for 2 and 3 dimensional routines.")
-      exit()
-    callTiming(args,new,erase,taskset,"hybridexplicit")
   elif runtype == None:
     if not real:
       callTiming(args,old,erase,taskset,"implicit")
@@ -127,6 +121,7 @@ def gettime(args,dim,Hermitian,real,T):
     if dim == 1:
       callTiming(args,old,erase,taskset,"explicito")
     callTiming(args,new,erase,taskset)
+    callTiming(args,new[:-1]+"oe"+dimString,erase,taskset)
     if Hermitian and I == 0:
       callTiming(args,new,erase,taskset,"explicit")
   else:

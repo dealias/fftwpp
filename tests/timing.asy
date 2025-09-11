@@ -14,7 +14,7 @@ real[] mh,h,lh,hh;
 real[] mp,p,lp,hp;
 
 bool explicito=false;
-bool hybridexplicit=false;
+bool hybridroe=false;
 string base,dir;
 bool title=true;
 
@@ -83,9 +83,9 @@ if(!realConv) {
   }
 }
 if(d > 1 && realConv) {
-  file fin=input(base+"/"+dir+"/hybridexplicit").line();
-  hybridexplicit=!error(fin);
-  if(hybridexplicit) {
+  file fin=input(base+"/"+dir+"/hybridroe").line();
+  hybridroe=!error(fin);
+  if(hybridroe) {
     real[][] a=fin.dimension(0,0);
     a=transpose(sort(a));
     mhe=a[0]; he=a[1];
@@ -184,7 +184,7 @@ if(!realConv) {
   }
 }
 
-if(hybridexplicit) {
+if(hybridroe) {
   real[] nhe=f(mhe);
   mhe=g(mhe);
   he *= nhe;
@@ -221,8 +221,8 @@ real mean(real[] a){return sum(a)/a.length;};
 if(expl) {
   write("explicit vs hybrid speedup="+(string)(mean(e)/mean(h)));
 }
-if(hybridexplicit) {
-  write("hybridexplicit vs hybrid speedup="+(string)(mean(he)/mean(h)));
+if(hybridroe) {
+  write("hybridroe vs hybrid speedup="+(string)(mean(he)/mean(h)));
 }
 write();
 if(!settings.xasy) {
