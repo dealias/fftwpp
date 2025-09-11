@@ -350,11 +350,16 @@ void fftBase::OptBase::opt(size_t L, size_t M, Application& app,
         optloop(ceilpow2M,L,M,app,C,S,centered,1,useTimer,false);
     }
   } else {
-    size_t m=nextfftsize(M);
+    size_t m;
+    if(mForced)
+      m=app.m;
+    else
+      m=nextfftsize(M);
+
     optloop(m,L,m,app,C,S,centered,itmax,useTimer,true);
 
     size_t ceilpow2M=ceilpow2(M);
-    if(ceilpow2M > m && C == 1)
+    if(ceilpow2M > m && C == 1 && !mForced)
       optloop(ceilpow2M,L,M,app,C,S,centered,1,useTimer,true);
   }
 }
