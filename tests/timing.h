@@ -7,10 +7,6 @@
 #include <iostream>
 #include <fstream>
 
-#include <algorithm>
-#include <vector>
-#include <cstddef>
-
 const double unit=1.0e-9; // default unit is 1 nanosecond
 
 const std::string Algorithm[]={"Median","Mean","Min","Max","P90","P80","P50"};
@@ -111,33 +107,6 @@ inline void stdev(double *T, size_t N,
   upper=mean+sqrt(upper*factor);
 }
 
-inline void quartiles(double *T, size_t N,
-                      double &lower, double &upper)
-{
-    if (N == 0) {
-        lower = upper = 0.0;
-        return;
-    }
-
-    // Copy to vector so we can sort
-    std::vector<double> data(T, T + N);
-    std::sort(data.begin(), data.end());
-
-    auto percentile = [&](double p) -> double {
-        // p in [0,1], e.g. 0.25 for Q1, 0.75 for Q3
-        double idx = p * (N - 1);
-        size_t i = static_cast<size_t>(idx);
-        double frac = idx - i;
-        if (i + 1 < N)
-            return data[i] * (1 - frac) + data[i + 1] * frac;
-        else
-            return data[i];
-    };
-
-    lower = percentile(0.25); // first quartile
-    upper = percentile(0.75); // third quartile
-}
-
 inline void timings(const char* text, size_t m, size_t count,
                     double value, double lower, double upper)
 {
@@ -163,8 +132,7 @@ inline void timings(const char* text, size_t m, double *T,
     myfile << "\n";
   } else {
     double avg=value(T,N,algorithm)*unit;
-    // stdev(T,N,lower,upper,algorithm);
-    quartiles(T,N,lower,upper);
+    stdev(T,N,lower,upper,algorithm);
     std::cout << "Statistics: " << Algorithm[algorithm] << " " << "time" << std::endl;
     std::cout << "Count: " << N << std::endl << std::endl;
 
