@@ -218,9 +218,13 @@ legendmargin=4;
 attach(legend(),point(NE),15SW+1N);
 
 real mean(real[] a){return sum(a)/a.length;};
-if(expl)
-  write("speedup="+(string)(mean(e)/mean(h)));
-
+if(expl) {
+  write("explicit vs hybrid speedup="+(string)(mean(e)/mean(h)));
+}
+if(hybridexplicit) {
+  write("hybridexplicit vs hybrid speedup="+(string)(mean(he)/mean(h)));
+}
+write();
 if(!settings.xasy) {
   shipout(dir);
   currentpicture.erase();
