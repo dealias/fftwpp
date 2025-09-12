@@ -113,8 +113,8 @@ inline void timings(const char* text, size_t m, size_t count,
   std::cout << text << ":\n"
             << m
             << "\t" << value
-            << "\t" << lower
-            << "\t" << upper
+            // << "\t" << lower
+            // << "\t" << upper
             << std::endl;
 }
 
