@@ -203,7 +203,7 @@ double time(fftBase *fft, double &threshold)
 
     if(threads > 1) {
       cpuTimer C;
-#pragma omp parallel for num_threads(threads)
+#pragma omp parallel for num_threads(threads) schedule(runtime)
       for(size_t t=0; t < threads; ++t)
         Convolve[t]->convolveRaw(f+N*t);
       time=C.nanoseconds();
@@ -371,7 +371,7 @@ void fftBase::OptBase::check(size_t L, size_t M,
 {
 //  cout << "m=" << m << ", p=" << p << ", q=" << q << ", n=" << n << ", D=" << D << ", I=" << inplace << ", C=" << C << ", S=" << S << endl;
   //cout << "valid=" << valid(m,p,q,n,D,S) << endl << endl;
-  if(valid(m,p,q,n,D,S)) {
+  if(valid(m,p,q,n,D,S) && !(real() && C > 1 && (p > 2 || inplace))) {
     if(useTimer) {
       double t=time(L,M,app,C,S,m,D,inplace);
       if(showOptTimes)

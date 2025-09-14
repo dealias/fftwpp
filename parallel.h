@@ -40,7 +40,7 @@ inline size_t get_max_threads()
 #ifndef SINGLE_THREAD
 #define PARALLEL(code)                                  \
   if(threads > 1) {                                     \
-    _Pragma("omp parallel for num_threads(threads)")    \
+    _Pragma("omp parallel for num_threads(threads) schedule(runtime)")    \
       code                                              \
       } else {code}
 #else
@@ -58,7 +58,7 @@ inline size_t get_max_threads()
 #endif
 
 #define PARALLELIF(condition,code)                              \
-  OMPIF(condition,"omp parallel for num_threads(threads)",code)
+  OMPIF(condition,"omp parallel for num_threads(threads) schedule(runtime)",code)
 
 namespace parallel {
 
