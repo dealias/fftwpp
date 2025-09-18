@@ -76,10 +76,10 @@ public:
 };
 
 typedef void multiplier(Complex **F, size_t n,
-                        Indices *indices, size_t threads);
+                        Indices *indices, size_t threads, Complex *Zetaqm);
 
 // Multiplication routines for binary convolutions that take two inputs.
-multiplier multNone,multBinary,realMultBinary,multcorrelation;
+multiplier multNone,multBinary,realMultBinary,multcorrelation,multBinaryRCM;
 
 class Application : public ThreadBase
 {
@@ -143,10 +143,10 @@ public:
   bool overwrite;
   FFTcall Forward,Backward;
   FFTPad Pad;
+  Complex *Zetaqm;
 protected:
   Complex *Zetaqp;
   Complex *Zetaqp0;
-  Complex *Zetaqm;
   Complex *ZetaqmS;
   Complex *Zetaqm0;
   Complex *ZetaqmS0;
@@ -999,6 +999,7 @@ protected:
   Complex *W;
   Complex *H;
   Complex *W0;
+  Complex *Zetaqm;
   bool allocateF;
   bool allocateV;
   bool allocateW;
@@ -1034,6 +1035,7 @@ public:
     q=fft->q;
     n=fft->n;
 
+    Zetaqm=fft->Zetaqm;
     Forward=fft->Forward;
     Backward=fft->Backward;
 
@@ -1122,7 +1124,7 @@ public:
     indices->r=r;
     indices->offset=0;
 
-    (*mult)(F,blocksize,indices,threads);
+    (*mult)(F,blocksize,indices,threads,Zetaqm);
 
     size_t b=fft->b;
     size_t stop=fft->span(r);
@@ -1130,7 +1132,7 @@ public:
       for(size_t a=0; a < A; ++a)
         G[a]=F[a]+d;
       indices->offset=d;
-      (*mult)(G,blocksize,indices,threads);
+      (*mult)(G,blocksize,indices,threads,Zetaqm);
     }
   }
 

@@ -24,14 +24,14 @@ const union uvec sse2_mm={
 const double twopi=2.0*M_PI;
 
 void multNone(Complex **F, size_t n, Indices *indices,
-              size_t threads)
+              size_t threads, Complex *Zetaqm)
 {
 }
 
 // This multiplication routine is for binary convolutions and takes
 // two Complex inputs of size n and outputs one Complex value.
 void multBinary(Complex **F, size_t n, Indices *indices,
-                size_t threads)
+                size_t threads, Complex *Zetaqm)
 {
   Complex *F0=F[0];
   Complex *F1=F[1];
@@ -55,10 +55,46 @@ void multBinary(Complex **F, size_t n, Indices *indices,
     );
 }
 
+
+
+
+
+// This multiplication routine is for binary convolutions and takes
+// two Complex inputs of size n and outputs one Complex value.
+void multBinaryRCM(Complex **F, size_t n, Indices *indices,
+                size_t threads, Complex *Zetaqm)
+{
+  Complex *F0=F[0];
+  Complex *F1=F[1];
+
+#if 0 // Transformed indices are available.
+  size_t N=indices->size;
+  fftBase *fft=indices->fft;
+  size_t r=indices->r;
+  size_t offset=indices->offset;
+  for(size_t j=0; j < n; ++j) {
+    for(size_t d=0; d < N; ++d)
+      cout << indices->index[N-1-d] << ",";
+    cout << fft->index(r,j+offset) << endl;
+  }
+#endif
+
+  F0[0] = F0[0]*F1[0];
+  // cout << "F0[0]=" << F0[0] << endl;
+  PARALLELIF(
+    n > threshold,
+    for(size_t j=1; j < n; ++j) {
+      //cout << "F0[" << j << "]=" << F0[j] << endl;
+      F0[j] = F0[j]*F1[j] - 0.25*(F0[j]-conj(F0[n-j]))*(F1[j]-conj(F1[n-j]))*(1+Zetaqm[n+j]);
+    }
+    );
+}
+
+
 // This multiplication routine is for binary convolutions and takes
 // two real inputs of size n.
 void realMultBinary(Complex **F, size_t n, Indices *indices,
-                    size_t threads)
+                    size_t threads, Complex *Zetaqm)
 {
   double *F0=(double *) F[0];
   double *F1=(double *) F[1];
@@ -85,7 +121,7 @@ void realMultBinary(Complex **F, size_t n, Indices *indices,
 // This multiplication routine is for binary correlations and takes
 // two Complex inputs of size n and outputs one Complex value.
 void multcorrelation(Complex **F, size_t n, Indices *indices,
-                     size_t threads)
+                     size_t threads, Complex *Zetaqm)
 {
   Complex *F0=F[0];
   Complex *F1=F[1];
@@ -203,7 +239,7 @@ double time(fftBase *fft, double &threshold)
 
     if(threads > 1) {
       cpuTimer C;
-#pragma omp parallel for num_threads(threads) schedule(runtime)
+#pragma omp parallel for num_threads(threads)
       for(size_t t=0; t < threads; ++t)
         Convolve[t]->convolveRaw(f+N*t);
       time=C.nanoseconds();
@@ -371,7 +407,7 @@ void fftBase::OptBase::check(size_t L, size_t M,
 {
 //  cout << "m=" << m << ", p=" << p << ", q=" << q << ", n=" << n << ", D=" << D << ", I=" << inplace << ", C=" << C << ", S=" << S << endl;
   //cout << "valid=" << valid(m,p,q,n,D,S) << endl << endl;
-  if(valid(m,p,q,n,D,S) && !(real() && C > 1 && (p > 2 || inplace))) {
+  if(valid(m,p,q,n,D,S) && D != 1) {// && !(real() && C > 1 && (p > 2 || inplace))) {
     if(useTimer) {
       double t=time(L,M,app,C,S,m,D,inplace);
       if(showOptTimes)
@@ -7515,24 +7551,24 @@ void Convolution::convolveRaw(Complex **g)
   if(q == 1) {
     size_t blocksize=fft->blocksize(0);
     forward(g,F,0,0,A);
-    (*mult)(F,blocksize,&indices,threads);
+    (*mult)(F,blocksize,&indices,threads,Zetaqm);
     backward(F,g,0,0,B,W);
   } else {
     if(fft->overwrite) {
       forward(g,F,0,0,A);
       indices.r=0;
-      (*mult)(g,fft->blocksize(0),&indices,threads);
+      (*mult)(g,fft->blocksize(0),&indices,threads,Zetaqm);
       size_t final=fft->n-1;
       for(size_t r=1; r < final; ++r) {
         size_t blocksize=fft->blocksize(r);
         for(size_t a=0; a < A; ++a)
           G[a]=g[a]+r*blocksize;
         indices.r=r;
-        (*mult)(G,blocksize,&indices,threads);
+        (*mult)(G,blocksize,&indices,threads,Zetaqm);
       }
       indices.r=final;
       size_t blocksize=fft->blocksize(final);
-      (*mult)(F,blocksize,&indices,threads);
+      (*mult)(F,blocksize,&indices,threads,Zetaqm);
       backward(F,g,0,0,B);
     } else {
       if(loop2) {

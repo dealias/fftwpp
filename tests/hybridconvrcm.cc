@@ -10,6 +10,10 @@ using namespace utils;
 using namespace Array;
 using namespace fftwpp;
 
+// Constants used for initialization and testing.
+const Complex iF(sqrt(3.0),sqrt(7.0));
+const Complex iG(sqrt(5.0),sqrt(11.0));
+
 size_t A=2; // number of inputs
 size_t B=1; // number of outputs
 
@@ -28,7 +32,9 @@ int main(int argc, char *argv[])
   cout << "L=" << L << endl;
   cout << "M=" << M << endl;
 
-  if(Output || testError)
+  bool single=Output || testError || accuracy;
+
+  if(single)
     s=0;
   if(s == 0) N=1;
   cout << "s=" << s << endl << endl;
@@ -36,33 +42,44 @@ int main(int argc, char *argv[])
 
   vector<double> T;
 
-  Application app(A,B,multBinary,fftw::maxthreads,true,mx,Dx,Ix);
-  fftBase *fft=new fftPadReal(L,M,app);
+  Application app(A,B,multBinaryRCM,fftw::maxthreads,true,mx,Dx,Ix);
+  fftPad *fft=Centered ? new fftPadCentered(L,M,app) : new fftPad(L,M,app);
   Convolution Convolve(fft);
 
-  double **f=doubleAlign(max(A,B),L);
-  for(size_t a=0; a < A; ++a) {
-    double *fa=f[a];
+  Complex **f=ComplexAlign(max(A,B),L);
+
+  if(accuracy) {
     for(size_t j=0; j < L; ++j) {
-      fa[j]=Output || testError ? (j % 2 ? (a+1)*j/2+3: j/2+a+1) : 0.0;
-      cout << fa[j] << endl;
+      Complex factor=expi(j);
+      f[0][j]=iF*factor;
+      f[1][j]=iG*factor;
     }
-  }
-  double *h=NULL;
-  if(testError) {
-    double **F=doubleAlign(max(A,B),L);
+  } else {
     for(size_t a=0; a < A; ++a) {
-      double *Fa=F[a];
-      double *fa=f[a];
-      for(size_t j=0; j < L; ++j)
-        Fa[j]=fa[j];
+      Complex *fa=f[a];
+      for(size_t j=0; j < L; ++j) {
+        fa[j]=Output || testError ? Complex(j+a+1,(a+1)*j+3) : 0.0;
+        cout << fa[j] << endl;
+      }
     }
-    h=doubleAlign(L);
-    directconv<double> C(L);
-    C.convolve(h,F[0],F[1]);
   }
 
-  if(!Output && !testError)
+  Complex *h=NULL;
+  if(accuracy) {
+    h=ComplexAlign(L);
+    // Exact solution for test case with two inputs
+    for(size_t j=0; j < L; ++j)
+      h[j]=iF*iG*(j+1)*expi(j);
+  } else if(testError) {
+    h=ComplexAlign(L);
+    directconv<Complex> C(L);
+    if(Centered)
+      C.convolveC(h,f[0],f[1]);
+    else
+      C.convolve(h,f[0],f[1]);
+  }
+
+  if(!single)
     Convolve.convolve(f);
 
   double sum=0.0;
@@ -86,17 +103,17 @@ int main(int argc, char *argv[])
   cout << endl;
 
   if(Output) {
-    if(testError)
+    if(testError || accuracy)
       cout << "Hybrid:" << endl;
     for(size_t b=0; b < B; ++b)
       for(size_t j=0; j < L; ++j)
         cout << f[b][j] << endl;
   }
 
-  if(testError) {
+  if(testError || accuracy) {
     if(Output) {
       cout << endl;
-      cout << "Direct:" << endl;
+      cout << (accuracy ? "Exact" : "Direct:") << endl;
       for(size_t j=0; j < L; ++j)
         cout << h[j] << endl;
       cout << endl;
@@ -105,9 +122,9 @@ int main(int argc, char *argv[])
     double norm=0.0;
 
     // Assumes B=1
-    double* f0=f[0];
+    Complex* f0=f[0];
     for(size_t j=0; j < L; ++j) {
-      double hj=h[j];
+      Complex hj=h[j];
       err += abs2(f0[j]-hj);
       norm += abs2(hj);
     }

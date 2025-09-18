@@ -30,6 +30,7 @@ set( conv_list
   hybridconvr3
   hybridconvroe2
   hybridconvroe3
+  hybridconvrcm
   hybrid
   hybridh
   hybridr
