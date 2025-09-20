@@ -83,9 +83,9 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices,
   if(n % 2 == 0) F0[n/2] = F0[n/2]*F1[n/2];
 
   PARALLELIF(
-    n > threshold,
+    n/2 > threshold,
     for(size_t j=1; j < n/2; ++j) {
-      Complex A=0.25*(F0[j]-conj(F0[n-j]))*(F1[j]-conj(F1[n-j]))*Zetaqm[j];
+      Complex A=(F0[j]-conj(F0[n-j]))*(F1[j]-conj(F1[n-j]))*Zetaqm[j];
       F0[j] = F0[j]*F1[j] - A;
       F0[n-j] = F0[n-j]*F1[n-j] - conj(A);
     }
@@ -180,10 +180,10 @@ void fftBase::initZetaqm(size_t q, size_t m)
 void fftBase::initZetam(size_t m)
 {
   double twopibym=twopi/m;
-  Zetaqm=ComplexAlign(m);
+  Zetaqm=ComplexAlign(m/2);
   Zetaqm[0]=1.0;
-  for(size_t j=1; j < m; ++j) {
-    Zetaqm[j]=1+expi(j*twopibym);
+  for(size_t j=1; j < m/2; ++j) {
+    Zetaqm[j]=(1+expi(j*twopibym))/4;
   }
 }
 

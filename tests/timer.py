@@ -114,6 +114,8 @@ def gettime(args,dim,Hermitian,real,T):
       callTiming(args,new[:-1]+"roe"+dimString,erase,taskset)
     if Hermitian and I == 0: # Why?
       callTiming(args,new,erase,taskset,"explicit")
+  elif runtype == "rcm":
+    callTiming(args,new+"rcm",erase,taskset)
   elif runtype == None:
     if not real:
       callTiming(args,old,erase,taskset,"implicit")

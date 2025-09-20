@@ -59,7 +59,6 @@ int main(int argc, char *argv[])
       Complex *fa=f[a];
       for(size_t j=0; j < L; ++j) {
         fa[j]=Output || testError ? Complex(j+a+1,(a+1)*j+3) : 0.0;
-        cout << fa[j] << endl;
       }
     }
   }
