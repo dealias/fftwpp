@@ -140,7 +140,7 @@ def max_m(p, RAM, runtype):
 
 def default_outdir(p,T,I):
     outdir=""
-    if p == "cconv" or p == "hybridconv" or p == "directTest":
+    if p == "cconv" or p == "hybridconv" or p == "directTest" or p == "hybridconvrcm":
         outdir = "timings1"
     if p == "cconv2" or p == "hybridconv2":
         outdir = "timings2"
@@ -301,6 +301,7 @@ def main(argv):
     ternary = False
     direct = False
     roe=False
+    rcm=False
 
     dim2routines=["cconv2","conv2","rconv2","hybridconv2","hybridconvh2","hybridconvr2","hybridconvroe2"]
     dim3routines=["cconv3","conv3","rconv3","hybridconv3","hybridconvh3","hybridconvr3","hybridconvroe3"]
@@ -325,6 +326,9 @@ def main(argv):
 
     if p in ["hybridconvroe2", "hybridconvroe3"]:
         roe=True
+
+    if p in ["hybridconvrcm"]:
+        rcm=True
 
     if p == "conv" or p == "conv2" or p == "conv3":
         hermitian = True
@@ -382,6 +386,9 @@ def main(argv):
             if roe:
                 outfile="hybridroe"+fileExt
                 optFile=outdir+os.sep+"hybridroeParams"+fileExt
+            elif rcm:
+                outfile="rcm"+fileExt
+                optFile=outdir+os.sep+"rcmParams"+fileExt
             else:
                 outfile = "hybrid"+fileExt
                 optFile=outdir+os.sep+"hybridParams"+fileExt
@@ -628,7 +635,7 @@ def main(argv):
                                     logfile.write(hybridParamsMessage)
                 # mcmd=cmd
                 if hybrid:
-                    mcmd=cmd+["-L"+str(L)]+["-M"+str(M)]
+                    mcmd=cmd+["-L"+str(L)]+["-M"+str(M)]#["-Lx="+str(L//2)]+["-Mx="+str(M//2)]+["-Ly="+str(L)]+["-My="+str(M)]
                 elif direct:
                     mcmd=cmd+["-L"+str(L)]
                 elif not roe:

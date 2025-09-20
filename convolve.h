@@ -160,6 +160,7 @@ public:
   void common();
 
   void initZetaqm(size_t q, size_t m);
+  void initZetam(size_t m);
 
   class OptBase {
   public:

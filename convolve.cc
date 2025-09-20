@@ -79,13 +79,15 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices,
   }
 #endif
 
-  F0[0] = F0[0]*F1[0];
-  // cout << "F0[0]=" << F0[0] << endl;
+  F0[0] = F0[0]*F1[0] + 2*imag(F0[0])*imag(F1[0]);
+  if(n % 2 == 0) F0[n/2] = F0[n/2]*F1[n/2];
+
   PARALLELIF(
     n > threshold,
-    for(size_t j=1; j < n; ++j) {
-      //cout << "F0[" << j << "]=" << F0[j] << endl;
-      F0[j] = F0[j]*F1[j] - 0.25*(F0[j]-conj(F0[n-j]))*(F1[j]-conj(F1[n-j]))*(1+Zetaqm[n+j]);
+    for(size_t j=1; j < n/2; ++j) {
+      Complex A=0.25*(F0[j]-conj(F0[n-j]))*(F1[j]-conj(F1[n-j]))*Zetaqm[j];
+      F0[j] = F0[j]*F1[j] - A;
+      F0[n-j] = F0[n-j]*F1[n-j] - conj(A);
     }
     );
 }
@@ -172,6 +174,16 @@ void fftBase::initZetaqm(size_t q, size_t m)
       for(size_t s=1; s < m; ++s)
         Zetaqm[mr+s]=expi(r*s*twopibyM);
       );
+  }
+}
+
+void fftBase::initZetam(size_t m)
+{
+  double twopibym=twopi/m;
+  Zetaqm=ComplexAlign(m);
+  Zetaqm[0]=1.0;
+  for(size_t j=1; j < m; ++j) {
+    Zetaqm[j]=1+expi(j*twopibym);
   }
 }
 
@@ -407,7 +419,7 @@ void fftBase::OptBase::check(size_t L, size_t M,
 {
 //  cout << "m=" << m << ", p=" << p << ", q=" << q << ", n=" << n << ", D=" << D << ", I=" << inplace << ", C=" << C << ", S=" << S << endl;
   //cout << "valid=" << valid(m,p,q,n,D,S) << endl << endl;
-  if(valid(m,p,q,n,D,S) && D != 1) {// && !(real() && C > 1 && (p > 2 || inplace))) {
+  if(valid(m,p,q,n,D,S)) {//&& D == 2 && q == 2) {// && !(real() && C > 1 && (p > 2 || inplace))) {
     if(useTimer) {
       double t=time(L,M,app,C,S,m,D,inplace);
       if(showOptTimes)
@@ -573,6 +585,7 @@ void fftPad::init()
       if(fftm->Threads() > 1)
         threads=fftm->Threads();
     }
+    initZetam(m);
 
     deleteAlign(G);
     if(!inplace)
@@ -746,6 +759,7 @@ void fftPad::init()
     deleteAlign(G);
 
     initZetaqm(q,centered && p == 2 ? m+1 : m);
+
   }
   if(showRoutines && (q != 1 || !centered)) {
     char const* cent=centered ? "Centered" : "";
@@ -909,6 +923,7 @@ void fftPad::forward1(Complex *f, Complex *F0, size_t r0, Complex *W)
       Complex *V=W+m;
       V[0]=W[0]=f[0];
       Complex *Zetar=Zetaqm+m*q2;
+
       PARALLELIF(
         L > threshold,
         for(size_t s=1; s < L; ++s) {
