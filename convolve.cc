@@ -24,14 +24,14 @@ const union uvec sse2_mm={
 const double twopi=2.0*M_PI;
 
 void multNone(Complex **F, size_t n, Indices *indices,
-              size_t threads, Complex *Zetaqm)
+              size_t threads)
 {
 }
 
 // This multiplication routine is for binary convolutions and takes
 // two Complex inputs of size n and outputs one Complex value.
 void multBinary(Complex **F, size_t n, Indices *indices,
-                size_t threads, Complex *Zetaqm)
+                size_t threads)
 {
   Complex *F0=F[0];
   Complex *F1=F[1];
@@ -56,17 +56,13 @@ void multBinary(Complex **F, size_t n, Indices *indices,
 }
 
 
-
-
-
 // This multiplication routine is for binary convolutions and takes
 // two Complex inputs of size n and outputs one Complex value.
 void multBinaryRCM(Complex **F, size_t n, Indices *indices,
-                size_t threads, Complex *Zetaqm)
+                size_t threads)
 {
   Complex *F0=F[0];
   Complex *F1=F[1];
-
 #if 0 // Transformed indices are available.
   size_t N=indices->size;
   fftBase *fft=indices->fft;
@@ -79,24 +75,47 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices,
   }
 #endif
 
+  fftBase *fft=indices->fft;
+  Complex *zeta=fft->Zetaqm;
+  size_t q=fft->q;
+  size_t qoverp=fft->n;
+  size_t N=indices->size;
+  size_t r=indices->r;
+  size_t offset=indices->offset;
+  cout << "r=" << r << endl;
+  cout << "q=" << q << endl;
+  cout << "qoverp=" << qoverp << endl;
+
   F0[0] = F0[0]*F1[0] + 2*imag(F0[0])*imag(F1[0]);
   if(n % 2 == 0) F0[n/2] = F0[n/2]*F1[n/2];
 
   PARALLELIF(
     n/2 > threshold,
     for(size_t j=1; j < n/2; ++j) {
-      Complex A=(F0[j]-conj(F0[n-j]))*(F1[j]-conj(F1[n-j]))*Zetaqm[j];
+      Complex A=(F0[j]-conj(F0[n-j]))*(F1[j]-conj(F1[n-j]))*zeta[j];
       F0[j] = F0[j]*F1[j] - A;
       F0[n-j] = F0[n-j]*F1[n-j] - conj(A);
     }
     );
+
+  // F0[0] = F0[0]*F1[0] + 2*imag(F0[0])*imag(F1[0]);
+  // if(n % 2 == 0) F0[n/2] = F0[n/2]*F1[n/2];
+
+  // PARALLELIF(
+  //   n/2 > threshold,
+  //   for(size_t j=1; j < n/2; ++j) {
+  //     Complex A=(F0[j]-conj(F0[n-j]))*(F1[j]-conj(F1[n-j]))*Zetaqm[j];
+  //     F0[j] = F0[j]*F1[j] - A;
+  //     F0[n-j] = F0[n-j]*F1[n-j] - conj(A);
+  //   }
+  //   );
 }
 
 
 // This multiplication routine is for binary convolutions and takes
 // two real inputs of size n.
 void realMultBinary(Complex **F, size_t n, Indices *indices,
-                    size_t threads, Complex *Zetaqm)
+                    size_t threads)
 {
   double *F0=(double *) F[0];
   double *F1=(double *) F[1];
@@ -123,7 +142,7 @@ void realMultBinary(Complex **F, size_t n, Indices *indices,
 // This multiplication routine is for binary correlations and takes
 // two Complex inputs of size n and outputs one Complex value.
 void multcorrelation(Complex **F, size_t n, Indices *indices,
-                     size_t threads, Complex *Zetaqm)
+                     size_t threads)
 {
   Complex *F0=F[0];
   Complex *F1=F[1];
@@ -7564,26 +7583,27 @@ Convolution::~Convolution()
 void Convolution::convolveRaw(Complex **g)
 {
   if(q == 1) {
+    indices.r=0;
     size_t blocksize=fft->blocksize(0);
     forward(g,F,0,0,A);
-    (*mult)(F,blocksize,&indices,threads,Zetaqm);
+    (*mult)(F,blocksize,&indices,threads);
     backward(F,g,0,0,B,W);
   } else {
     if(fft->overwrite) {
       forward(g,F,0,0,A);
       indices.r=0;
-      (*mult)(g,fft->blocksize(0),&indices,threads,Zetaqm);
+      (*mult)(g,fft->blocksize(0),&indices,threads);
       size_t final=fft->n-1;
       for(size_t r=1; r < final; ++r) {
         size_t blocksize=fft->blocksize(r);
         for(size_t a=0; a < A; ++a)
           G[a]=g[a]+r*blocksize;
         indices.r=r;
-        (*mult)(G,blocksize,&indices,threads,Zetaqm);
+        (*mult)(G,blocksize,&indices,threads);
       }
       indices.r=final;
       size_t blocksize=fft->blocksize(final);
-      (*mult)(F,blocksize,&indices,threads,Zetaqm);
+      (*mult)(F,blocksize,&indices,threads);
       backward(F,g,0,0,B);
     } else {
       if(loop2) {

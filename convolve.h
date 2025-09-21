@@ -76,7 +76,7 @@ public:
 };
 
 typedef void multiplier(Complex **F, size_t n,
-                        Indices *indices, size_t threads, Complex *Zetaqm);
+                        Indices *indices, size_t threads);
 
 // Multiplication routines for binary convolutions that take two inputs.
 multiplier multNone,multBinary,realMultBinary,multcorrelation,multBinaryRCM;
@@ -1125,7 +1125,7 @@ public:
     indices->r=r;
     indices->offset=0;
 
-    (*mult)(F,blocksize,indices,threads,Zetaqm);
+    (*mult)(F,blocksize,indices,threads);
 
     size_t b=fft->b;
     size_t stop=fft->span(r);
@@ -1133,7 +1133,7 @@ public:
       for(size_t a=0; a < A; ++a)
         G[a]=F[a]+d;
       indices->offset=d;
-      (*mult)(G,blocksize,indices,threads,Zetaqm);
+      (*mult)(G,blocksize,indices,threads);
     }
   }
 
