@@ -703,7 +703,7 @@ def check(program, cmd, options):
       if testPassed:
         errorSearch(program,output,cmd,options,routines,r"Forward Error")
 
-  if options.printEverything or not testPassed:
+  if options.printEverything:# or not testPassed:
     print(f"{cmd.case}\n{output}\n")
 
 

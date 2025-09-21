@@ -5506,7 +5506,7 @@ void fftPadReal::init()
     if (S == 1 && n > 2) {
       fftm=new mfft1d(m,1,d, 1,m, G,H,threads);
       ifftm=new mfft1d(m,-1,d, 1,m, H,G,threads);
-    } else if (S > 1 && (n%2 == 0 || n > 2)) {
+    } else if (S > 1 && ((q != n && n%2 == 0) || n > 2)) {
       fftm=new mfft1d(m,1,C, S,1, G,H,threads);
       ifftm=new mfft1d(m,-1,C, S,1, H,G,threads);
     }
@@ -5680,7 +5680,7 @@ fftPadReal::~fftPadReal()
       delete rcfftm;
     }
 
-    if(n > 2 || (S > 1 && n%2 == 0)) {
+    if(n > 2 || (S > 1 && (q != n && n%2 == 0))) {
       delete fftm;
       delete ifftm;
     }
