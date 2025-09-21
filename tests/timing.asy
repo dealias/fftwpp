@@ -5,6 +5,8 @@ barfactor=10;
 bool drawerrorbars=true;
 drawerrorbars=false;
 
+
+
 real[] me,e,le,he;
 real[] mb,b;
 real[] mhe; he;
@@ -50,6 +52,9 @@ real d=1;
 if(find(dir,"2-") >= 0) d=2;
 if(find(dir,"3-") >= 0) d=3;
 
+bool rcm=d == 1 && realConv;
+
+
 if(expl) {
   file fin=input(base+"/"+dir+"/explicit").line();
   real[][] a=fin.dimension(0,0);
@@ -89,6 +94,16 @@ if(d > 1 && realConv) {
     real[][] a=fin.dimension(0,0);
     a=transpose(sort(a));
     mhe=a[0]; he=a[1];
+  }
+}
+
+if(rcm) {
+  file fin=input(base+"/"+dir+"/rcm").line();
+  rcm=!error(fin);
+  if(rcm) {
+    real[][] a=fin.dimension(0,0);
+    a=transpose(sort(a));
+    mhe=2*a[0]; he=a[1];
   }
 }
 
@@ -192,7 +207,19 @@ if(hybridroe) {
   //lo *= no;
   // if(drawerrorbars)
   //   errorbars(mhe,o,0*mhe,ho-o,0*mhe,o-lo,Pen(3));
-  draw(graph(mhe,he,he > 0),Pentype(2),Label("Decomposed explicit",Pen(2)+Lp),mark2);
+  draw(graph(mhe,he,he > 0),Pentype(2),Label("roe",Pen(2)+Lp),mark2);
+}
+
+if(rcm) {
+  real[] nhe=f(mhe);
+  mhe=g(mhe);
+  he *= nhe;
+  //ho *= no;
+  //lo *= no;
+  // if(drawerrorbars)
+  //   errorbars(mhe,o,0*mhe,ho-o,0*mhe,o-lo,Pen(3));
+  // draw(graph(mhe,he,he > 0),Pentype(2),Label("rcm (heuristic)",Pen(2)+Lp),mark2);
+  draw(graph(mhe,he,he > 0),Pentype(2),Label("rcm (explicit)",Pen(2)+Lp),mark2);
 }
 
 real[] nh=f(mh);
@@ -223,6 +250,10 @@ if(expl) {
 }
 if(hybridroe) {
   write("hybridroe vs hybrid speedup="+(string)(mean(he)/mean(h)));
+}
+if(rcm) {
+  write("hybrid vs rcm speedup="+(string)(mean(h)/mean(he)));
+  write("explicit vs rcm speedup="+(string)(mean(e)/mean(he)));
 }
 write();
 if(!settings.xasy) {
