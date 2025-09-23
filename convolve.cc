@@ -77,19 +77,17 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices,
 
   // cout << "m=" << m << endl;
   size_t r=indices->r;
-  // cout << "r=" << r << endl;
+  cout << "r=" << r << endl;
   size_t offset=indices->offset;
-  // cout << "offset=" << offset << endl;
+  cout << "offset=" << offset << endl;
 
-
+  Complex *zeta=fft->ZetaRCM;
   if(q > 2){
-    Complex *zeta=fft->ZetaRCM;
     if(r == 0) {
       // u = 0
       F0[0] = F0[0]*F1[0] + 2*imag(F0[0])*imag(F1[0]);
-      for(size_t l=1; l < m/2; ++ l) {
-        size_t j=l;
-        Complex A=(F0[j]-conj(F0[m-j]))*(F1[j]-conj(F1[m-j]))*zeta[fft->index(r,j+offset)];
+      for(size_t j=1; j < m/2; ++ j) {
+        Complex A=(F0[j]-conj(F0[m-j]))*(F1[j]-conj(F1[m-j]))*zeta[j];
         F0[j] = F0[j]*F1[j] - A;
         F0[m-j] = F0[m-j]*F1[m-j] - conj(A);
       }
@@ -99,34 +97,33 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices,
       if(p % 2 == 0) {
         for(size_t l=0; l < m/2; ++ l) {
           size_t j=l+p*m/2;
-          Complex A=(F0[j]-conj(F0[n+m-j-1]))*(F1[j]-conj(F1[n+m-j-1]))*zeta[fft->index(r,j+offset)];
+          Complex A=(F0[j]-conj(F0[n+m-j-1]))*(F1[j]-conj(F1[n+m-j-1]))*zeta[j];
           F0[j] = F0[j]*F1[j] - A;
           F0[n+m-j-1] = F0[n+m-j-1]*F1[n+m-j-1] - conj(A);
         }
       }
 
       for(size_t j=m; j < n/2; ++j) {
-        Complex A=(F0[j]-conj(F0[n-j+m-1]))*(F1[j]-conj(F1[n-j+m-1]))*zeta[fft->index(r,j+offset)];
+        Complex A=(F0[j]-conj(F0[n-j+m-1]))*(F1[j]-conj(F1[n-j+m-1]))*zeta[j];
         F0[j] = F0[j]*F1[j] - A;
         F0[n-j+m-1] = F0[n-j+m-1]*F1[n-j+m-1] - conj(A);
       }
 
     } else if(r == 1) {
       for(size_t j=0; j < n/2; ++j) {
-        Complex A=(F0[j]-conj(F0[n-j-1]))*(F1[j]-conj(F1[n-j-1]))*zeta[fft->index(r,j+offset)];
+        Complex A=(F0[j]-conj(F0[n-j-1]))*(F1[j]-conj(F1[n-j-1]))*zeta[m*r*p+j];
         F0[j] = F0[j]*F1[j] - A;
         F0[n-j-1] = F0[n-j-1]*F1[n-j-1] - conj(A);
       }
     }
   } else if(q == 2) {
-    Complex *zeta=fft->Zetaqm;
     if(r == 0) {
       F0[0] = F0[0]*F1[0] + 2*imag(F0[0])*imag(F1[0]);
       if(n % 2 == 0) F0[n/2] = F0[n/2]*F1[n/2];
       PARALLELIF(
       n/2 > threshold,
       for(size_t j=1; j < n/2; ++j) {
-        Complex A=(F0[j]-conj(F0[n-j]))*(F1[j]-conj(F1[n-j]))*(1+zeta[2*j+n])/4;
+        Complex A=(F0[j]-conj(F0[n-j]))*(F1[j]-conj(F1[n-j]))*zeta[j];//(1+zeta[2*j+n])/4;
         F0[j] = F0[j]*F1[j] - A;
         F0[n-j] = F0[n-j]*F1[n-j] - conj(A);
       }
@@ -135,7 +132,7 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices,
       PARALLELIF(
       n/2 > threshold,
       for(size_t j=0; j < n/2; ++j) {
-        Complex A=(F0[j]-conj(F0[n-j-1]))*(F1[j]-conj(F1[n-j-1]))*(1+zeta[2*j+1+n])/4;
+        Complex A=(F0[j]-conj(F0[n-j-1]))*(F1[j]-conj(F1[n-j-1]))*zeta[m+j];//(1+zeta[2*j+1+n])/4;
         F0[j] = F0[j]*F1[j] - A;
         F0[n-j-1] = F0[n-j-1]*F1[n-j-1] - conj(A);
       }
@@ -143,7 +140,6 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices,
       // if(n % 2) F0[n/2] = F0[n/2]*F1[n/2];
     }
   } else if(q == 1) {
-    Complex *zeta=fft->ZetaRCM;
     F0[0] = F0[0]*F1[0] + 2*imag(F0[0])*imag(F1[0]);
     if(n % 2 == 0) F0[n/2] = F0[n/2]*F1[n/2];
     PARALLELIF(
@@ -247,13 +243,16 @@ void fftBase::initZetaqm(size_t q, size_t m)
   }
 }
 
-void fftBase::initZetaRCM(size_t m)
+void fftBase::initZetaRCM(size_t n,size_t p,size_t m)
 {
-  double twopibym=twopi/m;
-  ZetaRCM=ComplexAlign(m);
-  ZetaRCM[0]=1.0;
-  for(size_t j=1; j < m; ++j) {
-    ZetaRCM[j]=(1+expi(j*twopibym))/4;
+  double twopibym=twopi/(n*p*m);
+  // cout << "index(0,2)=" << index(0,2) << endl;
+  ZetaRCM=ComplexAlign(n*p*m);
+  // ZetaRCM[0]=1.0;
+  for(size_t r=0; r < n; ++r) {
+    for(size_t j=0; j < m*p; ++j) {
+      ZetaRCM[r*m*p+j]=(1+expi(index(r,j)*twopibym))/4;
+    }
   }
 }
 
@@ -655,8 +654,8 @@ void fftPad::init()
       if(fftm->Threads() > 1)
         threads=fftm->Threads();
     }
-    initZetaRCM(m);
 
+    initZetaRCM(1,1,m);
     deleteAlign(G);
     if(!inplace)
       deleteAlign(H);
@@ -829,7 +828,7 @@ void fftPad::init()
     deleteAlign(G);
 
     initZetaqm(q,centered && p == 2 ? m+1 : m);
-    if(q > 2) initZetaRCM(q*m);
+    initZetaRCM(n,p,m);
   }
   if(showRoutines && (q != 1 || !centered)) {
     char const* cent=centered ? "Centered" : "";

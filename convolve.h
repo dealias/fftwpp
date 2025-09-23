@@ -1,4 +1,4 @@
-/* Hybrid dealiased convolution routines.
+ /* Hybrid dealiased convolution routines.
    Copyright (C) 2024-5 John C. Bowman and Noel Murasko, Univ. of Alberta
 
    This program is free software; you can redistribute it and/or modify
@@ -161,7 +161,7 @@ public:
   void common();
 
   void initZetaqm(size_t q, size_t m);
-  void initZetaRCM(size_t m);
+  void initZetaRCM(size_t q, size_t p, size_t m);
 
   class OptBase {
   public:
