@@ -46,51 +46,46 @@ int main(int argc, char *argv[])
   fftPad *fft=new fftPad(L,M,app);
   Convolution Convolve(fft);
 
-  Complex **f=ComplexAlign(max(A,B),L);
-
-  if(accuracy) {
+  double **f=doubleAlign(max(A,B),L);
+  Complex **g=ComplexAlign(max(A,B),L/2);
+  for(size_t a=0; a < A; ++a) {
+    double *fa=f[a];
+    Complex *ga=g[a];
     for(size_t j=0; j < L; ++j) {
-      Complex factor=expi(j);
-      f[0][j]=iF*factor;
-      f[1][j]=iG*factor;
+      fa[j]=Output || testError ? (j % 2 ? (a+1)*j/2+3: j/2+a+1) : 0.0;
     }
-  } else {
+    for(size_t j=0; j < L/2; ++j) {
+      ga[j]=Complex(fa[2*j],fa[2*j+1]);//=Output || testError ? (j % 2 ? (a+1)*j/2+3: j/2+a+1) : 0.0;
+    }
+  }
+
+  double *h=NULL;
+  if(testError) {
+    double **F=doubleAlign(max(A,B),L);
     for(size_t a=0; a < A; ++a) {
-      Complex *fa=f[a];
-      for(size_t j=0; j < L; ++j) {
-        fa[j]=Output || testError ? Complex(j+a+1,(a+1)*j+3) : 0.0;
-      }
+      double *Fa=F[a];
+      double *fa=f[a];
+      for(size_t j=0; j < L; ++j)
+        Fa[j]=fa[j];
     }
+    h=doubleAlign(L);
+    directconv<double> C(L);
+    C.convolve(h,F[0],F[1]);
   }
 
-  Complex *h=NULL;
-  if(accuracy) {
-    h=ComplexAlign(L);
-    // Exact solution for test case with two inputs
-    for(size_t j=0; j < L; ++j)
-      h[j]=iF*iG*(j+1)*expi(j);
-  } else if(testError) {
-    h=ComplexAlign(L);
-    directconv<Complex> C(L);
-    if(Centered)
-      C.convolveC(h,f[0],f[1]);
-    else
-      C.convolve(h,f[0],f[1]);
-  }
-
-  if(!single)
-    Convolve.convolve(f);
+  if(!Output && !testError)
+    Convolve.convolve(g);
 
   double sum=0.0;
   while(sum < s || T.size() < N) {
     double t;
     if(normalized || testError) {
       cpuTimer c;
-      Convolve.convolve(f);
+      Convolve.convolve(g);
       t=c.nanoseconds();
     } else {
       cpuTimer c;
-      Convolve.convolveRaw(f);
+      Convolve.convolveRaw(g);
       t=c.nanoseconds();
     }
     T.push_back(t);
@@ -100,19 +95,24 @@ int main(int argc, char *argv[])
   cout << endl;
   timings("Hybrid",L,T.data(),T.size(),stats);
   cout << endl;
-
+  for(size_t b=0; b < B; ++b) {
+      for(size_t j=0; j < L/2; ++j) {
+        f[b][2*j]=real(g[b][j]);
+        f[b][2*j+1]=imag(g[b][j]);
+      }
+  }
   if(Output) {
-    if(testError || accuracy)
+    if(testError)
       cout << "Hybrid:" << endl;
     for(size_t b=0; b < B; ++b)
       for(size_t j=0; j < L; ++j)
         cout << f[b][j] << endl;
   }
 
-  if(testError || accuracy) {
+  if(testError) {
     if(Output) {
       cout << endl;
-      cout << (accuracy ? "Exact" : "Direct:") << endl;
+      cout << "Direct:" << endl;
       for(size_t j=0; j < L; ++j)
         cout << h[j] << endl;
       cout << endl;
@@ -121,9 +121,9 @@ int main(int argc, char *argv[])
     double norm=0.0;
 
     // Assumes B=1
-    Complex* f0=f[0];
+    double* f0=f[0];
     for(size_t j=0; j < L; ++j) {
-      Complex hj=h[j];
+      double hj=h[j];
       err += abs2(f0[j]-hj);
       norm += abs2(hj);
     }

@@ -45,7 +45,6 @@ int main(int argc, char *argv[])
     double *fa=f[a];
     for(size_t j=0; j < L; ++j) {
       fa[j]=Output || testError ? (j % 2 ? (a+1)*j/2+3: j/2+a+1) : 0.0;
-      cout << fa[j] << endl;
     }
   }
   double *h=NULL;
