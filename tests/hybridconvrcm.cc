@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
   vector<double> T;
 
   Application app(A,B,multBinaryRCM,fftw::maxthreads,true,mx,Dx,Ix);
-  fftPad *fft=new fftPad(L,M,app);
+  fftPad *fft=new fftPad(L/2,M/2,app);
   Convolution Convolve(fft);
 
   double **f=doubleAlign(max(A,B),L);
@@ -85,7 +85,20 @@ int main(int argc, char *argv[])
       t=c.nanoseconds();
     } else {
       cpuTimer c;
+      for(size_t a=0; a < A; ++a) {
+        double *fa=f[a];
+        Complex *ga=g[a];
+        for(size_t j=0; j < L/2; ++j) {
+          ga[j]=Complex(fa[2*j],fa[2*j+1]);
+        }
+      }
       Convolve.convolveRaw(g);
+      for(size_t b=0; b < B; ++b) {
+        for(size_t j=0; j < L/2; ++j) {
+          f[b][2*j]=real(g[b][j]);
+          f[b][2*j+1]=imag(g[b][j]);
+        }
+      }
       t=c.nanoseconds();
     }
     T.push_back(t);
@@ -133,6 +146,6 @@ int main(int argc, char *argv[])
   }
 
   deleteAlign(f[0]); delete [] f;
-
+  deleteAlign(g[0]); delete [] g;
   return 0;
 }
