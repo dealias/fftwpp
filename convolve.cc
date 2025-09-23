@@ -55,8 +55,6 @@ void multBinary(Complex **F, size_t n, Indices *indices,
     );
 }
 
-
-// Currently requires D=1, p=1
 void multBinaryRCM(Complex **F, size_t n, Indices *indices,
                 size_t threads)
 {
@@ -65,26 +63,13 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices,
   fftBase *fft=indices->fft;
 
   size_t m=fft->m;
-
   size_t q=fft->q;
   size_t p=fft->p;
 
-  // cout << "q=" << q << endl;
-  // size_t q_over_p=fft->n;
-  // cout << "q_over_p=" << q_over_p << endl;
-
-  // size_t N=indices->size;
-  // cout << "N=" << N << endl;
-
-  // cout << "m=" << m << endl;
   size_t offset=indices->offset;
   size_t r=indices->r+offset/(p*m);
-  // cout << "r=" << r << endl;
-
-  // cout << "offset=" << offset << endl;
 
   Complex *zeta=fft->ZetaRCM;
-
   if(q > 2){
     if(r == 0) {
       // u = 0
@@ -137,7 +122,7 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices,
       PARALLELIF(
       n/2 > threshold,
       for(size_t j=1; j < n/2; ++j) {
-        Complex A=(F0[j]-conj(F0[n-j]))*(F1[j]-conj(F1[n-j]))*zeta[j];//(1+zeta[2*j+n])/4;
+        Complex A=(F0[j]-conj(F0[n-j]))*(F1[j]-conj(F1[n-j]))*zeta[j];
         F0[j] = F0[j]*F1[j] - A;
         F0[n-j] = F0[n-j]*F1[n-j] - conj(A);
       }
@@ -146,12 +131,11 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices,
       PARALLELIF(
       n/2 > threshold,
       for(size_t j=0; j < n/2; ++j) {
-        Complex A=(F0[j]-conj(F0[n-j-1]))*(F1[j]-conj(F1[n-j-1]))*zeta[m+j];//(1+zeta[2*j+1+n])/4;
+        Complex A=(F0[j]-conj(F0[n-j-1]))*(F1[j]-conj(F1[n-j-1]))*zeta[m+j];
         F0[j] = F0[j]*F1[j] - A;
         F0[n-j-1] = F0[n-j-1]*F1[n-j-1] - conj(A);
       }
       );
-      // if(n % 2) F0[n/2] = F0[n/2]*F1[n/2];
     }
   } else if(q == 1) {
     F0[0] = F0[0]*F1[0] + 2*imag(F0[0])*imag(F1[0]);
@@ -165,11 +149,6 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices,
       }
       );
   }
-  // for(size_t j=0; j < n; ++j) {
-  //     cout << "F0[" << fft->index(r,j+offset) << "]=" << F0[j] << endl;
-  //     // cout << fft->index(r,j+offset) << endl;
-  //   }
-  // cout << endl;
 }
 
 
@@ -259,13 +238,12 @@ void fftBase::initZetaqm(size_t q, size_t m)
 
 void fftBase::initZetaRCM(size_t n,size_t p,size_t m)
 {
-  double twopibym=twopi/(n*p*m);
-  // cout << "index(0,2)=" << index(0,2) << endl;
-  ZetaRCM=ComplexAlign(n*p*m);
-  // ZetaRCM[0]=1.0;
+  size_t mp=m*p;
+  double twopibyM=twopi/(n*mp);
+  ZetaRCM=ComplexAlign(n*mp);
   for(size_t r=0; r < n; ++r) {
-    for(size_t j=0; j < m*p; ++j) {
-      ZetaRCM[r*m*p+j]=(1+expi(index(r,j)*twopibym))/4;
+    for(size_t j=0; j < mp; ++j) {
+      ZetaRCM[r*mp+j]=(1+expi(index(r,j)*twopibyM))/4;
     }
   }
 }
