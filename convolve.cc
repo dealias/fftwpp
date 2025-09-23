@@ -106,12 +106,13 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices,
       );
 
     } else if(r == 1) {
+      size_t shift=(p+1)*m/2;
       PARALLELIF(
       n/2 > threshold,
       for(size_t j=0; j < n/2; ++j) {
-        Complex A=(F0[j]-conj(F0[n-j-1]))*(F1[j]-conj(F1[n-j-1]))*zeta[m*r*p+j];
-        F0[j] = F0[j]*F1[j] - A;
-        F0[n-j-1] = F0[n-j-1]*F1[n-j-1] - conj(A);
+        Complex A=(F0[j]-conj(F0[n-j-1]))*(F1[j]-conj(F1[n-j-1]))*zeta[shift+j];
+        F0[j]=F0[j]*F1[j]-A;
+        F0[n-j-1]=F0[n-j-1]*F1[n-j-1]-conj(A);
       }
       );
     }
@@ -123,29 +124,29 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices,
       n/2 > threshold,
       for(size_t j=1; j < n/2; ++j) {
         Complex A=(F0[j]-conj(F0[n-j]))*(F1[j]-conj(F1[n-j]))*zeta[j];
-        F0[j] = F0[j]*F1[j] - A;
-        F0[n-j] = F0[n-j]*F1[n-j] - conj(A);
+        F0[j]=F0[j]*F1[j]-A;
+        F0[n-j]=F0[n-j]*F1[n-j]-conj(A);
       }
       );
     } else if(r == 1) {
       PARALLELIF(
       n/2 > threshold,
       for(size_t j=0; j < n/2; ++j) {
-        Complex A=(F0[j]-conj(F0[n-j-1]))*(F1[j]-conj(F1[n-j-1]))*zeta[m+j];
-        F0[j] = F0[j]*F1[j] - A;
-        F0[n-j-1] = F0[n-j-1]*F1[n-j-1] - conj(A);
+        Complex A=(F0[j]-conj(F0[n-j-1]))*(F1[j]-conj(F1[n-j-1]))*zeta[m/2+j];
+        F0[j]=F0[j]*F1[j] - A;
+        F0[n-j-1]=F0[n-j-1]*F1[n-j-1]-conj(A);
       }
       );
     }
   } else if(q == 1) {
-    F0[0] = F0[0]*F1[0] + 2*imag(F0[0])*imag(F1[0]);
-    if(n % 2 == 0) F0[n/2] = F0[n/2]*F1[n/2];
+    F0[0]=F0[0]*F1[0]+2*imag(F0[0])*imag(F1[0]);
+    if(n % 2 == 0) F0[n/2]=F0[n/2]*F1[n/2];
     PARALLELIF(
       n/2 > threshold,
       for(size_t j=1; j < n/2; ++j) {
         Complex A=(F0[j]-conj(F0[n-j]))*(F1[j]-conj(F1[n-j]))*zeta[j];
-        F0[j] = F0[j]*F1[j] - A;
-        F0[n-j] = F0[n-j]*F1[n-j] - conj(A);
+        F0[j] = F0[j]*F1[j]-A;
+        F0[n-j] = F0[n-j]*F1[n-j]-conj(A);
       }
       );
   }
@@ -236,15 +237,26 @@ void fftBase::initZetaqm(size_t q, size_t m)
   }
 }
 
+// // Only supports n=2 and p != 2. Assumes m is even.
 void fftBase::initZetaRCM(size_t n,size_t p,size_t m)
 {
   size_t mp=m*p;
   double twopibyM=twopi/(n*mp);
-  ZetaRCM=ComplexAlign(n*mp);
-  for(size_t r=0; r < n; ++r) {
-    for(size_t j=0; j < mp; ++j) {
-      ZetaRCM[r*mp+j]=(1+expi(index(r,j)*twopibyM))/4;
+  if(n == 1 || p == 1) {
+    ZetaRCM=ComplexAlign(n*mp/2);
+    for(size_t r=0; r < n; ++r) {
+      for(size_t j=0; j < mp/2; ++j) {
+        ZetaRCM[r*mp/2+j]=(1+expi(index(r,j)*twopibyM))/4;
+      }
     }
+  } else {
+    ZetaRCM=ComplexAlign(mp+m/2);
+    for(size_t j=0; j < mp/2+m/2; ++j) {
+      ZetaRCM[j]=(1+expi(index(0,j)*twopibyM))/4;
+    }
+    for(size_t j=0; j < mp/2; ++j) {
+        ZetaRCM[mp/2+m/2+j]=(1+expi(index(1,j)*twopibyM))/4;
+      }
   }
 }
 
