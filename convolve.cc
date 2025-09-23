@@ -56,8 +56,7 @@ void multBinary(Complex **F, size_t n, Indices *indices,
 }
 
 
-// This multiplication routine is for binary convolutions and takes
-// two Complex inputs of size n and outputs one Complex value.
+// Currently requires D=1, p=1
 void multBinaryRCM(Complex **F, size_t n, Indices *indices,
                 size_t threads)
 {
@@ -67,18 +66,63 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices,
   fftBase *fft=indices->fft;
   Complex *zeta=fft->Zetaqm;
   size_t q=fft->q;
-  // cout << "q=" << q << endl;
-  // size_t qoverp=fft->n;
-  // cout << "qoverp=" << qoverp << endl;
+  size_t p=fft->p;
+  cout << "q=" << q << endl;
+  size_t q_over_p=fft->n;
+  cout << "q_over_p=" << q_over_p << endl;
 
   // size_t N=indices->size;
   // cout << "N=" << N << endl;
+  size_t m=fft->m;
 
+  cout << "m=" << m << endl;
   size_t r=indices->r;
-  // cout << "r=" << r << endl;
+  cout << "r=" << r << endl;
+  size_t offset=indices->offset;
+  cout << "offset=" << offset << endl;
 
-  // size_t offset=indices->offset;
-  // cout << "offset=" << offset << endl;
+  // for(size_t j=0; j < n; ++j) {
+  //     cout << "F0[" << j << "]=" << F0[j] << endl;
+  //     cout << fft->index(r,j+offset) << endl;
+  //   }
+  // cout << endl;
+
+  if(q > 2){
+    if(r == 0) {
+      // u = 0
+      F0[0] = F0[0]*F1[0] + 2*imag(F0[0])*imag(F1[0]);
+      for(size_t l=1; l < m/2; ++ l) {
+        size_t j=l;
+        Complex A=(F0[j]-conj(F0[m-j]))*(F1[j]-conj(F1[m-j]))*(1+expi(twopi*(fft->index(r,j+offset))/(q*m)))/4;
+        F0[j] = F0[j]*F1[j] - A;
+        F0[m-j] = F0[m-j]*F1[m-j] - conj(A);
+      }
+      if(m % 2 == 0) F0[m/2] = F0[m/2]*F1[m/2];
+
+      // u = p/2
+      if(p % 2 == 0) {
+        for(size_t l=0; l < m/2; ++ l) {
+          size_t j=l+p*m/2;
+          Complex A=(F0[j]-conj(F0[n+m-j-1]))*(F1[j]-conj(F1[n+m-j-1]))*(1+expi(twopi*(fft->index(r,j+offset))/(q*m)))/4;
+          F0[j] = F0[j]*F1[j] - A;
+          F0[n+m-j-1] = F0[n+m-j-1]*F1[n+m-j-1] - conj(A);
+        }
+      }
+
+      for(size_t j=m; j < n/2; ++j) {
+        Complex A=(F0[j]-conj(F0[n-j+m-1]))*(F1[j]-conj(F1[n-j+m-1]))*(1+expi(twopi*(fft->index(r,j+offset))/(q*m)))/4;
+        F0[j] = F0[j]*F1[j] - A;
+        F0[n-j+m-1] = F0[n-j+m-1]*F1[n-j+m-1] - conj(A);
+      }
+
+    } else if(r == 1) {
+      for(size_t j=0; j < n/2; ++j) {
+        Complex A=(F0[j]-conj(F0[n-j-1]))*(F1[j]-conj(F1[n-j-1]))*(1+expi(twopi*(fft->index(r,j+offset))/(q*m)))/4;
+        F0[j] = F0[j]*F1[j] - A;
+        F0[n-j-1] = F0[n-j-1]*F1[n-j-1] - conj(A);
+      }
+    }
+  }
 
   if(r == 0 && q == 2) {
     F0[0] = F0[0]*F1[0] + 2*imag(F0[0])*imag(F1[0]);
@@ -114,31 +158,11 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices,
       }
       );
   }
-
-  // explicit:
-
-  // fftBase *fft=indices->fft;
-  // Complex *zeta=fft->Zetaqm;
-  // size_t q=fft->q;
-  // size_t qoverp=fft->n;
-  // size_t N=indices->size;
-  // size_t r=indices->r;
-  // size_t offset=indices->offset;
-  // cout << "r=" << r << endl;
-  // cout << "q=" << q << endl;
-  // cout << "qoverp=" << qoverp << endl;
-
-  // F0[0] = F0[0]*F1[0] + 2*imag(F0[0])*imag(F1[0]);
-  // if(n % 2 == 0) F0[n/2] = F0[n/2]*F1[n/2];
-
-  // PARALLELIF(
-  //   n/2 > threshold,
-  //   for(size_t j=1; j < n/2; ++j) {
-  //     Complex A=(F0[j]-conj(F0[n-j]))*(F1[j]-conj(F1[n-j]))*zeta[j];
-  //     F0[j] = F0[j]*F1[j] - A;
-  //     F0[n-j] = F0[n-j]*F1[n-j] - conj(A);
-  //   }
-  //   );
+  for(size_t j=0; j < n; ++j) {
+      cout << "F0[" << fft->index(r,j+offset) << "]=" << F0[j] << endl;
+      // cout << fft->index(r,j+offset) << endl;
+    }
+  cout << endl;
 }
 
 
@@ -468,7 +492,7 @@ void fftBase::OptBase::check(size_t L, size_t M,
 {
 //  cout << "m=" << m << ", p=" << p << ", q=" << q << ", n=" << n << ", D=" << D << ", I=" << inplace << ", C=" << C << ", S=" << S << endl;
   //cout << "valid=" << valid(m,p,q,n,D,S) << endl << endl;
-  if(valid(m,p,q,n,D,S) && m % 2 == 0 && p == 1 && q <= 2) {//&& D == 2 && q == 2) {// && !(real() && C > 1 && (p > 2 || inplace))) {
+  if(valid(m,p,q,n,D,S) && m % 2 == 0 && p != 2 && D == 1) {//&& D == 2 && q == 2) {// && !(real() && C > 1 && (p > 2 || inplace))) {
     if(useTimer) {
       double t=time(L,M,app,C,S,m,D,inplace);
       if(showOptTimes)
