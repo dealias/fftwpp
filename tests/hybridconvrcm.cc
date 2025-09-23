@@ -48,15 +48,13 @@ int main(int argc, char *argv[])
 
   double **f=doubleAlign(max(A,B),L);
   Complex **g=ComplexAlign(max(A,B),L/2);
+
   for(size_t a=0; a < A; ++a) {
     double *fa=f[a];
-    Complex *ga=g[a];
     for(size_t j=0; j < L; ++j) {
       fa[j]=Output || testError ? (j % 2 ? (a+1)*j/2+3: j/2+a+1) : 0.0;
     }
-    for(size_t j=0; j < L/2; ++j) {
-      ga[j]=Complex(fa[2*j],fa[2*j+1]);//=Output || testError ? (j % 2 ? (a+1)*j/2+3: j/2+a+1) : 0.0;
-    }
+    g[a]=(Complex *) f[a];
   }
 
   double *h=NULL;
@@ -85,20 +83,7 @@ int main(int argc, char *argv[])
       t=c.nanoseconds();
     } else {
       cpuTimer c;
-      for(size_t a=0; a < A; ++a) {
-        double *fa=f[a];
-        Complex *ga=g[a];
-        for(size_t j=0; j < L/2; ++j) {
-          ga[j]=Complex(fa[2*j],fa[2*j+1]);
-        }
-      }
       Convolve.convolveRaw(g);
-      for(size_t b=0; b < B; ++b) {
-        for(size_t j=0; j < L/2; ++j) {
-          f[b][2*j]=real(g[b][j]);
-          f[b][2*j+1]=imag(g[b][j]);
-        }
-      }
       t=c.nanoseconds();
     }
     T.push_back(t);
@@ -108,12 +93,7 @@ int main(int argc, char *argv[])
   cout << endl;
   timings("Hybrid",L,T.data(),T.size(),stats);
   cout << endl;
-  for(size_t b=0; b < B; ++b) {
-      for(size_t j=0; j < L/2; ++j) {
-        f[b][2*j]=real(g[b][j]);
-        f[b][2*j+1]=imag(g[b][j]);
-      }
-  }
+
   if(Output) {
     if(testError)
       cout << "Hybrid:" << endl;
@@ -146,6 +126,6 @@ int main(int argc, char *argv[])
   }
 
   deleteAlign(f[0]); delete [] f;
-  deleteAlign(g[0]); delete [] g;
+
   return 0;
 }
