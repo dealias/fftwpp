@@ -89,35 +89,46 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices,
     if(r == 0) {
       // u = 0
       F0[0] = F0[0]*F1[0] + 2*imag(F0[0])*imag(F1[0]);
+      PARALLELIF(
+      m/2 > threshold,
       for(size_t j=1; j < m/2; ++ j) {
         Complex A=(F0[j]-conj(F0[m-j]))*(F1[j]-conj(F1[m-j]))*zeta[j];
         F0[j] = F0[j]*F1[j] - A;
         F0[m-j] = F0[m-j]*F1[m-j] - conj(A);
       }
+      );
       if(m % 2 == 0) F0[m/2] = F0[m/2]*F1[m/2];
 
       // u = p/2
       if(p % 2 == 0) {
+        PARALLELIF(
+        m/2 > threshold,
         for(size_t l=0; l < m/2; ++ l) {
           size_t j=l+p*m/2;
           Complex A=(F0[j]-conj(F0[n+m-j-1]))*(F1[j]-conj(F1[n+m-j-1]))*zeta[j];
           F0[j] = F0[j]*F1[j] - A;
           F0[n+m-j-1] = F0[n+m-j-1]*F1[n+m-j-1] - conj(A);
         }
+        );
       }
-
+      PARALLELIF(
+      n/2-m > threshold,
       for(size_t j=m; j < n/2; ++j) {
         Complex A=(F0[j]-conj(F0[n-j+m-1]))*(F1[j]-conj(F1[n-j+m-1]))*zeta[j];
         F0[j] = F0[j]*F1[j] - A;
         F0[n-j+m-1] = F0[n-j+m-1]*F1[n-j+m-1] - conj(A);
       }
+      );
 
     } else if(r == 1) {
+      PARALLELIF(
+      n/2 > threshold,
       for(size_t j=0; j < n/2; ++j) {
         Complex A=(F0[j]-conj(F0[n-j-1]))*(F1[j]-conj(F1[n-j-1]))*zeta[m*r*p+j];
         F0[j] = F0[j]*F1[j] - A;
         F0[n-j-1] = F0[n-j-1]*F1[n-j-1] - conj(A);
       }
+      );
     }
   } else if(q == 2) {
     if(r == 0) {
