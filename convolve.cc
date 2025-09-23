@@ -62,38 +62,34 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices,
 {
   Complex *F0=F[0];
   Complex *F1=F[1];
-
   fftBase *fft=indices->fft;
-  Complex *zeta=fft->Zetaqm;
+
+  size_t m=fft->m;
+
   size_t q=fft->q;
   size_t p=fft->p;
-  cout << "q=" << q << endl;
-  size_t q_over_p=fft->n;
-  cout << "q_over_p=" << q_over_p << endl;
+  // cout << "q=" << q << endl;
+  // size_t q_over_p=fft->n;
+  // cout << "q_over_p=" << q_over_p << endl;
 
   // size_t N=indices->size;
   // cout << "N=" << N << endl;
-  size_t m=fft->m;
 
-  cout << "m=" << m << endl;
+  // cout << "m=" << m << endl;
   size_t r=indices->r;
-  cout << "r=" << r << endl;
+  // cout << "r=" << r << endl;
   size_t offset=indices->offset;
-  cout << "offset=" << offset << endl;
+  // cout << "offset=" << offset << endl;
 
-  // for(size_t j=0; j < n; ++j) {
-  //     cout << "F0[" << j << "]=" << F0[j] << endl;
-  //     cout << fft->index(r,j+offset) << endl;
-  //   }
-  // cout << endl;
 
   if(q > 2){
+    Complex *zeta=fft->ZetaRCM;
     if(r == 0) {
       // u = 0
       F0[0] = F0[0]*F1[0] + 2*imag(F0[0])*imag(F1[0]);
       for(size_t l=1; l < m/2; ++ l) {
         size_t j=l;
-        Complex A=(F0[j]-conj(F0[m-j]))*(F1[j]-conj(F1[m-j]))*(1+expi(twopi*(fft->index(r,j+offset))/(q*m)))/4;
+        Complex A=(F0[j]-conj(F0[m-j]))*(F1[j]-conj(F1[m-j]))*zeta[fft->index(r,j+offset)];
         F0[j] = F0[j]*F1[j] - A;
         F0[m-j] = F0[m-j]*F1[m-j] - conj(A);
       }
@@ -103,50 +99,51 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices,
       if(p % 2 == 0) {
         for(size_t l=0; l < m/2; ++ l) {
           size_t j=l+p*m/2;
-          Complex A=(F0[j]-conj(F0[n+m-j-1]))*(F1[j]-conj(F1[n+m-j-1]))*(1+expi(twopi*(fft->index(r,j+offset))/(q*m)))/4;
+          Complex A=(F0[j]-conj(F0[n+m-j-1]))*(F1[j]-conj(F1[n+m-j-1]))*zeta[fft->index(r,j+offset)];
           F0[j] = F0[j]*F1[j] - A;
           F0[n+m-j-1] = F0[n+m-j-1]*F1[n+m-j-1] - conj(A);
         }
       }
 
       for(size_t j=m; j < n/2; ++j) {
-        Complex A=(F0[j]-conj(F0[n-j+m-1]))*(F1[j]-conj(F1[n-j+m-1]))*(1+expi(twopi*(fft->index(r,j+offset))/(q*m)))/4;
+        Complex A=(F0[j]-conj(F0[n-j+m-1]))*(F1[j]-conj(F1[n-j+m-1]))*zeta[fft->index(r,j+offset)];
         F0[j] = F0[j]*F1[j] - A;
         F0[n-j+m-1] = F0[n-j+m-1]*F1[n-j+m-1] - conj(A);
       }
 
     } else if(r == 1) {
       for(size_t j=0; j < n/2; ++j) {
-        Complex A=(F0[j]-conj(F0[n-j-1]))*(F1[j]-conj(F1[n-j-1]))*(1+expi(twopi*(fft->index(r,j+offset))/(q*m)))/4;
+        Complex A=(F0[j]-conj(F0[n-j-1]))*(F1[j]-conj(F1[n-j-1]))*zeta[fft->index(r,j+offset)];
         F0[j] = F0[j]*F1[j] - A;
         F0[n-j-1] = F0[n-j-1]*F1[n-j-1] - conj(A);
       }
     }
-  }
-
-  if(r == 0 && q == 2) {
-    F0[0] = F0[0]*F1[0] + 2*imag(F0[0])*imag(F1[0]);
-    if(n % 2 == 0) F0[n/2] = F0[n/2]*F1[n/2];
-    PARALLELIF(
-    n/2 > threshold,
-    for(size_t j=1; j < n/2; ++j) {
-      Complex A=(F0[j]-conj(F0[n-j]))*(F1[j]-conj(F1[n-j]))*(1+zeta[2*j+n])/4;
-      F0[j] = F0[j]*F1[j] - A;
-      F0[n-j] = F0[n-j]*F1[n-j] - conj(A);
+  } else if(q == 2) {
+    Complex *zeta=fft->Zetaqm;
+    if(r == 0) {
+      F0[0] = F0[0]*F1[0] + 2*imag(F0[0])*imag(F1[0]);
+      if(n % 2 == 0) F0[n/2] = F0[n/2]*F1[n/2];
+      PARALLELIF(
+      n/2 > threshold,
+      for(size_t j=1; j < n/2; ++j) {
+        Complex A=(F0[j]-conj(F0[n-j]))*(F1[j]-conj(F1[n-j]))*(1+zeta[2*j+n])/4;
+        F0[j] = F0[j]*F1[j] - A;
+        F0[n-j] = F0[n-j]*F1[n-j] - conj(A);
+      }
+      );
+    } else if(r == 1) {
+      PARALLELIF(
+      n/2 > threshold,
+      for(size_t j=0; j < n/2; ++j) {
+        Complex A=(F0[j]-conj(F0[n-j-1]))*(F1[j]-conj(F1[n-j-1]))*(1+zeta[2*j+1+n])/4;
+        F0[j] = F0[j]*F1[j] - A;
+        F0[n-j-1] = F0[n-j-1]*F1[n-j-1] - conj(A);
+      }
+      );
+      // if(n % 2) F0[n/2] = F0[n/2]*F1[n/2];
     }
-    );
-  } else if(r == 1 && q == 2) {
-    PARALLELIF(
-    n/2 > threshold,
-    for(size_t j=0; j < n/2; ++j) {
-      Complex A=(F0[j]-conj(F0[n-j-1]))*(F1[j]-conj(F1[n-j-1]))*(1+zeta[2*j+1+n])/4;
-      F0[j] = F0[j]*F1[j] - A;
-      F0[n-j-1] = F0[n-j-1]*F1[n-j-1] - conj(A);
-    }
-    );
-    // if(n % 2) F0[n/2] = F0[n/2]*F1[n/2];
-
   } else if(q == 1) {
+    Complex *zeta=fft->ZetaRCM;
     F0[0] = F0[0]*F1[0] + 2*imag(F0[0])*imag(F1[0]);
     if(n % 2 == 0) F0[n/2] = F0[n/2]*F1[n/2];
     PARALLELIF(
@@ -158,11 +155,11 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices,
       }
       );
   }
-  for(size_t j=0; j < n; ++j) {
-      cout << "F0[" << fft->index(r,j+offset) << "]=" << F0[j] << endl;
-      // cout << fft->index(r,j+offset) << endl;
-    }
-  cout << endl;
+  // for(size_t j=0; j < n; ++j) {
+  //     cout << "F0[" << fft->index(r,j+offset) << "]=" << F0[j] << endl;
+  //     // cout << fft->index(r,j+offset) << endl;
+  //   }
+  // cout << endl;
 }
 
 
@@ -250,13 +247,13 @@ void fftBase::initZetaqm(size_t q, size_t m)
   }
 }
 
-void fftBase::initZetam(size_t m)
+void fftBase::initZetaRCM(size_t m)
 {
   double twopibym=twopi/m;
-  Zetaqm=ComplexAlign(m/2);
-  Zetaqm[0]=1.0;
-  for(size_t j=1; j < m/2; ++j) {
-    Zetaqm[j]=(1+expi(j*twopibym))/4;
+  ZetaRCM=ComplexAlign(m);
+  ZetaRCM[0]=1.0;
+  for(size_t j=1; j < m; ++j) {
+    ZetaRCM[j]=(1+expi(j*twopibym))/4;
   }
 }
 
@@ -658,7 +655,7 @@ void fftPad::init()
       if(fftm->Threads() > 1)
         threads=fftm->Threads();
     }
-    initZetam(m);
+    initZetaRCM(m);
 
     deleteAlign(G);
     if(!inplace)
@@ -832,7 +829,7 @@ void fftPad::init()
     deleteAlign(G);
 
     initZetaqm(q,centered && p == 2 ? m+1 : m);
-
+    initZetaRCM(q*m);
   }
   if(showRoutines && (q != 1 || !centered)) {
     char const* cent=centered ? "Centered" : "";

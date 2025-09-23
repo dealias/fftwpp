@@ -144,6 +144,7 @@ public:
   FFTcall Forward,Backward;
   FFTPad Pad;
   Complex *Zetaqm;
+  Complex *ZetaRCM;
 protected:
   Complex *Zetaqp;
   Complex *Zetaqp0;
@@ -160,7 +161,7 @@ public:
   void common();
 
   void initZetaqm(size_t q, size_t m);
-  void initZetam(size_t m);
+  void initZetaRCM(size_t m);
 
   class OptBase {
   public:
@@ -1000,7 +1001,6 @@ protected:
   Complex *W;
   Complex *H;
   Complex *W0;
-  Complex *Zetaqm;
   bool allocateF;
   bool allocateV;
   bool allocateW;
@@ -1036,7 +1036,6 @@ public:
     q=fft->q;
     n=fft->n;
 
-    Zetaqm=fft->Zetaqm;
     Forward=fft->Forward;
     Backward=fft->Backward;
 
