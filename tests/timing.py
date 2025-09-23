@@ -140,7 +140,7 @@ def max_m(p, RAM, runtype):
 
 def default_outdir(p,T,I):
     outdir=""
-    if p == "cconv" or p == "hybridconv" or p == "directTest" or p == "hybridconvrcm":
+    if p == "cconv" or p == "hybridconv" or p == "directTest":
         outdir = "timings1"
     if p == "cconv2" or p == "hybridconv2":
         outdir = "timings2"
@@ -152,7 +152,7 @@ def default_outdir(p,T,I):
         outdir = "timingsh2"
     if p == "conv3" or p == "hybridconvh3":
         outdir = "timingsh3"
-    if p == "rconv" or p == "hybridconvr":
+    if p == "rconv" or p == "hybridconvr" or p == "hybridconvrcm":
         outdir = "timingsr1"
     if p == "rconv2" or p == "hybridconvr2" or p == "hybridconvroe2":
         outdir = "timingsr2"

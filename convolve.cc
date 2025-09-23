@@ -829,7 +829,7 @@ void fftPad::init()
     deleteAlign(G);
 
     initZetaqm(q,centered && p == 2 ? m+1 : m);
-    initZetaRCM(q*m);
+    if(q > 2) initZetaRCM(q*m);
   }
   if(showRoutines && (q != 1 || !centered)) {
     char const* cent=centered ? "Centered" : "";
