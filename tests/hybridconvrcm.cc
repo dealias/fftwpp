@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
   vector<double> T;
 
   Application app(A,B,multBinaryRCM,fftw::maxthreads,true,mx,Dx,Ix);
-  fftPad *fft=new fftPad(L,M,app,1,0,true);
+  fftPad *fft=new fftPad(L,M,app);
   Convolution Convolve(fft);
 
   Complex **f=ComplexAlign(max(A,B),L);

@@ -63,40 +63,70 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices,
 {
   Complex *F0=F[0];
   Complex *F1=F[1];
-#if 0 // Transformed indices are available.
-  size_t N=indices->size;
-  fftBase *fft=indices->fft;
-  size_t r=indices->r;
-  size_t offset=indices->offset;
-  for(size_t j=0; j < n; ++j) {
-    for(size_t d=0; d < N; ++d)
-      cout << indices->index[N-1-d] << ",";
-    cout << fft->index(r,j+offset) << endl;
-  }
-#endif
 
   fftBase *fft=indices->fft;
   Complex *zeta=fft->Zetaqm;
   size_t q=fft->q;
-  size_t qoverp=fft->n;
-  size_t N=indices->size;
+  // cout << "q=" << q << endl;
+  // size_t qoverp=fft->n;
+  // cout << "qoverp=" << qoverp << endl;
+
+  // size_t N=indices->size;
+  // cout << "N=" << N << endl;
+
   size_t r=indices->r;
-  size_t offset=indices->offset;
-  cout << "r=" << r << endl;
-  cout << "q=" << q << endl;
-  cout << "qoverp=" << qoverp << endl;
+  // cout << "r=" << r << endl;
 
-  F0[0] = F0[0]*F1[0] + 2*imag(F0[0])*imag(F1[0]);
-  if(n % 2 == 0) F0[n/2] = F0[n/2]*F1[n/2];
+  // size_t offset=indices->offset;
+  // cout << "offset=" << offset << endl;
 
-  PARALLELIF(
+  if(r == 0 && q == 2) {
+    F0[0] = F0[0]*F1[0] + 2*imag(F0[0])*imag(F1[0]);
+    if(n % 2 == 0) F0[n/2] = F0[n/2]*F1[n/2];
+    PARALLELIF(
     n/2 > threshold,
     for(size_t j=1; j < n/2; ++j) {
-      Complex A=(F0[j]-conj(F0[n-j]))*(F1[j]-conj(F1[n-j]))*zeta[j];
+      Complex A=(F0[j]-conj(F0[n-j]))*(F1[j]-conj(F1[n-j]))*(1+zeta[2*j+n])/4;
       F0[j] = F0[j]*F1[j] - A;
       F0[n-j] = F0[n-j]*F1[n-j] - conj(A);
     }
     );
+  } else if(r == 1 && q == 2) {
+    PARALLELIF(
+    n/2 > threshold,
+    for(size_t j=0; j < n/2; ++j) {
+      Complex A=(F0[j]-conj(F0[n-j-1]))*(F1[j]-conj(F1[n-j-1]))*(1+zeta[2*j+1+n])/4;
+      F0[j] = F0[j]*F1[j] - A;
+      F0[n-j-1] = F0[n-j-1]*F1[n-j-1] - conj(A);
+    }
+    );
+    // if(n % 2) F0[n/2] = F0[n/2]*F1[n/2];
+
+  } else if(q == 1) {
+    F0[0] = F0[0]*F1[0] + 2*imag(F0[0])*imag(F1[0]);
+    if(n % 2 == 0) F0[n/2] = F0[n/2]*F1[n/2];
+    PARALLELIF(
+      n/2 > threshold,
+      for(size_t j=1; j < n/2; ++j) {
+        Complex A=(F0[j]-conj(F0[n-j]))*(F1[j]-conj(F1[n-j]))*zeta[j];
+        F0[j] = F0[j]*F1[j] - A;
+        F0[n-j] = F0[n-j]*F1[n-j] - conj(A);
+      }
+      );
+  }
+
+  // explicit:
+
+  // fftBase *fft=indices->fft;
+  // Complex *zeta=fft->Zetaqm;
+  // size_t q=fft->q;
+  // size_t qoverp=fft->n;
+  // size_t N=indices->size;
+  // size_t r=indices->r;
+  // size_t offset=indices->offset;
+  // cout << "r=" << r << endl;
+  // cout << "q=" << q << endl;
+  // cout << "qoverp=" << qoverp << endl;
 
   // F0[0] = F0[0]*F1[0] + 2*imag(F0[0])*imag(F1[0]);
   // if(n % 2 == 0) F0[n/2] = F0[n/2]*F1[n/2];
@@ -104,7 +134,7 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices,
   // PARALLELIF(
   //   n/2 > threshold,
   //   for(size_t j=1; j < n/2; ++j) {
-  //     Complex A=(F0[j]-conj(F0[n-j]))*(F1[j]-conj(F1[n-j]))*Zetaqm[j];
+  //     Complex A=(F0[j]-conj(F0[n-j]))*(F1[j]-conj(F1[n-j]))*zeta[j];
   //     F0[j] = F0[j]*F1[j] - A;
   //     F0[n-j] = F0[n-j]*F1[n-j] - conj(A);
   //   }
@@ -438,7 +468,7 @@ void fftBase::OptBase::check(size_t L, size_t M,
 {
 //  cout << "m=" << m << ", p=" << p << ", q=" << q << ", n=" << n << ", D=" << D << ", I=" << inplace << ", C=" << C << ", S=" << S << endl;
   //cout << "valid=" << valid(m,p,q,n,D,S) << endl << endl;
-  if(valid(m,p,q,n,D,S)) {//&& D == 2 && q == 2) {// && !(real() && C > 1 && (p > 2 || inplace))) {
+  if(valid(m,p,q,n,D,S) && m % 2 == 0 && p == 1 && q <= 2) {//&& D == 2 && q == 2) {// && !(real() && C > 1 && (p > 2 || inplace))) {
     if(useTimer) {
       double t=time(L,M,app,C,S,m,D,inplace);
       if(showOptTimes)
