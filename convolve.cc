@@ -68,6 +68,7 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices,
 
   size_t q=fft->q;
   size_t p=fft->p;
+
   // cout << "q=" << q << endl;
   // size_t q_over_p=fft->n;
   // cout << "q_over_p=" << q_over_p << endl;
@@ -76,12 +77,14 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices,
   // cout << "N=" << N << endl;
 
   // cout << "m=" << m << endl;
-  size_t r=indices->r;
-  cout << "r=" << r << endl;
   size_t offset=indices->offset;
-  cout << "offset=" << offset << endl;
+  size_t r=indices->r+offset/(p*m);
+  // cout << "r=" << r << endl;
+
+  // cout << "offset=" << offset << endl;
 
   Complex *zeta=fft->ZetaRCM;
+
   if(q > 2){
     if(r == 0) {
       // u = 0
@@ -488,7 +491,7 @@ void fftBase::OptBase::check(size_t L, size_t M,
 {
 //  cout << "m=" << m << ", p=" << p << ", q=" << q << ", n=" << n << ", D=" << D << ", I=" << inplace << ", C=" << C << ", S=" << S << endl;
   //cout << "valid=" << valid(m,p,q,n,D,S) << endl << endl;
-  if(valid(m,p,q,n,D,S) && m % 2 == 0 && p != 2 && D == 1) {//&& D == 2 && q == 2) {// && !(real() && C > 1 && (p > 2 || inplace))) {
+  if(valid(m,p,q,n,D,S) && m % 2 == 0 && p != 2 && D <= 2) {//&& D == 2 && q == 2) {// && !(real() && C > 1 && (p > 2 || inplace))) {
     if(useTimer) {
       double t=time(L,M,app,C,S,m,D,inplace);
       if(showOptTimes)
