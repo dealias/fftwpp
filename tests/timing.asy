@@ -103,7 +103,7 @@ if(rcm) {
   if(rcm) {
     real[][] a=fin.dimension(0,0);
     a=transpose(sort(a));
-    mhe=2*a[0]; he=a[1];
+    mhe=a[0]; he=a[1];
   }
 }
 
@@ -219,7 +219,7 @@ if(rcm) {
   // if(drawerrorbars)
   //   errorbars(mhe,o,0*mhe,ho-o,0*mhe,o-lo,Pen(3));
   // draw(graph(mhe,he,he > 0),Pentype(2),Label("rcm (heuristic)",Pen(2)+Lp),mark2);
-  draw(graph(mhe,he,he > 0),Pentype(2),Label("rcm (explicit)",Pen(2)+Lp),mark2);
+  draw(graph(mhe,he,he > 0),Pentype(2),Label("rcm (p=1)",Pen(2)+Lp),mark2);
 }
 
 real[] nh=f(mh);
