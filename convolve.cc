@@ -596,6 +596,7 @@ fftBase::~fftBase()
     deleteAlign(Zetaqm0);
   if(ZetaqmS)
     deleteAlign(ZetaqmS0);
+  deleteAlign(ZetaRCM);
 }
 
 void fftBase::checkParameters()
