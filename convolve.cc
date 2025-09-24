@@ -492,7 +492,7 @@ void fftBase::OptBase::check(size_t L, size_t M,
 {
 //  cout << "m=" << m << ", p=" << p << ", q=" << q << ", n=" << n << ", D=" << D << ", I=" << inplace << ", C=" << C << ", S=" << S << endl;
   //cout << "valid=" << valid(m,p,q,n,D,S) << endl << endl;
-  if(valid(m,p,q,n,D,S) && m % 2 == 0 && p != 2 && D <= 2) {//&& D == 2 && q == 2) {// && !(real() && C > 1 && (p > 2 || inplace))) {
+  if(valid(m,p,q,n,D,S) && L % 2 == 0 && m % 2 == 0 && p != 2 && D <= 2 && n <= 2) {
     if(useTimer) {
       double t=time(L,M,app,C,S,m,D,inplace);
       if(showOptTimes)
@@ -596,7 +596,8 @@ fftBase::~fftBase()
     deleteAlign(Zetaqm0);
   if(ZetaqmS)
     deleteAlign(ZetaqmS0);
-  deleteAlign(ZetaRCM);
+  if(ZetaRCM)
+    deleteAlign(ZetaRCM);
 }
 
 void fftBase::checkParameters()
@@ -615,6 +616,7 @@ void fftBase::checkParameters()
 void fftBase::common()
 {
   parameters(L,M,m,centered,p,n,q);
+  ZetaRCM=NULL;
 
   if(q*m < M) {
     cerr << "Invalid parameters: " << endl

@@ -57,3 +57,11 @@ Real:
     - fftPadReal::forward1Many
     - fftPadReal::forward2Many
     - fftPadReal::forwardInnerMany
+
+RCM:
+
+  forwardRoutines:
+    - fftPad::forwardExplicit
+    - fftPad::forward1All
+    - fftPad::forward1
+    - fftPad::forwardInner

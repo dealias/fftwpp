@@ -16,13 +16,14 @@ def main(mpi=False):
   test(programs, args)
 
 class Program:
-  def __init__(self, name, dim=1, mult=True, centered=False, hermitian=False, real=False):
+  def __init__(self, name, dim=1, mult=True, centered=False, hermitian=False, real=False, rcm=False):
     self.name="./"+name
     self.dim=dim
     self.mult=mult
     self.centered=centered or hermitian
     self.hermitian=hermitian
     self.real=real
+    self.rcm=rcm
 
     self.extraArgs="-c" if (centered and not hermitian) else ""
 
@@ -183,13 +184,16 @@ def getArgs():
   										s or c or H or r is the same as specifying all of them",
   										action="store_true")
   parser.add_argument("-c", help="Test Centered convolutions. Not specifying\
-  										s or c or H or r is the same as specifying all of them",
+  										s or c or H or r or rcm is the same as specifying all of them",
   										action="store_true")
   parser.add_argument("-H", help="Test Hermitian convolutions. Not specifying\
-  										s or c or H or r is the same as specifying all of them",
+  										s or c or H or r or rcm is the same as specifying all of them",
   										action="store_true")
   parser.add_argument("-r", help="Test Real convolutions. Not specifying\
-                      s or c or H or r is the same as specifying all of them",
+                      s or c or H or r or rcm is the same as specifying all of them",
+                      action="store_true")
+  parser.add_argument("-rcm", help="Test rcm convolutions. Not specifying\
+                      s or c or H or r or rcm is the same as specifying all of them",
                       action="store_true")
   parser.add_argument("-i","--identity", help="Test forward backward routines (hybrid.cc\
                        and/or hybridh.cc and/or hybridr.cc). Only in 1D. This tests the forward backward routines in addition to the convolution routines. To test forward backward routines without convolutions, use -I.",
@@ -247,16 +251,18 @@ def getPrograms(args):
   X=args.one
   Y=args.two
   Z=args.three
+  rcm=args.rcm
 
   iorI=(i or I)
 
-  notSCHR=(not (S or C or H or R))
+  notSCHR=(not (S or C or H or R or rcm))
   notXYZ=(not (X or Y or Z))
 
   SorNotSCHR=(S or notSCHR)
   CorNotSCHR=(C or notSCHR)
   HorNotSCHR=(H or notSCHR)
   rorNotSCHR=(R or notSCHR)
+  rcmorNotSCHR=(rcm or notSCHR)
 
   if not args.mpi:
     if X or notXYZ:
@@ -283,6 +289,11 @@ def getPrograms(args):
           programs.append(Program("hybridr",real=True,mult=False))
         if not I:
           programs.append(Program("hybridconvr",real=True))
+
+      if rcmorNotSCHR:
+        if not I:
+          programs.append(Program("hybridconvrcm",rcm=True))
+
 
   if Y or notXYZ:
     if SorNotSCHR:
@@ -544,6 +555,8 @@ def transformType(program, outer=False, inner=False):
       return "c"
   elif program.centered:
     return "c"
+  elif program.rcm:
+    return "rcm"
   else:
     return "s"
 
@@ -555,6 +568,8 @@ def findTests(program, minS, outer=False, inner=False, details=True):
     return hermitianTests(program, minS, details)
   elif ttype == "c":
     return centeredTests(program, minS, details)
+  elif ttype == "rcm":
+    return rcmTests(program, minS, details)
   else:
     return complexTests(program, minS, details)
 
@@ -652,6 +667,18 @@ def realTests(program, minS, det):
 
   return vals
 
+def rcmTests(program, minS, det):
+  vals=[]
+  L=32
+  Ms=[2*L]
+  for M in Ms:
+    ms=[L]
+    if det:
+      ms=[M]+ms+[ceilquotient(L,2),ceilquotient(L,8),ceilquotient(L,16)]
+    for m in ms:
+      vals+=collectTests(program, L=L, M=M, m=m, minS=minS)
+  return vals
+
 def checkOptimizer(program, L, M, T, options, dryrun=False):
   if not dryrun:
     cmd=Command(program,T,options,L=L,M=M)
@@ -703,7 +730,7 @@ def check(program, cmd, options):
       if testPassed:
         errorSearch(program,output,cmd,options,routines,r"Forward Error")
 
-  if options.printEverything or not testPassed:
+  if options.printEverything:# or not testPassed:
     print(f"{cmd.case}\n{output}\n")
 
 
@@ -825,7 +852,9 @@ def getUntestedRoutines(program,d):
     forwardRoutines_dict=yaml.safe_load(file)
 
   if program.mult == True:
-    if program.hermitian:
+    if program.rcm:
+      known_routines=forwardRoutines_dict["RCM"]["forwardRoutines"]
+    elif program.hermitian:
       if program.dim == 1:
         known_routines=forwardRoutines_dict["Hermitian"]["forwardRoutines"]
       else:
