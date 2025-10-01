@@ -37,6 +37,8 @@ extern bool showRoutines;
 // Constants used for initialization and testing.
 const Complex I(0.0,1.0);
 
+const bool rcm=true; // TODO: FIXME
+
 size_t nextfftsize(size_t m);
 
 class fftBase;
@@ -1045,21 +1047,23 @@ public:
     size_t outputSize=fft->outputSize();
     size_t workSizeW=fft->workSizeW();
 
-    size_t N=std::max(A,B);
+    size_t copies=(rcm ? 2 : 1);
+    size_t N=copies*std::max(A,B);
     allocateF=!F;
     this->F=allocateF ? utils::ComplexAlign(N,outputSize) : F;
-    g=new Complex*[A];
+    g=new Complex*[copies*A];
 
     allocateW=!W && !fft->inplace;
     W=allocateW ? utils::ComplexAlign(workSizeW) : NULL;
 
     if(q > 1) {
-      G=new Complex*[A];
+      G=new Complex*[N];
       allocateV=false;
       if(V) {
-        this->V=new Complex*[B];
+        size_t N=copies*B;
+        this->V=new Complex*[N];
         size_t size=fft->workSizeV();
-        for(size_t i=0; i < B; ++i)
+        for(size_t i=0; i < N; ++i)
           this->V[i]=V+i*size;
       } else
         this->V=NULL;
@@ -1069,7 +1073,7 @@ public:
 
       nloops=fft->nloops();
       loop2=fft->loop2();
-      if(loop2) {
+      if(loop2) { // TODO: Update for RCM
         r=fft->increment(0);
         Fp=new Complex*[A];
         size_t C=A-B;
@@ -1151,6 +1155,8 @@ public:
   }
 
   void convolveRaw(Complex **f);
+  void convolveRawRCM(Complex **f);
+  void convolveRawRCM(Complex **f, size_t offset, size_t offset2);
   void convolveRaw(Complex **f, Indices *indices);
   void convolveRaw(Complex **f, size_t offset);
   void convolveRaw(Complex **f, size_t offset, Indices *indices);
@@ -1308,7 +1314,7 @@ public:
     A(fftx->app.A), B(fftx->app.B), mult(fftx->app.mult),
     W(W), allocateF(false), allocateW(false) {
 
-    if(fftx->l < threads) {
+    if(fftx->l < threads) { // TODO: Change to l/2 for real case
       ffty->Threads(threads);
       threads=1;
     }
@@ -1443,6 +1449,19 @@ public:
         Convolution *cy=convolvey[t];
         cy->indices.index[0]=fftx->index(rx,i+base);
         cy->convolveRaw(F,offset+i*Sx,&cy->indices);
+      });
+  }
+
+  void subconvolutionRCM(Complex **F, size_t rx, size_t offset=0) {
+    size_t blocksize=blocksizex(rx)/2;  // FIXME
+    size_t Sx=stridex();
+    // Add i=0, i=blocksize   // CHECK
+
+    PARALLEL(
+      for(size_t i=1; i < blocksize; ++i) {
+        size_t t=parallel::get_thread_num(threads);
+        Convolution *cy=convolvey[t];
+        cy->convolveRawRCM(F,offset+i*Sx,offset+(blocksize-i)*Sx);
       });
   }
 

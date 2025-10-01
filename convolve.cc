@@ -7702,6 +7702,24 @@ void Convolution::convolveRaw(Complex **g)
   }
 }
 
+// g are arrays of 2*max(A,B) pointers to distinct data blocks
+void Convolution::convolveRawRCM(Complex **g)
+{
+
+  if(q == 1) {
+    indices.r=0;
+    size_t blocksize=fft->blocksize(0);
+    forward(g,F,0,0,A);
+    forward(g+A,F+A,0,0,A);
+    (*mult)(F,blocksize,&indices,threads);
+    backward(F,g,0,0,B,W);
+    backward(F+B,g+B,0,0,B,W);
+  } else {
+    cout << "Not yet implemented" << endl;
+    exit(-1);
+  }
+}
+
 void Convolution::convolveRaw(Complex **f, Indices *indices2)
 {
   for(size_t t=0; t < threads; ++t)
@@ -7715,6 +7733,15 @@ void Convolution::convolveRaw(Complex **f, size_t offset)
   for(size_t a=0; a < A; ++a)
     g[a]=f[a]+offset;
   convolveRaw(g);
+}
+
+void Convolution::convolveRawRCM(Complex **f, size_t offset, size_t offset2)
+{
+  for(size_t a=0; a < A; ++a) {
+    g[a]=f[a]+offset;
+    g[A+a]=f[a]+offset2;
+  }
+  convolveRawRCM(g);
 }
 
 void Convolution::convolveRaw(Complex **f, size_t offset,
