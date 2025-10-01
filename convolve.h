@@ -1157,7 +1157,8 @@ public:
 
   void convolveRaw(Complex **f);
   void convolveRawRCM(Complex **f);
-  void convolveRawRCM(Complex **f, size_t offset, size_t offset2);
+  void convolveRawRCM(Complex **f, size_t offset, size_t offset2,
+                      Indices *indices);
   void convolveRaw(Complex **f, Indices *indices);
   void convolveRaw(Complex **f, size_t offset);
   void convolveRaw(Complex **f, size_t offset, Indices *indices);
@@ -1456,14 +1457,17 @@ public:
   void subconvolutionRCM(Complex **F, size_t rx, size_t offset=0) {
     size_t blocksize=blocksizex(rx)/2;  // CHECK is blocksize even?
     size_t Sx=stridex();
+    size_t base=indexBase();
 
     PARALLEL(
       for(size_t i=0; i < blocksize; ++i) {
         size_t t=parallel::get_thread_num(threads);
         Convolution *cy=convolvey[t];
+        cy->indices.index[0]=fftx->index(rx,i+base);
         i > 0 ?
-        cy->convolveRawRCM(F,offset+i*Sx,offset+(blocksize-i)*Sx) :
-        cy->convolveRawRCM(F,offset,offset+blocksize*Sx);
+        cy->convolveRawRCM(F,offset+i*Sx,offset+(blocksize-i)*Sx,&cy->indices)
+        :
+        cy->convolveRawRCM(F,offset,offset+blocksize*Sx,&cy->indices);
       });
   }
 

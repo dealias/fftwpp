@@ -7769,8 +7769,12 @@ void Convolution::convolveRaw(Complex **f, size_t offset)
   convolveRaw(g);
 }
 
-void Convolution::convolveRawRCM(Complex **f, size_t offset, size_t offset2)
+void Convolution::convolveRawRCM(Complex **f, size_t offset, size_t offset2,
+                                 Indices *indices2)
 {
+  for(size_t t=0; t < threads; ++t) // CHECK!
+    indices.copy(indices2,0);
+  indices.fft=fft;
   for(size_t a=0; a < A; ++a) {
     g[a]=f[a]+offset;
     g[A+a]=f[a]+offset2;
