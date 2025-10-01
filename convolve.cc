@@ -55,8 +55,7 @@ void multBinary(Complex **F, size_t n, Indices *indices,
     );
 }
 
-void multBinaryRCM(Complex **F, size_t n, Indices *indices,
-                size_t threads)
+void multBinaryRCM(Complex **F, size_t n, Indices *indices, size_t threads)
 {
   Complex *F0=F[0];
   Complex *F1=F[1];
@@ -70,7 +69,7 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices,
   size_t r=indices->r+offset/(p*m);
 
   Complex *zeta=fft->ZetaRCM;
-  if(q > 2){
+  if(q > 2) {
     if(r == 0) {
       // u = 0
       F0[0] = F0[0]*F1[0] + 2*imag(F0[0])*imag(F1[0]);
@@ -152,6 +151,41 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices,
   }
 }
 
+// A=2, B=1
+void multBinaryRCM1(Complex **F, size_t n, Indices *indices, size_t threads)
+{
+  Complex *f0=F[0];
+  Complex *f1=F[1];
+  Complex *F0=F[2];
+  Complex *F1=F[3];
+  fftBase *fft=indices->fft;
+
+  size_t q=fft->q;
+  Complex *zeta=fft->ZetaRCM;
+
+  if(q == 1) {
+    f0[0]=f0[0]*f1[0]+2*imag(f0[0])*imag(f1[0]);
+    if(n % 2 == 0) F0[n/2]=F0[n/2]*F1[n/2];
+    PARALLELIF(
+      n/2 > threshold,
+      for(size_t j=1; j < n/2; ++j) {
+        Complex A=(f0[j]-conj(F0[n-j]))*(f1[j]-conj(F1[n-j]))*zeta[j];
+        f0[j] = f0[j]*f1[j]-A;
+        F0[n-j] = F0[n-j]*F1[n-j]-conj(A);
+      }
+      );
+  }
+}
+
+void multBinaryRCM2(Complex **F, size_t n, Indices *indices, size_t threads)
+{
+// Complex *G[]={F[0],F[1],F[0],F[1]}; // 1D
+  Complex *G0[]={F[0],F[1],F[2],F[3]};
+  multBinaryRCM1(G0,n,indices,threads);
+
+  Complex *G1[]={F[2],F[3],F[0],F[1]};
+  multBinaryRCM1(G1,n,indices,threads);
+}
 
 // This multiplication routine is for binary convolutions and takes
 // two real inputs of size n.

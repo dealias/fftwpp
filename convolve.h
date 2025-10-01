@@ -81,7 +81,8 @@ typedef void multiplier(Complex **F, size_t n,
                         Indices *indices, size_t threads);
 
 // Multiplication routines for binary convolutions that take two inputs.
-multiplier multNone,multBinary,realMultBinary,multcorrelation,multBinaryRCM;
+multiplier multNone,multBinary,realMultBinary,multcorrelation,
+  multBinaryRCM,multBinaryRCM2;
 
 class Application : public ThreadBase
 {
@@ -1453,15 +1454,16 @@ public:
   }
 
   void subconvolutionRCM(Complex **F, size_t rx, size_t offset=0) {
-    size_t blocksize=blocksizex(rx)/2;  // FIXME
+    size_t blocksize=blocksizex(rx)/2;  // CHECK is blocksize even?
     size_t Sx=stridex();
-    // Add i=0, i=blocksize   // CHECK
 
     PARALLEL(
-      for(size_t i=1; i < blocksize; ++i) {
+      for(size_t i=0; i < blocksize; ++i) {
         size_t t=parallel::get_thread_num(threads);
         Convolution *cy=convolvey[t];
-        cy->convolveRawRCM(F,offset+i*Sx,offset+(blocksize-i)*Sx);
+        i > 0 ?
+        cy->convolveRawRCM(F,offset+i*Sx,offset+(blocksize-i)*Sx) :
+        cy->convolveRawRCM(F,offset,offset+blocksize*Sx);
       });
   }
 
@@ -1531,7 +1533,7 @@ public:
 
         for(size_t rx=0; rx < Rx; rx += fftx->increment(rx)) {
           forward(f,F,rx,0,A,offset);
-          subconvolution(F,rx);
+          rcm ? subconvolutionRCM(F,rx) : subconvolution(F,rx);
           backward(F,h0,rx,0,B,Offset,W);
         }
 
