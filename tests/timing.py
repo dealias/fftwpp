@@ -154,7 +154,7 @@ def default_outdir(p,T,I):
         outdir = "timingsh3"
     if p == "rconv" or p == "hybridconvr" or p == "hybridconvrcm":
         outdir = "timingsr1"
-    if p == "rconv2" or p == "hybridconvr2" or p == "hybridconvroe2" or p == "hybridconvrcm":
+    if p == "rconv2" or p == "hybridconvr2" or p == "hybridconvroe2" or p == "hybridconvrcm2":
         outdir = "timingsr2"
     if p == "rconv3" or p == "hybridconvr3" or p == "hybridconvroe3":
         outdir = "timingsr3"
@@ -635,7 +635,7 @@ def main(argv):
                                     logfile.write(hybridParamsMessage)
                 # mcmd=cmd
                 if hybrid:
-                    mcmd=cmd+["-L"+str(L)]+["-M"+str(M)]+["-mx="+str(M)]+["-my="+str(L)]+["-I="+str(1)]#["-Lx="+str(L//2)]+["-Mx="+str(M//2)]+["-Ly="+str(L)]+["-My="+str(M)]
+                    mcmd=cmd+["-L"+str(L)]+["-M"+str(M)]#["-Lx="+str(L//2)]+["-Mx="+str(M//2)]+["-Ly="+str(L)]+["-My="+str(M)]
                 elif direct:
                     mcmd=cmd+["-L"+str(L)]
                 elif not roe:

@@ -197,13 +197,14 @@ void multBinaryRCM2(Complex **F, size_t n, Indices *indices, size_t threads)
 
   fftBase *fft=indices->fft;
 
-  size_t m=fft->m;
+  // size_t m=fft->m;
   size_t q=fft->q;
-  size_t p=fft->p;
+  // size_t p=fft->p;
 
-  size_t offset=indices->offset;
-  size_t r=indices->r+offset/(p*m);
-  size_t col=indices->index[0];
+  // size_t offset=indices->offset;
+  // size_t r=indices->r+offset/(p*m);
+  size_t col= indices->size > 0 ? indices->index[0] : 0;
+
 
   Complex *zeta=fft->ZetaRCM;
 
@@ -453,12 +454,14 @@ double time(fftBase *fft, double &threshold)
 #pragma omp parallel for num_threads(threads)
       for(size_t t=0; t < threads; ++t)
         Convolve[t]->convolveRaw(f+N*t);
+        // rcm ? Convolve[t]->convolveRawRCM(f+N*t) : Convolve[t]->convolveRaw(f+N*t);
       time=C.nanoseconds();
       Stats.add(time);
     } else {
       Convolution *Convolve0=Convolve[0];
       cpuTimer C;
       Convolve0->convolveRaw(f);
+      // rcm ? Convolve0->convolveRawRCM(f) : Convolve0->convolveRaw(f);
       time=C.nanoseconds();
       Stats.add(time);
     }
