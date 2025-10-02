@@ -1458,6 +1458,7 @@ public:
     size_t blocksize=blocksizex(rx)/2;  // CHECK is blocksize even?
     size_t Sx=stridex();
     size_t base=indexBase();
+    // std::cout << "blocksize=" << blocksize << std::endl;
 
     PARALLEL(
       for(size_t i=0; i < blocksize; ++i) {
@@ -1465,7 +1466,7 @@ public:
         Convolution *cy=convolvey[t];
         cy->indices.index[0]=fftx->index(rx,i+base);
         i > 0 ?
-        cy->convolveRawRCM(F,offset+i*Sx,offset+(blocksize-i)*Sx,&cy->indices)
+        cy->convolveRawRCM(F,offset+i*Sx,offset+(2*blocksize-i)*Sx,&cy->indices)
         :
         cy->convolveRawRCM(F,offset,offset+blocksize*Sx,&cy->indices);
       });

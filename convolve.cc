@@ -177,14 +177,106 @@ void multBinaryRCM1(Complex **F, size_t n, Indices *indices, size_t threads)
   }
 }
 
+// void multBinaryRCM2(Complex **F, size_t n, Indices *indices, size_t threads)
+// {
+// // Complex *G[]={F[0],F[1],F[0],F[1]}; // 1D
+//   Complex *G0[]={F[0],F[1],F[2],F[3]};
+//   multBinaryRCM1(G0,n,indices,threads);
+
+//   Complex *G1[]={F[2],F[3],F[0],F[1]};
+//   multBinaryRCM1(G1,n,indices,threads);
+// }
+
+
 void multBinaryRCM2(Complex **F, size_t n, Indices *indices, size_t threads)
 {
-// Complex *G[]={F[0],F[1],F[0],F[1]}; // 1D
-  Complex *G0[]={F[0],F[1],F[2],F[3]};
-  multBinaryRCM1(G0,n,indices,threads);
+  Complex *F0=F[0];
+  Complex *F1=F[1];
+  Complex *F2=F[2];
+  Complex *F3=F[3];
 
-  Complex *G1[]={F[2],F[3],F[0],F[1]};
-  multBinaryRCM1(G1,n,indices,threads);
+  fftBase *fft=indices->fft;
+
+  size_t m=fft->m;
+  size_t q=fft->q;
+  size_t p=fft->p;
+
+  size_t offset=indices->offset;
+  size_t r=indices->r+offset/(p*m);
+  size_t col=indices->index[0];
+
+  Complex *zeta=fft->ZetaRCM;
+
+  if(q == 1) {
+    if(col == 0) {
+      F0[0]=F0[0]*F1[0]+2*imag(F0[0])*imag(F1[0]);
+      if(n % 2 == 0) F0[n/2]=F0[n/2]*F1[n/2];
+      PARALLELIF(
+        n/2 > threshold,
+        for(size_t j=1; j < n/2; ++j) {
+          Complex A=(F0[j]-conj(F0[n-j]))*(F1[j]-conj(F1[n-j]))*zeta[j];
+          F0[j] = F0[j]*F1[j]-A;
+          F0[n-j] = F0[n-j]*F1[n-j]-conj(A);
+        }
+        );
+
+      F2[0]=F2[0]*F3[0]+2*imag(F2[0])*imag(F3[0]);
+      if(n % 2 == 0) F2[n/2]=F2[n/2]*F3[n/2];
+      PARALLELIF(
+        n/2 > threshold,
+        for(size_t j=1; j < n/2; ++j) {
+          Complex A=(F2[j]-conj(F2[n-j]))*(F3[j]-conj(F3[n-j]))*zeta[j];
+          F2[j] = F2[j]*F3[j]-A;
+          F2[n-j] = F2[n-j]*F3[n-j]-conj(A);
+        }
+        );
+    } else {
+
+      Complex A=(F0[0]-conj(F2[0]))*(F1[0]-conj(F3[0]))/2;
+      Complex B=(F2[0]-conj(F0[0]))*(F3[0]-conj(F1[0]))/2;
+
+      F0[0] = F0[0]*F1[0]-A;
+      F2[0] = F2[0]*F3[0]-conj(A);
+
+      PARALLELIF(
+      n/2 > threshold,
+      for(size_t j=1; j < n/2; ++j) {
+        Complex zetaj=zeta[j];
+        Complex A=(F0[j]-conj(F2[n-j]))*(F1[j]-conj(F3[n-j]))*zetaj;
+        Complex B=(F2[j]-conj(F0[n-j]))*(F3[j]-conj(F1[n-j]))*zetaj;
+
+        F0[j] = F0[j]*F1[j]-A;
+        F2[n-j] = F2[n-j]*F3[n-j]-conj(A);
+
+        F2[j] = F2[j]*F3[j]-B;
+        F0[n-j] = F0[n-j]*F1[n-j]-conj(B);
+      }
+      );
+      if(n%2 == 0) {
+        F0[n/2] = F0[n/2]*F1[n/2];
+        F2[n/2] = F2[n/2]*F3[n/2];
+      }
+    }
+    // for(size_t j=0; j < n; ++j) {
+    //     cout << "F0[" << j << "]=" << F0[j] << endl;
+    //   }
+    //   cout << endl;
+    //   // for(size_t j=0; j < n; ++j) {
+    //   //   cout << "F1[" << j << "]=" << F1[j] << endl;
+    //   // }
+    //   // cout << endl;
+
+    //   for(size_t j=0; j < n; ++j) {
+    //     cout << "F2[" << j << "]=" << F2[j] << endl;
+    //   }
+    //   cout << endl;
+
+    //   // for(size_t j=0; j < n; ++j) {
+    //   //   cout << "F3[" << j << "]=" << F3[j] << endl;
+    //   // }
+    //   cout << endl;
+    //   cout<< endl;
+  }
 }
 
 // This multiplication routine is for binary convolutions and takes
@@ -526,7 +618,7 @@ void fftBase::OptBase::check(size_t L, size_t M,
 {
 //  cout << "m=" << m << ", p=" << p << ", q=" << q << ", n=" << n << ", D=" << D << ", I=" << inplace << ", C=" << C << ", S=" << S << endl;
   //cout << "valid=" << valid(m,p,q,n,D,S) << endl << endl;
-  if(valid(m,p,q,n,D,S) && L % 2 == 0 && m % 2 == 0 && p != 2 && D <= 2 && n <= 2) {
+  if(valid(m,p,q,n,D,S) && ((q == 1 && L % 2 == 0 && M % 2 == 0) || !rcm)) {//&& L % 2 == 0 && m % 2 == 0 && p != 2 && D <= 2 && n <= 2) {
     if(useTimer) {
       double t=time(L,M,app,C,S,m,D,inplace);
       if(showOptTimes)
@@ -7747,7 +7839,7 @@ void Convolution::convolveRawRCM(Complex **g)
     forward(g+A,F+A,0,0,A);
     (*mult)(F,blocksize,&indices,threads);
     backward(F,g,0,0,B,W);
-    backward(F+B,g+B,0,0,B,W);
+    backward(F+A,g+A,0,0,B,W);
   } else {
     cout << "Not yet implemented" << endl;
     exit(-1);

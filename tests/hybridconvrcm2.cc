@@ -54,10 +54,22 @@ int main(int argc, char *argv[])
     double *fa=f[a];
     for(size_t i=0; i < Lx; ++i) {
       for(size_t j=0; j < Ly; ++j) {
-        fa[Sx*i+j]=Output || testError ? i+a*j+1 : 0.0;
+        fa[Sx*i+j]=Output || testError ? i+(a+1)*j+1-a : 0.0;
       }
     }
     g[a]=(Complex *) f[a];
+  }
+
+  if(Output) {
+    for(size_t a=0; a < A; ++a) {
+      for(size_t i=0; i < Lx; ++i) {
+        for(size_t j=0; j < Ly/2; ++j) {
+          cout << g[a][Sx*i/2+j] << "\t";
+        }
+        cout << endl;
+      }
+      cout << endl;
+    }
   }
 
 
