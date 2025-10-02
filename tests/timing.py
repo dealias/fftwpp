@@ -154,7 +154,7 @@ def default_outdir(p,T,I):
         outdir = "timingsh3"
     if p == "rconv" or p == "hybridconvr" or p == "hybridconvrcm":
         outdir = "timingsr1"
-    if p == "rconv2" or p == "hybridconvr2" or p == "hybridconvroe2":
+    if p == "rconv2" or p == "hybridconvr2" or p == "hybridconvroe2" or p == "hybridconvrcm":
         outdir = "timingsr2"
     if p == "rconv3" or p == "hybridconvr3" or p == "hybridconvroe3":
         outdir = "timingsr3"
@@ -303,7 +303,7 @@ def main(argv):
     roe=False
     rcm=False
 
-    dim2routines=["cconv2","conv2","rconv2","hybridconv2","hybridconvh2","hybridconvr2","hybridconvroe2"]
+    dim2routines=["cconv2","conv2","rconv2","hybridconv2","hybridconvh2","hybridconvr2","hybridconvroe2","hybridconvrcm2"]
     dim3routines=["cconv3","conv3","rconv3","hybridconv3","hybridconvh3","hybridconvr3","hybridconvroe3"]
 
     if p in dim2routines:
@@ -327,7 +327,7 @@ def main(argv):
     if p in ["hybridconvroe2", "hybridconvroe3"]:
         roe=True
 
-    if p in ["hybridconvrcm"]:
+    if p in ["hybridconvrcm", "hybridconvrcm2"]:
         rcm=True
 
     if p == "conv" or p == "conv2" or p == "conv3":
@@ -635,7 +635,7 @@ def main(argv):
                                     logfile.write(hybridParamsMessage)
                 # mcmd=cmd
                 if hybrid:
-                    mcmd=cmd+["-L"+str(L)]+["-M"+str(M)]#["-Lx="+str(L//2)]+["-Mx="+str(M//2)]+["-Ly="+str(L)]+["-My="+str(M)]
+                    mcmd=cmd+["-L"+str(L)]+["-M"+str(M)]+["-mx="+str(M)]+["-my="+str(L)]+["-I="+str(1)]#["-Lx="+str(L//2)]+["-Mx="+str(M//2)]+["-Ly="+str(L)]+["-My="+str(M)]
                 elif direct:
                     mcmd=cmd+["-L"+str(L)]
                 elif not roe:
