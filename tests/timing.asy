@@ -7,9 +7,10 @@ drawerrorbars=false;
 
 
 
-real[] me,e,le,he;
+real[] me,e;
 real[] mb,b;
-real[] mhe; he;
+real[] mhe, he;
+real[] mrc, rc;
 real[] mo,o,lo,ho;
 real[] mi,i,li,hi;
 real[] mh,h,lh,hh;
@@ -52,8 +53,7 @@ real d=1;
 if(find(dir,"2-") >= 0) d=2;
 if(find(dir,"3-") >= 0) d=3;
 
-bool rcm=d == 1 && realConv;
-
+bool rcm=d <= 2 && realConv;
 
 if(expl) {
   file fin=input(base+"/"+dir+"/explicit").line();
@@ -87,7 +87,7 @@ if(!realConv) {
     mi=a[0]; i=a[1];// li=a[2]; hi=a[3];
   }
 }
-if(d > 1 && realConv) {
+if(hybridroe && d > 1 && realConv) {
   file fin=input(base+"/"+dir+"/hybridroe").line();
   hybridroe=!error(fin);
   if(hybridroe) {
@@ -103,7 +103,7 @@ if(rcm) {
   if(rcm) {
     real[][] a=fin.dimension(0,0);
     a=transpose(sort(a));
-    mhe=a[0]; he=a[1];
+    mrc=a[0]; rc=a[1];
   }
 }
 
@@ -147,8 +147,8 @@ if(expl) {
   e *= ne;
   //he *= ne;
   //le *= ne;
-  if(drawerrorbars)
-    errorbars(me,e,0*me,he-e,0*me,e-le,Pen(0));
+  // if(drawerrorbars)
+  //   errorbars(me,e,0*me,he-e,0*me,e-le,Pen(0));
   draw(graph(me,e,e > 0),Pentype(0),Label("explicit"+(explicito ? " (IP)" : ""),Pen(0)+Lp),mark0);
 
 
@@ -207,19 +207,19 @@ if(hybridroe) {
   //lo *= no;
   // if(drawerrorbars)
   //   errorbars(mhe,o,0*mhe,ho-o,0*mhe,o-lo,Pen(3));
-  draw(graph(mhe,he,he > 0),Pentype(2),Label("roe",Pen(2)+Lp),mark2);
+  draw(graph(mhe,he,he > 0),Pentype(2),Label("roe",Pen(3)+Lp),mark3);
 }
 
 if(rcm) {
-  real[] nhe=f(mhe);
-  mhe=g(mhe);
-  he *= nhe;
+  real[] nrcm=f(mrc);
+  mrc=g(mrc);
+  rc *= nrcm;
   //ho *= no;
   //lo *= no;
   // if(drawerrorbars)
   //   errorbars(mhe,o,0*mhe,ho-o,0*mhe,o-lo,Pen(3));
   // draw(graph(mhe,he,he > 0),Pentype(2),Label("rcm (heuristic)",Pen(2)+Lp),mark2);
-  draw(graph(mhe,he,he > 0),Pentype(2),Label("rcm",Pen(2)+Lp),mark2);
+  draw(graph(mrc,rc,rc > 0),Pentype(2),Label("rcm (explicit)",Pen(2)+Lp),mark2);
 }
 
 real[] nh=f(mh);
@@ -252,8 +252,8 @@ if(hybridroe) {
   write("hybridroe vs hybrid speedup="+(string)(mean(he)/mean(h)));
 }
 if(rcm) {
-  write("hybrid vs rcm speedup="+(string)(mean(h)/mean(he)));
-  write("explicit vs rcm speedup="+(string)(mean(e)/mean(he)));
+  write("hybrid vs rcm speedup="+(string)(mean(h)/mean(rc)));
+  write("explicit vs rcm speedup="+(string)(mean(e)/mean(rc)));
 }
 write();
 if(!settings.xasy) {
