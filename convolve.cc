@@ -154,23 +154,23 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices, size_t threads)
 // A=2, B=1
 void multBinaryRCM1(Complex **F, size_t n, Indices *indices, size_t threads)
 {
-  Complex *f0=F[0];
-  Complex *f1=F[1];
-  Complex *F0=F[2];
-  Complex *F1=F[3];
+  Complex *F0=F[0];
+  Complex *F1=F[1];
+  // Complex *F2=F[2];
+  // Complex *F3=F[3];
   fftBase *fft=indices->fft;
 
   size_t q=fft->q;
   Complex *zeta=fft->ZetaRCM;
 
   if(q == 1) {
-    f0[0]=f0[0]*f1[0]+2*imag(f0[0])*imag(f1[0]);
+    F0[0]=F0[0]*F1[0]+2*imag(F0[0])*imag(F1[0]);
     if(n % 2 == 0) F0[n/2]=F0[n/2]*F1[n/2];
     PARALLELIF(
       n/2 > threshold,
       for(size_t j=1; j < n/2; ++j) {
-        Complex A=(f0[j]-conj(F0[n-j]))*(f1[j]-conj(F1[n-j]))*zeta[j];
-        f0[j] = f0[j]*f1[j]-A;
+        Complex A=(F0[j]-conj(F0[n-j]))*(F1[j]-conj(F1[n-j]))*zeta[j];
+        F0[j] = F0[j]*F1[j]-A;
         F0[n-j] = F0[n-j]*F1[n-j]-conj(A);
       }
       );
@@ -190,10 +190,15 @@ void multBinaryRCM1(Complex **F, size_t n, Indices *indices, size_t threads)
 
 void multBinaryRCM2(Complex **F, size_t n, Indices *indices, size_t threads)
 {
+  // Convolution of F and G
+  // F0 (G0) is bottom half of F (G)
+  // F1 (G1) is top half of F (G)
+  // Output is written to F
+
   Complex *F0=F[0];
-  Complex *F1=F[1];
-  Complex *F2=F[2];
-  Complex *F3=F[3];
+  Complex *G0=F[1];
+  Complex *F1=F[2];
+  Complex *G1=F[3];
 
   fftBase *fft=indices->fft;
 
@@ -210,52 +215,51 @@ void multBinaryRCM2(Complex **F, size_t n, Indices *indices, size_t threads)
 
   if(q == 1) {
     if(col == 0) {
-      F0[0]=F0[0]*F1[0]+2*imag(F0[0])*imag(F1[0]);
-      if(n % 2 == 0) F0[n/2]=F0[n/2]*F1[n/2];
+      F0[0]=F0[0]*G0[0]+2*imag(F0[0])*imag(G0[0]);
+      if(n % 2 == 0) F0[n/2]=F0[n/2]*G0[n/2];
       PARALLELIF(
         n/2 > threshold,
         for(size_t j=1; j < n/2; ++j) {
-          Complex A=(F0[j]-conj(F0[n-j]))*(F1[j]-conj(F1[n-j]))*zeta[j];
-          F0[j] = F0[j]*F1[j]-A;
-          F0[n-j] = F0[n-j]*F1[n-j]-conj(A);
+          Complex A=(F0[j]-conj(F0[n-j]))*(G0[j]-conj(G0[n-j]))*zeta[j];
+          F0[j] = F0[j]*G0[j]-A;
+          F0[n-j] = F0[n-j]*G0[n-j]-conj(A);
         }
         );
 
-      F2[0]=F2[0]*F3[0]+2*imag(F2[0])*imag(F3[0]);
-      if(n % 2 == 0) F2[n/2]=F2[n/2]*F3[n/2];
+      F1[0]=F1[0]*G1[0]+2*imag(F1[0])*imag(G1[0]);
+      if(n % 2 == 0) F1[n/2]=F1[n/2]*G1[n/2];
       PARALLELIF(
         n/2 > threshold,
         for(size_t j=1; j < n/2; ++j) {
-          Complex A=(F2[j]-conj(F2[n-j]))*(F3[j]-conj(F3[n-j]))*zeta[j];
-          F2[j] = F2[j]*F3[j]-A;
-          F2[n-j] = F2[n-j]*F3[n-j]-conj(A);
+          Complex A=(F1[j]-conj(F1[n-j]))*(G1[j]-conj(G1[n-j]))*zeta[j];
+          F1[j] = F1[j]*G1[j]-A;
+          F1[n-j] = F1[n-j]*G1[n-j]-conj(A);
         }
         );
     } else {
 
-      Complex A=(F0[0]-conj(F2[0]))*(F1[0]-conj(F3[0]))/2;
-      Complex B=(F2[0]-conj(F0[0]))*(F3[0]-conj(F1[0]))/2;
+      Complex A=(F0[0]-conj(F1[0]))*(G0[0]-conj(G1[0]))/2;
 
-      F0[0] = F0[0]*F1[0]-A;
-      F2[0] = F2[0]*F3[0]-conj(A);
+      F0[0] = F0[0]*G0[0]-A;
+      F1[0] = F1[0]*G1[0]-conj(A);
 
       PARALLELIF(
       n/2 > threshold,
       for(size_t j=1; j < n/2; ++j) {
         Complex zetaj=zeta[j];
-        Complex A=(F0[j]-conj(F2[n-j]))*(F1[j]-conj(F3[n-j]))*zetaj;
-        Complex B=(F2[j]-conj(F0[n-j]))*(F3[j]-conj(F1[n-j]))*zetaj;
+        Complex A=(F0[j]-conj(F1[n-j]))*(G0[j]-conj(G1[n-j]))*zetaj;
+        Complex B=(F1[j]-conj(F0[n-j]))*(G1[j]-conj(G0[n-j]))*zetaj;
 
-        F0[j] = F0[j]*F1[j]-A;
-        F2[n-j] = F2[n-j]*F3[n-j]-conj(A);
+        F0[j] = F0[j]*G0[j]-A;
+        F1[n-j] = F1[n-j]*G1[n-j]-conj(A);
 
-        F2[j] = F2[j]*F3[j]-B;
-        F0[n-j] = F0[n-j]*F1[n-j]-conj(B);
+        F1[j] = F1[j]*G1[j]-B;
+        F0[n-j] = F0[n-j]*G0[n-j]-conj(B);
       }
       );
       if(n%2 == 0) {
-        F0[n/2] = F0[n/2]*F1[n/2];
-        F2[n/2] = F2[n/2]*F3[n/2];
+        F0[n/2] = F0[n/2]*G0[n/2];
+        F1[n/2] = F1[n/2]*G1[n/2];
       }
     }
     // for(size_t j=0; j < n; ++j) {
@@ -263,17 +267,17 @@ void multBinaryRCM2(Complex **F, size_t n, Indices *indices, size_t threads)
     //   }
     //   cout << endl;
     //   // for(size_t j=0; j < n; ++j) {
-    //   //   cout << "F1[" << j << "]=" << F1[j] << endl;
+    //   //   cout << "G0[" << j << "]=" << G0[j] << endl;
     //   // }
     //   // cout << endl;
 
     //   for(size_t j=0; j < n; ++j) {
-    //     cout << "F2[" << j << "]=" << F2[j] << endl;
+    //     cout << "F1[" << j << "]=" << F1[j] << endl;
     //   }
     //   cout << endl;
 
     //   // for(size_t j=0; j < n; ++j) {
-    //   //   cout << "F3[" << j << "]=" << F3[j] << endl;
+    //   //   cout << "G1[" << j << "]=" << G1[j] << endl;
     //   // }
     //   cout << endl;
     //   cout<< endl;
