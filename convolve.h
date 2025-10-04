@@ -1459,9 +1459,14 @@ public:
     size_t Sx=stridex();
     size_t base=indexBase();
     size_t q=fftx->q;
+    size_t m=fftx->m;
+    size_t p=fftx->p;
     // std::cout << "blocksize=" << blocksize << std::endl;
     // std::cout << "q=" << q << std::endl;
     // std::cout << "rx=" << rx << std::endl;
+    // std::cout << "m=" << m << std::endl;
+    // std::cout << "p=" << p << std::endl;
+    // std::cout << "n=" << n << std::endl;
     // std::cout << "offset=" << offset << std::endl;
     if(q == 1) {
     PARALLEL(
@@ -1495,8 +1500,44 @@ public:
           cy->convolveRawRCM(F,offset+i*Sx,offset+(2*blocksize-i-1)*Sx,&cy->indices);
         });
       }
-    } else { // q > 2 (NOT YET IMPLEMENTED)
-
+    } else { // q > 2
+      if(rx == 0) {
+        PARALLEL(
+        for(size_t i=0; i < m/2; ++i) {
+          size_t t=parallel::get_thread_num(threads);
+          Convolution *cy=convolvey[t];
+          cy->indices.index[0]=fftx->index(rx,i+base);
+          i > 0 ?
+          cy->convolveRawRCM(F,offset+i*Sx,offset+(m-i)*Sx,&cy->indices)
+          :
+          cy->convolveRawRCM(F,offset,offset+(m/2)*Sx,&cy->indices);
+        });
+        if(p % 2 == 0) {
+          PARALLEL(
+          for(size_t i=0; i < m/2; ++i) {
+            size_t j=i+p*m/2;
+            size_t t=parallel::get_thread_num(threads);
+            Convolution *cy=convolvey[t];
+            cy->indices.index[0]=fftx->index(rx,j+base);
+            cy->convolveRawRCM(F,offset+j*Sx,offset+(2*blocksize+m-j-1)*Sx,&cy->indices);
+          });
+        }
+        PARALLEL(
+        for(size_t i=m; i < blocksize; ++i) {
+          size_t t=parallel::get_thread_num(threads);
+          Convolution *cy=convolvey[t];
+          cy->indices.index[0]=fftx->index(rx,i+base);
+          cy->convolveRawRCM(F,offset+i*Sx,offset+(2*blocksize+m-i-1)*Sx,&cy->indices);
+        });
+      } else { // rx == 1
+        PARALLEL(
+        for(size_t i=0; i < blocksize; ++i) {
+          size_t t=parallel::get_thread_num(threads);
+          Convolution *cy=convolvey[t];
+          cy->indices.index[0]=fftx->index(rx,i+base);
+          cy->convolveRawRCM(F,offset+i*Sx,offset+(2*blocksize-i-1)*Sx,&cy->indices);
+        });
+      }
     }
   }
 
