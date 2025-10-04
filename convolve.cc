@@ -557,7 +557,7 @@ void fftBase::OptBase::check(size_t L, size_t M,
 {
 //  cout << "m=" << m << ", p=" << p << ", q=" << q << ", n=" << n << ", D=" << D << ", I=" << inplace << ", C=" << C << ", S=" << S << endl;
   //cout << "valid=" << valid(m,p,q,n,D,S) << endl << endl;
-  if(valid(m,p,q,n,D,S) && ((q == 1 && L % 2 == 0 && M % 2 == 0) || !rcm)) {//&& L % 2 == 0 && m % 2 == 0 && p != 2 && D <= 2 && n <= 2) {
+  if(valid(m,p,q,n,D,S) && (((q == 1 || (C > 1 && q <= 2)) && L % 2 == 0 && M % 2 == 0) || !rcm)) {//&& L % 2 == 0 && m % 2 == 0 && p != 2 && D <= 2 && n <= 2) {
     if(useTimer) {
       double t=time(L,M,app,C,S,m,D,inplace);
       if(showOptTimes)
@@ -758,7 +758,7 @@ void fftPad::init()
     G=ComplexAlign(size);
     H=inplace ? G : ComplexAlign(size);
 
-    overwrite=inplace && L == p*m && n == (centered ? 3 : p+1) && D == 1 &&
+    overwrite=!rcm && inplace && L == p*m && n == (centered ? 3 : p+1) && D == 1 &&
       app.A >= app.B;
     if(!centered && p > 1) overwrite=false;
 

@@ -408,7 +408,7 @@ public:
   }
 
   bool loop2() {
-    return nloops() == 2 && app.A > app.B && !overwrite;
+    return !rcm && nloops() == 2 && app.A > app.B && !overwrite;
   }
 
   // Input data length
@@ -1458,8 +1458,12 @@ public:
     size_t blocksize=blocksizex(rx)/2;  // CHECK is blocksize even?
     size_t Sx=stridex();
     size_t base=indexBase();
+    size_t q=fftx->q;
     // std::cout << "blocksize=" << blocksize << std::endl;
-
+    // std::cout << "q=" << q << std::endl;
+    // std::cout << "rx=" << rx << std::endl;
+    // std::cout << "offset=" << offset << std::endl;
+    if(q == 1) {
     PARALLEL(
       for(size_t i=0; i < blocksize; ++i) {
         size_t t=parallel::get_thread_num(threads);
@@ -1470,6 +1474,30 @@ public:
         :
         cy->convolveRawRCM(F,offset,offset+blocksize*Sx,&cy->indices);
       });
+    } else if(q == 2) {
+      if(rx == 0) {
+      PARALLEL(
+      for(size_t i=0; i < blocksize; ++i) {
+        size_t t=parallel::get_thread_num(threads);
+        Convolution *cy=convolvey[t];
+        cy->indices.index[0]=fftx->index(rx,i+base);
+        i > 0 ?
+        cy->convolveRawRCM(F,offset+i*Sx,offset+(2*blocksize-i)*Sx,&cy->indices)
+        :
+        cy->convolveRawRCM(F,offset,offset+blocksize*Sx,&cy->indices);
+      });
+      } else { // rx == 1
+        PARALLEL(
+        for(size_t i=0; i < blocksize; ++i) {
+          size_t t=parallel::get_thread_num(threads);
+          Convolution *cy=convolvey[t];
+          cy->indices.index[0]=fftx->index(rx,i+base);
+          cy->convolveRawRCM(F,offset+i*Sx,offset+(2*blocksize-i-1)*Sx,&cy->indices);
+        });
+      }
+    } else { // q > 2 (NOT YET IMPLEMENTED)
+
+    }
   }
 
   virtual void backward(Complex **F, Complex **f, size_t rx,
