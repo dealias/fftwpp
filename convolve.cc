@@ -758,7 +758,7 @@ void fftPad::init()
     G=ComplexAlign(size);
     H=inplace ? G : ComplexAlign(size);
 
-    overwrite=!rcm && inplace && L == p*m && n == (centered ? 3 : p+1) && D == 1 &&
+    overwrite=inplace && L == p*m && n == (centered ? 3 : p+1) && D == 1 &&
       app.A >= app.B;
     if(!centered && p > 1) overwrite=false;
 

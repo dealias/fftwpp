@@ -408,7 +408,7 @@ public:
   }
 
   bool loop2() {
-    return !rcm && nloops() == 2 && app.A > app.B && !overwrite;
+    return nloops() == 2 && app.A > app.B && !overwrite;
   }
 
   // Input data length
@@ -1572,18 +1572,17 @@ public:
   void convolveRaw(Complex **f, size_t offset=0, Indices *indices=NULL) {
     for(size_t t=0; t < threads; ++t)
       convolvey[t]->indices.copy(indices,1);
-
     if(fftx->overwrite) {
       forward(f,F,0,0,A,offset);
       size_t final=fftx->n-1;
       for(size_t r=0; r < final; ++r)
-        subconvolution(f,r,offset+Sx*r*lx);
-      subconvolution(F,final);
+        rcm ? subconvolutionRCM(f,r,offset+Sx*r*lx) : subconvolution(f,r,offset+Sx*r*lx);
+      rcm ? subconvolutionRCM(F,final) : subconvolution(F,final);
       backward(F,f,0,0,B,offset,W);
     } else {
       if(loop2) {
         forward(f,F,0,0,A,offset);
-        subconvolution(F,0);
+        rcm ? subconvolutionRCM(F,0) : subconvolution(F,0);
         size_t C=A-B;
         size_t a=0;
         for(; a+C <= B; a += C) {
@@ -1591,7 +1590,7 @@ public:
           backward(F,f,0,a,a+C,offset,W0);
         }
         forward(f,Fp,r,a,A,offset);
-        subconvolution(Fp,r);
+        rcm ? subconvolutionRCM(Fp,r) : subconvolution(Fp,r);
         backward(Fp,f,r,0,B,offset,W0);
       } else {
         size_t Offset;
