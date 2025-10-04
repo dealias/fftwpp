@@ -65,3 +65,9 @@ RCM:
     - fftPad::forward1All
     - fftPad::forward1
     - fftPad::forwardInner
+
+  forwardManyRoutines:
+    - fftPad::forwardExplicitMany
+    - fftPad::forward1AllMany
+    - fftPad::forward1Many
+    - fftPad::forwardInnerMany

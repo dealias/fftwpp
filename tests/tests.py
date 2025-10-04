@@ -302,6 +302,8 @@ def getPrograms(args):
       programs.append(Program("hybridconvh2",dim=2,hermitian=True))
     if rorNotSCHR:
       programs.append(Program("hybridconvr2",dim=2,real=True))
+    if rcmorNotSCHR:
+      programs.append(Program("hybridconvrcm2",dim=2,rcm=True))
 
   if Z or notXYZ:
     if SorNotSCHR:
@@ -668,12 +670,14 @@ def realTests(program, minS, det):
   return vals
 
 def rcmTests(program, minS, det):
+  assert program.rcm
   vals=[]
+
   L=32
   Ms=[2*L]
   for M in Ms:
     ms=[L]
-    if det:
+    if det or True: # TODO: Remove after developing RCM in all cases
       ms=[M]+ms+[ceilquotient(L,2),ceilquotient(L,8),ceilquotient(L,16)]
     for m in ms:
       vals+=collectTests(program, L=L, M=M, m=m, minS=minS)
@@ -853,7 +857,11 @@ def getUntestedRoutines(program,d):
 
   if program.mult == True:
     if program.rcm:
-      known_routines=forwardRoutines_dict["RCM"]["forwardRoutines"]
+      if program.dim == 1:
+        known_routines=forwardRoutines_dict["RCM"]["forwardRoutines"]
+      else:
+        known_routines=forwardRoutines_dict["RCM"]["forwardManyRoutines"]
+        known_routines+=forwardRoutines_dict["RCM"]["forwardRoutines"] # TODO: Remove after developing RCM in all cases
     elif program.hermitian:
       if program.dim == 1:
         known_routines=forwardRoutines_dict["Hermitian"]["forwardRoutines"]
