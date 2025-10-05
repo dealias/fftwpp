@@ -38,7 +38,10 @@ def main():
     cmd = 'echo $OMP_NUM_THREADS'
     OMP_NUM_THREADS=str(check_output(cmd, shell=True))
     T=int(re.search(r"\d+",OMP_NUM_THREADS).group(0))
-    Ts=[1,T]
+    if T > 1:
+      Ts=[T,1]
+    else:
+      Ts=[1]
   else:
     Ts=[threads]
 
