@@ -1466,7 +1466,7 @@ public:
 
     bool zero_inner=(q > 2 && rx == 0);
 
-    size_t N=2*blocksize-(rx > 0 || q > 2);
+    size_t N=2*blocksize-((rx > 0 || q > 2) ? 1 : 0);
     if(zero_inner) N+=m;
 
     PARALLEL(

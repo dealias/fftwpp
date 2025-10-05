@@ -68,87 +68,37 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices, size_t threads)
   size_t offset=indices->offset;
   size_t r=indices->r+offset/(p*m);
 
+  size_t e=m/2;
+  size_t half=(q <= 2) ? n/2 : e;
+  bool zero_inner=(q > 2 && r == 0);
+  size_t N=n-((r > 0 || q > 2) ? 1 : 0);
+  if(zero_inner) N+=m;
+  size_t zeta_shift=(q > 2) ? (p+1)*e : e;
+
   Complex *zeta=fft->ZetaRCM;
-  if(q > 2) {
-    if(r == 0) {
-      // u = 0
-      F0[0] = F0[0]*G0[0] + 2*imag(F0[0])*imag(G0[0]);
-      PARALLELIF(
-      m/2 > threshold,
-      for(size_t j=1; j < m/2; ++ j) {
-        Complex A=(F0[j]-conj(F0[m-j]))*(G0[j]-conj(G0[m-j]))*zeta[j];
-        F0[j] = F0[j]*G0[j] - A;
-        F0[m-j] = F0[m-j]*G0[m-j] - conj(A);
-      }
-      );
-      if(m % 2 == 0) F0[m/2] = F0[m/2]*G0[m/2];
 
-      // u = p/2
-      if(p % 2 == 0) {
-        PARALLELIF(
-        m/2 > threshold,
-        for(size_t l=0; l < m/2; ++ l) {
-          size_t j=l+p*m/2;
-          Complex A=(F0[j]-conj(F0[n+m-j-1]))*(G0[j]-conj(G0[n+m-j-1]))*zeta[j];
-          F0[j] = F0[j]*G0[j] - A;
-          F0[n+m-j-1] = F0[n+m-j-1]*G0[n+m-j-1] - conj(A);
-        }
-        );
-      }
-      PARALLELIF(
-      n/2-m > threshold,
-      for(size_t j=m; j < n/2; ++j) {
-        Complex A=(F0[j]-conj(F0[n-j+m-1]))*(G0[j]-conj(G0[n-j+m-1]))*zeta[j];
-        F0[j] = F0[j]*G0[j] - A;
-        F0[n-j+m-1] = F0[n-j+m-1]*G0[n-j+m-1] - conj(A);
-      }
-      );
-
-    } else if(r == 1) {
-      size_t shift=(p+1)*m/2;
-      PARALLELIF(
-      n/2 > threshold,
-      for(size_t j=0; j < n/2; ++j) {
-        Complex A=(F0[j]-conj(F0[n-j-1]))*(G0[j]-conj(G0[n-j-1]))*zeta[shift+j];
-        F0[j]=F0[j]*G0[j]-A;
-        F0[n-j-1]=F0[n-j-1]*G0[n-j-1]-conj(A);
-      }
-      );
-    }
-  } else if(q == 2) {
-    if(r == 0) {
-      F0[0] = F0[0]*G0[0] + 2*imag(F0[0])*imag(G0[0]);
-      if(n % 2 == 0) F0[n/2] = F0[n/2]*G0[n/2];
-      PARALLELIF(
-      n/2 > threshold,
-      for(size_t j=1; j < n/2; ++j) {
-        Complex A=(F0[j]-conj(F0[n-j]))*(G0[j]-conj(G0[n-j]))*zeta[j];
-        F0[j]=F0[j]*G0[j]-A;
-        F0[n-j]=F0[n-j]*G0[n-j]-conj(A);
-      }
-      );
-    } else if(r == 1) {
-      PARALLELIF(
-      n/2 > threshold,
-      for(size_t j=0; j < n/2; ++j) {
-        Complex A=(F0[j]-conj(F0[n-j-1]))*(G0[j]-conj(G0[n-j-1]))*zeta[m/2+j];
-        F0[j]=F0[j]*G0[j] - A;
-        F0[n-j-1]=F0[n-j-1]*G0[n-j-1]-conj(A);
-      }
-      );
-    }
-  } else if(q == 1) {
-    F0[0]=F0[0]*G0[0]+2*imag(F0[0])*imag(G0[0]);
-    if(n % 2 == 0) F0[n/2]=F0[n/2]*G0[n/2];
-    PARALLELIF(
-      n/2 > threshold,
-      for(size_t j=1; j < n/2; ++j) {
-        Complex A=(F0[j]-conj(F0[n-j]))*(G0[j]-conj(G0[n-j]))*zeta[j];
-        F0[j] = F0[j]*G0[j]-A;
-        F0[n-j] = F0[n-j]*G0[n-j]-conj(A);
-      }
-      );
+  // u = 0
+  size_t j_start=0;
+  if(r == 0) {
+    F0[0] = F0[0]*G0[0] + 2*imag(F0[0])*imag(G0[0]);
+    F0[half] = F0[half]*G0[half];
+    zeta_shift=0;
+    j_start=1;
   }
+
+  PARALLELIF(
+  n/2 > threshold,
+  for(size_t j=j_start; j < n/2; ++ j) {
+    size_t i=(!zero_inner || j >= m || e > j) ? j : j+n/2-e;
+    size_t N0=N;
+    if(i == 0 && r == 0)
+      N0=half;
+    else if(zero_inner && e > i)
+      N0=m;
+    Complex A=(F0[i]-conj(F0[N0-i]))*(G0[i]-conj(G0[N0-i]))*zeta[zeta_shift+i];
+    F0[i] = F0[i]*G0[i] - A;
+    F0[N0-i] = F0[N0-i]*G0[N0-i] - conj(A);
+  });
 }
 
 // A=2, B=1
