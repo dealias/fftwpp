@@ -219,7 +219,7 @@ if(rcm) {
   // if(drawerrorbars)
   //   errorbars(mhe,o,0*mhe,ho-o,0*mhe,o-lo,Pen(3));
   // draw(graph(mhe,he,he > 0),Pentype(2),Label("rcm (heuristic)",Pen(2)+Lp),mark2);
-  draw(graph(mrc,rc,rc > 0),Pentype(2),Label("rcm (explicit)",Pen(2)+Lp),mark2);
+  draw(graph(mrc,rc,rc > 0),Pentype(2),Label("rcm (explicit in $y$)",Pen(2)+Lp),mark2);
 }
 
 real[] nh=f(mh);
@@ -246,14 +246,18 @@ attach(legend(),point(NE),15SW+1N);
 
 real mean(real[] a){return sum(a)/a.length;};
 if(expl) {
-  write("explicit vs hybrid speedup="+(string)(mean(e)/mean(h)));
+  int len=min(e.length,h.length);
+  write("explicit vs hybrid speedup="+(string)(mean(e[:len]/h[:len])));
 }
 if(hybridroe) {
-  write("hybridroe vs hybrid speedup="+(string)(mean(he)/mean(h)));
+  int len=min(he.length,h.length);
+  write("hybridroe vs hybrid speedup="+(string)(mean(he[:len]/h[:len])));
 }
 if(rcm) {
-  write("hybrid vs rcm speedup="+(string)(mean(h)/mean(rc)));
-  write("explicit vs rcm speedup="+(string)(mean(e)/mean(rc)));
+  int len=min(h.length,rc.length);
+  write("hybrid vs rcm speedup="+(string)(mean(h[:len]/rc[:len])));
+  len=min(e.length,rc.length);
+  write("explicit vs rcm speedup="+(string)(mean(e[:len]/rc[:len])));
 }
 write();
 if(!settings.xasy) {
