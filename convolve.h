@@ -1460,71 +1460,29 @@ public:
     size_t base=indexBase();
     size_t q=fftx->q;
     size_t m=fftx->m;
-    size_t p=fftx->p;
 
-    // std::cout << "blocksize=" << blocksize << std::endl;
-    // std::cout << "q=" << q << std::endl;
-    // std::cout << "rx=" << rx << std::endl;
-    // std::cout << "m=" << m << std::endl;
-    // std::cout << "p=" << p << std::endl;
-    // std::cout << "n=" << n << std::endl;
-    // std::cout << "offset=" << offset << std::endl;
-    if(q <= 2) {
-      size_t N=2*blocksize-rx;
-      PARALLEL(
+    size_t e=m/2;
+    size_t half=(q <= 2) ? blocksize : e;
+
+    bool zero_inner=(q > 2 && rx == 0);
+
+    size_t N=2*blocksize-(rx > 0 || q > 2);
+    if(zero_inner) N+=m;
+
+    PARALLEL(
       for(size_t i=0; i < blocksize; ++i) {
-        // std::cout << "rx=" << rx << ", i=" << i << std::endl;
         size_t t=parallel::get_thread_num(threads);
+        size_t j=(!zero_inner || i >= m || e > i) ? i : i+blocksize-e;
+        size_t N0=N;
+        if(i == 0 && rx == 0)
+          N0=half;
+        else if(zero_inner && e > i)
+          N0=m;
+
         Convolution *cy=convolvey[t];
-        cy->indices.index[0]=fftx->index(rx,i+base);
-        (rx > 0 || i > 0) ?
-        cy->convolveRawRCM(F,offset+i*Sx,offset+(N-i)*Sx,&cy->indices)
-        :
-        cy->convolveRawRCM(F,offset,offset+blocksize*Sx,&cy->indices);
+        cy->indices.index[0]=fftx->index(rx,j+base);
+        cy->convolveRawRCM(F,offset+j*Sx,offset+(N0-j)*Sx,&cy->indices);
       });
-    } else { // q > 2
-      if(rx == 0) {
-        PARALLEL(
-        for(size_t i=0; i < m/2; ++i) {
-          size_t t=parallel::get_thread_num(threads);
-          // std::cout << "rx=" << rx << ", i=" << i << std::endl;
-          Convolution *cy=convolvey[t];
-          cy->indices.index[0]=fftx->index(rx,i+base);
-          i > 0 ?
-          cy->convolveRawRCM(F,offset+i*Sx,offset+(m-i)*Sx,&cy->indices)
-          :
-          cy->convolveRawRCM(F,offset,offset+(m/2)*Sx,&cy->indices);
-        });
-        if(p % 2 == 0) {
-          PARALLEL(
-          for(size_t i=0; i < m/2; ++i) {
-            size_t j=i+p*m/2;
-            // std::cout << "rx=" << rx << ", j=" << j << std::endl;
-            size_t t=parallel::get_thread_num(threads);
-            Convolution *cy=convolvey[t];
-            cy->indices.index[0]=fftx->index(rx,j+base);
-            cy->convolveRawRCM(F,offset+j*Sx,offset+(2*blocksize+m-j-1)*Sx,&cy->indices);
-          });
-        }
-        PARALLEL(
-        for(size_t i=m; i < blocksize; ++i) {
-          // std::cout << "rx=" << rx << ", i=" << i << std::endl;
-          size_t t=parallel::get_thread_num(threads);
-          Convolution *cy=convolvey[t];
-          cy->indices.index[0]=fftx->index(rx,i+base);
-          cy->convolveRawRCM(F,offset+i*Sx,offset+(2*blocksize+m-i-1)*Sx,&cy->indices);
-        });
-      } else { // rx == 1
-        PARALLEL(
-        for(size_t i=0; i < blocksize; ++i) {
-          // std::cout << "rx=" << rx << ", i=" << i << std::endl;
-          size_t t=parallel::get_thread_num(threads);
-          Convolution *cy=convolvey[t];
-          cy->indices.index[0]=fftx->index(rx,i+base);
-          cy->convolveRawRCM(F,offset+i*Sx,offset+(2*blocksize-i-1)*Sx,&cy->indices);
-        });
-      }
-    }
   }
 
   virtual void backward(Complex **F, Complex **f, size_t rx,
