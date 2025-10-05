@@ -1461,6 +1461,7 @@ public:
     size_t q=fftx->q;
     size_t m=fftx->m;
     size_t p=fftx->p;
+
     // std::cout << "blocksize=" << blocksize << std::endl;
     // std::cout << "q=" << q << std::endl;
     // std::cout << "rx=" << rx << std::endl;
@@ -1468,43 +1469,25 @@ public:
     // std::cout << "p=" << p << std::endl;
     // std::cout << "n=" << n << std::endl;
     // std::cout << "offset=" << offset << std::endl;
-    if(q == 1) {
-    PARALLEL(
-      for(size_t i=0; i < blocksize; ++i) {
-        size_t t=parallel::get_thread_num(threads);
-        Convolution *cy=convolvey[t];
-        cy->indices.index[0]=fftx->index(rx,i+base);
-        i > 0 ?
-        cy->convolveRawRCM(F,offset+i*Sx,offset+(2*blocksize-i)*Sx,&cy->indices)
-        :
-        cy->convolveRawRCM(F,offset,offset+blocksize*Sx,&cy->indices);
-      });
-    } else if(q == 2) {
-      if(rx == 0) {
+    if(q <= 2) {
+      size_t N=2*blocksize-rx;
       PARALLEL(
       for(size_t i=0; i < blocksize; ++i) {
+        // std::cout << "rx=" << rx << ", i=" << i << std::endl;
         size_t t=parallel::get_thread_num(threads);
         Convolution *cy=convolvey[t];
         cy->indices.index[0]=fftx->index(rx,i+base);
-        i > 0 ?
-        cy->convolveRawRCM(F,offset+i*Sx,offset+(2*blocksize-i)*Sx,&cy->indices)
+        (rx > 0 || i > 0) ?
+        cy->convolveRawRCM(F,offset+i*Sx,offset+(N-i)*Sx,&cy->indices)
         :
         cy->convolveRawRCM(F,offset,offset+blocksize*Sx,&cy->indices);
       });
-      } else { // rx == 1
-        PARALLEL(
-        for(size_t i=0; i < blocksize; ++i) {
-          size_t t=parallel::get_thread_num(threads);
-          Convolution *cy=convolvey[t];
-          cy->indices.index[0]=fftx->index(rx,i+base);
-          cy->convolveRawRCM(F,offset+i*Sx,offset+(2*blocksize-i-1)*Sx,&cy->indices);
-        });
-      }
     } else { // q > 2
       if(rx == 0) {
         PARALLEL(
         for(size_t i=0; i < m/2; ++i) {
           size_t t=parallel::get_thread_num(threads);
+          // std::cout << "rx=" << rx << ", i=" << i << std::endl;
           Convolution *cy=convolvey[t];
           cy->indices.index[0]=fftx->index(rx,i+base);
           i > 0 ?
@@ -1516,6 +1499,7 @@ public:
           PARALLEL(
           for(size_t i=0; i < m/2; ++i) {
             size_t j=i+p*m/2;
+            // std::cout << "rx=" << rx << ", j=" << j << std::endl;
             size_t t=parallel::get_thread_num(threads);
             Convolution *cy=convolvey[t];
             cy->indices.index[0]=fftx->index(rx,j+base);
@@ -1524,6 +1508,7 @@ public:
         }
         PARALLEL(
         for(size_t i=m; i < blocksize; ++i) {
+          // std::cout << "rx=" << rx << ", i=" << i << std::endl;
           size_t t=parallel::get_thread_num(threads);
           Convolution *cy=convolvey[t];
           cy->indices.index[0]=fftx->index(rx,i+base);
@@ -1532,6 +1517,7 @@ public:
       } else { // rx == 1
         PARALLEL(
         for(size_t i=0; i < blocksize; ++i) {
+          // std::cout << "rx=" << rx << ", i=" << i << std::endl;
           size_t t=parallel::get_thread_num(threads);
           Convolution *cy=convolvey[t];
           cy->indices.index[0]=fftx->index(rx,i+base);
