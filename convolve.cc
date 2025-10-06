@@ -55,6 +55,50 @@ void multBinary(Complex **F, size_t n, Indices *indices,
     );
 }
 
+
+
+// A=2, B=1
+void multBinaryRCM1(Complex **F, size_t n, Indices *indices, size_t threads, bool col0=false, bool first_call=false)
+{
+  Complex *F0=F[0];
+  Complex *G0=F[1];
+  Complex *F1=F[2];
+  Complex *G1=F[3];
+  if(col0) {
+    F1=F0;
+    G1=G0;
+  }
+
+
+  fftBase *fft=indices->fft;
+
+  size_t q=fft->q;
+  Complex *zeta=fft->ZetaRCM;
+
+  if(q == 1) {
+    if(first_call || col0) {
+      Complex A=(!col0) ?(F0[0]-conj(F1[0]))*(G0[0]-conj(G1[0]))/2 : -2*imag(F0[0])*imag(G0[0]);
+
+      F0[0] = F0[0]*G0[0]-A;
+      F0[n/2] = F0[n/2]*G0[n/2];
+
+      if(!col0) {
+        F1[0] = F1[0]*G1[0]-conj(A);
+        F1[n/2] = F1[n/2]*G1[n/2];
+      }
+    }
+
+    PARALLELIF(
+      n/2 > threshold,
+      for(size_t j=1; j < n/2; ++j) {
+        Complex A=(F0[j]-conj(F1[n-j]))*(G0[j]-conj(G1[n-j]))*zeta[j];
+        F0[j] = F0[j]*G0[j]-A;
+        F1[n-j] = F1[n-j]*G1[n-j]-conj(A);
+      }
+      );
+  }
+}
+
 void multBinaryRCM(Complex **F, size_t n, Indices *indices, size_t threads)
 {
   Complex *F0=F[0];
@@ -106,59 +150,6 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices, size_t threads)
     F0[j]=F0[j]*G0[j]-A;
     F0[N-j]=F0[N-j]*G0[N-j]-conj(A);
   });
-}
-
-// A=2, B=1
-void multBinaryRCM1(Complex **F, size_t n, Indices *indices, size_t threads, bool col0=false, bool first_call=false)
-{
-  Complex *F0=F[0];
-  Complex *G0=F[1];
-  Complex *F1=F[2];
-  Complex *G1=F[3];
-
-  fftBase *fft=indices->fft;
-
-  size_t q=fft->q;
-  Complex *zeta=fft->ZetaRCM;
-
-  if(q == 1) {
-    if(col0) {
-      F0[0]=F0[0]*G0[0]+2*imag(F0[0])*imag(G0[0]);
-      if(n % 2 == 0) F0[n/2]=F0[n/2]*G0[n/2];
-      PARALLELIF(
-        n/2 > threshold,
-        for(size_t j=1; j < n/2; ++j) {
-          Complex A=(F0[j]-conj(F0[n-j]))*(G0[j]-conj(G0[n-j]))*zeta[j];
-          F0[j] = F0[j]*G0[j]-A;
-          F0[n-j] = F0[n-j]*G0[n-j]-conj(A);
-        }
-        );
-    } else {
-      if(first_call) {
-        Complex A=(F0[0]-conj(F1[0]))*(G0[0]-conj(G1[0]))/2;
-
-        F0[0] = F0[0]*G0[0]-A;
-        F1[0] = F1[0]*G1[0]-conj(A);
-
-        if(n%2 == 0) {
-          F0[n/2] = F0[n/2]*G0[n/2];
-          F1[n/2] = F1[n/2]*G1[n/2];
-        }
-      }
-
-      PARALLELIF(
-      n/2 > threshold,
-      for(size_t j=1; j < n/2; ++j) {
-        Complex zetaj=zeta[j];
-        Complex A=(F0[j]-conj(F1[n-j]))*(G0[j]-conj(G1[n-j]))*zetaj;
-
-        F0[j] = F0[j]*G0[j]-A;
-        F1[n-j] = F1[n-j]*G1[n-j]-conj(A);
-      }
-      );
-
-    }
-  }
 }
 
 void multBinaryRCM2(Complex **F, size_t n, Indices *indices, size_t threads)
