@@ -1466,22 +1466,23 @@ public:
 
     bool zero_inner=(q > 2 && rx == 0);
 
-    size_t N=2*blocksize-((rx > 0 || q > 2) ? 1 : 0);
-    if(zero_inner) N+=m;
+    size_t N0=2*blocksize;
+    if(zero_inner) N0+=m;
+    if(rx > 0 || q > 2) N0-=1;
 
     PARALLEL(
       for(size_t i=0; i < blocksize; ++i) {
         size_t t=parallel::get_thread_num(threads);
         size_t j=(!zero_inner || i >= m || e > i) ? i : i+blocksize-e;
-        size_t N0=N;
+        size_t N=N0;
         if(i == 0 && rx == 0)
-          N0=half;
+          N=half;
         else if(zero_inner && e > i)
-          N0=m;
+          N=m;
 
         Convolution *cy=convolvey[t];
         cy->indices.index[0]=fftx->index(rx,j+base);
-        cy->convolveRawRCM(F,offset+j*Sx,offset+(N0-j)*Sx,&cy->indices);
+        cy->convolveRawRCM(F,offset+j*Sx,offset+(N-j)*Sx,&cy->indices);
       });
   }
 
