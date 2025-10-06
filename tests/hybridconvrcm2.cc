@@ -60,21 +60,6 @@ int main(int argc, char *argv[])
     g[a]=(Complex *) f[a];
   }
 
-  if(Output) {
-    for(size_t a=0; a < A; ++a) {
-      for(size_t i=0; i < Lx; ++i) {
-        for(size_t j=0; j < Ly/2; ++j) {
-          cout << g[a][Sx*i/2+j] << "\t";
-        }
-        cout << endl;
-      }
-      cout << endl;
-    }
-  }
-
-
-
-
   double *h=NULL;
   if(testError) {
     h=doubleAlign(Lx*Ly);
