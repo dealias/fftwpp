@@ -192,7 +192,7 @@ def getArgs():
   parser.add_argument("-r", help="Test Real convolutions. Not specifying\
                       s or c or H or r or rcm is the same as specifying all of them",
                       action="store_true")
-  parser.add_argument("-rcm", help="Test rcm convolutions. Not specifying\
+  parser.add_argument("--rcm", help="Test rcm convolutions. Not specifying\
                       s or c or H or r or rcm is the same as specifying all of them",
                       action="store_true")
   parser.add_argument("-i","--identity", help="Test forward backward routines (hybrid.cc\
@@ -227,13 +227,14 @@ def getArgs():
   parser.add_argument("-t",metavar='tolerance',help="Error tolerance. Default is 1e-12.",
                       default=1e-12)
   parser.add_argument("-p",help="Print out everything. This automatically turns on --hide_progress.",action="store_true")
-  parser.add_argument("-l",help="Show log of failed cases",
+  parser.add_argument("--tested",help="Show tested routines.",action="store_true")
+  parser.add_argument("-l",help="Show log of failed cases after tests are completed.",
                       action="store_true")
   parser.add_argument("-d",help="Check all subtransforms inside multidimensional convolutions. Note: using this flag results in much slower testing.",
                       action="store_true")
   parser.add_argument("--valgrind",help="Run tests under valgrind. Requires valgrind to be installed. Note: using this flag results in much slower testing.",
                       action="store_true")
-  parser.add_argument("-v",help="Show the results of every test.",
+  parser.add_argument("-v","-verbose",help="Show the results of every test.",
                       action="store_true")
   parser.add_argument("--hide_progress", help="Hide test progress information. Default is usually False. This flag is always set to True if it is detected that ANSI escape codes are unsupported.",
                       action="store_true")
@@ -319,6 +320,7 @@ def test(programs, args):
   lenP=len(programs)
   T=0 if args.All else int(args.T)
   options=Options(args)
+  show_tested_routines=args.tested
   if lenP >= 1:
     passed=0
     failed=0
@@ -364,7 +366,12 @@ def test(programs, args):
       print(f"Finished: {ppassed} tests passed{warningText} {pfailed} failed.\n")
 
       try:
-        untested_p=getUntestedRoutines(p,args.d)
+        untested_p, tested_p=getUntestedRoutines(p,args.d)
+        if show_tested_routines and len(tested_p)>0:
+          print("Tested routines:")
+          for routine in tested_p:
+            print(routine)
+          print()
 
         if len(untested_p)>0:
           untested_routines=True
@@ -860,8 +867,9 @@ def getUntestedRoutines(program,d):
       if program.dim == 1:
         known_routines=forwardRoutines_dict["RCM"]["forwardRoutines"]
       else:
-        known_routines=forwardRoutines_dict["RCM"]["forwardManyRoutines"]
-        known_routines+=forwardRoutines_dict["RCM"]["forwardRoutines"] # TODO: Remove after developing RCM in all cases
+        known_routines=forwardRoutines_dict["RCM"]["forwardRoutines"]
+        known_routines+=forwardRoutines_dict["RCM"]["forwardManyRoutines"]
+
     elif program.hermitian:
       if program.dim == 1:
         known_routines=forwardRoutines_dict["Hermitian"]["forwardRoutines"]
@@ -905,8 +913,9 @@ def getUntestedRoutines(program,d):
   known_routines=set(known_routines)
 
   untested_routines=known_routines.difference(program.forwardRoutines)
+  tested_routines=known_routines.difference(untested_routines)
 
-  return list(untested_routines)
+  return list(untested_routines), list(tested_routines)
 
 if __name__ == "__main__":
   main()
