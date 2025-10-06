@@ -56,53 +56,14 @@ void multBinary(Complex **F, size_t n, Indices *indices,
 }
 
 
-
-// A=2, B=1
-void multBinaryRCM1(Complex **F, size_t n, Indices *indices, size_t threads, bool col0=false, bool first_call=false)
+// Common 1D multBinaryRCM
+void multBinaryRCM(Complex **F, size_t n, Indices *indices, size_t threads, bool col0, bool first_call)
 {
   Complex *F0=F[0];
   Complex *G0=F[1];
-  Complex *F1=F[2];
-  Complex *G1=F[3];
-  if(col0) {
-    F1=F0;
-    G1=G0;
-  }
+  Complex *F1=!col0 ? F[2] : F0;
+  Complex *G1=!col0 ? F[3] : G0;
 
-
-  fftBase *fft=indices->fft;
-
-  size_t q=fft->q;
-  Complex *zeta=fft->ZetaRCM;
-
-  if(q == 1) {
-    if(first_call || col0) {
-      Complex A=(!col0) ?(F0[0]-conj(F1[0]))*(G0[0]-conj(G1[0]))/2 : -2*imag(F0[0])*imag(G0[0]);
-
-      F0[0] = F0[0]*G0[0]-A;
-      F0[n/2] = F0[n/2]*G0[n/2];
-
-      if(!col0) {
-        F1[0] = F1[0]*G1[0]-conj(A);
-        F1[n/2] = F1[n/2]*G1[n/2];
-      }
-    }
-
-    PARALLELIF(
-      n/2 > threshold,
-      for(size_t j=1; j < n/2; ++j) {
-        Complex A=(F0[j]-conj(F1[n-j]))*(G0[j]-conj(G1[n-j]))*zeta[j];
-        F0[j] = F0[j]*G0[j]-A;
-        F1[n-j] = F1[n-j]*G1[n-j]-conj(A);
-      }
-      );
-  }
-}
-
-void multBinaryRCM(Complex **F, size_t n, Indices *indices, size_t threads)
-{
-  Complex *F0=F[0];
-  Complex *G0=F[1];
   fftBase *fft=indices->fft;
 
   size_t m=fft->m;
@@ -126,11 +87,21 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices, size_t threads)
   size_t i0=0;
 
   if(r == 0) {
-    F0[0] = F0[0]*G0[0] + 2*imag(F0[0])*imag(G0[0]);
-    F0[half] = F0[half]*G0[half];
     zeta_shift=0;
     i0=1;
+    if(first_call || col0) {
+      Complex A=(!col0) ?(F0[0]-conj(F1[0]))*(G0[0]-conj(G1[0]))/2 : -2*imag(F0[0])*imag(G0[0]);
+
+      F0[0] = F0[0]*G0[0]-A;
+      F0[half] = F0[half]*G0[half];
+
+      if(!col0) {
+        F1[0] = F1[0]*G1[0]-conj(A);
+        F1[half] = F1[half]*G1[half];
+      }
+    }
   }
+
 
   Complex *zeta=fft->ZetaRCM+zeta_shift;
 
@@ -146,10 +117,16 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices, size_t threads)
         j+=b-e;
       }
     }
-    Complex A=(F0[j]-conj(F0[N-j]))*(G0[j]-conj(G0[N-j]))*zeta[j];
+    Complex A=(F0[j]-conj(F1[N-j]))*(G0[j]-conj(G1[N-j]))*zeta[j];
     F0[j]=F0[j]*G0[j]-A;
-    F0[N-j]=F0[N-j]*G0[N-j]-conj(A);
+    F1[N-j]=F1[N-j]*G1[N-j]-conj(A);
   });
+}
+
+void multBinaryRCM(Complex **F, size_t n, Indices *indices, size_t threads)
+{
+  Complex *G[]={F[0],F[1],F[0],F[1]};
+  multBinaryRCM(G,n,indices,threads,true,true);
 }
 
 void multBinaryRCM2(Complex **F, size_t n, Indices *indices, size_t threads)
@@ -160,8 +137,8 @@ void multBinaryRCM2(Complex **F, size_t n, Indices *indices, size_t threads)
 
   bool col0=indices->size > 0 ? indices->index[0] == 0 : true;
 
-  multBinaryRCM1(G0,n,indices,threads,col0,true);
-  multBinaryRCM1(G1,n,indices,threads,col0,false);
+  multBinaryRCM(G0,n,indices,threads,col0,true);
+  multBinaryRCM(G1,n,indices,threads,col0,false);
 }
 
 // This multiplication routine is for binary convolutions and takes
@@ -706,7 +683,7 @@ void fftPad::init()
     G=ComplexAlign(size);
     H=inplace ? G : ComplexAlign(size);
 
-    overwrite=inplace && L == p*m && n == (centered ? 3 : p+1) && D == 1 &&
+    overwrite=!rcm && inplace && L == p*m && n == (centered ? 3 : p+1) && D == 1 &&
       app.A >= app.B;
     if(!centered && p > 1) overwrite=false;
 
@@ -7728,8 +7705,31 @@ void Convolution::convolveRawRCM(Complex **g)
     backward(F,g,0,0,B,W);
     backward(F+A,g+A,0,0,B,W);
   } else {
-    cout << "Not yet implemented" << endl;
-    exit(-1);
+    // cout << "Not yet implemented" << endl;
+    // exit(-1);
+    Complex **h0;
+    if(nloops > 1) {
+      if(!V) initV();
+      h0=V;
+    } else
+      h0=g;
+    for(size_t r=0; r < R; r += fft->increment(r)) {
+      forward(g,F,r,0,A);
+      forward(g+A,F+A,r,0,A);
+      operate(F,r,&indices);
+      backwardPad(F,h0,r,0,B,W0);
+      backwardPad(F+A,h0+A,r,0,B,W0);
+    }
+
+    if(nloops > 1) {
+      size_t wL=fft->wordSize()*fft->inputLength();
+      for(size_t b=0; b < B; ++b) {
+        double *gb=(double *) (g[b]);
+        double *hb=(double *) (h0[b]);
+        for(size_t i=0; i < wL; ++i)
+          gb[i]=hb[i];
+      }
+    }
   }
 }
 

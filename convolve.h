@@ -37,7 +37,7 @@ extern bool showRoutines;
 // Constants used for initialization and testing.
 const Complex I(0.0,1.0);
 
-const bool rcm=true; // TODO: FIXME
+const bool rcm=false; // TODO: FIXME
 
 size_t nextfftsize(size_t m);
 
@@ -408,7 +408,7 @@ public:
   }
 
   bool loop2() {
-    return nloops() == 2 && app.A > app.B && !overwrite;
+    return !rcm && nloops() == 2 && app.A > app.B && !overwrite;
   }
 
   // Input data length
