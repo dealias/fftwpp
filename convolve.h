@@ -1097,9 +1097,10 @@ public:
 
   void initV() {
     allocateV=true;
-    V=new Complex*[B];
+    size_t Bcopies=(rcm ? 2 : 1)*B;
+    V=new Complex*[Bcopies];
     size_t size=fft->workSizeV();
-    for(size_t i=0; i < B; ++i)
+    for(size_t i=0; i < Bcopies; ++i)
       V[i]=utils::ComplexAlign(size);
   }
 
@@ -1455,7 +1456,7 @@ public:
   }
 
   void subconvolutionRCM(Complex **F, size_t rx, size_t offset=0) {
-    size_t blocksize=blocksizex(rx)/2;  // CHECK is blocksize even?
+    size_t blocksize=blocksizex(rx)/2;
     size_t Sx=stridex();
     size_t base=indexBase();
     size_t q=fftx->q;
@@ -1467,22 +1468,22 @@ public:
     bool zero_inner=(q > 2 && rx == 0);
 
     size_t N0=2*blocksize;
-    if(zero_inner) N0+=m;
-    if(rx > 0 || q > 2) N0-=1;
+    if(zero_inner) N0 += m;
+    if(rx > 0 || q > 2) N0 -= 1;
 
     PARALLEL(
-      for(size_t i=0; i < blocksize; ++i) {
+      for(size_t I=0; I < blocksize; ++I) {
         size_t t=parallel::get_thread_num(threads);
-        size_t j=(!zero_inner || i >= m || e > i) ? i : i+blocksize-e;
+        size_t i=(!zero_inner || I >= m || e > I) ? I : I+blocksize-e;
         size_t N=N0;
-        if(i == 0 && rx == 0)
+        if(I == 0 && rx == 0)
           N=half;
-        else if(zero_inner && e > i)
+        else if(zero_inner && e > I)
           N=m;
 
         Convolution *cy=convolvey[t];
-        cy->indices.index[0]=fftx->index(rx,j+base);
-        cy->convolveRawRCM(F,offset+j*Sx,offset+(N-j)*Sx,&cy->indices);
+        cy->indices.index[0]=fftx->index(rx,i+base);
+        cy->convolveRawRCM(F,offset+i*Sx,offset+(N-i)*Sx,&cy->indices);
       });
   }
 

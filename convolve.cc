@@ -134,7 +134,8 @@ void multBinaryRCM2(Complex **F, size_t n, Indices *indices, size_t threads)
   Complex *G0[]={F[0],F[1],F[2],F[3]};
   Complex *G1[]={F[2],F[3],F[0],F[1]};
 
-  bool col0=indices->size > 0 ? indices->index[0] == 0 : true;
+  // TODO: Add indices to optimizer timing tests
+  bool col0=indices->size > 0 ? indices->index[0] == 0 : false;
 
   multBinaryRCM(G0,n,indices,threads,col0,true);
   multBinaryRCM(G1,n,indices,threads,col0,false);
@@ -481,7 +482,7 @@ void fftBase::OptBase::check(size_t L, size_t M,
 {
 //  cout << "m=" << m << ", p=" << p << ", q=" << q << ", n=" << n << ", D=" << D << ", I=" << inplace << ", C=" << C << ", S=" << S << endl;
   //cout << "valid=" << valid(m,p,q,n,D,S) << endl << endl;
-  if(valid(m,p,q,n,D,S) && D == 1 && (((q <= 1 || (C > 1 && n <= 2)) && L % 2 == 0 && M % 2 == 0 && m%2 == 0 && (p % 2 == 0 || p == 1)) || !rcm)) {//&& L % 2 == 0 && m % 2 == 0 && p != 2 && D <= 2 && n <= 2) {
+  if(valid(m,p,q,n,D,S) && D == 1 && (((n <= 2 || (C > 1 && n <= 2)) && L % 2 == 0 && M % 2 == 0 && m%2 == 0 && (p % 2 == 0 || p == 1)) || !rcm)) {//&& L % 2 == 0 && m % 2 == 0 && p != 2 && D <= 2 && n <= 2) {
     if(useTimer) {
       double t=time(L,M,app,C,S,m,D,inplace);
       if(showOptTimes)
@@ -7694,7 +7695,6 @@ void Convolution::convolveRaw(Complex **g)
 // g are arrays of 2*max(A,B) pointers to distinct data blocks
 void Convolution::convolveRawRCM(Complex **g)
 {
-
   if(q == 1) {
     indices.r=0;
     size_t blocksize=fft->blocksize(0);
@@ -7704,8 +7704,35 @@ void Convolution::convolveRawRCM(Complex **g)
     backward(F,g,0,0,B,W);
     backward(F+A,g+A,0,0,B,W);
   } else {
-    cout << "Not yet implemented" << endl;
-    exit(-1);
+    Complex **h0,**H0;
+    if(nloops > 1) {
+      if(!V) initV();
+      h0=V;
+      H0=h0+B;
+    } else {
+      h0=g;
+      H0=g+A;
+    }
+
+    for(size_t r=0; r < R; r += fft->increment(r)) {
+      forward(g,F,r,0,A);
+      forward(g+A,F+A,r,0,A);
+      operate(F,r,&indices);
+      backwardPad(F,h0,r,0,B,W0);
+      backwardPad(F+A,H0,r,0,B,W0);
+    }
+
+    if(nloops > 1) {
+      size_t wL=fft->wordSize()*fft->inputLength();
+      for(size_t k=0; k <= 1; k++) {
+        for(size_t b=0; b < B; ++b) {
+          double *gb=(double *) (g[k*A+b]);
+          double *hb=(double *) (h0[k*B+b]);
+          for(size_t i=0; i < wL; ++i)
+            gb[i]=hb[i];
+        }
+      }
+    }
   }
 }
 
