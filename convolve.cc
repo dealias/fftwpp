@@ -683,7 +683,7 @@ void fftPad::init()
     G=ComplexAlign(size);
     H=inplace ? G : ComplexAlign(size);
 
-    overwrite=!rcm && inplace && L == p*m && n == (centered ? 3 : p+1) && D == 1 &&
+    overwrite=inplace && L == p*m && n == (centered ? 3 : p+1) && D == 1 &&
       app.A >= app.B;
     if(!centered && p > 1) overwrite=false;
 
@@ -7703,7 +7703,28 @@ void Convolution::convolveRawRCM(Complex **g)
     (*mult)(F,blocksize,&indices,threads);
     backward(F,g,0,0,B,W);
     backward(F+A,g+A,0,0,B,W);
-  } else {
+  } else if(fft->overwrite) {
+      forward(g,F,0,0,A);
+      forward(g+A,F+A,0,0,A);
+      indices.r=0;
+      (*mult)(g,fft->blocksize(0),&indices,threads);
+      size_t final=fft->n-1;
+      for(size_t r=1; r < final; ++r) {
+        size_t blocksize=fft->blocksize(r);
+        for(size_t a=0; a < A; ++a) {
+          G[a]=g[a]+r*blocksize;
+          G[a+A]=g[a+A]+r*blocksize;
+        }
+        indices.r=r;
+        (*mult)(G,blocksize,&indices,threads);
+      }
+      indices.r=final;
+      size_t blocksize=fft->blocksize(final);
+      (*mult)(F,blocksize,&indices,threads);
+      backward(F,g,0,0,B);
+      backward(F+A,g+A,0,0,B);
+
+    } else {
     Complex **h0,**H0;
     if(nloops > 1) {
       if(!V) initV();
