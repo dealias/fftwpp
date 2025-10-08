@@ -408,7 +408,7 @@ public:
   }
 
   bool loop2() {
-    return !rcm && nloops() == 2 && app.A > app.B && !overwrite;
+    return (!rcm || C > 1) && nloops() == 2 && app.A > app.B && !overwrite;
   }
 
   // Input data length
