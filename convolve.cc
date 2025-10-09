@@ -7725,7 +7725,24 @@ void Convolution::convolveRawRCM(Complex **g)
       (*mult)(F,blocksize,&indices,threads);
       backward(F,g,0,0,B);
       backward(F+A,g+A,0,0,B);
-     } else {
+     } else if(loop2) {
+        forward(g,F,0,0,A);
+        forward(g+A,F+A,0,0,A);
+        operate(F,0,&indices);
+        size_t C=A-B;
+        size_t a=0;
+        for(; a+C <= B; a += C) {
+          forward(g,Fp,r,a,a+C);
+          forward(g+A,Fp+A,r,a,a+C);
+          backwardPad(F,g,0,a,a+C,W0);
+          backwardPad(F+A,g+A,0,a,a+C,W0);
+        }
+        forward(g,Fp,r,a,A);
+        forward(g+A,Fp+A,r,a,A);
+        operate(Fp,r,&indices);
+        backwardPad(Fp,g,r,0,B,W0);
+        backwardPad(Fp+A,g+A,r,0,B,W0);
+      } else {
       Complex **h0,**H0;
       if(nloops > 1) {
         if(!V) initV();

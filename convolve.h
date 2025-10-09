@@ -408,7 +408,7 @@ public:
   }
 
   bool loop2() {
-    return (!rcm || C > 1) && nloops() == 2 && app.A > app.B && !overwrite;
+    return nloops() == 2 && app.A > app.B && !overwrite;
   }
 
   // Input data length
@@ -1076,15 +1076,20 @@ public:
       loop2=fft->loop2();
       if(loop2) { // TODO: Update for RCM
         r=fft->increment(0);
-        Fp=new Complex*[A];
+        Fp=new Complex*[copies*A];
         size_t C=A-B;
 
-        for(size_t c=0; c < C; c++)
+        for(size_t c=0; c < C; c++) {
           Fp[c]=this->F[B+c];
+          if(rcm) Fp[A+c]=this->F[A+B+c];
+        }
 
-        for(size_t b=0; b < B; b += C)
-          for(size_t c=b; c < B; c++)
+        for(size_t b=0; b < B; b += C) {
+          for(size_t c=b; c < B; c++) {
             Fp[C+c]=this->F[c];
+            if(rcm) Fp[A+C+c]=this->F[A+c];
+          }
+        }
       }
 
       if(!loop2 && A > B && !fft->inplace && workSizeW <= outputSize) {

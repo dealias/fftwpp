@@ -679,7 +679,6 @@ def realTests(program, minS, det):
 def rcmTests(program, minS, det):
   assert program.rcm
   vals=[]
-
   L=32
   Ms=[2*L]
   for M in Ms:
