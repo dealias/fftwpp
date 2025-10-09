@@ -287,7 +287,7 @@ double time(fftBase *fft, double &threshold)
 {
   size_t threads=fft->app.threads == 1 ? fft->app.maxthreads : 1;
 
-  size_t N=max(fft->app.A,fft->app.B);
+  size_t N=(rcm ? 2 : 1)*max(fft->app.A,fft->app.B);
   size_t doubles=fft->doubles();
   Complex **f=(Complex **) doubleAlign(N*threads,doubles);
 
@@ -683,8 +683,9 @@ void fftPad::init()
     G=ComplexAlign(size);
     H=inplace ? G : ComplexAlign(size);
 
-    overwrite=(!rcm || C > 1) && inplace && L == p*m && n == (centered ? 3 : p+1) && D == 1 &&
+    overwrite=inplace && L == p*m && n == (centered ? 3 : p+1) && D == 1 &&
       app.A >= app.B;
+
     if(!centered && p > 1) overwrite=false;
 
     if(S == 1) {
@@ -7704,32 +7705,54 @@ void Convolution::convolveRawRCM(Complex **g)
     backward(F,g,0,0,B,W);
     backward(F+A,g+A,0,0,B,W);
   } else {
-    Complex **h0,**H0;
-    if(nloops > 1) {
-      if(!V) initV();
-      h0=V;
-      H0=h0+B;
-    } else {
-      h0=g;
-      H0=g+A;
-    }
+    if(fft->overwrite) {
+      forward(g,F,0,0,A);
+      forward(g+A,F+A,0,0,A);
+      indices.r=0;
+      (*mult)(g,fft->blocksize(0),&indices,threads);
+      size_t final=fft->n-1;
+      for(size_t r=1; r < final; ++r) {
+        size_t blocksize=fft->blocksize(r);
+        for(size_t a=0; a < A; ++a) {
+          G[a]=g[a]+r*blocksize;
+          G[A+a]=g[A+a]+r*blocksize;
+        }
+        indices.r=r;
+        (*mult)(G,blocksize,&indices,threads);
+      }
+      indices.r=final;
+      size_t blocksize=fft->blocksize(final);
+      (*mult)(F,blocksize,&indices,threads);
+      backward(F,g,0,0,B);
+      backward(F+A,g+A,0,0,B);
+     } else {
+      Complex **h0,**H0;
+      if(nloops > 1) {
+        if(!V) initV();
+        h0=V;
+        H0=h0+B;
+      } else {
+        h0=g;
+        H0=g+A;
+      }
 
-    for(size_t r=0; r < R; r += fft->increment(r)) {
-      forward(g,F,r,0,A);
-      forward(g+A,F+A,r,0,A);
-      operate(F,r,&indices);
-      backwardPad(F,h0,r,0,B,W0);
-      backwardPad(F+A,H0,r,0,B,W0);
-    }
+      for(size_t r=0; r < R; r += fft->increment(r)) {
+        forward(g,F,r,0,A);
+        forward(g+A,F+A,r,0,A);
+        operate(F,r,&indices);
+        backwardPad(F,h0,r,0,B,W0);
+        backwardPad(F+A,H0,r,0,B,W0);
+      }
 
-    if(nloops > 1) {
-      size_t wL=fft->wordSize()*fft->inputLength();
-      for(size_t k=0; k <= 1; k++) {
-        for(size_t b=0; b < B; ++b) {
-          double *gb=(double *) (g[k*A+b]);
-          double *hb=(double *) (h0[k*B+b]);
-          for(size_t i=0; i < wL; ++i)
-            gb[i]=hb[i];
+      if(nloops > 1) {
+        size_t wL=fft->wordSize()*fft->inputLength();
+        for(size_t k=0; k <= 1; k++) {
+          for(size_t b=0; b < B; ++b) {
+            double *gb=(double *) (g[k*A+b]);
+            double *hb=(double *) (h0[k*B+b]);
+            for(size_t i=0; i < wL; ++i)
+              gb[i]=hb[i];
+          }
         }
       }
     }
