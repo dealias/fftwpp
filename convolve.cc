@@ -102,7 +102,6 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices, size_t threads, bool
     }
   }
 
-
   Complex *zeta=fft->ZetaRCM+zeta_shift;
 
   PARALLELIF(
@@ -482,7 +481,7 @@ void fftBase::OptBase::check(size_t L, size_t M,
 {
 //  cout << "m=" << m << ", p=" << p << ", q=" << q << ", n=" << n << ", D=" << D << ", I=" << inplace << ", C=" << C << ", S=" << S << endl;
   //cout << "valid=" << valid(m,p,q,n,D,S) << endl << endl;
-  if(valid(m,p,q,n,D,S) && D == 1 && (((n <= 2 || (C > 1 && n <= 2)) && L % 2 == 0 && M % 2 == 0 && m%2 == 0 && (p % 2 == 0 || p == 1)) || !rcm)) {//&& L % 2 == 0 && m % 2 == 0 && p != 2 && D <= 2 && n <= 2) {
+  if(valid(m,p,q,n,D,S) && ((n <= 2 && L % 2 == 0 && M % 2 == 0 && m%2 == 0 && (p % 2 == 0 || p == 1)) || !rcm)) {//&& L % 2 == 0 && m % 2 == 0 && p != 2 && D <= 2 && n <= 2) {
     if(useTimer) {
       double t=time(L,M,app,C,S,m,D,inplace);
       if(showOptTimes)

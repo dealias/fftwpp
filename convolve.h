@@ -1140,8 +1140,10 @@ public:
     size_t b=fft->b;
     size_t stop=fft->span(r);
     for(size_t d=b; d < stop; d += b) {
-      for(size_t a=0; a < A; ++a)
+      for(size_t a=0; a < A; ++a) {
         G[a]=F[a]+d;
+        if(rcm) G[A+a]=F[A+a]+d;
+      }
       indices->offset=d;
       (*mult)(G,blocksize,indices,threads);
     }
