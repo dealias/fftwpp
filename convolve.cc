@@ -539,7 +539,7 @@ void fftBase::OptBase::scan(size_t L, size_t M, Application& app,
   opt(L,M,app,C,S,mStart,itmax,Explicit,centered,false);
 
   if(counter == 0) {
-    cerr << "Optimizer found no valid cases with specified parameters." << endl;
+    cerr << "\nOptimizer found no valid cases with specified parameters." << endl;
     cerr << "Using explicit routines with m=" << M << ", D=1, and I=0 instead." << endl << endl;
   } else if(counter > 1) {
     if(showOptTimes) cout << endl << "Timing " << counter << " algorithms:" << endl;
