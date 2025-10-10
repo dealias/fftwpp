@@ -493,6 +493,7 @@ def collectTests(program, L, M, m, minS, Dmin=0, Dmax=0, I0=True, I1=True):
   centered=program.centered
   hermitian=program.hermitian
   real=program.real
+  rcm=program.rcm
 
   p,q,n=getpqn(centered, hermitian, L, M, m)
 
@@ -511,6 +512,9 @@ def collectTests(program, L, M, m, minS, Dmin=0, Dmax=0, I0=True, I1=True):
   elif real:
     Dstart=max(Dmin,1)
     Dstop=min(max(Dmax,1),(n-1)//2)
+  elif rcm:
+    Dstart=max(Dmin,1)
+    Dstop=max(n//2,1)
   else:
     Dstart=max(Dmin,1)
     Dstop=min(max(Dmax,1),n)
@@ -676,15 +680,19 @@ def realTests(program, minS, det):
 
   return vals
 
-def rcmTests(program, minS, det):
+def rcmTests(program, minS, _):
   assert program.rcm
   vals=[]
   L=32
   Ms=[2*L]
   for M in Ms:
     ms=[L]
-    if det or True: # TODO: Remove after developing RCM in all cases
-      ms=[M]+ms+[ceilquotient(L,2),ceilquotient(L,8),ceilquotient(L,16)]
+    # Due to the nature of RCM, we always test all cases (as if det was true)
+    if minS > 1:
+      ms=[M]+ms+[ceilquotient(L,4),ceilquotient(L,8)]
+    else:
+      ms=ms+[ceilquotient(L,2),ceilquotient(L,8),ceilquotient(L,16)]
+
     for m in ms:
       vals+=collectTests(program, L=L, M=M, m=m, minS=minS)
   return vals
