@@ -1491,10 +1491,7 @@ public:
 
     size_t shift=blocksize-e;
 
-    PARALLEL(
-      for(size_t I=0; I < blocksize; ++I) {
-        size_t i;
-        size_t j;
+    auto setIndices=[=](size_t& i, size_t& j, size_t I) {
         if(I > 0) {
           if(I >= limit) {
             i=I;
@@ -1512,6 +1509,13 @@ public:
           i=0;
           j=j1;
         }
+    };
+
+    PARALLEL(
+      for(size_t I=0; I < blocksize; ++I) {
+        size_t i;
+        size_t j;
+        setIndices(i,j,I);
 
         size_t t=parallel::get_thread_num(threads);
         Convolution *cy=convolvey[t];
