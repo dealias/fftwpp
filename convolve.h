@@ -1491,32 +1491,26 @@ public:
 
     size_t shift=blocksize-e;
 
-    auto setIndices=[=](size_t& i, size_t& j, size_t I) {
-        if(I > 0) {
-          if(I >= limit) {
-            i=I;
+    auto setIndices=[=](size_t& i, size_t& j) {
+        if(i > 0) {
+          if(i >= limit)
             j=j0-i;
-          } else {
-            if(I >= e) {
-              i=I+shift;
+          else {
+            if(i >= e) {
+              i += shift;
               j=j0-i;
-            } else {
-              i=I;
+            } else
               j=m-i;
-            }
           }
-        } else {
-          i=0;
+        } else
           j=j1;
-        }
     };
 
     PARALLEL(
       for(size_t I=0; I < blocksize; ++I) {
-        size_t i;
+        size_t i=I;
         size_t j;
-        setIndices(i,j,I);
-
+        setIndices(i,j);
         size_t t=parallel::get_thread_num(threads);
         Convolution *cy=convolvey[t];
         cy->indices.index[0]=fftx->index(rx,i+base);
