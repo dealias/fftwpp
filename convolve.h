@@ -1470,27 +1470,51 @@ public:
     size_t m=fftx->m;
 
     size_t e=m/2;
-    size_t half=(q <= 2) ? blocksize : e;
+    size_t j0=2*blocksize;
+    size_t j1;
+    size_t limit;
 
-    bool zero_inner=(q > 2 && rx == 0);
+    if(rx > 0) {
+      j0 -= 1;
+      j1=j0;
+      limit=0;
+    } else {
+      if(q <= 2) {
+        j1=blocksize;
+        limit=0;
+      } else {
+        j0 += m-1;
+        j1=e;
+        limit=m;
+      }
+    }
 
-    size_t N0=2*blocksize;
-    if(zero_inner) N0 += m;
-    if(rx > 0 || q > 2) N0 -= 1;
+    size_t shift=blocksize-e;
+
+    auto setIndices=[=](size_t& i, size_t& j) {
+      if(i > 0) {
+        if(i >= limit)
+          j=j0-i;
+        else {
+          if(i >= e) {
+            i += shift;
+            j=j0-i;
+          } else
+            j=m-i;
+        }
+      } else
+        j=j1;
+    };
 
     PARALLEL(
       for(size_t I=0; I < blocksize; ++I) {
+        size_t i=I;
+        size_t j;
+        setIndices(i,j);
         size_t t=parallel::get_thread_num(threads);
-        size_t i=(!zero_inner || I >= m || e > I) ? I : I+blocksize-e;
-        size_t N=N0;
-        if(I == 0 && rx == 0)
-          N=half;
-        else if(zero_inner && e > I)
-          N=m;
-
         Convolution *cy=convolvey[t];
         cy->indices.index[0]=fftx->index(rx,i+base);
-        cy->convolveRawRCM(F,offset+i*Sx,offset+(N-i)*Sx,&cy->indices);
+        cy->convolveRawRCM(F,offset+i*Sx,offset+j*Sx,&cy->indices);
       });
   }
 
