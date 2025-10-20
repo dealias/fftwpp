@@ -1492,18 +1492,18 @@ public:
     size_t shift=blocksize-e;
 
     auto setIndices=[=](size_t& i, size_t& j) {
-        if(i > 0) {
-          if(i >= limit)
+      if(i > 0) {
+        if(i >= limit)
+          j=j0-i;
+        else {
+          if(i >= e) {
+            i += shift;
             j=j0-i;
-          else {
-            if(i >= e) {
-              i += shift;
-              j=j0-i;
-            } else
-              j=m-i;
-          }
-        } else
-          j=j1;
+          } else
+            j=m-i;
+        }
+      } else
+        j=j1;
     };
 
     PARALLEL(
