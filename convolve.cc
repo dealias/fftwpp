@@ -145,20 +145,51 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices, size_t threads, bool
 
 void multBinaryRCM(Complex **F, size_t n, Indices *indices, size_t threads)
 {
-  Complex *G[]={F[0],F[1],F[0],F[1]};
-  multBinaryRCM(G,n,indices,threads,true,true);
+  Complex *H[]={F[0],F[1],F[0],F[1]};
+  multBinaryRCM(H,n,indices,threads,true,true);
 }
 
 void multBinaryRCM2(Complex **F, size_t n, Indices *indices, size_t threads)
 {
-  Complex *G0[]={F[0],F[1],F[2],F[3]};
-  Complex *G1[]={F[2],F[3],F[0],F[1]};
+  Complex *H0[]={F[0],F[1],F[2],F[3]};
+  Complex *H1[]={F[2],F[3],F[0],F[1]};
 
   // TODO: Add indices to optimizer timing tests
   bool col0=indices->size > 0 ? indices->index[0] == 0 : false;
 
-  multBinaryRCM(G0,n,indices,threads,col0,true);
-  multBinaryRCM(G1,n,indices,threads,col0,false);
+  multBinaryRCM(H0,n,indices,threads,col0,true);
+  multBinaryRCM(H1,n,indices,threads,col0,false);
+}
+
+void multBinaryRCM3(Complex **F, size_t n, Indices *indices, size_t threads)
+{
+  Complex *H0[4];
+  Complex *H1[4];
+  Complex *H2[4];
+  Complex *H3[4];
+
+  bool xcol0=indices->size > 0 ? indices->index[1] == 0 : false;
+  bool ycol0=indices->size > 0 ? indices->index[0] == 0 : false;
+  bool col0=xcol0 && ycol0;
+
+  if(xcol0) {
+    H0[0]=F[0]; H0[1]=F[1]; H0[2]=F[2]; H0[3]=F[3];
+    H2[0]=F[4]; H2[1]=F[5]; H2[2]=F[6]; H2[3]=F[7];
+  } else if(ycol0) {
+    H0[0]=F[0]; H0[1]=F[1]; H0[2]=F[4]; H0[3]=F[5];
+    H2[0]=F[2]; H2[1]=F[3]; H2[2]=F[6]; H2[3]=F[7];
+  } else {
+    H0[0]=F[0]; H0[1]=F[1]; H0[2]=F[6]; H0[3]=F[7];
+    H2[0]=F[2]; H2[1]=F[3]; H2[2]=F[4]; H2[3]=F[5];
+  }
+  H1[0]=H0[2]; H1[1]=H0[3]; H1[2]=H0[0]; H1[3]=H0[1];
+  H3[0]=H2[2]; H3[1]=H2[3]; H3[2]=H2[0]; H3[3]=H2[1];
+
+  multBinaryRCM(H0,n,indices,threads,col0,true);
+  multBinaryRCM(H1,n,indices,threads,col0,false);
+
+  multBinaryRCM(H2,n,indices,threads,col0,true);
+  multBinaryRCM(H3,n,indices,threads,col0,false);
 }
 
 // This multiplication routine is for binary convolutions and takes
