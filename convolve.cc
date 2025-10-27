@@ -114,16 +114,18 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices, size_t threads, bool
   if(r == 0) {
     zeta_shift=0;
     i0=1;
-    if(first_call || col0) {
-      Complex A=(!col0) ?(F0[0]-conj(F1[0]))*(G0[0]-conj(G1[0]))/2 : -2*imag(F0[0])*imag(G0[0]);
+    if(col0) {
+      F0[0]=F0[0]*G0[0]+2*imag(F0[0])*imag(G0[0]);
+      F0[half]=F0[half]*G0[half];
+
+    } else if(first_call){
+      Complex A=(F0[0]-conj(F1[0]))*(G0[0]-conj(G1[0]))/2;
 
       F0[0]=F0[0]*G0[0]-A;
       F0[half]=F0[half]*G0[half];
 
-      if(!col0) {
-        F1[0]=F1[0]*G1[0]-conj(A);
-        F1[half]=F1[half]*G1[half];
-      }
+      F1[0]=F1[0]*G1[0]-conj(A);
+      F1[half]=F1[half]*G1[half];
     }
   }
 
