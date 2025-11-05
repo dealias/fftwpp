@@ -1834,6 +1834,65 @@ public:
       });
   }
 
+#if 0
+  void subconvolutionRCM(Complex **F, size_t rx, size_t offset=0) {
+    size_t blocksize=blocksizex(rx)/2;
+    size_t Sx=stridex();
+    size_t base=indexBase();
+
+    size_t q=fftx->q;
+    size_t m=fftx->m;
+
+    size_t e=m/2;
+    size_t j0=2*blocksize;
+    size_t j1;
+    size_t limit;
+
+    if(rx > 0) {
+      j0 -= 1;
+      j1=j0;
+      limit=0;
+    } else {
+      if(q <= 2) {
+        j1=blocksize;
+        limit=0;
+      } else {
+        j0 += m-1;
+        j1=e;
+        limit=m;
+      }
+    }
+
+    size_t shift=blocksize-e;
+
+    auto setIndices=[=](size_t& i, size_t& j) {
+      if(i > 0) {
+        if(i >= limit)
+          j=j0-i;
+        else {
+          if(i >= e) {
+            i += shift;
+            j=j0-i;
+          } else
+            j=m-i;
+        }
+      } else
+        j=j1;
+    };
+
+    PARALLEL(
+      for(size_t I=0; I < blocksize; ++I) {
+        size_t i=I;
+        size_t j;
+        setIndices(i,j);
+        size_t t=parallel::get_thread_num(threads);
+        Convolution2 *cyz=convolveyz[t];
+        cyz->indices.index[1]=fftx->index(rx,i+base);
+        cyz->convolveRawRCM(F,offset+i*Sx,offset+j*Sx,&cyz->indices);
+      });
+  }
+#endif
+
   virtual void backward(Complex **F, Complex **f, size_t rx,
                         size_t start, size_t stop,
                         size_t offset=0, Complex *W0=NULL) {
