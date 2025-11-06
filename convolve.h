@@ -1128,6 +1128,11 @@ public:
                size_t start, size_t stop) {
     for(size_t a=start; a < stop; ++a)
       (fft->*Forward)(f[a],F[a],r,W);
+    if(rcm) {
+      stop += A;
+      for(size_t a=A+start; a < stop; ++a)
+        (fft->*Forward)(f[a],F[a],r,W);
+    }
   }
 
   void operate(Complex **F, size_t r, Indices *indices) {
@@ -1154,17 +1159,27 @@ public:
                 Complex *W0=NULL) {
     for(size_t b=start; b < stop; ++b)
       (fft->*Backward)(F[b],f[b],r,W0);
+    if(rcm) {
+      stop += A;
+      for(size_t b=start+A; b < stop; ++b)
+        (fft->*Backward)(F[b],f[b],r,W0);
+    }
   }
 
   void backwardPad(Complex **F, Complex **f, size_t r,
                    size_t start, size_t stop,
                    Complex *W0=NULL) {
-    backward(F,f,r,start,stop,W0);
+    for(size_t b=start; b < stop; ++b)
+      (fft->*Backward)(F[b],f[b],r,W0);
+    if(rcm) {
+      size_t C=(nloops == 1 || loop2) ? A : B;
+      for(size_t b=start; b < stop; ++b)
+        (fft->*Backward)(F[A+b],f[C+b],r,W0);
+    }
     if(W && W == W0) (fft->*Pad)(W0);
   }
 
   void convolveRaw(Complex **f);
-  void convolveRawRCM(Complex **f);
   void convolveRawRCM(Complex **f, size_t offset, size_t offset2,
                       Indices *indices);
   void convolveRaw(Complex **f, Indices *indices);

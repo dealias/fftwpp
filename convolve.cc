@@ -7678,7 +7678,8 @@ Convolution::~Convolution()
   }
 }
 
-// g is an array of max(A,B) pointers to distinct data blocks
+// g are arrays of (rcm ? 2 : 1)*max(A,B) pointers to distinct
+// data blocks
 void Convolution::convolveRaw(Complex **g)
 {
   if(q == 1) {
@@ -7704,117 +7705,34 @@ void Convolution::convolveRaw(Complex **g)
       size_t blocksize=fft->blocksize(final);
       (*mult)(F,blocksize,&indices,threads);
       backward(F,g,0,0,B);
-    } else {
-      if(loop2) {
-        forward(g,F,0,0,A);
-        operate(F,0,&indices);
-        size_t C=A-B;
-        size_t a=0;
-        for(; a+C <= B; a += C) {
-          forward(g,Fp,r,a,a+C);
-          backwardPad(F,g,0,a,a+C,W0);
-        }
-        forward(g,Fp,r,a,A);
-        operate(Fp,r,&indices);
-        backwardPad(Fp,g,r,0,B,W0);
-      } else {
-        Complex **h0;
-        if(nloops > 1) {
-          if(!V) initV();
-          h0=V;
-        } else
-          h0=g;
-        for(size_t r=0; r < R; r += fft->increment(r)) {
-          forward(g,F,r,0,A);
-          operate(F,r,&indices);
-          backwardPad(F,h0,r,0,B,W0);
-        }
-
-        if(nloops > 1) {
-          size_t wL=fft->wordSize()*fft->inputLength();
-          for(size_t b=0; b < B; ++b) {
-            double *gb=(double *) (g[b]);
-            double *hb=(double *) (h0[b]);
-            for(size_t i=0; i < wL; ++i)
-              gb[i]=hb[i];
-          }
-        }
-      }
-    }
-  }
-}
-
-// g are arrays of 2*max(A,B) pointers to distinct data blocks
-void Convolution::convolveRawRCM(Complex **g)
-{
-  if(q == 1) {
-    indices.r=0;
-    size_t blocksize=fft->blocksize(0);
-    forward(g,F,0,0,A);
-    forward(g+A,F+A,0,0,A);
-    (*mult)(F,blocksize,&indices,threads);
-    backward(F,g,0,0,B,W);
-    backward(F+A,g+A,0,0,B,W);
-  } else {
-    if(fft->overwrite) {
+    } else if(loop2) {
       forward(g,F,0,0,A);
-      forward(g+A,F+A,0,0,A);
-      indices.r=0;
-      (*mult)(g,fft->blocksize(0),&indices,threads);
-      size_t final=fft->n-1;
-      for(size_t r=1; r < final; ++r) {
-        size_t blocksize=fft->blocksize(r);
-        for(size_t a=0; a < A; ++a) {
-          G[a]=g[a]+r*blocksize;
-          G[A+a]=g[A+a]+r*blocksize;
-        }
-        indices.r=r;
-        (*mult)(G,blocksize,&indices,threads);
+      operate(F,0,&indices);
+      size_t C=A-B;
+      size_t a=0;
+      for(; a+C <= B; a += C) {
+        forward(g,Fp,r,a,a+C);
+        backwardPad(F,g,0,a,a+C,W0);
       }
-      indices.r=final;
-      size_t blocksize=fft->blocksize(final);
-      (*mult)(F,blocksize,&indices,threads);
-      backward(F,g,0,0,B);
-      backward(F+A,g+A,0,0,B);
-     } else if(loop2) {
-        forward(g,F,0,0,A);
-        forward(g+A,F+A,0,0,A);
-        operate(F,0,&indices);
-        size_t C=A-B;
-        size_t a=0;
-        for(; a+C <= B; a += C) {
-          forward(g,Fp,r,a,a+C);
-          forward(g+A,Fp+A,r,a,a+C);
-          backwardPad(F,g,0,a,a+C,W0);
-          backwardPad(F+A,g+A,0,a,a+C,W0);
-        }
-        forward(g,Fp,r,a,A);
-        forward(g+A,Fp+A,r,a,A);
-        operate(Fp,r,&indices);
-        backwardPad(Fp,g,r,0,B,W0);
-        backwardPad(Fp+A,g+A,r,0,B,W0);
-      } else {
-      Complex **h0,**H0;
+      forward(g,Fp,r,a,A);
+      operate(Fp,r,&indices);
+      backwardPad(Fp,g,r,0,B,W0);
+    } else {
+      Complex **h0;
       if(nloops > 1) {
         if(!V) initV();
         h0=V;
-        H0=h0+B;
-      } else {
+      } else
         h0=g;
-        H0=g+A;
-      }
-
       for(size_t r=0; r < R; r += fft->increment(r)) {
         forward(g,F,r,0,A);
-        forward(g+A,F+A,r,0,A);
         operate(F,r,&indices);
         backwardPad(F,h0,r,0,B,W0);
-        backwardPad(F+A,H0,r,0,B,W0);
       }
 
       if(nloops > 1) {
         size_t wL=fft->wordSize()*fft->inputLength();
-        for(size_t k=0; k <= 1; k++) {
+        for(size_t k=0; k <= rcm; k++) {
           for(size_t b=0; b < B; ++b) {
             double *gb=(double *) (g[k*A+b]);
             double *hb=(double *) (h0[k*B+b]);
@@ -7852,7 +7770,7 @@ void Convolution::convolveRawRCM(Complex **f, size_t offset, size_t offset2,
     g[a]=f[a]+offset;
     g[A+a]=f[a]+offset2;
   }
-  convolveRawRCM(g);
+  convolveRaw(g);
 }
 
 void Convolution::convolveRaw(Complex **f, size_t offset,
