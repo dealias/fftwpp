@@ -1074,20 +1074,22 @@ public:
 
       nloops=fft->nloops();
       loop2=fft->loop2();
-      if(loop2) { // TODO: Update for RCM
+      if(loop2) {
         r=fft->increment(0);
         Fp=new Complex*[copies*A];
         size_t C=A-B;
 
         for(size_t c=0; c < C; c++) {
           Fp[c]=this->F[B+c];
-          if(rcm) Fp[A+c]=this->F[A+B+c];
+          if(rcm)
+            Fp[A+c]=this->F[A+B+c];
         }
 
         for(size_t b=0; b < B; b += C) {
           for(size_t c=b; c < B; c++) {
             Fp[C+c]=this->F[c];
-            if(rcm) Fp[A+C+c]=this->F[A+c];
+            if(rcm)
+              Fp[A+C+c]=this->F[A+c];
           }
         }
       }
@@ -1147,7 +1149,8 @@ public:
     for(size_t d=b; d < stop; d += b) {
       for(size_t a=0; a < A; ++a) {
         G[a]=F[a]+d;
-        if(rcm) G[A+a]=F[A+a]+d;
+        if(rcm)
+          G[A+a]=F[A+a]+d;
       }
       indices->offset=d;
       (*mult)(G,blocksize,indices,threads);
@@ -1465,6 +1468,9 @@ public:
   }
 
   void subconvolution(Complex **F, size_t rx, size_t offset=0) {
+    if(rcm)
+      return subconvolutionRCM(F,rx,offset);
+
     size_t blocksize=blocksizex(rx);
     size_t Sx=stridex();
     size_t base=indexBase();
@@ -1568,13 +1574,13 @@ public:
       forward(f,F,0,0,A,offset);
       size_t final=fftx->n-1;
       for(size_t r=0; r < final; ++r)
-        rcm ? subconvolutionRCM(f,r,offset+Sx*r*lx) : subconvolution(f,r,offset+Sx*r*lx);
-      rcm ? subconvolutionRCM(F,final) : subconvolution(F,final);
+        subconvolution(f,r,offset+Sx*r*lx);
+      subconvolution(F,final);
       backward(F,f,0,0,B,offset,W);
     } else {
       if(loop2) {
         forward(f,F,0,0,A,offset);
-        rcm ? subconvolutionRCM(F,0) : subconvolution(F,0);
+        subconvolution(F,0);
         size_t C=A-B;
         size_t a=0;
         for(; a+C <= B; a += C) {
@@ -1582,7 +1588,7 @@ public:
           backward(F,f,0,a,a+C,offset,W0);
         }
         forward(f,Fp,r,a,A,offset);
-        rcm ? subconvolutionRCM(Fp,r) : subconvolution(Fp,r);
+        subconvolution(Fp,r);
         backward(Fp,f,r,0,B,offset,W0);
       } else {
         size_t Offset;
@@ -1598,7 +1604,7 @@ public:
 
         for(size_t rx=0; rx < Rx; rx += fftx->increment(rx)) {
           forward(f,F,rx,0,A,offset);
-          rcm ? subconvolutionRCM(F,rx) : subconvolution(F,rx);
+          subconvolution(F,rx);
           backward(F,h0,rx,0,B,Offset,W);
         }
 
