@@ -1458,6 +1458,11 @@ public:
                        size_t offset=0) {
     for(size_t a=start; a < stop; ++a)
       (fftx->*Forward)(f[a]+offset,F[a],rx,W);
+    if(rcm3) {
+      stop += A;
+      for(size_t a=A+start; a < stop; ++a)
+        (fftx->*Forward)(f[a],F[a],rx,W);
+    }
   }
 
   virtual size_t blocksizex(size_t rx) {
