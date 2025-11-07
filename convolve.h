@@ -37,11 +37,11 @@ extern bool showRoutines;
 // Constants used for initialization and testing.
 const Complex I(0.0,1.0);
 
-const bool rcm=false; // TODO: FIXME
-const bool rcm3=false; // TODO: FIXME
+const bool rcm=true; // TODO: FIXME
+const bool rcm3=true; // TODO: FIXME
 
-const bool allow_overwrite=true;
-const bool allow_loop2=true;
+const bool allow_overwrite=false;
+const bool allow_loop2=false;
 
 
 size_t nextfftsize(size_t m);
@@ -1458,11 +1458,11 @@ public:
                        size_t offset=0) {
     for(size_t a=start; a < stop; ++a)
       (fftx->*Forward)(f[a]+offset,F[a],rx,W);
-    if(rcm3) {
-      stop += A;
-      for(size_t a=A+start; a < stop; ++a)
-        (fftx->*Forward)(f[a],F[a],rx,W);
-    }
+    // if(rcm3) {
+    //   stop += A;
+    //   for(size_t a=A+start; a < stop; ++a)
+    //     (fftx->*Forward)(f[a],F[a],rx,W);
+    // }
   }
 
   virtual size_t blocksizex(size_t rx) {
@@ -1738,6 +1738,7 @@ void subconvolutionRCM3(Complex **F, size_t rx, size_t offset=0) {
 
         for(size_t rx=0; rx < Rx; rx += fftx->increment(rx)) {
           forward(f,F,rx,0,A,offset0);
+          // forward(f,F,rx,0,A,offset1);
           subconvolution(F,rx);
           backward(F,h0,rx,0,B,Offset,W);
         }
