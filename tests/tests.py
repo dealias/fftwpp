@@ -184,16 +184,16 @@ def getArgs():
   										s or c or H or r is the same as specifying all of them",
   										action="store_true")
   parser.add_argument("-c", help="Test Centered convolutions. Not specifying\
-  										s or c or H or r or rcm is the same as specifying all of them",
+  										s or c or H or r is the same as specifying all of them",
   										action="store_true")
   parser.add_argument("-H", help="Test Hermitian convolutions. Not specifying\
-  										s or c or H or r or rcm is the same as specifying all of them",
+  										s or c or H or r is the same as specifying all of them",
   										action="store_true")
   parser.add_argument("-r", help="Test Real convolutions. Not specifying\
-                      s or c or H or r or rcm is the same as specifying all of them",
+                      s or c or H or r is the same as specifying all of them",
                       action="store_true")
-  parser.add_argument("--rcm", help="Test rcm convolutions. Not specifying\
-                      s or c or H or r or rcm is the same as specifying all of them",
+  parser.add_argument("--rcm", help="Test rcm convolutions. Unless otherwise\
+                      specified, this turns off -s -c -H.",
                       action="store_true")
   parser.add_argument("-i","--identity", help="Test forward backward routines (hybrid.cc\
                        and/or hybridh.cc and/or hybridr.cc). Only in 1D. This tests the forward backward routines in addition to the convolution routines. To test forward backward routines without convolutions, use -I.",
@@ -263,7 +263,7 @@ def getPrograms(args):
   CorNotSCHR=(C or notSCHR)
   HorNotSCHR=(H or notSCHR)
   rorNotSCHR=(R or notSCHR)
-  rcmorNotSCHR=(rcm or notSCHR)
+  # rcmorNotSCHR=(rcm or notSCHR)
 
   if not args.mpi:
     if X or notXYZ:
@@ -291,7 +291,7 @@ def getPrograms(args):
         if not I:
           programs.append(Program("hybridconvr",real=True))
 
-      if rcmorNotSCHR:
+      if rcm:
         if not I:
           programs.append(Program("hybridconvrcm",rcm=True))
 
@@ -303,7 +303,7 @@ def getPrograms(args):
       programs.append(Program("hybridconvh2",dim=2,hermitian=True))
     if rorNotSCHR:
       programs.append(Program("hybridconvr2",dim=2,real=True))
-    if rcmorNotSCHR:
+    if rcm:
       programs.append(Program("hybridconvrcm2",dim=2,rcm=True))
 
   if Z or notXYZ:

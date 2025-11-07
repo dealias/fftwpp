@@ -37,11 +37,11 @@ extern bool showRoutines;
 // Constants used for initialization and testing.
 const Complex I(0.0,1.0);
 
-const bool rcm=true; // TODO: FIXME
-const bool rcm3=true; // TODO: FIXME
+const bool rcm=false; // TODO: FIXME
+const bool rcm3=false; // TODO: FIXME
 
-const bool allow_overwrite=false;
-const bool allow_loop2=false;
+const bool allow_overwrite=true;
+const bool allow_loop2=true;
 
 
 size_t nextfftsize(size_t m);
