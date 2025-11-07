@@ -38,6 +38,11 @@ extern bool showRoutines;
 const Complex I(0.0,1.0);
 
 const bool rcm=true; // TODO: FIXME
+const bool rcm3=true; // TODO: FIXME
+
+const bool allow_overwrite=false;
+const bool allow_loop2=false;
+
 
 size_t nextfftsize(size_t m);
 
@@ -408,7 +413,7 @@ public:
   }
 
   bool loop2() {
-    return nloops() == 2 && app.A > app.B && !overwrite;
+    return allow_loop2 && nloops() == 2 && app.A > app.B && !overwrite;
   }
 
   // Input data length
@@ -1468,6 +1473,9 @@ public:
   }
 
   void subconvolution(Complex **F, size_t rx, size_t offset=0) {
+    if(rcm3)
+      return subconvolutionRCM3(F,rx,offset);
+
     if(rcm)
       return subconvolutionRCM(F,rx,offset);
 
@@ -1537,6 +1545,63 @@ public:
         cy->indices.index[0]=fftx->index(rx,i+base);
         cy->convolveRawRCM(F,offset+i*Sx,offset+j*Sx,&cy->indices);
       });
+  }
+
+void subconvolutionRCM3(Complex **F, size_t rx, size_t offset=0) {
+    size_t blocksize=blocksizex(rx)/2;
+    size_t Sx=stridex();
+    size_t base=indexBase();
+    size_t q=fftx->q;
+    size_t m=fftx->m;
+
+    size_t e=m/2;
+    size_t j0=2*blocksize;
+    size_t j1;
+    size_t limit;
+
+    if(rx > 0) {
+      j0 -= 1;
+      j1=j0;
+      limit=0;
+    } else {
+      if(q <= 2) {
+        j1=blocksize;
+        limit=0;
+      } else {
+        j0 += m-1;
+        j1=e;
+        limit=m;
+      }
+    }
+
+    size_t shift=blocksize-e;
+
+    auto setIndices=[=](size_t& i, size_t& j) {
+      if(i > 0) {
+        if(i >= limit)
+          j=j0-i;
+        else {
+          if(i >= e) {
+            i += shift;
+            j=j0-i;
+          } else
+            j=m-i;
+        }
+      } else
+        j=j1;
+    };
+
+    PARALLEL(
+      for(size_t I=0; I < blocksize; ++I) {
+        size_t i=I;
+        size_t j;
+        setIndices(i,j);
+        size_t t=parallel::get_thread_num(threads);
+        Convolution *cy=convolvey[t];
+        cy->indices.index[0]=fftx->index(rx,i+base);
+        cy->convolveRawRCM(F,offset+i*Sx,offset+j*Sx,&cy->indices);
+      });
+
   }
 
   virtual void backward(Complex **F, Complex **f, size_t rx,
@@ -1614,6 +1679,70 @@ public:
           size_t wLy=w*inputLengthy();
           for(size_t b=0; b < B; ++b) {
             double *fb=(double *) (f[b]+offset);
+            double *hb=(double *) (h0[b]);
+            for(size_t i=0; i < Lx; ++i) {
+              size_t Sxi=wSx*i;
+              double *fbi=fb+Sxi;
+              double *hbi=hb+Sxi;
+              for(size_t j=0; j < wLy; ++j)
+                fbi[j]=hbi[j];
+            }
+          }
+        }
+      }
+    }
+  }
+
+
+// f is a pointer to A distinct data blocks each of size Lx*Sx,
+// shifted by offset.
+  void convolveRawRCM(Complex **f, size_t offset0=0, size_t offset1=0, Indices *indices=NULL) {
+    for(size_t t=0; t < threads; ++t)
+      convolvey[t]->indices.copy(indices,1);
+    if(fftx->overwrite) {
+      forward(f,F,0,0,A,offset0);
+      size_t final=fftx->n-1;
+      for(size_t r=0; r < final; ++r)
+        subconvolution(f,r,offset0+Sx*r*lx);
+      subconvolution(F,final);
+      backward(F,f,0,0,B,offset0,W);
+    } else {
+      if(loop2) {
+        forward(f,F,0,0,A,offset0);
+        subconvolution(F,0);
+        size_t C=A-B;
+        size_t a=0;
+        for(; a+C <= B; a += C) {
+          forward(f,Fp,r,a,a+C,offset0);
+          backward(F,f,0,a,a+C,offset0,W0);
+        }
+        forward(f,Fp,r,a,A,offset0);
+        subconvolution(Fp,r);
+        backward(Fp,f,r,0,B,offset0,W0);
+      } else {
+        size_t Offset;
+        Complex **h0;
+        if(nloops > 1) {
+          if(!V) initV();
+          h0=V;
+          Offset=0;
+        } else {
+          Offset=offset0;
+          h0=f;
+        }
+
+        for(size_t rx=0; rx < Rx; rx += fftx->increment(rx)) {
+          forward(f,F,rx,0,A,offset0);
+          subconvolution(F,rx);
+          backward(F,h0,rx,0,B,Offset,W);
+        }
+
+        if(nloops > 1) {
+          size_t w=fftx->wordSize();
+          size_t wSx=w*Sx;
+          size_t wLy=w*inputLengthy();
+          for(size_t b=0; b < B; ++b) {
+            double *fb=(double *) (f[b]+offset0);
             double *hb=(double *) (h0[b]);
             for(size_t i=0; i < Lx; ++i) {
               size_t Sxi=wSx*i;
@@ -1843,6 +1972,9 @@ public:
   }
 
   void subconvolution(Complex **F, size_t rx, size_t offset=0) {
+    if(rcm3)
+      return subconvolutionRCM(F,rx,offset);
+
     size_t blocksize=blocksizex(rx);
     size_t Sx=stridex();
     size_t base=indexBase();
@@ -1855,7 +1987,7 @@ public:
       });
   }
 
-#if 0
+
   void subconvolutionRCM(Complex **F, size_t rx, size_t offset=0) {
     size_t blocksize=blocksizex(rx)/2;
     size_t Sx=stridex();
@@ -1912,7 +2044,6 @@ public:
         cyz->convolveRawRCM(F,offset+i*Sx,offset+j*Sx,&cyz->indices);
       });
   }
-#endif
 
   virtual void backward(Complex **F, Complex **f, size_t rx,
                         size_t start, size_t stop,
