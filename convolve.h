@@ -1496,6 +1496,45 @@ public:
       });
   }
 
+  size_t conjugate(size_t i, size_t rx, size_t blocksize, size_t q, size_t m) {
+    size_t e=m/2;
+    size_t j0=2*blocksize;
+    size_t j1;
+    size_t limit;
+
+    if(rx > 0) {
+      j0 -= 1;
+      j1=j0;
+      limit=0;
+    } else {
+      if(q <= 2) {
+        j1=blocksize;
+        limit=0;
+      } else {
+        j0 += m-1;
+        j1=e;
+        limit=m;
+      }
+    }
+
+    size_t shift=blocksize-e;
+    size_t j;
+
+    if(i > 0) {
+      if(i >= limit)
+        j=j0-i;
+      else {
+        if(i >= e) {
+          i += shift;
+          j=j0-i;
+        } else
+          j=m-i;
+      }
+    } else
+      j=j1;
+
+    return j;
+  }
   void subconvolutionRCM(Complex **F, size_t rx, size_t offset=0) {
     size_t blocksize=blocksizex(rx)/2;
     size_t Sx=stridex();
@@ -1545,6 +1584,8 @@ public:
         size_t i=I;
         size_t j;
         setIndices(i,j);
+        std::cout << "j=" << j << std::endl;
+        std::cout << "conjugate(i,rx,blocksize,q,m)=" << conjugate(i,rx,blocksize,q,m) << std::endl;
         size_t t=parallel::get_thread_num(threads);
         Convolution *cy=convolvey[t];
         cy->indices.index[0]=fftx->index(rx,i+base);
