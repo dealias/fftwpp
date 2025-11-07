@@ -65,50 +65,17 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices, size_t threads, bool
   Complex *G1=!col0 ? F[3] : G0;
 
   fftBase *fft=indices->fft;
-  size_t q=fft->q;
-  size_t p=fft->p;
-  size_t m=fft->m;
   size_t r=indices->r+indices->offset/n;
-
   size_t b=n/2;
+  size_t q=fft->q;
+  size_t m=fft->m;
+  rcmIndex rcmInd=rcmIndex(r,b,q,m);
+
+  size_t p=fft->p;
   size_t e=m/2;
   size_t half=(q <= 2) ? b : e;
 
-  size_t j0=n;
-  size_t j1;
-  size_t limit;
-  if(r > 0) {
-    j0 -= 1;
-    j1=j0;
-    limit=0;
-  } else {
-    if(q <= 2) {
-      j1=b;
-      limit=0;
-    } else {
-      j0 += m-1;
-      j1=e;
-      limit=m;
-    }
-  }
-
   size_t zeta_shift=(q > 2) ? (p+1)*e : e;
-  size_t shift=b-e;
-
-  auto setIndices=[=](size_t& i, size_t& j) {
-    if(i > 0) {
-      if(i >= limit)
-        j=j0-i;
-      else {
-        if(i >= e) {
-          i += shift;
-          j=j0-i;
-        } else
-          j=m-i;
-      }
-    } else
-      j=j1;
-  };
   size_t i0=0;
 
   if(r == 0) {
@@ -136,7 +103,7 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices, size_t threads, bool
   for(size_t I=i0; I < b; ++I) {
     size_t i=I;
     size_t j;
-    setIndices(i,j);
+    rcmInd.setIndices(i,j);
     Complex A=(F0[i]-conj(F1[j]))*(G0[i]-conj(G1[j]))*zeta[i];
     F0[i]=F0[i]*G0[i]-A;
     F1[j]=F1[j]*G1[j]-conj(A);
