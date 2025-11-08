@@ -1544,9 +1544,7 @@ public:
 
   void subconvolutionRCM(Complex **F, size_t rx, size_t offset=0) {
     size_t blocksize=blocksizex(rx)/2;
-    size_t q=fftx->q;
-    size_t m=fftx->m;
-    rcmIndex rcmInd=rcmIndex(rx,blocksize,q,m);
+    rcmIndex rcmInd=rcmIndex(rx,blocksize,fftx->q,fftx->m);
 
     size_t Sx=stridex();
     size_t base=indexBase();
