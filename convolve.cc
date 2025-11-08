@@ -67,19 +67,12 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices, size_t threads, bool
   fftBase *fft=indices->fft;
   size_t r=indices->r+indices->offset/n;
   size_t b=n/2;
-  size_t q=fft->q;
-  size_t m=fft->m;
-  rcmIndex rcmInd=rcmIndex(r,b,q,m);
+  rcmIndex rcmInd=rcmIndex(r,b,fft->q,fft->m);
+  Complex *zeta=rcmInd.zeta(fft->ZetaRCM, fft->p);
 
-  size_t p=fft->p;
-  size_t e=m/2;
-  size_t half=(q <= 2) ? b : e;
-
-  size_t zeta_shift=(q > 2) ? (p+1)*e : e;
   size_t i0=0;
-
   if(r == 0) {
-    zeta_shift=0;
+    size_t half=rcmInd.half();
     i0=1;
     if(col0) {
       F0[0]=F0[0]*G0[0]+2*imag(F0[0])*imag(G0[0]);
@@ -95,8 +88,6 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices, size_t threads, bool
       F1[half]=F1[half]*G1[half];
     }
   }
-
-  Complex *zeta=fft->ZetaRCM+zeta_shift;
 
   PARALLELIF(
   b-i0 > threshold,

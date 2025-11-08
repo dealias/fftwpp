@@ -72,6 +72,7 @@ struct rcmIndex {
       }
     }
   }
+
   void setIndices(size_t& i, size_t& j) {
     if(i > 0) {
       if(i >= limit)
@@ -85,6 +86,15 @@ struct rcmIndex {
       }
     } else
       j=j1;
+  }
+
+  Complex* zeta(Complex *ZetaRCM, size_t p) {
+    size_t zeta_shift=r == 0 ? 0 : (q > 2) ? (p+1)*e : e;
+    return ZetaRCM+zeta_shift;
+  }
+
+  size_t half() {
+    return (q <= 2) ? b : e;
   }
 
 };
