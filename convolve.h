@@ -38,13 +38,72 @@ extern bool showRoutines;
 const Complex I(0.0,1.0);
 
 const bool rcm=true; // TODO: FIXME
-const bool rcm3=true; // TODO: FIXME
+const bool rcm3=false; // TODO: FIXME
 
 const bool allow_overwrite=false;
 const bool allow_loop2=false;
 
 
 size_t nextfftsize(size_t m);
+
+struct rcmIndex {
+  size_t r;
+  size_t b;
+  size_t q;
+  size_t m;
+
+  size_t e;
+  size_t limit;
+  size_t shift;
+  size_t j0;
+  size_t j1;
+
+  rcmIndex(size_t r, size_t b, size_t q, size_t m) : r(r), b(b), q(q), m(m) {
+    e=m/2;
+    j0=2*b;
+    shift=b-e;
+    if(r > 0) {
+      j0 -= 1;
+      j1=j0;
+      limit=0;
+    } else {
+      if(q <= 2) {
+        j1=b;
+        limit=0;
+      } else {
+        j0 += m-1;
+        j1=e;
+        limit=m;
+      }
+    }
+  }
+
+  void setIndices(size_t& i, size_t& j) {
+    if(i > 0) {
+      if(i >= limit)
+        j=j0-i;
+      else {
+        if(i >= e) {
+          i += shift;
+          j=j0-i;
+        } else
+          j=m-i;
+      }
+    } else
+      j=j1;
+  }
+
+  Complex* zeta(Complex *ZetaRCM, size_t p) {
+    size_t zeta_shift=r == 0 ? 0 : (q > 2) ? (p+1)*e : e;
+    return ZetaRCM+zeta_shift;
+  }
+
+  size_t half() {
+    return (q <= 2) ? b : e;
+  }
+
+};
+
 
 class fftBase;
 
@@ -1537,55 +1596,18 @@ public:
   }
   void subconvolutionRCM(Complex **F, size_t rx, size_t offset=0) {
     size_t blocksize=blocksizex(rx)/2;
-    size_t Sx=stridex();
-    size_t base=indexBase();
     size_t q=fftx->q;
     size_t m=fftx->m;
+    rcmIndex rcmInd=rcmIndex(rx,blocksize,q,m);
 
-    size_t e=m/2;
-    size_t j0=2*blocksize;
-    size_t j1;
-    size_t limit;
-
-    if(rx > 0) {
-      j0 -= 1;
-      j1=j0;
-      limit=0;
-    } else {
-      if(q <= 2) {
-        j1=blocksize;
-        limit=0;
-      } else {
-        j0 += m-1;
-        j1=e;
-        limit=m;
-      }
-    }
-
-    size_t shift=blocksize-e;
-
-    auto setIndices=[=](size_t& i, size_t& j) {
-      if(i > 0) {
-        if(i >= limit)
-          j=j0-i;
-        else {
-          if(i >= e) {
-            i += shift;
-            j=j0-i;
-          } else
-            j=m-i;
-        }
-      } else
-        j=j1;
-    };
+    size_t Sx=stridex();
+    size_t base=indexBase();
 
     PARALLEL(
       for(size_t I=0; I < blocksize; ++I) {
         size_t i=I;
         size_t j;
-        setIndices(i,j);
-        std::cout << "j=" << j << std::endl;
-        std::cout << "conjugate(i,rx,blocksize,q,m)=" << conjugate(i,rx,blocksize,q,m) << std::endl;
+        rcmInd.setIndices(i,j);
         size_t t=parallel::get_thread_num(threads);
         Convolution *cy=convolvey[t];
         cy->indices.index[0]=fftx->index(rx,i+base);
