@@ -1429,7 +1429,8 @@ public:
     size_t outputSize=fftx->outputSize();
     size_t workSizeW=fftx->workSizeW();
 
-    size_t N=std::max(A,B);
+    size_t copies=rcm3 ? 2 : 1;
+    size_t N=std::max(A,B)*copies;
     allocateF=!F;
     this->F=allocateF ? utils::ComplexAlign(N,outputSize) : F;
 
@@ -1517,11 +1518,6 @@ public:
                        size_t offset=0) {
     for(size_t a=start; a < stop; ++a)
       (fftx->*Forward)(f[a]+offset,F[a],rx,W);
-    // if(rcm3) {
-    //   stop += A;
-    //   for(size_t a=A+start; a < stop; ++a)
-    //     (fftx->*Forward)(f[a],F[a],rx,W);
-    // }
   }
 
   virtual size_t blocksizex(size_t rx) {
@@ -1722,15 +1718,9 @@ public:
           h0=f;
         }
 
-
-        // for(size_t a=0; a < A; ++a) {
-        //   g[a]=f[a]+offset0;
-        //   g[A+a]=f[a]+offset1;
-        // }
-
         for(size_t rx=0; rx < Rx; rx += fftx->increment(rx)) {
           forward(f,F,rx,0,A,offset0);
-          // forward(f,F,rx,0,A,offset1);
+          forward(f,F+A,rx,0,A,offset1);
           subconvolution(F,rx);
           backward(F,h0,rx,0,B,Offset,W);
         }
