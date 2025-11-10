@@ -4,6 +4,8 @@
 #include <iostream>
 #include "seconds.h"
 #include "Complex.h"
+#include <algorithm>
+
 
 extern double s;  // Time limit (seconds) for testing
 extern size_t N;  // Minimum sample size for testing
@@ -249,6 +251,11 @@ inline size_t hpadding(size_t m)
 inline size_t tpadding(size_t m)
 {
   return padding(4*m-3);
+}
+
+inline void swapRCM(Complex** F) {
+    std::swap(F[0], F[2]);
+    std::swap(F[1], F[3]);
 }
 
 // return real(z*w)

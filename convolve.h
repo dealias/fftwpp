@@ -1249,6 +1249,8 @@ public:
   void convolveRaw(Complex **f);
   void convolveRawRCM(Complex **f, size_t offset, size_t offset2,
                       Indices *indices);
+  void convolveRawRCM3(Complex **f, size_t offset, size_t offset2,
+                      Indices *indices);
   void convolveRaw(Complex **f, Indices *indices);
   void convolveRaw(Complex **f, size_t offset);
   void convolveRaw(Complex **f, size_t offset, Indices *indices);
@@ -1472,7 +1474,7 @@ public:
     allocateV=false;
 
     if(V) {
-      this->V=new Complex*[B];
+      this->V=new Complex*[copies*B];
       size_t size=fftx->workSizeV();
       for(size_t i=0; i < B; ++i)
         this->V[i]=V+i*size;
@@ -1533,9 +1535,12 @@ public:
   }
 
   void subconvolution(Complex **F, size_t rx, size_t offset=0) {
-    if(rcm3)
-      return subconvolutionRCM3(F,rx,offset);
-
+    if(rcm3) {
+      subconvolutionRCM3(F,rx,offset);
+      utils::swapRCM(F);
+      subconvolutionRCM3(F,rx,offset);
+      return utils::swapRCM(F);
+    }
     if(rcm)
       return subconvolutionRCM(F,rx,offset);
 
@@ -1587,7 +1592,7 @@ public:
         size_t t=parallel::get_thread_num(threads);
         Convolution *cy=convolvey[t];
         cy->indices.index[0]=fftx->index(rx,i+base);
-        cy->convolveRawRCM(F,offset+i*Sx,offset+j*Sx,&cy->indices);
+        cy->convolveRawRCM3(F,offset+i*Sx,offset+j*Sx,&cy->indices);
       });
   }
 
@@ -1707,22 +1712,22 @@ public:
         subconvolution(Fp,r);
         backward(Fp,f,r,0,B,offset0,W0);
       } else {
-        size_t Offset;
+        // size_t Offset;
         Complex **h0;
         if(nloops > 1) {
           if(!V) initV();
           h0=V;
-          Offset=0;
+          // Offset=0;
         } else {
-          Offset=offset0;
+          // Offset=offset0;
           h0=f;
         }
-
         for(size_t rx=0; rx < Rx; rx += fftx->increment(rx)) {
           forward(f,F,rx,0,A,offset0);
           forward(f,F+A,rx,0,A,offset1);
           subconvolution(F,rx);
-          backward(F,h0,rx,0,B,Offset,W);
+          backward(F,f,rx,0,B,offset0,W);
+          backward(F+A,f,rx,0,B,offset1,W);
         }
 
         if(nloops > 1) {

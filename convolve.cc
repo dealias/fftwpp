@@ -1,4 +1,5 @@
 #include "convolve.h"
+#include "Complex.h"
 #include "align.h"
 #include "cmult-sse2.h"
 
@@ -109,14 +110,37 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices, size_t threads)
 
 void multBinaryRCM2(Complex **F, size_t n, Indices *indices, size_t threads)
 {
-  Complex *H0[]={F[0],F[1],F[2],F[3]};
-  Complex *H1[]={F[2],F[3],F[0],F[1]};
+  Complex *H[]={F[0],F[1],F[2],F[3]};
+  // Complex *H1[]={F[2],F[3],F[0],F[1]};
 
   // TODO: Add indices to optimizer timing tests
-  bool col0=indices->size > 0 ? indices->index[0] == 0 : false;
+  bool col0;
+  size_t N=indices->size;
+  if(indices->size > 0) {
+    size_t i=1;
+    col0=(indices->index[0] == 0);
+    while(col0 && i < N) {
+      col0=(indices->index[i] == 0);
+      i++;
+    }
+  } else {
+    col0=false;
+  }
+  // cout << "index=(" << indices->index[1] << ", "<<  indices->index[0] << "), col0=" << col0 << endl;
 
-  multBinaryRCM(H0,n,indices,threads,col0,true);
-  multBinaryRCM(H1,n,indices,threads,col0,false);
+  multBinaryRCM(H,n,indices,threads,col0,true);
+  swapRCM(H);
+  multBinaryRCM(H,n,indices,threads,col0,false);
+  // swapRCM(H);
+
+  // for(size_t i=0; i < n; ++i) {
+  //   cout << "F[0][" << i << "]=" << F[0][i] << endl;
+  // }
+  // cout << endl;
+  // for(size_t i=0; i < n; ++i) {
+  //   cout << "F[2][" << i << "]=" << F[2][i] << endl;
+  // }
+  // cout << endl;
 }
 
 void multBinaryRCM3(Complex **F, size_t n, Indices *indices, size_t threads)
@@ -7728,6 +7752,46 @@ void Convolution::convolveRawRCM(Complex **f, size_t offset, size_t offset2,
     g[a]=f[a]+offset;
     g[A+a]=f[a]+offset2;
   }
+  convolveRaw(g);
+}
+
+void Convolution::convolveRawRCM3(Complex **f, size_t offset, size_t offset2,
+                                 Indices *indices2)
+{
+  for(size_t t=0; t < threads; ++t) // CHECK!
+    indices.copy(indices2,0);
+  indices.fft=fft;
+  // cout << "index=(" << indices.index[1] << ", "<<  indices.index[0] << ")" << endl;
+  size_t i=indices.index[1];
+  size_t j=indices.index[0];
+
+  Complex *F0=f[0]+offset;
+  Complex *F1=f[0]+offset2;
+  Complex *F2=f[2]+offset;
+  Complex *F3=f[2]+offset2;
+
+  Complex *G0=f[1]+offset;
+  Complex *G1=f[1]+offset2;
+  Complex *G2=f[3]+offset;
+  Complex *G3=f[3]+offset2;
+
+  if(i == 0) {
+    g[0]=F0;
+    g[1]=G0;
+    g[2]=F1;
+    g[3]=G1;
+  } else if(j == 0) {
+    g[0]=F0;
+    g[1]=G0;
+    g[2]=F2;
+    g[3]=G2;
+  } else {
+    g[0]=F0;
+    g[1]=G0;
+    g[2]=F3;
+    g[3]=G3;
+  }
+
   convolveRaw(g);
 }
 
