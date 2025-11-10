@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
   if(Sx == 0) Sx=Ly*Sy;
 
   Application appx(A,B,multNone,fftw::maxthreads,true,mx,Dx,Ix);
-  fftPadReal fftx(Lx,Mx,appx,Ly*Sy/2,Sx/2);
+  fftPad fftx(Lx,Mx,appx,Ly*Sy/2,Sx/2);
   Application appy(A,B,multNone,appx,my,Dy,Iy);
   fftPad ffty(Ly,My,appy,Lz/2,Sy/2);
   Application appz(A,B,multBinary,appy,mz,Dz,Iz);
@@ -61,11 +61,27 @@ int main(int argc, char *argv[])
     for(size_t i=0; i < Lx; ++i) {
       for(size_t j=0; j < Ly; ++j) {
         for(size_t k=0; k < Lz; ++k) {
-          fa[Sx*i+Sy*j+k]=Output || testError ? i+(a+1)*j+a*k+1 : 0.0;
+          fa[Sx*i+Sy*j+k]=Output || testError ? i+(a+1)*j+(a+2)*k+1-a : 0.0;
         }
       }
     }
     g[a]=(Complex *) f[a];
+  }
+
+  if(Output && false) {
+    for(size_t a=0; a < A; ++a) {
+      Complex *ga=g[a];
+      for(size_t i=0; i < Lx; ++i) {
+        for(size_t j=0; j < Ly; ++j) {
+          for(size_t k=0; k < Lz/2; ++k) {
+            cout << ga[(Sx/2)*i+(Sy/2)*j+k] << " ";
+          }
+          cout << endl;
+        }
+        cout << endl;
+      }
+      cout << endl;
+    }
   }
 
   double *h=NULL;
@@ -76,18 +92,18 @@ int main(int argc, char *argv[])
   }
 
   if(!Output && !testError)
-    Convolve.convolve(f);
+    Convolve.convolve(g);
 
   double sum=0.0;
   while(sum < s || T.size() < N) {
     double t;
     if(normalized || testError) {
       cpuTimer c;
-      Convolve.convolve(f);
+      Convolve.convolve(g);
       t=c.nanoseconds();
     } else {
       cpuTimer c;
-      Convolve.convolveRaw(f);
+      Convolve.convolveRaw(g);
       t=c.nanoseconds();
     }
     T.push_back(t);
