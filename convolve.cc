@@ -1,4 +1,5 @@
 #include "convolve.h"
+#include "Complex.h"
 #include "align.h"
 #include "cmult-sse2.h"
 
@@ -113,10 +114,22 @@ void multBinaryRCM2(Complex **F, size_t n, Indices *indices, size_t threads)
   Complex *H1[]={F[2],F[3],F[0],F[1]};
 
   // TODO: Add indices to optimizer timing tests
-  bool col0=indices->size > 0 ? indices->index[0] == 0 : false;
+  bool col0;
+  size_t N=indices->size;
+  if(indices->size > 0) {
+    size_t i=1;
+    col0=(indices->index[0] == 0);
+    while(col0 && i < N) {
+      col0=(indices->index[i] == 0);
+      i++;
+    }
+  } else {
+    col0=false;
+  }
 
   multBinaryRCM(H0,n,indices,threads,col0,true);
   multBinaryRCM(H1,n,indices,threads,col0,false);
+
 }
 
 void multBinaryRCM3(Complex **F, size_t n, Indices *indices, size_t threads)
@@ -692,7 +705,7 @@ void fftPad::init()
     G=ComplexAlign(size);
     H=inplace ? G : ComplexAlign(size);
 
-    overwrite=inplace && L == p*m && n == (centered ? 3 : p+1) && D == 1 &&
+    overwrite=allow_overwrite && inplace && L == p*m && n == (centered ? 3 : p+1) && D == 1 &&
       app.A >= app.B;
 
     if(!centered && p > 1) overwrite=false;
@@ -7728,6 +7741,31 @@ void Convolution::convolveRawRCM(Complex **f, size_t offset, size_t offset2,
     g[a]=f[a]+offset;
     g[A+a]=f[a]+offset2;
   }
+  convolveRaw(g);
+}
+
+void Convolution::convolveRawRCM3(Complex **f, size_t offset, size_t offset2,
+                                 Indices *indices2, bool first_call)
+{
+  for(size_t t=0; t < threads; ++t) // CHECK!
+    indices.copy(indices2,0);
+  indices.fft=fft;
+  size_t i=indices.index[1];
+  size_t j=indices.index[0];
+
+  g[0]=f[0]+offset;
+  g[1]=f[1]+offset;
+  if(i == 0) {
+    g[2]=f[0]+offset2;
+    g[3]=f[1]+offset2;
+  } else if(j == 0) {
+    g[2]=f[2]+offset;
+    g[3]=f[3]+offset;
+  } else {
+    g[2]=f[2]+offset2;
+    g[3]=f[3]+offset2;
+  }
+
   convolveRaw(g);
 }
 

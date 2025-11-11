@@ -5,6 +5,7 @@
 #include "seconds.h"
 #include "Complex.h"
 
+
 extern double s;  // Time limit (seconds) for testing
 extern size_t N;  // Minimum sample size for testing
 
