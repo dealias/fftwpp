@@ -7753,32 +7753,17 @@ void Convolution::convolveRawRCM3(Complex **f, size_t offset, size_t offset2,
   size_t i=indices.index[1];
   size_t j=indices.index[0];
 
-  Complex *F0=f[0]+offset;
-  Complex *F1=f[0]+offset2;
-  Complex *F2=(i == 0 ? f[0] : f[2])+offset;
-  Complex *F3=(i == 0 ? f[0] : f[2])+offset2;
-
-  Complex *G0=f[1]+offset;
-  Complex *G1=f[1]+offset2;
-  Complex *G2=(i == 0 ? f[1] : f[3])+offset;
-  Complex *G3=(i == 0 ? f[1] : f[3])+offset2;
-
-
+  g[0]=f[0]+offset;
+  g[1]=f[1]+offset;
   if(i == 0) {
-    g[0]=F0;
-    g[1]=G0;
-    g[2]=F1;
-    g[3]=G1;
+    g[2]=f[0]+offset2;
+    g[3]=f[1]+offset2;
   } else if(j == 0) {
-    g[0]=F0;
-    g[1]=G0;
-    g[2]=F2;
-    g[3]=G2;
+    g[2]=f[2]+offset;
+    g[3]=f[3]+offset;
   } else {
-    g[0]=F0;
-    g[1]=G0;
-    g[2]=F3;
-    g[3]=G3;
+    g[2]=f[2]+offset2;
+    g[3]=f[3]+offset2;
   }
 
   convolveRaw(g);
