@@ -156,7 +156,7 @@ def default_outdir(p,T,I):
         outdir = "timingsr1"
     if p == "rconv2" or p == "hybridconvr2" or p == "hybridconvroe2" or p == "hybridconvrcm2":
         outdir = "timingsr2"
-    if p == "rconv3" or p == "hybridconvr3" or p == "hybridconvroe3":
+    if p == "rconv3" or p == "hybridconvr3" or p == "hybridconvroe3" or p == "hybridconvrcm3":
         outdir = "timingsr3"
     if p == "tconv":
         outdir = "timings1t"
@@ -304,7 +304,7 @@ def main(argv):
     rcm=False
 
     dim2routines=["cconv2","conv2","rconv2","hybridconv2","hybridconvh2","hybridconvr2","hybridconvroe2","hybridconvrcm2"]
-    dim3routines=["cconv3","conv3","rconv3","hybridconv3","hybridconvh3","hybridconvr3","hybridconvroe3"]
+    dim3routines=["cconv3","conv3","rconv3","hybridconv3","hybridconvh3","hybridconvr3","hybridconvroe3","hybridconvrcm3"]
 
     if p in dim2routines:
         dimension=2
@@ -327,7 +327,7 @@ def main(argv):
     if p in ["hybridconvroe2", "hybridconvroe3"]:
         roe=True
 
-    if p in ["hybridconvrcm", "hybridconvrcm2"]:
+    if p in ["hybridconvrcm", "hybridconvrcm2", "hybridconvrcm3"]:
         rcm=True
 
     if p == "conv" or p == "conv2" or p == "conv3":

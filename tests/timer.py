@@ -31,7 +31,7 @@ def main():
     dimensions.append(1)
   if two or not123:
     dimensions.append(2)
-  if (three or not123) and not rcm:
+  if (three or not123):
     dimensions.append(3)
 
   if threads == 0:
