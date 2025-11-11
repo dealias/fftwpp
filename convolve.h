@@ -1250,7 +1250,7 @@ public:
   void convolveRawRCM(Complex **f, size_t offset, size_t offset2,
                       Indices *indices);
   void convolveRawRCM3(Complex **f, size_t offset, size_t offset2,
-                      Indices *indices);
+                      Indices *indices,bool first_call);
   void convolveRaw(Complex **f, Indices *indices);
   void convolveRaw(Complex **f, size_t offset);
   void convolveRaw(Complex **f, size_t offset, Indices *indices);
@@ -1536,9 +1536,9 @@ public:
 
   void subconvolution(Complex **F, size_t rx, size_t offset=0) {
     if(rcm3) {
-      subconvolutionRCM3(F,rx,offset);
+      subconvolutionRCM3(F,rx,offset,true);
       utils::swapRCM(F);
-      subconvolutionRCM3(F,rx,offset);
+      subconvolutionRCM3(F,rx,offset,false);
       return utils::swapRCM(F);
     }
     if(rcm)
@@ -1576,23 +1576,31 @@ public:
       });
   }
 
-  void subconvolutionRCM3(Complex **F, size_t rx, size_t offset=0) {
+  void subconvolutionRCM3(Complex **F, size_t rx, size_t offset=0, bool first_call=true) {
     size_t blocksize=blocksizex(rx)/2;
     rcmIndex rcmInd=rcmIndex(rx,blocksize,fftx->q,fftx->m);
 
     size_t Sx=stridex(); //Sy
 
     size_t base=indexBase();
-
     PARALLEL(
       for(size_t I=0; I < blocksize; ++I) {
         size_t i=I;
         size_t j;
         rcmInd.setIndices(i,j);
+        // std::cout << "indices.index[1]=" << indices.index[1] << std::endl;
+        if(i == 0 && indices.index[1] != 0) {
+          if(first_call){
+            j=0;
+          } else {
+            i=j;
+          }
+        }
+
         size_t t=parallel::get_thread_num(threads);
         Convolution *cy=convolvey[t];
         cy->indices.index[0]=fftx->index(rx,i+base);
-        cy->convolveRawRCM3(F,offset+i*Sx,offset+j*Sx,&cy->indices);
+        cy->convolveRawRCM3(F,offset+i*Sx,offset+j*Sx,&cy->indices,first_call);
       });
   }
 

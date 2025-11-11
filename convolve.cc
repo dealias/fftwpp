@@ -7756,7 +7756,7 @@ void Convolution::convolveRawRCM(Complex **f, size_t offset, size_t offset2,
 }
 
 void Convolution::convolveRawRCM3(Complex **f, size_t offset, size_t offset2,
-                                 Indices *indices2)
+                                 Indices *indices2, bool first_call)
 {
   for(size_t t=0; t < threads; ++t) // CHECK!
     indices.copy(indices2,0);
@@ -7767,13 +7767,14 @@ void Convolution::convolveRawRCM3(Complex **f, size_t offset, size_t offset2,
 
   Complex *F0=f[0]+offset;
   Complex *F1=f[0]+offset2;
-  Complex *F2=f[2]+offset;
-  Complex *F3=f[2]+offset2;
+  Complex *F2=(i == 0 ? f[0] : f[2])+offset;
+  Complex *F3=(i == 0 ? f[0] : f[2])+offset2;
 
   Complex *G0=f[1]+offset;
   Complex *G1=f[1]+offset2;
-  Complex *G2=f[3]+offset;
-  Complex *G3=f[3]+offset2;
+  Complex *G2=(i == 0 ? f[1] : f[3])+offset;
+  Complex *G3=(i == 0 ? f[1] : f[3])+offset2;
+
 
   if(i == 0) {
     g[0]=F0;
