@@ -92,6 +92,18 @@ struct rcmIndex {
       j=j1;
   }
 
+  // Used for 3D subconvolutions
+  void setIndices(size_t& i, size_t& j, bool i0, bool first_call) {
+    if(i > 0 || !i0) {
+      this->setIndices(i, j);
+    } else if(first_call){
+      j=0;
+    } else {
+      i=j1;
+      j=j1;
+    }
+  }
+
   Complex* zeta(Complex *ZetaRCM, size_t p) {
     size_t zeta_shift=r == 0 ? 0 : (q > 2) ? (p+1)*e : e;
     return ZetaRCM+zeta_shift;
@@ -1590,24 +1602,15 @@ public:
   void subconvolutionRCM3(Complex **F, size_t rx, size_t offset=0, bool first_call=true) {
     size_t blocksize=blocksizex(rx)/2;
     rcmIndex rcmInd=rcmIndex(rx,blocksize,fftx->q,fftx->m);
+    bool i0=indices.index[1] != 0 && rx == 0;
 
-    size_t Sx=stridex(); //Sy
-
+    size_t Sx=stridex();
     size_t base=indexBase();
     PARALLEL(
       for(size_t I=0; I < blocksize; ++I) {
         size_t i=I;
         size_t j;
-        rcmInd.setIndices(i,j);
-        // std::cout << "indices.index[1]=" << indices.index[1] << std::endl;
-        if(i == 0 && indices.index[1] != 0 && rx == 0) {
-          if(first_call){
-            j=0;
-          } else {
-            i=j;
-          }
-        }
-
+        rcmInd.setIndices(i,j,i0,first_call);
         size_t t=parallel::get_thread_num(threads);
         Convolution *cy=convolvey[t];
         cy->indices.index[0]=fftx->index(rx,i+base);
