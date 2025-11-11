@@ -313,6 +313,9 @@ def getPrograms(args):
       programs.append(Program("hybridconvh3",dim=3,hermitian=True))
     if rorNotSCHR:
       programs.append(Program("hybridconvr3",dim=3,real=True))
+    if rcm:
+      programs.append(Program("hybridconvrcm3",dim=3,rcm=True))
+
 
   return programs
 

@@ -7761,7 +7761,6 @@ void Convolution::convolveRawRCM3(Complex **f, size_t offset, size_t offset2,
   for(size_t t=0; t < threads; ++t) // CHECK!
     indices.copy(indices2,0);
   indices.fft=fft;
-  // cout << "index=(" << indices.index[1] << ", "<<  indices.index[0] << ")" << endl;
   size_t i=indices.index[1];
   size_t j=indices.index[0];
 
