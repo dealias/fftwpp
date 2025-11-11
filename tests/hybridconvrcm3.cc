@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
   if(Sx == 0) Sx=Ly*Sy;
 
   Application appx(A,B,multNone,fftw::maxthreads,true,mx,Dx,Ix);
-  fftPad fftx(Lx,Mx,appx,Ly*Sy/2,Sx/2);
+  fftPad fftx(Lx,Mx,appx,Sy == Lz ? Ly*Sy/2 : Lz/2,Sx/2);
   Application appy(A,B,multNone,appx,my,Dy,Iy);
   fftPad ffty(Ly,My,appy,Lz/2,Sy/2);
   Application appz(A,B,multBinaryRCM2,appy,mz,Dz,Iz);

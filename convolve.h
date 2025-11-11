@@ -1878,9 +1878,10 @@ public:
       std::cerr << "Sx cannot be less than Ly*Sy" << std::endl;
       exit(-1);
     }
+    size_t correct_C=contiguous() ? Ly*Sy : Lz;
 
-    if(fftx->C != (contiguous() ? Ly*Sy : Lz)) {
-      std::cerr << "fftx->C is invalid" << std::endl;
+    if(fftx->C != correct_C) {
+      std::cerr << "fftx->C="<< fftx->C << " is invalid (expected " << correct_C << ")" << std::endl;
       exit(-1);
     }
   }
