@@ -40,9 +40,8 @@ const Complex I(0.0,1.0);
 const bool rcm=true; // TODO: FIXME
 const bool rcm3=true; // TODO: FIXME
 
-const bool allow_overwrite=false;
-const bool allow_loop2=false;
-
+const bool allow_overwrite=!rcm3;
+const bool allow_loop2=true;
 
 size_t nextfftsize(size_t m);
 
@@ -1459,10 +1458,13 @@ public:
     size_t extra;
     if(loop2) {
       r=fftx->increment(0);
-      Fp=new Complex*[A];
+      Fp=new Complex*[copies*A];
       Fp[0]=this->F[A-1];
-      for(size_t a=1; a < A; ++a)
+      if(rcm3) Fp[A]=this->F[2*A-1];
+      for(size_t a=1; a < A; ++a) {
         Fp[a]=this->F[a-1];
+        if(rcm3) Fp[A+a]=this->F[A+a-1];
+      }
       extra=1;
     } else
       extra=0;
@@ -1488,7 +1490,7 @@ public:
     size_t size=fftx->workSizeV();
     V=utils::ComplexAlign(copies*B,size);
 
-    // For some reason this broke:
+    // TODO For some reason this broke:
     // V=new Complex*[copies*B];
     // for(size_t i=0; i < copies*B; ++i)
     //   V[i]=utils::ComplexAlign(size);
@@ -1718,16 +1720,21 @@ public:
     } else {
       if(loop2) {
         forward(f,F,0,0,A,offset0);
+        forward(f,F+A,0,0,A,offset1);
         subconvolution(F,0);
         size_t C=A-B;
         size_t a=0;
         for(; a+C <= B; a += C) {
           forward(f,Fp,r,a,a+C,offset0);
+          forward(f,Fp+A,r,a,a+C,offset1);
           backward(F,f,0,a,a+C,offset0,W0);
+          backward(F+A,f,0,a,a+C,offset1,W0);
         }
         forward(f,Fp,r,a,A,offset0);
+        forward(f,Fp+A,r,a,A,offset1);
         subconvolution(Fp,r);
         backward(Fp,f,r,0,B,offset0,W0);
+        backward(Fp+A,f,r,0,B,offset1,W0);
       } else {
         size_t Offset0;
         size_t Offset1;
