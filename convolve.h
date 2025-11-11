@@ -1395,6 +1395,7 @@ protected:
   FFTcall Forward,Backward;
   FFTPad Pad;
   size_t nloops;
+  size_t copies;
 public:
   Indices indices;
 
@@ -1431,7 +1432,7 @@ public:
     size_t outputSize=fftx->outputSize();
     size_t workSizeW=fftx->workSizeW();
 
-    size_t copies=rcm3 ? 2 : 1;
+    copies=rcm3 ? 2 : 1;
     size_t N=std::max(A,B)*copies;
     allocateF=!F;
     this->F=allocateF ? utils::ComplexAlign(N,outputSize) : F;
@@ -1467,7 +1468,7 @@ public:
       extra=0;
 
     if(A > B+extra && !fftx->inplace && workSizeW <= outputSize) {
-      W0=this->F[B];
+      W0=this->F[copies*B];
     } else
       W0=this->W;
 
@@ -1476,7 +1477,7 @@ public:
     if(V) {
       this->V=new Complex*[copies*B];
       size_t size=fftx->workSizeV();
-      for(size_t i=0; i < B; ++i)
+      for(size_t i=0; i < copies*B; ++i)
         this->V[i]=V+i*size;
     } else
       this->V=NULL;
@@ -1484,10 +1485,13 @@ public:
 
   void initV() {
     allocateV=true;
-    V=new Complex*[B];
     size_t size=fftx->workSizeV();
-    for(size_t i=0; i < B; ++i)
-      V[i]=utils::ComplexAlign(size);
+    V=utils::ComplexAlign(copies*B,size);
+
+    // For some reason this broke:
+    // V=new Complex*[copies*B];
+    // for(size_t i=0; i < copies*B; ++i)
+    //   V[i]=utils::ComplexAlign(size);
   }
 
   virtual ~Convolution2() {
@@ -1500,12 +1504,18 @@ public:
       utils::deleteAlign(W);
 
     if(allocateV) {
-      for(size_t i=0; i < B; ++i)
-        utils::deleteAlign(V[i]);
+      utils::deleteAlign(V[0]);
+      delete [] V;
+      // for(size_t i=0; i < B; ++i)
+      //   utils::deleteAlign(V[i]);
+    } else if(V) {
+      delete [] V;
     }
 
-    if(V)
-      delete [] V;
+    // For some reason, this needs to be in the else:
+    // if(V) {
+    //   delete [] V;
+    // }
 
     if(loop2)
       delete [] Fp;
@@ -1536,10 +1546,9 @@ public:
 
   void subconvolution(Complex **F, size_t rx, size_t offset=0) {
     if(rcm3) {
+      Complex *G[]={F[2],F[3],F[0],F[1]};
       subconvolutionRCM3(F,rx,offset,true);
-      utils::swapRCM(F);
-      subconvolutionRCM3(F,rx,offset,false);
-      return utils::swapRCM(F);
+      return subconvolutionRCM3(G,rx,offset,false);
     }
     if(rcm)
       return subconvolutionRCM(F,rx,offset);
@@ -1589,7 +1598,7 @@ public:
         size_t j;
         rcmInd.setIndices(i,j);
         // std::cout << "indices.index[1]=" << indices.index[1] << std::endl;
-        if(i == 0 && indices.index[1] != 0) {
+        if(i == 0 && indices.index[1] != 0 && rx == 0) {
           if(first_call){
             j=0;
           } else {
@@ -1720,22 +1729,26 @@ public:
         subconvolution(Fp,r);
         backward(Fp,f,r,0,B,offset0,W0);
       } else {
-        // size_t Offset;
+        size_t Offset0;
+        size_t Offset1;
+
         Complex **h0;
         if(nloops > 1) {
           if(!V) initV();
           h0=V;
-          // Offset=0;
+          Offset0=0;
+          Offset1=fftx->outputSize();
         } else {
-          // Offset=offset0;
+          Offset0=offset0;
+          Offset1=offset1;
           h0=f;
         }
         for(size_t rx=0; rx < Rx; rx += fftx->increment(rx)) {
           forward(f,F,rx,0,A,offset0);
           forward(f,F+A,rx,0,A,offset1);
           subconvolution(F,rx);
-          backward(F,f,rx,0,B,offset0,W);
-          backward(F+A,f,rx,0,B,offset1,W);
+          backward(F,h0,rx,0,B,Offset0,W);
+          backward(F+A,h0,rx,0,B,Offset1,W);
         }
 
         if(nloops > 1) {
@@ -1745,6 +1758,22 @@ public:
           for(size_t b=0; b < B; ++b) {
             double *fb=(double *) (f[b]+offset0);
             double *hb=(double *) (h0[b]);
+            for(size_t i=0; i < Lx; ++i) {
+              size_t Sxi=wSx*i;
+              double *fbi=fb+Sxi;
+              double *hbi=hb+Sxi;
+              for(size_t j=0; j < wLy; ++j)
+                fbi[j]=hbi[j];
+            }
+          }
+        }
+        if(nloops > 1) {
+          size_t w=fftx->wordSize();
+          size_t wSx=w*Sx;
+          size_t wLy=w*inputLengthy();
+          for(size_t b=0; b < B; ++b) {
+            double *fb=(double *) (f[b]+offset1);
+            double *hb=(double *) (h0[b]+Offset1);
             for(size_t i=0; i < Lx; ++i) {
               size_t Sxi=wSx*i;
               double *fbi=fb+Sxi;

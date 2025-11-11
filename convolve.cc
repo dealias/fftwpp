@@ -110,8 +110,8 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices, size_t threads)
 
 void multBinaryRCM2(Complex **F, size_t n, Indices *indices, size_t threads)
 {
-  Complex *H[]={F[0],F[1],F[2],F[3]};
-  // Complex *H1[]={F[2],F[3],F[0],F[1]};
+  Complex *H0[]={F[0],F[1],F[2],F[3]};
+  Complex *H1[]={F[2],F[3],F[0],F[1]};
 
   // TODO: Add indices to optimizer timing tests
   bool col0;
@@ -126,21 +126,10 @@ void multBinaryRCM2(Complex **F, size_t n, Indices *indices, size_t threads)
   } else {
     col0=false;
   }
-  // cout << "index=(" << indices->index[1] << ", "<<  indices->index[0] << "), col0=" << col0 << endl;
 
-  multBinaryRCM(H,n,indices,threads,col0,true);
-  swapRCM(H);
-  multBinaryRCM(H,n,indices,threads,col0,false);
-  // swapRCM(H);
+  multBinaryRCM(H0,n,indices,threads,col0,true);
+  multBinaryRCM(H1,n,indices,threads,col0,false);
 
-  // for(size_t i=0; i < n; ++i) {
-  //   cout << "F[0][" << i << "]=" << F[0][i] << endl;
-  // }
-  // cout << endl;
-  // for(size_t i=0; i < n; ++i) {
-  //   cout << "F[2][" << i << "]=" << F[2][i] << endl;
-  // }
-  // cout << endl;
 }
 
 void multBinaryRCM3(Complex **F, size_t n, Indices *indices, size_t threads)
@@ -515,7 +504,7 @@ void fftBase::OptBase::check(size_t L, size_t M,
 {
 //  cout << "m=" << m << ", p=" << p << ", q=" << q << ", n=" << n << ", D=" << D << ", I=" << inplace << ", C=" << C << ", S=" << S << endl;
   //cout << "valid=" << valid(m,p,q,n,D,S) << endl << endl;
-  if(valid(m,p,q,n,D,S) && ((n == 1 && L % 2 == 0 && M % 2 == 0 && m%2 == 0 && (p % 2 == 0 || p == 1)) || !rcm)) {//&& L % 2 == 0 && m % 2 == 0 && p != 2 && D <= 2 && n <= 2) {
+  if(valid(m,p,q,n,D,S) && ((n <= 2 && L % 2 == 0 && M % 2 == 0 && m%2 == 0 && (p % 2 == 0 || p == 1)) || !rcm)) {//&& L % 2 == 0 && m % 2 == 0 && p != 2 && D <= 2 && n <= 2) {
     if(useTimer) {
       double t=time(L,M,app,C,S,m,D,inplace);
       if(showOptTimes)
