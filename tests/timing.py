@@ -577,7 +577,14 @@ def main(argv):
                     Sx=L+2
                     options.append(f'-Sx={Sx}')
               if dimension == 3:
-                if not real:
+                if rcm:
+                    Sy=ceilquotient(L,2) if hermitian else L
+                    if T == 1:
+                      Sy += 2
+                    options.append(f'-Sy={Sy}')
+                    Sx=Sy*L+2
+                    options.append(f'-Sx={Sx}')
+                elif not real:
                     Sy=ceilquotient(L,2) if hermitian else L
                     if T == 1:
                       Sy += 2
