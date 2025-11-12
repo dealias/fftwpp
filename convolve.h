@@ -1765,31 +1765,19 @@ public:
           size_t w=fftx->wordSize();
           size_t wSx=w*Sx;
           size_t wLy=w*inputLengthy();
-          for(size_t b=0; b < B; ++b) {
-            double *fb=(double *) (f[b]+offset0);
-            double *hb=(double *) (h0[b]);
-            for(size_t i=0; i < Lx; ++i) {
-              size_t Sxi=wSx*i;
-              double *fbi=fb+Sxi;
-              double *hbi=hb+Sxi;
-              for(size_t j=0; j < wLy; ++j)
-                fbi[j]=hbi[j];
-            }
-          }
-        }
-        if(nloops > 1) {
-          size_t w=fftx->wordSize();
-          size_t wSx=w*Sx;
-          size_t wLy=w*inputLengthy();
-          for(size_t b=0; b < B; ++b) {
-            double *fb=(double *) (f[b]+offset1);
-            double *hb=(double *) (h0[b]+Offset1);
-            for(size_t i=0; i < Lx; ++i) {
-              size_t Sxi=wSx*i;
-              double *fbi=fb+Sxi;
-              double *hbi=hb+Sxi;
-              for(size_t j=0; j < wLy; ++j)
-                fbi[j]=hbi[j];
+          size_t offsets[]={offset0,offset1};
+          size_t Offsets[]={offset0,offset1};
+          for(size_t k=0; k < 2; ++k) {
+            for(size_t b=0; b < B; ++b) {
+              double *fb=(double *) (f[b]+offsets[k]);
+              double *hb=(double *) (h0[b]+Offsets[k]);
+              for(size_t i=0; i < Lx; ++i) {
+                size_t Sxi=wSx*i;
+                double *fbi=fb+Sxi;
+                double *hbi=hb+Sxi;
+                for(size_t j=0; j < wLy; ++j)
+                  fbi[j]=hbi[j];
+              }
             }
           }
         }
