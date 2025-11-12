@@ -53,7 +53,7 @@ real d=1;
 if(find(dir,"2-") >= 0) d=2;
 if(find(dir,"3-") >= 0) d=3;
 
-bool rcm=d <= 2 && realConv;
+bool rcm=d <= 3 && realConv;
 
 if(expl) {
   file fin=input(base+"/"+dir+"/explicit").line();
