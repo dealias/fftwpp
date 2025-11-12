@@ -40,7 +40,7 @@ const Complex I(0.0,1.0);
 const bool rcm=true; // TODO: FIXME
 const bool rcm3=true; // TODO: FIXME
 
-const bool allow_overwrite=!rcm3;
+const bool allow_overwrite=true;
 const bool allow_loop2=true;
 
 size_t nextfftsize(size_t m);
@@ -1715,11 +1715,16 @@ public:
       convolvey[t]->indices.copy(indices,1);
     if(fftx->overwrite) {
       forward(f,F,0,0,A,offset0);
-      size_t final=fftx->n-1;
-      for(size_t r=0; r < final; ++r)
-        subconvolution(f,r,offset0+Sx*r*lx);
-      subconvolution(F,final);
+      forward(f,F+A,0,0,A,offset1);
+      // size_t final=fftx->n-1;
+      // for(size_t r=0; r < final; ++r)
+      //   subconvolution(f,r,offset0+Sx*r*lx);
+      // subconvolution(F,final);
+      Complex *G[]={f[0]+offset0, f[1]+offset0, f[0]+offset1, f[1]+offset1};
+      subconvolution(G,0);
+      subconvolution(F,1);
       backward(F,f,0,0,B,offset0,W);
+      backward(F+A,f,0,0,B,offset1,W);
     } else {
       if(loop2) {
         forward(f,F,0,0,A,offset0);
