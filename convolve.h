@@ -37,8 +37,9 @@ extern bool showRoutines;
 // Constants used for initialization and testing.
 const Complex I(0.0,1.0);
 
-const bool rcm=true; // TODO: FIXME
-const bool rcm3=true; // TODO: FIXME
+// TODO: FIXME
+const bool rcm3=true;
+const bool rcm2=true; // rcm2 must be true if rcm3 is true
 
 const bool allow_overwrite=true;
 const bool allow_loop2=true;
@@ -1123,7 +1124,7 @@ public:
     size_t outputSize=fft->outputSize();
     size_t workSizeW=fft->workSizeW();
 
-    size_t copies=(rcm ? 2 : 1);
+    size_t copies=(rcm2 ? 2 : 1);
     size_t N=copies*std::max(A,B);
     allocateF=!F;
     this->F=allocateF ? utils::ComplexAlign(N,outputSize) : F;
@@ -1156,14 +1157,14 @@ public:
 
         for(size_t c=0; c < C; c++) {
           Fp[c]=this->F[B+c];
-          if(rcm)
+          if(rcm2)
             Fp[A+c]=this->F[A+B+c];
         }
 
         for(size_t b=0; b < B; b += C) {
           for(size_t c=b; c < B; c++) {
             Fp[C+c]=this->F[c];
-            if(rcm)
+            if(rcm2)
               Fp[A+C+c]=this->F[A+c];
           }
         }
@@ -1179,7 +1180,7 @@ public:
 
   void initV() {
     allocateV=true;
-    size_t Bcopies=(rcm ? 2 : 1)*B;
+    size_t Bcopies=(rcm2 ? 2 : 1)*B;
     V=new Complex*[Bcopies];
     size_t size=fft->workSizeV();
     for(size_t i=0; i < Bcopies; ++i)
@@ -1205,7 +1206,7 @@ public:
                size_t start, size_t stop) {
     for(size_t a=start; a < stop; ++a)
       (fft->*Forward)(f[a],F[a],r,W);
-    if(rcm) {
+    if(rcm2) {
       stop += A;
       for(size_t a=A+start; a < stop; ++a)
         (fft->*Forward)(f[a],F[a],r,W);
@@ -1224,7 +1225,7 @@ public:
     for(size_t d=b; d < stop; d += b) {
       for(size_t a=0; a < A; ++a) {
         G[a]=F[a]+d;
-        if(rcm)
+        if(rcm2)
           G[A+a]=F[A+a]+d;
       }
       indices->offset=d;
@@ -1237,7 +1238,7 @@ public:
                 Complex *W0=NULL) {
     for(size_t b=start; b < stop; ++b)
       (fft->*Backward)(F[b],f[b],r,W0);
-    if(rcm) {
+    if(rcm2) {
       stop += A;
       for(size_t b=start+A; b < stop; ++b)
         (fft->*Backward)(F[b],f[b],r,W0);
@@ -1249,7 +1250,7 @@ public:
                    Complex *W0=NULL) {
     for(size_t b=start; b < stop; ++b)
       (fft->*Backward)(F[b],f[b],r,W0);
-    if(rcm) {
+    if(rcm2) {
       size_t C=(nloops == 1 || loop2) ? A : B;
       for(size_t b=start; b < stop; ++b)
         (fft->*Backward)(F[A+b],f[C+b],r,W0);
@@ -1564,7 +1565,7 @@ public:
       subconvolutionRCM3(F,rx,offset,true);
       return subconvolutionRCM3(G,rx,offset,false);
     }
-    if(rcm)
+    if(rcm2)
       return subconvolutionRCM(F,rx,offset);
 
     size_t blocksize=blocksizex(rx);

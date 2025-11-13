@@ -309,7 +309,7 @@ double time(fftBase *fft, double &threshold)
 {
   size_t threads=fft->app.threads == 1 ? fft->app.maxthreads : 1;
 
-  size_t N=(rcm ? 2 : 1)*max(fft->app.A,fft->app.B);
+  size_t N=(rcm2 ? 2 : 1)*max(fft->app.A,fft->app.B);
   size_t doubles=fft->doubles();
   Complex **f=(Complex **) doubleAlign(N*threads,doubles);
 
@@ -337,14 +337,14 @@ double time(fftBase *fft, double &threshold)
 #pragma omp parallel for num_threads(threads)
       for(size_t t=0; t < threads; ++t)
         Convolve[t]->convolveRaw(f+N*t);
-        // rcm ? Convolve[t]->convolveRawRCM(f+N*t) : Convolve[t]->convolveRaw(f+N*t);
+        // rcm2 ? Convolve[t]->convolveRawRCM(f+N*t) : Convolve[t]->convolveRaw(f+N*t);
       time=C.nanoseconds();
       Stats.add(time);
     } else {
       Convolution *Convolve0=Convolve[0];
       cpuTimer C;
       Convolve0->convolveRaw(f);
-      // rcm ? Convolve0->convolveRawRCM(f) : Convolve0->convolveRaw(f);
+      // rcm2 ? Convolve0->convolveRawRCM(f) : Convolve0->convolveRaw(f);
       time=C.nanoseconds();
       Stats.add(time);
     }
@@ -504,7 +504,7 @@ void fftBase::OptBase::check(size_t L, size_t M,
 {
 //  cout << "m=" << m << ", p=" << p << ", q=" << q << ", n=" << n << ", D=" << D << ", I=" << inplace << ", C=" << C << ", S=" << S << endl;
   //cout << "valid=" << valid(m,p,q,n,D,S) << endl << endl;
-  if(valid(m,p,q,n,D,S) && ((n <= 2 && L % 2 == 0 && M % 2 == 0 && m%2 == 0 && (p % 2 == 0 || p == 1)) || !rcm)) {//&& L % 2 == 0 && m % 2 == 0 && p != 2 && D <= 2 && n <= 2) {
+  if(valid(m,p,q,n,D,S) && ((n <= 2 && L % 2 == 0 && M % 2 == 0 && m%2 == 0 && (p % 2 == 0 || p == 1)) || !rcm2)) {//&& L % 2 == 0 && m % 2 == 0 && p != 2 && D <= 2 && n <= 2) {
     if(useTimer) {
       double t=time(L,M,app,C,S,m,D,inplace);
       if(showOptTimes)
@@ -7649,7 +7649,7 @@ Convolution::~Convolution()
   }
 }
 
-// g are arrays of (rcm ? 2 : 1)*max(A,B) pointers to distinct
+// g are arrays of (rcm2 ? 2 : 1)*max(A,B) pointers to distinct
 // data blocks
 void Convolution::convolveRaw(Complex **g)
 {
@@ -7703,7 +7703,7 @@ void Convolution::convolveRaw(Complex **g)
 
       if(nloops > 1) {
         size_t wL=fft->wordSize()*fft->inputLength();
-        for(size_t k=0; k <= rcm; k++) {
+        for(size_t k=0; k <= rcm2; k++) {
           for(size_t b=0; b < B; ++b) {
             double *gb=(double *) (g[k*A+b]);
             double *hb=(double *) (h0[k*B+b]);
