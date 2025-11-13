@@ -1087,6 +1087,7 @@ protected:
   bool loop2;
   FFTcall Forward,Backward;
   FFTPad Pad;
+  size_t copies;
 public:
   Indices indices;
 
@@ -1124,7 +1125,7 @@ public:
     size_t outputSize=fft->outputSize();
     size_t workSizeW=fft->workSizeW();
 
-    size_t copies=(rcm2 ? 2 : 1);
+    copies=(rcm2 ? 2 : 1);
     size_t N=copies*std::max(A,B);
     allocateF=!F;
     this->F=allocateF ? utils::ComplexAlign(N,outputSize) : F;
@@ -1180,10 +1181,10 @@ public:
 
   void initV() {
     allocateV=true;
-    size_t Bcopies=(rcm2 ? 2 : 1)*B;
-    V=new Complex*[Bcopies];
+    size_t C=copies*B;
+    V=new Complex*[C];
     size_t size=fft->workSizeV();
-    for(size_t i=0; i < Bcopies; ++i)
+    for(size_t i=0; i < C; ++i)
       V[i]=utils::ComplexAlign(size);
   }
 
