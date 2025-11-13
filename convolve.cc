@@ -110,11 +110,10 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices, size_t threads)
 
 void multBinaryRCM2(Complex **F, size_t n, Indices *indices, size_t threads)
 {
-  Complex *H0[]={F[0],F[1],F[2],F[3]};
-  Complex *H1[]={F[2],F[3],F[0],F[1]};
+  Complex *H[]={F[2],F[3],F[0],F[1]};
 
-  multBinaryRCM(H0,n,indices,threads,indices->col0(),true);
-  multBinaryRCM(H1,n,indices,threads,indices->col0(),false);
+  multBinaryRCM(F,n,indices,threads,indices->col0(),true);
+  multBinaryRCM(H,n,indices,threads,indices->col0(),false);
 }
 
 // This multiplication routine is for binary convolutions and takes

@@ -1783,13 +1783,12 @@ public:
           backward(F,h0,rx,0,B,Offset0,W);
           backward(F+A,h0,rx,0,B,Offset1,W);
         }
-
         if(nloops > 1) {
           size_t w=fftx->wordSize();
           size_t wSx=w*Sx;
           size_t wLy=w*inputLengthy();
           size_t offsets[]={offset0,offset1};
-          size_t Offsets[]={offset0,offset1};
+          size_t Offsets[]={Offset0,Offset1};
           for(size_t k=0; k < 2; ++k) {
             for(size_t b=0; b < B; ++b) {
               double *fb=(double *) (f[b]+offsets[k]);
