@@ -7705,20 +7705,27 @@ void Convolution::convolveRawRCM3(Complex **f, size_t offset, size_t offset2,
   for(size_t t=0; t < threads; ++t) // CHECK!
     indices.copy(indices2,0);
   indices.fft=fft;
+
   size_t i=indices.index[1];
   size_t j=indices.index[0];
 
-  g[0]=f[0]+offset;
-  g[1]=f[1]+offset;
+  size_t a,b,c,d;
+  if(first_call)
+    a=0,b=1,c=2,d=3;
+  else
+    a=2,b=3,c=0,d=1;
+
+  g[a]=f[a]+offset;
+  g[b]=f[b]+offset;
   if(i == 0) {
-    g[2]=f[0]+offset2;
-    g[3]=f[1]+offset2;
+    g[c]=f[a]+offset2;
+    g[d]=f[b]+offset2;
   } else if(j == 0) {
-    g[2]=f[2]+offset;
-    g[3]=f[3]+offset;
+    g[c]=f[c]+offset;
+    g[d]=f[d]+offset;
   } else {
-    g[2]=f[2]+offset2;
-    g[3]=f[3]+offset2;
+    g[c]=f[c]+offset2;
+    g[d]=f[d]+offset2;
   }
 
   convolveRaw(g);

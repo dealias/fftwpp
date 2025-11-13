@@ -1571,9 +1571,8 @@ public:
 
   void subconvolution(Complex **F, size_t rx, size_t offset=0) {
     if(rcm3) {
-      Complex *G[]={F[2],F[3],F[0],F[1]};
       subconvolutionRCM3(F,rx,offset,true);
-      return subconvolutionRCM3(G,rx,offset,false);
+      return subconvolutionRCM3(F,rx,offset,false);
     }
     if(rcm2)
       return subconvolutionRCM(F,rx,offset);
