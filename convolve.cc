@@ -113,23 +113,8 @@ void multBinaryRCM2(Complex **F, size_t n, Indices *indices, size_t threads)
   Complex *H0[]={F[0],F[1],F[2],F[3]};
   Complex *H1[]={F[2],F[3],F[0],F[1]};
 
-  // TODO: Add indices to optimizer timing tests
-  bool col0;
-  size_t N=indices->size;
-  if(indices->size > 0) {
-    size_t i=1;
-    col0=(indices->index[0] == 0);
-    while(col0 && i < N) {
-      col0=(indices->index[i] == 0);
-      i++;
-    }
-  } else {
-    col0=false;
-  }
-
-  multBinaryRCM(H0,n,indices,threads,col0,true);
-  multBinaryRCM(H1,n,indices,threads,col0,false);
-
+  multBinaryRCM(H0,n,indices,threads,indices->col0(),true);
+  multBinaryRCM(H1,n,indices,threads,indices->col0(),false);
 }
 
 // This multiplication routine is for binary convolutions and takes

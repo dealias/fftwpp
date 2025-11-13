@@ -113,7 +113,6 @@ struct rcmIndex {
   size_t half() {
     return (q <= 2) ? b : e;
   }
-
 };
 
 
@@ -145,6 +144,23 @@ public:
     if(indices)
       for(size_t d=1; d < size; ++d)
         index[d]=indices->index[d];
+  }
+
+  // Used for multidimensional RCM.
+  // Returns true only if indices are non-empty and are all 0.
+  bool col0() {
+    bool col0;
+    if(size > 0) {
+      size_t i=1;
+      col0=(index[0] == 0);
+      while(col0 && i < size) {
+        col0=(index[i] == 0);
+        i++;
+      }
+    } else {
+      return false;
+    }
+    return col0;
   }
 
   ~Indices() {
