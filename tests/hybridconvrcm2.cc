@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 
   Application appx(A,B,multNone,fftw::maxthreads,true,mx,Dx,Ix);
   fftPad fftx(Lx,Mx,appx,Ly/2,Sx/2);
-  Application appy(A,B,multBinaryRCM2,appx,my,Dy,Iy);
+  Application appy(A,B,multBinaryRCM,appx,my,Dy,Iy);
   fftPad ffty(Ly/2,My/2,appy);
   Convolution2 Convolve(&fftx,&ffty);
 

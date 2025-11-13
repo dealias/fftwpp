@@ -58,12 +58,21 @@ void multBinary(Complex **F, size_t n, Indices *indices,
 
 
 // Common 1D multBinaryRCM
-void multBinaryRCM(Complex **F, size_t n, Indices *indices, size_t threads, bool col0, bool first_call)
+void multBinaryRCM(Complex **F, size_t n, Indices *indices, size_t threads, bool first_call)
 {
-  Complex *F0=F[0];
-  Complex *G0=F[1];
-  Complex *F1=!col0 ? F[2] : F0;
-  Complex *G1=!col0 ? F[3] : G0;
+  bool col0=indices->col0;
+  Complex *F0=first_call ? F[0] : F[2];
+  Complex *G0=first_call ? F[1] : F[3];
+
+  Complex *F1;
+  Complex *G1;
+  if(col0) {
+    F1=F0;
+    G1=G0;
+  } else {
+    F1=first_call ? F[2] : F[0];
+    G1=first_call ? F[3] : F[1];
+  }
 
   fftBase *fft=indices->fft;
   size_t r=indices->r+indices->offset/n;
@@ -104,16 +113,9 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices, size_t threads, bool
 
 void multBinaryRCM(Complex **F, size_t n, Indices *indices, size_t threads)
 {
-  Complex *H[]={F[0],F[1],F[0],F[1]};
-  multBinaryRCM(H,n,indices,threads,true,true);
-}
-
-void multBinaryRCM2(Complex **F, size_t n, Indices *indices, size_t threads)
-{
-  Complex *H[]={F[2],F[3],F[0],F[1]};
-
-  multBinaryRCM(F,n,indices,threads,indices->col0(),true);
-  multBinaryRCM(H,n,indices,threads,indices->col0(),false);
+  multBinaryRCM(F,n,indices,threads,true);
+  if(indices->size)
+    multBinaryRCM(F,n,indices,threads,false);
 }
 
 // This multiplication routine is for binary convolutions and takes

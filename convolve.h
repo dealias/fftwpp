@@ -130,6 +130,7 @@ public:
   size_t size,maxsize;
   size_t r;
   size_t offset;
+  bool col0=true;
 
   Indices() : index(NULL), maxsize(0), offset(0) {}
 
@@ -146,21 +147,13 @@ public:
         index[d]=indices->index[d];
   }
 
-  // Used for multidimensional RCM.
-  // Returns true only if indices are non-empty and are all 0.
-  bool col0() {
-    bool col0;
+  // Used for RCM.
+  void set_col0() {
     if(size > 0) {
-      size_t i=1;
       col0=(index[0] == 0);
-      while(col0 && i < size) {
+      for(size_t i=1; col0 && i < size; i++)
         col0=(index[i] == 0);
-        i++;
-      }
-    } else {
-      return false;
     }
-    return col0;
   }
 
   ~Indices() {
@@ -1613,6 +1606,7 @@ public:
         size_t t=parallel::get_thread_num(threads);
         Convolution *cy=convolvey[t];
         cy->indices.index[0]=fftx->index(rx,i+base);
+        cy->indices.set_col0();
         cy->convolveRawRCM(F,offset+i*Sx,offset+j*Sx,&cy->indices);
       });
   }
@@ -1632,6 +1626,7 @@ public:
         size_t t=parallel::get_thread_num(threads);
         Convolution *cy=convolvey[t];
         cy->indices.index[0]=fftx->index(rx,i+base);
+        cy->indices.set_col0();
         cy->convolveRawRCM3(F,offset+i*Sx,offset+j*Sx,&cy->indices,first_call);
       });
   }
