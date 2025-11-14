@@ -46,7 +46,8 @@ const bool allow_loop2=true;
 
 size_t nextfftsize(size_t m);
 
-struct rcmIndex {
+class rcmIndex {
+public:
   size_t r;
   size_t b;
   size_t q;
@@ -96,8 +97,8 @@ struct rcmIndex {
   // Used for 3D subconvolutions
   void setIndices(size_t& i, size_t& j, bool i0, bool first_call) {
     if(i > 0 || !i0) {
-      this->setIndices(i, j);
-    } else if(first_call){
+      this->setIndices(i,j);
+    } else if(first_call) {
       j=0;
     } else {
       i=j1;
@@ -1575,7 +1576,7 @@ public:
       return subconvolutionRCM3(F,rx,offset,false);
     }
     if(rcm2)
-      return subconvolutionRCM(F,rx,offset);
+      return subconvolutionRCM2(F,rx,offset);
 
     size_t blocksize=blocksizex(rx);
     size_t Sx=stridex();
@@ -1590,7 +1591,7 @@ public:
   }
 
 
-  void subconvolutionRCM(Complex **F, size_t rx, size_t offset=0) {
+  void subconvolutionRCM2(Complex **F, size_t rx, size_t offset=0) {
     size_t blocksize=blocksizex(rx)/2;
     rcmIndex rcmInd=rcmIndex(rx,blocksize,fftx->q,fftx->m);
 
