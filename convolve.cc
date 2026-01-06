@@ -351,7 +351,7 @@ void fftBase::OptBase::opt(size_t L, size_t M, Application& app,
     }
   } else {
     size_t m;
-    if(mForced)
+    if(mForced && app.m >= M)
       m=app.m;
     else
       m=nextfftsize(M);
