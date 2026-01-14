@@ -63,6 +63,7 @@ size_t measureThreshold(size_t threads)
 
 void Threshold(size_t threads)
 {
+  setenv("OMP_WAIT_POLICY","active",0);
   if(threads > 1 && threads < lastThreads) {
     statistics S(true);
     for(size_t i=0; i < 10; ++i)
