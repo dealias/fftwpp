@@ -31,6 +31,7 @@
 #include <typeinfo>
 #include <climits>
 
+#include "cpuPrimer.h"
 #include "seconds.h"
 #include "parallel.h"
 
@@ -319,6 +320,12 @@ public:
       std::cerr << "ERROR: fft " << inout << std::endl;
       exit(1);
     }
+    static bool initPrime=true;
+    if(initPrime && threads > 1 && doubles > 1 << 23) {
+      initPrime=false;
+      CpuPrimer::prime();
+    }
+
     return out;
   }
 
