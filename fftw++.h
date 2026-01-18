@@ -139,6 +139,7 @@ public:
   static bool wiser;
 
   virtual size_t Threads() {return threads;}
+  size_t numberOfDoubles() {return doubles;}
 
   static const char *oddshift;
 

@@ -64,6 +64,15 @@ fftw_plan Planner(fftw *F, Complex *in, Complex *out)
   fftw_plan plan=F->Plan(in,out);
   fftw::effort &= ~FFTW_WISDOM_ONLY;
   if(!plan) {
+    const size_t patientCutoff=1 << 16;
+    if(F->numberOfDoubles() <= patientCutoff) {
+      fftw::effort &= ~FFTW_MEASURE;
+      fftw::effort |= FFTW_PATIENT;
+    } else {
+      fftw::effort &= ~FFTW_PATIENT;
+      fftw::effort |= FFTW_MEASURE;
+    }
+
     plan=F->Plan(in,out);
     static bool first=true;
     if(first) {
