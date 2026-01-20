@@ -9,7 +9,6 @@ using namespace utils;
 namespace fftwpp {
 
 const double fftw::twopi=2.0*acos(-1.0);
-bool fftw::wiser=false;
 
 // User settings:
 size_t fftw::effort=FFTW_MEASURE;
@@ -45,15 +44,16 @@ void loadWisdom()
 
 void saveWisdom()
 {
-  if(fftw::wiser) {
-    char *wisdom=fftw_export_wisdom_to_string();
+  static size_t lastWisdomLength=0;
+  char *wisdom=fftw_export_wisdom_to_string();
+  size_t len=strlen(wisdom);
+  if(len > lastWisdomLength) {
     ofstream ofWisdom;
     ofWisdom.open(wisdomTemp.str().c_str());
     ofWisdom << wisdom;
     fftw_free(wisdom);
     ofWisdom.close();
     renameOverwrite(wisdomTemp.str().c_str(),wisdomName.c_str());
-    fftw::wiser=false;
   }
 }
 
@@ -65,12 +65,7 @@ fftw_plan Planner(fftw *F, Complex *in, Complex *out)
   fftw::effort &= ~FFTW_WISDOM_ONLY;
   if(!plan) {
     plan=F->Plan(in,out);
-    static bool first=true;
-    if(first) {
-      atexit(saveWisdom);
-      first=false;
-    }
-    fftw::wiser=true;
+    saveWisdom();
   }
   return plan;
 }
