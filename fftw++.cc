@@ -26,10 +26,11 @@ Mfft1d::Table Mfft1d::threadtable;
 Mrcfft1d::Table Mrcfft1d::threadtable;
 Mcrfft1d::Table Mcrfft1d::threadtable;
 
+static size_t lastWisdomLength=0;
+
 void loadWisdom()
 {
-  static bool Wise=false;
-  if(!Wise) {
+  if(lastWisdomLength == 0) {
     wisdomTemp << wisdomName << "_" << getpid();
     ifstream ifWisdom;
     ifWisdom.open(wisdomName);
@@ -38,13 +39,12 @@ void loadWisdom()
     ifWisdom.close();
     const string& s=wisdom.str();
     fftw_import_wisdom_from_string(s.c_str());
-    Wise=true;
+    lastWisdomLength=s.size();
   }
 }
 
 void saveWisdom()
 {
-  static size_t lastWisdomLength=0;
   char *wisdom=fftw_export_wisdom_to_string();
   size_t len=strlen(wisdom);
   if(len > lastWisdomLength) {
@@ -54,6 +54,7 @@ void saveWisdom()
     fftw_free(wisdom);
     ofWisdom.close();
     renameOverwrite(wisdomTemp.str().c_str(),wisdomName.c_str());
+    lastWisdomLength=len;
   }
 }
 
