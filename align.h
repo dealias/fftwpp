@@ -56,33 +56,48 @@ inline void free0(void *p)
 
 namespace Array {
 
-template<class T>
-inline void newAlign(T *&v, size_t len, size_t align)
+inline void ArrayExit0(const char *x)
 {
-  void *mem=NULL;
-  const char *invalid="Invalid alignment requested";
-  const char *nomem="Memory limits exceeded";
-#ifdef HAVE_POSIX_MEMALIGN
-  int rc=posix_memalign(&mem,align,len*sizeof(T));
-#else
-  int rc=posix_memalign0(&mem,align,len*sizeof(T));
-#endif
-  if(rc == EINVAL) std::cerr << invalid << std::endl;
-  if(rc == ENOMEM) std::cerr << nomem << std::endl;
-  v=(T *) mem;
-  for(size_t i=0; i < len; i++) new(v+i) T;
+  std::cerr << "\nERROR: " << x << "." << std::endl;
+  exit(1);
 }
 
 template<class T>
 inline void deleteAlign(T *v, size_t len)
 {
-  for(size_t i=len; i-- > 0;) v[i].~T();
+  for(size_t i=len; i > 0;) v[--i].~T();
 #ifdef HAVE_POSIX_MEMALIGN
   free(v);
 #else
   free0(v);
 #endif
 }
+
+template<class T>
+inline void newAlign(T *&v, size_t len, size_t align)
+{
+  void *mem=NULL;
+  const char *invalid="Invalid alignment requested";
+  const char *nomem="Memory limits exceeded";
+  size_t totalSize=len*sizeof(T);
+#ifdef HAVE_POSIX_MEMALIGN
+  int rc=posix_memalign(&mem,align,totalSize);
+#else
+  int rc=posix_memalign0(&mem,align,totalSize);
+#endif
+  if(rc == EINVAL) ArrayExit0(invalid);
+  if(rc == ENOMEM) ArrayExit0(nomem);
+  v=(T *) mem;
+  size_t i=0;
+  try {
+    for(; i < len; i++) new(v+i) T;
+  } catch(...) {
+    deleteAlign(v,i);
+    v=NULL;
+    throw;
+  }
+}
+
 }
 
 #endif
