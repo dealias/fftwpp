@@ -1,6 +1,8 @@
 #ifndef __align_h__
 #define __align_h__ 1
 
+#include <sys/mman.h>
+
 #ifndef HAVE_POSIX_MEMALIGN
 
 #ifdef __GLIBC_PREREQ
@@ -56,6 +58,12 @@ inline void free0(void *p)
 
 namespace Array {
 
+inline void ArrayExit0(const char *x)
+{
+  std::cerr << "\nERROR: " << x << "." << std::endl;
+  exit(1);
+}
+
 template<class T>
 inline void deleteAlign(T *v, size_t len)
 {
@@ -83,8 +91,8 @@ inline void newAlign(T *&v, size_t len, size_t align)
 #else
   int rc=posix_memalign0(&mem,align,totalSize);
 #endif
-  if(rc == EINVAL) Array::ArrayExit(invalid);
-  if(rc == ENOMEM) Array::ArrayExit(nomem);
+  if(rc == EINVAL) ArrayExit0(invalid);
+  if(rc == ENOMEM) ArrayExit0(nomem);
   v=(T *) mem;
   size_t i=0;
   try {
@@ -96,6 +104,8 @@ inline void newAlign(T *&v, size_t len, size_t align)
     v=NULL;
     throw;
   }
+}
+
 }
 
 #endif
