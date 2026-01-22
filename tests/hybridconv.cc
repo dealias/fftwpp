@@ -7,7 +7,6 @@
 
 using namespace std;
 using namespace utils;
-using namespace Array;
 using namespace fftwpp;
 
 // Constants used for initialization and testing.

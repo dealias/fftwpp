@@ -7,7 +7,6 @@
 
 using namespace std;
 using namespace utils;
-using namespace Array;
 using namespace fftwpp;
 
 size_t A=2; // number of inputs

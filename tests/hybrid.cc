@@ -3,7 +3,6 @@
 
 using namespace std;
 using namespace utils;
-using namespace Array;
 using namespace fftwpp;
 
 int main(int argc, char *argv[])
