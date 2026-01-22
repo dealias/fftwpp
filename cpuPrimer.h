@@ -4,11 +4,26 @@
 #include <sys/wait.h>
 #include <cstring>
 
-/* cpu_primer.h: Instruction State Scrubber
+/* Instruction State Scrubber: prepare multicore CPUs for maximum throughput
  *
- * Eliminate latency on high-performance Intel architectures (Alder Lake+) to
- * ensure consistent benchmark timing by evicting stale code from the CPU
- * instruction cache and branch target buffer associated with OS kernel tasks.
+ * Flood the CPU with multiple independent instruction streams
+ * (via fork/exec of compiler processes) to saturate the front-end pipelines:
+ * DSB (Decoded Stream Buffer), MITE, and LSD.
+ * Exercise branch predictors with thousands of branches and indirect calls
+ * across cores.
+ * Stress memory prefetchers and caches with multiple short-lived processes.
+ * Increase IPC, reduce L2/LLC stalls, and produce a persistent
+ * high-throughput microarchitectural state.
+ *
+            +-----------------------+
+            |    Each CPU Core      |
+            |   +-------------+     |
+  forked -->|   | MITE/LSD/DSB|<-- Diverse compiler processes
+  process   |   +-------------+     |
+            |   | Branch Pred. |    |
+            |   | L1 I/D Cache |    |
+            |   | L2/L3 Cache  |    |
+            +-----------------------+
  */
 
 class CpuPrimer {
