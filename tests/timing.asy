@@ -210,6 +210,17 @@ if(hybridroe) {
   draw(graph(mhe,he,he > 0),Pentype(2),Label("roe",Pen(3)+Lp),mark3);
 }
 
+
+
+real[] nh=f(mh);
+mh=g(mh);
+h *= nh;
+//hh *= nh;
+//lh *= nh;
+if(drawerrorbars)
+  errorbars(mh,h,0*mh,hh-h,0*mh,h-lh,Pen(1));
+draw(graph(mh,h,h > 0),Pentype(1),Label("hybrid (symmetries)",Pen(1)+Lp),mark1);
+
 if(rcm) {
   real[] nrcm=f(mrc);
   mrc=g(mrc);
@@ -219,17 +230,8 @@ if(rcm) {
   // if(drawerrorbars)
   //   errorbars(mhe,o,0*mhe,ho-o,0*mhe,o-lo,Pen(3));
   // draw(graph(mhe,he,he > 0),Pentype(2),Label("rcm (heuristic)",Pen(2)+Lp),mark2);
-  draw(graph(mrc,rc,rc > 0),Pentype(2),Label("rcm",Pen(2)+Lp),mark2);
+  draw(graph(mrc,rc,rc > 0),Pentype(2),Label("hybrid (packing)",Pen(2)+Lp),mark2);
 }
-
-real[] nh=f(mh);
-mh=g(mh);
-h *= nh;
-//hh *= nh;
-//lh *= nh;
-if(drawerrorbars)
-  errorbars(mh,h,0*mh,hh-h,0*mh,h-lh,Pen(1));
-draw(graph(mh,h,h > 0),Pentype(1),Label("hybrid",Pen(1)+Lp),mark1);
 
 if(title)
   label(dir,point(N),N);
