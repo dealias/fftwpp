@@ -76,6 +76,7 @@ if(d == 1) {
     real[][] a=fin.dimension(0,0);
     a=transpose(sort(a));
     mo=a[0]; o=a[1];// lo=a[2]; ho=a[3];
+    e=min(o,e);
   }
 }
 if(!realConv) {
@@ -140,6 +141,7 @@ real log2=log(2);
 real[] f(real[] m) {return log2/(1e-9*m*log(m));}
 real[] g(real[] x) {return x^(1/d);}
 
+explicito=false;
 if(expl) {
   // error bars:
   real[] ne=f(me);
