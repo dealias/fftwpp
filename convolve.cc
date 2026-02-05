@@ -60,7 +60,7 @@ void multBinary(Complex **F, size_t n, Indices *indices,
 // Common 1D multBinaryRCM
 void multBinaryEP(Complex **F, size_t n, Indices *indices, size_t threads)
 {
-  bool col0=indices->col0;
+  // bool col0=indices->col0;
 
   Complex *F0=F[0];
   Complex *F1=F[1];
@@ -70,56 +70,101 @@ void multBinaryEP(Complex **F, size_t n, Indices *indices, size_t threads)
   rcmIndex rcmInd=rcmIndex(r,b,fft->q,fft->m);
 
   Complex *zeta=rcmInd.zeta(fft->ZetaRCM, fft->p);
-  #if 0 // Transformed indices are available.
-    size_t N=indices->size;
-    fftBase *fft=indices->fft;
-    size_t r=indices->r;
-    size_t offset=indices->offset;
-    for(size_t j=0; j < n; ++j) {
-      for(size_t d=0; d < N; ++d)
-        cout << indices->index[N-1-d] << ",";
-      cout << fft->index(r,j+offset) << endl;
+
+  if(r == 0) {
+    F0[0]=real(F0[0])+imag(F0[0])+I*(real(F0[0])-imag(F0[0]));
+    F1[0]=real(F1[0])+imag(F1[0])+I*(real(F1[0])-imag(F1[0]));
+
+    // size_t i0=0;
+    for(size_t k=1; k < n/2; ++k) {
+      size_t i=k;
+      size_t j;
+      rcmInd.setIndices(i,j);
+      cout << "i=" << i << endl;
+      cout << "j=" << j << endl;
+      Complex A=0.5*(F0[i]+conj(F0[j]));
+      Complex B=0.5*I*(F0[i]-conj(F0[j]))*zeta[i];
+      F0[i]=A-B;
+      F0[j]=conj(A+B);
+
+      Complex C=0.5*(F1[i]+conj(F1[j]));
+      Complex D=0.5*I*(F1[i]-conj(F1[j]))*zeta[i];
+      F1[i]=C-D;
+      F1[j]=conj(C+D);
     }
-  #endif
+    cout << endl;
 
-  // cout << "n=" << n << endl;
-  // for(unsigned k=0; k < n/2; ++k) {
-  //   cout << "zeta[" << k << "]=" << zeta[k] << endl;
-  // }
+    F0[0]=real(F0[0])*real(F1[0])+I*imag(F0[0])*imag(F1[0]);
 
-  F0[0]=real(F0[0])+imag(F0[0])+I*(real(F0[0])-imag(F0[0]));
-  F1[0]=real(F1[0])+imag(F1[0])+I*(real(F1[0])-imag(F1[0]));
+    PARALLELIF(
+      n > threshold,
+      for(size_t j=1; j < n; ++j)
+        F0[j] *= F1[j];
+      );
+
+    F0[0]=0.5*(1+I)*conj(F0[0]);
+
+    for(unsigned k=1; k < n/2; ++k) {
+      size_t i=k;
+      size_t j;
+      rcmInd.setIndices(i,j);
+      Complex A=0.5*(F0[i]+conj(F0[j]));
+      Complex B=0.5*I*(F0[i]-conj(F0[j]))*conj(zeta[i]);
+      F0[i]=A+B;
+      F0[j]=conj(A-B);
 
 
-  for(unsigned k=1; k < n/2; ++k) {
-    Complex A=0.5*(F0[k]+conj(F0[n-k]));
-    Complex B=0.5*I*(F0[k]-conj(F0[n-k]))*zeta[k];
-    F0[k]=A-B;
-    F0[n-k]=conj(A+B);
+      // Complex A=0.5*(F0[k]+conj(F0[n-k]));
+      // Complex B=0.5*I*(F0[k]-conj(F0[n-k]))*conj(zeta[k]);
+      // F0[k]=A+B;
+      // F0[n-k]=conj(A-B);
+    }
+  } else if(r == 1) {
+    // size_t i0=0;
+    for(size_t k=0; k < n/2; ++k) {
+      size_t i=k;
+      size_t j;
+      rcmInd.setIndices(i,j);
+      cout << "i=" << i << endl;
+      cout << "j=" << j << endl;
+      Complex A=0.5*(F0[i]+conj(F0[j]));
+      Complex B=0.5*I*(F0[i]-conj(F0[j]))*zeta[i];
+      F0[i]=A-B;
+      F0[j]=conj(A+B);
 
-    Complex C=0.5*(F1[k]+conj(F1[n-k]));
-    Complex D=0.5*I*(F1[k]-conj(F1[n-k]))*zeta[k];
-    F1[k]=C-D;
-    F1[n-k]=conj(C+D);
+      Complex C=0.5*(F1[i]+conj(F1[j]));
+      Complex D=0.5*I*(F1[i]-conj(F1[j]))*zeta[i];
+      F1[i]=C-D;
+      F1[j]=conj(C+D);
+    }
+    cout << endl;
+
+
+    PARALLELIF(
+      n > threshold,
+      for(size_t j=0; j < n; ++j)
+        F0[j] *= F1[j];
+      );
+
+    // F0[0]=0.5*(1+I)*conj(F0[0]);
+
+    for(unsigned k=0; k < n/2; ++k) {
+      size_t i=k;
+      size_t j;
+      rcmInd.setIndices(i,j);
+      Complex A=0.5*(F0[i]+conj(F0[j]));
+      Complex B=0.5*I*(F0[i]-conj(F0[j]))*conj(zeta[i]);
+      F0[i]=A+B;
+      F0[j]=conj(A-B);
+
+
+      // Complex A=0.5*(F0[k]+conj(F0[n-k]));
+      // Complex B=0.5*I*(F0[k]-conj(F0[n-k]))*conj(zeta[k]);
+      // F0[k]=A+B;
+      // F0[n-k]=conj(A-B);
+    }
+
   }
-
-  F0[0]=real(F0[0])*real(F1[0])+I*imag(F0[0])*imag(F1[0]);
-
-  PARALLELIF(
-    n > threshold,
-    for(size_t j=1; j < n; ++j)
-      F0[j] *= F1[j];
-    );
-
-  F0[0]=0.5*(1+I)*conj(F0[0]);
-
-  for(unsigned k=1; k < n/2; ++k) {
-    Complex A=0.5*(F0[k]+conj(F0[n-k]));
-    Complex B=0.5*I*(F0[k]-conj(F0[n-k]))*conj(zeta[k]);
-    F0[k]=A+B;
-    F0[n-k]=conj(A-B);
-  }
-
 }
 
 // Common 1D multBinaryRCM
@@ -524,7 +569,7 @@ void fftBase::OptBase::check(size_t L, size_t M,
 {
 //  cout << "m=" << m << ", p=" << p << ", q=" << q << ", n=" << n << ", D=" << D << ", I=" << inplace << ", C=" << C << ", S=" << S << endl;
   //cout << "valid=" << valid(m,p,q,n,D,S) << endl << endl;
-  if(valid(m,p,q,n,D,S) && (p == q) && ((n <= 2 && L % 2 == 0 && M % 2 == 0 && m%2 == 0 && (p % 2 == 0 || p == 1)) || !rcm2)) {//&& L % 2 == 0 && m % 2 == 0 && p != 2 && D <= 2 && n <= 2) {
+  if(valid(m,p,q,n,D,S) && (q == 1 || q == 2) && ((n <= 2 && L % 2 == 0 && M % 2 == 0 && m%2 == 0 && (p % 2 == 0 || p == 1)) || !rcm2)) {//&& L % 2 == 0 && m % 2 == 0 && p != 2 && D <= 2 && n <= 2) {
     if(useTimer) {
       double t=time(L,M,app,C,S,m,D,inplace);
       if(showOptTimes)
