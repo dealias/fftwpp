@@ -71,95 +71,56 @@ void multBinaryEP(Complex **F, size_t n, Indices *indices, size_t threads)
 
   Complex *zeta=rcmInd.zeta(fft->ZetaRCM, fft->p);
 
+  size_t k0=0;
   if(r == 0) {
+    k0=1;
     F0[0]=real(F0[0])+imag(F0[0])+I*(real(F0[0])-imag(F0[0]));
     F1[0]=real(F1[0])+imag(F1[0])+I*(real(F1[0])-imag(F1[0]));
+  }
 
-    // size_t i0=0;
-    for(size_t k=1; k < n/2; ++k) {
-      size_t i=k;
-      size_t j;
-      rcmInd.setIndices(i,j);
-      Complex A=0.5*(F0[i]+conj(F0[j]));
-      Complex B=0.5*I*(F0[i]-conj(F0[j]))*zeta[i];
-      F0[i]=A-B;
-      F0[j]=conj(A+B);
+  for(size_t k=k0; k < n/2; ++k) {
+    size_t i=k;
+    size_t j;
+    rcmInd.setIndices(i,j);
+    Complex A=0.5*(F0[i]+conj(F0[j]));
+    Complex B=0.5*I*(F0[i]-conj(F0[j]))*zeta[i];
+    F0[i]=A-B;
+    F0[j]=conj(A+B);
 
-      Complex C=0.5*(F1[i]+conj(F1[j]));
-      Complex D=0.5*I*(F1[i]-conj(F1[j]))*zeta[i];
-      F1[i]=C-D;
-      F1[j]=conj(C+D);
-    }
+    Complex C=0.5*(F1[i]+conj(F1[j]));
+    Complex D=0.5*I*(F1[i]-conj(F1[j]))*zeta[i];
+    F1[i]=C-D;
+    F1[j]=conj(C+D);
+  }
 
+  if(r == 0)
     F0[0]=real(F0[0])*real(F1[0])+I*imag(F0[0])*imag(F1[0]);
 
-    PARALLELIF(
-      n > threshold,
-      for(size_t j=1; j < n; ++j)
-        F0[j] *= F1[j];
-      );
+  PARALLELIF(
+    n > threshold,
+    for(size_t j=k0; j < n; ++j)
+      F0[j] *= F1[j];
+    );
 
+  if(r == 0)
     F0[0]=0.5*(1+I)*conj(F0[0]);
 
-    for(unsigned k=1; k < n/2; ++k) {
-      size_t i=k;
-      size_t j;
-      rcmInd.setIndices(i,j);
-      Complex A=0.5*(F0[i]+conj(F0[j]));
-      Complex B=0.5*I*(F0[i]-conj(F0[j]))*conj(zeta[i]);
-      F0[i]=A+B;
-      F0[j]=conj(A-B);
+  for(unsigned k=k0; k < n/2; ++k) {
+    size_t i=k;
+    size_t j;
+    rcmInd.setIndices(i,j);
+    Complex A=0.5*(F0[i]+conj(F0[j]));
+    Complex B=0.5*I*(F0[i]-conj(F0[j]))*conj(zeta[i]);
+    F0[i]=A+B;
+    F0[j]=conj(A-B);
 
 
       // Complex A=0.5*(F0[k]+conj(F0[n-k]));
       // Complex B=0.5*I*(F0[k]-conj(F0[n-k]))*conj(zeta[k]);
       // F0[k]=A+B;
       // F0[n-k]=conj(A-B);
-    }
-  } else if(r == 1) {
-    // size_t i0=0;
-    for(size_t k=0; k < n/2; ++k) {
-      size_t i=k;
-      size_t j;
-      rcmInd.setIndices(i,j);
-      Complex A=0.5*(F0[i]+conj(F0[j]));
-      Complex B=0.5*I*(F0[i]-conj(F0[j]))*zeta[i];
-      F0[i]=A-B;
-      F0[j]=conj(A+B);
-
-      Complex C=0.5*(F1[i]+conj(F1[j]));
-      Complex D=0.5*I*(F1[i]-conj(F1[j]))*zeta[i];
-      F1[i]=C-D;
-      F1[j]=conj(C+D);
-    }
-
-    PARALLELIF(
-      n > threshold,
-      for(size_t j=0; j < n; ++j)
-        F0[j] *= F1[j];
-      );
-
-    // F0[0]=0.5*(1+I)*conj(F0[0]);
-
-    for(unsigned k=0; k < n/2; ++k) {
-      size_t i=k;
-      size_t j;
-      rcmInd.setIndices(i,j);
-      Complex A=0.5*(F0[i]+conj(F0[j]));
-      Complex B=0.5*I*(F0[i]-conj(F0[j]))*conj(zeta[i]);
-      F0[i]=A+B;
-      F0[j]=conj(A-B);
-
-
-      // Complex A=0.5*(F0[k]+conj(F0[n-k]));
-      // Complex B=0.5*I*(F0[k]-conj(F0[n-k]))*conj(zeta[k]);
-      // F0[k]=A+B;
-      // F0[n-k]=conj(A-B);
-    }
-
   }
 }
-
 // Common 1D multBinaryRCM
 void multBinaryRCM(Complex **F, size_t n, Indices *indices, size_t threads, bool first_call)
 {
