@@ -80,8 +80,6 @@ void multBinaryEP(Complex **F, size_t n, Indices *indices, size_t threads)
       size_t i=k;
       size_t j;
       rcmInd.setIndices(i,j);
-      cout << "i=" << i << endl;
-      cout << "j=" << j << endl;
       Complex A=0.5*(F0[i]+conj(F0[j]));
       Complex B=0.5*I*(F0[i]-conj(F0[j]))*zeta[i];
       F0[i]=A-B;
@@ -92,7 +90,6 @@ void multBinaryEP(Complex **F, size_t n, Indices *indices, size_t threads)
       F1[i]=C-D;
       F1[j]=conj(C+D);
     }
-    cout << endl;
 
     F0[0]=real(F0[0])*real(F1[0])+I*imag(F0[0])*imag(F1[0]);
 
@@ -125,8 +122,6 @@ void multBinaryEP(Complex **F, size_t n, Indices *indices, size_t threads)
       size_t i=k;
       size_t j;
       rcmInd.setIndices(i,j);
-      cout << "i=" << i << endl;
-      cout << "j=" << j << endl;
       Complex A=0.5*(F0[i]+conj(F0[j]));
       Complex B=0.5*I*(F0[i]-conj(F0[j]))*zeta[i];
       F0[i]=A-B;
@@ -137,8 +132,6 @@ void multBinaryEP(Complex **F, size_t n, Indices *indices, size_t threads)
       F1[i]=C-D;
       F1[j]=conj(C+D);
     }
-    cout << endl;
-
 
     PARALLELIF(
       n > threshold,
