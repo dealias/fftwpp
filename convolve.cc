@@ -56,7 +56,6 @@ void multBinary(Complex **F, size_t n, Indices *indices,
     );
 }
 
-
 // Common 1D multBinaryRCM
 void multBinaryRCM(Complex **F, size_t n, Indices *indices, size_t threads, bool first_call)
 {

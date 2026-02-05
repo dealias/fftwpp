@@ -53,6 +53,9 @@ real d=1;
 if(find(dir,"2-") >= 0) d=2;
 if(find(dir,"3-") >= 0) d=3;
 
+real T=1;
+if(find(dir,"-T8") >= 0) T=8;
+
 bool rcm=d <= 3 && realConv;
 
 if(expl) {
@@ -221,7 +224,7 @@ h *= nh;
 //lh *= nh;
 if(drawerrorbars)
   errorbars(mh,h,0*mh,hh-h,0*mh,h-lh,Pen(1));
-draw(graph(mh,h,h > 0),Pentype(1),Label("hybrid (symmetries)",Pen(1)+Lp),mark1);
+draw(graph(mh,h,h > 0),Pentype(1),Label("hybridCS",Pen(1)+Lp),mark1);
 
 if(rcm) {
   real[] nrcm=f(mrc);
@@ -232,7 +235,7 @@ if(rcm) {
   // if(drawerrorbars)
   //   errorbars(mhe,o,0*mhe,ho-o,0*mhe,o-lo,Pen(3));
   // draw(graph(mhe,he,he > 0),Pentype(2),Label("rcm (heuristic)",Pen(2)+Lp),mark2);
-  draw(graph(mrc,rc,rc > 0),Pentype(2),Label("hybrid (packing)",Pen(2)+Lp),mark2);
+  draw(graph(mrc,rc,rc > 0),Pentype(2),Label("hybridIP",Pen(2)+Lp),mark2);
 }
 
 if(title)
@@ -248,10 +251,20 @@ legendlinelength=0.6cm;
 legendmargin=4;
 attach(legend(),point(NE),15SW+1N);
 
+bool showRun=true;
+if(showRun) {
+  write("d="+(string) d+", T="+(string) T);
+}
+
 real mean(real[] a){return sum(a)/a.length;};
 if(expl) {
   int len=min(e.length,h.length);
-  write("explicit vs hybrid speedup="+(string)(mean(e[:len]/h[:len])));
+  real [] speedup=e[:len]/h[:len];
+  write("average hybrid speedup (over explicit): "+(string)(mean(speedup)));
+  write("max hybrid speedup (over explicit): "+(string)(max(speedup)));
+  write("min hybrid speedup (over explicit): "+(string)(min(speedup)));
+  write("max explicit speedup (over hybrid): "+(string)(max(h[:len]/e[:len])));
+  write();
 }
 if(hybridroe) {
   int len=min(he.length,h.length);
@@ -259,9 +272,17 @@ if(hybridroe) {
 }
 if(rcm) {
   int len=min(h.length,rc.length);
-  write("hybrid vs rcm speedup="+(string)(mean(h[:len]/rc[:len])));
+  real [] speedup=h[:len]/rc[:len];
+  write("average rcm speedup (over hybrid): "+(string)(mean(speedup)));
+  write("max rcm speedup (over hybrid): "+(string)(max(speedup)));
+  write("min rcm speedup (over hybrid): "+(string)(min(speedup)));
   len=min(e.length,rc.length);
-  write("explicit vs rcm speedup="+(string)(mean(e[:len]/rc[:len])));
+  write();
+  speedup=e[:len]/rc[:len];
+  write("average rcm speedup (over explicit): "+(string)(mean(speedup)));
+  write("max rcm speedup (over explicit): "+(string)(max(speedup)));
+  write("min rcm speedup (over explicit): "+(string)(min(speedup)));
+
 }
 write();
 if(!settings.xasy) {
