@@ -122,7 +122,7 @@ def send_email(subject:str,content:str):
     from email.message import EmailMessage
     from dotenv import load_dotenv
     # Load credentials and settings from .env
-    load_dotenv()
+    load_dotenv(override=True)
     SMTP_SERVER = os.getenv("SMTP_SERVER")
     SMTP_PORT   = int(os.getenv("SMTP_PORT", 587))
     SMTP_USER   = os.getenv("SMTP_USER")
@@ -134,12 +134,15 @@ def send_email(subject:str,content:str):
     msg["To"] = TO_EMAIL
     msg["Subject"] = subject
     msg.set_content(content)
-
-    with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-        server.starttls()
-        server.login(SMTP_USER, SMTP_PASS)
-        server.send_message(msg)
-
+    try:
+      with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10) as server:
+          server.ehlo()            # Identify to server
+          server.starttls()        # Upgrade to secure connection
+          server.ehlo()
+          server.login(SMTP_USER, SMTP_PASS)
+          server.send_message(msg)
+    except Exception as e:
+      print("SMTP error:", e)
 
 
 class Progress:

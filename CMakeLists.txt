@@ -94,7 +94,7 @@ set(FFTW_LIBS fftw3 fftw3_omp m ${OpenMP_CXX_LIBRARIES} CACHE INTERNAL "FFTW lib
 set(FFTW_LIBS fftw3 fftw3_omp m ${OpenMP_CXX_LIBRARIES} CACHE INTERNAL "FFTW libraries")
 
 set(FFTW_SOURCES fftw++.cc parallel.cc)
-set(HYBRID_SOURCES ${FFTW_SOURCES} convolve.cc tests/direct.cc tests/options.cc)
+set(HYBRID_SOURCES convolve.cc tests/direct.cc tests/options.cc)
 
 add_library(fftw_helpers STATIC ${FFTW_SOURCES})
 add_library(hybrid_helpers STATIC ${HYBRID_SOURCES})
@@ -136,7 +136,7 @@ if(MPI OR MPI_FFTW OR ALL)
   include_directories(SYSTEM ${MPI_CXX_INCLUDE_PATH})
 
   set(FFTW_MPI_SOURCES fftw++.cc parallel.cc mpi/mpitranspose.cc mpi/mpifftw++.cc)
-  set(HYBRID_MPI_SOURCES ${FFTW_MPI_SOURCES} convolve.cc mpi/mpiconvolve.cc tests/options.cc)
+  set(HYBRID_MPI_SOURCES convolve.cc mpi/mpiconvolve.cc tests/options.cc)
 
   add_library(fftw_mpi_helpers STATIC ${FFTW_MPI_SOURCES})
   add_library(hybrid_mpi_helpers STATIC ${HYBRID_MPI_SOURCES})
