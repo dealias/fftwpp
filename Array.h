@@ -18,7 +18,7 @@
 #ifndef __Array_h__
 #define __Array_h__ 1
 
-#define __ARRAY_H_VERSION__ 1.58
+#define __ARRAY_H_VERSION__ 1.59
 
 // Defining NDEBUG improves optimization but disables argument checking.
 // Defining __NOARRAY2OPT inhibits special optimization of Array2[].
@@ -100,6 +100,17 @@ inline void free0(void *p)
 }
 
 template<class T>
+inline void deleteAlign(T *v, size_t len)
+{
+  for(size_t i=len; i > 0;) v[--i].~T();
+#ifdef HAVE_POSIX_MEMALIGN
+  free(v);
+#else
+  free0(v);
+#endif
+}
+
+template<class T>
 inline void newAlign(T *&v, size_t len, size_t align)
 {
   void *mem=NULL;
@@ -113,19 +124,14 @@ inline void newAlign(T *&v, size_t len, size_t align)
   if(rc == EINVAL) Array::ArrayExit(invalid);
   if(rc == ENOMEM) Array::ArrayExit(nomem);
   v=(T *) mem;
-  for(size_t i=0; i < len; i++) new(v+i) T;
-}
-
-template<class T>
-inline void deleteAlign(T *v, size_t len)
-{
-  for(size_t i=len-1; i > 0; i--) v[i].~T();
-  v[0].~T();
-#ifdef HAVE_POSIX_MEMALIGN
-  free(v);
-#else
-  free0(v);
-#endif
+  size_t i=0;
+  try {
+    for(; i < len; i++) new(v+i) T;
+  } catch(...) {
+    deleteAlign(v,i);
+    v=NULL;
+    throw;
+  }
 }
 
 #endif

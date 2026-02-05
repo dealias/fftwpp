@@ -37,6 +37,7 @@ int main(int argc, char *argv[])
   cout << endl << "Optimal Explicit:" << endl;
   Application appE(app);
   appE.D=1;
+  appE.m=0;
   fftPad *fft1=Centered ? new fftPadCentered(L,M,appE,C,S,true) :
     new fftPad(L,M,appE,C,S,true);
 

@@ -34,6 +34,7 @@ int main(int argc, char *argv[])
   cout << endl << "Optimal Explicit:" << endl;
   Application appE(app);
   appE.D=1;
+  appE.m=0;
   fftPadHermitian fft1(L,M,appE,C,true);
   double median1=min(median0,fft1.report());
 
