@@ -38,8 +38,8 @@ extern bool showRoutines;
 const Complex I(0.0,1.0);
 
 // TODO: FIXME
-const bool rcm3=true;
-const bool rcm2=true; // rcm2 must be true if rcm3 is true
+const bool rcm3=false;
+const bool rcm2=false; // rcm2 must be true if rcm3 is true
 
 const bool allow_overwrite=true;
 const bool allow_loop2=true;
@@ -168,7 +168,7 @@ typedef void multiplier(Complex **F, size_t n,
 
 // Multiplication routines for binary convolutions that take two inputs.
 multiplier multNone,multBinary,realMultBinary,multcorrelation,
-  multBinaryRCM,multBinaryRCM2;
+  multBinaryRCM,multBinaryRCM2,multBinaryEP;
 
 class Application : public ThreadBase
 {

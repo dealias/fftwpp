@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
 
   vector<double> T;
 
-  Application app(A,B,multBinaryRCM,fftw::maxthreads,true,mx,Dx,Ix);
+  Application app(A,B,multBinaryEP,fftw::maxthreads,true,mx,Dx,Ix);
   fftPad *fft=new fftPad(L/2,M/2,app);
   Convolution Convolve(fft);
 
