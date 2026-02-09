@@ -652,11 +652,11 @@ def main(argv):
                     mcmd=cmd+["-L"+str(L)]+["-M"+str(M)]
                     if rcm and runtype == "explicit":
                         if dimension == 1:
-                            mcmd+=["-m"+str(ceilquotient(M,2))]
+                            mcmd+=["-m="+str(ceilquotient(M,2))]
                         elif dimension == 2:
-                            mcmd+=["-mx"+str(M),"-my"+str(ceilquotient(M,2))]
+                            mcmd+=["-mx="+str(M),"-my="+str(ceilquotient(M,2))]
                         elif dimension == 3:
-                            mcmd+=["-mx"+str(M),"-my"+str(M),"-mz"+str(ceilquotient(M,2))]
+                            mcmd+=["-mx="+str(M),"-my="+str(M),"-mz="+str(ceilquotient(M,2))]
                 elif direct:
                     mcmd=cmd+["-L"+str(L)]
                 elif not roe:

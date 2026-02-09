@@ -78,7 +78,6 @@ void multBinaryRCM(Complex **F, size_t n, Indices *indices, size_t threads, bool
   size_t b=n/2;
   rcmIndex rcmInd=rcmIndex(r,b,fft->q,fft->m);
   Complex *zeta=rcmInd.zeta(fft->ZetaRCM, fft->p);
-
   size_t i0=0;
   if(r == 0) {
     size_t half=rcmInd.half();
