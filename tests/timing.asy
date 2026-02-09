@@ -6,7 +6,7 @@ bool drawerrorbars=true;
 drawerrorbars=false;
 
 
-
+real[] mercm,ercm;
 real[] me,e;
 real[] mb,b;
 real[] mhe, he;
@@ -57,6 +57,7 @@ real T=1;
 if(find(dir,"-T8") >= 0) T=8;
 
 bool rcm=d <= 3 && realConv;
+bool explicit_rcm=realConv;
 
 if(expl) {
   file fin=input(base+"/"+dir+"/explicit").line();
@@ -108,6 +109,15 @@ if(rcm) {
     real[][] a=fin.dimension(0,0);
     a=transpose(sort(a));
     mrc=a[0]; rc=a[1];
+  }
+}
+
+if(explicit_rcm) {
+  file fin=input(base+"/"+dir+"/explicit_rcm").line();
+  if(!error(fin)) {
+    real[][] a=fin.dimension(0,0);
+    a=transpose(sort(a));
+    mercm=a[0]; ercm=a[1];
   }
 }
 
@@ -235,7 +245,19 @@ if(rcm) {
   // if(drawerrorbars)
   //   errorbars(mhe,o,0*mhe,ho-o,0*mhe,o-lo,Pen(3));
   // draw(graph(mhe,he,he > 0),Pentype(2),Label("rcm (heuristic)",Pen(2)+Lp),mark2);
-  draw(graph(mrc,rc,rc > 0),Pentype(2),Label("hybridIP",Pen(2)+Lp),mark2);
+  draw(graph(mrc,rc,rc > 0),Pentype(2),Label("hybridRCM",Pen(2)+Lp),mark2);
+}
+
+if(explicit_rcm) {
+  real[] nercm=f(mercm);
+  mercm=g(mercm);
+  ercm *= nercm;
+  //ho *= no;
+  //lo *= no;
+  // if(drawerrorbars)
+  //   errorbars(mhe,o,0*mhe,ho-o,0*mhe,o-lo,Pen(3));
+  // draw(graph(mhe,he,he > 0),Pentype(2),Label("rcm (heuristic)",Pen(2)+Lp),mark2);
+  draw(graph(mercm,ercm,ercm > 0),Pentype(3),Label("explicitRCM",Pen(3)+Lp),mark3);
 }
 
 if(title)
