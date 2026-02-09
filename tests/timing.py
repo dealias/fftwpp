@@ -485,7 +485,7 @@ def main(argv):
         if dimension == 1:
             if runtype == "explicito":
                 cmd.append("-I0")
-            elif runtype == "explicit":
+            elif runtype == "explicit" and not rcm:
                 cmd.append("-I1")
         if hybrid:
             cmd.append("-R")
