@@ -387,8 +387,13 @@ def main(argv):
                 outfile="hybridroe"+fileExt
                 optFile=outdir+os.sep+"hybridroeParams"+fileExt
             elif rcm:
-                outfile="rcm"+fileExt
-                optFile=outdir+os.sep+"rcmParams"+fileExt
+                if runtype == "explicit":
+                    outfile="explicit_rcm"+fileExt
+                    optFile=outdir+os.sep+"explicit_rcmParams"+fileExt
+                else:
+                    outfile="rcm"+fileExt
+                    optFile=outdir+os.sep+"rcmParams"+fileExt
+
             else:
                 outfile = "hybrid"+fileExt
                 optFile=outdir+os.sep+"hybridParams"+fileExt
@@ -567,6 +572,7 @@ def main(argv):
                 M = 3*m-2
 
             print(str(i) + " m=" + str(m))
+
             options=[]
             if hybrid:
               if dimension == 2:
@@ -641,8 +647,11 @@ def main(argv):
                                     logfile.write("# Optimal values for "+p+"\n")
                                     logfile.write(hybridParamsMessage)
                 # mcmd=cmd
+
                 if hybrid:
-                    mcmd=cmd+["-L"+str(L)]+["-M"+str(M)]#["-Lx="+str(L//2)]+["-Mx="+str(M//2)]+["-Ly="+str(L)]+["-My="+str(M)]
+                    mcmd=cmd+["-L"+str(L)]+["-M"+str(M)]
+                    if rcm and runtype == "explicit":
+                        mcmd+=["-m"+str(M)]
                 elif direct:
                     mcmd=cmd+["-L"+str(L)]
                 elif not roe:

@@ -19,7 +19,10 @@ def main():
   two=args.two
   three=args.three
 
-  rcm=args.rcm
+  ercm=args.ercm
+
+  rcm=args.rcm or ercm
+
   if rcm:
     R=True
     H=False
@@ -90,7 +93,8 @@ def gettime(args,dim,Hermitian,real,T):
   dimString=str(dim) if dim > 1 else ""
   new="hybridconv"
   old="conv"
-  rcm=args.rcm
+  ercm=args.ercm
+  rcm=args.rcm or ercm
 
   if rcm:
     runtype="hybrid"
@@ -123,9 +127,12 @@ def gettime(args,dim,Hermitian,real,T):
     else:
       callTiming(args,old,erase,taskset,runtype)
   elif runtype == "hybrid":
-    callTiming(args,new,erase,taskset)
-    if real and dim >= 2 and not rcm:
-      callTiming(args,new[:-1]+"roe"+dimString,erase,taskset)
+    if ercm:
+      callTiming(args,new,erase,taskset,"explicit")
+    else:
+      callTiming(args,new,erase,taskset)
+    # if real and dim >= 2 and not rcm:
+      # callTiming(args,new[:-1]+"roe"+dimString,erase,taskset)
     if Hermitian and I == 0: # Why?
       callTiming(args,new,erase,taskset,"explicit")
   elif runtype == None:
@@ -165,6 +172,7 @@ def getArgs():
   parser.add_argument("-r",help="runtype: implicit, explicit, or hybrid. Not specifying does all of them.", type=str)
   parser.add_argument("-R", help="Test Real convolutions. Not specifying S, H, or R is the same as specifying both.", action="store_true")
   parser.add_argument("--rcm", help="Test rcm convolutions.", action="store_true")
+  parser.add_argument("--ercm", help="Test explicit rcm convolutions.", action="store_true")
   parser.add_argument("-S", help="Test Standard convolutions. Not specifying S, H, or R is the same as specifying both.",
                       action="store_true")
   parser.add_argument("-T",metavar='threads',help="Number of threads. Not specifying, runs T=1 and T=$OMP_NUM_THREADS", default=0, type=int)
