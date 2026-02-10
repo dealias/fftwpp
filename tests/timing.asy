@@ -164,7 +164,7 @@ if(expl) {
   //le *= ne;
   // if(drawerrorbars)
   //   errorbars(me,e,0*me,he-e,0*me,e-le,Pen(0));
-  draw(graph(me,e,e > 0),Pentype(0),Label("explicit"+(explicito ? " (IP)" : ""),Pen(0)+Lp),mark0);
+  draw(graph(me,e,e > 0),Pentype(0),Label("\texttt{explicit}"+(explicito ? " (IP)" : ""),Pen(0)+Lp),mark0);
 
 
   if(pruned) {
@@ -234,7 +234,7 @@ h *= nh;
 //lh *= nh;
 if(drawerrorbars)
   errorbars(mh,h,0*mh,hh-h,0*mh,h-lh,Pen(1));
-draw(graph(mh,h,h > 0),Pentype(1),Label("hybridCS",Pen(1)+Lp),mark1);
+draw(graph(mh,h,h > 0),Pentype(1),Label("\texttt{hybridCS}",Pen(1)+Lp),mark1);
 
 if(rcm) {
   real[] nrcm=f(mrc);
@@ -245,7 +245,7 @@ if(rcm) {
   // if(drawerrorbars)
   //   errorbars(mhe,o,0*mhe,ho-o,0*mhe,o-lo,Pen(3));
   // draw(graph(mhe,he,he > 0),Pentype(2),Label("rcm (heuristic)",Pen(2)+Lp),mark2);
-  draw(graph(mrc,rc,rc > 0),Pentype(2),Label("hybridRCM",Pen(2)+Lp),mark2);
+  draw(graph(mrc,rc,rc > 0),Pentype(2),Label("\texttt{hybridRCM}",Pen(2)+Lp),mark2);
 }
 
 if(explicit_rcm) {
@@ -257,7 +257,7 @@ if(explicit_rcm) {
   // if(drawerrorbars)
   //   errorbars(mhe,o,0*mhe,ho-o,0*mhe,o-lo,Pen(3));
   // draw(graph(mhe,he,he > 0),Pentype(2),Label("rcm (heuristic)",Pen(2)+Lp),mark2);
-  draw(graph(mercm,ercm,ercm > 0),Pentype(3),Label("explicitRCM",Pen(3)+Lp),mark3);
+  draw(graph(mercm,ercm,ercm > 0),Pentype(3),Label("\texttt{explicitRCM}",Pen(3)+Lp),mark3);
 }
 
 if(title)
