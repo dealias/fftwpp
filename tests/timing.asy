@@ -31,7 +31,7 @@ bool realConv=find(dir,"timingsr") >= 0;
 //      incremental ? 215 : 185,IgnoreAspect);
 
 size(incremental ? 370.4pt : 181.5pt,
-     incremental ? 215 : 185,IgnoreAspect);
+     incremental ? 215 : 190,IgnoreAspect);
 scaleT yscale;
 
 if(incremental) {
@@ -148,7 +148,7 @@ marker mark1=marker(g1,Draw(Pen(1)+solid));
 marker mark2=marker(g2,Draw(Pen(2)+solid));
 marker mark3=marker(g3,Draw(Pen(3)+solid));
 
-pen Lp=fontsize(8pt);
+pen Lp=fontsize(7pt);
 
 real log2=log(2);
 real[] f(real[] m) {return log2/(1e-9*m*log(m));}
@@ -271,7 +271,14 @@ yaxis("time/($"+sd+"L"+D+"\log_2 L$) (ns)",LeftRight,RightTicks("%#.1f"));
 
 legendlinelength=0.6cm;
 legendmargin=4;
-attach(legend(),point(NE),15SW+1N);
+
+if((d == 1 && T == 1) || d == 2) {
+  attach(legend(),point(NW),15SE+1N);
+} else if(d == 1 && T == 8) {
+  attach(legend(),point(NE),15SW+1N);
+} else {
+  attach(legend(),point(NE),35SW+20S);
+}
 
 bool showRun=true;
 if(showRun) {
