@@ -275,7 +275,7 @@ legendmargin=4;
 if((d == 1 && T == 1) || d == 2) {
   attach(legend(),point(NW),15SE+1N);
 } else if(d == 1 && T == 8) {
-  attach(legend(),point(NE),15SW+1N);
+  attach(legend(),point(SW),15NE+1N);
 } else {
   attach(legend(),point(NE),35SW+20S);
 }
@@ -313,6 +313,28 @@ if(rcm) {
   write("min rcm speedup (over explicit): "+(string)(min(speedup)));
 
 }
+
+if(explicit_rcm) {
+  int len=min(h.length,ercm.length);
+  real [] speedup=h[:len]/ercm[:len];
+  write();
+  write("average ercm speedup (over hybrid): "+(string)(mean(speedup)));
+  write("max ercm speedup (over hybrid): "+(string)(max(speedup)));
+  write("min ercm speedup (over hybrid): "+(string)(min(speedup)));
+  len=min(e.length,ercm.length);
+  write();
+  speedup=e[:len]/ercm[:len];
+  write("average ercm speedup (over explicit): "+(string)(mean(speedup)));
+  write("max ercm speedup (over explicit): "+(string)(max(speedup)));
+  write("min ercm speedup (over explicit): "+(string)(min(speedup)));
+  len=min(ercm.length,rc.length);
+  write();
+  speedup=ercm[:len]/rc[:len];
+  write("average rcm speedup (over ercm): "+(string)(mean(speedup)));
+  write("max rcm speedup (over ercm): "+(string)(max(speedup)));
+  write("min rcm speedup (over ercm): "+(string)(min(speedup)));
+}
+
 write();
 if(!settings.xasy) {
   shipout(dir);
