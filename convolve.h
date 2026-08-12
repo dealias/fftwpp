@@ -1489,11 +1489,13 @@ public:
         subconvolution(F,0);
         size_t C=A-B;
         size_t a=0;
-        for(; a+C <= B; a += C) {
-          forward(f,Fp,r,a,a+C,offset);
-          backward(F,f,0,a,a+C,offset,W0);
+        while(a < B) {
+          size_t stop=std::min(a+C,B);
+          forward(f,Fp,r,a,stop,offset);
+          backward(F,f,0,a,stop,offset,W0);
+          a=stop;
         }
-        forward(f,Fp,r,a,A,offset);
+        forward(f,Fp,r,B,A,offset);
         subconvolution(Fp,r);
         backward(Fp,f,r,0,B,offset,W0);
       } else {
@@ -1826,11 +1828,13 @@ public:
         subconvolution(F,0);
         size_t C=A-B;
         size_t a=0;
-        for(; a+C <= B; a += C) {
-          forward(f,Fp,r,a,a+C,offset);
-          backward(F,f,0,a,a+C,offset,W0);
+        while(a < B) {
+          size_t stop=std::min(a+C,B);
+          forward(f,Fp,r,a,stop,offset);
+          backward(F,f,0,a,stop,offset,W0);
+          a=stop;
         }
-        forward(f,Fp,r,a,A,offset);
+        forward(f,Fp,r,B,A,offset);
         subconvolution(Fp,r);
         backward(Fp,f,r,0,B,offset,W0);
       } else {

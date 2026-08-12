@@ -7540,11 +7540,13 @@ void Convolution::convolveRaw(Complex **g)
         operate(F,0,&indices);
         size_t C=A-B;
         size_t a=0;
-        for(; a+C <= B; a += C) {
-          forward(g,Fp,r,a,a+C);
-          backwardPad(F,g,0,a,a+C,W0);
+        while(a < B) {
+          size_t stop=std::min(a+C,B);
+          forward(g,Fp,r,a,stop);
+          backwardPad(F,g,0,a,stop,W0);
+          a=stop;
         }
-        forward(g,Fp,r,a,A);
+        forward(g,Fp,r,B,A);
         operate(Fp,r,&indices);
         backwardPad(Fp,g,r,0,B,W0);
       } else {
