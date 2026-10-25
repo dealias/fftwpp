@@ -1,0 +1,301 @@
+# Optimal values for hybridconvr
+#
+#
+# Run on 2026-02-09  12:06:58-PST using commit 1a185f4 (2026-01-22):
+#
+# 2026-02-09  12:07:12-PST
+# taskset -c 0-15 ./hybridconvr -S0 -T8 -R -s5.0 -u -L32 -M64
+m=64
+p=1
+q=1
+C=1
+S=1
+D=1
+I=1
+fftPadReal::forwardExplicit
+fftPadReal::backwardExplicit
+#
+# 2026-02-09  12:07:23-PST
+# taskset -c 0-15 ./hybridconvr -S0 -T8 -R -s5.0 -u -L64 -M128
+m=128
+p=1
+q=1
+C=1
+S=1
+D=1
+I=0
+fftPadReal::forwardExplicit
+fftPadReal::backwardExplicit
+#
+# 2026-02-09  12:07:31-PST
+# taskset -c 0-15 ./hybridconvr -S0 -T8 -R -s5.0 -u -L128 -M256
+m=256
+p=1
+q=1
+C=1
+S=1
+D=1
+I=0
+fftPadReal::forwardExplicit
+fftPadReal::backwardExplicit
+#
+# 2026-02-09  12:07:38-PST
+# taskset -c 0-15 ./hybridconvr -S0 -T8 -R -s5.0 -u -L256 -M512
+m=256
+p=1
+q=2
+C=1
+S=1
+D=1
+I=0
+fftPadReal::forward1
+fftPadReal::backward1
+#
+# 2026-02-09  12:07:44-PST
+# taskset -c 0-15 ./hybridconvr -S0 -T8 -R -s5.0 -u -L512 -M1024
+m=512
+p=1
+q=2
+C=1
+S=1
+D=1
+I=0
+fftPadReal::forward1
+fftPadReal::backward1
+#
+# 2026-02-09  12:07:49-PST
+# taskset -c 0-15 ./hybridconvr -S0 -T8 -R -s5.0 -u -L1024 -M2048
+m=1024
+p=1
+q=2
+C=1
+S=1
+D=1
+I=0
+fftPadReal::forward1
+fftPadReal::backward1
+#
+# 2026-02-09  12:07:54-PST
+# taskset -c 0-15 ./hybridconvr -S0 -T8 -R -s5.0 -u -L2048 -M4096
+m=2048
+p=1
+q=2
+C=1
+S=1
+D=1
+I=0
+fftPadReal::forward1
+fftPadReal::backward1
+#
+# 2026-02-09  12:08:00-PST
+# taskset -c 0-15 ./hybridconvr -S0 -T8 -R -s5.0 -u -L4096 -M8192
+m=4096
+p=1
+q=2
+C=1
+S=1
+D=1
+I=0
+fftPadReal::forward1
+fftPadReal::backward1
+#
+# 2026-02-09  12:08:05-PST
+# taskset -c 0-15 ./hybridconvr -S0 -T8 -R -s5.0 -u -L8192 -M16384
+m=8192
+p=1
+q=2
+C=1
+S=1
+D=1
+I=0
+fftPadReal::forward1
+fftPadReal::backward1
+#
+# 2026-02-09  12:08:10-PST
+# taskset -c 0-15 ./hybridconvr -S0 -T8 -R -s5.0 -u -L16384 -M32768
+m=8192
+p=2
+q=4
+C=1
+S=1
+D=1
+I=1
+fftPadReal::forward2
+fftPadReal::backward2
+#
+# 2026-02-09  12:08:16-PST
+# taskset -c 0-15 ./hybridconvr -S0 -T8 -R -s5.0 -u -L32768 -M65536
+m=65536
+p=1
+q=1
+C=1
+S=1
+D=1
+I=0
+fftPadReal::forwardExplicit
+fftPadReal::backwardExplicit
+#
+# 2026-02-09  12:08:23-PST
+# taskset -c 0-15 ./hybridconvr -S0 -T8 -R -s5.0 -u -L65536 -M131072
+m=65536
+p=1
+q=2
+C=1
+S=1
+D=1
+I=0
+fftPadReal::forward1
+fftPadReal::backward1
+#
+# 2026-02-09  12:08:31-PST
+# taskset -c 0-15 ./hybridconvr -S0 -T8 -R -s5.0 -u -L131072 -M262144
+m=131072
+p=1
+q=2
+C=1
+S=1
+D=1
+I=0
+fftPadReal::forward1
+fftPadReal::backward1
+#
+# 2026-02-09  12:08:41-PST
+# taskset -c 0-15 ./hybridconvr -S0 -T8 -R -s5.0 -u -L262144 -M524288
+m=262144
+p=1
+q=2
+C=1
+S=1
+D=1
+I=1
+fftPadReal::forward1
+fftPadReal::backward1
+#
+# 2026-02-09  12:08:50-PST
+# taskset -c 0-15 ./hybridconvr -S0 -T8 -R -s5.0 -u -L524288 -M1048576
+m=262144
+p=2
+q=4
+C=1
+S=1
+D=1
+I=1
+fftPadReal::forward2
+fftPadReal::backward2
+#
+# 2026-02-09  12:09:01-PST
+# taskset -c 0-15 ./hybridconvr -S0 -T8 -R -s5.0 -u -L1048576 -M2097152
+m=1048576
+p=1
+q=2
+C=1
+S=1
+D=1
+I=0
+fftPadReal::forward1
+fftPadReal::backward1
+#
+# 2026-02-09  12:09:27-PST
+# taskset -c 0-15 ./hybridconvr -S0 -T8 -R -s5.0 -u -L2097152 -M4194304
+m=2097152
+p=1
+q=2
+C=1
+S=1
+D=1
+I=0
+fftPadReal::forward1
+fftPadReal::backward1
+#
+# 2026-02-09  12:10:23-PST
+# taskset -c 0-15 ./hybridconvr -S0 -T8 -R -s5.0 -u -L4194304 -M8388608
+m=4194304
+p=1
+q=2
+C=1
+S=1
+D=1
+I=0
+fftPadReal::forward1
+fftPadReal::backward1
+#
+#
+# Run on 2026-02-09  14:08:05-PST using commit 1a185f4 (2026-01-22):
+#
+# 2026-02-09  14:10:08-PST
+# taskset -c 0-15 ./hybridconvr -S0 -T8 -R -s5.0 -u -L8388608 -M16777216
+m=8388608
+p=1
+q=2
+C=1
+S=1
+D=1
+I=0
+fftPadReal::forward1
+fftPadReal::backward1
+#
+# 2026-02-09  14:13:59-PST
+# taskset -c 0-15 ./hybridconvr -S0 -T8 -R -s5.0 -u -L16777216 -M33554432
+m=16777216
+p=1
+q=2
+C=1
+S=1
+D=1
+I=0
+fftPadReal::forward1
+fftPadReal::backward1
+#
+# 2026-02-09  15:01:01-PST
+# taskset -c 0-15 ./hybridconvr -S0 -T8 -R -s5.0 -u -L33554432 -M67108864
+m=33554432
+p=1
+q=2
+C=1
+S=1
+D=1
+I=0
+fftPadReal::forward1
+fftPadReal::backward1
+#
+#
+# Run on 2026-02-10  11:03:45-PST using commit 1a185f4 (2026-01-22):
+#
+# 2026-02-10  12:53:58-PST
+# taskset -c 0-15 ./hybridconvr -S0 -T8 -R -s5.0 -u -L67108864 -M134217728
+m=67108864
+p=1
+q=2
+C=1
+S=1
+D=1
+I=0
+fftPadReal::forward1
+fftPadReal::backward1
+#
+# 2026-02-10  16:30:37-PST
+# taskset -c 0-15 ./hybridconvr -S0 -T8 -R -s5.0 -u -L134217728 -M268435456
+m=134217728
+p=1
+q=2
+C=1
+S=1
+D=1
+I=0
+fftPadReal::forward1
+fftPadReal::backward1
+#
+#
+# Run on 2026-02-12  05:03:02-PST using commit 1a185f4 (2026-01-22):
+#
+# 2026-02-12  12:15:48-PST
+# taskset -c 0-15 ./hybridconvr -S0 -T8 -R -s5.0 -u -L268435456 -M536870912
+m=268435456
+p=1
+q=2
+C=1
+S=1
+D=1
+I=0
+fftPadReal::forward1
+fftPadReal::backward1

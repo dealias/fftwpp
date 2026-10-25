@@ -1,0 +1,91 @@
+# Optimal values for hybridconvrcm3
+#
+#
+# Run on 2026-02-09  11:08:21-PST using commit 3b2f9a4 (2026-02-09):
+#
+# 2026-02-09  11:08:26-PST
+# taskset -c 0-15 ./hybridconvrcm3 -S0 -T8 -R -s5.0 -u -L16 -M32 -Sy=16 -Sx=258
+mx=16	my=32	mz=16
+px=1	py=1	pz=1
+qx=2	qy=1	qz=1
+Cx=128	Cy=8	Cz=1
+Sx=129	Sy=8	Sz=1
+Dx=1	Dy=1	Dz=1
+Ix=1	Iy=1	Iz=1
+fftPad::forward1ManyAll	fftPad::forwardExplicitMany	fftPad::forwardExplicit
+fftPad::backward1ManyAll	fftPad::backwardExplicitMany	fftPad::backwardExplicit
+#
+# 2026-02-09  11:08:32-PST
+# taskset -c 0-15 ./hybridconvrcm3 -S0 -T8 -R -s5.0 -u -L32 -M64 -Sy=32 -Sx=1026
+mx=64	my=64	mz=16
+px=1	py=1	pz=1
+qx=1	qy=1	qz=2
+Cx=512	Cy=16	Cz=1
+Sx=513	Sy=16	Sz=1
+Dx=1	Dy=1	Dz=2
+Ix=1	Iy=1	Iz=0
+fftPad::forwardExplicitMany	fftPad::forwardExplicitMany	fftPad::forward1
+fftPad::backwardExplicitMany	fftPad::backwardExplicitMany	fftPad::backward1
+#
+# 2026-02-09  11:08:38-PST
+# taskset -c 0-15 ./hybridconvrcm3 -S0 -T8 -R -s5.0 -u -L64 -M128 -Sy=64 -Sx=4098
+mx=64	my=64	mz=64
+px=1	py=1	pz=1
+qx=2	qy=2	qz=1
+Cx=2048	Cy=32	Cz=1
+Sx=2049	Sy=32	Sz=1
+Dx=1	Dy=1	Dz=1
+Ix=1	Iy=1	Iz=0
+fftPad::forward1ManyAll	fftPad::forward1ManyAll	fftPad::forwardExplicit
+fftPad::backward1ManyAll	fftPad::backward1ManyAll	fftPad::backwardExplicit
+#
+# 2026-02-09  11:08:51-PST
+# taskset -c 0-15 ./hybridconvrcm3 -S0 -T8 -R -s5.0 -u -L128 -M256 -Sy=128 -Sx=16386
+mx=256	my=16	mz=128
+px=1	py=8	pz=1
+qx=1	qy=16	qz=1
+Cx=8192	Cy=64	Cz=1
+Sx=8193	Sy=64	Sz=1
+Dx=1	Dy=1	Dz=1
+Ix=1	Iy=1	Iz=0
+fftPad::forwardExplicitMany	fftPad::forwardInnerMany	fftPad::forwardExplicit
+fftPad::backwardExplicitMany	fftPad::backwardInnerMany	fftPad::backwardExplicit
+#
+# 2026-02-09  11:10:24-PST
+# taskset -c 0-15 ./hybridconvrcm3 -S0 -T8 -R -s5.0 -u -L256 -M512 -Sy=256 -Sx=65538
+mx=256	my=16	mz=256
+px=1	py=16	pz=1
+qx=2	qy=32	qz=1
+Cx=32768	Cy=128	Cz=1
+Sx=32769	Sy=128	Sz=1
+Dx=1	Dy=1	Dz=1
+Ix=1	Iy=1	Iz=0
+fftPad::forward1ManyAll	fftPad::forwardInnerMany	fftPad::forwardExplicit
+fftPad::backward1ManyAll	fftPad::backwardInnerMany	fftPad::backwardExplicit
+#
+# 2026-02-09  11:17:29-PST
+# taskset -c 0-15 ./hybridconvrcm3 -S0 -T8 -R -s5.0 -u -L512 -M1024 -Sy=512 -Sx=262146
+mx=512	my=512	mz=512
+px=1	py=1	pz=1
+qx=2	qy=2	qz=1
+Cx=131072	Cy=256	Cz=1
+Sx=131073	Sy=256	Sz=1
+Dx=1	Dy=1	Dz=1
+Ix=1	Iy=1	Iz=0
+fftPad::forward1ManyAll	fftPad::forward1ManyAll	fftPad::forwardExplicit
+fftPad::backward1ManyAll	fftPad::backward1ManyAll	fftPad::backwardExplicit
+#
+#
+# Run on 2026-02-11  13:21:37-PST using commit 24324e3 (2026-02-09):
+#
+# 2026-02-11  14:05:28-PST
+# taskset -c 0-15 ./hybridconvrcm3 -S0 -T8 -R -s5.0 -u -L1024 -M2048 -Sy=1024 -Sx=1048578
+mx=1024	my=1024	mz=512
+px=1	py=1	pz=1
+qx=2	qy=2	qz=2
+Cx=524288	Cy=512	Cz=1
+Sx=524289	Sy=512	Sz=1
+Dx=1	Dy=1	Dz=1
+Ix=1	Iy=1	Iz=1
+fftPad::forward1ManyAll	fftPad::forward1ManyAll	fftPad::forward1All
+fftPad::backward1ManyAll	fftPad::backward1ManyAll	fftPad::backward1All

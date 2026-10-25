@@ -1,0 +1,355 @@
+# Optimal values for hybridconvrcm
+#
+#
+# Run on 2026-02-09  09:47:21-PST using commit 7789cac (2026-02-09):
+#
+# 2026-02-09  09:47:37-PST
+# taskset -c 0-15 ./hybridconvrcm -S0 -T8 -R -s5.0 -u -L32 -M64
+m=32
+p=1
+q=1
+C=1
+S=1
+D=1
+I=0
+fftPad::forwardExplicit
+fftPad::backwardExplicit
+#
+# 2026-02-09  09:47:48-PST
+# taskset -c 0-15 ./hybridconvrcm -S0 -T8 -R -s5.0 -u -L64 -M128
+m=64
+p=1
+q=1
+C=1
+S=1
+D=1
+I=0
+fftPad::forwardExplicit
+fftPad::backwardExplicit
+#
+# 2026-02-09  09:47:56-PST
+# taskset -c 0-15 ./hybridconvrcm -S0 -T8 -R -s5.0 -u -L128 -M256
+m=128
+p=1
+q=1
+C=1
+S=1
+D=1
+I=0
+fftPad::forwardExplicit
+fftPad::backwardExplicit
+#
+# 2026-02-09  09:48:03-PST
+# taskset -c 0-15 ./hybridconvrcm -S0 -T8 -R -s5.0 -u -L256 -M512
+m=256
+p=1
+q=1
+C=1
+S=1
+D=1
+I=0
+fftPad::forwardExplicit
+fftPad::backwardExplicit
+#
+# 2026-02-09  09:48:09-PST
+# taskset -c 0-15 ./hybridconvrcm -S0 -T8 -R -s5.0 -u -L512 -M1024
+m=256
+p=1
+q=2
+C=1
+S=1
+D=1
+I=0
+fftPad::forward1
+fftPad::backward1
+#
+# 2026-02-09  09:48:15-PST
+# taskset -c 0-15 ./hybridconvrcm -S0 -T8 -R -s5.0 -u -L1024 -M2048
+m=512
+p=1
+q=2
+C=1
+S=1
+D=1
+I=0
+fftPad::forward1
+fftPad::backward1
+#
+# 2026-02-09  09:48:20-PST
+# taskset -c 0-15 ./hybridconvrcm -S0 -T8 -R -s5.0 -u -L2048 -M4096
+m=1024
+p=1
+q=2
+C=1
+S=1
+D=1
+I=0
+fftPad::forward1
+fftPad::backward1
+#
+# 2026-02-09  09:48:25-PST
+# taskset -c 0-15 ./hybridconvrcm -S0 -T8 -R -s5.0 -u -L4096 -M8192
+m=2048
+p=1
+q=2
+C=1
+S=1
+D=1
+I=0
+fftPad::forward1
+fftPad::backward1
+#
+# 2026-02-09  09:48:30-PST
+# taskset -c 0-15 ./hybridconvrcm -S0 -T8 -R -s5.0 -u -L8192 -M16384
+m=4096
+p=1
+q=2
+C=1
+S=1
+D=1
+I=0
+fftPad::forward1
+fftPad::backward1
+#
+# 2026-02-09  09:48:36-PST
+# taskset -c 0-15 ./hybridconvrcm -S0 -T8 -R -s5.0 -u -L16384 -M32768
+m=8192
+p=1
+q=2
+C=1
+S=1
+D=2
+I=1
+fftPad::forward1
+fftPad::backward1
+#
+# 2026-02-09  09:48:42-PST
+# taskset -c 0-15 ./hybridconvrcm -S0 -T8 -R -s5.0 -u -L32768 -M65536
+m=32768
+p=1
+q=1
+C=1
+S=1
+D=1
+I=0
+fftPad::forwardExplicit
+fftPad::backwardExplicit
+#
+# 2026-02-09  09:48:51-PST
+# taskset -c 0-15 ./hybridconvrcm -S0 -T8 -R -s5.0 -u -L65536 -M131072
+m=65536
+p=1
+q=1
+C=1
+S=1
+D=1
+I=0
+fftPad::forwardExplicit
+fftPad::backwardExplicit
+#
+# 2026-02-09  09:49:00-PST
+# taskset -c 0-15 ./hybridconvrcm -S0 -T8 -R -s5.0 -u -L131072 -M262144
+m=65536
+p=1
+q=2
+C=1
+S=1
+D=1
+I=0
+fftPad::forward1
+fftPad::backward1
+#
+# 2026-02-09  09:49:14-PST
+# taskset -c 0-15 ./hybridconvrcm -S0 -T8 -R -s5.0 -u -L262144 -M524288
+m=2048
+p=64
+q=128
+C=1
+S=1
+D=1
+I=0
+fftPad::forwardInner
+fftPad::backwardInner
+#
+# 2026-02-09  09:49:29-PST
+# taskset -c 0-15 ./hybridconvrcm -S0 -T8 -R -s5.0 -u -L524288 -M1048576
+m=2048
+p=128
+q=256
+C=1
+S=1
+D=1
+I=0
+fftPad::forwardInner
+fftPad::backwardInner
+#
+# 2026-02-09  09:50:13-PST
+# taskset -c 0-15 ./hybridconvrcm -S0 -T8 -R -s5.0 -u -L1048576 -M2097152
+m=8192
+p=64
+q=128
+C=1
+S=1
+D=1
+I=1
+fftPad::forwardInner
+fftPad::backwardInner
+#
+# 2026-02-09  09:50:47-PST
+# taskset -c 0-15 ./hybridconvrcm -S0 -T8 -R -s5.0 -u -L2097152 -M4194304
+m=8192
+p=128
+q=256
+C=1
+S=1
+D=1
+I=1
+fftPad::forwardInner
+fftPad::backwardInner
+#
+# 2026-02-09  09:51:57-PST
+# taskset -c 0-15 ./hybridconvrcm -S0 -T8 -R -s5.0 -u -L4194304 -M8388608
+m=16384
+p=128
+q=256
+C=1
+S=1
+D=1
+I=0
+fftPad::forwardInner
+fftPad::backwardInner
+#
+#
+# Run on 2026-02-09  09:59:47-PST using commit 7789cac (2026-02-09):
+#
+# 2026-02-09  09:59:53-PST
+# taskset -c 0-15 ./hybridconvrcm -S0 -T8 -R -s5.0 -u -L32768 -M65536
+m=32768
+p=1
+q=1
+C=1
+S=1
+D=1
+I=0
+fftPad::forwardExplicit
+fftPad::backwardExplicit
+#
+# 2026-02-09  10:00:03-PST
+# taskset -c 0-15 ./hybridconvrcm -S0 -T8 -R -s5.0 -u -L65536 -M131072
+m=65536
+p=1
+q=1
+C=1
+S=1
+D=1
+I=0
+fftPad::forwardExplicit
+fftPad::backwardExplicit
+#
+#
+# Run on 2026-02-09  12:57:35-PST using commit 24324e3 (2026-02-09):
+#
+# 2026-02-09  13:00:38-PST
+# taskset -c 0-15 ./hybridconvrcm -S0 -T8 -R -s5.0 -u -L8388608 -M16777216
+m=32768
+p=128
+q=256
+C=1
+S=1
+D=1
+I=1
+fftPad::forwardInner
+fftPad::backwardInner
+#
+# 2026-02-09  13:06:22-PST
+# taskset -c 0-15 ./hybridconvrcm -S0 -T8 -R -s5.0 -u -L16777216 -M33554432
+m=8388608
+p=1
+q=2
+C=1
+S=1
+D=1
+I=0
+fftPad::forward1
+fftPad::backward1
+#
+# 2026-02-09  13:18:06-PST
+# taskset -c 0-15 ./hybridconvrcm -S0 -T8 -R -s5.0 -u -L33554432 -M67108864
+m=16777216
+p=1
+q=2
+C=1
+S=1
+D=1
+I=0
+fftPad::forward1
+fftPad::backward1
+#
+#
+# Run on 2026-02-10  19:04:08-PST using commit 24324e3 (2026-02-09):
+#
+# 2026-02-10  19:28:36-PST
+# taskset -c 0-15 ./hybridconvrcm -S0 -T8 -R -s5.0 -u -L67108864 -M134217728
+m=32768
+p=1024
+q=2048
+C=1
+S=1
+D=2
+I=1
+fftPad::forwardInner
+fftPad::backwardInner
+#
+# 2026-02-10  20:15:53-PST
+# taskset -c 0-15 ./hybridconvrcm -S0 -T8 -R -s5.0 -u -L134217728 -M268435456
+m=65536
+p=1024
+q=2048
+C=1
+S=1
+D=2
+I=1
+fftPad::forwardInner
+fftPad::backwardInner
+#
+#
+# Run on 2026-02-12  20:00:07-PST using commit 24324e3 (2026-02-09):
+#
+# 2026-02-12  21:41:19-PST
+# taskset -c 0-15 ./hybridconvrcm -S0 -T8 -R -s5.0 -u -L268435456 -M536870912
+m=131072
+p=1024
+q=2048
+C=1
+S=1
+D=2
+I=1
+fftPad::forwardInner
+fftPad::backwardInner
+#
+#
+# Run on 2026-02-15  13:05:04-PST using commit 24324e3 (2026-02-09):
+#
+# 2026-02-15  13:05:10-PST
+# taskset -c 0-15 ./hybridconvrcm -S0 -T8 -R -s5.0 -u -L32768 -M65536
+m=32768
+p=1
+q=1
+C=1
+S=1
+D=1
+I=0
+fftPad::forwardExplicit
+fftPad::backwardExplicit
+#
+# 2026-02-15  13:05:21-PST
+# taskset -c 0-15 ./hybridconvrcm -S0 -T8 -R -s5.0 -u -L131072 -M262144
+m=131072
+p=1
+q=1
+C=1
+S=1
+D=1
+I=1
+fftPad::forwardExplicit
+fftPad::backwardExplicit
